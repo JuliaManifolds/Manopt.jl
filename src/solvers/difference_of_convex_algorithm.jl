@@ -84,7 +84,7 @@ end
 get_gradient(dcs::DifferenceOfConvexState) = dcs.X
 
 @doc raw"""
-    difference_of_convex_algorithm(M, f, g, ∂h, p; kwargs...)
+    difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
 
 Compute the difference of convex algorithm [^FerreiraSantosSouza2021] to minimize
 
@@ -105,25 +105,33 @@ Then repeat for ``k=0,1,\ldots``
 
 until the `stopping_criterion` is fulfilled.
 
+For more details on the sub problem, see the `sub_problem=` keyword.
+
 # Optional parameters
 
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
-  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
-* `grad_g` (`nothing`) – if you use the default settings for the sub solver,
-  the ``\operatorname{grad} g`` is required
+* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
+  allocation (default) form `grad_f(M, p)` or [`InplaceEvaluation`](@ref) form `grad_f!(M, X, x)`
+* `gradient` (`nothing`) – specify ``\operatorname{grad} f``, for debug / analysis or enhancing `stopping_criterion=`
+* `grad_g` (`nothing`) – specify the gradient of `g`. If specified, a full subsolver is automatically set up.
 * `initial_vector` (`zero_vector(M, p)`) initialise the inner tangent vecor to store the subgradient result.
+* `stopping_criterion` ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
+    a [`StoppingCriterion`](@ref) for the algorithm – includes a [`StopWhenGradienNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
 * `sub_cost` ([`LinearizedDCCost`](@ref)`(g, p, initial_vector)`) cost to be used within the default `sub_problem`
   use this if you have a more efficient version than using `g` from above.
 * `sub_grad` ([`LinearizedSubProblemGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`gradient to be used within the default `sub_problem`.
   use this if you have a more efficient version than using grad_g` from above
+* `sub_hess` – (a fininte difference approximation by default) specify a Hessian of the subproblem, e.g. to run a trust region algorithm.
+  set this to nothing to just use a [`ManifoldGradientObjective`](@ref) in the `subobjective=`
 * `sub_kwargs` (`[]`) pass keyword arguments to the `sub_state`, in form of a `Dict(:kwname=>value)`,
   unless you set the `sub_state` directly.
+* `sub_objective` (a gradient or hessian objetive based on the last 3 keywords)
+  provide the objective used within `sub_problem` (if that is not specified by the user)
+* `sub_problem` ([`DefaultManifoldProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
+  You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
 * `sub_state` (default: decorated gradient descent) – set the options for the sub task using the other keyword arguments for the sub task setup
-* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenGradientNormLess`](@ref)`(1e-12) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the sub solver,
-  unless you set the `sub_state` directly.
-* `sub_stepsize` ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size for the sub task,
-  unless you set the `sub_state` directly.
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(200)` a [`StoppingCriterion`](@ref) for the algorithm.
+* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-8) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+  a stopping crierion used withing the default `sub_state=`
+* `sub_stepsize` ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
 
 ...all others are passed on to decorate the inner [`DifferenceOfConvexState`](@ref).
 
@@ -136,9 +144,9 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     > _The difference of convex algorithm on Riemannian manifolds_,
     > 2021, arXiv: [2112.05250](http://arxiv.org/abs/2112.05250).
 """
-function difference_of_convex_algorithm(M::AbstractManifold, cost, g, ∂h, p; kwargs...)
+function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h, p=rand(M); kwargs...)
     q = copy(M, p)
-    return difference_of_convex_algorithm!(M, cost, g, ∂h, q; kwargs...)
+    return difference_of_convex_algorithm!(M, f, g, ∂h, q; kwargs...)
 end
 
 @doc raw"""
@@ -153,38 +161,49 @@ function difference_of_convex_algorithm!(
     g,
     ∂h,
     p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     grad_g=nothing,
     gradient=nothing,
     initial_vector=zero_vector(M, p),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    sub_cost=LinearizedDCCost(g, p, initial_vector),
-    sub_grad=LinearizedDCGrad(grad_g, p, initial_vector; evaluation=evaluation),
-    sub_use_hessian=true,
-    sub_hess=if sub_use_hessian
-        ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation)
+    stopping_criterion=if isnothing(gradient)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-8)
     else
-        nothing
+        StopAfterIteration(300) | StopWhenChangeLess(1e-8) | StopWhenGradientNormLess(1e-8)
     end,
+    StopAfterIteration(200),
+    # Subsolver Magic Cascade.
+    sub_cost=LinearizedDCCost(g, p, initial_vector),
+    sub_grad=if isnothing(grad_g)
+        nothing
+    else
+        LinearizedDCGrad(grad_g, p, initial_vector; evaluation=evaluation)
+    end,
+    sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(300) |
-                           StopWhenGradientNormLess(1e-12) |
-                           StopWhenStepsizeLess(1e-8),
     sub_stepsize=ArmijoLinesearch(M),
+    sub_stopping_criterion=StopAfterIteration(300) |
+                           StopWhenStepsizeLess(1e-8) |
+                           StopWhenGradientNormLess(1e-8),
     sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=decorate_state!(
         GradientDescentState(
             M, copy(M, p); stepsize=sub_stepsize, stopping_criterion=sub_stopping_criterion
         );
         sub_kwargs...,
     ),
-    sub_objective=if isnothing(sub_hess)
-        ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+    sub_objective=if isnothing(sub_cost) || isnothing(sub_options)
+        nothing
     else
-        ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+        if isnothing(sub_hess)
+            ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+        else
+            ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+        end
     end,
-    sub_problem::Union{AbstractManoptProblem,Function}=DefaultManoptProblem(
-        M, sub_objective
-    ),
-    stopping_criterion=StopAfterIteration(200),
+    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objetcive)
+        nothing
+    else
+        DefaultManoptProblem(M, sub_objective)
+    end,
     kwargs..., #collect rest
 )
     mdco = ManifoldDifferenceOfConvexObjective(
@@ -193,7 +212,18 @@ function difference_of_convex_algorithm!(
     dmdco = decorate_objective!(M, mdco; kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here
-    if sub_problem isa AbstractManoptProblem
+
+    if isnothting(sub_problem)
+        error(
+            """
+            Subproblem not correctly intialized. Please provide _either_
+            * a `sub_problem=` to be solved
+            * a `sub_objective` to automatically generate the sub problem,
+            * `sub_grad=` (as well as the usually given `sub_cost=`) to automatically generate the sub objective _or_
+            * `grad_g=` keywords to automatically generate the sub problems gradient.
+            """,
+        )
+    elseif sub_problem isa AbstractManoptProblem
         dcs = DifferenceOfConvexState(
             M,
             p,

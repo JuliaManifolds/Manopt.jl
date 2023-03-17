@@ -89,15 +89,18 @@ get_gradient(dcps::DifferenceOfConvexProximalState) = dcps.X
 #
 @doc raw"""
     difference_of_convex_proximal_point(M, prox_g, grad_h, p; kwargs...)
+    difference_of_convex_proximal_point(M, grad_h, p; kwargs...)
 
 Compute the difference of convex algorithm to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M} g(p) - h(p)
 ```
+where you have to provide the (sub) gradient ``∂h`` of ``h`` and either
+* the proximal map ``\prox_{\lambda g}`` of `g` as a function `prox_g(M, λ, p)` or  `prox_g(M, q, λ, p)`
+* the functions `g=` and `grad_g` to compute the proximal map using a sub solver
+* your own sub-solver, see optional keywods below
 
-where you have to provide the proximal map of `g` and the gradient of `h`.
-Optionally, the cost can also be provided, e.g. for debug or recordings.
 This algorithm performs the following steps given a start point `p`= ``p^{(0)}``.
 Then repeat for ``k=0,1,\ldots``
 
@@ -111,7 +114,7 @@ Then repeat for ``k=0,1,\ldots``
 until the `stopping_criterion` is fulfilled.
 See [^AlmeidaNetoOliveiraSouza2020] for more details,
 where we slightly changed step 4-6, sine here we get the classical proximal point
-method for DC functions for ``s_k = 1`` we obtain the classical proximal method for
+method for DC functions for ``s_k = 1`` and we can employ linesearches similar to other solvers.
 
 # Optional parameters
 
@@ -143,7 +146,13 @@ function difference_of_convex_proximal_point(
     difference_of_convex_proximal_point!(M, g, grad_g, grad_h, q; kwargs...)
     return q
 end
-
+function difference_of_convex_proximal_point(
+    M::AbstractManifold, prox_g, grad_h, p; kwargs...
+)
+    q = copy(M, p)
+    difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
+    return q
+end
 @doc raw"""
     difference_of_convex_proximal_point!(M, prox_g, grad_h, p; cost=nothing, kwargs...)
 
@@ -161,10 +170,10 @@ For all further details, especially the keyword arguments, see [`difference_of_c
 """
 function difference_of_convex_proximal_point!(
     M,
-    g,
-    grad_g,
     grad_h,
     p;
+    g=nothing,
+    grad_g=nothing,
     X=zero_vector(M, p),
     λ=i -> 1 / 2,
     evaluation=AllocatingEvaluation(),
@@ -174,14 +183,13 @@ function difference_of_convex_proximal_point!(
     retraction_method=default_retraction_method(M),
     stepsize=ArmijoLinesearch(M),
     stopping_criterion=StopAfterIteration(200),
-    sub_cost=ProximalDCCost(g, copy(M, p), λ(1)),
-    sub_grad=ProximalDCGrad(grad_g, copy(M, p), λ(1); evaluation=evaluation),
-    sub_use_hessian=true,
-    sub_hess=if sub_use_hessian
-        ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation)
-    else
+    sub_cost=isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),
+    sub_grad=if isnothing(grad_g)
         nothing
+    else
+        ProximalDCGrad(grad_g, copy(M, p), λ(1); evaluation=evaluation)
     end,
+    sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(1e-12) |
@@ -193,16 +201,35 @@ function difference_of_convex_proximal_point!(
         );
         sub_kwargs...,
     ),
-    sub_objective=if isnothing(sub_hess)
-        ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+    sub_objective=if isnothing(sub_cost) || isnothing(sub_options)
+        nothing
     else
-        ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+        if isnothing(sub_hess)
+            ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+        else
+            ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+        end
     end,
-    sub_problem::Union{AbstractManoptProblem,Function}=DefaultManoptProblem(
-        M, sub_objective
-    ),
+    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objetcive)
+        nothing
+    else
+        DefaultManoptProblem(M, sub_objective)
+    end,
     kwargs...,
 )
+    # Check whether either the right defaults were provided or a sub_problen.
+    if isnothing(sub_problem)
+        error(
+            """
+            The `sub_problem` is not correctly intialized.
+            Please provide _either_
+            * a `sub_problem=` to be solved
+            * a `sub_objective` to automatically generate the sub problem,
+            * `sub_cost=` and `sub_grad=` to automatically generate the sub objective _or_
+            * `g=` and `grad_g=` keywords to automatically generate the sub cost and gradient.
+            """,
+        )
+    end
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
         grad_h; cost=cost, gradient=gradient, evaluation=evaluation
     )
@@ -223,6 +250,43 @@ function difference_of_convex_proximal_point!(
     ddcps = decorate_state!(dcps; kwargs...)
     return get_solver_return(solve!(dmp, ddcps))
 end
+function difference_of_convex_proximal_point!(
+    M,
+    prox_g,
+    grad_h,
+    p;
+    X=zero_vector(M, p),
+    λ=i -> 1 / 2,
+    evaluation=AllocatingEvaluation(),
+    cost=nothing,
+    gradient=nothing,
+    inverse_retraction_method=default_inverse_retraction_method(M),
+    retraction_method=default_retraction_method(M),
+    stepsize=ArmijoLinesearch(M),
+    stopping_criterion=StopAfterIteration(200),
+    kwargs...,
+)
+    mdcpo = ManifoldDifferenceOfConvexProximalObjective(
+        grad_h; cost=cost, gradient=gradient, evaluation=evaluation
+    )
+    dmdcpo = decorate_objective!(M, mdcpo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmdcpo)
+    dcps = DifferenceOfConvexProximalState(
+        M,
+        p,
+        prox_g,
+        evaluation;
+        X=X,
+        stepsize=stepsize,
+        stopping_criterion=stopping_criterion,
+        inverse_retraction_method=inverse_retraction_method,
+        retraction_method=retraction_method,
+        λ=λ,
+    )
+    ddcps = decorate_state!(dcps; kwargs...)
+    return get_solver_return(solve!(dmp, ddcps))
+end
+
 function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState)
     return dcps
 end
@@ -244,6 +308,7 @@ function step_solver!(
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     return dcps
 end
+
 #=
     Varant II: In-Place closed form of the prox
 =#
