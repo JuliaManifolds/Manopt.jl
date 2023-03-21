@@ -114,7 +114,7 @@ end
 (F::LinearizedDCCost)(M, p) = F.g(M, p) - inner(M, F.pk, F.Xk, log(M, F.pk, p))
 
 function set_manopt_parameter!(ldc::LinearizedDCCost, ::Val{:p}, p)
-    return ldc.pk .= p
+    ldc.pk .= p
     return ldc
 end
 function set_manopt_parameter!(ldc::LinearizedDCCost, ::Val{:X}, X)
@@ -188,7 +188,7 @@ function (grad_f!::LinearizedDCGrad{InplaceEvaluation})(M, p)
 end
 
 function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:p}, p)
-    return ldcg.pk .= p
+    ldcg.pk .= p
     return ldcg
 end
 function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:X}, X)
@@ -321,7 +321,7 @@ end
 (F::ProximalDCCost)(M, p) = 1 / (2 * F.λ) * distance(M, p, F.pk)^2 + F.g(M, p)
 
 function set_manopt_parameter!(pdcc::ProximalDCCost, ::Val{:p}, p)
-    return pdcc.pk .= p
+    pdcc.pk .= p
     return pdcc
 end
 function set_manopt_parameter!(pdcc::ProximalDCCost, ::Val{:λ}, λ)
@@ -393,7 +393,7 @@ function (grad_f!::ProximalDCGrad{InplaceEvaluation})(M, p)
     return X
 end
 function set_manopt_parameter!(pdcg::ProximalDCGrad, ::Val{:p}, p)
-    return pdcg.pk .= p
+    pdcg.pk .= p
     return pdcg
 end
 function set_manopt_parameter!(pdcg::ProximalDCGrad, ::Val{:λ}, λ)
