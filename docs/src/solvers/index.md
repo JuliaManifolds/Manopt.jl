@@ -18,6 +18,8 @@ The following algorithms are currently available
 [Chambolle-Pock](@ref ChambollePockSolver) | [`ChambollePock`](@ref), [`ChambollePockState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}``, ``\operatorname{prox}_{τ G^*}``, ``Λ`` |
 [Conjugate Gradient Descent](@ref CGSolver) | [`conjugate_gradient_descent`](@ref), [`ConjugateGradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f``
 [Cyclic Proximal Point](@ref CPPSolver) | [`cyclic_proximal_point`](@ref), [`CyclicProximalPointState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
+[Difference of Convex Algorithm](@ref DCASolver) | [`difference_of_convex_algorithm`](@ref), [`DifferenceOfConvexState`](@ref) | ``f=g-h``, ``∂h``, and e.g. ``g``, ``\operatorname{grad} g`` |
+[Difference of Convex Proximal Point](@ref DCPPASolver) | [`difference_of_convex_proximal_point`](@ref), [`DifferenceOfConvexProximalState`](@ref) | ``f=g-h``, ``∂h``, and e.g. ``g``, ``\operatorname{grad} g`` |
 [Douglas–Rachford](@ref DRSolver) | [`DouglasRachford`](@ref), [`DouglasRachfordState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
 [Exact Penalty Method](@ref ExactPenaltySolver) | [`exact_penalty_method`](@ref), [`ExactPenaltyMethodState`](@ref) | ``f``, ``\operatorname{grad} f``, ``g``, ``\operatorname{grad} g_i``, ``h``, ``\operatorname{grad} h_j`` |
 [Frank-Wolfe algorithm](@ref FrankWolfe) | [`Frank_Wolfe_method`](@ref), [`FrankWolfeState`](@ref) | sub-problem solver |

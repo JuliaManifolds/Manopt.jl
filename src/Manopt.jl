@@ -275,6 +275,7 @@ export linesearch_backtrack, default_stepsize
 export get_cost, get_cost_function
 export get_gradient, get_gradient_function, get_gradient!
 export get_subgradient, get_subgradient!
+export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map,
     get_proximal_map!,
     get_state,
@@ -323,7 +324,9 @@ export get_constraints,
     get_grad_equality_constraints,
     get_grad_equality_constraints!
 export ConstraintType, FunctionConstraint, VectorConstraint
+# Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
+export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate

@@ -1,7 +1,7 @@
 @doc raw"""
     ManifoldDifferenceOfConvexObjective{E} <: AbstractManifoldCostObjective{E}
 
-Specify an objetive for a [`difference_of_convex`](@ref) algorithm.
+Specify an objetive for a [`difference_of_convex_algorithm`](@ref).
 
 The objective ``f: \mathcal M \to ℝ`` is given as
 
@@ -14,7 +14,7 @@ Furthermore we assume that the subdifferential ``∂h`` of ``h`` is given.
 
 # Fields
 
-* `cost` – an implementation of ``f(p) = g(p)-h(p)``
+* `cost` – an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
 * `∂h!!` – a deterministic version of ``∂h: \mathcal M → T\mathcal M``,
   i.e. calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and if there is more than
   one, it returns a deterministic choice.
@@ -35,6 +35,18 @@ struct ManifoldDifferenceOfConvexObjective{E,TCost,TGrad,TSubGrad} <:
     end
 end
 
+"""
+    X = get_subtrahend_gradient(amp, q)
+    get_subtrahend_gradient!(amp, X, q)
+
+Evaluate the (sub)gradient of the subtrahend `h` from within
+a [`ManifoldDifferenceOfConvexObjective`](@ref) `amp` at the point `q` (in place of `X`).
+
+The evaluation is done in place of `X` for the `!`-variant.
+The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
+When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
+memory for the result is allocated.
+"""
 function get_subtrahend_gradient(amp::AbstractManoptProblem, p)
     return get_subtrahend_gradient(get_manifold(amp), get_objective(amp), p)
 end
@@ -43,17 +55,6 @@ function get_subtrahend_gradient!(amp::AbstractManoptProblem, X, p)
     return X
 end
 
-"""
-    X = get_subtrahend_gradient(p, q)
-    get_subtrahend_gradient!(p, X, q)
-
-Evaluate the (sub)gradient of a [`ManifoldDifferenceOfConvexObjective`](@ref)` p` at the point `q`.
-
-The evaluation is done in place of `X` for the `!`-variant.
-The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
-memory for the result is allocated.
-"""
 function get_subtrahend_gradient(
     M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p
 )
@@ -87,7 +88,7 @@ A functor `(M,q) → ℝ` to represent the inner problem of a [`ManifoldDifferen
 i.e. a cost function of the form
 
 ```math
-    F_{p_k,X_k}(p) = g(p) - ⟨X_k, \log_p_kp⟩
+    F_{p_k,X_k}(p) = g(p) - ⟨X_k, \log_{p_k}p⟩
 ```
 for a point `p_k` and a tangent vector `X_k` at `p_k` (e.g. outer iterates)
 that are stored within this functor as well.
@@ -95,8 +96,15 @@ that are stored within this functor as well.
 # Fields
 
 * `g` a function
-* `p` a point on a manifold
-* `X` a tangent vector at `p`
+* `pk` a point on a manifold
+* `Xk` a tangent vector at `pk`
+
+Both interims values can be set using
+`set_manopt_parameter!(::LinearizedDCCost, ::Val{:p}, p)`
+and `set_manopt_parameter!(::LinearizedDCCost, ::Val{:X}, X)`, respectively.
+
+# Constructor
+    LinearizedDCCost(g, p, X)
 """
 mutable struct LinearizedDCCost{P,T,TG}
     g::TG
@@ -121,11 +129,11 @@ A functor `(M,X,p) → ℝ` to represent the gradient of the inner problem of a 
 i.e. for a cost function of the form
 
 ```math
-    F_{p_k,X_k}(p) = f(p) - ⟨X_k, \log_p_kp⟩
+    F_{p_k,X_k}(p) = g(p) - ⟨X_k, \log_{p_k}p⟩
 ```
 
-its gradient is given by using ``F=F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩`` and ``F_2(p) = \log_p_kp``
-and the chain rule as well as the [`adjoint_differential_log_argument`](@ref) for ``D^*F_2(p)``
+its gradient is given by using ``F=F_1(F_2(p))``, where ``F_1(X) = ⟨X_k,X⟩`` and ``F_2(p) = \log_{p_k}p``
+and the chain rule as well as the adjoint differential of the logarithmic map with respect to its argument for ``D^*F_2(p)``
 
 ```math
     \operatorname{grad} F(q) = \operatorname{grad} f(q) - DF_2^*(q)[X]
@@ -135,9 +143,13 @@ for a point `pk` and a tangent vector `Xk` at `pk` (the outer iterates) that are
 
 # Fields
 
-* `grad_g!!` the gradient of ``g`` (see [`LinearizedSubProblem`](@ref)) as
+* `grad_g!!` the gradient of ``g`` (see also [`LinearizedDCCost`](@ref))
 * `pk` a point on a manifold
 * `Xk` a tangent vector at `pk`
+
+Both interims values can be set using
+`set_manopt_parameter!(::LinearizedDCGrad, ::Val{:p}, p)`
+and `set_manopt_parameter!(::LinearizedDCGrad, ::Val{:X}, X)`, respectively.
 
 # Constructor
     LinearizedDCGrad(grad_g, p, X; evaluation=AllocatingEvaluation())
@@ -188,13 +200,15 @@ end
 # Difference of Convex Proximal Algorithm plan
 #
 @doc raw"""
-    ManifoldDifferenceOfConvexProximalObjective <: Problem
+    ManifoldDifferenceOfConvexProximalObjective{E} <: Problem
 
-Specify an objective [`difference_of_convex_proximal`](@ref) algorithm.
+Specify an objective [`difference_of_convex_proximal_point`](@ref) algorithm.
 The problem is of the form
+
 ```math
     \operatorname*{argmin}_{p\in \mathcal M} g(p) - h(p)
 ```
+
 where both ``g`` and ``h`` are convex, lsc. and proper.
 # Fields
 
@@ -229,11 +243,11 @@ struct ManifoldDifferenceOfConvexProximalObjective{
 end
 
 @doc raw"""
-    X = get_subtrahend_gradient(M::AbstractManifold, dcpo::DifferenceOfConvexProxProblem, p)
-    get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::DifferenceOfConvexProxProblem, p)
+    X = get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
+    get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
 Evaluate the gradient of the subtrahend ``h`` from within
-a [`DifferenceOfConvexProxProblem`](@ref)` `P` at the point `p` (in place of X).
+a [`ManifoldDifferenceOfConvexProximalObjective`](@ref)` `P` at the point `p` (in place of X).
 """
 get_subtrahend_gradient(
     M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p
@@ -291,7 +305,12 @@ for a point `pk` and a proximal parameter ``λ``.
 * `pk` - a point on a manifold
 * `λ`  - the prox parameter
 
+Both interims values can be set using
+`set_manopt_parameter!(::ProximalDCCost, ::Val{:p}, p)`
+and `set_manopt_parameter!(::ProximalDCCost, ::Val{:λ}, λ)`, respectively.
+
 # Constructor
+
     ProximalDCCost(g, p, λ)
 """
 mutable struct ProximalDCCost{P,TG,R}
@@ -334,6 +353,11 @@ for a point `pk` and a proximal parameter `λ`.
 * `pk` - a point on a manifold
 * `λ`  - the prox parameter
 
+Both interims values can be set using
+`set_manopt_parameter!(::ProximalDCGrad, ::Val{:p}, p)`
+and `set_manopt_parameter!(::ProximalDCGrad, ::Val{:λ}, λ)`, respectively.
+
+
 # Constructor
     ProximalDCGrad(grad_g, pk, λ; evaluation=AllocatingEvaluation())
 
@@ -351,10 +375,10 @@ mutable struct ProximalDCGrad{E<:AbstractEvaluationType,P,TG,R}
     end
 end
 function (grad_f::ProximalDCGrad{AllocatingEvaluation})(M, p)
-    return 1 / (2 * grad_f.λ) * log(M, p, grad_f.pk) + grad_f.grad_g!!(M, p)
+    return grad_f.grad_g!!(M, p) - 1 / grad_f.λ * log(M, p, grad_f.pk)
 end
 function (grad_f::ProximalDCGrad{AllocatingEvaluation})(M, X, p)
-    copyto!(M, X, p, 1 / (2 * grad_f.λ) * log(M, p, grad_f.pk) + grad_f.grad_g!!(M, p))
+    copyto!(M, X, p, grad_f.grad_g!!(M, p) - 1 / grad_f.λ * log(M, p, grad_f.pk))
     return X
 end
 function (grad_f!::ProximalDCGrad{InplaceEvaluation})(M, X, p)

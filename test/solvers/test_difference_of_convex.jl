@@ -59,9 +59,15 @@ using LinearAlgebra, Manifolds, Manopt, Test
         evaluation=InplaceEvaluation(),
         sub_hess=nothing,
     )
+    p7 = difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
+    p8 = difference_of_convex_proximal_point(
+        M, grad_h, p0; g=g, grad_g=grad_g, sub_hess=nothing
+    )
     @test isapprox(M, p4, p5)
     @test isapprox(M, p5, p6)
-    @test f(M, p4) ≈ 0.0
+    @test isapprox(M, p6, p7)
+    @test isapprox(M, p7, p8)
+    @test f(M, p5) ≈ 0.0
 
     @test_throws ErrorException difference_of_convex_proximal_point(
         M, grad_h, p0; sub_problem=nothing
