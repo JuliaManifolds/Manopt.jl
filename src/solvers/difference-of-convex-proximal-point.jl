@@ -8,7 +8,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 * `retraction_method` – (`default_retraction_method(M)`) a type of retraction
 * `p`, `q`, `r`  – the current iterate, the gradient step and the prox, respetively
   their type is set by intializing `p`
-* `stepsize` – ([`ArmijoLinesearch`](@ref)`(M)`) a [`Stepsize`](@ref) function
+* `stepsize` – ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref) function to run the modified algorithm (experimental)
 * `stop` – ([`StopWhenChangeLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
 * `X`, `Y` – (`zero_vector(M,p)`) the current gradient and descent direction, respectively
   their common type is set by the keyword `X`
@@ -46,7 +46,7 @@ mutable struct DifferenceOfConvexProximalState{
         sub_problem::Pr,
         sub_state::St;
         X::T=zero_vector(M, p),
-        stepsize::S=ArmijoLinesearch(M),
+        stepsize::S=ConstantStepsize(M),
         stopping_criterion::SC=StopWhenChangeLess(1e-8),
         inverse_retraction_method::I=default_inverse_retraction_method(M),
         retraction_method::R=default_retraction_method(M),
@@ -125,9 +125,29 @@ method for DC functions for ``s_k = 1`` and we can employ linesearches similar t
   use this if you have a more efficient version than using `g` from above.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction method to use (see step 4).
 * `retraction_method` – (`default_retraction_method(M)`) a retraction to use (see step 2)
-* `stepsize` – ([`ArmijoLinesearch`](@ref)`(M)`) specify a [`Stepsize`](@ref)
+* `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref) to run the modified algorithm (experimental.)
   functor.
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(200)` a [`StoppingCriterion`](@ref) for the algorithm.
+
+* `sub_cost` ([`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`) cost to be used within the default `sub_problem`
+  use this if you have a more efficient version than using `g` from above.
+* `sub_grad` ([`ProximalDCGrad`](@ref)`ProximalDCGrad(grad_g, copy(M, p), λ(1); evaluation=evaluation)`
+  gradient to be used within the default `sub_problem`.
+  Use this if you have a more efficient version than using grad_g` from above
+* `sub_hess` – (a fininte difference approximation by default) specify a Hessian of the subproblem, e.g. to run a trust region algorithm.
+  set this to nothing to just use a [`ManifoldGradientObjective`](@ref) in the `subobjective=`
+* `sub_kwargs` (`[]`) pass keyword arguments to the `sub_state`, in form of a `Dict(:kwname=>value)`,
+  unless you set the `sub_state` directly.
+* `sub_objective` (a gradient or hessian objetive based on the last 3 keywords)
+  provide the objective used within `sub_problem` (if that is not specified by the user)
+* `sub_problem` ([`DefaultManifoldProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
+  You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
+* `sub_state` (default: decorated gradient descent) – set the options for the sub task using the other keyword arguments for the sub task setup
+* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-8) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+  a stopping crierion used withing the default `sub_state=`
+* `sub_stepsize` ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
+
+
 ...all others are passed on to decorate the inner [`DifferenceOfConvexOptions`](@ref).
 
 # Output
@@ -141,13 +161,15 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 """
 function difference_of_convex_proximal_point(M::AbstractManifold, grad_h, p; kwargs...)
     q = copy(M, p)
-    return difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
+    difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
+    return q
 end
 function difference_of_convex_proximal_point(
     M::AbstractManifold, prox_g, grad_h, p; kwargs...
 )
     q = copy(M, p)
-    return difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
+    difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
+    return q
 end
 @doc raw"""
     difference_of_convex_proximal_point!(M, prox_g, grad_h, p; cost=nothing, kwargs...)
@@ -177,8 +199,12 @@ function difference_of_convex_proximal_point!(
     gradient=nothing,
     inverse_retraction_method=default_inverse_retraction_method(M),
     retraction_method=default_retraction_method(M),
-    stepsize=ArmijoLinesearch(M),
-    stopping_criterion=StopAfterIteration(200),
+    stepsize=ConstantStepsize(M),
+    stopping_criterion=if isnothing(gradient)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-8)
+    else
+        StopAfterIteration(300) | StopWhenChangeLess(1e-8) | StopWhenGradientNormLess(1e-8)
+    end,
     sub_cost=isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),
     sub_grad=if isnothing(grad_g)
         nothing
@@ -188,8 +214,8 @@ function difference_of_convex_proximal_point!(
     sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
-                           StopWhenGradientNormLess(1e-12) |
-                           StopWhenStepsizeLess(1e-8),
+                           StopWhenStepsizeLess(1e-8) |
+                           StopWhenGradientNormLess(1e-8),
     sub_stepsize=ArmijoLinesearch(M),
     sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=decorate_state!(
         GradientDescentState(
@@ -206,7 +232,7 @@ function difference_of_convex_proximal_point!(
             ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
         end
     end,
-    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objective)
+    sub_problem::Union{AbstractManoptProblem,Function,Nothing}=if isnothing(sub_objective)
         nothing
     else
         DefaultManoptProblem(M, sub_objective)

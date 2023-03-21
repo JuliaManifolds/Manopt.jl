@@ -72,7 +72,7 @@ function get_subtrahend_gradient!(
     doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation},
     p,
 )
-    return copyto!(M, p, X, doco.∂h!!(M, p))
+    return copyto!(M, X, p, doco.∂h!!(M, p))
 end
 function get_subtrahend_gradient!(
     M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
@@ -160,13 +160,7 @@ function (grad_f::LinearizedDCGrad{AllocatingEvaluation})(M, p)
            adjoint_differential_log_argument(M, grad_f.pk, p, grad_f.Xk)
 end
 function (grad_f::LinearizedDCGrad{AllocatingEvaluation})(M, X, p)
-    copyto!(
-        M,
-        X,
-        p,
-        grad_f.grad_g!!(M, p) .-
-        adjoint_differential_log_argument(M, grad_f.pk, p, grad_f.Xk),
-    )
+    copyto!(M, X, p, grad_f(M, p))
     return X
 end
 function (grad_f!::LinearizedDCGrad{InplaceEvaluation})(M, X, p)
@@ -267,7 +261,7 @@ function get_subtrahend_gradient!(
     dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
     p,
 )
-    return copyto!(M, X, x, dcpo.grad_h!!(p.M, x))
+    return copyto!(M, X, p, dcpo.grad_h!!(M, p))
 end
 function get_subtrahend_gradient!(
     M::AbstractManifold,
@@ -357,12 +351,10 @@ mutable struct ProximalDCGrad{E<:AbstractEvaluationType,P,TG,R}
     end
 end
 function (grad_f::ProximalDCGrad{AllocatingEvaluation})(M, p)
-    return 1 / (2 * grad_f.λ) * distance(M, p, grad_f.pk)^2 + grad_f.grad_g!!(M, p)
+    return 1 / (2 * grad_f.λ) * log(M, p, grad_f.pk) + grad_f.grad_g!!(M, p)
 end
 function (grad_f::ProximalDCGrad{AllocatingEvaluation})(M, X, p)
-    copyto!(
-        M, X, p, 1 / (2 * grad_f.λ) * distance(M, p, grad_f.pk)^2 + grad_f.grad_g!!(M, p)
-    )
+    copyto!(M, X, p, 1 / (2 * grad_f.λ) * log(M, p, grad_f.pk) + grad_f.grad_g!!(M, p))
     return X
 end
 function (grad_f!::ProximalDCGrad{InplaceEvaluation})(M, X, p)

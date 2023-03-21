@@ -116,10 +116,12 @@ For more details on the sub problem, see the `sub_problem=` keyword.
 * `initial_vector` (`zero_vector(M, p)`) initialise the inner tangent vecor to store the subgradient result.
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
     a [`StoppingCriterion`](@ref) for the algorithm – includes a [`StopWhenGradienNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
+
 * `sub_cost` ([`LinearizedDCCost`](@ref)`(g, p, initial_vector)`) cost to be used within the default `sub_problem`
   use this if you have a more efficient version than using `g` from above.
-* `sub_grad` ([`LinearizedSubProblemGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`gradient to be used within the default `sub_problem`.
-  use this if you have a more efficient version than using grad_g` from above
+* `sub_grad` ([`LinearizedSubProblemGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`
+  gradient to be used within the default `sub_problem`.
+  Use this if you have a more efficient version than using grad_g` from above
 * `sub_hess` – (a fininte difference approximation by default) specify a Hessian of the subproblem, e.g. to run a trust region algorithm.
   set this to nothing to just use a [`ManifoldGradientObjective`](@ref) in the `subobjective=`
 * `sub_kwargs` (`[]`) pass keyword arguments to the `sub_state`, in form of a `Dict(:kwname=>value)`,
@@ -198,7 +200,7 @@ function difference_of_convex_algorithm!(
             ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
         end
     end,
-    sub_problem::Union{AbstractManoptProblem,Function}=if isnothing(sub_objective)
+    sub_problem::Union{AbstractManoptProblem,Function,Nothing}=if isnothing(sub_objective)
         nothing
     else
         DefaultManoptProblem(M, sub_objective)
