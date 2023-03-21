@@ -105,17 +105,26 @@ Then repeat for ``k=0,1,\ldots``
 
 until the `stopping_criterion` is fulfilled.
 
-For more details on the sub problem, see the `sub_problem=` keyword.
-
 # Optional parameters
 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
   allocation (default) form `grad_f(M, p)` or [`InplaceEvaluation`](@ref) form `grad_f!(M, X, x)`
 * `gradient` (`nothing`) – specify ``\operatorname{grad} f``, for debug / analysis or enhancing `stopping_criterion=`
-* `grad_g` (`nothing`) – specify the gradient of `g`. If specified, a full subsolver is automatically set up.
+* `grad_g` (`nothing`) – specify the gradient of `g`. If specified, a subsolver is automatically set up.
 * `initial_vector` (`zero_vector(M, p)`) initialise the inner tangent vecor to store the subgradient result.
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
     a [`StoppingCriterion`](@ref) for the algorithm – includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
+
+While there are several parameters for a sub solver, the easiest is to provide the function `grad_g=`,
+such that together with the mandatory function `g` a default cost and gradient can be generated and passed to
+a default subsolver. Hence the easiest example call looks like
+
+```
+difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g=grad_g)
+```
+
+# Optional parameters for the sub problem
+
 * `sub_cost` ([`LinearizedDCCost`](@ref)`(g, p, initial_vector)`) cost to be used within the default `sub_problem`
   use this if you have a more efficient version than using `g` from above.
 * `sub_grad` ([`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`
