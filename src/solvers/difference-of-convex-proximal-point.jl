@@ -254,24 +254,19 @@ function difference_of_convex_proximal_point!(
     else
         DefaultManoptProblem(M, sub_objective)
     end,
-    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
-        Function
-        evaluation
-    else
-        decorate_state!(
-            if isnothing(sub_hess)
-                GradientDescentState(
-                    M,
-                    copy(M, p);
-                    stepsize=sub_stepsize,
-                    stopping_criterion=sub_stopping_criterion,
-                )
-            else
-                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
-            end,
-            sub_kwargs...,
-        )
-    end,
+    sub_state::AbstractManoptSolverState=decorate_state!(
+        if isnothing(sub_hess)
+            GradientDescentState(
+                M,
+                copy(M, p);
+                stepsize=sub_stepsize,
+                stopping_criterion=sub_stopping_criterion,
+            )
+        else
+            TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+        end,
+        sub_kwargs...,
+    ),
     kwargs...,
 )
     # Check whether either the right defaults were provided or a sub_problen.

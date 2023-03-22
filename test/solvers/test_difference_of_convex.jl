@@ -78,6 +78,19 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test X5 == grad_h(M, p0)
         X6 = get_subtrahend_gradient(M, dc_cost_i, p0)
         @test X6 == grad_h(M, p0)
+
+        dcp_cost_a = ManifoldDifferenceOfConvexProximalObjective(grad_h)
+        dcp_cost_i = ManifoldDifferenceOfConvexProximalObjective(
+            grad_h!; evaluation=InplaceEvaluation()
+        )
+        dcpp = DefaultManoptProblem(M, dcp_cost_a)
+
+        X4 = get_subtrahend_gradient(dcpp, p0)
+        @test X4 == grad_h(M, p0)
+        X5 = get_subtrahend_gradient(M, dcp_cost_a, p0)
+        @test X5 == grad_h(M, p0)
+        X6 = get_subtrahend_gradient(M, dcp_cost_i, p0)
+        @test X6 == grad_h(M, p0)
     end
 
     @testset "Running the subsolver algorithms" begin
