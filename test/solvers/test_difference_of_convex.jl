@@ -111,13 +111,18 @@ using LinearAlgebra, Manifolds, Manopt, Test
         p4 = difference_of_convex_algorithm(
             M, f, g, grad_h, p0; grad_g=grad_g, sub_hess=nothing
         )
-        p5 = difference_of_convex_algorithm(
-            M, f, g, grad_h, p0; grad_g=grad_g, gradient=grad_f
+        s1 = difference_of_convex_algorithm(
+            M, f, g, grad_h, p0; grad_g=grad_g, gradient=grad_f, return_state=true
         )
+        @test startswith(
+            repr(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
+        )
+        p5 = get_solver_result(s1)
         @test isapprox(M, p1, p2)
         @test isapprox(M, p2, p3)
         @test isapprox(M, p3, p4)
-        @test f(M, p4) ≈ 0.0
+        @test isapprox(M, p4, p5)
+        @test f(M, p1) ≈ 0.0
         # not provided grad_g or problem nothing
         @test_throws ErrorException difference_of_convex_algorithm(
             M, f, g, grad_h, p0; sub_problem=nothing
@@ -140,9 +145,14 @@ using LinearAlgebra, Manifolds, Manopt, Test
         p9 = difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, sub_hess=nothing
         )
-        p10 = difference_of_convex_proximal_point(
-            M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f
+        s2 = difference_of_convex_proximal_point(
+            M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f, return_state=true
         )
+        @test startswith(
+            repr(s2),
+            "# Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm\n",
+        )
+        p10 = get_solver_result(s2)
         @test isapprox(M, p5, p6)
         @test isapprox(M, p6, p7)
         @test isapprox(M, p7, p8)

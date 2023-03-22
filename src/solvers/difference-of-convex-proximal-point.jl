@@ -87,7 +87,29 @@ function set_gradient!(dcps::DifferenceOfConvexProximalState, M, p, X)
     copyto!(M, dcps.X, p, X)
     return dcps
 end
+function show(io::IO, dcps::DifferenceOfConvexProximalState)
+    i = get_count(dcps, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(dcps.stop) ? "Yes" : "No"
+    sub = repr(dcps.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
+    s = """
+    # Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm
+    $Iter
+    ## Parameters
+    * retraction method:         $(dcps.retraction_method)
+    * inverse retraction method: $(dcps.inverse_retraction_method)
+    * sub solver state:
+        | $(sub)
 
+    ## Stepsize
+    $(dcps.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(dcps.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 #
 # Prox approach
 #
@@ -186,15 +208,13 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 """
 function difference_of_convex_proximal_point(M::AbstractManifold, grad_h, p; kwargs...)
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
-    return q
+    return difference_of_convex_proximal_point!(M, grad_h, q; kwargs...)
 end
 function difference_of_convex_proximal_point(
     M::AbstractManifold, prox_g, grad_h, p; kwargs...
 )
     q = copy(M, p)
-    difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
-    return q
+    return difference_of_convex_proximal_point!(M, prox_g, grad_h, q; kwargs...)
 end
 @doc raw"""
     difference_of_convex_proximal_point!(M, prox_g, grad_h, p; cost=nothing, kwargs...)

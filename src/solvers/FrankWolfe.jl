@@ -83,12 +83,16 @@ function show(io::IO, fws::FrankWolfeState)
     i = get_count(fws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
+    sub = repr(fws.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
     s = """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
     $Iter
     ## Parameters
     * inverse retraction method: $(fws.inverse_retraction_method)
     * retraction method: $(fws.retraction_method)
+    * sub solver state:
+        | $(sub)
 
     ## Stepsize
     $(fws.stepsize)

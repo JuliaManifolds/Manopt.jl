@@ -55,7 +55,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
         sub_problem::Pr,
         sub_state::St;
         initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(200),
+        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
     ) where {
         P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState,T,SC<:StoppingCriterion
     }
@@ -68,7 +68,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
         p::P,
         sub_problem::S;
         initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(200),
+        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
         evaluation=AllocatingEvaluation(),
     ) where {P,S<:Function,T,SC<:StoppingCriterion}
         return new{S,typeof(evaluation),P,T,SC}(
@@ -86,7 +86,24 @@ function set_gradient!(dcs::DifferenceOfConvexState, M, p, X)
     copyto!(M, dcs.X, p, X)
     return dcs
 end
+function show(io::IO, dcs::DifferenceOfConvexState)
+    i = get_count(dcs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(dcs.stop) ? "Yes" : "No"
+    sub = repr(dcs.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
+    s = """
+    # Solver state for `Manopt.jl`s Difference of Convex Algorithm
+    $Iter
+    ## Parameters
+    * sub solver state:
+        | $(sub)
 
+    ## Stopping Criterion
+    $(status_summary(dcs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 @doc raw"""
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
 

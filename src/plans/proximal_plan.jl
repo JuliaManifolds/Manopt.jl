@@ -71,15 +71,13 @@ function get_proximal_map(amp::AbstractManoptProblem, λ, p, i)
     return get_proximal_map(get_manifold(amp), get_objective(amp), λ, p, i)
 end
 function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p, i)
-    get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p, i)
-    return q
+    return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p, i)
 end
 function get_proximal_map(amp::AbstractManoptProblem, λ, p)
     return get_proximal_map(get_manifold(amp), get_objective(amp), λ, p)
 end
 function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p)
-    get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p)
-    return q
+    return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p)
 end
 
 function get_proximal_map(
