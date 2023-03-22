@@ -150,6 +150,16 @@ function TrustRegionsState(
         project!,
     )
 end
+get_iterate(trs::TrustRegionsState) = trs.p
+function set_iterate!(trs::TrustRegionsState, M, p)
+    copyto!(M, trs.p, p)
+    return trs
+end
+function set_gradient!(trs::TrustRegionsState, M, p, X)
+    copyto!(M, trs.X, p, X)
+    return trs
+end
+
 function show(io::IO, trs::TrustRegionsState)
     i = get_count(trs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""

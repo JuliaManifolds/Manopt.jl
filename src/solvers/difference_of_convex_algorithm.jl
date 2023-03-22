@@ -77,11 +77,15 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
     end
 end
 get_iterate(dcs::DifferenceOfConvexState) = dcs.p
-function set_iterate!(dcs::DifferenceOfConvexState, p)
-    dcs.p = p
+function set_iterate!(dcs::DifferenceOfConvexState, M, p)
+    copyto!(M, dcs.p, p)
     return dcs
 end
 get_gradient(dcs::DifferenceOfConvexState) = dcs.X
+function set_gradient!(dcs::DifferenceOfConvexState, M, p, X)
+    copyto!(M, dcs.X, p, X)
+    return dcs
+end
 
 @doc raw"""
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
@@ -120,7 +124,7 @@ such that together with the mandatory function `g` a default cost and gradient c
 a default subsolver. Hence the easiest example call looks like
 
 ```
-difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g=grad_g)
+difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
 ```
 
 # Optional parameters for the sub problem
@@ -138,9 +142,11 @@ difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g=grad_g)
   provide the objective used within `sub_problem` (if that is not specified by the user)
 * `sub_problem` ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
   You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state` ([`GradientDescentState`](@ref) decorated with `sub_kwargs`) – choose the solver by specifying a solver state
-  to solve the `sub_problem`
-* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-8) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+* `sub_state` ([`TrustRegionState`](@ref) by default, if the hessian is deavtivated (`nothing`) [`GradientDescentState`](@ref); decorated with `sub_kwargs`)
+  choose the solver by specifying a solver state to solve the `sub_problem`
+  if the `sub_problem` if a function (i.e. a closed form solution), this is set to `evaluation`
+  and can be changed to the evalution type of the closed form solution accordingly.
+* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping crierion used withing the default `sub_state=`
 * `sub_stepsize` ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
 
@@ -177,29 +183,23 @@ function difference_of_convex_algorithm!(
     gradient=nothing,
     initial_vector=zero_vector(M, p),
     stopping_criterion=if isnothing(gradient)
-        StopAfterIteration(300) | StopWhenChangeLess(1e-8)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(1e-8) | StopWhenGradientNormLess(1e-8)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
     end,
     # Subsolver Magic Cascade.
-    sub_cost=LinearizedDCCost(g, p, initial_vector),
+    sub_cost=LinearizedDCCost(g, copy(M, p), copy(M, p, initial_vector)),
     sub_grad=if isnothing(grad_g)
         nothing
     else
-        LinearizedDCGrad(grad_g, p, initial_vector; evaluation=evaluation)
+        LinearizedDCGrad(
+            grad_g, copy(M, p), copy(M, p, initial_vector); evaluation=evaluation
+        )
     end,
     sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
     sub_stepsize=ArmijoLinesearch(M),
-    sub_stopping_criterion=StopAfterIteration(300) |
-                           StopWhenStepsizeLess(1e-8) |
-                           StopWhenGradientNormLess(1e-8),
-    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=decorate_state!(
-        GradientDescentState(
-            M, copy(M, p); stepsize=sub_stepsize, stopping_criterion=sub_stopping_criterion
-        );
-        sub_kwargs...,
-    ),
+    sub_stopping_criterion=StopAfterIteration(300) | StopWhenGradientNormLess(1e-8),
     sub_objective=if isnothing(sub_cost) || isnothing(sub_grad)
         nothing
     else
@@ -213,6 +213,24 @@ function difference_of_convex_algorithm!(
         nothing
     else
         DefaultManoptProblem(M, sub_objective)
+    end,
+    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
+        Function
+        evaluation
+    else
+        decorate_state!(
+            if isnothing(sub_hess)
+                GradientDescentState(
+                    M,
+                    copy(M, p);
+                    stepsize=sub_stepsize,
+                    stopping_criterion=sub_stopping_criterion,
+                )
+            else
+                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+            end,
+            sub_kwargs...,
+        )
     end,
     kwargs..., #collect rest
 )
@@ -288,7 +306,7 @@ function step_solver!(
     i,
 )
     M = get_manifold(amp)
-    get_subgradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
+    get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
     dcs.sub_problem(M, dcs.p, dcs.p, dcs.X) # evaluate the closed form solution and store the result in p
     return dcs
 end
@@ -301,7 +319,7 @@ function step_solver!(
     i,
 )
     M = get_manifold(amp)
-    get_subgradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
+    get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
     # run the subsolver inplace of a copy of the current iterate and copy it back to the current iterate
     copyto!(M, dcs.p, dcs.sub_problem(M, copy(M, dcs.p), dcs.X))
     return dcs

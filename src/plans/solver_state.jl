@@ -108,9 +108,7 @@ By default also undecorates the state beforehand
 """
 get_gradient(s::AbstractManoptSolverState) = _get_gradient(s, dispatch_state_decorator(s))
 function _get_gradient(s::AbstractManoptSolverState, ::Val{false})
-    return error(
-        "It seems the AbstractManoptSolverState $s do not provide access to a gradient"
-    )
+    return error("It seems that $s do not provide access to a gradient")
 end
 _get_gradient(s::AbstractManoptSolverState, ::Val{true}) = get_gradient(s.state)
 

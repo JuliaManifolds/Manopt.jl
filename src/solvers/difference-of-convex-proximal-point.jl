@@ -78,11 +78,15 @@ mutable struct DifferenceOfConvexProximalState{
     end
 end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
-function set_iterate!(dcps::DifferenceOfConvexProximalState, p)
-    dcps.p = p
+function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
+    copyto!(M, dcps.p, p)
     return dcps
 end
-get_gradient(dcps::DifferenceOfConvexProximalState) = dcps.X
+get_gradient(dcs::DifferenceOfConvexProximalState) = dcs.X
+function set_gradient!(dcps::DifferenceOfConvexProximalState, M, p, X)
+    copyto!(M, dcps.X, p, X)
+    return dcps
+end
 
 #
 # Prox approach
@@ -158,12 +162,11 @@ difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
   provide the objective used within `sub_problem` (if that is not specified by the user)
 * `sub_problem` ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
   You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state` ([`GradientDescentState`](@ref) decorated with `sub_kwargs`) – choose the solver by specifying a solver state
-  to solve the `sub_problem`
-* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-8) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+* `sub_state` ([`TrustRegionState`](@ref) by default, if the hessian is deavtivated (`nothing`) [`GradientDescentState`](@ref); decorated with `sub_kwargs`)
+  choose the solver by specifying a solver state to solve the `sub_problem`
+* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping crierion used withing the default `sub_state=`
 * `sub_stepsize` ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
-
 
 ...all others are passed on to decorate the inner [`DifferenceOfConvexProximalState`](@ref).
 
@@ -223,9 +226,9 @@ function difference_of_convex_proximal_point!(
     retraction_method=default_retraction_method(M),
     stepsize=ConstantStepsize(M),
     stopping_criterion=if isnothing(gradient)
-        StopAfterIteration(300) | StopWhenChangeLess(1e-8)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(1e-8) | StopWhenGradientNormLess(1e-8)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
     end,
     sub_cost=isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),
     sub_grad=if isnothing(grad_g)
@@ -235,16 +238,8 @@ function difference_of_convex_proximal_point!(
     end,
     sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(300) |
-                           StopWhenStepsizeLess(1e-8) |
-                           StopWhenGradientNormLess(1e-8),
+    sub_stopping_criterion=StopAfterIteration(300) | StopWhenGradientNormLess(1e-8),
     sub_stepsize=ArmijoLinesearch(M),
-    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=decorate_state!(
-        GradientDescentState(
-            M, copy(M, p); stepsize=sub_stepsize, stopping_criterion=sub_stopping_criterion
-        );
-        sub_kwargs...,
-    ),
     sub_objective=if isnothing(sub_cost) || isnothing(sub_grad)
         nothing
     else
@@ -258,6 +253,24 @@ function difference_of_convex_proximal_point!(
         nothing
     else
         DefaultManoptProblem(M, sub_objective)
+    end,
+    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
+        Function
+        evaluation
+    else
+        decorate_state!(
+            if isnothing(sub_hess)
+                GradientDescentState(
+                    M,
+                    copy(M, p);
+                    stepsize=sub_stepsize,
+                    stopping_criterion=sub_stopping_criterion,
+                )
+            else
+                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+            end,
+            sub_kwargs...,
+        )
     end,
     kwargs...,
 )
@@ -306,8 +319,12 @@ function difference_of_convex_proximal_point!(
     gradient=nothing,
     inverse_retraction_method=default_inverse_retraction_method(M),
     retraction_method=default_retraction_method(M),
-    stepsize=ArmijoLinesearch(M),
-    stopping_criterion=StopAfterIteration(200),
+    stepsize=ConstantStepsize(M),
+    stopping_criterion=if isnothing(gradient)
+        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
+    else
+        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
+    end,
     kwargs...,
 )
     mdcpo = ManifoldDifferenceOfConvexProximalObjective(
