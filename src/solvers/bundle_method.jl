@@ -76,9 +76,9 @@ mutable struct BundleMethodState{
         bundle_points = [(copy(M, p), copy(M, p, X))]
         lin_errors = [0.0]
         ξ = 0.0
-        λ = [1.]
+        λ = [1.0]
         g = copy(M, p, X)
-        ε = 0.
+        ε = 0.0
         return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
             bundle_points,
             inverse_retraction_method,
@@ -239,7 +239,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         println("stepped in")
         bms.p_last_serious .= bms.p
-        push!(bms.bundle_points, (copy(M, bms.p_last_serious), copy(M, bms.p_last_serious, bms.X)))
+        push!(
+            bms.bundle_points,
+            (copy(M, bms.p_last_serious), copy(M, bms.p_last_serious, bms.X)),
+        )
     else
         push!(bms.bundle_points, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     end
@@ -257,11 +260,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.inverse_retraction_method,
             ),
         ) +
-        bms.diam * 
-        sqrt(
-            2 *
-            distance(M, bms.p_last_serious, bms.bundle_points[j][1])
-        ) *
+        bms.diam *
+        sqrt(2 * distance(M, bms.p_last_serious, bms.bundle_points[j][1])) *
         norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in bms.index_set
     ]
     return bms

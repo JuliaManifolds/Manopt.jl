@@ -27,7 +27,7 @@ function plot_maxfunc_iterates(M)
         F3,
         subgradF3,
         data[1];
-        diam = 10.0,
+        diam=10.0,
         stopping_criterion=StopWhenSubgradientNormLess(1e-12),
         record=:Iterate,
         return_state=true,
@@ -57,5 +57,5 @@ function plot_maxfunc_iterates(M)
     plot!(fig, M, si_pts; geodesic_interpolation=100, wireframe=false)
     plot!(fig, M, si_pts; label="Subgrad iterates", wireframe=false)
     plot!(fig, M, data; label="Data points")
-    display(fig)
+    return display(fig)
 end

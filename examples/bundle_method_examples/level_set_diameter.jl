@@ -15,94 +15,119 @@
     * `show_err` - a boolean input to decide whether to print the error signaling the fallback to running the constrained optimization with `iter_cap`.
 	* `debug_var` - a boolean input to decide whether to print the debug output of the subsolver
 """
-function level_set_diameter(M, f, ∂f, p0; sub_solver::Function=augmented_Lagrangian_method, iter_cap::Int=60, random_seed::Int=42, distr_var::Real=1., show_err::Bool=false, debug_var::Bool=false)
-	N = M^2
-	Random.seed!(random_seed)
-    prod_data = [rand(N; σ = distr_var) for j in 1:10000]
-    G(N, q) = -sum(1 / (2 * length(prod_data)) * distance.(Ref(N), Ref(q), prod_data).^2)
+function level_set_diameter(
+    M,
+    f,
+    ∂f,
+    p0;
+    sub_solver::Function=augmented_Lagrangian_method,
+    iter_cap::Int=60,
+    random_seed::Int=42,
+    distr_var::Real=1.0,
+    show_err::Bool=false,
+    debug_var::Bool=false,
+)
+    N = M^2
+    Random.seed!(random_seed)
+    prod_data = [rand(N; σ=distr_var) for j in 1:10000]
+    G(N, q) = -sum(1 / (2 * length(prod_data)) * distance.(Ref(N), Ref(q), prod_data) .^ 2)
     gradG(N, q) = -sum(1 / length(prod_data) * grad_distance.(Ref(N), prod_data, Ref(q)))
     H1(N, q) = f(M, q[N, 1]) - f(M, p0)
-	function gradH1(N, q) 
-		r = rand(N)
-		set_component!(N, r, ∂f(M, q[N, 1]), 1)
-		set_component!(N, r, zeros(representation_size(M)), 2)
-		return r
-	end
+    function gradH1(N, q)
+        r = rand(N)
+        set_component!(N, r, ∂f(M, q[N, 1]), 1)
+        set_component!(N, r, zeros(representation_size(M)), 2)
+        return r
+    end
     #gradH1(N, q) = hcat(∂f(M, q[N, 1]), zeros(representation_size(M)))
     H2(N, q) = f(M, q[N, 2]) - f(M, p0)
-	function gradH2(N, q) 
-		r = rand(N)
-		set_component!(N, r, zeros(representation_size(M)), 1)
-		set_component!(N, r, ∂f(M, q[N, 2]), 2)
-		return r
-	end
+    function gradH2(N, q)
+        r = rand(N)
+        set_component!(N, r, zeros(representation_size(M)), 1)
+        set_component!(N, r, ∂f(M, q[N, 2]), 2)
+        return r
+    end
     #gradH2(N, q) = hcat(zeros(representation_size(M)), ∂f(M, q[N, 2]))
     H(N, q) = [H1(N, q), H2(N, q)]
     gradH(N, q) = [gradH1(N, q), gradH2(N, q)]
-	initial_product_point = prod_data[1]
-	# pts = 0.
-	err = ""
-	# try
-	# 	if deubg_var
-	# 		pts = sub_solver(
-	# 				N, G, gradG, initial_product_point; 
-	# 				g=H, grad_g=gradH, 
-	# 				record=[:Iterate, :Cost],
-	# 				return_state=true,
-	# 				debug=[:Iteration, :Cost, :Stop, "\n"],
-	# 				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
-	# 					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-	# 				)),
-	# 		)
-	# 	else
-	# 		pts = sub_solver(
-	# 				N, G, gradG, initial_product_point; 
-	# 				g=H, grad_g=gradH, 
-	# 				record=[:Iterate, :Cost],
-	# 				return_state=true,
-	# 				# debug=[:Iteration, :Cost, :Stop, "\n"],
-	# 				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
-	# 					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-	# 				)),
-	# 		)
-	# 	end
-	# catch e
-	# 	err = "$e. Ran ALM with a $iter_cap iterations cap."
+    initial_product_point = prod_data[1]
+    # pts = 0.
+    err = ""
+    # try
+    # 	if deubg_var
+    # 		pts = sub_solver(
+    # 				N, G, gradG, initial_product_point; 
+    # 				g=H, grad_g=gradH, 
+    # 				record=[:Iterate, :Cost],
+    # 				return_state=true,
+    # 				debug=[:Iteration, :Cost, :Stop, "\n"],
+    # 				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
+    # 					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
+    # 				)),
+    # 		)
+    # 	else
+    # 		pts = sub_solver(
+    # 				N, G, gradG, initial_product_point; 
+    # 				g=H, grad_g=gradH, 
+    # 				record=[:Iterate, :Cost],
+    # 				return_state=true,
+    # 				# debug=[:Iteration, :Cost, :Stop, "\n"],
+    # 				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
+    # 					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
+    # 				)),
+    # 		)
+    # 	end
+    # catch e
+    # 	err = "$e. Ran ALM with a $iter_cap iterations cap."
     # finally
-		if debug_var
-			pts = sub_solver(
-					N, G, gradG, initial_product_point; 
-					g=H, grad_g=gradH, 
-					record=[:Iterate, :Cost],
-					return_state=true,
-					debug=[:Iteration, :Cost, :Stop, "\n"],
-					stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(iter_cap) | (
-						StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-					)),
-			)
-		else
-			pts = sub_solver(
-				N, G, gradG, initial_product_point; 
-				g=H, grad_g=gradH, 
-				record=[:Iterate, :Cost],
-				return_state=true,
-				# debug=[:Iteration, :Cost, :Stop, "\n"],
-				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(iter_cap) | (
-					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-				)),
-		)
-		end
+    if debug_var
+        pts = sub_solver(
+            N,
+            G,
+            gradG,
+            initial_product_point;
+            g=H,
+            grad_g=gradH,
+            record=[:Iterate, :Cost],
+            return_state=true,
+            debug=[:Iteration, :Cost, :Stop, "\n"],
+            stopping_criterion=StopWhenAny(
+                StopWhenCostNan(),
+                StopWhenIterNan(),
+                StopAfterIteration(iter_cap) |
+                (StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)),
+            ),
+        )
+    else
+        pts = sub_solver(
+            N,
+            G,
+            gradG,
+            initial_product_point;
+            g=H,
+            grad_g=gradH,
+            record=[:Iterate, :Cost],
+            return_state=true,
+            # debug=[:Iteration, :Cost, :Stop, "\n"],
+            stopping_criterion=StopWhenAny(
+                StopWhenCostNan(),
+                StopWhenIterNan(),
+                StopAfterIteration(iter_cap) |
+                (StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)),
+            ),
+        )
+    end
     # end
-	if show_err
-		println("\n $err")
-	end
-	# Get the iterate corresponding to the last non-NaN value of the cost function
-	if length(get_record_action(pts)[:Iterate]) > 1 
-		p_diam = get_record_action(pts)[:Iterate][end-1]
-	elseif !isnan(get_record_action(pts)[:Cost][1])
-		p_diam = get_record_action(pts)[:Iterate][1]
-	else
-		p_diam = initial_product_point
-	end
-	return -G(N, p_diam)
+    if show_err
+        println("\n $err")
+    end
+    # Get the iterate corresponding to the last non-NaN value of the cost function
+    if length(get_record_action(pts)[:Iterate]) > 1
+        p_diam = get_record_action(pts)[:Iterate][end - 1]
+    elseif !isnan(get_record_action(pts)[:Cost][1])
+        p_diam = get_record_action(pts)[:Iterate][1]
+    else
+        p_diam = initial_product_point
+    end
+    return -G(N, p_diam)
 end
