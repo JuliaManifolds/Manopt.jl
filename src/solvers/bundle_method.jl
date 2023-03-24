@@ -49,6 +49,9 @@ mutable struct BundleMethodState{
     m::Real
     ξ::Real
     diam::Real
+    λ::AbstractVector{Real}
+    g::T
+    ε::Real
     function BundleMethodState(
         M::TM,
         p::P;
@@ -70,9 +73,12 @@ mutable struct BundleMethodState{
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         index_set = Set(1)
-        bundle_points = [(p, X)]
+        bundle_points = [(copy(M, p), copy(M, p, X))]
         lin_errors = [0.0]
         ξ = 0.0
+        λ = [1.]
+        g = copy(M, p, X)
+        ε = 0.
         return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
             bundle_points,
             inverse_retraction_method,
@@ -87,15 +93,14 @@ mutable struct BundleMethodState{
             m,
             ξ,
             diam,
+            λ,
+            g,
+            ε,
         )
     end
 end
 get_iterate(bms::BundleMethodState) = bms.p_last_serious
 get_subgradient(bms::BundleMethodState) = bms.X
-function set_iterate!(bms::BundleMethodState, M, p)
-    copyto!(M, bms.p, p)
-    return bms
-end
 
 @doc raw"""
     bundle_method(M, f, ∂f, p)
@@ -190,7 +195,8 @@ end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
-    bms.X = zero_vector(M, bms.p)
+    bms.X = get_subgradient(mp, bms.p)
+    bms.g = copy(M, bms.p, bms.X)
     return bms
 end
 function bundle_method_sub_solver(::Any, ::Any, ::Any)
@@ -209,11 +215,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.vector_transport_method,
         ) for j in bms.index_set
     ]
-    λ = bundle_method_sub_solver(M, bms, transported_subgradients)
-    g = sum(λ .* transported_subgradients)
-    ε = sum(λ .* bms.lin_errors)
+    bms.λ = bundle_method_sub_solver(M, bms, transported_subgradients)
+    bms.g = sum(bms.λ .* transported_subgradients)
+    bms.ε = sum(bms.λ .* bms.lin_errors)
 
-    # Check transported subgradients ε-inequality
+    # Check transported subgradients bms.ε-inequality
     # v = rand(M; vector_at = bms.bundle_points[1][1])
     # v = get_subgradient(mp, bms.bundle_points[1][1])
     # v = rand(0.0:bms.diam) * v/norm(M, bms.bundle_points[1][1], v)
@@ -222,21 +228,22 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     # if (
     #     get_cost(mp, r) <
     #     get_cost(mp, bms.p_last_serious) +
-    #     inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
+    #     inner(M, bms.p_last_serious, bms.g, log(M, bms.p_last_serious, r)) - bms.ε
     # )
     #     println("No")
     # end
 
-    bms.ξ = -norm(M, bms.p_last_serious, g)^2 - ε
-    retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
+    bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
+    retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
-        bms.p_last_serious = bms.p
-        push!(bms.bundle_points, (bms.p_last_serious, bms.X))
+        println("stepped in")
+        bms.p_last_serious .= bms.p
+        push!(bms.bundle_points, (copy(M, bms.p_last_serious), copy(M, bms.p_last_serious, bms.X)))
     else
-        push!(bms.bundle_points, (bms.p, bms.X))
+        push!(bms.bundle_points, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     end
-    positive_indices = intersect(bms.index_set, Set(findall(j -> j > eps(Float64), λ)))
+    positive_indices = intersect(bms.index_set, Set(findall(j -> j > eps(Float64), bms.λ)))
     bms.index_set = union(positive_indices, i + 1)
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle_points[j][1]) - inner(
