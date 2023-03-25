@@ -196,7 +196,8 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
     bms.X = get_subgradient(mp, bms.p)
-    bms.g = copy(M, bms.p, bms.X)
+    bms.g = copy(M, bms.p_last_serious, bms.X)
+    bms.bundle_points = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
     return bms
 end
 function bundle_method_sub_solver(::Any, ::Any, ::Any)
@@ -210,7 +211,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         vector_transport_to(
             M,
             bms.bundle_points[j][1],
-            get_subgradient!(mp, bms.bundle_points[j][2], bms.bundle_points[j][1]),
+            bms.bundle_points[j][2],
             bms.p_last_serious,
             bms.vector_transport_method,
         ) for j in bms.index_set
@@ -218,13 +219,13 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     bms.λ = bundle_method_sub_solver(M, bms, transported_subgradients)
     bms.g = sum(bms.λ .* transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
+    println(norm(M, bms.p_last_serious, bms.g))
 
     # Check transported subgradients bms.ε-inequality
     # v = rand(M; vector_at = bms.bundle_points[1][1])
     # v = get_subgradient(mp, bms.bundle_points[1][1])
-    # v = rand(0.0:bms.diam) * v/norm(M, bms.bundle_points[1][1], v)
+    # v = bms.diam * rand() * v/norm(M, bms.bundle_points[1][1], v)
     # r = retract(M, bms.bundle_points[1][1], -v, Manifolds.default_retraction_method(M, typeof(bms.bundle_points[1][1])))
-    # r = rand(M)
     # if (
     #     get_cost(mp, r) <
     #     get_cost(mp, bms.p_last_serious) +
@@ -238,7 +239,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         println("stepped in")
-        bms.p_last_serious .= bms.p
+        bms.p_last_serious = copy(M, bms.p)
         push!(
             bms.bundle_points,
             (copy(M, bms.p_last_serious), copy(M, bms.p_last_serious, bms.X)),
