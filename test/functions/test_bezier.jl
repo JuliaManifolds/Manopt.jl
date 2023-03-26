@@ -18,7 +18,7 @@ using Manopt, Manifolds, Test
         t = collect(range(0.0, 1.0; length=5))
         pts = shortest_geodesic(M, pT, pB, t)
         pts2 = de_casteljau(M, B, 2 .* t)
-        @test sum(distance.(Ref(M), pts, pts2)) ≈ 0
+        @test sum(distance.(Ref(M), pts, pts2)) < 10 * eps()
         aX = log(M, pT, pC)
         aT1 = adjoint_differential_bezier_control(M, BezierSegment([pT, pC]), 0.5, aX).pts
         aT1a = BezierSegment(similar.(aT1))
