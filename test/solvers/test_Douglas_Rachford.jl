@@ -13,7 +13,7 @@ using Manifolds, Manopt, Test
     @test_throws ErrorException DouglasRachford(M, f, Array{Function,1}([prox1]), start) # we need more than one prox
     xHat = DouglasRachford(M, f, [prox1, prox2], start)
     @test f(M, start) > f(M, xHat)
-    @test distance(M, xHat, result) < eps()
+    @test distance(M, xHat, result) ≈ 0 atol = eps()
     # but we can also compute the riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works
     F2(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2 + distance(M, p, d3)^2
