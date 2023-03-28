@@ -118,6 +118,10 @@ end
 
 
 
+
+
+
+
 function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveRegularizationState)
 	dim=manifold_dimension(M)
 	T=spdiagm(-1=>zeros(dim-1),0=>zeros(dim),1=>zeros(dim-1))
@@ -134,14 +138,14 @@ function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveR
 	#argmin of one dimensional model
 	y=(α-sqrt(α^2+4*s.ς*gradnorm))/(2*s.ς) #verifed this
 
-	for j in 1:dim-1
+	for j in 1:dim-1 # can at the most generate dim(TₓM) lanczos vectors, but created the first above so subtract
 		β=norm(M,s.p,r)
-		#Note: not doing MGS causes fast loss of orthogonality.
+		#Note: not doing MGS causes fast loss of orthogonality. We do full orthogonalization for robustness.
 		if β>1e-10  # β large enough-> Do regular procedure: MGS of r wrt. Q
 			for i in 1:j
 				r=r-inner(M,s.p,Q[i],r)*Q[i]
 			end
-			q=r/β
+			q=r/norm(M,s.p,r) #/β
 
 		else # Generate new random vec and MGS of new vec wrt. Q
 			r=rand(M,vector_at=s.p)
@@ -158,22 +162,23 @@ function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveR
 		T[j,j+1]=β
 		T[j+1,j]=β
 
-		#We have created the j+1'th orthonormal vector and the (j+1)x(j+1) T matrix.
-		#Now compute the gradient corresponding to the j dimensional model.
+		#We have created the j+1'th orthonormal vector and the (j+1)x(j+1) T matrix, creating one additional lanczos vector
+        #to the dimension we minimized in so that checking the stopping criterion is cheaper.
+		#Now compute the gradient corresponding to the j dimensional model in the basis of Q[1],...,Q[j+1].
 
-		e1=zeros(j+1)#what is the standard Julia way?
+		e1=zeros(j+1)#
 		e1[1]=1
 		model_gradnorm=norm(gradnorm*e1+T[1:j+1,1:j]*y+s.ς*norm(y,2)*vcat(y,0),2)
-
-		#check stopping condition
-		#print(model_gradnorm," <= ",Θ*norm(y,2)^2)
 
 		#if model_gradnorm <= s.θ*norm(y,2)^2    #the loop stopped here. Temp comment out
 		#	break
 		#end
 
-		#Minimize the (j+1) dimensional model by in the subspace of TₚM spanned by the (j+1) orthogonal vectors
-		y=minimize_cubic_grad_descent(gradnorm,T[1:j+1,1:j+1],s.ς) # verified this in 2-dim.
+		#Stopping condition not satisifed. Proceed to minimize the (j+1) dimensional model by in the subspace of TₚM spanned by
+        #the (j+1) orthogonal vectors
+
+		yg=minimize_cubic_grad_descent(gradnorm,T[1:j+1,1:j+1],s.ς) # verified this in 2-dim.
+        y=min_cubic_Newton(gradnorm,T[1:j+1,1:j+1],s.ς)
 
 	end
 	#Assemble the tangent vector
@@ -186,6 +191,64 @@ function Lanczos!(M::AbstractManifold,mho::ManifoldHessianObjective,s::AdaptiveR
 end
 
 
+
+
+function min_cubic_Newton(gradnorm,T,σ)
+    #Implements newton again, but this time I compute the Newton step the same way as in MATLAB code.
+    #minimize the cubic in R^n.
+	n=size(T)[1]
+    maxiter=100
+    tol=1e-16
+
+	gvec=zeros(n)
+	gvec[1]=gradnorm
+	λ=opnorm(T,1)+2
+	T_λ=T+λ*I
+	λ_min=eigmin(T)
+	lower_barrier=max(0,-λ_min)
+	iter=0
+	y=0
+	while iter<=maxiter
+		y=-(T_λ\gvec)
+		ynorm=norm(y,2)
+		ϕ=1/ynorm-σ/λ #when ϕ is "zero", y is the solution.
+		if abs(ϕ)<tol*ynorm 
+			break
+		end
+
+        #compute the newton step
+		ψ=ynorm^2
+		Δy=-(H_λ)\y
+		ψ_prime=2*dot(y,Δy)
+		p0=2*σ*ψ^(1.5)
+		p1=-2*ψ-λ*ψ_prime
+		p2=ψ_prime
+		#r=roots(Polynomial([p0,p1,p2]))                           IMPORTANT ADD POLYNOMIALS PACKAGE!!!!
+		Δλ=maximum(r)-λ
+		iter=iter+1
+
+		if λ+Δλ<=lower_barrier #if we jumped past the lower barrier for λ, jump to midpoint between current and lower λ.
+			Δλ=-0.5*(λ-lower_barrier)
+		end
+
+		if abs(Δλ)<=eps(λ) #if the steps we make are to small, terminate
+			break
+		end
+
+		T_λ=T_λ+Δλ*I
+		λ=λ+Δλ	
+	end
+	return y
+end
+
+
+
+
+
+
+
+
+
 function minimize_cubic_grad_descent(gradnorm,T,ς)
 	#minimize the cubic in the k-dimensional subspace of TₚM spanned by {q₁,...,qₖ} Lanczos vectors.
     #Equivalently minimize cubic in R^k with respect to the coordinates.
@@ -194,14 +257,14 @@ function minimize_cubic_grad_descent(gradnorm,T,ς)
 	k=size(T)[1] # Dimension of subspace of TₚM spanned by k lanczos vectors.
 	Mₑ=Euclidean(k)
 	function cost(M,p)
-		return gradnorm*p[1] + 0.5*p'*T*p +ς/3*norm(M,p,p)^3
+		return gradnorm*p[1] + 0.5*p'*T*p +ς/3*norm(M,p,p)^3                                           #ERROR
 	end
 	function grad(M,p)
         X = T*p +ς*p*norm(M,p,p)
         X[1] += gradnorm
 		return X
 	end
-	return gradient_descent(Mₑ,cost,grad,rand(Mₑ))
+	return gradient_descent(Mₑ,cost,grad,zeros(k))   #rand(Mₑ)                         #change to maybe to zero?
 end
 
 #Update the Regularization parameter in the same way as its done in Numerical Section of Boumal equation (39)
@@ -226,6 +289,9 @@ function UpdateRegParameterAndIterate!(M::AbstractManifold,s::AdaptiveRegulariza
     end
 end
 
+
+
+#document the below
 function ComputeRegRatio!(M::AbstractManifold,
     mho::ManifoldHessianObjective,
     s::AdaptiveRegularizationState
@@ -243,6 +309,10 @@ function step_solver!(dmp::AbstractManoptProblem,s::AdaptiveRegularizationState)
     UpdateRegParameterAndIterate!(M,s)
     return s
 end
+
+
+
+
 
 
 
@@ -301,3 +371,56 @@ function OLDLanczos(M,mho::ManifoldHessianObjective,s::AdaptiveRegularizationSta
 	return qvecs
 
 end
+
+
+
+function oldLanczos2(M::AbstractManifold,mho::ManifoldHessianObjective,p)
+    dim=manifold_dimension(M)
+	T=spdiagm(-1=>zeros(dim-1),0=>zeros(dim),1=>zeros(dim-1))
+	Q = [zero_vector(M,s.p) for _ in 1:dim]
+	g=get_gradient(M,mho,s.p)
+	gradnorm=norm(M,s.p,g)
+	q=g/gradnorm
+	Q[1] .= q
+
+    Hq=get_hessian(M,mho,p,q)
+    α=dot(Hq,q)
+    T[1,1]=α
+    Hq_perp=Hq-α*q
+
+    for j in 1:dim-1
+
+        β=norm(Hq_perp,2)
+
+        if β>1e-12
+            q=1/β*Hq_perp
+        else
+            v=rand(M)
+            for k in 1:j
+                v=v-dot(v,Q[k])*Q[k]
+            end 
+            q=1/norm(v,2)*v
+        end
+
+        #q=tangent...
+
+        Hq=get_hessian(M,mho,p,q)
+        Hqm=Hq-β*Q[j]
+        α=dot(Hqm,q)
+        Hq_perp=Hqm-α*q 
+        Q[j+1].=q
+
+        T[j,j+1]=β
+        T[j+1,j]=β
+        T[j+1,j+1]=α
+    end
+    
+    return T
+
+end
+
+
+function polytest(coefvec)
+    return Polynomial(coefvec)
+end
+
