@@ -197,6 +197,8 @@ function min_cubic_Newton(gradnorm,T,σ)
     #Implements newton again, but this time I compute the Newton step the same way as in MATLAB code.
     #minimize the cubic in R^n.
 	n=size(T)[1]
+    # StopAfterIteration(1000) | StopWhenChangeLess(1e-16) -> for Lanzos
+    # s.stop(p,s,i) -> true/false
     maxiter=100
     tol=1e-16
 
@@ -212,7 +214,7 @@ function min_cubic_Newton(gradnorm,T,σ)
 		y=-(T_λ\gvec)
 		ynorm=norm(y,2)
 		ϕ=1/ynorm-σ/λ #when ϕ is "zero", y is the solution.
-		if abs(ϕ)<tol*ynorm 
+		if abs(ϕ)<tol*ynorm
 			break
 		end
 
@@ -236,7 +238,7 @@ function min_cubic_Newton(gradnorm,T,σ)
 		end
 
 		T_λ=T_λ+Δλ*I
-		λ=λ+Δλ	
+		λ=λ+Δλ
 	end
 	return y
 end
@@ -304,6 +306,7 @@ end
 function step_solver!(dmp::AbstractManoptProblem,s::AdaptiveRegularizationState)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
+    # With a LanczosSubState this could just get a solve!(s.subproblem, s.substate)
     Lanczos!(M,mho,s)
     ComputeRegRatio!(M,mho,s)
     UpdateRegParameterAndIterate!(M,s)
@@ -398,7 +401,7 @@ function oldLanczos2(M::AbstractManifold,mho::ManifoldHessianObjective,p)
             v=rand(M)
             for k in 1:j
                 v=v-dot(v,Q[k])*Q[k]
-            end 
+            end
             q=1/norm(v,2)*v
         end
 
@@ -407,14 +410,14 @@ function oldLanczos2(M::AbstractManifold,mho::ManifoldHessianObjective,p)
         Hq=get_hessian(M,mho,p,q)
         Hqm=Hq-β*Q[j]
         α=dot(Hqm,q)
-        Hq_perp=Hqm-α*q 
+        Hq_perp=Hqm-α*q
         Q[j+1].=q
 
         T[j,j+1]=β
         T[j+1,j]=β
         T[j+1,j+1]=α
     end
-    
+
     return T
 
 end
@@ -423,4 +426,3 @@ end
 function polytest(coefvec)
     return Polynomial(coefvec)
 end
-
