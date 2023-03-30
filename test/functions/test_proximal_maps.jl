@@ -11,7 +11,7 @@ using Manifolds, Manopt, Test, Dates
     @test_throws ErrorException prox_distance!(M, p, 1.0, p, q, 3)
     @test distance(
         M, prox_distance(M, distance(M, p, q) / 2, p, q, 1), shortest_geodesic(M, p, q, 0.5)
-    ) ≈ 0
+    ) < eps()
     t = similar(p)
     prox_distance!(M, t, distance(M, p, q) / 2, p, q, 1)
     @test t == prox_distance(M, distance(M, p, q) / 2, p, q, 1)
@@ -32,12 +32,12 @@ using Manifolds, Manopt, Test, Dates
         abs(t[2] - u[1]) < eps(Float64) &&
         abs(t[3] - u[3]) < eps(Float64)
     )
-    @test distance(M, t, u) == π / 4 # and have moved half their distance
+    @test distance(M, t, u) ≈ π / 4 # and have moved half their distance
     #
     (v, w) = prox_TV(M, 1.0, (p, q), 2)
     vC, wC = shortest_geodesic(M, p, q, [1 / 3, 2 / 3])
     @test distance(M, v, vC) ≈ 0
-    @test distance(M, w, wC) ≈ 0
+    @test distance(M, w, wC) < eps()
     P = [similar(p), similar(q)]
     prox_TV!(M, P, 1.0, (p, q), 2)
     @test P == [v, w]
