@@ -27,59 +27,43 @@ function level_set_diameter(
     show_err::Bool=false,
     debug_var::Bool=false,
 )
-    N = M^2
+    N = PowerManifold(M, NestedPowerRepresentation(), 2)
     Random.seed!(random_seed)
-    prod_data = [rand(N; σ=distr_var) for j in 1:10000]
-    G(N, q) = -sum(1 / (2 * length(prod_data)) * distance.(Ref(N), Ref(q), prod_data) .^ 2)
-    gradG(N, q) = -sum(1 / length(prod_data) * grad_distance.(Ref(N), prod_data, Ref(q)))
+    initial_product_point = rand(N)
+	set_component!(N, initial_product_point, p0, 1)
+	set_component!(N, initial_product_point, p0, 2)
+    G(N, q) = -distance(M, q[N, 1], q[N, 2])
+    function gradG(N, q)
+		if q[N, 1] ≈ q[N, 2]
+			X = rand(N; vector_at = q)
+			set_component!(N, X, -normal_cone_vector(M, q[N, 1]), 1)
+			set_component!(N, X, -normal_cone_vector(M, q[N, 1]), 2)
+			return X
+		else
+			Y = rand(N; vector_at = q)
+			set_component!(N, Y, -grad_distance(M, q[N, 2], q[N, 1]), 1)
+			set_component!(N, Y, -grad_distance(M, q[N, 1], q[N, 2]), 2)
+			return Y
+		end
+	end
     H1(N, q) = f(M, q[N, 1]) - f(M, p0)
     function gradH1(N, q)
         r = rand(N)
         set_component!(N, r, ∂f(M, q[N, 1]), 1)
-        set_component!(N, r, zeros(representation_size(M)), 2)
+        set_component!(N, r, zero_vector(M, q[N, 1]), 2)
         return r
     end
     #gradH1(N, q) = hcat(∂f(M, q[N, 1]), zeros(representation_size(M)))
     H2(N, q) = f(M, q[N, 2]) - f(M, p0)
     function gradH2(N, q)
         r = rand(N)
-        set_component!(N, r, zeros(representation_size(M)), 1)
+        set_component!(N, r, zero_vector(M, q[N, 2]), 1)
         set_component!(N, r, ∂f(M, q[N, 2]), 2)
         return r
     end
     #gradH2(N, q) = hcat(zeros(representation_size(M)), ∂f(M, q[N, 2]))
     H(N, q) = [H1(N, q), H2(N, q)]
     gradH(N, q) = [gradH1(N, q), gradH2(N, q)]
-    initial_product_point = prod_data[1]
-    # pts = 0.
-    err = ""
-    # try
-    # 	if deubg_var
-    # 		pts = sub_solver(
-    # 				N, G, gradG, initial_product_point; 
-    # 				g=H, grad_g=gradH, 
-    # 				record=[:Iterate, :Cost],
-    # 				return_state=true,
-    # 				debug=[:Iteration, :Cost, :Stop, "\n"],
-    # 				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
-    # 					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-    # 				)),
-    # 		)
-    # 	else
-    # 		pts = sub_solver(
-    # 				N, G, gradG, initial_product_point; 
-    # 				g=H, grad_g=gradH, 
-    # 				record=[:Iterate, :Cost],
-    # 				return_state=true,
-    # 				# debug=[:Iteration, :Cost, :Stop, "\n"],
-    # 				stopping_criterion=StopWhenAny(StopWhenCostNan(), StopWhenIterNan(), StopAfterIteration(300) | (
-    # 					StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)
-    # 				)),
-    # 		)
-    # 	end
-    # catch e
-    # 	err = "$e. Ran ALM with a $iter_cap iterations cap."
-    # finally
     if debug_var
         pts = sub_solver(
             N,
@@ -93,7 +77,7 @@ function level_set_diameter(
             debug=[:Iteration, :Cost, :Stop, "\n"],
             stopping_criterion=StopWhenAny(
                 StopWhenCostNan(),
-                StopWhenIterNan(),
+                #StopWhenIterNan(),
                 StopAfterIteration(iter_cap) |
                 (StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)),
             ),
@@ -111,7 +95,7 @@ function level_set_diameter(
             # debug=[:Iteration, :Cost, :Stop, "\n"],
             stopping_criterion=StopWhenAny(
                 StopWhenCostNan(),
-                StopWhenIterNan(),
+                #StopWhenIterNan(),
                 StopAfterIteration(iter_cap) |
                 (StopWhenSmallerOrEqual(:ϵ, 1e-6) & StopWhenChangeLess(1e-6)),
             ),
