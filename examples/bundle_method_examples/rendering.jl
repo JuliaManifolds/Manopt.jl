@@ -5,11 +5,21 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 1c1f69c8-c330-11ed-2117-2ba0918ec216
-using Pkg;
-Pkg.activate();
+begin
+    using Pkg
+    Pkg.activate()
+end
 
 # ╔═╡ e41fee0e-ad95-44c0-96ee-9457453f534e
-using Random, LinearAlgebra, QuadraticModels, RipQP, Manifolds, Manopt, ColorSchemes
+using Random,
+    LinearAlgebra,
+    QuadraticModels,
+    RipQP,
+    Manifolds,
+    Manopt,
+    ColorSchemes,
+    ImageView,
+    Images
 
 # ╔═╡ f8a8374a-b088-4739-babc-43f1867eb85f
 begin
@@ -29,11 +39,14 @@ end
 
 # ╔═╡ fc28e3af-33ca-4f1b-9dbd-a90a0717348a
 asymptote_export_SPD(
-    "export1.fig"; data=img, scale_axes=(4.0, 4.0, 4.0), color_scheme=ColorSchemes.hsv
+    "/Users/hajgj/Repositories/Julia/Manopt.jl/examples/figures/export1.fig";
+    data=img,
+    scale_axes=(4.0, 4.0, 4.0),
+    color_scheme=ColorSchemes.hsv,
 )
 
 # ╔═╡ d5218834-ab32-46b4-bcd8-9789df00a787
-render_asymptote("export1.fig")
+render_asymptote("/Users/hajgj/Repositories/Julia/Manopt.jl/examples/figures/export1.fig")
 
 # ╔═╡ b8311ec8-342c-42eb-b7b3-d8716a1af3af
 #asymptote_export_SPD("export2.fig"; data=b, scale_axes=(6.,6.,6.))
@@ -46,11 +59,14 @@ img2 = map(p -> exp(M, p, rand(M; vector_at=p, tangent_distr=:Rician, σ=0.03)),
 
 # ╔═╡ 997a9286-1788-46e6-8a5f-ae8cee7d43a2
 asymptote_export_SPD(
-    "export2.fig"; data=img2, scale_axes=(12.0, 12.0, 12.0), color_scheme=ColorSchemes.hsv
+    "/Users/hajgj/Repositories/Julia/Manopt.jl/examples/figures/export2.fig";
+    data=img2,
+    scale_axes=(12.0, 12.0, 12.0),
+    color_scheme=ColorSchemes.hsv,
 )
 
 # ╔═╡ 7c03e397-1dd8-4f58-9bb9-c412284b8690
-render_asymptote("export2.fig")
+render_asymptote("/Users/hajgj/Repositories/Julia/Manopt.jl/examples/figures/export2.fig")
 
 # ╔═╡ eee8994b-7167-4e06-9f61-a4bd54c399f3
 #s = subgradient_method(N, f, gradf, img2; stopping_criterion=StopAfterIteration(90), debug=[:Iteration, :Cost, "\n"])
@@ -59,14 +75,19 @@ render_asymptote("export2.fig")
 begin
     img3 = artificial_SPD_image2(16)
     asymptote_export_SPD(
-        "export3.fig"; data=img3, scale_axes=(8.0, 8.0, 8.0), color_scheme=ColorSchemes.hsv
+        "/Users/hajgj/Repositories/Julia/Manopt.jl/examples/figures/export3.fig";
+        data=img3,
+        scale_axes=(8.0, 8.0, 8.0),
+        color_scheme=ColorSchemes.hsv,
     )
-    render_asymptote("export3.fig")
+    render_asymptote(
+        "/Users/hajgj/Repositories/Julia/Manopt.jl/examples/figures/export3.fig"
+    )
 end
 
 # ╔═╡ 97f8f8b5-553c-4e19-9dd4-9e80feda37c9
-function normal_cone_vector(M, p)
-    Y = rand(M; vector_at=p)
+function normal_cone_vector(M, p, scale)
+    Y = rand(M; vector_at=p) * 10^(-scale)
     (norm(M, p, Y) > 1.0) && (Y /= norm(M, p, Y))
     return Y
 end
@@ -75,12 +96,13 @@ end
 begin
     data = img3#map(p -> exp(M, p, rand(M; vector_at=p, tangent_distr=:Rician, σ=0.03)), img3)
     α = 6.0
+    diam = 0.1
     L = PowerManifold(M, NestedPowerRepresentation(), size(img3)[1], size(img3)[2])
     g(L, q) = 1 / (2 * α) * distance(L, data, q)^2 + costTV(L, q)
     function gradg(L, q)
         if q ≈ data
             #println(norm(L, q, 1/α * normal_cone_vector(L, q) + grad_TV(L, q)))
-            return 1 / α * normal_cone_vector(L, q) + grad_TV(L, q)
+            return 1 / α * normal_cone_vector(L, q, diam) + grad_TV(L, q)
         else
             #println(norm(L, q, 1/α * grad_distance(L, data, q) + grad_TV(L, q)))
             return 1 / α * grad_distance(L, data, q) + grad_TV(L, q)
@@ -110,22 +132,48 @@ b = bundle_method(
     g,
     gradg,
     data;
-    m=1e-8,
-    diam=0.1,
+    m=1e-12,
+    diam=diam,
     debug=[:Iteration, (:Cost, "F(p): %1.15e "), :Stop, "\n"],
-    stopping_criterion=StopAfterIteration(100),
+    stopping_criterion=StopWhenBundleLess(1e-8) | StopWhenCostLess(14.10241459459748),
 )
+
+# ╔═╡ 06cde52a-bfa8-4aa5-a8ea-098424f9c7a3
+g(L, data)
 
 # ╔═╡ ed110367-2d6c-4eba-adb1-14ae9a4b1175
 g(L, s)
 
+# ╔═╡ 9ec57ccc-242f-4f32-a2ed-de9fc2e128e1
+g(L, b)
+
 # ╔═╡ a9d0b9a7-1ed3-4f1e-aefe-8e518f1899bf
 begin
     asymptote_export_SPD(
-        "b.fig"; data=s, scale_axes=(8.0, 8.0, 8.0), color_scheme=ColorSchemes.hsv
+        "s.fig"; data=s, scale_axes=(8.0, 8.0, 8.0), color_scheme=ColorSchemes.hsv
+    )
+    render_asymptote("s.fig")
+end
+
+# ╔═╡ 058309ff-8ef1-4107-8502-fb6656e339ff
+begin
+    asymptote_export_SPD(
+        "b.fig"; data=b, scale_axes=(8.0, 8.0, 8.0), color_scheme=ColorSchemes.hsv
     )
     render_asymptote("b.fig")
 end
+
+# ╔═╡ bd5fafce-d271-49f4-b2bd-cab7de16ce44
+s_img = load("s.png")
+
+# ╔═╡ 5c1ff058-a81d-494e-b679-07271bd77c52
+b_img = load("b.png")
+
+# ╔═╡ f47ecbe0-ac6c-471b-b044-acb35eaf1832
+# imshow(s_img)
+
+# ╔═╡ db29f4be-5a24-494e-a8a9-d187b1466c94
+# imshow(b_img)
 
 # ╔═╡ ab48f6e5-d803-4872-845c-dfb92a61440a
 md"""b=bundle_method(L, g, gradg, data; 
@@ -768,6 +816,13 @@ m=1e-3, diam=.1, debug=[:Iteration, (:Cost,"F(p): %1.15e "), :Stop, "\n"], stopp
 # ╠═ec0de758-b00b-4bdd-a0d3-b2361b03c74a
 # ╠═6749f982-99cb-4dd2-ad56-9aec03a3663d
 # ╠═d9416139-6170-421a-b181-641d50c98695
+# ╠═06cde52a-bfa8-4aa5-a8ea-098424f9c7a3
 # ╠═ed110367-2d6c-4eba-adb1-14ae9a4b1175
+# ╠═9ec57ccc-242f-4f32-a2ed-de9fc2e128e1
 # ╠═a9d0b9a7-1ed3-4f1e-aefe-8e518f1899bf
+# ╠═058309ff-8ef1-4107-8502-fb6656e339ff
+# ╠═bd5fafce-d271-49f4-b2bd-cab7de16ce44
+# ╠═5c1ff058-a81d-494e-b679-07271bd77c52
+# ╠═f47ecbe0-ac6c-471b-b044-acb35eaf1832
+# ╠═db29f4be-5a24-494e-a8a9-d187b1466c94
 # ╠═ab48f6e5-d803-4872-845c-dfb92a61440a
