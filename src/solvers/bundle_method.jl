@@ -262,7 +262,18 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             ),
         ) +
         bms.diam *
-        sqrt(2 * distance(M, bms.p_last_serious, bms.bundle_points[j][1])) *
+        sqrt(
+            2 * norm(
+                M,
+                bms.bundle_points[j][1],
+                inverse_retract(
+                    M,
+                    bms.bundle_points[j][1],
+                    bms.p_last_serious,
+                    bms.inverse_retraction_method,
+                ),
+            ),
+        ) *
         norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in bms.index_set
     ]
     return bms
