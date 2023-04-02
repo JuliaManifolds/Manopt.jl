@@ -194,13 +194,16 @@ function StopWhenChangeLess(
 end
 function StopWhenChangeLess(
     ε::Float64;
-    manifold::AbstractManifold=DefaultManifold(), #Deprecated
-    kwargs...,
-)
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
+    manifold::AbstractManifold=DefaultManifold(),
+    inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
+) where {IRT<:AbstractInverseRetractionMethod}
     if !(manifold isa DefaultManifold)
         @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
     end
-    return StopWhenChangeLess(manifold, ε; kwargs...)
+    return StopWhenChangeLess{IRT,typeof(storage)}(
+        ε, "", storage, inverse_retraction_method, 0
+    )
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if i == 0 # reset on init
