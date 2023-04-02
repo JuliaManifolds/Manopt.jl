@@ -271,7 +271,7 @@ function (c::StopWhenCostLess)(
     end
     if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
         c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
-        c.at_iteration = 0
+        c.at_iteration = i
         return true
     end
     return false
