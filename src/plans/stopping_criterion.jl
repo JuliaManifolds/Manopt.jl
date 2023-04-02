@@ -353,7 +353,7 @@ function (c::StopWhenGradientChangeLess)(
         has_storage(c.storage, VectorStorageKey(:Gradient))
         M = get_manifold(mp)
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
-        X_old = get_storage(c.storage, VectorStorageKey(:Iterate))
+        X_old = get_storage(c.storage, VectorStorageKey(:Gradient))
         p = get_iterate(s)
         Xt = vector_transport_to(M, p_old, X_old, p, c.vector_transport_method)
         d = norm(M, p, Xt - get_gradient(s))
