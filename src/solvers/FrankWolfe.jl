@@ -166,7 +166,7 @@ function Frank_Wolfe_method!(
     initial_vector=zero_vector(M, p),
     evaluation=AllocatingEvaluation(),
     retraction_method=default_retraction_method(M, typeof(p)),
-       stepsize::TStep=default_stepsize(M, FrankWolfeState),
+    stepsize::TStep=default_stepsize(M, FrankWolfeState),
     stopping_criterion::TStop=StopAfterIteration(200) |
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(1.0e-8),
