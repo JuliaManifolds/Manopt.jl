@@ -119,6 +119,8 @@ end
         @test swgcl(gp, gs, 1) # change 0 -> true
         @test endswith(Manopt.status_summary(swgcl), "reached")
     end
+    update_stopping_criterion!(swgcl1, :MinGradientChange, 1e-9)
+    @test swgcl1.threshold == 1e-9
 end
 
 @testset "TCG stopping criteria" begin

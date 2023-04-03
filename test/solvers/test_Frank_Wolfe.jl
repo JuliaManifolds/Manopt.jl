@@ -40,18 +40,10 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
             p2a = Frank_Wolfe_method(
-                M,
-                f,
-                grad_f!,
-                p;
-                sub_problem=oracle!,
-                sub_state=InplaceEvaluation(),
-                evaluation=InplaceEvaluation(),
+                M, f, grad_f!, p; sub_problem=oracle!, evaluation=InplaceEvaluation()
             )
             @test f(M, p2a) < f(M, p)
-            p2b = Frank_Wolfe_method(
-                M, f, grad_f, p; sub_problem=oracle, sub_state=AllocatingEvaluation()
-            )
+            p2b = Frank_Wolfe_method(M, f, grad_f, p; sub_problem=oracle)
             @test f(M, p2b) ≈ f(M, p2a)
         end
         @testset "Testing with an Subsolver" begin
