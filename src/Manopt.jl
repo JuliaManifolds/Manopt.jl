@@ -6,7 +6,7 @@ using Colors
 using ColorSchemes
 using ColorTypes
 using Markdown
-using LinearAlgebra: I, Diagonal, eigvals, eigen, tril
+using LinearAlgebra: I, Diagonal, eigvals, eigen, tril, eigmin, opnorm
 using Dates: Period, Nanosecond, value, Millisecond, canonicalize
 using Requires
 using Random: shuffle!
