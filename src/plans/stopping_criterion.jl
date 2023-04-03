@@ -338,8 +338,10 @@ function StopWhenGradientChangeLess(
         ε, "", storage, vector_transport_method, 0
     )
 end
-function StopWhenGradientChangeLess(ε::Float64; kwargs...)
-    return StopWhenGradientChangeLess(DefaultManifold(), ε; kwargs...)
+function StopWhenGradientChangeLess(
+    ε::Float64; storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]), kwargs...
+)
+    return StopWhenGradientChangeLess(DefaultManifold(1), ε; storage=storage, kwargs...)
 end
 function (c::StopWhenGradientChangeLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
@@ -375,7 +377,7 @@ end
 function show(io::IO, c::StopWhenGradientChangeLess)
     return print(
         io,
-        "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vecttor_transport_method))\n    $(status_summary(c))",
+        "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vector_transport_method))\n    $(status_summary(c))",
     )
 end
 
