@@ -139,7 +139,9 @@ By default also undecorates the state beforehand.
 get_iterate(s::AbstractManoptSolverState) = _get_iterate(s, dispatch_state_decorator(s))
 function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
     return error(
-        "It seems the AbstractManoptSolverState $s do not provide access to an iterate"
+        "It seems the AbstractManoptSolverState $s do not provide access to an iterate.
+        If it has the iterate stored internally, please implement `get_iterate(s::$(typeof(s))).`
+        "
     )
 end
 _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
