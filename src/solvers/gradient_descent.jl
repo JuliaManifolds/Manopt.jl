@@ -186,7 +186,6 @@ function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, i)
     return s
 end
 
-
 function testfunction2(x)
-    return x*2
+    return x * 2
 end
