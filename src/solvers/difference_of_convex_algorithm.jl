@@ -86,6 +86,14 @@ function set_gradient!(dcs::DifferenceOfConvexState, M, p, X)
     copyto!(M, dcs.X, p, X)
     return dcs
 end
+function get_message(dcs::DifferenceOfConvexState)
+    # for now only the sub solver might have messages
+    return get_message(dcs.sub_state)
+end
+function get_message_type(dcs::DifferenceOfConvexState)
+    # for now only the sub solver might have messages
+    return get_message_type(dcs.sub_state)
+end
 function show(io::IO, dcs::DifferenceOfConvexState)
     i = get_count(dcs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""

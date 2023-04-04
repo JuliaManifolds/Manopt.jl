@@ -271,7 +271,7 @@ export FrankWolfeCost, FrankWolfeGradient
 export NelderMeadSimplex
 #
 # Accessors and helpers for AbstractManoptSolverState
-export linesearch_backtrack, default_stepsize
+export default_stepsize
 export get_cost, get_cost_function
 export get_gradient, get_gradient_function, get_gradient!
 export get_subgradient, get_subgradient!

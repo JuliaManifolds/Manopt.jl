@@ -9,9 +9,25 @@ All subtypes should be functors, i.e. one should be able to call them as `H(M,x,
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
 @doc raw"""
+    get_message(du::AbstractQuasiNewtonDirectionUpdate)
+
+get a message (String) from the update computation.
+"""
+get_message(::AbstractQuasiNewtonDirectionUpdate) = ""
+
+@doc raw"""
+    get_message(du::AbstractQuasiNewtonDirectionUpdate)
+
+get symbol indicating the type of a message delivered by [`get_message`](@ref)
+"""
+get_message_type(::AbstractQuasiNewtonDirectionUpdate) = nothing
+
+@doc raw"""
     AbstractQuasiNewtonUpdateRule
 
-Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s.
+Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s,
+that is, e.g. for a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several differeent updates to the matrix,
+while the default for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the most prominent is [`InverseBFGS`](@ref).
 """
 abstract type AbstractQuasiNewtonUpdateRule end
 
@@ -399,6 +415,7 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
 * `ρ` – a variable used in the two-loop recursion.
 * `scale` –
 * `vector_transport_method` – a `AbstractVectorTransportMethod`
+* `message` – a string containing a potential warning that might have appeared
 
 # Constructor
     QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -436,6 +453,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     scale::F
     project::Bool
     vector_transport_method::VT
+    warning::String
 end
 function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     s = "limited memory $T (size $(length(d.memory_s)))"
@@ -467,16 +485,26 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         convert(mT, scale),
         project,
         vector_transport_method,
+        "",
     )
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
+    length(d.warning) > 0 && (d.warning = "") # reset warning
     M = get_manifold(mp)
     p = get_iterate(st)
     r = copy(M, p, get_gradient(st))
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
-        d.ρ[i] = 1 / inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        # what if we dvide by zero here? Setting to zero ignores this in the next step
+        #precompute in case inner is expensive
+        v = inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        if v == 0
+            d.ρ[i] = zero(eltype(d.ρ))
+            d.message = "The $(i)th ⟨s_i,y_i⟩ ≈ 0, ignoring summand in approximation."
+        else
+            d.ρ[i] = 1 / v
+        end
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end

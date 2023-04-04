@@ -518,6 +518,47 @@ show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.for
 status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
 
 @doc raw"""
+    DebugMessages <: DebugAction
+
+An [`AbstractManoptSolverState`](@ref) or one of its substeps like a
+[`Stepsize`](@ref) might generate warnings throughout their compuations.
+This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
+depending on the message type
+"""
+mutable struct DebugMessages <: DebugAction
+    io::IO
+    mode::Symbol
+    DebugMessages(mode::Symbol=:Type; io::IO=stdout) = new(io, mode)
+end
+function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
+    msg = get_message(st)
+    msg_type = get_message_type(st)
+    (i < 0 || isnothing(msg_type)) && (return nothing)
+    mode = (d.mode ∉ [:Warning, :Error, :Info, :Print]) ? :Type : d.mode
+    if mode == :Warning || (mode == :Type && msg_type == :Warning)
+        @warn msg
+    end
+    if mode == :Error || (mode == :Type && msg_type == :Error)
+        @warn msg
+    end
+    if mode == :Info || (mode == :Type && msg_type == :Info)
+        @info msg
+    end
+    if mode == :Print || (mode == :Type && msg_type == :Print)
+        print(d.io, msg)
+    end
+    return nothing
+end
+show(io::IO, ::DebugMessages) = print(io, "DebugMessages()")
+function status_summary(::DebugMessages)
+    (mode == :Warning) && return ":WarningMessages"
+    (mode == :Info) && return ":InfoMessages"
+    (mode == :Error) && return ":ErrorMessages"
+    (mode == :Print) && return ":PrintMessages"
+    return ":Messages"
+end
+
+@doc raw"""
     DebugStoppingCriterion <: DebugAction
 
 print the Reason provided by the stopping criterion. Usually this should be
@@ -860,6 +901,12 @@ function DebugActionFactory(s::Symbol)
     (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
     (s == :Time) && return DebugTime()
     (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
+    # Messages
+    (s == :WarningMessages) && return DebugMessages(:Warning)
+    (s == :InfoMessages) && return DebugMessages(:Info)
+    (s == :ErrorMessages) && return DebugMessages(:Error)
+    (s == :PrintMessages) && return DebugMessages(:Print)
+    (s == :Messages) && return DebugMessages()
     return DebugEntry(s)
 end
 """

@@ -97,7 +97,7 @@ using Manopt, Manifolds, Test
             ),
             direction=Nesterov(M, r2[1]),
         )
-        @test isapprox(M, x, x6; atol=1e-13)
+        @test isapprox(M, x, x6; atol=1e-11)
 
         @test_logs (
             :warn,

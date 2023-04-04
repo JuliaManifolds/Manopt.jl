@@ -82,6 +82,14 @@ function default_stepsize(
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
+function get_message(gds::GradientDescentState)
+    # for now only step size is quipped with messages
+    return get_message(gds.stepsize)
+end
+function get_message_type(gds::GradientDescentState)
+    # for now only step size is quipped with messages
+    return get_message_type(gds.stepsize)
+end
 function show(io::IO, gds::GradientDescentState)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""

@@ -93,6 +93,22 @@ function QuasiNewtonState(
         vector_transport_method,
     )
 end
+function get_message(qns::QuasiNewtonState)
+    # we might have a message from (1) direction update or the (2) the step size
+    msg1 = get_message(qns.direction_update)
+    msg2 = get_message(qns.stepsize)
+    d = (length(msg1) > 0 && length(msg2) > 0) ? "\n" : "" #divider
+    return "$(msg1)$(d)$(msg2)"
+end
+function get_message_type(qns::QuasiNewtonState)
+    msg1t = get_messag_type(qns.direction_update)
+    msg2t = get_message_type(qns.stepsize)
+    isnothing(msg1t) && return msg2t
+    isnothing(msg2t) && return msg1t
+    # for now as a first idea return the QN one if both are not nothing,
+    # Think about a way to combine them later
+    return msg1t
+end
 function show(io::IO, qns::QuasiNewtonState)
     i = get_count(qns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""

@@ -14,31 +14,58 @@ end
 function linesearch_backtrack(
     M::NONMUTATINGMANIFOLDS,
     F::TF,
-    x,
+    p,
     gradF::T,
     s,
     decrease,
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
     η::T=-gradF,
-    f0=F(x);
-    stop_step=0.0,
+    f0=F(p);
+    stop_when_stepsize_less=0.0,
+    stop_when_stepsize_larger=max_stepsize(M, p),
+    max_increase_steps=100,
+    max_decrease_steps=1000,
 ) where {TF,T}
-    x_new = retract(M, x, s * η, retr)
-    fNew = F(x_new)
-    while fNew < f0 + decrease * s * real(inner(M, x, η, gradF)) # increase
-        x_new = retract(M, x, s * η, retr)
-        fNew = F(x_new)
+    msg = ""
+    p_new = retract(M, p, s * η, retr)
+    fNew = F(p_new)
+    i = 0
+    while fNew < f0 + decrease * s * real(inner(M, p, η, gradF)) # increase
+        i = i + 1
         s = s / contract
+        p_new = retract(M, p, η, s, retr)
+        fNew = F(p_new)
+        if i == max_increase_steps
+            msg = "Max increase steps ($(max_increase_steps) reached"
+            break
+        end
+        if s > stop_when_stepsize_larger
+            (length(msg) > 0) && (msg = "$msg\n")
+            s = s * contract
+            msg = "$msg Max step size ($(stop_when_stepsize_larger) reached, reducing to $s"
+            break
+        end
     end
-    s = s * contract # correct last
-    while fNew > f0 + decrease * s * real(inner(M, x, η, gradF)) # decrease
+    i = 0
+    while fNew > f0 + decrease * s * real(inner(M, p, η, gradF)) # decrease
+        i = i + 1
         s = contract * s
-        x_new = retract(M, x, s * η, retr)
-        fNew = F(x_new)
-        (s < stop_step) && break
+        p_new = retract(M, p, η, s, retr)
+        fNew = F(p_new)
+        if i == max_decrease_steps
+            (length(msg) > 0) && (msg = "$msg\n")
+            msg = "Max decrese steps ($(max_decrease_steps) reached"
+            break
+        end
+        if s < stop_when_stepsize_less
+            (length(msg) > 0) && (msg = "$msg\n")
+            s = s / contract
+            msg = "$msg Min step size ($(stop_when_stepsize_less) exceeded, increasing back to $s"
+            break
+        end
     end
-    return s
+    return (s, msg)
 end
 #
 # Specific solver steps

@@ -43,6 +43,23 @@ The default is `Val{false}`, i.e. by default an state is not decorated.
 """
 dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
+@doc raw"""
+    get_message(du::AbstractManoptSolverState)
+
+get a message (String) from e.g. performing a step computation.
+This should return any message a sub-step might have issued
+"""
+get_message(::AbstractManoptSolverState) = ""
+
+@doc raw"""
+    get_message(du::AbstractManoptSolverState)
+
+get symbol indicating the type of a message delivered by [`get_message`](@ref),
+including those from a sub-step.
+Usually this should be `:warning` or `:info` – and defaults to `nothing`
+"""
+get_message_type(::AbstractManoptSolverState) = nothing
+
 """
     is_state_decorator(s::AbstractManoptSolverState)
 

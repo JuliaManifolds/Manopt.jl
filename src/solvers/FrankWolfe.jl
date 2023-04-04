@@ -79,6 +79,23 @@ mutable struct FrankWolfeState{
         )
     end
 end
+function default_stepsize(::AbstractManifold, ::Type{FrankWolfeState})
+    return DecreasingStepsize(; length=2.0, shift=2)
+end
+get_gradient(fws::FrankWolfeState) = fws.X
+get_iterate(fws::FrankWolfeState) = fws.p
+function get_message(fws::FrankWolfeState)
+    # for now only the sub solver might have messages
+    return get_message(fws.sub_state)
+end
+function get_message_type(fws::FrankWolfeState)
+    # for now only the sub solver might have messages
+    return get_message_type(fws.sub_state)
+end
+function set_iterate!(fws::FrankWolfeState, p)
+    fws.p = p
+    return fws
+end
 function show(io::IO, fws::FrankWolfeState)
     i = get_count(fws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -101,15 +118,6 @@ function show(io::IO, fws::FrankWolfeState)
     $(status_summary(fws.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
-end
-get_iterate(O::FrankWolfeState) = O.p
-function set_iterate!(O::FrankWolfeState, p)
-    O.p = p
-    return O
-end
-get_gradient(O::FrankWolfeState) = O.X
-function default_stepsize(::AbstractManifold, ::Type{FrankWolfeState})
-    return DecreasingStepsize(; length=2.0, shift=2)
 end
 
 @doc raw"""
