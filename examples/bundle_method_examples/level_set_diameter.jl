@@ -30,22 +30,22 @@ function level_set_diameter(
     N = PowerManifold(M, NestedPowerRepresentation(), 2)
     Random.seed!(random_seed)
     initial_product_point = rand(N)
-	set_component!(N, initial_product_point, p0, 1)
-	set_component!(N, initial_product_point, p0, 2)
+    set_component!(N, initial_product_point, p0, 1)
+    set_component!(N, initial_product_point, p0, 2)
     G(N, q) = -distance(M, q[N, 1], q[N, 2])
     function gradG(N, q)
-		if q[N, 1] ≈ q[N, 2]
-			X = rand(N; vector_at = q)
-			set_component!(N, X, -normal_cone_vector(M, q[N, 1]), 1)
-			set_component!(N, X, -normal_cone_vector(M, q[N, 1]), 2)
-			return X
-		else
-			Y = rand(N; vector_at = q)
-			set_component!(N, Y, -grad_distance(M, q[N, 2], q[N, 1]), 1)
-			set_component!(N, Y, -grad_distance(M, q[N, 1], q[N, 2]), 2)
-			return Y
-		end
-	end
+        if q[N, 1] ≈ q[N, 2]
+            X = rand(N; vector_at=q)
+            set_component!(N, X, -normal_cone_vector(M, q[N, 1]), 1)
+            set_component!(N, X, -normal_cone_vector(M, q[N, 1]), 2)
+            return X
+        else
+            Y = rand(N; vector_at=q)
+            set_component!(N, Y, -grad_distance(M, q[N, 2], q[N, 1]), 1)
+            set_component!(N, Y, -grad_distance(M, q[N, 1], q[N, 2]), 2)
+            return Y
+        end
+    end
     H1(N, q) = f(M, q[N, 1]) - f(M, p0)
     function gradH1(N, q)
         r = rand(N)
@@ -116,7 +116,7 @@ function level_set_diameter(
     return -G(N, p_diam)
 end
 function normal_cone_vector(M, p)
-	Y = rand(M; vector_at = p)# * 10^(-diam)
-	(norm(M, p, Y) > 1.) && (Y /= norm(M, p, Y))
-	return Y
+    Y = rand(M; vector_at=p)# * 10^(-diam)
+    (norm(M, p, Y) > 1.0) && (Y /= norm(M, p, Y))
+    return Y
 end
