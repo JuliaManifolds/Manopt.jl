@@ -42,6 +42,7 @@ makedocs(;
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
+            "Difference of Convex" => "solvers/difference_of_convex.md",
             "Douglas–Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",

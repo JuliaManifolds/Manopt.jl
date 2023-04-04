@@ -195,7 +195,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function exact_penalty_method(
     M::AbstractManifold, f::TF, grad_f::TGF, p=rand(M); kwargs...

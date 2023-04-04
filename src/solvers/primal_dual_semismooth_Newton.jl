@@ -36,7 +36,7 @@ Note that this changes the arguments the `forward_operator` will be called.
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 [^DiepeveenLellmann2021]:
     > W. Diepeveen, J. Lellmann:

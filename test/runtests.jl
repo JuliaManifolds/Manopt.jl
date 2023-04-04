@@ -39,6 +39,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_augmented_lagrangian.jl")
         include("solvers/test_ChambollePock.jl")
         include("solvers/test_conjugate_gradient.jl")
+        include("solvers/test_difference_of_convex.jl")
         include("solvers/test_Douglas_Rachford.jl")
         include("solvers/test_cyclic_proximal_point.jl")
         include("solvers/test_exact_penalty.jl")

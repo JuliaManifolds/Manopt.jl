@@ -86,6 +86,9 @@ end
     @test typeof(e) === typeof((a | b) | c)
     update_stopping_criterion!(e, :MinGradNorm, 1e-9)
     @test d.criteria[3].threshold == 1e-9
+end
+
+@testset "Stopping Criterion print&summary" begin
     f = StopWhenStepsizeLess(1e-6)
     sf1 = "Stepsize s < 1.0e-6:\tnot reached"
     @test Manopt.status_summary(f) == sf1
@@ -107,6 +110,17 @@ end
     @test length(g.reason) > 0
     h = StopWhenSmallerOrEqual(:p, 1e-4)
     @test repr(h) == "StopWhenSmallerOrEqual(:p, $(1e-4))\n    $(Manopt.status_summary(h))"
+    swgcl1 = StopWhenGradientChangeLess(Euclidean(2), 1e-8)
+    swgcl2 = StopWhenGradientChangeLess(1e-8)
+    for swgcl in [swgcl1, swgcl2]
+        repr(swgcl) ==
+        "StopWhenGradientChangeLess($(1e-8); vector_transport_method=ParallelTransport())\n $(Manopt.status_summary(swgcl))"
+        swgcl(gp, gs, 0) # reset
+        @test swgcl(gp, gs, 1) # change 0 -> true
+        @test endswith(Manopt.status_summary(swgcl), "reached")
+    end
+    update_stopping_criterion!(swgcl1, :MinGradientChange, 1e-9)
+    @test swgcl1.threshold == 1e-9
 end
 
 @testset "TCG stopping criteria" begin

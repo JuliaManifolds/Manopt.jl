@@ -31,6 +31,8 @@ include("trust_region_model.jl")
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Trust Region Method\n")
         p1 = get_solver_result(s)
         q = copy(M, p)
+        set_gradient!(s, M, p, zero_vector(M, p))
+        @test norm(M, p, get_gradient(s)) ≈ 0.0
         trust_regions!(M, cost, rgrad, rhess, q; max_trust_region_radius=8.0)
         @test isapprox(M, p1, q)
         p2 = trust_regions(

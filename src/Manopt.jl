@@ -1,10 +1,10 @@
-"""
+@doc raw"""
 🏔️ Manopt.jl – Optimization on Manifolds in Julia.
 
-- 📚 Documentation: https://manoptjl.org
-- 📦 Repository: https://github.com/JuliaManifolds/Manopt.jl
-- 💬 Discussions: https://github.com/JuliaManifolds/Manopt.jl/discussions
-- 🎯 Issues: https://github.com/JuliaManifolds/Manopt.jl/issues
+- 📚 Documentation: [manoptjl.org](https://manoptjl.org)
+- 📦 Repository: [github.com/JuliaManifolds/Manopt.jl](https://github.com/JuliaManifolds/Manopt.jl)
+- 💬 Discussions: [github.com/JuliaManifolds/Manopt.jl/discussions](https://github.com/JuliaManifolds/Manopt.jl/discussions)
+- 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
 """
 module Manopt
 import Base: &, copy, getindex, identity, setindex!, show, |
@@ -140,6 +140,8 @@ include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
+include("solvers/difference_of_convex_algorithm.jl")
+include("solvers/difference-of-convex-proximal-point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
@@ -226,6 +228,8 @@ export AbstractManifoldGradientObjective,
     ManifoldAlternatingGradientObjective,
     ManifoldCostGradientObjective,
     ManifoldCostObjective,
+    ManifoldDifferenceOfConvexObjective,
+    ManifoldDifferenceOfConvexProximalObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
     ManifoldProximalMapObjective,
@@ -247,6 +251,8 @@ export AbstractGradientSolverState,
     ChambollePockState,
     ConjugateGradientDescentState,
     CyclicProximalPointState,
+    DifferenceOfConvexState,
+    DifferenceOfConvexProximalState,
     DouglasRachfordState,
     ExactPenaltyMethodState,
     FrankWolfeState,
@@ -269,6 +275,7 @@ export linesearch_backtrack, default_stepsize
 export get_cost, get_cost_function
 export get_gradient, get_gradient_function, get_gradient!
 export get_subgradient, get_subgradient!
+export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map,
     get_proximal_map!,
     get_state,
@@ -317,7 +324,9 @@ export get_constraints,
     get_grad_equality_constraints,
     get_grad_equality_constraints!
 export ConstraintType, FunctionConstraint, VectorConstraint
+# Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
+export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -326,10 +335,7 @@ export QuasiNewtonCautiousDirectionUpdate,
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch,
-    StrongWolfePowellLinesearch,
-    operator_to_matrix,
-    square_matrix_vector_product,
-    WolfePowellBinaryLinesearch
+    operator_to_matrix, square_matrix_vector_product, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
@@ -357,6 +363,10 @@ export augmented_Lagrangian_method,
     conjugate_gradient_descent!,
     cyclic_proximal_point,
     cyclic_proximal_point!,
+    difference_of_convex_algorithm,
+    difference_of_convex_algorithm!,
+    difference_of_convex_proximal_point,
+    difference_of_convex_proximal_point!,
     DouglasRachford,
     DouglasRachford!,
     exact_penalty_method,
@@ -406,6 +416,7 @@ export StopAfter,
     StopWhenChangeLess,
     StopWhenCostLess,
     StopWhenCurvatureIsNegative,
+    StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
     StopWhenModelIncreased,
     StopWhenPopulationConcentrated,

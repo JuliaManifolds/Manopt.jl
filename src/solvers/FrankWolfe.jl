@@ -32,7 +32,7 @@ mutable struct FrankWolfeState{
     P,
     T,
     Pr,
-    Op,
+    St,
     TStep<:Stepsize,
     TStop<:StoppingCriterion,
     TM<:AbstractRetractionMethod,
@@ -41,7 +41,7 @@ mutable struct FrankWolfeState{
     p::P
     X::T
     sub_problem::Pr
-    sub_state::Op
+    sub_state::St
     stop::TStop
     stepsize::TStep
     retraction_method::TM
@@ -83,12 +83,16 @@ function show(io::IO, fws::FrankWolfeState)
     i = get_count(fws, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(fws.stop) ? "Yes" : "No"
+    sub = repr(fws.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
     s = """
     # Solver state for `Manopt.jl`s Frank Wolfe Method
     $Iter
     ## Parameters
     * inverse retraction method: $(fws.inverse_retraction_method)
     * retraction method: $(fws.retraction_method)
+    * sub solver state:
+        | $(sub)
 
     ## Stepsize
     $(fws.stepsize)
@@ -144,7 +148,7 @@ all further keywords are passed down to [`decorate_state!`](@ref), e.g. `debug`.
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function Frank_Wolfe_method(M::AbstractManifold, f, grad_f, p; kwargs...)
     q = copy(M, p)
@@ -160,29 +164,34 @@ function Frank_Wolfe_method!(
     grad_f,
     p;
     initial_vector=zero_vector(M, p),
+    evaluation=AllocatingEvaluation(),
     retraction_method=default_retraction_method(M, typeof(p)),
+    stepsize::TStep=default_stepsize(M, FrankWolfeState),
+    stopping_criterion::TStop=StopAfterIteration(200) |
+                              StopWhenGradientNormLess(1.0e-8) |
+                              StopWhenChangeLess(1.0e-8),
     sub_cost=FrankWolfeCost(p, initial_vector),
     sub_grad=FrankWolfeGradient(p, initial_vector),
     sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
     sub_problem=DefaultManoptProblem(M, sub_objective),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) | StopWhenStepsizeLess(1e-8),
-    sub_state=decorate_state!(
-        GradientDescentState(
-            M,
-            copy(M, p);
-            stopping_criterion=sub_stopping_criterion,
-            stepsize=default_stepsize(
-                M, GradientDescentState; retraction_method=retraction_method
+    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
+        Function
+        evaluation
+    else
+        decorate_state!(
+            GradientDescentState(
+                M,
+                copy(M, p);
+                stopping_criterion=sub_stopping_criterion,
+                stepsize=default_stepsize(
+                    M, GradientDescentState; retraction_method=retraction_method
+                ),
             ),
-        ),
-        sub_kwargs...,
-    ),
-    evaluation=AllocatingEvaluation(),
-    stepsize::TStep=default_stepsize(M, FrankWolfeState),
-    stopping_criterion::TStop=StopAfterIteration(200) |
-                              StopWhenGradientNormLess(1.0e-8) |
-                              StopWhenChangeLess(1.0e-8),
+            sub_kwargs...,
+        )
+    end,
     kwargs..., #collect rest
 ) where {TStop<:StoppingCriterion,TStep<:Stepsize}
     mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
