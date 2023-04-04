@@ -115,3 +115,8 @@ function level_set_diameter(
     end
     return -G(N, p_diam)
 end
+function normal_cone_vector(M, p)
+	Y = rand(M; vector_at = p)# * 10^(-diam)
+	(norm(M, p, Y) > 1.) && (Y /= norm(M, p, Y))
+	return Y
+end
