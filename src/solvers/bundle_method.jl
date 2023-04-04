@@ -100,7 +100,7 @@ mutable struct BundleMethodState{
     end
 end
 get_iterate(bms::BundleMethodState) = bms.p_last_serious
-get_subgradient(bms::BundleMethodState) = bms.X
+get_subgradient(bms::BundleMethodState) = bms.g
 
 @doc raw"""
     bundle_method(M, f, ∂f, p)
@@ -111,7 +111,7 @@ where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
 
 with ``X_{q_j}\in∂f(q_j)``, and
 
-where ``\mathrm{retr}`` is a retraction and `p_k` is the last serious iterate. 
+where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate. 
 Though the subgradient might be set valued, the argument `∂f` should always 
 return _one_ element from the subgradient, but not necessarily deterministic.
 
@@ -131,7 +131,7 @@ return _one_ element from the subgradient, but not necessarily deterministic.
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,p,X)` to use.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
+* `stopping_criterion` – ([`StopWhenBundleLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 ...
@@ -238,8 +238,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
-        println("stepped in")
-        bms.p_last_serious = copy(M, bms.p)
+        println("serious step")
+        copyto!(M, bms.p_last_serious, bms.p)
         push!(
             bms.bundle_points,
             (copy(M, bms.p_last_serious), copy(M, bms.p_last_serious, bms.X)),
@@ -285,7 +285,7 @@ get_solver_result(bms::BundleMethodState) = bms.p_last_serious
 
 A stopping criterion for [`bundle_method`](@ref) to indicate to stop when
 
-* the parameter ξ = -\norm{g}^2 - ε 
+* the parameter ξ = -|g|² - ε 
 
 is less than a given tolerance tol.
 
