@@ -484,8 +484,8 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
-        # what if we dvide by zero here? Setting to zero ignores this in the next step
-        #precompute in case inner is expensive
+        # what if we divide by zero here? Setting to zero ignores this in the next step
+        # precompute in case inner is expensive
         v = inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
         if v ≈ 0
             d.ρ[i] = zero(eltype(d.ρ))
