@@ -88,10 +88,7 @@ function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
 end
-function get_message_type(fws::FrankWolfeState)
-    # for now only the sub solver might have messages
-    return get_message_type(fws.sub_state)
-end
+
 function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
     return fws

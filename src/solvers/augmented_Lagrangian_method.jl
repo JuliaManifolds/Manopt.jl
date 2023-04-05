@@ -110,10 +110,7 @@ function get_message(alms::AugmentedLagrangianMethodState)
     # for now only the sub solver might have messages
     return get_message(alms.sub_state)
 end
-function get_message_type(alms::AugmentedLagrangianMethodState)
-    # for now only the sub solver might have messages
-    return get_message_type(alms.sub_state)
-end
+
 function show(io::IO, alms::AugmentedLagrangianMethodState)
     i = get_count(alms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""

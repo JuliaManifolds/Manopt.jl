@@ -532,21 +532,12 @@ mutable struct DebugMessages <: DebugAction
 end
 function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
     msg = get_message(st)
-    msg_type = get_message_type(st)
-    (i < 0 || isnothing(msg_type)) && (return nothing)
-    mode = (d.mode ∉ [:Warning, :Error, :Info, :Print]) ? :Type : d.mode
-    if mode == :Warning || (mode == :Type && msg_type == :Warning)
-        @warn msg
-    end
-    if mode == :Error || (mode == :Type && msg_type == :Error)
-        @warn msg
-    end
-    if mode == :Info || (mode == :Type && msg_type == :Info)
-        @info msg
-    end
-    if mode == :Print || (mode == :Type && msg_type == :Print)
-        print(d.io, msg)
-    end
+    (i < 0 || length(msg) == 0) && (return nothing)
+    (d.mode == :Warning) && (@warn msg; return nothing)
+    (d.mode == :Error) && (@error msg; return nothing)
+    (d.mode == :Print) && (print(d.io, msg); return nothing)
+    #(d.mode == :Info) &&
+    (@info msg) # Default
     return nothing
 end
 show(io::IO, ::DebugMessages) = print(io, "DebugMessages()")
@@ -881,11 +872,15 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
 * `:Time` creates a [`DebugTime`](@ref)
-* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
+* `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
+* `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
+* `:ErrorMessages`creates a [`DebugMessages`](@ref)`(:Error)`
+* `:Messages`creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -905,7 +900,6 @@ function DebugActionFactory(s::Symbol)
     (s == :WarningMessages) && return DebugMessages(:Warning)
     (s == :InfoMessages) && return DebugMessages(:Info)
     (s == :ErrorMessages) && return DebugMessages(:Error)
-    (s == :PrintMessages) && return DebugMessages(:Print)
     (s == :Messages) && return DebugMessages()
     return DebugEntry(s)
 end

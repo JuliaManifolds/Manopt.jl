@@ -103,10 +103,6 @@ function get_message(cgs::ConjugateGradientDescentState)
     # for now only step size is quipped with messages
     return get_message(cgs.stepsize)
 end
-function get_message_type(cgs::ConjugateGradientDescentState)
-    # for now only step size is quipped with messages
-    return get_message_type(cgs.stepsize)
-end
 
 @doc raw"""
     ConjugateDescentCoefficient <: DirectionUpdateRule

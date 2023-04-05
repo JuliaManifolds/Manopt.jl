@@ -49,16 +49,12 @@ dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 get a message (String) from e.g. performing a step computation.
 This should return any message a sub-step might have issued
 """
-get_message(::AbstractManoptSolverState) = ""
-
-@doc raw"""
-    get_message(du::AbstractManoptSolverState)
-
-get symbol indicating the type of a message delivered by [`get_message`](@ref),
-including those from a sub-step.
-Usually this should be `:warning` or `:info` – and defaults to `nothing`
-"""
-get_message_type(::AbstractManoptSolverState) = nothing
+function get_message(::AbstractManoptSolverState)
+    return _get_message(s, dispatch_state_decorator(s))
+end
+_get_message(s::AbstractManoptSolverState, ::Val{true}) = _get_message(s.state)
+#INtroduce a default that there is no message
+_get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 
 """
     is_state_decorator(s::AbstractManoptSolverState)

@@ -16,7 +16,6 @@ and returns a number, namely the stepsize to use.
 abstract type Stepsize end
 
 get_message(::S) where {S<:Stepsize} = ""
-get_message_type(::S) where {S<:Stepsize} = nothing
 
 """
     default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
@@ -264,7 +263,6 @@ function status_summary(als::ArmijoLinesearch)
     return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
 get_message(a::ArmijoLinesearch) = a.message
-get_message_type(a::ArmijoLinesearch) = length(a.message) > 0 ? :Warning : nothing
 
 @doc raw"""
     (s, msg) = linesearch_backtrack(
@@ -648,7 +646,7 @@ function show(io::IO, a::NonmonotoneLinesearch)
     )
 end
 get_message(a::NonmonotoneLinesearch) = a.message
-get_message_type(a::NonmonotoneLinesearch) = length(a.message) > 0 ? :Warning : nothing
+
 @doc raw"""
     WolfePowellLinesearch <: Linesearch
 

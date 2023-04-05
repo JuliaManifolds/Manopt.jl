@@ -100,15 +100,6 @@ function get_message(qns::QuasiNewtonState)
     d = (length(msg1) > 0 && length(msg2) > 0) ? "\n" : "" #divider
     return "$(msg1)$(d)$(msg2)"
 end
-function get_message_type(qns::QuasiNewtonState)
-    msg1t = get_messag_type(qns.direction_update)
-    msg2t = get_message_type(qns.stepsize)
-    isnothing(msg1t) && return msg2t
-    isnothing(msg2t) && return msg1t
-    # for now as a first idea return the QN one if both are not nothing,
-    # Think about a way to combine them later
-    return msg1t
-end
 function show(io::IO, qns::QuasiNewtonState)
     i = get_count(qns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -327,9 +318,9 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
 end
 
 function locking_condition_scale(
-    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, p_old, v, x, vt
+    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, p_old, X, p, vtm
 )
-    return norm(M, p_old, v) / norm(M, x, vector_transport_to(M, p_old, v, x, vt))
+    return norm(M, p_old, X) / norm(M, p, vector_transport_to(M, p_old, X, p, vtm))
 end
 
 @doc raw"""

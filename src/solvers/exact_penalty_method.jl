@@ -85,10 +85,6 @@ function get_message(epms::ExactPenaltyMethodState)
     # for now only the sub solver might have messages
     return get_message(epms.sub_state)
 end
-function get_message_type(epms::ExactPenaltyMethodState)
-    # for now only the sub solver might have messages
-    return get_message_type(epms.sub_state)
-end
 function set_iterate!(epms::ExactPenaltyMethodState, M, p)
     epms.p = p
     return epms

@@ -16,13 +16,6 @@ get a message (String) from the update computation.
 get_message(::AbstractQuasiNewtonDirectionUpdate) = ""
 
 @doc raw"""
-    get_message(du::AbstractQuasiNewtonDirectionUpdate)
-
-get symbol indicating the type of a message delivered by [`get_message`](@ref)
-"""
-get_message_type(::AbstractQuasiNewtonDirectionUpdate) = nothing
-
-@doc raw"""
     AbstractQuasiNewtonUpdateRule
 
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s,
@@ -453,14 +446,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     scale::F
     project::Bool
     vector_transport_method::VT
-    warning::String
-end
-function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
-    s = "limited memory $T (size $(length(d.memory_s)))"
-    (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
-    d.project && (s = "$(s), projections, ")
-    s = "$(s)and $(d.vector_transport_method) as vector transport."
-    return s
+    message::String
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
     M::AbstractManifold,
@@ -488,8 +474,16 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
         "",
     )
 end
+get_message(d::QuasiNewtonLimitedMemoryDirectionUpdate) = d.message
+function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
+    s = "limited memory $T (size $(length(d.memory_s)))"
+    (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
+    d.project && (s = "$(s), projections, ")
+    s = "$(s)and $(d.vector_transport_method) as vector transport."
+    return s
+end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
-    length(d.warning) > 0 && (d.warning = "") # reset warning
+    (length(d.message) > 0) && (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
     r = copy(M, p, get_gradient(st))
@@ -499,17 +493,29 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
         # what if we dvide by zero here? Setting to zero ignores this in the next step
         #precompute in case inner is expensive
         v = inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
-        if v == 0
+        if v ≈ 0
             d.ρ[i] = zero(eltype(d.ρ))
-            d.message = "The $(i)th ⟨s_i,y_i⟩ ≈ 0, ignoring summand in approximation."
+            if length(d.message) > 0
+                d.message = replace(
+                    d.message, " i=" => " i=$i,", "summand in" => "summands in"
+                )
+            else
+                d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i ignoring summand in approximation."
+            end
         else
             d.ρ[i] = 1 / v
         end
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end
-    r .*= 1 / (d.ρ[m] * norm(M, p, last(d.memory_y))^2)
-    for i in 1:m
+    safe_indices = findall(d.ρ .> 0)
+    if (length(safe_indices) == 0)
+        d.message = "$(d.message)$(length(d.message)>0 ? :"\n" : "")"
+        d.message = "$(d.message) all memory yield zero inner products, falling back to a gradient step."
+        return -get_gradient(st)
+    end
+    r .*= 1 / (d.ρ[last(safe_indices)] * norm(M, p, d.memory_y[last(safe_indices)])^2)
+    for i in safe_indices
         r .+= (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
     end
     d.project && embed_project!(M, r, p, r)

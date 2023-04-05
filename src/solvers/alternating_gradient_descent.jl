@@ -100,10 +100,6 @@ function get_message(agds::AlternatingGradientDescentState)
     # for now only step size is quipped with messages
     return get_message(agds.stepsize)
 end
-function get_message_type(agds::AlternatingGradientDescentState)
-    # for now only step size is quipped with messages
-    return get_message_type(agds.stepsize)
-end
 
 """
     AlternatingGradient <: DirectionUpdateRule

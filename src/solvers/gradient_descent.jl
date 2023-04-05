@@ -86,10 +86,6 @@ function get_message(gds::GradientDescentState)
     # for now only step size is quipped with messages
     return get_message(gds.stepsize)
 end
-function get_message_type(gds::GradientDescentState)
-    # for now only step size is quipped with messages
-    return get_message_type(gds.stepsize)
-end
 function show(io::IO, gds::GradientDescentState)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""

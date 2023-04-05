@@ -91,10 +91,6 @@ function get_message(dcs::DifferenceOfConvexProximalState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)
 end
-function get_message_type(dcs::DifferenceOfConvexProximalState)
-    # for now only the sub solver might have messages
-    return get_message_type(dcs.sub_state)
-end
 function show(io::IO, dcps::DifferenceOfConvexProximalState)
     i = get_count(dcps, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
