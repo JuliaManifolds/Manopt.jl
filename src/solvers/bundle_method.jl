@@ -207,8 +207,8 @@ end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
     bms.transported_subgradients = [
-        vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) 
-        for (qj, Xj) in bms.bundle
+        vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
+        (qj, Xj) in bms.bundle
     ]
     bms.λ = bundle_method_sub_solver(M, bms)
     bms.g = sum(bms.λ .* bms.transported_subgradients)
