@@ -554,7 +554,6 @@ function status_summary(::DebugMessages)
     (mode == :Warning) && return ":WarningMessages"
     (mode == :Info) && return ":InfoMessages"
     (mode == :Error) && return ":ErrorMessages"
-    (mode == :Print) && return ":PrintMessages"
     return ":Messages"
 end
 

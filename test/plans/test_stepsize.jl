@@ -26,11 +26,38 @@ using Manopt, Manifolds, Test
     # no stepsize yet so repr and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""
-    @testset "Linesearch safeguards" begin
+    @testset "Mutating Linesearch safeguards" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = sum(2 .* p)
         p = [2.0, 2.0]
+        s1 = Manopt.linesearch_backtrack(
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; max_decrease_steps=10
+        )
+        @test startswith(s1[2], "Max decrease")
+        s2 = Manopt.linesearch_backtrack(
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5, ExponentialRetraction(), grad_f(M, p);
+        )
+        @test startswith(s2[2], "The search direction")
+        s3 = Manopt.linesearch_backtrack(
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5; stop_when_stepsize_less=0.75
+        )
+        @test startswith(s3[2], "Min step size (0.75)")
+        # cheating for increase
+        s4 = Manopt.linesearch_backtrack(
+            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_when_stepsize_larger=0.1
+        )
+        @test startswith(s4[2], "Max step size (0.1)")
+        s5 = Manopt.linesearch_backtrack(
+            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; max_increase_steps=1
+        )
+        @test startswith(s5[2], "Max increase steps (1)")
+    end
+    @testset "Allocating Linesearch safeguards" begin
+        M = Euclidean()
+        f(M, p) = p^2
+        grad_f(M, p) = 2 * p
+        p = 2.0
         s1 = Manopt.linesearch_backtrack(
             M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; max_decrease_steps=10
         )

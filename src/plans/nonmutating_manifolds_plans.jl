@@ -15,12 +15,12 @@ function linesearch_backtrack(
     M::NONMUTATINGMANIFOLDS,
     F::TF,
     p,
-    gradF::T,
+    grad_f_at_p::T,
     s,
     decrease,
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
-    η::T=-gradF,
+    η::T=-grad_f_at_p,
     f0=F(M, p);
     stop_when_stepsize_less=0.0,
     stop_when_stepsize_larger=max_stepsize(M, p) / norm(M, p, η),
@@ -30,38 +30,43 @@ function linesearch_backtrack(
     msg = ""
     p_new = retract(M, p, s * η, retr)
     fNew = F(M, p_new)
+    search_dir_inner = real(inner(M, p, η, grad_f_at_p))
+    if search_dir_inner >= 0
+        msg = "The search direction η might not be a descent directon, since ⟨η, grad_f(p)⟩ ≥ 0."
+    end
     i = 0
-    while fNew < f0 + decrease * s * real(inner(M, p, η, gradF)) # increase
+    while fNew < f0 + decrease * s * search_dir_inner # increase
         i = i + 1
         s = s / contract
         p_new = retract(M, p, η, s, retr)
         fNew = F(M, p_new)
         if i == max_increase_steps
-            msg = "Max increase steps ($(max_increase_steps) reached"
+            (length(msg) > 0) && (msg = "$msg\n")
+            msg = "$(msg)Max increase steps ($(max_increase_steps)) reached"
             break
         end
         if s > stop_when_stepsize_larger
             (length(msg) > 0) && (msg = "$msg\n")
             s = s * contract
-            msg = "$msg Max step size ($(stop_when_stepsize_larger) reached, reducing to $s"
+            msg = "$(msg)Max step size ($(stop_when_stepsize_larger)) reached, reducing to $s"
             break
         end
     end
     i = 0
-    while fNew > f0 + decrease * s * real(inner(M, p, η, gradF)) # decrease
+    while fNew > f0 + decrease * s * search_dir_inner # decrease
         i = i + 1
         s = contract * s
         p_new = retract(M, p, η, s, retr)
         fNew = F(M, p_new)
         if i == max_decrease_steps
             (length(msg) > 0) && (msg = "$msg\n")
-            msg = "Max decrese steps ($(max_decrease_steps) reached"
+            msg = "$(msg)Max decrease steps ($(max_decrease_steps)) reached"
             break
         end
         if s < stop_when_stepsize_less
             (length(msg) > 0) && (msg = "$msg\n")
             s = s / contract
-            msg = "$msg Min step size ($(stop_when_stepsize_less) exceeded, increasing back to $s"
+            msg = "$(msg)Min step size ($(stop_when_stepsize_less)) exceeded, increasing back to $s"
             break
         end
     end

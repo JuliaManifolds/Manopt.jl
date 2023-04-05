@@ -158,7 +158,7 @@ using Manopt, Manifolds, Test
             grad_f,
             1 / sqrt(2) .* [1.0, -1.0, 0.0];
             stepsize=ConstantStepsize(1.0),
-            debug=[DebugWarnIfCostIncreases(:Once)],
+            debug=[DebugWarnIfCostIncreases(:Once), :Messages],
         )
     end
 end

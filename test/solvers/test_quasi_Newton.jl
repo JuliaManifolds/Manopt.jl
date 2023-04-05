@@ -11,6 +11,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
         s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
         @test repr(d) == s
+        @test Manopt.get_message(d) == ""
     end
     @testset "Mean of 3 Matrices" begin
         # Mean of 3 matrices
