@@ -52,7 +52,7 @@ This should return any message a sub-step might have issued
 function get_message(s::AbstractManoptSolverState)
     return _get_message(s, dispatch_state_decorator(s))
 end
-_get_message(s::AbstractManoptSolverState, ::Val{true}) = _get_message(s.state)
+_get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
 #INtroduce a default that there is no message
 _get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 

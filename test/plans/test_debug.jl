@@ -197,6 +197,7 @@ struct TestDebugAction <: DebugAction end
         # Status for multiple dictionaries
         dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
         @test contains(Manopt.status_summary(dss), ":Stop")
+        @test Manopt.get_message(dss) == ""
         # DebugEvery summary
         de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
         @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"

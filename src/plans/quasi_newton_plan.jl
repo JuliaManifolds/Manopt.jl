@@ -499,7 +499,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
                     d.message, " i=" => " i=$i,", "summand in" => "summands in"
                 )
             else
-                d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i ignoring summand in approximation."
+                d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
             end
         else
             d.ρ[i] = 1 / v
@@ -510,7 +510,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
     safe_indices = findall(abs.(d.ρ) .> 0)
     if (length(safe_indices) == 0)
         d.message = "$(d.message)$(length(d.message)>0 ? :"\n" : "")"
-        d.message = "$(d.message) all memory yield zero inner products, falling back to a gradient step."
+        d.message = "$(d.message) All memory yield zero inner products, falling back to a gradient step."
         return -get_gradient(st)
     end
     r .*= 1 / (d.ρ[last(safe_indices)] * norm(M, p, d.memory_y[last(safe_indices)])^2)
