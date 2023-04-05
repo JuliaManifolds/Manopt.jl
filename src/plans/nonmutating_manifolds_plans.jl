@@ -23,7 +23,7 @@ function linesearch_backtrack(
     η::T=-gradF,
     f0=F(p);
     stop_when_stepsize_less=0.0,
-    stop_when_stepsize_larger=max_stepsize(M, p),
+    stop_when_stepsize_larger=max_stepsize(M, p) / norm(M, p, η),
     max_increase_steps=100,
     max_decrease_steps=1000,
 ) where {TF,T}
