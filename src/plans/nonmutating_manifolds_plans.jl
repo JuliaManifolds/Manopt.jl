@@ -23,9 +23,9 @@ function linesearch_backtrack(
     η::T=-grad_f_at_p,
     f0=F(M, p);
     stop_when_stepsize_less=0.0,
-    stop_when_stepsize_larger=max_stepsize(M, p) / norm(M, p, η),
-    max_increase_steps=100,
-    max_decrease_steps=1000,
+    stop_when_stepsize_exceeds=max_stepsize(M, p) / norm(M, p, η),
+    stop_increasing_at_step=100,
+    stop_decreasing_at_step=1000,
 ) where {TF,T}
     msg = ""
     p_new = retract(M, p, s * η, retr)
@@ -40,15 +40,15 @@ function linesearch_backtrack(
         s = s / contract
         p_new = retract(M, p, η, s, retr)
         fNew = F(M, p_new)
-        if i == max_increase_steps
+        if i == stop_increasing_at_step
             (length(msg) > 0) && (msg = "$msg\n")
-            msg = "$(msg)Max increase steps ($(max_increase_steps)) reached"
+            msg = "$(msg)Max increase steps ($(stop_increasing_at_step)) reached"
             break
         end
-        if s > stop_when_stepsize_larger
+        if s > stop_when_stepsize_exceeds
             (length(msg) > 0) && (msg = "$msg\n")
             s = s * contract
-            msg = "$(msg)Max step size ($(stop_when_stepsize_larger)) reached, reducing to $s"
+            msg = "$(msg)Max step size ($(stop_when_stepsize_exceeds)) reached, reducing to $s"
             break
         end
     end
@@ -58,9 +58,9 @@ function linesearch_backtrack(
         s = contract * s
         p_new = retract(M, p, η, s, retr)
         fNew = F(M, p_new)
-        if i == max_decrease_steps
+        if i == stop_decreasing_at_step
             (length(msg) > 0) && (msg = "$msg\n")
-            msg = "$(msg)Max decrease steps ($(max_decrease_steps)) reached"
+            msg = "$(msg)Max decrease steps ($(stop_decreasing_at_step)) reached"
             break
         end
         if s < stop_when_stepsize_less

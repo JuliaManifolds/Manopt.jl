@@ -347,7 +347,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         mp = DefaultManoptProblem(Euclidean(2), ManifoldCostObjective(x -> x))
         d = DebugMessages(:Info)
         @test repr(d) == "DebugMessages(:Info)"
-        @test Manopt.status_summary(d) == ":InfoMessages"
+        @test Manopt.status_summary(d) == ":Messages"
         @test_logs (:info, "DebugTest") d(mp, s, 0)
     end
 end

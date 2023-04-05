@@ -552,8 +552,8 @@ end
 show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode))")
 function status_summary(d::DebugMessages)
     (d.mode == :Warning) && return ":WarningMessages"
-    (d.mode == :Info) && return ":InfoMessages"
     (d.mode == :Error) && return ":ErrorMessages"
+    # (d.mode == :Info) && return ":InfoMessages" #default
     return ":Messages"
 end
 

@@ -32,7 +32,7 @@ using Manopt, Manifolds, Test
         grad_f(M, p) = sum(2 .* p)
         p = [2.0, 2.0]
         s1 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; max_decrease_steps=10
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; stop_decreasing_at_step=10
         )
         @test startswith(s1[2], "Max decrease")
         s2 = Manopt.linesearch_backtrack(
@@ -45,11 +45,11 @@ using Manopt, Manifolds, Test
         @test startswith(s3[2], "Min step size (0.75)")
         # cheating for increase
         s4 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_when_stepsize_larger=0.1
+            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_when_stepsize_exceeds=0.1
         )
         @test startswith(s4[2], "Max step size (0.1)")
         s5 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; max_increase_steps=1
+            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_increasing_at_step=1
         )
         @test startswith(s5[2], "Max increase steps (1)")
     end
@@ -59,7 +59,7 @@ using Manopt, Manifolds, Test
         grad_f(M, p) = 2 * p
         p = 2.0
         s1 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; max_decrease_steps=10
+            M, f, p, grad_f(M, p), 1.0, 1.0, 0.99; stop_decreasing_at_step=10
         )
         @test startswith(s1[2], "Max decrease")
         s2 = Manopt.linesearch_backtrack(
@@ -72,11 +72,11 @@ using Manopt, Manifolds, Test
         @test startswith(s3[2], "Min step size (0.75)")
         # cheating for increase
         s4 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_when_stepsize_larger=0.1
+            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_when_stepsize_exceeds=0.1
         )
         @test startswith(s4[2], "Max step size (0.1)")
         s5 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; max_increase_steps=1
+            M, f, p, grad_f(M, p), 1e-12, 0, 0.5; stop_increasing_at_step=1
         )
         @test startswith(s5[2], "Max increase steps (1)")
     end
