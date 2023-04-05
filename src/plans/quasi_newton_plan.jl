@@ -477,7 +477,7 @@ function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     return s
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
-    (length(d.message) > 0) && (d.message = "") # reset message
+    isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
     r = copy(M, p, get_gradient(st))
