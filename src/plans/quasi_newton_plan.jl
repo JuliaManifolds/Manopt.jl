@@ -477,15 +477,15 @@ function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     return s
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
-    (length(d.message) > 0) && (d.message = "") # reset message
+    isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
     r = copy(M, p, get_gradient(st))
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
-        # what if we dvide by zero here? Setting to zero ignores this in the next step
-        #precompute in case inner is expensive
+        # what if we divide by zero here? Setting to zero ignores this in the next step
+        # precompute in case inner is expensive
         v = inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
         if iszero(v)
             d.ρ[i] = zero(eltype(d.ρ))
