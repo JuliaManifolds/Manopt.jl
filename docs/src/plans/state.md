@@ -29,6 +29,13 @@ get_gradient(::AbstractManifoldGradientObjective)
 set_gradient!
 ```
 
+An internal function working on the state and elements within a state is used to
+pass messages from (sub) activties of a state to the corresponding [`DebugMessages`](@ref)
+
+```@docs
+get_message
+```
+
 ## Decorators for AbstractManoptSolverState
 
 A solver state can be decorated using the following trait and function to initialize

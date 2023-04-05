@@ -8,11 +8,6 @@ All subtypes should be functors, i.e. one should be able to call them as `H(M,x,
 """
 abstract type AbstractQuasiNewtonDirectionUpdate end
 
-@doc raw"""
-    get_message(du::AbstractQuasiNewtonDirectionUpdate)
-
-get a message (String) from the update computation.
-"""
 get_message(::AbstractQuasiNewtonDirectionUpdate) = ""
 
 @doc raw"""
@@ -495,9 +490,8 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
         if v ≈ 0
             d.ρ[i] = zero(eltype(d.ρ))
             if length(d.message) > 0
-                d.message = replace(
-                    d.message, " i=" => " i=$i,", "summand in" => "summands in"
-                )
+                d.message = replace(d.message, " i=" => " i=$i,")
+                d.message = replace(d.message, "summand in" => "summands in")
             else
                 d.message = "The inner products ⟨s_i,y_i⟩ ≈ 0, i=$i, ignoring summand in approximation."
             end
