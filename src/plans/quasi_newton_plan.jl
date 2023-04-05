@@ -508,7 +508,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
         d.ξ[i] = inner(M, p, d.memory_s[i], r) * d.ρ[i]
         r .-= d.ξ[i] .* d.memory_y[i]
     end
-    safe_indices = findall(d.ρ .> 0)
+    safe_indices = findall(abs.(d.ρ) .> 0)
     if (length(safe_indices) == 0)
         d.message = "$(d.message)$(length(d.message)>0 ? :"\n" : "")"
         d.message = "$(d.message) all memory yield zero inner products, falling back to a gradient step."
