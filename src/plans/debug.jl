@@ -346,11 +346,11 @@ print a certain entries change during iterates
 
 # Keyword arguments
 
-- `io` (`stdout`) an `IOStream`
-- `prefix` (`"Change of $f"`)
-- `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
-- `initial_value` an initial value for the change of `o.field`.
-- `format` – (`"$prefix %e"`) format to print the change
+* `io` (`stdout`) an `IOStream`
+* `prefix` (`"Change of $f"`)
+* `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
+* `initial_value` an initial value for the change of `o.field`.
+* `format` – (`"$prefix %e"`) format to print the change
 
 """
 mutable struct DebugEntryChange <: DebugAction
@@ -523,12 +523,21 @@ status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
 An [`AbstractManoptSolverState`](@ref) or one of its substeps like a
 [`Stepsize`](@ref) might generate warnings throughout their compuations.
 This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
-depending on the message type
+depending on the message type.
+
+# Constructor
+    DebugMessages(mode=:Info; io::IO=stdout)
+
+Initialize the messages debug to a certain `mode`. Available modes are
+* `:Error` – issue the messages as an error and hence stop at any issue occuring
+* `:Info` – issue the messages as an `@info`
+* `:Print` – print messages to the steam `io`.
+* `:Warning` – issue the messages as a warning
 """
 mutable struct DebugMessages <: DebugAction
     io::IO
     mode::Symbol
-    DebugMessages(mode::Symbol=:Type; io::IO=stdout) = new(io, mode)
+    DebugMessages(mode::Symbol=:Info; io::IO=stdout) = new(io, mode)
 end
 function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
     msg = get_message(st)

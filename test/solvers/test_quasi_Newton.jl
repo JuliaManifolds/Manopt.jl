@@ -44,6 +44,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
         set_gradient!(lrbfgs_s, M, p, grad_f(M, p))
         @test isapprox(M, p, Manopt.get_gradient(lrbfgs_s), grad_f(M, p))
+        @test Manopt.get_message(lrbfgs_s) == ""
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
@@ -174,7 +175,8 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
     end
-    @testset "Brockett" begin
+
+    @testset "Brocket" begin
         struct GradF
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}

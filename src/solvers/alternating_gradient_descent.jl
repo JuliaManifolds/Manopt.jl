@@ -131,7 +131,7 @@ function (a::ArmijoLinesearch)(
     get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
     (a.last_stepsize, a.message) = linesearch_backtrack(
         M,
-        p -> get_cost(amp, p),
+        (M, p) -> get_cost(amp, p),
         agds.p,
         X,
         a.last_stepsize,

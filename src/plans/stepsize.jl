@@ -234,7 +234,7 @@ function (a::ArmijoLinesearch)(
     X = get_gradient!(mp, get_gradient(s), get_iterate(s))
     (a.last_stepsize, a.message) = linesearch_backtrack(
         get_manifold(mp),
-        p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
+        (M, p) -> get_cost_function(get_objective(mp))(M, p),
         get_iterate(s),
         X,
         a.initial_guess(mp, s, i, a.last_stepsize),
@@ -302,7 +302,7 @@ function linesearch_backtrack(
     contract,
     retr::AbstractRetractionMethod=default_retraction_method(M),
     η::T=-grad_f_at_p,
-    f0=f(p);
+    f0=f(M, p);
     stop_when_stepsize_less=0.0,
     stop_when_stepsize_larger=max_stepsize(M, p) / norm(M, p, η),
     max_increase_steps=100,
@@ -310,7 +310,7 @@ function linesearch_backtrack(
 ) where {TF,T}
     msg = ""
     p_new = retract(M, p, η, s, retr)
-    fNew = f(p_new)
+    fNew = f(M, p_new)
     search_dir_inner = real(inner(M, p, η, grad_f_at_p))
     if search_dir_inner >= 0
         msg = "The search direction η might not be a descent directon, since ⟨η, grad_f(p)⟩ ≥ 0."
@@ -320,16 +320,16 @@ function linesearch_backtrack(
         i = i + 1
         s = s / contract
         retract!(M, p_new, p, η, s, retr)
-        fNew = f(p_new)
+        fNew = f(M, p_new)
         if i == max_increase_steps
             (length(msg) > 0) && (msg = "$msg\n")
-            msg = "Max increase steps ($(max_increase_steps)) reached"
+            msg = "$(msg)Max increase steps ($(max_increase_steps)) reached"
             break
         end
         if s > stop_when_stepsize_larger
             (length(msg) > 0) && (msg = "$msg\n")
             s = s * contract
-            msg = "$msg Max step size ($(stop_when_stepsize_larger)) reached, reducing to $s"
+            msg = "$(msg)Max step size ($(stop_when_stepsize_larger)) reached, reducing to $s"
             break
         end
     end
@@ -338,16 +338,16 @@ function linesearch_backtrack(
         i = i + 1
         s = contract * s
         retract!(M, p_new, p, η, s, retr)
-        fNew = f(p_new)
+        fNew = f(M, p_new)
         if i == max_decrease_steps
             (length(msg) > 0) && (msg = "$msg\n")
-            msg = "Max decrese steps ($(max_decrease_steps)) reached"
+            msg = "$(msg)Max decrease steps ($(max_decrease_steps)) reached"
             break
         end
         if s < stop_when_stepsize_less
             (length(msg) > 0) && (msg = "$msg\n")
             s = s / contract
-            msg = "$msg Min step size ($(stop_when_stepsize_less)) exceeded, increasing back to $s"
+            msg = "$(msg)Min step size ($(stop_when_stepsize_less)) exceeded, increasing back to $s"
             break
         end
     end
@@ -553,7 +553,7 @@ function (a::NonmonotoneLinesearch)(
     return a(
         get_manifold(mp),
         get_iterate(s),
-        x -> get_cost(mp, x),
+        (M, p) -> get_cost(M, get_objective(mp), p),
         get_gradient(mp, get_iterate(s)),
         η,
         p_old,
@@ -606,10 +606,10 @@ function (a::NonmonotoneLinesearch)(
 
     memory_size = length(a.old_costs)
     if iter <= memory_size
-        a.old_costs[iter] = F(x)
+        a.old_costs[iter] = F(M, x)
     else
         a.old_costs[1:(memory_size - 1)] = a.old_costs[2:memory_size]
-        a.old_costs[memory_size] = F(x)
+        a.old_costs[memory_size] = F(M, x)
     end
 
     #compute the new step size with the help of the Barzilai-Borwein step size

@@ -114,9 +114,8 @@ We denote by ``\widetilde{B}_k^\mathrm{DFP}`` the operator concatenated with a v
 Then the update formula reads
 
 ```math
-B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k
-+ \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-- \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
+B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  - \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
