@@ -8,6 +8,9 @@ end
 
 struct TestDebugAction <: DebugAction end
 
+struct TestMessageState <: AbstractManoptSolverState end
+Manopt.get_message(::TestMessageState) = "DebugTest"
+
 @testset "Debug State" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
@@ -338,5 +341,13 @@ struct TestDebugAction <: DebugAction end
         @test repr(DebugGradient()) == "DebugGradient(; format=\"grad f(p):%s\")"
         dg_s = "(:Gradient, \"grad f(p):%s\")"
         @test Manopt.status_summary(DebugGradient()) == dg_s
+    end
+    @testset "Debug Messages" begin
+        s = TestMessageState()
+        mp = DefaultManoptProblem(Euclidean(2), ManifoldCostObjective(x -> x))
+        d = DebugMessages(:Info)
+        @test repr(d) == "DebugMessages(:Info)"
+        @test Manopt.status_summary(d) == ":InfoMessages"
+        @test_logs (:info, "DebugTest") d(mp, s, 0)
     end
 end

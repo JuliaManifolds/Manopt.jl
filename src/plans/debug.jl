@@ -549,11 +549,11 @@ function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverSta
     (@info msg) # Default
     return nothing
 end
-show(io::IO, ::DebugMessages) = print(io, "DebugMessages()")
-function status_summary(::DebugMessages)
-    (mode == :Warning) && return ":WarningMessages"
-    (mode == :Info) && return ":InfoMessages"
-    (mode == :Error) && return ":ErrorMessages"
+show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode))")
+function status_summary(d::DebugMessages)
+    (d.mode == :Warning) && return ":WarningMessages"
+    (d.mode == :Info) && return ":InfoMessages"
+    (d.mode == :Error) && return ":ErrorMessages"
     return ":Messages"
 end
 

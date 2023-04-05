@@ -351,10 +351,12 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         qns = QuasiNewtonState(M, p)
         # push zeros to memory
         push!(qns.direction_update.memory_s, copy(p))
+        push!(qns.direction_update.memory_s, copy(p))
+        push!(qns.direction_update.memory_y, copy(p))
         push!(qns.direction_update.memory_y, copy(p))
         qns.direction_update(mp, qns)
         # Update (1) says at i=1 inner prodcucts are zero (2) all are zero -> gradient proposal
-        @test contains(qns.direction_update.message, "i=1")
+        @test contains(qns.direction_update.message, "i=1,2")
         @test contains(qns.direction_update.message, "gradient")
     end
 end

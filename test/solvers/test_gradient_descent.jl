@@ -20,6 +20,7 @@ using Manopt, Manifolds, Test
                 DebugCost(; io=my_io),
                 DebugStoppingCriterion(; io=my_io),
                 DebugDivider("\n"; io=my_io),
+                DebugMessages(),
             ]),
             500,
         )
