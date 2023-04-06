@@ -5,6 +5,14 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.13] - 06/04/2023
+
+### Added
+
+* `get_message` to obtain messages from sub steps of a solver
+* `DebugMessages` to display the new messages in debug
+* safeguards in Armijo linesearch and L-BFGS against numerical over- and underflow that report in messages
+
 ## [0.4.12] - 04/04/2023
 
 ### Added
