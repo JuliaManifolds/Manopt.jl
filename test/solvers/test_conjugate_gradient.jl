@@ -19,79 +19,80 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     diff = grad_2 - grad_1
 
     dU = SteepestDirectionUpdateRule()
-    cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
-    @test cgs.coefficient(dmp, cgs, 1) == 0
-    @test default_stepsize(M, typeof(cgs)) isa ArmijoLinesearch
+    s1 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
+    @test s1.coefficient(dmp, s1, 1) == 0
+    @test default_stepsize(M, typeof(s1)) isa ArmijoLinesearch
+    @test Manopt.get_message(s1) == ""
 
     dU = ConjugateDescentCoefficient()
-    cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
-    cgs.X = grad_1
-    cgs.δ = δ1
+    s2 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
+    s2.X = grad_1
+    s2.δ = δ1
     # for the first case we get zero
-    @test cgs.coefficient(dmp, cgs, 1) == 0.0
-    cgs.X = grad_2
-    cgs.δ = δ2
-    @test cgs.coefficient(dmp, cgs, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
+    @test s2.coefficient(dmp, s2, 1) == 0.0
+    s2.X = grad_2
+    s2.δ = δ2
+    @test s2.coefficient(dmp, s2, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
 
     dU = DaiYuanCoefficient()
-    cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
-    cgs.X = grad_1
-    cgs.δ = δ1
+    s3 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+    s3.X = grad_1
+    s3.δ = δ1
     # for the first case we get zero
-    @test cgs.coefficient(dmp, cgs, 1) == 0.0
-    cgs.X = grad_2
-    cgs.δ = δ2
-    @test cgs.coefficient(dmp, cgs, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
+    @test s3.coefficient(dmp, s3, 1) == 0.0
+    s3.X = grad_2
+    s3.δ = δ2
+    @test s3.coefficient(dmp, s3, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
 
     dU = FletcherReevesCoefficient()
-    cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
-    cgs.X = grad_1
-    cgs.δ = δ1
+    s4 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+    s4.X = grad_1
+    s4.δ = δ1
     # for the first case we get zero
-    @test cgs.coefficient(dmp, cgs, 1) == 1.0
-    cgs.X = grad_2
-    cgs.δ = δ2
-    @test cgs.coefficient(dmp, cgs, 2) == dot(grad_2, grad_2) / dot(grad_1, grad_1)
+    @test s4.coefficient(dmp, s4, 1) == 1.0
+    s4.X = grad_2
+    s4.δ = δ2
+    @test s4.coefficient(dmp, s4, 2) == dot(grad_2, grad_2) / dot(grad_1, grad_1)
 
     dU = HagerZhangCoefficient()
-    cgs = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
-    cgs.X = grad_1
-    cgs.δ = δ1
+    s5 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+    s5.X = grad_1
+    s5.δ = δ1
     # for the first case we get zero
-    @test cgs.coefficient(dmp, cgs, 1) == 0.0
-    cgs.X = grad_2
-    cgs.δ = δ2
+    @test s5.coefficient(dmp, s5, 1) == 0.0
+    s5.X = grad_2
+    s5.δ = δ2
     denom = dot(δ1, diff)
     ndiffsq = dot(diff, diff)
-    @test cgs.coefficient(dmp, cgs, 2) ==
+    @test s5.coefficient(dmp, s5, 2) ==
         dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
 
     dU = HestenesStiefelCoefficient()
-    O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
-    O.X = grad_1
-    O.δ = δ1
-    @test O.coefficient(dmp, O, 1) == 0.0
-    O.X = grad_2
-    O.δ = δ2
-    @test O.coefficient(dmp, O, 2) == dot(diff, grad_2) / dot(δ1, diff)
+    s6 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+    s6.X = grad_1
+    s6.δ = δ1
+    @test s6.coefficient(dmp, s6, 1) == 0.0
+    s6.X = grad_2
+    s6.δ = δ2
+    @test s6.coefficient(dmp, s6, 2) == dot(diff, grad_2) / dot(δ1, diff)
 
     dU = LiuStoreyCoefficient()
-    O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
-    O.X = grad_1
-    O.δ = δ1
-    @test O.coefficient(dmp, O, 1) == 0.0
-    O.X = grad_2
-    O.δ = δ2
-    @test O.coefficient(dmp, O, 2) == -dot(grad_2, diff) / dot(δ1, grad_1)
+    s7 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+    s7.X = grad_1
+    s7.δ = δ1
+    @test s7.coefficient(dmp, s7, 1) == 0.0
+    s7.X = grad_2
+    s7.δ = δ2
+    @test s7.coefficient(dmp, s7, 2) == -dot(grad_2, diff) / dot(δ1, grad_1)
 
     dU = PolakRibiereCoefficient()
-    O = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
-    O.X = grad_1
-    O.δ = δ1
-    @test O.coefficient(dmp, O, 1) == 0.0
-    O.X = grad_2
-    O.δ = δ2
-    @test O.coefficient(dmp, O, 2) == dot(grad_2, diff) / dot(grad_1, grad_1)
+    s8 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+    s8.X = grad_1
+    s8.δ = δ1
+    @test s8.coefficient(dmp, s8, 1) == 0.0
+    s8.X = grad_2
+    s8.δ = δ2
+    @test s8.coefficient(dmp, s8, 2) == dot(grad_2, diff) / dot(grad_1, grad_1)
 end
 @testset "Conjugate Gradient runs – Low Rank matrix approx" begin
     A = Diagonal([2.0, 1.1, 1.0])

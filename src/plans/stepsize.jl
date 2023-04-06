@@ -15,6 +15,8 @@ and returns a number, namely the stepsize to use.
 """
 abstract type Stepsize end
 
+get_message(::S) where {S<:Stepsize} = ""
+
 """
     default_stepsize(M::AbstractManifold, ams::AbstractManoptSolverState)
 
@@ -25,12 +27,16 @@ default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
 """
     max_stepsize(M::AbstractManifold, p)
+    max_stepsize(M::AbstractManifold)
 
-Get the maximum stepsize at point `p` on manifold `M`. It should be used to limit the
+Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to limit the
 distance an algorithm is trying to move in a single step.
 """
 function max_stepsize(M::AbstractManifold, p)
     return injectivity_radius(M, p)
+end
+function max_stepsize(M::AbstractManifold)
+    return injectivity_radius(M)
 end
 
 """
@@ -150,7 +156,7 @@ the negative gradient.
 abstract type Linesearch <: Stepsize end
 
 function armijo_initial_guess(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int, l::Real
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real
 )
     M = get_manifold(mp)
     X = get_gradient(s)
@@ -168,19 +174,27 @@ last step size.
 
 # Fields
 
-* `initial_stepsize` – (`1.0`) and initial step size
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `contraction_factor` – (`0.95`) exponent for line search reduction
+* `initial_stepsize`    – (`1.0`) and initial step size
+* `retraction_method`   – (`default_retraction_method(M)`) the rectraction to use
+* `contraction_factor`  – (`0.95`) exponent for line search reduction
 * `sufficient_decrease` – (`0.1`) gain within Armijo's rule
-* `last_stepsize` – (`initialstepsize`) the last step size we start the search with
-* `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
-    before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
-* `initial_guess` (`(p,o,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `o`
-  and a current iterate `i` and a last step size `l`, this returns an initial guess. The default uses the last obtained stepsize
+* `last_stepsize`       – (`initialstepsize`) the last step size we start the search with
+* `initial_guess`       - (`(p,s,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`,
+  [`AbstractManoptSolverState`](@ref) `s` and a current iterate `i` and a last step size `l`,
+  this returns an initial guess. The default uses the last obtained stepsize
+
+Furthermore the following fields act as safeguards
+
+* `stop_when_stepsize_less    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds - ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
+* `stop_increasing_at_step`   - (^100`) last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step`   - (`1000`) last step size to decrese the stepsize (phase 2),
+
+Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
 # Constructor
 
-    ArmijoLineSearch(M=DefaultManifold())
+    ArmijoLinesearch(M=DefaultManifold())
 
 with the Fields above as keyword arguments and the retraction is set to the default retraction on `M`.
 
@@ -198,15 +212,22 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
     contraction_factor::Float64
     sufficient_decrease::Float64
     last_stepsize::Float64
-    linesearch_stopsize::Float64
+    stop_when_stepsize_less::Float64
+    stop_when_stepsize_exceeds::Float64
+    stop_increasing_at_step::Int
+    stop_decreasing_at_step::Int
     initial_guess::F
+    message::String
     function ArmijoLinesearch(
         M::AbstractManifold=DefaultManifold();
         initial_stepsize::Float64=1.0,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         contraction_factor::Float64=0.95,
         sufficient_decrease::Float64=0.1,
-        linesearch_stopsize::Float64=0.0,
+        stop_when_stepsize_less=0.0,
+        stop_when_stepsize_exceeds=max_stepsize(M),
+        stop_increasing_at_step=100,
+        stop_decreasing_at_step=1000,
         initial_guess=armijo_initial_guess,
     )
         return new{typeof(retraction_method),typeof(initial_guess)}(
@@ -215,8 +236,12 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,F} <: Linesearch
             contraction_factor,
             sufficient_decrease,
             initial_stepsize,
-            linesearch_stopsize,
+            stop_when_stepsize_less,
+            stop_when_stepsize_exceeds,
+            stop_increasing_at_step,
+            stop_decreasing_at_step,
             initial_guess,
+            "",
         )
     end
 end
@@ -227,18 +252,23 @@ function (a::ArmijoLinesearch)(
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
-    X = get_gradient!(mp, get_gradient(s), get_iterate(s))
-    a.last_stepsize = linesearch_backtrack(
+    p = get_iterate(s)
+    X = get_gradient!(mp, get_gradient(s), p)
+    (a.last_stepsize, a.message) = linesearch_backtrack(
         get_manifold(mp),
-        p -> get_cost_function(get_objective(mp))(get_manifold(mp), p),
-        get_iterate(s),
+        (M, p) -> get_cost_function(get_objective(mp))(M, p),
+        p,
         X,
         a.initial_guess(mp, s, i, a.last_stepsize),
         a.sufficient_decrease,
         a.contraction_factor,
         a.retraction_method,
         η;
-        stop_step=a.linesearch_stopsize,
+        stop_when_stepsize_less=a.stop_when_stepsize_less / norm(get_manifold(mp), p, η),
+        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds /
+                                   norm(get_manifold(mp), p, η),
+        stop_increasing_at_step=a.stop_increasing_at_step,
+        stop_decreasing_at_step=a.stop_decreasing_at_step,
     )
     return a.last_stepsize
 end
@@ -251,16 +281,22 @@ function show(io::IO, als::ArmijoLinesearch)
           * initial_stepsize = $(als.initial_stepsize)
           * retraction_method = $(als.retraction_method)
           * contraction_factor = $(als.contraction_factor)
-          * sufficient_decrease = $(als.sufficient_decrease)
-          * linesearch_stopsize = $(als.linesearch_stopsize)""",
+          * sufficient_decrease = $(als.sufficient_decrease)""",
     )
 end
 function status_summary(als::ArmijoLinesearch)
     return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
+get_message(a::ArmijoLinesearch) = a.message
 
 @doc raw"""
-    linesearch_backtrack(M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x); stop_step=0.)
+    (s, msg) = linesearch_backtrack(
+        M, F, x, gradFx, s, decrease, contract, retr, η = -gradFx, f0 = F(x);
+        stop_when_stepsize_less=0.0,
+        stop_when_stepsize_exceeds=max_stepsize(M, p),
+        stop_increasing_at_step = 100,
+        stop_decreasing_at_step = 1000,
+    )
 
 perform a linesearch for
 * a manifold `M`
@@ -273,38 +309,74 @@ perform a linesearch for
 * a `retr`action, which defaults to the `default_retraction_method(M)`
 * a search direction ``η = -\operatorname{grad}F(x)``
 * an offset, ``f_0 = F(x)``
-* a keyword `stop_step` as a minimal step size when to stop
+
+And use the 4 keywords to limit the maximal increase and decrease steps as well as
+a maximal stepsize (especially on non-Hadamard manifolds) and a minimal one.
+
+# Return value
+
+A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
 """
 function linesearch_backtrack(
     M::AbstractManifold,
     f::TF,
     p,
-    gradFx::T,
+    grad_f_at_p::T,
     s,
     decrease,
     contract,
     retr::AbstractRetractionMethod=default_retraction_method(M),
-    η::T=-gradFx,
-    f0=f(p);
-    stop_step=0.0,
+    η::T=-grad_f_at_p,
+    f0=f(M, p);
+    stop_when_stepsize_less=0.0,
+    stop_when_stepsize_exceeds=max_stepsize(M, p) / norm(M, p, η),
+    stop_increasing_at_step=100,
+    stop_decreasing_at_step=1000,
 ) where {TF,T}
+    msg = ""
     p_new = retract(M, p, η, s, retr)
-    fNew = f(p_new)
-    search_dir_inner = real(inner(M, p, η, gradFx))
-    extended = false
+    fNew = f(M, p_new)
+    search_dir_inner = real(inner(M, p, η, grad_f_at_p))
+    if search_dir_inner >= 0
+        msg = "The search direction η might not be a descent directon, since ⟨η, grad_f(p)⟩ ≥ 0."
+    end
+    i = 0
     while fNew < f0 + decrease * s * search_dir_inner # increase
-        extended = true
+        i = i + 1
         s = s / contract
         retract!(M, p_new, p, η, s, retr)
-        fNew = f(p_new)
+        fNew = f(M, p_new)
+        if i == stop_increasing_at_step
+            (length(msg) > 0) && (msg = "$msg\n")
+            msg = "$(msg)Max increase steps ($(stop_increasing_at_step)) reached"
+            break
+        end
+        if s > stop_when_stepsize_exceeds
+            (length(msg) > 0) && (msg = "$msg\n")
+            s = s * contract
+            msg = "$(msg)Max step size ($(stop_when_stepsize_exceeds)) reached, reducing to $s"
+            break
+        end
     end
+    i = 0
     while fNew > f0 + decrease * s * search_dir_inner # decrease
+        i = i + 1
         s = contract * s
         retract!(M, p_new, p, η, s, retr)
-        fNew = f(p_new)
-        (s < stop_step) && break
+        fNew = f(M, p_new)
+        if i == stop_decreasing_at_step
+            (length(msg) > 0) && (msg = "$msg\n")
+            msg = "$(msg)Max decrease steps ($(stop_decreasing_at_step)) reached"
+            break
+        end
+        if s < stop_when_stepsize_less
+            (length(msg) > 0) && (msg = "$msg\n")
+            s = s / contract
+            msg = "$(msg)Min step size ($(stop_when_stepsize_less)) exceeded, increasing back to $s"
+            break
+        end
     end
-    return s
+    return (s, msg)
 end
 
 @doc raw"""
@@ -370,17 +442,24 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 
 # Fields
 * `initial_stepsize` – (`1.0`) the step size we start the search with
-* `linesearch_stopsize` - (`0.0`) a safeguard when to stop the line search
-    before the step is numerically zero. This should be combined with [`StopWhenStepsizeLess`](@ref)
 * `memory_size` – (`10`) number of iterations after which the cost value needs to be lower than the current one
-* `min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
-* `max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
+* `bb_min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
+* `bb_max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
 * `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
 * `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
 * `storage` – (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 * `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
 * `sufficient_decrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
 * `vector_transport_method` – (`ParallelTransport()`) the vector transport method to use
+
+Furthermore the following fields act as safeguards
+
+* `stop_when_stepsize_less    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds - ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
+* `stop_increasing_at_step`   - (^100`) last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step`   - (`1000`) last step size to decrese the stepsize (phase 2),
+
+Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
 # Constructor
 
@@ -405,13 +484,17 @@ mutable struct NonmonotoneLinesearch{
     vector_transport_method::VTM
     stepsize_reduction::Float64
     sufficient_decrease::Float64
-    min_stepsize::Float64
-    max_stepsize::Float64
+    bb_min_stepsize::Float64
+    bb_max_stepsize::Float64
     initial_stepsize::Float64
     old_costs::T
     strategy::Symbol
     storage::TSSA
-    linesearch_stopsize::Float64
+    stop_when_stepsize_less::Float64
+    stop_when_stepsize_exceeds::Float64
+    stop_increasing_at_step::Int
+    stop_decreasing_at_step::Int
+    message::String
     function NonmonotoneLinesearch(
         M::AbstractManifold=DefaultManifold();
         initial_stepsize::Float64=1.0,
@@ -422,11 +505,14 @@ mutable struct NonmonotoneLinesearch{
         stepsize_reduction::Float64=0.5,
         sufficient_decrease::Float64=1e-4,
         memory_size::Int=10,
-        min_stepsize::Float64=1e-3,
-        max_stepsize::Float64=1e3,
+        bb_min_stepsize::Float64=1e-3,
+        bb_max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
         storage::Union{Nothing,StoreStateAction}=nothing,
-        linesearch_stopsize::Float64=0.0,
+        stop_when_stepsize_less::Float64=0.0,
+        stop_when_stepsize_exceeds::Float64=max_stepsize(M),
+        stop_increasing_at_step=100,
+        stop_decreasing_at_step=1000,
     )
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
@@ -436,18 +522,18 @@ mutable struct NonmonotoneLinesearch{
             )
             strategy = :direct
         end
-        if min_stepsize <= 0.0
+        if bb_min_stepsize <= 0.0
             throw(
                 DomainError(
-                    min_stepsize,
+                    bb_min_stepsize,
                     "The lower bound for the step size min_stepsize has to be greater than zero.",
                 ),
             )
         end
-        if max_stepsize <= min_stepsize
+        if bb_max_stepsize <= bb_min_stepsize
             throw(
                 DomainError(
-                    max_stepsize,
+                    bb_max_stepsize,
                     "The upper bound for the step size max_stepsize has to be greater its lower bound min_stepsize.",
                 ),
             )
@@ -474,13 +560,17 @@ mutable struct NonmonotoneLinesearch{
             vector_transport_method,
             stepsize_reduction,
             sufficient_decrease,
-            min_stepsize,
-            max_stepsize,
+            bb_min_stepsize,
+            bb_max_stepsize,
             initial_stepsize,
             zeros(memory_size),
             strategy,
             storage,
-            linesearch_stopsize,
+            stop_when_stepsize_less,
+            stop_when_stepsize_exceeds,
+            stop_increasing_at_step,
+            stop_decreasing_at_step,
+            "",
         )
     end
 end
@@ -504,7 +594,7 @@ function (a::NonmonotoneLinesearch)(
     return a(
         get_manifold(mp),
         get_iterate(s),
-        x -> get_cost(mp, x),
+        (M, p) -> get_cost(M, get_objective(mp), p),
         get_gradient(mp, get_iterate(s)),
         η,
         p_old,
@@ -531,40 +621,48 @@ function (a::NonmonotoneLinesearch)(
     #indirect strategy
     if a.strategy == :inverse
         if s1 > 0
-            BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s1 / s2))
+            BarzilaiBorwein_stepsize = min(
+                a.bb_max_stepsize, max(a.bb_min_stepsize, s1 / s2)
+            )
         else
-            BarzilaiBorwein_stepsize = a.max_stepsize
+            BarzilaiBorwein_stepsize = a.bb_max_stepsize
         end
         #alternating strategy
     elseif a.strategy == :alternating
         if s1 > 0
             if iter % 2 == 0
-                BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s1 / s2))
+                BarzilaiBorwein_stepsize = min(
+                    a.bb_max_stepsize, max(a.bb_min_stepsize, s1 / s2)
+                )
             else
-                BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s3 / s1))
+                BarzilaiBorwein_stepsize = min(
+                    a.bb_max_stepsize, max(a.bb_min_stepsize, s3 / s1)
+                )
             end
         else
-            BarzilaiBorwein_stepsize = a.max_stepsize
+            BarzilaiBorwein_stepsize = a.bb_max_stepsize
         end
         #direct strategy
     else
         if s1 > 0
-            BarzilaiBorwein_stepsize = min(a.max_stepsize, max(a.min_stepsize, s2 / s1))
+            BarzilaiBorwein_stepsize = min(
+                a.bb_max_stepsize, max(a.bb_min_stepsize, s2 / s1)
+            )
         else
-            BarzilaiBorwein_stepsize = a.max_stepsize
+            BarzilaiBorwein_stepsize = a.bb_max_stepsize
         end
     end
 
     memory_size = length(a.old_costs)
     if iter <= memory_size
-        a.old_costs[iter] = F(x)
+        a.old_costs[iter] = F(M, x)
     else
         a.old_costs[1:(memory_size - 1)] = a.old_costs[2:memory_size]
-        a.old_costs[memory_size] = F(x)
+        a.old_costs[memory_size] = F(M, x)
     end
 
     #compute the new step size with the help of the Barzilai-Borwein step size
-    a.initial_stepsize = linesearch_backtrack(
+    (a.initial_stepsize, a.message) = linesearch_backtrack(
         M,
         F,
         x,
@@ -575,7 +673,10 @@ function (a::NonmonotoneLinesearch)(
         a.retraction_method,
         η,
         maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]);
-        stop_step=a.linesearch_stopsize,
+        stop_when_stepsize_less=a.stop_when_stepsize_less / norm(M, x, η),
+        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds / norm(M, x, η),
+        stop_increasing_at_step=a.stop_increasing_at_step,
+        stop_decreasing_at_step=a.stop_decreasing_at_step,
     )
     return a.initial_stepsize
 end
@@ -585,10 +686,9 @@ function show(io::IO, a::NonmonotoneLinesearch)
         """
         NonmonotoneLinesearch() with keyword arguments
           * initial_stepsize = $(a.initial_stepsize)
-          * linesearch_stopsize = $(a.linesearch_stopsize)
-          * max_stepsize = $(a.max_stepsize)
+          * bb_max_stepsize = $(a.bb_max_stepsize)
+          * bb_min_stepsize = $(a.bb_min_stepsize),
           * memory_size = $(length(a.old_costs))
-          * min_stepsize = $(a.min_stepsize),
           * stepsize_reduction = $(a.stepsize_reduction)
           * strategy = :$(a.strategy)
           * sufficient_decrease = $(a.sufficient_decrease)
@@ -596,6 +696,8 @@ function show(io::IO, a::NonmonotoneLinesearch)
           * vector_transport_method = $(a.vector_transport_method)""",
     )
 end
+get_message(a::NonmonotoneLinesearch) = a.message
+
 @doc raw"""
     WolfePowellLinesearch <: Linesearch
 

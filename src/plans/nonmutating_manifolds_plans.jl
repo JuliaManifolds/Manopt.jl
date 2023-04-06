@@ -14,31 +14,63 @@ end
 function linesearch_backtrack(
     M::NONMUTATINGMANIFOLDS,
     F::TF,
-    x,
-    gradF::T,
+    p,
+    grad_f_at_p::T,
     s,
     decrease,
     contract,
     retr::AbstractRetractionMethod=ExponentialRetraction(),
-    η::T=-gradF,
-    f0=F(x);
-    stop_step=0.0,
+    η::T=-grad_f_at_p,
+    f0=F(M, p);
+    stop_when_stepsize_less=0.0,
+    stop_when_stepsize_exceeds=max_stepsize(M, p) / norm(M, p, η),
+    stop_increasing_at_step=100,
+    stop_decreasing_at_step=1000,
 ) where {TF,T}
-    x_new = retract(M, x, s * η, retr)
-    fNew = F(x_new)
-    while fNew < f0 + decrease * s * real(inner(M, x, η, gradF)) # increase
-        x_new = retract(M, x, s * η, retr)
-        fNew = F(x_new)
+    msg = ""
+    p_new = retract(M, p, s * η, retr)
+    fNew = F(M, p_new)
+    search_dir_inner = real(inner(M, p, η, grad_f_at_p))
+    if search_dir_inner >= 0
+        msg = "The search direction η might not be a descent directon, since ⟨η, grad_f(p)⟩ ≥ 0."
+    end
+    i = 0
+    while fNew < f0 + decrease * s * search_dir_inner # increase
+        i = i + 1
         s = s / contract
+        p_new = retract(M, p, η, s, retr)
+        fNew = F(M, p_new)
+        if i == stop_increasing_at_step
+            (length(msg) > 0) && (msg = "$msg\n")
+            msg = "$(msg)Max increase steps ($(stop_increasing_at_step)) reached"
+            break
+        end
+        if s > stop_when_stepsize_exceeds
+            (length(msg) > 0) && (msg = "$msg\n")
+            s = s * contract
+            msg = "$(msg)Max step size ($(stop_when_stepsize_exceeds)) reached, reducing to $s"
+            break
+        end
     end
-    s = s * contract # correct last
-    while fNew > f0 + decrease * s * real(inner(M, x, η, gradF)) # decrease
+    i = 0
+    while fNew > f0 + decrease * s * search_dir_inner # decrease
+        i = i + 1
         s = contract * s
-        x_new = retract(M, x, s * η, retr)
-        fNew = F(x_new)
-        (s < stop_step) && break
+        p_new = retract(M, p, η, s, retr)
+        fNew = F(M, p_new)
+        if i == stop_decreasing_at_step
+            (length(msg) > 0) && (msg = "$msg\n")
+            msg = "$(msg)Max decrease steps ($(stop_decreasing_at_step)) reached"
+            break
+        end
+        if s < stop_when_stepsize_less
+            (length(msg) > 0) && (msg = "$msg\n")
+            s = s / contract
+            msg = "$(msg)Min step size ($(stop_when_stepsize_less)) exceeded, increasing back to $s"
+            break
+        end
     end
-    return s
+    return (s, msg)
 end
 #
 # Specific solver steps

@@ -38,6 +38,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
         dca_sub_state = GradientDescentState(M, copy(M, p0))
 
         dcs = DifferenceOfConvexState(M, copy(M, p0), dca_sub_problem, dca_sub_state)
+        @test Manopt.get_message(dcs) == ""
 
         set_iterate!(dcs, M, p1)
         @test dcs.p == p1
@@ -105,6 +106,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
             repr(s1), "# Solver state for `Manopt.jl`s Difference of Convex Algorithm\n"
         )
         p3 = get_solver_result(s1)
+        @test Manopt.get_message(s1) == "" # no message in last step
         @test isapprox(M, p1, p2)
         @test isapprox(M, p2, p3)
         @test f(M, p1) ≈ 0.0
@@ -129,6 +131,8 @@ using LinearAlgebra, Manifolds, Manopt, Test
             "# Solver state for `Manopt.jl`s Difference of Convex Proximal Point Algorithm\n",
         )
         p6 = get_solver_result(s2)
+        @test Manopt.get_message(s2) == ""
+
         @test isapprox(M, p3, p4)
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)

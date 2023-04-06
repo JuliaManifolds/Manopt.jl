@@ -346,11 +346,11 @@ print a certain entries change during iterates
 
 # Keyword arguments
 
-- `io` (`stdout`) an `IOStream`
-- `prefix` (`"Change of $f"`)
-- `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
-- `initial_value` an initial value for the change of `o.field`.
-- `format` – (`"$prefix %e"`) format to print the change
+* `io` (`stdout`) an `IOStream`
+* `prefix` (`"Change of $f"`)
+* `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
+* `initial_value` an initial value for the change of `o.field`.
+* `format` – (`"$prefix %e"`) format to print the change
 
 """
 mutable struct DebugEntryChange <: DebugAction
@@ -516,6 +516,46 @@ function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverStat
 end
 show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.format)\")")
 status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
+
+@doc raw"""
+    DebugMessages <: DebugAction
+
+An [`AbstractManoptSolverState`](@ref) or one of its substeps like a
+[`Stepsize`](@ref) might generate warnings throughout their compuations.
+This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
+depending on the message type.
+
+# Constructor
+    DebugMessages(mode=:Info; io::IO=stdout)
+
+Initialize the messages debug to a certain `mode`. Available modes are
+* `:Error` – issue the messages as an error and hence stop at any issue occuring
+* `:Info` – issue the messages as an `@info`
+* `:Print` – print messages to the steam `io`.
+* `:Warning` – issue the messages as a warning
+"""
+mutable struct DebugMessages <: DebugAction
+    io::IO
+    mode::Symbol
+    DebugMessages(mode::Symbol=:Info; io::IO=stdout) = new(io, mode)
+end
+function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
+    msg = get_message(st)
+    (i < 0 || length(msg) == 0) && (return nothing)
+    (d.mode == :Warning) && (@warn msg; return nothing)
+    (d.mode == :Error) && (@error msg; return nothing)
+    (d.mode == :Print) && (print(d.io, msg); return nothing)
+    #(d.mode == :Info) &&
+    (@info msg) # Default
+    return nothing
+end
+show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode))")
+function status_summary(d::DebugMessages)
+    (d.mode == :Warning) && return ":WarningMessages"
+    (d.mode == :Error) && return ":ErrorMessages"
+    # (d.mode == :Info) && return ":InfoMessages" #default
+    return ":Messages"
+end
 
 @doc raw"""
     DebugStoppingCriterion <: DebugAction
@@ -840,11 +880,15 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
 * `:Time` creates a [`DebugTime`](@ref)
-* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
+* `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
+* `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
+* `:ErrorMessages`creates a [`DebugMessages`](@ref)`(:Error)`
+* `:Messages`creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -860,6 +904,11 @@ function DebugActionFactory(s::Symbol)
     (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
     (s == :Time) && return DebugTime()
     (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
+    # Messages
+    (s == :WarningMessages) && return DebugMessages(:Warning)
+    (s == :InfoMessages) && return DebugMessages(:Info)
+    (s == :ErrorMessages) && return DebugMessages(:Error)
+    (s == :Messages) && return DebugMessages()
     return DebugEntry(s)
 end
 """
