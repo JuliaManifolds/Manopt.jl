@@ -5,7 +5,15 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.13] - 06/04/2023
+## [0.4.14] - 06/04/2023
+
+### Changed
+* `particle_swarm` now uses much more in-place operations
+
+### Fixed
+* `particle_swarm` used quie a few `deepcopy(p)` commands still, which are now `copy(M,p)`
+
+## [0.4.13] - 09/04/2023
 
 ### Added
 
