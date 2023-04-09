@@ -13,7 +13,7 @@ Describes a particle swarm optimizing algorithm, with
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
-* `p_temp` – temporary storage for a point to avoid allocaitons on the algorithm
+* `p_temp` – temporary storage for a point to avoid allocations during a step of the algorithm
 * `social_vec` - temporary storage for a tangent vector related to `social_weight`
 * `cognitive_vector` -  temporary storage for a tangent vector related to `cognitive_weight`
 * `stopping_criterion` – (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
@@ -288,9 +288,9 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
         # add v = inertia * v + cw*cog_infl + sw*soc_infl
         # where the last two are randomly shortened a bit
         s.velocity[i] .=
-            s.inertia .* s.velocity[i] +
-            s.cognitive_weight * rand(1) .* s.cognitive_vector +
-            s.social_weight * rand(1) .* s.social_vector
+            s.inertia .* s.velocity[i] .+
+            s.cognitive_weight .* rand(1) .* s.cognitive_vector .+
+            s.social_weight .* rand(1) .* s.social_vector
         copyto!(M, s.p_temp, s.x[i])
         retract!(M, s.x[i], s.x[i], s.velocity[i], s.retraction_method)
         vector_transport_to!(

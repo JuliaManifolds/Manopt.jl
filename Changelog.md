@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `particle_swarm` now uses much more in-place operations
 
 ### Fixed
-* `particle_swarm` used quie a few `deepcopy(p)` commands still, which are now `copy(M,p)`
+* `particle_swarm` used quite a few `deepcopy(p)` commands still, which were replaced by `copy(M, p)`
 
 ## [0.4.13] - 09/04/2023
 
