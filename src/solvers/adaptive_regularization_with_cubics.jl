@@ -241,6 +241,8 @@ end
 #Maybe instead of implementing the subproblem solver(and future subproblem solver I may add?) as functor just make a function #subproblem_solver!(ls::LanczosState,dmp::AbstractManoptProblem,s::AdaptiveRegularizationState). For a new solver I implement
 #subproblem_solver!(ns::NewState,...)
 
+#doing it the way of the augmented Lagrangian Solver this would be the step_solver!(LanczosState)
+#which would be called to solve the subproblem in the step_solver!(AdaptiveRegularizationState)
 function subproblem_solver!(
     dmp::AbstractManoptProblem, s::AdaptiveRegularizationState, ls::LanczosState
 )
@@ -257,6 +259,8 @@ function subproblem_solver!(
     α = inner(M, s.p, q, r)
     T[1, 1] = α
     r = r - α * q
+    # make the above part of initalize_solver?
+
 
     #argmin of one dimensional model
     y = (α - sqrt(α^2 + 4 * s.ς * gradnorm)) / (2 * s.ς)
@@ -274,7 +278,7 @@ function subproblem_solver!(
         else # Generate new random vec and MGS of new vec wrt. Q
             r = rand(M; vector_at=s.p)
             for i in 1:j
-                r = r - inner(M, s.p, ls.Q[i], r) * ls.Q[i]
+                r .= r - inner(M, s.p, ls.Q[i], r) * ls.Q[i]   #maybe .= to avoid memory alloc
             end
             q = r / norm(M, s.p, r)
         end
@@ -298,7 +302,7 @@ function subproblem_solver!(
         )
 
         if model_gradnorm <= s.θ * norm(y, 2)^2    #the loop stopped here. Temp comment out
-            println("number of dims in tangent space solution ", j)
+            #println("number of dims in tangent space solution ", j)
             break
         end
 
@@ -398,19 +402,19 @@ function step_solver!(dmp::AbstractManoptProblem, s::AdaptiveRegularizationState
 
     #Update iterate
     if s.ρ >= s.η1
-        println("Updated iterate")
+        #println("Updated iterate")
         s.p = retract(M, s.p, s.S)
     end
 
     #Update regularization parameter
     if s.ρ >= s.η2 #very successful
-        println("very successful")
+        #println("very successful")
         s.ς = max(s.ςmin, s.γ1 * s.ς)
     elseif s.η1 <= s.ρ < s.η2
-        println("successful")
+        #println("successful")
         #leave regParam unchanged
     else #unsuccessful
-        println("unsuccessful")
+        #println("unsuccessful")
         s.ς = s.γ2 * s.ς
     end
     #ComputeRegRatio!(M,mho,s)
@@ -418,3 +422,149 @@ function step_solver!(dmp::AbstractManoptProblem, s::AdaptiveRegularizationState
     get_gradient!(dmp, s.X, s.p)
     return s
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#################################################################################################################
+#Below here I write some new functions that will be used when I formulate the subproblem solver in a similar manner as
+# in the AugmentedLagrangianMethod
+
+
+mutable struct NewLanczosState{P,I,R,T,TM,V,Y} <: AbstractManoptSolverState
+    p::P
+    maxIterLanczos::I #maximum number of iterations
+    maxIterNewton::I
+    tolNewton::R
+    Q::T #store orthonormal basis
+    Tmatrix::TM #store triddiagonal matrix
+    r::V # store the r vector
+    y::Y # store the y vector
+    function NewLanczosState{P,I,R,T,TM,V,Y}(
+        M::AbstractManifold,p::P,maxIterLanczos::R, maxIterNewton::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,y::Y
+    ) where {P,I,R,T,TM,V,Y}
+        o = new{P,I,R,T,TM,V,Y}()
+        o.p=p
+        o.maxIterLanczos=maxIterLanczos
+        o.maxIterNewton = maxIterNewton
+        o.tolNewton = tolNewton
+        o.Q = Q
+        o.Tmatrix=Tmatrix
+        o.r=r
+        o.y=y
+        return o
+    end
+end
+
+function NewLanczosState(
+    M::AbstractManifold,
+    p::P=rand(M);
+    maxIterLanczos::I=200,
+    maxIterNewton::I=100,
+    tolNewton::R=1e-16,
+    Q::T=[zero_vector(M, rand(M)) for _ in 1:maxIterLanczos],
+    Tmatrix::TM=spdiagm(-1 => zeros(maxIterLanczos - 1), 0 => zeros(maxIterLanczos), 1 => zeros(maxIterLanczos - 1)),
+    r::V=zero_vector(M,p),
+    y::Y=0.0
+) where{P,I,R,T,TM,V,Y}
+    return NewLanczosState{P,I,R,T,TM,V,Y}(M,p, maxIterNewton, tolNewton, Q, Tmatrix, r, y)
+end
+
+
+#NewLanczosState will be the substate of the ArcState
+
+#also add stopping crit to state
+
+#stopping_criterion::StoppingCriterion=StopAfterIteration(maxLanczosIter)| #make custom Stop for 
+
+
+
+
+
+function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
+    #in the intialization we set the first orthonormal vector, the first element of the Tmatrix and the r vector.
+    M = get_manifold(dmp)
+    mho = get_objective(dmp)
+
+    g = get_gradient(M, mho, s.p)
+    gradnorm = norm(M, s.p, g)
+    q = g / gradnorm
+
+    s.Q[1] .= q
+    r = get_hessian(M, mho, s.p, q)
+    α = inner(M, s.p, q, r)
+    s.Tmatrix[1,1]=α
+    s.r = r - α * q
+    #argmin of one dimensional model
+    s.y = (α - sqrt(α^2 + 4 * s.ς * gradnorm)) / (2 * s.ς) # store y in the state. 
+    return s
+end
+
+
+#step solver for the NewLanczosState (will change to LanczosState when its done and its correct)
+function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
+    M = get_manifold(dmp)
+    mho = get_objective(dmp)
+    β = norm(M, s.p, s.r)
+
+    #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
+    if β > 1e-10  # β large enough-> Do regular procedure: MGS of r wrt. Q
+        q = r / β
+    else # Generate new random vec and MGS of new vec wrt. Q
+        r = rand(M; vector_at=s.p)
+        for i in 1:j
+            r .= r - inner(M, s.p, s.Q[i], r) * s.Q[i]
+        end
+        q = r / norm(M, s.p, r)
+    end
+
+    r = get_hessian(M, mho, s.p, q) - β * ls.Q[j] #also store this in s.r to save memory
+    α = inner(M, s.p, r, q)
+    s.r = r - α * q
+    s.Q[j + 1] .= q
+
+    s.Tmatrix[j + 1, j + 1] = α
+    s.Tmatrix[j, j + 1] = β
+    s.Tmatrix[j + 1, j] = β
+
+    #here we dont have to write any stopping criterion stuff, that is handled by the solve! function when we 
+    #have defined or own stopping criterion.
+
+    # How to define stopping crit? Use stop if less or equal?
+    #Should I call stop_solver! here so that I can compute y then if necessary (i.e if we should not stop, proceed to compute y)
+
+    #IMPORTANT HERE WE SOLVE for the next y if we did not stop above
+
+
+    #This is the stopping crit
+    #e1 = zeros(j + 1)#
+    #e1[1] = 1
+    #model_gradnorm = norm(
+    #    gradnorm * e1 + T[1:(j + 1), 1:j] * y + s.ς * norm(y, 2) * vcat(y, 0), 2
+    #)
+
+    #if model_gradnorm <= s.θ * norm(y, 2)^2    #the loop stopped here. Temp comment out
+    #    #println("number of dims in tangent space solution ", j)
+    #    brea
+end
+
+
+
+
+
+#TODO
+#1. Add any remaning stuff we need to lanczosState. 
+    #a) gradient? copied over from ArcState.
+    #b) ς
+#2 Fix the stopping criterion
+#3 Fix the nice way of allocating memory for Q and T.
