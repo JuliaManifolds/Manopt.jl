@@ -350,8 +350,7 @@ end
     store_points::Union{Type{TPS},Vector{Symbol}}=Tuple{},
     store_vectors::Union{Type{TTS},Vector{Symbol}}=Tuple{},
     p_init=rand(M),
-    p_init_=p_init isa Number ? fill(p_init) : p_init,
-    X_init=zero_vector(M, p_init_),
+    X_init=zero_vector(M, p_init),
     once=true,
 ) where {TPS<:Tuple,TTS<:Tuple}
     if store_points isa Vector{Symbol}

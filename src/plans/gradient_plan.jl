@@ -420,7 +420,7 @@ function Nesterov(
     μ::T=0.9,
     shrinkage::Function=i -> 0.8,
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, typeof(p)
+        M, P
     ),
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, copy(M, p), shrinkage, inverse_retraction_method)

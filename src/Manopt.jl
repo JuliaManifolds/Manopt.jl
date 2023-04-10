@@ -188,9 +188,13 @@ function __init__()
             sym_rem,
             mean
         import Random: rand, randperm
+        import ManifoldsBase: copy
         using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
         # adaptions for Nonmutating manifolds
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
+        function copy(::NONMUTATINGMANIFOLDS, p::Number)
+            return p
+        end
         include("functions/manifold_functions.jl")
         include("functions/nonmutating_manifolds_functions.jl")
         include("plans/alternating_gradient_plan.jl")

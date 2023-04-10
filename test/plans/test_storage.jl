@@ -3,8 +3,8 @@ using Test, Manopt, ManifoldsBase, Manifolds
 @testset "StoreStateAction" begin
     @testset "manifold $M" for M in [ManifoldsBase.DefaultManifold(2), Circle()]
         if M isa Circle
-            p = fill(0.4)
-            X_zero = fill(0.0)
+            p = 0.4
+            X_zero = 0.0
         else
             p = [4.0, 2.0]
             X_zero = [0.0, 0.0]
