@@ -508,7 +508,9 @@ mutable struct NonmonotoneLinesearch{
         bb_min_stepsize::Float64=1e-3,
         bb_max_stepsize::Float64=1e3,
         strategy::Symbol=:direct,
-        storage::Union{Nothing,StoreStateAction}=nothing,
+        storage::Union{Nothing,StoreStateAction}=StoreStateAction(
+            M; store_fields=[:Iterate, :Gradient]
+        ),
         stop_when_stepsize_less::Float64=0.0,
         stop_when_stepsize_exceeds::Float64=max_stepsize(M),
         stop_increasing_at_step=100,
@@ -540,15 +542,6 @@ mutable struct NonmonotoneLinesearch{
         end
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
-        end
-        if isnothing(storage)
-            if M isa DefaultManifold
-                storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
-            else
-                storage = StoreStateAction(
-                    M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}
-                )
-            end
         end
         return new{
             typeof(retraction_method),
