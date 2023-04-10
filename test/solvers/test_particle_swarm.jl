@@ -7,7 +7,7 @@ using Random
         M = Euclidean(3)
         f(::Euclidean, p) = (p' * A * p) / (p' * p)
         p1 = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
-        p2 = deepcopy(p1)
+        p2 = copy.(Ref(M), p1)
 
         Random.seed!(35)
         o = particle_swarm(M, f; x0=p1, return_state=true)
@@ -23,7 +23,7 @@ using Random
         # the cost of g and the p[i]'s are not greater after one step
         j = argmin([f(M, y) for y in p1])
         g0 = deepcopy(p1[j])
-        @test f(M, g) <= f(M, g0)
+        @test f(M, g) <= f(M, g0) # global did not get worse
         for (p, q) in zip(o.p, p1)
             @test f(M, p) <= f(M, q) # nonincreased
             # the cost of g is not greater than the cost of any p[i]
