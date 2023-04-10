@@ -193,7 +193,6 @@ function __init__()
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
         include("functions/manifold_functions.jl")
         include("functions/nonmutating_manifolds_functions.jl")
-        include("plans/nonmutating_manifolds_plans.jl")
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
         export mid_point, mid_point!, reflect, reflect!

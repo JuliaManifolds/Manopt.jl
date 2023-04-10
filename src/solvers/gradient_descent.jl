@@ -107,6 +107,7 @@ end
 
 @doc raw"""
     gradient_descent(M, f, grad_f, p; kwargs...)
+    gradient_descent(M, gradient_objective, p; kwargs...)
 
 perform a gradient descent
 
@@ -124,6 +125,9 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
   - as a function `(M, p) -> X` or a function `(M, X, p) -> X`
 * `p` – an initial value `p` ``= p_0 ∈ \mathcal M``
 
+Alternatively to `f` and `grad_f` you can prodive
+the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+
 # Optional
 * `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
@@ -134,7 +138,11 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
+
+All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
+[`decorate_objective!`](@ref), respectively.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, no decoration of the objective is performed.
 
 # Output
 
@@ -142,13 +150,43 @@ the obtained (approximate) minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
 function gradient_descent(
-    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
+    M::AbstractManifold,
+    F::TF,
+    gradF::TDF,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
 ) where {TF,TDF}
-    x_res = copy(M, x)
-    return gradient_descent!(M, F, gradF, x_res; kwargs...)
+    q = copy(M, p)
+    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    return gradient_descent!(M, dmgo, q; kwargs...)
+end
+function gradient_descent(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TDF,
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    # redefine our initial point
+    q = fill(p)
+    f_(M, p) = f(M, p[])
+    if evaluation isa AllocatingEvaluation
+        grad_f_(M, p) = fill(grad_f(M, p[]))
+    elseif evaluation isa InplaceEvaluation
+        grad_f_(M, X, p) = (X .= fill(grad_f(M, p[])))
+    end
+    rs = gradient_descent(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    (typeof(q) == typeof(rs)) && (return rs[])
+    # otherwise (probably the state - return rs)
+    return rs
 end
 @doc raw"""
-    gradient_descent!(M, f, grad_f, p)
+    gradient_descent!(M, f, grad_f, p; kwargs...)
+    gradient_descent!(M, gradient_objective, p; kwargs...)
 
 perform a gradient_descent
 
@@ -164,12 +202,30 @@ in place of `p` with different choices of ``s_k`` available.
 * `grad_f` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
 * `p` – an initial value ``p ∈ \mathcal M``
 
+Alternatively to `f` and `grad_f` you can prodive
+the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+
+# Keyword Argmuents
+*
+
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """
+gradient_descent(M::AbstractManifold, params...; kwargs...)
 function gradient_descent!(
     M::AbstractManifold,
     F::TF,
     gradF::TDF,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    return gradient_descent!(M, dmgo, p; kwargs...)
+end
+function gradient_descent!(
+    M::AbstractManifold,
+    mgo::AbstractManifoldGradientObjective,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
@@ -179,12 +235,9 @@ function gradient_descent!(
                                           StopWhenGradientNormLess(1e-9),
     debug=stepsize isa ConstantStepsize ? [DebugWarnIfCostIncreases()] : [],
     direction=IdentityUpdateRule(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
-) where {TF,TDF}
-    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
-    dmgo = decorate_objective!(M, mgo; kwargs...)
-    mp = DefaultManoptProblem(M, dmgo)
+)
+    mp = DefaultManoptProblem(M, mgo)
     s = GradientDescentState(
         M,
         p;

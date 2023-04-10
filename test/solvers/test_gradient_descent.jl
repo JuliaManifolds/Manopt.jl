@@ -24,7 +24,7 @@ using Manopt, Manifolds, Test
             ]),
             500,
         )
-        s = gradient_descent!(
+        s = gradient_descent(
             M,
             f,
             grad_f,
@@ -35,10 +35,10 @@ using Manopt, Manifolds, Test
             record=[:Iteration, :Cost, 1],
             return_state=true,
         )
-        x = get_solver_result(s)
+        p = get_solver_result(s)[]
         res_debug = String(take!(my_io))
         @test res_debug === " F(x): 1.357071\n"
-        x2 = gradient_descent!(
+        p2 = gradient_descent(
             M,
             f,
             grad_f,
@@ -46,7 +46,7 @@ using Manopt, Manifolds, Test
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
         )
-        @test x == x2
+        @test p == p2
         step = NonmonotoneLinesearch(
             M;
             stepsize_reduction=0.99,
@@ -57,7 +57,7 @@ using Manopt, Manifolds, Test
             strategy=:direct,
             stop_when_stepsize_exceeds=0.9 * π,
         )
-        x3 = gradient_descent!(
+        p3 = gradient_descent(
             M,
             f,
             grad_f,
@@ -66,9 +66,9 @@ using Manopt, Manifolds, Test
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
-        @test isapprox(M, x, x3; atol=1e-13)
+        @test isapprox(M, p, p3; atol=1e-13)
         step.strategy = :inverse
-        x4 = gradient_descent!(
+        p4 = gradient_descent(
             M,
             f,
             grad_f,
@@ -77,9 +77,9 @@ using Manopt, Manifolds, Test
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
-        @test isapprox(M, x, x4; atol=1e-13)
+        @test isapprox(M, p, p4; atol=1e-13)
         step.strategy = :alternating
-        x5 = gradient_descent!(
+        p5 = gradient_descent(
             M,
             f,
             grad_f,
@@ -88,8 +88,8 @@ using Manopt, Manifolds, Test
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
-        @test isapprox(M, x, x5; atol=1e-13)
-        x6 = gradient_descent!(
+        @test isapprox(M, p, p5; atol=1e-13)
+        p6 = gradient_descent(
             M,
             f,
             grad_f,
@@ -99,7 +99,7 @@ using Manopt, Manifolds, Test
             ),
             direction=Nesterov(M, r2[1]),
         )
-        @test isapprox(M, x, x6; atol=1e-11)
+        @test isapprox(M, p, p6; atol=1e-11)
 
         @test_logs (
             :warn,
@@ -115,7 +115,7 @@ using Manopt, Manifolds, Test
 
         rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
-        @test distance(M, x, apprpstar) ≈ 0 atol = 5 * 10.0^(-14)
+        @test distance(M, p, apprpstar) ≈ 0 atol = 5 * 10.0^(-14)
     end
     @testset "mutating Sphere" begin
         M = Sphere(2)
