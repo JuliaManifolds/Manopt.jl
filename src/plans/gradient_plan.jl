@@ -406,13 +406,14 @@ Initialize the Nesterov acceleration, where `x0` initializes `v`.
     > H. Zhang, S. Sra: _Towards Riemannian Accelerated Gradient Methods_,
     > Preprint, 2018, arXiv: [1806.02812](https://arxiv.org/abs/1806.02812)
 """
-mutable struct Nesterov{P,T<:Real} <: DirectionUpdateRule
-    γ::T
-    μ::T
+mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
+    γ::R
+    μ::R
     v::P
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
+Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, fill(p); kwargs...)
 function Nesterov(
     M::AbstractManifold,
     p::P;
@@ -431,15 +432,20 @@ function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState
     p = get_iterate(s)
     α = (h * (n.γ - n.μ) + sqrt(h^2 * (n.γ - n.μ)^2 + 4 * h * n.γ)) / 2
     γbar = (1 - α) * n.γ + α * n.μ
-    y = retract(M, p, (α * n.γ) / (n.γ + α * n.μ) .* inverse_retract(M, p, n.v))
+    y = retract(
+        M,
+        p,
+        ((α * n.γ) / (n.γ + α * n.μ)) *
+        inverse_retract(M, p, n.v, n.inverse_retraction_method),
+    )
     gradf_yk = get_gradient(mp, y)
     xn = retract(M, y, -h * gradf_yk)
     d =
-        ((1 - α) * n.γ) / γbar .* inverse_retract(M, y, n.v, n.inverse_retraction_method) -
-        α / γbar .* gradf_yk
+        (((1 - α) * n.γ) / γbar) * inverse_retract(M, y, n.v, n.inverse_retraction_method) -
+        (α / γbar) * gradf_yk
     n.v = retract(M, y, d, s.retraction_method)
     n.γ = 1 / (1 + n.shrinkage(i)) * γbar
-    return h, -1 / h .* inverse_retract(M, p, xn) # outer update
+    return h, (-1 / h) * inverse_retract(M, p, xn, n.inverse_retraction_method) # outer update
 end
 
 @doc raw"""

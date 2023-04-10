@@ -28,11 +28,16 @@ All following fields are keyword arguments.
 [`gradient_descent`](@ref)
 """
 mutable struct GradientDescentState{
-    P,T,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
+    P,
+    T,
+    TStop<:StoppingCriterion,
+    TStepsize<:Stepsize,
+    TDirection<:DirectionUpdateRule,
+    TRTM<:AbstractRetractionMethod,
 } <: AbstractGradientSolverState
     p::P
     X::T
-    direction::DirectionUpdateRule
+    direction::TDirection
     stepsize::TStepsize
     stop::TStop
     retraction_method::TRTM
@@ -45,14 +50,14 @@ mutable struct GradientDescentState{
         retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
-        o = new{P,T,typeof(stop),typeof(step),typeof(retraction_method)}()
-        o.direction = direction
-        o.p = p
-        o.retraction_method = retraction_method
-        o.stepsize = step
-        o.stop = stop
-        o.X = X
-        return o
+        s = new{P,T,typeof(stop),typeof(step),typeof(direction),typeof(retraction_method)}()
+        s.direction = direction
+        s.p = p
+        s.retraction_method = retraction_method
+        s.stepsize = step
+        s.stop = stop
+        s.X = X
+        return s
     end
 end
 function GradientDescentState(
