@@ -413,7 +413,7 @@ mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
-Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, fill(p); kwargs...)
+Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, [p]; kwargs...)
 function Nesterov(
     M::AbstractManifold,
     p::P;

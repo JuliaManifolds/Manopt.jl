@@ -176,12 +176,12 @@ function gradient_descent(
     kwargs...,
 ) where {TF,TDF}
     # redefine our initial point
-    q = fill(p)
+    q = [p]
     f_(M, p) = f(M, p[])
     if evaluation isa AllocatingEvaluation
-        grad_f_(M, p) = fill(grad_f(M, p[]))
+        grad_f_(M, p) = [grad_f(M, p[])]
     elseif evaluation isa InplaceEvaluation
-        grad_f_(M, X, p) = (X .= fill(grad_f(M, p[])))
+        grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
     end
     rs = gradient_descent(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
     #return just a number if  the return type is the same as the type of q
