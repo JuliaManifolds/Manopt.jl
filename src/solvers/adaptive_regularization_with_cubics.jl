@@ -304,12 +304,13 @@ function subproblem_solver!(
         if model_gradnorm <= s.θ * norm(y, 2)^2    #the loop stopped here. Temp comment out
             #println("number of dims in tangent space solution ", j)
             break
-        end
+        else
 
         #Stopping condition not satisifed. Proceed to minimize the (j+1) dimensional model by in the subspace of TₚM spanned by
         #the (j+1) orthogonal vectors
 
-        y = min_cubic_Newton(ls, gradnorm, T[1:(j + 1), 1:(j + 1)], s.ς)
+            y = min_cubic_Newton(ls, gradnorm, T[1:(j + 1), 1:(j + 1)], s.ς)
+        end
     end
 
     #Assemble the tangent vector
@@ -441,9 +442,9 @@ end
 # in the AugmentedLagrangianMethod
 
 
-mutable struct NewLanczosState{P,I,R,T,TM,V,Y} <: AbstractManoptSolverState
+mutable struct NewLanczosState{P,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverState
     p::P
-    maxIterLanczos::I #maximum number of iterations
+    stopping_criterion::SC #maximum number of iterations
     maxIterNewton::I
     tolNewton::R
     Q::T #store orthonormal basis
@@ -451,33 +452,35 @@ mutable struct NewLanczosState{P,I,R,T,TM,V,Y} <: AbstractManoptSolverState
     r::V # store the r vector
     y::Y # store the y vector
     function NewLanczosState{P,I,R,T,TM,V,Y}(
-        M::AbstractManifold,p::P,maxIterLanczos::R, maxIterNewton::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,y::Y
-    ) where {P,I,R,T,TM,V,Y}
-        o = new{P,I,R,T,TM,V,Y}()
-        o.p=p
-        o.maxIterLanczos=maxIterLanczos
-        o.maxIterNewton = maxIterNewton
-        o.tolNewton = tolNewton
-        o.Q = Q
-        o.Tmatrix=Tmatrix
-        o.r=r
-        o.y=y
-        return o
+        M::AbstractManifold,p::P,sc_lanzcos::SC, maxIterNewton::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,y::Y
+    ) where {P,I,SC,R,T,TM,V,Y}
+        s = new{P,SC,I,R,T,TM,V,Y}()
+        s.p=p
+        s.stopping_criterion=sc_lanzcos
+        s.maxIterNewton = maxIterNewton # ? better: NewtonSate
+        s.tolNewton = tolNewton
+        s.Q = Q
+        s.Tmatrix=Tmatrix
+        s.r=r
+        s.y=y
+        return s
     end
 end
 
 function NewLanczosState(
     M::AbstractManifold,
     p::P=rand(M);
-    maxIterLanczos::I=200,
+    maxIterLanczos=200,
+    θ = 1e-5,
+    stopping_criterion::SC=StopAfterIteration(maxIterLanczos) | StopWhenLanczosModelGradLess(θ),
     maxIterNewton::I=100,
     tolNewton::R=1e-16,
-    Q::T=[zero_vector(M, rand(M)) for _ in 1:maxIterLanczos],
+    Q::T=[zero_vector(M, p) for _ in 1:maxIterLanczos],
     Tmatrix::TM=spdiagm(-1 => zeros(maxIterLanczos - 1), 0 => zeros(maxIterLanczos), 1 => zeros(maxIterLanczos - 1)),
     r::V=zero_vector(M,p),
     y::Y=0.0
-) where{P,I,R,T,TM,V,Y}
-    return NewLanczosState{P,I,R,T,TM,V,Y}(M,p, maxIterNewton, tolNewton, Q, Tmatrix, r, y)
+) where{P,I,R,T,TM,V,YSC<:StoppingCriterion}
+    return NewLanczosState{P,I,R,T,TM,V,Y}(M, p, stopping_criterion, maxIterNewton, tolNewton, Q, Tmatrix, r, y)
 end
 
 
@@ -485,7 +488,7 @@ end
 
 #also add stopping crit to state
 
-#stopping_criterion::StoppingCriterion=StopAfterIteration(maxLanczosIter)| #make custom Stop for 
+#stopping_criterion::StoppingCriterion=StopAfterIteration(maxLanczosIter)| #make custom Stop for
 
 
 
@@ -506,7 +509,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
     s.Tmatrix[1,1]=α
     s.r = r - α * q
     #argmin of one dimensional model
-    s.y = (α - sqrt(α^2 + 4 * s.ς * gradnorm)) / (2 * s.ς) # store y in the state. 
+    s.y = (α - sqrt(α^2 + 4 * s.ς * gradnorm)) / (2 * s.ς) # store y in the state.
     return s
 end
 
@@ -517,6 +520,9 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     mho = get_objective(dmp)
     β = norm(M, s.p, s.r)
 
+    if j > size(s.Q)[1]
+        #reasonable error
+    end
     #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
     if β > 1e-10  # β large enough-> Do regular procedure: MGS of r wrt. Q
         q = r / β
@@ -537,7 +543,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     s.Tmatrix[j, j + 1] = β
     s.Tmatrix[j + 1, j] = β
 
-    #here we dont have to write any stopping criterion stuff, that is handled by the solve! function when we 
+    #here we dont have to write any stopping criterion stuff, that is handled by the solve! function when we
     #have defined or own stopping criterion.
 
     # How to define stopping crit? Use stop if less or equal?
@@ -558,12 +564,26 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     #    brea
 end
 
-
+mutable struct StopWhenLanczosModelGradLess <: StoppingCriterion
+    relative_threshold::Float64
+    reason::String
+    StopWhenLanczosModelGradLess(ε::Float64) = new(ε, "")
+end
+function (c::StopWhenLanczosModelGradLess)(
+    ::AbstractManoptProblem, s::NewLanczosState, i::Int
+)
+    (i == 0) && (c.reason = "") # reset on init
+    if (i > 0) && s.model_gradnorm <= c.relative_threshold*norm(s.y, 2)^2
+        c.reason = "The algorithm has reduced the model grad norm by $(c.relative_threshold).\n"
+        return true
+    end
+    return false
+end
 
 
 
 #TODO
-#1. Add any remaning stuff we need to lanczosState. 
+#1. Add any remaning stuff we need to lanczosState.
     #a) gradient? copied over from ArcState.
     #b) ς
 #2 Fix the stopping criterion
