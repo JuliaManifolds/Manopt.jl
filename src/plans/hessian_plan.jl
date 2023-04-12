@@ -151,7 +151,14 @@ update_hessian!(M, f, p, p_proposal, X) = f
 update_hessian_basis!(M, f, p) = f
 
 @doc raw"""
-    ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real}
+    AbstractApproxHessian <: Function
+
+An abstract supertypes for approximate hessian functions, declares them also to be functions.
+"""
+abstract type AbstractApproxHessian <: Function end
+
+@doc raw"""
+    ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real} <: AbstractApproxHessian
 
 A functor to approximate the Hessian by a finite difference of gradient evaluation.
 
@@ -191,7 +198,8 @@ Then we approximate the Hessian by the finite difference of the gradients, where
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use in the approximation.
 * `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 """
-mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real}
+mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real} <:
+               AbstractApproxHessian
     p_dir::P
     gradient!!::G
     grad_tmp::T
@@ -251,7 +259,8 @@ function (f::ApproxHessianFiniteDifference{InplaceEvaluation})(M, Y, p, X)
 end
 
 @doc raw"""
-    ApproxHessianSymmetricRankOne{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real}
+    ApproxHessianSymmetricRankOne{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real} <: AbstractApproxHessian
+
 A functor to approximate the Hessian by the symmetric rank one update.
 # Fields
 * `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
@@ -271,7 +280,8 @@ A functor to approximate the Hessian by the symmetric rank one update.
 * `evaluation` ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 * `vector_transport_method` (`ParallelTransport()`) vector transport ``\mathcal T_{\cdot\gets\cdot}`` to use.
 """
-mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real}
+mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real} <:
+               AbstractApproxHessian
     p_tmp::P
     gradient!!::G
     grad_tmp::T
@@ -384,7 +394,7 @@ function update_hessian_basis!(M, f::ApproxHessianSymmetricRankOne{InplaceEvalua
 end
 
 @doc raw"""
-    ApproxHessianBFGS{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real}
+    ApproxHessianBFGS{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real} <: AbstractApproxHessian
 A functor to approximate the Hessian by the BFGS update.
 # Fields
 * `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
@@ -406,7 +416,7 @@ A functor to approximate the Hessian by the BFGS update.
 """
 mutable struct ApproxHessianBFGS{
     E,P,G,T,B<:AbstractBasis{ℝ},VTR<:AbstractVectorTransportMethod
-}
+} <: AbstractApproxHessian
     p_tmp::P
     gradient!!::G
     grad_tmp::T

@@ -88,5 +88,3 @@ function step_solver!(
     s.p = retract(get_manifold(p), s.p, -step * s.X, s.retraction_method)
     return s
 end
-#Hack for now?
-copy(::NONMUTATINGMANIFOLDS, p) = p
