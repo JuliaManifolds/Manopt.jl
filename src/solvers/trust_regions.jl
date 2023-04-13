@@ -258,23 +258,49 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 function trust_regions(
-    M::AbstractManifold, f::TF, grad_f::TdF, Hess_f::TH, p; kwargs...
-) where {TF,TdF,TH}
+    M::AbstractManifold, f::TF, grad_f::TdF, Hess_f::TH, p=rand(M); kwargs...
+) where {TF,TdF,TH<:Function}
     q = copy(M, p)
     return trust_regions!(M, f, grad_f, Hess_f, q; kwargs...)
 end
-
+function trust_regions(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TdF,
+    p=rand(M);
+    evaluation=AllocatingEvaluation(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    kwargs...,
+) where {TF,TdF}
+    hess_f = ApproxHessianFiniteDifference(
+        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
+    )
+    return trust_regions(
+        M,
+        f,
+        grad_f,
+        hess_f,
+        p;
+        evaluation=evaluation,
+        retraction_method=retraction_method,
+        kwargs...,
+    )
+end
 @doc raw"""
-    trust_regions!(M, f, grad_f, Hess_f, x; kwargs...)
+    trust_regions!(M, f, grad_f, Hess_f, p; kwargs...)
+    trust_regions!(M, f, grad_f, p; kwargs...)
 
-evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `x`.
+evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `p`.
 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
-* `Hess_f` – the hessian ``H( \mathcal M, x, ξ)`` of ``F``
+* `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
 * `x` – an initial value ``x  ∈  \mathcal M``
+
+For the case that no hessian is provided, the Hessian is computed using finite difference, see
+[`ApproxHessianFiniteDifference`](@ref).
 
 for more details and all options, see [`trust_regions`](@ref)
 """
@@ -349,7 +375,29 @@ function trust_regions!(
     trs = decorate_state!(trs; kwargs...)
     return get_solver_return(solve!(mp, trs))
 end
-
+function trust_regions!(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TdF,
+    p;
+    evaluation=AllocatingEvaluation(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    kwargs...,
+) where {TF,TdF}
+    hess_f = ApproxHessianFiniteDifference(
+        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
+    )
+    return trust_regions!(
+        M,
+        f,
+        grad_f,
+        hess_f,
+        p;
+        evaluation=evaluation,
+        retraction_method=retraction_method,
+        kwargs...,
+    )
+end
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)
     get_gradient!(mp, trs.X, trs.p)

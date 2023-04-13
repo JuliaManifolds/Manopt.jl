@@ -45,13 +45,6 @@ include("trust_region_model.jl")
             M,
             cost,
             rgrad,
-            ApproxHessianFiniteDifference(
-                M,
-                p,
-                rgrad;
-                steplength=2^(-9),
-                vector_transport_method=ProjectionTransport(),
-            ),
             p;
             max_trust_region_radius=8.0,
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
@@ -61,13 +54,6 @@ include("trust_region_model.jl")
             M,
             cost,
             rgrad,
-            ApproxHessianFiniteDifference(
-                M,
-                p,
-                rgrad;
-                steplength=2^(-9),
-                vector_transport_method=ProjectionTransport(),
-            ),
             q2;
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
             max_trust_region_radius=8.0,
