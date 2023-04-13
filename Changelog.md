@@ -5,6 +5,20 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.15] - 13/04/2023
+
+### Changed
+
+* `trust_regions(M, f, grad_f, hess_f, p)` now has the Hessian `hess_f` as well as
+  the start point `p0` as an optional parameter and approximate it otherwise.
+* `trust_regions!(M, f, grad_f, hess_f, p)` has the Hessian as an optional parameter
+  and approximate it otherwise.
+
+### Removed
+
+* support for `ManifoldsBase.jl` 0.13.x, since with the definition of `copy(M,p::Number)`,
+  in 0.14.4, we now use that instead of defining it ourselves.
+
 ## [0.4.14] - 06/04/2023
 
 ### Changed

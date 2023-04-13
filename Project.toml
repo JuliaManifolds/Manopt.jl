@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.4.14"
+version = "0.4.15"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
@@ -27,8 +27,8 @@ ColorTypes = "0.9.1, 0.10, 0.11"
 Colors = "0.11.2, 0.12"
 DataStructures = "0.17, 0.18"
 ManifoldDiff = "0.2, 0.3"
-Manifolds = "0.8.43"
-ManifoldsBase = "0.13.30, 0.14.4"
+Manifolds = "0.8.57"
+ManifoldsBase = "0.14.4"
 Requires = "0.5, 1"
 StaticArrays = "0.12, 1.0"
 julia = "1.6"
