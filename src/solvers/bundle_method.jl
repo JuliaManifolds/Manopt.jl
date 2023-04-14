@@ -16,7 +16,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
     `p` that was last evaluated.
-* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε 
+* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε
 
 # Constructor
 
@@ -34,6 +34,7 @@ mutable struct BundleMethodState{
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
+    R<:Real,
 } <: AbstractManoptSolverState where {P,T}
     bundle::AbstractVector{Tuple{P,T}}
     inverse_retraction_method::IR
@@ -44,18 +45,18 @@ mutable struct BundleMethodState{
     retraction_method::TR
     stop::TSC
     vector_transport_method::VT
-    m::Real
-    ξ::Real
-    diam::Real
-    λ::AbstractVector{Real}
+    m::R
+    ξ::R
+    diam::R
+    λ::AbstractVector{R}
     g::T
-    ε::Real
+    ε::R
     transported_subgradients::AbstractVector{T}
     function BundleMethodState(
         M::TM,
         p::P;
-        m::Real=0.0125,
-        diam::Real=1.0,
+        m::R=0.0125,
+        diam::R=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopWhenBundleLess(1e-8),
@@ -69,6 +70,7 @@ mutable struct BundleMethodState{
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
+        R<:Real,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         bundle = [(copy(M, p), copy(M, p, X))]
@@ -78,12 +80,12 @@ mutable struct BundleMethodState{
         g = copy(M, p, X)
         ε = 0.0
         transported_subgradients = [copy(M, p, X)]
-        return new{IR,typeof(lin_errors),P,T,TR,SC,VT}(
+        return new{IR,typeof(lin_errors),P,T,TR,SC,VT,R}(
             bundle,
             inverse_retraction_method,
             lin_errors,
             p,
-            deepcopy(p),
+            copy(M, p),
             X,
             retraction_method,
             stopping_criterion,
@@ -104,14 +106,14 @@ get_subgradient(bms::BundleMethodState) = bms.g
 @doc raw"""
     bundle_method(M, f, ∂f, p)
 
-perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, 
+perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
 
 where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
 
 with ``X_{q_j}\in∂f(q_j)``, and
 
-where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate. 
-Though the subgradient might be set valued, the argument `∂f` should always 
+where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate.
+Though the subgradient might be set valued, the argument `∂f` should always
 return _one_ element from the subgradient, but not necessarily deterministic.
 
 # Input
@@ -166,8 +168,8 @@ function bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    m::Real=0.0125,
-    diam::Real=1.0,
+    m=0.0125,
+    diam=1.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -211,7 +213,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         (qj, Xj) in bms.bundle
     ]
     bms.λ = bundle_method_sub_solver(M, bms)
-    bms.g = sum(bms.λ .* bms.transported_subgradients)
+    bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
@@ -247,7 +249,7 @@ get_solver_result(bms::BundleMethodState) = bms.p_last_serious
 
 A stopping criterion for [`bundle_method`](@ref) to indicate to stop when
 
-* the parameter ξ = -|g|² - ε 
+* the parameter ξ = -|g|² - ε
 
 is less than a given tolerance tol.
 
