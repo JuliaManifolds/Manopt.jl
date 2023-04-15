@@ -164,8 +164,7 @@ function gradient_descent(
 ) where {TF,TDF}
     q = copy(M, p)
     mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
-    dmgo = decorate_objective!(M, mgo; kwargs...)
-    return gradient_descent!(M, dmgo, q; kwargs...)
+    return gradient_descent!(M, mgo, q; kwargs...)
 end
 function gradient_descent(
     M::AbstractManifold,
@@ -178,11 +177,7 @@ function gradient_descent(
     # redefine our initial point
     q = [p]
     f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        grad_f_(M, p) = [grad_f(M, p[])]
-    elseif evaluation isa InplaceEvaluation
-        grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
-    end
+    grad_f_ = _to_mutating_function(grad_f, evaluation)
     rs = gradient_descent(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
     #return just a number if  the return type is the same as the type of q
     (typeof(q) == typeof(rs)) && (return rs[])
@@ -242,7 +237,8 @@ function gradient_descent!(
     direction=IdentityUpdateRule(),
     kwargs..., #collect rest
 )
-    mp = DefaultManoptProblem(M, mgo)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    mp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
         M,
         p;
