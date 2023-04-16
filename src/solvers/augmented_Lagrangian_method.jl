@@ -249,6 +249,12 @@ function augmented_Lagrangian_method(
     return augmented_Lagrangian_method!(M, cmo, q; evaluation=evaluation, kwargs...)
 end
 function augmented_Lagrangian_method(
+    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...
+)
+    q = copy(M, p)
+    return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
+end
+function augmented_Lagrangian_method(
     M::AbstractManifold,
     f::TF,
     grad_f::TGF,
@@ -265,7 +271,7 @@ function augmented_Lagrangian_method(
     grad_f_ = _to_mutating_function(grad_f, evaluation)
     g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
     grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_function(grad_g, evaluation)
-    h_ = isnothing(g) ? nothing : (M, p) -> h(M, p[])
+    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
     grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_function(grad_h, evaluation)
     cmo = ConstrainedManifoldObjective(
         f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
@@ -395,22 +401,18 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)
     n_ineq_constraint = size(cost_ineq, 1)
-    alms.μ = convert(
-        Vector{Float64},
+    alms.μ .=
         min.(
             ones(n_ineq_constraint) .* alms.μ_max,
-            max.(alms.μ + alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
-        ),
-    )
+            max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
+        )
     cost_eq = get_equality_constraints(mp, alms.p)
     n_eq_constraint = size(cost_eq, 1)
-    alms.λ = convert(
-        Vector{Float64},
+    alms.λ =
         min.(
             ones(n_eq_constraint) .* alms.λ_max,
             max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
-        ),
-    )
+        )
     # get new evaluation of penalty
     penalty = maximum(
         [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init=0
