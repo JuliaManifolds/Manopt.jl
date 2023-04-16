@@ -199,7 +199,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), r2, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), r2))
         s = conjugate_gradient_descent(
-            M, f, grad_f, r2[1]; evalutation=InplaceEvaluation(), return_state=true
+            M, f, grad_f, r2[1]; evaluation=InplaceEvaluation(), return_state=true
         )
         p = get_solver_result(s)[]
         @test f(M, p) < f(M, r2[1])
