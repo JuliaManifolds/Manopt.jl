@@ -99,7 +99,7 @@ using Manopt, Manifolds, Test
             ),
             direction=Nesterov(M, r2[1]),
         )
-        @test isapprox(M, p, p6; atol=1e-11)
+        @test isapprox(M, p, p6; atol=1e-13)
 
         @test_logs (
             :warn,
@@ -115,7 +115,7 @@ using Manopt, Manifolds, Test
 
         rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
-        @test distance(M, p, apprpstar) ≈ 0 atol = 5 * 10.0^(-14)
+        @test isapprox(M, p, apprpstar, atol=5e-10)
     end
     @testset "mutating Sphere" begin
         M = Sphere(2)

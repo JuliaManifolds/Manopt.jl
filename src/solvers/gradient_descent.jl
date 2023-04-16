@@ -162,9 +162,8 @@ function gradient_descent(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    q = copy(M, p)
     mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
-    return gradient_descent!(M, mgo, q; kwargs...)
+    return gradient_descent(M, mgo, p; kwargs...)
 end
 function gradient_descent(
     M::AbstractManifold,
@@ -184,6 +183,11 @@ function gradient_descent(
     # otherwise (probably the state - return rs)
     return rs
 end
+function gradient_descent(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
+    q = copy(M, p)
+    return gradient_descent!(M, mgo, q; kwargs...)
+end
+
 @doc raw"""
     gradient_descent!(M, f, grad_f, p; kwargs...)
     gradient_descent!(M, gradient_objective, p; kwargs...)
@@ -205,9 +209,6 @@ in place of `p` with different choices of ``s_k`` available.
 Alternatively to `f` and `grad_f` you can prodive
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
-# Keyword Argmuents
-*
-
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """
 gradient_descent(M::AbstractManifold, params...; kwargs...)
@@ -220,8 +221,7 @@ function gradient_descent!(
     kwargs...,
 ) where {TF,TDF}
     mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
-    dmgo = decorate_objective!(M, mgo; kwargs...)
-    return gradient_descent!(M, dmgo, p; kwargs...)
+    return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(
     M::AbstractManifold,
