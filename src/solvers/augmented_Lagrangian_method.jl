@@ -305,7 +305,7 @@ function augmented_Lagrangian_method!(
         f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
     )
     dcmo = decorate_objective!(M, cmo; kwargs...)
-    return augmented_Lagrangian_method!(M, dcmo, q; evaluation=evaluation, kwargs...)
+    return augmented_Lagrangian_method!(M, dcmo, p; evaluation=evaluation, kwargs...)
 end
 function augmented_Lagrangian_method!(
     M::AbstractManifold,

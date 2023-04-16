@@ -177,7 +177,17 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             stepsize=CGStepsize(),
             stopping_criterion=StopAfterIteration(2),
         )
+        p2 = copy(M, p0)
+        conjugate_gradient_descent!(
+            M,
+            f,
+            grad_f,
+            p2;
+            stepsize=CGStepsize(),
+            stopping_criterion=StopAfterIteration(2),
+        )
         @test norm(p1) ≈ 0 atol = 4 * 1e-16
+        @test p1 == p2
     end
 
     @testset "CG on the Circle" begin
@@ -188,7 +198,10 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         apprpstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(r)
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), r2, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), r2))
-        p = conjugate_gradient_descent(M, f, grad_f, r2[1];)
+        s = conjugate_gradient_descent(
+            M, f, grad_f, r2[1]; evalutation=InplaceEvaluation(), return_state=true
+        )
+        p = get_solver_result(s)[]
         @test f(M, p) < f(M, r2[1])
         @test isapprox(M, p, apprpstar; atol=5e-8)
     end

@@ -16,6 +16,9 @@ using LinearAlgebra: I, tr
         p0 = project(M, ones(d))
         sol = augmented_Lagrangian_method(M, f, grad_f, p0; g=g, grad_g=grad_g)
         @test distance(M, sol, v0) < 8 * 1e-4
+        sol2 = copy(M, p0)
+        augmented_Lagrangian_method!(M, f, grad_f, sol2; g=g, grad_g=grad_g)
+        @test sol2 == sol
 
         co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g)
         mp = DefaultManoptProblem(M, co)
@@ -36,9 +39,17 @@ using LinearAlgebra: I, tr
         grad_f(M, p) = 2 * p + 10
         g(M, p) = -p # i.e. p ≥ 0
         grad_g(M, p) = -1
-        q = augmented_Lagrangian_method(
-            M, f, grad_f, 4.0; g=g, grad_g=grad_g, stopping_criterion=StopAfterIteration(20)
+        s = augmented_Lagrangian_method(
+            M,
+            f,
+            grad_f,
+            4.0;
+            g=g,
+            grad_g=grad_g,
+            stopping_criterion=StopAfterIteration(20),
+            return_state=true,
         )
+        q = get_solver_result(s)[]
         @test q isa Real
         @test f(M, q) < f(M, 4)
     end
