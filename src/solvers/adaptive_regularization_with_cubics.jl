@@ -404,7 +404,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::AdaptiveRegularizationState
     #Update iterate
     if s.ρ >= s.η1
         #println("Updated iterate")
-        s.p = retract(M, s.p, s.S)
+        s.p = retract(M, s.p, s.S) #            Move the get_gradient! below up here so we only compute it when the point is new.
     end
 
     #Update regularization parameter
@@ -446,22 +446,30 @@ mutable struct NewLanczosState{P,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverState
     p::P
     stopping_criterion::SC #maximum number of iterations
     maxIterNewton::I
+    ς::R # current reg parameter, must update with set manopt parameter.
+    gradnorm::R # norm of gradient at current point p
+    modelGradnorm::R
     tolNewton::R
     Q::T #store orthonormal basis
     Tmatrix::TM #store triddiagonal matrix
     r::V # store the r vector
+    S::V # store the tangent vector that solves the minimization problem
     y::Y # store the y vector
-    function NewLanczosState{P,I,R,T,TM,V,Y}(
-        M::AbstractManifold,p::P,sc_lanzcos::SC, maxIterNewton::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,y::Y
-    ) where {P,I,SC,R,T,TM,V,Y}
+    function NewLanczosState{P,SC,I,R,T,TM,V,Y}(
+        M::AbstractManifold,p::P,sc_lanzcos::SC, maxIterNewton::I,ς::R,gradnorm::R,modelGradnorm::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,S::V,y::Y
+    ) where {P,SC,I,R,T,TM,V,Y}
         s = new{P,SC,I,R,T,TM,V,Y}()
         s.p=p
         s.stopping_criterion=sc_lanzcos
         s.maxIterNewton = maxIterNewton # ? better: NewtonSate
+        s.ς=ς
+        s.gradnorm=gradnorm
+        s.modelGradnorm=modelGradnorm
         s.tolNewton = tolNewton
         s.Q = Q
         s.Tmatrix=Tmatrix
         s.r=r
+        s.S=S
         s.y=y
         return s
     end
@@ -470,17 +478,21 @@ end
 function NewLanczosState(
     M::AbstractManifold,
     p::P=rand(M);
+    θ=0.5,
     maxIterLanczos=200,
-    θ = 1e-5,
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos) | StopWhenLanczosModelGradLess(θ),
     maxIterNewton::I=100,
+    ς::R=10.0,
+    gradnorm::R=1.0,
+    modelGradnorm::R=Inf,
     tolNewton::R=1e-16,
     Q::T=[zero_vector(M, p) for _ in 1:maxIterLanczos],
     Tmatrix::TM=spdiagm(-1 => zeros(maxIterLanczos - 1), 0 => zeros(maxIterLanczos), 1 => zeros(maxIterLanczos - 1)),
     r::V=zero_vector(M,p),
+    S::V=zero_vector(M,p),
     y::Y=0.0
-) where{P,I,R,T,TM,V,YSC<:StoppingCriterion}
-    return NewLanczosState{P,I,R,T,TM,V,Y}(M, p, stopping_criterion, maxIterNewton, tolNewton, Q, Tmatrix, r, y)
+) where{P,SC<:StoppingCriterion,I,R,T,TM,V,Y}
+    return NewLanczosState{P,SC,I,R,T,TM,V,Y}(M, p, stopping_criterion, maxIterNewton,ς,gradnorm,modelGradnorm, tolNewton, Q, Tmatrix, r,S,y)
 end
 
 
@@ -499,17 +511,18 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
 
+    
     g = get_gradient(M, mho, s.p)
-    gradnorm = norm(M, s.p, g)
-    q = g / gradnorm
+    s.gradnorm = norm(M, s.p, g)  
+    q = g / s.gradnorm
 
-    s.Q[1] .= q
-    r = get_hessian(M, mho, s.p, q)
+    s.Q[1] .= q #store it directly above
+    r = get_hessian(M, mho, s.p, q)        #save memory here use s.r, and below use @. s.r = s.r -...
     α = inner(M, s.p, q, r)
     s.Tmatrix[1,1]=α
     s.r = r - α * q
     #argmin of one dimensional model
-    s.y = (α - sqrt(α^2 + 4 * s.ς * gradnorm)) / (2 * s.ς) # store y in the state.
+    s.y = (α - sqrt(α^2 + 4 * s.ς * s.gradnorm)) / (2 * s.ς) # store y in the state.
     return s
 end
 
@@ -520,49 +533,89 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     mho = get_objective(dmp)
     β = norm(M, s.p, s.r)
 
-    if j > size(s.Q)[1]
-        #reasonable error
+    if j+1 > length(s.Q) #j+1? Since we created the first lanczos vector in the intialization
+        println("We have used all the allocated Lanczos vectors")
     end
+
     #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
-    if β > 1e-10  # β large enough-> Do regular procedure: MGS of r wrt. Q
+    if β > 1e-12  # β large enough-> Do regular procedure: MGS of r wrt. Q
         q = r / β
     else # Generate new random vec and MGS of new vec wrt. Q
         r = rand(M; vector_at=s.p)
         for i in 1:j
-            r .= r - inner(M, s.p, s.Q[i], r) * s.Q[i]
+            r .= r - inner(M, s.p, s.Q[i], r) * s.Q[i]  #use @.
         end
         q = r / norm(M, s.p, r)
     end
 
-    r = get_hessian(M, mho, s.p, q) - β * ls.Q[j] #also store this in s.r to save memory
+    r = get_hessian(M, mho, s.p, q) - β * s.Q[j] #also store this in s.r to save memory
     α = inner(M, s.p, r, q)
     s.r = r - α * q
-    s.Q[j + 1] .= q
+    s.Q[j + 1] .= q #it would be better to just store it here in the if/else above at once, and acess it at the index where we need it above.
 
     s.Tmatrix[j + 1, j + 1] = α
     s.Tmatrix[j, j + 1] = β
     s.Tmatrix[j + 1, j] = β
 
-    #here we dont have to write any stopping criterion stuff, that is handled by the solve! function when we
-    #have defined or own stopping criterion.
 
-    # How to define stopping crit? Use stop if less or equal?
-    #Should I call stop_solver! here so that I can compute y then if necessary (i.e if we should not stop, proceed to compute y)
+    #Compute the norm of the gradient of the model.
 
-    #IMPORTANT HERE WE SOLVE for the next y if we did not stop above
+    #Do this vcat(gradnorm,zeros(3)) instead (3 was just arbitarly chosen number?
+    e1 = zeros(j + 1) #vcat(s.gradnorm,zeros(j))
+    e1[1] = 1
 
+    model_gradnorm = norm(
+        s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:(j+1)]) * s.y + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
 
-    #This is the stopping crit
-    #e1 = zeros(j + 1)#
-    #e1[1] = 1
-    #model_gradnorm = norm(
-    #    gradnorm * e1 + T[1:(j + 1), 1:j] * y + s.ς * norm(y, 2) * vcat(y, 0), 2
-    #)
-
-    #if model_gradnorm <= s.θ * norm(y, 2)^2    #the loop stopped here. Temp comment out
-    #    #println("number of dims in tangent space solution ", j)
-    #    brea
+    if model_gradnorm > s.θ * norm(s.y, 2)^2
+        #compute the y 
+        s.y .= min_cubic_Newton(s,j+1)
+        #S is initalized as zero_vector(M,p) so dont have to set it.
+        return s 
+    else
+        #The condition is satisifed. Assemble the optimal tangent vector
+        #S_opt=zero_vector(M,p)
+        for i in 1:length(s.y)
+            s.S = s.S + s.Q[i] * s.y[i] # save memory here
+        end
+        return s
+    end
 end
+
+
+
+#How to make the below less confusing?
+#The the iterates in in the Lanczos stepsolver is strictly a sequence of tangent vectors that minimize the problem in TₚM. 
+#However we must set the correct inital point in the LanczosState
+get_iterate(s::NewLanczosState) = s.S
+
+function set_iterate!(s::NewLanczosState, p)
+    copyto!(M, s.p, p)
+    return s
+end
+
+
+function set_manopt_parameter!(s::NewLanczosState, ::Val{:ς}, ς)
+    s.ς=ς
+    return s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 mutable struct StopWhenLanczosModelGradLess <: StoppingCriterion
     relative_threshold::Float64
@@ -573,7 +626,7 @@ function (c::StopWhenLanczosModelGradLess)(
     ::AbstractManoptProblem, s::NewLanczosState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
-    if (i > 0) && s.model_gradnorm <= c.relative_threshold*norm(s.y, 2)^2
+    if (i > 0) && s.modelGradnorm <= c.relative_threshold*norm(s.y, 2)^2
         c.reason = "The algorithm has reduced the model grad norm by $(c.relative_threshold).\n"
         return true
     end
@@ -582,9 +635,66 @@ end
 
 
 
+
+
+function min_cubic_Newton(s::NewLanczosState,j)
+    maxiter = s.maxIterNewton
+    tol = s.tolNewton
+
+    gvec=zeros(j)
+    gvec[1]=s.gradnorm
+    λ=opnorm(Array(@view s.Tmatrix[1:j,1:j]))+2
+    T_λ = @view(s.Tmatrix[1:j,1:j]) + λ * I
+
+    λ_min = eigmin(Array(@view s.Tmatrix[1:j,1:j]))
+    lower_barrier = max(0, -λ_min)
+    iter = 0
+    y = 0
+
+    while iter <= maxiter
+        y = -(T_λ \ gvec)
+        ynorm = norm(y, 2)
+        ϕ = 1 / ynorm - s.ς / λ #when ϕ is "zero", y is the solution.
+        if abs(ϕ) < tol * ynorm
+            break
+        end
+
+        #compute the newton step
+        ψ = ynorm^2
+        Δy = -(T_λ) \ y
+        ψ_prime = 2 * dot(y, Δy)
+        # Quadratic polynomial coefficients
+        p0 = 2 * s.ς * ψ^(1.5)
+        p1 = -2 * ψ - λ * ψ_prime
+        p2 = ψ_prime
+        #Polynomial roots
+        r1 = (-p1 + sqrt(p1^2 - 4 * p2 * p0)) / (2 * p2)
+        r2 = (-p1 - sqrt(p1^2 - 4 * p2 * p0)) / (2 * p2)
+
+        Δλ = max(r1, r2) - λ
+        iter = iter + 1
+
+        if λ + Δλ <= lower_barrier #if we jumped past the lower barrier for λ, jump to midpoint between current and lower λ.
+            Δλ = -0.5 * (λ - lower_barrier)
+        end
+
+        if abs(Δλ) <= eps(λ) #if the steps we make are to small, terminate
+            break
+        end
+
+        @.T_λ = T_λ + Δλ * I
+        λ = λ + Δλ
+    end
+    return y
+end
+
+
+
+
 #TODO
-#1. Add any remaning stuff we need to lanczosState.
-    #a) gradient? copied over from ArcState.
-    #b) ς
-#2 Fix the stopping criterion
-#3 Fix the nice way of allocating memory for Q and T.
+#1. Add subCost field to ArcState
+#2. Make a model cost function. modelCost(M,X) CubicModelCost
+
+# Compute it (since its the cost restricted to subpace spanned by Q) by (36) in arc paper
+# Maybe implement the cost as a functor in augmented lagrangian. Then I can store y \in R^k and T_k and and compute it like that in the paper.
+#
