@@ -466,12 +466,12 @@ function initialize_solver!(
     tcgs.X = get_gradient(mp, tcgs.p)
     tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.Hη : tcgs.X
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
-    tcgs.δ = -deepcopy(tcgs.z)
+    tcgs.δ = -copy(M, tcgs.p, tcgs.z)
     tcgs.Hδ = zero_vector(M, tcgs.p)
-    tcgs.δHδ = inner(M, tcgs.p, tcgs.δ, tcgs.Hδ)
-    tcgs.ηPδ = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.δ) : zero(tcgs.δHδ)
-    tcgs.δPδ = inner(M, tcgs.p, tcgs.residual, tcgs.z)
-    tcgs.ηPη = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.η) : zero(tcgs.δHδ)
+    tcgs.δHδ = real(inner(M, tcgs.p, tcgs.δ, tcgs.Hδ))
+    tcgs.ηPδ = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.η, tcgs.δ)) : zero(tcgs.δHδ)
+    tcgs.δPδ = real(inner(M, tcgs.p, tcgs.residual, tcgs.z))
+    tcgs.ηPη = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.η, tcgs.η)) : zero(tcgs.δHδ)
     if tcgs.randomize
         tcgs.model_value =
             real(inner(M, tcgs.p, tcgs.η, tcgs.X)) +
@@ -479,7 +479,7 @@ function initialize_solver!(
     else
         tcgs.model_value = 0
     end
-    tcgs.z_r = inner(M, tcgs.p, tcgs.z, tcgs.residual)
+    tcgs.z_r = real(inner(M, tcgs.p, tcgs.z, tcgs.residual))
     tcgs.initialResidualNorm = norm(M, tcgs.p, tcgs.residual)
     return tcgs
 end
@@ -488,7 +488,7 @@ function step_solver!(
 )
     M = get_manifold(mp)
     get_hessian!(mp, tcgs.Hδ, tcgs.p, tcgs.δ)
-    tcgs.δHδ = inner(M, tcgs.p, tcgs.δ, tcgs.Hδ)
+    tcgs.δHδ = real(inner(M, tcgs.p, tcgs.δ, tcgs.Hδ))
     α = tcgs.z_r / tcgs.δHδ
     ηPη_new = tcgs.ηPη + 2 * α * tcgs.ηPδ + α^2 * tcgs.δPδ
     # Check against negative curvature and trust-region radius violation.
@@ -517,7 +517,7 @@ function step_solver!(
 
     # Precondition the residual.
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
-    zr = inner(M, tcgs.p, tcgs.z, tcgs.residual)
+    zr = real(inner(M, tcgs.p, tcgs.z, tcgs.residual))
     # Compute new search direction.
     β = zr / tcgs.z_r
     tcgs.z_r = zr
