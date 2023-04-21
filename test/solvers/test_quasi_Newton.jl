@@ -345,7 +345,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), data))
         p = quasi_Newton(M, f, grad_f, data[1])
         @test isapprox(M, pstar, p)
-        s = quasi_Newton(M, f, grad_f, data[1], return_state=true)
+        s = quasi_Newton(M, f, grad_f, data[1]; return_state=true)
         @test get_solver_result(s) == p
     end
 end
