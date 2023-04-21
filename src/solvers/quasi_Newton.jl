@@ -144,22 +144,22 @@ function default_stepsize(
     )
 end
 @doc raw"""
-    quasi_Newton(M, F, gradF, p)
+    quasi_Newton(M, f, grad_f, p)
 
-Perform a quasi Newton iteration for `F` on the manifold `M` starting
-in the point `x` using a retraction ``R`` and a vector transport ``T``
+Perform a quasi Newton iteration for `f` on the manifold `M` starting
+in the point `p`.
 
 The ``k``th iteration consists of
-1. Compute the search direction ``η_k = -\mathcal{B}_k [\operatorname{grad}f (x_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (x_k)]``.
-2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{x_k}(α η_k)`` e.g. by using [`WolfePowellLinesearch`](@ref).
-3. Compute ``x_{k+1} = R_{x_k}(α_k η_k)``.
-4. Define ``s_k = T_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(x_{k+1}) - T_{x_k, α_k η_k}(\operatorname{grad}f(x_k))``.
+1. Compute the search direction ``η_k = -\mathcal{B}_k [\operatorname{grad}f (p_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (p_k)]``.
+2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{p_k}(α η_k)`` e.g. by using [`WolfePowellLinesearch`](@ref).
+3. Compute `p_{k+1} = R_{p_k}(α_k η_k)``.
+4. Define ``s_k = T_{p_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(p_{k+1}) - T_{p_k, α_k η_k}(\operatorname{grad}f(p_k))``.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_k``.
 
 # Input
 * `M` – a manifold ``\mathcal{M}``.
-* `F` – a cost function ``F : \mathcal{M} →ℝ`` to minimize.
-* `gradF`– the gradient ``\operatorname{grad}F : \mathcal{M} →T_x\mathcal M`` of ``F``.
+* `f` – a cost function ``F : \mathcal{M} →ℝ`` to minimize.
+* `grad_f`– the gradient ``\operatorname{grad}F : \mathcal{M} →T_x\mathcal M`` of ``F``.
 * `p` – an initial value ``p ∈ \mathcal{M}``.
 
 # Optional
@@ -180,7 +180,7 @@ The ``k``th iteration consists of
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction method to use, by default
   the exponential map.
 * `scale_initial_operator` - (`true`) scale initial operator with
-  ``\frac{⟨s_k,y_k⟩_{x_k}}{\lVert y_k\rVert_{x_k}}`` in the computation
+  ``\frac{⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}`` in the computation
 * `stabilize` – (`true`) stabilize the method numerically by projecting computed (Newton-)
   directions to the tangent space to reduce numerical errors
 * `stepsize` – ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
@@ -191,11 +191,40 @@ The ``k``th iteration consists of
 
 # Output
 
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details.
 """
-function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, p; kwargs...) where {TF,TDF}
+function quasi_Newton(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TDF,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    return quasi_Newton(M, mgo, p; kwargs...)
+end
+function quasi_Newton(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TDF,
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    # redefine our initial point
+    q = [p]
+    f_(M, p) = f(M, p[])
+    grad_f_ = _to_mutating_function(grad_f, evaluation)
+    rs = quasi_Newton(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    (typeof(q) == typeof(rs)) && (return rs[])
+    # otherwise (probably the state - return rs)
+    return rs
+end
+function quasi_Newton(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
     q = copy(M, p)
-    return quasi_Newton!(M, F, gradF, q; kwargs...)
+    return quasi_Newton!(M, mgo, q; kwargs...)
 end
 @doc raw"""
     quasi_Newton!(M, F, gradF, x; options...)
@@ -211,10 +240,21 @@ in the point `x` using a retraction ``R`` and a vector transport ``T``.
 
 For all optional parameters, see [`quasi_Newton`](@ref).
 """
+quasi_Newton!(M::AbstractManifold, params...; kwargs...)
 function quasi_Newton!(
     M::AbstractManifold,
     f::TF,
     grad_f::TDF,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    return quasi_Newton!(M, mgo, p; kwargs...)
+end
+function quasi_Newton!(
+    M::AbstractManifold,
+    mgo::ManifoldGradientObjective,
     p;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
@@ -224,7 +264,6 @@ function quasi_Newton!(
     ),
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     memory_size::Int=min(manifold_dimension(M), 20),
     stabilize=true,
     initial_operator::AbstractMatrix=(
@@ -244,7 +283,7 @@ function quasi_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
     kwargs...,
-) where {TF,TDF}
+)
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
@@ -270,7 +309,6 @@ function quasi_Newton!(
             local_dir_upd; θ=cautious_function
         )
     end
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     dmgo = decorate_objective!(M, mgo; kwargs...)
     mp = DefaultManoptProblem(M, dmgo)
     qns = QuasiNewtonState(
@@ -286,13 +324,11 @@ function quasi_Newton!(
     qns = decorate_state!(qns; kwargs...)
     return get_solver_return(solve!(mp, qns))
 end
-
 function initialize_solver!(p::AbstractManoptProblem, s::QuasiNewtonState)
     s.X = get_gradient(p, s.p)
     s.sk = deepcopy(s.X)
     return s.yk = deepcopy(s.X)
 end
-
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)

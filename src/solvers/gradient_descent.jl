@@ -211,7 +211,7 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """
-gradient_descent(M::AbstractManifold, params...; kwargs...)
+gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function gradient_descent!(
     M::AbstractManifold,
     F::TF,
