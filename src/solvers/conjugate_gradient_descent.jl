@@ -28,8 +28,8 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
 end
 
 @doc raw"""
-    conjugate_gradient_descent(M, F, gradF, x)
-    conjugate_gradient_descent(M, gradient_objective, x)
+    conjugate_gradient_descent(M, F, gradF, p=rand(M))
+    conjugate_gradient_descent(M, gradient_objective, p)
 
 perform a conjugate gradient based descent
 
@@ -84,6 +84,10 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+conjugate_gradient_descent(M::AbstractManifold, args...; kwargs...)
+function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
+    return conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
+end
 function conjugate_gradient_descent(
     M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation=AllocatingEvaluation(), kwargs...
 ) where {TF,TDF}
@@ -109,7 +113,7 @@ function conjugate_gradient_descent(
     return rs
 end
 function conjugate_gradient_descent(
-    M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...
+    M::AbstractManifold, mgo::ManifoldGradientObjective, p=rand(M); kwargs...
 )
     q = copy(M, p)
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)

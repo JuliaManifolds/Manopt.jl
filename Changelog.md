@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * A new interface of the form `alg(M, objective, p0)` to allow to reuse
   objectives without creating `AbstractSolverStates` and calling `solve!`. This especially still allows for any decoration of the objective and/or the state using e.g. `debug=`, or `record=`.
 
+### Changed
+
+* All solvers now have the initial point `p` as an optional parameter making it more accessible to first time users, e.g. `gradient_descent(M, f, grad_f)`
+
 ### Fixed
 
 * Unified the framework to work on manifold where points are represented by numbers for several solvers

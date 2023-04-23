@@ -111,7 +111,7 @@ function show(io::IO, gds::GradientDescentState)
 end
 
 @doc raw"""
-    gradient_descent(M, f, grad_f, p; kwargs...)
+    gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
     gradient_descent(M, gradient_objective, p; kwargs...)
 
 perform a gradient descent
@@ -154,6 +154,10 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 the obtained (approximate) minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
+gradient_descent(M::AbstractManifold, args...; kwargs...)
+function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
+    return gradient_descent(M, f, grad_f, rand(M); kwargs...)
+end
 function gradient_descent(
     M::AbstractManifold,
     F::TF,
@@ -183,7 +187,9 @@ function gradient_descent(
     # otherwise (probably the state - return rs)
     return rs
 end
-function gradient_descent(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
+function gradient_descent(
+    M::AbstractManifold, mgo::ManifoldGradientObjective, p=rand(M); kwargs...
+)
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
