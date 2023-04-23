@@ -215,7 +215,7 @@ function quasi_Newton(
     # redefine our initial point
     q = [p]
     f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_function(grad_f, evaluation)
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
     rs = quasi_Newton(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
     #return just a number if  the return type is the same as the type of q
     (typeof(q) == typeof(rs)) && (return rs[])

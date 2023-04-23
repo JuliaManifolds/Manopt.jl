@@ -134,7 +134,7 @@ Alternatively to `f` and `grad_f` you can prodive
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 # Optional
-* `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
+* `direction` – ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)`.
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use
@@ -147,7 +147,7 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
-If you provide the [`ManifoldGradientObjective`](@ref) directly, no decoration of the objective is performed.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
 # Output
 
@@ -176,8 +176,8 @@ function gradient_descent(
     # redefine our initial point
     q = [p]
     f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_function(grad_f, evaluation)
-    rs = gradient_descent(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
+    rs = gradient_descent(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
     #return just a number if  the return type is the same as the type of q
     (typeof(q) == typeof(rs)) && (return rs[])
     # otherwise (probably the state - return rs)

@@ -268,11 +268,11 @@ function augmented_Lagrangian_method(
 ) where {TF,TGF}
     q = [p]
     f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_function(grad_f, evaluation)
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
     g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_function(grad_g, evaluation)
+    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
     h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_function(grad_h, evaluation)
+    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
     cmo = ConstrainedManifoldObjective(
         f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
     )
