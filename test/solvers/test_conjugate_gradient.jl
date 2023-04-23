@@ -1,5 +1,7 @@
-using Manopt, Manifolds, ManifoldsBase, Test
+using Manopt, Manifolds, ManifoldsBase, Test, Random
 using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
+
+include("../utils/example_tasks.jl")
 
 @testset "Conjugate Gradient Descent" begin
     @testset "Conjugate Gradient coefficient rules" begin
@@ -128,6 +130,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             repr(x_opt2),
             "# Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver",
         )
+        Random.seed!(23)
         x_opt3 = conjugate_gradient_descent(
             M,
             f,
@@ -200,18 +203,12 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
     end
 
     @testset "CG on the Circle" begin
-        M = Circle()
-        #vecr(α) = [cos(α), sin(α)]
-        r = [-π / 2, π / 4, 0.0, π / 4]
-        r2 = [-π / 2, π / 4, 0.0, π / 4]
-        apprpstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(r)
-        f(M, p) = 1 / 10 * sum(distance.(Ref(M), r2, Ref(p)) .^ 2)
-        grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), r2))
+        M, f, grad_f, p0, p_star = Circle_mean_task()
         s = conjugate_gradient_descent(
-            M, f, grad_f, r2[1]; evaluation=InplaceEvaluation(), return_state=true
+            M, f, grad_f, p0; evaluation=InplaceEvaluation(), return_state=true
         )
         p = get_solver_result(s)[]
-        @test f(M, p) < f(M, r2[1])
-        @test isapprox(M, p, apprpstar; atol=5e-8)
+        @test f(M, p) < f(M, p0)
+        @test isapprox(M, p, p_star; atol=5e-8)
     end
 end

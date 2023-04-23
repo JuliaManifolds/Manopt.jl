@@ -1,5 +1,7 @@
 using Manifolds, Manopt, ManifoldsBase, Test
 
+include("utils/example_tasks.jl")
+
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin
         include("plans/test_problem.jl")
