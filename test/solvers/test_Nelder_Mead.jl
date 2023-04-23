@@ -56,6 +56,14 @@ Random.seed!(29)
         nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
         @test any(map(!, nonincreasing)) == false
         #mutate
+        p2 = NelderMeadSimplex(copy.(Ref(M), p0.pts))
+        p3 = NelderMead!( #work in place of p2 but the best is the point p3
+            M,
+            f,
+            p2;
+            stopping_criterion=StopAfterIteration(400),
+        )
+        @test isapprox(M, p1, p3)
         # SC
         f = StopWhenPopulationConcentrated(1e-1, 1e-2)
         sf = "StopWhenPopulationConcentrated($(1e-1), $(1e-2))\n    $(Manopt.status_summary(f))"
