@@ -128,6 +128,15 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             repr(x_opt2),
             "# Solver state for `Manopt.jl`s Conjugate Gradient Descent Solver",
         )
+        x_opt3 = conjugate_gradient_descent(
+            M,
+            f,
+            grad_f;
+            stepsize=ArmijoLinesearch(M),
+            coefficient=FletcherReevesCoefficient(),
+            stopping_criterion=StopAfterIteration(15),
+        )
+        @test isapprox(f(M, x_opt3), minimum(eigvals(A)); atol=2.0 * 1e-2)
     end
 
     @testset "CG on complex manifolds" begin

@@ -2,16 +2,11 @@ using Manopt, Manifolds, Test
 
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
-        # Test the gradient descent with
-        # the distance function squared
-        # on S1, such that we can easily also verify exp and log
         M = Circle()
-        #vecr(α) = [cos(α), sin(α)]
-        r = [-π / 2, π / 4, 0.0, π / 4]
-        r2 = [-π / 2, π / 4, 0.0, π / 4]
-        apprpstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(r)
-        f(M, p) = 1 / 10 * sum(distance.(Ref(M), r2, Ref(p)) .^ 2)
-        grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), r2))
+        data = [-π / 2, π / 4, 0.0, π / 4]
+        apprpstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(data)
+        f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
+        grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), data))
         my_io = IOBuffer()
         d = DebugEvery(
             DebugGroup([
@@ -28,7 +23,7 @@ using Manopt, Manifolds, Test
             M,
             f,
             grad_f,
-            r2[1];
+            data[1];
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
             debug=d,
@@ -42,7 +37,7 @@ using Manopt, Manifolds, Test
             M,
             f,
             grad_f,
-            r2[1];
+            data[1];
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
         )
@@ -61,7 +56,7 @@ using Manopt, Manifolds, Test
             M,
             f,
             grad_f,
-            r2[1];
+            data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
@@ -72,7 +67,7 @@ using Manopt, Manifolds, Test
             M,
             f,
             grad_f,
-            r2[1];
+            data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
@@ -83,7 +78,7 @@ using Manopt, Manifolds, Test
             M,
             f,
             grad_f,
-            r2[1];
+            data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
@@ -93,11 +88,11 @@ using Manopt, Manifolds, Test
             M,
             f,
             grad_f,
-            r2[1];
+            data[1];
             stopping_criterion=StopWhenAny(
                 StopAfterIteration(1000), StopWhenChangeLess(1e-16)
             ),
-            direction=Nesterov(M, r2[1]),
+            direction=Nesterov(M, data[1]),
         )
         @test isapprox(M, p, p6; atol=1e-13)
 
@@ -125,9 +120,13 @@ using Manopt, Manifolds, Test
         f(M, p) = 1 / 8 * sum(distance.(Ref(M), pts, Ref(p)) .^ 2)
         grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
         n2 = gradient_descent(M, f, grad_f, pts[1])
+        n2a = gradient_descent(M, f, grad_f)
         # Since we called gradient_descent n2 is newly allocated
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
+        n2a = gradient_descent(M, f, grad_f)
+        # Since we called gradient_descent n2 is newly allocated
+        @test isapprox(M, north, n2a)
         n3 = gradient_descent(
             M,
             f,

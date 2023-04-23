@@ -338,7 +338,9 @@ function trust_regions(
         kwargs...,
     )
 end
-function trust_regions(M::AbstractManifold, mho::ManifoldHessianObjective, p; kwargs...)
+function trust_regions(
+    M::AbstractManifold, mho::ManifoldHessianObjective, p=rand(M); kwargs...
+)
     q = copy(M, p)
     return trust_regions!(M, mho, q; kwargs...)
 end

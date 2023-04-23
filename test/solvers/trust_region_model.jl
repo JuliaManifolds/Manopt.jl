@@ -1,6 +1,6 @@
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
-cost(M::PowerManifold, p) = -0.5 * norm(transpose(p[M, 1]) * A * p[M, 2])^2
+f(M::PowerManifold, p) = -0.5 * norm(transpose(p[M, 1]) * A * p[M, 2])^2
 
 function egrad(M::PowerManifold, X::Array)
     U = X[M, 1]

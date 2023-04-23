@@ -15,7 +15,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     fidelity(M, p) = 1 / 2 * distance(M, p, f)^2
     Λ(M, p) = ProductRepr(p, forward_logs(M, p))
     prior(M, p) = norm(norm.(Ref(M.manifold), p, submanifold_component(N, Λ(p), 2)), 1)
-    cost(M, p) = (1 / α) * fidelity(M, p) + prior(M, p)
+    f(M, p) = (1 / α) * fidelity(M, p) + prior(M, p)
     prox_f(M, λ, p) = prox_distance(M, λ / α, data, p, 2)
     prox_f!(M, q, λ, p) = prox_distance!(M, q, λ / α, data, p, 2)
     prox_g_dual(N, n, λ, X) = project_collaborative_TV(N, λ, n, X, Inf, Inf, 1.0)
@@ -156,11 +156,11 @@ using Manopt, Manifolds, ManifoldsBase, Test
 
     @testset "test Mutating/Allocation Problem Variants" begin
         obj1 = PrimalDualManifoldSemismoothNewtonObjective(
-            cost, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
+            f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ
         )
         p1 = TwoManifoldProblem(M, N, obj1)
         obj2 = PrimalDualManifoldSemismoothNewtonObjective(
-            cost,
+            f,
             prox_f!,
             Dprox_F!,
             prox_g_dual!,

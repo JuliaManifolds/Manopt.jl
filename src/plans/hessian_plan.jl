@@ -304,9 +304,9 @@ function ApproxHessianSymmetricRankOne(
 ) where {
     mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod
 }
-    if evaluation == AllocatingEvaluation()
+    if evaluation isa AllocatingEvaluation
         grad_tmp = gradient(M, p)
-    elseif evaluation == InplaceEvaluation()
+    elseif evaluation isa InplaceEvaluation
         grad_tmp = zero_vector(M, p)
         gradient(M, grad_tmp, p)
     end

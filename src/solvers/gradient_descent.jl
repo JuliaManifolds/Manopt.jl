@@ -112,7 +112,7 @@ end
 
 @doc raw"""
     gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
-    gradient_descent(M, gradient_objective, p; kwargs...)
+    gradient_descent(M, gradient_objective, p=rand(M); kwargs...)
 
 perform a gradient descent
 

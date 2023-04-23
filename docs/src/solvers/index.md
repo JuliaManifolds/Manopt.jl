@@ -70,14 +70,15 @@ Then there are basically two different variants to call
 
 ```
 new_solver(M, f, df, p=rand(M); kwargs...)
-new_solver!(M, f, df; kwargs...)
+new_solver!(M, f, df, p; kwargs...)
 ```
 
-Where the start point should be optional and `kwargs` might for example specify whether
-`df` works inplace or allocation, debug,...
-The third variant works inplace of `p`, so it is mandatory.
+Where the start point should be optional.
 Keyword arguments include the type of evaluation, decorators like `debug=` or `record=`
 as well as algorithm specific ones.
+If you provide an immutable point `p` or the `rand(M)` point is immutable, like on the `Circle()` this method should turn the point into a mutable one as well.
+
+The third variant works in place of `p`, so it is mandatory.
 
 This first interface would set up the objective and pass all keywords on the the
 objective based call.

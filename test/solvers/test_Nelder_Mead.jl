@@ -57,4 +57,25 @@ Random.seed!(29)
         sf = "StopWhenPopulationConcentrated($(1e-1), $(1e-2))\n    $(Manopt.status_summary(f))"
         @test repr(f) == sf
     end
+
+    @testset "Circle" begin
+        M = Circle()
+        data = [-π / 2, π / 4, 0.0, π / 4]
+        p_star = sum(data) / length(data)
+        f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
+        #vector p-cost
+        f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
+        q = NelderMead(M, f)
+        @test isapprox(p_star, q; atol=1e-7)
+        s = NelderMead(M, f; return_state=true)
+        q2 = get_solver_result(s)[] #here we have to floatify ouselves
+        @test isapprox(M, p_star, q2; atol=1e-7)
+        population = NelderMeadSimplex(M)
+        q3 = NelderMead(M, f, population)
+        #same type also returns Float
+        @test isapprox(M, p_star, q3; atol=1e-7)
+        population2 = NelderMeadSimplex([[0.1], [-0.1]])
+        q4 = NelderMead(M, f2, population2)
+        @test isapprox(M, p_star, q4[]; atol=1e-7)
+    end
 end

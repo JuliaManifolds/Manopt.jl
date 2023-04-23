@@ -24,12 +24,15 @@ space at point `p` using retraction `retraction_method`. This works similarly to
 the initial simplex is constructed in the Euclidean Nelder-Mead algorithm, just in
 the tangent space at point `p`.
 """
-struct NelderMeadSimplex{TP}
-    pts::Vector{TP}
+struct NelderMeadSimplex{TP,T<:AbstractVector{TP}}
+    pts::T
 end
 
 function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
+end
+function NelderMeadSimplex(M::AbstractManifold, p::Number, B::AbstractBasis; kwargs...)
+    return NelderMeadSimplex(M, [p], B; kwargs...)
 end
 function NelderMeadSimplex(
     M::AbstractManifold,
@@ -166,6 +169,7 @@ end
 
 @doc raw"""
     NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
+    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective [, population::NelderMeadSimplex])
 
 Solve a Nelder-Mead minimization problem for the cost function ``f\colon \mathcal M`` on the
 manifold `M`. If the initial population `p` is not given, a random set of
@@ -203,14 +207,31 @@ and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+NelderMead(M::AbstractManifold, args...; kwargs...)
+function NelderMead(M::AbstractManifold, f; kwargs...)
+    return NelderMead(M, f, NelderMeadSimplex(M); kwargs...)
+end
+function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
+    mco = ManifoldCostObjective(f)
+    return NelderMead(M, mco, population; kwargs...)
+end
 function NelderMead(
     M::AbstractManifold,
-    f::TF,
-    population::NelderMeadSimplex=NelderMeadSimplex(M);
+    mco::AbstractManifoldCostObjective,
+    population::NelderMeadSimplex;
     kwargs...,
-) where {TF}
+)
     res_population = NelderMeadSimplex(copy.(Ref(M), population.pts))
-    return NelderMead!(M, f, res_population; kwargs...)
+    return NelderMead!(M, mco, res_population; kwargs...)
+end
+function NelderMead(
+    M::AbstractManifold, f, population::NelderMeadSimplex{P,V}; kwargs...
+) where {P<:Number,V<:AbstractVector{P}}
+    f_ = (M, p) -> f(M, p[])
+    population_ = NelderMeadSimplex([[p] for p in population.pts])
+    rs = NelderMead(M, f_, population_; kwargs...)
+    (P == eltype(rs)) && (return rs[])
+    return rs
 end
 @doc raw"""
     NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
@@ -221,10 +242,15 @@ points is chosen. If it is given, the computation is done in place of `populatio
 
 For more options see [`NelderMead`](@ref).
 """
+NelderMead!(M::AbstractManifold, args...; kwargs...)
+function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
+    mco = ManifoldCostObjective(f)
+    return NelderMead!(M, mco, population; kwargs...)
+end
 function NelderMead!(
     M::AbstractManifold,
-    f::TF,
-    population::NelderMeadSimplex=NelderMeadSimplex(M);
+    mco::AbstractManifoldCostObjective,
+    population::NelderMeadSimplex;
     stopping_criterion::StoppingCriterion=StopAfterIteration(2000) |
                                           StopWhenPopulationConcentrated(),
     α=1.0,
@@ -238,8 +264,8 @@ function NelderMead!(
         M, eltype(population.pts)
     ),
     kwargs..., #collect rest
-) where {TF}
-    dmco = decorate_objective!(M, ManifoldCostObjective(f); kwargs...)
+)
+    dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
         M,
