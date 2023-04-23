@@ -1,6 +1,7 @@
 using Manifolds, Manopt, Test, LinearAlgebra
 
 include("trust_region_model.jl")
+include("../utils/example_tasks.jl")
 
 @testset "Riemannian Trust-Region" begin
     n = size(A, 1)
@@ -269,11 +270,7 @@ include("trust_region_model.jl")
         end
     end
     @testset "on the Circle" begin
-        M = Circle()
-        data = [-π / 2, π / 4, 0.0, π / 4]
-        p_star = 0.0
-        f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
-        grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), data))
+        M, f, grad_f, p0, p_star = Circle_mean_task()
         hess_f(M, p, X) = 1.0
         s = trust_regions(M, f, grad_f, hess_f; return_state=true)
         q = get_solver_result(s)
@@ -282,7 +279,7 @@ include("trust_region_model.jl")
         @test distance(M, p_star, q[]) < 1e-2
         q2 = trust_regions(M, f, grad_f, hess_f)
         @test distance(M, p_star, q[]) < 1e-2
-        q2 = trust_regions(M, f, grad_f, hess_f, 0.1; ebaluation=InplaceEvaluation())
+        q2 = trust_regions(M, f, grad_f, hess_f, 0.1; evaluation=InplaceEvaluation())
         @test distance(M, p_star, q[]) < 1e-2
     end
 end

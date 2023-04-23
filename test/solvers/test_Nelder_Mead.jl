@@ -1,8 +1,9 @@
 #
 #
 #
-using Random, Manifolds, Manopt, Test
+using Manifolds, Manopt, Random, Test
 Random.seed!(29)
+
 @testset "Test Nelder-Mead" begin
     @testset "Euclidean" begin
         M = Euclidean(6)
@@ -39,20 +40,23 @@ Random.seed!(29)
         A = randn(3, 3)
         A .= (A - A') ./ 2
         f(::Rotations, x) = norm(A * x * x * A)
-        x0 = NelderMeadSimplex([rand(M) for _ in 1:12])
-        o = NelderMead(
+        Random.seed!(23)
+        p0 = NelderMeadSimplex([rand(M) for _ in 1:12])
+        s = NelderMead(
             M,
             f,
-            x0;
+            p0;
             record=[RecordCost()],
             return_state=true,
             stopping_criterion=StopAfterIteration(400),
         )
-        @test startswith(repr(o), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
-        x = get_solver_result(o)
-        rec = get_record(o)
+        @test startswith(repr(s), "# Solver state for `Manopt.jl`s Nelder Mead Algorithm")
+        p1 = get_solver_result(s)
+        rec = get_record(s)
         nonincreasing = [rec[i] >= rec[i + 1] for i in 1:(length(rec) - 1)]
         @test any(map(!, nonincreasing)) == false
+        #mutate
+        # SC
         f = StopWhenPopulationConcentrated(1e-1, 1e-2)
         sf = "StopWhenPopulationConcentrated($(1e-1), $(1e-2))\n    $(Manopt.status_summary(f))"
         @test repr(f) == sf
@@ -62,6 +66,7 @@ Random.seed!(29)
         M = Circle()
         data = [-π / 2, π / 4, 0.0, π / 4]
         p_star = sum(data) / length(data)
+        @test NelderMeadSimplex(Circle(), 0.0).pts isa Vector{Vector{Float64}}
         f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
         #vector p-cost
         f2(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p[])) .^ 2)
