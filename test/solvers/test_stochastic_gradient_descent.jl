@@ -8,7 +8,7 @@ using Manopt, Manifolds, Test
         exp(M, p, X) for
         X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
-    f(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
+    f(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
     grad_f(M, y) = sum([-log(M, y, x) for x in pts])
     sgrad_f1(M, y) = [-log(M, y, x) for x in pts]
     function sgrad_f1!(M, X, y)
@@ -121,5 +121,23 @@ using Manopt, Manifolds, Test
             ),
         )
         @test norm(x5) ≈ 1
+    end
+    @testset "Comparing different starts" begin
+        msgo2 = ManifoldStochasticGradientObjective(sgrad_f1)
+        q1 = stochastic_gradient_descent(M, msgo2, p)
+        q2 = copy(M, p)
+        stochastic_gradient_descent!(M, msgo2, q2)
+    end
+    @testset "Circle ecample" begin
+        M = Circle()
+        p = 0.0
+        data = [-π / 4, 0.0, π / 4]
+        fc(y) = 1 / 2 * sum([distance(M, y, x)^2 for x in data])
+        sgrad_fc(M, y) = [-log(M, y, x) for x in data]
+        q1 = stochastic_gradient_descent(M, sgrad_fc, p)
+        #For this case inplace does not exist.
+        sgrad_fc2 = [((M, y) -> -log(M, y, x)) for x in data]
+        q2 = stochastic_gradient_descent(M, sgrad_fc2, p)
+        q3 = stochastic_gradient_descent(M, sgrad_fc2, p; evaluation=InplaceEvaluation())
     end
 end

@@ -156,12 +156,54 @@ perform a stochastic gradient descent
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+stochastic_gradient_descent(M::AbstractManifold, args...; kwargs...)
+function stochastic_gradient_descent(M::AbstractManifold, grad_f; kwargs...)
+    return stochastic_gradient_descent(M, grad_f, rand(M); kwargs...)
+end
 function stochastic_gradient_descent(
-    M::AbstractManifold, gradF::TDF, p; kwargs...
-) where {TDF}
-    q = allocate(p)
-    copyto!(M, q, p)
-    return stochastic_gradient_descent!(M, gradF, q; kwargs...)
+    M::AbstractManifold,
+    grad_f,
+    p;
+    cost=Missing(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
+    return stochastic_gradient_descent(M, msgo, p; evaluation=evaluation, kwargs...)
+end
+function stochastic_gradient_descent(
+    M::AbstractManifold,
+    grad_f,
+    p::Number;
+    cost=Missing(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    q = [p]
+    f_ = ismissing(cost) ? cost : (M, p) -> cost(M, p[])
+    if grad_f isa Function
+        n = grad_f(M, p) isa Number
+        grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
+    else
+        if evaluation isa AllocatingEvaluation
+            grad_f_ = [(M, p) -> [f(M, p[])] for f in grad_f]
+        else
+            grad_f_ = [(M, X, p) -> (X .= [f(M, p[])]) for f in grad_f]
+        end
+    end
+    rs = stochastic_gradient_descent(
+        M, grad_f_, q; cost=f_, evaluation=evaluation, kwargs...
+    )
+    #return just a number if  the return type is the same as the type of q
+    (typeof(q) == typeof(rs)) && (return rs[])
+    # otherwise (probably the state - return rs)
+    return rs
+end
+function stochastic_gradient_descent(
+    M::AbstractManifold, msgo::ManifoldStochasticGradientObjective, p; kwargs...
+)
+    q = copy(M, p)
+    return stochastic_gradient_descent!(M, msgo, q; kwargs...)
 end
 
 @doc raw"""
@@ -178,22 +220,30 @@ perform a stochastic gradient descent in place of `x`.
 
 for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 """
+stochastic_gradient_descent!(::AbstractManifold, args...; kwargs...)
 function stochastic_gradient_descent!(
     M::AbstractManifold,
-    grad_f::TDF,
+    grad_f,
     p;
-    cost::TF=Missing(),
-    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, p)),
+    cost=Missing(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+)
+    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
+    return stochastic_gradient_descent!(M, msgo, p; evaluation=evaluation, kwargs...)
+end
+function stochastic_gradient_descent!(
+    M::AbstractManifold,
+    msgo::ManifoldStochasticGradientObjective,
+    p;
+    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),
     stepsize::Stepsize=default_stepsize(M, StochasticGradientDescentState),
+    order=collect(1:length(get_gradients(M, msgo, p))),
     order_type::Symbol=:Random,
-    order=collect(1:(grad_f isa Function ? length(grad_f(M, p)) : length(grad_f))),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
-) where {TDF,TF}
-    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
+)
     dmsgo = decorate_objective!(M, msgo; kwargs...)
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
