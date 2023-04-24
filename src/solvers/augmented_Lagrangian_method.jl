@@ -194,7 +194,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `grad_h` – (`nothing`) the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be proviede.
-Otherwise the problem is not constrained and you can also call e.g. [`quasi_newton`](@ref)
+Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
 
 # Optional
 

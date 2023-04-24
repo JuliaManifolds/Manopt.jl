@@ -142,8 +142,16 @@ TrustRegionsState
 
 ## Approximation of the Hessian
 
+We currently provide a few different methods to approximate the Hessian.
+
 ```@docs
 ApproxHessianFiniteDifference
 ApproxHessianSymmetricRankOne
 ApproxHessianBFGS
+```
+
+as well as their (non-exported) common supertype
+
+```@docs
+Manopt.AbstractApproxHessian
 ```

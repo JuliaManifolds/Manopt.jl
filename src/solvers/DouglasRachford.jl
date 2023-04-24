@@ -43,7 +43,7 @@ mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S} <: AbstractManoptSolverState
     stop::S
     parallel::Bool
     function DouglasRachfordState(
-        ::AbstractManifold,
+        M::AbstractManifold,
         p::P;
         λ::Fλ=i -> 1.0,
         α::Fα=i -> 0.9,
@@ -52,7 +52,7 @@ mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S} <: AbstractManoptSolverState
         parallel=false,
     ) where {P,Fλ,Fα,FR,S<:StoppingCriterion}
         return new{P,Fλ,Fα,FR,S}(
-            p, copy(p), copy(p), copy(p), λ, α, R, stopping_criterion, parallel
+            p, copy(M, p), copy(M, p), copy(M, p), λ, α, R, stopping_criterion, parallel
         )
     end
 end
@@ -87,8 +87,8 @@ function (r::RecordProximalParameter)(
     return record_or_reset!(r, cpps.λ(i), i)
 end
 @doc raw"""
-     DouglasRachford(M, f, proxes_f, p)
-     DouglasRachford(M, mpo, p)
+    DouglasRachford(M, f, proxes_f, p)
+    DouglasRachford(M, mpo, p)
 
 Compute the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial
 data ``p`` and the (two) proximal maps `proxMaps`.
@@ -135,6 +135,7 @@ and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+DouglasRachford(::AbstractManifold, args...; kwargs...)
 function DouglasRachford(
     M::AbstractManifold,
     f::TF,
@@ -148,7 +149,28 @@ function DouglasRachford(
         M, f, proxes_f, p, parallel, evaluation
     )
     mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation=evaluation)
-    return DouglasRachford(N, mpo, p0; evaluation=evaluation, parallel=parallel_)
+    return DouglasRachford(N, mpo, p0; evaluation=evaluation, parallel=parallel_, kwargs...)
+end
+function DouglasRachford(
+    M::AbstractManifold,
+    f::TF,
+    proxes_f::Vector{<:Any},
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF}
+    q = [p]
+    f_(M, p) = f(M, p[])
+    if evaluation isa AllocatingEvaluation
+        proxes_f_ = [(M, λ, p) -> [pf(M, λ, p[])] for pf in proxes_f]
+    else
+        proxes_f_ = [(M, q, λ, p) -> (q .= [pf(M, λ, p[])]) for pf in proxes_f]
+    end
+    rs = DouglasRachford(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    (typeof(q) == typeof(rs)) && (return rs[])
+    # otherwise (probably the state - return rs)
+    return rs
 end
 function DouglasRachford(
     M::AbstractManifold, mpo::ManifoldProximalMapObjective, p; kwargs...
@@ -156,6 +178,7 @@ function DouglasRachford(
     q = copy(M, p)
     return DouglasRachford!(M, mpo, q; kwargs...)
 end
+
 @doc raw"""
      DouglasRachford!(M, f, proxes_f, p)
      DouglasRachford!(M, mpo, p)
@@ -168,6 +191,12 @@ A vectorial proximal map on the power manifold ``\mathcal M^k`` is introduced as
 proximal map and the second proximal map of the is set to the `mean` (Riemannian Center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 i.e. component wise in a vector.
+
+!!! note
+
+    While creating the new staring point `p'` on the power manifold, a copy of `p`
+    Is created, so that the (by k>2 implicitly generated) parallel Douglas Rachford does
+    not work in-place for now.
 
 If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proximal maps are kept unchanged.
 
@@ -193,10 +222,10 @@ function DouglasRachford!(
     N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(
         M, f, proxes_f, p, parallel, evaluation
     )
-    mpo = ManifoldProximalMapObjective(
-        f_, (prox1, prox2); evaluation=evaluation, parallel=parallel_
+    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation=evaluation)
+    return DouglasRachford!(
+        N, mpo, p0; evaluation=evaluation, parallel=parallel_, kwargs...
     )
-    return DouglasRachford!(N, mpo, p0)
 end
 function DouglasRachford!(
     M::AbstractManifold,
@@ -216,8 +245,8 @@ function DouglasRachford!(
     drs = DouglasRachfordState(
         M, p; λ=λ, α=α, R=R, stopping_criterion=stopping_criterion, parallel=parallel > 0
     )
-    drs = decorate_state!(drs; kwargs...)
-    return get_solver_return(solve!(dmp, drs))
+    ddrs = decorate_state!(drs; kwargs...)
+    return get_solver_return(solve!(dmp, ddrs))
 end
 #
 # An internal function that turns more than 2 proxes into a parallel variant
@@ -228,7 +257,10 @@ function parallel_to_alternating_DR(
     prox1, prox2, parallel_ = prepare_proxes(proxes_f, parallel, evaluation)
     if parallel_ > 0
         N = PowerManifold(M, NestedPowerRepresentation(), parallel_)
-        p0 = [copy(M, p) for _ in 1:parallel_]
+        p0 = [p]
+        for _ in 2:parallel_
+            push!(p0, copy(M, p))
+        end
         f_ = (M, p) -> f(M.manifold, p[1])
     else
         N = M
