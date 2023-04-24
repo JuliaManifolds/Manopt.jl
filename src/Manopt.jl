@@ -110,6 +110,7 @@ using ManifoldsBase:
     retract!,
     set_component!,
     shortest_geodesic,
+    shortest_geodesic!,
     vector_transport_to,
     vector_transport_to!,
     zero_vector,
