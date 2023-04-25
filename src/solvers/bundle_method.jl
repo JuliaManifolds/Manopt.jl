@@ -222,7 +222,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    deleteat!(bms.bundle, findall(λj -> λj ≤ √eps(Float64), bms.λ))
+    deleteat!(bms.bundle, findall(λj -> λj ≤ 10*√eps(Float64), bms.λ))
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
