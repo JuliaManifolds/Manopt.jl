@@ -1,4 +1,5 @@
 using LinearAlgebra, Manifolds, Manopt, Test
+import Manifolds: inner
 
 @testset "Difference of Convex" begin
     g(M, p) = log(det(p))^4 + 1 / 4
@@ -68,6 +69,10 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test dcps.X == X1
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
+        @test_throws ErrorException difference_of_convex_algorithm(
+            M, dc_cost_a, p1; grad_g=grad_g
+        )
+        @test_throws ErrorException difference_of_convex_algorithm(M, dc_cost_a, p1; g=g)
         dc_cost_i = ManifoldDifferenceOfConvexObjective(
             f, grad_h!; evaluation=InplaceEvaluation()
         )
@@ -93,7 +98,6 @@ using LinearAlgebra, Manifolds, Manopt, Test
         X6 = get_subtrahend_gradient(M, dcp_cost_i, p0)
         @test X6 == grad_h(M, p0)
     end
-
     @testset "Running the subsolver algorithms" begin
         p1 = difference_of_convex_algorithm(
             M, f, g, grad_h!, p0; grad_g=grad_g!, evaluation=InplaceEvaluation()
@@ -199,5 +203,18 @@ using LinearAlgebra, Manifolds, Manopt, Test
         )
         @test isapprox(M, p13, p14)
         @test f(M, p13) ≈ 0.0 atol = 1e-15
+    end
+    @testset "On positive numbers" begin
+        # Define in Manifolds.jl?
+        Manifolds.inner(M::PositiveNumbers, p, X, Y) = inner(M, p[], X[], Y[])
+        Mp = PositiveNumbers()
+        pp = 1.0
+        # We do not have a ONB on PosNum, so we can only do a minimalistic test.
+        q = difference_of_convex_algorithm(Mp, f, g, grad_h, pp; grad_g=grad_g)
+        @test pp == q # since we start in a minimizer
+        s = difference_of_convex_algorithm(
+            Mp, f, g, grad_h, pp; grad_g=grad_g, return_state=true
+        )
+        @test get_solver_result(s)[] == q
     end
 end

@@ -229,7 +229,7 @@ function difference_of_convex_algorithm(
     grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
     ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
     rs = difference_of_convex_algorithm(
-        M, f_, g_, ∂h_, p; gradient=gradient_, grad_g=grad_g_, kwargs...
+        M, f_, g_, ∂h_, q; gradient=gradient_, grad_g=grad_g_, kwargs...
     )
     (typeof(q) == typeof(rs)) && (return rs[])
     # otherwise (probably the state - return rs)
