@@ -1,4 +1,4 @@
-using LinearAlgebra, Manifolds, Manopt, Test
+using LinearAlgebra, Manifolds, Manopt, Random, Test
 import Manifolds: inner
 
 @testset "Difference of Convex" begin
@@ -141,6 +141,14 @@ import Manifolds: inner
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
         @test isapprox(f(M, p4), 0.0; atol=2e-16)
+
+        Random.seed!(23)
+        p7 = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g=grad_g)
+        @test isapprox(f(M, p7), 0.0; atol=2e-16)
+
+        p8 = copy(M, p0) # Same call as p2 inplace
+        difference_of_convex_algorithm!(M, f, g, grad_h, p8; grad_g=grad_g)
+        @test isapprox(M, p8, p2)
 
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing
