@@ -240,21 +240,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
-    for j in 1:length(bms.lin_errors)
-    #     if bms.lin_errors[j] ≤ -√eps(Float64)
-    #         #@warn "($i) Entry $j in the linearization error vector is out of bounds: $(bms.lin_errors[j])"
-    #     end
-        if √eps(Float64) ≥ bms.lin_errors[j] ≥ -√eps(Float64)
-            bms.lin_errors[j] = 0.
-        end
-        # if bms.lin_errors[j] < 0.
-        #     bms.lin_errors[j] = -bms.lin_errors[j]
-        # end
-        # if √eps(Float64) ≥ bms.lin_errors[j]
-        #     bms.lin_errors[j] = 0.
-        # end
-    end
-    # bms.lin_errors = max.(bms.lin_errors, Ref(0.))
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
