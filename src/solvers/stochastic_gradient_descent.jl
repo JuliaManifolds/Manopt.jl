@@ -126,16 +126,20 @@ function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentS
 end
 
 @doc raw"""
-    stochastic_gradient_descent(M, gradF, x)
+    stochastic_gradient_descent(M, grad_f, p; kwargs...)
+    stochastic_gradient_descent(M, msgo, p; kwargs...)
 
 perform a stochastic gradient descent
 
 # Input
 
 * `M` a manifold ``\mathcal M``
-* `gradF` – a gradient function, that either returns a vector of the subgradients
+* `grad_f` – a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
-* `x` – an initial value ``x ∈ \mathcal M``
+* `p` – an initial value ``x ∈ \mathcal M``
+
+alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
+then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
 
 # Optional
 * `cost` – (`missing`) you can provide a cost function for example to track the function value
@@ -207,16 +211,20 @@ function stochastic_gradient_descent(
 end
 
 @doc raw"""
-    stochastic_gradient_descent!(M, gradF, x)
+    stochastic_gradient_descent!(M, grad_f, p)
+    stochastic_gradient_descent!(M, msgo, p)
 
-perform a stochastic gradient descent in place of `x`.
+perform a stochastic gradient descent in place of `p`.
 
 # Input
 
 * `M` a manifold ``\mathcal M``
-* `gradF` – a gradient function, that either returns a vector of the subgradients
+* `grad_f` – a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
-* `x` – an initial value ``x ∈ \mathcal M``
+* `p` – an initial value ``p ∈ \mathcal M``
+
+Alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
+then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
 
 for all optional parameters, see [`stochastic_gradient_descent`](@ref).
 """
@@ -227,6 +235,7 @@ function stochastic_gradient_descent!(
     p;
     cost=Missing(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
 )
     msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
     return stochastic_gradient_descent!(M, msgo, p; evaluation=evaluation, kwargs...)

@@ -111,6 +111,7 @@ function show(io::IO, dcs::DifferenceOfConvexState)
 end
 @doc raw"""
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
+    difference_of_convex_algorithm(M, mdco, p; kwargs...)
 
 Compute the difference of convex algorithm[^FerreiraSantosSouza2021] to minimize
 
@@ -140,6 +141,11 @@ until the `stopping_criterion` is fulfilled.
 * `initial_vector`      - (`zero_vector(M, p)`) initialise the inner tangent vecor to store the subgradient result.
 * `stopping_criterion`  – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
   a [`StoppingCriterion`](@ref) for the algorithm – includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
+
+if you specify the [`ManifoldDifferenceOfConvexObjective`](@ref) `mdco`, additionally
+
+* `g`                   - (`nothing`) speficy the function `g` If specified, a subsolver is automatically set up.
+
 
 While there are several parameters for a sub solver, the easiest is to provide the function `grad_g=`,
 such that together with the mandatory function `g` a default cost and gradient can be generated and passed to
@@ -184,17 +190,69 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     > _The difference of convex algorithm on Riemannian manifolds_,
     > 2021, arXiv: [2112.05250](http://arxiv.org/abs/2112.05250).
 """
-function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h, p=rand(M); kwargs...)
+difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
+function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h; kwargs...)
+    return difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h, rand(M); kwargs...)
+end
+function difference_of_convex_algorithm(
+    M::AbstractManifold,
+    f,
+    g,
+    ∂h,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    gradient=nothing,
+    kwargs...,
+)
+    mdco = ManifoldDifferenceOfConvexObjective(
+        f, ∂h; gradient=gradient, evaluation=evaluation
+    )
+    return difference_of_convex_algorithm(
+        M, mdco, p; g=g, evaluation=evaluation, gradient=gradient, kwargs...
+    )
+end
+function difference_of_convex_algorithm(
+    M::AbstractManifold,
+    f,
+    g,
+    ∂h,
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    grad_g=nothing,
+    gradient=nothing,
+    kwargs...,
+)
+    q = [p]
+    f_(M, p) = f(M, p[])
+    g_(M, p) = f(M, p[])
+    gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
+    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
+    ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
+    rs = difference_of_convex_algorithm(
+        M, f_, g_, ∂h_, p; gradient=gradient_, grad_g=grad_g_, kwargs...
+    )
+    (typeof(q) == typeof(rs)) && (return rs[])
+    # otherwise (probably the state - return rs)
+    return rs
+end
+function difference_of_convex_algorithm(
+    M::AbstractManifold, mdco::ManifoldDifferenceOfConvexObjective, p; kwargs...
+)
     q = copy(M, p)
-    return difference_of_convex_algorithm!(M, f, g, ∂h, q; kwargs...)
+    return difference_of_convex_algorithm!(M, mdco, p; kwargs...)
 end
 
 @doc raw"""
     difference_of_convex_algorithm!(M, f, g, ∂h, p; kwargs...)
+    difference_of_convex_algorithm!(M, mdco, p; kwargs...)
 
 Run the difference of convex algorithm and perform the steps in place of `p`.
 See [`difference_of_convex_algorithm`](@ref) for more details.
+
+if you specify the [`ManifoldDifferenceOfConvexObjective`](@ref) `mdco`,
+the `g` is a keyword argument.
 """
+difference_of_convex_algorithm!(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm!(
     M::AbstractManifold,
     f,
@@ -202,6 +260,20 @@ function difference_of_convex_algorithm!(
     ∂h,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    gradient=nothing,
+    kwargs...,
+)
+    mdco = ManifoldDifferenceOfConvexObjective(
+        f, ∂h; gradient=gradient, evaluation=evaluation
+    )
+    return difference_of_convex_algorithm!(M, mdco, p; g=g, kwargs...)
+end
+function difference_of_convex_algorithm!(
+    M::AbstractManifold,
+    mdco::ManifoldDifferenceOfConvexObjective,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    g=nothing,
     grad_g=nothing,
     gradient=nothing,
     initial_vector=zero_vector(M, p),
@@ -211,7 +283,11 @@ function difference_of_convex_algorithm!(
         StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
     end,
     # Subsolver Magic Cascade.
-    sub_cost=LinearizedDCCost(g, copy(M, p), copy(M, p, initial_vector)),
+    sub_cost=if isnothing(g)
+        nothing
+    else
+        LinearizedDCCost(g, copy(M, p), copy(M, p, initial_vector))
+    end,
     sub_grad=if isnothing(grad_g)
         nothing
     else
@@ -243,13 +319,9 @@ function difference_of_convex_algorithm!(
     end,
     kwargs..., #collect rest
 )
-    mdco = ManifoldDifferenceOfConvexObjective(
-        f, ∂h; gradient=gradient, evaluation=evaluation
-    )
     dmdco = decorate_objective!(M, mdco; kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here
-
     if isnothing(sub_problem)
         error(
             """

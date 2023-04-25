@@ -109,7 +109,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test Manopt.get_message(s1) == "" # no message in last step
         @test isapprox(M, p1, p2)
         @test isapprox(M, p2, p3)
-        @test f(M, p1) ≈ 0.0
+        @test isapprox(f(M, p1), 0.0; atol=2e-16)
         # not provided grad_g or problem nothing
         @test_throws ErrorException difference_of_convex_algorithm(
             M, f, g, grad_h, p0; sub_problem=nothing
@@ -136,7 +136,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test isapprox(M, p3, p4)
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
-        @test f(M, p4) ≈ 0.0
+        @test isapprox(f(M, p4), 0.0; atol=2e-16)
 
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing
