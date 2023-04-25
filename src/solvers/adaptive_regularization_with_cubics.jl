@@ -49,7 +49,7 @@ mutable struct AdaptiveRegularizationState{
 } <: AbstractManoptSolverState#AbstractHessianSolverState
     p::P
     substate::St
-    subcost::SCO
+    subcost::SCO # Ronny: not necessary because its included in the cubproblem
     subprob::SPR
     X::T
     H::T
@@ -69,7 +69,7 @@ mutable struct AdaptiveRegularizationState{
     function AdaptiveRegularizationState{P,St,SCO,SPR,T,R}(
         M::AbstractManifold,
         p::P=rand(M),
-        substate::St=NewLanczosState(M,p),
+        substate::St=NewLanczosState(M,p), # Why i subcost in the state?
         subcost::SCO=substate.subcost,
         subprob::SPR=DefaultManoptProblem(M,ManifoldCostObjective(subcost)),
         X::T=zero_vector(M, p),
@@ -116,7 +116,7 @@ function AdaptiveRegularizationState(
     M::AbstractManifold,
     p::P=rand(M);
     substate::St=NewLanczosState(M,p),
-    subcost::SCO=substate.subcost,
+    subcost::SCO=substate.subcost, # ManifoldHessianObjective((M,p)->0,(M,p)->0,(M,p,X)->0)
     subprob::SPR=DefaultManoptProblem(M,ManifoldCostObjective(subcost)),
     X::T=zero_vector(M, p),
     H::T=zero_vector(M, p),
@@ -234,7 +234,7 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
     return s
 end
 
-#removed here 
+#removed here
 function initialize_solver!(dmp::AbstractManoptProblem, s::AdaptiveRegularizationState)
     get_gradient!(dmp, s.X, s.p)
     return s
@@ -247,7 +247,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     #Set iterate and update the regularization parameter
     set_iterate!(arcs.substate, M, arcs.p)
     set_manopt_parameter!(arcs.substate,:ς,arcs.ς)
-   
+
 
     #Solve the subproblem
     arcs.S = get_solver_result(solve!(arcs.subprob, decorate_state!(arcs.substate)))
@@ -270,7 +270,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     #Update iterate
     if arcs.ρ >= arcs.η1
         #println("Updated iterate")
-        arcs.p = retract(M, arcs.p, arcs.S) 
+        arcs.p = retract(M, arcs.p, arcs.S)
         get_gradient!(dmp, arcs.X, arcs.p)
         #            Move the get_gradient! below up here so we only compute it when the point is new.
     end
@@ -314,7 +314,7 @@ end
 mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverState
     p::P
     objective::ManifoldHessianObjective
-    subcost::SCO
+    subcost::SCO # Ronny: Why is that here?
     stop::SC #maximum number of iterations
     maxIterNewton::I
     ς::R # current reg parameter, must update with set manopt parameter.
@@ -353,6 +353,7 @@ end
 function NewLanczosState(
     M::AbstractManifold,
     p::P=rand(M);
+    # Ronny: Maybe not necessary?
     objective::ManifoldHessianObjective = ManifoldHessianObjective((M,p)->0,(M,p)->0,(M,p,X)->0),
     θ=0.5,
     maxIterLanczos=200,                     #maxIterLanczos
@@ -383,7 +384,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
     mho =s.objective
 
     g = get_gradient(M, mho, s.p)
-    s.gradnorm = norm(M, s.p, g)  
+    s.gradnorm = norm(M, s.p, g)
     #q = g / s.gradnorm
     #s.Q[1] .= q #store it directly above
     s.Q[1] .= g / s.gradnorm
@@ -400,6 +401,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
 
 
     #update parameters for the subcost
+    # Ronny: instead do set_manopt_parameter!(dmp, :Cost, :k,1)
     set_manopt_parameter!(s.subcost,:k,1)
     set_manopt_parameter!(s.subcost,:y,s.y)
     set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
@@ -451,7 +453,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     #This was only necessary since
     if j==1
         s.modelGradnorm = norm(
-            s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y' + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2) 
+            s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y' + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
     else
         s.modelGradnorm = norm(
             s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
@@ -461,7 +463,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     #s.modelGradnorm = norm(
     #    s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y[1:j] + s.ς * norm(s.y[1:j], 2) * vcat(s.y[1:j], 0), 2)
 
-    
+
     if s.modelGradnorm > s.θ * norm(s.y, 2)^2
         s.y=min_cubic_Newton(s,j+1)
         #S is initalized as zero_vector(M,p) so dont have to set it.
@@ -474,13 +476,12 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
         end
         s.S=S_opt
     end
-    #Update the params here. 
+    #Update the params here.
     set_manopt_parameter!(s.subcost,:k,j+1)
-    set_manopt_parameter!(s.subcost,:y,s.y)
+    set_manopt_parameter!(s.subcost,:y,s.y) #     s.subcost(TangentSpaceAt(M,p), s.y)
     set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
     set_manopt_parameter!(s.subcost,:ς,s.ς)
-
-    return s    
+    return s
 end
 
 
@@ -493,22 +494,22 @@ end
 
 
 mutable struct CubicSubCost{Y,T,I,R}
-    k::I #number of Lanczos vectors 
+    k::I #number of Lanczos vectors
     gradnorm::R
     ς::R
     Tmatrix::T #submatrix
     y::Y # Solution of of argmin m(s), s= sum y[i]q[i]
-end 
-function (C::CubicSubCost)(M::AbstractManifold,p)  # just dummy variable
+end
+function (C::CubicSubCost)(M::AbstractManifold,p)  # Ronny: M is Euclidean (R^k) but p should be y
     #C.y[1]*C.gradnorm + 0.5*dot(C.y[1:C.k],@view(C.Tmatrix[1:C.k,1:C.k])*C.y[1:C.k]) + C.ς/3*norm(C.y[1:C.k],2)^3
-    return C.y[1]*C.gradnorm + 0.5*dot(C.y,@view(C.Tmatrix[1:C.k,1:C.k])*C.y) + C.ς/3*norm(C.y,2)^3 
+    return C.y[1]*C.gradnorm + 0.5*dot(C.y,@view(C.Tmatrix[1:C.k,1:C.k])*C.y) + C.ς/3*norm(C.y,2)^3
 end
 
 
 
 
 #How to make the below less confusing?
-#The the iterates in in the Lanczos stepsolver is strictly a sequence of tangent vectors that minimize the problem in TₚM. 
+#The the iterates in in the Lanczos stepsolver is strictly a sequence of tangent vectors that minimize the problem in TₚM.
 #However we must set the correct inital point in the LanczosState
 get_iterate(s::NewLanczosState) = s.S
 
@@ -561,6 +562,7 @@ function (c::StopWhenLanczosModelGradLess)(
     ::AbstractManoptProblem, s::NewLanczosState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
+    # Ronny: maybe s.y[1:s.k] ?
     if (i > 0) && s.modelGradnorm <= c.relative_threshold*norm(s.y, 2)^2
         c.reason = "The algorithm has reduced the model grad norm by $(c.relative_threshold).\n"
         return true
@@ -623,4 +625,3 @@ function min_cubic_Newton(s::NewLanczosState,j)
     end
     return y
 end
-
