@@ -143,7 +143,7 @@ import Manifolds: inner
         @test isapprox(f(M, p4), 0.0; atol=2e-16)
 
         Random.seed!(23)
-        p7 = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g=grad_g)
+        p7 = difference_of_convex_algorithm(M, f, g, grad_h; grad_g=grad_g)
         @test isapprox(f(M, p7), 0.0; atol=2e-16)
 
         p8 = copy(M, p0) # Same call as p2 inplace
