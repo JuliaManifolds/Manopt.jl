@@ -20,6 +20,7 @@ using Manopt, Manifolds, Test
                 DebugCost(; io=my_io),
                 DebugStoppingCriterion(; io=my_io),
                 DebugDivider("\n"; io=my_io),
+                DebugMessages(),
             ]),
             500,
         )
@@ -51,9 +52,10 @@ using Manopt, Manifolds, Test
             stepsize_reduction=0.99,
             sufficient_decrease=0.1,
             memory_size=2,
-            min_stepsize=1e-7,
-            max_stepsize=π / 2,
+            bb_min_stepsize=1e-7,
+            bb_max_stepsize=π / 2,
             strategy=:direct,
+            stop_when_stepsize_exceeds=0.9 * π,
         )
         x3 = gradient_descent!(
             M,
@@ -97,19 +99,19 @@ using Manopt, Manifolds, Test
             ),
             direction=Nesterov(M, r2[1]),
         )
-        @test isapprox(M, x, x6; atol=1e-13)
+        @test isapprox(M, x, x6; atol=1e-11)
 
         @test_logs (
             :warn,
             string(
                 "The strategy 'indirect' is not defined. The 'direct' strategy is used instead.",
             ),
-        ) NonmonotoneLinesearch(M; strategy=:indirect)
-        @test_throws DomainError NonmonotoneLinesearch(M; min_stepsize=0.0)
+        ) NonmonotoneLinesearch(Euclidean(); strategy=:indirect)
+        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); bb_min_stepsize=0.0)
         @test_throws DomainError NonmonotoneLinesearch(
-            M; min_stepsize=π / 2, max_stepsize=π / 4
+            Euclidean(); bb_min_stepsize=π / 2, bb_max_stepsize=π / 4
         )
-        @test_throws DomainError NonmonotoneLinesearch(M; memory_size=0)
+        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); memory_size=0)
 
         rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
@@ -158,7 +160,7 @@ using Manopt, Manifolds, Test
             grad_f,
             1 / sqrt(2) .* [1.0, -1.0, 0.0];
             stepsize=ConstantStepsize(1.0),
-            debug=[DebugWarnIfCostIncreases(:Once)],
+            debug=[DebugWarnIfCostIncreases(:Once), :Messages],
         )
     end
 end

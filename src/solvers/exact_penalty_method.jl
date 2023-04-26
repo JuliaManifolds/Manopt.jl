@@ -80,6 +80,15 @@ mutable struct ExactPenaltyMethodState{P,Pr,Op,TStopping<:StoppingCriterion} <:
         return epms
     end
 end
+get_iterate(epms::ExactPenaltyMethodState) = epms.p
+function get_message(epms::ExactPenaltyMethodState)
+    # for now only the sub solver might have messages
+    return get_message(epms.sub_state)
+end
+function set_iterate!(epms::ExactPenaltyMethodState, M, p)
+    epms.p = p
+    return epms
+end
 function show(io::IO, epms::ExactPenaltyMethodState)
     i = get_count(epms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -96,11 +105,6 @@ function show(io::IO, epms::ExactPenaltyMethodState)
     $(status_summary(epms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
-end
-get_iterate(epms::ExactPenaltyMethodState) = epms.p
-function set_iterate!(epms::ExactPenaltyMethodState, M, p)
-    epms.p = p
-    return epms
 end
 
 @doc raw"""
@@ -195,7 +199,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function exact_penalty_method(
     M::AbstractManifold, f::TF, grad_f::TGF, p=rand(M); kwargs...

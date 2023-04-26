@@ -32,26 +32,23 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
         Y = similar(X)
         FG(M, Y, p)
         @test FG(M, p) == Y
-        O = FrankWolfeState(M, p, oracle!, InplaceEvaluation())
-        @test startswith(repr(O), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
-        set_iterate!(O, 2 .* p)
-        @test get_iterate(O) == 2 .* p
+        s = FrankWolfeState(M, p, oracle!, InplaceEvaluation())
+        @test Manopt.get_message(s) == ""
+        @test startswith(repr(s), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
+        set_iterate!(s, 2 .* p)
+        @test get_iterate(s) == 2 .* p
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
+        gds = GradientDescentState(M)
+        s2 = FrankWolfeState(M, p, dmp, gds)
+        @test Manopt.get_message(s2) == ""
     end
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
             p2a = Frank_Wolfe_method(
-                M,
-                f,
-                grad_f!,
-                p;
-                sub_problem=oracle!,
-                sub_state=InplaceEvaluation(),
-                evaluation=InplaceEvaluation(),
+                M, f, grad_f!, p; sub_problem=oracle!, evaluation=InplaceEvaluation()
             )
             @test f(M, p2a) < f(M, p)
-            p2b = Frank_Wolfe_method(
-                M, f, grad_f, p; sub_problem=oracle, sub_state=AllocatingEvaluation()
-            )
+            p2b = Frank_Wolfe_method(M, f, grad_f, p; sub_problem=oracle)
             @test f(M, p2b) ≈ f(M, p2a)
         end
         @testset "Testing with an Subsolver" begin

@@ -4,14 +4,15 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
 @testset "Riemannian quasi-Newton Methods" begin
     @testset "Show & Status" begin
         M = Euclidean(4)
-        p = zeros(Float64, 4)
         qnu = InverseBFGS()
         d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
         @test Manopt.status_summary(d) ==
             "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
         s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
         @test repr(d) == s
+        @test Manopt.get_message(d) == ""
     end
+
     @testset "Mean of 3 Matrices" begin
         # Mean of 3 matrices
         A = [18.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
@@ -44,6 +45,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
         set_gradient!(lrbfgs_s, M, p, grad_f(M, p))
         @test isapprox(M, p, Manopt.get_gradient(lrbfgs_s), grad_f(M, p))
+        @test Manopt.get_message(lrbfgs_s) == ""
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
@@ -107,6 +109,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             end
         end
     end
+
     @testset "Rayleigh Quotient Minimzation" begin
         n = 4
         rayleigh_atol = 1e-8
@@ -174,7 +177,8 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
         end
     end
-    @testset "Brockett" begin
+
+    @testset "Brocket" begin
         struct GradF
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}
@@ -335,5 +339,24 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         p0 = [2.0, 1 + im]
         p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion=StopAfterIteration(3))
         @test fc(M, p4) ≤ fc(M, p0)
+    end
+
+    @testset "Boundary cases and safeguards" begin
+        M = Euclidean(2)
+        p = [0.0, 0.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 * sum(p)
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        qns = QuasiNewtonState(M, p)
+        # push zeros to memory
+        push!(qns.direction_update.memory_s, copy(p))
+        push!(qns.direction_update.memory_s, copy(p))
+        push!(qns.direction_update.memory_y, copy(p))
+        push!(qns.direction_update.memory_y, copy(p))
+        qns.direction_update(mp, qns)
+        # Update (1) says at i=1 inner prodcucts are zero (2) all are zero -> gradient proposal
+        @test contains(qns.direction_update.message, "i=1,2")
+        @test contains(qns.direction_update.message, "gradient")
     end
 end

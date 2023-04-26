@@ -31,6 +31,8 @@ include("trust_region_model.jl")
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Trust Region Method\n")
         p1 = get_solver_result(s)
         q = copy(M, p)
+        set_gradient!(s, M, p, zero_vector(M, p))
+        @test norm(M, p, get_gradient(s)) ≈ 0.0
         trust_regions!(M, cost, rgrad, rhess, q; max_trust_region_radius=8.0)
         @test isapprox(M, p1, q)
         p2 = trust_regions(
@@ -43,13 +45,6 @@ include("trust_region_model.jl")
             M,
             cost,
             rgrad,
-            ApproxHessianFiniteDifference(
-                M,
-                p,
-                rgrad;
-                steplength=2^(-9),
-                vector_transport_method=ProjectionTransport(),
-            ),
             p;
             max_trust_region_radius=8.0,
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
@@ -59,13 +54,6 @@ include("trust_region_model.jl")
             M,
             cost,
             rgrad,
-            ApproxHessianFiniteDifference(
-                M,
-                p,
-                rgrad;
-                steplength=2^(-9),
-                vector_transport_method=ProjectionTransport(),
-            ),
             q2;
             stopping_criterion=StopAfterIteration(2000) | StopWhenGradientNormLess(1e-6),
             max_trust_region_radius=8.0,

@@ -99,13 +99,13 @@ using Manifolds, Manopt, Test, Dates
             M, f; stopping_criterion=StopAfterIteration(1), λ=i -> i
         )
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
-        p = DefaultManoptProblem(M, mpo)
+        dmp = DefaultManoptProblem(M, mpo)
         ds = DebugSolverState(s, DebugProximalParameter(; io=io))
-        step_solver!(p, ds, 1)
+        step_solver!(dmp, ds, 1)
         debug = String(take!(io))
         @test startswith(debug, "λ:")
         rs = RecordSolverState(s, RecordProximalParameter())
-        step_solver!(p, rs, 1)
+        step_solver!(dmp, rs, 1)
         @test get_record(rs) == [1.0]
     end
 end

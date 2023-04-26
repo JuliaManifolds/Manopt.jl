@@ -13,6 +13,9 @@ Describes a particle swarm optimizing algorithm, with
 * `inertia` – (`0.65`) the inertia of the patricles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
+* `p_temp` – temporary storage for a point to avoid allocations during a step of the algorithm
+* `social_vec` - temporary storage for a tangent vector related to `social_weight`
+* `cognitive_vector` -  temporary storage for a tangent vector related to `cognitive_weight`
 * `stopping_criterion` – (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `retraction_method` – (`default_retraction_method(M, eltype(x))`) the rectraction to use
@@ -32,9 +35,10 @@ which are keyword arguments here.
 [`particle_swarm`](@ref)
 """
 mutable struct ParticleSwarmState{
-    TX<:AbstractVector,
-    TG,
-    TVelocity<:AbstractVector,
+    P,
+    T,
+    TX<:AbstractVector{P},
+    TVelocity<:AbstractVector{T},
     TParams<:Real,
     TStopping<:StoppingCriterion,
     TRetraction<:AbstractRetractionMethod,
@@ -43,11 +47,14 @@ mutable struct ParticleSwarmState{
 } <: AbstractManoptSolverState
     x::TX
     p::TX
-    g::TG
+    g::P
     velocity::TVelocity
     inertia::TParams
     social_weight::TParams
     cognitive_weight::TParams
+    p_temp::P
+    social_vector::T
+    cognitive_vector::T
     stop::TStopping
     retraction_method::TRetraction
     inverse_retraction_method::TInvRetraction
@@ -55,42 +62,42 @@ mutable struct ParticleSwarmState{
 
     function ParticleSwarmState(
         M::AbstractManifold,
-        x::AbstractVector,
-        velocity::AbstractVector;
+        x::VP,
+        velocity::VT;
         inertia=0.65,
         social_weight=1.4,
         cognitive_weight=1.4,
-        stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                              StopWhenChangeLess(1e-4),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(x)),
-        inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            M, eltype(x)
-        ),
-        vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-            M, eltype(x)
-        ),
-    )
-        o = new{
-            typeof(x),
-            eltype(x),
-            typeof(velocity),
-            typeof(inertia + social_weight + cognitive_weight),
-            typeof(stopping_criterion),
-            typeof(retraction_method),
-            typeof(inverse_retraction_method),
-            typeof(vector_transport_method),
+        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(1e-4),
+        retraction_method::RTM=default_retraction_method(M, eltype(x)),
+        inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(x)),
+        vector_transport_method::VTM=default_vector_transport_method(M, eltype(x)),
+    ) where {
+        P,
+        T,
+        VP<:AbstractVector{<:P},
+        VT<:AbstractVector{<:T},
+        RTM<:AbstractRetractionMethod,
+        SCT<:StoppingCriterion,
+        IRM<:AbstractInverseRetractionMethod,
+        VTM<:AbstractVectorTransportMethod,
+    }
+        s = new{
+            P,T,VP,VT,typeof(inertia + social_weight + cognitive_weight),SCT,RTM,IRM,VTM
         }()
-        o.x = x
-        o.p = deepcopy(x)
-        o.velocity = velocity
-        o.inertia = inertia
-        o.social_weight = social_weight
-        o.cognitive_weight = cognitive_weight
-        o.stop = stopping_criterion
-        o.retraction_method = retraction_method
-        o.inverse_retraction_method = inverse_retraction_method
-        o.vector_transport_method = vector_transport_method
-        return o
+        s.x = x
+        s.p = copy.(Ref(M), x)
+        s.p_temp = copy(M, first(x))
+        s.social_vector = zero_vector(M, s.p_temp)
+        s.cognitive_vector = zero_vector(M, s.p_temp)
+        s.velocity = velocity
+        s.inertia = inertia
+        s.social_weight = social_weight
+        s.cognitive_weight = cognitive_weight
+        s.stop = stopping_criterion
+        s.retraction_method = retraction_method
+        s.inverse_retraction_method = inverse_retraction_method
+        s.vector_transport_method = vector_transport_method
+        return s
     end
 end
 function show(io::IO, pss::ParticleSwarmState)
@@ -229,27 +236,27 @@ function particle_swarm!(
     M::AbstractManifold,
     f::TF;
     n::Int=100,
-    x::AbstractVector=[rand(M) for i in 1:n],
-    velocity::AbstractVector=[rand(M; vector_at=y) for y in x],
+    x0::AbstractVector=[rand(M) for i in 1:n],
+    velocity::AbstractVector=[rand(M; vector_at=y) for y in x0],
     inertia::Real=0.65,
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
                                           StopWhenChangeLess(1e-4),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(x)),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(x0)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, eltype(x)
+        M, eltype(x0)
     ),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-        M, eltype(x)
+        M, eltype(x0)
     ),
     kwargs..., #collect rest
 ) where {TF}
     dmco = decorate_objective!(M, ManifoldCostObjective(f); kwargs...)
     mp = DefaultManoptProblem(M, dmco)
-    o = ParticleSwarmState(
+    pss = ParticleSwarmState(
         M,
-        x,
+        x0,
         velocity;
         inertia=inertia,
         social_weight=social_weight,
@@ -259,7 +266,7 @@ function particle_swarm!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state!(o; kwargs...)
+    o = decorate_state!(pss; kwargs...)
     return get_solver_return(solve!(mp, o))
 end
 
@@ -267,27 +274,32 @@ end
 # Solver functions
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState)
+    M = get_manifold(mp)
     j = argmin([get_cost(mp, p) for p in s.x])
-    return s.g = deepcopy(s.x[j])
+    s.g = copy(M, s.x[j])
+    return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
     M = get_manifold(mp)
+    # Allocate two tangent vectors
     for i in 1:length(s.x)
-        s.velocity[i] =
-            s.inertia .* s.velocity[i] +
-            s.cognitive_weight * rand(1) .*
-            inverse_retract(M, s.x[i], s.p[i], s.inverse_retraction_method) +
-            s.social_weight * rand(1) .*
-            inverse_retract(M, s.x[i], s.g, s.inverse_retraction_method)
-        xOld = s.x[i]
-        s.x[i] = retract(M, s.x[i], s.velocity[i], s.retraction_method)
-        s.velocity[i] = vector_transport_to(
-            M, xOld, s.velocity[i], s.x[i], s.vector_transport_method
+        inverse_retract!(M, s.cognitive_vector, s.x[i], s.p[i], s.inverse_retraction_method)
+        inverse_retract!(M, s.social_vector, s.x[i], s.g, s.inverse_retraction_method)
+        # add v = inertia * v + cw*cog_infl + sw*soc_infl
+        # where the last two are randomly shortened a bit
+        s.velocity[i] .=
+            s.inertia .* s.velocity[i] .+
+            s.cognitive_weight .* rand(1) .* s.cognitive_vector .+
+            s.social_weight .* rand(1) .* s.social_vector
+        copyto!(M, s.p_temp, s.x[i])
+        retract!(M, s.x[i], s.x[i], s.velocity[i], s.retraction_method)
+        vector_transport_to!(
+            M, s.velocity[i], s.p_temp, s.velocity[i], s.x[i], s.vector_transport_method
         )
         if get_cost(mp, s.x[i]) < get_cost(mp, s.p[i])
-            s.p[i] = s.x[i]
+            copyto!(M, s.p[i], s.x[i])
             if get_cost(mp, s.p[i]) < get_cost(mp, s.g)
-                s.g = s.p[i]
+                copyto!(M, s.g, s.p[i])
             end
         end
     end
@@ -306,6 +318,7 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmStat
         )
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"
+            c.at_iteration = i
             c.storage(mp, s, i)
             return true
         end

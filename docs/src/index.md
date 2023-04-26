@@ -10,7 +10,9 @@ Manopt.Manopt
 
 For a function $f:\mathcal M → ℝ$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
 
-$\operatorname*{argmin}_{x ∈ \mathcal M} f(x),$
+```math
+\operatorname*{argmin}_{p ∈ \mathcal M} f(p),
+```
 
 or in other words: find the point $x$ on the manifold, where $f$ reaches its minimal function value.
 

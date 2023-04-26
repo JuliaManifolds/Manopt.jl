@@ -23,6 +23,7 @@ using LinearAlgebra: I, tr
         M, co, p0, DefaultManoptProblem(M, ManifoldCostObjective(f)), NelderMeadState(M)
     )
     set_iterate!(alms, M, 2 .* p0)
+    @test Manopt.get_message(alms) == ""
     @test get_iterate(alms) == 2 .* p0
     @test startswith(
         repr(alms), "# Solver state for `Manopt.jl`s Augmented Lagrangian Method\n"

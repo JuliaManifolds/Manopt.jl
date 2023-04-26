@@ -93,6 +93,13 @@ function QuasiNewtonState(
         vector_transport_method,
     )
 end
+function get_message(qns::QuasiNewtonState)
+    # we might have a message from (1) direction update or the (2) the step size
+    msg1 = get_message(qns.direction_update)
+    msg2 = get_message(qns.stepsize)
+    d = (length(msg1) > 0 && length(msg2) > 0) ? "\n" : "" #divider
+    return "$(msg1)$(d)$(msg2)"
+end
 function show(io::IO, qns::QuasiNewtonState)
     i = get_count(qns, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -184,7 +191,7 @@ The ``k``th iteration consists of
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function quasi_Newton(M::AbstractManifold, F::TF, gradF::TDF, p; kwargs...) where {TF,TDF}
     q = copy(M, p)
@@ -311,9 +318,9 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
 end
 
 function locking_condition_scale(
-    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, p_old, v, x, vt
+    M::AbstractManifold, ::AbstractQuasiNewtonDirectionUpdate, p_old, X, p, vtm
 )
-    return norm(M, p_old, v) / norm(M, x, vector_transport_to(M, p_old, v, x, vt))
+    return norm(M, p_old, X) / norm(M, p, vector_transport_to(M, p_old, X, p, vtm))
 end
 
 @doc raw"""

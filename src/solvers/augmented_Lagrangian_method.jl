@@ -100,6 +100,17 @@ mutable struct AugmentedLagrangianMethodState{
         return alms
     end
 end
+
+get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
+function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
+    alms.p = p
+    return alms
+end
+function get_message(alms::AugmentedLagrangianMethodState)
+    # for now only the sub solver might have messages
+    return get_message(alms.sub_state)
+end
+
 function show(io::IO, alms::AugmentedLagrangianMethodState)
     i = get_count(alms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -119,11 +130,6 @@ function show(io::IO, alms::AugmentedLagrangianMethodState)
     $(status_summary(alms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
-end
-get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
-function set_iterate!(alms::AugmentedLagrangianMethodState, M, p)
-    alms.p = p
-    return alms
 end
 
 @doc raw"""

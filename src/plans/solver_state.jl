@@ -43,6 +43,19 @@ The default is `Val{false}`, i.e. by default an state is not decorated.
 """
 dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
+@doc raw"""
+    get_message(du::AbstractManoptSolverState)
+
+get a message (String) from e.g. performing a step computation.
+This should return any message a sub-step might have issued
+"""
+function get_message(s::AbstractManoptSolverState)
+    return _get_message(s, dispatch_state_decorator(s))
+end
+_get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
+#INtroduce a default that there is no message
+_get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
+
 """
     is_state_decorator(s::AbstractManoptSolverState)
 
@@ -108,9 +121,7 @@ By default also undecorates the state beforehand
 """
 get_gradient(s::AbstractManoptSolverState) = _get_gradient(s, dispatch_state_decorator(s))
 function _get_gradient(s::AbstractManoptSolverState, ::Val{false})
-    return error(
-        "It seems the AbstractManoptSolverState $s do not provide access to a gradient"
-    )
+    return error("It seems that $s do not provide access to a gradient")
 end
 _get_gradient(s::AbstractManoptSolverState, ::Val{true}) = get_gradient(s.state)
 

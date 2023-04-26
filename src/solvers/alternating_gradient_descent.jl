@@ -96,6 +96,10 @@ function show(io::IO, agds::AlternatingGradientDescentState)
     This indicates convergence: $Conv"""
     return print(io, s)
 end
+function get_message(agds::AlternatingGradientDescentState)
+    # for now only step size is quipped with messages
+    return get_message(agds.stepsize)
+end
 
 """
     AlternatingGradient <: DirectionUpdateRule
@@ -125,9 +129,9 @@ function (a::ArmijoLinesearch)(
     M = get_manifold(amp)
     X = zero_vector(M, agds.p)
     get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    a.last_stepsize = linesearch_backtrack(
+    (a.last_stepsize, a.message) = linesearch_backtrack(
         M,
-        p -> get_cost(amp, p),
+        (M, p) -> get_cost(amp, p),
         agds.p,
         X,
         a.last_stepsize,

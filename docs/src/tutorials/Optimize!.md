@@ -76,7 +76,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 
 and just call [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/).
 For a first start, we do not have to provide more than the manifold, the cost, the gradient,
-and a startig point, which we just set to the first data point
+and a starting point, which we just set to the first data point
 
 ``` julia
 m1 = gradient_descent(M, f, grad_f, data[1])

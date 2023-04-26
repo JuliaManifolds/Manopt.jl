@@ -33,6 +33,68 @@ combine stopping criteria.
 """
 abstract type StoppingCriterionSet <: StoppingCriterion end
 
+"""
+    StopAfter <: StoppingCriterion
+
+store a threshold when to stop looking at the complete runtime. It uses
+`time_ns()` to measure the time and you provide a `Period` as a time limit,
+i.e. `Minute(15)`
+
+# Constructor
+
+    StopAfter(t)
+
+initialize the stopping criterion to a `Period t` to stop after.
+"""
+mutable struct StopAfter <: StoppingCriterion
+    threshold::Period
+    reason::String
+    start::Nanosecond
+    at_iteration::Int
+    function StopAfter(t::Period)
+        return if value(t) < 0
+            error("You must provide a positive time period")
+        else
+            new(t, "", Nanosecond(0), 0)
+        end
+    end
+end
+function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
+    if value(c.start) == 0 || i <= 0 # (re)start timer
+        c.reason = ""
+        c.at_iteration = 0
+        c.start = Nanosecond(time_ns())
+    else
+        cTime = Nanosecond(time_ns()) - c.start
+        if i > 0 && (cTime > Nanosecond(c.threshold))
+            c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold).\n"
+            c.at_iteration = i
+            return true
+        end
+    end
+    return false
+end
+function status_summary(c::StopAfter)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "stopped after $(c.threshold):\t$s"
+end
+indicates_convergence(c::StopAfter) = false
+function show(io::IO, c::StopAfter)
+    return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
+end
+
+"""
+    update_stopping_criterion!(c::StopAfter, :MaxTime, v::Period)
+
+Update the time period after which an algorithm shall stop.
+"""
+function update_stopping_criterion!(c::StopAfter, ::Val{:MaxTime}, v::Period)
+    (value(v) < 0) && error("You must provide a positive time period")
+    c.threshold = v
+    return c
+end
+
 @doc raw"""
     StopAfterIteration <: StoppingCriterion
 
@@ -91,61 +153,6 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
 end
 
 """
-    StopWhenGradientNormLess <: StoppingCriterion
-
-A stopping criterion based on the current gradient norm.
-
-# Constructor
-
-    StopWhenGradientNormLess(ε::Float64)
-
-Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
-indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
-"""
-mutable struct StopWhenGradientNormLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    at_iteration::Int
-    StopWhenGradientNormLess(ε::Float64) = new(ε, "", 0)
-end
-function (c::StopWhenGradientNormLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
-)
-    M = get_manifold(mp)
-    if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
-    end
-    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
-        c.at_iteration = i
-        return true
-    end
-    return false
-end
-function status_summary(c::StopWhenGradientNormLess)
-    has_stopped = length(c.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "|∇f| < $(c.threshold): $s"
-end
-indicates_convergence(c::StopWhenGradientNormLess) = true
-function show(io::IO, c::StopWhenGradientNormLess)
-    return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
-end
-
-"""
-    update_stopping_criterion!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
-
-Update the minimal gradient norm when an algorithm shall stop
-"""
-function update_stopping_criterion!(
-    c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v::Float64
-)
-    c.threshold = v
-    return c
-end
-
-"""
     StopWhenSubgradientNormLess <: StoppingCriterion
 
 A stopping criterion based on the current subgradient norm.
@@ -196,15 +203,15 @@ For the storage a [`StoreStateAction`](@ref) is used
 # Constructor
 
     StopWhenChangeLess(
+        M::AbstractManifold,
         ε::Float64;
         storage::StoreStateAction=StoreStateAction([:Iterate]),
-        manifold::AbstractManifold=DefaultManifold(3),
         inverse_retraction_method::IRT=default_inverse_retraction_method(manifold)
     )
 
 initialize the stopping criterion to a threshold `ε` using the
 [`StoreStateAction`](@ref) `a`, which is initialized to just store `:Iterate` by
-default. You can also provide an inverse_retraction_method for the `distance` or a manifold
+default. You can also provide an inverse_retraction_method for the `distance` or a manifol
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
@@ -246,8 +253,8 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
     end
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
-        x_old = get_storage(c.storage, PointStorageKey(:Iterate))
-        d = distance(M, get_iterate(s), x_old, c.inverse_retraction)
+        p_old = get_storage(c.storage, PointStorageKey(:Iterate))
+        d = distance(M, get_iterate(s), p_old, c.inverse_retraction)
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
             c.at_iteration = i
@@ -274,6 +281,210 @@ end
 Update the minimal change below which an algorithm shall stop.
 """
 function update_stopping_criterion!(c::StopWhenChangeLess, ::Val{:MinIterateChange}, v)
+    c.threshold = v
+    return c
+end
+
+"""
+    StopWhenCostLess <: StoppingCriterion
+
+store a threshold when to stop looking at the cost function of the
+optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+
+# Constructor
+
+    StopWhenCostLess(ε)
+
+initialize the stopping criterion to a threshold `ε`.
+"""
+mutable struct StopWhenCostLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    at_iteration::Int
+    StopWhenCostLess(ε::Float64) = new(ε, "", 0)
+end
+function (c::StopWhenCostLess)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
+        c.at_iteration = i
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenCostLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "f(x) < $(c.threshold):\t$s"
+end
+function show(io::IO, c::StopWhenCostLess)
+    return print(io, "StopWhenCostLess($(c.threshold))\n    $(status_summary(c))")
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenCostLess, :MinCost, v)
+
+Update the minimal cost below which the slgorithm shall stop
+"""
+function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
+    c.threshold = v
+    return c
+end
+
+@doc raw"""
+    StopWhenGradientChangeLess <: StoppingCriterion
+
+A stopping criterion based on the change of the gradient
+
+```
+\lVert \mathcal T_{p^{(k)}\gets p^{(k-1)} \operatorname{grad} f(p^{(k-1)}) -  \operatorname{grad} f(p^{(k-1)}) \rVert < ε
+```
+
+# Constructor
+
+    StopWhenGradientChangeLess(
+        M::AbstractManifold,
+        ε::Float64;
+        storage::StoreStateAction=StoreStateAction([:Iterate]),
+        vector_transport_method::IRT=default_vector_transport_method(M),
+    )
+
+Create a stopping criterion with threshold `ε` for the change gradient, that is, this criterion
+indicates to stop when [`get_gradient`](@ref) is in (norm of) its change less than `ε`, where
+`vector_transport_method` denotes the vector transport ``\mathcal T`` used.
+"""
+mutable struct StopWhenGradientChangeLess{
+    VTM<:AbstractVectorTransportMethod,TSSA<:StoreStateAction
+} <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    storage::TSSA
+    vector_transport_method::VTM
+    at_iteration::Int
+end
+function StopWhenGradientChangeLess(
+    M::AbstractManifold,
+    ε::Float64;
+    storage::StoreStateAction=StoreStateAction(
+        M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}
+    ),
+    vector_transport_method::VTM=default_vector_transport_method(M),
+) where {VTM<:AbstractVectorTransportMethod}
+    return StopWhenGradientChangeLess{VTM,typeof(storage)}(
+        ε, "", storage, vector_transport_method, 0
+    )
+end
+function StopWhenGradientChangeLess(
+    ε::Float64; storage::StoreStateAction=StoreStateAction([:Iterate, :Gradient]), kwargs...
+)
+    return StopWhenGradientChangeLess(DefaultManifold(1), ε; storage=storage, kwargs...)
+end
+function (c::StopWhenGradientChangeLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if has_storage(c.storage, PointStorageKey(:Iterate)) &&
+        has_storage(c.storage, VectorStorageKey(:Gradient))
+        M = get_manifold(mp)
+        p_old = get_storage(c.storage, PointStorageKey(:Iterate))
+        X_old = get_storage(c.storage, VectorStorageKey(:Gradient))
+        p = get_iterate(s)
+        Xt = vector_transport_to(M, p_old, X_old, p, c.vector_transport_method)
+        d = norm(M, p, Xt - get_gradient(s))
+        if d < c.threshold && i > 0
+            c.reason = "At iteration $i the change of the gradient ($d) was less than $(c.threshold).\n"
+            c.at_iteration = i
+            c.storage(mp, s, i)
+            return true
+        end
+    end
+    c.storage(mp, s, i)
+    return false
+end
+function status_summary(c::StopWhenGradientChangeLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δgrad f| < $(c.threshold): $s"
+end
+function show(io::IO, c::StopWhenGradientChangeLess)
+    return print(
+        io,
+        "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vector_transport_method))\n    $(status_summary(c))",
+    )
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenGradientChangeLess, :MinGradientChange, v)
+
+Update the minimal change below which an algorithm shall stop.
+"""
+function update_stopping_criterion!(
+    c::StopWhenGradientChangeLess, ::Val{:MinGradientChange}, v
+)
+    c.threshold = v
+    return c
+end
+
+"""
+    StopWhenGradientNormLess <: StoppingCriterion
+
+A stopping criterion based on the current gradient norm.
+
+# Constructor
+
+    StopWhenGradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
+indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
+"""
+mutable struct StopWhenGradientNormLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    at_iteration::Int
+    StopWhenGradientNormLess(ε::Float64) = new(ε, "", 0)
+end
+function (c::StopWhenGradientNormLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
+        c.at_iteration = i
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenGradientNormLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|grad f| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenGradientNormLess) = true
+function show(io::IO, c::StopWhenGradientNormLess)
+    return print(io, "StopWhenGradientNormLess($(c.threshold))\n    $(status_summary(c))")
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
+
+Update the minimal gradient norm when an algorithm shall stop
+"""
+function update_stopping_criterion!(
+    c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v::Float64
+)
     c.threshold = v
     return c
 end
@@ -327,57 +538,6 @@ end
 Update the minimal step size below which the slgorithm shall stop
 """
 function update_stopping_criterion!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}, v)
-    c.threshold = v
-    return c
-end
-
-"""
-    StopWhenCostLess <: StoppingCriterion
-
-store a threshold when to stop looking at the cost function of the
-optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
-
-# Constructor
-
-    StopWhenCostLess(ε)
-
-initialize the stopping criterion to a threshold `ε`.
-"""
-mutable struct StopWhenCostLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    at_iteration::Int
-    StopWhenCostLess(ε::Float64) = new(ε, "", 0)
-end
-function (c::StopWhenCostLess)(
-    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
-)
-    if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
-    end
-    if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
-        c.at_iteration = 0
-        return true
-    end
-    return false
-end
-function status_summary(c::StopWhenCostLess)
-    has_stopped = length(c.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "f(x) < $(c.threshold):\t$s"
-end
-function show(io::IO, c::StopWhenCostLess)
-    return print(io, "StopWhenCostLess($(c.threshold))\n    $(status_summary(c))")
-end
-
-"""
-    update_stopping_criterion!(c::StopWhenCostLess, :MinCost, v)
-
-Update the minimal cost below which the slgorithm shall stop
-"""
-function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
     return c
 end
@@ -507,68 +667,6 @@ function show(io::IO, c::StopWhenSmallerOrEqual)
     return print(
         io, "StopWhenSmallerOrEqual(:$(c.value), $(c.minValue))\n    $(status_summary(c))"
     )
-end
-
-"""
-    StopAfter <: StoppingCriterion
-
-store a threshold when to stop looking at the complete runtime. It uses
-`time_ns()` to measure the time and you provide a `Period` as a time limit,
-i.e. `Minute(15)`
-
-# Constructor
-
-    StopAfter(t)
-
-initialize the stopping criterion to a `Period t` to stop after.
-"""
-mutable struct StopAfter <: StoppingCriterion
-    threshold::Period
-    reason::String
-    start::Nanosecond
-    at_iteration::Int
-    function StopAfter(t::Period)
-        return if value(t) < 0
-            error("You must provide a positive time period")
-        else
-            new(t, "", Nanosecond(0), 0)
-        end
-    end
-end
-function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
-    if value(c.start) == 0 || i <= 0 # (re)start timer
-        c.reason = ""
-        c.at_iteration = 0
-        c.start = Nanosecond(time_ns())
-    else
-        cTime = Nanosecond(time_ns()) - c.start
-        if i > 0 && (cTime > Nanosecond(c.threshold))
-            c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold).\n"
-            c.at_iteration = i
-            return true
-        end
-    end
-    return false
-end
-function status_summary(c::StopAfter)
-    has_stopped = length(c.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "stopped after $(c.threshold):\t$s"
-end
-indicates_convergence(c::StopAfter) = false
-function show(io::IO, c::StopAfter)
-    return print(io, "StopAfter($(repr(c.threshold)))\n    $(status_summary(c))")
-end
-
-"""
-    update_stopping_criterion!(c::StopAfter, :MaxTime, v::Period)
-
-Update the time period after which an algorithm shall stop.
-"""
-function update_stopping_criterion!(c::StopAfter, ::Val{:MaxTime}, v::Period)
-    (value(v) < 0) && error("You must provide a positive time period")
-    c.threshold = v
-    return c
 end
 
 #
