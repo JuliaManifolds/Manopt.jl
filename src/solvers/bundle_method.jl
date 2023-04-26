@@ -52,7 +52,8 @@ mutable struct BundleMethodState{
     g::T
     ε::R
     transported_subgradients::AbstractVector{T}
-    filter::R
+    filter1::R
+    filter2::R
     function BundleMethodState(
         M::TM,
         p::P;
@@ -63,7 +64,8 @@ mutable struct BundleMethodState{
         stopping_criterion::SC=StopWhenBundleLess(1e-8),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        filter::R=eps(Float64),
+        filter1::R=eps(Float64),
+        filter2::R=eps(Float64),
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -99,7 +101,8 @@ mutable struct BundleMethodState{
             g,
             ε,
             transported_subgradients,
-            filter
+            filter1,
+            filter2,
         )
     end
 end
@@ -173,7 +176,8 @@ function bundle_method!(
     p;
     m=0.0125,
     diam=1.0,
-    filter=eps(Float64),
+    filter1=eps(Float64),
+    filter2=eps(Float64),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -189,6 +193,8 @@ function bundle_method!(
         p;
         m=m,
         diam=diam,
+        filter1=filter1,
+        filter2=filter2,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -226,7 +232,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter, bms.λ))
+    deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
@@ -244,7 +250,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
-    bms.lin_errors = [0.0 ≥ x ≥ -bms.filter ? 0.0 : x for x in bms.lin_errors]
+    bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
