@@ -229,27 +229,26 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
+        # J = [
+        #     k for k in 1:length(bms.bundle) if
+        #     k ≥ findfirst(q -> q[1] ≈ bms.p_last_serious, bms.bundle)
+        # ]
+        # if bms.diam > eps(Float64) && !isempty(J)
+        #     bms.diam =
+        #         max(
+        #             bms.diam -
+        #             2*max(
+        #             maximum([distance(M, bms.p_last_serious, bms.bundle[j][1]) for j in J]),
+        #             distance(M, bms.p_last_serious, bms.p),
+        #         ),
+        #         0.0
+        #         )
+        # end
         copyto!(M, bms.p_last_serious, bms.p)
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
-    if i > 1
-        bms.lin_errors = [
-            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
-                M,
-                qj,
-                Xj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ) +
-            sqrt(2) *
-            norm(
-                M,
-                qj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ) *
-            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-        ]
-    else
+    if i < 3
         bms.lin_errors = [
             get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
                 M,
@@ -266,6 +265,22 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                         M, qj, bms.p_last_serious, bms.inverse_retraction_method
                     ),
                 ),
+            ) *
+            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+        ]
+    else
+        bms.lin_errors = [
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+                M,
+                qj,
+                Xj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            ) +
+            sqrt(2) *
+            norm(
+                M,
+                qj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             ) *
             norm(M, qj, Xj) for (qj, Xj) in bms.bundle
         ]
