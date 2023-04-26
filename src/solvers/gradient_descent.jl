@@ -187,9 +187,7 @@ function gradient_descent(
     # otherwise (probably the state - return rs)
     return rs
 end
-function gradient_descent(
-    M::AbstractManifold, mgo::ManifoldGradientObjective, p=rand(M); kwargs...
-)
+function gradient_descent(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
