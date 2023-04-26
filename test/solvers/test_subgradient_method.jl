@@ -1,4 +1,4 @@
-using Manopt, ManifoldsBase, Manifolds, Test
+using Manopt, ManifoldsBase, Manifolds, Random, Test
 
 include("../utils/example_tasks.jl")
 
@@ -68,7 +68,13 @@ include("../utils/example_tasks.jl")
         q1 = get_solver_result(sr)
         q2 = subgradient_method(M, sgom, p0)
         q3 = copy(M, p0)
-        q2 = subgradient_method!(M, sgom, p0)
+        subgradient_method!(M, sgom, q3)
+        @test isapprox(M, q1, p)
+        @test isapprox(M, q2, p)
+        @test isapprox(M, q3, p)
+        Random.seed!(23)
+        q4 = subgradient_method(M, f, ∂f!; evaluation=InplaceEvaluation())
+        @test isapprox(M, q4, p; atol=0.5) # random point -> not that close
         # Check Fallbacks of Problen
         @test get_cost(mp, q1) == 0.0
         @test norm(M, q1, get_subgradient(mp, q1)) == 0
@@ -85,7 +91,10 @@ include("../utils/example_tasks.jl")
         Mc, fc, ∂fc, pc, pcs = Circle_mean_task()
         q4 = subgradient_method(Mc, fc, ∂fc, pc)
         q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation=InplaceEvaluation())
+        s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state=true)
+        q6 = get_solver_result(s3)[]
         @test isapprox(q4, 0.0; atol=1e-8)
         @test isapprox(q5, 0.0; atol=1e-8)
+        @test isapprox(q6, 0.0; atol=1e-8)
     end
 end
