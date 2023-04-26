@@ -233,23 +233,43 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
-    bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
-            M,
-            qj,
-            Xj,
-            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        ) +
-        bms.diam *
-        sqrt(
-            2 * norm(
+    if i > 1
+        bms.lin_errors = [
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+                M,
+                qj,
+                Xj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            ) +
+            sqrt(2) *
+            norm(
                 M,
                 qj,
                 inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ),
-        ) *
-        norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-    ]
+            ) *
+            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+        ]
+    else
+        bms.lin_errors = [
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+                M,
+                qj,
+                Xj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            ) +
+            bms.diam *
+            sqrt(
+                2 * norm(
+                    M,
+                    qj,
+                    inverse_retract(
+                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
+                    ),
+                ),
+            ) *
+            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+        ]
+    end
     bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
     return bms
 end
