@@ -57,7 +57,7 @@ mutable struct BundleMethodState{
     function BundleMethodState(
         M::TM,
         p::P;
-        m::R=0.0125,
+        m::R=1e-2,
         diam::R=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -174,7 +174,7 @@ function bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    m=0.0125,
+    m=1e-2,
     diam=1.0,
     filter1=eps(Float64),
     filter2=eps(Float64),
