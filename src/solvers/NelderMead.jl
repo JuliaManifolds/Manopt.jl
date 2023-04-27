@@ -230,8 +230,7 @@ function NelderMead(
     f_ = (M, p) -> f(M, p[])
     population_ = NelderMeadSimplex([[p] for p in population.pts])
     rs = NelderMead(M, f_, population_; kwargs...)
-    (P == eltype(rs)) && (return rs[])
-    return rs
+    return (P == eltype(rs)) ? rs[] : rs
 end
 @doc raw"""
     NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])

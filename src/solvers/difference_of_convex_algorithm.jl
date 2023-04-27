@@ -224,16 +224,14 @@ function difference_of_convex_algorithm(
 )
     q = [p]
     f_(M, p) = f(M, p[])
-    g_(M, p) = f(M, p[])
+    g_(M, p) = g(M, p[])
     gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
     grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
     ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
     rs = difference_of_convex_algorithm(
         M, f_, g_, ∂h_, q; gradient=gradient_, grad_g=grad_g_, kwargs...
     )
-    (typeof(q) == typeof(rs)) && (return rs[])
-    # otherwise (probably the state - return rs)
-    return rs
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function difference_of_convex_algorithm(
     M::AbstractManifold, mdco::ManifoldDifferenceOfConvexObjective, p; kwargs...

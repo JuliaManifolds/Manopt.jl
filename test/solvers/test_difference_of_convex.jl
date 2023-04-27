@@ -197,6 +197,7 @@ import Manifolds: inner
             trust_regions!(M, prox, grad_prox, hess_prox, q)
             return q
         end
+        @test_logs (:warn,) difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
         p13 = difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
         function prox_g!(M, q, λ, p)
             copyto!(M, q, p)
@@ -206,8 +207,11 @@ import Manifolds: inner
             trust_regions!(M, prox, grad_prox, hess_prox, q)
             return q
         end
-        p14 = difference_of_convex_proximal_point(
+        @test_logs (:warn,) difference_of_convex_proximal_point(
             M, prox_g!, grad_h!, p0; evaluation=InplaceEvaluation()
+        )
+        p14 = difference_of_convex_proximal_point(
+            M, grad_h!, p0; prox_g=prox_g!, evaluation=InplaceEvaluation()
         )
         @test isapprox(M, p13, p14)
         @test f(M, p13) ≈ 0.0 atol = 1e-15

@@ -168,9 +168,7 @@ function DouglasRachford(
     end
     rs = DouglasRachford(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
     #return just a number if  the return type is the same as the type of q
-    (typeof(q) == typeof(rs)) && (return rs[])
-    # otherwise (probably the state - return rs)
-    return rs
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function DouglasRachford(
     M::AbstractManifold, mpo::ManifoldProximalMapObjective, p; kwargs...

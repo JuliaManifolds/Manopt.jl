@@ -146,9 +146,7 @@ function subgradient_method(
     ∂f_ = _to_mutating_gradient(∂f, evaluation)
     rs = subgradient_method(M, f_, ∂f_, q; evaluation=evaluation, kwargs...)
     #return just a number if  the return type is the same as the type of q
-    (typeof(q) == typeof(rs)) && (return rs[])
-    # otherwise (probably the state - return rs)
-    return rs
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function subgradient_method(
     M::AbstractManifold, sgo::ManifoldSubgradientObjective, p; kwargs...

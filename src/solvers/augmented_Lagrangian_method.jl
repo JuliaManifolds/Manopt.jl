@@ -277,9 +277,7 @@ function augmented_Lagrangian_method(
         f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
     )
     rs = augmented_Lagrangian_method(M, cmo, q; evaluation=evaluation, kwargs...)
-    (typeof(q) == typeof(rs)) && (return rs[])
-    # otherwise (probably the state - return rs)
-    return rs
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 
 @doc raw"""

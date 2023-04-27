@@ -307,10 +307,7 @@ function trust_regions(
     rs = trust_regions(
         M, f_, grad_f_, Hess_f_, q; preconditioner=precon_, evaluation=evaluation, kwargs...
     )
-    #return just a number if  the return type is the same as the type of q
-    (typeof(q) == typeof(rs)) && (return rs[])
-    # otherwise (probably the state - return rs)
-    return rs
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)
     return trust_regions(M, f, grad_f, rand(M); kwargs...)
