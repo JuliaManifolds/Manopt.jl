@@ -14,6 +14,7 @@ using LinearAlgebra: I, tr
     grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
     p0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
     sol_lse = exact_penalty_method(M, f, grad_f, p0; g=g, grad_g=grad_g)
+    sol_lse2 = exact_penalty_method(M, f, grad_f; g=g, grad_g=grad_g)
     sol_lqh = exact_penalty_method(
         M, f, grad_f, p0; g=g, grad_g=grad_g, smoothing=LinearQuadraticHuber()
     )
@@ -21,9 +22,11 @@ using LinearAlgebra: I, tr
     exact_penalty_method!(
         M, f, grad_f, sol_lqh2; g=g, grad_g=grad_g, smoothing=LinearQuadraticHuber()
     )
-    @test isapprox(M, v0, sol_lse; atol=8e-2)
-    @test isapprox(M, v0, sol_lqh; atol=8e-2)
-    @test isapprox(M, v0, sol_lqh2; atol=8e-2)
+    a_tol_emp = 8e-2
+    @test isapprox(M, v0, sol_lse; atol=a_tol_emp)
+    @test isapprox(M, v0, sol_lse2; atol=a_tol_emp)
+    @test isapprox(M, v0, sol_lqh; atol=a_tol_emp)
+    @test isapprox(M, v0, sol_lqh2; atol=a_tol_emp)
     # Dummy options
     mco = ManifoldCostObjective(f)
     dmp = DefaultManoptProblem(M, mco)

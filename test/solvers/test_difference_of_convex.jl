@@ -160,7 +160,7 @@ import Manifolds: inner
         # we need both g and grad g here
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0; g=g)
         @test_throws ErrorException difference_of_convex_proximal_point(
-            M, grad_h, p0, grad_g=grad_g
+            M, grad_h, p0; grad_g=grad_g
         )
     end
     @testset "Running the closed form solution solvers" begin
@@ -198,7 +198,10 @@ import Manifolds: inner
             return q
         end
         @test_logs (:warn,) difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
-        p13 = difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
+        p13 = difference_of_convex_proximal_point(M, grad_h, p0; prox_g=prox_g)
+        p13b = copy(M, p0)
+        difference_of_convex_proximal_point!(M, grad_h, p13b; prox_g=prox_g)
+        @test isapprox(M, p13, p13b)
         function prox_g!(M, q, λ, p)
             copyto!(M, q, p)
             prox = ProximalDCCost(g, copy(M, p), λ)
@@ -224,9 +227,7 @@ import Manifolds: inner
         # We do not have a ONB on PosNum, so we can only do a minimalistic test.
         q = difference_of_convex_algorithm(Mp, f, g, grad_h, pp; grad_g=grad_g)
         @test pp == q # since we start in a minimizer
-        s = difference_of_convex_algorithm(
-            Mp, f, g, grad_h, pp; grad_g=grad_g, return_state=true
-        )
-        @test get_solver_result(s)[] == q
+        q2 = difference_of_convex_proximal_point(Mp, grad_h, pp; g=g, grad_g=grad_g)
+        @test pp == q2 # since we start in a minimizer
     end
 end

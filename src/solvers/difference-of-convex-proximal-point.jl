@@ -247,7 +247,7 @@ function difference_of_convex_proximal_point(
     kwargs...,
 )
     q = [p]
-    cost = isnothing(cost) ? nothing : (M, p) -> cost(M, p[])
+    cost_ = isnothing(cost) ? nothing : (M, p) -> cost(M, p[])
     grad_h_ = _to_mutating_gradient(grad_h, evaluation)
     g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
     gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
