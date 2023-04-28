@@ -127,6 +127,7 @@ import Manifolds: inner
             M, grad_h!, p0; g=g, grad_g=grad_g!, evaluation=InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
+        p5b = difference_of_convex_proximal_point(M, grad_h; g=g, grad_g=grad_g)
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f, return_state=true
         )
@@ -140,6 +141,7 @@ import Manifolds: inner
         @test isapprox(M, p3, p4)
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
+        @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min
         @test isapprox(f(M, p4), 0.0; atol=2e-16)
 
         Random.seed!(23)

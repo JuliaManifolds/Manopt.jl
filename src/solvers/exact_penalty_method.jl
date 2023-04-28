@@ -109,6 +109,7 @@ end
 
 @doc raw"""
     exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
+    exact_penalty_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020].
 The aim of the EPM is to find a solution of the constrained optimisation task
@@ -173,13 +174,18 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
 * `grad_f` – the gradient of the cost function
 
+# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
+
+* `g` – (`nothing`) the inequality constraints
+* `h` – (`nothing`) the equality constraints
+* `grad_g` – (`nothing`) the gradient of the inequality constraints
+* `grad_h` – (`nothing`) the gradient of the equality constraints
+
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be proviede.
+Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
+
 # Optional
 
-* `g` – the inequality constraints
-* `h` – the equality constraints
-* `grad<-g` – the gradient of the inequality constraints
-* `grad_h` – the gradient of the equality constraints
-* `p` – initial point
 * `smoothing` – ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
@@ -248,7 +254,7 @@ function exact_penalty_method(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function exact_penalty_method(
-    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p; kwargs...
+    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...
 )
     q = copy(M, p)
     return exact_penalty_method!(M, cmo, q; kwargs...)
@@ -256,11 +262,13 @@ end
 
 @doc raw"""
     exact_penalty_method!(M, f, grad_f, p; kwargs...)
+    exact_penalty_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020] in place of `p`.
 
 For all options, see [`exact_penalty_method`](@ref).
 """
+exact_penalty_method!(M::AbstractManifold, args...; kwargs...)
 function exact_penalty_method!(
     M::AbstractManifold,
     f,

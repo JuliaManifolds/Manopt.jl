@@ -215,7 +215,7 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 difference_of_convex_proximal_point(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_proximal_point(M::AbstractManifold, grad_h; kwargs...)
     return difference_of_convex_proximal_point(
-        M::AbstractManifold, grad_h::GH, rand(M); kwargs...
+        M::AbstractManifold, grad_h, rand(M); kwargs...
     )
 end
 function difference_of_convex_proximal_point(

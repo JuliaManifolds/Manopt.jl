@@ -186,7 +186,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
 * `grad_f` – the gradient of the cost function
 
-# Optional (if not called with the objective)
+# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
 * `g` – (`nothing`) the inequality constraints
 * `h` – (`nothing`) the equality constraints
