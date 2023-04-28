@@ -54,6 +54,7 @@ mutable struct BundleMethodState{
     transported_subgradients::AbstractVector{T}
     filter1::R
     filter2::R
+    δ::R
     function BundleMethodState(
         M::TM,
         p::P;
@@ -66,6 +67,7 @@ mutable struct BundleMethodState{
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         filter1::R=eps(Float64),
         filter2::R=eps(Float64),
+        δ::R=0.0,
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -103,6 +105,7 @@ mutable struct BundleMethodState{
             transported_subgradients,
             filter1,
             filter2,
+            δ,
         )
     end
 end
@@ -178,6 +181,7 @@ function bundle_method!(
     diam=1.0,
     filter1=eps(Float64),
     filter2=eps(Float64),
+    δ=0.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -195,6 +199,7 @@ function bundle_method!(
         diam=diam,
         filter1=filter1,
         filter2=filter2,
+        δ=δ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -229,62 +234,30 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
-        # J = [
-        #     k for k in 1:length(bms.bundle) if
-        #     k ≥ findfirst(q -> q[1] ≈ bms.p_last_serious, bms.bundle)
-        # ]
-        # if bms.diam > eps(Float64) && !isempty(J)
-        #     bms.diam =
-        #         max(
-        #             bms.diam -
-        #             2*max(
-        #             maximum([distance(M, bms.p_last_serious, bms.bundle[j][1]) for j in J]),
-        #             distance(M, bms.p_last_serious, bms.p),
-        #         ),
-        #         0.0
-        #         )
-        # end
+        bms.diam = max(0.0, bms.diam - bms.δ*distance(M, bms.p_last_serious, bms.p))
         copyto!(M, bms.p_last_serious, bms.p)
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
-    if i < 3
-        bms.lin_errors = [
-            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+    bms.lin_errors = [
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+            M,
+            qj,
+            Xj,
+            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+        ) +
+        bms.diam *
+        sqrt(
+            2 * norm(
                 M,
                 qj,
-                Xj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ) +
-            bms.diam *
-            sqrt(
-                2 * norm(
-                    M,
-                    qj,
-                    inverse_retract(
-                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
-                    ),
+                inverse_retract(
+                    M, qj, bms.p_last_serious, bms.inverse_retraction_method
                 ),
-            ) *
-            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-        ]
-    else
-        bms.lin_errors = [
-            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
-                M,
-                qj,
-                Xj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ) +
-            sqrt(2) *
-            norm(
-                M,
-                qj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ) *
-            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-        ]
-    end
+            ),
+        ) *
+        norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+    ]
     bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
     return bms
 end
