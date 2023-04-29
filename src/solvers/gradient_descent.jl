@@ -124,6 +124,7 @@ p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
 with different choices of the stepsize ``s_k`` available (see `stepsize` option below).
 
 # Input
+
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
 * `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
@@ -160,23 +161,23 @@ function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
 end
 function gradient_descent(
     M::AbstractManifold,
-    F::TF,
-    gradF::TDF,
+    f,
+    grad_f,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
-) where {TF,TDF}
-    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     return gradient_descent(M, mgo, p; kwargs...)
 end
 function gradient_descent(
     M::AbstractManifold,
-    f::TF,
-    grad_f::TDF,
+    f,
+    grad_f,
     p::Number;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
-) where {TF,TDF}
+)
     # redefine our initial point
     q = [p]
     f_(M, p) = f(M, p[])
@@ -213,16 +214,16 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """
-gradient_descent!(M::AbstractManifold, params...; kwargs...)
+gradient_descent!(M::AbstractManifold, args...; kwargs...)
 function gradient_descent!(
     M::AbstractManifold,
-    F::TF,
-    gradF::TDF,
+    f,
+    grad_f,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
-) where {TF,TDF}
-    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(

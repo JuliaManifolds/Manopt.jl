@@ -50,6 +50,11 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
             @test f(M, p2a) < f(M, p)
             p2b = Frank_Wolfe_method(M, f, grad_f, p; sub_problem=oracle)
             @test f(M, p2b) ≈ f(M, p2a)
+            p2c = copy(M, p)
+            Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem=oracle)
+            @test f(M, p2c) < f(M, p)
+            p2d = Frank_Wolfe_method(M, f, grad_f; sub_problem=oracle)
+            @test f(M, p2d) < f(M, p)
         end
         @testset "Testing with an Subsolver" begin
             # This is not a useful run since the subproblem is not constraint
@@ -72,6 +77,17 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
             )
             #so we can just test that the subproblem is delivering a point.
             @test is_point(M, p3b)
+        end
+        @testset "Number test" begin
+            # I have no good idea for a test, so this merely
+            # Checks the call, since that it works was already tested
+            M = Euclidean()
+            f(M, p) = P
+            grad_f(M, p) = zero_vector(M, p)
+            oracle(M, p, X) = X
+            Frank_Wolfe_method(M, f, grad_f; sub_problem=oracle)
+            # and since the gradient is zero and oracle hence returns zero, we stay at zero
+            @test 0.0 == Frank_Wolfe_method(M, f, grad_f, 0.0; sub_problem=oracle)
         end
     end
 end
