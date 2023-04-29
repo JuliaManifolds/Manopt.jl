@@ -4,6 +4,7 @@ include("utils/example_tasks.jl")
 
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin
+        include("plans/test_objective.jl")
         include("plans/test_problem.jl")
         include("plans/test_state.jl")
         include("plans/test_conjugate_gradient_plan.jl")

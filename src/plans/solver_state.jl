@@ -35,7 +35,7 @@ abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
     dispatch_state_decorator(s::AbstractManoptSolverState)
 
 Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` to be of decorating type, i.e.
-it stores (encapsulates) state in itself, by default in the field `s.state`.
+it stores (encapsulates) a state in itself, by default in the field `s.state`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
