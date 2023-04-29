@@ -237,6 +237,21 @@ function particle_swarm(M::AbstractManifold, f, swarm::AbstractVector; kwargs...
 end
 function particle_swarm(
     M::AbstractManifold,
+    f,
+    swarm::AbstractVector{T};
+    velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
+    kwargs...,
+) where {T<:Number}
+    f_(M, p) = f(M, p[])
+    swarm_ = [[s] for s in swarm]
+    velocity_ = [[v] for v in velocity]
+    rs = particle_swarm(M, f_, swarm_; velocity=velocity_, kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    return (typeof(swarm_[1]) == typeof(rs)) ? rs[] : rs
+end
+
+function particle_swarm(
+    M::AbstractManifold,
     mco::AbstractManifoldCostObjective,
     swarm::AbstractVector;
     kwargs...,

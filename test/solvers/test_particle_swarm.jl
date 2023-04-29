@@ -50,4 +50,12 @@ using Random
             @test is_vector(M, p, v, true; atol=2e-15)
         end
     end
+    @testset "Spherical Particle Swarm" begin
+        Random.seed!(42)
+        M = Circle()
+        f(::Circle, p) = p * 2 * p
+        swarm = [-π / 4, 0, π / 4]
+        s = particle_swarm(M, f, swarm)
+        @test s ≈ 0.0
+    end
 end
