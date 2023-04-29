@@ -47,6 +47,7 @@ end
         # pass a keyword
         s2 = objective_cache_factory(M, mgoa, (:Simple, [], [:initialized => false]))
         @test s2 isa SimpleCacheObjective
+        @test Manopt.is_objective_decorator(s2)
         # but not initialized
         @test !s2.X_valid
         @test !s2.c_valid

@@ -33,7 +33,8 @@ then the keyword `jacobian_tangent_basis` below is ignored
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(1e-12))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `expect_zero_residual` – (`false`)
+* `expect_zero_residual` – (`false`) whether or not the algorithm might expect that the value of
+  residual (objective) at mimimum is equal to 0.
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.

@@ -366,7 +366,7 @@ function trust_regions!(
     f,
     grad_f,
     p;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
 )

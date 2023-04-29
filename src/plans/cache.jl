@@ -29,6 +29,7 @@ mutable struct SimpleCacheObjective{
     c::C # a value for the cost
     c_valid::Bool
 end
+dispatch_objective_decorator(::SimpleCacheObjective) = Val(true)
 
 function SimpleCacheObjective(
     M::AbstractManifold,

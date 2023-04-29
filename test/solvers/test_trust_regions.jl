@@ -63,10 +63,25 @@ include("../utils/example_tasks.jl")
 
         X = zero_vector(M, p)
 
+        @test_logs (:warn,) truncated_conjugate_gradient_descent(M, f, rgrad, p, X, rhess)
         Y = truncated_conjugate_gradient_descent(
-            M, f, rgrad, p, X, rhess; trust_region_radius=0.5
+            M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
-        f(M, X) > f(M, Y)
+        @test Y != X
+        Y2 = truncated_conjugate_gradient_descent(
+            M, f, rgrad, p, X; trust_region_radius=0.5
+        )
+        @test isapprox(M, p, Y, Y2)
+        # random point -> different result
+        Y3 = truncated_conjugate_gradient_descent(
+            M, f, rgrad, rhess; trust_region_radius=0.5
+        )
+        @test Y3 != X
+        Y4 = copy(M, p, X)
+        truncated_conjugate_gradient_descent!(
+            M, f, rgrad, rhess, p, Y4; trust_region_radius=0.5
+        )
+        @test_logs (:warn,) truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y4, rhess)
     end
     @testset "Mutating" begin
         g = RGrad(M, A)
@@ -270,16 +285,20 @@ include("../utils/example_tasks.jl")
         end
     end
     @testset "on the Circle" begin
-        M, f, grad_f, p0, p_star = Circle_mean_task()
-        hess_f(M, p, X) = 1.0
-        s = trust_regions(M, f, grad_f, hess_f; return_state=true)
+        Mc, fc, grad_fc, pc0, pc_star = Circle_mean_task()
+        hess_fc(Mc, p, X) = 1.0
+        s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state=true)
         q = get_solver_result(s)
-        @test distance(M, p_star, q[]) < 1e-2
-        q2 = trust_regions(M, f, grad_f, hess_f, 0.1)
-        @test distance(M, p_star, q[]) < 1e-2
-        q2 = trust_regions(M, f, grad_f, hess_f)
-        @test distance(M, p_star, q[]) < 1e-2
-        q2 = trust_regions(M, f, grad_f, hess_f, 0.1; evaluation=InplaceEvaluation())
-        @test distance(M, p_star, q[]) < 1e-2
+        @test distance(Mc, pc_star, q[]) < 1e-2
+        q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1)
+        @test distance(Mc, pc_star, q[]) < 1e-2
+        q2 = trust_regions(Mc, fc, grad_fc, hess_fc)
+        @test distance(Mc, pc_star, q[]) < 1e-2
+        q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1; evaluation=InplaceEvaluation())
+        @test distance(Mc, pc_star, q[]) < 1e-2
+        Y1 = truncated_conjugate_gradient_descent(
+            Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius=0.5
+        )
+        @test abs(Y1) ≈ 0.5
     end
 end

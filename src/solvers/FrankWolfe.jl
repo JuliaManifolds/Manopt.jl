@@ -213,7 +213,7 @@ end
 
 Peform the Frank Wolfe method in place of `p`.
 
-For all options and keyword arguments, see [`Franke_Wolfe_method`](@ref).
+For all options and keyword arguments, see [`Frank_Wolfe_method`](@ref).
 """
 Frank_Wolfe_method!(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method!(

@@ -16,9 +16,16 @@ using Random
         )
         g = get_solver_result(o)
 
+        initF = min(f.(Ref(M), p1)...)
         Random.seed!(35)
-        g2 = particle_swarm(M, f, p2; return_state=false)
-        @test isequal(g, g2)
+        g2 = particle_swarm(M, f, p2)
+        @test f(M, g2) < initF
+        @test isapprox(M, g, g2)
+        p3 = copy.(Ref(M), p1)
+        g3 = particle_swarm!(M, f, p3)
+        @test f(M, g3) < initF
+        g4 = particle_swarm(M, f)
+        @test f(M, g4) < initF
 
         # the cost of g and the p[i]'s are not greater after one step
         j = argmin([f(M, y) for y in p1])
