@@ -8,7 +8,6 @@ The Objective describes that actual cost function and all its properties.
 
 ```@docs
 AbstractManifoldObjective
-decorate_objective!
 ```
 
 Which has two main different possibilities for its containing functions concerning the evaluation mode – not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
@@ -153,7 +152,17 @@ get_grad_inequality_constraints
 get_grad_inequality_constraints!
 ```
 
-## [Cache Objective](@id CacheSection)
+## Decorators for AbstractManoptSolverState
+
+An objective can be decorated using the following trait and function to initialize
+
+```@docs
+dispatch_objective_decorator
+is_objective_decorator
+decorate_objective!
+```
+
+### [Cache Objective](@id CacheSection)
 
 Since single function calls, e.g. to the cost or the gradient, might be expensive,
 a simple cache objective exists as a decorator, that caches one cost value or gradient.

@@ -1,6 +1,6 @@
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
-cost(M::PowerManifold, p) = -0.5 * norm(transpose(p[M, 1]) * A * p[M, 2])^2
+f(M::PowerManifold, p) = -0.5 * norm(transpose(p[M, 1]) * A * p[M, 2])^2
 
 function egrad(M::PowerManifold, X::Array)
     U = X[M, 1]
@@ -12,7 +12,7 @@ function egrad(M::PowerManifold, X::Array)
     AR[:, :, 2] .= -AtU * (transpose(AtU) * V)
     return AR
 end
-struct EGrad{T,TM}
+struct EGrad{T,TM} <: Function
     M::TM
     A::Matrix{T}
 end
@@ -27,7 +27,7 @@ function (e::EGrad)(Y::Array, X::Array)
 end
 
 rgrad(M::PowerManifold, p) = project(M, p, egrad(M, p))
-struct RGrad{T,TM}
+struct RGrad{T,TM} <: Function
     egrad::EGrad{T,TM}
 end
 function RGrad(M::PowerManifold, A::Matrix{T}) where {T}
@@ -70,7 +70,7 @@ function eHess(M::AbstractManifold, X::Array{Float64,3}, H::Array{Float64,3})
     #! format: on
     return R
 end
-struct EHess{T,TM}
+struct EHess{T,TM} <: Function
     M::TM
     A::Matrix{T}
 end
@@ -106,7 +106,7 @@ function rhess(M::PowerManifold, p, X)
     end
     return Ha
 end
-struct RHess{T,TM}
+struct RHess{T,TM} <: Function
     e_grad!::EGrad{T,TM}
     e_hess!::EHess{T,TM}
     G::Array{T,3}

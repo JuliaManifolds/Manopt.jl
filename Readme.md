@@ -31,8 +31,16 @@ using Pkg; Pkg.add("Manopt");
 
 and then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
 
+## Related packages
+
 Manopt.jl is based on [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/),
-hence the algorithms can be used with _any_ manifold defined e.g. within [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/).
+hence the algorithms can be used with _any_ manifold following this interface for defining
+a Riemannian manifold.
+
+The following packages are related to `Manopt.jl`
+
+* [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) – a library of manifolds implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) :octocat: [GitHub repository](https://github.com/JuliaManifolds/Manifolds.jl)
+* [`ManifoldsDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) – a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
 
 ## Further Packages & Links
 

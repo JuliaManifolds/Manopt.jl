@@ -257,17 +257,66 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 # see also
 [`truncated_conjugate_gradient_descent`](@ref)
 """
+trust_regions(M::AbstractManifold, args...; kwargs...)
 function trust_regions(
-    M::AbstractManifold, f::TF, grad_f::TdF, Hess_f::TH, p=rand(M); kwargs...
-) where {TF,TdF,TH<:Function}
-    q = copy(M, p)
-    return trust_regions!(M, f, grad_f, Hess_f, q; kwargs...)
+    M::AbstractManifold, f, grad_f, Hess_f::TH; kwargs...
+) where {TH<:Function}
+    return trust_regions(M, f, grad_f, Hess_f, rand(M); kwargs...)
+end
+function trust_regions(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f::TH,
+    p;
+    evaluation=AllocatingEvaluation(),
+    preconditioner=if evaluation isa InplaceEvaluation
+        (M, Y, p, X) -> (Y .= X)
+    else
+        (M, p, X) -> X
+    end,
+    kwargs...,
+) where {TH<:Function}
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+    return trust_regions(M, mho, p; evaluation=evaluation, kwargs...)
+end
+function trust_regions(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f::TH, #we first fill a default below bwfore dispatching on p::Number
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    preconditioner=(M, p, X) -> X,
+    kwargs...,
+) where {TH<:Function}
+    q = [p]
+    f_(M, p) = f(M, p[])
+    Hess_f_ = Hess_f
+    # For now we can not update the gradient within the ApproxHessian so the filled default
+    # Hessian fails here
+    if evaluation isa AllocatingEvaluation
+        grad_f_ = (M, p) -> [grad_f(M, p[])]
+        Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
+        precon_ = (M, p, X) -> [preconditioner(M, p[], X[])]
+    else
+        grad_f_ = (M, X, p) -> (X .= [grad_f(M, p[])])
+        Hess_f_ = (M, Y, p, X) -> (Y .= [Hess_f(M, p[], X[])])
+        precon_ = (M, Y, p, X) -> (Y .= [preconditioner(M, p[], X[])])
+    end
+    rs = trust_regions(
+        M, f_, grad_f_, Hess_f_, q; preconditioner=precon_, evaluation=evaluation, kwargs...
+    )
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)
+    return trust_regions(M, f, grad_f, rand(M); kwargs...)
 end
 function trust_regions(
     M::AbstractManifold,
     f::TF,
     grad_f::TdF,
-    p=rand(M);
+    p;
     evaluation=AllocatingEvaluation(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
@@ -286,6 +335,13 @@ function trust_regions(
         kwargs...,
     )
 end
+function trust_regions(
+    M::AbstractManifold, mho::ManifoldHessianObjective, p=rand(M); kwargs...
+)
+    q = copy(M, p)
+    return trust_regions!(M, mho, q; kwargs...)
+end
+# If the Hessian go autofilled already _and_ we have a p that is a number
 @doc raw"""
     trust_regions!(M, f, grad_f, Hess_f, p; kwargs...)
     trust_regions!(M, f, grad_f, p; kwargs...)
@@ -304,18 +360,51 @@ For the case that no hessian is provided, the Hessian is computed using finite d
 
 for more details and all options, see [`trust_regions`](@ref)
 """
+trust_regions!(M::AbstractManifold, args...; kwargs...)
 function trust_regions!(
     M::AbstractManifold,
-    f::TF,
-    grad_f::TdF,
+    f,
+    grad_f,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    kwargs...,
+)
+    hess_f = ApproxHessianFiniteDifference(
+        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
+    )
+    return trust_regions!(
+        M,
+        f,
+        grad_f,
+        hess_f,
+        p;
+        evaluation=evaluation,
+        retraction_method=retraction_method,
+        kwargs...,
+    )
+end
+function trust_regions!(
+    M::AbstractManifold,
+    f,
+    grad_f,
     Hess_f::TH,
     p;
-    evaluation=AllocatingEvaluation(),
-    preconditioner::Tprec=if evaluation isa InplaceEvaluation
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    preconditioner=if evaluation isa InplaceEvaluation
         (M, Y, p, X) -> (Y .= X)
     else
         (M, p, X) -> X
     end,
+    kwargs...,
+) where {TH<:Function}
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+    return trust_regions!(M, mho, p; evaluation=evaluation, kwargs...)
+end
+function trust_regions!(
+    M::AbstractManifold,
+    mho::ManifoldHessianObjective,
+    p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
                                           StopWhenGradientNormLess(1e-6),
@@ -330,7 +419,7 @@ function trust_regions!(
     reduction_threshold::Float64=0.1,
     augmentation_threshold::Float64=0.75,
     kwargs..., #collect rest
-) where {TF,TdF,TH,Tprec,Proj}
+) where {Proj}
     (ρ_prime >= 0.25) && throw(
         ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.")
     )
@@ -344,7 +433,6 @@ function trust_regions!(
             "trust_region_radius must be positive and smaller than max_trust_region_radius (=$max_trust_region_radius) but it is $trust_region_radius.",
         ),
     )
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
     dmho = decorate_objective!(M, mho; kwargs...)
     mp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
@@ -374,29 +462,6 @@ function trust_regions!(
     )
     trs = decorate_state!(trs; kwargs...)
     return get_solver_return(solve!(mp, trs))
-end
-function trust_regions!(
-    M::AbstractManifold,
-    f::TF,
-    grad_f::TdF,
-    p;
-    evaluation=AllocatingEvaluation(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    kwargs...,
-) where {TF,TdF}
-    hess_f = ApproxHessianFiniteDifference(
-        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
-    )
-    return trust_regions!(
-        M,
-        f,
-        grad_f,
-        hess_f,
-        p;
-        evaluation=evaluation,
-        retraction_method=retraction_method,
-        kwargs...,
-    )
 end
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

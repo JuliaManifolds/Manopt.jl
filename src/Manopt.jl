@@ -110,6 +110,7 @@ using ManifoldsBase:
     retract!,
     set_component!,
     shortest_geodesic,
+    shortest_geodesic!,
     vector_transport_to,
     vector_transport_to!,
     zero_vector,
@@ -188,12 +189,12 @@ function __init__()
             sym_rem,
             mean
         import Random: rand, randperm
+        import ManifoldsBase: copy
         using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
         # adaptions for Nonmutating manifolds
         const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
         include("functions/manifold_functions.jl")
         include("functions/nonmutating_manifolds_functions.jl")
-        include("plans/nonmutating_manifolds_plans.jl")
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
         export mid_point, mid_point!, reflect, reflect!

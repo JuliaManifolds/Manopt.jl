@@ -1,7 +1,10 @@
 using Manifolds, Manopt, ManifoldsBase, Test
 
+include("utils/example_tasks.jl")
+
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin
+        include("plans/test_objective.jl")
         include("plans/test_problem.jl")
         include("plans/test_state.jl")
         include("plans/test_conjugate_gradient_plan.jl")
@@ -9,7 +12,6 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("plans/test_storage.jl")
         include("plans/test_cache_plan.jl")
         include("plans/test_nelder_mead_plan.jl")
-        include("plans/test_nonmutating.jl")
         include("plans/test_gradient_plan.jl")
         include("plans/test_constrained_plan.jl")
         include("plans/test_hessian_plan.jl")
@@ -54,7 +56,6 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_subgradient_method.jl")
         include("solvers/test_truncated_cg.jl")
         include("solvers/test_trust_regions.jl")
-        include("solvers/test_trust_regions_hessian_update.jl")
     end
     include("test_deprecated.jl")
 end

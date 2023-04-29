@@ -20,7 +20,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
-    cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
+    f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     prox_g_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
     DΛ(M, m, X) = differential_forward_logs(M, m, X)
@@ -145,7 +145,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     s = primal_dual_semismooth_Newton(
         M,
         N,
-        cost,
+        f,
         x0,
         ξ0,
         m,
@@ -170,7 +170,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     o2 = primal_dual_semismooth_Newton(
         M,
         N,
-        cost,
+        f,
         x0,
         ξ0,
         m,

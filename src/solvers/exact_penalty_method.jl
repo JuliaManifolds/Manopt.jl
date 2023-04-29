@@ -109,6 +109,7 @@ end
 
 @doc raw"""
     exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
+    exact_penalty_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020].
 The aim of the EPM is to find a solution of the constrained optimisation task
@@ -173,13 +174,18 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
 * `grad_f` – the gradient of the cost function
 
+# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
+
+* `g` – (`nothing`) the inequality constraints
+* `h` – (`nothing`) the equality constraints
+* `grad_g` – (`nothing`) the gradient of the inequality constraints
+* `grad_h` – (`nothing`) the gradient of the equality constraints
+
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be proviede.
+Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
+
 # Optional
 
-* `g` – the inequality constraints
-* `h` – the equality constraints
-* `grad<-g` – the gradient of the inequality constraints
-* `grad_h` – the gradient of the equality constraints
-* `p` – initial point
 * `smoothing` – ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
 * `ϵ` – (`1e–3`) the accuracy tolerance
 * `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
@@ -201,29 +207,89 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+exact_penalty_method(M::AbstractManifold, args...; kwargs...)
+function exact_penalty_method(M::AbstractManifold, f, grad_f; kwargs...)
+    return exact_penalty_method(M, f, grad_f, rand(M); kwargs...)
+end
 function exact_penalty_method(
-    M::AbstractManifold, f::TF, grad_f::TGF, p=rand(M); kwargs...
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TGF,
+    p;
+    g=nothing,
+    h=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
 ) where {TF,TGF}
+    cmo = ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+    )
+    return exact_penalty_method(M, cmo, p; evaluation=evaluation, kwargs...)
+end
+function exact_penalty_method(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    p::Number;
+    g=nothing,
+    h=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    q = [p]
+    f_(M, p) = f(M, p[])
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
+    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
+    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
+    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
+    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
+    cmo = ConstrainedManifoldObjective(
+        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
+    )
+    rs = exact_penalty_method(M, cmo, q; evaluation=evaluation, kwargs...)
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+function exact_penalty_method(
+    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...
+)
     q = copy(M, p)
-    return exact_penalty_method!(M, f, grad_f, q; kwargs...)
+    return exact_penalty_method!(M, cmo, q; kwargs...)
 end
 
 @doc raw"""
-    exact_penalty_method!(M, f, grad_f, p=rand(M); kwargs...)
+    exact_penalty_method!(M, f, grad_f, p; kwargs...)
+    exact_penalty_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
 perform the exact penalty method (EPM)[^LiuBoumal2020] in place of `p`.
 
 For all options, see [`exact_penalty_method`](@ref).
 """
+exact_penalty_method!(M::AbstractManifold, args...; kwargs...)
 function exact_penalty_method!(
     M::AbstractManifold,
-    f::TF,
-    grad_f::TGF,
-    p=rand(M);
+    f,
+    grad_f,
+    p;
     g=nothing,
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    cmo = ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+    )
+    return exact_penalty_method!(M, cmo, p; evaluation=evaluation, kwargs...)
+end
+function exact_penalty_method!(
+    M::AbstractManifold,
+    cmo::ConstrainedManifoldObjective,
+    p;
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
@@ -236,11 +302,8 @@ function exact_penalty_method!(
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
     smoothing=LogarithmicSumOfExponentials(),
-    _objective=ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
-    ),
-    sub_cost=ExactPenaltyCost(_objective, ρ, u; smoothing=smoothing),
-    sub_grad=ExactPenaltyGrad(_objective, ρ, u; smoothing=smoothing),
+    sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
+    sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
     sub_problem::AbstractManoptProblem=DefaultManoptProblem(
         M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
     ),
@@ -265,7 +328,7 @@ function exact_penalty_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-) where {TF,TGF}
+)
     emps = ExactPenaltyMethodState(
         M,
         p,
@@ -281,7 +344,7 @@ function exact_penalty_method!(
         θ_u=θ_u,
         stopping_criterion=stopping_criterion,
     )
-    deco_o = decorate_objective!(M, _objective; kwargs...)
+    deco_o = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, deco_o)
     epms = decorate_state!(emps; kwargs...)
     return get_solver_return(solve!(dmp, epms))
