@@ -173,6 +173,16 @@ end
     lms = get_state(ds)
     @test isapprox(M, p_star, lms.p; atol=p_atol)
 
+    p1 = copy(M, p0)
+    LevenbergMarquardt!(
+        M,
+        F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
+        jacF_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
+        p1;
+        expect_zero_residual=true,
+    )
+    @test isapprox(M, p_star, p1; atol=p_atol)
+
     # mutating R2 regression
     p0 = [0.0, 0.0]
     ds = LevenbergMarquardt(
@@ -248,6 +258,14 @@ end
         )
 
         @test_throws ArgumentError LevenbergMarquardt(
+            M,
+            F_reg_r2!,
+            jacF_reg_r2!,
+            x0;
+            return_state=true,
+            evaluation=InplaceEvaluation(),
+        )
+        @test_throws ArgumentError LevenbergMarquardt!(
             M,
             F_reg_r2!,
             jacF_reg_r2!,

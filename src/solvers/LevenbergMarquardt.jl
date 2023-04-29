@@ -139,7 +139,7 @@ function LevenbergMarquardt!(
         (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
-            num_components = length(F(M, p))
+            num_components = length(f(M, p))
         else
             throw(
                 ArgumentError(

@@ -60,7 +60,8 @@ include("../utils/example_tasks.jl")
         )
         @test isapprox(M, p3, q2; atol=1e-6)
         @test f(M, p3) ≈ f(M, p1)
-
+    end
+    @testset "TCG" begin
         X = zero_vector(M, p)
 
         @test_logs (:warn,) truncated_conjugate_gradient_descent(M, f, rgrad, p, X, rhess)
@@ -68,19 +69,49 @@ include("../utils/example_tasks.jl")
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
         @test Y != X
-        Y2 = truncated_conjugate_gradient_descent(
-            M, f, rgrad, p, X; trust_region_radius=0.5
+        Y2 = truncated_conjugate_gradient_descent( #approx hess
+            M,
+            f,
+            rgrad,
+            p,
+            X;
+            trust_region_radius=0.5,
         )
         @test isapprox(M, p, Y, Y2)
         # random point -> different result
-        Y3 = truncated_conjugate_gradient_descent(
-            M, f, rgrad, rhess; trust_region_radius=0.5
+        Y3 = truncated_conjugate_gradient_descent( #random point and vector
+            M,
+            f,
+            rgrad,
+            rhess;
+            trust_region_radius=0.5,
         )
         @test Y3 != X
-        Y4 = copy(M, p, X)
-        truncated_conjugate_gradient_descent!(
-            M, f, rgrad, rhess, p, Y4; trust_region_radius=0.5
+        Y4 = truncated_conjugate_gradient_descent( # 2 & 3
+            M,
+            f,
+            rgrad;
+            trust_region_radius=0.5,
         )
+        @test Y4 != X
+        Y5 = truncated_conjugate_gradient_descent( # 2 & 3
+            M,
+            f,
+            rgrad,
+            rhess,
+            p,
+            X;
+            trust_region_radius=0.5,
+        )
+        @test Y5 != X
+        Y6 = copy(M, p, X)
+        truncated_conjugate_gradient_descent!(
+            M, f, rgrad, rhess, p, Y6; trust_region_radius=0.5
+        )
+        @test Y6 != X
+        Y7 = copy(M, p, X)
+        truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y7; trust_region_radius=0.5)
+        @test Y7 != X
         @test_logs (:warn,) truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y4, rhess)
     end
     @testset "Mutating" begin
@@ -109,6 +140,23 @@ include("../utils/example_tasks.jl")
             evaluation=InplaceEvaluation(),
         )
         @test f(M, p2) ≈ f(M, p1)
+        X = zero_vector(M, p)
+        Y6 = truncated_conjugate_gradient_descent( # inplace -> other precon default
+            M,
+            f,
+            g,
+            h,
+            p,
+            X;
+            evaluation=InplaceEvaluation(),
+            trust_region_radius=0.5,
+        )
+        @test Y6 != X
+        Y9 = copy(M, p, X)
+        truncated_conjugate_gradient_descent!(
+            M, f, g, h, p, Y6; evaluation=InplaceEvaluation(), trust_region_radius=0.5
+        )
+        @test Y6 != X
     end
     @testset "...with different Hessian updates" begin
         n = 4
@@ -298,6 +346,17 @@ include("../utils/example_tasks.jl")
         @test distance(Mc, pc_star, q[]) < 1e-2
         Y1 = truncated_conjugate_gradient_descent(
             Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius=0.5
+        )
+        @test abs(Y1) ≈ 0.5
+        Y1 = truncated_conjugate_gradient_descent(
+            Mc,
+            fc,
+            grad_fc,
+            hess_fc,
+            0.1,
+            0.0;
+            evaluation=InplaceEvaluation(),
+            trust_region_radius=0.5,
         )
         @test abs(Y1) ≈ 0.5
     end
