@@ -1,13 +1,13 @@
 @doc raw"""
-    LevenbergMarquardt(M, F, jacF, x, num_components=-1)
+    LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1)
 
 Solve an optimization problem of the form
 
 ```math
-\operatorname{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert F(p) \rVert^2,
+\operatorname{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert f(p) \rVert^2,
 ```
 
-where ``F\colon\mathcal M \to ℝ^d`` is a continuously differentiable function,
+where ``f\colon\mathcal M \to ℝ^d`` is a continuously differentiable function,
 using the Riemannian Levenberg-Marquardt algorithm [^Peeters1993].
 The implementation follows Algorithm 1[^Adachi2022].
 
@@ -17,20 +17,28 @@ The implementation follows Algorithm 1[^Adachi2022].
 * `jacF` – the Jacobian of ``F``. `jacF` is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
-* `x` – an initial value ``x ∈ \mathcal M``
+* `p` – an initial value ``p ∈ \mathcal M``
 * `num_components` -- length of the vector returned by the cost function (`d`).
   By default its value is -1 which means that it will be determined automatically by
   calling `F` one additional time. Only possible when `evaluation` is `AllocatingEvaluation`,
   for mutating evaluation this must be explicitly specified.
 
+These can also be passed as a [`NonlinearLeastSquaresObjective`](@ref),
+then the keyword `jacB` below is ignored
+
 # Optional
+
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(1e-12))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-...
-and the ones that are passed to [`decorate_state!`](@ref) for decorators.
+* `expect_zero_residual` – (`false`)
+
+All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
+[`decorate_objective!`](@ref), respectively.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
+
 
 # Output
 
@@ -48,34 +56,68 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     > Serie Research Memoranda 0011, 1993.
     > link: [https://econpapers.repec.org/paper/vuawpaper/1993-11.htm](https://econpapers.repec.org/paper/vuawpaper/1993-11.htm).
 """
+LevenbergMarquardt(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt(
-    M::AbstractManifold, F::TF, jacF::TDF, p, num_components::Int=-1; kwargs...
-) where {TF,TDF}
+    M::AbstractManifold,
+    f,
+    jacobian_f,
+    num_components::Int=-1;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    return LevenbergMarquardt(
+        M, f, jacobian_f, rand(M), num_components; evaluation=evaluation, kwargs...
+    )
+end
+function LevenbergMarquardt(
+    M::AbstractManifold,
+    f,
+    jacobian_f,
+    p,
+    num_components::Int=-1;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    jacB::AbstractBasis=DefaultOrthonormalBasis(),
+    kwargs...,
+)
+    if num_components == -1
+        if evaluation === AllocatingEvaluation()
+            num_components = length(f(M, p))
+        else
+            throw(
+                ArgumentError(
+                    "For mutating evaluation num_components needs to be explicitly specified",
+                ),
+            )
+        end
+    end
+    nlso = NonlinearLeastSquaresObjective(
+        f, jacobian_f, num_components; evaluation=evaluation, jacB=jacB
+    )
+    return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
+end
+function LevenbergMarquardt(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+)
     q = copy(M, p)
-    return LevenbergMarquardt!(M, F, jacF, q, num_components; kwargs...)
+    return LevenbergMarquardt!(M, nlso, q; kwargs...)
 end
 
 @doc raw"""
-    LevenbergMarquardt!(M, F, jacF, x, num_components; kwargs...)
+    LevenbergMarquardt!(M, f, jacobian_f, p, num_components=-1; kwargs...)
 
 For more options see [`LevenbergMarquardt`](@ref).
 """
+LevenbergMarquardt!(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt!(
     M::AbstractManifold,
-    F::TF,
-    jacF::TDF,
+    f,
+    jacobian_f,
     p,
     num_components::Int=-1;
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(1e-12) |
-                                          StopWhenStepsizeLess(1e-12),
-    debug=[DebugWarnIfCostIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    expect_zero_residual::Bool=false,
     jacB::AbstractBasis=DefaultOrthonormalBasis(),
-    kwargs..., #collect rest
-) where {TF,TDF}
+    kwargs...,
+)
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(F(M, p))
@@ -88,15 +130,30 @@ function LevenbergMarquardt!(
         end
     end
     nlso = NonlinearLeastSquaresObjective(
-        F, jacF, num_components; evaluation=evaluation, jacB=jacB
+        f, jacobian_f, num_components; evaluation=evaluation, jacB=jacB
     )
+    return LevenbergMarquardt!(M, nlso, p; evaluation=evaluation, kwargs...)
+end
+function LevenbergMarquardt!(
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective,
+    p;
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenGradientNormLess(1e-12) |
+                                          StopWhenStepsizeLess(1e-12),
+    debug=[DebugWarnIfCostIncreases()],
+    expect_zero_residual::Bool=false,
+    kwargs..., #collect rest
+)
+    i_nlso = get_objective(nlso) # undeecorate – for safety
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
         M,
         p,
-        similar(p, num_components),
-        similar(p, num_components, manifold_dimension(M));
+        similar(p, i_nlso.num_components),
+        similar(p, i_nlso.num_components, manifold_dimension(M));
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,

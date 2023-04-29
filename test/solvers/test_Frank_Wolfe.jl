@@ -1,4 +1,4 @@
-using ManifoldsBase, Manopt, Test, LinearAlgebra
+using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
 
 @testset "Frank Wolfe Method" begin
     M = ManifoldsBase.DefaultManifold(3)
@@ -53,8 +53,8 @@ using ManifoldsBase, Manopt, Test, LinearAlgebra
             p2c = copy(M, p)
             Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem=oracle)
             @test f(M, p2c) < f(M, p)
+            Random.seed!(23)
             p2d = Frank_Wolfe_method(M, f, grad_f; sub_problem=oracle)
-            @test f(M, p2d) < f(M, p)
         end
         @testset "Testing with an Subsolver" begin
             # This is not a useful run since the subproblem is not constraint

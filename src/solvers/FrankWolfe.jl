@@ -122,7 +122,7 @@ end
 
 @doc raw"""
     Frank_Wolfe_method(M, f, grad_f, p)
-    Frank_Wolfe_method(M, gradient_objective, p=rand(M); kwargs...)
+    Frank_Wolfe_method(M, gradient_objective, p; kwargs...)
 
 Perform the Frank-Wolfe algorithm to compute for ``\mathcal C \subset \mathcal M``
 
@@ -149,7 +149,7 @@ use a retraction and its inverse.
 * `f` – a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
 * `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   - as a function `(M, p) -> X` or a function `(M, X, p) -> X`
-* `p` – an initial value `p` ``= p_0 ∈ \mathcal M``
+* `p` – an initial value ``p ∈ \mathcal C``, note that it really has to be a feasible point
 
 Alternatively to `f` and `grad_f` you can prodive
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
@@ -173,9 +173,6 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 Frank_Wolfe_method(M::AbstractManifold, args...; kwargs...)
-function Frank_Wolfe_method(M::AbstractManifold, f, grad_f; kwargs...)
-    return Frank_Wolfe_method(M, f, grad_f, rand(M); kwargs...)
-end
 function Frank_Wolfe_method(
     M::AbstractManifold,
     f,
