@@ -138,7 +138,7 @@ end
         p0,
         length(ts_r2) * 2;
         return_state=true,
-        jacB=ProjectedOrthonormalBasis(:svd),
+        jacobian_tangent_basis=ProjectedOrthonormalBasis(:svd),
     )
     lms = get_state(ds)
     @test isapprox(lms.p[1], 2, atol=0.01)

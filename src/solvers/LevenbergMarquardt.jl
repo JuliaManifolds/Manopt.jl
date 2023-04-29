@@ -13,8 +13,8 @@ The implementation follows Algorithm 1[^Adachi2022].
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F: \mathcal M→ℝ^d``
-* `jacF` – the Jacobian of ``F``. `jacF` is supposed to accept a keyword argument
+* `f` – a cost function ``F: \mathcal M→ℝ^d``
+* `jacobian_f` – the Jacobian of ``f``. The Jacobian `jacF` is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
 * `p` – an initial value ``p ∈ \mathcal M``
@@ -24,7 +24,7 @@ The implementation follows Algorithm 1[^Adachi2022].
   for mutating evaluation this must be explicitly specified.
 
 These can also be passed as a [`NonlinearLeastSquaresObjective`](@ref),
-then the keyword `jacB` below is ignored
+then the keyword `jacobian_tangent_basis` below is ignored
 
 # Optional
 
@@ -76,9 +76,16 @@ function LevenbergMarquardt(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB::AbstractBasis=DefaultOrthonormalBasis(),
+    jacB=nothing,
+    jacobian_tangent_basis::AbstractBasis=if isnothing(jacB)
+        DefaultOrthonormalBasis()
+    else
+        jacB
+    end,
     kwargs...,
 )
+    !isnothing(jacB) &&
+        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
@@ -91,7 +98,11 @@ function LevenbergMarquardt(
         end
     end
     nlso = NonlinearLeastSquaresObjective(
-        f, jacobian_f, num_components; evaluation=evaluation, jacB=jacB
+        f,
+        jacobian_f,
+        num_components;
+        evaluation=evaluation,
+        jacobian_tangent_basis=jacobian_tangent_basis,
     )
     return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
 end
@@ -115,9 +126,16 @@ function LevenbergMarquardt!(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB::AbstractBasis=DefaultOrthonormalBasis(),
+    jacB=nothing,
+    jacobian_tangent_basis::AbstractBasis=if isnothing(jacB)
+        DefaultOrthonormalBasis()
+    else
+        jacB
+    end,
     kwargs...,
 )
+    !isnothing(jacB) &&
+        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(F(M, p))
@@ -130,7 +148,11 @@ function LevenbergMarquardt!(
         end
     end
     nlso = NonlinearLeastSquaresObjective(
-        f, jacobian_f, num_components; evaluation=evaluation, jacB=jacB
+        f,
+        jacobian_f,
+        num_components;
+        evaluation=evaluation,
+        jacobian_tangent_basis=jacobian_tangent_basis,
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation=evaluation, kwargs...)
 end
@@ -169,7 +191,7 @@ function initialize_solver!(
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
-    lms.residual_values = get_objective(dmp).F(M, lms.p)
+    lms.residual_values = get_objective(dmp).f(M, lms.p)
     lms.X = get_gradient(dmp, lms.p)
     return lms
 end
@@ -177,7 +199,7 @@ function initialize_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
-    get_objective(dmp).F(get_manifold(dmp), lms.residual_values, lms.p)
+    get_objective(dmp).f(get_manifold(dmp), lms.residual_values, lms.p)
     lms.X = get_gradient(dmp, lms.p)
     return lms
 end
@@ -214,14 +236,14 @@ function get_residuals!(
     residuals,
     p,
 ) where {mT}
-    return copyto!(residuals, get_objective(dmp).F(get_manifold(dmp), p))
+    return copyto!(residuals, get_objective(dmp).f(get_manifold(dmp), p))
 end
 function get_residuals!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     residuals,
     p,
 ) where {mT}
-    return get_objective(dmp).F(get_manifold(dmp), residuals, p)
+    return get_objective(dmp).f(get_manifold(dmp), residuals, p)
 end
 
 function step_solver!(
@@ -232,7 +254,7 @@ function step_solver!(
     # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
-    basis_ox = _maybe_get_basis(M, lms.p, nlso.jacB)
+    basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
     get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
     λk = lms.damping_term * norm(lms.residual_values)
 
