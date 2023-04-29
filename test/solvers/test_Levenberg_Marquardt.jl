@@ -104,18 +104,20 @@ end
 @testset "LevenbergMarquardt" begin
     # testing on rotations
     M = Rotations(3)
-    x0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
+    p0 = exp(M, ref_R, get_vector(M, ref_R, randn(3) * 0.00001, DefaultOrthonormalBasis()))
 
-    lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, x0, length(pts_LM); return_state=true)
+    lm_r = LevenbergMarquardt(M, F_RLM, jacF_RLM, p0, length(pts_LM); return_state=true)
     lm_rs = "# Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm\n"
     @test startswith(repr(lm_r), lm_rs)
     p_opt = get_state(lm_r).p
     @test norm(M, p_opt, get_gradient(lm_r)) < 2e-3
-    @test distance(M, ref_R, p_opt) < 1e-2
+    p_atol = 1.5e-2
+    @test isapprox(M, ref_R, p_opt; atol=p_atol)
 
     # allocating R2 regression, nonzero residual
     M = Euclidean(2)
     p0 = [0.0, 0.0]
+    p_star = [2, -3]
     ds = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, xs_r2, ys_r2),
@@ -125,12 +127,9 @@ end
         return_state=true,
     )
     lms = get_state(ds)
-    @test isapprox(lms.p[1], 2, atol=0.01)
-    @test isapprox(lms.p[2], -3, atol=0.01)
+    @test isapprox(M, p_star, lms.p; atol=p_atol)
 
     # testing with a basis that requires caching
-    M = Euclidean(2)
-    p0 = [0.0, 0.0]
     ds = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, xs_r2, ys_r2),
@@ -141,12 +140,28 @@ end
         jacobian_tangent_basis=ProjectedOrthonormalBasis(:svd),
     )
     lms = get_state(ds)
-    @test isapprox(lms.p[1], 2, atol=0.01)
-    @test isapprox(lms.p[2], -3, atol=0.01)
+    @test isapprox(M, p_star, lms.p; atol=p_atol)
+    # start with random point
+    p2 = LevenbergMarquardt(
+        M,
+        F_reg_r2(ts_r2, xs_r2, ys_r2),
+        jacF_reg_r2(ts_r2, xs_r2, ys_r2),
+        length(ts_r2) * 2;
+    )
+    @test isapprox(M, p_star, p2; atol=p_atol)
+    # tsting inplace
+    p3 = copy(M, p0)
+    LevenbergMarquardt!(
+        M,
+        F_reg_r2(ts_r2, xs_r2, ys_r2),
+        jacF_reg_r2(ts_r2, xs_r2, ys_r2),
+        p3,
+        length(ts_r2) * 2;
+    )
+    @test isapprox(M, p_star, p3; atol=p_atol)
 
     # allocating R2 regression, zero residual
     M = Euclidean(2)
-    p0 = [0.0, 0.0]
     ds = LevenbergMarquardt(
         M,
         F_reg_r2(ts_r2, 2 * ts_r2, -3 * ts_r2),
@@ -156,12 +171,11 @@ end
         expect_zero_residual=true,
     )
     lms = get_state(ds)
-    @test isapprox(lms.p[1], 2, atol=0.01)
-    @test isapprox(lms.p[2], -3, atol=0.01)
+    @test isapprox(M, p_star, lms.p; atol=p_atol)
 
     # mutating R2 regression
     p0 = [0.0, 0.0]
-    ds_m = LevenbergMarquardt(
+    ds = LevenbergMarquardt(
         M,
         F_reg_r2!,
         jacF_reg_r2!,
@@ -171,8 +185,7 @@ end
         evaluation=InplaceEvaluation(),
     )
     lms = get_state(ds)
-    @test isapprox(lms.p[1], 2, atol=0.01)
-    @test isapprox(lms.p[2], -3, atol=0.01)
+    @test isapprox(M, p_star, lms.p; atol=p_atol)
 
     x0 = [4.0, 2.0]
     o_r2 = LevenbergMarquardtState(

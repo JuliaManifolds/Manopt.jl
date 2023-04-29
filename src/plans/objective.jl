@@ -55,7 +55,7 @@ dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
 
 Indicate, whether [`AbstractManifoldObjective`](@ref) `s` are of decorator type.
 """
-function is_state_decorator(s::AbstractManifoldObjective)
+function is_objective_decorator(s::AbstractManifoldObjective)
     return _extract_val(dispatch_objective_decorator(s))
 end
 

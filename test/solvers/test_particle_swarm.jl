@@ -10,14 +10,14 @@ using Random
         p2 = copy.(Ref(M), p1)
 
         Random.seed!(35)
-        o = particle_swarm(M, f; x0=p1, return_state=true)
+        o = particle_swarm(M, f, p1; return_state=true)
         @test startswith(
             repr(o), "# Solver state for `Manopt.jl`s Particle Swarm Optimization Algorithm"
         )
         g = get_solver_result(o)
 
         Random.seed!(35)
-        g2 = particle_swarm(M, f; x0=p2, return_state=false)
+        g2 = particle_swarm(M, f, p2; return_state=false)
         @test isequal(g, g2)
 
         # the cost of g and the p[i]'s are not greater after one step
