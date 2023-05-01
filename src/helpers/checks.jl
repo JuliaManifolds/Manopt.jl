@@ -109,12 +109,12 @@ function check_gradient(
     grad_f,
     p=rand(M),
     X=rand(M; vector_at=p);
-    gradient = grad_f(M,p),
+    gradient=grad_f(M, p),
     check_vector=true,
     throw_error=false,
     kwargs...,
 )
-    check_vector && ( !is_vector(M, p, gradient, throw_error;) && return false )
+    check_vector && (!is_vector(M, p, gradient, throw_error;) && return false)
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
     return check_differential(M, f, df, p, X; throw_error=throw_error, kwargs...)
@@ -172,12 +172,12 @@ function check_Hessian(
     p=rand(M),
     X=rand(M; vector_at=p),
     Y=rand(M; vector_at=p);
-    a = randn(),
-    b = randn(),
+    a=randn(),
+    b=randn(),
     check_gradient=true,
     io::Union{IO,Nothing}=nothing,
-    gradient = grad_f(M, p),
-    Hessian = Hess_f(M, p, X),
+    gradient=grad_f(M, p),
+    Hessian=Hess_f(M, p, X),
     limits=(-8.0, 0.0),
     log_range=range(limits[1], limits[2]; length=N),
     mode::Symbol=:Default,
@@ -190,13 +190,17 @@ function check_Hessian(
     kwargs...,
 )
     if chech_gradient
-        if !check_gradient(M, f, grad_f, p, X; gradient=gradient, throw_error=throw_error, kwargs...)
+        if !check_gradient(
+            M, f, grad_f, p, X; gradient=gradient, throw_error=throw_error, kwargs...
+        )
             return false
         end
     end
-    check_vector && ( !is_vector(M, f, p, Hessian; throw_error=throw_error) && return false )
+    check_vector && (!is_vector(M, f, p, Hessian; throw_error=throw_error) && return false)
     if check_linearity
-        if !check_Hessian_linearity(M, Hess_f, p, X, Y, a, b; throw_error=throw_error, kwargs...)
+        if !check_Hessian_linearity(
+            M, Hess_f, p, X, Y, a, b; throw_error=throw_error, kwargs...
+        )
             return false
         end
     end
@@ -205,11 +209,11 @@ function check_Hessian(
             return false
         end
     end
-    if mode===:CriticalPoint # find a critical point and update grad, hess and X
+    if mode === :CriticalPoint # find a critical point and update grad, hess and X
         p = gradient_descent(M, f, grad_f, p)
         gradient = grad_f(M, p)
         Hessian = Hess_f(M, p, X)
-        X=rand(M; vector_at=p)
+        X = rand(M; vector_at=p)
     end
     #
     # slope check
@@ -224,8 +228,11 @@ function check_Hessian(
     costs = [F(M, pi) for pi in points]
     # linearized
     linearized = map(
-        t -> F(M, p) + t * real(inner(M, p, gradient, X_n)) + t^2/2 * real(inner(M, p, Hessian_n, X_n)),
-        T
+        t ->
+            F(M, p) +
+            t * real(inner(M, p, gradient, X_n)) +
+            t^2 / 2 * real(inner(M, p, Hessian_n, X_n)),
+        T,
     )
     L = abs.(costs .- linearized)
     # global fit a + bx
@@ -271,13 +278,21 @@ which is checked using `isapptox` and the `kwargs...` are passed to this functio
 * `throw_error`       - (`false`) throw an error message if the gradient is wrong
 
 """
-function check_Hessian_linearity(M, Hess_f, p, X=rand(M; vector_at=p), Y=rand(M; vector_at=p),
-    a = randn(), b = randn(); throw_error=false, kwargs...)
-    Z1 = Hess_f(M, p, a*X + b*Y)
-    Z2 = a*Hess_f(M, p, X) + b*Hess_f(M, p, Y)
-    return isapprox(M, p, Z1, Z2; error = throw_error ? :error : :none, kwargs...)
+function check_Hessian_linearity(
+    M,
+    Hess_f,
+    p,
+    X=rand(M; vector_at=p),
+    Y=rand(M; vector_at=p),
+    a=randn(),
+    b=randn();
+    throw_error=false,
+    kwargs...,
+)
+    Z1 = Hess_f(M, p, a * X + b * Y)
+    Z2 = a * Hess_f(M, p, X) + b * Hess_f(M, p, Y)
+    return isapprox(M, p, Z1, Z2; error=throw_error ? :error : :none, kwargs...)
 end
-
 
 @doc raw"""
     check_Hessian_symmetry(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
@@ -297,11 +312,20 @@ which is checked using `isapptox` and the `kwargs...` are passed to this functio
 * `atol`, `rtol` - with the same defaults as the usual `isapprox`
 * `throw_error` - (`false`) throw an error message if the gradient is wrong
 """
-function check_Hessian_symmetry(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
-    throw_error=false, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps, kwargs...)
+function check_Hessian_symmetry(
+    M,
+    Hess_f,
+    p=rand(M),
+    X=rand(M; vector_at=p),
+    Y=rand(M; vector_at=p);
+    throw_error=false,
+    atol::Real=0,
+    rtol::Real=atol > 0 ? 0 : √eps,
+    kwargs...,
+)
     a = inner(M, p, Hess_f(M, p, X), Y)
     b = inner(M, p, X, Hess_f(M, p, Y))
-    isapprox(a,b; atol=atol, rtol=rtol) && (return true)
+    isapprox(a, b; atol=atol, rtol=rtol) && (return true)
     m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
     throw_error && throw(ErrorException(m))
     return false
