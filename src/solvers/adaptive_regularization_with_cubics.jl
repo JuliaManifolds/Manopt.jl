@@ -76,7 +76,7 @@ mutable struct AdaptiveRegularizationState{
         H::T=zero_vector(M, p),
         S::T=zero_vector(M, p),
         ς::R=1.0,
-        ρ::R=1.0,
+        ρ::R=0.0,
         ρ_regularization::R=1.0,
         stop::StoppingCriterion=StopAfterIteration(100),       #TRTM?
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -251,7 +251,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
 
     #Solve the subproblem
     arcs.S = get_solver_result(solve!(arcs.subprob, decorate_state!(arcs.substate)))
-    println("step S" ,arcs.S)
+
 
     #Computing the regularized ratio between actual improvement and model improvement.
     cost = get_cost(M, mho, arcs.p)
@@ -260,7 +260,9 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
-    println("ρ ", ρ)
+
+
+
     arcs.ρ = ρ
     sub_fail = (ρ_den + ρ_reg <= 0)
     if sub_fail
@@ -271,8 +273,8 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     if arcs.ρ >= arcs.η1
         #println("Updated iterate")
         arcs.p = retract(M, arcs.p, arcs.S)
-        get_gradient!(dmp, arcs.X, arcs.p)
-        #            Move the get_gradient! below up here so we only compute it when the point is new.
+        get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
+        
     end
 
     #Update regularization parameter
@@ -287,28 +289,10 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
         arcs.ς = arcs.γ2 * arcs.ς
     end
 
-    #get_gradient!(dmp, arcs.X, arcs.p)
     return arcs
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#################################################################################################################
-#Below here I write some new functions that will be used when I formulate the subproblem solver in a similar manner as
-# in the AugmentedLagrangianMethod
 
 
 mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverState
@@ -385,6 +369,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
 
     g = get_gradient(M, mho, s.p)
     s.gradnorm = norm(M, s.p, g)
+
     #q = g / s.gradnorm
     #s.Q[1] .= q #store it directly above
     s.Q[1] .= g / s.gradnorm
@@ -422,25 +407,42 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
         println("We have used all the allocated Lanczos vectors")
     end
 
+
+
+
+    #Had to move it here to avoid logic error: earlier we computed only new y if stopping criterion failed, however this would lead to updating the y in s.y, and when the stopping_criterion is called after the step, it would be checked with a new y.
+    if j>1
+        s.y=min_cubic_Newton(s,j)
+    end    
+
+
     #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
     if β > 1e-12  # β large enough-> Do regular procedure: MGS of r wrt. Q
-        s.Q[j + 1] .= s.r / β
+        s.Q[j + 1] .= project(M,s.p,s.r / β)
+        #for i in 1:j
+        #    s.r=s.r-inner(M,s.p,s.Q[i],s.r)*s.Q[i]
+        #end
+       # s.Q[j + 1] .= project(M,s.p,s.r/norm(M,s.p,s.r))    #q=r/norm(M,s.p,r) #/β                                      #s.r / β # project(M::Grassmann, p, X)
     else # Generate new random vec and MGS of new vec wrt. Q
+        println("maxed out! gen rand vec")
         r = rand(M; vector_at=s.p)
         for i in 1:j
             r .= r - inner(M, s.p, s.Q[i], r) * s.Q[i]  #use @.
         end
-        s.Q[j + 1] .= r / norm(M, s.p, r)
+        s.Q[j + 1] .= project(M,s.p,r / norm(M, s.p, r))                           # r / norm(M, s.p, r)
     end
 
-    r = get_hessian(M, mho, s.p,s.Q[j + 1]) - β * s.Q[j] #also store this in s.r to save memory
+    rh=get_hessian(M, mho, s.p,s.Q[j + 1])
+    r = rh - β * s.Q[j] #also store this in s.r to save memory
     α = inner(M, s.p, r, s.Q[j + 1])
     s.r = r - α * s.Q[j + 1]
-    #s.Q[j + 1] .= q #it would be better to just store it here in the if/else above at once, and acess it at the index where we need it above.
+
 
     s.Tmatrix[j + 1, j + 1] = α
     s.Tmatrix[j, j + 1] = β
     s.Tmatrix[j + 1, j] = β
+
+    
 
 
     #Compute the norm of the gradient of the model.
@@ -459,28 +461,23 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
             s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
     end
 
-    #Old modelgrad
-    #s.modelGradnorm = norm(
-    #    s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y[1:j] + s.ς * norm(s.y[1:j], 2) * vcat(s.y[1:j], 0), 2)
 
-
-    if s.modelGradnorm > s.θ * norm(s.y, 2)^2
-        s.y=min_cubic_Newton(s,j+1)
-        #S is initalized as zero_vector(M,p) so dont have to set it.
-    else
-        println("stopping crit satisifed at iteration:",j)
+    if s.modelGradnorm <= s.θ*norm(s.y,2)^2
         #The condition is satisifed. Assemble the optimal tangent vector
         S_opt=zero_vector(M,s.p)
+        println("number of dim in opt sol: ", j)
         for i in 1:j #length(s.y)
-            S_opt = S_opt + s.Q[i] * s.y[i] # save memory here
+            S_opt = S_opt + s.Q[i] * s.y[i] 
         end
-        s.S=S_opt
+        s.S=project(M,s.p,S_opt)
     end
+
     #Update the params here.
     set_manopt_parameter!(s.subcost,:k,j+1)
     set_manopt_parameter!(s.subcost,:y,s.y) #     s.subcost(TangentSpaceAt(M,p), s.y)
     set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
     set_manopt_parameter!(s.subcost,:ς,s.ς)
+
     return s
 end
 
