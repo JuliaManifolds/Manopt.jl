@@ -7,14 +7,14 @@ This implements the method described in Section 4.8 [^Boumal2022].
 
 # Keyword arguments
 
-* `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
-* `throw_error` - (`false`) throw an error message if the gradient is wrong
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
+* `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
+* `throw_error` - (`false`) throw an error message if the gradient is wrong
 
 Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
 
@@ -66,39 +66,245 @@ function check_differential(
     # otherwise
     # find best contiguous window of length w
     (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
-    msg = "You gradient fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n"
+    msg = "The Gradient/Differential fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n"
     (io !== nothing) && print(io, msg)
-    throw_error && throw(ErrorException(msg))
     plot && return plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
+    throw_error && throw(ErrorException(msg))
     return false
 end
 
 @doc raw"""
     check_gradient(M, F, gradF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
-Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct.
+Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct, that is whether
 
-This implements the method described in Section 4.8 [^Boumal2022].
 
-Its keyword arguments are the same as for the [`check_differential`](@ref) and Additionally
+```math
+f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \mathcal O(t^2)
+```
 
-* `check_vector` _ (`true`) whether or not to check that the gradient is a tangent vector.
+or in other words, that the error between the function ``f`` and its first order Taylor
+behaves in error ``\mthcal O(t^2)``, which indicates that the gradient is correct,
+cf. also Section 4.8 [^Boumal2022].
+
+# Keyword arguments
+
+* `check_vector` – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M`` using `is_vector`.
+* `io` – (`nothing`) provide an `IO` to print the check result to
+* `gradient` - (`grad_f(M, p)`) instead of the gradient _function_ you can also provide the gradient at `p` directly
+* `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
+* `limits` (`(1e-8,1)`) specify the limits in the `log_range`
+* `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
+* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
+* `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
+* `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
+* `throw_error` - (`false`) throw an error message if the gradient is wrong
+
+Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
+
 """
 function check_gradient(
     M::AbstractManifold,
-    F,
-    gradF,
+    f,
+    grad_f,
     p=rand(M),
     X=rand(M; vector_at=p);
+    gradient = grad_f(M,p),
     check_vector=true,
     throw_error=false,
     kwargs...,
 )
-    gradient = gradF(M, p)
-    check_vector && is_vector(M, p, gradient, throw_error;)
+    check_vector && ( !is_vector(M, p, gradient, throw_error;) && return false )
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
-    return check_differential(M, F, df, p, X; throw_error=throw_error, kwargs...)
+    return check_differential(M, f, df, p, X; throw_error=throw_error, kwargs...)
+end
+
+@doc raw"""
+    check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M, vector_at=p); kwargs...)
+
+Check numerivcally whether the Hessian `{operatorname{Hess} f(M,p, X)` of `f(M,p)` is correct.
+
+For this we require either a second-order retraction or a critical point ``p`` of `f`.
+
+given that we know  that is whether
+
+```math
+f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \mathcal O(t^2)
+```
+
+or in other words, that the error between the function ``f`` and its first order Taylor
+behaves in error ``\mthcal O(t^2)``, which indicates that the gradient is correct,
+cf. also Section 4.8 [^Boumal2022].
+
+# Keyword arguments
+
+* `check_gradient` – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
+* `check_vector` – (`true`) check whether ``\operatorname{Hess} f(p)[X]``  \in T_p\mathcal M`` using `is_vector`.
+* `check_symmetry` – (`true`) check whether TODO
+* `check_linearity` – (`true`) check whether TODO
+* `check_mode` (`:Default`) specify the mode, by default we assume to have a second order retraction given by `retraction_method=`
+  you can also this method if you already _have_ a cirtical point `p`.
+  Set to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
+  Note: This requires (and evaluates) new tangent vectors `X` and `Y`
+
+* `a`, `b` – two real values to check linearity of the Hessian (if `check_linearity=true`)
+* `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
+* `io` – (`nothing`) provide an `IO` to print the check result to
+* `gradient`          - (`grad_f(M, p)`) instead of the gradient _function_ you can also provide the gradient at `p` directly
+* `Hessian`           - (`Hess_f(M,p)`) instead of the Hessian _function_ you can provide the result of `\operatorname{Hess} f(p)[X]` directly.
+  Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry.
+* `limits`            - (`(1e-8,1)`) specify the limits in the `log_range`
+* `log_range`         - (`range(limits[1], limits[2]; length=N)`) specify the range of points (in log scale) to sample the gradient line
+* `N`                 - (`101`) number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
+* `plot`              - (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
+* `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
+* `slope_tol`         – (`0.1`) tolerance for the slope (global) of the approximation
+* `throw_error`       - (`false`) throw an error message if the gradient is wrong
+* `Y` (``)
+Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
+"""
+function check_Hessian(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f,
+    p=rand(M),
+    X=rand(M; vector_at=p),
+    Y=rand(M; vector_at=p);
+    a = randn(),
+    b = randn(),
+    check_gradient=true,
+    io::Union{IO,Nothing}=nothing,
+    gradient = grad_f(M, p),
+    Hessian = Hess_f(M, p, X),
+    limits=(-8.0, 0.0),
+    log_range=range(limits[1], limits[2]; length=N),
+    mode::Symbol=:Default,
+    N=101,
+    plot=false,
+    retraction_method=default_retraction_method(M, typeof(p)),
+    slope_tol=0.1,
+    throw_error=false,
+    window=nothing,
+    kwargs...,
+)
+    if chech_gradient
+        if !check_gradient(M, f, grad_f, p, X; gradient=gradient, throw_error=throw_error, kwargs...)
+            return false
+        end
+    end
+    check_vector && ( !is_vector(M, f, p, Hessian; throw_error=throw_error) && return false )
+    if check_linearity
+        if !check_Hessian_linearity(M, Hess_f, p, X, Y, a, b; throw_error=throw_error, kwargs...)
+            return false
+        end
+    end
+    if check_symmetry
+        if !check_Hessian_symmetry(M, Hess_f, p, X, Y; throw_error=throw_error, kwargs...)
+            return false
+        end
+    end
+    if mode===:CriticalPoint # find a critical point and update grad, hess and X
+        p = gradient_descent(M, f, grad_f, p)
+        gradient = grad_f(M, p)
+        Hessian = Hess_f(M, p, X)
+        X=rand(M; vector_at=p)
+    end
+    #
+    # slope check
+    X_n = X ./ norm(M, p, X) # normalize tangent direction
+    Hessian_n = Hessian ./ norm(M, p, X)
+    # function for the directional derivative
+    #
+    T = exp10.(log_range)
+    # points p_i to evaluate our error function at
+    points = map(t -> retract(M, p, Xn, t, retraction_method), T)
+    # F(p_i)
+    costs = [F(M, pi) for pi in points]
+    # linearized
+    linearized = map(
+        t -> F(M, p) + t * real(inner(M, p, gradient, X_n)) + t^2/2 * real(inner(M, p, Hessian_n, X_n)),
+        T
+    )
+    L = abs.(costs .- linearized)
+    # global fit a + bx
+    x = log_range[L .> 0]
+    y = log10.(L[L .> 0])
+    (a, b) = find_best_slope_window(x, y, length(x); slope=3.0)[1:2]
+    if isapprox(b, 3.0; atol=slope_tol)
+        plot && return plot_slope(
+            T[L .> 0], L[L .> 0]; line_base=L[1], a=a, b=b, i=1, j=length(y)
+        )
+        (io !== nothing) && print(
+            io,
+            "The Hessianss slope is globally $(@sprintf("%.4f", b)), so within 3 ± $(slope_tol).\n",
+        )
+        return true
+    end
+    # otherwise
+    # find best contiguous window of length w
+    (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
+    msg = "The Hessian fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 3 ± $(slope_tol).\n"
+    (io !== nothing) && print(io, msg)
+    plot && return plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
+    throw_error && throw(ErrorException(msg))
+    return false
+end
+
+@doc raw"""
+    check_Hessian_linearity(M, Hess_f, p,
+    X=rand(M; vector_at=p), Y=rand(M; vector_at=p), a=randn(), b=randn();
+    throw_error=false, kwargs...
+)
+
+Check whether the Hessian function `Hess_f` fulfills linearity, i.e. that
+
+```math
+\operatorname{Hess} f(p)[aX + bY] = b\operatorname{Hess} f(p)[X]
+ + b\operatorname{Hess} f(p)[Y]
+```
+
+which is checked using `isapptox` and the `kwargs...` are passed to this function.
+
+# Optional Arguments
+* `throw_error`       - (`false`) throw an error message if the gradient is wrong
+
+"""
+function check_Hessian_linearity(M, Hess_f, p, X=rand(M; vector_at=p), Y=rand(M; vector_at=p),
+    a = randn(), b = randn(); throw_error=false, kwargs...)
+    Z1 = Hess_f(M, p, a*X + b*Y)
+    Z2 = a*Hess_f(M, p, X) + b*Hess_f(M, p, Y)
+    return isapprox(M, p, Z1, Z2; error = throw_error ? :error : :none, kwargs...)
+end
+
+
+@doc raw"""
+    check_Hessian_symmetry(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
+    throw_error=false, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
+)
+
+Check whether the Hessian function `Hess_f` fulfills symetry, i.e. that
+
+```math
+⟨\operatorname{Hess} f(p)[X], Y⟩ = ⟨X, \operatorname{Hess} f(p)[Y]⟩
+```
+
+which is checked using `isapptox` and the `kwargs...` are passed to this function.
+
+# Optional Arguments
+
+* `atol`, `rtol` - with the same defaults as the usual `isapprox`
+* `throw_error` - (`false`) throw an error message if the gradient is wrong
+"""
+function check_Hessian_symmetry(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
+    throw_error=false, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps, kwargs...)
+    a = inner(M, p, Hess_f(M, p, X), Y)
+    b = inner(M, p, X, Hess_f(M, p, Y))
+    isapprox(a,b; atol=atol, rtol=rtol) && (return true)
+    m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
+    throw_error && throw(ErrorException(m))
+    return false
 end
 
 """
