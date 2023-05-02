@@ -185,7 +185,7 @@ function bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-8),
+    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-6, 1e-6),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -268,21 +268,22 @@ get_solver_result(bms::BundleMethodState) = bms.p_last_serious
 
 A stopping criterion for [`bundle_method`](@ref) to indicate to stop when
 
-* the parameter ξ = -|g|² - ε
+* the parameters ε and |g|
 
-is less than a given tolerance tol.
+are less than given tolerances tole and tolg respectively.
 
 # Constructor
 
-    StopWhenBundleLess(tol::Real=1e-8)
+    StopWhenBundleLess(tole=1e-6, tolg=1e-6)
 
 """
 mutable struct StopWhenBundleLess{T<:Real} <: StoppingCriterion
-    tol::T
+    tole::T
+    tolg::T
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess(tol::Real=1e-8)
-        return new{typeof(tol)}(tol, "", 0)
+    function StopWhenBundleLess(tole=1e-6, tolg=1e-6)
+        return new{typeof(tole)}(tole, tolg, "", 0)
     end
 end
 function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int)
@@ -290,8 +291,9 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
         b.reason = ""
         b.at_iteration = 0
     end
-    if -bms.ξ ≤ b.tol && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tol).\n"
+    M = get_manifold(mp)
+    if bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g)≤ b.tolg && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
         b.at_iteration = i
         return true
     end
@@ -300,8 +302,8 @@ end
 function status_summary(b::StopWhenBundleLess)
     has_stopped = length(b.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Stopping parameter: -ξ ≤ $(b.tol):\t$s"
+    return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
 end
 function show(io::IO, b::StopWhenBundleLess)
-    return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
+    return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))")
 end
