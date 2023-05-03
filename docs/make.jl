@@ -1,5 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds
+using Manopt, Manifolds, Plots
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"

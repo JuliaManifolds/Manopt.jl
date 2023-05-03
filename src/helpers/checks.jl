@@ -4,8 +4,12 @@
 Given a range of values `log_range`, where we computed `errors`,
 check whether this yields a slope of `slope` in log-scale
 
+Note that if the errors are below the given tolerance and the method is exact,
+no plot will be generated,
+
 # Keyword arguments
 
+* `eaxctness_tol` - (`1e3*eps(eltype(errors))`) is all errors are below this tolerance, the check is considered to be exact
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `name` (`"differntial"`) – name to display in the check (e.g. if checking gradient)
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
@@ -22,18 +26,33 @@ function prepare_check_result(
     plot=false,
     throw_error=false,
     window=nothing,
+    eaxctness_tol=1e3 * eps(eltype(errors)),
 )
+    if max(errors...) < eaxctness_tol
+        (io !== nothing) && print(
+            io,
+            "All errors are below the exactness tolerance $(eaxctness_tol). Your check can be considered exact, hence there is no use to cheeck for a slope.\n",
+        )
+        return true
+    end
     x = log_range[errors .> 0]
     T = exp10.(x)
     y = log10.(errors[errors .> 0])
     (a, b) = find_best_slope_window(x, y, length(x))[1:2]
     if isapprox(b, slope; atol=slope_tol)
         plot && return plot_slope(
-            T, errors[errors .> 0]; line_base=errors[1], a=a, b=b, i=1, j=length(y)
+            T,
+            errors[errors .> 0];
+            slope=slope,
+            line_base=errors[1],
+            a=a,
+            b=b,
+            i=1,
+            j=length(y),
         )
         (io !== nothing) && print(
             io,
-            "You gradients slope is globally $(@sprintf("%.4f", b)), so within $slope ± $(slope_tol).\n",
+            "Your $name's slope is globally $(@sprintf("%.4f", b)), so within $slope ± $(slope_tol).\n",
         )
         return true
     end
@@ -42,8 +61,9 @@ function prepare_check_result(
     (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
     msg = "The $(name) fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance $slope ± $(slope_tol).\n"
     (io !== nothing) && print(io, msg)
-    plot &&
-        return plot_slope(T, errors[errors .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
+    plot && return plot_slope(
+        T, errors[errors .> 0]; slope=slope, line_base=errors[1], a=ab, b=bb, i=ib, j=jb
+    )
     throw_error && throw(ErrorException(msg))
     return false
 end
@@ -54,8 +74,12 @@ Check numerivcally whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
 This implements the method described in Section 4.8 [^Boumal2022].
 
+Note that if the errors are below the given tolerance and the method is exact,
+no plot will be generated,
+
 # Keyword arguments
 
+* `eaxctness_tol` - (`1e-12`) is all errors are below this tolerance, the check is considered to be exact
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
@@ -78,15 +102,16 @@ function check_differential(
     dF,
     p=rand(M),
     X=rand(M; vector_at=p);
-    plot=false,
-    throw_error=false,
+    eaxctness_tol=1e-12,
     io::Union{IO,Nothing}=nothing,
     limits=(-8.0, 0.0),
     N=101,
     name="differential",
     log_range=range(limits[1], limits[2]; length=N),
+    plot=false,
     retraction_method=default_retraction_method(M, typeof(p)),
     slope_tol=0.1,
+    throw_error=false,
     window=nothing,
 )
     Xn = X ./ norm(M, p, X) # normalize tangent direction
@@ -103,6 +128,7 @@ function check_differential(
         log_range,
         abs.(costs .- linearized),
         2.0;
+        eaxctness_tol=eaxctness_tol,
         io=io,
         name=name,
         plot=plot,
@@ -123,21 +149,25 @@ f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \math
 ```
 
 or in other words, that the error between the function ``f`` and its first order Taylor
-behaves in error ``\mthcal O(t^2)``, which indicates that the gradient is correct,
+behaves in error ``\mathcal O(t^2)``, which indicates that the gradient is correct,
 cf. also Section 4.8 [^Boumal2022].
+
+Note that if the errors are below the given tolerance and the method is exact,
+no plot will be generated,
 
 # Keyword arguments
 
-* `check_vector` – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M`` using `is_vector`.
-* `io` – (`nothing`) provide an `IO` to print the check result to
-* `gradient` - (`grad_f(M, p)`) instead of the gradient _function_ you can also provide the gradient at `p` directly
-* `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
-* `limits` (`(1e-8,1)`) specify the limits in the `log_range`
-* `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
-* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
+* `check_vector`      – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M`` using `is_vector`.
+* `eaxctness_tol`     - (`1e-12`) is all errors are below this tolerance, the check is considered to be exact
+* `io`                – (`nothing`) provide an `IO` to print the check result to
+* `gradient`          - (`grad_f(M, p)`) instead of the gradient _function_ you can also provide the gradient at `p` directly
+* `limits`            - (`(1e-8,1)`) specify the limits in the `log_range`
+* `log_range`         - (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
+* `N`                 - (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
+* `plot`              - (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
-* `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
-* `throw_error` - (`false`) throw an error message if the gradient is wrong
+* `slope_tol`         – (`0.1`) tolerance for the slope (global) of the approximation
+* `throw_error`       - (`false`) throw an error message if the gradient is wrong
 
 Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
 
@@ -171,30 +201,34 @@ For this we require either a second-order retraction or a critical point ``p`` o
 given that we know  that is whether
 
 ```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \mathcal O(t^2)
+f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac{t^2}{2}⟨\operatorname{Hess}f(p)[X], X⟩ + \mathcal O(t^3)
 ```
 
-or in other words, that the error between the function ``f`` and its first order Taylor
-behaves in error ``\mthcal O(t^2)``, which indicates that the gradient is correct,
-cf. also Section 4.8 [^Boumal2022].
+or in other words, that the error between the function ``f`` and its second order Taylor
+behaves in error ``\mathcal O(t^3)``, which indicates that the gradient is correct,
+cf. also Section 6.8 [^Boumal2022].
+
+Note that if the errors are below the given tolerance and the method is exact,
+no plot will be generated,
 
 # Keyword arguments
 
-* `check_gradient` – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
-* `check_vector` – (`true`) check whether ``\operatorname{Hess} f(p)[X]``  \in T_p\mathcal M`` using `is_vector`.
-* `check_symmetry` – (`true`) check whether TODO
-* `check_linearity` – (`true`) check whether TODO
-* `check_mode` (`:Default`) specify the mode, by default we assume to have a second order retraction given by `retraction_method=`
+* `check_gradient`   – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
+* `check_linearity`  – (`true`) check whether the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
+* `check_symmetry`   – (`true`) check whether the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
+* `check_vector`     – (`true`) check whether ``\operatorname{Hess} f(p)[X]``  \in T_p\mathcal M`` using `is_vector`.
+* `mode`             - (`:Default`) specify the mode, by default we assume to have a second order retraction given by `retraction_method=`
   you can also this method if you already _have_ a cirtical point `p`.
   Set to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
   Note: This requires (and evaluates) new tangent vectors `X` and `Y`
 
-* `a`, `b` – two real values to check linearity of the Hessian (if `check_linearity=true`)
-* `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
-* `io` – (`nothing`) provide an `IO` to print the check result to
+* `a`, `b`            – two real values to check linearity of the Hessian (if `check_linearity=true`)
+* `N`                 - (`101`) number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
+* `eaxctness_tol`     - (`1e-12`) is all errors are below this tolerance, the check is considered to be exact
+* `io`                – (`nothing`) provide an `IO` to print the check result to
 * `gradient`          - (`grad_f(M, p)`) instead of the gradient _function_ you can also provide the gradient at `p` directly
-* `Hessian`           - (`Hess_f(M,p)`) instead of the Hessian _function_ you can provide the result of `\operatorname{Hess} f(p)[X]` directly.
-  Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry.
+* `Hessian`           - (`Hess_f(M,p)`) instead of the Hessian _function_ you can provide the result of ``\operatorname{Hess} f(p)[X]``` directly.
+  Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry and/or when using `:CriticalPoint` mode.
 * `limits`            - (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range`         - (`range(limits[1], limits[2]; length=N)`) specify the range of points (in log scale) to sample the gradient line
 * `N`                 - (`101`) number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
@@ -202,7 +236,6 @@ cf. also Section 4.8 [^Boumal2022].
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol`         – (`0.1`) tolerance for the slope (global) of the approximation
 * `throw_error`       - (`false`) throw an error message if the gradient is wrong
-* `Y` (``)
 Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
 """
 function check_Hessian(
@@ -215,7 +248,11 @@ function check_Hessian(
     Y=rand(M; vector_at=p);
     a=randn(),
     b=randn(),
-    check_gradient=true,
+    check_grad=true,
+    check_vector=true,
+    check_symmetry=true,
+    check_linearity=true,
+    eaxctness_tol=1e-12,
     io::Union{IO,Nothing}=nothing,
     gradient=grad_f(M, p),
     Hessian=Hess_f(M, p, X),
@@ -230,31 +267,32 @@ function check_Hessian(
     window=nothing,
     kwargs...,
 )
-    if chech_gradient
+    if check_grad
         if !check_gradient(
-            M, f, grad_f, p, X; gradient=gradient, throw_error=throw_error, kwargs...
+            M, f, grad_f, p, X; gradient=gradient, throw_error=throw_error, io=io, kwargs...
         )
-            return false
         end
     end
-    check_vector && (!is_vector(M, f, p, Hessian; throw_error=throw_error) && return false)
+    check_vector && (!is_vector(M, p, Hessian, throw_error) && return false)
     if check_linearity
-        if !check_Hessian_linearity(
-            M, Hess_f, p, X, Y, a, b; throw_error=throw_error, kwargs...
+        if !is_Hessian_linear(
+            M, Hess_f, p, X, Y, a, b; throw_error=throw_error, io=io, kwargs...
         )
             return false
         end
     end
     if check_symmetry
-        if !check_Hessian_symmetry(M, Hess_f, p, X, Y; throw_error=throw_error, kwargs...)
+        if !is_Hessian_symmetric(
+            M, Hess_f, p, X, Y; throw_error=throw_error, io=io, kwargs...
+        )
             return false
         end
     end
     if mode === :CriticalPoint # find a critical point and update grad, hess and X
         p = gradient_descent(M, f, grad_f, p)
         gradient = grad_f(M, p)
-        Hessian = Hess_f(M, p, X)
         X = rand(M; vector_at=p)
+        Hessian = Hess_f(M, p, X)
     end
     #
     # slope check
@@ -264,13 +302,13 @@ function check_Hessian(
     #
     T = exp10.(log_range)
     # points p_i to evaluate our error function at
-    points = map(t -> retract(M, p, Xn, t, retraction_method), T)
+    points = map(t -> retract(M, p, X_n, t, retraction_method), T)
     # F(p_i)
-    costs = [F(M, pi) for pi in points]
+    costs = [f(M, pi) for pi in points]
     # linearized
     linearized = map(
         t ->
-            F(M, p) +
+            f(M, p) +
             t * real(inner(M, p, gradient, X_n)) +
             t^2 / 2 * real(inner(M, p, Hessian_n, X_n)),
         T,
@@ -279,6 +317,7 @@ function check_Hessian(
         log_range,
         abs.(costs .- linearized),
         3.0;
+        eaxctness_tol=eaxctness_tol,
         io=io,
         name="Hessian",
         plot=plot,
@@ -289,9 +328,9 @@ function check_Hessian(
 end
 
 @doc raw"""
-    check_Hessian_linearity(M, Hess_f, p,
+    is_Hessian_linear(M, Hess_f, p,
     X=rand(M; vector_at=p), Y=rand(M; vector_at=p), a=randn(), b=randn();
-    throw_error=false, kwargs...
+    throw_error=false, io=nothing, kwargs...
 )
 
 Check whether the Hessian function `Hess_f` fulfills linearity, i.e. that
@@ -307,7 +346,7 @@ which is checked using `isapptox` and the `kwargs...` are passed to this functio
 * `throw_error`       - (`false`) throw an error message if the gradient is wrong
 
 """
-function check_Hessian_linearity(
+function is_Hessian_linear(
     M,
     Hess_f,
     p,
@@ -316,16 +355,22 @@ function check_Hessian_linearity(
     a=randn(),
     b=randn();
     throw_error=false,
+    io=nothing,
     kwargs...,
 )
     Z1 = Hess_f(M, p, a * X + b * Y)
     Z2 = a * Hess_f(M, p, X) + b * Hess_f(M, p, Y)
-    return isapprox(M, p, Z1, Z2; error=throw_error ? :error : :none, kwargs...)
+    isapprox(M, p, Z1, Z2; kwargs...) && return true
+    n = norm(M, p, Z1 - Z2)
+    m = "Hess f seems to not be linear since Hess_f(p)[aX+bY] differs from aHess f(p)[X] + b*Hess f(p)[Y] by $(n).\n"
+    (io !== nothing) && print(io, m)
+    throw_error && throw(ErrorException(m))
+    return false
 end
 
 @doc raw"""
-    check_Hessian_symmetry(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
-    throw_error=false, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
+    is_Hessian_symmetric(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
+    throw_error=false, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
 )
 
 Check whether the Hessian function `Hess_f` fulfills symetry, i.e. that
@@ -341,21 +386,23 @@ which is checked using `isapptox` and the `kwargs...` are passed to this functio
 * `atol`, `rtol` - with the same defaults as the usual `isapprox`
 * `throw_error` - (`false`) throw an error message if the gradient is wrong
 """
-function check_Hessian_symmetry(
+function is_Hessian_symmetric(
     M,
     Hess_f,
     p=rand(M),
     X=rand(M; vector_at=p),
     Y=rand(M; vector_at=p);
     throw_error=false,
+    io=nothing,
     atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : √eps,
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(number_eltype(p))),
     kwargs...,
 )
     a = inner(M, p, Hess_f(M, p, X), Y)
     b = inner(M, p, X, Hess_f(M, p, Y))
     isapprox(a, b; atol=atol, rtol=rtol) && (return true)
     m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
+    (io !== nothing) && print(io, m)
     throw_error && throw(ErrorException(m))
     return false
 end

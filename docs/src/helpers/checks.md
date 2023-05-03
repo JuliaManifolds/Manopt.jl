@@ -12,4 +12,5 @@ Pages   = ["checks.jl"]
 ```@autodocs
 Modules = [Manopt]
 Pages   = ["check_plots.jl"]
+Private = true
 ```
