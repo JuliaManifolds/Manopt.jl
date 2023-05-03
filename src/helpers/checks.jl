@@ -89,8 +89,8 @@ no plot will be generated,
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
 * `throw_error` - (`false`) throw an error message if the gradient is wrong
-
-Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
+* `window` – (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
+  the default is, to use all window sizes `2:N`.
 
 [^Boumal2022]:
     > Boumal, N.: _An Introduction to Optimization on Smooth Manifolds_, book in preparation, 2022.
@@ -168,8 +168,9 @@ no plot will be generated.
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol`         – (`0.1`) tolerance for the slope (global) of the approximation
 * `throw_error`       - (`false`) throw an error message if the gradient is wrong
+* `window` – (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
+  the default is, to use all window sizes `2:N`.
 
-Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
 
 """
 function check_gradient(
@@ -236,7 +237,8 @@ no plot will be generated.
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol`         – (`0.1`) tolerance for the slope (global) of the approximation
 * `throw_error`       - (`false`) throw an error message if the gradient is wrong
-Note that `throw_error` disables returning the plot, so better use `io=stdout` if you would like to see the message together with the plot.
+* `window` – (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
+  the default is, to use all window sizes `2:N`.
 """
 function check_Hessian(
     M::AbstractManifold,
