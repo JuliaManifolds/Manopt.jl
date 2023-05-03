@@ -9,7 +9,7 @@ no plot will be generated,
 
 # Keyword arguments
 
-* `eaxctness_tol` - (`1e3*eps(eltype(errors))`) is all errors are below this tolerance, the check is considered to be exact
+* `exactness_tol` - (`1e3*eps(eltype(errors))`) is all errors are below this tolerance, the check is considered to be exact
 * `io` – (`nothing`) provide an `IO` to print the check result to
 * `name` (`"differntial"`) – name to display in the check (e.g. if checking gradient)
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
@@ -26,12 +26,12 @@ function prepare_check_result(
     plot=false,
     throw_error=false,
     window=nothing,
-    eaxctness_tol=1e3 * eps(eltype(errors)),
+    exactness_tol=1e3 * eps(eltype(errors)),
 )
-    if max(errors...) < eaxctness_tol
+    if max(errors...) < exactness_tol
         (io !== nothing) && print(
             io,
-            "All errors are below the exactness tolerance $(eaxctness_tol). Your check can be considered exact, hence there is no use to cheeck for a slope.\n",
+            "All errors are below the exactness tolerance $(exactness_tol). Your check can be considered exact, hence there is no use to cheeck for a slope.\n",
         )
         return true
     end
@@ -128,7 +128,7 @@ function check_differential(
         log_range,
         abs.(costs .- linearized),
         2.0;
-        eaxctness_tol=eaxctness_tol,
+        exactness_tol=exactness_tol,
         io=io,
         name=name,
         plot=plot,
@@ -318,7 +318,7 @@ function check_Hessian(
         log_range,
         abs.(costs .- linearized),
         3.0;
-        eaxctness_tol=eaxctness_tol,
+        exactness_tol=exactness_tol,
         io=io,
         name="Hessian",
         plot=plot,
