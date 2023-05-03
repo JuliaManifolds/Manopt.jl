@@ -140,7 +140,7 @@ return _one_ element from the subgradient, but not necessarily deterministic.
    allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
-* `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,p,X)` to use.
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 * `stopping_criterion` – ([`StopWhenBundleLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
@@ -185,7 +185,7 @@ function bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-6, 1e-6),
+    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-4),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -211,12 +211,12 @@ end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
-    bms.X = get_subgradient(mp, bms.p)
-    bms.g = copy(M, bms.p_last_serious, bms.X)
+    get_subgradient!(mp, bms.X, bms.p)
+    copyto!(M, bms.g, bms.p_last_serious, bms.X)
     bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
     return bms
 end
-function bundle_method_sub_solver(::Any, ::Any, ::Any)
+function bundle_method_sub_solver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
@@ -305,8 +305,8 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
     end
     M = get_manifold(mp)
     if b.tolxi == nothing 
-        if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g)^2 ≤ b.tolg) && i > 0
-            b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g|^2 = $(norm(M, bms.p_last_serious, bms.g)^2) is less than $(b.tolg).\n"
+        if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g) ≤ b.tolg) && i > 0
+            b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g|^2 = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
             b.at_iteration = i
         return true
         end
