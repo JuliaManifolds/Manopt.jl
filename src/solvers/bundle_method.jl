@@ -266,25 +266,37 @@ get_solver_result(bms::BundleMethodState) = bms.p_last_serious
 """
     StopWhenBundleLess <: StoppingCriterion
 
-A stopping criterion for [`bundle_method`](@ref) to indicate to stop when
+Two stopping criteria for [`bundle_method`](@ref) to indicate to stop when either
 
 * the parameters ε and |g|
 
-are less than given tolerances tole and tolg respectively.
+are less than given tolerances tole and tolg respectively, or
 
-# Constructor
+* the parameter -ξ = - |g|^2 - ε
 
-    StopWhenBundleLess(tole=1e-6, tolg=1e-6)
+is less than a given tolerance tolxi.
+
+# Constructors
+
+    StopWhenBundleLess(tole=1e-4, tolg=1e-2)
+
+    StopWhenBundleLess(tolxi=1e-4)
 
 """
-mutable struct StopWhenBundleLess{T<:Real} <: StoppingCriterion
+mutable struct StopWhenBundleLess{T, R} <: StoppingCriterion
     tole::T
     tolg::T
+    tolxi::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess(tole=1e-6, tolg=1e-6)
-        return new{typeof(tole)}(tole, tolg, "", 0)
+    function StopWhenBundleLess{Real, Nothing}(tole=1e-4, tolg=1e-2)
+        return new{typeof(tole), Nothing}(tole, tolg, nothing, "", 0)
     end
+    StopWhenBundleLess(tole::Real, tolg::Real) = StopWhenBundleLess{Real, Nothing}(tole, tolg)
+    function StopWhenBundleLess{Nothing, Real}(tolxi=1e-4)
+        return new{Nothing, typeof(tolxi)}(nothing, nothing, tolxi, "", 0)
+    end
+    StopWhenBundleLess(tolxi::Real) = StopWhenBundleLess{Nothing, Real}(tolxi)
 end
 function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int)
     if i == 0 # reset on init
@@ -292,8 +304,14 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g)≤ b.tolg && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
+    if b.tolxi == nothing 
+        if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g)^2 ≤ b.tolg) && i > 0
+            b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g|^2 = $(norm(M, bms.p_last_serious, bms.g)^2) is less than $(b.tolg).\n"
+            b.at_iteration = i
+        return true
+        end
+    elseif -bms.ξ ≤ b.tolxi && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tolxi).\n"
         b.at_iteration = i
         return true
     end
@@ -302,8 +320,15 @@ end
 function status_summary(b::StopWhenBundleLess)
     has_stopped = length(b.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
+    if b.tolxi == nothing
+        return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
+    else "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
+    end
 end
 function show(io::IO, b::StopWhenBundleLess)
-    return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))")
+    if b.tolxi == nothing
+        return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))")
+    else
+        return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
+    end
 end
