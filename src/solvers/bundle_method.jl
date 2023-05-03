@@ -233,7 +233,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
-    (i > 1) && (bms.diam = max(0.0, copy(bms.diam) - bms.δ * distance(M, bms.p_last_serious, bms.p)))
+    (i > 1) && (
+        bms.diam = max(0.0, copy(bms.diam) - bms.δ * distance(M, bms.p_last_serious, bms.p))
+    )
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         # bms.diam = max(0.0, copy(bms.diam) - bms.δ * distance(M, bms.p_last_serious, bms.p))
         # s = (get_cost(mp, bms.p) - get_cost(mp, bms.p_last_serious))/distance(M, bms.p_last_serious, bms.p)
@@ -254,9 +256,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             2 * norm(
                 M,
                 qj,
-                inverse_retract(
-                    M, qj, bms.p_last_serious, bms.inverse_retraction_method
-                ),
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             ),
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
@@ -286,20 +286,22 @@ is less than a given tolerance tolxi.
     StopWhenBundleLess(tolxi=1e-4)
 
 """
-mutable struct StopWhenBundleLess{T, R} <: StoppingCriterion
+mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
     tole::T
     tolg::T
     tolxi::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess{Real, Nothing}(tole=1e-4, tolg=1e-2)
-        return new{typeof(tole), Nothing}(tole, tolg, nothing, "", 0)
+    function StopWhenBundleLess{Real,Nothing}(tole=1e-4, tolg=1e-2)
+        return new{typeof(tole),Nothing}(tole, tolg, nothing, "", 0)
     end
-    StopWhenBundleLess(tole::Real, tolg::Real) = StopWhenBundleLess{Real, Nothing}(tole, tolg)
-    function StopWhenBundleLess{Nothing, Real}(tolxi=1e-4)
-        return new{Nothing, typeof(tolxi)}(nothing, nothing, tolxi, "", 0)
+    function StopWhenBundleLess(tole::Real, tolg::Real)
+        return StopWhenBundleLess{Real,Nothing}(tole, tolg)
     end
-    StopWhenBundleLess(tolxi::Real) = StopWhenBundleLess{Nothing, Real}(tolxi)
+    function StopWhenBundleLess{Nothing,Real}(tolxi=1e-4)
+        return new{Nothing,typeof(tolxi)}(nothing, nothing, tolxi, "", 0)
+    end
+    StopWhenBundleLess(tolxi::Real) = StopWhenBundleLess{Nothing,Real}(tolxi)
 end
 function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int)
     if i == 0 # reset on init
@@ -307,11 +309,11 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if b.tolxi == nothing 
+    if b.tolxi == nothing
         if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g) ≤ b.tolg) && i > 0
             b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g|^2 = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
             b.at_iteration = i
-        return true
+            return true
         end
     elseif -bms.ξ ≤ b.tolxi && i > 0
         b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tolxi).\n"
@@ -325,12 +327,15 @@ function status_summary(b::StopWhenBundleLess)
     s = has_stopped ? "reached" : "not reached"
     if b.tolxi == nothing
         return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
-    else "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
+    else
+        "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
     end
 end
 function show(io::IO, b::StopWhenBundleLess)
     if b.tolxi == nothing
-        return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))")
+        return print(
+            io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))"
+        )
     else
         return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
     end
