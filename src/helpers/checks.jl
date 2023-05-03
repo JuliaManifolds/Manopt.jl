@@ -1,3 +1,52 @@
+"""
+    prepare_check_result(log_range, errors, slope)
+
+Given a range of values `log_range`, where we computed `errors`,
+check whether this yields a slope of `slope` in log-scale
+
+# Keyword arguments
+
+* `io` – (`nothing`) provide an `IO` to print the check result to
+* `name` (`"differntial"`) – name to display in the check (e.g. if checking gradient)
+* `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
+* `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
+* `throw_error` - (`false`) throw an error message if the gradient is wrong
+"""
+function prepare_check_result(
+    log_range,
+    errors,
+    slope;
+    io::Union{IO,Nothing}=nothing,
+    name="estimated slope",
+    slope_tol=1e-1,
+    plot=false,
+    throw_error=false,
+    window=nothing,
+)
+    x = log_range[errors .> 0]
+    T = exp10.(x)
+    y = log10.(errors[errors .> 0])
+    (a, b) = find_best_slope_window(x, y, length(x))[1:2]
+    if isapprox(b, slope; atol=slope_tol)
+        plot && return plot_slope(
+            T, errors[errors .> 0]; line_base=errors[1], a=a, b=b, i=1, j=length(y)
+        )
+        (io !== nothing) && print(
+            io,
+            "You gradients slope is globally $(@sprintf("%.4f", b)), so within $slope ± $(slope_tol).\n",
+        )
+        return true
+    end
+    # otherwise
+    # find best contiguous window of length w
+    (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
+    msg = "The $(name) fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance $slope ± $(slope_tol).\n"
+    (io !== nothing) && print(io, msg)
+    plot &&
+        return plot_slope(T, errors[errors .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
+    throw_error && throw(ErrorException(msg))
+    return false
+end
 @doc raw"""
     check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p))
 
@@ -11,6 +60,7 @@ This implements the method described in Section 4.8 [^Boumal2022].
 * `limits` (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range` (`range(limits[1], limits[2]; length=N)`) - specify the range of points (in log scale) to sample the gradient line
 * `N` (`101`) – number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
+* `name` (`"differntial"`) – name to display in the check (e.g. if checking gradient)
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 * `retraction_method` - (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
@@ -33,6 +83,7 @@ function check_differential(
     io::Union{IO,Nothing}=nothing,
     limits=(-8.0, 0.0),
     N=101,
+    name="differential",
     log_range=range(limits[1], limits[2]; length=N),
     retraction_method=default_retraction_method(M, typeof(p)),
     slope_tol=0.1,
@@ -48,29 +99,17 @@ function check_differential(
     costs = [F(M, pi) for pi in points]
     # linearized
     linearized = map(t -> F(M, p) + t * dF(M, p, Xn), T)
-    L = abs.(costs .- linearized)
-    # global fit a + bx
-    x = log_range[L .> 0]
-    y = log10.(L[L .> 0])
-    (a, b) = find_best_slope_window(x, y, length(x))[1:2]
-    if isapprox(b, 2.0; atol=slope_tol)
-        plot && return plot_slope(
-            T[L .> 0], L[L .> 0]; line_base=L[1], a=a, b=b, i=1, j=length(y)
-        )
-        (io !== nothing) && print(
-            io,
-            "You gradients slope is globally $(@sprintf("%.4f", b)), so within 2 ± $(slope_tol).\n",
-        )
-        return true
-    end
-    # otherwise
-    # find best contiguous window of length w
-    (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
-    msg = "The Gradient/Differential fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 2 ± $(slope_tol).\n"
-    (io !== nothing) && print(io, msg)
-    plot && return plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
-    throw_error && throw(ErrorException(msg))
-    return false
+    return prepare_check_result(
+        log_range,
+        abs.(costs .- linearized),
+        2.0;
+        io=io,
+        name=name,
+        plot=plot,
+        slope_tol=slope_tol,
+        throw_error=throw_error,
+        window=window,
+    )
 end
 
 @doc raw"""
@@ -117,7 +156,9 @@ function check_gradient(
     check_vector && (!is_vector(M, p, gradient, throw_error;) && return false)
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
-    return check_differential(M, f, df, p, X; throw_error=throw_error, kwargs...)
+    return check_differential(
+        M, f, df, p, X; name="gradient", throw_error=throw_error, kwargs...
+    )
 end
 
 @doc raw"""
@@ -179,9 +220,9 @@ function check_Hessian(
     gradient=grad_f(M, p),
     Hessian=Hess_f(M, p, X),
     limits=(-8.0, 0.0),
-    log_range=range(limits[1], limits[2]; length=N),
     mode::Symbol=:Default,
     N=101,
+    log_range=range(limits[1], limits[2]; length=N),
     plot=false,
     retraction_method=default_retraction_method(M, typeof(p)),
     slope_tol=0.1,
@@ -234,29 +275,17 @@ function check_Hessian(
             t^2 / 2 * real(inner(M, p, Hessian_n, X_n)),
         T,
     )
-    L = abs.(costs .- linearized)
-    # global fit a + bx
-    x = log_range[L .> 0]
-    y = log10.(L[L .> 0])
-    (a, b) = find_best_slope_window(x, y, length(x); slope=3.0)[1:2]
-    if isapprox(b, 3.0; atol=slope_tol)
-        plot && return plot_slope(
-            T[L .> 0], L[L .> 0]; line_base=L[1], a=a, b=b, i=1, j=length(y)
-        )
-        (io !== nothing) && print(
-            io,
-            "The Hessianss slope is globally $(@sprintf("%.4f", b)), so within 3 ± $(slope_tol).\n",
-        )
-        return true
-    end
-    # otherwise
-    # find best contiguous window of length w
-    (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
-    msg = "The Hessian fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance 3 ± $(slope_tol).\n"
-    (io !== nothing) && print(io, msg)
-    plot && return plot_slope(T[L .> 0], L[L .> 0]; line_base=L[1], a=ab, b=bb, i=ib, j=jb)
-    throw_error && throw(ErrorException(msg))
-    return false
+    return prepare_check_result(
+        log_range,
+        abs.(costs .- linearized),
+        3.0;
+        io=io,
+        name="Hessian",
+        plot=plot,
+        slope_tol=slope_tol,
+        throw_error=throw_error,
+        window=window,
+    )
 end
 
 @doc raw"""
