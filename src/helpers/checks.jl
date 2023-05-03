@@ -213,7 +213,7 @@ no plot will be generated,
 
 # Keyword arguments
 
-* `check_gradient`   – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
+* `check_grad`   – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
 * `check_linearity`  – (`true`) check whether the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry`   – (`true`) check whether the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector`     – (`true`) check whether ``\operatorname{Hess} f(p)[X]``  \in T_p\mathcal M`` using `is_vector`.
@@ -271,6 +271,7 @@ function check_Hessian(
         if !check_gradient(
             M, f, grad_f, p, X; gradient=gradient, throw_error=throw_error, io=io, kwargs...
         )
+            return false
         end
     end
     check_vector && (!is_vector(M, p, Hessian, throw_error) && return false)
