@@ -311,7 +311,7 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
     M = get_manifold(mp)
     if b.tolxi == nothing
         if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g) ≤ b.tolg) && i > 0
-            b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g|^2 = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
+            b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
             b.at_iteration = i
             return true
         end
