@@ -513,5 +513,5 @@ export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDual
 export RecordProximalParameter
 #
 # Helpers
-export check_gradient, check_differential
+export check_gradient, check_differential, check_Hessian
 end
