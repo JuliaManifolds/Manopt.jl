@@ -233,16 +233,19 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
-    (i > 1) && (
-        bms.diam = max(0.0, copy(bms.diam) - bms.δ * distance(M, bms.p_last_serious, bms.p))
-    )
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
-        # bms.diam = max(0.0, copy(bms.diam) - bms.δ * distance(M, bms.p_last_serious, bms.p))
-        # s = (get_cost(mp, bms.p) - get_cost(mp, bms.p_last_serious))/distance(M, bms.p_last_serious, bms.p)
-        # bms.diam = max(0.0, copy(bms.diam) + bms.δ * bms.m * bms.ξ / distance(M, bms.p_last_serious, bms.p))
         copyto!(M, bms.p_last_serious, bms.p)
     end
-    deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
+    if !isempty(findall(λj -> λj ≤ bms.filter1, bms.λ))
+        y = bms.bundle[1][1]
+        deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
+        s = (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y))/distance(M, bms.bundle[1][1], y)
+        if !isnan(s)
+            bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
+        else
+            bms.diam = 0.0
+        end
+    end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
