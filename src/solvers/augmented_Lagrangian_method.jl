@@ -43,7 +43,7 @@ mutable struct AugmentedLagrangianMethodState{
     P,
     Pr<:AbstractManoptProblem,
     Op<:AbstractManoptSolverState,
-    R,
+    R<:Real,
     V<:AbstractVector{<:R},
     TStopping<:StoppingCriterion,
 } <: AbstractManoptSolverState
@@ -85,7 +85,7 @@ mutable struct AugmentedLagrangianMethodState{
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
     ) where {
-        P,Pr<:AbstractManoptProblem,R,V,SC<:StoppingCriterion,St<:AbstractManoptSolverState
+        P,Pr<:AbstractManoptProblem,R<:Real,V,SC<:StoppingCriterion,St<:AbstractManoptSolverState
     }
         alms = new{P,Pr,St,R,V,SC}()
         alms.p = p
