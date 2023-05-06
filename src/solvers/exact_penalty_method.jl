@@ -30,7 +30,7 @@ arguments.
 
 [`exact_penalty_method`](@ref)
 """
-mutable struct ExactPenaltyMethodState{P,Pr,St,R,TStopping<:StoppingCriterion} <:
+mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriterion} <:
                AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
@@ -64,7 +64,7 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R,TStopping<:StoppingCriterion} <
             StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
         ),
     ) where {
-        P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState,R,SC<:StoppingCriterion
+        P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState,R<:Real,SC<:StoppingCriterion
     }
         epms = new{P,Pr,St,R,SC}()
         epms.p = p
