@@ -64,7 +64,11 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
             StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
         ),
     ) where {
-        P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState,R<:Real,SC<:StoppingCriterion
+        P,
+        Pr<:AbstractManoptProblem,
+        St<:AbstractManoptSolverState,
+        R<:Real,
+        SC<:StoppingCriterion,
     }
         epms = new{P,Pr,St,R,SC}()
         epms.p = p
