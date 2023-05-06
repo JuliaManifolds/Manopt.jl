@@ -30,41 +30,43 @@ arguments.
 
 [`exact_penalty_method`](@ref)
 """
-mutable struct ExactPenaltyMethodState{P,Pr,Op,TStopping<:StoppingCriterion} <:
+mutable struct ExactPenaltyMethodState{P,Pr,St,R,TStopping<:StoppingCriterion} <:
                AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
-    sub_state::Op
-    ϵ::Real
-    ϵ_min::Real
-    u::Real
-    u_min::Real
-    ρ::Real
-    θ_ρ::Real
-    θ_u::Real
-    θ_ϵ::Real
+    sub_state::St
+    ϵ::R
+    ϵ_min::R
+    u::R
+    u_min::R
+    ρ::R
+    θ_ρ::R
+    θ_u::R
+    θ_ϵ::R
     stop::TStopping
     function ExactPenaltyMethodState(
         ::AbstractManifold,
         p::P,
         sub_problem::Pr,
-        sub_state::Op;
-        ϵ::Real=1e-3,
-        ϵ_min::Real=1e-6,
+        sub_state::St;
+        ϵ::R=1e-3,
+        ϵ_min::R=1e-6,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        u::Real=1e-1,
-        u_min::Real=1e-6,
+        u::R=1e-1,
+        u_min::R=1e-6,
         u_exponent=1 / 100,
         θ_u=(u_min / u)^(u_exponent),
-        ρ::Real=1.0,
-        θ_ρ::Real=0.3,
-        stopping_criterion::StoppingCriterion=StopWhenAny(
+        ρ::R=1.0,
+        θ_ρ::R=0.3,
+        stopping_criterion::SC=StopWhenAny(
             StopAfterIteration(300),
             StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
         ),
-    ) where {P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState}
-        epms = new{P,Pr,Op,typeof(stopping_criterion)}()
+    ) where {
+        P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState,R,SC<:StoppingCriterion
+    }
+        epms = new{P,Pr,St,R,SC}()
         epms.p = p
         epms.sub_problem = sub_problem
         epms.sub_state = sub_state
