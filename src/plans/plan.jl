@@ -41,3 +41,4 @@ include("stochastic_gradient_plan.jl")
 include("subsolver_plan.jl")
 
 include("cache.jl")
+include("count.jl")
