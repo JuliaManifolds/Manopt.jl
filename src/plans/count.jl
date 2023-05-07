@@ -62,3 +62,7 @@ function get_gradient!(M::AbstractManifold, X, co::CountObjective, p)
     get_gradient!(M, X, co.objective, p)
     return X
 end
+
+#
+# State
+#
