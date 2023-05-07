@@ -40,23 +40,28 @@ in the keyword arguments.
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodState{
-    P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState,TStopping<:StoppingCriterion
+    P,
+    Pr<:AbstractManoptProblem,
+    Op<:AbstractManoptSolverState,
+    R<:Real,
+    V<:AbstractVector{<:R},
+    TStopping<:StoppingCriterion,
 } <: AbstractManoptSolverState
     p::P
     sub_problem::Pr
     sub_state::Op
-    ϵ::Real
-    ϵ_min::Real
-    λ_max::Real
-    λ_min::Real
-    μ_max::Real
-    μ::Vector
-    λ::Vector
-    ρ::Real
-    τ::Real
-    θ_ρ::Real
-    θ_ϵ::Real
-    penalty::Real
+    ϵ::R
+    ϵ_min::R
+    λ_max::R
+    λ_min::R
+    μ_max::R
+    μ::V
+    λ::V
+    ρ::R
+    τ::R
+    θ_ρ::R
+    θ_ϵ::R
+    penalty::R
     stop::TStopping
     function AugmentedLagrangianMethodState(
         M::AbstractManifold,
@@ -64,23 +69,30 @@ mutable struct AugmentedLagrangianMethodState{
         p::P,
         sub_problem::Pr,
         sub_state::St;
-        ϵ::Real=1e-3,
-        ϵ_min::Real=1e-6,
-        λ_max::Real=20.0,
-        λ_min::Real=-λ_max,
-        μ_max::Real=20.0,
-        μ::Vector=ones(length(get_inequality_constraints(M, co, p))),
-        λ::Vector=ones(length(get_equality_constraints(M, co, p))),
-        ρ::Real=1.0,
-        τ::Real=0.8,
-        θ_ρ::Real=0.3,
+        ϵ::R=1e-3,
+        ϵ_min::R=1e-6,
+        λ_max::R=20.0,
+        λ_min::R=-λ_max,
+        μ_max::R=20.0,
+        μ::V=ones(length(get_inequality_constraints(M, co, p))),
+        λ::V=ones(length(get_equality_constraints(M, co, p))),
+        ρ::R=1.0,
+        τ::R=0.8,
+        θ_ρ::R=0.3,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
+        stopping_criterion::SC=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
-    ) where {P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState}
-        alms = new{P,Pr,St,typeof(stopping_criterion)}()
+    ) where {
+        P,
+        Pr<:AbstractManoptProblem,
+        R<:Real,
+        V,
+        SC<:StoppingCriterion,
+        St<:AbstractManoptSolverState,
+    }
+        alms = new{P,Pr,St,R,V,SC}()
         alms.p = p
         alms.sub_problem = sub_problem
         alms.sub_state = sub_state
