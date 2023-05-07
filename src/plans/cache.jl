@@ -182,6 +182,11 @@ function get_gradient!(
 end
 
 #
+# A full cache objective for more than one entry and a full possibility for all fields
+#
+struct CachedObjective{E,O<:AbstractManifoldObjective{<:E}} <: AbstractManifoldObjective{E} end
+
+#
 # Factory
 #
 @doc raw"""

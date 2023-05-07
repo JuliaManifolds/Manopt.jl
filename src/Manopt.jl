@@ -513,6 +513,9 @@ export RecordPrimalBaseChange,
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
 #
+# Count
+export get_count
+#
 # Helpers
 export check_gradient, check_differential, check_Hessian
 end
