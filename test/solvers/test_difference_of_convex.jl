@@ -1,4 +1,5 @@
-using LinearAlgebra, Manifolds, Manopt, Test
+using LinearAlgebra, Manifolds, Manopt, Random, Test
+import Manifolds: inner
 
 @testset "Difference of Convex" begin
     g(M, p) = log(det(p))^4 + 1 / 4
@@ -68,6 +69,10 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test dcps.X == X1
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
+        @test_throws ErrorException difference_of_convex_algorithm(
+            M, dc_cost_a, p1; grad_g=grad_g
+        )
+        @test_throws ErrorException difference_of_convex_algorithm(M, dc_cost_a, p1; g=g)
         dc_cost_i = ManifoldDifferenceOfConvexObjective(
             f, grad_h!; evaluation=InplaceEvaluation()
         )
@@ -93,7 +98,6 @@ using LinearAlgebra, Manifolds, Manopt, Test
         X6 = get_subtrahend_gradient(M, dcp_cost_i, p0)
         @test X6 == grad_h(M, p0)
     end
-
     @testset "Running the subsolver algorithms" begin
         p1 = difference_of_convex_algorithm(
             M, f, g, grad_h!, p0; grad_g=grad_g!, evaluation=InplaceEvaluation()
@@ -109,7 +113,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test Manopt.get_message(s1) == "" # no message in last step
         @test isapprox(M, p1, p2)
         @test isapprox(M, p2, p3)
-        @test f(M, p1) ≈ 0.0
+        @test isapprox(f(M, p1), 0.0; atol=2e-16)
         # not provided grad_g or problem nothing
         @test_throws ErrorException difference_of_convex_algorithm(
             M, f, g, grad_h, p0; sub_problem=nothing
@@ -123,6 +127,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
             M, grad_h!, p0; g=g, grad_g=grad_g!, evaluation=InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
+        p5b = difference_of_convex_proximal_point(M, grad_h; g=g, grad_g=grad_g)
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f, return_state=true
         )
@@ -136,7 +141,16 @@ using LinearAlgebra, Manifolds, Manopt, Test
         @test isapprox(M, p3, p4)
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
-        @test f(M, p4) ≈ 0.0
+        @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min
+        @test isapprox(f(M, p4), 0.0; atol=2e-16)
+
+        Random.seed!(23)
+        p7 = difference_of_convex_algorithm(M, f, g, grad_h; grad_g=grad_g)
+        @test isapprox(f(M, p7), 0.0; atol=2e-16)
+
+        p8 = copy(M, p0) # Same call as p2 inplace
+        difference_of_convex_algorithm!(M, f, g, grad_h, p8; grad_g=grad_g)
+        @test isapprox(M, p8, p2)
 
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing
@@ -148,7 +162,7 @@ using LinearAlgebra, Manifolds, Manopt, Test
         # we need both g and grad g here
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0; g=g)
         @test_throws ErrorException difference_of_convex_proximal_point(
-            M, grad_h, p0, grad_g=grad_g
+            M, grad_h, p0; grad_g=grad_g
         )
     end
     @testset "Running the closed form solution solvers" begin
@@ -185,7 +199,11 @@ using LinearAlgebra, Manifolds, Manopt, Test
             trust_regions!(M, prox, grad_prox, hess_prox, q)
             return q
         end
-        p13 = difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
+        @test_logs (:warn,) difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
+        p13 = difference_of_convex_proximal_point(M, grad_h, p0; prox_g=prox_g)
+        p13b = copy(M, p0)
+        difference_of_convex_proximal_point!(M, grad_h, p13b; prox_g=prox_g)
+        @test isapprox(M, p13, p13b)
         function prox_g!(M, q, λ, p)
             copyto!(M, q, p)
             prox = ProximalDCCost(g, copy(M, p), λ)
@@ -194,10 +212,24 @@ using LinearAlgebra, Manifolds, Manopt, Test
             trust_regions!(M, prox, grad_prox, hess_prox, q)
             return q
         end
-        p14 = difference_of_convex_proximal_point(
+        @test_logs (:warn,) difference_of_convex_proximal_point(
             M, prox_g!, grad_h!, p0; evaluation=InplaceEvaluation()
+        )
+        p14 = difference_of_convex_proximal_point(
+            M, grad_h!, p0; prox_g=prox_g!, evaluation=InplaceEvaluation()
         )
         @test isapprox(M, p13, p14)
         @test f(M, p13) ≈ 0.0 atol = 1e-15
+    end
+    @testset "On positive numbers" begin
+        # Define in Manifolds.jl?
+        Manifolds.inner(M::PositiveNumbers, p, X, Y) = inner(M, p[], X[], Y[])
+        Mp = PositiveNumbers()
+        pp = 1.0
+        # We do not have a ONB on PosNum, so we can only do a minimalistic test.
+        q = difference_of_convex_algorithm(Mp, f, g, grad_h, pp; grad_g=grad_g)
+        @test pp == q # since we start in a minimizer
+        q2 = difference_of_convex_proximal_point(Mp, grad_h, pp; g=g, grad_g=grad_g)
+        @test pp == q2 # since we start in a minimizer
     end
 end

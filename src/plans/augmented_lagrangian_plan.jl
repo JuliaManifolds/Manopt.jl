@@ -95,13 +95,13 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, X, p)
     n = length(hp)
     get_gradient!(M, X, LG.co, p)
     (m > 0) && (
-        X += sum(
+        X .+= sum(
             ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(M, LG.co, p)) .*
             ((gp .+ LG.μ ./ LG.ρ) .> 0),
         )
     )
     (n > 0) &&
-        (X += sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p)))
+        (X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p)))
     return X
 end
 # Allocating vector -> we can omit a few of the ineq gradients.

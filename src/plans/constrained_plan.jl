@@ -137,7 +137,7 @@ function ConstrainedManifoldObjective(
     f::TF,
     grad_f::TGF,
     g::Function,
-    grad_h::Function,
+    grad_g::Function,
     ::Nothing=nothing,
     ::Nothing=nothing;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -150,11 +150,11 @@ function ConstrainedManifoldObjective(
         TF,
         TGF,
         typeof(g),
-        typeof(grad_h),
+        typeof(grad_g),
         typeof(local_h),
         typeof(local_grad_h),
     }(
-        f, grad_f, g, grad_h, local_h, local_grad_h
+        f, grad_f, g, grad_g, local_h, local_grad_h
     )
 end
 #

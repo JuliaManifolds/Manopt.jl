@@ -40,23 +40,28 @@ in the keyword arguments.
 [`augmented_Lagrangian_method`](@ref)
 """
 mutable struct AugmentedLagrangianMethodState{
-    P,Pr<:AbstractManoptProblem,Op<:AbstractManoptSolverState,TStopping<:StoppingCriterion
+    P,
+    Pr<:AbstractManoptProblem,
+    Op<:AbstractManoptSolverState,
+    R<:Real,
+    V<:AbstractVector{<:R},
+    TStopping<:StoppingCriterion,
 } <: AbstractManoptSolverState
     p::P
     sub_problem::Pr
     sub_state::Op
-    ϵ::Real
-    ϵ_min::Real
-    λ_max::Real
-    λ_min::Real
-    μ_max::Real
-    μ::Vector
-    λ::Vector
-    ρ::Real
-    τ::Real
-    θ_ρ::Real
-    θ_ϵ::Real
-    penalty::Real
+    ϵ::R
+    ϵ_min::R
+    λ_max::R
+    λ_min::R
+    μ_max::R
+    μ::V
+    λ::V
+    ρ::R
+    τ::R
+    θ_ρ::R
+    θ_ϵ::R
+    penalty::R
     stop::TStopping
     function AugmentedLagrangianMethodState(
         M::AbstractManifold,
@@ -64,23 +69,30 @@ mutable struct AugmentedLagrangianMethodState{
         p::P,
         sub_problem::Pr,
         sub_state::St;
-        ϵ::Real=1e-3,
-        ϵ_min::Real=1e-6,
-        λ_max::Real=20.0,
-        λ_min::Real=-λ_max,
-        μ_max::Real=20.0,
-        μ::Vector=ones(length(get_inequality_constraints(M, co, p))),
-        λ::Vector=ones(length(get_equality_constraints(M, co, p))),
-        ρ::Real=1.0,
-        τ::Real=0.8,
-        θ_ρ::Real=0.3,
+        ϵ::R=1e-3,
+        ϵ_min::R=1e-6,
+        λ_max::R=20.0,
+        λ_min::R=-λ_max,
+        μ_max::R=20.0,
+        μ::V=ones(length(get_inequality_constraints(M, co, p))),
+        λ::V=ones(length(get_equality_constraints(M, co, p))),
+        ρ::R=1.0,
+        τ::R=0.8,
+        θ_ρ::R=0.3,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
+        stopping_criterion::SC=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
-    ) where {P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState}
-        alms = new{P,Pr,St,typeof(stopping_criterion)}()
+    ) where {
+        P,
+        Pr<:AbstractManoptProblem,
+        R<:Real,
+        V,
+        SC<:StoppingCriterion,
+        St<:AbstractManoptSolverState,
+    }
+        alms = new{P,Pr,St,R,V,SC}()
         alms.p = p
         alms.sub_problem = sub_problem
         alms.sub_state = sub_state
@@ -134,6 +146,7 @@ end
 
 @doc raw"""
     augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
+    augmented_Lagrangian_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM)[^LiuBoumal2020].
 The aim of the ALM is to find the solution of the constrained optimisation task
@@ -185,19 +198,26 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
 * `grad_f` – the gradient of the cost function
 
+# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
+
+* `g` – (`nothing`) the inequality constraints
+* `h` – (`nothing`) the equality constraints
+* `grad_g` – (`nothing`) the gradient of the inequality constraints
+* `grad_h` – (`nothing`) the gradient of the equality constraints
+
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be proviede.
+Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
+
 # Optional
-* `g` – the inequality constraints
-* `h` – the equality constraints
-* `grad_g` – the gradient of the inequality constraints
-* `grad_h` – the gradient of the equality constraints
+
 * `ϵ` – (`1e-3`) the accuracy tolerance
 * `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
 * `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
    also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
 * `θ_ϵ` – (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
-* `μ` – (`ones(size(G(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ` – (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
 * `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ` – (`ones(size(H(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
+* `λ` – (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
 * `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
 * `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
@@ -223,11 +243,55 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
     > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(
-    M::AbstractManifold, f::TF, grad_f::TGF, p=rand(M); kwargs...
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TGF,
+    p=rand(M);
+    evaluation=AllocatingEvaluation(),
+    g=nothing,
+    h=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    kwargs...,
 ) where {TF,TGF}
     q = copy(M, p)
-    return augmented_Lagrangian_method!(M, f, grad_f, q; kwargs...)
+    cmo = ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+    )
+    return augmented_Lagrangian_method!(M, cmo, q; evaluation=evaluation, kwargs...)
 end
+function augmented_Lagrangian_method(
+    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...
+)
+    q = copy(M, p)
+    return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
+end
+function augmented_Lagrangian_method(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TGF,
+    p::Number;
+    evaluation=AllocatingEvaluation(),
+    g=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    h=nothing,
+    kwargs...,
+) where {TF,TGF}
+    q = [p]
+    f_(M, p) = f(M, p[])
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
+    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
+    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
+    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
+    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
+    cmo = ConstrainedManifoldObjective(
+        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
+    )
+    rs = augmented_Lagrangian_method(M, cmo, q; evaluation=evaluation, kwargs...)
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+
 @doc raw"""
     augmented_Lagrangian_method!(M, f, grad_f p=rand(M); kwargs...)
 
@@ -239,31 +303,39 @@ function augmented_Lagrangian_method!(
     M::AbstractManifold,
     f::TF,
     grad_f::TGF,
-    p=rand(M);
+    p;
+    evaluation=AllocatingEvaluation(),
     g=nothing,
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
+    kwargs...,
+) where {TF,TGF}
+    cmo = ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+    )
+    dcmo = decorate_objective!(M, cmo; kwargs...)
+    return augmented_Lagrangian_method!(M, dcmo, p; evaluation=evaluation, kwargs...)
+end
+function augmented_Lagrangian_method!(
+    M::AbstractManifold,
+    cmo::ConstrainedManifoldObjective,
+    p;
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     ϵ_exponent=1 / 100,
     θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-    _m=isnothing(g) ? 0 : (g isa Function ? size(g(M, p)) : length(g)),
-    μ::Vector=ones(_m),
+    μ::Vector=ones(length(get_inequality_constraints(M, cmo, p))),
     μ_max::Real=20.0,
-    _n=isnothing(h) ? 0 : (h isa Function ? size(h(M, p)) : length(h)),
-    λ::Vector=ones(_n),
+    λ::Vector=ones(length(get_equality_constraints(M, cmo, p))),
     λ_max::Real=20.0,
     λ_min::Real=-λ_max,
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
-    _objective=ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
-    ),
-    sub_cost=AugmentedLagrangianCost(_objective, ρ, μ, λ),
-    sub_grad=AugmentedLagrangianGrad(_objective, ρ, μ, λ),
+    sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
+    sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
@@ -288,10 +360,10 @@ function augmented_Lagrangian_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-) where {TF,TGF}
+)
     alms = AugmentedLagrangianMethodState(
         M,
-        _objective,
+        cmo,
         p,
         sub_problem,
         sub_state;
@@ -308,8 +380,8 @@ function augmented_Lagrangian_method!(
         θ_ϵ=θ_ϵ,
         stopping_criterion=stopping_criterion,
     )
-    obj = decorate_objective!(M, _objective; kwargs...)
-    mp = DefaultManoptProblem(M, obj)
+    dcmo = decorate_objective!(M, cmo; kwargs...)
+    mp = DefaultManoptProblem(M, dcmo)
     alms = decorate_state!(alms; kwargs...)
     return get_solver_return(solve!(mp, alms))
 end
@@ -339,22 +411,18 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)
     n_ineq_constraint = size(cost_ineq, 1)
-    alms.μ = convert(
-        Vector{Float64},
+    alms.μ .=
         min.(
             ones(n_ineq_constraint) .* alms.μ_max,
-            max.(alms.μ + alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
-        ),
-    )
+            max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
+        )
     cost_eq = get_equality_constraints(mp, alms.p)
     n_eq_constraint = size(cost_eq, 1)
-    alms.λ = convert(
-        Vector{Float64},
+    alms.λ =
         min.(
             ones(n_eq_constraint) .* alms.λ_max,
             max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
-        ),
-    )
+        )
     # get new evaluation of penalty
     penalty = maximum(
         [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init=0
