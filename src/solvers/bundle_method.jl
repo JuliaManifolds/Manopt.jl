@@ -243,7 +243,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         if !isnan(s)
             bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         else
-            bms.diam = 0.0
+            bms.diam = bms.diam
         end
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
