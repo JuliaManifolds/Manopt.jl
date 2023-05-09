@@ -178,6 +178,7 @@ function adaptive_regularization_with_cubics!(
     H::T=zero_vector(M, p0),
     S::T=zero_vector(M, p0),
     ς::R=100.0 / sqrt(manifold_dimension(M)),
+    maxIterLanczos= 200,
     ρ::R=0.0, #1.0
     ρ_regularization::R=1e3,
     stop::StoppingCriterion=StopAfterIteration(40) | StopWhenGradientNormLess(1e-9),
@@ -190,7 +191,7 @@ function adaptive_regularization_with_cubics!(
     γ1::R=0.1,
     γ2::R=2.0,
     γ3::R=2.0,
-    substate::AbstractManoptSolverState=NewLanczosState(M, p0; θ=θ,ς=ς,objective=ManifoldHessianObjective(f,gradf,hessf)),
+    substate::AbstractManoptSolverState=NewLanczosState(M, p0; maxIterLanczos=maxIterLanczos, θ=θ,ς=ς,objective=ManifoldHessianObjective(f,gradf,hessf)),
     subcost=substate.subcost,
     subprob=DefaultManoptProblem(M,ManifoldCostObjective(subcost)),
     kwargs...,
@@ -311,8 +312,9 @@ mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverSta
     r::V # store the r vector
     S::V # store the tangent vector that solves the minimization problem
     y::Y # store the y vector
+    d::I #number of dimensions of current subspace solution
     function NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y}(                               #sc_lanzcos
-        M::AbstractManifold,p::P, objective::ManifoldHessianObjective,subcost::SCO,stop::SC, maxIterNewton::I,ς::R,θ::R,gradnorm::R,modelGradnorm::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,S::V,y::Y
+        M::AbstractManifold,p::P, objective::ManifoldHessianObjective,subcost::SCO,stop::SC, maxIterNewton::I,ς::R,θ::R,gradnorm::R,modelGradnorm::R, tolNewton::R, Q::T,Tmatrix::TM,r::V,S::V,y::Y,d::I
     ) where {P,SCO,SC,I,R,T,TM,V,Y}
         s = new{P,SCO,SC,I,R,T,TM,V,Y}()
         s.p=p
@@ -330,6 +332,7 @@ mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverSta
         s.r=r
         s.S=S
         s.y=y
+        s.d=d
         return s
     end
 end
@@ -351,10 +354,11 @@ function NewLanczosState(
     Tmatrix::TM=spdiagm(-1 => zeros(maxIterLanczos - 1), 0 => zeros(maxIterLanczos), 1 => zeros(maxIterLanczos - 1)),
     r::V=zero_vector(M,p),
     S::V=zero_vector(M,p),
-    y::Y=[0.0],                     #Y=zeros(maxIterLanczos),
+    y::Y=[0.0],
+    d=1,                     #Y=zeros(maxIterLanczos),
     subcost::SCO=CubicSubCost(1,gradnorm,ς,Tmatrix,y)
 ) where{P,SCO,SC<:StoppingCriterion,I,R,T,TM,V,Y}
-    return NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y}(M, p, objective, subcost, stopping_criterion, maxIterNewton,ς,θ,gradnorm,modelGradnorm, tolNewton, Q, Tmatrix, r,S,y)
+    return NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y}(M, p, objective, subcost, stopping_criterion, maxIterNewton,ς,θ,gradnorm,modelGradnorm, tolNewton, Q, Tmatrix, r,S,y,d)
 end
 
 
@@ -367,7 +371,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
     M = get_manifold(dmp)
     mho =s.objective
 
-    g = get_gradient(M, mho, s.p)
+    g = get_gradient(M, mho,s.p)   #added ! and s.X
     s.gradnorm = norm(M, s.p, g)
 
     #q = g / s.gradnorm
@@ -380,6 +384,10 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
     α = inner(M, s.p, s.Q[1], r) #q change
     s.Tmatrix[1,1]=α
     s.r = r - α * s.Q[1] #q change
+
+
+    #idea in the initalize_solver we set dim of subspace sol to d=1.
+
     #argmin of one dimensional model
     s.y = [(α - sqrt(α^2 + 4 * s.ς * s.gradnorm)) / (2 * s.ς)] # store y in the state.
 
@@ -404,7 +412,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     β = norm(M, s.p, s.r)
 
     if j+1 > length(s.Q) #j+1? Since we created the first lanczos vector in the intialization
-        println("We have used all the allocated Lanczos vectors")
+        println("We have used all the ",length(s.Q), " allocated Lanczos vectors. Allocate more by variable maxIterLanczos.")
     end
 
 
@@ -461,13 +469,18 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
             s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
     end
 
+    
+    #println("modelgradnorm: ",s.modelGradnorm," θ: ",s.θ, " norm(y)^2: ", norm(s.y,2)^2)
+    #println("f gradnorm: ",s.gradnorm," ς: ",s.ς)
+
 
     if s.modelGradnorm <= s.θ*norm(s.y,2)^2
         #The condition is satisifed. Assemble the optimal tangent vector
         S_opt=zero_vector(M,s.p)
-        println("number of dim in opt sol: ", j)
+        #println("number of dim in opt sol: ", j)
+        #println("Q lengths ",norm.(s.Q,2))
         for i in 1:j #length(s.y)
-            S_opt = S_opt + s.Q[i] * s.y[i] 
+            S_opt = S_opt + s.Q[i] * s.y[i]    #better to do lc=s.y .* s.Q[1:length(s.y)] to do the linear comb, then sum(lc)
         end
         s.S=project(M,s.p,S_opt)
     end
