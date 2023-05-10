@@ -191,7 +191,10 @@ function adaptive_regularization_with_cubics!(
     γ1::R=0.1,
     γ2::R=2.0,
     γ3::R=2.0,
-    substate::AbstractManoptSolverState=NewLanczosState(M, p0; maxIterLanczos=maxIterLanczos, θ=θ,ς=ς,objective=ManifoldHessianObjective(f,gradf,hessf)),
+    substate::AbstractManoptSolverState=NewLanczosState(M, p0;
+        maxIterLanczos=maxIterLanczos,
+        θ=θ,
+        ς=ς,objective=ManifoldHessianObjective(f,gradf,hessf; evaluation=evaluation)),
     subcost=substate.subcost,
     subprob=DefaultManoptProblem(M,ManifoldCostObjective(subcost)),
     kwargs...,
@@ -275,7 +278,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
         #println("Updated iterate")
         arcs.p = retract(M, arcs.p, arcs.S)
         get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
-        
+
     end
 
     #Update regularization parameter
@@ -421,7 +424,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     #Had to move it here to avoid logic error: earlier we computed only new y if stopping criterion failed, however this would lead to updating the y in s.y, and when the stopping_criterion is called after the step, it would be checked with a new y.
     if j>1
         s.y=min_cubic_Newton(s,j)
-    end    
+    end
 
 
     #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
@@ -450,7 +453,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     s.Tmatrix[j, j + 1] = β
     s.Tmatrix[j + 1, j] = β
 
-    
+
 
 
     #Compute the norm of the gradient of the model.
@@ -469,7 +472,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
             s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
     end
 
-    
+
     #println("modelgradnorm: ",s.modelGradnorm," θ: ",s.θ, " norm(y)^2: ", norm(s.y,2)^2)
     #println("f gradnorm: ",s.gradnorm," ς: ",s.ς)
 
