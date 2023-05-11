@@ -180,11 +180,11 @@ function check_gradient(
     p=rand(M),
     X=rand(M; vector_at=p);
     gradient=grad_f(M, p),
-    check_vector=true,
+    check_vector=false,
     throw_error=false,
     kwargs...,
 )
-    check_vector && (!is_vector(M, p, gradient, throw_error;) && return false)
+    check_vector && (!is_vector(M, p, gradient, throw_error) && return false)
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
     return check_differential(
@@ -214,10 +214,10 @@ no plot will be generated.
 
 # Keyword arguments
 
-* `check_grad`   – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
+* `check_grad`       – (`true`) check whether ``\operatorname{grad} f(p) \in T_p\mathcal M``.
 * `check_linearity`  – (`true`) check whether the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry`   – (`true`) check whether the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
-* `check_vector`     – (`true`) check whether ``\operatorname{Hess} f(p)[X] \in T_p\mathcal M`` using `is_vector`.
+* `check_vector`     – (`false`) check whether ``\operatorname{Hess} f(p)[X] \in T_p\mathcal M`` using `is_vector`.
 * `mode`             - (`:Default`) specify the mode, by default we assume to have a second order retraction given by `retraction_method=`
   you can also this method if you already _have_ a cirtical point `p`.
   Set to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
@@ -251,7 +251,7 @@ function check_Hessian(
     a=randn(),
     b=randn(),
     check_grad=true,
-    check_vector=true,
+    check_vector=false,
     check_symmetry=true,
     check_linearity=true,
     exactness_tol=1e-12,
