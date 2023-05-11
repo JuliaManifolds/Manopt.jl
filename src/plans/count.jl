@@ -41,6 +41,7 @@ function CountObjective(
 ) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldCostObjective{E}}
     return CountObjective(objective, Dict([symbol => init for symbol in count]))
 end
+dispatch_objective_decorator(::CountObjective) = Val(true)
 
 function _count_if_exists(co::CountObjective, s::Symbol)
     return haskey(co.counts, s) && (co.counts[s] += 1)
@@ -66,6 +67,13 @@ function get_count(co::CountObjective, s::Symbol, mode::Symbol=:None)
     end
     return co.counts[s]
 end
+function get_count(o::AbstractManifoldObjective, s::Symbol, mode::Symbol=:None)
+    return _get_count(o, dispatch_objective_decorator(o), s, mode)
+end
+function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, m)
+    return error("It seems $o does not provide access to a `CountObjective`.")
+end
+_get_count(o::AbstractManifoldObjective, ::Val{true}, s, m) = get_count(o.objective, s, m)
 
 #
 # Overwrite accessors

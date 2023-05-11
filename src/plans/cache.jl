@@ -1,5 +1,5 @@
 #
-# A Cache for Objectives
+# A Simple Cache for Objectives
 #
 @doc raw"""
      SimpleCacheObjective{O<:AbstractManifoldGradientObjective{E,TC,TG}, P, T,C} <: AbstractManifoldGradientObjective{E,TC,TG}
@@ -44,10 +44,7 @@ function SimpleCacheObjective(
         obj, q, X, initialized, c, initialized
     )
 end
-
-#
-# Default implementation
-#
+# Default implementations
 function get_cost(M::AbstractManifold, sco::SimpleCacheObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.c_valid
@@ -61,7 +58,6 @@ function get_cost(M::AbstractManifold, sco::SimpleCacheObjective, p)
     return sco.c
 end
 get_cost_function(sco::SimpleCacheObjective) = get_cost_function(sco.objective)
-
 function get_gradient(M::AbstractManifold, sco::SimpleCacheObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
@@ -185,27 +181,88 @@ end
 # A full cache objective for more than one entry and a full possibility for all fields
 #
 @doc raw"""
-    CachedObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractManifoldObjective{E}
+    LRUCacheObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractManifoldObjective{E}
 
 Create a cache for an objective, based on a `NamedTuple` that stores `LRUCaches` for
 
 # Constructor
 
-    CachedObjective(M, o::AbstractManifoldObjective; kwargs...)
+    LRUCacheObjective(M, o::AbstractManifoldObjective, caches::Vector{Symbol}; kwargs...)
 
-Create a cache for the [`AbstractManifoldObjective`](@ref)
+Create a cache for the [`AbstractManifoldObjective`](@ref) where the Symbols in `caches` indicate,
+which function evaluations to cache.
 
 # Keyword Arguments
 * `p`           - (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
-* `X`           - (`rand(M; vector_at=p)`) the type of values to be cached for gradient and Hessian calls.
-* `cache`       - (`[:Cost]`) which function calls should be cached.
+* `X`           - (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
+* `cache`       - (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
 * `cache_size`  - (`10`) number of (least recently used) calls to cache
 * `cache_sizes` - a named tuple or dictionary specifying the sizes individually for each cache.
 """
-struct CachedObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractManifoldObjective{E}
+struct LRUCacheObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
+       AbstractManifoldObjective{E}
+    objective::O
     cache::C
 end
-CachedObjective
+function LRUCacheObjective(
+    M::AbstractManifold,
+    objective::O,
+    caches::AbstractVector{<:Symbol}=[:Cost];
+    p::P=rand(M),
+    v::R=get_cost(M, objective, p),
+    X::T=zero_vector(M, p),
+    cache_size=10,
+    cache_sizes=Dict{Symbol,Int}(),
+) where {O<:AbstractManifoldObjective,R,P,T}
+    # Initialize Caches
+    lru_caches = LRU{P}[]
+    for c in caches
+        m = get(cache_sizes, c, cache_size)
+        # Float cache, e.g. Cost
+        (c === :Cost) && push!(lru_caches, LRU{P,R}(; maxsize=m))
+        # Tangent Vector cache, e.g. Gradient
+        (c === :Gradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        # Arbitrary Vector Caches (constraints maybe?)
+        # Point caches ?
+    end
+    return LRUCacheObjective(objective, NamedTuple{Tuple(caches)}(lru_caches))
+end
+dispatch_objective_decorator(::LRUCacheObjective) = Val(true)
+
+#
+# Default implementations - (a) check if field exists (b) try to get cache
+function get_cost(M::AbstractManifold, co::LRUCacheObjective, p)
+    !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p)
+    return get!(co.cache[:Cost], p) do
+        get_cost(M, co.objective, p)
+    end
+end
+get_cost_function(co::LRUCacheObjective) = get_cost_function(co.objective)
+
+function get_gradient(M::AbstractManifold, co::LRUCacheObjective, p)
+    !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
+    return get!(co.cache[:Gradient], p) do
+        get_gradient(M, co.objective, p)
+    end
+end
+function get_gradient!(M::AbstractManifold, X, co::LRUCacheObjective, p)
+    !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p)
+    copyto!(
+        M,
+        p,
+        X,
+        get!(co.cache[:Gradient], p) do
+            get_gradient!(M, X, co.objective, p)
+        end,
+    )
+    println(X)
+    return X
+end
+get_gradient_function(co::LRUCacheObjective) = get_gradient_function(co.objective)
+
+#
+# CostGradImplementation - ToDo
+
 #
 # Factory
 #
@@ -218,6 +275,9 @@ on the `AbstractManifold M` based on the symbol `cache`.
 The following caches are available
 
 * `:Simple` generates a [`SimpleCacheObjective`](@ref)
+* `:LRU` generates a [`LRUCacheObjective`](@ref) where you should use the form
+  `(:LRU, [:Cost, :Gradient])` to specify what should be cached or
+  `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size
 """
 function objective_cache_factory(M, o, cache::Symbol)
     (cache === :Simple) && return SimpleCacheObjective(M, o)
@@ -225,16 +285,29 @@ function objective_cache_factory(M, o, cache::Symbol)
 end
 
 @doc raw"""
-    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array}Symbol)
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array, Array})
+    objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Tuple{Symbol, Array})
 
 Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
 on the `AbstractManifold M` based on the symbol `cache[1]`,
-where the second element `cache[2]` is an array of further arguments for the cache and
-the third is passed down as keyword arguments.
+where the second element `cache[2]` is are further arguments to  the cache and
+the optional third is passed down as keyword arguments.
 
-For all availabel caches see the simpler variant with symbols.
+For all available caches see the simpler variant with symbols.
 """
 function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
     (cache[1] === :Simple) && return SimpleCacheObjective(M, o; cache[3]...)
+    if (cache[1] === :LRU)
+        if (cacge[3] isa Integer)
+            return LRUCacheObjective(M, o, cache[2]; cache_size=cache[3])
+        else
+            return LRUCacheObjective(M, o, cache[2]; cache[3]...)
+        end
+    end
+    return o
+end
+function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray})
+    (cache[1] === :Simple) && return SimpleCacheObjective(M, o)
+    (cache[1] === :LRU) && return LRUCacheObjective(M, o, cache[2])
     return o
 end

@@ -162,4 +162,27 @@ end
         @test get_gradient(M, sco4, s) == s # cached
         @test sco4.objective.costgrad!!.i == 5
     end
+    @testset "LRUCacheObjective" begin
+        M = Sphere(2)
+        A = [2.0 1.0 0.0; 1.0 2.0 1.0; 0.0 1.0 2.0]
+        f(M, p) = p' * A * p
+        grad_f(M, p) = 2 * A * p
+        o = ManifoldGradientObjective(f, grad_f)
+        co = CountObjective(o, [:Cost, :Gradient])
+        lco = LRUCacheObjective(M, co, [:Cost, :Gradient])
+        p = [1.0, 0.0, 0.0]
+        a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
+        @test get_cost(M, lco, p) == 2.0
+        @test get_cost(M, lco, p) == 2.0
+        # but the second was cached so no cost eval
+        @test get_count(lco, :Cost) == a + 1
+        # Gradient
+        b = get_count(lco, :Gradient)
+        X = get_gradient(M, lco, p)
+        @test X == grad_f(M, p)
+        Y = similar(X)
+        get_gradient!(M, Y, lco, p)
+        @test_broken Y == X #Does not yet update Y it seems
+        @test get_count(lco, :Gradient) == b + 1
+    end
 end
