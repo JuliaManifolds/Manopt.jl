@@ -184,8 +184,28 @@ end
 #
 # A full cache objective for more than one entry and a full possibility for all fields
 #
-struct CachedObjective{E,O<:AbstractManifoldObjective{<:E}} <: AbstractManifoldObjective{E} end
+@doc raw"""
+    CachedObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractManifoldObjective{E}
 
+Create a cache for an objective, based on a `NamedTuple` that stores `LRUCaches` for
+
+# Constructor
+
+    CachedObjective(M, o::AbstractManifoldObjective; kwargs...)
+
+Create a cache for the [`AbstractManifoldObjective`](@ref)
+
+# Keyword Arguments
+* `p`           - (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
+* `X`           - (`rand(M; vector_at=p)`) the type of values to be cached for gradient and Hessian calls.
+* `cache`       - (`[:Cost]`) which function calls should be cached.
+* `cache_size`  - (`10`) number of (least recently used) calls to cache
+* `cache_sizes` - a named tuple or dictionary specifying the sizes individually for each cache.
+"""
+struct CachedObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractManifoldObjective{E}
+    cache::C
+end
+CachedObjective
 #
 # Factory
 #
