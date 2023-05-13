@@ -249,8 +249,8 @@ function get_gradient!(M::AbstractManifold, X, co::LRUCacheObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p)
     copyto!(
         M,
-        p,
         X,
+        p,
         get!(co.cache[:Gradient], p) do
             get_gradient!(M, X, co.objective, p)
         end,

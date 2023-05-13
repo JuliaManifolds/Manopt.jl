@@ -181,8 +181,9 @@ end
         X = get_gradient(M, lco, p)
         @test X == grad_f(M, p)
         Y = similar(X)
+        #Update Y inplace but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
-        @test_broken Y == X #Does not yet update Y it seems
+        @test Y == X
         @test get_count(lco, :Gradient) == b + 1
     end
 end
