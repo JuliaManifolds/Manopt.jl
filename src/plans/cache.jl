@@ -255,7 +255,6 @@ function get_gradient!(M::AbstractManifold, X, co::LRUCacheObjective, p)
             get_gradient!(M, X, co.objective, p)
         end,
     )
-    println(X)
     return X
 end
 get_gradient_function(co::LRUCacheObjective) = get_gradient_function(co.objective)
@@ -264,8 +263,10 @@ get_gradient_function(co::LRUCacheObjective) = get_gradient_function(co.objectiv
 # CostGradImplementation - ToDo
 
 #
-# Factory
+# Hessian and precon - ToDo
+
 #
+# Factory
 @doc raw"""
     objective_cache_factory(M::AbstractManifold, o::AbstractManifoldObjective, cache::Symbol)
 

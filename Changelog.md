@@ -5,6 +5,14 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.21] - WIP
+
+### Added
+
+* A `LRUCacheObjective` as a decorator for objectives to cache results of calls using an Least Recently Used (LRU) cache.
+  For now this works with cost and gradient evaluations
+* A `CountObjective` as a decorator for objectives to enable counting of calls to for example the cost and the gradient
+
 ## [0.4.20] - 11/05/2023
 
 ### Changed
