@@ -5,7 +5,30 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.17] - working version
+## [0.4.20] - 11/05/2023
+
+### Changed
+
+* the default tolerances for the numerical `check_` functions were loosened a bit,
+  such that `check_vector` can also be changed in its tolerances.
+
+## [0.4.19] - 07/05/2023
+
+### Added
+
+* the sub solver for `trust_regions` is now costumizable, i.e. can be exchanged.
+
+### Changed
+
+* slightly changed the definitions of the solver states for ALM and EPM to be type stable
+
+## [0.4.18] - 04/05/2023
+
+### Added
+
+* A function `check_Hessian(M, f, grad_f, Hess_f)` to numerically check the (Riemannian) Hessian of a function `f`
+
+## [0.4.17] - 28/04/2023
 
 ### Added
 
