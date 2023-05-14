@@ -6,7 +6,7 @@ An abstract type to specify the kind of evaluation a [`AbstractManifoldObjective
 abstract type AbstractEvaluationType end
 
 @doc raw"""
-    AbstractManifoldObjective{T<:AbstractEvaluationType}
+    AbstractManifoldObjective{E<:AbstractEvaluationType}
 
 Describe the collection of the optimization function ``f\colon \mathcal M → \bbR` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) prxomial maps.
@@ -20,7 +20,16 @@ All these elements should usually be implemented as functions
 
 the type `T` indicates the global [`AbstractEvaluationType`](@ref).
 """
-abstract type AbstractManifoldObjective{T<:AbstractEvaluationType} end
+abstract type AbstractManifoldObjective{E<:AbstractEvaluationType} end
+
+@doc raw"""
+    AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
+
+A common supertype for all decorators of [`AbstractManifoldObjective`]()@ref)s to simplify dispatch.
+    The second parameter should refer to the undecorated objective (i.e. the most inner one).
+"""
+abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective} <:
+              AbstractManifoldObjective{E} end
 
 @doc raw"""
     AllocatingEvaluation <: AbstractEvaluationType
@@ -49,6 +58,7 @@ Decorators indicate this by returning `Val{true}` for further dispatch.
 The default is `Val{false}`, i.e. by default an state is not decorated.
 """
 dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
+dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)
 
 """
     is_object_decorator(s::AbstractManifoldObjective)

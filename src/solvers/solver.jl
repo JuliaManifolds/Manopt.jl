@@ -75,7 +75,16 @@ other keywords are ignored.
 [`objective_cache_factory`](@ref)
 """
 function decorate_objective!(
-    M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kwargs...
+    M::AbstractManifold,
+    o::O;
+    cache::Union{
+        Missing,
+        Symbol,
+        Tuple{Symbol,<:AbstractArray},
+        Tuple{Symbol,<:AbstractArray,<:AbstractArray},
+    }=missing,
+    count::Union{Missing,Vector{Symbol}}=missing,
+    kwargs...,
 ) where {O<:AbstractManifoldObjective}
     deco_o = ismissing(cache) ? o : objective_cache_factory(M, o, cache)
     deco_o = ismissing(count) ? deco_o : objective_count_factory(M, o, count)

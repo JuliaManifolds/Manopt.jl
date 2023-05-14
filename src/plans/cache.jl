@@ -21,7 +21,7 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 """
 mutable struct SimpleCacheObjective{
     E<:AbstractEvaluationType,TC,TG,O<:AbstractManifoldGradientObjective{E,TC,TG},P,T,C
-} <: AbstractManifoldGradientObjective{E,TC,TG}
+} <: AbstractDecoratedManifoldObjective{E,O}
     objective::O
     p::P # a point
     X::T # a vector
@@ -29,7 +29,6 @@ mutable struct SimpleCacheObjective{
     c::C # a value for the cost
     c_valid::Bool
 end
-dispatch_objective_decorator(::SimpleCacheObjective) = Val(true)
 
 function SimpleCacheObjective(
     M::AbstractManifold,
@@ -181,8 +180,7 @@ end
 # A full cache objective for more than one entry and a full possibility for all fields
 #
 @doc raw"""
-    LRUCacheObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractManifoldObjective{E}
-
+    LRUCacheObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
 Create a cache for an objective, based on a `NamedTuple` that stores `LRUCaches` for
 
 # Constructor
@@ -199,8 +197,8 @@ which function evaluations to cache.
 * `cache_size`  - (`10`) number of (least recently used) calls to cache
 * `cache_sizes` - a named tuple or dictionary specifying the sizes individually for each cache.
 """
-struct LRUCacheObjective{E,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
-       AbstractManifoldObjective{E}
+struct LRUCacheObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
+       AbstractDecoratedManifoldObjective{E,P}
     objective::O
     cache::C
 end
@@ -213,8 +211,31 @@ function LRUCacheObjective(
     X::T=zero_vector(M, p),
     cache_size=10,
     cache_sizes=Dict{Symbol,Int}(),
-) where {O<:AbstractManifoldObjective,R,P,T}
-    # Initialize Caches
+) where {E,O<:AbstractManifoldObjective{E},R,P,T}
+    c = init_caches(caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes)
+    return LRUCacheObjective{E,O,O,typeof(c)}(objective, c)
+end
+function LRUCacheObjective(
+    M::AbstractManifold,
+    objective::O,
+    caches::AbstractVector{<:Symbol}=[:Cost];
+    p::P=rand(M),
+    v::R=get_cost(M, objective, p),
+    X::T=zero_vector(M, p),
+    cache_size=10,
+    cache_sizes=Dict{Symbol,Int}(),
+) where {E,O2,O<:AbstractDecoratedManifoldObjective{E,O2},R,P,T}
+    c = init_caches(caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes)
+    return LRUCacheObjective{E,O2,O,typeof(c)}(objective, c)
+end
+function init_caches(
+    caches;
+    p::P=rand(M),
+    v::R=get_cost(M, objective, p),
+    X::T=zero_vector(M, p),
+    cache_size=10,
+    cache_sizes=Dict{Symbol,Int}(),
+) where {P,R,T}
     lru_caches = LRU{P}[]
     for c in caches
         m = get(cache_sizes, c, cache_size)
@@ -225,9 +246,10 @@ function LRUCacheObjective(
         # Arbitrary Vector Caches (constraints maybe?)
         # Point caches ?
     end
-    return LRUCacheObjective(objective, NamedTuple{Tuple(caches)}(lru_caches))
+    return NamedTuple{Tuple(caches)}(lru_caches)
 end
-dispatch_objective_decorator(::LRUCacheObjective) = Val(true)
+get_gradient_function(co::LRUCacheObjective) = get_gradient_function(co.objective)
+get_cost_function(co::LRUCacheObjective) = get_cost_function(co.objective)
 
 #
 # Default implementations - (a) check if field exists (b) try to get cache
@@ -237,7 +259,6 @@ function get_cost(M::AbstractManifold, co::LRUCacheObjective, p)
         get_cost(M, co.objective, p)
     end
 end
-get_cost_function(co::LRUCacheObjective) = get_cost_function(co.objective)
 
 function get_gradient(M::AbstractManifold, co::LRUCacheObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
@@ -257,76 +278,37 @@ function get_gradient!(M::AbstractManifold, X, co::LRUCacheObjective, p)
     )
     return X
 end
-get_gradient_function(co::LRUCacheObjective) = get_gradient_function(co.objective)
 
 #
 # CostGradImplementation
 function get_cost(
-    M::AbstractManifold,
-    sco::LRUCacheObjective{AllocatingEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
+    M::AbstractManifold, co::LRUCacheObjective{E,<:ManifoldCostGradientObjective}, p
+) where {E<:AbstractEvaluationType}
     #Neither cost not grad cached -> evaluate
-    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_cost(M, co.objective, p)
     return get!(co.cache[:Cost], p) do
-        c, X = sco.objective.costgrad!!(M, p)
-        #if this is evaluated, we can also set X
-        haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, p)
-        c #but we also set the new cost here
-    end
-end
-function get_cost(
-    M::AbstractManifold,
-    sco::LRUCacheObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    #Neither cost not grad cached -> evaluate
-    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
-        return get_cost(M, co.objective, p)
-    return get!(co.cache[:Cost], p) do
-        X = zero_vector(M, p)
-        c, _ = sco.objective.costgrad!!(M, X, p)
+        c, X = get_cost_and_gradient(M, co.objective, p)
         #if this is evaluated, we can also set X
         haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, p)
         c #but we also set the new cost here
     end
 end
 function get_gradient(
-    M::AbstractManifold,
-    sco::LRUCacheObjective{AllocatingEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+    M::AbstractManifold, co::LRUCacheObjective{E,<:ManifoldCostGradientObjective}, p
+) where {E<:AllocatingEvaluation}
+    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_gradient(M, co.objective, p)
     return get!(co.cache[:Gradient], p) do
-        c, X = sco.objective.costgrad!!(M, p)
+        c, X = get_cost_and_gradient(M, co.objective, p)
         #if this is evaluated, we can also set c
         haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
         X #but we also set the new cost here
     end
 end
-function get_gradient(
-    M::AbstractManifold,
-    sco::LRUCacheObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
-        return get_gradient(M, co.objective, p)
-    return get!(co.cache[:Gradient], p) do
-        X = zero_vector(M, p)
-        c, _ = sco.objective.costgrad!!(M, X, p)
-        #if this is evaluated, we can also set X
-        haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
-        X # but we also set the new gradient
-    end
-end
 function get_gradient!(
-    M::AbstractManifold,
-    X,
-    co::LRUCacheObjective{AllocatingEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
+    M::AbstractManifold, X, co::LRUCacheObjective{E,<:ManifoldCostGradientObjective}, p
+) where {E}
     All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_gradient!(M, X, co.objective, p)
     return copyto!(
@@ -334,30 +316,10 @@ function get_gradient!(
         X,
         p,
         get!(co.cache[:Gradient], p) do
-            c, Y = sco.objective.costgrad!!(M, p)
+            c, _ = get_cost_and_gradient!(M, X, co.objective, p)
             #if this is evaluated, we can also set c
             haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
-            copyto!(M, X, p, Y)
-        end,
-    )
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    co::LRUCacheObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
-        return get_gradient!(M, X, co.objective, p)
-    return copyto!(
-        M,
-        X,
-        p,
-        get!(co.cache[:Gradient], p) do
-            c, _ = sco.objective.costgrad!!(M, X, p)
-            #if this is evaluated, we can also set X
-            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
-            X # but we also set the new gradient
+            X
         end,
     )
 end
@@ -378,10 +340,13 @@ The following caches are available
 * `:Simple` generates a [`SimpleCacheObjective`](@ref)
 * `:LRU` generates a [`LRUCacheObjective`](@ref) where you should use the form
   `(:LRU, [:Cost, :Gradient])` to specify what should be cached or
-  `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size
+  `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size.
+  Here this variant defaults to `(:LRU, [:Cost, :Gradient], 100)`,
+  i.e. to cache up to 100 cost and gradient values.
 """
 function objective_cache_factory(M, o, cache::Symbol)
     (cache === :Simple) && return SimpleCacheObjective(M, o)
+    (cache === :LRU) && return LRUCacheObjective(M, o, [:Cost, :Gradient]; cache_size=100)
     return o
 end
 

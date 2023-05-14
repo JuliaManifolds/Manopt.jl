@@ -1,8 +1,8 @@
 """
-     CountObjective{E,O<:AbstractManifoldObjective,I<:Integer} <: AbstractManifoldObjective{E}
+    CountObjective{E,P,O<:AbstractManifoldObjective,I<:Integer} <: AbstractDecoratedManifoldObjective{E,P}
 
-A wrapper for any [`AbstractManifoldObjective`](@ref) to count different calls to parts of
-the objective.
+A wrapper for any [`AbstractManifoldObjective`](@ref) of type `O` to count different calls
+to parts of the objective.
 
 # Fields
 
@@ -33,22 +33,32 @@ Initialise the `CountObjective` to wrap `objective` initializing the set of coun
 
 Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
 """
-struct CountObjective{E,O<:AbstractManifoldObjective,I<:Integer} <:
-       AbstractManifoldObjective{E}
+struct CountObjective{E,P,O<:AbstractManifoldObjective,I<:Integer} <:
+       AbstractDecoratedManifoldObjective{E,P}
     counts::Dict{Symbol,I}
     objective::O
 end
 function CountObjective(
     ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
-) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldCostObjective{E}}
-    return CountObjective{E,O,I}(counts, objective)
+) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldObjective{E}}
+    return CountObjective{E,O,O,I}(counts, objective)
+end
+# Store the undecorated type of the input is decorated
+function CountObjective(
+    ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
+) where {
+    E<:AbstractEvaluationType,
+    I<:Integer,
+    P<:AbstractManifoldObjective,
+    O<:AbstractDecoratedManifoldObjective{E,P},
+}
+    return CountObjective{E,P,O,I}(counts, objective)
 end
 function CountObjective(
-    ::AbstractManifold, objective::O, count::AbstractVector{Symbol}, init::I=0
-) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldCostObjective{E}}
-    return CountObjective(objective, Dict([symbol => init for symbol in count]))
+    M::AbstractManifold, objective::O, count::AbstractVector{Symbol}, init::I=0
+) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldObjective{E}}
+    return CountObjective(M, objective, Dict([symbol => init for symbol in count]))
 end
-dispatch_objective_decorator(::CountObjective) = Val(true)
 
 function _count_if_exists(co::CountObjective, s::Symbol)
     return haskey(co.counts, s) && (co.counts[s] += 1)
@@ -127,6 +137,18 @@ function get_cost(M::AbstractManifold, co::CountObjective, p)
     return get_cost(M, co.objective, p)
 end
 
+function get_cost_and_gradient(M::AbstractManifold, co::CountObjective, p)
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient(M, co.objective, p)
+end
+
+function get_cost_and_gradient(M::AbstractManifold, X, co::CountObjective, p)
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient!(M, X, co.objective, p)
+end
+
 function get_gradient(M::AbstractManifold, co::CountObjective, p)
     _count_if_exists(co, :Gradient)
     return get_gradient(M, co.objective, p)
@@ -194,7 +216,7 @@ end
 #
 
 function objective_count_factory(
-    M::AbstractManifold, o::AbstractManifoldCostObjective, count::Vector{<:Symbol}
+    M::AbstractManifold, o::AbstractManifoldCostObjective, counts::Vector{<:Symbol}
 )
     return CountObjective(M, o, counts)
 end

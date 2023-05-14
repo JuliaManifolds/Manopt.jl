@@ -168,7 +168,7 @@ end
         f(M, p) = p' * A * p
         grad_f(M, p) = 2 * A * p
         o = ManifoldGradientObjective(f, grad_f)
-        co = CountObjective(o, [:Cost, :Gradient])
+        co = CountObjective(M, o, [:Cost, :Gradient])
         lco = LRUCacheObjective(M, co, [:Cost, :Gradient])
         p = [1.0, 0.0, 0.0]
         a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
@@ -185,5 +185,30 @@ end
         get_gradient!(M, Y, lco, p)
         @test Y == X
         @test get_count(lco, :Gradient) == b + 1
+        #
+        # CostGrad
+        f_f_grad(M, p) = (p' * A * p, 2 * A * p)
+        f_f_grad!(M, X, p) = (p' * A * p, X .= 2 * A * p)
+        o2a = ManifoldCostGradientObjective(f_f_grad)
+        co2a = CountObjective(M, o2a, [:Cost, :Gradient])
+        lco2a = LRUCacheObjective(M, co2a, [:Cost, :Gradient])
+        o2i = ManifoldCostGradientObjective(f_f_grad!; evaluation=InplaceEvaluation())
+        co2i = CountObjective(M, o2i, [:Cost, :Gradient])
+        lco2i = LRUCacheObjective(M, co2i, [:Cost, :Gradient])
+        #
+        c = get_count(lco2a, :Cost) # usually 1 since creating lco calls that once
+        @test get_cost(M, lco2a, p) == 2.0
+        @test get_cost(M, lco2a, p) == 2.0
+        # but the second was cached so no cost eval
+        @test get_count(lco2a, :Cost) == c + 1
+        d = get_count(lco2a, :Gradient)
+        X = get_gradient(M, lco2a, p)
+        @test X == f_f_grad(M, p)[2]
+        Y = similar(X)
+        #Update Y inplace but without evaluating the gradient but taking it from the cache
+        get_gradient!(M, Y, lco, p)
+        @test Y == X
+        # Gradient cached already so no new evals
+        @test get_count(lco2a, :Gradient) == d
     end
 end
