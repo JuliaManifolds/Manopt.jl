@@ -146,8 +146,8 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
-[`decorate_objective!`](@ref), respectively.
+All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
+[`decorate_objective!`](@ref) for objective, respectively.
 If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
 # Output

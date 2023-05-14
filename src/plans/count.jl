@@ -20,7 +20,7 @@ the objective.
 | `:Constraints`            | [`get_constraints`](@ref)            |                              |
 | `:EqualityConstraint`     | [`get_equality_constraint`](@ref)    | requires vector of counters  |
 | `:EqualityConstraints`    | [`get_equality_constraints`](@ref)   | does not count single access |
-| `:InequalityConstraint`   | [`get_inequality_constraint`](@ref)  | requires vector of counters |
+| `:InequalityConstraint`   | [`get_inequality_constraint`](@ref)  | requires vector of counters  |
 | `:InequalityConstraints`  | [`get_inequality_constraints`](@ref) | does not count single access |
 
 # Constructors
@@ -29,7 +29,7 @@ the objective.
 
 Initialise the `CountObjective` to wrap `objective` initializing the set of counts
 
-    CountObjective(objective::AbstractManifoldObjective, count::AbstractVecor{Symbol}, init=0)
+    CountObjective(M::AbtractManifold, objective::AbstractManifoldObjective, count::AbstractVecor{Symbol}, init=0)
 
 Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
 """
@@ -39,12 +39,12 @@ struct CountObjective{E,O<:AbstractManifoldObjective,I<:Integer} <:
     objective::O
 end
 function CountObjective(
-    objective::O, counts::Dict{Symbol,I}
+    ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
 ) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldCostObjective{E}}
     return CountObjective{E,O,I}(counts, objective)
 end
 function CountObjective(
-    objective::O, count::AbstractVector{Symbol}, init::I=0
+    ::AbstractManifold, objective::O, count::AbstractVector{Symbol}, init::I=0
 ) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldCostObjective{E}}
     return CountObjective(objective, Dict([symbol => init for symbol in count]))
 end
@@ -192,3 +192,9 @@ end
 # Subgradient
 # Stochastic
 #
+
+function objective_count_factory(
+    M::AbstractManifold, o::AbstractManifoldCostObjective, count::Vector{<:Symbol}
+)
+    return CountObjective(M, o, counts)
+end

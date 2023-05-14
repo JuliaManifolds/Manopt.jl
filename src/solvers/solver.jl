@@ -78,6 +78,7 @@ function decorate_objective!(
     M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kwargs...
 ) where {O<:AbstractManifoldObjective}
     deco_o = ismissing(cache) ? o : objective_cache_factory(M, o, cache)
+    deco_o = ismissing(count) ? deco_o : objective_count_factory(M, o, count)
     return deco_o
 end
 

@@ -260,7 +260,107 @@ end
 get_gradient_function(co::LRUCacheObjective) = get_gradient_function(co.objective)
 
 #
-# CostGradImplementation - ToDo
+# CostGradImplementation
+function get_cost(
+    M::AbstractManifold,
+    sco::LRUCacheObjective{AllocatingEvaluation,<:ManifoldCostGradientObjective},
+    p,
+)
+    #Neither cost not grad cached -> evaluate
+    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_cost(M, co.objective, p)
+    return get!(co.cache[:Cost], p) do
+        c, X = sco.objective.costgrad!!(M, p)
+        #if this is evaluated, we can also set X
+        haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, p)
+        c #but we also set the new cost here
+    end
+end
+function get_cost(
+    M::AbstractManifold,
+    sco::LRUCacheObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
+    p,
+)
+    #Neither cost not grad cached -> evaluate
+    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_cost(M, co.objective, p)
+    return get!(co.cache[:Cost], p) do
+        X = zero_vector(M, p)
+        c, _ = sco.objective.costgrad!!(M, X, p)
+        #if this is evaluated, we can also set X
+        haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, p)
+        c #but we also set the new cost here
+    end
+end
+function get_gradient(
+    M::AbstractManifold,
+    sco::LRUCacheObjective{AllocatingEvaluation,<:ManifoldCostGradientObjective},
+    p,
+)
+    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_gradient(M, co.objective, p)
+    return get!(co.cache[:Gradient], p) do
+        c, X = sco.objective.costgrad!!(M, p)
+        #if this is evaluated, we can also set c
+        haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
+        X #but we also set the new cost here
+    end
+end
+function get_gradient(
+    M::AbstractManifold,
+    sco::LRUCacheObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
+    p,
+)
+    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_gradient(M, co.objective, p)
+    return get!(co.cache[:Gradient], p) do
+        X = zero_vector(M, p)
+        c, _ = sco.objective.costgrad!!(M, X, p)
+        #if this is evaluated, we can also set X
+        haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
+        X # but we also set the new gradient
+    end
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    co::LRUCacheObjective{AllocatingEvaluation,<:ManifoldCostGradientObjective},
+    p,
+)
+    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_gradient!(M, X, co.objective, p)
+    return copyto!(
+        M,
+        X,
+        p,
+        get!(co.cache[:Gradient], p) do
+            c, Y = sco.objective.costgrad!!(M, p)
+            #if this is evaluated, we can also set c
+            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
+            copyto!(M, X, p, Y)
+        end,
+    )
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    co::LRUCacheObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
+    p,
+)
+    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_gradient!(M, X, co.objective, p)
+    return copyto!(
+        M,
+        X,
+        p,
+        get!(co.cache[:Gradient], p) do
+            c, _ = sco.objective.costgrad!!(M, X, p)
+            #if this is evaluated, we can also set X
+            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
+            X # but we also set the new gradient
+        end,
+    )
+end
 
 #
 # Hessian and precon - ToDo
