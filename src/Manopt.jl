@@ -15,7 +15,7 @@ using ColorTypes
 using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
-using LinearAlgebra: Diagonal, I, eigen, eigvals, tril, Symmetric, dot
+using LinearAlgebra: Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky
 using ManifoldDiff:
     adjoint_Jacobi_field,
     adjoint_Jacobi_field!,
@@ -138,6 +138,7 @@ include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
@@ -162,6 +163,7 @@ include("solvers/record_solver.jl")
 include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
+include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
@@ -169,8 +171,6 @@ function __init__()
     @static if !isdefined(Base, :get_extension)
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
-            include("plans/alternating_gradient_plan.jl")
-            include("solvers/alternating_gradient_descent.jl")
         end
         @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
             include("../ext/ManoptPlotsExt/ManoptPlotsExt.jl")
@@ -184,6 +184,7 @@ end
 #
 # General
 export ℝ, ℂ, &, |
+export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
@@ -219,6 +220,7 @@ export AbstractGradientSolverState,
     AbstractHessianSolverState,
     AbstractManoptSolverState,
     AbstractPrimalDualSolverState,
+    AlternatingGradientDescentState,
     AugmentedLagrangianMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
@@ -241,6 +243,7 @@ export AbstractGradientSolverState,
 
 export FrankWolfeCost, FrankWolfeGradient
 export NelderMeadSimplex
+export AlternatingGradient
 #
 # Accessors and helpers for AbstractManoptSolverState
 export default_stepsize
@@ -327,7 +330,9 @@ export DirectionUpdateRule,
     ConjugateGradientBealeRestart
 #
 # Solvers
-export augmented_Lagrangian_method,
+export alternating_gradient_descent,
+    alternating_gradient_descent!,
+    augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
     ChambollePock,
     ChambollePock!,

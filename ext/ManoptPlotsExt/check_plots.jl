@@ -1,14 +1,5 @@
-"""
-plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1,j=length(x))
 
-plot the result from the error check functions, e.g.
-[`check_gradient`](@ref), [`check_differential`](@ref), [`check_Hessian`](@ref)
-on data `x,y` with two comparison lines
-
-1) `line_base` + t`slope`  as the global slope the plot should have
-2) `a` + `b*t` on the interval [`x[i]`, `x[j]`] for some (best fitting) comparison slope
-"""
-function plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1, j=length(x))
+function Manopt.plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1, j=length(x))
     fig = plot(
         x,
         y;

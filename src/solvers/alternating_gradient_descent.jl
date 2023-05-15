@@ -146,6 +146,9 @@ function default_stepsize(M::AbstractManifold, ::Type{AlternatingGradientDescent
     return ArmijoLinesearch(M)
 end
 
+function alternating_gradient_descent end
+function alternating_gradient_descent! end
+
 @doc raw"""
     alternating_gradient_descent(M::ProductManifold, f, grad_f, p=rand(M))
     alternating_gradient_descent(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
@@ -180,7 +183,7 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
 
 !!! note
 
-    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` needs to be loaded.
 
 !!! note
 
@@ -189,24 +192,8 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
     the `i`th components gradient is computed / returned.
 
 """
-alternating_gradient_descent(::ProductManifold, args...; kwargs...)
-function alternating_gradient_descent(
-    M::ProductManifold,
-    f,
-    grad_f::Union{TgF,AbstractVector{<:TgF}},
-    p=rand(M);
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TgF}
-    ago = ManifoldAlternatingGradientObjective(f, grad_f; evaluation=evaluation)
-    return alternating_gradient_descent(M, ago, p; evaluation=evaluation, kwargs...)
-end
-function alternating_gradient_descent(
-    M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p; kwargs...
-)
-    q = copy(M, p)
-    return alternating_gradient_descent!(M, ago, q; kwargs...)
-end
+alternating_gradient_descent(::AbstractManifold, args...; kwargs...)
+
 @doc raw"""
     alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
     alternating_gradient_descent!(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
@@ -225,47 +212,8 @@ you can also pass a [`ManifoldAlternatingGradientObjective`](@ref) `ago` contain
 
 for all optional parameters, see [`alternating_gradient_descent`](@ref).
 """
-alternating_gradient_descent!(M::ProductManifold, args...; kwargs...)
+alternating_gradient_descent!(M::AbstractManifold, args...; kwargs...)
 
-function alternating_gradient_descent!(
-    M::ProductManifold,
-    f,
-    grad_f::Union{TgF,AbstractVector{<:TgF}},
-    p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TgF}
-    agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation=evaluation)
-    return alternating_gradient_descent!(M, agmo, p; evaluation=evaluation, kwargs...)
-end
-function alternating_gradient_descent!(
-    M::ProductManifold,
-    agmo::ManifoldAlternatingGradientObjective,
-    p;
-    inner_iterations::Int=5,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
-                                          StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
-    order_type::Symbol=:Linear,
-    order=collect(1:length(M.manifolds)),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    kwargs...,
-)
-    dagmo = decorate_objective!(M, agmo; kwargs...)
-    dmp = DefaultManoptProblem(M, dagmo)
-    agds = AlternatingGradientDescentState(
-        M,
-        p;
-        inner_iterations=inner_iterations,
-        stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
-        order_type=order_type,
-        order=order,
-        retraction_method=retraction_method,
-    )
-    agds = decorate_state!(agds; kwargs...)
-    return get_solver_return(solve!(dmp, agds))
-end
 function initialize_solver!(
     amp::AbstractManoptProblem, agds::AlternatingGradientDescentState
 )
