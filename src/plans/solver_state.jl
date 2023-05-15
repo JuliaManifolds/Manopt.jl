@@ -235,7 +235,7 @@ _storage_copy_point(::AbstractManifold, p::Number) = StorageRef(p)
 
 Make a copy of tangent vector `X` from manifold `M` for storage in [`StoreStateAction`](@ref).
 """
-_storage_copy_vector(M::AbstractManifold, X) = copy(M, SA_F64[], X)
+_storage_copy_vector(M::AbstractManifold, X) = copy(M, X)
 _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 
 @doc raw"""

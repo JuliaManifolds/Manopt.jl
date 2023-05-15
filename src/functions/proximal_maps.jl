@@ -316,7 +316,7 @@ function prox_TV2(
             "Proximal Map of TV2(M, λ, x, p) not implemented for p=$(p) (requires p=1) on general manifolds.",
         ),
     )
-    PowX = SVector(x)
+    PowX = [x...]
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
     xR = PowX
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
@@ -338,7 +338,7 @@ function prox_TV2!(
             "Proximal Map of TV2(M, λ, x, p) not implemented for p=$(p) (requires p=1) on general manifolds.",
         ),
     )
-    PowX = SVector(x)
+    PowX = [x...]
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
     copyto!(M, y, PowX)
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)

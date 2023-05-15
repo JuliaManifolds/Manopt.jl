@@ -1,0 +1,57 @@
+
+function Manopt.ChambollePockState(
+    M::AbstractManifold,
+    m::P,
+    n::Q,
+    p::P,
+    X::T;
+    N::AbstractManifold=TangentBundle(M),
+    primal_stepsize::Float64=1 / sqrt(8),
+    dual_stepsize::Float64=1 / sqrt(8),
+    acceleration::Float64=0.0,
+    relaxation::Float64=1.0,
+    relax::Symbol=:primal,
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300),
+    variant::Symbol=:exact,
+    update_primal_base::Union{Function,Missing}=missing,
+    update_dual_base::Union{Function,Missing}=missing,
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+    inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
+        N, typeof(p)
+    ),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(n)),
+    vector_transport_method_dual::VTM_Dual=default_vector_transport_method(N, typeof(n)),
+) where {
+    P,
+    Q,
+    T,
+    RM<:AbstractRetractionMethod,
+    IRM<:AbstractInverseRetractionMethod,
+    IRM_Dual<:AbstractInverseRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+    VTM_Dual<:AbstractVectorTransportMethod,
+}
+    return ChambollePockState{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
+        m,
+        n,
+        p,
+        copy(M, p),
+        X,
+        copy(N, X),
+        primal_stepsize,
+        dual_stepsize,
+        acceleration,
+        relaxation,
+        relax,
+        stopping_criterion,
+        variant,
+        update_primal_base,
+        update_dual_base,
+        retraction_method,
+        inverse_retraction_method,
+        inverse_retraction_method_dual,
+        vector_transport_method,
+        vector_transport_method_dual,
+    )
+end

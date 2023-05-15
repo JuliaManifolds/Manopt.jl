@@ -1,15 +1,24 @@
-module ManoptLRUCache
+module ManoptLRUCacheExt
 
 if isdefined(Base, :get_extension)
+    using Manopt
+    using Manopt: AbstractDecoratedManifoldObjective, get_cost_and_gradient
+    import Manopt: get_cost, get_gradient_function, get_gradient, get_gradient!
+    using ManifoldsBase
     using LRUCache
 else
     # imports need to be relative for Requires.jl-based workflows:
     # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
+    using ..Manopt
+    using ..Manopt: AbstractDecoratedManifoldObjective, get_cost_and_gradient
+    import ..Manopt: get_cost, get_gradient_function, get_gradient, get_gradient!
+    using ..ManifoldsBase
     using ..LRUCache
 end
 
 @doc raw"""
     LRUCacheObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
+
 Create a cache for an objective, based on a `NamedTuple` that stores `LRUCaches` for
 
 # Constructor
@@ -155,5 +164,11 @@ end
 
 #
 # Hessian and precon - ToDo
+
+function Manopt.objective_cache_factory(
+    M::AbstractManifold, o, ::Val{:LRU}, cache2::AbstractArray
+)
+    return LRUCacheObjective(M, o, cache2)
+end
 
 end

@@ -9,14 +9,13 @@
 module Manopt
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: mid_point, mid_point!
 
 using ColorSchemes
 using ColorTypes
 using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
-using LinearAlgebra: Diagonal, I, eigen, eigvals, tril
+using LinearAlgebra: Diagonal, I, eigen, eigvals, tril, Symmetric, dot
 using ManifoldDiff:
     adjoint_Jacobi_field,
     adjoint_Jacobi_field!,
@@ -99,6 +98,8 @@ using ManifoldsBase:
     log,
     log!,
     manifold_dimension,
+    mid_point,
+    mid_point!,
     norm,
     number_eltype,
     power_dimensions,
@@ -123,7 +124,6 @@ using Printf
 using Random: shuffle!, rand, randperm
 using Requires
 using SparseArrays
-using StaticArrays
 using Statistics: cor, cov, mean, std
 
 include("plans/plan.jl")
@@ -134,6 +134,7 @@ include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
 include("functions/proximal_maps.jl")
+include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
