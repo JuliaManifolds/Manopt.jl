@@ -1,3 +1,13 @@
+module ManoptLineSearchesExt
+
+
+if isdefined(Base, :get_extension)
+    using LineSearches
+else
+    # imports need to be relative for Requires.jl-based workflows:
+    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
+    using ..LineSearches
+end
 
 """
     LineSearchesStepsize <: Stepsize
@@ -118,4 +128,5 @@ function show(io::IO, cs::LineSearchesStepsize)
         io,
         "LineSearchesStepsize($(cs.linesearch); retraction_method=$(cs.retraction_method), vector_transport_method=$(cs.vector_transport_method))",
     )
+end
 end

@@ -121,7 +121,7 @@ using ManifoldsBase:
     ℝ
 using Markdown
 using Printf
-using Random: shuffle!
+using Random: shuffle!, rand, randperm
 using Requires
 using SparseArrays
 using StaticArrays
@@ -166,50 +166,18 @@ include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
 function __init__()
-    @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
-        using .Manifolds:
-            Circle,
-            Euclidean,
-            Grassmann,
-            GroupManifold,
-            Hyperbolic,
-            PositiveNumbers,
-            ProductManifold,
-            Rotations,
-            SymmetricPositiveDefinite,
-            Stiefel,
-            Sphere,
-            TangentBundle,
-            TangentSpaceAtPoint,
-            FixedRankMatrices,
-            SVDMPoint,
-            UMVTVector,
-            ArrayPowerRepresentation,
-            ProductRepr,
-            submanifold_components,
-            sym_rem,
-            mean
-        import Random: rand, randperm
-        import ManifoldsBase: copy
-        using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
-        # adaptions for Nonmutating manifolds
-        const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
-        include("functions/manifold_functions.jl")
-        include("functions/nonmutating_manifolds_functions.jl")
+    @static if !isdefined(Base, :get_extension)
+        @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+        include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
         include("plans/alternating_gradient_plan.jl")
         include("solvers/alternating_gradient_descent.jl")
-        export mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentState
-        export AlternatingGradient
-        export alternating_gradient_descent, alternating_gradient_descent!
-    end
-    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
-        using .Plots
-        include("helpers/check_plots.jl")
-    end
-    @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
-        using .LineSearches
-        include("ext/LineSearchesExt.jl")
+        end
+        @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+            include("../ext/ManoptPlotsExt/ManoptPlotsExt.jl")
+        end
+        @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+            include("../ext/ManoptLineSearchesExt.jl")
+        end
     end
     return nothing
 end
