@@ -229,6 +229,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ]
     bms.λ = bundle_method_sub_solver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
+    ε_old = bms.ε
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
@@ -239,15 +240,19 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     l = findall(λj -> λj ≤ bms.filter1, bms.λ)
     if !isempty(l)
-        y = bms.bundle[1][1]
+        #y = bms.bundle[1][1]
         deleteat!(bms.bundle, l)
-        s =
-            (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
-            distance(M, bms.bundle[1][1], y)
-        if !isnan(s)
-            bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
+        #s =
+        #    (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+        #    distance(M, bms.bundle[1][1], y)
+        #if !isnan(s)
+        #    bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
+        #end
+        if abs(ε_old - bms.ε) < 1e-6
+            bms.diam = bms.δ * bms.diam
         end
     end
+    ## Check lin errors to not be negative
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
@@ -266,6 +271,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
+    ##
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
