@@ -1,6 +1,5 @@
 module ManoptLineSearchesExt
 
-
 if isdefined(Base, :get_extension)
     using LineSearches
 else
