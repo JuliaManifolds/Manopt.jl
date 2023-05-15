@@ -241,7 +241,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if !isempty(l)
         y = bms.bundle[1][1]
         deleteat!(bms.bundle, l)
-        s = (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y))/distance(M, bms.bundle[1][1], y)
+        s =
+            (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+            distance(M, bms.bundle[1][1], y)
         if !isnan(s)
             bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         end
