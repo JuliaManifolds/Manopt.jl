@@ -17,7 +17,6 @@ using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra: Diagonal, I, eigen, eigvals, tril
-using LRUCache
 using ManifoldDiff:
     adjoint_Jacobi_field,
     adjoint_Jacobi_field!,

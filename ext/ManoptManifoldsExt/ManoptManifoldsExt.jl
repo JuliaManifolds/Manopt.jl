@@ -14,7 +14,7 @@ else
 end
 
 const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
-input("manifold_functions.jl")
-input("nonmutating_manifolds_functions.jl")
+include("manifold_functions.jl")
+include("nonmutating_manifolds_functions.jl")
 
 end
