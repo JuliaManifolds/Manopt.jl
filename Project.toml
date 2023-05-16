@@ -20,22 +20,6 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[weakdeps]
-LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
-LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
-Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
-Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-
-[extensions]
-# name of extension to the left
-# extension dependencies required to load the extension to the right
-# use a list for multiple extension dependencies
-ManoptLineSearchesExt = "LineSearches"
-ManoptManifoldsExt = ["Manifolds", "StaticArrays"]
-ManoptPlotsExt = "Plots"
-ManoptLRUCacheExt = "LRUCache"
-
 [compat]
 ColorSchemes = "3.5.0"
 ColorTypes = "0.9.1, 0.10, 0.11"
@@ -49,10 +33,16 @@ Requires = "0.5, 1"
 StaticArrays = "0.12, 1.0"
 julia = "1.6"
 
+[extensions]
+ManoptLRUCacheExt = "LRUCache"
+ManoptLineSearchesExt = "LineSearches"
+ManoptManifoldsExt = ["Manifolds", "StaticArrays"]
+ManoptPlotsExt = "Plots"
+
 [extras]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -60,3 +50,10 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "ForwardDiff", "Manifolds", "Plots", "LineSearches", "LRUCache"]
+
+[weakdeps]
+LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
