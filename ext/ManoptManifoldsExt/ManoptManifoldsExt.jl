@@ -2,7 +2,7 @@ module ManoptManifoldsExt
 
 if isdefined(Base, :get_extension)
     using Manifolds
-    using ManifoldsBase
+    using ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
     using Manopt
     import Manopt:
         max_stepsize,
@@ -24,7 +24,7 @@ else
     # imports need to be relative for Requires.jl-based workflows:
     # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
     using ..Manifolds
-    using ..ManifoldsBase
+    using ..ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
     using ..Manopt
     import ..Manopt:
         max_stepsize,
