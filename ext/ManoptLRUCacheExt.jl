@@ -1,16 +1,14 @@
 module ManoptLRUCacheExt
 
+using Manopt
+import Manopt: init_caches
+using ManifoldsBase
+
 if isdefined(Base, :get_extension)
-    using Manopt
-    import Manopt: init_caches
-    using ManifoldsBase
     using LRUCache
 else
     # imports need to be relative for Requires.jl-based workflows:
     # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
-    using ..Manopt
-    import ..Manopt: init_caches
-    using ..ManifoldsBase
     using ..LRUCache
 end
 

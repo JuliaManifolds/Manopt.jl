@@ -25,8 +25,8 @@ function grad_TV2(M::NONMUTATINGMANIFOLDS, q, p::Int=1)
     return X
 end
 function prox_TV2(::NONMUTATINGMANIFOLDS, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
-    w = @SVector [1.0, -2.0, 1.0]
-    x = SVector(pointTuple)
+    w = [1.0, -2.0, 1.0]
+    x = [pointTuple...]
     if p == 1 # Theorem 3.5 in Bergmann, Laus, Steidl, Weinmann, 2014.
         sr_dot_xw = sym_rem(sum(x .* w))
         m = min(λ, abs(sr_dot_xw) / (dot(w, w)))

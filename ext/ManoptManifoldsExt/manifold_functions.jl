@@ -49,8 +49,8 @@ function mid_point!(M::Sphere, y, p, q, x)
 end
 
 function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
-    w = @SVector [1.0, -2.0, 1.0]
-    x = SVector(pointTuple)
+    w = [1.0, -2.0, 1.0]
+    x = [pointTuple...]
     if p == 1 # Example 3.2 in Bergmann, Laus, Steidl, Weinmann, 2014.
         m = min.(Ref(λ), abs.(x .* w) / (dot(w, w)))
         s = sign.(sum(x .* w))
