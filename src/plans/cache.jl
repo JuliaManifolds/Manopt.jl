@@ -2,7 +2,7 @@
 # A Simple Cache for Objectives
 #
 @doc raw"""
-     SimpleCachedManifoldObjective{O<:AbstractManifoldGradientObjective{E,TC,TG}, P, T,C} <: AbstractManifoldGradientObjective{E,TC,TG}
+     SimpleManifoldCachedObjective{O<:AbstractManifoldGradientObjective{E,TC,TG}, P, T,C} <: AbstractManifoldGradientObjective{E,TC,TG}
 
 Provide a simple cache for an [`AbstractManifoldGradientObjective`](@ref) that is for a given point `p` this cache
 stores a point `p` and a gradient ``\operatorname{grad} f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
@@ -11,7 +11,7 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
 # Constructor
 
-    SimpleCachedManifoldObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
+    SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
 
 ## Keyword
 * `p` (`rand(M)`) – a point on the manifold to initialize the cache with
@@ -19,7 +19,7 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 * `c` (`get_cost(M, obj, p)` or `0.0`) – a value to store the cost function in `initialize`
 * `initialized` (`true`) – whether to initialize the cached `X` and `c` or not.
 """
-mutable struct SimpleCachedManifoldObjective{
+mutable struct SimpleManifoldCachedObjective{
     E<:AbstractEvaluationType,TC,TG,O<:AbstractManifoldGradientObjective{E,TC,TG},P,T,C
 } <: AbstractDecoratedManifoldObjective{E,O}
     objective::O
@@ -30,7 +30,7 @@ mutable struct SimpleCachedManifoldObjective{
     c_valid::Bool
 end
 
-function SimpleCachedManifoldObjective(
+function SimpleManifoldCachedObjective(
     M::AbstractManifold,
     obj::O;
     initialized=true,
@@ -39,12 +39,12 @@ function SimpleCachedManifoldObjective(
     c=initialized ? get_cost(M, obj, p) : 0.0,
 ) where {E<:AbstractEvaluationType,TC,TG,O<:AbstractManifoldGradientObjective{E,TC,TG}}
     q = copy(M, p)
-    return SimpleCachedManifoldObjective{E,TC,TG,O,typeof(q),typeof(X),typeof(c)}(
+    return SimpleManifoldCachedObjective{E,TC,TG,O,typeof(q),typeof(X),typeof(c)}(
         obj, q, X, initialized, c, initialized
     )
 end
 # Default implementations
-function get_cost(M::AbstractManifold, sco::SimpleCachedManifoldObjective, p)
+function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.c_valid
         # else evaluate cost, invalidate grad if p changed
@@ -56,8 +56,8 @@ function get_cost(M::AbstractManifold, sco::SimpleCachedManifoldObjective, p)
     end
     return sco.c
 end
-get_cost_function(sco::SimpleCachedManifoldObjective) = get_cost_function(sco.objective)
-function get_gradient(M::AbstractManifold, sco::SimpleCachedManifoldObjective, p)
+get_cost_function(sco::SimpleManifoldCachedObjective) = get_cost_function(sco.objective)
+function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         get_gradient!(M, sco.X, sco.objective, p)
@@ -68,7 +68,7 @@ function get_gradient(M::AbstractManifold, sco::SimpleCachedManifoldObjective, p
     end
     return copy(M, p, sco.X)
 end
-function get_gradient!(M::AbstractManifold, X, sco::SimpleCachedManifoldObjective, p)
+function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         get_gradient!(M, sco.X, sco.objective, p)
@@ -80,7 +80,7 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleCachedManifoldObjectiv
     copyto!(M, X, sco.p, sco.X)
     return X
 end
-function get_gradient_function(sco::SimpleCachedManifoldObjective)
+function get_gradient_function(sco::SimpleManifoldCachedObjective)
     return get_gradient_function(sco.objective)
 end
 
@@ -89,7 +89,7 @@ end
 #
 function get_cost(
     M::AbstractManifold,
-    sco::SimpleCachedManifoldObjective{
+    sco::SimpleManifoldCachedObjective{
         AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective
     },
     p,
@@ -105,7 +105,7 @@ function get_cost(
 end
 function get_cost(
     M::AbstractManifold,
-    sco::SimpleCachedManifoldObjective{
+    sco::SimpleManifoldCachedObjective{
         InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective
     },
     p,
@@ -121,7 +121,7 @@ function get_cost(
 end
 function get_gradient(
     M::AbstractManifold,
-    sco::SimpleCachedManifoldObjective{
+    sco::SimpleManifoldCachedObjective{
         AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective
     },
     p,
@@ -138,7 +138,7 @@ function get_gradient(
 end
 function get_gradient(
     M::AbstractManifold,
-    sco::SimpleCachedManifoldObjective{
+    sco::SimpleManifoldCachedObjective{
         InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective
     },
     p,
@@ -156,7 +156,7 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    sco::SimpleCachedManifoldObjective{
+    sco::SimpleManifoldCachedObjective{
         AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective
     },
     p,
@@ -174,7 +174,7 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    sco::SimpleCachedManifoldObjective{
+    sco::SimpleManifoldCachedObjective{
         InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective
     },
     p,
@@ -191,17 +191,17 @@ function get_gradient!(
 end
 
 #
-# CachedManifoldObjective constructor which errors by default since we can only define init
+# ManifoldCachedObjective constructor which errors by default since we can only define init
 # for LRU Caches
 #
 @doc raw"""
-    CachedManifoldObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
+    ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
 
 Create a cache for an objective, based on a `NamedTuple` that stores `LRUCaches` for
 
 # Constructor
 
-    CachedManifoldObjective(M, o::AbstractManifoldObjective, caches::Vector{Symbol}; kwargs...)
+    ManifoldCachedObjective(M, o::AbstractManifoldObjective, caches::Vector{Symbol}; kwargs...)
 
 Create a cache for the [`AbstractManifoldObjective`](@ref) where the Symbols in `caches` indicate,
 which function evaluations to cache.
@@ -214,12 +214,12 @@ which function evaluations to cache.
 * `cache_size`  - (`10`) number of (least recently used) calls to cache
 * `cache_sizes` – (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
 """
-struct CachedManifoldObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
+struct ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
        AbstractDecoratedManifoldObjective{E,P}
     objective::O
     cache::C
 end
-function CachedManifoldObjective(
+function ManifoldCachedObjective(
     M::AbstractManifold,
     objective::O,
     caches::AbstractVector{<:Symbol}=[:Cost];
@@ -232,9 +232,9 @@ function CachedManifoldObjective(
     c = init_caches(
         M, caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
-    return CachedManifoldObjective{E,O,O,typeof(c)}(objective, c)
+    return ManifoldCachedObjective{E,O,O,typeof(c)}(objective, c)
 end
-function CachedManifoldObjective(
+function ManifoldCachedObjective(
     M::AbstractManifold,
     objective::O,
     caches::AbstractVector{<:Symbol}=[:Cost];
@@ -247,7 +247,7 @@ function CachedManifoldObjective(
     c = init_caches(
         M, caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
-    return CachedManifoldObjective{E,O2,O,typeof(c)}(objective, c)
+    return ManifoldCachedObjective{E,O2,O,typeof(c)}(objective, c)
 end
 
 """
@@ -257,7 +257,7 @@ Given a vector of symbols `caches`, this function sets up the
 `NamedTuple` of caches for points/vectors on `M`,
 where `T` is the type of cache to use.
 """
-function init_caches(M, caches, T=Nothing; kwargs...)
+function init_caches(M::AbstractManifold, caches, T=Nothing; kwargs...)
     return throw(DomainError(
         T,
         """
@@ -268,25 +268,25 @@ function init_caches(M, caches, T=Nothing; kwargs...)
     ))
 end
 
-get_gradient_function(co::CachedManifoldObjective) = get_gradient_function(co.objective)
-get_cost_function(co::CachedManifoldObjective) = get_cost_function(co.objective)
+get_gradient_function(co::ManifoldCachedObjective) = get_gradient_function(co.objective)
+get_cost_function(co::ManifoldCachedObjective) = get_cost_function(co.objective)
 
 #
 # Default implementations - (a) check if field exists (b) try to get cache
-function get_cost(M::AbstractManifold, co::CachedManifoldObjective, p)
+function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p)
     return get!(co.cache[:Cost], p) do
         get_cost(M, co.objective, p)
     end
 end
 
-function get_gradient(M::AbstractManifold, co::CachedManifoldObjective, p)
+function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
     return get!(co.cache[:Gradient], p) do
         get_gradient(M, co.objective, p)
     end
 end
-function get_gradient!(M::AbstractManifold, X, co::CachedManifoldObjective, p)
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p)
     copyto!(
         M,
@@ -302,7 +302,7 @@ end
 #
 # CostGradImplementation
 function get_cost(
-    M::AbstractManifold, co::CachedManifoldObjective{E,<:ManifoldCostGradientObjective}, p
+    M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AbstractEvaluationType}
     #Neither cost not grad cached -> evaluate
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
@@ -315,7 +315,7 @@ function get_cost(
     end
 end
 function get_gradient(
-    M::AbstractManifold, co::CachedManifoldObjective{E,<:ManifoldCostGradientObjective}, p
+    M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AllocatingEvaluation}
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_gradient(M, co.objective, p)
@@ -329,7 +329,7 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    co::CachedManifoldObjective{E,<:ManifoldCostGradientObjective},
+    co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective},
     p,
 ) where {E}
     All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
@@ -358,8 +358,8 @@ on the `AbstractManifold M` based on the symbol `cache`.
 
 The following caches are available
 
-* `:Simple` generates a [`SimpleCachedManifoldObjective`](@ref)
-* `:LRU` generates a [`CachedManifoldObjective`](@ref) where you should use the form
+* `:Simple` generates a [`SimpleManifoldCachedObjective`](@ref)
+* `:LRU` generates a [`ManifoldCachedObjective`](@ref) where you should use the form
   `(:LRU, [:Cost, :Gradient])` to specify what should be cached or
   `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size.
   Here this variant defaults to `(:LRU, [:Cost, :Gradient], 100)`,
@@ -368,9 +368,9 @@ The following caches are available
 [^1] this cache requires [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl) to be loaded as well.
 """
 function objective_cache_factory(M, o, cache::Symbol)
-    (cache === :Simple) && return SimpleCachedManifoldObjective(M, o)
+    (cache === :Simple) && return SimpleManifoldCachedObjective(M, o)
     (cache === :LRU) &&
-        return CachedManifoldObjective(M, o, [:Cost, :Gradient]; cache_size=100)
+        return ManifoldCachedObjective(M, o, [:Cost, :Gradient]; cache_size=100)
     return o
 end
 
@@ -386,18 +386,18 @@ the optional third is passed down as keyword arguments.
 For all available caches see the simpler variant with symbols.
 """
 function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
-    (cache[1] === :Simple) && return SimpleCachedManifoldObjective(M, o; cache[3]...)
+    (cache[1] === :Simple) && return SimpleManifoldCachedObjective(M, o; cache[3]...)
     if (cache[1] === :LRU)
         if (cacge[3] isa Integer)
-            return CachedManifoldObjective(M, o, cache[2]; cache_size=cache[3])
+            return ManifoldCachedObjective(M, o, cache[2]; cache_size=cache[3])
         else
-            return CachedManifoldObjective(M, o, cache[2]; cache[3]...)
+            return ManifoldCachedObjective(M, o, cache[2]; cache[3]...)
         end
     end
     return o
 end
 function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray})
-    (cache[1] === :Simple) && return SimpleCachedManifoldObjective(M, o)
-    (cache[1] === :LRU) && return CachedManifoldObjective(M, o, cache[2])
+    (cache[1] === :Simple) && return SimpleManifoldCachedObjective(M, o)
+    (cache[1] === :LRU) && return ManifoldCachedObjective(M, o, cache[2])
     return o
 end

@@ -64,7 +64,7 @@ decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators.
 A specific one is used to activate certain decorators.
 
-* `cache` – (`missing`) currently only supports the [`SimpleCachedManifoldObjective`](@ref)
+* `cache` – (`missing`) currently only supports the [`SimpleManifoldCachedObjective`](@ref)
   which is activated by either specifying the symbol `:Simple` or the tuple
   (`:Simple, kwargs...`) to pass down keyword arguments
 

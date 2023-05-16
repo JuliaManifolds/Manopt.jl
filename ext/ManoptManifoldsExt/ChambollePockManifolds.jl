@@ -5,10 +5,7 @@ function Manopt.ChambollePockState(
     p::P,
     X::T;
     N::AbstractManifold=TangentBundle(M),
-    kwargs...
-) where {
-    P,
-    Q,
-    T}
+    kwargs...,
+) where {P,Q,T}
     return ChambollePockState(M, N, m, n, p, X; kwargs...)
 end

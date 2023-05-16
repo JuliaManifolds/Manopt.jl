@@ -170,10 +170,10 @@ include("deprecated.jl")
 function __init__()
     @static if isdefined(Base.Experimental, :register_error_hint)
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if exc.f === CachedManifoldObjective
+            if exc.f === ManifoldCachedObjective
                 print(
                     io,
-                    "\n The CachedManifoldObjective requires loading LRUCache, for example caaling",
+                    "\n The ManifoldCachedObjective requires loading LRUCache, for example caaling",
                 )
                 printstyled(io, "`using LRUCache`"; color=:cyan)
             end
@@ -223,8 +223,8 @@ export AbstractManifoldGradientObjective,
     ManifoldSubgradientObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
-    SimpleCachedManifoldObjective,
-    CachedManifoldObjective
+    SimpleManifoldCachedObjective,
+    ManifoldCachedObjective
 #
 # Evaluation & Problems - old
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type

@@ -15,8 +15,10 @@ else
 end
 
 # introduce LRU even as default.
-function Manopt.init_caches(M::AbstractManifold, caches::AbstractVector{<:Symbol}, kwargs...)
-    return Manopt.init_caches(M, caches, LRUCaches.LRU; kwargs...)
+function Manopt.init_caches(
+    M::AbstractManifold, caches::AbstractVector{<:Symbol}; kwargs...
+)
+    return Manopt.init_caches(M, caches, LRU; kwargs...)
 end
 
 """
@@ -34,7 +36,7 @@ Given a vector of symbols `caches`, this function sets up the
 * `cache_sizes` – (`Dict{Symbol,Int}()`) a dictionary of sizes for the `caches` to specify different (non-default) sizes
 """
 function Manopt.init_caches(
-    M,
+    M::AbstractManifold,
     caches::AbstractVector{<:Symbol},
     ::Type{LRU};
     p::P=rand(M),

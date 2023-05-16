@@ -43,18 +43,18 @@ end
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         s1 = objective_cache_factory(M, mgoa, :Simple)
-        @test s1 isa SimpleCachedManifoldObjective
+        @test s1 isa SimpleManifoldCachedObjective
         @test objective_cache_factory(M, mgoa, :none) == mgoa
         # pass a keyword
         s2 = objective_cache_factory(M, mgoa, (:Simple, [], [:initialized => false]))
-        @test s2 isa SimpleCachedManifoldObjective
+        @test s2 isa SimpleManifoldCachedObjective
         @test Manopt.is_objective_decorator(s2)
         # but not initialized
         @test !s2.X_valid
         @test !s2.c_valid
         @test objective_cache_factory(M, mgoa, (:none, [], [])) == mgoa
     end
-    @testset "SimpleCachedManifoldObjective" begin
+    @testset "SimpleManifoldCachedObjective" begin
         M = Euclidean(3)
         p = zeros(3)
         q = ones(3)
@@ -64,7 +64,7 @@ end
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         mcgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
-        sco1 = Manopt.SimpleCachedManifoldObjective(M, mgoa; p=p)
+        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=p)
         # We evaluated on init -> 1
         @test get_gradient_function(sco1).i == 1
         @test get_cost_function(sco1).i == 1
@@ -90,7 +90,7 @@ end
         mgoi = ManifoldGradientObjective(
             TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
         )
-        sco2 = Manopt.SimpleCachedManifoldObjective(M, mgoi; p=p, initialized=false)
+        sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; p=p, initialized=false)
         # We did not evaluate on init -> 1st eval
         @test get_gradient_function(sco2).i == 0
         @test get_cost_function(sco2).i == 0
@@ -111,7 +111,7 @@ end
         @test X == r
 
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
-        sco3 = Manopt.SimpleCachedManifoldObjective(M, mcgoa; p=p, initialized=false)
+        sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; p=p, initialized=false)
         # We do not evaluate on init -> still zero
         @test sco3.objective.costgrad!!.i == 0
         @test get_gradient(M, sco3, p) == p
@@ -139,7 +139,7 @@ end
         mcgoi = ManifoldCostGradientObjective(
             TestCostGradCount(0); evaluation=InplaceEvaluation()
         )
-        sco4 = Manopt.SimpleCachedManifoldObjective(M, mcgoi; p=p)
+        sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p=p)
         # We evaluated on init -> evaluates twice
         @test sco4.objective.costgrad!!.i == 2
         @test get_gradient(M, sco4, p) == p
@@ -163,7 +163,7 @@ end
         @test get_gradient(M, sco4, s) == s # cached
         @test sco4.objective.costgrad!!.i == 5
     end
-    @testset "CachedManifoldObjective" begin
+    @testset "ManifoldCachedObjective" begin
         M = Sphere(2)
         A = [2.0 1.0 0.0; 1.0 2.0 1.0; 0.0 1.0 2.0]
         f(M, p) = p' * A * p
