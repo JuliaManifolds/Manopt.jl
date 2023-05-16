@@ -168,6 +168,20 @@ include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
 function __init__()
+    @static if isdefined(Base.Experimental, :register_error_hint)
+        Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
+            if exc.f === CachedManifoldObjective
+                print(
+                    io,
+                    "\n The CachedManifoldObjective requires loading LRUCache, for example caaling",
+                )
+                printstyled(io, "`using LRUCache`"; color=:cyan)
+            end
+        end
+    end
+    #
+    # Requires fallback for Julia < 1.9
+    #
     @static if !isdefined(Base, :get_extension)
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
@@ -209,8 +223,8 @@ export AbstractManifoldGradientObjective,
     ManifoldSubgradientObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
-    SimpleCacheObjective,
-    LRUCacheObjective
+    SimpleCachedManifoldObjective,
+    CachedManifoldObjective
 #
 # Evaluation & Problems - old
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type

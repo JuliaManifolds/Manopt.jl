@@ -171,6 +171,8 @@ _This feature was just recently introduced in Manopt 0.4 and might still be a li
 The `cache::Symbol=` keyword argument of the solvers might be extended or still change slightly for example._
 
 ```@docs
-SimpleCacheObjective
+SimpleCachedManifoldObjective
 objective_cache_factory
 ```
+
+If you load [`LRUCache.jl](objective_cache_factory)

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* A `LRUCacheObjective` as a decorator for objectives to cache results of calls using an Least Recently Used (LRU) cache.
+* A `CachedManifoldObjective` as a decorator for objectives to cache results of calls using an Least Recently Used (LRU) cache.
   For now this works with cost and gradient evaluations
 * A `CountObjective` as a decorator for objectives to enable counting of calls to for example the cost and the gradient
 
