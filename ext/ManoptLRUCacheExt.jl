@@ -2,8 +2,6 @@ module ManoptLRUCacheExt
 
 if isdefined(Base, :get_extension)
     using Manopt
-    using Manopt: AbstractDecoratedManifoldObjective, get_cost_and_gradient
-    import Manopt: get_cost, get_gradient_function, get_gradient, get_gradient!
     import Manopt: init_caches
     using ManifoldsBase
     using LRUCache
@@ -11,16 +9,14 @@ else
     # imports need to be relative for Requires.jl-based workflows:
     # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
     using ..Manopt
-    using ..Manopt: AbstractDecoratedManifoldObjective, get_cost_and_gradient
-    import ..Manopt: get_cost, get_gradient_function, get_gradient, get_gradient!
-    import ..Manopt: CachedManifoldObjective
+    import ..Manopt: init_caches
     using ..ManifoldsBase
     using ..LRUCache
 end
 
 # introduce LRU even as default.
-function init_caches(M::AbstractManifold, caches::AbstractVector{<:Symbol}, kwargs...)
-    return init_caches(M, caches, LRUCaches.LRU; kwargs...)
+function Manopt.init_caches(M::AbstractManifold, caches::AbstractVector{<:Symbol}, kwargs...)
+    return Manopt.init_caches(M, caches, LRUCaches.LRU; kwargs...)
 end
 
 """
@@ -37,7 +33,7 @@ Given a vector of symbols `caches`, this function sets up the
 * `cache_size` - (`10`)  a default cache size to use
 * `cache_sizes` – (`Dict{Symbol,Int}()`) a dictionary of sizes for the `caches` to specify different (non-default) sizes
 """
-function init_caches(
+function Manopt.init_caches(
     M,
     caches::AbstractVector{<:Symbol},
     ::Type{LRU};

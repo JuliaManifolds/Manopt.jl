@@ -398,6 +398,6 @@ function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:Abs
 end
 function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray})
     (cache[1] === :Simple) && return SimpleCachedManifoldObjective(M, o)
-    (cache[1] === :LRU) && return objective_cache_factory(M, o, Val(:LRU), cache[2])
+    (cache[1] === :LRU) && return CachedManifoldObjective(M, o, cache[2])
     return o
 end
