@@ -168,17 +168,6 @@ include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
 function __init__()
-    @static if isdefined(Base.Experimental, :register_error_hint)
-        Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if exc.f === ManifoldCachedObjective
-                print(
-                    io,
-                    "\n The ManifoldCachedObjective requires loading LRUCache, for example caaling",
-                )
-                printstyled(io, "`using LRUCache`"; color=:cyan)
-            end
-        end
-    end
     #
     # Requires fallback for Julia < 1.9
     #
