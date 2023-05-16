@@ -192,6 +192,9 @@ function __init__()
         @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
             include("../ext/ManoptLineSearchesExt.jl")
         end
+        @require LRUCaches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+            include("../ext/ManoptLRUCacheExt.jl")
+        end
     end
     return nothing
 end
