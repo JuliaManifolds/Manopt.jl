@@ -25,7 +25,7 @@ abstract type AbstractManifoldObjective{E<:AbstractEvaluationType} end
 @doc raw"""
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
 
-A common supertype for all decorators of [`AbstractManifoldObjective`]()@ref)s to simplify dispatch.
+A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
     The second parameter should refer to the undecorated objective (i.e. the most inner one).
 """
 abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective} <:
@@ -89,18 +89,23 @@ function is_objective_decorator(s::AbstractManifoldObjective)
 end
 
 @doc raw"""
-    get_objective(o::AbstractManifoldObjective)
+    get_objective(o::AbstractManifoldObjective, recursive=true)
 
-return the undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
+return the (one step) undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
 As long as your decorated objective stores the objetive within `o.objective` and
 the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
 the internal state are extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
-`o.objective`. Overwrtie `_get_objective(o, ::Val{true}) to change this bevahiour for your objective `o`.
+`o.objective`. Overwrtie `_get_objective(o, ::Val{true}, recursive) to change this bevahiour for your objective `o`
+for both the recursive and the nonrecursive case.
+
+If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
-function get_objective(o::AbstractManifoldObjective)
-    return _get_objective(o, dispatch_objective_decorator(o))
+function get_objective(o::AbstractManifoldObjective, recursive=true)
+    return _get_objective(o, dispatch_objective_decorator(o), recursive)
 end
-_get_objective(o::AbstractManifoldObjective, ::Val{false}) = o
-_get_objective(o::AbstractManifoldObjective, ::Val{true}) = get_objective(o.objective)
+_get_objective(o::AbstractManifoldObjective, ::Val{false}, rec) = o
+function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec)
+    return rec ? get_objective(o.objective) : o.objective
+end

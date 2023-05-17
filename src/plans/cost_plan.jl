@@ -44,7 +44,7 @@ function get_cost(M::AbstractManifold, mco::AbstractManifoldCostObjective, p)
     return get_cost_function(mco)(M, p)
 end
 function get_cost(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
-    return get_cost(M, admo.objective, p)
+    return get_cost(M, get_objective(admo, false), p)
 end
 
 @doc raw"""
@@ -54,5 +54,5 @@ return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) 
 """
 get_cost_function(mco::AbstractManifoldCostObjective) = mco.cost
 function get_cost_function(admo::AbstractDecoratedManifoldObjective)
-    return get_cost_function(admo.objective)
+    return get_cost_function(get_objective(admo, false))
 end

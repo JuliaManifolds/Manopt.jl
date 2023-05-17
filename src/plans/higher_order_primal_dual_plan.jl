@@ -238,6 +238,11 @@ function get_differential_primal_prox(
     pdsno.diff_prox_f!!(M, Y, σ, p, X)
     return Y
 end
+function get_differential_primal_prox(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, σ, p, X
+)
+    return get_differential_primal_prox(M, get_objective(admo, false), σ, p, X)
+end
 function get_differential_primal_prox!(
     M::AbstractManifold,
     Y,
@@ -259,6 +264,11 @@ function get_differential_primal_prox!(
 )
     pdsno.diff_prox_f!!(M, Y, σ, p, X)
     return Y
+end
+function get_differential_primal_prox!(
+    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, σ, p, X
+)
+    return get_differential_primal_prox!(M, Y, get_objective(admo, false), σ, p, X)
 end
 
 @doc raw"""
@@ -313,6 +323,11 @@ function get_differential_dual_prox(
     pdsno.diff_prox_g_dual!!(N, η, n, τ, X, ξ)
     return η
 end
+function get_differential_dual_prox(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, n, τ, X, ξ
+)
+    return get_differential_dual_prox(M, get_objective(admo, false), n, τ, X, ξ)
+end
 function get_differential_dual_prox!(
     N::AbstractManifold,
     η,
@@ -336,4 +351,9 @@ function get_differential_dual_prox!(
 )
     pdsno.diff_prox_g_dual!!(N, η, n, τ, X, ξ)
     return η
+end
+function get_differential_dual_prox!(
+    M::AbstractManifold, η, admo::AbstractDecoratedManifoldObjective, n, τ, X, ξ
+)
+    return get_differential_dual_prox(M, η, get_objective(admo, false), n, τ, X, ξ)
 end

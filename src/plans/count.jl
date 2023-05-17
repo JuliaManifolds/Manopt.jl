@@ -96,7 +96,9 @@ end
 function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, m)
     return error("It seems $o does not provide access to a `CountObjective`.")
 end
-_get_count(o::AbstractManifoldObjective, ::Val{true}, s, m) = get_count(o.objective, s, m)
+function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, m)
+    return get_count(get_objective(o, false), s, m)
+end
 
 function get_count(co::CountObjective, s::Symbol, i, mode::Symbol=:None)
     if !haskey(co.counts, s)
@@ -126,7 +128,7 @@ function _get_count(o::AbstractManifoldObjective, ::Val{false}, s, i, m)
     return error("It seems $o does not provide access to a `CountObjective`.")
 end
 function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, i, m)
-    return get_count(o.objective, s, i, m)
+    return get_count(get_objective(o, false), s, i, m)
 end
 
 #

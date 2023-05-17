@@ -70,7 +70,7 @@ end
 function get_subtrahend_gradient(
     M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
 )
-    return get_subtrahend_gradient(M, admo.objective, p)
+    return get_subtrahend_gradient(M, get_objective(admo, false), p)
 end
 
 function get_subtrahend_gradient!(
@@ -89,7 +89,7 @@ end
 function get_subtrahend_gradient!(
     M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
 )
-    return get_subtrahend_gradient!(M, X, admo.objective, p)
+    return get_subtrahend_gradient!(M, X, get_objective(admo, false), p)
 end
 
 @doc raw"""

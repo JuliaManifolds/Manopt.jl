@@ -113,7 +113,7 @@ function get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolver
 end
 #carefully undecorate both and check whether a solver/obejctive return happens
 function _get_solver_return(o::AbstractManifoldObjective, s, ::Val{true})
-    return get_solver_return(o.objective, s)
+    return get_solver_return(get_objective(o, false), s)
 end
 _get_solver_return(::AbstractManifoldObjective, s, ::Val{false}) = get_solver_return(s)
 function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)

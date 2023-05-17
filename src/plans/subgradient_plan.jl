@@ -63,6 +63,10 @@ function get_subgradient(
     X = zero_vector(M, p)
     return sgo.subgradient!!(M, X, p)
 end
+function get_subgradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_subgradient(M, get_objective(admo, false), p)
+end
+
 function get_subgradient!(
     M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
 )
@@ -74,4 +78,9 @@ function get_subgradient!(
 )
     sgo.subgradient!!(M, X, p)
     return X
+end
+function get_subgradient!(
+    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
+)
+    return get_subgradient(M, X, get_objective(admo, false), p)
 end

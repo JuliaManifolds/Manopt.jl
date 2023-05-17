@@ -18,7 +18,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 """
 get_gradient_function(amgo::AbstractManifoldGradientObjective) = amgo.gradient!!
 function get_gradient_function(admo::AbstractDecoratedManifoldObjective)
-    return get_gradient_function(admo.objective)
+    return get_gradient_function(get_objective(admo, false))
 end
 
 @doc raw"""
@@ -156,7 +156,7 @@ vector `X` comes second.
 get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective, p)
 
 function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient(M, admo.objective, p)
+    return get_gradient(M, get_objective(admo, false), p)
 end
 function get_gradient(
     M::AbstractManifold, mgo::AbstractManifoldGradientObjective{AllocatingEvaluation}, p
@@ -176,7 +176,7 @@ function get_gradient(M::AbstractManifold, mcgo::ManifoldCostGradientObjective, 
 end
 
 function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient!(M, X, admo.objective, p)
+    return get_gradient!(M, X, get_objective(admo, false), p)
 end
 
 function get_gradient!(

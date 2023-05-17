@@ -144,6 +144,12 @@ function get_primal_prox(
     q = allocate_result(M, get_primal_prox, p)
     return apdmo.prox_f!!(M, q, σ, p)
 end
+function get_primal_prox(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, σ, p
+)
+    return get_primal_prox(M, get_objective(admo, false), σ, p)
+end
+
 function get_primal_prox!(
     M::AbstractManifold,
     q,
@@ -163,6 +169,11 @@ function get_primal_prox!(
 )
     apdmo.prox_f!!(M, q, σ, p)
     return q
+end
+function get_primal_prox!(
+    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, σ, p
+)
+    return get_primal_prox!(M, q, get_objective(admo, false), σ, p)
 end
 
 @doc raw"""
@@ -207,6 +218,12 @@ function get_dual_prox(
     apdmo.prox_g_dual!!(M, Y, n, τ, X)
     return Y
 end
+function get_dual_prox(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, n, τ, X
+)
+    return get_dual_prox(M, get_objective(admo, false), n, τ, X)
+end
+
 function get_dual_prox!(
     M::AbstractManifold,
     Y,
@@ -228,6 +245,11 @@ function get_dual_prox!(
 )
     apdmo.prox_g_dual!!(M, Y, n, τ, X)
     return Y
+end
+function get_dual_prox!(
+    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, n, τ, X
+)
+    return get_dual_prox(M, Y, get_objective(admo, false), n, τ, X)
 end
 
 @doc raw"""
@@ -275,6 +297,17 @@ function linearized_forward_operator(
     apdmo.linearized_forward_operator!!(M, Y, m, X)
     return Y
 end
+function linearized_forward_operator(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    X,
+    n,
+)
+    return linearized_forward_operator(M, N, get_objective(admo, false), m, X, n)
+end
+
 function linearized_forward_operator!(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -298,6 +331,17 @@ function linearized_forward_operator!(
 )
     apdmo.linearized_forward_operator!!(M, Y, m, X)
     return Y
+end
+function linearized_forward_operator!(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    Y,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    X,
+    n,
+)
+    return linearized_forward_operator!(M, N, Y, get_objetctive(admo, false), m, X, n)
 end
 
 @doc raw"""
@@ -338,6 +382,12 @@ function forward_operator(
     apdmo.Λ!!(M, q, p)
     return q
 end
+function forward_operator(
+    M::AbstractManifold, N::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
+)
+    return forward_operator(M, N, get_objective(admo, false), p)
+end
+
 function forward_operator!(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -357,6 +407,11 @@ function forward_operator!(
 )
     apdmo.Λ!!(M, q, p)
     return q
+end
+function forward_operator!(
+    M::AbstractManifold, N::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, p
+)
+    return forward_operator!(M, N, q, get_objective(admo, false), p)
 end
 
 @doc raw"""
@@ -382,7 +437,6 @@ function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
         get_manifold(tmp, 1), get_manifold(tmp, 2), X, get_objective(tmp), m, n, Y
     )
 end
-
 function adjoint_linearized_operator(
     ::AbstractManifold,
     N::AbstractManifold,
@@ -405,6 +459,17 @@ function adjoint_linearized_operator(
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X
 end
+function adjoint_linearized_operator(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    n,
+    Y,
+)
+    return adjoint_linearized_operator(M, N, get_objective(admo, false), m, n, Y)
+end
+
 function adjoint_linearized_operator!(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -428,6 +493,17 @@ function adjoint_linearized_operator!(
 )
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X
+end
+function adjoint_linearized_operator!(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    X,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    n,
+    Y,
+)
+    return adjoint_linearized_operator!(M, N, X, get_objective(admo, false), m, n, Y)
 end
 
 @doc raw"""
