@@ -94,7 +94,7 @@ function alternating_gradient_descent!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
 )
-    dagmo = decorate_objective!(M, agmo; kwargs...)
+    dagmo = Manopt.decorate_objective!(M, agmo; kwargs...)
     dmp = DefaultManoptProblem(M, dagmo)
     agds = AlternatingGradientDescentState(
         M,
@@ -106,7 +106,7 @@ function alternating_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    agds = decorate_state!(agds; kwargs...)
-    solve!(dmp, agds)
-    return get_solver_return(get_objective(dmp), agds)
+    agds = Manopt.decorate_state!(agds; kwargs...)
+    Manopt.solve!(dmp, agds)
+    return Manopt.get_solver_return(get_objective(dmp), agds)
 end
