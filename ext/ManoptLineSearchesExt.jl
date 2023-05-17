@@ -1,7 +1,7 @@
 module ManoptLineSearchesExt
 
 using Manopt
-using Manopt: LineSearchesStepsize
+import Manopt: LineSearchesStepsize
 using ManifoldsBase
 
 if isdefined(Base, :get_extension)
