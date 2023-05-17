@@ -43,6 +43,9 @@ By default this implementation assumed that the cost is stored within `mco.cost`
 function get_cost(M::AbstractManifold, mco::AbstractManifoldCostObjective, p)
     return get_cost_function(mco)(M, p)
 end
+function get_cost(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_cost(M, admo.objective, p)
+end
 
 @doc raw"""
     get_cost_function(amco::AbstractManifoldCostObjective)

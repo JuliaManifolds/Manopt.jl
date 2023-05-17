@@ -67,6 +67,12 @@ function get_subtrahend_gradient(
     X = zero_vector(M, p)
     return doco.∂h!!(M, X, p)
 end
+function get_subtrahend_gradient(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
+)
+    return get_subtrahend_gradient(M, admo.objective, p)
+end
+
 function get_subtrahend_gradient!(
     M::AbstractManifold,
     X,
@@ -79,6 +85,11 @@ function get_subtrahend_gradient!(
     M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
 )
     return doco.∂h!!(M, X, p)
+end
+function get_subtrahend_gradient!(
+    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
+)
+    return get_subtrahend_gradient!(M, X, admo.objective, p)
 end
 
 @doc raw"""

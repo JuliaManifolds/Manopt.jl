@@ -155,6 +155,9 @@ vector `X` comes second.
 """
 get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective, p)
 
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradient(M, admo.objective, p)
+end
 function get_gradient(
     M::AbstractManifold, mgo::AbstractManifoldGradientObjective{AllocatingEvaluation}, p
 )
@@ -170,6 +173,10 @@ end
 function get_gradient(M::AbstractManifold, mcgo::ManifoldCostGradientObjective, p)
     _, X = get_cost_and_gradient(M, mcgo, p)
     return X
+end
+
+function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradient!(M, X, admo.objective, p)
 end
 
 function get_gradient!(

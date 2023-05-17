@@ -73,6 +73,10 @@ end
 function get_hessian!(amp::AbstractManoptProblem, Y, p, X)
     return get_hessian!(get_manifold(amp), Y, get_objective(amp), p, X)
 end
+
+function get_hessian(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X)
+    return get_hessian(M, admo.objective, p, X)
+end
 function get_hessian(
     M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
 )
@@ -84,6 +88,11 @@ function get_hessian(
     Y = zero_vector(M, p)
     mho.hessian!!(M, Y, p, X)
     return Y
+end
+function get_hessian!(
+    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+)
+    return get_hessian!(M, Y, admo.objective, p, X)
 end
 function get_hessian!(
     M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
@@ -133,11 +142,22 @@ function get_preconditioner(
     mho.preconditioner!!(M, Y, p, X)
     return Y
 end
+function get_preconditioner(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+)
+    return get_preconditioner(M, admo.objective, p, X)
+end
+
 function get_preconditioner!(
     M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
 )
     copyto!(M, Y, p, mho.preconditioner!!(M, p, X))
     return Y
+end
+function get_preconditioner!(
+    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, p, X
+)
+    return get_preconditioner!(M, Y, admo.objective, p, X)
 end
 function get_preconditioner!(
     M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p, X
