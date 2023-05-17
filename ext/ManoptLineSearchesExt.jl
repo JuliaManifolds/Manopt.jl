@@ -67,11 +67,4 @@ function (cs::Manopt.LineSearchesStepsize)(
     end
 end
 
-function Base.show(io::IO, cs::Manopt.LineSearchesStepsize)
-    return print(
-        io,
-        "LineSearchesStepsize($(cs.linesearch); retraction_method=$(cs.retraction_method), vector_transport_method=$(cs.vector_transport_method))",
-    )
-end
-
 end
