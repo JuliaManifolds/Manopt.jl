@@ -180,8 +180,9 @@ function conjugate_gradient_descent!(
         vector_transport_method,
         X,
     )
-    cgs = decorate_state!(cgs; kwargs...)
-    return get_solver_return(solve!(dmp, cgs))
+    dcgs = decorate_state!(cgs; kwargs...)
+    solve!(dmp, dcgs)
+    return get_solver_return(get_objective(dmp),dcgs)
 end
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)

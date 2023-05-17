@@ -107,5 +107,6 @@ function alternating_gradient_descent!(
         retraction_method=retraction_method,
     )
     agds = decorate_state!(agds; kwargs...)
-    return get_solver_return(solve!(dmp, agds))
+    solve!(dmp, agds)
+    return get_solver_return(get_objective(dmp), agds)
 end

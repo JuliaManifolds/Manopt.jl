@@ -314,8 +314,9 @@ function particle_swarm!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state!(pss; kwargs...)
-    return get_solver_return(solve!(mp, o))
+    dpss = decorate_state!(pss; kwargs...)
+    solve!(mp, dpss)
+    return get_solver_return(get_objective(mp), dpss)
 end
 
 #

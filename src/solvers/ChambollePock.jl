@@ -315,7 +315,7 @@ function ChambollePock!(
     )
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
-    o = ChambollePockState(
+    cps = ChambollePockState(
         M,
         m,
         n,
@@ -335,8 +335,9 @@ function ChambollePock!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state!(o; kwargs...)
-    return get_solver_return(solve!(tmp, o))
+    dcps = decorate_state!(cps; kwargs...)
+    solve!(tmp, dcps)
+    return get_solver_return(get_objective(tmp),dcps)
 end
 
 function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end

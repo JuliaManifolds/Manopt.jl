@@ -319,8 +319,9 @@ function quasi_Newton!(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    qns = decorate_state!(qns; kwargs...)
-    return get_solver_return(solve!(mp, qns))
+    dqns = decorate_state!(qns; kwargs...)
+    solve!(mp, dqns)
+    return get_solver_return(get_objective(mp), dqns)
 end
 function initialize_solver!(p::AbstractManoptProblem, s::QuasiNewtonState)
     s.X = get_gradient(p, s.p)

@@ -264,8 +264,9 @@ function stochastic_gradient_descent!(
         order=order,
         retraction_method=retraction_method,
     )
-    sgds = decorate_state!(sgds; kwargs...)
-    return get_solver_return(solve!(mp, sgds))
+    dsgds = decorate_state!(sgds; kwargs...)
+    solve!(mp, dsgds)
+    return get_solver_return(get_objective(mp), dsgds)
 end
 function initialize_solver!(::AbstractManoptProblem, s::StochasticGradientDescentState)
     s.k = 1

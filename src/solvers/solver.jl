@@ -84,10 +84,12 @@ function decorate_objective!(
         Tuple{Symbol,<:AbstractArray,<:AbstractArray},
     }=missing,
     count::Union{Missing,Vector{Symbol}}=missing,
+    return_objective=false,
     kwargs...,
 ) where {O<:AbstractManifoldObjective}
     deco_o = ismissing(cache) ? o : objective_cache_factory(M, o, cache)
     deco_o = ismissing(count) ? deco_o : objective_count_factory(M, o, count)
+    deco_o = return_objective ? ReturnManifoldObjective(deco_o) : deco_o
     return deco_o
 end
 

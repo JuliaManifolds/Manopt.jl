@@ -205,8 +205,9 @@ function subgradient_method!(
         stepsize=stepsize,
         retraction_method=retraction_method,
     )
-    sgs = decorate_state!(sgs; kwargs...)
-    return get_solver_return(solve!(mp, sgs))
+    dsgs = decorate_state!(sgs; kwargs...)
+    solve!(mp, dsgs)
+    return get_solver_return(get_objective(mp),dsgs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)
     M = get_manifold(mp)

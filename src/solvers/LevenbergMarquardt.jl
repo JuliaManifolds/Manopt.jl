@@ -181,8 +181,9 @@ function LevenbergMarquardt!(
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
     )
-    lms = decorate_state!(lms; debug=debug, kwargs...)
-    return get_solver_return(solve!(nlsp, lms))
+    dlms = decorate_state!(lms; debug=debug, kwargs...)
+    solve!(nlsp, dlms)
+    return get_solver_return(get_objective(nlsp),dlms)
 end
 #
 # Solver functions

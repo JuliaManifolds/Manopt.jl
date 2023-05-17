@@ -132,8 +132,9 @@ function cyclic_proximal_point!(
     cpps = CyclicProximalPointState(
         M, p; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
-    cpps = decorate_state!(cpps; kwargs...)
-    return get_solver_return(solve!(dmp, cpps))
+    dcpps = decorate_state!(cpps; kwargs...)
+    solve!(dmp, dcpps)
+    return get_solver_return(get_objective(dmp),dcpps)
 end
 function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)
     c = length(get_objective(amp).proximal_maps!!)

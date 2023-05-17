@@ -474,8 +474,9 @@ function trust_regions!(
         augmentation_threshold=augmentation_threshold,
         (project!)=project!,
     )
-    trs = decorate_state!(trs; kwargs...)
-    return get_solver_return(solve!(mp, trs))
+    dtrs = decorate_state!(trs; kwargs...)
+    solve!(mp, dtrs)
+    return get_solver_return(get_objective(mp), dtrs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

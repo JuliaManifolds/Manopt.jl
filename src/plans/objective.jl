@@ -47,6 +47,11 @@ do not allocate memory but work on their input, i.e. in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
+struct ReturnManifoldObjective{E,P,O<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,P}
+end
+ReturnManifoldObjective(o::O) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}} = ReturnManifoldObjective{E,O,O}(o)
+ReturnManifoldObjective(o::O) where {E<:AbstractEvaluationType,P<:AbstractManifoldObjective,O<:AbstractDecoratedManifoldObjective{E,P}} = ReturnManifoldObjective{E,P,O}(o)
+
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)
 
@@ -76,6 +81,9 @@ return the undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) dec
 As long as your decorated objective stores the objetive within `o.objective` and
 the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
 the internal state are extracted automatically.
+
+By default the objective that is stored within a decorated objective is assumed to be at
+`o.objective`. Overwrtie `_get_objective(o, ::Val{true}) to change this bevahiour for your objective `o`.
 """
 function get_objective(o::AbstractManifoldObjective)
     return _get_objective(o, dispatch_objective_decorator(o))

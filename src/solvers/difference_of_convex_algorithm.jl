@@ -350,7 +350,8 @@ function difference_of_convex_algorithm!(
         )
     end
     ddcs = decorate_state!(dcs; kwargs...)
-    return get_solver_return(solve!(dmp, ddcs))
+    solve!(dmp, ddcs)
+    return get_solver_return(get_objective(dmp),ddcs)
 end
 function initialize_solver!(::AbstractManoptProblem, dcs::DifferenceOfConvexState)
     return dcs

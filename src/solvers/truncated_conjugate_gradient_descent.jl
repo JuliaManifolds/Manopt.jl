@@ -627,8 +627,9 @@ function truncated_conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         (project!)=project!,
     )
-    tcgs = decorate_state!(tcgs; kwargs...)
-    return get_solver_return(solve!(mp, tcgs))
+    dtcgs = decorate_state!(tcgs; kwargs...)
+    solve!(mp, dtcgs)
+    return get_solver_return(get_objective(mp), dtcgs)
 end
 #
 # Deprecated - even kept old notation

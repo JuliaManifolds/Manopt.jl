@@ -274,8 +274,9 @@ function Frank_Wolfe_method!(
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,
     )
-    fws = decorate_state!(fws; kwargs...)
-    return get_solver_return(solve!(dmp, fws))
+    dfws = decorate_state!(fws; kwargs...)
+    solve!(dmp, dfws)
+    return get_solver_return(get_objective(dmp), dfws)
 end
 function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)

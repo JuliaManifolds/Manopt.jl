@@ -383,7 +383,8 @@ function augmented_Lagrangian_method!(
     dcmo = decorate_objective!(M, cmo; kwargs...)
     mp = DefaultManoptProblem(M, dcmo)
     alms = decorate_state!(alms; kwargs...)
-    return get_solver_return(solve!(mp, alms))
+    solve!(mp, alms)
+    return get_solver_return(get_objective(mp),alms)
 end
 
 #

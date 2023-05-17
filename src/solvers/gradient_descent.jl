@@ -241,7 +241,7 @@ function gradient_descent!(
     kwargs..., #collect rest
 )
     dmgo = decorate_objective!(M, mgo; kwargs...)
-    mp = DefaultManoptProblem(M, dmgo)
+    dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
         M,
         p;
@@ -250,8 +250,9 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    s = decorate_state!(s; debug=debug, kwargs...)
-    return get_solver_return(solve!(mp, s))
+    ds = decorate_state!(s; debug=debug, kwargs...)
+    solve!(dmp, ds)
+    return get_solver_return(get_objective(dmp),ds)
 end
 #
 # Solver functions
