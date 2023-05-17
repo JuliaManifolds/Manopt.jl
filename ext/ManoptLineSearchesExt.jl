@@ -12,7 +12,7 @@ else
     using ..LineSearches
 end
 
-function (cs::LineSearchesStepsize)(
+function (cs::Manopt.LineSearchesStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     i::Int,
@@ -67,7 +67,7 @@ function (cs::LineSearchesStepsize)(
     end
 end
 
-function Base.show(io::IO, cs::LineSearchesStepsize)
+function Base.show(io::IO, cs::Manopt.LineSearchesStepsize)
     return print(
         io,
         "LineSearchesStepsize($(cs.linesearch); retraction_method=$(cs.retraction_method), vector_transport_method=$(cs.vector_transport_method))",
