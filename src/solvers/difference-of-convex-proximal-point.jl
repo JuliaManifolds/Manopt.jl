@@ -390,7 +390,7 @@ function difference_of_convex_proximal_point!(
     )
     ddcps = decorate_state!(dcps; kwargs...)
     solve!(dmp, ddcps)
-    return get_solver_return(get_objective(dmp),ddcps)
+    return get_solver_return(get_objective(dmp), ddcps)
 end
 
 function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState)

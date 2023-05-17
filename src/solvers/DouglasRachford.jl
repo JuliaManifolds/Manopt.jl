@@ -245,7 +245,7 @@ function DouglasRachford!(
     )
     ddrs = decorate_state!(drs; kwargs...)
     solve!(dmp, ddrs)
-    return get_solver_return(get_objective(dmp),ddrs)
+    return get_solver_return(get_objective(dmp), ddrs)
 end
 #
 # An internal function that turns more than 2 proxes into a parallel variant

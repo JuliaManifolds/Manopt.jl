@@ -196,7 +196,9 @@ export mid_point, mid_point!, reflect, reflect!
 export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
 #
 # Objectives
-export AbstractManifoldGradientObjective,
+export
+    AbstractDecoratedManifoldObjective,
+    AbstractManifoldGradientObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractPrimalDualManifoldObjective,
@@ -377,7 +379,7 @@ export alternating_gradient_descent,
     trust_regions!
 # Solver helpers
 export decorate_state!, decorate_objective!
-export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
+export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!

@@ -197,7 +197,7 @@ end
 @doc raw"""
     ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
 
-Create a cache for an objective, based on a `NamedTuple` that stores `LRUCaches` for
+Create a cache for an objective, based on a `NamedTuple` that stores some kind of cache.
 
 # Constructor
 
@@ -365,7 +365,8 @@ The following caches are available
   Here this variant defaults to `(:LRU, [:Cost, :Gradient], 100)`,
   i.e. to cache up to 100 cost and gradient values.[^1]
 
-[^1] this cache requires [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl) to be loaded as well.
+[^1]:
+    This cache requires [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl) to be loaded as well.
 """
 function objective_cache_factory(M, o, cache::Symbol)
     (cache === :Simple) && return SimpleManifoldCachedObjective(M, o)

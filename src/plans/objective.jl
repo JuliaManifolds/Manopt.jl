@@ -47,10 +47,22 @@ do not allocate memory but work on their input, i.e. in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
-struct ReturnManifoldObjective{E,P,O<:AbstractManifoldObjective{E}} <: AbstractDecoratedManifoldObjective{E,P}
+struct ReturnManifoldObjective{E,P,O<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{E,P} end
+function ReturnManifoldObjective(
+    o::O
+) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}}
+    return ReturnManifoldObjective{E,O,O}(o)
 end
-ReturnManifoldObjective(o::O) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}} = ReturnManifoldObjective{E,O,O}(o)
-ReturnManifoldObjective(o::O) where {E<:AbstractEvaluationType,P<:AbstractManifoldObjective,O<:AbstractDecoratedManifoldObjective{E,P}} = ReturnManifoldObjective{E,P,O}(o)
+function ReturnManifoldObjective(
+    o::O
+) where {
+    E<:AbstractEvaluationType,
+    P<:AbstractManifoldObjective,
+    O<:AbstractDecoratedManifoldObjective{E,P},
+}
+    return ReturnManifoldObjective{E,P,O}(o)
+end
 
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)

@@ -8,6 +8,7 @@ The Objective describes that actual cost function and all its properties.
 
 ```@docs
 AbstractManifoldObjective
+AbstractDecoratedManifoldObjective
 ```
 
 Which has two main different possibilities for its containing functions concerning the evaluation mode – not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
@@ -167,12 +168,31 @@ decorate_objective!
 Since single function calls, e.g. to the cost or the gradient, might be expensive,
 a simple cache objective exists as a decorator, that caches one cost value or gradient.
 
-_This feature was just recently introduced in Manopt 0.4 and might still be a little unstable.
-The `cache::Symbol=` keyword argument of the solvers might be extended or still change slightly for example._
+It can be activated/used with the `cache=` keyword argument available for every solver.
+
+```@docs
+Manopt.objective_cache_factory
+```
+
+#### A simple cache
 
 ```@docs
 SimpleManifoldCachedObjective
-objective_cache_factory
 ```
 
-If you load [`LRUCache.jl](objective_cache_factory)
+### A Generic Cache
+
+For the more advanced cache, you need to implement some type of cache yourself, that provides a `get!`
+and implement [`init_caches`](@ref).
+This is for example provided if you load [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl). Then you obtain
+
+```@docs
+ManifoldCachedObjective
+init_caches
+```
+
+### [Count Objective](@id CountObjective)
+
+```@docs
+CountObjective
+```

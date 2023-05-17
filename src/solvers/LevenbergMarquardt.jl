@@ -183,7 +183,7 @@ function LevenbergMarquardt!(
     )
     dlms = decorate_state!(lms; debug=debug, kwargs...)
     solve!(nlsp, dlms)
-    return get_solver_return(get_objective(nlsp),dlms)
+    return get_solver_return(get_objective(nlsp), dlms)
 end
 #
 # Solver functions

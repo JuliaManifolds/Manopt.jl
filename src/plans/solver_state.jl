@@ -109,10 +109,12 @@ _get_solver_return(s::AbstractManoptSolverState, ::Val{true}) = get_solver_retur
 get_solver_return(s::ReturnSolverState) = s.state
 function get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
     #resolve objevctive first
-    _get_solver_return(o, s, dispatch_objective_decorator(o))
+    return _get_solver_return(o, s, dispatch_objective_decorator(o))
 end
 #carefully undecorate both and check whether a solver/obejctive return happens
-_get_solver_return(o::AbstractManifoldObjective, s, ::Val{true}) = get_solver_return(o.objective, s)
+function _get_solver_return(o::AbstractManifoldObjective, s, ::Val{true})
+    return get_solver_return(o.objective, s)
+end
 _get_solver_return(::AbstractManifoldObjective, s, ::Val{false}) = get_solver_return(s)
 function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
     return o.objective, get_solver_return(s)
@@ -203,7 +205,9 @@ and the solver result for the state is called.
 function get_solver_result(s::AbstractManoptSolverState)
     return _get_solver_result(s, dispatch_state_decorator(s))
 end
-function get_solver_result(tos::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState})
+function get_solver_result(
+    tos::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState}
+)
     return get_solver_result(tos...)
 end
 function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)

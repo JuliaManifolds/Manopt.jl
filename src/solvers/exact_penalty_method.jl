@@ -354,7 +354,7 @@ function exact_penalty_method!(
     dmp = DefaultManoptProblem(M, deco_o)
     epms = decorate_state!(emps; kwargs...)
     solve!(dmp, epms)
-    return get_solver_return(get_objective(dmp),epms)
+    return get_solver_return(get_objective(dmp), epms)
 end
 #
 # Solver functions

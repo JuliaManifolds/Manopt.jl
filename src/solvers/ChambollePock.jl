@@ -337,7 +337,7 @@ function ChambollePock!(
     )
     dcps = decorate_state!(cps; kwargs...)
     solve!(tmp, dcps)
-    return get_solver_return(get_objective(tmp),dcps)
+    return get_solver_return(get_objective(tmp), dcps)
 end
 
 function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end

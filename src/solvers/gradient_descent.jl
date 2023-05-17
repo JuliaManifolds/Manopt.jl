@@ -252,7 +252,7 @@ function gradient_descent!(
     )
     ds = decorate_state!(s; debug=debug, kwargs...)
     solve!(dmp, ds)
-    return get_solver_return(get_objective(dmp),ds)
+    return get_solver_return(get_objective(dmp), ds)
 end
 #
 # Solver functions
