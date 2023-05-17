@@ -56,7 +56,6 @@ function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     end
     return sco.c
 end
-get_cost_function(sco::SimpleManifoldCachedObjective) = get_cost_function(sco.objective)
 function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
@@ -79,9 +78,6 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjectiv
     end
     copyto!(M, X, sco.p, sco.X)
     return X
-end
-function get_gradient_function(sco::SimpleManifoldCachedObjective)
-    return get_gradient_function(sco.objective)
 end
 
 #
@@ -267,9 +263,6 @@ function init_caches(M::AbstractManifold, caches, T=Nothing; kwargs...)
         """,
     ))
 end
-
-get_gradient_function(co::ManifoldCachedObjective) = get_gradient_function(co.objective)
-get_cost_function(co::ManifoldCachedObjective) = get_cost_function(co.objective)
 
 #
 # Default implementations - (a) check if field exists (b) try to get cache

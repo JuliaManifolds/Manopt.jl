@@ -48,7 +48,9 @@ do not allocate memory but work on their input, i.e. in place.
 struct InplaceEvaluation <: AbstractEvaluationType end
 
 struct ReturnManifoldObjective{E,P,O<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,P} end
+       AbstractDecoratedManifoldObjective{E,P}
+    objective::O
+end
 function ReturnManifoldObjective(
     o::O
 ) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}}

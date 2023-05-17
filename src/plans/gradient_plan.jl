@@ -17,6 +17,9 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
 """
 get_gradient_function(amgo::AbstractManifoldGradientObjective) = amgo.gradient!!
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective)
+    return get_gradient_function(admo.objective)
+end
 
 @doc raw"""
     ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}

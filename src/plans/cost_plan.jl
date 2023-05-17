@@ -50,3 +50,6 @@ end
 return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) -> c`.
 """
 get_cost_function(mco::AbstractManifoldCostObjective) = mco.cost
+function get_cost_function(admo::AbstractDecoratedManifoldObjective)
+    return get_cost_function(admo.objective)
+end
