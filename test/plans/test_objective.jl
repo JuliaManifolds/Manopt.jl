@@ -21,5 +21,8 @@ include("../utils/dummy_types.jl")
          ManifoldCostObjective{AllocatingEvaluation}
 
          To access the solver result, call `get_solver_result` on this variable."""
+        d = DummyDecoratedObjective(o)
+        r2 = Manopt.ReturnManifoldObjective(d)
+        @test repr(r) == "ManifoldCostObjective{AllocatingEvaluation}"
     end
 end

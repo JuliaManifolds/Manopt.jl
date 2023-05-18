@@ -431,11 +431,9 @@ end
 function (a::StoreStateAction)(
     amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    #update values (maybe only once)
-    if !a.once || a.last_stored != i
-        update_storage!(a, amp, s)
-    end
-    return a.last_stored = i
+    (!a.once || a.last_stored != i) && (update_storage!(a, amp, s))
+    a.last_stored = i
+    return a
 end
 
 """
