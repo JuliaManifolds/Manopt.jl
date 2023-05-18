@@ -249,7 +249,7 @@ end
 function get_dual_prox!(
     M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, n, τ, X
 )
-    return get_dual_prox(M, Y, get_objective(admo, false), n, τ, X)
+    return get_dual_prox!(M, Y, get_objective(admo, false), n, τ, X)
 end
 
 @doc raw"""
@@ -341,7 +341,7 @@ function linearized_forward_operator!(
     X,
     n,
 )
-    return linearized_forward_operator!(M, N, Y, get_objetctive(admo, false), m, X, n)
+    return linearized_forward_operator!(M, N, Y, get_objective(admo, false), m, X, n)
 end
 
 @doc raw"""
