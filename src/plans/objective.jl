@@ -122,7 +122,7 @@ function status_summary(co::AbstractDecoratedManifoldObjective)
     return status_summary(get_objective(co, false))
 end
 
-function show(io::IO, o::AbstractManifoldObjective)
+function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
     return print(io, "$(nameof(typeof(o))){$E}")
 end
 # Default undecorate for show

@@ -82,5 +82,5 @@ end
 function get_subgradient!(
     M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
 )
-    return get_subgradient(M, X, get_objective(admo, false), p)
+    return get_subgradient!(M, X, get_objective(admo, false), p)
 end

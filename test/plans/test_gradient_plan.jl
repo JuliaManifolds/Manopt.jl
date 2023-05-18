@@ -1,4 +1,5 @@
 using Manopt, ManifoldsBase, Test
+include("../utils/dummy_types.jl")
 
 @testset "Gradient Plan" begin
     io = IOBuffer()
@@ -13,7 +14,8 @@ using Manopt, ManifoldsBase, Test
     @test isapprox(M, p, get_gradient(gst), [1.0, 0.0])
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
-    mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+    mgo = ManifoldGradientObjective(f, grad_f)
+    mp = DefaultManoptProblem(M, mgo)
     @test get_initial_stepsize(mp, gst) == 1.0
     @test get_stepsize(mp, gst, 1) == 1.0
     @test get_last_stepsize(mp, gst, 1) == 1.0
@@ -73,5 +75,15 @@ using Manopt, ManifoldsBase, Test
         @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
         get_gradient!(M, Y, mcgo!, p)
         @test isapprox(M, p, X, Y)
+    end
+    @testset "Objetive Decorator passthrough" begin
+        ddo = DummyDecoratedObjective(mgo)
+        @test get_cost(M, mgo, p) == get_cost(M, ddo, p)
+        @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)
+        X = zero_vector(M, p)
+        Y = zero_vector(M, p)
+        get_gradient!(M, X, ddo, p)
+        get_gradient!(M, Y, ddo, p)
+        @test X == Y
     end
 end

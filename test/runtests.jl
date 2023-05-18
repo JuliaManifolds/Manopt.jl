@@ -17,10 +17,12 @@ include("utils/example_tasks.jl")
         include("plans/test_constrained_plan.jl")
         include("plans/test_hessian_plan.jl")
         include("plans/test_primal_dual_plan.jl")
+        include("plans/test_proximal_plan.jl")
         include("plans/test_higher_order_primal_dual_plan.jl")
         include("plans/test_record.jl")
         include("plans/test_stepsize.jl")
         include("plans/test_stopping_criteria.jl")
+        include("plans/test_subgradient_plan.jl")
     end
     @testset "Function Tests     " begin
         include("functions/test_adjoint_differentials.jl")
