@@ -106,5 +106,7 @@ include("../utils/dummy_types.jl")
         # But also if the second is already some other type
         @test isnan(get_solver_result((ro, NaN)))
         @test isnan(get_solver_result((o, NaN)))
+        @test isnan(get_solver_result(ro, NaN))
+        @test isnan(get_solver_result(o, NaN))
     end
 end

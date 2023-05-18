@@ -24,12 +24,12 @@ include("../utils/dummy_types.jl")
             ddo = DummyDecoratedObjective(obj)
             @test get_gradients(M, obj, p) == get_gradients(M, ddo, p)
             get_gradients!(M, Xa, obj, p)
-            get_gradients!(M, Ya, obj, p)
+            get_gradients!(M, Ya, ddo, p)
             @test Xa == Ya
             for i in 1:length(sgrad_f2)
                 @test get_gradient(M, obj, p, i) == get_gradient(M, ddo, p, i)
                 get_gradient!(M, X, obj, p, i)
-                get_gradient!(M, Y, obj, p, i)
+                get_gradient!(M, Y, ddo, p, i)
                 @test X == Y
             end
         end
