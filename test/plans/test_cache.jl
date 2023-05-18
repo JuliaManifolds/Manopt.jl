@@ -1,5 +1,6 @@
-using LinearAlgebra, Manifolds, Manopt, Test
-using LRUCache
+using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
+
+include("../utils/dummy_types.jl")
 
 # Three dummy functors that are just meant to cound their calls
 mutable struct TestCostCount
@@ -52,6 +53,9 @@ end
         # but not initialized
         @test !s2.X_valid
         @test !s2.c_valid
+        # test fallbacks that do not decorate
+        @test objective_cache_factory(M, mgoa, :none) == mgoa
+        @test objective_cache_factory(M, mgoa, (:none, [])) == mgoa
         @test objective_cache_factory(M, mgoa, (:none, [], [])) == mgoa
     end
     @testset "SimpleManifoldCachedObjective" begin
@@ -163,7 +167,7 @@ end
         @test get_gradient(M, sco4, s) == s # cached
         @test sco4.objective.costgrad!!.i == 5
     end
-    @testset "ManifoldCachedObjective" begin
+    @testset "ManifoldCachedObjective on Cost&Grad" begin
         M = Sphere(2)
         A = [2.0 1.0 0.0; 1.0 2.0 1.0; 0.0 1.0 2.0]
         f(M, p) = p' * A * p
@@ -171,6 +175,9 @@ end
         o = ManifoldGradientObjective(f, grad_f)
         co = ManifoldCountObjective(M, o, [:Cost, :Gradient])
         lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient]))
+        ro = DummyDecoratedObjective(o)
+        #indecorated works as well
+        lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
         p = [1.0, 0.0, 0.0]
         a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
         @test get_cost(M, lco, p) == 2.0
@@ -192,10 +199,14 @@ end
         f_f_grad!(M, X, p) = (p' * A * p, X .= 2 * A * p)
         o2a = ManifoldCostGradientObjective(f_f_grad)
         co2a = ManifoldCountObjective(M, o2a, [:Cost, :Gradient])
-        lco2a = objective_cache_factory(M, co2a, (:LRU, [:Cost, :Gradient]))
+        #pass size
+        lco2a = objective_cache_factory(M, co2a, (:LRU, [:Cost, :Gradient], 10))
         o2i = ManifoldCostGradientObjective(f_f_grad!; evaluation=InplaceEvaluation())
         co2i = ManifoldCountObjective(M, o2i, [:Cost, :Gradient])
-        lco2i = objective_cache_factory(M, co2i, (:LRU, [:Cost, :Gradient]))
+        # pass keyword
+        lco2i = objective_cache_factory(
+            M, co2i, (:LRU, [:Cost, :Gradient], [:cache_size => 10])
+        )
         #
         c = get_count(lco2a, :Cost) # usually 1 since creating lco calls that once
         @test get_cost(M, lco2a, p) == 2.0
@@ -209,7 +220,18 @@ end
         #Update Y inplace but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
         @test Y == X
+        get_gradient!(M, Y, lco, -p) #trigger cache with in-place
+        @test Y == -X
+        # Similar with
         # Gradient cached already so no new evals
         @test get_count(lco2a, :Gradient) == d
+        # Trigger caching on costgrad
+        X = get_gradient(M, lco2a, -p)
+        @test X == Y
+        # Trigger caching on costgrad!
+        get_gradient!(M, X, lco2i, -p)
+        @test X == Y
+        # Check default trigger
+        @test_throws DomainError Manopt.init_caches(M, [:Cost], Nothing)
     end
 end

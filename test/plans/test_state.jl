@@ -3,6 +3,8 @@ using Dates
 
 include("../utils/dummy_types.jl")
 
+struct NoIterateState <: AbstractManoptSolverState end
+
 @testset "Manopt Solver State" begin
     @testset "Generic State" begin
         M = Euclidean(3)
@@ -66,6 +68,8 @@ include("../utils/dummy_types.jl")
         @test isnan(get_iterate(r)) # dummy returns nan
         @test_throws ErrorException set_iterate!(s, M, 0)
         @test_throws ErrorException set_iterate!(r, M, 0)
+        s2 = NoIterateState()
+        @test_throws ErrorException get_iterate(s2)
     end
     @testset "Iteration and Gradient setters" begin
         M = Euclidean(3)
@@ -108,5 +112,9 @@ include("../utils/dummy_types.jl")
         @test isnan(get_solver_result((o, NaN)))
         @test isnan(get_solver_result(ro, NaN))
         @test isnan(get_solver_result(o, NaN))
+        # unless overwritten, objectives to not display in these tuples.
+        @test repr((o, s)) == repr(s)
+        # Passdown
+        @test repr((ro, s)) == repr(s)
     end
 end

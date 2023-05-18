@@ -1,5 +1,7 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 
+include("../utils/dummy_types.jl")
+
 @testset "Test primal dual plan" begin
     #
     # Perform an really easy test, just compute a mid point
@@ -272,5 +274,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
             r(p_exact, s_exact, 1)
             @test length(get_record(r)) == 1
         end
+    end
+    @testset "Objetive Decorator passthrough" begin
+        # PD
+        pdmoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+        rpdmoe = DummyDecoratedObjective(pdmoe)
     end
 end

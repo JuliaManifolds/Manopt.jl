@@ -355,5 +355,5 @@ end
 function get_differential_dual_prox!(
     M::AbstractManifold, η, admo::AbstractDecoratedManifoldObjective, n, τ, X, ξ
 )
-    return get_differential_dual_prox(M, η, get_objective(admo, false), n, τ, X, ξ)
+    return get_differential_dual_prox!(M, η, get_objective(admo, false), n, τ, X, ξ)
 end

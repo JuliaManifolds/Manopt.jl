@@ -325,14 +325,14 @@ function get_gradient!(
     co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective},
     p,
 ) where {E}
-    All(!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_gradient!(M, X, co.objective, p)
     return copyto!(
         M,
         X,
         p,
         get!(co.cache[:Gradient], p) do
-            c, _ = get_cost_and_gradient!(M, X, co.objective, p)
+            c, _ = get_cost_and_gradient!(M, X, get_objective(co.objective), p)
             #if this is evaluated, we can also set c
             haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
             X
@@ -379,10 +379,10 @@ the optional third is passed down as keyword arguments.
 
 For all available caches see the simpler variant with symbols.
 """
-function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,<:AbstractArray})
+function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray,I}) where {I}
     (cache[1] === :Simple) && return SimpleManifoldCachedObjective(M, o; cache[3]...)
     if (cache[1] === :LRU)
-        if (cacge[3] isa Integer)
+        if (cache[3] isa Integer)
             return ManifoldCachedObjective(M, o, cache[2]; cache_size=cache[3])
         else
             return ManifoldCachedObjective(M, o, cache[2]; cache[3]...)
