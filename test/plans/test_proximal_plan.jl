@@ -20,4 +20,8 @@ include("../utils/dummy_types.jl")
             @test q == r
         end
     end
+    @testset "Counts" begin
+        # ToDo
+        cppo = ManifoldCountObjective(M, ppo, [:Proxes])
+    end
 end

@@ -299,6 +299,12 @@ include("../utils/dummy_types.jl")
         linearized_forward_operator!(M, N, Y1, ro, m, p0, n)
         linearized_forward_operator!(M, N, Y2, pdmol, m, p0, n)
         @test Y1 == Y2
+        Z1 = adjoint_linearized_operator(M, N, ro, m, n, X0)
+        Z2 = adjoint_linearized_operator(M, N, pdmol, m, n, X0)
+        @test Z1 == Z2
+        adjoint_linearized_operator!(M, N, Z1, ro, m, n, X0)
+        adjoint_linearized_operator!(M, N, Z2, pdmol, m, n, X0)
+        @test Z1 == Z2
         s = forward_operator(M, N, ro, p0)
         t = forward_operator(M, N, pdmo, p0)
         @test s == t

@@ -85,7 +85,7 @@ function get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
     if !haskey(co.counts, s)
         msg = "There is no recorded count for $s."
         (mode === :warn) && (@warn msg)
-        (mode === :error) && (error(msh))
+        (mode === :error) && (error(msg))
         return -1
     end
     return co.counts[s]
@@ -104,19 +104,19 @@ function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
     if !haskey(co.counts, s)
         msg = "There is no recorded count for $s."
         (mode === :warn) && (@warn msg)
-        (mode === :error) && (error(msh))
+        (mode === :error) && (error(msg))
         return -1
     end
     if length(i) != ndims(co.counts[s])
-        msg = "The entru for $s has $(ndims(co.counts[s])) dimensions but the index you provided has $(length(i))"
+        msg = "The entry for $s has $(ndims(co.counts[s])) dimensions but the index you provided has $(length(i))"
         (mode === :warn) && (@warn msg)
-        (mode === :error) && (error(msh))
+        (mode === :error) && (error(msg))
         return -1
     end
     if any(i .> size(co.counts[s]))
         msg = "The index $i is out of range for the stored counts in $s ($(size(co.counts[s])))."
         (mode === :warn) && (@warn msg)
-        (mode === :error) && (error(msh))
+        (mode === :error) && (error(msg))
         return -1
     end
     return co.counts[s]
@@ -187,13 +187,13 @@ function get_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Constraints)
     return get_constraints(M, co.objective, p)
 end
-function get_equatlity_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
+function get_equality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :EqualityConstraints)
-    return get_equatlity_constraints(M, co.objective, p)
+    return get_equality_constraints(M, co.objective, p)
 end
-function get_equatlity_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :EqualityConstraint, i)
-    return get_equatlity_constraint(M, co.objective, p, i)
+    return get_equality_constraint(M, co.objective, p, i)
 end
 function get_inequality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :InequalityConstraints)
