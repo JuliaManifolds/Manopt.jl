@@ -169,7 +169,7 @@ end
         f(M, p) = p' * A * p
         grad_f(M, p) = 2 * A * p
         o = ManifoldGradientObjective(f, grad_f)
-        co = CountObjective(M, o, [:Cost, :Gradient])
+        co = ManifoldCountObjective(M, o, [:Cost, :Gradient])
         lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient]))
         p = [1.0, 0.0, 0.0]
         a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
@@ -191,10 +191,10 @@ end
         f_f_grad(M, p) = (p' * A * p, 2 * A * p)
         f_f_grad!(M, X, p) = (p' * A * p, X .= 2 * A * p)
         o2a = ManifoldCostGradientObjective(f_f_grad)
-        co2a = CountObjective(M, o2a, [:Cost, :Gradient])
+        co2a = ManifoldCountObjective(M, o2a, [:Cost, :Gradient])
         lco2a = objective_cache_factory(M, co2a, (:LRU, [:Cost, :Gradient]))
         o2i = ManifoldCostGradientObjective(f_f_grad!; evaluation=InplaceEvaluation())
-        co2i = CountObjective(M, o2i, [:Cost, :Gradient])
+        co2i = ManifoldCountObjective(M, o2i, [:Cost, :Gradient])
         lco2i = objective_cache_factory(M, co2i, (:LRU, [:Cost, :Gradient]))
         #
         c = get_count(lco2a, :Cost) # usually 1 since creating lco calls that once

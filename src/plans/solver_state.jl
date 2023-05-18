@@ -596,3 +596,14 @@ end
 function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
     return get_count(ams.stop, v)
 end
+
+# in general, ignore printing the objective by default
+function show(io::IO, t::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState})
+    return print(io, "$(t[2])")
+end
+# for decorated ons, default: pass down
+function show(
+    io::IO, t::Tuple{<:AbstractDecoratedManifoldObjective,<:AbstractManoptSolverState}
+)
+    return show(io, (get_objective(t[1], false), t[2]))
+end

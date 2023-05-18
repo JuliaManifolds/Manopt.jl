@@ -191,8 +191,8 @@ ManifoldCachedObjective
 init_caches
 ```
 
-### [Count Objective](@id CountObjective)
+### [Count Objective](@id ManifoldCountObjective)
 
 ```@docs
-CountObjective
+ManifoldCountObjective
 ```

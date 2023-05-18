@@ -6,7 +6,7 @@ using Manifolds, Manopt, Test
     f(M, p) = p' * A * p
     grad_f(M, p) = project(M, p, 2 * A * p)
     obj = ManifoldGradientObjective(f, grad_f)
-    c_obj = CountObjective(M, obj, [:Cost, :Gradient])
+    c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient])
 
     p = [1.0, 0.0, 0.0]
     X = [1.0, 1.0, 0.0]

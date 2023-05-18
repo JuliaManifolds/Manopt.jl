@@ -109,3 +109,33 @@ _get_objective(o::AbstractManifoldObjective, ::Val{false}, rec) = o
 function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec)
     return rec ? get_objective(o.objective) : o.objective
 end
+
+function get_solver_result(t::Tuple{<:AbstractManifoldObjective,P}) where {P}
+    return get_solver_result(t[2])
+end
+
+function status_summary(o::AbstractManifoldObjective{E}) where {E}
+    return "$(nameof(typeof(o))){$E}"
+end
+# Default undecorate for summary
+function status_summary(co::AbstractDecoratedManifoldObjective)
+    return status_summary(get_objective(co, false))
+end
+
+function show(io::IO, o::AbstractManifoldObjective)
+    return print(io, "$(nameof(typeof(o))){$E}")
+end
+# Default undecorate for show
+function show(io::IO, co::AbstractDecoratedManifoldObjective)
+    return show(io, get_objective(co, false))
+end
+
+function show(io::IO, t::Tuple{<:AbstractManifoldObjective,P}) where {P}
+    return print(
+        io,
+        """
+$(status_summary(t[1]))
+
+To access the solver result, call `get_solver_result` on this variable.""",
+    )
+end
