@@ -1,4 +1,5 @@
 using Manopt, Manifolds, Test
+include("../utils/dummy_types.jl")
 
 @testset "Hessian access functions" begin
     M = Euclidean(2)
@@ -33,5 +34,20 @@ using Manopt, Manifolds, Test
         @test get_preconditioner(mp, p, X) == X
         get_preconditioner!(mp, Y, p, X)
         @test Y == X
+    end
+    @testset "Objetive Decorator passthrough" begin
+        Y1 = zero_vector(M, p)
+        Y2 = zero_vector(M, p)
+        for obj in [mho1, mho2, mho3, mho4]
+            ddo = DummyDecoratedObjective(obj)
+            @test get_hessian(M, obj, p, X) == get_hessian(M, ddo, p, X)
+            get_hessian!(M, Y1, obj, p, X)
+            get_hessian!(M, Y2, ddo, p, X)
+            @test Y1 == Y2
+            @test get_preconditioner(M, obj, p, X) == get_preconditioner(M, ddo, p, X)
+            get_preconditioner!(M, Y1, obj, p, X)
+            get_preconditioner!(M, Y2, ddo, p, X)
+            @test Y1 == Y2
+        end
     end
 end

@@ -210,8 +210,15 @@ function get_solver_result(
 )
     return get_solver_result(tos...)
 end
+function get_solver_result(tos::Tuple{<:AbstractManifoldObjective,S}) where {S}
+    return tos[2]
+end
 function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
     return get_solver_result(s)
+end
+# if the second one is anything else we assume it is a point/result -> return that
+function get_solver_result(::AbstractManifoldObjective, s)
+    return s
 end
 _get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
 _get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)

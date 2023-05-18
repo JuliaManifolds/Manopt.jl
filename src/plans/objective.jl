@@ -109,11 +109,6 @@ _get_objective(o::AbstractManifoldObjective, ::Val{false}, rec) = o
 function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec)
     return rec ? get_objective(o.objective) : o.objective
 end
-
-function get_solver_result(t::Tuple{<:AbstractManifoldObjective,P}) where {P}
-    return get_solver_result(t[2])
-end
-
 function status_summary(o::AbstractManifoldObjective{E}) where {E}
     return "$(nameof(typeof(o))){$E}"
 end
