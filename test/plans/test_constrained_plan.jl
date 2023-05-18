@@ -1,5 +1,7 @@
 using Manopt, ManifoldsBase, Test
 
+include("../utils/dummy_types.jl")
+
 @testset "Constrained Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
     # Cost
@@ -178,6 +180,47 @@ using Manopt, ManifoldsBase, Test
                 wg3 = sum(gh .* (c[2] ./ sqrt.(c[2] .^ 2 .+ u^2)) .* ρ)
                 @test EPGh(M, p) ≈ gf + wg1 .+ wg2 .+ wg3
             end
+        end
+    end
+    @testset "Objetive Decorator passthrough" begin
+        for obj in [cofa, cofm, cova, covm]
+            ddo = DummyDecoratedObjective(obj)
+            @test get_constraints(M, ddo, p) == get_constraints(M, obj, p)
+            @test get_equality_constraints(M, ddo, p) == get_equality_constraints(M, obj, p)
+            @test get_inequality_constraints(M, ddo, p) ==
+                get_inequality_constraints(M, obj, p)
+            Xe = get_grad_equality_constraints(M, ddo, p)
+            Ye = get_grad_equality_constraints(M, obj, p)
+            @test Ye == Xe
+            get_grad_equality_constraints!(M, Xe, ddo, p)
+            get_grad_equality_constraints!(M, Ye, obj, p)
+            @test Ye == Xe
+            for i in 1:1 #num of equ constr
+                @test get_equality_constraint(M, ddo, p, i) ==
+                    get_equality_constraint(M, obj, p, i)
+                X = get_grad_equality_constraint(M, ddo, p, i)
+                Y = get_grad_equality_constraint(M, obj, p, i)
+                @test X == Y
+                X = get_grad_equality_constraint!(M, X, ddo, p, i)
+                Y = get_grad_equality_constraint!(M, Y, obj, p, i)
+                @test X == Y
+            end
+            for j in 1:2 # num eq constr
+                @test get_inequality_constraint(M, ddo, p, j) ==
+                    get_inequality_constraint(M, obj, p, j)
+                X = get_grad_inequality_constraint(M, ddo, p, j)
+                Y = get_grad_inequality_constraint(M, obj, p, j)
+                @test X == Y
+                X = get_grad_inequality_constraint!(M, X, ddo, p, j)
+                Y = get_grad_inequality_constraint!(M, Y, obj, p, j)
+                @test X == Y
+            end
+            Xe = get_grad_inequality_constraints(M, ddo, p)
+            Ye = get_grad_inequality_constraints(M, obj, p)
+            @test Ye == Xe
+            get_grad_inequality_constraints!(M, Xe, ddo, p)
+            get_grad_inequality_constraints!(M, Ye, obj, p)
+            @test Ye == Xe
         end
     end
 end
