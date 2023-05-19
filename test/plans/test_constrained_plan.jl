@@ -233,6 +233,10 @@ include("../utils/dummy_types.jl")
                 :InequalityConstraint,
                 :EqualityConstraints,
                 :EqualityConstraint,
+                :GradInequalityConstraints,
+                :GradInequalityConstraint,
+                :GradEqualityConstraints,
+                :GradEqualityConstraint,
             ],
         )
         @test get_constraints(M, ccofa, p) == get_constraints(M, cofa, p)
@@ -252,7 +256,36 @@ include("../utils/dummy_types.jl")
             get_inequality_constraint(M, cofa, p, 2)
         @test get_count(ccofa, :InequalityConstraint) == [1, 1]
         @test get_count(ccofa, :InequalityConstraint, 1) == 1
-        @test get_count(ccofa, :InequalityConstraint, 1) == 1
+        @test get_count(ccofa, :InequalityConstraint, 2) == 1
         @test get_count(ccofa, :InequalityConstraint, [1, 2, 3]) == -1
+
+        Xe = get_grad_equality_constraints(M, cofa, p)
+        @test get_grad_equality_constraints(M, ccofa, p) == Xe
+        Ye = copy.(Ref(M), Ref(p), Xe)
+        get_grad_equality_constraints!(M, Ye, ccofa, p)
+        @test Ye == Xe
+        @test get_count(ccofa, :GradEqualityConstraints) == 2
+        X = get_grad_equality_constraint(M, cofa, p, 1)
+        @test get_grad_equality_constraint(M, ccofa, p, 1) == X
+        Y = copy(M, p, X)
+        get_grad_equality_constraint!(M, Y, ccofa, p, 1) == X
+        @test Y == X
+        @test get_count(ccofa, :GradEqualityConstraint) == 2
+        @test get_count(ccofa, :GradEqualityConstraint, 1) == 2
+        Xi = get_grad_inequality_constraints(M, cofa, p)
+        @test get_grad_inequality_constraints(M, ccofa, p) == Xi
+        Yi = copy.(Ref(M), Ref(p), Xi)
+        @test get_grad_inequality_constraints!(M, Yi, ccofa, p) == Xi
+        @test get_count(ccofa, :GradInequalityConstraints) == 2
+        X1 = get_grad_inequality_constraint(M, cofa, p, 1)
+        @test get_grad_inequality_constraint(M, ccofa, p, 1) == X1
+        @test get_grad_inequality_constraint!(M, Y, ccofa, p, 1) == X1
+        X2 = get_grad_inequality_constraint(M, cofa, p, 2)
+        @test get_grad_inequality_constraint(M, ccofa, p, 2) == X2
+        @test get_grad_inequality_constraint!(M, Y, ccofa, p, 2) == X2
+        @test get_count(ccofa, :GradInequalityConstraint) == [2, 2]
+        @test get_count(ccofa, :GradInequalityConstraint, 1) == 2
+        @test get_count(ccofa, :GradInequalityConstraint, 2) == 2
+        @test get_count(ccofa, :GradInequalityConstraint, [1, 2, 3]) == -1
     end
 end

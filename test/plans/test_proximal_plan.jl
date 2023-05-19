@@ -22,6 +22,12 @@ include("../utils/dummy_types.jl")
     end
     @testset "Counts" begin
         # ToDo
-        cppo = ManifoldCountObjective(M, ppo, [:Proxes])
+        cppo = ManifoldCountObjective(M, ppo, [:ProximalMap])
+        q = get_proximal_map(M, cppo, 0.1, p, 1)
+        @test q == get_proximal_map(M, ppo, 0.1, p, 1)
+        q2 = copy(M, p)
+        get_proximal_map!(M, q2, cppo, 0.1, p, 1)
+        @test q2 == q
+        @test get_count(cppo, :ProximalMap, 1) == 2
     end
 end

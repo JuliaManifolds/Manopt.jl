@@ -11,17 +11,20 @@ to parts of the objective.
 
 # Supported Symbols
 
-| Symbol                    | Counts calls to                      | Comment                      |
-| ------------------------- | -----------------------------        | ------------------           |
-| `:Cost`                   | [`get_cost`](@ref)                   |                              |
-| `:Gradient`               | [`get_gradient`](@ref)               |                              |
-| `:Hessian`                | [`get_hessian`](@ref)                |                              |
-| `:Preconditioner`         | [`get_preconditioner`](@ref)         |                              |
-| `:Constraints`            | [`get_constraints`](@ref)            |                              |
-| `:EqualityConstraint`     | [`get_equality_constraint`](@ref)    | requires vector of counters  |
-| `:EqualityConstraints`    | [`get_equality_constraints`](@ref)   | does not count single access |
-| `:InequalityConstraint`   | [`get_inequality_constraint`](@ref)  | requires vector of counters  |
-| `:InequalityConstraints`  | [`get_inequality_constraints`](@ref) | does not count single access |
+| Symbol                      | Counts calls to                        | Comment                      |
+| --------------------------- | -------------------------------------- | ---------------------------- |
+| `:Constraints`              | [`get_constraints`](@ref)              |                              |
+| `:Cost`                     | [`get_cost`](@ref)                     |                              |
+| `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
+| `:EqualityConstraints`      | [`get_equality_constraints`](@ref)     | does not count single access |
+| `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
+| `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
+| `:Gradient`                 | [`get_gradient`](@ref)                 |                              |
+| `:Hessian`                  | [`get_hessian`](@ref)                  |                              |
+| `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
+| `:InequalityConstraints`    | [`get_inequality_constraints`](@ref)   | does not count single access |
+| `:Preconditioner`           | [`get_preconditioner`](@ref)           |                              |
+| `:ProximalMap`              | [`get_proximal_map`](@ref)             |                              |
 
 # Constructors
 
@@ -264,14 +267,6 @@ function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjecti
     return get_inequality_constraint(M, co.objective, p, i)
 end
 
-function get_grad_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :GradConstraints)
-    return get_grad_constraints(M, co.objective, p)
-end
-function get_grad_constraints!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :GradConstraints)
-    return get_grad_constraints(M, co.objective, p)
-end
 function get_grad_equality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :GradEqualityConstraints)
     return get_grad_equality_constraints(M, co.objective, p)
@@ -280,7 +275,7 @@ function get_grad_equality_constraints!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p
 )
     _count_if_exists(co, :GradEqualityConstraints)
-    return get_grad_equality_constraint!(M, X, co.objective, p)
+    return get_grad_equality_constraints!(M, X, co.objective, p)
 end
 function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :GradEqualityConstraint, i)
@@ -317,60 +312,60 @@ end
 
 #
 # proxes
-function get_proximal_map(M, co::ManifoldCountObjective, λ, p)
+function get_proximal_map(M::AbstractManifold, co::ManifoldCountObjective, λ, p)
     _count_if_exists(co, :ProximalMap)
     return get_proximal_map(M, co.objective, λ, p)
 end
-function get_proximal_map!(M, q, co::ManifoldCountObjective, λ, p)
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCountObjective, λ, p)
     _count_if_exists(co, :ProximalMap)
-    return get_proximal_map(M, q, co.objective, λ, p)
+    return get_proximal_map!(M, q, co.objective, λ, p)
 end
-function get_proximal_map(M, co::ManifoldCountObjective, λ, p, i)
+function get_proximal_map(M::AbstractManifold, co::ManifoldCountObjective, λ, p, i)
     _count_if_exists(co, :ProximalMap, i)
     return get_proximal_map(M, co.objective, λ, p, i)
 end
-function get_proximal_map!(M, q, co::ManifoldCountObjective, λ, p, i)
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCountObjective, λ, p, i)
     _count_if_exists(co, :ProximalMap, i)
-    return get_proximal_map(M, q, co.objective, λ, p, i)
+    return get_proximal_map!(M, q, co.objective, λ, p, i)
 end
 
 #
 # DC
-function get_subtrahend_gradient(M, co::ManifoldCountObjective, p)
+function get_subtrahend_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :SubtrahendGradient)
     return get_subtrahend_gradient(M, co.objective, p)
 end
-function get_subtrahend_gradient!(M, X, co::ManifoldCountObjective, p)
+function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     _count_if_exists(co, :SubtrahendGradient)
     return get_subtrahend_gradient!(M, X, co.objective, p)
 end
 
 #
 # Subgradient
-function get_subgradient(M, co::ManifoldCountObjective, p)
+function get_subgradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :SubGradient)
     return get_subgradient(M, co.objective, p)
 end
-function get_subgradient!(M, X, co::ManifoldCountObjective, p)
+function get_subgradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     _count_if_exists(co, :SubGradient)
     return get_subgradient!(M, X, co.objective, p)
 end
 
 #
 # Stochastic Gradient
-function get_gradients(M, co::ManifoldCountObjective, p)
+function get_gradients(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :StochasticGradients)
     return get_gradients(M, co.objective, p)
 end
-function get_gradients!(M, X, co::ManifoldCountObjective, p)
+function get_gradients!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     _count_if_exists(co, :StochasticGradients)
     return get_gradients!(M, X, co.objective, p)
 end
-function get_gradient(M, co::ManifoldCountObjective, p, i)
+function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :StochasticGradient, i)
     return get_gradient(M, co.objective, p, i)
 end
-function get_gradients!(M, X, co::ManifoldCountObjective, p, i)
+function get_gradients!(M::AbstractManifold, X, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :StochasticGradient, i)
     return get_gradient!(M, X, co.objective, p, i)
 end
