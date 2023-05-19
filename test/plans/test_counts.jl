@@ -36,4 +36,13 @@ include("../utils/dummy_types.jl")
     @test startswith(repr((c_obj, p)), "## Statistics")
     # but this also includes the hint, how to access the result
     @test endswith(repr((c_obj, p)), "on this variable.")
+    rc_obj = DummyDecoratedObjective(c_obj)
+    @test get_count(rc_obj, :Gradient) == 2 #still works if count is encapsulated
+    @test_throws ErrorException get_count(obj, :Gradient) # no count objective
+    @test get_count(rc_obj, :Gradient, 1) == 2 #still works if count is encapsulated
+    @test_throws ErrorException get_count(obj, :Gradient, 1) # no count objective
+    # test fallbacks
+    @test get_count(c_obj, :None, 1) == -1
+    @test get_count(c_obj, :Gradient, 2) == -1 # out of range
+    @test get_count(c_obj, :Gradient, [2, 1]) == -1 #nonfitting dimensions
 end

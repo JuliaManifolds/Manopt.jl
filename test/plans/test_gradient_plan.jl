@@ -75,6 +75,14 @@ include("../utils/dummy_types.jl")
         @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
         get_gradient!(M, Y, mcgo!, p)
         @test isapprox(M, p, X, Y)
+        cmcgo = ManifoldCountObjective(M, mcgo, [:Cost, :Gradient])
+        @test get_cost(M, cmcgo, p) == get_cost(M, mcgo, p)
+        @test get_gradient(M, cmcgo, p) == get_gradient(M, mcgo, p)
+        get_gradient!(M, Y, cmcgo, p)
+        get_gradient!(M, X, mcgo, p)
+        # Now we called both 3 times
+        @test get_count(cmcgo, :Gradient) == 3
+        @test get_count(cmcgo, :Cost) == 3
     end
     @testset "Objetive Decorator passthrough" begin
         ddo = DummyDecoratedObjective(mgo)

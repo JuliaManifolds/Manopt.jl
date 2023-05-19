@@ -127,9 +127,7 @@ function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, m)
     return get_count(get_objective(o, false), s, m)
 end
 
-function get_count(
-    co::ManifoldCountObjective, s::Symbol, i::I, mode::Symbol=:None
-) where {I<:Integer}
+function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
     if !haskey(co.counts, s)
         msg = "There is no recorded count for $s."
         (mode === :warn) && (@warn msg)
@@ -170,6 +168,12 @@ function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
     return get_cost(M, co.objective, p)
 end
+function get_cost(
+    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
+) where {E<:AbstractEvaluationType}
+    c, _ = get_cost_and_gradient(M, co, p)
+    return c
+end
 
 function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
@@ -177,7 +181,7 @@ function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, 
     return get_cost_and_gradient(M, co.objective, p)
 end
 
-function get_cost_and_gradient(M::AbstractManifold, X, co::ManifoldCountObjective, p)
+function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
     _count_if_exists(co, :Gradient)
     return get_cost_and_gradient!(M, X, co.objective, p)
@@ -190,6 +194,18 @@ end
 function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Gradient)
     get_gradient!(M, X, co.objective, p)
+    return X
+end
+function get_gradient(
+    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
+) where {E<:AbstractEvaluationType}
+    _, X = get_cost_and_gradient(M, co, p)
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold, X, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
+) where {E<:AbstractEvaluationType}
+    get_cost_and_gradient!(M, X, co, p)
     return X
 end
 
