@@ -129,27 +129,33 @@ end
 
 function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
     if !haskey(co.counts, s)
-        msg = "There is no recorded count for $s."
+        msg = "There is no recorded count for :$s."
         (mode === :warn) && (@warn msg)
         (mode === :error) && (error(msg))
         return -1
     end
-    if (i == 1) && (ndims(co.counts[s]) == 0)
+    if !(ndims(i) == 0 && ndims(co.counts[s]) == 1) && ndims(i) != ndims(co.counts[s])
+        msg = "The entry for :$s has $(ndims(co.counts[s])) dimensions but the index you provided has $(ndims(i))"
+        (mode === :warn) && (@warn msg)
+        (mode === :error) && (error(msg))
+        return -1
+    end
+    if ndims(i) == 0 && ndims(co.counts[s]) == 0
+        if i > 1
+            msg = "The entry for :$s is a number, but you provided the index $i > 1"
+            (mode === :warn) && (@warn msg)
+            (mode === :error) && (error(msg))
+            return -1
+        end
         return co.counts[s]
     end
-    if length(i) != ndims(co.counts[s])
-        msg = "The entry for $s has $(ndims(co.counts[s])) dimensions but the index you provided has $(length(i))"
-        (mode === :warn) && (@warn msg)
-        (mode === :error) && (error(msg))
-        return -1
-    end
     if any(i .> size(co.counts[s]))
-        msg = "The index $i is out of range for the stored counts in $s ($(size(co.counts[s])))."
+        msg = "The index $i is out of range for the stored counts in :$s ($(size(co.counts[s])))."
         (mode === :warn) && (@warn msg)
         (mode === :error) && (error(msg))
         return -1
     end
-    return co.counts[s][i]
+    return co.counts[s][i...]
 end
 function get_count(o::AbstractManifoldObjective, s::Symbol, i, mode::Symbol=:None)
     return _get_count(o, dispatch_objective_decorator(o), s, i, mode)

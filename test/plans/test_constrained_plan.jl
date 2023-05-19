@@ -235,6 +235,8 @@ include("../utils/dummy_types.jl")
                 :EqualityConstraint,
             ],
         )
+        @test get_constraints(M, ccofa, p) == get_constraints(M, cofa, p)
+        @test get_count(ccofa, :Constraints) == 1
         @test get_equality_constraints(M, ccofa, p) == get_equality_constraints(M, cofa, p)
         @test get_count(ccofa, :EqualityConstraints) == 1
         @test get_equality_constraint(M, ccofa, p, 1) ==
@@ -251,5 +253,6 @@ include("../utils/dummy_types.jl")
         @test get_count(ccofa, :InequalityConstraint) == [1, 1]
         @test get_count(ccofa, :InequalityConstraint, 1) == 1
         @test get_count(ccofa, :InequalityConstraint, 1) == 1
+        @test get_count(ccofa, :InequalityConstraint, [1, 2, 3]) == -1
     end
 end
