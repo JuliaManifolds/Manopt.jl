@@ -19,12 +19,16 @@ to parts of the objective.
 | `:EqualityConstraints`      | [`get_equality_constraints`](@ref)     | does not count single access |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
 | `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
-| `:Gradient`                 | [`get_gradient`](@ref)                 |                              |
+| `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |                              |
 | `:Hessian`                  | [`get_hessian`](@ref)                  |                              |
 | `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
 | `:InequalityConstraints`    | [`get_inequality_constraints`](@ref)   | does not count single access |
 | `:Preconditioner`           | [`get_preconditioner`](@ref)           |                              |
 | `:ProximalMap`              | [`get_proximal_map`](@ref)             |                              |
+| `:StochasticGradients`      | [`get_gradients`](@ref)                |                              |
+| `:StochasticGradients`      | [`get_gradient`](@ref)`(M, p, i)`      |                              |
+| `:SubGradient`              | [`get_subgradient`](@ref)              |                              |
+| `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      |                              |
 
 # Constructors
 

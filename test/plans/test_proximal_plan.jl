@@ -1,4 +1,12 @@
 using Manopt, Manifolds, Test
+import Manopt: get_proximal_map, get_proximal_map!
+function get_proximal_map(M, o::ManifoldProximalMapObjective, λ, p)
+    return get_proximal_map(M, o, λ, p, 1)
+end
+function get_proximal_map!(M, q, o::ManifoldProximalMapObjective, λ, p)
+    return get_proximal_map!(M, q, o, λ, p, 1)
+end
+
 include("../utils/dummy_types.jl")
 
 @testset "Proximal Plan" begin
@@ -21,7 +29,6 @@ include("../utils/dummy_types.jl")
         end
     end
     @testset "Counts" begin
-        # ToDo
         cppo = ManifoldCountObjective(M, ppo, [:ProximalMap])
         q = get_proximal_map(M, cppo, 0.1, p, 1)
         @test q == get_proximal_map(M, ppo, 0.1, p, 1)
@@ -29,8 +36,11 @@ include("../utils/dummy_types.jl")
         get_proximal_map!(M, q2, cppo, 0.1, p, 1)
         @test q2 == q
         @test get_count(cppo, :ProximalMap, 1) == 2
-        #the single ones currenlty are not implemented
-        @test_throws MethodError get_proximal_map(M, cppo, 0.1, p)
-        @test_throws MethodError get_proximal_map!(M, q, cppo, 0.1, p)
+        # the single ones have to be tricked a bit
+        cppo2 = ManifoldCountObjective(M, ppo, Dict([:ProximalMap => 0]))
+        @test q == get_proximal_map(M, cppo2, 0.1, p)
+        get_proximal_map!(M, q2, cppo2, 0.1, p)
+        @test q2 == q
+        @test get_count(cppo2, :ProximalMap) == 2
     end
 end
