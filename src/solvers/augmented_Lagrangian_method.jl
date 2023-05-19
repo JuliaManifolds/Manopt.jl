@@ -411,14 +411,14 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
 
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)
-    n_ineq_constraint = size(cost_ineq, 1)
+    n_ineq_constraint = length(cost_ineq)
     alms.μ .=
         min.(
             ones(n_ineq_constraint) .* alms.μ_max,
             max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
         )
     cost_eq = get_equality_constraints(mp, alms.p)
-    n_eq_constraint = size(cost_eq, 1)
+    n_eq_constraint = length(cost_eq)
     alms.λ =
         min.(
             ones(n_eq_constraint) .* alms.λ_max,

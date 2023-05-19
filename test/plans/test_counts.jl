@@ -30,4 +30,10 @@ include("../utils/dummy_types.jl")
     @test_throws ErrorException get_count(ro, :Cost) # Errors since no CountObj
     @test get_count(c_obj2, :Cost) == -1 # Does not count cost
     @test_throws ErrorException get_count(c_obj2, :Cost, :error)
+    @test startswith(repr(c_obj), "## Statistics")
+    @test startswith(Manopt.status_summary(c_obj), "## Statistics")
+    # also if we get any (nonspecific tuple) - i.e. if the second is a point
+    @test startswith(repr((c_obj, p)), "## Statistics")
+    # but this also includes the hint, how to access the result
+    @test endswith(repr((c_obj, p)), "on this variable.")
 end

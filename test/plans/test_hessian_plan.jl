@@ -50,4 +50,22 @@ include("../utils/dummy_types.jl")
             @test Y1 == Y2
         end
     end
+    @testset "Counting Objective" begin
+        Y1 = zero_vector(M, p)
+        Y2 = zero_vector(M, p)
+        for obj in [mho1, mho2, mho3, mho4]
+            cobj = Manopt.objective_count_factory(M, obj, [:Hessian, :Preconditioner])
+            ddo = DummyDecoratedObjective(obj)
+            @test get_hessian(M, obj, p, X) == get_hessian(M, cobj, p, X)
+            get_hessian!(M, Y1, obj, p, X)
+            get_hessian!(M, Y2, cobj, p, X)
+            @test Y1 == Y2
+            @test get_preconditioner(M, obj, p, X) == get_preconditioner(M, cobj, p, X)
+            get_preconditioner!(M, Y1, obj, p, X)
+            get_preconditioner!(M, Y2, cobj, p, X)
+            @test Y1 == Y2
+            @test get_count(cobj, :Hessian) == 2
+            @test get_count(cobj, :Preconditioner) == 2
+        end
+    end
 end

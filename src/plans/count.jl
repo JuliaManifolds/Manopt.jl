@@ -33,14 +33,19 @@ Initialise the `ManifoldCountObjective` to wrap `objective` initializing the set
 
 Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
 """
-struct ManifoldCountObjective{E,P,O<:AbstractManifoldObjective,I<:Integer} <:
-       AbstractDecoratedManifoldObjective{E,P}
+struct ManifoldCountObjective{
+    E,P,O<:AbstractManifoldObjective,I<:Union{<:Integer,AbstractVector{<:Integer}}
+} <: AbstractDecoratedManifoldObjective{E,P}
     counts::Dict{Symbol,I}
     objective::O
 end
 function ManifoldCountObjective(
     ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
-) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldObjective{E}}
+) where {
+    E<:AbstractEvaluationType,
+    I<:Union{<:Integer,AbstractVector{<:Integer}},
+    O<:AbstractManifoldObjective{E},
+}
     return ManifoldCountObjective{E,O,O,I}(counts, objective)
 end
 # Store the undecorated type of the input is decorated
@@ -48,26 +53,48 @@ function ManifoldCountObjective(
     ::AbstractManifold, objective::O, counts::Dict{Symbol,I}
 ) where {
     E<:AbstractEvaluationType,
-    I<:Integer,
+    I<:Union{<:Integer,AbstractVector{<:Integer}},
     P<:AbstractManifoldObjective,
     O<:AbstractDecoratedManifoldObjective{E,P},
 }
     return ManifoldCountObjective{E,P,O,I}(counts, objective)
 end
 function ManifoldCountObjective(
-    M::AbstractManifold, objective::O, count::AbstractVector{Symbol}, init::I=0
-) where {E<:AbstractEvaluationType,I<:Integer,O<:AbstractManifoldObjective{E}}
-    return ManifoldCountObjective(M, objective, Dict([symbol => init for symbol in count]))
+    M::AbstractManifold,
+    objective::O,
+    count::AbstractVector{Symbol},
+    init::I=0;
+    p::P=rand(M),
+) where {P,I<:Integer,O<:AbstractManifoldObjective}
+    # Infere the sizes of the counters from the symbols if possible
+    counts = Pair{Symbol,Union{I,Vector{I}}}[]
+    for symbol in count
+        l = _get_counter_size(M, objective, symbol, p)
+        push!(counts, Pair(symbol, l == 1 ? init : fill(init, l)))
+    end
+
+    return ManifoldCountObjective(M, objective, Dict(counts))
+end
+
+function _get_counter_size(
+    M::AbstractManifold, o::O, s::Symbol, p::P=rand(M)
+) where {P,O<:AbstractManifoldObjective}
+    (s == :EqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
+    (s == :InequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
+    return 1 #number - default
 end
 
 function _count_if_exists(co::ManifoldCountObjective, s::Symbol)
     return haskey(co.counts, s) && (co.counts[s] += 1)
 end
 function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i)
-    return haskey(co.counts, s) &&
-           length(i) == ndims(co.counts[s]) &&
-           all(i .<= size(co.counts[s])) &&
-           (co.counts[s][i] += 1)
+    if haskey(co.counts, s)
+        if (i == 1) && (ndims(co.counts[s]) == 0)
+            return co.counts[s] += 1
+        elseif length(i) == ndims(co.counts[s]) && all(i .<= size(co.counts[s]))
+            return co.counts[s][i] += 1
+        end
+    end
 end
 
 """
@@ -100,12 +127,17 @@ function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, m)
     return get_count(get_objective(o, false), s, m)
 end
 
-function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
+function get_count(
+    co::ManifoldCountObjective, s::Symbol, i::I, mode::Symbol=:None
+) where {I<:Integer}
     if !haskey(co.counts, s)
         msg = "There is no recorded count for $s."
         (mode === :warn) && (@warn msg)
         (mode === :error) && (error(msg))
         return -1
+    end
+    if (i == 1) && (ndims(co.counts[s]) == 0)
+        return co.counts[s]
     end
     if length(i) != ndims(co.counts[s])
         msg = "The entry for $s has $(ndims(co.counts[s])) dimensions but the index you provided has $(length(i))"
@@ -119,7 +151,7 @@ function get_count(co::ManifoldCountObjective, s::Symbol, i, mode::Symbol=:None)
         (mode === :error) && (error(msg))
         return -1
     end
-    return co.counts[s]
+    return co.counts[s][i]
 end
 function get_count(o::AbstractManifoldObjective, s::Symbol, i, mode::Symbol=:None)
     return _get_count(o, dispatch_objective_decorator(o), s, i, mode)
@@ -197,13 +229,11 @@ function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective
 end
 function get_inequality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :InequalityConstraints)
-    get_inequality_constraints(M, co.objective, p)
-    return Y
+    return get_inequality_constraints(M, co.objective, p)
 end
 function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :InequalityConstraint, i)
-    get_inequality_constraint(M, co.objective, p, i)
-    return Y
+    return get_inequality_constraint(M, co.objective, p, i)
 end
 
 # A small todo list for further objective accessors.

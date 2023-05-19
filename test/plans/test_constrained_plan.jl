@@ -225,11 +225,31 @@ include("../utils/dummy_types.jl")
     end
     @testset "Counting" begin
         ccofa = Manopt.objective_count_factory(
-            M, cofa, [:EqualityConstraints, :EqualityConstraint]
+            M,
+            cofa,
+            [
+                :Constraints,
+                :InequalityConstraints,
+                :InequalityConstraint,
+                :EqualityConstraints,
+                :EqualityConstraint,
+            ],
         )
         @test get_equality_constraints(M, ccofa, p) == get_equality_constraints(M, cofa, p)
         @test get_count(ccofa, :EqualityConstraints) == 1
         @test get_equality_constraint(M, ccofa, p, 1) ==
             get_equality_constraint(M, cofa, p, 1)
+        @test get_count(ccofa, :EqualityConstraint) == 1
+        @test get_count(ccofa, :EqualityConstraint, 1) == 1
+        @test get_inequality_constraints(M, ccofa, p) ==
+            get_inequality_constraints(M, cofa, p)
+        @test get_count(ccofa, :InequalityConstraints) == 1
+        @test get_inequality_constraint(M, ccofa, p, 1) ==
+            get_inequality_constraint(M, cofa, p, 1)
+        @test get_inequality_constraint(M, ccofa, p, 2) ==
+            get_inequality_constraint(M, cofa, p, 2)
+        @test get_count(ccofa, :InequalityConstraint) == [1, 1]
+        @test get_count(ccofa, :InequalityConstraint, 1) == 1
+        @test get_count(ccofa, :InequalityConstraint, 1) == 1
     end
 end
