@@ -249,7 +249,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         #    bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         #end
         if abs(ε_old - bms.ε) < 1e-6
-            bms.diam = bms.δ * bms.diam
+            bms.diam -= bms.δ * bms.diam
         end
     end
     ## Check lin errors to not be negative
@@ -271,6 +271,26 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
+    if !isempty(findall(ej -> ej < 0.0, bms.lin_errors))
+        bms.diam += bms.δ * bms.diam
+        bms.lin_errors = [
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+            M,
+            qj,
+            Xj,
+            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+        ) +
+        bms.diam *
+        sqrt(
+            2 * norm(
+                M,
+                qj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            ),
+        ) *
+        norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+    ]
+    end
     ##
     return bms
 end
