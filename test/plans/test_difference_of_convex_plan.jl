@@ -24,4 +24,17 @@ include("../utils/dummy_types.jl")
             @test Y == Z
         end
     end
+    @testset "counter" begin
+        for obj in [dc_obj, dcp_obj]
+            ddo = ManifoldCountObjective(M, obj, [:SubtrahendGradient])
+            X = get_subtrahend_gradient(M, ddo, p)
+            @test X == get_subtrahend_gradient(M, obj, p)
+            Y = zero_vector(M, p)
+            Z = zero_vector(M, p)
+            get_subtrahend_gradient!(M, Y, ddo, p)
+            get_subtrahend_gradient!(M, Z, obj, p)
+            @test Y == Z
+            @test get_count(ddo, :SubtrahendGradient) == 2
+        end
+    end
 end

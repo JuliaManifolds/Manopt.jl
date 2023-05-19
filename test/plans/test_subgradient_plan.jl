@@ -17,8 +17,18 @@ include("../utils/dummy_types.jl")
         @test get_subgradient(M, mso, p) == get_subgradient(M, ddo, p)
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
-        get_subgradient!(M, X, ddo, p)
+        get_subgradient!(M, X, mso, p)
         get_subgradient!(M, Y, ddo, p)
         @test X == Y
+    end
+    @testset "Objetive Decorator passthrough" begin
+        ddo = ManifoldCountObjective(M, mso, [:SubGradient])
+        @test get_subgradient(M, mso, p) == get_subgradient(M, ddo, p)
+        X = zero_vector(M, p)
+        Y = zero_vector(M, p)
+        get_subgradient!(M, X, mso, p)
+        get_subgradient!(M, Y, ddo, p)
+        @test X == Y
+        @test get_count(ddo, :SubGradient) == 2
     end
 end

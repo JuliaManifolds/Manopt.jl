@@ -365,7 +365,7 @@ function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :StochasticGradient, i)
     return get_gradient(M, co.objective, p, i)
 end
-function get_gradients!(M::AbstractManifold, X, co::ManifoldCountObjective, p, i)
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p, i)
     _count_if_exists(co, :StochasticGradient, i)
     return get_gradient!(M, X, co.objective, p, i)
 end

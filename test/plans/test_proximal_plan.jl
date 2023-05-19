@@ -30,7 +30,7 @@ include("../utils/dummy_types.jl")
         @test q2 == q
         @test get_count(cppo, :ProximalMap, 1) == 2
         #the single ones currenlty are not implemented
-        @test_throws MethodError get_proximal_map(M, ppo, 0.1, p)
-        @test_throws MethodError get_proximal_map!(M, q, ppo, 0.1, p)
+        @test_throws MethodError get_proximal_map(M, cppo, 0.1, p)
+        @test_throws MethodError get_proximal_map!(M, q, cppo, 0.1, p)
     end
 end
