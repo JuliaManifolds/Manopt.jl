@@ -220,7 +220,9 @@ function quasi_Newton(
     #return just a number if  the return type is the same as the type of q
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
-function quasi_Newton(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
+function quasi_Newton(
+    M::AbstractManifold, mgo::O, p; kwargs...
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
@@ -252,7 +254,7 @@ function quasi_Newton!(
 end
 function quasi_Newton!(
     M::AbstractManifold,
-    mgo::ManifoldGradientObjective,
+    mgo::O,
     p;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 10^(-4),
@@ -281,7 +283,7 @@ function quasi_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
     kwargs...,
-)
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,

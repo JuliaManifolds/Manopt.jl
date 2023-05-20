@@ -93,5 +93,7 @@ include("../utils/dummy_types.jl")
         get_gradient!(M, X, ddo, p)
         get_gradient!(M, Y, ddo, p)
         @test X == Y
+        @test get_gradient_function(ddo) == get_gradient_function(mgo)
+        @test get_cost_function(ddo) == get_cost_function(mgo)
     end
 end

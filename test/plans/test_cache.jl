@@ -90,6 +90,8 @@ end
         @test get_gradient(M, sco1, r) == X # cached
         @test X == r
         @test sco1.objective.gradient!!.i == 3
+        @test get_cost_function(sco1) != get_cost_function(mgoa)
+        @test get_gradient_function(sco1) != get_gradient_function(mgoa)
 
         mgoi = ManifoldGradientObjective(
             TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
@@ -178,6 +180,8 @@ end
         ro = DummyDecoratedObjective(o)
         #indecorated works as well
         lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
+        @test get_cost_function(lco2) != get_cost_function(o)
+        @test get_gradient_function(lco2) != get_gradient_function(o)
         p = [1.0, 0.0, 0.0]
         a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
         @test get_cost(M, lco, p) == 2.0

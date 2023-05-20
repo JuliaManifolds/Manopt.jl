@@ -234,8 +234,8 @@ function difference_of_convex_algorithm(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function difference_of_convex_algorithm(
-    M::AbstractManifold, mdco::ManifoldDifferenceOfConvexObjective, p; kwargs...
-)
+    M::AbstractManifold, mdco::O, p; kwargs...
+) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return difference_of_convex_algorithm!(M, mdco, p; kwargs...)
 end
@@ -268,7 +268,7 @@ function difference_of_convex_algorithm!(
 end
 function difference_of_convex_algorithm!(
     M::AbstractManifold,
-    mdco::ManifoldDifferenceOfConvexObjective,
+    mdco::O,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
@@ -316,7 +316,7 @@ function difference_of_convex_algorithm!(
         )
     end,
     kwargs..., #collect rest
-)
+) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     dmdco = decorate_objective!(M, mdco; kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here

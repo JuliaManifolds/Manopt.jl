@@ -171,8 +171,8 @@ function DouglasRachford(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function DouglasRachford(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective, p; kwargs...
-)
+    M::AbstractManifold, mpo::O, p; kwargs...
+) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return DouglasRachford!(M, mpo, q; kwargs...)
 end
@@ -227,7 +227,7 @@ function DouglasRachford!(
 end
 function DouglasRachford!(
     M::AbstractManifold,
-    mpo::ManifoldProximalMapObjective,
+    mpo::O,
     p;
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
@@ -237,7 +237,7 @@ function DouglasRachford!(
         StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
     ),
     kwargs..., #especially may contain decorator options
-) where {Tλ,Tα,TR}
+) where {Tλ,Tα,TR,O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(

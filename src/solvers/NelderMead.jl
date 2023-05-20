@@ -216,11 +216,8 @@ function NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex; kwarg
     return NelderMead(M, mco, population; kwargs...)
 end
 function NelderMead(
-    M::AbstractManifold,
-    mco::AbstractManifoldCostObjective,
-    population::NelderMeadSimplex;
-    kwargs...,
-)
+    M::AbstractManifold, mco::O, population::NelderMeadSimplex; kwargs...
+) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
     res_population = NelderMeadSimplex(copy.(Ref(M), population.pts))
     return NelderMead!(M, mco, res_population; kwargs...)
 end
@@ -248,7 +245,7 @@ function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwar
 end
 function NelderMead!(
     M::AbstractManifold,
-    mco::AbstractManifoldCostObjective,
+    mco::O,
     population::NelderMeadSimplex;
     stopping_criterion::StoppingCriterion=StopAfterIteration(2000) |
                                           StopWhenPopulationConcentrated(),
@@ -263,7 +260,7 @@ function NelderMead!(
         M, eltype(population.pts)
     ),
     kwargs..., #collect rest
-)
+) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(

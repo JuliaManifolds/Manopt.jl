@@ -186,7 +186,9 @@ function gradient_descent(
     #return just a number if  the return type is the same as the type of q
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
-function gradient_descent(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
+function gradient_descent(
+    M::AbstractManifold, mgo::O, p; kwargs...
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -228,7 +230,7 @@ function gradient_descent!(
 end
 function gradient_descent!(
     M::AbstractManifold,
-    mgo::AbstractManifoldGradientObjective,
+    mgo::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
@@ -239,7 +241,7 @@ function gradient_descent!(
     debug=stepsize isa ConstantStepsize ? [DebugWarnIfCostIncreases()] : [],
     direction=IdentityUpdateRule(),
     kwargs..., #collect rest
-)
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(

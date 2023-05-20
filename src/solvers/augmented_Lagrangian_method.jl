@@ -261,8 +261,8 @@ function augmented_Lagrangian_method(
     return augmented_Lagrangian_method!(M, cmo, q; evaluation=evaluation, kwargs...)
 end
 function augmented_Lagrangian_method(
-    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...
-)
+    M::AbstractManifold, cmo::O, p=rand(M); kwargs...
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
 end
@@ -319,7 +319,7 @@ function augmented_Lagrangian_method!(
 end
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
-    cmo::ConstrainedManifoldObjective,
+    cmo::O,
     p;
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
@@ -360,7 +360,7 @@ function augmented_Lagrangian_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-)
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     alms = AugmentedLagrangianMethodState(
         M,
         cmo,

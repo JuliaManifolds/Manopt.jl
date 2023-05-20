@@ -496,7 +496,7 @@ export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDual
 export RecordProximalParameter
 #
 # Count
-export get_count
+export get_count, reset_counters!
 #
 # Helpers
 export check_gradient, check_differential, check_Hessian

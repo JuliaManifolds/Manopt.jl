@@ -201,8 +201,8 @@ function Frank_Wolfe_method(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function Frank_Wolfe_method(
-    M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...
-)
+    M::AbstractManifold, mgo::O, p; kwargs...
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return Frank_Wolfe_method!(M, mgo, q; kwargs...)
 end
@@ -229,7 +229,7 @@ function Frank_Wolfe_method!(
 end
 function Frank_Wolfe_method!(
     M::AbstractManifold,
-    mgo::AbstractManifoldGradientObjective,
+    mgo::O,
     p;
     initial_vector=zero_vector(M, p),
     evaluation=AllocatingEvaluation(),
@@ -261,7 +261,11 @@ function Frank_Wolfe_method!(
         )
     end,
     kwargs..., #collect rest
-) where {TStop<:StoppingCriterion,TStep<:Stepsize}
+) where {
+    TStop<:StoppingCriterion,
+    TStep<:Stepsize,
+    O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective},
+}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     fws = FrankWolfeState(

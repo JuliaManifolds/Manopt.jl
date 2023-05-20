@@ -260,8 +260,8 @@ function exact_penalty_method(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function exact_penalty_method(
-    M::AbstractManifold, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...
-)
+    M::AbstractManifold, cmo::O, p=rand(M); kwargs...
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return exact_penalty_method!(M, cmo, q; kwargs...)
 end
@@ -294,7 +294,7 @@ function exact_penalty_method!(
 end
 function exact_penalty_method!(
     M::AbstractManifold,
-    cmo::ConstrainedManifoldObjective,
+    cmo::O,
     p;
     evaluation=AllocatingEvaluation(),
     ϵ::Real=1e-3,
@@ -334,7 +334,7 @@ function exact_penalty_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-)
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     emps = ExactPenaltyMethodState(
         M,
         p,

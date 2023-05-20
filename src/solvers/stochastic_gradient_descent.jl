@@ -202,8 +202,8 @@ function stochastic_gradient_descent(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function stochastic_gradient_descent(
-    M::AbstractManifold, msgo::ManifoldStochasticGradientObjective, p; kwargs...
-)
+    M::AbstractManifold, msgo::O, p; kwargs...
+) where {O<:Union{ManifoldStochasticGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return stochastic_gradient_descent!(M, msgo, q; kwargs...)
 end
@@ -240,7 +240,7 @@ function stochastic_gradient_descent!(
 end
 function stochastic_gradient_descent!(
     M::AbstractManifold,
-    msgo::ManifoldStochasticGradientObjective,
+    msgo::O,
     p;
     direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
@@ -250,7 +250,7 @@ function stochastic_gradient_descent!(
     order_type::Symbol=:Random,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     kwargs...,
-)
+) where {O<:Union{ManifoldStochasticGradientObjective,AbstractDecoratedManifoldObjective}}
     dmsgo = decorate_objective!(M, msgo; kwargs...)
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(

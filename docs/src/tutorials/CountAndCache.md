@@ -75,7 +75,7 @@ gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objecti
 ```
 
     # Solver state for `Manopt.jl`s Gradient Descent
-    After 68 iterations
+    After 67 iterations
 
     ## Parameters
     * retraction method: ExponentialRetraction()
@@ -95,8 +95,8 @@ gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objecti
     This indicates convergence: Yes
 
     ## Statistics on function calls
-      * :Gradient :  205
-      * :Cost     :  292
+      * :Gradient :  202
+      * :Cost     :  278
     on a ManifoldGradientObjective{AllocatingEvaluation}
 
 And we see that statistics are shown in the end. To now also cache these calls,
@@ -104,8 +104,10 @@ we can use the `cache=` keyword argument.
 Since now both the cache and the count “extend” the functionality of the objective,
 the order is important: On the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
-All available caches can be found at \[LINK TODO\].
-Here we want to use `:LRU` caches for `[Cost, :Gradient]` with a size of `25`.
+With the proper initialisation, you can use any caches here that support the
+`get!(function, cache, key)! update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword`cache`that takes a tuple`(c, vs, n)`of three arguments, where`c`is a symbol for the type of cache,`vs`is a vector of symbols, which calls to cache and`n`is the size of the cache. If the last element is not provided, a suitable default (currently`n=10\`) is used.
+
+Here we want to use `c=:LRU` caches for `vs=[Cost, :Gradient]` with a size of `n=25`.
 
 ``` julia
 r = gradient_descent(M, f, grad_f, data[1];
@@ -115,7 +117,7 @@ r = gradient_descent(M, f, grad_f, data[1];
 ```
 
     # Solver state for `Manopt.jl`s Gradient Descent
-    After 68 iterations
+    After 67 iterations
 
     ## Parameters
     * retraction method: ExponentialRetraction()
@@ -135,8 +137,8 @@ r = gradient_descent(M, f, grad_f, data[1];
     This indicates convergence: Yes
 
     ## Statistics on function calls
-      * :Gradient :  68
-      * :Cost     :  163
+      * :Gradient :  67
+      * :Cost     :  152
     on a ManifoldGradientObjective{AllocatingEvaluation}
 
 Since the default setup with [`ArmijoLinesearch`](@ref) needs the gradient and the
@@ -151,9 +153,9 @@ get_solver_result(r)
 ```
 
     3-element Vector{Float64}:
-      0.7309133914182244
-     -0.020054502310600526
-      0.6821755134733176
+      0.6670220435400654
+     -0.00848349588310393
+      0.7449896802837178
 
 ## Limitations
 

@@ -287,5 +287,8 @@ include("../utils/dummy_types.jl")
         @test get_count(ccofa, :GradInequalityConstraint, 1) == 2
         @test get_count(ccofa, :GradInequalityConstraint, 2) == 2
         @test get_count(ccofa, :GradInequalityConstraint, [1, 2, 3]) == -1
+        # test vectorial reset
+        reset_counters!(ccofa)
+        @test get_count(ccofa, :GradInequalityConstraint) == [0, 0]
     end
 end

@@ -180,6 +180,28 @@ function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, i, m)
     return get_count(get_objective(o, false), s, i, m)
 end
 
+"""
+    reset_counters(co::ManifoldCountObjective, value=0)
+
+Reset all values in the count objective to `value`.
+"""
+function reset_counters!(co::ManifoldCountObjective, value=0)
+    for s in keys(co.counts)
+        if (ndims(co.counts[s]) == 0)
+            co.counts[s] = value
+        else
+            co.counts[s] .= value
+        end
+    end
+    return co
+end
+function reset_counters!(o::AbstractDecoratedManifoldObjective, value=0)
+    return reset_counters!(get_objective(o, false), value)
+end
+function reset_counters!(o::AbstractManifoldObjective, value=0)
+    return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
+end
+
 #
 # Overwrite accessors
 #

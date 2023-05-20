@@ -251,11 +251,8 @@ function particle_swarm(
 end
 
 function particle_swarm(
-    M::AbstractManifold,
-    mco::AbstractManifoldCostObjective,
-    swarm::AbstractVector;
-    kwargs...,
-)
+    M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
+) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
     new_swarm = [copy(M, xi) for xi in swarm]
     return particle_swarm!(M, mco, new_swarm; kwargs...)
 end
@@ -283,7 +280,7 @@ function particle_swarm!(M::AbstractManifold, f, swarm::AbstractVector; kwargs..
 end
 function particle_swarm!(
     M::AbstractManifold,
-    mco::AbstractManifoldCostObjective,
+    mco::O,
     swarm::AbstractVector;
     velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
     inertia::Real=0.65,
@@ -299,7 +296,7 @@ function particle_swarm!(
         M, eltype(swarm)
     ),
     kwargs..., #collect rest
-)
+) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     pss = ParticleSwarmState(

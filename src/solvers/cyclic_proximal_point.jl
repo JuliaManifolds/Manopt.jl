@@ -81,8 +81,8 @@ function cyclic_proximal_point(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function cyclic_proximal_point(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective, p; kwargs...
-)
+    M::AbstractManifold, mpo::O, p; kwargs...
+) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return cyclic_proximal_point!(M, mpo, q; kwargs...)
 end
@@ -118,7 +118,7 @@ function cyclic_proximal_point!(
 end
 function cyclic_proximal_point!(
     M::AbstractManifold,
-    mpo::ManifoldProximalMapObjective,
+    mpo::O,
     p;
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopWhenAny(
@@ -126,7 +126,7 @@ function cyclic_proximal_point!(
     ),
     λ=i -> 1 / i,
     kwargs...,
-)
+) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(

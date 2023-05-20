@@ -207,13 +207,23 @@ Create a cache for an objective, based on a `NamedTuple` that stores some kind o
 Create a cache for the [`AbstractManifoldObjective`](@ref) where the Symbols in `caches` indicate,
 which function evaluations to cache.
 
+# Supported Symbols
+
+| Symbol                      | Counts calls to                        |
+| --------------------------- | -------------------------------------- |
+| `:Cost`                     | [`get_cost`](@ref)                     |
+| `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |
+
 # Keyword Arguments
+
 * `p`           - (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
 * `v`           - (`get_cost(M, objective, p)`) the type of values for numeric values in the cache, e.g. the cost
 * `X`           - (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
 * `cache`       - (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
 * `cache_size`  - (`10`) number of (least recently used) calls to cache
 * `cache_sizes` – (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
+
+
 """
 struct ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
        AbstractDecoratedManifoldObjective{E,P}
