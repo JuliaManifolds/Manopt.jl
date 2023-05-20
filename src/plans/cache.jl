@@ -273,7 +273,7 @@ end
 # Default implementations - (a) check if field exists (b) try to get cache
 function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p)
-    return get!(co.cache[:Cost], p) do
+    return get!(co.cache[:Cost], copy(M, p)) do
         get_cost(M, co.objective, p)
     end
 end
@@ -282,7 +282,7 @@ get_gradient_function(co::ManifoldCachedObjective) = (M, p) -> get_gradient(M, c
 
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
-    return get!(co.cache[:Gradient], p) do
+    return get!(co.cache[:Gradient], copy(M, p)) do
         get_gradient(M, co.objective, p)
     end
 end
@@ -292,7 +292,7 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
         M,
         X,
         p,
-        get!(co.cache[:Gradient], p) do
+        get!(co.cache[:Gradient], copy(M, p)) do
             get_gradient!(M, X, co.objective, p)
         end,
     )
@@ -307,10 +307,10 @@ function get_cost(
     #Neither cost not grad cached -> evaluate
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_cost(M, co.objective, p)
-    return get!(co.cache[:Cost], p) do
+    return get!(co.cache[:Cost], copy(M, p)) do
         c, X = get_cost_and_gradient(M, co.objective, p)
         #if this is evaluated, we can also set X
-        haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, p)
+        haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, copy(M, p))
         c #but we also set the new cost here
     end
 end
@@ -322,7 +322,7 @@ function get_gradient(
     return get!(co.cache[:Gradient], p) do
         c, X = get_cost_and_gradient(M, co.objective, p)
         #if this is evaluated, we can also set c
-        haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
+        haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
         X #but we also set the new cost here
     end
 end
@@ -338,10 +338,10 @@ function get_gradient!(
         M,
         X,
         p,
-        get!(co.cache[:Gradient], p) do
+        get!(co.cache[:Gradient], copy(M, p)) do
             c, _ = get_cost_and_gradient!(M, X, get_objective(co.objective), p)
             #if this is evaluated, we can also set c
-            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, p)
+            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
             X
         end,
     )

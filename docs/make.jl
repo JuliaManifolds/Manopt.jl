@@ -34,6 +34,7 @@ makedocs(;
             "Record values" => "tutorials/HowToRecord.md",
             "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
             "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
+            "How to Count and use a Cache" => "tutorials/CountAndCache.md",
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
