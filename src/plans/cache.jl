@@ -214,6 +214,7 @@ which function evaluations to cache.
 | `:Cost`                     | [`get_cost`](@ref)                     |                    |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          | tangent vectors    |
 | `:Hessian`                  | [`get_hessian`](@ref)                  | tangent vectors    |
+| `:ProximalMap`              | [`get_proximal_map`](@ref)             | points             |
 | `:SubGradient`              | [`get_subgradient`](@ref)              | tangent vectors    |
 | `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      | tangent vectors    |
 
@@ -382,6 +383,28 @@ function get_hessian!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
         end,
     )
     return X
+end
+
+#
+# Proximal Map
+function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, p, i)
+    !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
+    return get!(co.cache[:ProximalMap], (copy(M, p), i)) do #use the tuple (p,i) as key
+        get_proximal_map(M, co.objective, λ, p, i)
+    end
+end
+function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, λ, p, i)
+    !(haskey(co.cache, :ProximalMap)) &&
+        return get_proximal_map!(M, q, co.objective, λ, p, i)
+    copyto!(
+        M,
+        q, #for the tricks performed here see get_gradient!
+        get!(co.cache[:ProximalMap], (copy(M, p), i)) do
+            get_proximal_map!(M, q, co.objective, λ, p, i)
+            copy(M, p, X)
+        end,
+    )
+    return q
 end
 
 #
