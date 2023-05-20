@@ -1,5 +1,6 @@
 ---
 title: "Get Started: Optimize!"
+author: Ronny Bergmann
 ---
 
 In this tutorial, we will both introduce the basics of optimisation on manifolds as well as

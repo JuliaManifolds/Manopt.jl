@@ -23,4 +23,4 @@ format:
     variant: -raw_html
     wrap: none
 
-jupyter: julia-1.8
+jupyter: julia-1.9

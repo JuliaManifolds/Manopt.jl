@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * A new interface of the form `alg(M, objective, p0)` to allow to reuse
-  objectives without creating `AbstractSolverStates` and calling `solve!`. This especially still allows for any decoration of the objective and/or the state using e.g. `debug=`, or `record=`.
+  objectives without creating `AbstractManoptSolverState`s and calling `solve!`. This especially still allows for any decoration of the objective and/or the state using e.g. `debug=`, or `record=`.
 
 ### Changed
 

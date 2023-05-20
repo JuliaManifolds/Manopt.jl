@@ -193,6 +193,7 @@ function get_cost(
     c, _ = get_cost_and_gradient(M, co, p)
     return c
 end
+get_cost_function(co::ManifoldCountObjective) = (M, p) -> get_cost(M, co, p)
 
 function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
@@ -206,6 +207,7 @@ function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjecti
     return get_cost_and_gradient!(M, X, co.objective, p)
 end
 
+get_gradient_function(co::ManifoldCountObjective) = (M, p) -> get_gradient(M, co, p)
 function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Gradient)
     return get_gradient(M, co.objective, p)

@@ -56,6 +56,11 @@ function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     end
     return sco.c
 end
+get_cost_function(sco::SimpleManifoldCachedObjective) = (M, p) -> get_cost(M, sco, p)
+function get_gradient_function(sco::SimpleManifoldCachedObjective)
+    return (M, p) -> get_gradient(M, sco, p)
+end
+
 function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
@@ -272,6 +277,8 @@ function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
         get_cost(M, co.objective, p)
     end
 end
+get_cost_function(co::ManifoldCachedObjective) = (M, p) -> get_cost(M, co, p)
+get_gradient_function(co::ManifoldCachedObjective) = (M, p) -> get_gradient(M, co, p)
 
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)

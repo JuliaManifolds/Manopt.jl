@@ -1,5 +1,6 @@
 ---
 title: How to do Constrained Optimization
+author: Ronny Bergmann
 ---
 
 This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
