@@ -9,6 +9,9 @@ include("../utils/dummy_types.jl")
     grad_f(M, p) = project(M, p, 2 * A * p)
     obj = ManifoldGradientObjective(f, grad_f)
     c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient])
+    # function acessors are different since the right is still counting.
+    @test get_cost_function(obj) != get_cost_function(c_obj)
+    @test get_gradient_function(obj) != get_gradient_function(c_obj)
     p = [1.0, 0.0, 0.0]
     X = [1.0, 1.0, 0.0]
     get_cost(M, c_obj, p)
@@ -48,4 +51,6 @@ include("../utils/dummy_types.jl")
     reset_counters!(c_obj)
     @test get_count(c_obj, :Gradient) == 0
     @test get_count(c_obj, :Cost) == 0
+    reset_counters!(rc_obj) # also works on decorated counters
+    @test_throws ErrorException reset_counters!(obj) # errors on non-counter ones
 end
