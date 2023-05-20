@@ -209,10 +209,13 @@ which function evaluations to cache.
 
 # Supported Symbols
 
-| Symbol                      | Counts calls to                        |
-| --------------------------- | -------------------------------------- |
-| `:Cost`                     | [`get_cost`](@ref)                     |
-| `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |
+| Symbol                      | Caches calls to (incl. `!` variants`)  | Comment
+| --------------------------- | -------------------------------------- | ------------------ |
+| `:Cost`                     | [`get_cost`](@ref)                     |                    |
+| `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          | tangent vectors    |
+| `:Hessian`                  | [`get_hessian`](@ref)                  | tangent vectors    |
+| `:SubGradient`              | [`get_subgradient`](@ref)              | tangent vectors    |
+| `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      | tangent vectors    |
 
 # Keyword Arguments
 
@@ -303,8 +306,10 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
         X,
         p,
         get!(co.cache[:Gradient], copy(M, p)) do
+            # This evaluates in place of X
             get_gradient!(M, X, co.objective, p)
-        end,
+            copy(M, p, X) #this creates a copy to be placed in the cache
+        end, #and we copy the values back to X
     )
     return X
 end
@@ -357,6 +362,73 @@ function get_gradient!(
     )
 end
 
+#
+# Hessian
+function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :Hessian)) && return get_hessian(M, co.objective, p)
+    return get!(co.cache[:Hessian], copy(M, p)) do
+        get_hessian(M, co.objective, p)
+    end
+end
+function get_hessian!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :Hessian)) && return get_hessian!(M, X, co.objective, p)
+    copyto!(
+        M,
+        X,
+        p, #for the tricks performed here see get_gradient!
+        get!(co.cache[:Hessian], copy(M, p)) do
+            get_hessian!(M, X, co.objective, p)
+            copy(M, p, X)
+        end,
+    )
+    return X
+end
+
+#
+# Subgradient
+function get_subgradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubGradient)) && return get_subgradient(M, co.objective, p)
+    return get!(co.cache[:SubGradient], copy(M, p)) do
+        get_subgradient(M, co.objective, p)
+    end
+end
+function get_subgradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubGradient)) && return get_subgradient!(M, X, co.objective, p)
+    copyto!(
+        M,
+        X,
+        p, #for the tricks performed here see get_gradient!
+        get!(co.cache[:SubGradient], copy(M, p)) do
+            get_subgradient!(M, X, co.objective, p)
+            copy(M, p, X)
+        end,
+    )
+    return X
+end
+
+#
+# Subtrahend gradient (from DC)
+function get_subtrahend_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubtrahendGradient)) &&
+        return get_subtrahend_gradient(M, co.objective, p)
+    return get!(co.cache[:SubtrahendGradient], copy(M, p)) do
+        get_subtrahend_gradient(M, co.objective, p)
+    end
+end
+function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :SubtrahendGradient)) &&
+        return get_subtrahend_gradient!(M, X, co.objective, p)
+    copyto!(
+        M,
+        X,
+        p, #for the tricks performed here see get_gradient!
+        get!(co.cache[:SubtrahendGradient], copy(M, p)) do
+            get_subtrahend_gradient!(M, X, co.objective, p)
+            copy(M, p, X)
+        end,
+    )
+    return X
+end
 #
 # Factory
 #

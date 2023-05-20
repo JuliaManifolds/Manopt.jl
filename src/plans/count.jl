@@ -11,7 +11,7 @@ to parts of the objective.
 
 # Supported Symbols
 
-| Symbol                      | Counts calls to                        | Comment                      |
+| Symbol                      | Counts calls to (incl. `!` variants`)  | Comment                      |
 | --------------------------- | -------------------------------------- | ---------------------------- |
 | `:Constraints`              | [`get_constraints`](@ref)              |                              |
 | `:Cost`                     | [`get_cost`](@ref)                     |                              |
@@ -26,7 +26,7 @@ to parts of the objective.
 | `:Preconditioner`           | [`get_preconditioner`](@ref)           |                              |
 | `:ProximalMap`              | [`get_proximal_map`](@ref)             |                              |
 | `:StochasticGradients`      | [`get_gradients`](@ref)                |                              |
-| `:StochasticGradients`      | [`get_gradient`](@ref)`(M, p, i)`      |                              |
+| `:StochasticGradient`       | [`get_gradient`](@ref)`(M, p, i)`      |                              |
 | `:SubGradient`              | [`get_subgradient`](@ref)              |                              |
 | `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      |                              |
 

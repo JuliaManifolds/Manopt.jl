@@ -48,10 +48,28 @@ function Manopt.init_caches(
         m = get(cache_sizes, c, cache_size)
         # Float cache, e.g. Cost
         (c === :Cost) && push!(lru_caches, LRU{P,R}(; maxsize=m))
-        # Tangent Vector cache, e.g. Gradient
+        # vectors – e.g. Constraints/EqCOnstraints/InEqCOnstraints
+        # (a) store whole vectors
+        # (c === :EqualityConstraints)
+        # (c === :InequalityConstraints)
+        # (c === :Constraints)
+        # (b) store single entries, but with an point-index key
+        # (c === :EqualityConstraint)
+        # (c === :InequalityConstraint)
+        # Tangent Vector cache
+        # (a) the simple ones, like the gradient or the Hessian
         (c === :Gradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
-        # Arbitrary Vector Caches (constraints maybe?)
-        # Point caches ?
+        (c === :Hessian) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        (c === :Prconditioner) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        (c === :SubGradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        (c === :SubtrahendGradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        # (b) store tangent vectors of components, but with an point-index key
+        # (c === :GradEqualityConstraint)
+        # (c === :GradInequalityConstraint)
+        # (c === :StochasticGradient)
+        # Point caches
+        # (b) proximal point - we have to again use (p,i) as key
+        # (c === :ProximalPoint)
     end
     return NamedTuple{Tuple(caches)}(lru_caches)
 end

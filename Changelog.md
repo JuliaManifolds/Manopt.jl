@@ -13,9 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   using LRU Caches as a weak dependency. For now this works with cost and gradient evaluations
 * A `ManifoldCountObjective` as a decorator for objectives to enable counting of calls to for example the cost and the gradient
 * Switch all Requires weak dependencies to actual weak dependencies starting in Julia 1.9
-* adds a `return_objective` kewyord, that switches the return of a solver to a tuple `(o, s)`,
+* adds a `return_objective` keyword, that switches the return of a solver to a tuple `(o, s)`,
   where `o` is the (possibly decorated) objective, and `s` os the “classical” solver return (state or point).
   This way the counted values can be accessed and the cache can be reused.
+* change solvers on the mid level (form `solver(M, objective, p)`) to also accept decorated objectives
+
 
 ## [0.4.20] - 11/05/2023
 

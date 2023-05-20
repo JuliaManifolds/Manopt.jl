@@ -224,6 +224,11 @@ end
         #Update Y inplace but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
         @test Y == X
+        # But is Y also fixed in there ? not that we returned a reference to the cache.
+        Y .+= 1
+        Z = similar(Y)
+        get_gradient!(M, Z, lco, p)
+        @test Z == X
         get_gradient!(M, Y, lco, -p) #trigger cache with in-place
         @test Y == -X
         # Similar with
@@ -238,4 +243,5 @@ end
         # Check default trigger
         @test_throws DomainError Manopt.init_caches(M, [:Cost], Nothing)
     end
+    # Other tests are included with their respectives objective tests in the corresponding plans
 end
