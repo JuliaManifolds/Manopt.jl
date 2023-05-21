@@ -253,9 +253,9 @@ function ManifoldCachedObjective(
     p::P=rand(M),
     v::R=get_cost(M, objective, p),
     X::T=zero_vector(M, p),
-    cache_size=10,
-    cache_sizes=Dict{Symbol,Int}(),
-) where {E,O<:AbstractManifoldObjective{E},R,P,T}
+    cache_size::Int=10,
+    cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
+) where {E,O<:AbstractManifoldObjective{E},R<:Real,P,T}
     c = init_caches(
         M, caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
@@ -268,9 +268,9 @@ function ManifoldCachedObjective(
     p::P=rand(M),
     v::R=get_cost(M, objective, p),
     X::T=zero_vector(M, p),
-    cache_size=10,
-    cache_sizes=Dict{Symbol,Int}(),
-) where {E,O2,O<:AbstractDecoratedManifoldObjective{E,O2},R,P,T}
+    cache_size::Int=10,
+    cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
+) where {E,O2,O<:AbstractDecoratedManifoldObjective{E,O2},R<:Real,P,T}
     c = init_caches(
         M, caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
@@ -770,7 +770,7 @@ end
 
 Generate a cached variant of the [`AbstractManifoldObjective`](@ref) `o`
 on the `AbstractManifold M` based on the symbol `cache[1]`,
-where the second element `cache[2]` is are further arguments to  the cache and
+where the second element `cache[2]` are further arguments to the cache and
 the optional third is passed down as keyword arguments.
 
 For all available caches see the simpler variant with symbols.
