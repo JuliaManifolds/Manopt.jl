@@ -1,4 +1,4 @@
-using LinearAlgebra, Manopt, Manifolds, Test
+using LRUCache, LinearAlgebra, Manopt, Manifolds, Test
 include("../utils/dummy_types.jl")
 
 @testset "Difference of Convex Plan" begin
@@ -11,7 +11,7 @@ include("../utils/dummy_types.jl")
     p = log(2) * Matrix{Float64}(I, n, n)
 
     dc_obj = ManifoldDifferenceOfConvexObjective(f, grad_h)
-    dcp_obj = ManifoldDifferenceOfConvexProximalObjective(grad_h)
+    dcp_obj = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost=f)
     @testset "Objetive Decorator passthrough" begin
         for obj in [dc_obj, dcp_obj]
             ddo = DummyDecoratedObjective(obj)
@@ -24,7 +24,7 @@ include("../utils/dummy_types.jl")
             @test Y == Z
         end
     end
-    @testset "counter" begin
+    @testset "Count" begin
         for obj in [dc_obj, dcp_obj]
             ddo = ManifoldCountObjective(M, obj, [:SubtrahendGradient])
             X = get_subtrahend_gradient(M, ddo, p)
@@ -35,6 +35,19 @@ include("../utils/dummy_types.jl")
             get_subtrahend_gradient!(M, Z, obj, p)
             @test Y == Z
             @test get_count(ddo, :SubtrahendGradient) == 2
+        end
+    end
+    @testset "Cache" begin
+        for obj in [dc_obj, dcp_obj]
+            ddo = ManifoldCountObjective(M, obj, [:SubtrahendGradient])
+            cddo = objective_cache_factory(M, ddo, (:LRU, [:SubtrahendGradient]))
+            X = get_subtrahend_gradient(M, obj, p)
+            @test X == get_subtrahend_gradient(M, cddo, p)
+            @test X == get_subtrahend_gradient(M, cddo, p) # Cached
+            Y = zero_vector(M, p)
+            get_subtrahend_gradient!(M, Y, cddo, p) # also cached
+            @test Y == X
+            @test get_count(ddo, :SubtrahendGradient) == 1
         end
     end
 end

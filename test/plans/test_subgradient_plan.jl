@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Test
+using LRUCache, Manopt, Manifolds, Test
 include("../utils/dummy_types.jl")
 @testset "Subgradient Plan" begin
     M = Euclidean(2)
@@ -21,7 +21,7 @@ include("../utils/dummy_types.jl")
         get_subgradient!(M, Y, ddo, p)
         @test X == Y
     end
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Count" begin
         ddo = ManifoldCountObjective(M, mso, [:SubGradient])
         @test get_subgradient(M, mso, p) == get_subgradient(M, ddo, p)
         X = zero_vector(M, p)
@@ -30,5 +30,16 @@ include("../utils/dummy_types.jl")
         get_subgradient!(M, Y, ddo, p)
         @test X == Y
         @test get_count(ddo, :SubGradient) == 2
+    end
+    @testset "Cache" begin
+        ddo = ManifoldCountObjective(M, mso, [:SubGradient])
+        cddo = objective_cache_factory(M, ddo, (:LRU, [:SubGradient]))
+        X = get_subgradient(M, mso, p)
+        @test get_subgradient(M, cddo, p) == X
+        @test get_subgradient(M, cddo, p) == X #Cached
+        Y = zero_vector(M, p)
+        get_subgradient!(M, Y, cddo, p) # Cached
+        @test X == Y
+        @test get_count(ddo, :SubGradient) == 1
     end
 end
