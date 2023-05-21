@@ -1,4 +1,4 @@
-using Manopt, ManifoldsBase, Test
+using LRUCache, Manopt, ManifoldsBase, Test
 
 include("../utils/dummy_types.jl")
 
@@ -223,7 +223,7 @@ include("../utils/dummy_types.jl")
             @test Ye == Xe
         end
     end
-    @testset "Counting" begin
+    @testset "Count Objective" begin
         ccofa = Manopt.objective_count_factory(
             M,
             cofa,
@@ -290,5 +290,74 @@ include("../utils/dummy_types.jl")
         # test vectorial reset
         reset_counters!(ccofa)
         @test get_count(ccofa, :GradInequalityConstraint) == [0, 0]
+    end
+    @testset "Cache Objective" begin
+        cache_and_count = [
+            :Constraints,
+            :InequalityConstraints,
+            :InequalityConstraint,
+            :EqualityConstraints,
+            :EqualityConstraint,
+            :GradInequalityConstraints,
+            :GradInequalityConstraint,
+            :GradEqualityConstraints,
+            :GradEqualityConstraint,
+        ]
+        ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
+        cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
+        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # counts
+        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # cached
+        @test get_count(cccofa, :Constraints) == 1
+
+        ce = get_equality_constraints(M, cofa, p)
+        @test get_equality_constraints(M, cccofa, p) == ce # counts
+        @test get_equality_constraints(M, cccofa, p) == ce # cached
+        @test get_count(cccofa, :EqualityConstraints) == 1
+        for i in 1
+            ce_i = get_equality_constraint(M, cofa, p, i)
+            @test get_equality_constraint(M, cccofa, p, i) == ce_i # counts
+            @test get_equality_constraint(M, cccofa, p, i) == ce_i # cached
+            @test get_count(cccofa, :EqualityConstraint, i) == 1
+        end
+        ci = get_inequality_constraints(M, cofa, p)
+        @test ci == get_inequality_constraints(M, cccofa, p) # counts
+        @test ci == get_inequality_constraints(M, cccofa, p) #cached
+        @test get_count(cccofa, :InequalityConstraints) == 1
+        for j in 1:2
+            ci_j = get_inequality_constraint(M, cofa, p, j)
+            @test get_inequality_constraint(M, cccofa, p, j) == ci_j # count
+            @test get_inequality_constraint(M, cccofa, p, j) == ci_j # cached
+            @test get_count(cccofa, :InequalityConstraint, j) == 1
+        end
+
+        #=
+        Xe = get_grad_equality_constraints(M, cofa, p)
+        @test get_grad_equality_constraints(M, ccofa, p) == Xe
+        Ye = copy.(Ref(M), Ref(p), Xe)
+        get_grad_equality_constraints!(M, Ye, ccofa, p)
+        @test Ye == Xe
+        @test get_count(ccofa, :GradEqualityConstraints) == 2
+        X = get_grad_equality_constraint(M, cofa, p, 1)
+        @test get_grad_equality_constraint(M, ccofa, p, 1) == X
+        Y = copy(M, p, X)
+        get_grad_equality_constraint!(M, Y, ccofa, p, 1) == X
+        @test Y == X
+        @test get_count(ccofa, :GradEqualityConstraint) == 2
+        @test get_count(ccofa, :GradEqualityConstraint, 1) == 2
+        Xi = get_grad_inequality_constraints(M, cofa, p)
+        @test get_grad_inequality_constraints(M, ccofa, p) == Xi
+        Yi = copy.(Ref(M), Ref(p), Xi)
+        @test get_grad_inequality_constraints!(M, Yi, ccofa, p) == Xi
+        @test get_count(ccofa, :GradInequalityConstraints) == 2
+        X1 = get_grad_inequality_constraint(M, cofa, p, 1)
+        @test get_grad_inequality_constraint(M, ccofa, p, 1) == X1
+        @test get_grad_inequality_constraint!(M, Y, ccofa, p, 1) == X1
+        X2 = get_grad_inequality_constraint(M, cofa, p, 2)
+        @test get_grad_inequality_constraint(M, ccofa, p, 2) == X2
+        @test get_grad_inequality_constraint!(M, Y, ccofa, p, 2) == X2
+        @test get_count(ccofa, :GradInequalityConstraint) == [2, 2]
+        @test get_count(ccofa, :GradInequalityConstraint, 1) == 2
+        @test get_count(ccofa, :GradInequalityConstraint, 2) == 2
+        =#
     end
 end

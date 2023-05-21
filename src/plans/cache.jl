@@ -425,7 +425,7 @@ function get_inequality_constraint(M::AbstractManifold, co::ManifoldCachedObject
     all(.!(haskey.(Ref(co.cache), [:InequalityConstraint]))) &&
         return get_inequality_constraint(M, co.objective, p, i)
     return copy(
-        get!(co.cache[:InequalityConstraints], (copy(M, p), i)) do
+        get!(co.cache[:InequalityConstraint], (copy(M, p), i)) do
             get_inequality_constraint(M, co.objective, p, i)
         end,
     )

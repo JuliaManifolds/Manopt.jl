@@ -53,7 +53,7 @@ function Manopt.init_caches(
         # (a) store whole vectors
         (c === :EqualityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
         (c === :InequalityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
-        (c === :Constraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
+        (c === :Constraints) && push!(lru_caches, LRU{P,Vector{Vector{R}}}(; maxsize=m))
         # (b) store single entries, but with an point-index key
         (c === :EqualityConstraint) && push!(lru_caches, LRU{Tuple{P,Int},R}(; maxsize=m))
         (c === :InequalityConstraint) && push!(lru_caches, LRU{Tuple{P,Int},R}(; maxsize=m))
