@@ -233,7 +233,7 @@ which function evaluations to cache.
 # Keyword Arguments
 
 * `p`           - (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
-* `v`           - (`get_cost(M, objective, p)`) the type of values for numeric values in the cache, e.g. the cost
+* `value`       - (`get_cost(M, objective, p)`) the type of values for numeric values in the cache, e.g. the cost
 * `X`           - (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
 * `cache`       - (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
 * `cache_size`  - (`10`) number of (least recently used) calls to cache
@@ -251,13 +251,13 @@ function ManifoldCachedObjective(
     objective::O,
     caches::AbstractVector{<:Symbol}=[:Cost];
     p::P=rand(M),
-    v::R=get_cost(M, objective, p),
+    value::R=get_cost(M, objective, p),
     X::T=zero_vector(M, p),
     cache_size::Int=10,
     cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
 ) where {E,O<:AbstractManifoldObjective{E},R<:Real,P,T}
     c = init_caches(
-        M, caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes
+        M, caches; p=p, value=value, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
     return ManifoldCachedObjective{E,O,O,typeof(c)}(objective, c)
 end
@@ -266,13 +266,13 @@ function ManifoldCachedObjective(
     objective::O,
     caches::AbstractVector{<:Symbol}=[:Cost];
     p::P=rand(M),
-    v::R=get_cost(M, objective, p),
+    value::R=get_cost(M, objective, p),
     X::T=zero_vector(M, p),
     cache_size::Int=10,
     cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
 ) where {E,O2,O<:AbstractDecoratedManifoldObjective{E,O2},R<:Real,P,T}
     c = init_caches(
-        M, caches; p=p, v=v, X=X, cache_size=cache_size, cache_sizes=cache_sizes
+        M, caches; p=p, value=value, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
     return ManifoldCachedObjective{E,O2,O,typeof(c)}(objective, c)
 end
