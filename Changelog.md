@@ -5,18 +5,20 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.21] - WIP
+## [0.4.21] - 22/05/023
 
 ### Added
 
 * A `ManifoldCacheObjective` as a decorator for objectives to cache results of calls,
   using LRU Caches as a weak dependency. For now this works with cost and gradient evaluations
 * A `ManifoldCountObjective` as a decorator for objectives to enable counting of calls to for example the cost and the gradient
-* Switch all Requires weak dependencies to actual weak dependencies starting in Julia 1.9
 * adds a `return_objective` keyword, that switches the return of a solver to a tuple `(o, s)`,
   where `o` is the (possibly decorated) objective, and `s` os the “classical” solver return (state or point).
   This way the counted values can be accessed and the cache can be reused.
 * change solvers on the mid level (form `solver(M, objective, p)`) to also accept decorated objectives
+
+### Changed
+* Switch all Requires weak dependencies to actual weak dependencies starting in Julia 1.9
 
 
 ## [0.4.20] - 11/05/2023
