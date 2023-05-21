@@ -225,6 +225,8 @@ which function evaluations to cache.
 | `:InequalityConstraints`    | [`get_inequality_constraints`](@ref)   | vector of numbers         |
 | `:Preconditioner`           | [`get_preconditioner`](@ref)           | tangent vectors           |
 | `:ProximalMap`              | [`get_proximal_map`](@ref)             | point per `(p,λ,i)`       |
+| `:StochasticGradients`      | [`get_gradients`](@ref)                | vector of tangent vectors |
+| `:StochasticGradient`       | [`get_gradient`](@ref)`(M, p, i)`      | tangent vector per (p,i)  |
 | `:SubGradient`              | [`get_subgradient`](@ref)              | tangent vectors           |
 | `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      | tangent vectors           |
 
@@ -629,7 +631,58 @@ function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, 
     )
     return q
 end
+#
+# Stochastic Gradient
+function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
+    !(haskey(co.cache, :StochasticGradient)) && return get_gradient(M, co.objective, p, i)
+    return copy(
+        M,
+        p,
+        get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
+            get_gradient(M, co.objective, p, i)
+        end,
+    )
+end
+function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p, i)
+    !(haskey(co.cache, :StochasticGradient)) &&
+        return get_gradient!(M, X, co.objective, p, i)
+    copyto!(
+        M,
+        X,
+        p,
+        get!(co.cache[:StochasticGradient], (copy(M, p), i)) do
+            # This evaluates in place of X
+            get_gradient!(M, X, co.objective, p, i)
+            copy(M, p, X) #this creates a copy to be placed in the cache
+        end, #and we copy the values back to X
+    )
+    return X
+end
 
+function get_gradients(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, co.objective, p)
+    return copy.(
+        Ref(M),
+        Ref(p),
+        get!(co.cache[:StochasticGradients], copy(M, p)) do
+            get_gradients(M, co.objective, p)
+        end,
+    )
+end
+function get_gradients(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+    !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, X, co.objective, p)
+    copyto.(
+        Ref(M),
+        X,
+        Ref(p),
+        get!(co.cache[:StochasticGradients], copy(M, p)) do
+            # This evaluates in place of X
+            get_gradients(M, X, co.objective, p)
+            copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
+        end, #and we copy the values back to X
+    )
+    return X
+end
 #
 # Subgradient
 function get_subgradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
