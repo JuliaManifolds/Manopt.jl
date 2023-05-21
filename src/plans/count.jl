@@ -92,7 +92,8 @@ function _get_counter_size(
     (s === :EqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
     (s === :GradEqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
     (s === :InequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
-    (s === :GradInequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
+    (s === :GradInequalityConstraint) &&
+        (return length(get_inequality_constraints(M, o, p)))
     # For now this only appears in ProximalMapObjective – so we can access its field
     (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
     (s === :StochasticGradient) && (return length(get_gradients(M, o, p)))
