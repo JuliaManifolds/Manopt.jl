@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Test
+using LRUCache, Manopt, Manifolds, Test
 include("../utils/dummy_types.jl")
 
 @testset "Hessian access functions" begin
@@ -66,6 +66,27 @@ include("../utils/dummy_types.jl")
             @test Y1 == Y2
             @test get_count(cobj, :Hessian) == 2
             @test get_count(cobj, :Preconditioner) == 2
+        end
+    end
+    @testset "LRU Cache Objective" begin
+        Y = zero_vector(M, p)
+        for obj in [mho1, mho2, mho3, mho4]
+            cobj = Manopt.objective_count_factory(M, obj, [:Hessian, :Preconditioner])
+            ccobj = Manopt.objective_cache_factory(
+                M, cobj, (:LRU, [:Hessian, :Preconditioner])
+            )
+            Z = get_hessian(M, obj, p, X)
+            @test get_hessian(M, ccobj, p, X) == Z
+            @test get_hessian(M, ccobj, p, X) == Z #cached
+            get_hessian!(M, Y, ccobj, p, X) #cached
+            @test Y == Z
+            @test get_count(ccobj, :Hessian) == 1
+            Z = get_preconditioner(M, obj, p, X)
+            @test get_preconditioner(M, ccobj, p, X) == Z
+            @test get_preconditioner(M, ccobj, p, X) == Z #cached
+            get_preconditioner!(M, Y, ccobj, p, X) #cached
+            @test Y == Z
+            @test get_count(ccobj, :Preconditioner) == 1
         end
     end
 end

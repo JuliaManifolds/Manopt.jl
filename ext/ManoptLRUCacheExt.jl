@@ -43,7 +43,7 @@ function Manopt.init_caches(
     cache_size=10,
     cache_sizes=Dict{Symbol,Int}(),
 ) where {P,R,T}
-    lru_caches = LRU{P}[]
+    lru_caches = LRU[]
     for c in caches
         m = get(cache_sizes, c, cache_size)
         # Float cache, e.g. Cost
@@ -59,8 +59,8 @@ function Manopt.init_caches(
         # Tangent Vector cache
         # (a) the simple ones, like the gradient or the Hessian
         (c === :Gradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
-        (c === :Hessian) && push!(lru_caches, LRU{P,T}(; maxsize=m))
-        (c === :Prconditioner) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        (c === :Hessian) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
+        (c === :Preconditioner) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
         (c === :SubGradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
         (c === :SubtrahendGradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
         # (b) store tangent vectors of components, but with an point-index key

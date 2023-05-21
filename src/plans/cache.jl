@@ -214,6 +214,7 @@ which function evaluations to cache.
 | `:Cost`                     | [`get_cost`](@ref)                     |                    |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          | tangent vectors    |
 | `:Hessian`                  | [`get_hessian`](@ref)                  | tangent vectors    |
+| `:Preconditioner`           | [`get_preconditioner`](@ref)           | tangent vectors    |
 | `:ProximalMap`              | [`get_proximal_map`](@ref)             | points             |
 | `:SubGradient`              | [`get_subgradient`](@ref)              | tangent vectors    |
 | `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      | tangent vectors    |
@@ -365,24 +366,47 @@ end
 
 #
 # Hessian
-function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :Hessian)) && return get_hessian(M, co.objective, p)
-    return get!(co.cache[:Hessian], copy(M, p)) do
-        get_hessian(M, co.objective, p)
+function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Hessian)) && return get_hessian(M, co.objective, p, X)
+    return get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
+        get_hessian(M, co.objective, p, X)
     end
 end
-function get_hessian!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :Hessian)) && return get_hessian!(M, X, co.objective, p)
+function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Hessian)) && return get_hessian!(M, Y, co.objective, p, X)
     copyto!(
         M,
-        X,
+        Y,
         p, #for the tricks performed here see get_gradient!
-        get!(co.cache[:Hessian], copy(M, p)) do
-            get_hessian!(M, X, co.objective, p)
-            copy(M, p, X)
+        get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
+            get_hessian!(M, Y, co.objective, p, X)
+            copy(M, p, Y) #store a copy of Y
         end,
     )
-    return X
+    return Y
+end
+
+#
+# Preconditioner
+function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Preconditioner)) && return get_preconditioner(M, co.objective, p, X)
+    return get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
+        get_preconditioner(M, co.objective, p, X)
+    end
+end
+function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
+    !(haskey(co.cache, :Preconditioner)) &&
+        return get_preconditioner!(M, Y, co.objective, p, X)
+    copyto!(
+        M,
+        Y,
+        p, #for the tricks performed here see get_gradient!
+        get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
+            get_preconditioner!(M, Y, co.objective, p, X)
+            copy(M, p, Y)
+        end,
+    )
+    return Y
 end
 
 #
