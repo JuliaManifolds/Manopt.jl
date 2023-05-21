@@ -196,6 +196,7 @@ end
         X .= [1.0, 0.0, 1.0]
         # does not affect the cache
         @test get_gradient(M, lco, p) == grad_f(M, p)
+        X = get_gradient(M, lco, p) # restore X
         Y = similar(X)
         #Update Y inplace but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
