@@ -89,13 +89,13 @@ function _get_counter_size(
     M::AbstractManifold, o::O, s::Symbol, p::P=rand(M)
 ) where {P,O<:AbstractManifoldObjective}
     # vectorial counting cases
-    (s == :EqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
-    (s == :GradEqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
-    (s == :InequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
-    (s == :GradInequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
+    (s === :EqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
+    (s === :GradEqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
+    (s === :InequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
+    (s === :GradInequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
     # For now this only appears in ProximalMapObjective – so we can access its field
-    (s == :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
-    (s == :StochasticGradient) && (return length(get_gradients(M, o, p)))
+    (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
+    (s === :StochasticGradient) && (return length(get_gradients(M, o, p)))
     return 1 #number - default
 end
 
@@ -183,11 +183,11 @@ function _get_count(o::AbstractManifoldObjective, ::Val{true}, s, i, m)
 end
 
 """
-    reset_counters(co::ManifoldCountObjective, value=0)
+    reset_counters(co::ManifoldCountObjective, value::Integer=0)
 
 Reset all values in the count objective to `value`.
 """
-function reset_counters!(co::ManifoldCountObjective, value=0)
+function reset_counters!(co::ManifoldCountObjective, value::Integer=0)
     for s in keys(co.counts)
         if (ndims(co.counts[s]) == 0)
             co.counts[s] = value
@@ -197,10 +197,10 @@ function reset_counters!(co::ManifoldCountObjective, value=0)
     end
     return co
 end
-function reset_counters!(o::AbstractDecoratedManifoldObjective, value=0)
+function reset_counters!(o::AbstractDecoratedManifoldObjective, value::Integer=0)
     return reset_counters!(get_objective(o, false), value)
 end
-function reset_counters!(o::AbstractManifoldObjective, value=0)
+function reset_counters!(o::AbstractManifoldObjective, value::Integer=0)
     return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
 end
 

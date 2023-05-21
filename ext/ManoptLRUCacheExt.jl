@@ -40,9 +40,9 @@ function Manopt.init_caches(
     p::P=rand(M),
     v::R=0.0,
     X::T=zero_vector(M, p),
-    cache_size=10,
-    cache_sizes=Dict{Symbol,Int}(),
-) where {P,R,T}
+    cache_size::Int=10,
+    cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
+) where {P,R<:Real,T}
     lru_caches = LRU[]
     for c in caches
         i = length(lru_caches)
