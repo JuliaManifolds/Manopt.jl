@@ -669,15 +669,15 @@ function get_gradients(M::AbstractManifold, co::ManifoldCachedObjective, p)
         end,
     )
 end
-function get_gradients(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
+function get_gradients!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :StochasticGradients)) && return get_gradients(M, X, co.objective, p)
-    copyto.(
+    copyto!.(
         Ref(M),
         X,
         Ref(p),
         get!(co.cache[:StochasticGradients], copy(M, p)) do
             # This evaluates in place of X
-            get_gradients(M, X, co.objective, p)
+            get_gradients!(M, X, co.objective, p)
             copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
         end, #and we copy the values back to X
     )

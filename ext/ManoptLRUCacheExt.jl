@@ -75,8 +75,8 @@ function Manopt.init_caches(
         (c === :GradInequalityConstraints) &&
             push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
         # (c === :StochasticGradient)
-        (c === :StochasticGradients) && push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
-        (c === :StochasticGradient) && push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
+        (c === :StochasticGradient) && push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
+        (c === :StochasticGradients) && push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
         # Point caches
         # (b) proximal point - we have to again use (p, λ, i) as key
         (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P,R,Int},P}(; maxsize=m))
