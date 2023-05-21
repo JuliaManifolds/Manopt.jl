@@ -297,9 +297,13 @@ get_gradient_function(co::ManifoldCachedObjective) = (M, p) -> get_gradient(M, c
 
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
-    return get!(co.cache[:Gradient], copy(M, p)) do
-        get_gradient(M, co.objective, p)
-    end
+    return copy(
+        M,
+        p,
+        get!(co.cache[:Gradient], copy(M, p)) do
+            get_gradient(M, co.objective, p)
+        end,
+    )
 end
 function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient!(M, X, co.objective, p)
@@ -336,12 +340,16 @@ function get_gradient(
 ) where {E<:AllocatingEvaluation}
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_gradient(M, co.objective, p)
-    return get!(co.cache[:Gradient], p) do
-        c, X = get_cost_and_gradient(M, co.objective, p)
-        #if this is evaluated, we can also set c
-        haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
-        X #but we also set the new cost here
-    end
+    return copy(
+        M,
+        p,
+        get!(co.cache[:Gradient], p) do
+            c, X = get_cost_and_gradient(M, co.objective, p)
+            #if this is evaluated, we can also set c
+            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
+            X #but we also set the new cost here
+        end,
+    )
 end
 function get_gradient!(
     M::AbstractManifold,
@@ -368,9 +376,13 @@ end
 # Hessian
 function get_hessian(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Hessian)) && return get_hessian(M, co.objective, p, X)
-    return get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
-        get_hessian(M, co.objective, p, X)
-    end
+    return copy(
+        M,
+        p,
+        get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
+            get_hessian(M, co.objective, p, X)
+        end,
+    )
 end
 function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Hessian)) && return get_hessian!(M, Y, co.objective, p, X)
@@ -390,9 +402,13 @@ end
 # Preconditioner
 function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Preconditioner)) && return get_preconditioner(M, co.objective, p, X)
-    return get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
-        get_preconditioner(M, co.objective, p, X)
-    end
+    return copy(
+        M,
+        p,
+        get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
+            get_preconditioner(M, co.objective, p, X)
+        end,
+    )
 end
 function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Preconditioner)) &&
@@ -413,9 +429,12 @@ end
 # Proximal Map
 function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, p, i)
     !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
-    return get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do #use the tuple (p,i) as key
-        get_proximal_map(M, co.objective, λ, p, i)
-    end
+    return copy(
+        M,
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do #use the tuple (p,i) as key
+            get_proximal_map(M, co.objective, λ, p, i)
+        end,
+    )
 end
 function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, λ, p, i)
     !(haskey(co.cache, :ProximalMap)) &&
@@ -435,9 +454,13 @@ end
 # Subgradient
 function get_subgradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :SubGradient)) && return get_subgradient(M, co.objective, p)
-    return get!(co.cache[:SubGradient], copy(M, p)) do
-        get_subgradient(M, co.objective, p)
-    end
+    return copy(
+        M,
+        p,
+        get!(co.cache[:SubGradient], copy(M, p)) do
+            get_subgradient(M, co.objective, p)
+        end,
+    )
 end
 function get_subgradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :SubGradient)) && return get_subgradient!(M, X, co.objective, p)
@@ -458,9 +481,13 @@ end
 function get_subtrahend_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :SubtrahendGradient)) &&
         return get_subtrahend_gradient(M, co.objective, p)
-    return get!(co.cache[:SubtrahendGradient], copy(M, p)) do
-        get_subtrahend_gradient(M, co.objective, p)
-    end
+    return copy(
+        M,
+        p,
+        get!(co.cache[:SubtrahendGradient], copy(M, p)) do
+            get_subtrahend_gradient(M, co.objective, p)
+        end,
+    )
 end
 function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :SubtrahendGradient)) &&

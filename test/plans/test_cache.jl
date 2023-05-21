@@ -192,6 +192,10 @@ end
         b = get_count(lco, :Gradient)
         X = get_gradient(M, lco, p)
         @test X == grad_f(M, p)
+        # make sure this is safe, i.e. modifying X
+        X .= [1.0, 0.0, 1.0]
+        # does not affect the cache
+        @test get_gradient(M, lco, p) == grad_f(M, p)
         Y = similar(X)
         #Update Y inplace but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
