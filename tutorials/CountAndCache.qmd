@@ -1,5 +1,5 @@
 ---
-title: "How to Cache function calls and Get Started: Optimize!"
+title: "How to Count and Cache Function Calls"
 author: Ronny Bergmann
 ---
 
@@ -9,7 +9,7 @@ introductionary tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tu
 
 ## Introduction
 
-THere are surely many ways to keep track for example of how often the cost function is called,
+There are surely many ways to keep track for example of how often the cost function is called,
 for example with a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects), as we used in an example in [How to Record Data](https://manoptjl.org/stable/tutorials/HowtoRecord.html)
 
 ```{julia}
@@ -24,9 +24,11 @@ function (c::MyCost)(M, x)
 end
 ```
 
-though this still leaves a bit of work to the user, especially for trakcing more than just the cost.
+This still leaves a bit of work to the user, especially for tracking more than just the number of cost function evaluations.
 
-Similarly caching of function calls can for example be added using [Memoize.jl](https://github.com/JuliaCollections/Memoize.jl) by the user.
+When the a function like objective or gradient is expensive to compute, it may make sense to cache its results.
+Manopt.jl tries to minimize the number of repeated calls but sometimes they are necessary and harmless when the function is cheap to compute.
+Caching of expensive function calls can for example be added using [Memoize.jl](https://github.com/JuliaCollections/Memoize.jl) by the user.
 The approach in the solvers of [Manopt.jl](https://manoptjl.org) aims to simplify adding
 both these capabilities on the level of calling a solver.
 
@@ -65,7 +67,7 @@ using Manopt, Manifolds, Random, LRUCache
 
 ## Counting
 
-We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html). tutorial
+We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
 ```{julia}
 n = 100
@@ -95,11 +97,7 @@ Since now both the cache and the count “extend” the functionality of the obj
 the order is important: On the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
 With the proper initialisation, you can use any caches here that support the
-`get!(function, cache, key)! update.
-All parts of the objective that can currently be cached are listed
-at [`ManifoldCachedObjective`](@ref).
-The solver call has a keyword `cache` that takes a tuple `(c, vs, n)`
-of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols, which calls to cache and `n` is the size of the cache. If the last element is not provided, a suitable default (currently `n=10`) is used.
+`get!(function, cache, key)!` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple`(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols, which calls to cache and `n` is the size of the cache. If the last element is not provided, a suitable default (currently`n=10`) is used.
 
 Here we want to use `c=:LRU` caches for `vs=[Cost, :Gradient]` with a size of `n=25`.
 
@@ -120,9 +118,3 @@ result as usual:
 ```{julia}
 get_solver_result(r)
 ```
-
-## Limitations
-
-Since caching requires a bit more work, especially when setting up the cache,
-the list of supported caches is still a bit shorter and will grow over time.
-If you are missing a cache you need, open an [issue](https://github.com/JuliaManifolds/Manopt.jl/issues).

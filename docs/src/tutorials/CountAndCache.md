@@ -1,4 +1,4 @@
-# How to Cache function calls and Get Started: Optimize!
+# How to Count and Cache Function Calls
 Ronny Bergmann
 
 In this tutorial, we want to investigate the caching and counting (i.e. statistics) features
@@ -7,7 +7,7 @@ introductionary tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tu
 
 ## Introduction
 
-THere are surely many ways to keep track for example of how often the cost function is called,
+There are surely many ways to keep track for example of how often the cost function is called,
 for example with a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects), as we used in an example in [How to Record Data](https://manoptjl.org/stable/tutorials/HowtoRecord.html)
 
 ``` julia
@@ -21,9 +21,11 @@ function (c::MyCost)(M, x)
 end
 ```
 
-though this still leaves a bit of work to the user, especially for trakcing more than just the cost.
+This still leaves a bit of work to the user, especially for tracking more than just the number of cost function evaluations.
 
-Similarly caching of function calls can for example be added using [Memoize.jl](https://github.com/JuliaCollections/Memoize.jl) by the user.
+When the a function like objective or gradient is expensive to compute, it may make sense to cache its results.
+Manopt.jl tries to minimize the number of repeated calls but sometimes they are necessary and harmless when the function is cheap to compute.
+Caching of expensive function calls can for example be added using [Memoize.jl](https://github.com/JuliaCollections/Memoize.jl) by the user.
 The approach in the solvers of [Manopt.jl](https://manoptjl.org) aims to simplify adding
 both these capabilities on the level of calling a solver.
 
@@ -50,7 +52,7 @@ using Manopt, Manifolds, Random, LRUCache
 
 ## Counting
 
-We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html). tutorial
+We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
 ``` julia
 n = 100
@@ -75,7 +77,7 @@ gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objecti
 ```
 
     # Solver state for `Manopt.jl`s Gradient Descent
-    After 67 iterations
+    After 72 iterations
 
     ## Parameters
     * retraction method: ExponentialRetraction()
@@ -95,8 +97,8 @@ gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objecti
     This indicates convergence: Yes
 
     ## Statistics on function calls
-      * :Gradient :  202
-      * :Cost     :  278
+      * :Gradient :  217
+      * :Cost     :  298
     on a ManifoldGradientObjective{AllocatingEvaluation}
 
 And we see that statistics are shown in the end. To now also cache these calls,
@@ -105,7 +107,7 @@ Since now both the cache and the count “extend” the functionality of the obj
 the order is important: On the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
 With the proper initialisation, you can use any caches here that support the
-`get!(function, cache, key)! update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword`cache`that takes a tuple`(c, vs, n)`of three arguments, where`c`is a symbol for the type of cache,`vs`is a vector of symbols, which calls to cache and`n`is the size of the cache. If the last element is not provided, a suitable default (currently`n=10\`) is used.
+`get!(function, cache, key)!` update. All parts of the objective that can currently be cached are listed at [`ManifoldCachedObjective`](@ref). The solver call has a keyword `cache` that takes a tuple`(c, vs, n)` of three arguments, where `c` is a symbol for the type of cache, `vs` is a vector of symbols, which calls to cache and `n` is the size of the cache. If the last element is not provided, a suitable default (currently`n=10`) is used.
 
 Here we want to use `c=:LRU` caches for `vs=[Cost, :Gradient]` with a size of `n=25`.
 
@@ -117,7 +119,7 @@ r = gradient_descent(M, f, grad_f, data[1];
 ```
 
     # Solver state for `Manopt.jl`s Gradient Descent
-    After 67 iterations
+    After 72 iterations
 
     ## Parameters
     * retraction method: ExponentialRetraction()
@@ -137,8 +139,8 @@ r = gradient_descent(M, f, grad_f, data[1];
     This indicates convergence: Yes
 
     ## Statistics on function calls
-      * :Gradient :  67
-      * :Cost     :  152
+      * :Gradient :  72
+      * :Cost     :  164
     on a ManifoldGradientObjective{AllocatingEvaluation}
 
 Since the default setup with [`ArmijoLinesearch`](@ref) needs the gradient and the
@@ -153,12 +155,6 @@ get_solver_result(r)
 ```
 
     3-element Vector{Float64}:
-      0.6670220435400654
-     -0.00848349588310393
-      0.7449896802837178
-
-## Limitations
-
-Since caching requires a bit more work, especially when setting up the cache,
-the list of supported caches is still a bit shorter and will grow over time.
-If you are missing a cache you need, open an [issue](https://github.com/JuliaManifolds/Manopt.jl/issues).
+     0.7298774364923435
+     0.047665824852873
+     0.6819141418393224
