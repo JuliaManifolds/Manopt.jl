@@ -43,4 +43,17 @@ include("../utils/dummy_types.jl")
         @test q2 == q
         @test get_count(cppo2, :ProximalMap) == 2
     end
+    @testset "Cache" begin
+        cppo = ManifoldCountObjective(M, ppo, [:ProximalMap])
+        ccppo = objective_cache_factory(M, cppo, (:LRU, [:ProximalMap]))
+        for i in 1:2
+            q = get_proximal_map(M, ppo, 0.1, p, i)
+            @test q == get_proximal_map(M, ccppo, 0.1, p, i)
+            @test q == get_proximal_map(M, ccppo, 0.1, p, i) # Cached
+            q2 = copy(M, p)
+            get_proximal_map!(M, q2, ccppo, 0.1, p, i) # Cached
+            @test q2 == q
+            @test get_count(ccppo, :ProximalMap, i) == 1
+        end
+    end
 end

@@ -69,7 +69,7 @@ function Manopt.init_caches(
         # (c === :StochasticGradient)
         # Point caches
         # (b) proximal point - we have to again use (p,i) as key
-        (c === :ProximalPoint) && push!(lru_caches, LRU{Tuple{P,Int},P}(; maxsize=m))
+        (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P,Int},P}(; maxsize=m))
     end
     return NamedTuple{Tuple(caches)}(lru_caches)
 end
