@@ -238,8 +238,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    l = findall(λj -> λj ≤ bms.filter1, bms.λ)
-    if !isempty(l)
+    if !isempty(findall(λj -> λj ≤ bms.filter1, bms.λ))
         #y = bms.bundle[1][1]
         deleteat!(bms.bundle, l)
         #s =
@@ -271,7 +270,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
-    if !isempty(findall(ej -> ej < 0.0, bms.lin_errors))
+    while !isempty(findall(ej -> ej < 0.0, bms.lin_errors))
         bms.diam += bms.δ * bms.diam
         bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
