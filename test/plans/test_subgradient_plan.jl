@@ -41,5 +41,14 @@ include("../utils/dummy_types.jl")
         get_subgradient!(M, Y, cddo, p) # Cached
         @test X == Y
         @test get_count(ddo, :SubGradient) == 1
+
+        X = get_subgradient(M, mso, -p)
+        Y = zero_vector(M, p)
+        get_subgradient!(M, Y, cddo, -p)
+        @test X == Y
+        get_subgradient!(M, Y, cddo, -p) # Cached
+        @test X == Y
+        @test get_subgradient(M, cddo, -p) == X #Cached
+        @test get_count(ddo, :SubGradient) == 2
     end
 end

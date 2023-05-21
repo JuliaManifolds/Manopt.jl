@@ -45,6 +45,7 @@ function Manopt.init_caches(
 ) where {P,R,T}
     lru_caches = LRU[]
     for c in caches
+        i = length(lru_caches)
         m = get(cache_sizes, c, cache_size)
         # Float cache, e.g. Cost
         (c === :Cost) && push!(lru_caches, LRU{P,R}(; maxsize=m))
@@ -59,17 +60,23 @@ function Manopt.init_caches(
         # Tangent Vector cache
         # (a) the simple ones, like the gradient or the Hessian
         (c === :Gradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
-        (c === :Hessian) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
-        (c === :Preconditioner) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
         (c === :SubGradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
         (c === :SubtrahendGradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
+        # (b) indexed by point and vector
+        (c === :Hessian) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
+        (c === :Preconditioner) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
         # (b) store tangent vectors of components, but with an point-index key
         # (c === :GradEqualityConstraint)
         # (c === :GradInequalityConstraint)
         # (c === :StochasticGradient)
         # Point caches
-        # (b) proximal point - we have to again use (p,i) as key
-        (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P,Int},P}(; maxsize=m))
+        # (b) proximal point - we have to again use (p, λ, i) as key
+        (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P,R,Int},P}(; maxsize=m))
+        if length(lru_caches) == i #nothing pushed
+            error("""
+            A cache for :$c seems to not be supported by LRU caches.
+            """)
+        end
     end
     return NamedTuple{Tuple(caches)}(lru_caches)
 end

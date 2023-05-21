@@ -413,7 +413,7 @@ end
 # Proximal Map
 function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, p, i)
     !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
-    return get!(co.cache[:ProximalMap], (copy(M, p), i)) do #use the tuple (p,i) as key
+    return get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do #use the tuple (p,i) as key
         get_proximal_map(M, co.objective, λ, p, i)
     end
 end
@@ -422,10 +422,10 @@ function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, 
         return get_proximal_map!(M, q, co.objective, λ, p, i)
     copyto!(
         M,
-        q, #for the tricks performed here see get_gradient!
-        get!(co.cache[:ProximalMap], (copy(M, p), i)) do
-            get_proximal_map!(M, q, co.objective, λ, p, i)
-            copy(M, p, X)
+        q,
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do
+            get_proximal_map!(M, q, co.objective, λ, p, i) #compute inplace of q
+            copy(M, q) #store copy of q
         end,
     )
     return q

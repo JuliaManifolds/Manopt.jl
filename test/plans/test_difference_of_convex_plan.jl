@@ -48,6 +48,15 @@ include("../utils/dummy_types.jl")
             get_subtrahend_gradient!(M, Y, cddo, p) # also cached
             @test Y == X
             @test get_count(ddo, :SubtrahendGradient) == 1
+
+            X = get_subtrahend_gradient(M, obj, 2 .* p)
+            Y = zero_vector(M, 2 .* p)
+            get_subtrahend_gradient!(M, Y, cddo, 2 .* p)
+            @test Y == X
+            get_subtrahend_gradient!(M, Y, cddo, 2 .* p) # cached
+            @test Y == X
+            @test X == get_subtrahend_gradient(M, cddo, 2 .* p) # Cached
+            @test get_count(ddo, :SubtrahendGradient) == 2
         end
     end
 end

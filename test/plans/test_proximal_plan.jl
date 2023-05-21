@@ -54,6 +54,14 @@ include("../utils/dummy_types.jl")
             get_proximal_map!(M, q2, ccppo, 0.1, p, i) # Cached
             @test q2 == q
             @test get_count(ccppo, :ProximalMap, i) == 1
+
+            q = get_proximal_map(M, ppo, 0.2, -p, i)
+            get_proximal_map!(M, q2, ccppo, 0.2, -p, i)
+            @test q2 == q
+            get_proximal_map!(M, q2, ccppo, 0.2, -p, i) # Cached
+            @test q2 == q
+            @test q == get_proximal_map(M, ccppo, 0.2, -p, i) # Cached
+            @test get_count(ccppo, :ProximalMap, i) == 2
         end
     end
 end

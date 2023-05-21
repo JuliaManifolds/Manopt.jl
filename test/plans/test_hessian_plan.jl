@@ -81,12 +81,26 @@ include("../utils/dummy_types.jl")
             get_hessian!(M, Y, ccobj, p, X) #cached
             @test Y == Z
             @test get_count(ccobj, :Hessian) == 1
+            Z = get_hessian(M, obj, -p, -X)
+            get_hessian!(M, Y, ccobj, -p, -X) #cached
+            @test Y == Z
+            @test get_hessian(M, ccobj, -p, -X) == Z #cached
+            @test get_count(ccobj, :Hessian) == 2
+
             Z = get_preconditioner(M, obj, p, X)
             @test get_preconditioner(M, ccobj, p, X) == Z
             @test get_preconditioner(M, ccobj, p, X) == Z #cached
             get_preconditioner!(M, Y, ccobj, p, X) #cached
             @test Y == Z
             @test get_count(ccobj, :Preconditioner) == 1
+            Z = get_preconditioner(M, obj, -p, -X)
+            get_preconditioner!(M, Y, ccobj, -p, -X)
+            @test Y == Z
+            get_preconditioner!(M, Y, ccobj, -p, -X) # Cached
+            @test Y == Z
+            @test get_preconditioner(M, ccobj, -p, -X) == Z #cached
+            @test get_preconditioner(M, ccobj, -p, -X) == Z #cached
+            @test get_count(ccobj, :Preconditioner) == 2
         end
     end
 end

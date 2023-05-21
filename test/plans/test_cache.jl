@@ -242,6 +242,7 @@ end
         @test X == Y
         # Check default trigger
         @test_throws DomainError Manopt.init_caches(M, [:Cost], Nothing)
+        @test_throws ErrorException Manopt.init_caches(M, [:None], LRU)
     end
     # Other tests are included with their respectives objective tests in the corresponding plans
 end
