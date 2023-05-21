@@ -211,11 +211,16 @@ which function evaluations to cache.
 
 | Symbol                      | Caches calls to (incl. `!` variants`)  | Comment
 | --------------------------- | -------------------------------------- | ------------------ |
+| `:Constraints`              | [`get_constraints`](@ref)              | vector of numbers  |
 | `:Cost`                     | [`get_cost`](@ref)                     |                    |
+| `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | numbers per (p,i)  |
+| `:EqualityConstraints`      | [`get_equality_constraints`](@ref)     | vector of numbers  |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          | tangent vectors    |
 | `:Hessian`                  | [`get_hessian`](@ref)                  | tangent vectors    |
+| `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | numbers per (p,j)  |
+| `:InequalityConstraints`    | [`get_inequality_constraints`](@ref)   | vector of numbers  |
 | `:Preconditioner`           | [`get_preconditioner`](@ref)           | tangent vectors    |
-| `:ProximalMap`              | [`get_proximal_map`](@ref)             | points             |
+| `:ProximalMap`              | [`get_proximal_map`](@ref)             | point per `(p,λ,i)`|
 | `:SubGradient`              | [`get_subgradient`](@ref)              | tangent vectors    |
 | `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      | tangent vectors    |
 
@@ -343,7 +348,7 @@ function get_gradient(
     return copy(
         M,
         p,
-        get!(co.cache[:Gradient], p) do
+        get!(co.cache[:Gradient], copy(M, p)) do
             c, X = get_cost_and_gradient(M, co.objective, p)
             #if this is evaluated, we can also set c
             haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
@@ -371,6 +376,56 @@ function get_gradient!(
         end,
     )
 end
+
+#
+# Constraints
+function get_constraints(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    all(.!(haskey.(Ref(co.cache), [:Constraints]))) &&
+        return get_constraints(M, co.objective, p)
+    return copy(
+        get!(co.cache[:Constraints], copy(M, p)) do
+            get_constraints(M, co.objective, p)
+        end,
+    )
+end
+function get_equality_constraints(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    all(.!(haskey.(Ref(co.cache), [:EqualityConstraints]))) &&
+        return get_equality_constraints(M, co.objective, p)
+    return copy(
+        get!(co.cache[:EqualityConstraints], copy(M, p)) do
+            get_equality_constraints(M, co.objective, p)
+        end,
+    )
+end
+function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
+    all(.!(haskey.(Ref(co.cache), [:EqualityConstraint]))) &&
+        return get_equality_constraint(M, co.objective, p, i)
+    return copy(
+        get!(co.cache[:EqualityConstraint], (copy(M, p), i)) do
+            get_equality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+function get_inequality_constraints(M::AbstractManifold, co::ManifoldCachedObjective, p)
+    all(.!(haskey.(Ref(co.cache), [:InequalityConstraints]))) &&
+        return get_inequality_constraints(M, co.objective, p)
+    return copy(
+        get!(co.cache[:InequalityConstraints], copy(M, p)) do
+            get_inequality_constraints(M, co.objective, p)
+        end,
+    )
+end
+function get_inequality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
+    all(.!(haskey.(Ref(co.cache), [:InequalityConstraint]))) &&
+        return get_inequality_constraint(M, co.objective, p, i)
+    return copy(
+        get!(co.cache[:InequalityConstraints], (copy(M, p), i)) do
+            get_inequality_constraint(M, co.objective, p, i)
+        end,
+    )
+end
+#
+# Gradients of Constraints
 
 #
 # Hessian

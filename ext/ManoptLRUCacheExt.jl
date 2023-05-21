@@ -51,12 +51,12 @@ function Manopt.init_caches(
         (c === :Cost) && push!(lru_caches, LRU{P,R}(; maxsize=m))
         # vectors – e.g. Constraints/EqCOnstraints/InEqCOnstraints
         # (a) store whole vectors
-        # (c === :EqualityConstraints)
-        # (c === :InequalityConstraints)
-        # (c === :Constraints)
+        (c === :EqualityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
+        (c === :InequalityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
+        (c === :Constraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
         # (b) store single entries, but with an point-index key
-        # (c === :EqualityConstraint)
-        # (c === :InequalityConstraint)
+        (c === :EqualityConstraint) && push!(lru_caches, LRU{Tuple{P,Int},R}(; maxsize=m))
+        (c === :InequalityConstraint) && push!(lru_caches, LRU{Tuple{P,Int},R}(; maxsize=m))
         # Tangent Vector cache
         # (a) the simple ones, like the gradient or the Hessian
         (c === :Gradient) && push!(lru_caches, LRU{P,T}(; maxsize=m))
@@ -72,6 +72,7 @@ function Manopt.init_caches(
         # Point caches
         # (b) proximal point - we have to again use (p, λ, i) as key
         (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P,R,Int},P}(; maxsize=m))
+        # None of the above matched -> unknown cache type
         if length(lru_caches) == i #nothing pushed
             error("""
             A cache for :$c seems to not be supported by LRU caches.
