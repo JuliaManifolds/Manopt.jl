@@ -66,8 +66,14 @@ function Manopt.init_caches(
         (c === :Hessian) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
         (c === :Preconditioner) && push!(lru_caches, LRU{Tuple{P,T},T}(; maxsize=m))
         # (b) store tangent vectors of components, but with an point-index key
-        # (c === :GradEqualityConstraint)
-        # (c === :GradInequalityConstraint)
+        (c === :GradEqualityConstraint) &&
+            push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
+        (c === :GradInequalityConstraint) &&
+            push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
+        # For the (future) product tangent budle this might also be just Ts
+        (c === :GradEqualityConstraints) && push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
+        (c === :GradInequalityConstraints) &&
+            push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
         # (c === :StochasticGradient)
         # Point caches
         # (b) proximal point - we have to again use (p, λ, i) as key

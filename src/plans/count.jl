@@ -18,7 +18,9 @@ to parts of the objective.
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
 | `:EqualityConstraints`      | [`get_equality_constraints`](@ref)     | does not count single access |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
+| `:GradEqualityConstraints`  | [`get_grad_equality_constraints`](@ref)| does not count single access |
 | `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
+| `:GradInequalityConstraints`| [`get_inequality_constraints`](@ref)   | does not count single access |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |                              |
 | `:Hessian`                  | [`get_hessian`](@ref)                  |                              |
 | `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
