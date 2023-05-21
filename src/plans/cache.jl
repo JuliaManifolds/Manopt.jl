@@ -479,7 +479,7 @@ function get_grad_equality_constraints!(
 )
     !(haskey(co.cache, :GradEqualityConstraints)) &&
         return get_grad_equality_constraints!(M, X, co.objective, p)
-    copyto.(
+    copyto!.(
         Ref(M),
         X,
         Ref(p),
@@ -541,7 +541,7 @@ function get_grad_inequality_constraints!(
 )
     !(haskey(co.cache, :GradInequalityConstraints)) &&
         return get_grad_inequality_constraints!(M, X, co.objective, p)
-    copyto.(
+    copyto!.(
         Ref(M),
         X,
         Ref(p),
