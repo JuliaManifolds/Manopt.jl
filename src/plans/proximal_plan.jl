@@ -86,12 +86,23 @@ function get_proximal_map(
     check_prox_number(length(mpo.proximal_maps!!), i)
     return mpo.proximal_maps!![i](M, λ, p)
 end
+function get_proximal_map(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, λ, p, i
+)
+    return get_proximal_map(M, get_objective(admo, false), λ, p, i)
+end
+
 function get_proximal_map!(
     M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
 )
     check_prox_number(length(mpo.proximal_maps!!), i)
     copyto!(M, q, mpo.proximal_maps!![i](M, λ, p))
     return q
+end
+function get_proximal_map!(
+    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, λ, p, i
+)
+    return get_proximal_map!(M, q, get_objective(admo, false), λ, p, i)
 end
 function get_proximal_map(
     M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i

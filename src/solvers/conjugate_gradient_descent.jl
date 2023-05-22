@@ -111,8 +111,8 @@ function conjugate_gradient_descent(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function conjugate_gradient_descent(
-    M::AbstractManifold, mgo::ManifoldGradientObjective, p=rand(M); kwargs...
-)
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -154,7 +154,7 @@ function conjugate_gradient_descent!(
 end
 function conjugate_gradient_descent!(
     M::AbstractManifold,
-    mgo::ManifoldGradientObjective,
+    mgo::O,
     p;
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
@@ -166,7 +166,7 @@ function conjugate_gradient_descent!(
     ),
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
     kwargs...,
-)
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     X = zero_vector(M, p)
@@ -180,8 +180,9 @@ function conjugate_gradient_descent!(
         vector_transport_method,
         X,
     )
-    cgs = decorate_state!(cgs; kwargs...)
-    return get_solver_return(solve!(dmp, cgs))
+    dcgs = decorate_state!(cgs; kwargs...)
+    solve!(dmp, dcgs)
+    return get_solver_return(get_objective(dmp), dcgs)
 end
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)

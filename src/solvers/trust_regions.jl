@@ -349,8 +349,8 @@ function trust_regions(
     )
 end
 function trust_regions(
-    M::AbstractManifold, mho::ManifoldHessianObjective, p=rand(M); kwargs...
-)
+    M::AbstractManifold, mho::O, p=rand(M); kwargs...
+) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return trust_regions!(M, mho, q; kwargs...)
 end
@@ -416,7 +416,7 @@ function trust_regions!(
 end
 function trust_regions!(
     M::AbstractManifold,
-    mho::ManifoldHessianObjective,
+    mho::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
@@ -442,7 +442,7 @@ function trust_regions!(
         (project!)=project!,
     ),
     kwargs..., #collect rest
-) where {Proj}
+) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     (ρ_prime >= 0.25) && throw(
         ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.")
     )
@@ -474,8 +474,9 @@ function trust_regions!(
         augmentation_threshold=augmentation_threshold,
         (project!)=project!,
     )
-    trs = decorate_state!(trs; kwargs...)
-    return get_solver_return(solve!(mp, trs))
+    dtrs = decorate_state!(trs; kwargs...)
+    solve!(mp, dtrs)
+    return get_solver_return(get_objective(mp), dtrs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

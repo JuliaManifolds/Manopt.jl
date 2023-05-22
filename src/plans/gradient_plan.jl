@@ -17,6 +17,9 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
 """
 get_gradient_function(amgo::AbstractManifoldGradientObjective) = amgo.gradient!!
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective)
+    return get_gradient_function(get_objective(admo, false))
+end
 
 @doc raw"""
     ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
@@ -87,8 +90,36 @@ function get_gradient_function(cgo::ManifoldCostGradientObjective)
     return (M, p) -> get_gradient(M, cgo, p)
 end
 
+#
+# and indernal helper to make the dispatch nicer
+#
+function get_cost_and_gradient(
+    M::AbstractManifold, cgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
+)
+    return cgo.costgrad!!(M, p)
+end
+function get_cost_and_gradient(
+    M::AbstractManifold, cgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    return cgo.costgrad!!(M, X, p)
+end
+
+function get_cost_and_gradient!(
+    M::AbstractManifold, X, cgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
+)
+    (c, Y) = cgo.costgrad!!(M, p)
+    copyto!(M, X, p, Y)
+    return (c, X)
+end
+function get_cost_and_gradient!(
+    M::AbstractManifold, X, cgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
+)
+    return cgo.costgrad!!(M, X, p)
+end
+
 function get_cost(M::AbstractManifold, cgo::ManifoldCostGradientObjective, p)
-    v, _ = cgo.costgrad!!(M, p)
+    v, _ = get_cost_and_gradient(M, cgo, p)
     return v
 end
 
@@ -124,6 +155,9 @@ vector `X` comes second.
 """
 get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective, p)
 
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradient(M, get_objective(admo, false), p)
+end
 function get_gradient(
     M::AbstractManifold, mgo::AbstractManifoldGradientObjective{AllocatingEvaluation}, p
 )
@@ -136,18 +170,13 @@ function get_gradient(
     mgo.gradient!!(M, X, p)
     return X
 end
-function get_gradient(
-    M::AbstractManifold, mgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
-)
-    _, X = mgo.costgrad!!(M, p)
+function get_gradient(M::AbstractManifold, mcgo::ManifoldCostGradientObjective, p)
+    _, X = get_cost_and_gradient(M, mcgo, p)
     return X
 end
-function get_gradient(
-    M::AbstractManifold, mgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
-)
-    X = zero_vector(M, p)
-    mgo.costgrad!!(M, X, p)
-    return X
+
+function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradient!(M, X, get_objective(admo, false), p)
 end
 
 function get_gradient!(
@@ -162,17 +191,8 @@ function get_gradient!(
     mgo.gradient!!(M, X, p)
     return X
 end
-function get_gradient!(
-    M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
-)
-    _, Y = mgo.costgrad!!(M, p)
-    copyto!(M, X, p, Y)
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
-)
-    mgo.costgrad!!(M, X, p)
+function get_gradient!(M::AbstractManifold, X, mcgo::ManifoldCostGradientObjective, p)
+    get_cost_and_gradient!(M, X, mcgo, p)
     return X
 end
 

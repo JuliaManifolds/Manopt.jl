@@ -149,8 +149,8 @@ function subgradient_method(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function subgradient_method(
-    M::AbstractManifold, sgo::ManifoldSubgradientObjective, p; kwargs...
-)
+    M::AbstractManifold, sgo::O, p; kwargs...
+) where {O<:Union{ManifoldSubgradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return subgradient_method!(M, sgo, q; kwargs...)
 end
@@ -189,13 +189,13 @@ function subgradient_method!(
 end
 function subgradient_method!(
     M::AbstractManifold,
-    sgo::ManifoldSubgradientObjective,
+    sgo::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(M, SubGradientMethodState),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     kwargs...,
-)
+) where {O<:Union{ManifoldSubgradientObjective,AbstractDecoratedManifoldObjective}}
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sgs = SubGradientMethodState(
@@ -205,8 +205,9 @@ function subgradient_method!(
         stepsize=stepsize,
         retraction_method=retraction_method,
     )
-    sgs = decorate_state!(sgs; kwargs...)
-    return get_solver_return(solve!(mp, sgs))
+    dsgs = decorate_state!(sgs; kwargs...)
+    solve!(mp, dsgs)
+    return get_solver_return(get_objective(mp), dsgs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)
     M = get_manifold(mp)

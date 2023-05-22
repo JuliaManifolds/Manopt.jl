@@ -518,8 +518,8 @@ end
 # Objetive -> Allocate and call !
 #
 function truncated_conjugate_gradient_descent(
-    M::AbstractManifold, mho::ManifoldHessianObjective, p, X; kwargs...
-)
+    M::AbstractManifold, mho::O, p, X; kwargs...
+) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     Y = copy(M, p, X)
     return truncated_conjugate_gradient_descent!(M, mho, q, Y; kwargs...)
@@ -597,7 +597,7 @@ function truncated_conjugate_gradient_descent!(
 end
 function truncated_conjugate_gradient_descent!(
     M::AbstractManifold,
-    mho::ManifoldHessianObjective,
+    mho::O,
     p,
     X;
     trust_region_radius::Float64=injectivity_radius(M) / 4,
@@ -613,7 +613,7 @@ function truncated_conjugate_gradient_descent!(
                                           StopWhenModelIncreased(),
     project!::Proj=copyto!,
     kwargs..., #collect rest
-) where {Proj}
+) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     dmho = decorate_objective!(M, mho; kwargs...)
     mp = DefaultManoptProblem(M, dmho)
     tcgs = TruncatedConjugateGradientState(
@@ -627,8 +627,9 @@ function truncated_conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         (project!)=project!,
     )
-    tcgs = decorate_state!(tcgs; kwargs...)
-    return get_solver_return(solve!(mp, tcgs))
+    dtcgs = decorate_state!(tcgs; kwargs...)
+    solve!(mp, dtcgs)
+    return get_solver_return(get_objective(mp), dtcgs)
 end
 #
 # Deprecated - even kept old notation

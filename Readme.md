@@ -42,22 +42,6 @@ The following packages are related to `Manopt.jl`
 * [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) – a library of manifolds implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) :octocat: [GitHub repository](https://github.com/JuliaManifolds/Manifolds.jl)
 * [`ManifoldsDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) – a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
 
-## Further Packages & Links
-
-`Manopt.jl` belongs to the Manopt family:
-
-*  [manopt.org](https://www.manopt.org) – The Matlab version of Manopt, see also their :octocat: [GitHub repository](https://github.com/NicolasBoumal/manopt)
-* [pymanopt.org](https://www.pymanopt.org/) – The Python version of Manopt – providing also several AD backends, see also their :octocat: [GitHub repository](https://github.com/pymanopt/pymanopt)
-
-but there are also more packages providing tools on manifolds:
-
-* [Jax Geometry](https://bitbucket.org/stefansommer/jaxgeometry/src/main/) (Python/Jax) for differential geometry and stochastic dynamics with deep learning
-* [Geomstats](https://geomstats.github.io) (Python with several backends) focusing on statistics and machine learning :octocat: [GitHub repository](https://github.com/geomstats/geomstats)
-* [Geoopt](https://geoopt.readthedocs.io/en/latest/) (Python & PyTorch) – Riemannian ADAM & SGD. :octocat: [GitHub repository](https://github.com/geoopt/geoopt)
-* [McTorch](https://github.com/mctorch/mctorch) (Python & PyToch) – Riemannian SGD, Adagrad, ASA & CG.
-* [ROPTLIB](https://www.math.fsu.edu/~whuang2/papers/ROPTLIB.htm) (C++) a Riemannian OPTimization LIBrary :octocat: [GitHub repository](https://github.com/whuang08/ROPTLIB)
-* [TF Riemopt](https://github.com/master/tensorflow-riemopt) (Python & TensorFlow) Riemannian optimization using TensorFlow
-
 ## Citation
 
 If you use `Manopt.jl` in your work, please cite the following
@@ -91,3 +75,21 @@ To refer to a certain version or the source code in general we recommend to cite
 
 for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
 Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
+
+## Further and Similar Packages & Links
+
+`Manopt.jl` belongs to the Manopt family:
+
+*  [manopt.org](https://www.manopt.org) – The Matlab version of Manopt, see also their :octocat: [GitHub repository](https://github.com/NicolasBoumal/manopt)
+* [pymanopt.org](https://www.pymanopt.org/) – The Python version of Manopt – providing also several AD backends, see also their :octocat: [GitHub repository](https://github.com/pymanopt/pymanopt)
+
+but there are also more packages providing tools on manifolds:
+
+* [Jax Geometry](https://bitbucket.org/stefansommer/jaxgeometry/src/main/) (Python/Jax) for differential geometry and stochastic dynamics with deep learning
+* [Geomstats](https://geomstats.github.io) (Python with several backends) focusing on statistics and machine learning :octocat: [GitHub repository](https://github.com/geomstats/geomstats)
+* [Geoopt](https://geoopt.readthedocs.io/en/latest/) (Python & PyTorch) – Riemannian ADAM & SGD. :octocat: [GitHub repository](https://github.com/geoopt/geoopt)
+* [McTorch](https://github.com/mctorch/mctorch) (Python & PyToch) – Riemannian SGD, Adagrad, ASA & CG.
+* [ROPTLIB](https://www.math.fsu.edu/~whuang2/papers/ROPTLIB.htm) (C++) a Riemannian OPTimization LIBrary :octocat: [GitHub repository](https://github.com/whuang08/ROPTLIB)
+* [TF Riemopt](https://github.com/master/tensorflow-riemopt) (Python & TensorFlow) Riemannian optimization using TensorFlow
+
+Did you use `Manopt.jl` somewhere? Let us know! We'd love to collect those here as well.

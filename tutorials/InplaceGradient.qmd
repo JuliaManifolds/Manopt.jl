@@ -1,5 +1,6 @@
 ---
 title: "Speedup using Inplace Evaluation"
+author: Ronny Bergmann
 ---
 
 When it comes to time critital operations, a main ingredient in Julia is given by
