@@ -240,7 +240,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     if !isempty(findall(λj -> λj ≤ bms.filter1, bms.λ))
         #y = bms.bundle[1][1]
-        deleteat!(bms.bundle, l)
+        deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
         #s =
         #    (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
         #    distance(M, bms.bundle[1][1], y)
