@@ -3,7 +3,7 @@ Ronny Bergmann
 
 In this tutorial, we want to investigate the caching and counting (i.e. statistics) features
 of [Manopt.jl](https://manoptjl.org). We will reuse the optimization tasks from the
-introductionary tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
+introductory tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
 
 ## Introduction
 
@@ -23,7 +23,7 @@ end
 
 This still leaves a bit of work to the user, especially for tracking more than just the number of cost function evaluations.
 
-When the a function like objective or gradient is expensive to compute, it may make sense to cache its results.
+When a function like the objective or gradient is expensive to compute, it may make sense to cache its results.
 Manopt.jl tries to minimize the number of repeated calls but sometimes they are necessary and harmless when the function is cheap to compute.
 Caching of expensive function calls can for example be added using [Memoize.jl](https://github.com/JuliaCollections/Memoize.jl) by the user.
 The approach in the solvers of [Manopt.jl](https://manoptjl.org) aims to simplify adding
@@ -31,7 +31,7 @@ both these capabilities on the level of calling a solver.
 
 ## Technical Background
 
-The two ingdredients for a solver in [Manopt.jl](https://manoptjl.org)
+The two ingredients for a solver in [Manopt.jl](https://manoptjl.org)
 are the [`AbstractManoptProblem`](@ref) and the [`AbstractManoptSolverState`](@ref), where the
 former consists of the domain, that is the [manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold) and [`AbstractManifoldObjective`](@ref).
 
