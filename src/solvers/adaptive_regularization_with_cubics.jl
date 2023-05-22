@@ -59,6 +59,7 @@ mutable struct AdaptiveRegularizationState{
     ρ_regularization::R
     stop::TStop
     retraction_method::TRTM
+    optimized_updating_rule::Bool
     ςmin::R
     θ::R
     η1::R
@@ -80,6 +81,7 @@ mutable struct AdaptiveRegularizationState{
         ρ_regularization::R=1.0,
         stop::StoppingCriterion=StopAfterIteration(100),       #TRTM?
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        optimized_updating_rule::Bool=false,
         ςmin::R=1.0, #Set the below to appropriate default vals.
         θ::R=1.0,
         η1::R=1.0,
@@ -101,6 +103,7 @@ mutable struct AdaptiveRegularizationState{
         o.ρ_regularization = ρ_regularization
         o.stop = stop
         o.retraction_method = retraction_method
+        o.optimized_updating_rule=optimized_updating_rule
         o.ςmin = ςmin
         o.θ = θ
         o.η1 = η1
@@ -126,6 +129,7 @@ function AdaptiveRegularizationState(
     ρ_regularization::R=1e3,
     stop::StoppingCriterion=StopAfterIteration(100),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    optimized_updating_rule::Bool=false,
     ςmin::R=1e-10, #Set the below to appropriate default vals.
     θ::R=2.0,
     η1::R=0.1,
@@ -148,6 +152,7 @@ function AdaptiveRegularizationState(
         ρ_regularization,
         stop,
         retraction_method,
+        optimized_updating_rule,
         ςmin,
         θ,
         η1,
@@ -181,8 +186,9 @@ function adaptive_regularization_with_cubics!(
     maxIterLanczos= 200,
     ρ::R=0.0, #1.0
     ρ_regularization::R=1e3,
-    stop::StoppingCriterion=StopAfterIteration(40) | StopWhenGradientNormLess(1e-9),
+    stop::StoppingCriterion=StopAfterIteration(40) | StopWhenGradientNormLess(1e-9) | StopWhenAllLanczosVectorsUsed(maxIterLanczos-1),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    optimized_updating_rule::Bool=false,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ςmin::R=1e-10,
     θ::R=2.0,
@@ -216,6 +222,7 @@ function adaptive_regularization_with_cubics!(
         ρ_regularization=ρ_regularization,
         stop=stop,
         retraction_method=retraction_method,
+        optimized_updating_rule=optimized_updating_rule,
         ςmin=ςmin,
         θ=θ,
         η1=η1,
@@ -256,50 +263,263 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     #Solve the subproblem
     arcs.S = get_solver_result(solve!(arcs.subprob, decorate_state!(arcs.substate)))
 
+    if !arcs.optimized_updating_rule #check if we want to use the optimized procedure
+        #Regular updating procedure
+        #Computing the regularized ratio between actual improvement and model improvement.
+        retrx=retract(M, arcs.p, arcs.S,arcs.retraction_method)
+        cost = get_cost(M, mho, arcs.p)
+        ρ_num = cost - get_cost(M, mho, retrx)
+        ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
+        ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
+        ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
+        ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
 
-    #Computing the regularized ratio between actual improvement and model improvement.
-    retrx=retract(M, arcs.p, arcs.S,arcs.retraction_method)
-    cost = get_cost(M, mho, arcs.p)
-    ρ_num = cost - get_cost(M, mho, retrx)
-    ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
-    ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
-    ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
-    ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
+        arcs.ρ = ρ
+        sub_fail = (ρ_den + ρ_reg <= 0)
+        if sub_fail
+            println("subproblem failure!")    #if this is the case we should reject the step!
+        end
+
+        #Update iterate
+        if arcs.ρ >= arcs.η1
+            arcs.p = retrx                    #retract(M, arcs.p, arcs.S) #changed to .=
+            get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
+        end
+
+        #Update regularization parameter
+        if arcs.ρ >= arcs.η2 #very successful
+            arcs.ς = max(arcs.ςmin, arcs.γ1 * arcs.ς)
+        elseif arcs.η1 <= arcs.ρ < arcs.η2
+            #leave regParam unchanged
+        else #unsuccessful
+            arcs.ς = arcs.γ2 * arcs.ς
+        end
+
+    else 
+        #optimized updating procedure
+
+        #temporarly set the parameters here. Will move them to the arc state so they can be adjusted.
+        ϵχ=1e-10
+        β=0.01
+        δ1=0.1
+        δ2=0.1
+        δ3=2.0
+        δmax=100.0
+        αmax=2
+        η=arcs.η1
+
+        #compute retraction and cost
+        retrx=retract(M, arcs.p, arcs.S,arcs.retraction_method)
+        cost = get_cost(M, mho, arcs.p)
+        newcost=get_cost(M, mho, retrx)
+
+
+        
 
 
 
-    arcs.ρ = ρ
-    sub_fail = (ρ_den + ρ_reg <= 0)
-    if sub_fail
-        println("subproblem failure!")    #if this is the case we should reject the step!
-    end
+        #compute ρ (not regularized)
+        ρ_num = cost - newcost
+        ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
+        ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
+        ρ=ρ_num/ρ_den
+        arcs.ρ = ρ
 
-    if arcs.ρ<0
-        println("ρ_num ",ρ_num," ρ_den ",ρ_den," ρ_reg ",ρ_reg )
-    end
+        #Update iterate
+        if arcs.ρ >= arcs.η1
+            arcs.p = retrx                    #retract(M, arcs.p, arcs.S) #changed to .=
+            get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
+        end
 
-    #Update iterate
-    if arcs.ρ >= arcs.η1
-        #println("Updated iterate")
-        arcs.p = retrx                    #retract(M, arcs.p, arcs.S)
-        get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
+        #useful variables
+        ck=(arcs.subcost)(M,arcs.subcost.y) #compute subcost  (arcs.substate.y)
+        qk=ck-arcs.ς/3 * norm(arcs.subcost.y,2)^3 #compute quadratic model   
+        χk=ck-max(newcost,qk) #compute gap
+        pk=newcost-qk
+        gs=arcs.subcost.y[1]*arcs.subcost.gradnorm
+        sHs=0.5*dot(arcs.subcost.y,@view(arcs.subcost.Tmatrix[1:arcs.subcost.k,1:arcs.subcost.k])*arcs.subcost.y) 
+        
 
-    end
+        if arcs.ρ>=1 && χk >= ϵχ
+            if newcost>=qk
+                #solve cubic equation (3.29) given by 3*pk*α^3 + sHs*α^2 + gs*α + 3*β*χk=0
+                roots=solvecubic(3*pk,sHs,gs,3*β*χk)
+                realrootsvec=realroots(roots)
+                A=realrootsvec[realrootsvec .>=cbrt(β)]
+                if length(A)==0
+                    arcs.ς = max(δ1*arcs.ς,eps()) 
+                end
+                if length(A)>0
+                    Aβ = A .- cbrt(β)
+                    min_index= argmin(Aβ) #computes αβ=argmin{(α-cbrt(β))| α ∈ A }
+                    αβ=A[min_index]
 
-    #Update regularization parameter
-    if arcs.ρ >= arcs.η2 #very successful
-        #println("very successful")
-        arcs.ς = max(arcs.ςmin, arcs.γ1 * arcs.ς)
-    elseif arcs.η1 <= arcs.ρ < arcs.η2
-        #println("successful")
-        #leave regParam unchanged
-    else #unsuccessful
-        #println("unsuccessful")
-        arcs.ς = arcs.γ2 * arcs.ς
+                    if αβ <= αmax 
+                        ςβ = arcs.ς + 3.0*χk/(norm(arcs.subcost.y,2)^3)*((β-αβ^3)/(αβ^3))                      #ςβ =arcs.ς*β/(αβ)^3
+                        arcs.ς=max(ςβ,eps())
+                    end
+                    if αβ > αmax 
+                        arcs.ς=max(δ1*arcs.ς,eps())
+                    end
+                end
+            elseif newcost < qk 
+                # solve quadratic equation (3.34) sHs*α^2 + gs*α + 3*β*χk=0
+                disc=(gs)^2-4*sHs*3*β*χk #compute discriminant
+                real_roots=[]
+                if isapprox(disc, 0.0; atol=1e-15, rtol=0)
+                    r1=-gs/(2*sHs)
+                    append!(real_roots,r1)
+                elseif disc>0
+                    r1=(-gs+sqrt(disc))/(2*sHs)
+                    r2=(-gs-sqrt(disc))/(2*sHs)
+                    append!(real_roots,r1)
+                    append!(real_roots,r2)
+                end
+                A=real_roots[real_roots .>=cbrt(β)]
+                
+                if length(A)==0
+                    arcs.ς=max(δ1*arcs.ς,eps())
+                end
+                if length(A)>0
+                    Aβ = A .- cbrt(β)
+                    min_index= argmin(Aβ) #computes αβ=argmin{(α-cbrt(β))| α ∈ A }
+                    αβ=A[min_index]
+                    if αβ <= αmax
+                        ςβ =arcs.ς*β/(αβ)^3
+                        arcs.ς=max(ςβ,eps())
+                    end
+                    if αβ > αmax
+                        arcs.ς=max(δ1*arcs.ς,eps())
+                    end
+                end
+            end
+        elseif arcs.ρ>=1.0 && χk<ϵχ
+            arcs.ς=max(δ1*arcs.ς,eps())
+        elseif arcs.η2 <= arcs.ρ <1.0
+            arcs.ς=max(δ2*arcs.ς,eps())
+        elseif arcs.η1<=arcs.ρ < arcs.η2
+            println("we enter unchange elseif")
+            #leave unchanged
+        elseif 0<=arcs.ρ<arcs.η1
+            arcs.ς=δ3* arcs.ς
+        else arcs.ρ<0
+            #solve the quadratic equation (3.38) 6*pk*α^2 + (3-η)*sHs*α + 2*(3-2*η)*gs = 0
+            disc=((3-η)*sHs)^2-48*pk*(3-2*η)*gs
+            r1 = (-(3-η)*sHs + sqrt(disc))/(12*pk)
+            r2 = (-(3-η)*sHs - sqrt(disc))/(12*pk)
+            αη = max(r1,r2)
+            ςη = -(gs + sHs*αη)/(αη^2*norm(arcs.subcost.y,2)^3)  
+            arcs.ς = min(max(ςη,δ3*arcs.ς), δmax*arcs.ς)
+        end
     end
 
     return arcs
 end
+
+
+#solver for cubic equations taken from github since we dont have have Polynomial roots package.
+#needed for the optimized updating rule
+
+function solvecubic(a, b, c, d)
+	if a == 0 && b == 0                    # Case for handling Liner Equation
+        return [(-d * 1.0) / c]										# Returning 
+	elseif a == 0                             # Case for handling Quadratic 
+        D = c * c - 4.0 * b * d                       # Helper Temporary Variable
+        if D >= 0
+            D = sqrt(D)
+            x1 = (-c + D) / (2.0 * b)
+            x2 = (-c - D) / (2.0 * b)
+        else
+            D = sqrt(-D)
+            x1 = (-c + D * im) / (2.0 * b)
+            x2 = (-c - D * im) / (2.0 * b)
+		end
+        	return [x1, x2]
+	end
+		# Returning Quadratic Roots as numpy array.
+
+    f = findF(a, b, c)                          # Helper Temporary Variable
+    g = findG(a, b, c, d)                       # Helper Temporary Variable
+    h = findH(g, f)                             # Helper Temporary Variable
+
+    if f == 0 && g == 0 && h == 0            # All 3 Roots are Real and Equal
+        if (d / a) >= 0
+            x = (d / (1.0 * a)) ^ (1 / 3.0) * -1
+        else
+            x = (-d / (1.0 * a)) ^ (1 / 3.0)
+		end
+        return [x, x, x]           # Returning Equal Roots as numpy array.
+
+	elseif h <= 0                               # All 3 roots are Real
+
+        i = sqrt(((g ^ 2.0) / 4.0) - h)   # Helper Temporary Variable
+        j = i ^ (1 / 3.0)                      # Helper Temporary Variable
+        k = acos(-(g / (2 * i)))           # Helper Temporary Variable
+        L = j * -1                              # Helper Temporary Variable
+        M = cos(k / 3.0)                   # Helper Temporary Variable
+        N = sqrt(3) * sin(k / 3.0)    # Helper Temporary Variable
+        P = (b / (3.0 * a)) * -1                # Helper Temporary Variable
+
+        x1 = 2 * j * cos(k / 3.0) - (b / (3.0 * a))
+        x2 = L * (M + N) + P
+        x3 = L * (M - N) + P
+
+        return [x1, x2, x3]          # Returning Real Roots as numpy array.
+
+	elseif h > 0                               # One Real Root and two Complex Roots
+        R = -(g / 2.0) + sqrt(h)           # Helper Temporary Variable
+        if R >= 0
+            S = R ^ (1 / 3.0)                  # Helper Temporary Variable
+        else
+            S = (-R) ^ (1 / 3.0) * -1
+		end                 # Helper Temporary Variable
+        T = -(g / 2.0) - sqrt(h)
+        if T >= 0
+            U = (T ^ (1 / 3.0))                # Helper Temporary Variable
+        else
+            U = ((-T) ^ (1 / 3.0)) * -1
+		end# Helper Temporary Variable
+		
+        x1 = (S + U) - (b / (3.0 * a))
+        x2 = -(S + U) / 2 - (b / (3.0 * a)) + (S - U) * sqrt(3) * 0.5*im
+        x3 = -(S + U) / 2 - (b / (3.0 * a)) - (S - U) * sqrt(3) * 0.5*im
+        return [x1, x2, x3]
+	end
+	end
+		# Returning One Real Root and two Complex Roots
+# Helper function to return float value of f.
+function findF(a, b, c)
+    return ((3.0 * c / a) - ((b ^ 2.0) / (a ^ 2.0))) / 3.0
+end
+# Helper function to return float value of g.
+function findG(a, b, c, d)
+    return (((2.0 * (b ^ 3.0)) / (a ^ 3.0)) - ((9.0 * b * c) / (a ^2.0)) + (27.0 * d/ 		a)) /27.0
+end
+# Helper function to return float value of h.
+function findH(g, f)
+    return ((g ^ 2.0) / 4.0 + (f ^ 3.0) / 27.0)
+end
+
+#find the real roots from the cubic solver
+function realroots(rootvec)
+	#find the real roots of the cubic equation ax^3+bx^2+cx+d=0
+	#input rootvec=[x1,x2,x3]
+	realrootvec=[]
+	im_part=imag.(rootvec)
+	for i in 1:length(rootvec)
+		if isapprox(im_part[i], 0.0; atol=1e-15, rtol=0) # check if im part is zero
+			append!(realrootvec,real(rootvec[i]))
+		end
+	end
+	return realrootvec		
+end
+
+
+
+
+
+
+
 
 
 
@@ -351,8 +571,8 @@ function NewLanczosState(
     # Ronny: Maybe not necessary?
     objective::ManifoldHessianObjective = ManifoldHessianObjective((M,p)->0,(M,p)->0,(M,p,X)->0),
     θ=0.5,
-    maxIterLanczos=200,                     #maxIterLanczos
-    stopping_criterion::SC=StopAfterIteration(maxIterLanczos) | StopWhenLanczosModelGradLess(θ),
+    maxIterLanczos=200,                     #maxIterLanczos-1 since the first Lanczos vector is constructed in the intialization
+    stopping_criterion::SC=StopAfterIteration(maxIterLanczos-1) | StopWhenLanczosModelGradLess(θ),
     maxIterNewton::I=100,
     ς::R=10.0,
     gradnorm::R=1.0,
@@ -403,11 +623,11 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
 
     #update parameters for the subcost
     # Ronny: instead do set_manopt_parameter!(dmp, :Cost, :k,1)
-    #set_manopt_parameter!(s.subcost,:k,1)
-    #set_manopt_parameter!(s.subcost,:y,s.y)
-    #set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
-    #set_manopt_parameter!(s.subcost,:ς,s.ς)
-    #set_manopt_parameter!(s.subcost,:gradnorm,s.gradnorm)
+    set_manopt_parameter!(s.subcost,:k,1)
+    set_manopt_parameter!(s.subcost,:y,s.y)
+    set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
+    set_manopt_parameter!(s.subcost,:ς,s.ς)
+    set_manopt_parameter!(s.subcost,:gradnorm,s.gradnorm)
 
     return s
 end
@@ -477,19 +697,13 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
             s.gradnorm * e1 + @view(s.Tmatrix[1:(j+1),1:j]) * s.y + s.ς * norm(s.y, 2) * vcat(s.y, 0), 2)
     end
 
-    
 
-
-    #println("modelgradnorm: ",s.modelGradnorm," θ: ",s.θ, " norm(y)^2: ", norm(s.y,2)^2)
    
     if s.modelGradnorm <= s.θ*norm(s.y,2)^2
         #The condition is satisifed. Assemble the optimal tangent vector
         S_opt=zero_vector(M,s.p)
         #println("number of dim in opt sol: ", j)
-        #funcvalue=s.gradnorm*s.y[1]+0.5*dot(s.y,s.Tmatrix[1:j,1:j]*s.y)+s.ς/3*norm(s.y,2)^3
-        #println("m(s): ",funcvalue," m(0): ",get_cost(M, mho,s.p))
 
-        #println("Q lengths ",norm.(s.Q,2))
         for i in 1:j #length(s.y)
             S_opt = S_opt + s.Q[i] * s.y[i]    #better to do lc=s.y .* s.Q[1:length(s.y)] to do the linear comb, then sum(lc)
         end
@@ -497,10 +711,10 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
     end
 
     #Update the params here.
-    #set_manopt_parameter!(s.subcost,:k,j+1)
-    #set_manopt_parameter!(s.subcost,:y,s.y) #     s.subcost(TangentSpaceAt(M,p), s.y)
-    #set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
-    #set_manopt_parameter!(s.subcost,:ς,s.ς)
+    set_manopt_parameter!(s.subcost,:k,j) #tried changing for j+1 to j
+    set_manopt_parameter!(s.subcost,:y,s.y) #     s.subcost(TangentSpaceAt(M,p), s.y)
+    set_manopt_parameter!(s.subcost,:Tmatrix,s.Tmatrix)
+    set_manopt_parameter!(s.subcost,:ς,s.ς)
 
     return s
 end
@@ -521,9 +735,9 @@ mutable struct CubicSubCost{Y,T,I,R}
     Tmatrix::T #submatrix
     y::Y # Solution of of argmin m(s), s= sum y[i]q[i]
 end
-function (C::CubicSubCost)(M::AbstractManifold,p)  # Ronny: M is Euclidean (R^k) but p should be y
+function (C::CubicSubCost)(::AbstractManifold,y)# Ronny: M is Euclidean (R^k) but p should be y. I can change it to y a just input c.y when computing the subcost
     #C.y[1]*C.gradnorm + 0.5*dot(C.y[1:C.k],@view(C.Tmatrix[1:C.k,1:C.k])*C.y[1:C.k]) + C.ς/3*norm(C.y[1:C.k],2)^3
-    return C.y[1]*C.gradnorm + 0.5*dot(C.y,@view(C.Tmatrix[1:C.k,1:C.k])*C.y) + C.ς/3*norm(C.y,2)^3
+    return y[1]*C.gradnorm + 0.5*dot(y,@view(C.Tmatrix[1:C.k,1:C.k])*y) + C.ς/3*norm(y,2)^3
 end
 
 
@@ -590,6 +804,29 @@ function (c::StopWhenLanczosModelGradLess)(
     end
     return false
 end
+
+
+#A new stopping criterion that deals with the scenario when a step needs more Lanczos vectors than preallocated.
+#Previously this would just cause an error due to out of bounds error. So this stopping criterion deals both with the scenario
+#of too few allocated vectors and stagnation in the solver.
+mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
+    maxInnerIter::Int64
+    reason::String
+    StopWhenAllLanczosVectorsUsed(maxIts::Int64) = new(maxIts, "")
+end
+function (c::StopWhenAllLanczosVectorsUsed)(
+    ::AbstractManoptProblem, s::AdaptiveRegularizationState, i::Int
+)
+    (i == 0) && (c.reason = "") # reset on init
+    if (i > 0) && s.subcost.k==c.maxInnerIter  
+        c.reason = "The algorithm used all preallocated Lanczos vectors and may have stagnated. Allocate more by variable maxIterLanczos.\n"
+        return true
+    end
+    return false
+end
+
+
+
 
 
 
