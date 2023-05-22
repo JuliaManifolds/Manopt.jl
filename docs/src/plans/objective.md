@@ -171,16 +171,19 @@ a simple cache objective exists as a decorator, that caches one cost value or gr
 It can be activated/used with the `cache=` keyword argument available for every solver.
 
 ```@docs
+Manopt.reset_counters!
 Manopt.objective_cache_factory
 ```
 
 #### A simple cache
 
+A first generic cache is always available, but it only caches one gradient and one cost function evaluation (for the same point).
+
 ```@docs
 SimpleManifoldCachedObjective
 ```
 
-### A Generic Cache
+#### A Generic Cache
 
 For the more advanced cache, you need to implement some type of cache yourself, that provides a `get!`
 and implement [`init_caches`](@ref).

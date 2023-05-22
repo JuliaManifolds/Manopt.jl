@@ -209,8 +209,8 @@ which function evaluations to cache.
 
 # Supported Symbols
 
-| Symbol                      | Caches calls to (incl. `!` variants`)  | Comment
-| --------------------------- | -------------------------------------- | ------------------------- |
+| Symbol                      | Caches calls to (incl. `!` variants)  | Comment
+| :-------------------------- | :------------------------------------- | :------------------------ |
 | `:Constraints`              | [`get_constraints`](@ref)              | vector of numbers         |
 | `:Cost`                     | [`get_cost`](@ref)                     |                           |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | numbers per (p,i)         |

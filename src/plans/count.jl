@@ -11,8 +11,8 @@ to parts of the objective.
 
 # Supported Symbols
 
-| Symbol                      | Counts calls to (incl. `!` variants`)  | Comment                      |
-| --------------------------- | -------------------------------------- | ---------------------------- |
+| Symbol                      | Counts calls to (incl. `!` variants)  | Comment                      |
+| :-------------------------- | :------------------------------------- | :--------------------------- |
 | `:Constraints`              | [`get_constraints`](@ref)              |                              |
 | `:Cost`                     | [`get_cost`](@ref)                     |                              |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
