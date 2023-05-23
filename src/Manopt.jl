@@ -138,6 +138,7 @@ include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
@@ -317,8 +318,7 @@ export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
-export WolfePowellLinesearch,
-    operator_to_matrix, square_matrix_vector_product, WolfePowellBinaryLinesearch
+export WolfePowellLinesearch, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
@@ -338,7 +338,9 @@ export DirectionUpdateRule,
     ConjugateGradientBealeRestart
 #
 # Solvers
-export alternating_gradient_descent,
+export adaptive_regularization_with_cubics,
+    adaptive_regularization_with_cubics!,
+    alternating_gradient_descent,
     alternating_gradient_descent!,
     augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
