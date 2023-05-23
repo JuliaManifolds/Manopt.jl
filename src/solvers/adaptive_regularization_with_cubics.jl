@@ -235,7 +235,8 @@ function adaptive_regularization_with_cubics!(
         γ3=γ3,
     )
     arcs = decorate_state!(arcs; kwargs...)
-    return get_solver_return(solve!(dmp, arcs))
+    solve!(dmp, arcs)
+    return get_solver_return(get_objective(dmp), arcs)
 end
 get_iterate(s::AdaptiveRegularizationState) = s.p
 function set_iterate!(s::AdaptiveRegularizationState, p)
@@ -330,7 +331,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
 
         #useful variables
         ck = (arcs.subcost)(M, arcs.subcost.y) #compute subcost  (arcs.substate.y)
-        qk = ck - arcs.ς / 3 * norm(arcs.subcost.y, 2)^3 #compute quadratic model   
+        qk = ck - arcs.ς / 3 * norm(arcs.subcost.y, 2)^3 #compute quadratic model
         χk = ck - max(newcost, qk) #compute gap
         pk = newcost - qk
         gs = arcs.subcost.y[1] * arcs.subcost.gradnorm
@@ -425,8 +426,8 @@ end
 
 function solvecubic(a, b, c, d)
     if a == 0 && b == 0                    # Case for handling Liner Equation
-        return [(-d * 1.0) / c]# Returning 
-    elseif a == 0                             # Case for handling Quadratic 
+        return [(-d * 1.0) / c]# Returning
+    elseif a == 0                             # Case for handling Quadratic
         D = c * c - 4.0 * b * d                       # Helper Temporary Variable
         if D >= 0
             D = sqrt(D)
@@ -678,7 +679,7 @@ function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
 
     #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
     if β > 1e-12  # β large enough-> Do regular procedure: MGS of r wrt. Q
-        s.Q[j + 1] .= project(M, s.p, s.r / β) #s.r/β  
+        s.Q[j + 1] .= project(M, s.p, s.r / β) #s.r/β
     #for i in 1:j
     #    s.r=s.r-inner(M,s.p,s.Q[i],s.r)*s.Q[i]
     #end
