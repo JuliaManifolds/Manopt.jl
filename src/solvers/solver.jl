@@ -43,8 +43,13 @@ function decorate_state!(
     return_state=false,
     kwargs..., # ignore all others
 ) where {S<:AbstractManoptSolverState}
-    deco_s = ismissing(debug) ? s : DebugSolverState(s, debug)
-    deco_s = ismissing(record) ? deco_s : RecordSolverState(deco_s, record)
+    deco_s = s
+    if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
+        deco_s = DebugSolverState(s, debug)
+    end
+    if !ismissing(record) && !(record isa AbstractArray && length(record) == 0)
+        deco_s = RecordSolverState(deco_s, record)
+    end
     deco_s = (return_state) ? ReturnSolverState(deco_s) : deco_s
     return deco_s
 end
@@ -59,9 +64,11 @@ decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators.
 A specific one is used to activate certain decorators.
 
-* `cache` – (`missing`) currently only supports the [`SimpleCacheObjective`](@ref)
-  which is activated by either specifying the symbol `:Simple` or the tuple
-  (`:Simple, kwargs...`) to pass down keyword arguments
+* `cache` – (`missing`) specify a cache. Currenlty `:Simple` is supported and `:LRU` if you
+  load `LRUCache.jl`. For this case a tuple specifying what to cache and how many can be provided,
+  i.e. `(:LRU, [:Cost, :Gradient], 10)`, where the number specifies the size of each cache.
+  and 10 is the default if one omits the last tuple entry
+* `count` – (`missing`) specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
 
 other keywords are ignored.
 
@@ -70,9 +77,20 @@ other keywords are ignored.
 [`objective_cache_factory`](@ref)
 """
 function decorate_objective!(
-    M::AbstractManifold, o::O; cache::Union{Missing,Symbol}=missing, kwargs...
-) where {O<:AbstractManifoldObjective}
-    deco_o = ismissing(cache) ? o : objective_cache_factory(M, o, cache)
+    M::AbstractManifold,
+    o::O;
+    cache::Union{
+        Missing,Symbol,Tuple{Symbol,<:AbstractArray},Tuple{Symbol,<:AbstractArray,P}
+    }=missing,
+    count::Union{Missing,AbstractVector{<:Symbol}}=missing,
+    return_objective=false,
+    kwargs...,
+) where {O<:AbstractManifoldObjective,P}
+    # Order: First count _then_ cache, so that cache is the outer decorator and
+    # we only count _after_ cache misses
+    deco_o = ismissing(count) ? o : objective_count_factory(M, o, count)
+    deco_o = ismissing(cache) ? deco_o : objective_cache_factory(M, deco_o, cache)
+    deco_o = return_objective ? ReturnManifoldObjective(deco_o) : deco_o
     return deco_o
 end
 

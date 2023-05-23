@@ -13,13 +13,31 @@ using Manifolds, Manopt, Test, Dates
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
         @test f(N, q) > f(N, q2)
-        o = CyclicProximalPointState(
+        q3 = copy(N, q)
+        cyclic_proximal_point!(
+            N, f, proxes, q3; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
+        )
+        cpps = CyclicProximalPointState(
             N, f; stopping_criterion=StopAfterIteration(1), λ=i -> π / (2 * i)
         )
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
         p = DefaultManoptProblem(N, mpo)
         @test_throws ErrorException get_proximal_map(p, 1.0, f, 3)
         @test_throws ErrorException ManifoldProximalMapObjective(f, proxes, [1, 2, 2])
+    end
+    @testset "Number" begin
+        M = Circle()
+        data = [-π / 2, π / 4, 0.0, π / 4]
+        q = sum(data) / length(data)
+        f(M, p) = 1 / 10 * sum(distance.(Ref(M), dara, Ref(p)) .^ 2)
+        proxes_f = [(N, λ, p) -> prox_distance(N, λ, q, p) for q in data]
+        p1 = cyclic_proximal_point(M, f, proxes_f, data[1])
+        @test isapprox(M, q, p1; atol=1e-3)
+        p2 = cyclic_proximal_point(M, f, proxes_f, data[1]; evaluation=InplaceEvaluation())
+        @test p1 == p2
+        s = cyclic_proximal_point(M, f, proxes_f, data[1]; return_state=true)
+        p3 = get_solver_result(s)[]
+        @test p2 == p3
     end
     @testset "Mutating" begin
         n = 3
@@ -37,7 +55,7 @@ using Manifolds, Manopt, Test, Dates
         s1 = cyclic_proximal_point(
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
-        s2 = cyclic_proximal_point(
+        r = cyclic_proximal_point(
             N,
             f,
             proxes!,
@@ -45,8 +63,13 @@ using Manifolds, Manopt, Test, Dates
             λ=i -> π / (2 * i),
             stopping_criterion=StopAfterIteration(100),
             evaluation=InplaceEvaluation(),
+            return_state=true,
         )
+        s2 = get_solver_result(r)
         @test isapprox(N, s1, s2)
+        @test startswith(
+            repr(r), "# Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm"
+        )
     end
     @testset "Problem access functions" begin
         n = 3
@@ -74,7 +97,7 @@ using Manifolds, Manopt, Test, Dates
             @test isapprox(N, r, get_proximal_map(dmp2, 1.0, q, i))
         end
     end
-    @testset "Option accsess functions" begin
+    @testset "State accsess functions" begin
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M, zeros(3))
@@ -94,13 +117,13 @@ using Manifolds, Manopt, Test, Dates
             M, f; stopping_criterion=StopAfterIteration(1), λ=i -> i
         )
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
-        p = DefaultManoptProblem(M, mpo)
+        dmp = DefaultManoptProblem(M, mpo)
         ds = DebugSolverState(s, DebugProximalParameter(; io=io))
-        step_solver!(p, ds, 1)
+        step_solver!(dmp, ds, 1)
         debug = String(take!(io))
         @test startswith(debug, "λ:")
         rs = RecordSolverState(s, RecordProximalParameter())
-        step_solver!(p, rs, 1)
+        step_solver!(dmp, rs, 1)
         @test get_record(rs) == [1.0]
     end
 end

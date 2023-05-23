@@ -12,6 +12,7 @@ or a [`Stepsize`](@ref).
 ```@docs
 AbstractManoptSolverState
 get_state
+Manopt.get_count
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,
@@ -26,6 +27,13 @@ get_iterate
 set_iterate!
 get_gradient(::AbstractManifoldGradientObjective)
 set_gradient!
+```
+
+An internal function working on the state and elements within a state is used to
+pass messages from (sub) activties of a state to the corresponding [`DebugMessages`](@ref)
+
+```@docs
+get_message
 ```
 
 ## Decorators for AbstractManoptSolverState
@@ -63,6 +71,15 @@ StoreStateAction
 get_storage
 has_storage
 update_storage!
+PointStorageKey
+VectorStorageKey
+```
+
+as well as two internal functions
+
+```@docs
+_storage_copy_vector
+_storage_copy_point
 ```
 
 ## Abstract States

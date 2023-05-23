@@ -8,10 +8,10 @@ A type for nonlinear least squares problems.
 Specify a nonlinear least squares problem
 
 # Fields
-* `F`        – a function ``F: \mathcal M → ℝ^d`` to minimize
-* `jacF!!`   – Jacobian of the function ``F``
-* `jacB`     – the basis of tangent space used for computing the Jacobian.
-* `num_components` – number of values returned by `F` (equal to `d`).
+* `f`        – a function ``f: \mathcal M → ℝ^d`` to minimize
+* `jacobian!!`   – Jacobian of the function ``f``
+* `jacobian_tangent_basis`     – the basis of tangent space used for computing the Jacobian.
+* `num_components` – number of values returned by `f` (equal to `d`).
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to be provided:
 
@@ -29,7 +29,7 @@ Also the Jacobian ``jacF!!`` is required:
 
 # Constructors
 
-    NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=AllocatingEvaluation(), jacB=DefaultOrthonormalBasis())
+    NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=AllocatingEvaluation(), jacobian_tangent_basis=DefaultOrthonormalBasis())
 
 # See also
 
@@ -37,72 +37,75 @@ Also the Jacobian ``jacF!!`` is required:
 """
 struct NonlinearLeastSquaresObjective{E<:AbstractEvaluationType,TC,TJ,TB<:AbstractBasis} <:
        AbstractManifoldGradientObjective{E,TC,TJ}
-    F::TC
+    f::TC
     jacobian!!::TJ
-    jacB::TB
+    jacobian_tangent_basis::TB
     num_components::Int
 end
 function NonlinearLeastSquaresObjective(
-    F::TF,
-    jacF::TJ,
+    f::TF,
+    jacobian_f::TJ,
     num_components::Int;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB::TB=DefaultOrthonormalBasis(),
+    jacB=nothing,
+    jacobian_tangent_basis::TB=isnothing(jacB) ? DefaultOrthonormalBasis() : jacB,
 ) where {TF,TJ,TB<:AbstractBasis}
+    !isnothing(jacB) &&
+        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     return NonlinearLeastSquaresObjective{typeof(evaluation),TF,TJ,TB}(
-        F, jacF, jacB, num_components
+        f, jacobian_f, jacobian_tangent_basis, num_components
     )
 end
 
 function get_cost(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
-    return 1//2 * norm(nlso.F(M, p))^2
+    return 1//2 * norm(nlso.f(M, p))^2
 end
 function get_cost(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
     residual_values = zeros(nlso.num_components)
-    nlso.F(M, residual_values, p)
+    nlso.f(M, residual_values, p)
     return 1//2 * norm(residual_values)^2
 end
 
 function get_gradient(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
-    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
     Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
-    residual_values = nlso.F(M, p)
+    residual_values = nlso.f(M, p)
     return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
 end
 function get_gradient(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
-    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
     Jval = zeros(nlso.num_components, manifold_dimension(M))
     nlso.jacobian!!(M, Jval, p; basis_domain=basis_x)
     residual_values = zeros(nlso.num_components)
-    nlso.F(M, residual_values, p)
+    nlso.f(M, residual_values, p)
     return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
 end
 
 function get_gradient!(
     M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
-    basis_x = _maybe_get_basis(M, p, nlso.jacB)
+    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
     Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
-    residual_values = nlso.F(M, p)
+    residual_values = nlso.f(M, p)
     return get_vector!(M, X, p, transpose(Jval) * residual_values, basis_x)
 end
 
 function get_gradient!(
     M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
-    basis_p = _maybe_get_basis(M, p, nlso.jacB)
+    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
     Jval = zeros(nlso.num_components, manifold_dimension(M))
     nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
     residual_values = zeros(nlso.num_components)
-    nlso.F(M, residual_values, p)
+    nlso.f(M, residual_values, p)
     get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
     return X
 end
@@ -119,7 +122,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `x` – a point (of type `P`) on a manifold as starting point
 * `stop` – (`StopAfterIteration(200) | StopWhenGradientNormLess(1e-12) | StopWhenStepsizeLess(1e-12)`)
   a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`default_retraction_method(M)`) the retraction to use, defaults to
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use, defaults to
   the default set for your manifold.
 * `residual_values` – value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp` – value of ``F`` for the current proposal point
@@ -177,7 +180,7 @@ mutable struct LevenbergMarquardtState{
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-12) |
                                               StopWhenStepsizeLess(1e-12),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         η::Real=0.2,
         damping_term_min::Real=0.1,
         β::Real=5.0,
@@ -222,4 +225,24 @@ mutable struct LevenbergMarquardtState{
             expect_zero_residual,
         )
     end
+end
+
+function show(io::IO, lms::LevenbergMarquardtState)
+    i = get_count(lms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(lms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Levenberg Marquardt Algorithm
+    $Iter
+    ## Parameters
+    * β: $(lms.β)
+    * damping term_ $(lms.damping_term) (min: $(lms.damping_term_min))
+    * η: $(lms.η)
+    * expect zero residual: $(lms.expect_zero_residual)
+    * retraction method: $(lms.retraction_method)
+
+    ## Stopping Criterion
+    $(status_summary(lms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end

@@ -25,7 +25,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TruncatedConjugateGradientState(M, p, x, η;
+    TruncatedConjugateGradientState(M, p=rand(M), η=zero_vector(M,p);
         trust_region_radius=injectivity_radius(M)/4,
         randomize=false,
         θ=1.0,
@@ -63,8 +63,8 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
         M::AbstractManifold,
-        p::P,
-        η::T;
+        p::P=rand(M),
+        η::T=zero_vector(M, p);
         trust_region_radius::R=injectivity_radius(M) / 4.0,
         randomize::Bool=false,
         project!::F=copyto!,
@@ -88,6 +88,22 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         tcgs.model_value = zero(trust_region_radius)
         return tcgs
     end
+end
+function show(io::IO, tcgs::TruncatedConjugateGradientState)
+    i = get_count(tcgs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(tcgs.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent
+    $Iter
+    ## Parameters
+    * randomize: $(tcgs.randomize)
+    * trust region radius: $(tcgs.trust_region_radius)
+
+    ## Stopping Criterion
+    $(status_summary(tcgs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 
 #
@@ -118,13 +134,18 @@ mutable struct StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
     κ::Float64
     θ::Float64
     reason::String
+    at_iteration::Int
     function StopWhenResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0)
-        return new(κ, θ, "")
+        return new(κ, θ, "", 0)
     end
 end
 function (c::StopWhenResidualIsReducedByFactorOrPower)(
     mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if norm(get_manifold(mp), tcgstate.p, tcgstate.residual) <=
        tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
         c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
@@ -132,6 +153,18 @@ function (c::StopWhenResidualIsReducedByFactorOrPower)(
     end
     return false
 end
+function status_summary(c::StopWhenResidualIsReducedByFactorOrPower)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Residual reduced by factor $(c.κ) or power $(c.θ):\t$s"
+end
+function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
+    return print(
+        io,
+        "StopWhenResidualIsReducedByFactorOrPower($(c.κ), $(c.θ))\n    $(status_summary(c))",
+    )
+end
+
 @doc raw"""
     update_stopping_criterion!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualPower, v)
 Update the residual Power `θ`  to `v`.
@@ -164,17 +197,13 @@ mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 # Fields
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
-* `storage` – stores the necessary parameters `η, δ, residual` to check the
-    criterion.
 
 # Constructor
 
-    StopWhenTrustRegionIsExceeded([a])
+    StopWhenTrustRegionIsExceeded()
 
 initialize the StopWhenTrustRegionIsExceeded functor to indicate to stop after
-the norm of the next iterate is greater than the trust-region radius using the
-[`StoreStateAction`](@ref) `a`, which is initialized to store
-`:η, :δ, :residual` by default.
+the norm of the next iterate is greater than the trust-region radius.
 
 # See also
 
@@ -182,18 +211,31 @@ the norm of the next iterate is greater than the trust-region radius using the
 """
 mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
     reason::String
+    at_iteration::Int
 end
-StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("")
+StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("", 0)
 function (c::StopWhenTrustRegionIsExceeded)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if tcgs.ηPη >= tcgs.trust_region_radius^2 && i >= 0
         c.reason = "Trust-region radius violation (‖η‖² = $(tcgs.ηPη)) >= $(tcgs.trust_region_radius^2) = trust_region_radius²). \n"
+        c.at_iteration = i
         return true
     end
     return false
 end
-
+function status_summary(c::StopWhenTrustRegionIsExceeded)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Trust region exceeded:\t$s"
+end
+function show(io::IO, c::StopWhenTrustRegionIsExceeded)
+    return print(io, "StopWhenTrustRegionIsExceeded()\n    $(status_summary(c))")
+end
 @doc raw"""
     StopWhenCurvatureIsNegative <: StoppingCriterion
 
@@ -216,16 +258,30 @@ does not give a reduction of the model.
 """
 mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
     reason::String
+    at_iteration::Int
 end
-StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("")
+StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("", 0)
 function (c::StopWhenCurvatureIsNegative)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if tcgs.δHδ <= 0 && i > 0
         c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(tcgs.δHδ))) <= 0).\n"
+        c.at_iteration = i
         return true
     end
     return false
+end
+function status_summary(c::StopWhenCurvatureIsNegative)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Cuvature is negative:\t$s"
+end
+function show(io::IO, c::StopWhenCurvatureIsNegative)
+    return print(io, "StopWhenCurvatureIsNegative()\n    $(status_summary(c))")
 end
 
 @doc raw"""
@@ -247,20 +303,38 @@ A functor for testing if the curvature of the model value increased.
 """
 mutable struct StopWhenModelIncreased <: StoppingCriterion
     reason::String
+    at_iteration::Int
 end
-StopWhenModelIncreased() = StopWhenModelIncreased("")
+StopWhenModelIncreased() = StopWhenModelIncreased("", 0)
 function (c::StopWhenModelIncreased)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
     if i > 0 && (tcgs.new_model_value > tcgs.model_value)
         c.reason = "Model value increased from $(tcgs.model_value) to $(tcgs.new_model_value).\n"
         return true
     end
     return false
 end
+function status_summary(c::StopWhenModelIncreased)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Model Increased:\t$s"
+end
+function show(io::IO, c::StopWhenModelIncreased)
+    return print(io, "StopWhenModelIncreased()\n    $(status_summary(c))")
+end
 
 @doc raw"""
-    truncated_conjugate_gradient_descent(M, f, grad_f, p, η, Hess_f, trust_region_radius)
+    truncated_conjugate_gradient_descent(M, f, grad_f, p; kwargs...)
+    truncated_conjugate_gradient_descent(M, f, grad_f, p, X; kwargs...)
+    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f; kwargs...)
+    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p; kwargs...)
+    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p, X; kwargs...)
+    truncated_conjugate_gradient_descent(M, mho::ManifoldHessianObjective, p, X; kwargs...)
 
 solve the trust-region subproblem
 
@@ -287,12 +361,15 @@ see the reference:
 
 # Input
 
+See signatures above, you can leave out only the Hessian,
+the vector, the point and the vector, or all 3.
+
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of `F`
-* `Hess_f` – the hessian ``\operatorname{Hess}f: T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
+* `Hess_f` – (optional, cf. [`ApproxHessianFiniteDifference`](@ref)) the hessian ``\operatorname{Hess}f: T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
 * `p` – a point on the manifold ``p ∈ \mathcal M``
-* `η` – an update tangential vector ``η ∈ T_p\mathcal M``
+* `X` – an update tangential vector ``X ∈ T_p\mathcal M``
 
 # Optional
 
@@ -325,18 +402,141 @@ the obtained (approximate) minimizer ``\eta^*``, see [`get_solver_return`](@ref)
 # see also
 [`trust_regions`](@ref)
 """
-function truncated_conjugate_gradient_descent(
-    M::AbstractManifold, F::TF, gradF::TG, x, η, H::TH; kwargs...
-) where {TF,TG,TH}
-    x_res = copy(M, x)
-    return truncated_conjugate_gradient_descent!(M, F, gradF, x_res, η, H; kwargs...)
+truncated_conjugate_gradient_descent(M::AbstractManifold, args; kwargs...)
+# No Hessian, no point/vector
+function truncated_conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
+    return truncated_conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end
+# No Hessian, no vector
+function truncated_conjugate_gradient_descent(M::AbstractManifold, f, grad_f, p; kwargs...)
+    return truncated_conjugate_gradient_descent(
+        M, f, grad_f, p, rand(M; vector_at=p); kwargs...
+    )
+end
+# no Hessian
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    p,
+    X;
+    evaluation=AllocatingEvaluation(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    kwargs...,
+)
+    Hess_f = ApproxHessianFiniteDifference(
+        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
+    )
+    return truncated_conjugate_gradient_descent(
+        M,
+        f,
+        grad_f,
+        Hess_f,
+        p,
+        X;
+        evaluation=evaluation,
+        retraction_method=retraction_method,
+        kwargs...,
+    )
+end
+# no point/vector
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold, f, grad_f, Hess_f::TH; kwargs...
+) where {TH<:Function}
+    return truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, rand(M); kwargs...)
+end
+# no vector
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold, f, grad_f, Hess_f::TH, p; kwargs...
+) where {TH<:Function}
+    return truncated_conjugate_gradient_descent(
+        M, f, grad_f, Hess_f, p, rand(M; vector_at=p); kwargs...
+    )
+end
+#
+# All defaults filled, generate mho
+#
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f::TH,
+    p,
+    X;
+    evaluation=AllocatingEvaluation(),
+    preconditioner=if evaluation isa InplaceEvaluation
+        (M, Y, p, X) -> (Y .= X)
+    else
+        (M, p, X) -> X
+    end,
+    kwargs...,
+) where {TH<:Function}
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+    return truncated_conjugate_gradient_descent(
+        M, mho, p, X; evaluation=evaluation, kwargs...
+    )
+end
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f::TH, #we first fill a default below bwfore dispatching on p::Number
+    p::Number,
+    X::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    preconditioner=(M, p, X) -> X,
+    kwargs...,
+) where {TH<:Function}
+    q = [p]
+    Y = [X]
+    f_(M, p) = f(M, p[])
+    # For now we can not update the gradient within the ApproxHessian so the filled default
+    # Hessian fails here
+    if evaluation isa AllocatingEvaluation
+        grad_f_ = (M, p) -> [grad_f(M, p[])]
+        Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
+        precon_ = (M, p, X) -> [preconditioner(M, p[], X[])]
+    else
+        grad_f_ = (M, X, p) -> (X .= [grad_f(M, p[])])
+        Hess_f_ = (M, Y, p, X) -> (Y .= [Hess_f(M, p[], X[])])
+        precon_ = (M, Y, p, X) -> (Y .= [preconditioner(M, p[], X[])])
+    end
+    rs = truncated_conjugate_gradient_descent(
+        M,
+        f_,
+        grad_f_,
+        Hess_f_,
+        q,
+        Y;
+        preconditioner=precon_,
+        evaluation=evaluation,
+        kwargs...,
+    )
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+#
+# Objetive -> Allocate and call !
+#
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold, mho::O, p, X; kwargs...
+) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
+    q = copy(M, p)
+    Y = copy(M, p, X)
+    return truncated_conjugate_gradient_descent!(M, mho, q, Y; kwargs...)
+end
+#
+# Deprecated - even keeping old notation.
+#
+@deprecate truncated_conjugate_gradient_descent(
+    M::AbstractManifold, F, gradF, x, η, H::TH; kwargs...
+) where {TH<:Function} truncated_conjugate_gradient_descent(M, F, gradF, H, x, η; kwargs...)
+
 @doc raw"""
-    truncated_conjugate_gradient_descent!(M, F, gradF, x, η, HessF, trust_region_radius; kwargs...)
+    truncated_conjugate_gradient_descent!(M, f, grad_f, Hess_f, p, X; kwargs...)
+    truncated_conjugate_gradient_descent!(M, f, grad_f, p, X; kwargs...)
 
-solve the trust-region subproblem in place of `x`.
+solve the trust-region subproblem in place of `X` (and `p`).
 
-# Input
 # Input
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
@@ -347,16 +547,60 @@ solve the trust-region subproblem in place of `x`.
 
 For more details and all optional arguments, see [`truncated_conjugate_gradient_descent`](@ref).
 """
+truncated_conjugate_gradient_descent!(M::AbstractManifold, args...; kwargs...)
+# no Hessian
 function truncated_conjugate_gradient_descent!(
     M::AbstractManifold,
-    f::TF,
-    grad_f::TG,
+    f,
+    grad_f,
     p,
-    X,
-    Hess_f::TH;
+    X;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    kwargs...,
+)
+    hess_f = ApproxHessianFiniteDifference(
+        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
+    )
+    return truncated_conjugate_gradient_descent!(
+        M,
+        f,
+        grad_f,
+        hess_f,
+        p,
+        X;
+        evaluation=evaluation,
+        retraction_method=retraction_method,
+        kwargs...,
+    )
+end
+# From functions to objective
+function truncated_conjugate_gradient_descent!(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f::TH,
+    p,
+    X;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    preconditioner=if evaluation isa InplaceEvaluation
+        (M, Y, p, X) -> (Y .= X)
+    else
+        (M, p, X) -> X
+    end,
+    kwargs...,
+) where {TH<:Function}
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+    return truncated_conjugate_gradient_descent!(
+        M, mho, p, X; evaluation=evaluation, kwargs...
+    )
+end
+function truncated_conjugate_gradient_descent!(
+    M::AbstractManifold,
+    mho::O,
+    p,
+    X;
     trust_region_radius::Float64=injectivity_radius(M) / 4,
-    evaluation=AllocatingEvaluation(),
-    preconditioner::Tprec=(M, x, ξ) -> ξ,
     θ::Float64=1.0,
     κ::Float64=0.1,
     randomize::Bool=false,
@@ -369,8 +613,7 @@ function truncated_conjugate_gradient_descent!(
                                           StopWhenModelIncreased(),
     project!::Proj=copyto!,
     kwargs..., #collect rest
-) where {TF,TG,TH,Tprec,Proj}
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     dmho = decorate_objective!(M, mho; kwargs...)
     mp = DefaultManoptProblem(M, dmho)
     tcgs = TruncatedConjugateGradientState(
@@ -384,10 +627,21 @@ function truncated_conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         (project!)=project!,
     )
-    tcgs = decorate_state!(tcgs; kwargs...)
-    return get_solver_return(solve!(mp, tcgs))
+    dtcgs = decorate_state!(tcgs; kwargs...)
+    solve!(mp, dtcgs)
+    return get_solver_return(get_objective(mp), dtcgs)
 end
+#
+# Deprecated - even kept old notation
+@deprecate truncated_conjugate_gradient_descent!(
+    M::AbstractManifold, F::TF, gradF::TG, x, η, H::TH; kwargs...
+) where {TF<:Function,TG<:Function,TH<:Function} truncated_conjugate_gradient_descent!(
+    M, F, gradF, H, x, η; kwargs...
+)
 
+#
+# Maybe these could be improved a bit in readablility some time
+#
 function initialize_solver!(
     mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState
 )
@@ -397,12 +651,12 @@ function initialize_solver!(
     tcgs.X = get_gradient(mp, tcgs.p)
     tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.Hη : tcgs.X
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
-    tcgs.δ = -deepcopy(tcgs.z)
+    tcgs.δ = -copy(M, tcgs.p, tcgs.z)
     tcgs.Hδ = zero_vector(M, tcgs.p)
-    tcgs.δHδ = inner(M, tcgs.p, tcgs.δ, tcgs.Hδ)
-    tcgs.ηPδ = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.δ) : zero(tcgs.δHδ)
-    tcgs.δPδ = inner(M, tcgs.p, tcgs.residual, tcgs.z)
-    tcgs.ηPη = tcgs.randomize ? inner(M, tcgs.p, tcgs.η, tcgs.η) : zero(tcgs.δHδ)
+    tcgs.δHδ = real(inner(M, tcgs.p, tcgs.δ, tcgs.Hδ))
+    tcgs.ηPδ = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.η, tcgs.δ)) : zero(tcgs.δHδ)
+    tcgs.δPδ = real(inner(M, tcgs.p, tcgs.residual, tcgs.z))
+    tcgs.ηPη = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.η, tcgs.η)) : zero(tcgs.δHδ)
     if tcgs.randomize
         tcgs.model_value =
             real(inner(M, tcgs.p, tcgs.η, tcgs.X)) +
@@ -410,7 +664,7 @@ function initialize_solver!(
     else
         tcgs.model_value = 0
     end
-    tcgs.z_r = inner(M, tcgs.p, tcgs.z, tcgs.residual)
+    tcgs.z_r = real(inner(M, tcgs.p, tcgs.z, tcgs.residual))
     tcgs.initialResidualNorm = norm(M, tcgs.p, tcgs.residual)
     return tcgs
 end
@@ -419,7 +673,7 @@ function step_solver!(
 )
     M = get_manifold(mp)
     get_hessian!(mp, tcgs.Hδ, tcgs.p, tcgs.δ)
-    tcgs.δHδ = inner(M, tcgs.p, tcgs.δ, tcgs.Hδ)
+    tcgs.δHδ = real(inner(M, tcgs.p, tcgs.δ, tcgs.Hδ))
     α = tcgs.z_r / tcgs.δHδ
     ηPη_new = tcgs.ηPη + 2 * α * tcgs.ηPδ + α^2 * tcgs.δPδ
     # Check against negative curvature and trust-region radius violation.
@@ -429,8 +683,8 @@ function step_solver!(
                 -tcgs.ηPδ +
                 sqrt(tcgs.ηPδ^2 + tcgs.δPδ * (tcgs.trust_region_radius^2 - tcgs.ηPη))
             ) / tcgs.δPδ
-        tcgs.η = tcgs.η + τ * tcgs.δ
-        tcgs.Hη = tcgs.Hη + τ * tcgs.Hδ
+        copyto!(M, tcgs.η, tcgs.p, tcgs.η + τ * tcgs.δ)
+        copyto!(M, tcgs.Hη, tcgs.p, tcgs.Hη + τ * tcgs.Hδ)
         tcgs.ηPη = ηPη_new
         return tcgs
     end
@@ -448,7 +702,7 @@ function step_solver!(
 
     # Precondition the residual.
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
-    zr = inner(M, tcgs.p, tcgs.z, tcgs.residual)
+    zr = real(inner(M, tcgs.p, tcgs.z, tcgs.residual))
     # Compute new search direction.
     β = zr / tcgs.z_r
     tcgs.z_r = zr

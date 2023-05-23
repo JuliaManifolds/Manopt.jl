@@ -11,7 +11,7 @@ see also [`alternating_gradient_descent`](@ref).
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
 * `order` the current permutation
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M,x,ξ)` to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
 * `stepsize` ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `p` the current iterate
@@ -52,7 +52,7 @@ function AlternatingGradientDescentState(
     inner_iterations::Int=5,
     order_type::Symbol=:Linear,
     order::Vector{<:Int}=Int[],
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000),
     stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
 ) where {P,T}
@@ -77,6 +77,30 @@ function AlternatingGradientDescentState(
         inner_iterations,
     )
 end
+function show(io::IO, agds::AlternatingGradientDescentState)
+    Iter = (agds.i > 0) ? "After $(agds.i) iterations\n" : ""
+    Conv = indicates_convergence(agds.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Alternating Gradient Descent Solver
+    $Iter
+    ## Parameters
+    * order: :$(agds.order_type)
+    * retraction method: $(agds.retraction_method)
+
+
+    ## Stepsize
+    $(agds.stepsize)
+
+    ## Stopping Criterion
+    $(status_summary(agds.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+function get_message(agds::AlternatingGradientDescentState)
+    # for now only step size is quipped with messages
+    return get_message(agds.stepsize)
+end
+
 """
     AlternatingGradient <: DirectionUpdateRule
 
@@ -105,9 +129,9 @@ function (a::ArmijoLinesearch)(
     M = get_manifold(amp)
     X = zero_vector(M, agds.p)
     get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    a.last_stepsize = linesearch_backtrack(
+    (a.last_stepsize, a.message) = linesearch_backtrack(
         M,
-        p -> get_cost(amp, p),
+        (M, p) -> get_cost(amp, p),
         agds.p,
         X,
         a.last_stepsize,
@@ -122,8 +146,12 @@ function default_stepsize(M::AbstractManifold, ::Type{AlternatingGradientDescent
     return ArmijoLinesearch(M)
 end
 
+function alternating_gradient_descent end
+function alternating_gradient_descent! end
+
 @doc raw"""
-    alternating_gradient_descent(M::ProductManifold, f, grad_f, p)
+    alternating_gradient_descent(M::ProductManifold, f, grad_f, p=rand(M))
+    alternating_gradient_descent(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
 
 perform an alternating gradient descent
 
@@ -147,7 +175,7 @@ perform an alternating gradient descent
 * `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
 * `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
 * `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M)`) a `retraction(M, p, X)` to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 
 # Output
 
@@ -155,23 +183,20 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
 
 !!! note
 
-    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` needs to be loaded.
 
 !!! note
 
-    The input of each of the (component) gradients is still the whole vector `x`,
+    The input of each of the (component) gradients is still the whole vector `X`,
     just that all other then the `i`th input component are assumed to be fixed and just
     the `i`th components gradient is computed / returned.
 
 """
-function alternating_gradient_descent(
-    M::ProductManifold, f, grad_f::Union{TgF,AbstractVector{<:TgF}}, p; kwargs...
-) where {TgF}
-    q = copy(M, p)
-    return alternating_gradient_descent!(M, f, grad_f, q; kwargs...)
-end
+alternating_gradient_descent(::AbstractManifold, args...; kwargs...)
+
 @doc raw"""
     alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
+    alternating_gradient_descent!(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
 
 perform a alternating gradient descent in place of `p`.
 
@@ -183,39 +208,12 @@ perform a alternating gradient descent in place of `p`.
   or is a vector of gradients
 * `p` – an initial value ``p_0 ∈ \mathcal M``
 
+you can also pass a [`ManifoldAlternatingGradientObjective`](@ref) `ago` containing `f` and `grad_f` instead.
+
 for all optional parameters, see [`alternating_gradient_descent`](@ref).
 """
-function alternating_gradient_descent!(
-    M::ProductManifold,
-    f,
-    grad_f::Union{TgF,AbstractVector{<:TgF}},
-    p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inner_iterations::Int=5,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
-                                          StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
-    order_type::Symbol=:Linear,
-    order=collect(1:(grad_f isa Function ? length(grad_f(M, p)) : length(grad_f))),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    kwargs...,
-) where {TgF}
-    agmo = ManifoldAlternatingGradientObjective(f, grad_f; evaluation=evaluation)
-    dagmo = decorate_objective!(M, agmo; kwargs...)
-    dmp = DefaultManoptProblem(M, dagmo)
-    agds = AlternatingGradientDescentState(
-        M,
-        p;
-        inner_iterations=inner_iterations,
-        stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
-        order_type=order_type,
-        order=order,
-        retraction_method=retraction_method,
-    )
-    agds = decorate_state!(agds; kwargs...)
-    return get_solver_return(solve!(dmp, agds))
-end
+alternating_gradient_descent!(M::AbstractManifold, args...; kwargs...)
+
 function initialize_solver!(
     amp::AbstractManoptProblem, agds::AlternatingGradientDescentState
 )

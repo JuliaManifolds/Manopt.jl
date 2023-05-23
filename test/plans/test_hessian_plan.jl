@@ -1,4 +1,5 @@
-using Manopt, Manifolds, Test
+using LRUCache, Manopt, Manifolds, Test
+include("../utils/dummy_types.jl")
 
 @testset "Hessian access functions" begin
     M = Euclidean(2)
@@ -33,5 +34,73 @@ using Manopt, Manifolds, Test
         @test get_preconditioner(mp, p, X) == X
         get_preconditioner!(mp, Y, p, X)
         @test Y == X
+    end
+    @testset "Objetive Decorator passthrough" begin
+        Y1 = zero_vector(M, p)
+        Y2 = zero_vector(M, p)
+        for obj in [mho1, mho2, mho3, mho4]
+            ddo = DummyDecoratedObjective(obj)
+            @test get_hessian(M, obj, p, X) == get_hessian(M, ddo, p, X)
+            get_hessian!(M, Y1, obj, p, X)
+            get_hessian!(M, Y2, ddo, p, X)
+            @test Y1 == Y2
+            @test get_preconditioner(M, obj, p, X) == get_preconditioner(M, ddo, p, X)
+            get_preconditioner!(M, Y1, obj, p, X)
+            get_preconditioner!(M, Y2, ddo, p, X)
+            @test Y1 == Y2
+        end
+    end
+    @testset "Counting Objective" begin
+        Y1 = zero_vector(M, p)
+        Y2 = zero_vector(M, p)
+        for obj in [mho1, mho2, mho3, mho4]
+            cobj = Manopt.objective_count_factory(M, obj, [:Hessian, :Preconditioner])
+            ddo = DummyDecoratedObjective(obj)
+            @test get_hessian(M, obj, p, X) == get_hessian(M, cobj, p, X)
+            get_hessian!(M, Y1, obj, p, X)
+            get_hessian!(M, Y2, cobj, p, X)
+            @test Y1 == Y2
+            @test get_preconditioner(M, obj, p, X) == get_preconditioner(M, cobj, p, X)
+            get_preconditioner!(M, Y1, obj, p, X)
+            get_preconditioner!(M, Y2, cobj, p, X)
+            @test Y1 == Y2
+            @test get_count(cobj, :Hessian) == 2
+            @test get_count(cobj, :Preconditioner) == 2
+        end
+    end
+    @testset "LRU Cache Objective" begin
+        Y = zero_vector(M, p)
+        for obj in [mho1, mho2, mho3, mho4]
+            cobj = Manopt.objective_count_factory(M, obj, [:Hessian, :Preconditioner])
+            ccobj = Manopt.objective_cache_factory(
+                M, cobj, (:LRU, [:Hessian, :Preconditioner])
+            )
+            Z = get_hessian(M, obj, p, X)
+            @test get_hessian(M, ccobj, p, X) == Z
+            @test get_hessian(M, ccobj, p, X) == Z #cached
+            get_hessian!(M, Y, ccobj, p, X) #cached
+            @test Y == Z
+            @test get_count(ccobj, :Hessian) == 1
+            Z = get_hessian(M, obj, -p, -X)
+            get_hessian!(M, Y, ccobj, -p, -X) #cached
+            @test Y == Z
+            @test get_hessian(M, ccobj, -p, -X) == Z #cached
+            @test get_count(ccobj, :Hessian) == 2
+
+            Z = get_preconditioner(M, obj, p, X)
+            @test get_preconditioner(M, ccobj, p, X) == Z
+            @test get_preconditioner(M, ccobj, p, X) == Z #cached
+            get_preconditioner!(M, Y, ccobj, p, X) #cached
+            @test Y == Z
+            @test get_count(ccobj, :Preconditioner) == 1
+            Z = get_preconditioner(M, obj, -p, -X)
+            get_preconditioner!(M, Y, ccobj, -p, -X)
+            @test Y == Z
+            get_preconditioner!(M, Y, ccobj, -p, -X) # Cached
+            @test Y == Z
+            @test get_preconditioner(M, ccobj, -p, -X) == Z #cached
+            @test get_preconditioner(M, ccobj, -p, -X) == Z #cached
+            @test get_count(ccobj, :Preconditioner) == 2
+        end
     end
 end

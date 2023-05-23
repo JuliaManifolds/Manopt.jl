@@ -1,29 +1,51 @@
-"""
-`Manopt.jl` – Optimization on Manifolds in Julia.
+@doc raw"""
+🏔️ Manopt.jl – Optimization on Manifolds in Julia.
+
+* 📚 Documentation: [manoptjl.org](https://manoptjl.org)
+* 📦 Repository: [github.com/JuliaManifolds/Manopt.jl](https://github.com/JuliaManifolds/Manopt.jl)
+* 💬 Discussions: [github.com/JuliaManifolds/Manopt.jl/discussions](https://github.com/JuliaManifolds/Manopt.jl/discussions)
+* 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
 """
 module Manopt
-using Colors
+import Base: &, copy, getindex, identity, setindex!, show, |
+import LinearAlgebra: reflect!
+
 using ColorSchemes
 using ColorTypes
-using Markdown
-using LinearAlgebra: I, Diagonal, eigvals, eigen, tril, eigmin, opnorm
-using Dates: Period, Nanosecond, value, Millisecond, canonicalize
-using Requires
-using Random: shuffle!
-using Statistics: std, cov, mean, cor
-using DataStructures: CircularBuffer, capacity, length, size, push!
-using StaticArrays
-using SparseArrays
-using Printf
-import LinearAlgebra: reflect!
-import Base: &, |, copy, getindex, identity, setindex!, show
+using Colors
+using DataStructures: CircularBuffer, capacity, length, push!, size
+using Dates: Millisecond, Nanosecond, Period, canonicalize, value
+using LinearAlgebra: Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky
+using ManifoldDiff:
+    adjoint_Jacobi_field,
+    adjoint_Jacobi_field!,
+    adjoint_differential_exp_argument,
+    adjoint_differential_exp_argument!,
+    adjoint_differential_exp_basepoint,
+    adjoint_differential_exp_basepoint!,
+    adjoint_differential_log_argument,
+    adjoint_differential_log_argument!,
+    adjoint_differential_log_basepoint,
+    adjoint_differential_log_basepoint!,
+    adjoint_differential_shortest_geodesic_endpoint,
+    adjoint_differential_shortest_geodesic_endpoint!,
+    adjoint_differential_shortest_geodesic_startpoint,
+    adjoint_differential_shortest_geodesic_startpoint!,
+    differential_exp_argument,
+    differential_exp_argument!,
+    differential_exp_basepoint,
+    differential_exp_basepoint!,
+    differential_log_argument,
+    differential_log_argument!,
+    differential_log_basepoint,
+    differential_log_basepoint!,
+    differential_shortest_geodesic_endpoint,
+    differential_shortest_geodesic_endpoint!,
+    differential_shortest_geodesic_startpoint,
+    differential_shortest_geodesic_startpoint!,
+    jacobi_field,
+    jacobi_field!
 using ManifoldsBase:
-    ℝ,
-    ℂ,
-    ×,
-    ^,
-    _read,
-    _write,
     AbstractBasis,
     AbstractDecoratorManifold,
     AbstractInverseRetractionMethod,
@@ -34,13 +56,17 @@ using ManifoldsBase:
     CachedBasis,
     DefaultManifold,
     DefaultOrthonormalBasis,
+    DiagonalizingOrthonormalBasis,
     ExponentialRetraction,
     LogarithmicInverseRetraction,
     NestedPowerRepresentation,
     ParallelTransport,
-    ProjectionTransport,
     PowerManifold,
+    ProjectionTransport,
     QRRetraction,
+    ^,
+    _read,
+    _write,
     allocate,
     allocate_result,
     allocate_result_type,
@@ -50,75 +76,55 @@ using ManifoldsBase:
     default_retraction_method,
     default_vector_transport_method,
     distance,
+    embed_project,
+    embed_project!,
     exp,
     exp!,
-    log,
-    log!,
-    injectivity_radius,
-    inner,
     geodesic,
     get_basis,
     get_component,
     get_coordinates,
     get_coordinates!,
+    get_iterator,
     get_vector,
     get_vector!,
     get_vectors,
-    get_iterator,
+    injectivity_radius,
+    inner,
+    inverse_retract,
+    inverse_retract!,
+    is_point,
+    is_vector,
+    log,
+    log!,
     manifold_dimension,
-    NestedPowerRepresentation,
+    mid_point,
+    mid_point!,
     norm,
     number_eltype,
     power_dimensions,
     project,
     project!,
+    representation_size,
     requires_caching,
     retract,
     retract!,
-    inverse_retract,
-    inverse_retract!,
-    is_point,
-    is_vector,
+    set_component!,
     shortest_geodesic,
+    shortest_geodesic!,
     vector_transport_to,
     vector_transport_to!,
     zero_vector,
     zero_vector!,
-    DiagonalizingOrthonormalBasis,
-    representation_size,
-    set_component!
-
-using ManifoldDiff:
-    adjoint_Jacobi_field,
-    adjoint_Jacobi_field!,
-    adjoint_differential_shortest_geodesic_startpoint,
-    adjoint_differential_shortest_geodesic_startpoint!,
-    adjoint_differential_shortest_geodesic_endpoint,
-    adjoint_differential_shortest_geodesic_endpoint!,
-    adjoint_differential_exp_basepoint,
-    adjoint_differential_exp_basepoint!,
-    adjoint_differential_exp_argument,
-    adjoint_differential_exp_argument!,
-    adjoint_differential_log_basepoint,
-    adjoint_differential_log_basepoint!,
-    adjoint_differential_log_argument,
-    adjoint_differential_log_argument!,
-    jacobi_field,
-    jacobi_field!,
-    differential_shortest_geodesic_startpoint,
-    differential_shortest_geodesic_startpoint!,
-    differential_shortest_geodesic_endpoint,
-    differential_shortest_geodesic_endpoint!,
-    differential_exp_basepoint,
-    differential_exp_basepoint!,
-    differential_exp_argument,
-    differential_exp_argument!,
-    differential_log_basepoint,
-    differential_log_basepoint!,
-    differential_log_argument,
-    differential_log_argument!
-
-import ManifoldsBase: mid_point, mid_point!
+    ×,
+    ℂ,
+    ℝ
+using Markdown
+using Printf
+using Random: shuffle!, rand, randperm
+using Requires
+using SparseArrays
+using Statistics: cor, cov, mean, std
 
 include("plans/plan.jl")
 # Functions
@@ -128,14 +134,17 @@ include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
 include("functions/proximal_maps.jl")
+include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
-include("solvers/adaptive_regularization_with_cubics.jl")
+include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
+include("solvers/difference_of_convex_algorithm.jl")
+include("solvers/difference-of-convex-proximal-point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
 include("solvers/NelderMead.jl")
@@ -154,69 +163,52 @@ include("solvers/record_solver.jl")
 include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
+include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
+include("deprecated.jl")
 
 function __init__()
-    @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
-        using .Manifolds:
-            Circle,
-            Euclidean,
-            Grassmann,
-            GroupManifold,
-            Hyperbolic,
-            PositiveNumbers,
-            ProductManifold,
-            Rotations,
-            SymmetricPositiveDefinite,
-            Stiefel,
-            Sphere,
-            TangentBundle,
-            TangentSpaceAtPoint,
-            FixedRankMatrices,
-            SVDMPoint,
-            UMVTVector,
-            ArrayPowerRepresentation,
-            ProductRepr,
-            submanifold_components,
-            sym_rem,
-            mean
-        import Random: rand, randperm
-        using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
-        # adaptions for Nonmutating manifolds
-        const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
-        include("functions/manifold_functions.jl")
-        include("functions/nonmutating_manifolds_functions.jl")
-        include("plans/nonmutating_manifolds_plans.jl")
-        include("plans/alternating_gradient_plan.jl")
-        include("solvers/alternating_gradient_descent.jl")
-        export mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentState
-        export AlternatingGradient
-        export alternating_gradient_descent, alternating_gradient_descent!
-    end
-    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
-        using .Plots
-        include("helpers/check_plots.jl")
+    #
+    # Requires fallback for Julia < 1.9
+    #
+    @static if !isdefined(Base, :get_extension)
+        @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+            include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
+        end
+        @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+            include("../ext/ManoptPlotsExt/ManoptPlotsExt.jl")
+        end
+        @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+            include("../ext/ManoptLineSearchesExt.jl")
+        end
+        @require LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637" begin
+            include("../ext/ManoptLRUCacheExt.jl")
+        end
     end
     return nothing
 end
 #
 # General
 export ℝ, ℂ, &, |
+export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
 #
 # Objectives
-export AbstractManifoldGradientObjective,
+export AbstractDecoratedManifoldObjective,
+    AbstractManifoldGradientObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
+    ManifoldCountObjective,
     NonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
     ManifoldCostGradientObjective,
     ManifoldCostObjective,
+    ManifoldDifferenceOfConvexObjective,
+    ManifoldDifferenceOfConvexProximalObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
     ManifoldProximalMapObjective,
@@ -224,7 +216,8 @@ export AbstractManifoldGradientObjective,
     ManifoldSubgradientObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
-    SimpleCacheObjective
+    SimpleManifoldCachedObjective,
+    ManifoldCachedObjective
 #
 # Evaluation & Problems - old
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -235,10 +228,13 @@ export AbstractGradientSolverState,
     AbstractManoptSolverState,
     AbstractPrimalDualSolverState,
     AdaptiveRegularizationState,
+    AlternatingGradientDescentState,
     AugmentedLagrangianMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
     CyclicProximalPointState,
+    DifferenceOfConvexState,
+    DifferenceOfConvexProximalState,
     DouglasRachfordState,
     ExactPenaltyMethodState,
     FrankWolfeState,
@@ -255,12 +251,14 @@ export AbstractGradientSolverState,
 
 export FrankWolfeCost, FrankWolfeGradient
 export NelderMeadSimplex
+export AlternatingGradient
 #
 # Accessors and helpers for AbstractManoptSolverState
-export linesearch_backtrack, default_stepsize
+export default_stepsize
 export get_cost, get_cost_function
 export get_gradient, get_gradient_function, get_gradient!
 export get_subgradient, get_subgradient!
+export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map,
     get_proximal_map!,
     get_state,
@@ -309,7 +307,9 @@ export get_constraints,
     get_grad_equality_constraints,
     get_grad_equality_constraints!
 export ConstraintType, FunctionConstraint, VectorConstraint
+# Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
+export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -318,10 +318,7 @@ export QuasiNewtonCautiousDirectionUpdate,
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch,
-    StrongWolfePowellLinesearch,
-    operator_to_matrix,
-    square_matrix_vector_product,
-    WolfePowellBinaryLinesearch
+    operator_to_matrix, square_matrix_vector_product, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
@@ -331,16 +328,19 @@ export DirectionUpdateRule,
     IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
 export DirectionUpdateRule,
     SteepestDirectionUpdateRule,
-    HeestenesStiefelCoefficient,
+    HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
     PolakRibiereCoefficient,
     ConjugateDescentCoefficient,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
-    HagerZhangCoefficient
+    HagerZhangCoefficient,
+    ConjugateGradientBealeRestart
 #
 # Solvers
-export augmented_Lagrangian_method,
+export alternating_gradient_descent,
+    alternating_gradient_descent!,
+    augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
     ChambollePock,
     ChambollePock!,
@@ -348,6 +348,10 @@ export augmented_Lagrangian_method,
     conjugate_gradient_descent!,
     cyclic_proximal_point,
     cyclic_proximal_point!,
+    difference_of_convex_algorithm,
+    difference_of_convex_algorithm!,
+    difference_of_convex_proximal_point,
+    difference_of_convex_proximal_point!,
     DouglasRachford,
     DouglasRachford!,
     exact_penalty_method,
@@ -375,7 +379,7 @@ export augmented_Lagrangian_method,
     trust_regions!
 # Solver helpers
 export decorate_state!, decorate_objective!
-export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
+export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
@@ -397,6 +401,7 @@ export StopAfter,
     StopWhenChangeLess,
     StopWhenCostLess,
     StopWhenCurvatureIsNegative,
+    StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
     StopWhenModelIncreased,
     StopWhenPopulationConcentrated,
@@ -476,7 +481,7 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
-export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
+export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugMessages
 #
 # Records - and access functions
 export get_record, get_record_state, get_record_action, has_record
@@ -491,6 +496,9 @@ export RecordPrimalBaseChange,
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
 #
+# Count
+export get_count, reset_counters!
+#
 # Helpers
-export check_gradient, check_differential
+export check_gradient, check_differential, check_Hessian
 end

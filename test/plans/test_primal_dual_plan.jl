@@ -1,5 +1,7 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 
+include("../utils/dummy_types.jl")
+
 @testset "Test primal dual plan" begin
     #
     # Perform an really easy test, just compute a mid point
@@ -22,7 +24,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         return Y
     end
     prior(M, x) = norm(norm.(Ref(pixelM), x, (Λ(M, x))[N, :vector]), 1)
-    cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
+    f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     prox_f!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
     function prox_g_dual(N, n, λ, ξ)
@@ -59,10 +61,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
     p0 = deepcopy(data)
     X0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
 
-    pdmoe = PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+    pdmoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
     p_exact = TwoManifoldProblem(M, N, pdmoe)
     pdmol = PrimalDualManifoldObjective(
-        cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+        f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
     p_linearized = TwoManifoldProblem(M, N, pdmol)
     s_exact = ChambollePockState(M, m, n, zero.(p0), X0; variant=:exact)
@@ -89,11 +91,11 @@ using Manopt, Manifolds, ManifoldsBase, Test
 
     @testset "test Mutating/Allocation Problem Variants" begin
         pdmoa = PrimalDualManifoldObjective(
-            cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
+            f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ, Λ=Λ
         )
         p1 = TwoManifoldProblem(M, N, pdmoa)
         pdmoi = PrimalDualManifoldObjective(
-            cost,
+            f,
             prox_f!,
             prox_g_dual!,
             adjoint_DΛ!;
@@ -149,10 +151,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test Z1 == Z2
     end
     @testset "Primal/Dual residual" begin
-        pmdoe = PrimalDualManifoldObjective(cost, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
+        pmdoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
         p_exact = TwoManifoldProblem(M, N, pdmoe)
         pmdol = PrimalDualManifoldObjective(
-            cost, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
+            f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
         p_linearized = TwoManifoldProblem(M, N, pmdol)
         s_exact = ChambollePockState(M, m, n, p0, X0; variant=:exact)
@@ -175,7 +177,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test_throws DomainError dual_residual(p_exact, o_err, p_old, ξ_old, n_old)
     end
     @testset "Debug prints" begin
-        a = StoreStateAction((:Iterate, :X, :n, :m))
+        a = StoreStateAction([:Iterate, :X, :n, :m])
         update_storage!(a, Dict(:Iterate => p_old, :X => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
@@ -255,7 +257,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
         @test startswith(s, "Primal Residual:")
     end
     @testset "Records" begin
-        a = StoreStateAction((:Iterate, :X, :n, :m))
+        a = StoreStateAction([:Iterate, :X, :n, :m])
         update_storage!(a, Dict(:Iterate => p_old, :X => ξ_old, :n => n_old, :m => copy(m)))
         io = IOBuffer()
 
@@ -272,5 +274,42 @@ using Manopt, Manifolds, ManifoldsBase, Test
             r(p_exact, s_exact, 1)
             @test length(get_record(r)) == 1
         end
+    end
+    @testset "Objetive Decorator passthrough" begin
+        # PD
+        pdmo = PrimalDualManifoldObjective(
+            f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ, linearized_forward_operator=DΛ
+        )
+        ro = DummyDecoratedObjective(pdmo)
+        q1 = get_primal_prox(M, ro, 0.1, p0)
+        q2 = get_primal_prox(M, pdmo, 0.1, p0)
+        @test q1 == q2
+        get_primal_prox!(M, q1, ro, 0.1, p0)
+        get_primal_prox!(M, q2, pdmo, 0.1, p0)
+        @test q1 == q2
+        Y1 = get_dual_prox(N, ro, n, 0.1, X0)
+        Y2 = get_dual_prox(N, pdmo, n, 0.1, X0)
+        @test Y1 == Y2
+        get_dual_prox!(N, Y1, ro, n, 0.1, X0)
+        get_dual_prox!(N, Y2, pdmo, n, 0.1, X0)
+        @test Y1 == Y2
+        Y1 = linearized_forward_operator(M, N, ro, m, p0, n)
+        Y2 = linearized_forward_operator(M, N, pdmol, m, p0, n)
+        @test Y1 == Y2
+        linearized_forward_operator!(M, N, Y1, ro, m, p0, n)
+        linearized_forward_operator!(M, N, Y2, pdmol, m, p0, n)
+        @test Y1 == Y2
+        Z1 = adjoint_linearized_operator(M, N, ro, m, n, X0)
+        Z2 = adjoint_linearized_operator(M, N, pdmol, m, n, X0)
+        @test Z1 == Z2
+        adjoint_linearized_operator!(M, N, Z1, ro, m, n, X0)
+        adjoint_linearized_operator!(M, N, Z2, pdmol, m, n, X0)
+        @test Z1 == Z2
+        s = forward_operator(M, N, ro, p0)
+        t = forward_operator(M, N, pdmo, p0)
+        @test s == t
+        forward_operator!(M, N, s, ro, p0)
+        forward_operator!(M, N, t, pdmo, p0)
+        @test Y1 == Y2
     end
 end

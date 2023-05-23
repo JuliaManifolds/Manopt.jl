@@ -12,6 +12,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     grad_f(M, q) = -2 * log(M, q, p)
     dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
     a = RecordIteration()
+    @test repr(a) == "RecordIteration()"
+    @test Manopt.status_summary(a) == ":Iteration"
     # constructors
     rs = RecordSolverState(gds, a)
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
@@ -72,6 +74,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test_throws ErrorException RecordGroup(RecordAction[], Dict(:a => 1))
     @test_throws ErrorException RecordGroup(RecordAction[], Dict(:a => 0))
     b = RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2))
+    @test Manopt.status_summary(b) == "[ :Iteration, :Iteration ]"
+    @test repr(b) == "RecordGroup([RecordIteration(), RecordIteration()])"
     b(dmp, gds, 1)
     b(dmp, gds, 2)
     @test b.group[1].recorded_values == [1, 2]
@@ -86,6 +90,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test RecordSolverState(gds, b)[:Iteration, 1] == [1, 2]
     #RecordEvery
     c = RecordEvery(a, 10, true)
+    @test repr(c) == "RecordEvery(RecordIteration(), 10, true)"
+    @test Manopt.status_summary(c) == "[RecordIteration(), 10]"
     @test c(dmp, gds, 0) === nothing
     @test c(dmp, gds, 1) === nothing
     @test c(dmp, gds, 10) == [10]
@@ -95,6 +101,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     c2 = RecordEvery(
         RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2)), 10
     )
+    @test repr(c2) == "RecordEvery($(repr(c2.record)), 10, true)"
+    @test Manopt.status_summary(c2) == "[:Iteration, :Iteration, 10]"
     c2(dmp, gds, 5)
     c2(dmp, gds, 10)
     c2(dmp, gds, 20)
@@ -102,6 +110,9 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test c2[:It1] == [10, 20]
     # RecordChange
     d = RecordChange()
+    sd = "RecordChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
+    @test repr(d) == sd
+    @test Manopt.status_summary(d) == ":Change"
     d(dmp, gds, 1)
     @test d.recorded_values == [0.0] # no p0 -> assume p is the first iterate
     set_iterate!(gds, M, p + [1.0, 0.0])
@@ -111,14 +122,15 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     e(dmp, gds, 1)
     @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
 
-    dinvretr = RecordChange(; invretr=PolarInverseRetraction())
-    dmani = RecordChange(; manifold=Symplectic(2))
-    @test dinvretr.invretr === PolarInverseRetraction()
-    @test dmani.invretr === CayleyInverseRetraction()
-    @test d.invretr === LogarithmicInverseRetraction()
+    dinvretr = RecordChange(; inverse_retraction_method=PolarInverseRetraction())
+    dmani = RecordChange(Symplectic(2))
+    @test dinvretr.inverse_retraction_method === PolarInverseRetraction()
+    @test dmani.inverse_retraction_method === CayleyInverseRetraction()
+    @test d.inverse_retraction_method === LogarithmicInverseRetraction()
     # RecordEntry
     set_iterate!(gds, M, p)
     f = RecordEntry(p, :p)
+    @test repr(f) == "RecordEntry(:p)"
     f(dmp, gds, 1)
     @test f.recorded_values == [p]
     f2 = RecordEntry(typeof(p), :p)
@@ -127,7 +139,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     # RecordEntryChange
     set_iterate!(gds, M, p)
     e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
-    @test update_storage!(e.storage, gds) == (:p,)
+    @test startswith(repr(e), "RecordEntryChange(:p")
+    @test update_storage!(e.storage, dmp, gds) == [:p]
     e2 = RecordEntryChange(dmp, :p, (p, o, x, y) -> distance(get_manifold(p), x, y))
     @test e.field == e2.field
     e(dmp, gds, 1)
@@ -138,11 +151,15 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     # RecordIterate
     set_iterate!(gds, M, p)
     f = RecordIterate(p)
+    @test Manopt.status_summary(f) == ":Iterate"
+    @test repr(f) == "RecordIterate(Vector{Float64})"
     @test_throws ErrorException RecordIterate()
     f(dmp, gds, 1)
     @test f.recorded_values == [p]
     # RecordCost
     g = RecordCost()
+    @test repr(g) == "RecordCost()"
+    @test Manopt.status_summary(g) == ":Cost"
     g(dmp, gds, 1)
     @test g.recorded_values == [0.0]
     gds.p = [3.0, 2.0]
@@ -174,6 +191,8 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test RecordActionFactory(gds, g) == g
 
     h1 = RecordTime(; mode=:cumulative)
+    @test repr(h1) == "RecordTime(; mode=:cumulative)"
+    @test Manopt.status_summary(h1) == ":Time"
     t = h1.start
     @test t isa Nanosecond
     h1(dmp, gds, 1)
@@ -192,4 +211,7 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     # stop after 20 so 21 hits
     h3(dmp, gds, 20)
     @test length(h3.recorded_values) == 1
+    @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
+    # since only the type is stored we get
+    @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
 end

@@ -11,24 +11,23 @@ initialized automatically and values with a default may be left out.
 * `X` - an initial tangent vector ``X^{(0)}∈T^*\mathcal N`` (and its previous iterate)
 * `pbar` - the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `Xbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
-* `Θ` – factor to damp the helping ``\tilde x``
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
 * `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
 * `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `pbar`)
-* `relax` – (`_primal`) which variable to relax (`:primal` or `:dual`)
+* `relax` – (`:primal`) which variable to relax (`:primal` or `:dual`)
 * `stop` - a [`StoppingCriterion`](@ref)
-* `type` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
+* `variant` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`default_retraction_method(M)`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse
   retraction to use on the manifold ``\mathcal M``.
-* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(N)`)
+* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(N, typeof(n))`)
   an inverse retraction to use on manifold ``\mathcal N``.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to
   use on the manifold ``\mathcal M``.
-* `vector_transport_method_dual` - (`default_vector_transport_method(N)`) a
+* `vector_transport_method_dual` - (`default_vector_transport_method(N, typeof(n))`) a
   vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -37,12 +36,15 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
 
 # Constructor
-    ChambollePockState(M::AbstractManifold,
+
+    ChambollePockState(M::AbstractManifold, N::AbstractManifold,
         m::P, n::Q, p::P, X::T, primal_stepsize::Float64, dual_stepsize::Float64;
         kwargs...
     )
-where all other fields from above are keyword arguments with their default values given in brackets,
-as well as `N=TangentBundle(M)`
+
+where all other fields from above are keyword arguments with their default values given in brackets.
+
+if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
 mutable struct ChambollePockState{
     P,
@@ -74,61 +76,87 @@ mutable struct ChambollePockState{
     inverse_retraction_method_dual::IRM_Dual
     vector_transport_method::VTM
     vector_transport_method_dual::VTM_Dual
+end
+function Manopt.ChambollePockState(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    m::P,
+    n::Q,
+    p::P,
+    X::T;
+    primal_stepsize::Float64=1 / sqrt(8),
+    dual_stepsize::Float64=1 / sqrt(8),
+    acceleration::Float64=0.0,
+    relaxation::Float64=1.0,
+    relax::Symbol=:primal,
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300),
+    variant::Symbol=:exact,
+    update_primal_base::Union{Function,Missing}=missing,
+    update_dual_base::Union{Function,Missing}=missing,
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+    inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
+        N, typeof(p)
+    ),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(n)),
+    vector_transport_method_dual::VTM_Dual=default_vector_transport_method(N, typeof(n)),
+) where {
+    P,
+    Q,
+    T,
+    RM<:AbstractRetractionMethod,
+    IRM<:AbstractInverseRetractionMethod,
+    IRM_Dual<:AbstractInverseRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+    VTM_Dual<:AbstractVectorTransportMethod,
+}
+    return ChambollePockState{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
+        m,
+        n,
+        p,
+        copy(M, p),
+        X,
+        copy(N, X),
+        primal_stepsize,
+        dual_stepsize,
+        acceleration,
+        relaxation,
+        relax,
+        stopping_criterion,
+        variant,
+        update_primal_base,
+        update_dual_base,
+        retraction_method,
+        inverse_retraction_method,
+        inverse_retraction_method_dual,
+        vector_transport_method,
+        vector_transport_method_dual,
+    )
+end
+function show(io::IO, cps::ChambollePockState)
+    i = get_count(cps, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cps.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Chambolle-Pock Algorithm
+    $Iter
+    ## Parameters
+    * primal_stepsize:  $(cps.primal_stepsize)
+    * dual_stepsize:    $(cps.dual_stepsize)
+    * acceleration:     $(cps.acceleration)
+    * relaxation:       $(cps.relaxation)
+    * relax:            $(cps.relax)
+    * variant:          :$(cps.variant)
+    * retraction_method:              $(cps.retraction_method)
+    * inverse_retraction_method:      $(cps.inverse_retraction_method)
+    * vector_transport_method:        $(cps.vector_transport_method)
+    * inverse_retraction_method_dual: $(cps.inverse_retraction_method_dual)
+    * vector_transport_method_dual:   $(cps.vector_transport_method_dual)
 
-    function ChambollePockState(
-        M::AbstractManifold,
-        m::P,
-        n::Q,
-        p::P,
-        X::T;
-        N=TangentBundle(M),
-        primal_stepsize::Float64=1 / sqrt(8),
-        dual_stepsize::Float64=1 / sqrt(8),
-        acceleration::Float64=0.0,
-        relaxation::Float64=1.0,
-        relax::Symbol=:primal,
-        stopping_criterion::StoppingCriterion=StopAfterIteration(300),
-        variant::Symbol=:exact,
-        update_primal_base::Union{Function,Missing}=missing,
-        update_dual_base::Union{Function,Missing}=missing,
-        retraction_method::RM=default_retraction_method(M),
-        inverse_retraction_method::IRM=default_inverse_retraction_method(M),
-        inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(N),
-        vector_transport_method::VTM=default_vector_transport_method(M),
-        vector_transport_method_dual::VTM_Dual=default_vector_transport_method(N),
-    ) where {
-        P,
-        Q,
-        T,
-        RM<:AbstractRetractionMethod,
-        IRM<:AbstractInverseRetractionMethod,
-        IRM_Dual<:AbstractInverseRetractionMethod,
-        VTM<:AbstractVectorTransportMethod,
-        VTM_Dual<:AbstractVectorTransportMethod,
-    }
-        return new{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
-            m,
-            n,
-            p,
-            copy(M, p),
-            X,
-            copy(N, X),
-            primal_stepsize,
-            dual_stepsize,
-            acceleration,
-            relaxation,
-            relax,
-            stopping_criterion,
-            variant,
-            update_primal_base,
-            update_dual_base,
-            retraction_method,
-            inverse_retraction_method,
-            inverse_retraction_method_dual,
-            vector_transport_method,
-            vector_transport_method_dual,
-        )
-    end
+    ## Stopping Criterion
+    $(status_summary(cps.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 get_solver_result(apds::AbstractPrimalDualSolverState) = get_iterate(apds)
 get_iterate(apds::AbstractPrimalDualSolverState) = apds.p
@@ -149,12 +177,12 @@ Perform the Riemannian Chambolle–Pock algorithm.
 
 Given a `cost` function $\mathcal E:\mathcal M → ℝ$ of the form
 ```math
-\mathcal E(x) = F(x) + G( Λ(x) ),
+\mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where $F:\mathcal M → ℝ$, $G:\mathcal N → ℝ$,
 and $Λ:\mathcal M → \mathcal N$. The remaining input parameters are
 
-* `x,ξ` primal and dual start points $x∈\mathcal M$ and $ξ∈T_n\mathcal N$
+* `p, X` primal and dual start points $x∈\mathcal M$ and $ξ∈T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
 * `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N$
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
@@ -186,13 +214,13 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 [^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
     > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
@@ -205,8 +233,8 @@ function ChambollePock(
     M::AbstractManifold,
     N::AbstractManifold,
     cost::TF,
-    x::P,
-    ξ::T,
+    p::P,
+    X::T,
     m::P,
     n::Q,
     prox_F::Function,
@@ -216,18 +244,18 @@ function ChambollePock(
     linearized_forward_operator::Union{Function,Missing}=missing,
     kwargs...,
 ) where {TF,P,T,Q}
-    x_res = copy(M, x)
-    ξ_res = copy(N, n, ξ)
-    m_res = copy(M, m)
-    n_res = copy(N, n)
+    q = copy(M, p)
+    Y = copy(N, n, X)
+    m2 = copy(M, m)
+    n2 = copy(N, n)
     return ChambollePock!(
         M,
         N,
         cost,
-        x_res,
-        ξ_res,
-        m_res,
-        n_res,
+        q,
+        Y,
+        m2,
+        n2,
         prox_F,
         prox_G_dual,
         adjoint_linear_operator;
@@ -263,9 +291,9 @@ function ChambollePock!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(200),
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=default_retraction_method(M),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(M),
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     variant=ismissing(Λ) ? :exact : :linearized,
     kwargs...,
 ) where {
@@ -287,7 +315,7 @@ function ChambollePock!(
     )
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
-    o = ChambollePockState(
+    cps = ChambollePockState(
         M,
         m,
         n,
@@ -307,8 +335,9 @@ function ChambollePock!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state!(o; kwargs...)
-    return get_solver_return(solve!(tmp, o))
+    dcps = decorate_state!(cps; kwargs...)
+    solve!(tmp, dcps)
+    return get_solver_return(get_objective(tmp), dcps)
 end
 
 function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end

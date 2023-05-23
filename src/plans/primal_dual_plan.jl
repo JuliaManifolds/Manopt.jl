@@ -144,6 +144,12 @@ function get_primal_prox(
     q = allocate_result(M, get_primal_prox, p)
     return apdmo.prox_f!!(M, q, σ, p)
 end
+function get_primal_prox(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, σ, p
+)
+    return get_primal_prox(M, get_objective(admo, false), σ, p)
+end
+
 function get_primal_prox!(
     M::AbstractManifold,
     q,
@@ -163,6 +169,11 @@ function get_primal_prox!(
 )
     apdmo.prox_f!!(M, q, σ, p)
     return q
+end
+function get_primal_prox!(
+    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, σ, p
+)
+    return get_primal_prox!(M, q, get_objective(admo, false), σ, p)
 end
 
 @doc raw"""
@@ -207,6 +218,12 @@ function get_dual_prox(
     apdmo.prox_g_dual!!(M, Y, n, τ, X)
     return Y
 end
+function get_dual_prox(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, n, τ, X
+)
+    return get_dual_prox(M, get_objective(admo, false), n, τ, X)
+end
+
 function get_dual_prox!(
     M::AbstractManifold,
     Y,
@@ -228,6 +245,11 @@ function get_dual_prox!(
 )
     apdmo.prox_g_dual!!(M, Y, n, τ, X)
     return Y
+end
+function get_dual_prox!(
+    M::AbstractManifold, Y, admo::AbstractDecoratedManifoldObjective, n, τ, X
+)
+    return get_dual_prox!(M, Y, get_objective(admo, false), n, τ, X)
 end
 
 @doc raw"""
@@ -275,6 +297,17 @@ function linearized_forward_operator(
     apdmo.linearized_forward_operator!!(M, Y, m, X)
     return Y
 end
+function linearized_forward_operator(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    X,
+    n,
+)
+    return linearized_forward_operator(M, N, get_objective(admo, false), m, X, n)
+end
+
 function linearized_forward_operator!(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -298,6 +331,17 @@ function linearized_forward_operator!(
 )
     apdmo.linearized_forward_operator!!(M, Y, m, X)
     return Y
+end
+function linearized_forward_operator!(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    Y,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    X,
+    n,
+)
+    return linearized_forward_operator!(M, N, Y, get_objective(admo, false), m, X, n)
 end
 
 @doc raw"""
@@ -338,6 +382,12 @@ function forward_operator(
     apdmo.Λ!!(M, q, p)
     return q
 end
+function forward_operator(
+    M::AbstractManifold, N::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p
+)
+    return forward_operator(M, N, get_objective(admo, false), p)
+end
+
 function forward_operator!(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -357,6 +407,11 @@ function forward_operator!(
 )
     apdmo.Λ!!(M, q, p)
     return q
+end
+function forward_operator!(
+    M::AbstractManifold, N::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, p
+)
+    return forward_operator!(M, N, q, get_objective(admo, false), p)
 end
 
 @doc raw"""
@@ -382,7 +437,6 @@ function adjoint_linearized_operator!(tmp::TwoManifoldProblem, X, m, n, Y)
         get_manifold(tmp, 1), get_manifold(tmp, 2), X, get_objective(tmp), m, n, Y
     )
 end
-
 function adjoint_linearized_operator(
     ::AbstractManifold,
     N::AbstractManifold,
@@ -405,6 +459,17 @@ function adjoint_linearized_operator(
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X
 end
+function adjoint_linearized_operator(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    n,
+    Y,
+)
+    return adjoint_linearized_operator(M, N, get_objective(admo, false), m, n, Y)
+end
+
 function adjoint_linearized_operator!(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -428,6 +493,17 @@ function adjoint_linearized_operator!(
 )
     apdmo.adjoint_linearized_operator!!(N, X, m, n, Y)
     return X
+end
+function adjoint_linearized_operator!(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    X,
+    admo::AbstractDecoratedManifoldObjective,
+    m,
+    n,
+    Y,
+)
+    return adjoint_linearized_operator!(M, N, X, get_objective(admo, false), m, n, Y)
 end
 
 @doc raw"""
@@ -644,7 +720,7 @@ mutable struct DebugDualResidual <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugDualResidual(;
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -653,7 +729,7 @@ mutable struct DebugDualResidual <: DebugAction
     end
     function DebugDualResidual(
         initial_values::Tuple{P,T,Q};
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Dual Residual: ",
         format="$prefix%s",
@@ -671,7 +747,10 @@ function (d::DebugDualResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         Printf.format(
             d.io,
             Printf.Format(d.format),
@@ -702,7 +781,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugPrimalResidual(;
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -711,7 +790,7 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
     function DebugPrimalResidual(
         values::Tuple{P,T,Q};
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="Primal Residual: ",
         format="$prefix%s",
@@ -727,11 +806,14 @@ function (d::DebugPrimalResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        xOld, XOld, nOld = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         Printf.format(
             d.io,
             Printf.Format(d.format),
-            primal_residual(M, N, apdmo, apds, xOld, XOld, nOld),
+            primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
     return d.storage(tmp, apds, i)
@@ -758,7 +840,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugPrimalDualResidual(;
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -767,7 +849,7 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
     function DebugPrimalDualResidual(
         values::Tuple{P,T,Q};
-        storage::StoreStateAction=StoreStateAction((:Iterate, :X, :n)),
+        storage::StoreStateAction=StoreStateAction([:Iterate, :X, :n]),
         io::IO=stdout,
         prefix="PD Residual: ",
         format="$prefix%s",
@@ -783,7 +865,10 @@ function (d::DebugPrimalDualResidual)(
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
     if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
-        p_old, X_old, n_old = get_storage.(Ref(d.storage), [:Iterate, :X, :n]) #fetch
+        #fetch
+        p_old = get_storage(d.storage, :Iterate)
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         v =
             primal_residual(M, N, apdmo, apds, p_old, X_old, n_old) +
             dual_residual(tmp, apds, p_old, X_old, n_old)
@@ -802,7 +887,7 @@ Print the change of the primal variable by using [`DebugChange`](@ref),
 see their constructors for detail.
 """
 function DebugPrimalChange(;
-    storage::StoreStateAction=StoreStateAction((:Iterate,)),
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
     prefix="Primal Change: ",
     kwargs...,
 )
@@ -838,7 +923,7 @@ mutable struct DebugDualChange <: DebugAction
     format::String
     storage::StoreStateAction
     function DebugDualChange(;
-        storage::StoreStateAction=StoreStateAction((:X, :n)),
+        storage::StoreStateAction=StoreStateAction([:X, :n]),
         io::IO=stdout,
         prefix="Dual Change: ",
         format="$prefix%s",
@@ -847,7 +932,7 @@ mutable struct DebugDualChange <: DebugAction
     end
     function DebugDualChange(
         values::Tuple{T,P};
-        storage::StoreStateAction=StoreStateAction((:X, :n)),
+        storage::StoreStateAction=StoreStateAction([:X, :n]),
         io::IO=stdout,
         prefix="Dual Change: ",
         format="$prefix%s",
@@ -863,7 +948,9 @@ function (d::DebugDualChange)(
 )
     N = get_manifold(tmp, 2)
     if all(has_storage.(Ref(d.storage), [:X, :n])) && i > 0 # all values stored
-        X_old, n_old = get_storage.(Ref(d.storage), [:X, :n]) #fetch
+        #fetch
+        X_old = get_storage(d.storage, :X)
+        n_old = get_storage(d.storage, :n)
         v = norm(
             N,
             apds.n,
@@ -886,13 +973,13 @@ This method is further set display `o.n`.
 DebugDualBaseIterate(; kwargs...) = DebugEntry(:n; kwargs...)
 
 """
-    DebugDualChange(; storage=StoreStateAction((:X)), io::IO=stdout)
+    DebugDualChange(; storage=StoreStateAction([:n]), io::IO=stdout)
 
 Print the change of the dual base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.
 """
 function DebugDualBaseChange(;
-    storage::StoreStateAction=StoreStateAction((:n)), prefix="Dual Base Change:", kwargs...
+    storage::StoreStateAction=StoreStateAction([:n]), prefix="Dual Base Change:", kwargs...
 )
     return DebugEntryChange(
         :n,
@@ -914,7 +1001,7 @@ This method is further set display `o.m`.
 DebugPrimalBaseIterate(opts...; kwargs...) = DebugEntry(:m, opts...; kwargs...)
 
 """
-    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction((:m)),io::IO=stdout)
+    DebugPrimalBaseChange(a::StoreStateAction=StoreStateAction([:m]),io::IO=stdout)
 
 Print the change of the primal base variable by using [`DebugEntryChange`](@ref),
 see their constructors for detail, on `o.n`.

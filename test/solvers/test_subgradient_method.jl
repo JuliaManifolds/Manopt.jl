@@ -1,4 +1,6 @@
-using Manopt, ManifoldsBase, Manifolds, Test
+using Manopt, ManifoldsBase, Manifolds, Random, Test
+
+include("../utils/example_tasks.jl")
 
 @testset "Subgradient Plan" begin
     M = Euclidean(2)
@@ -7,6 +9,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
     sgs = SubGradientMethodState(
         M, p0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
     )
+    @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
     @test get_iterate(sgs) == p0
     sgs.X = [1.0, 0.0]
     f(M, q) = distance(M, q, p)
@@ -15,7 +18,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
             if distance(M, p, q) == 0
                 return zero_vector(M, q)
             end
-            return -2 * log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
+            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
         end
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
         X = zero_vector(M, p)
@@ -23,7 +26,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
         oR = solve!(mp, sgs)
-        xHat = get_solver_result(oR)
+        q1 = get_solver_result(oR)
         @test get_initial_stepsize(mp, sgs) == 1.0
         @test get_stepsize(mp, sgs, 1) == 1.0
         @test get_last_stepsize(mp, sgs, 1) == 1.0
@@ -32,6 +35,9 @@ using Manopt, ManifoldsBase, Manifolds, Test
         @test norm(M, p, get_subgradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, sgs.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p, 1)
+        @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p, 1)
+        @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p)
+        @test_throws MethodError get_proximal_map!(mp, 1.0, sgs.p)
         sgs2 = subgradient_method(M, f, ∂f, p0; return_state=true)
         p_star2 = get_solver_result(sgs2)
         @test get_subgradient(sgs2) == -∂f(M, p_star2)
@@ -48,7 +54,7 @@ using Manopt, ManifoldsBase, Manifolds, Test
                 return X
             end
             log!(M, X, q, p)
-            X .*= -2 / max(10 * eps(Float64), d)
+            X ./= -max(10 * eps(Float64), d)
             return X
         end
         sgom = ManifoldSubgradientObjective(f, ∂f!; evaluation=InplaceEvaluation())
@@ -57,17 +63,38 @@ using Manopt, ManifoldsBase, Manifolds, Test
         Y = get_subgradient(mp, p)
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
+        @test isapprox(M, p, Y, zero_vector(M, p))
         sr = solve!(mp, sgs)
-        xHat = get_solver_result(sr)
+        q1 = get_solver_result(sr)
+        q2 = subgradient_method(M, sgom, p0)
+        q3 = copy(M, p0)
+        subgradient_method!(M, sgom, q3)
+        @test isapprox(M, q1, p)
+        @test isapprox(M, q2, p)
+        @test isapprox(M, q3, p)
+        Random.seed!(23)
+        q4 = subgradient_method(M, f, ∂f!; evaluation=InplaceEvaluation())
+        @test isapprox(M, q4, p; atol=0.5) # random point -> not that close
         # Check Fallbacks of Problen
-        @test get_cost(mp, p) == 0.0
-        @test norm(M, p, get_subgradient(mp, p)) == 0
+        @test get_cost(mp, q1) == 0.0
+        @test norm(M, q1, get_subgradient(mp, q1)) == 0
         @test_throws MethodError get_gradient(mp, sgs.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, sgs.p, 1)
         s2 = subgradient_method(
-            M, f, ∂f!, copy(p0); evaluation=InplaceEvaluation(), return_state=true
+            M, f, ∂f!, p0; evaluation=InplaceEvaluation(), return_state=true
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
+    end
+
+    @testset "Circle" begin
+        Mc, fc, ∂fc, pc, pcs = Circle_mean_task()
+        q4 = subgradient_method(Mc, fc, ∂fc, pc)
+        q5 = subgradient_method(Mc, fc, ∂fc, pc; evaluation=InplaceEvaluation())
+        s3 = subgradient_method(Mc, fc, ∂fc, pc; return_state=true)
+        q6 = get_solver_result(s3)[]
+        @test isapprox(q4, 0.0; atol=1e-8)
+        @test isapprox(q5, 0.0; atol=1e-8)
+        @test isapprox(q6, 0.0; atol=1e-8)
     end
 end

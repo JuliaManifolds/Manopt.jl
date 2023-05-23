@@ -1,16 +1,16 @@
 @doc raw"""
-    primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
+    primal_dual_semismooth_Newton(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
 
 Perform the Primal-Dual Riemannian Semismooth Newton algorithm.
 
 Given a `cost` function $\mathcal E\colon\mathcal M \to \overline{ℝ}$ of the form
 ```math
-\mathcal E(x) = F(x) + G( Λ(x) ),
+\mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where $F\colon\mathcal M \to \overline{ℝ}$, $G\colon\mathcal N \to \overline{ℝ}$,
 and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
 
-* `x,ξ` primal and dual start points $x\in\mathcal M$ and $\xi\in T_n\mathcal N$
+* `p, X` primal and dual start points $x\in\mathcal M$ and $\xi\in T_n\mathcal N$
 * `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
 * `linearized_forward_operator` the linearization $DΛ(⋅)[⋅]$ of the operator $Λ(⋅)$.
 * `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N$
@@ -30,13 +30,13 @@ Note that this changes the arguments the `forward_operator` will be called.
 * `stopping_criterion` – (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`default_retraction_method(M)`) the rectraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M)`) a vector transport to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 [^DiepeveenLellmann2021]:
     > W. Diepeveen, J. Lellmann:
@@ -48,8 +48,8 @@ function primal_dual_semismooth_Newton(
     M::AbstractManifold,
     N::AbstractManifold,
     cost::TF,
-    x::P,
-    ξ::T,
+    p::P,
+    X::T,
     m::P,
     n::Q,
     prox_F::Function,
@@ -61,8 +61,8 @@ function primal_dual_semismooth_Newton(
     Λ::Union{Function,Missing}=missing,
     kwargs...,
 ) where {TF,P,T,Q}
-    x_res = copy(M, x)
-    ξ_res = copy(N, n, ξ)
+    x_res = copy(M, p)
+    ξ_res = copy(N, n, X)
     m_res = copy(M, m)
     n_res = copy(N, n)
     return primal_dual_semismooth_Newton!(
@@ -93,8 +93,8 @@ function primal_dual_semismooth_Newton!(
     M::mT,
     N::nT,
     cost::Function,
-    x::P,
-    ξ::T,
+    p::P,
+    X::T,
     m::P,
     n::Q,
     prox_F::Function,
@@ -111,9 +111,9 @@ function primal_dual_semismooth_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(50),
     update_primal_base::Union{Function,Missing}=missing,
     update_dual_base::Union{Function,Missing}=missing,
-    retraction_method::RM=default_retraction_method(M),
-    inverse_retraction_method::IRM=default_inverse_retraction_method(M),
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     kwargs...,
 ) where {
     mT<:AbstractManifold,
@@ -142,8 +142,8 @@ function primal_dual_semismooth_Newton!(
         M,
         m,
         n,
-        x,
-        ξ;
+        p,
+        X;
         primal_stepsize=primal_stepsize,
         dual_stepsize=dual_stepsize,
         regularization_parameter=reg_param,
@@ -154,8 +154,9 @@ function primal_dual_semismooth_Newton!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    pdsn = decorate_state!(pdsn; kwargs...)
-    return get_solver_return(solve!(tmp, pdsn))
+    dpdsn = decorate_state!(pdsn; kwargs...)
+    solve!(tmp, dpdsn)
+    return get_solver_return(get_objective(tmp), dpdsn)
 end
 
 function initialize_solver!(::TwoManifoldProblem, ::PrimalDualSemismoothNewtonState) end

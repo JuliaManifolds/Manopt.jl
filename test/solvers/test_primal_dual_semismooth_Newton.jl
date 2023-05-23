@@ -20,7 +20,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
     Λ(M, x) = ProductRepr(x, forward_logs(M, x))
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
-    cost(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
+    f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     prox_g_dual(N, n, λ, ξ) = project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
     DΛ(M, m, X) = differential_forward_logs(M, m, X)
@@ -142,10 +142,10 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x0 = deepcopy(data)
     ξ0 = zero_vector(M, m)
 
-    o = primal_dual_semismooth_Newton(
+    s = primal_dual_semismooth_Newton(
         M,
         N,
-        cost,
+        f,
         x0,
         ξ0,
         m,
@@ -160,14 +160,17 @@ using Manopt, Manifolds, ManifoldsBase, Test
         dual_stepsize=τ,
         return_state=true,
     )
-    y = get_solver_result(o)
+    @test startswith(
+        repr(s), "# Solver state for `Manopt.jl`s primal dual semismooth Newton"
+    )
+    y = get_solver_result(s)
     @test x_hat ≈ y atol = 2 * 1e-7
 
     update_dual_base(p, o, i) = o.n
     o2 = primal_dual_semismooth_Newton(
         M,
         N,
-        cost,
+        f,
         x0,
         ξ0,
         m,
@@ -185,4 +188,26 @@ using Manopt, Manifolds, ManifoldsBase, Test
     )
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7
+    @testset "Objetive Decorator passthrough" begin
+        # PDNSSN additionals
+        pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
+            f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
+        )
+        ro = DummyDecoratedObjective(pdmsno)
+        X = zero_vector(M, x0)
+        Y = get_differential_primal_prox(M, pdmsno, 0.1, x0, X)
+        Y2 = get_differential_primal_prox(M, ro, 0.1, x0, X)
+        @test Y == Y2
+        get_differential_primal_prox!(M, Y, pdmsno, 0.1, x0, X)
+        get_differential_primal_prox!(M, Y2, ro, 0.1, x0, X)
+        @test Y == Y2
+
+        X = zero_vector(N, ξ0)
+        Y = get_differential_dual_prox(N, pdmsno, n, 0.1, ξ0, X)
+        Y2 = get_differential_dual_prox(N, ro, n, 0.1, ξ0, X)
+        @test Y == Y2
+        get_differential_dual_prox!(N, Y, pdmsno, n, 0.1, ξ0, X)
+        get_differential_dual_prox!(N, Y2, ro, n, 0.1, ξ0, X)
+        @test Y == Y2
+    end
 end

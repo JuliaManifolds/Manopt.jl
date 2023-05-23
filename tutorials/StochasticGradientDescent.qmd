@@ -1,0 +1,143 @@
+---
+title: How to Run Stochastic Gradient Descent
+author: Ronny Bergmann
+---
+
+This tutorial illustrates how to use the [`stochastic_gradient_descent`](https://manoptjl.org/stable/solvers/stochastic_gradient_descent.html)
+solver and different [`DirectionUpdateRule`](https://manoptjl.org/stable/solvers/gradient_descent.html#Direction-Update-Rules-1)s in order to introduce
+the average or momentum variant, see [Stochastic Gradient Descent](https://en.wikipedia.org/wiki/Stochastic_gradient_descent).
+
+Computationally, we look at a very simple but large scale problem,
+the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/Fréchet_mean):
+for given points $p_i ∈\mathcal M$, $i=1,…,N$ this optimization problem reads
+
+```math
+\operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
+  \operatorname{d}^2_{\mathcal M}(x,p_i),
+```
+
+which of course can be (and is) solved by a gradient descent, see the introductionary
+tutorial or [Statistics in Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html).
+If $N$ is very large, evaluating the complete gradient might be quite expensive.
+A remedy is to evaluate only one of the terms at a time and choose a random order for these.
+
+We first initialize the packages
+
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+using Pkg;
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
+```
+
+```{julia}
+using Manifolds, Manopt, Random, BenchmarkTools
+Random.seed!(42);
+```
+
+
+We next generate a (little) large(r) data set
+
+```{julia}
+n = 5000
+σ = π / 12
+M = Sphere(2)
+p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+```
+
+Note that due to the construction of the points as zero mean tangent vectors, the mean should
+be very close to our initial point `p`.
+
+In order to use the stochastic gradient, we now need a function that returns the vector of gradients.
+There are two ways to define it in `Manopt.jl`: either as a single function that returns a vector, or as a vector of functions.
+
+The first variant is of course easier to define, but the second is more efficient when only evaluating one of the gradients.
+
+For the mean, the gradient is
+
+```math
+\operatorname{grad}f(p) = \sum_{i=1}^N \operatorname{grad}f_i(x) \quad \text{where} \operatorname{grad}f_i(x) = -\log_x p_i
+```
+
+which we define in `Manopt.jl` in two different ways:
+either as one function returning all gradients as a vector (see `gradF`), or – maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
+
+
+```{julia}
+F(M, p) = 1 / (2 * n) * sum(map(q -> distance(M, p, q)^2, data))
+gradF(M, p) = [grad_distance(M, p, q) for q in data]
+gradf = [(M, p) -> grad_distance(M, q, p) for q in data];
+p0 = 1 / sqrt(3) * [1.0, 1.0, 1.0]
+```
+
+The calls are only slightly different, but notice that accessing the 2nd gradient element
+requires evaluating all logs in the first function, while we only call _one_
+of the functions in the second array of functions.
+So while you can use both `gradF` and `gradf` in the following call, the second one is (much) faster:
+
+```{julia}
+p_opt1 = stochastic_gradient_descent(M, gradF, p)
+```
+```{julia}
+@benchmark stochastic_gradient_descent($M, $gradF, $p0)
+```
+```{julia}
+p_opt2 = stochastic_gradient_descent(M, gradf, p0)
+```
+```{julia}
+@benchmark stochastic_gradient_descent($M, $gradf, $p0)
+```
+
+
+This result is reasonably close. But we can improve it by using a `DirectionUpdateRule`, namely:
+
+On the one hand [`MomentumGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.MomentumGradient), which requires both the manifold and the initial value,  in order to keep track of the iterate and parallel transport the last direction to the current iterate.
+The necessary `vector_transport_method` keyword is set to a suitable default on every manifold,
+see [`default_vector_transport_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/vector_transports.html#ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}). We get
+"""
+
+```{julia}
+p_opt3 = stochastic_gradient_descent(
+    M, gradf, p0; direction=MomentumGradient(M, p0; direction=StochasticGradient(M))
+)
+```
+
+```{julia}
+MG = MomentumGradient(M, p0; direction=StochasticGradient(M));
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$MG)
+```
+
+And on the other hand the [`AverageGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.AverageGradient) computes an average of the last `n` gradients, i.e.
+
+```{julia}
+p_opt4 = stochastic_gradient_descent(
+    M, gradf, p0; direction=AverageGradient(M, p0; n=10, direction=StochasticGradient(M))
+)
+```
+```{julia}
+AG = AverageGradient(M, p0; n=10, direction=StochasticGradient(M));
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG)
+```
+
+Note that the default `StoppingCriterion` is a fixed number of iterations which helps the comparison here.
+
+For both update rules we have to internally specify that we are still in the stochastic setting,
+since both rules can also be used with the `IdentityUpdateRule` within [`gradient_descent`](file:///Users/ronny/Repositories/Julia/Manopt.jl/docs/build/solvers/gradient_descent.html).
+
+For this not-that-large-scale example we can of course also use a gradient descent with `ArmijoLinesearch`,
+
+```{julia}
+fullGradF(M, p) = sum(grad_distance(M, q, p) for q in data)
+p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch(M))
+```
+
+but it will be a little slower usually
+
+```{julia}
+AL = ArmijoLinesearch(M);
+@benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)
+```
+
+Note that all 5 runs are very close to each other, here we check the distance to the first

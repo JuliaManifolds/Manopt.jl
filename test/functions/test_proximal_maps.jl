@@ -11,7 +11,7 @@ using Manifolds, Manopt, Test, Dates
     @test_throws ErrorException prox_distance!(M, p, 1.0, p, q, 3)
     @test distance(
         M, prox_distance(M, distance(M, p, q) / 2, p, q, 1), shortest_geodesic(M, p, q, 0.5)
-    ) ≈ 0
+    ) < eps()
     t = similar(p)
     prox_distance!(M, t, distance(M, p, q) / 2, p, q, 1)
     @test t == prox_distance(M, distance(M, p, q) / 2, p, q, 1)
@@ -32,12 +32,12 @@ using Manifolds, Manopt, Test, Dates
         abs(t[2] - u[1]) < eps(Float64) &&
         abs(t[3] - u[3]) < eps(Float64)
     )
-    @test distance(M, t, u) == π / 4 # and have moved half their distance
+    @test distance(M, t, u) ≈ π / 4 # and have moved half their distance
     #
     (v, w) = prox_TV(M, 1.0, (p, q), 2)
     vC, wC = shortest_geodesic(M, p, q, [1 / 3, 2 / 3])
     @test distance(M, v, vC) ≈ 0
-    @test distance(M, w, wC) ≈ 0
+    @test distance(M, w, wC) < eps()
     P = [similar(p), similar(q)]
     prox_TV!(M, P, 1.0, (p, q), 2)
     @test P == [v, w]
@@ -75,13 +75,13 @@ using Manifolds, Manopt, Test, Dates
     N2 = PowerManifold(M2, 3)
     pS, rS, qS = [-0.5, 0.1, 0.5]
     d = sum([pS, rS, qS] .* [1.0, -2.0, 1.0])
-    m = min(0.3, abs(Manopt.sym_rem(d) / 6))
-    s = sign(Manopt.sym_rem(d))
-    pSc, rSc, qSc = Manopt.sym_rem.([pS, rS, qS] .- m .* s .* [1.0, -2.0, 1.0])
+    m = min(0.3, abs(Manifolds.sym_rem(d) / 6))
+    s = sign(Manifolds.sym_rem(d))
+    pSc, rSc, qSc = Manifolds.sym_rem.([pS, rS, qS] .- m .* s .* [1.0, -2.0, 1.0])
     pSr, rSr, qSr = prox_TV2(M2, 0.3, (pS, rS, qS))
     @test sum(distance.(Ref(M2), [pSc, rSc, qSc], [pSr, rSr, qSr])) ≈ 0
     # p=2
-    t = 0.3 * Manopt.sym_rem(d) / (1 + 0.3 * 6.0)
+    t = 0.3 * Manifolds.sym_rem(d) / (1 + 0.3 * 6.0)
     @test sum(
         distance.(
             Ref(M2),

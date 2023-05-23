@@ -17,6 +17,9 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
 """
 get_gradient_function(amgo::AbstractManifoldGradientObjective) = amgo.gradient!!
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective)
+    return get_gradient_function(get_objective(admo, false))
+end
 
 @doc raw"""
     ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
@@ -91,8 +94,36 @@ function get_gradient_function(cgo::ManifoldCostGradientObjective)
     return (M, p) -> get_gradient(M, cgo, p)
 end
 
+#
+# and indernal helper to make the dispatch nicer
+#
+function get_cost_and_gradient(
+    M::AbstractManifold, cgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
+)
+    return cgo.costgrad!!(M, p)
+end
+function get_cost_and_gradient(
+    M::AbstractManifold, cgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    return cgo.costgrad!!(M, X, p)
+end
+
+function get_cost_and_gradient!(
+    M::AbstractManifold, X, cgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
+)
+    (c, Y) = cgo.costgrad!!(M, p)
+    copyto!(M, X, p, Y)
+    return (c, X)
+end
+function get_cost_and_gradient!(
+    M::AbstractManifold, X, cgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
+)
+    return cgo.costgrad!!(M, X, p)
+end
+
 function get_cost(M::AbstractManifold, cgo::ManifoldCostGradientObjective, p)
-    v, _ = cgo.costgrad!!(M, p)
+    v, _ = get_cost_and_gradient(M, cgo, p)
     return v
 end
 
@@ -128,6 +159,9 @@ vector `X` comes second.
 """
 get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective, p)
 
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradient(M, get_objective(admo, false), p)
+end
 function get_gradient(
     M::AbstractManifold, mgo::AbstractManifoldGradientObjective{AllocatingEvaluation}, p
 )
@@ -140,18 +174,13 @@ function get_gradient(
     mgo.gradient!!(M, X, p)
     return X
 end
-function get_gradient(
-    M::AbstractManifold, mgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
-)
-    _, X = mgo.costgrad!!(M, p)
+function get_gradient(M::AbstractManifold, mcgo::ManifoldCostGradientObjective, p)
+    _, X = get_cost_and_gradient(M, mcgo, p)
     return X
 end
-function get_gradient(
-    M::AbstractManifold, mgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
-)
-    X = zero_vector(M, p)
-    mgo.costgrad!!(M, X, p)
-    return X
+
+function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradient!(M, X, get_objective(admo, false), p)
 end
 
 function get_gradient!(
@@ -166,18 +195,16 @@ function get_gradient!(
     mgo.gradient!!(M, X, p)
     return X
 end
-function get_gradient!(
-    M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
-)
-    _, Y = mgo.costgrad!!(M, p)
-    copyto!(M, X, p, Y)
+function get_gradient!(M::AbstractManifold, X, mcgo::ManifoldCostGradientObjective, p)
+    get_cost_and_gradient!(M, X, mcgo, p)
     return X
 end
-function get_gradient!(
-    M::AbstractManifold, X, mgo::ManifoldCostGradientObjective{InplaceEvaluation}, p
-)
-    mgo.costgrad!!(M, X, p)
-    return X
+
+function _to_mutating_gradient(grad_f, evaluation::AllocatingEvaluation)
+    return grad_f_(M, p) = [grad_f(M, p[])]
+end
+function _to_mutating_gradient(grad_f, evaluation::InplaceEvaluation)
+    return grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
 end
 
 """
@@ -248,7 +275,7 @@ last direction multiplied by momentum ``m``.
 * `momentum` – (`0.2`) factor for momentum
 * `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
   add the momentum to.
-* `vector_transport_method` – `default_vector_transport_method(M)` vector transport method to use
+* `vector_transport_method` – `default_vector_transport_method(M, typeof(p))` vector transport method to use
 * `X_old` – (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
 
 # Constructors
@@ -260,7 +287,7 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
         p=rand(M),
         s::DirectionUpdateRule=IdentityUpdateRule();
         X=zero_vector(p.M, x0), momentum=0.2
-        vector_transport_method=default_vector_transport_method(M),
+        vector_transport_method=default_vector_transport_method(M, typeof(p)),
     )
 
 Initialize a momentum gradient rule to `s`. Note that the keyword agruments `p` and `X`
@@ -279,7 +306,7 @@ function MomentumGradient(
     M::AbstractManifold,
     p::P=rand(M);
     direction::DirectionUpdateRule=IdentityUpdateRule(),
-    vector_transport_method::VTM=ParallelTransport(),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     X=zero_vector(M, p),
     momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
@@ -317,16 +344,17 @@ them to the current iterates tangent space.
 
 # Constructors
     AverageGradient(
-        p::GradientProlem,
-        x0;
+        M::AbstractManifold,
+        p::P=rand(M);
         n::Int=10
         s::DirectionUpdateRule=IdentityUpdateRule();
         gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
-        vector_transport_method = default_vector_transport_method(M)
+        vector_transport_method = default_vector_transport_method(M, typeof(p))
     )
 
 Add average to a gradient problem, where
+
 * `n` determines the size of averaging
 * `s` is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients` can be prefilled with some history
@@ -346,7 +374,7 @@ function AverageGradient(
     n::Int=10,
     direction::DirectionUpdateRule=IdentityUpdateRule(),
     gradients=[zero_vector(M, p) for _ in 1:n],
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {P,VTM}
     return AverageGradient{P,eltype(gradients),VTM}(
         gradients, p, direction, vector_transport_method
@@ -400,7 +428,7 @@ This compute a Nesterov type update using the following steps, see [^ZhangSra201
 Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
 
 # Constructor
-    Nesterov(x0::P, γ=0.001, μ=0.9, schrinkage = k -> 0.8;
+    Nesterov(M::AbstractManifold, p::P; γ=0.001, μ=0.9, schrinkage = k -> 0.8;
         inverse_retraction_method=LogarithmicInverseRetraction())
 
 Initialize the Nesterov acceleration, where `x0` initializes `v`.
@@ -409,13 +437,14 @@ Initialize the Nesterov acceleration, where `x0` initializes `v`.
     > H. Zhang, S. Sra: _Towards Riemannian Accelerated Gradient Methods_,
     > Preprint, 2018, arXiv: [1806.02812](https://arxiv.org/abs/1806.02812)
 """
-mutable struct Nesterov{P,T<:Real} <: DirectionUpdateRule
-    γ::T
-    μ::T
+mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
+    γ::R
+    μ::R
     v::P
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
+Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, [p]; kwargs...)
 function Nesterov(
     M::AbstractManifold,
     p::P;
@@ -423,7 +452,7 @@ function Nesterov(
     μ::T=0.9,
     shrinkage::Function=i -> 0.8,
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M
+        M, P
     ),
 ) where {P,T}
     return Nesterov{P,T}(γ, μ, copy(M, p), shrinkage, inverse_retraction_method)
@@ -434,15 +463,20 @@ function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState
     p = get_iterate(s)
     α = (h * (n.γ - n.μ) + sqrt(h^2 * (n.γ - n.μ)^2 + 4 * h * n.γ)) / 2
     γbar = (1 - α) * n.γ + α * n.μ
-    y = retract(M, p, (α * n.γ) / (n.γ + α * n.μ) .* inverse_retract(M, p, n.v))
+    y = retract(
+        M,
+        p,
+        ((α * n.γ) / (n.γ + α * n.μ)) *
+        inverse_retract(M, p, n.v, n.inverse_retraction_method),
+    )
     gradf_yk = get_gradient(mp, y)
     xn = retract(M, y, -h * gradf_yk)
     d =
-        ((1 - α) * n.γ) / γbar .* inverse_retract(M, y, n.v, n.inverse_retraction_method) -
-        α / γbar .* gradf_yk
+        (((1 - α) * n.γ) / γbar) * inverse_retract(M, y, n.v, n.inverse_retraction_method) -
+        (α / γbar) * gradf_yk
     n.v = retract(M, y, d, s.retraction_method)
     n.γ = 1 / (1 + n.shrinkage(i)) * γbar
-    return h, -1 / h .* inverse_retract(M, p, xn) # outer update
+    return h, (-1 / h) * inverse_retract(M, p, xn, n.inverse_retraction_method) # outer update
 end
 
 @doc raw"""
@@ -473,6 +507,10 @@ function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverStat
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
+function show(io::IO, dg::DebugGradient)
+    return print(io, "DebugGradient(; format=\"$(dg.format)\")")
+end
+status_summary(dg::DebugGradient) = "(:Gradient, \"$(dg.format)\")"
 
 @doc raw"""
     DebugGradientNorm <: DebugAction
@@ -511,6 +549,10 @@ function (d::DebugGradientNorm)(
     )
     return nothing
 end
+function show(io::IO, dgn::DebugGradientNorm)
+    return print(io, "DebugGradientNorm(; format=\"$(dgn.format)\")")
+end
+status_summary(dgn::DebugGradientNorm) = "(:GradientNorm, \"$(dgn.format)\")"
 
 @doc raw"""
     DebugStepsize <: DebugAction
@@ -541,7 +583,10 @@ function (d::DebugStepsize)(
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, i))
     return nothing
 end
-
+function show(io::IO, ds::DebugStepsize)
+    return print(io, "DebugStepsize(; format=\"$(ds.format)\")")
+end
+status_summary(ds::DebugStepsize) = "(:Stepsize, \"$(ds.format)\")"
 #
 # Records
 #
@@ -565,6 +610,7 @@ function (r::RecordGradient{T})(
 ) where {T}
     return record_or_reset!(r, get_gradient(s), i)
 end
+show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient{$T}()")
 
 @doc raw"""
     RecordGradientNorm <: RecordAction
@@ -581,6 +627,7 @@ function (r::RecordGradientNorm)(
     M = get_manifold(mp)
     return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), i)
 end
+show(io::IO, ::RecordGradientNorm) = print(io, "RecordGradientNorm()")
 
 @doc raw"""
     RecordStepsize <: RecordAction

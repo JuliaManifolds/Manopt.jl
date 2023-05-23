@@ -1,19 +1,17 @@
 using Manifolds, Manopt, Test, ManifoldsBase
-import Manopt: set_manopt_parameter!
 using Dates
 
-struct TestStateProblem{M<:AbstractManifold} <: AbstractManoptProblem{M} end
-mutable struct TestState <: AbstractManoptSolverState
-    storage::Vector{Float64}
-end
-TestState() = TestState([])
-set_manopt_parameter!(s::TestState, ::Val, v) = s
+include("../utils/dummy_types.jl")
+
+struct NoIterateState <: AbstractManoptSolverState end
 
 @testset "Manopt Solver State" begin
     @testset "Generic State" begin
         M = Euclidean(3)
-        pr = TestStateProblem{typeof(M)}()
-        s = TestState()
+        pr = DummyStateProblem{typeof(M)}()
+        s = DummyState()
+        @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
+        @test Manopt.status_summary(Manopt.ReturnSolverState(s)) == "DummyState(Float64[])"
         a = ArmijoLinesearch(M; initial_stepsize=1.0)
         @test get_last_stepsize(pr, s, a) == 1.0
         @test get_initial_stepsize(a) == 1.0
@@ -26,13 +24,13 @@ set_manopt_parameter!(s::TestState, ::Val, v) = s
         )
         @test get_initial_stepsize(dec_step) == 10.0
         M = Euclidean(3)
-        pr = TestStateProblem{typeof(M)}()
-        @test dec_step(pr, TestState(), 1) == 10.0
-        @test dec_step(pr, TestState(), 2) == 5.0
+        pr = DummyStateProblem{typeof(M)}()
+        @test dec_step(pr, DummyState(), 1) == 10.0
+        @test dec_step(pr, DummyState(), 2) == 5.0
     end
 
     @testset "Decorator State" begin
-        s = TestState(zeros(3))
+        s = DummyState(zeros(3))
         r = RecordSolverState(s, RecordIteration())
         d = DebugSolverState(s, DebugIteration())
         ret = Manopt.ReturnSolverState(s)
@@ -66,10 +64,12 @@ set_manopt_parameter!(s::TestState, ::Val, v) = s
 
         @test_throws ErrorException get_gradient(s)
         @test_throws ErrorException get_gradient(r)
-        @test_throws ErrorException get_iterate(s)
-        @test_throws ErrorException get_iterate(r)
+        @test isnan(get_iterate(s)) # dummy returns nan
+        @test isnan(get_iterate(r)) # dummy returns nan
         @test_throws ErrorException set_iterate!(s, M, 0)
         @test_throws ErrorException set_iterate!(r, M, 0)
+        s2 = NoIterateState()
+        @test_throws ErrorException get_iterate(s2)
     end
     @testset "Iteration and Gradient setters" begin
         M = Euclidean(3)
@@ -87,5 +87,34 @@ set_manopt_parameter!(s::TestState, ::Val, v) = s
         @test d2.state.p == 3 * ones(3)
         set_gradient!(d2, M, p, X)
         @test d2.state.X == ones(3)
+    end
+    @testset "Generic Objective and State solver returns" begin
+        f(M, p) = 1
+        o = ManifoldCostObjective(f)
+        ro = Manopt.ReturnManifoldObjective(o)
+        ddo = DummyDecoratedObjective(o)
+        s = DummyState()
+        rs = Manopt.ReturnSolverState(s)
+        @test Manopt.get_solver_return(o, rs) == s #no ReturnObjective
+        # Return O & S
+        (a, b) = Manopt.get_solver_return(ro, rs)
+        @test a == o
+        @test b == s
+        # Return just S
+        Manopt.get_solver_return(ddo, rs) == s
+        # both as tuples and they return the iterate
+        @test isnan(get_solver_result((ro, rs)))
+        @test isnan(get_solver_result((o, rs)))
+        @test isnan(get_solver_result(ro, rs))
+        @test isnan(get_solver_result(o, rs))
+        # But also if the second is already some other type
+        @test isnan(get_solver_result((ro, NaN)))
+        @test isnan(get_solver_result((o, NaN)))
+        @test isnan(get_solver_result(ro, NaN))
+        @test isnan(get_solver_result(o, NaN))
+        # unless overwritten, objectives to not display in these tuples.
+        @test repr((o, s)) == repr(s)
+        # Passdown
+        @test repr((ro, s)) == repr(s)
     end
 end

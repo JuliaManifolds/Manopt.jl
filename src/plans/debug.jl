@@ -69,11 +69,31 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
+function status_summary(dst::DebugSolverState)
+    if length(dst.debugDictionary) > 0
+        s = ""
+        if length(dst.debugDictionary) == 1 && first(keys(dst.debugDictionary)) === :All
+            s = "\n    $(status_summary(dst.debugDictionary[:All]))"
+        else
+            for (k, v) in dst.debugDictionary
+                s = "$s\n    :$k = $(status_summary(v))"
+            end
+        end
+        return """
+               $(dst.state)
 
+               ## Debug$s"""
+    else # for length 1 the group is equivvalent to the summary of the single state
+        return status_summary(dst.state)
+    end
+end
+function show(io::IO, dst::DebugSolverState)
+    return print(io, status_summary(dst))
+end
 dispatch_state_decorator(::DebugSolverState) = Val(true)
 
 #
-# Meta Debugs
+# Meta Debug Actions
 #
 """
     DebugGroup <: DebugAction
@@ -97,6 +117,13 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     for di in d.group
         di(p, st, i)
     end
+end
+function status_summary(dg::DebugGroup)
+    return "[ $( join(["$(status_summary(di))" for di in dg.group], ", ")) ]"
+end
+function show(io::IO, dg::DebugGroup)
+    s = join(["$(di)" for di in dg.group], ", ")
+    return print(io, "DebugGroup([$s])")
 end
 
 @doc raw"""
@@ -128,42 +155,70 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
 end
-
+function show(io::IO, de::DebugEvery)
+    return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
+end
+function status_summary(de::DebugEvery)
+    s = ""
+    if de.debug isa DebugGroup
+        s = status_summary(de.debug)[3:(end - 2)]
+    else
+        s = "$(de.debug)"
+    end
+    return "[$s, $(de.every)]"
+end
 #
 # Special single ones
 #
 @doc raw"""
-    DebugChange()
+    DebugChange(M=DefaultManifold())
 
 debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreStateAction( (:Iterate,) )`) – (eventually shared) the storage of the previous action
+* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
-* `manifold` (`DefaultManifold(1)`) manifold whose default inverse retraction should be used
-  for approximating the distance.
-* `invretr` - (`default_inverse_retraction_method(manifold)`) the inverse retraction to be
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) the inverse retraction to be
   used for approximating distance.
 """
-mutable struct DebugChange{TInvRetr<:AbstractInverseRetractionMethod} <: DebugAction
+mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    invretr::TInvRetr
-    function DebugChange(;
-        storage::StoreStateAction=StoreStateAction((:Iterate,)),
+    inverse_retraction_method::IR
+    function DebugChange(
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::AbstractManifold=DefaultManifold(1),
-        invretr::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-            manifold
+        manifold::Union{Nothing,AbstractManifold}=nothing,
+        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
+        inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
+            M
         ),
     )
-        return new{typeof(invretr)}(io, format, storage, invretr)
+        irm = inverse_retraction_method
+        # Deprecated, remove in Manopt 0.5
+        if !isnothing(manifold)
+            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+            irm = default_inverse_retraction_method(manifold)
+        end
+        if !isnothing(invretr)
+            @warn "invretr keyword is deprecated, use `inverse_retraction_method`, which this one overrides for now."
+            irm = invretr
+        end
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate])
+            else
+                storage = StoreStateAction(M; store_points=Tuple{:Iterate})
+            end
+        end
+        return new{typeof(irm)}(io, format, storage, irm)
     end
 end
 function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverState, i)
@@ -171,11 +226,174 @@ function (d::DebugChange)(mp::AbstractManoptProblem, st::AbstractManoptSolverSta
     (i > 0) && Printf.format(
         d.io,
         Printf.Format(d.format),
-        distance(M, get_iterate(st), get_storage(d.storage, :Iterate), d.invretr),
+        distance(
+            M,
+            get_iterate(st),
+            get_storage(d.storage, PointStorageKey(:Iterate)),
+            d.inverse_retraction_method,
+        ),
     )
     d.storage(mp, st, i)
     return nothing
 end
+function show(io::IO, dc::DebugChange)
+    return print(
+        io,
+        "DebugChange(; format=\"$(dc.format)\", inverse_retraction=$(dc.inverse_retraction_method))",
+    )
+end
+status_summary(dc::DebugChange) = "(:Change, \"$(dc.format)\")"
+
+@doc raw"""
+    DebugCost <: DebugAction
+
+print the current cost function value, see [`get_cost`](@ref).
+
+# Constructors
+    DebugCost()
+
+# Parameters
+
+* `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
+* `io` – (`stdout`) default steream to print the debug to.
+* `long` - (`false`) short form to set the format to `F(x):` (default) or `current cost: ` and the cost
+"""
+mutable struct DebugCost <: DebugAction
+    io::IO
+    format::String
+    function DebugCost(;
+        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "F(x): %f"
+    )
+        return new(io, format)
+    end
+end
+function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
+    return nothing
+end
+show(io::IO, di::DebugCost) = print(io, "DebugCost(; format=\"$(di.format)\")")
+status_summary(di::DebugCost) = "(:Cost, \"$(di.format)\")"
+
+@doc raw"""
+    DebugDivider <: DebugAction
+
+print a small `div`ider (default `" | "`).
+
+# Constructor
+    DebugDivider(div,print)
+
+"""
+mutable struct DebugDivider{TIO<:IO} <: DebugAction
+    io::TIO
+    divider::String
+    DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
+end
+function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
+    if i >= 0 && !isempty(d.divider)
+        print(d.io, d.divider)
+    end
+    return nothing
+end
+show(io::IO, di::DebugDivider) = print(io, "DebugDivider(; divider=\"$(di.divider)\")")
+status_summary(di::DebugDivider) = "\"$(di.divider)\""
+
+@doc raw"""
+    DebugEntry <: DebugAction
+
+print a certain fields entry of type {T} during the iterates, where a `format` can be
+specified how to print the entry.
+
+# Addidtional Fields
+* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+
+# Constructor
+
+    DebugEntry(f[, prefix="$f:", format = "$prefix %s", io=stdout])
+
+"""
+mutable struct DebugEntry <: DebugAction
+    io::IO
+    format::String
+    field::Symbol
+    function DebugEntry(f::Symbol; prefix="$f:", format="$prefix %s", io::IO=stdout)
+        return new(io, format, f)
+    end
+end
+function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
+    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
+    return nothing
+end
+function show(io::IO, di::DebugEntry)
+    return print(io, "DebugEntry(:$(di.field); format=\"$(di.format)\")")
+end
+
+@doc raw"""
+    DebugEntryChange{T} <: DebugAction
+
+print a certain entries change during iterates
+
+# Additional Fields
+* `print` – (`print`) function to print the result
+* `prefix` – (`"Change of :Iterate"`) prefix to the print out
+* `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
+* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
+* `storage` – a [`StoreStateAction`](@ref) to store the previous value of `:f`
+
+# Constructors
+
+    DebugEntryChange(f,d)
+
+# Keyword arguments
+
+* `io` (`stdout`) an `IOStream`
+* `prefix` (`"Change of $f"`)
+* `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
+* `initial_value` an initial value for the change of `o.field`.
+* `format` – (`"$prefix %e"`) format to print the change
+
+"""
+mutable struct DebugEntryChange <: DebugAction
+    distance::Any
+    field::Symbol
+    format::String
+    io::IO
+    storage::StoreStateAction
+    function DebugEntryChange(
+        f::Symbol,
+        d;
+        storage::StoreStateAction=StoreStateAction([f]),
+        prefix::String="Change of $f:",
+        format::String="$prefix%s",
+        io::IO=stdout,
+        initial_value::Any=NaN,
+    )
+        if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
+            update_storage!(storage, Dict(f => initial_value))
+        end
+        return new(d, f, format, io, storage)
+    end
+end
+function (d::DebugEntryChange)(
+    p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
+)
+    if i == 0
+        # on init if field not present -> generate
+        !has_storage(d.storage, d.field) && d.storage(p, st, i)
+        return nothing
+    end
+    x = get_storage(d.storage, d.field)
+    v = d.distance(p, st, getproperty(st, d.field), x)
+    Printf.format(d.io, Printf.Format(d.format), v)
+    d.storage(p, st, i)
+    return nothing
+end
+function show(io::IO, dec::DebugEntryChange)
+    return print(
+        io, "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(dec.format)\")"
+    )
+end
+
 @doc raw"""
     DebugGradientChange()
 
@@ -188,31 +406,56 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `io` – (`stdout`) default steream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
 """
-mutable struct DebugGradientChange <: DebugAction
+mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
     io::IO
     format::String
     storage::StoreStateAction
-    function DebugGradientChange(;
-        storage::StoreStateAction=StoreStateAction((:Gradient,)),
+    vector_transport_method::VTR
+    function DebugGradientChange(
+        M::AbstractManifold=DefaultManifold();
+        storage::Union{Nothing,StoreStateAction}=nothing,
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-    )
-        return new(io, format, storage)
+        vector_transport_method::VTR=default_vector_transport_method(M),
+    ) where {VTR<:AbstractVectorTransportMethod}
+        if isnothing(storage)
+            if M isa DefaultManifold
+                storage = StoreStateAction(M; store_fields=[:Iterate, :Gradient])
+            else
+                storage = StoreStateAction(
+                    M; store_points=[:Iterate], store_vectors=[:Gradient]
+                )
+            end
+        end
+        return new{VTR}(io, format, storage, vector_transport_method)
     end
 end
 function (d::DebugGradientChange)(
     pm::AbstractManoptProblem, st::AbstractManoptSolverState, i
 )
-    M = get_manifold(pm)
-    (i > 0) && Printf.format(
-        d.io,
-        Printf.Format(d.format),
-        distance(M, get_gradient(st), get_storage(d.storage, :Gradient)),
-    )
+    if i > 0
+        M = get_manifold(pm)
+        p_old = get_storage(d.storage, PointStorageKey(:Iterate))
+        X_old = get_storage(d.storage, VectorStorageKey(:Gradient))
+        p = get_iterate(st)
+        X = get_gradient(st)
+        l = norm(
+            M, p, X - vector_transport_to(M, p_old, X_old, p, d.vector_transport_method)
+        )
+        Printf.format(d.io, Printf.Format(d.format), l)
+    end
     d.storage(pm, st, i)
     return nothing
 end
+function show(io::IO, dgc::DebugGradientChange)
+    return print(
+        io,
+        "DebugGradientChange(; format=\"$(dgc.format)\", vector_transport_method=$(dgc.vector_transport_method))",
+    )
+end
+status_summary(di::DebugGradientChange) = "(:GradientChange, \"$(di.format)\")"
+
 @doc raw"""
     DebugIterate <: DebugAction
 
@@ -242,6 +485,10 @@ function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverStat
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), get_iterate(st))
     return nothing
 end
+function show(io::IO, di::DebugIterate)
+    return print(io, "DebugIterate(; format=\"$(di.format)\")")
+end
+status_summary(di::DebugIterate) = "(:Iterate, \"$(di.format)\")"
 
 @doc raw"""
     DebugIteration <: DebugAction
@@ -267,144 +514,47 @@ function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverStat
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
 end
+show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.format)\")")
+status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
 
 @doc raw"""
-    DebugCost <: DebugAction
+    DebugMessages <: DebugAction
 
-print the current cost function value, see [`get_cost`](@ref).
-
-# Constructors
-    DebugCost()
-
-# Parameters
-
-* `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
-* `io` – (`stdout`) default steream to print the debug to.
-* `long` - (`false`) short form to set the format to `F(x):` (default) or `current cost: ` and the cost
-"""
-mutable struct DebugCost <: DebugAction
-    io::IO
-    format::String
-    function DebugCost(;
-        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "F(x): %f"
-    )
-        return new(io, format)
-    end
-end
-function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
-    return nothing
-end
-
-@doc raw"""
-    DebugDivider <: DebugAction
-
-print a small `div`ider (default `" | "`).
+An [`AbstractManoptSolverState`](@ref) or one of its substeps like a
+[`Stepsize`](@ref) might generate warnings throughout their compuations.
+This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
+depending on the message type.
 
 # Constructor
-    DebugDivider(div,print)
+    DebugMessages(mode=:Info; io::IO=stdout)
 
+Initialize the messages debug to a certain `mode`. Available modes are
+* `:Error` – issue the messages as an error and hence stop at any issue occuring
+* `:Info` – issue the messages as an `@info`
+* `:Print` – print messages to the steam `io`.
+* `:Warning` – issue the messages as a warning
 """
-mutable struct DebugDivider{TIO<:IO} <: DebugAction
-    io::TIO
-    divider::String
-    DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
-end
-function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
-    if i >= 0 && !isempty(d.divider)
-        print(d.io, d.divider)
-    end
-    return nothing
-end
-
-@doc raw"""
-    DebugEntry <: RecordAction
-
-print a certain fields entry of type {T} during the iterates, where a `format` can be
-specified how to print the entry.
-
-# Addidtional Fields
-* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
-
-# Constructor
-
-    DebugEntry(f[, prefix="$f:", format = "$prefix %s", io=stdout])
-
-"""
-mutable struct DebugEntry <: DebugAction
+mutable struct DebugMessages <: DebugAction
     io::IO
-    format::String
-    field::Symbol
-    function DebugEntry(f::Symbol; prefix="$f:", format="$prefix %s", io::IO=stdout)
-        return new(io, format, f)
-    end
+    mode::Symbol
+    DebugMessages(mode::Symbol=:Info; io::IO=stdout) = new(io, mode)
 end
-function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
-    (i >= 0) && Printf.format(d.io, Printf.Format(d.format), getfield(st, d.field))
+function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
+    msg = get_message(st)
+    (i < 0 || length(msg) == 0) && (return nothing)
+    (d.mode == :Warning) && (@warn msg; return nothing)
+    (d.mode == :Error) && (@error msg; return nothing)
+    (d.mode == :Print) && (print(d.io, msg); return nothing)
+    #(d.mode == :Info) &&
+    (@info msg) # Default
     return nothing
 end
-
-@doc raw"""
-    DebugEntryChange{T} <: DebugAction
-
-print a certain entries change during iterates
-
-# Additional Fields
-* `print` – (`print`) function to print the result
-* `prefix` – (`"Change of :Iterate"`) prefix to the print out
-* `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
-* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage` – a [`StoreStateAction`](@ref) to store the previous value of `:f`
-
-# Constructors
-
-    DebugEntryChange(f,d)
-
-# Keyword arguments
-
-- `io` (`stdout`) an `IOStream`
-- `prefix` (`"Change of $f"`)
-- `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
-- `initial_value` an initial value for the change of `o.field`.
-- `format` – (`"$prefix %e"`) format to print the change
-
-"""
-mutable struct DebugEntryChange <: DebugAction
-    distance::Any
-    field::Symbol
-    format::String
-    io::IO
-    storage::StoreStateAction
-    function DebugEntryChange(
-        f::Symbol,
-        d;
-        storage::StoreStateAction=StoreStateAction((f,)),
-        prefix::String="Change of $f:",
-        format::String="$prefix%s",
-        io::IO=stdout,
-        initial_value::T where {T}=NaN,
-    )
-        if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
-            update_storage!(storage, Dict(f => initial_value))
-        end
-        return new(d, f, format, io, storage)
-    end
-end
-
-function (d::DebugEntryChange)(
-    p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
-)
-    if i == 0
-        # on init if field not present -> generate
-        !has_storage(d.storage, d.field) && d.storage(p, st, i)
-        return nothing
-    end
-    x = get_storage(d.storage, d.field)
-    v = d.distance(p, st, getproperty(st, d.field), x)
-    Printf.format(d.io, Printf.Format(d.format), v)
-    d.storage(p, st, i)
-    return nothing
+show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode))")
+function status_summary(d::DebugMessages)
+    (d.mode == :Warning) && return ":WarningMessages"
+    (d.mode == :Error) && return ":ErrorMessages"
+    # (d.mode == :Info) && return ":InfoMessages" #default
+    return ":Messages"
 end
 
 @doc raw"""
@@ -423,6 +573,8 @@ function (d::DebugStoppingCriterion)(
     print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(st) : "")
     return nothing
 end
+show(io::IO, ::DebugStoppingCriterion) = print(io, "DebugStoppingCriterion()")
+status_summary(::DebugStoppingCriterion) = ":Stop"
 
 @doc raw"""
     DebugTime()
@@ -473,7 +625,15 @@ function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, i)
     end
     return nothing
 end
-
+function show(io::IO, di::DebugTime)
+    return print(io, "DebugTime(; format=\"$(di.format)\", mode=:$(di.mode))")
+end
+function status_summary(di::DebugTime)
+    if di.mode === :iterative
+        return "(:IterativeTime, \"$(di.format)\")"
+    end
+    return "(:Time, \"$(di.format)\")"
+end
 """
     reset!(d::DebugTime)
 
@@ -483,7 +643,6 @@ function reset!(d::DebugTime)
     d.last_time = Nanosecond(time_ns())
     return d
 end
-
 """
     stop!(d::DebugTime)
 
@@ -545,6 +704,9 @@ function (d::DebugWarnIfCostIncreases)(
     end
     return nothing
 end
+function show(io::IO, di::DebugWarnIfCostIncreases)
+    return print(io, "DebugWarnIfCostIncreases(; tol=\"$(di.tol)\")")
+end
 
 @doc raw"""
     DebugWarnIfCostNotFinite <: DebugAction
@@ -581,6 +743,8 @@ function (d::DebugWarnIfCostNotFinite)(
     end
     return nothing
 end
+show(io::IO, ::DebugWarnIfCostNotFinite) = print(io, "DebugWarnIfCostNotFinite()")
+status_summary(::DebugWarnIfCostNotFinite) = ":WarnCost"
 
 @doc raw"""
     DebugWarnIfFieldNotFinite <: DebugAction
@@ -597,22 +761,33 @@ It can also be set to `:No` to deactivate the warning, but this makes this Actio
 All other symbols are handled as if they were `:Always:`
 
 # Example
-    DebugWaranIfFieldNotFinite(:gradient)
+    DebugWaranIfFieldNotFinite(:Gradient)
 
 Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
 """
 mutable struct DebugWarnIfFieldNotFinite <: DebugAction
     status::Symbol
     field::Symbol
-    DebugWarnIfFieldNotFinite(field::Symbol, warn::Symbol=:Once) = new(warn, field)
+    function DebugWarnIfFieldNotFinite(field::Symbol=:Gradient, warn::Symbol=:Once)
+        return new(warn, field)
+    end
 end
 function (d::DebugWarnIfFieldNotFinite)(
     ::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
     if d.status !== :No
-        v = getproperty(st, d.field)
+        if d.field == :Iterate
+            v = get_iterate(st)
+            s = "The iterate"
+        elseif d.field == :Gradient
+            v = get_gradient(st)
+            s = "The gradient"
+        else
+            v = getproperty(st, d.field)
+            s = "The field s.$(d.field)"
+        end
         if !all(isfinite.(v))
-            @warn """The field o.$(d.field) is or contains values that are not finite.
+            @warn """$s is or contains values that are not finite.
             At iteration #$i it evaluated to $(v)."""
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
@@ -621,6 +796,9 @@ function (d::DebugWarnIfFieldNotFinite)(
         end
     end
     return nothing
+end
+function show(io::IO, dw::DebugWarnIfFieldNotFinite)
+    return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field))")
 end
 
 @doc raw"""
@@ -702,11 +880,15 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
+* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
-* `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `:gradient`.
+* `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
 * `:Time` creates a [`DebugTime`](@ref)
-* `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
+* `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
+* `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
+* `:ErrorMessages`creates a [`DebugMessages`](@ref)`(:Error)`
+* `:Messages`creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
@@ -719,9 +901,14 @@ function DebugActionFactory(s::Symbol)
     (s == :Iteration) && return DebugIteration()
     (s == :Stepsize) && return DebugStepsize()
     (s == :WarnCost) && return DebugWarnIfCostNotFinite()
-    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:gradient)
+    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
     (s == :Time) && return DebugTime()
     (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
+    # Messages
+    (s == :WarningMessages) && return DebugMessages(:Warning)
+    (s == :InfoMessages) && return DebugMessages(:Info)
+    (s == :ErrorMessages) && return DebugMessages(:Error)
+    (s == :Messages) && return DebugMessages()
     return DebugEntry(s)
 end
 """
