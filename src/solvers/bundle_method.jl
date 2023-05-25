@@ -270,8 +270,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
-    while !isempty(findall(ej -> ej < 0.0, bms.lin_errors))
+    while !isempty(findall(ej -> ej < -bms.filter2, bms.lin_errors))
         bms.diam += bms.δ * bms.diam
+        if isinf(bms.diam)
+            break
+        end
         bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
@@ -288,7 +291,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             ),
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-    ]
+        ]
     end
     ##
     return bms
