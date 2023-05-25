@@ -108,8 +108,8 @@ function LevenbergMarquardt(
     return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
 end
 function LevenbergMarquardt(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
-)
+    M::AbstractManifold, nlso::O, p; kwargs...
+) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return LevenbergMarquardt!(M, nlso, q; kwargs...)
 end
@@ -159,7 +159,7 @@ function LevenbergMarquardt!(
 end
 function LevenbergMarquardt!(
     M::AbstractManifold,
-    nlso::NonlinearLeastSquaresObjective,
+    nlso::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -168,7 +168,7 @@ function LevenbergMarquardt!(
     debug=[DebugWarnIfCostIncreases()],
     expect_zero_residual::Bool=false,
     kwargs..., #collect rest
-)
+) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     i_nlso = get_objective(nlso) # undeecorate – for safety
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
@@ -181,8 +181,9 @@ function LevenbergMarquardt!(
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
     )
-    lms = decorate_state!(lms; debug=debug, kwargs...)
-    return get_solver_return(solve!(nlsp, lms))
+    dlms = decorate_state!(lms; debug=debug, kwargs...)
+    solve!(nlsp, dlms)
+    return get_solver_return(get_objective(nlsp), dlms)
 end
 #
 # Solver functions

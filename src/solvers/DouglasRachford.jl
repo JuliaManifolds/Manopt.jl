@@ -171,8 +171,8 @@ function DouglasRachford(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function DouglasRachford(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective, p; kwargs...
-)
+    M::AbstractManifold, mpo::O, p; kwargs...
+) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return DouglasRachford!(M, mpo, q; kwargs...)
 end
@@ -227,7 +227,7 @@ function DouglasRachford!(
 end
 function DouglasRachford!(
     M::AbstractManifold,
-    mpo::ManifoldProximalMapObjective,
+    mpo::O,
     p;
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
@@ -237,14 +237,15 @@ function DouglasRachford!(
         StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
     ),
     kwargs..., #especially may contain decorator options
-) where {Tλ,Tα,TR}
+) where {Tλ,Tα,TR,O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(
         M, p; λ=λ, α=α, R=R, stopping_criterion=stopping_criterion, parallel=parallel > 0
     )
     ddrs = decorate_state!(drs; kwargs...)
-    return get_solver_return(solve!(dmp, ddrs))
+    solve!(dmp, ddrs)
+    return get_solver_return(get_objective(dmp), ddrs)
 end
 #
 # An internal function that turns more than 2 proxes into a parallel variant

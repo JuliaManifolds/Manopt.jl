@@ -21,6 +21,7 @@ include("stepsize.jl")
 
 include("cost_plan.jl")
 include("gradient_plan.jl")
+include("alternating_gradient_plan.jl")
 include("constrained_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
@@ -41,3 +42,4 @@ include("stochastic_gradient_plan.jl")
 include("subsolver_plan.jl")
 
 include("cache.jl")
+include("count.jl")

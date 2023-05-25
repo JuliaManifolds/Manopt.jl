@@ -278,9 +278,9 @@ function show(io::IO, als::ArmijoLinesearch)
         io,
         """
         ArmijoLineseach() with keyword parameters
-          * initial_stepsize = $(als.initial_stepsize)
-          * retraction_method = $(als.retraction_method)
-          * contraction_factor = $(als.contraction_factor)
+          * initial_stepsize    = $(als.initial_stepsize)
+          * retraction_method   = $(als.retraction_method)
+          * contraction_factor  = $(als.contraction_factor)
           * sufficient_decrease = $(als.sufficient_decrease)""",
     )
 end

@@ -154,8 +154,9 @@ function primal_dual_semismooth_Newton!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    pdsn = decorate_state!(pdsn; kwargs...)
-    return get_solver_return(solve!(tmp, pdsn))
+    dpdsn = decorate_state!(pdsn; kwargs...)
+    solve!(tmp, dpdsn)
+    return get_solver_return(get_objective(tmp), dpdsn)
 end
 
 function initialize_solver!(::TwoManifoldProblem, ::PrimalDualSemismoothNewtonState) end

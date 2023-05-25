@@ -83,16 +83,23 @@ show(io::IO, rst::ReturnSolverState) = print(io, "ReturnSolverState($(rst.state)
 dispatch_state_decorator(::ReturnSolverState) = Val(true)
 
 """
-    get_solver_return(O::AbstractManoptSolverState)
+    get_solver_return(s::AbstractManoptSolverState)
+    get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
 
-determine the result value of a call to a solver. By default this returns the same as [`get_solver_result`](@ref),
+determine the result value of a call to a solver.
+By default this returns the same as [`get_solver_result`](@ref),
 i.e. the last iterate or (approximate) minimizer.
 
-    get_solver_return(O::ReturnSolverState)
+    get_solver_return(s::ReturnSolverState)
+    get_solver_return(o::AbstractManifoldObjective, s::ReturnSolverState)
 
 return the internally stored state of the [`ReturnSolverState`](@ref) instead of the minimizer.
 This means that when the state are decorated like this, the user still has to call [`get_solver_result`](@ref)
 on the internal state separately.
+
+    get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
+
+return both the objective and the state as a tuple.
 """
 function get_solver_return(s::AbstractManoptSolverState)
     return _get_solver_return(s, dispatch_state_decorator(s))
@@ -100,6 +107,18 @@ end
 _get_solver_return(s::AbstractManoptSolverState, ::Val{false}) = get_solver_result(s)
 _get_solver_return(s::AbstractManoptSolverState, ::Val{true}) = get_solver_return(s.state)
 get_solver_return(s::ReturnSolverState) = s.state
+function get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
+    #resolve objevctive first
+    return _get_solver_return(o, s, dispatch_objective_decorator(o))
+end
+#carefully undecorate both and check whether a solver/obejctive return happens
+function _get_solver_return(o::AbstractManifoldObjective, s, ::Val{true})
+    return get_solver_return(get_objective(o, false), s)
+end
+_get_solver_return(::AbstractManifoldObjective, s, ::Val{false}) = get_solver_return(s)
+function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverState)
+    return o.objective, get_solver_return(s)
+end
 
 @doc raw"""
     get_state(s::AbstractManoptSolverState)
@@ -174,15 +193,35 @@ _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.
 
 """
     get_solver_result(ams::AbstractManoptSolverState)
+    get_solver_result(tos::Tuple{AbstractManifoldObjective,AbstractManoptSolverState})
+    get_solver_result(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
 
 Return the final result after all iterations that is stored within
 the [`AbstractManoptSolverState`](@ref) `ams`, which was modified during the iterations.
+
+For the case the objective is passed as well, but default, the objective is ignored,
+and the solver result for the state is called.
 """
 function get_solver_result(s::AbstractManoptSolverState)
-    return get_solver_result(s, dispatch_state_decorator(s))
+    return _get_solver_result(s, dispatch_state_decorator(s))
 end
-get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
-get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
+function get_solver_result(
+    tos::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState}
+)
+    return get_solver_result(tos...)
+end
+function get_solver_result(tos::Tuple{<:AbstractManifoldObjective,S}) where {S}
+    return tos[2]
+end
+function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
+    return get_solver_result(s)
+end
+# if the second one is anything else we assume it is a point/result -> return that
+function get_solver_result(::AbstractManifoldObjective, s)
+    return s
+end
+_get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
+_get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
 
 """
     struct PointStorageKey{key} end
@@ -235,7 +274,7 @@ _storage_copy_point(::AbstractManifold, p::Number) = StorageRef(p)
 
 Make a copy of tangent vector `X` from manifold `M` for storage in [`StoreStateAction`](@ref).
 """
-_storage_copy_vector(M::AbstractManifold, X) = copy(M, SA_F64[], X)
+_storage_copy_vector(M::AbstractManifold, X) = copy(M, X)
 _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 
 @doc raw"""
@@ -392,11 +431,9 @@ end
 function (a::StoreStateAction)(
     amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
-    #update values (maybe only once)
-    if !a.once || a.last_stored != i
-        update_storage!(a, amp, s)
-    end
-    return a.last_stored = i
+    (!a.once || a.last_stored != i) && (update_storage!(a, amp, s))
+    a.last_stored = i
+    return a
 end
 
 """
@@ -563,4 +600,15 @@ end
 
 function get_count(ams::AbstractManoptSolverState, v::Val{:Iterations})
     return get_count(ams.stop, v)
+end
+
+# in general, ignore printing the objective by default
+function show(io::IO, t::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState})
+    return print(io, "$(t[2])")
+end
+# for decorated ons, default: pass down
+function show(
+    io::IO, t::Tuple{<:AbstractDecoratedManifoldObjective,<:AbstractManoptSolverState}
+)
+    return show(io, (get_objective(t[1], false), t[2]))
 end

@@ -1,5 +1,6 @@
 ---
 title: How to Run Stochastic Gradient Descent
+author: Ronny Bergmann
 ---
 
 This tutorial illustrates how to use the [`stochastic_gradient_descent`](https://manoptjl.org/stable/solvers/stochastic_gradient_descent.html)

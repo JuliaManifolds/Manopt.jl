@@ -113,7 +113,7 @@ end
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
 all forward differences occurring in the power manifold array, i.e.
 ``\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)`` with `xi` and `xj` are array
-elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unitvector.
+elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -316,7 +316,7 @@ function prox_TV2(
             "Proximal Map of TV2(M, λ, x, p) not implemented for p=$(p) (requires p=1) on general manifolds.",
         ),
     )
-    PowX = SVector(x)
+    PowX = [x...]
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
     xR = PowX
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
@@ -338,7 +338,7 @@ function prox_TV2!(
             "Proximal Map of TV2(M, λ, x, p) not implemented for p=$(p) (requires p=1) on general manifolds.",
         ),
     )
-    PowX = SVector(x)
+    PowX = [x...]
     PowM = PowerManifold(M, NestedPowerRepresentation(), 3)
     copyto!(M, y, PowX)
     F(M, x) = 1 / 2 * distance(M, PowX, x)^2 + λ * costTV2(M, x)
@@ -419,7 +419,7 @@ compute the projection onto collaborative Norm unit (or α-) ball, i.e. of the f
 ```math
 F^q(x) = \sum_{i∈\mathcal G}
   \Bigl( \sum_{j∈\mathcal I_i}
-    \sum_{k=1^d} \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q/p},
+    \sum_{k=1}^d \lVert X_{i,j}\rVert_x^p\Bigr)^\frac{q}{p},
 ```
 
 where ``\mathcal G`` is the set of indices for ``x∈\mathcal M`` and ``\mathcal I_i``

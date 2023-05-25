@@ -84,6 +84,10 @@ function get_gradients(
 ) where {TC}
     return [grad_i(M, p) for grad_i in sgo.gradient!!]
 end
+function get_gradients(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradients(M, get_objective(admo, false), p)
+end
+
 function get_gradients!(
     M::AbstractManifold,
     X,
@@ -102,6 +106,10 @@ function get_gradients!(
     copyto!.(Ref(M), X, [grad_i(M, p) for grad_i in sgo.gradient!!])
     return X
 end
+function get_gradients!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradients!(M, X, get_objective(admo, false), p)
+end
+
 function get_gradients(
     ::AbstractManifold,
     ::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:Function},
@@ -182,6 +190,10 @@ function get_gradient(
     X = zero_vector(M, p)
     return get_gradient!(M, X, sgo, p, k)
 end
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, k)
+    return get_gradient(M, get_objective(admo, false), p, k)
+end
+
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -222,6 +234,12 @@ function get_gradient!(
 ) where {TC}
     return sgo.gradient!![k](M, X, p)
 end
+function get_gradient!(
+    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p, k
+)
+    return get_gradient!(M, X, get_objective(admo, false), p, k)
+end
+
 # Passdown from problem
 function get_gradient(mp::AbstractManoptProblem, p, k)
     return get_gradient(get_manifold(mp), get_objective(mp), p, k)

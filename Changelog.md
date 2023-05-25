@@ -5,12 +5,51 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.17] - working version
+## [0.4.21] - 22/05/2023
+
+### Added
+
+* A `ManifoldCacheObjective` as a decorator for objectives to cache results of calls,
+  using LRU Caches as a weak dependency. For now this works with cost and gradient evaluations
+* A `ManifoldCountObjective` as a decorator for objectives to enable counting of calls to for example the cost and the gradient
+* adds a `return_objective` keyword, that switches the return of a solver to a tuple `(o, s)`,
+  where `o` is the (possibly decorated) objective, and `s` os the “classical” solver return (state or point).
+  This way the counted values can be accessed and the cache can be reused.
+* change solvers on the mid level (form `solver(M, objective, p)`) to also accept decorated objectives
+
+### Changed
+* Switch all Requires weak dependencies to actual weak dependencies starting in Julia 1.9
+
+
+## [0.4.20] - 11/05/2023
+
+### Changed
+
+* the default tolerances for the numerical `check_` functions were loosened a bit,
+  such that `check_vector` can also be changed in its tolerances.
+
+## [0.4.19] - 07/05/2023
+
+### Added
+
+* the sub solver for `trust_regions` is now costumizable, i.e. can be exchanged.
+
+### Changed
+
+* slightly changed the definitions of the solver states for ALM and EPM to be type stable
+
+## [0.4.18] - 04/05/2023
+
+### Added
+
+* A function `check_Hessian(M, f, grad_f, Hess_f)` to numerically check the (Riemannian) Hessian of a function `f`
+
+## [0.4.17] - 28/04/2023
 
 ### Added
 
 * A new interface of the form `alg(M, objective, p0)` to allow to reuse
-  objectives without creating `AbstractSolverStates` and calling `solve!`. This especially still allows for any decoration of the objective and/or the state using e.g. `debug=`, or `record=`.
+  objectives without creating `AbstractManoptSolverState`s and calling `solve!`. This especially still allows for any decoration of the objective and/or the state using e.g. `debug=`, or `record=`.
 
 ### Changed
 

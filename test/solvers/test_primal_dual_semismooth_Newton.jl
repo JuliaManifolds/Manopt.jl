@@ -188,4 +188,26 @@ using Manopt, Manifolds, ManifoldsBase, Test
     )
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7
+    @testset "Objetive Decorator passthrough" begin
+        # PDNSSN additionals
+        pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
+            f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
+        )
+        ro = DummyDecoratedObjective(pdmsno)
+        X = zero_vector(M, x0)
+        Y = get_differential_primal_prox(M, pdmsno, 0.1, x0, X)
+        Y2 = get_differential_primal_prox(M, ro, 0.1, x0, X)
+        @test Y == Y2
+        get_differential_primal_prox!(M, Y, pdmsno, 0.1, x0, X)
+        get_differential_primal_prox!(M, Y2, ro, 0.1, x0, X)
+        @test Y == Y2
+
+        X = zero_vector(N, ξ0)
+        Y = get_differential_dual_prox(N, pdmsno, n, 0.1, ξ0, X)
+        Y2 = get_differential_dual_prox(N, ro, n, 0.1, ξ0, X)
+        @test Y == Y2
+        get_differential_dual_prox!(N, Y, pdmsno, n, 0.1, ξ0, X)
+        get_differential_dual_prox!(N, Y2, ro, n, 0.1, ξ0, X)
+        @test Y == Y2
+    end
 end

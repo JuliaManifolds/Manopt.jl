@@ -146,8 +146,8 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
-[`decorate_objective!`](@ref), respectively.
+All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
+[`decorate_objective!`](@ref) for objective, respectively.
 If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
 # Output
@@ -186,7 +186,9 @@ function gradient_descent(
     #return just a number if  the return type is the same as the type of q
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
-function gradient_descent(M::AbstractManifold, mgo::ManifoldGradientObjective, p; kwargs...)
+function gradient_descent(
+    M::AbstractManifold, mgo::O, p; kwargs...
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -228,7 +230,7 @@ function gradient_descent!(
 end
 function gradient_descent!(
     M::AbstractManifold,
-    mgo::AbstractManifoldGradientObjective,
+    mgo::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
@@ -239,9 +241,9 @@ function gradient_descent!(
     debug=stepsize isa ConstantStepsize ? [DebugWarnIfCostIncreases()] : [],
     direction=IdentityUpdateRule(),
     kwargs..., #collect rest
-)
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
-    mp = DefaultManoptProblem(M, dmgo)
+    dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
         M,
         p;
@@ -250,8 +252,9 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    s = decorate_state!(s; debug=debug, kwargs...)
-    return get_solver_return(solve!(mp, s))
+    ds = decorate_state!(s; debug=debug, kwargs...)
+    solve!(dmp, ds)
+    return get_solver_return(get_objective(dmp), ds)
 end
 #
 # Solver functions

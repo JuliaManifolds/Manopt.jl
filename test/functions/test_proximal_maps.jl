@@ -75,13 +75,13 @@ using Manifolds, Manopt, Test, Dates
     N2 = PowerManifold(M2, 3)
     pS, rS, qS = [-0.5, 0.1, 0.5]
     d = sum([pS, rS, qS] .* [1.0, -2.0, 1.0])
-    m = min(0.3, abs(Manopt.sym_rem(d) / 6))
-    s = sign(Manopt.sym_rem(d))
-    pSc, rSc, qSc = Manopt.sym_rem.([pS, rS, qS] .- m .* s .* [1.0, -2.0, 1.0])
+    m = min(0.3, abs(Manifolds.sym_rem(d) / 6))
+    s = sign(Manifolds.sym_rem(d))
+    pSc, rSc, qSc = Manifolds.sym_rem.([pS, rS, qS] .- m .* s .* [1.0, -2.0, 1.0])
     pSr, rSr, qSr = prox_TV2(M2, 0.3, (pS, rS, qS))
     @test sum(distance.(Ref(M2), [pSc, rSc, qSc], [pSr, rSr, qSr])) ≈ 0
     # p=2
-    t = 0.3 * Manopt.sym_rem(d) / (1 + 0.3 * 6.0)
+    t = 0.3 * Manifolds.sym_rem(d) / (1 + 0.3 * 6.0)
     @test sum(
         distance.(
             Ref(M2),

@@ -1,5 +1,5 @@
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using Manopt, Manifolds, Plots
+using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
@@ -31,6 +31,7 @@ makedocs(;
             "Get started: Optimize!" => "tutorials/Optimize!.md",
             "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
+            "Count and use a Cache" => "tutorials/CountAndCache.md",
             "Record values" => "tutorials/HowToRecord.md",
             "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
             "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",

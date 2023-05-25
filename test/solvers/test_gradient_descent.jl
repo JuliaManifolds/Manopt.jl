@@ -145,6 +145,17 @@ using Manopt, Manifolds, Test
         r = gradient_descent!(M, f, grad_f, n5; return_state=true)
         @test isapprox(M, n5, n2)
         @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent")
+        # State and a count objective – putting stats behind print
+        n6 = gradient_descent(
+            M,
+            f,
+            grad_f,
+            pts[1];
+            count=[:Gradient],
+            return_objective=true,
+            return_state=true,
+        )
+        @test repr(n6) == "$(n6[2])\n\n$(n6[1])"
     end
     @testset "Warning when cost increases" begin
         M = Sphere(2)

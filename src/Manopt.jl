@@ -1,22 +1,21 @@
 @doc raw"""
 🏔️ Manopt.jl – Optimization on Manifolds in Julia.
 
-- 📚 Documentation: [manoptjl.org](https://manoptjl.org)
-- 📦 Repository: [github.com/JuliaManifolds/Manopt.jl](https://github.com/JuliaManifolds/Manopt.jl)
-- 💬 Discussions: [github.com/JuliaManifolds/Manopt.jl/discussions](https://github.com/JuliaManifolds/Manopt.jl/discussions)
-- 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
+* 📚 Documentation: [manoptjl.org](https://manoptjl.org)
+* 📦 Repository: [github.com/JuliaManifolds/Manopt.jl](https://github.com/JuliaManifolds/Manopt.jl)
+* 💬 Discussions: [github.com/JuliaManifolds/Manopt.jl/discussions](https://github.com/JuliaManifolds/Manopt.jl/discussions)
+* 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
 """
 module Manopt
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: mid_point, mid_point!
 
 using ColorSchemes
 using ColorTypes
 using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
-using LinearAlgebra: Diagonal, I, eigen, eigvals, tril
+using LinearAlgebra: Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky
 using ManifoldDiff:
     adjoint_Jacobi_field,
     adjoint_Jacobi_field!,
@@ -99,6 +98,8 @@ using ManifoldsBase:
     log,
     log!,
     manifold_dimension,
+    mid_point,
+    mid_point!,
     norm,
     number_eltype,
     power_dimensions,
@@ -120,10 +121,9 @@ using ManifoldsBase:
     ℝ
 using Markdown
 using Printf
-using Random: shuffle!
+using Random: shuffle!, rand, randperm
 using Requires
 using SparseArrays
-using StaticArrays
 using Statistics: cor, cov, mean, std
 
 include("plans/plan.jl")
@@ -134,9 +134,11 @@ include("functions/costs.jl")
 include("functions/differentials.jl")
 include("functions/gradients.jl")
 include("functions/proximal_maps.jl")
+include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/bundle_method.jl")
 include("solvers/ChambollePock.jl")
@@ -162,54 +164,27 @@ include("solvers/record_solver.jl")
 include("helpers/checks.jl")
 include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
+include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
 function __init__()
-    @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
-        using .Manifolds:
-            Circle,
-            Euclidean,
-            Grassmann,
-            GroupManifold,
-            Hyperbolic,
-            PositiveNumbers,
-            ProductManifold,
-            Rotations,
-            SymmetricPositiveDefinite,
-            Stiefel,
-            Sphere,
-            TangentBundle,
-            TangentSpaceAtPoint,
-            FixedRankMatrices,
-            SVDMPoint,
-            UMVTVector,
-            ArrayPowerRepresentation,
-            ProductRepr,
-            submanifold_components,
-            sym_rem,
-            mean
-        import Random: rand, randperm
-        import ManifoldsBase: copy
-        using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu
-        # adaptions for Nonmutating manifolds
-        const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
-        include("functions/manifold_functions.jl")
-        include("functions/nonmutating_manifolds_functions.jl")
-        include("plans/alternating_gradient_plan.jl")
-        include("solvers/alternating_gradient_descent.jl")
-        export mid_point, mid_point!, reflect, reflect!
-        export AlternatingGradientDescentState
-        export AlternatingGradient
-        export alternating_gradient_descent, alternating_gradient_descent!
-    end
-    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
-        using .Plots
-        include("helpers/check_plots.jl")
-    end
-    @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
-        using .LineSearches
-        include("ext/LineSearchesExt.jl")
+    #
+    # Requires fallback for Julia < 1.9
+    #
+    @static if !isdefined(Base, :get_extension)
+        @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+            include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
+        end
+        @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+            include("../ext/ManoptPlotsExt/ManoptPlotsExt.jl")
+        end
+        @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
+            include("../ext/ManoptLineSearchesExt.jl")
+        end
+        @require LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637" begin
+            include("../ext/ManoptLRUCacheExt.jl")
+        end
     end
     @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
         using .QuadraticModels: QuadraticModel
@@ -224,16 +199,19 @@ end
 #
 # General
 export ℝ, ℂ, &, |
+export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
 #
 # Objectives
-export AbstractManifoldGradientObjective,
+export AbstractDecoratedManifoldObjective,
+    AbstractManifoldGradientObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
+    ManifoldCountObjective,
     NonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
     ManifoldCostGradientObjective,
@@ -247,7 +225,8 @@ export AbstractManifoldGradientObjective,
     ManifoldSubgradientObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
-    SimpleCacheObjective
+    SimpleManifoldCachedObjective,
+    ManifoldCachedObjective
 #
 # Evaluation & Problems - old
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -257,6 +236,7 @@ export AbstractGradientSolverState,
     AbstractHessianSolverState,
     AbstractManoptSolverState,
     AbstractPrimalDualSolverState,
+    AlternatingGradientDescentState,
     AugmentedLagrangianMethodState,
     BundleMethodState,
     ChambollePockState,
@@ -280,6 +260,7 @@ export AbstractGradientSolverState,
 
 export FrankWolfeCost, FrankWolfeGradient
 export NelderMeadSimplex
+export AlternatingGradient
 #
 # Accessors and helpers for AbstractManoptSolverState
 export default_stepsize
@@ -366,7 +347,9 @@ export DirectionUpdateRule,
     ConjugateGradientBealeRestart
 #
 # Solvers
-export augmented_Lagrangian_method,
+export alternating_gradient_descent,
+    alternating_gradient_descent!,
+    augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
     bundle_method,
     bundle_method!,
@@ -407,7 +390,7 @@ export augmented_Lagrangian_method,
     trust_regions!
 # Solver helpers
 export decorate_state!, decorate_objective!
-export initialize_solver!, step_solver!, get_solver_result, get_solver_return, stop_solver!
+export initialize_solver!, step_solver!, get_solver_result, stop_solver!
 export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
@@ -527,6 +510,9 @@ export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
+#
+# Count
+export get_count, reset_counters!
 #
 # Helpers
 export check_gradient, check_differential, check_Hessian

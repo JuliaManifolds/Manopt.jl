@@ -36,12 +36,15 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing` in the linearized case).
 
 # Constructor
-    ChambollePockState(M::AbstractManifold,
+
+    ChambollePockState(M::AbstractManifold, N::AbstractManifold,
         m::P, n::Q, p::P, X::T, primal_stepsize::Float64, dual_stepsize::Float64;
         kwargs...
     )
-where all other fields from above are keyword arguments with their default values given in brackets,
-as well as `N=TangentBundle(M)`
+
+where all other fields from above are keyword arguments with their default values given in brackets.
+
+if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
 mutable struct ChambollePockState{
     P,
@@ -73,65 +76,62 @@ mutable struct ChambollePockState{
     inverse_retraction_method_dual::IRM_Dual
     vector_transport_method::VTM
     vector_transport_method_dual::VTM_Dual
-
-    function ChambollePockState(
-        M::AbstractManifold,
-        m::P,
-        n::Q,
-        p::P,
-        X::T;
-        N=TangentBundle(M),
-        primal_stepsize::Float64=1 / sqrt(8),
-        dual_stepsize::Float64=1 / sqrt(8),
-        acceleration::Float64=0.0,
-        relaxation::Float64=1.0,
-        relax::Symbol=:primal,
-        stopping_criterion::StoppingCriterion=StopAfterIteration(300),
-        variant::Symbol=:exact,
-        update_primal_base::Union{Function,Missing}=missing,
-        update_dual_base::Union{Function,Missing}=missing,
-        retraction_method::RM=default_retraction_method(M, typeof(p)),
-        inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
-        inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
-            N, typeof(p)
-        ),
-        vector_transport_method::VTM=default_vector_transport_method(M, typeof(n)),
-        vector_transport_method_dual::VTM_Dual=default_vector_transport_method(
-            N, typeof(n)
-        ),
-    ) where {
-        P,
-        Q,
-        T,
-        RM<:AbstractRetractionMethod,
-        IRM<:AbstractInverseRetractionMethod,
-        IRM_Dual<:AbstractInverseRetractionMethod,
-        VTM<:AbstractVectorTransportMethod,
-        VTM_Dual<:AbstractVectorTransportMethod,
-    }
-        return new{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
-            m,
-            n,
-            p,
-            copy(M, p),
-            X,
-            copy(N, X),
-            primal_stepsize,
-            dual_stepsize,
-            acceleration,
-            relaxation,
-            relax,
-            stopping_criterion,
-            variant,
-            update_primal_base,
-            update_dual_base,
-            retraction_method,
-            inverse_retraction_method,
-            inverse_retraction_method_dual,
-            vector_transport_method,
-            vector_transport_method_dual,
-        )
-    end
+end
+function Manopt.ChambollePockState(
+    M::AbstractManifold,
+    N::AbstractManifold,
+    m::P,
+    n::Q,
+    p::P,
+    X::T;
+    primal_stepsize::Float64=1 / sqrt(8),
+    dual_stepsize::Float64=1 / sqrt(8),
+    acceleration::Float64=0.0,
+    relaxation::Float64=1.0,
+    relax::Symbol=:primal,
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300),
+    variant::Symbol=:exact,
+    update_primal_base::Union{Function,Missing}=missing,
+    update_dual_base::Union{Function,Missing}=missing,
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+    inverse_retraction_method_dual::IRM_Dual=default_inverse_retraction_method(
+        N, typeof(p)
+    ),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(n)),
+    vector_transport_method_dual::VTM_Dual=default_vector_transport_method(N, typeof(n)),
+) where {
+    P,
+    Q,
+    T,
+    RM<:AbstractRetractionMethod,
+    IRM<:AbstractInverseRetractionMethod,
+    IRM_Dual<:AbstractInverseRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+    VTM_Dual<:AbstractVectorTransportMethod,
+}
+    return ChambollePockState{P,Q,T,RM,IRM,IRM_Dual,VTM,VTM_Dual}(
+        m,
+        n,
+        p,
+        copy(M, p),
+        X,
+        copy(N, X),
+        primal_stepsize,
+        dual_stepsize,
+        acceleration,
+        relaxation,
+        relax,
+        stopping_criterion,
+        variant,
+        update_primal_base,
+        update_dual_base,
+        retraction_method,
+        inverse_retraction_method,
+        inverse_retraction_method_dual,
+        vector_transport_method,
+        vector_transport_method_dual,
+    )
 end
 function show(io::IO, cps::ChambollePockState)
     i = get_count(cps, :Iterations)
@@ -315,7 +315,7 @@ function ChambollePock!(
     )
     dpdmo = decorate_objective!(M, pdmo; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmo)
-    o = ChambollePockState(
+    cps = ChambollePockState(
         M,
         m,
         n,
@@ -335,8 +335,9 @@ function ChambollePock!(
         inverse_retraction_method=inverse_retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    o = decorate_state!(o; kwargs...)
-    return get_solver_return(solve!(tmp, o))
+    dcps = decorate_state!(cps; kwargs...)
+    solve!(tmp, dcps)
+    return get_solver_return(get_objective(tmp), dcps)
 end
 
 function initialize_solver!(::TwoManifoldProblem, ::ChambollePockState) end

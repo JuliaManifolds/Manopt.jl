@@ -1,5 +1,7 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 
+include("../utils/dummy_types.jl")
+
 @testset "Test primal dual plan" begin
     #
     # Perform an really easy test, just compute a mid point
@@ -272,5 +274,42 @@ using Manopt, Manifolds, ManifoldsBase, Test
             r(p_exact, s_exact, 1)
             @test length(get_record(r)) == 1
         end
+    end
+    @testset "Objetive Decorator passthrough" begin
+        # PD
+        pdmo = PrimalDualManifoldObjective(
+            f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ, linearized_forward_operator=DΛ
+        )
+        ro = DummyDecoratedObjective(pdmo)
+        q1 = get_primal_prox(M, ro, 0.1, p0)
+        q2 = get_primal_prox(M, pdmo, 0.1, p0)
+        @test q1 == q2
+        get_primal_prox!(M, q1, ro, 0.1, p0)
+        get_primal_prox!(M, q2, pdmo, 0.1, p0)
+        @test q1 == q2
+        Y1 = get_dual_prox(N, ro, n, 0.1, X0)
+        Y2 = get_dual_prox(N, pdmo, n, 0.1, X0)
+        @test Y1 == Y2
+        get_dual_prox!(N, Y1, ro, n, 0.1, X0)
+        get_dual_prox!(N, Y2, pdmo, n, 0.1, X0)
+        @test Y1 == Y2
+        Y1 = linearized_forward_operator(M, N, ro, m, p0, n)
+        Y2 = linearized_forward_operator(M, N, pdmol, m, p0, n)
+        @test Y1 == Y2
+        linearized_forward_operator!(M, N, Y1, ro, m, p0, n)
+        linearized_forward_operator!(M, N, Y2, pdmol, m, p0, n)
+        @test Y1 == Y2
+        Z1 = adjoint_linearized_operator(M, N, ro, m, n, X0)
+        Z2 = adjoint_linearized_operator(M, N, pdmol, m, n, X0)
+        @test Z1 == Z2
+        adjoint_linearized_operator!(M, N, Z1, ro, m, n, X0)
+        adjoint_linearized_operator!(M, N, Z2, pdmol, m, n, X0)
+        @test Z1 == Z2
+        s = forward_operator(M, N, ro, p0)
+        t = forward_operator(M, N, pdmo, p0)
+        @test s == t
+        forward_operator!(M, N, s, ro, p0)
+        forward_operator!(M, N, t, pdmo, p0)
+        @test Y1 == Y2
     end
 end

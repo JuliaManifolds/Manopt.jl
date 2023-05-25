@@ -269,8 +269,10 @@ function difference_of_convex_proximal_point(
 end
 
 function difference_of_convex_proximal_point(
-    M::AbstractManifold, mdcpo::ManifoldDifferenceOfConvexProximalObjective, p; kwargs...
-)
+    M::AbstractManifold, mdcpo::O, p; kwargs...
+) where {
+    O<:Union{ManifoldDifferenceOfConvexProximalObjective,AbstractDecoratedManifoldObjective}
+}
     q = copy(M, p)
     return difference_of_convex_proximal_point!(M, mdcpo, q; kwargs...)
 end
@@ -310,7 +312,7 @@ function difference_of_convex_proximal_point!(
 end
 function difference_of_convex_proximal_point!(
     M::AbstractManifold,
-    mdcpo::ManifoldDifferenceOfConvexProximalObjective,
+    mdcpo::O,
     p;
     g=nothing,
     grad_g=nothing,
@@ -360,7 +362,9 @@ function difference_of_convex_proximal_point!(
         )
     end,
     kwargs...,
-)
+) where {
+    O<:Union{ManifoldDifferenceOfConvexProximalObjective,AbstractDecoratedManifoldObjective}
+}
     # Check whether either the right defaults were provided or a sub_problen.
     if isnothing(sub_problem)
         error(
@@ -389,7 +393,8 @@ function difference_of_convex_proximal_point!(
         λ=λ,
     )
     ddcps = decorate_state!(dcps; kwargs...)
-    return get_solver_return(solve!(dmp, ddcps))
+    solve!(dmp, ddcps)
+    return get_solver_return(get_objective(dmp), ddcps)
 end
 
 function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexProximalState)
