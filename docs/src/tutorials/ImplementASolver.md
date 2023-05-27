@@ -1,34 +1,22 @@
----
-title: "How to implementing your own solver"
-author: Ronny Bergmann
----
+# How to implementing your own solver
+Ronny Bergmann
 
 When you have used a few solvers from `Manopt.jl` for example like in the opening
 tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
 you might come to the idea of implementing a solver yourself.
 
 After a short introduction of the algorithm we will implement,
-this tutorial first discusses the structural details, i.e. what a solver consists of and “works with”.
+this tutorial first discusses the structural details, i.e. what a solver consists of and “works with”.
 Afterwards, we will show how to implement the algorithm.
 Finally, we will discuss how to make the algorithm both nice for the user as well as
 initiliased in a way, that it can benefit from features already available in `Manopt.jl`.
 
-::: {.callout-tip}
-If you have implemented your own solver, we would be very happy to have that within `Manopt.jl`
-as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
-:::
+> **Tip**
+>
+> If you have implemented your own solver, we would be very happy to have that within `Manopt.jl`
+> as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
 
-```{julia}
-#| echo: false
-#| code-fold: true
-#| output: false
-using Pkg;
-cd(@__DIR__)
-Pkg.activate("."); # for reproducibility use the local tutorial environment.
-```
-
-```{julia}
-#| output: false
+``` julia
 using Manopt, Manifolds, Random
 ```
 
@@ -37,25 +25,25 @@ using Manopt, Manifolds, Random
 Since most serious algorithms should be implemented in `Manopt.jl` themselves directly,
 we will implement a solver that randomly walks on the manifold and keeps track of the lowest
 point visited.
-As for algorithms in `Manopt.jl` we aim to implement this _generically_ for any manifold that
+As for algorithms in `Manopt.jl` we aim to implement this *generically* for any manifold that
 is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
 
 **The Random Walk Minimization**
 
 Given:
-* a manifold $\mathcal M$
-* a starting point $p=p^{(0)}$
-* a cost function $f: \mathcal M \to\mathbb R$.
-* a parameter $\sigma > 0$.
-* a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
+\* a manifold $\mathcal M$
+\* a starting point $p=p^{(0)}$
+\* a cost function $f: \mathcal M \to\mathbb R$.
+\* a parameter $\sigma > 0$.
+\* a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
 
-1. set $k=0$
-2. set our best point $q = p^{(0)}$
-2. Repeat until a stopping criterion is fulfilled
-  1. Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert \leq \sigma$
-  2. “Walk” along this direction, i.e. $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
-  3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
-4. Return $q$ as the resulting best point we visited
+1.  set $k=0$
+2.  set our best point $q = p^{(0)}$
+3.  Repeat until a stopping criterion is fulfilled
+4.  Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert \leq \sigma$
+5.  “Walk” along this direction, i.e. $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
+6.  If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}\$ as our new best visited point
+7.  Return $q$ as the resulting best point we visited
 
 ## Preliminaries – Elements a Solver works on
 
@@ -84,15 +72,15 @@ values that are needed beyond just one iteration, is stored in a subtype of the
 
 In our case we want to store five things
 
-* the current iterate `p`$=p^{(k)}$
-* the best visited point $q$
-* the variable $\sigma > 0$
-* the retraction $\operatorname{retr}$ to use (cf. [retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions.html))
-* a criterion, when to stop, i.e. a [`StoppingCriterion`](@ref)
+- the current iterate `p`$=p^{(k)}$
+- the best visited point $q$
+- the variable $\sigma > 0$
+- the retraction $\operatorname{retr}$ to use (cf. [retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions.html))
+- a criterion, when to stop, i.e. a [`StoppingCriterion`](@ref)
 
 We can defined this as
 
-```{julia}
+``` julia
 mutable struct RandomWalkState{
     P,
     R<:AbstractRetractionMethod,
@@ -111,7 +99,7 @@ do otherwise, you have one more function to implement (see next section).
 For ease of use, we can provide a constructor, that for example chooses a good default for
 the retraction based on a given manifold.
 
-```{julia}
+``` julia
 function RandomWalkState(M::AbstractManifold, p::P=rand(M);
     σ = 0.1,
     retraction_method::R=default_retraction_method(M),
@@ -120,6 +108,8 @@ function RandomWalkState(M::AbstractManifold, p::P=rand(M);
     return RandomWalkState{P,R,S}(p, copy(M, p), σ, retraction_method, stopping_criterion)
 end
 ```
+
+    RandomWalkState
 
 Parametrising the state avoid that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
@@ -131,14 +121,14 @@ States usually have a shortened name as their variable, we will use `rws` for ou
 
 There is basically only two methods we need to implement for our solver
 
-* `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
-* `step_solver!(mp, rws, i)` implement the `i`th iteration, where `i` is given to you as the third parameter
-* `get_iterate(rws)` to access the iterate from other places in the solver
+- `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
+- `step_solver!(mp, rws, i)` implement the `i`th iteration, where `i` is given to you as the third parameter
+- `get_iterate(rws)` to access the iterate from other places in the solver
 
 Both functions are in-place functions, that is they modify our solver state `rws`.
 You implement these by multiple dispatch on the types after importing said functions from Mantop:
 
-```{julia}
+``` julia
 import Manopt: initialize_solver!, step_solver!, get_iterate
 ```
 
@@ -146,8 +136,8 @@ The state above has two fields where we use the common names used in `Manopt.jl`
 that is the [`StoppingCriterion`](@ref) is usually in `stop` and the iterate in `p`.
 If your choice is different, you need to reimplement
 
-* `stop_solver!(mp, rws, i)` to determine whether or not to stop after the `i`th iteration.
-* `get_iterate(rws)` to access the current iterate
+- `stop_solver!(mp, rws, i)` to determine whether or not to stop after the `i`th iteration.
+- `get_iterate(rws)` to access the current iterate
 
 We recommend to follow the general scheme with the `stop` field. If you have specific criteria
 when to stop, consider implementing your own [stoping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead
@@ -160,7 +150,7 @@ For our solver, there is not so much to initialize, just to be safe we should co
 initial value in `p` we start with, to `q`. We do not have to care about remembering the iterate,
 that is done by `Manopt.jl`. For the iterate access we just have to pass `p`.
 
-```{julia}
+``` julia
 function initialize_solver!(mp::AbstractManoptProblem, rws::RandomWalkState)
     copyto!(M, rws.q, rws.p) # Set p^{(0)} = q
     return rws
@@ -168,11 +158,13 @@ end
 get_iterate(rws::RandomWalkState) = rws.p
 ```
 
+    get_iterate (generic function with 17 methods)
+
 and siilarly we implement the step. Here we make use of the fact that the problem
 (and also the objective in fact) have access functions for their elements,
 the one we need is [`get_cost`](@ref).
 
-```{julia}
+``` julia
 function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, i)
     M = get_manifold(mp) # for ease of use get the manifold from the problem
     X = rand(M; vector_at=p)     # generate a direction
@@ -187,8 +179,10 @@ function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, i)
 end
 ```
 
+    step_solver! (generic function with 30 methods)
+
 Performance wise we could improve the number of allocations by making `X` also a field of
-our `rws` but let's keep it simple here.
+our `rws` but let’s keep it simple here.
 We could also store the cost of `q` in the state, but we will see how to easily also enable
 this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
 
@@ -196,7 +190,7 @@ Now we can just run the solver already! We take the same example as for the othe
 
 We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
-```{julia}
+``` julia
 Random.seed!(23)
 n = 100
 σ = π / 8
@@ -206,15 +200,22 @@ data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 ```
 
+    f (generic function with 1 method)
+
 We can now generate the problem with its objective and the state
 
-```{julia}
+``` julia
 mp = DefaultManoptProblem(M, ManifoldCostObjective(f))
 s = RandomWalkState(M; σ = 0.2)
 
 solve!(mp, s)
 get_solver_result(s)
 ```
+
+    3-element Vector{Float64}:
+     -0.10341540500117308
+      0.9074885652532569
+     -0.572115736398473
 
 The function `solve!` works also in place of `s`, but the last line illustrates how to access
 the result in general; we could also just look at `s.p`, but the function `get_iterate` is
