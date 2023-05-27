@@ -18,7 +18,7 @@ jobs:
           version: 1.9
       - uses: quarto-dev/quarto-actions/render@v2
         with:
-          path: tutorials
+          path: tutorials/
       - uses: julia-actions/julia-docdeploy@releases/v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
