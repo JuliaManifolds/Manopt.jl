@@ -52,9 +52,9 @@ Given:
 1. set $k=0$
 2. set our best point $q = p^{(0)}$
 2. Repeat until a stopping criterion is fulfilled
-  1. Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert \leq \sigma$
-  2. “Walk” along this direction, i.e. $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
-  3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
+    1. Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert \leq \sigma$
+    2. “Walk” along this direction, i.e. $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
+    3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
 4. Return $q$ as the resulting best point we visited
 
 ## Preliminaries – Elements a Solver works on
