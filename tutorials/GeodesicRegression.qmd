@@ -16,6 +16,7 @@ The meaning of “best explain” has still to be clarified. We distinguish two 
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 img_folder = "img/regression";
 mkpath(img_folder)
@@ -200,7 +201,7 @@ y = gradient_descent(
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
-        linesearch_stopsize=1e-9,
+        stop_when_stepsize_less=1e-9,
     ),
     stopping_criterion=StopAfterIteration(200) |
                         StopWhenGradientNormLess(1e-8) |
@@ -289,7 +290,7 @@ y2 = gradient_descent(
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
-        linesearch_stopsize=1e-9,
+        stop_when_stepsize_less=1e-9,
     ),
     stopping_criterion=StopAfterIteration(200) |
                         StopWhenGradientNormLess(1e-8) |
@@ -455,7 +456,13 @@ y3 = alternating_gradient_descent(
     x2;
     evaluation=InplaceEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(M; contraction_factor=0.999, sufficient_decrease=0.066, linesearch_stopsize=1e-11, retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction())),
+    stepsize=ArmijoLinesearch(
+        M;
+        contraction_factor=0.999,
+        sufficient_decrease=0.066,
+        stop_when_stepsize_less=1e-11,
+        retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction()),
+    ),
     inner_iterations=1,
 )
 ```
