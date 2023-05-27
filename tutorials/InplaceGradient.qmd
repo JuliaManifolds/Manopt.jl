@@ -55,7 +55,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 We further set the stopping criterion to be a little more strict. Then we obtain
 
 ```{julia}
-sc = StopWhenGradientNormLess(1e-10)
+sc = StopWhenGradientNormLess(3e-10)
 p0 = zeros(Float64, m + 1); p0[1] = 1/sqrt(2); p0[2] = 1/sqrt(2)
 m1 = gradient_descent(M, f, grad_f, p0; stopping_criterion=sc);
 ```
