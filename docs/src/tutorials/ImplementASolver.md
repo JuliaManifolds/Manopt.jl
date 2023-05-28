@@ -9,12 +9,11 @@ After a short introduction of the algorithm we will implement,
 this tutorial first discusses the structural details, i.e. what a solver consists of and “works with”.
 Afterwards, we will show how to implement the algorithm.
 Finally, we will discuss how to make the algorithm both nice for the user as well as
-initiliased in a way, that it can benefit from features already available in `Manopt.jl`.
+initialized in a way, that it can benefit from features already available in `Manopt.jl`.
 
-> **Tip**
->
-> If you have implemented your own solver, we would be very happy to have that within `Manopt.jl`
-> as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
+!!! note  
+  
+    If you have implemented your own solver, we would be very happy to have that within `Manopt.jl` as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
 
 ``` julia
 using Manopt, Manifolds, Random
@@ -31,16 +30,16 @@ is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/Manif
 **The Random Walk Minimization**
 
 Given:
-\* a manifold $\mathcal M$
-\* a starting point $p=p^{(0)}$
-\* a cost function $f: \mathcal M \to\mathbb R$.
-\* a parameter $\sigma > 0$.
-\* a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
+- a manifold $\mathcal M$
+- a starting point $p=p^{(0)}$
+- a cost function $f: \mathcal M \to\mathbb R$.
+- a parameter $\sigma > 0$.
+- a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
 
 1.  set $k=0$
 2.  set our best point $q = p^{(0)}$
 3.  Repeat until a stopping criterion is fulfilled
-    1.  Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert \leq \sigma$
+    1.  Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
     2.  “Walk” along this direction, i.e. $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
     3.  If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}\$ as our new best visited point
 4.  Return $q$ as the resulting best point we visited
@@ -58,8 +57,8 @@ In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that store
 `f(M,p) = ...`. MOre general it might for example store a gradient function or the Hessian
 or any other information we have about our task.
 
-This is something indepentend of the solver itself, since it only identifies the problem we
-want to solve indepentend of how we want to solve it – or in other words, this type contains
+This is something independent of the solver itself, since it only identifies the problem we
+want to solve independent of how we want to solve it – or in other words, this type contains
 all information that is static and independent of the specific solver at hand.
 
 Usually the problems variable is called `mp`.
@@ -109,8 +108,6 @@ function RandomWalkState(M::AbstractManifold, p::P=rand(M);
 end
 ```
 
-    RandomWalkState
-
 Parametrising the state avoid that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
 in `Manopt.jl` and provide an easy way to construct this state now.
@@ -124,12 +121,14 @@ There is basically only two methods we need to implement for our solver
 - `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
 - `step_solver!(mp, rws, i)` implement the `i`th iteration, where `i` is given to you as the third parameter
 - `get_iterate(rws)` to access the iterate from other places in the solver
+- `get_solver_result(rws)` toi return the final point we reached. Bz default this would
+  return the last iterate, but since our result is `q`, we have to set this
 
-Both functions are in-place functions, that is they modify our solver state `rws`.
+The first two functions are in-place functions, that is they modify our solver state `rws`.
 You implement these by multiple dispatch on the types after importing said functions from Mantop:
 
 ``` julia
-import Manopt: initialize_solver!, step_solver!, get_iterate
+import Manopt: initialize_solver!, step_solver!, get_iterate, get_solver_result
 ```
 
 The state above has two fields where we use the common names used in `Manopt.jl`,
@@ -141,8 +140,6 @@ If your choice is different, you need to reimplement
 
 We recommend to follow the general scheme with the `stop` field. If you have specific criteria
 when to stop, consider implementing your own [stoping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead
-
-TODO: The stopping criterion page could have a small example in the begining as well.
 
 ### Initialization & Iterate Access
 
@@ -156,9 +153,8 @@ function initialize_solver!(mp::AbstractManoptProblem, rws::RandomWalkState)
     return rws
 end
 get_iterate(rws::RandomWalkState) = rws.p
+get_solver_result(rws::RandomWalkState) = rws.q
 ```
-
-    get_iterate (generic function with 17 methods)
 
 and siilarly we implement the step. Here we make use of the fact that the problem
 (and also the objective in fact) have access functions for their elements,
@@ -179,8 +175,6 @@ function step_solver!(mp::AbstractManoptProblem, rws::RandomWalkState, i)
 end
 ```
 
-    step_solver! (generic function with 30 methods)
-
 Performance wise we could improve the number of allocations by making `X` also a field of
 our `rws` but let’s keep it simple here.
 We could also store the cost of `q` in the state, but we will see how to easily also enable
@@ -200,8 +194,6 @@ data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 ```
 
-    f (generic function with 1 method)
-
 We can now generate the problem with its objective and the state
 
 ``` julia
@@ -213,16 +205,144 @@ get_solver_result(s)
 ```
 
     3-element Vector{Float64}:
-     -0.10341540500117308
-      0.9074885652532569
-     -0.572115736398473
+     -0.2412674850987521
+      0.8608618657176527
+     -0.44800317943876844
 
 The function `solve!` works also in place of `s`, but the last line illustrates how to access
 the result in general; we could also just look at `s.p`, but the function `get_iterate` is
 also used in several other places.
 
-## Ease of Use I: An Interface with the Objective
+We could for example easilz set up a second solver to work from a specified starting point
+with a different `σ` like
 
-## Ease of Use II: The high level interface
+``` julia
+s2 = RandomWalkState(M, [1.0, 0.0, 0.0];  σ = 0.1)
+solve!(mp, s2)
+get_solver_result(s2)
+```
 
-## Ease of USe III: The State Summary
+    3-element Vector{Float64}:
+     1.0
+     0.0
+     0.0
+
+## Ease of Use I: The high level interface(s)
+
+`Manopt.jl` offers a few additional features for solvers in their high level interfaces,
+for example [`debug=` for debug](@ref DebugSection), [`record=`](@ref RecordSection) keywords for debug and recording
+within solver states or [`count=` and `cache`](@ref ObjectiveSection) keywords for the objective.
+
+We can introduce these here as well with just a few lines of code. There are usually two steps.
+We further need three internal function from `Manopt.jl`
+
+``` julia
+using Manopt: get_solver_return, indicates_convergence, status_summary
+```
+
+### A high level interface using the objective
+
+This could be considered as an interims step to the high-level interface:
+If we already have the objective – in our case a [`ManifoldCostObjective`](@ref) at hand, the high level interface consists of the steps
+
+1.  possibly decorate the objective
+2.  generate the problem
+3.  generate and possiblz generate the state
+4.  call the solver
+5.  determine the return value
+
+We illustrate the step with an in-place variant here. A variant that keeps the
+given start point unchanged would just add a `copy(M, p)` upfront.
+`Manopt.jl` provides both variants.
+
+``` julia
+function random_walk_algorithm!(
+    M::AbstractManifold,
+    mgo::ManifoldCostObjective,
+    p;
+    σ = 0.1,
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200),
+    kwargs...,
+)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    dmp = DefaultManoptProblem(M, dmgo)
+    s = RandomWalkState(M, [1.0, 0.0, 0.0];
+        σ=0.1,
+        retraction_method=retraction_method, stopping_criterion=stopping_criterion,
+    )
+    ds = decorate_state!(s; kwargs...)
+    solve!(dmp, ds)
+    return get_solver_return(get_objective(dmp), ds)
+end
+```
+
+    random_walk_algorithm! (generic function with 3 methods)
+
+### The high level interface
+
+Starting from the last section, the usual call a user would prefer is just
+passing a manifold `M` the cost `f` and maybe a start point `p`.
+
+``` julia
+function random_walk_algorithm!(M::AbstractManifold, f, p=rand(M); kwargs...)
+    mgo = ManifoldCostObjective(f)
+    return random_walk_algorithm!(M, mgo, p; kwargs...)
+end
+```
+
+    random_walk_algorithm! (generic function with 3 methods)
+
+## Ease of Use III: The State Summary
+
+For the case that zou set `return_state=true` the soplver should return a summary of the run. This is realised providing a `show` method.
+It should reflect its main parameters, if they are not too verbose an dprovide information
+about the reason it stopped and whether this indicates convergence
+
+Here it would for example look like
+
+``` julia
+import Base: show
+function show(io::IO, rws::RandomWalkState)
+    i = get_count(rws, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(rws.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Tutorial Random Walk
+    $Iter
+    ## Parameters
+    * retraction method: $(rws.retraction_method)
+    * σ                : $(rws.σ)
+
+    ## Stopping Criterion
+    $(status_summary(rws.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+```
+
+    show (generic function with 693 methods)
+
+Now the algorithm can be easily called and provides – if wanted – all features of a `Manopt.jl`
+algorithm. For example to see the summary, we could now just call
+
+``` julia
+q = random_walk_algorithm!(M, f; return_state=true)
+```
+
+    # Solver state for `Manopt.jl`s Tutorial Random Walk
+    After 200 iterations
+
+    ## Parameters
+    * retraction method: ExponentialRetraction()
+    * σ                : 0.1
+
+    ## Stopping Criterion
+    Max Iteration 200:  reached
+    This indicates convergence: No
+
+## Conclusion & Beyond
+
+We saw in this tutorial how to implement a simple cost-based algorithm, to illustrate how optimization algorithms are covered in `Manopt.jl`.
+
+One feature we did not cover is that most algorithms allow for inplace and allocation functions, as soon as they work on more than just the cost, e.g. gradients, proximal maps or Hessians. This is usually a keyword argument of the objective and hence also part of the high-level interfaces.
