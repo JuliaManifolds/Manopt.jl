@@ -11,9 +11,8 @@ Afterwards, we will show how to implement the algorithm.
 Finally, we will discuss how to make the algorithm both nice for the user as well as
 initialized in a way, that it can benefit from features already available in `Manopt.jl`.
 
-!!! note  
-  
-    If you have implemented your own solver, we would be very happy to have that within `Manopt.jl` as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
+!!! note
+    If you have implemented your own solver, we would be very happy to have that within `Manopt.jl` as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
 
 ``` julia
 using Manopt, Manifolds, Random
@@ -35,6 +34,8 @@ Given:
 - a cost function $f: \mathcal M \to\mathbb R$.
 - a parameter $\sigma > 0$.
 - a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
+
+We can run the following steps of the algorithm
 
 1.  set $k=0$
 2.  set our best point $q = p^{(0)}$
@@ -293,7 +294,7 @@ end
 
     random_walk_algorithm! (generic function with 3 methods)
 
-## Ease of Use III: The State Summary
+## Ease of Use II: The State Summary
 
 For the case that zou set `return_state=true` the soplver should return a summary of the run. This is realised providing a `show` method.
 It should reflect its main parameters, if they are not too verbose an dprovide information
