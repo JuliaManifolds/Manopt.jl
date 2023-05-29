@@ -35,7 +35,7 @@ jobs:
           path: docs/src/tutorials
           key: ${{ runner.os }}-documenter-tutorials
       - name: Render Tutorials
-        run: quarto render tutorials
+        run: "quarto render tutorials/*.qmd"
       - uses: julia-actions/julia-docdeploy@releases/v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
