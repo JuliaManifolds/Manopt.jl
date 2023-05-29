@@ -16,6 +16,10 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: 1.9
+      - uses: actions/setup-python@v4
+        with:
+         python-version: '3.11'
+      - run: pip install jupyter
       - uses: quarto-dev/quarto-actions/render@v2
         with:
           path: tutorials
