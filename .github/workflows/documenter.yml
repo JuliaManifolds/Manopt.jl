@@ -20,9 +20,7 @@ jobs:
         with:
          python-version: '3.11'
       - run: pip install jupyter
-      - uses: quarto-dev/quarto-actions/render@v2
-        with:
-          path: tutorials
+      - run: quarto render tutorials
       - uses: julia-actions/julia-docdeploy@releases/v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
