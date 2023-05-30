@@ -4,6 +4,7 @@ project:
   render:
     - "*.qmd"
     - "!GeodesicRegression.qmd"
+    - "!InplaceGradient.qmd"
 
 crossref:
   fig-prefix: Figure
