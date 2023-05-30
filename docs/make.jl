@@ -1,5 +1,34 @@
+#!/usr/bin/env julia
+#
+#
+
+#
+# (a) if docs is not the current active environment, switch to it
+# (from https://github.com/JuliaIO/HDF5.jl/pull/1020/) 
+if Base.active_project() != joinpath(@__DIR__, "Project.toml")
+    using Pkg
+    Pkg.activate(@__DIR__)
+    Pkg.resolve()
+    Pkg.instantiate()
+    if "--quarto" ∈ ARGS
+        Pkg.build("IJulia") # to activate the right kernel
+    end
+end
+
+# (b) load necessary packages
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using LineSearches, LRUCache, Manopt, Manifolds, Plots
+
+# (c) Did someone say render? Then we render!
+
+if "--quarto" ∈ ARGS
+    using CondaPkg
+    CondaPkg.withenv() do
+        @info "Rendering Quarto"
+        tutorials_folder = (@__DIR__) * "/../tutorials"
+        run(`quarto render $(tutorials_folder)`)
+    end
+end
 
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
