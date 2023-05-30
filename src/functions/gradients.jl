@@ -206,7 +206,7 @@ function grad_distance(M, y, x, p::Int=2)
     if p == 2
         return -log(M, x, y)
     else 
-        if x ≈ y && p ==1
+        if x ≈ y
             return normal_vector(M, x)
         else
             return -distance(M, x, y)^(p - 2) * log(M, x, y)
@@ -218,7 +218,7 @@ function grad_distance!(M, X, y, x, p::Int=2)
     if p == 2
         X .*= -one(eltype(X))
     else
-        if x ≈ y && p == 1
+        if x ≈ y
             normal_vector!(M, X, x)
         else
             X .*= -distance(M, x, y)^(p - 2)
@@ -265,8 +265,8 @@ function grad_TV(M::AbstractManifold, q::Tuple{T,T}, p=1) where {T}
         return (-log(M, q[1], q[2]), -log(M, q[2], q[1]))
     else
         d = distance(M, q[1], q[2])
-        if q[1] ≈ q[2] # subdifferential given by normal cone
-            return (normal_vector(M, q[1]), normal_vector(M, q[2]))
+        if d == 0 # subdifferential given by normal cone
+            return (zero_vector(M, q[1]), zero_vector(M, q[2]))
         else
             return (-log(M, q[1], q[2]) / (d^(2 - p)), -log(M, q[2], q[1]) / (d^(2 - p)))
         end
@@ -274,9 +274,9 @@ function grad_TV(M::AbstractManifold, q::Tuple{T,T}, p=1) where {T}
 end
 function grad_TV!(M::AbstractManifold, X, q::Tuple{T,T}, p=1) where {T}
     d = distance(M, q[1], q[2])
-    if q[1] ≈ q[2] # subdifferential given by normal cone
-        normal_vector!(M, X[1], q[1])
-        normal_vector!(M, X[2], q[2])
+    if d == 0 # subdifferential given by normal cone
+        zero_vector!(M, X[1], q[1])
+        zero_vector!(M, X[2], q[2])
         return X
     end
     log!(M, X[1], q[1], q[2])
@@ -483,9 +483,9 @@ function grad_TV2!(M::AbstractManifold, X, q, p::Int=1)
             M, q[1], q[3], 1 / 2, innerLog
         )
     else
-        if q[2] ≈ c # subdifferential given by normal cone
+        if d == 0 # subdifferential given by normal cone
             for i in 1:3
-                normal_vector!(M, X[i], q[i])
+                zero_vector!(M, X[i], q[i])
             end
         else
             X[1] .= adjoint_differential_shortest_geodesic_startpoint(
