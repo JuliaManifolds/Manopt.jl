@@ -1,6 +1,6 @@
 function prox_bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
     d = length(bms.lin_errors)
-    H = bms.μ/2 * local_metric(M, bms.p_last_serious, DefaultOrthonormalBasis())
+    H = bms.μ * local_metric(M, bms.p_last_serious, DefaultOrthonormalBasis())
     B = reshape(ones(d), 1, d)
     qm = QuadraticModel(
         bms.lin_errors,
