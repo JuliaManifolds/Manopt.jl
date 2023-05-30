@@ -23,6 +23,7 @@ if "--quarto" ∈ ARGS
         @info "Rendering Quarto"
         tutorials_folder = (@__DIR__) * "/../tutorials"
         Pkg.activate(tutorials_folder)
+        Pkg.resolve()
         Pkg.instantiate()
         run(`quarto render $(tutorials_folder)`)
     end
