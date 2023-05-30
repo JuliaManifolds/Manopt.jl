@@ -8,6 +8,7 @@
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     using Pkg
     Pkg.activate(@__DIR__)
+    Pkg.develop(PackageSpec(path=".."))
     Pkg.resolve()
     Pkg.instantiate()
     if "--quarto" ∈ ARGS
@@ -20,7 +21,6 @@ using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
 using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (c) Did someone say render? Then we render!
-
 if "--quarto" ∈ ARGS
     using CondaPkg
     CondaPkg.withenv() do
@@ -30,6 +30,7 @@ if "--quarto" ∈ ARGS
     end
 end
 
+# (d) add contributing.md to docs
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
@@ -49,6 +50,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
     end
 end
 
+# (e) ...finally! make docs
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
@@ -120,3 +122,5 @@ makedocs(;
     ],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)
+#back to main env
+Pkg.activate()

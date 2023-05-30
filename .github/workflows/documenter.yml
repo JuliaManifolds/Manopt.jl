@@ -35,7 +35,7 @@ jobs:
           path: docs/.CondaPkg
           key: ${{ runner.os }}-condapkg-${{ hashFiles('docs/.CondaPkg/**') }}
       - name: "Documenter rendering (including Quarto)"
-        run: "./docs/make.jl --quarto"
+        run: "docs/make.jl --quarto"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
