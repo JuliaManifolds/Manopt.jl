@@ -17,24 +17,28 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: 1.9
+      - name: Julia Cache
+        uses: julia-actions/cache@v1
+        with:
+          cache-compiled: "true"
       - name: Cache Quarto
         id: cache-quarto
         uses: actions/cache@v3
         with:
           path: tutorials/_freeze
-          key: ${{ runner.os }}-quarto-freeze--${{ hashFiles('tutorials/_freeze/**') }}
+          key: ${{ runner.os }}-quarto-freeze
       - name: Cache Documenter
         id: cache-documenter
         uses: actions/cache@v3
         with:
           path: docs/src/tutorials
-          key: ${{ runner.os }}-documenter-tutorials-${{ hashFiles('docs/src/tutorials/**') }}
+          key: ${{ runner.os }}-documenter-tutorials
       - name: Cache CondaPkg
         id: cache-condaPkg
         uses: actions/cache@v3
         with:
           path: docs/.CondaPkg
-          key: ${{ runner.os }}-condapkg-${{ hashFiles('docs/.CondaPkg/**') }}
+          key: ${{ runner.os }}-condapkg
       - name: "Documenter rendering (including Quarto)"
         run: "docs/make.jl --quarto"
         env:
