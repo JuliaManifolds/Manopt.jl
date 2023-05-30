@@ -22,12 +22,13 @@ if "--quarto" ∈ ARGS
     CondaPkg.withenv() do
         @info "Rendering Quarto"
         tutorials_folder = (@__DIR__) * "/../tutorials"
+        # instantiate the tutorials environment if necessary
         Pkg.activate(tutorials_folder)
         Pkg.resolve()
         Pkg.instantiate()
+        Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
-    Pkg.activate(@__DIR__)
 end
 
 # (c) load necessary packages for the docs
