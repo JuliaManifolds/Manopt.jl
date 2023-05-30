@@ -134,20 +134,10 @@ A = hcat(
     map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data)...
 )
 pca1 = get_vector(S, m, svd(A).U[:, 1], DefaultOrthonormalBasis())
-x0 = ProductRepr(m, pca1)
+x0 = ArrayPartition(m, pca1)
 ```
 
-    ProductRepr with 2 submanifold components:
-     Component 1 =
-      3-element Vector{Float64}:
-        0.6998621681746481
-       -0.013681674945026638
-        0.7141468737791822
-     Component 2 =
-      3-element Vector{Float64}:
-        0.5931302057517893
-       -0.5459465115717783
-       -0.5917254139611094
+    ([0.6998621681746481, -0.013681674945026638, 0.7141468737791822], [0.5931302057517893, -0.5459465115717783, -0.5917254139611094])
 
 The optimal “time labels” are then just the projections $t_i = ⟨d_i,X^*⟩$, $i=1,\ldots,n$.
 
@@ -195,17 +185,7 @@ y = gradient_descent(
     # 200    | F(x): 0.141113
     The algorithm reached its maximal number of iterations (200).
 
-    ProductRepr with 2 submanifold components:
-     Component 1 =
-      3-element Vector{Float64}:
-       0.7119768725361988
-       0.009463059143003981
-       0.7021391482357537
-     Component 2 =
-      3-element Vector{Float64}:
-        0.590008151835008
-       -0.5543272518659472
-       -0.5908038715512287
+    ([0.7119768725361988, 0.009463059143003981, 0.7021391482357537], [0.590008151835008, -0.5543272518659472, -0.5908038715512287])
 
 For the result, we can generate and plot all involved geodesics
 
@@ -251,7 +231,7 @@ A2 = hcat(
     map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...
 )
 pca2 = get_vector(S, m, svd(A2).U[:, 1], DefaultOrthonormalBasis())
-x1 = ProductRepr(m, pca2)
+x1 = ArrayPartition(m, pca2)
 t2 = map(d -> inner(S, m2, pca2, log(S, m2, d)), data2)
 ```
 
@@ -480,7 +460,7 @@ end
 We can reuse the computed initial values from before, just that now we are on a product manifold
 
 ``` julia
-x2 = ProductRepr(x1, t2)
+x2 = ArrayPartition(x1, t2)
 F3 = RegressionCost2(data2)
 gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)];
 ```
@@ -511,28 +491,7 @@ y3 = alternating_gradient_descent(
     # 100    | F(x): 0.091097
     The algorithm reached its maximal number of iterations (100).
 
-    ProductRepr with 2 submanifold components:
-     Component 1 =
-      ProductRepr with 2 submanifold components:
-       Component 1 =
-        3-element Vector{Float64}:
-         0.750222090700214
-         0.031464227399200885
-         0.6604368380243274
-       Component 2 =
-        3-element Vector{Float64}:
-          0.6636489079535082
-         -0.3497538263293046
-         -0.737208025444054
-     Component 2 =
-      7-element Vector{Float64}:
-        0.7965909273713889
-        0.43402264218923514
-        0.755822122896529
-        0.001059348203453764
-       -0.6421135044471217
-       -0.8635572995105818
-       -0.5546338813212247
+    (ArrayPartition{Float64, Tuple{Vector{Float64}, Vector{Float64}}}(([0.750222090700214, 0.031464227399200885, 0.6604368380243274], [0.6636489079535082, -0.3497538263293046, -0.737208025444054])), [0.7965909273713889, 0.43402264218923514, 0.755822122896529, 0.001059348203453764, -0.6421135044471217, -0.8635572995105818, -0.5546338813212247])
 
 which we render can collect into an image creating the geodesics again
 
