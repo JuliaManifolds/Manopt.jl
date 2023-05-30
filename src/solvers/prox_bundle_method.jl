@@ -46,7 +46,7 @@ mutable struct ProxBundleMethodState{
     p_last_serious::P
     retraction_method::TR
     size::Integer
-    stopping_criterion::TSC
+    stop::TSC
     transported_subgradients::AbstractVector{T}
     vector_transport_method::VT
     X::T
