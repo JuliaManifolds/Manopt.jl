@@ -16,19 +16,22 @@ if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     end
 end
 
-# (b) load necessary packages
-using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
-using LineSearches, LRUCache, Manopt, Manifolds, Plots
-
-# (c) Did someone say render? Then we render!
+# (b) Did someone say render? Then we render!
 if "--quarto" ∈ ARGS
     using CondaPkg
     CondaPkg.withenv() do
         @info "Rendering Quarto"
         tutorials_folder = (@__DIR__) * "/../tutorials"
+        Pkg.activate(tutorials_folder)
+        Pkg.instantiate()
         run(`quarto render $(tutorials_folder)`)
     end
+    Pkg.activate(@__DIR__)
 end
+
+# (c) load necessary packages for the docs
+using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (d) add contributing.md to docs
 generated_path = joinpath(@__DIR__, "src")
