@@ -1,6 +1,6 @@
 function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
     d = length(bms.lin_errors)
-    H = [
+    H = 2*[
         inner(M, bms.p_last_serious, X, Y) for X in bms.transported_subgradients,
         Y in bms.transported_subgradients
     ]
