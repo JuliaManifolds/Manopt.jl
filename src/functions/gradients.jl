@@ -205,20 +205,24 @@ end
 function grad_distance(M, y, x, p::Int=2)
     if p == 2
         return -log(M, x, y)
-    elseif p == 1 && x ≈ y
-        return normal_vector(M, x)
-    else
-        return -distance(M, x, y)^(p - 2) * log(M, x, y)
+    else 
+        if x ≈ y && p ==1
+            return normal_vector(M, x)
+        else
+            return -distance(M, x, y)^(p - 2) * log(M, x, y)
+        end
     end
 end
 function grad_distance!(M, X, y, x, p::Int=2)
     log!(M, X, x, y)
     if p == 2
         X .*= -one(eltype(X))
-    elseif p == 1 && x ≈ y
-        normal_vector!(M, X, x)
     else
-        X .*= -distance(M, x, y)^(p - 2)
+        if x ≈ y && p == 1
+            normal_vector!(M, X, x)
+        else
+            X .*= -distance(M, x, y)^(p - 2)
+        end
     end
     return X
 end
