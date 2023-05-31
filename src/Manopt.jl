@@ -192,6 +192,7 @@ function __init__()
         @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
             using .RipQP: ripqp
             include("solvers/bundle_method_sub_solver.jl")
+            include("solvers/prox_bundle_method_sub_solver.jl")
         end
     end
 
