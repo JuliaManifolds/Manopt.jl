@@ -18,7 +18,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = M
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
-    Λ(M, x) = ProductRepr(x, forward_logs(M, x))
+    Λ(M, x) = ArrayPartition(x, forward_logs(M, x))
     prior(M, x) = norm(norm.(Ref(M.manifold), x, submanifold_component(N, Λ(x), 2)), 1)
     f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)

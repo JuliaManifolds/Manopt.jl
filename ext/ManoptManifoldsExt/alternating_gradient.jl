@@ -12,7 +12,7 @@ function get_gradient(
     mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:AbstractVector},
     p,
 ) where {TC}
-    return ProductRepr([gi(M, p) for gi in mago.gradient!!]...)
+    return ArrayPartition([gi(M, p) for gi in mago.gradient!!]...)
 end
 
 @doc raw"""
