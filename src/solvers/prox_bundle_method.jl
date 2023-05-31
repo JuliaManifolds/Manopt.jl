@@ -88,7 +88,7 @@ mutable struct ProxBundleMethodState{
         α = 0.0
         η = 0.0
         ν = 0.0
-        return new{T,IR,R,P,TR,SC,VT}(
+        return new{IR,P,T,TR,SC,VT,R}(
             approx_errors,
             bundle,
             d,
@@ -346,7 +346,7 @@ end
 function status_summary(b::StopWhenProxBundleLess)
     has_stopped = length(b.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Stopping parameter: -ξ ≤ $(b.tol):\t$s"
+    return "Stopping parameter: -ν ≤ $(b.tol):\t$s"
 end
 function show(io::IO, b::StopWhenProxBundleLess)
     return print(io, "StopWhenProxBundleLess($(b.tol)\n    $(status_summary(b))")
