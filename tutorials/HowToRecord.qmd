@@ -23,6 +23,7 @@ Here we focus on ways to investigate the behaviour during iterations by using Re
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 

@@ -475,7 +475,13 @@ y3 = alternating_gradient_descent(
     x2;
     evaluation=InplaceEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(M; contraction_factor=0.999, sufficient_decrease=0.066, stop_when_stepsize_less=1e-11, retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction())),
+    stepsize=ArmijoLinesearch(
+        M;
+        contraction_factor=0.999,
+        sufficient_decrease=0.066,
+        stop_when_stepsize_less=1e-11,
+        retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction()),
+    ),
     inner_iterations=1,
 )
 ```
