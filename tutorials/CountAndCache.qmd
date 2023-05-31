@@ -91,7 +91,11 @@ We can further also set `return_state=true` to get even more information about t
 gradient_descent(M, f, grad_f, data[1]; count=[:Cost, :Gradient], return_objective=true, return_state=true)
 ```
 
-And we see that statistics are shown in the end. To now also cache these calls,
+And we see that statistics are shown in the end.
+
+## Caching
+
+To now also cache these calls,
 we can use the `cache=` keyword argument.
 Since now both the cache and the count “extend” the functionality of the objective,
 the order is important: On the high-level interface, the `count` is treated first, which

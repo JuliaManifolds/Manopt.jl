@@ -69,6 +69,7 @@ makedocs(;
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
             "Count and use a Cache" => "tutorials/CountAndCache.md",
             "Record values" => "tutorials/HowToRecord.md",
+            "Implement a Solver" => "tutorials/ImplementASolver.md",
             "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
             "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
         ],
