@@ -77,7 +77,7 @@ all information that is static and independent of the specific solver at hand.
 
 Usually the problems variable is called `mp`.
 
-### The “Solver” An `AbstractManoptSolverState`
+### The Solver – An `AbstractManoptSolverState`
 
 Everything that is needed by a solver during the iterations, all its parameters, interims
 values that are needed beyond just one iteration, is stored in a subtype of the
@@ -135,10 +135,12 @@ States usually have a shortened name as their variable, we will use `rws` for ou
 There is basically only two methods we need to implement for our solver
 
 - `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
-- `step_solver!(mp, rws, i)` implement the `i`th iteration, where `i` is given to you as the third parameter
-- `get_iterate(rws)` to access the iterate from other places in the solver
-- `get_solver_result(rws)` to return the final point we reached. By default this would
-  return the last iterate, but since our result is `q`, we have to set this
+- `step_solver!(mp, rws, i)` which implements the `i`th iteration, where `i` is given to you as the third parameter
+- `get_iterate(rws)` which accesses the iterate from other places in the solver
+- `get_solver_result(rws)` returning the solvers final (best) point we reached.
+  By default this would return the last iterate `rws.p` (or more precisely calls [`get_iterate`](@ref)), but since we randomly walk and remember
+    our best point in `q`, this has to return `rws.q`.
+
 
 The first two functions are in-place functions, that is they modify our solver state `rws`.
 You implement these by multiple dispatch on the types after importing said functions from Manopt:
