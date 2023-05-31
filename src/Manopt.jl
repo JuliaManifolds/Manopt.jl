@@ -192,7 +192,10 @@ function __init__()
         @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
             using .RipQP: ripqp
             include("solvers/bundle_method_sub_solver.jl")
-            include("solvers/prox_bundle_method_sub_solver.jl")
+            @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
+                using .Manifolds: local_metric, get_embedding
+                include("solvers/prox_bundle_method_sub_solver.jl")
+            end
         end
     end
 
