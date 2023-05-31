@@ -82,13 +82,13 @@ mutable struct ProxBundleMethodState{
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         approx_errors = [0.0]
         bundle = [(copy(M, p), copy(M, p, X))]
-        lin_errors = [0.0]
-        α = 0.0
-        transported_subgradients = [copy(M, p, X)]
         d = copy(M, p, X)
+        lin_errors = [0.0]
+        transported_subgradients = [copy(M, p, X)]
+        α = 0.0
         η = 0.0
         ν = 0.0
-        return new{IR,P,T,TR,SC,VT,R}(
+        return new{T,IR,R,P,TR,SC,VT}(
             approx_errors,
             bundle,
             d,
@@ -182,18 +182,18 @@ function prox_bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    m::R=0.0125,
+    m=0.0125,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    size::Integer=50,
+    size=50,
     stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
-    α₀::R=1.2,
-    ε::R=1e-2,
-    μ::R=0.5,
+    α₀=1.2,
+    ε=1e-2,
+    μ=0.5,
     kwargs..., #especially may contain debug
-) where {R,TF,TdF,TRetr,IR,VTransp}
+) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
