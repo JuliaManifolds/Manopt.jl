@@ -60,15 +60,15 @@ We can run the following steps of the algorithm
 
 ## Preliminaries – Elements a Solver works on
 
-THere is two main ingredients a solver needs:
-A problem to work on and the state of a solver, which “identifies” the solver.
+There are two main ingredients a solver needs:
+a problem to work on and the state of a solver, which “identifies” the solver and stores intermediate results.
 
 ### The “Task” – An `AbstractManoptProblem`
 
 A problem in `Manopt.jl` usually consists of a manifold (an [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold)) and an [`AbstractManifoldObjective`](@ref)
 describing the function we have and its features.
 In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that stores cost function
-`f(M,p) = ...`. MOre general it might for example store a gradient function or the Hessian
+`f(M,p) = ...`. More generally, it might for example store a gradient function or the Hessian
 or any other information we have about our task.
 
 This is something independent of the solver itself, since it only identifies the problem we
@@ -108,7 +108,7 @@ mutable struct RandomWalkState{
 end
 ```
 
-The stopping criterion is usually stored in the states `stop` field, if you have a reason to
+The stopping criterion is usually stored in the state's `stop` field. If you have a reason to
 do otherwise, you have one more function to implement (see next section).
 For ease of use, we can provide a constructor, that for example chooses a good default for
 the retraction based on a given manifold.
@@ -137,11 +137,11 @@ There is basically only two methods we need to implement for our solver
 - `initialize_solver!(mp, rws)` which initialises the solver before the first iteration
 - `step_solver!(mp, rws, i)` implement the `i`th iteration, where `i` is given to you as the third parameter
 - `get_iterate(rws)` to access the iterate from other places in the solver
-- `get_solver_result(rws)` toi return the final point we reached. Bz default this would
+- `get_solver_result(rws)` to return the final point we reached. By default this would
   return the last iterate, but since our result is `q`, we have to set this
 
 The first two functions are in-place functions, that is they modify our solver state `rws`.
-You implement these by multiple dispatch on the types after importing said functions from Mantop:
+You implement these by multiple dispatch on the types after importing said functions from Manopt:
 
 ```{julia}
 import Manopt: initialize_solver!, step_solver!, get_iterate, get_solver_result
@@ -155,7 +155,7 @@ If your choice is different, you need to reimplement
 - `get_iterate(rws)` to access the current iterate
 
 We recommend to follow the general scheme with the `stop` field. If you have specific criteria
-when to stop, consider implementing your own [stoping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead
+when to stop, consider implementing your own [stoping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead.
 
 ### Initialization & Iterate Access
 
@@ -173,7 +173,7 @@ get_iterate(rws::RandomWalkState) = rws.p
 get_solver_result(rws::RandomWalkState) = rws.q
 ```
 
-and siilarly we implement the step. Here we make use of the fact that the problem
+and similarly we implement the step. Here we make use of the fact that the problem
 (and also the objective in fact) have access functions for their elements,
 the one we need is [`get_cost`](@ref).
 
@@ -197,6 +197,7 @@ Performance wise we could improve the number of allocations by making `X` also a
 our `rws` but let's keep it simple here.
 We could also store the cost of `q` in the state, but we will see how to easily also enable
 this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
+In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
 Now we can just run the solver already! We take the same example as for the other tutorials
 
@@ -227,7 +228,7 @@ The function `solve!` works also in place of `s`, but the last line illustrates 
 the result in general; we could also just look at `s.p`, but the function `get_iterate` is
 also used in several other places.
 
-We could for example easilz set up a second solver to work from a specified starting point
+We could for example easily set up a second solver to work from a specified starting point
 with a different `σ` like
 
 ```{julia}
@@ -300,9 +301,9 @@ end
 
 ## Ease of Use II: The State Summary
 
-For the case that zou set `return_state=true` the soplver should return a summary of the run. This is realised providing a `show` method.
-It should reflect its main parameters, if they are not too verbose an dprovide information
-about the reason it stopped and whether this indicates convergence
+For the case that you set `return_state=true` the solver should return a summary of the run. When a `show` method is provided, users can easily read such summary in a terminal.
+It should reflect its main parameters, if they are not too verbose and provide information
+about the reason it stopped and whether this indicates convergence.
 
  Here it would for example look like
 
