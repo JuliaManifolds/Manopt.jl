@@ -315,7 +315,7 @@ Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when 
 
 are less than given tolerances tole and tolg respectively, or
 
-* the parameter -ν = -max\{−c^k_j + \langle ξ^k_j,d \rangle \}.
+* the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
 
 is less than a given tolerance tol.
 
@@ -324,11 +324,11 @@ is less than a given tolerance tol.
     StopWhenProxBundleLess(tol=1e-8)
 
 """
-mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
+mutable struct StopWhenProxBundleLess{R} <: StoppingCriterion
     tol::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess(tol::Real=1e-8)
+    function StopWhenBundleLess(tol::R=1e-8)
         return new{typeof(tol)}(tol, "", 0)
     end
 end
