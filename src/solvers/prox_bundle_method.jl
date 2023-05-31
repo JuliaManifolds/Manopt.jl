@@ -228,22 +228,31 @@ function prox_bundle_method_sub_solver(::Any, ::Any)
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     M = get_manifold(mp)
-    bms.η =
+    v = maximum([
+        -2 * ej /
+        norm(
+            M,
+            bms.p_last_serious,
+            inverse_retract(
+                M, bms.p_last_serious, qj, bms.inverse_retraction_method
+            ),
+        )^2 for (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if
+        !(qj ≈ bms.p_last_serious)
+    ])
+    if !isempty(v)
+        bms.η =
+            bms.α₀ + max(
+                bms.α₀,
+                bms.α,
+                v,
+                )
+    else
+        bms.η =
         bms.α₀ + max(
             bms.α₀,
             bms.α,
-            maximum([
-                -2 * ej /
-                norm(
-                    M,
-                    bms.p_last_serious,
-                    inverse_retract(
-                        M, bms.p_last_serious, qj, bms.inverse_retraction_method
-                    ),
-                )^2 for (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if
-                !(qj ≈ bms.p_last_serious)
-            ]),
-        )
+            )
+    end
     bms.transported_subgradients = [
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) +
         bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method)
