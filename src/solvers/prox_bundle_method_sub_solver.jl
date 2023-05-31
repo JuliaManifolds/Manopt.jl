@@ -1,16 +1,13 @@
-function prox_bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
+function prox_bundle_method_sub_solver(mp::AbstractManoptProblem, bms::BundleMethodState)
     d = length(bms.lin_errors)
+    M = get_manifold(mp)
     H = bms.μ * local_metric(M, bms.p_last_serious, DefaultOrthonormalBasis())
-    B = reshape(ones(d), 1, d)
+    c = maximum([-ej + Xj * local_metric(M, bms.p_last_serious, DefaultOrthonormalBasis()) for (ej, Xj) in zip(bms.approx, bms.transported_subdradients)])
     qm = QuadraticModel(
-        bms.lin_errors,
+        c,
         tril(H);
         A=B,
-        lcon=[1.0],
-        ucon=[1.0],
-        lvar=zeros(d),
-        uvar=[Inf for i in 1:d],
-        c0=0.0,
+        c0=get_cost(mp, bms.p_last_serious),
     )
     return ripqp(qm; display=false).solution
 end
