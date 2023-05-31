@@ -314,15 +314,13 @@ Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when 
 
 are less than given tolerances tole and tolg respectively, or
 
-* the parameter -ξ = - |g|^2 - ε
+* the parameter -ν = -max\{−c^k_j + \langle ξ^k_j,d \rangle \}.
 
 is less than a given tolerance tol.
 
-# Constructors
+# Constructor
 
-    StopWhenProxBundleLess(tole=1e-4, tolg=1e-2)
-
-    StopWhenProxBundleLess(tol=1e-4)
+    StopWhenProxBundleLess(tol=1e-8)
 
 """
 mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
