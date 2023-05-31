@@ -360,7 +360,7 @@ function status_summary(b::StopWhenBundleLess)
     if b.tolxi == nothing
         return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
     else
-        "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
+        return "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
     end
 end
 function show(io::IO, b::StopWhenBundleLess)
