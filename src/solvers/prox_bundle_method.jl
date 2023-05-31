@@ -232,21 +232,22 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         bms.α₀ + max(
             bms.α₀,
             bms.α,
-            maximum(
-                [-2 * ej /
-                 norm(
+            maximum([
+                -2 * ej /
+                norm(
                     M,
                     bms.p_last_serious,
                     inverse_retract(
                         M, bms.p_last_serious, qj, bms.inverse_retraction_method
                     ),
-                )^2 for (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if qj !≈ bms.p_last_serious],
-            ),
+                )^2 for (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if
+                !(qj ≈ bms.p_last_serious)
+            ]),
         )
     bms.transported_subgradients = [
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) +
-        bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method) for
-        (qj, Xj) in bms.bundle
+        bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method)
+        for (qj, Xj) in bms.bundle
     ]
     bms.d = prox_prox_bundle_method_sub_solver(mp, bms)
     bms.ν = maximum([
