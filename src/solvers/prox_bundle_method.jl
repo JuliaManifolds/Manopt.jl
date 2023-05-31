@@ -229,9 +229,9 @@ end
 function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     M = get_manifold(mp)
     bms.η =
-        α₀ + max(
-            α₀,
-            α,
+        bms.α₀ + max(
+            bms.α₀,
+            bms.α,
             maximum(
                 [-2 * ej /
                  norm(
@@ -245,7 +245,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         )
     bms.transported_subgradients = [
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) +
-        η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method) for
+        bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method) for
         (qj, Xj) in bms.bundle
     ]
     bms.d = prox_prox_bundle_method_sub_solver(mp, bms)
@@ -256,7 +256,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     if norm(M, bms.p_last_serious, bms.d) ≤ bms.ε
         retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
         get_subgradient!(mp, bms.X, bms.p)
-        α = 0
+        bms.α = 0
     else
         retract!(
             M,
@@ -266,7 +266,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
             bms.retraction_method,
         )
         get_subgradient!(mp, bms.X, bms.p)
-        α =
+        bms.α =
             -inner(
                 M,
                 bms.p_last_serious,
