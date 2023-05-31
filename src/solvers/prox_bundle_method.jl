@@ -223,7 +223,7 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodStat
 end
 function prox_bundle_method_sub_solver(::Any, ::Any)
     throw(
-        ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
+        ErrorException("""All three packages "Manifolds", "QuadraticModels", and "RipQP" need to be loaded.""")
     )
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
@@ -258,7 +258,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method)
         for (qj, Xj) in bms.bundle
     ]
-    bms.d = prox_bundle_method_sub_solver(mp, bms)
+    bms.d = maximum([prox_bundle_method_sub_solver(mp, bms, ej, Xj) for (ej, Xj) in zip(bms.approx_error, bms.transported_subgradients)])
     bms.ν = maximum([
         -c + inner(M, bms.p_last_serious, bms.d, Xj) for
         (c, Xj) in zip(bms.approx_error, bms.transported_subgradients)
