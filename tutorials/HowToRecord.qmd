@@ -77,7 +77,6 @@ get_record(R)
 To record more than one value, you can pass an array of a mix of symbols and [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s which formally introduces [`RecordGroup`](https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup). Such a group records a tuple of values in every iteration:
 
 ```{julia}
-# ╔═╡ 68cb3e06-866d-4650-863a-61f965e3320f
 R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)
 ```
 
