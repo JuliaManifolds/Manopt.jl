@@ -1,9 +1,16 @@
-function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
+function bundle_method_sub_solver(M::A, bms::Union{BundleMethodState, ProxBundleMethodState}) where {A<:AbstractManifold}
     d = length(bms.lin_errors)
-    H = [
-        inner(M, bms.p_last_serious, X, Y) for X in bms.transported_subgradients,
-        Y in bms.transported_subgradients
-    ]
+    if typeof(bms) == ProxBundleMethodState
+        H = 1/bms.μ*[
+            inner(M, bms.p_last_serious, X, Y) for X in bms.transported_subgradients,
+            Y in bms.transported_subgradients
+        ]
+    else
+        H = [
+            inner(M, bms.p_last_serious, X, Y) for X in bms.transported_subgradients,
+            Y in bms.transported_subgradients
+        ]
+    end
     B = reshape(ones(d), 1, d)
     qm = QuadraticModel(
         bms.lin_errors,
