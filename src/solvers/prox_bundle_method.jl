@@ -36,7 +36,7 @@ mutable struct ProxBundleMethodState{
     VT<:AbstractVectorTransportMethod,
     R<:Real,
 } <: AbstractManoptSolverState where {P,T}
-    approx_error::AbstractVector{R}
+    approx_errors::AbstractVector{R}
     bundle::AbstractVector{Tuple{P,T}}
     d::T
     inverse_retraction_method::IR
@@ -258,11 +258,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method)
         for (qj, Xj) in bms.bundle
     ]
-    bms.d = maximum([prox_bundle_method_sub_solver(mp, bms, ej, Xj) for (ej, Xj) in zip(bms.approx_error, bms.transported_subgradients)])
-    bms.ν = maximum([
-        -c + inner(M, bms.p_last_serious, bms.d, Xj) for
-        (c, Xj) in zip(bms.approx_error, bms.transported_subgradients)
-    ])
+    λ = bundle_method_sub_solver(M, bms)
+    c = sum(λ .* bms.approx_errors)
+    bms.d .= -1/bms.μ * sum(λ .* bms.transported_subgradients)
+    bms.ν = -norm(M, bms.p_last_serious, bms.d)^2 - c
     if norm(M, bms.p_last_serious, bms.d) ≤ bms.ε
         retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
         get_subgradient!(mp, bms.X, bms.p)
@@ -292,7 +291,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     if l == bms.size
-        deleteat!(bms.bundle, l - bms.size)
+        deleteat!(bms.bundle, l - bms.size + 1)
     end
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
@@ -302,7 +301,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
         ) for (qj, Xj) in bms.bundle
     ]
-    bms.approx_error =
+    bms.approx_errors =
         bms.lin_errors + [
             bms.η / 2 *
             norm(
