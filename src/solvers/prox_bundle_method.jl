@@ -38,6 +38,7 @@ mutable struct ProxBundleMethodState{
 } <: AbstractManoptSolverState where {P,T}
     approx_errors::AbstractVector{R}
     bundle::AbstractVector{Tuple{P,T}}
+    c::R
     d::T
     inverse_retraction_method::IR
     lin_errors::AbstractVector{R}
@@ -54,6 +55,7 @@ mutable struct ProxBundleMethodState{
     α₀::R
     ε::R
     η::R
+    λ::AbstractVector{R}
     μ::R
     ν::R
     function ProxBundleMethodState(
@@ -82,15 +84,18 @@ mutable struct ProxBundleMethodState{
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         approx_errors = [0.0]
         bundle = [(copy(M, p), copy(M, p, X))]
+        c = 0.0
         d = copy(M, p, X)
         lin_errors = [0.0]
         transported_subgradients = [copy(M, p, X)]
         α = 0.0
+        λ = [0.0]
         η = 0.0
         ν = 0.0
         return new{IR,P,T,TR,SC,VT,R}(
             approx_errors,
             bundle,
+            c,
             d,
             inverse_retraction_method,
             lin_errors,
@@ -107,6 +112,7 @@ mutable struct ProxBundleMethodState{
             α₀,
             ε,
             η,
+            λ,
             μ,
             ν,
         )
@@ -258,10 +264,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method)
         for (qj, Xj) in bms.bundle
     ]
-    λ = bundle_method_sub_solver(M, bms)
-    c = sum(λ .* bms.approx_errors)
-    bms.d .= -1/bms.μ * sum(λ .* bms.transported_subgradients)
-    bms.ν = -norm(M, bms.p_last_serious, bms.d)^2 - c
+    bms.λ = bundle_method_sub_solver(M, bms)
+    bms.c = sum(bms.λ .* bms.approx_errors)
+    bms.d .= -1/bms.μ * sum(bms.λ .* bms.transported_subgradients)
+    bms.ν = -norm(M, bms.p_last_serious, bms.d)^2 - bms.c
     if norm(M, bms.p_last_serious, bms.d) ≤ bms.ε
         retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
         get_subgradient!(mp, bms.X, bms.p)
