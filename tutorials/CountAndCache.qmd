@@ -140,10 +140,10 @@ The Rayleigh quotient. We aim to maximize the Rayleigh quotient $\frac{x^{\mathr
 (as many other optimization toolboxes) minimizes, we consider
 
 ```math
-g(p) = -p^{\mathrm{T}}Ap,\qqad \mathbb S^{m}
+g(p) = -p^{\mathrm{T}}Ap,\qquad p\in\mathbb S^{m}
 ```
 
-The Euclidean gradient (that is in $ R^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient the projection of $\nablda g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
+The Euclidean gradient (that is in $ R^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
 
 ```{julia}
 m = 25
@@ -163,7 +163,7 @@ grad_g!(M,X, p) = project!(M, X, p, ∇g(p))
 
 But since both the cost and the gradient require the computation of the matrix-vector product $Ap$, it might be beneficial to only compute this once.
 
-## The [`ManifoldCostGradientObjective`](@ref) approach
+### The [`ManifoldCostGradientObjective`](@ref) approach
 
 The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the inplace variant as
 
