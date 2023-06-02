@@ -227,11 +227,6 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodStat
     bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
     return bms
 end
-function prox_bundle_method_sub_solver(::Any, ::Any)
-    throw(
-        ErrorException("""All three packages "Manifolds", "QuadraticModels", and "RipQP" need to be loaded.""")
-    )
-end
 function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     M = get_manifold(mp)
     v = [
@@ -271,7 +266,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     if norm(M, bms.p_last_serious, bms.d) ≤ bms.ε
         retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
         get_subgradient!(mp, bms.X, bms.p)
-        bms.α = 0
+        bms.α = 0.0
     else
         retract!(
             M,
@@ -300,11 +295,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         deleteat!(bms.bundle, l - bms.size + 1)
     end
     bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) + inner(
             M,
             qj,
-            Xj,
-            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method),
+            inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method),
         ) for (qj, Xj) in bms.bundle
     ]
     bms.approx_errors =
