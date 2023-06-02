@@ -14,7 +14,7 @@ stores option values for a [`prox_bundle_method`](@ref) solver
 * `prox_bundle` - bundle that collects each iterate with its computed proximal subgradient
 * `retraction_method` – the retraction to use within
 * `stop` – a [`StoppingCriterion`](@ref)
-* `size` - the maximal size of the bundle
+* `bundle_size` - the maximal bundle_size of the bundle
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
     `p` that was last evaluated.
@@ -46,7 +46,7 @@ mutable struct ProxBundleMethodState{
     p::P
     p_last_serious::P
     retraction_method::TR
-    size::Integer
+    bundle_size::Integer
     stop::TSC
     transported_subgradients::AbstractVector{T}
     vector_transport_method::VT
@@ -65,7 +65,7 @@ mutable struct ProxBundleMethodState{
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopWhenProxBundleLess(1e-8),
-        size::Integer=50,
+        bundle_size::Integer=50,
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         X::T=zero_vector(M, p),
         α₀::R=1.2,
@@ -103,7 +103,7 @@ mutable struct ProxBundleMethodState{
             p,
             copy(M, p),
             retraction_method,
-            size,
+            bundle_size,
             stopping_criterion,
             transported_subgradients,
             vector_transport_method,
@@ -192,12 +192,12 @@ function prox_bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    size=50,
+    bundle_size=50,
     stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
-    μ=1.,
+    μ=1.0,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -209,7 +209,7 @@ function prox_bundle_method!(
         m=m,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
-        size=size,
+        bundle_size=bundle_size,
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
         α₀=α₀,
@@ -234,25 +234,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         norm(
             M,
             bms.p_last_serious,
-            inverse_retract(
-                M, bms.p_last_serious, qj, bms.inverse_retraction_method
-            ),
-        )^2 for (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if
-        !(qj ≈ bms.p_last_serious)
+            inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method),
+        )^2 for
+        (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if !(qj ≈ bms.p_last_serious)
     ]
     if !isempty(v)
-        bms.η =
-            bms.α₀ + max(
-                bms.α₀,
-                bms.α,
-                maximum(v),
-                )
+        bms.η = bms.α₀ + max(bms.α₀, bms.α, maximum(v))
     else
-        bms.η =
-        bms.α₀ + max(
-            bms.α₀,
-            bms.α,
-            )
+        bms.η = bms.α₀ + max(bms.α₀, bms.α)
     end
     bms.transported_subgradients = [
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) +
@@ -261,7 +250,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     ]
     bms.λ = bundle_method_sub_solver(M, bms)
     bms.c = sum(bms.λ .* bms.approx_errors)
-    bms.d .= -1/bms.μ * sum(bms.λ .* bms.transported_subgradients)
+    bms.d .= -1 / bms.μ * sum(bms.λ .* bms.transported_subgradients)
     bms.ν = -norm(M, bms.p_last_serious, bms.d)^2 - bms.c
     if norm(M, bms.p_last_serious, bms.d) ≤ bms.ε
         retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
@@ -287,12 +276,76 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
             ) / (bms.ε * norm(M, bms.p_last_serious, bms.d))
     end
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ν)
+        # bms.μ = bms.μ * 
+        #     norm(
+        #         M,
+        #         bms.p,
+        #         bms.X - vector_transport_to(
+        #             M,
+        #             bms.p_last_serious,
+        #             get_subgradient(mp, bms.p_last_serious),
+        #             bms.p,
+        #             bms.vector_transport_method,
+        #         ),
+        #     )^2 / (
+        #         norm(
+        #             M,
+        #             bms.p,
+        #             bms.X - vector_transport_to(
+        #                 M,
+        #                 bms.p_last_serious,
+        #                 get_subgradient(mp, bms.p_last_serious),
+        #                 bms.p,
+        #                 bms.vector_transport_method,
+        #             ),
+        #         )^2 -
+        #         bms.μ * inner(
+        #             M,
+        #             bms.p,
+        #             inverse_retract(
+        #                 M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
+        #             ),
+        #             bms.X - vector_transport_to(
+        #                 M,
+        #                 bms.p_last_serious,
+        #                 get_subgradient(mp, bms.p_last_serious),
+        #                 bms.p,
+        #                 bms.vector_transport_method,
+        #             ),
+        #         )
+        #     )
+        # bms.μ = norm(
+        #     M,
+        #     bms.p,
+        #     bms.X - vector_transport_to(
+        #         M,
+        #         bms.p_last_serious,
+        #         get_subgradient(mp, bms.p_last_serious),
+        #         bms.p,
+        #         bms.vector_transport_method,
+        #     ),
+        # )^2 / 
+        # inner(
+        #             M,
+        #             bms.p,
+        #             inverse_retract(
+        #                 M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
+        #             ),
+        #             bms.X - vector_transport_to(
+        #                 M,
+        #                 bms.p_last_serious,
+        #                 get_subgradient(mp, bms.p_last_serious),
+        #                 bms.p,
+        #                 bms.vector_transport_method,
+        #             ),
+        #         )
+        bms.μ += 0.1 * bms.μ
         copyto!(M, bms.p_last_serious, bms.p)
     end
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    if l == bms.size
-        deleteat!(bms.bundle, l - bms.size + 1)
+    if l == bms.bundle_size
+        deleteat!(bms.bundle, l - bms.bundle_size + 1)
     end
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) + inner(
