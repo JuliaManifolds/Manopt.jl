@@ -19,8 +19,8 @@ jobs:
           version: 1.9
       - name: Julia Cache
         uses: julia-actions/cache@v1
-        with:
-          cache-compiled: "true"
+#        with:
+#          cache-compiled: "true"
       - name: Cache Quarto
         id: cache-quarto
         uses: actions/cache@v3
