@@ -13,9 +13,10 @@ Afterwards, we will show how to implement the algorithm.
 Finally, we will discuss how to make the algorithm both nice for the user as well as
 initialized in a way, that it can benefit from features already available in `Manopt.jl`.
 
-| !!! note
-|     If you have implemented your own solver, we would be very happy to have that within `Manopt.jl` as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
-
+```{=commonmark}
+!!! note
+    If you have implemented your own solver, we would be very happy to have that within `Manopt.jl` as well, so maybe consider [opening a Pull Request](https://github.com/JuliaManifolds/Manopt.jl)
+```
 
 ```{julia}
 #| echo: false
