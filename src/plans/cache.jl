@@ -106,9 +106,7 @@ function get_cost(
 end
 function get_cost(
     M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{
-        InplaceEvaluation,<:ManifoldCostGradientObjective
-    },
+    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
     p,
 )
     scop_neq_p = sco.p != p
@@ -139,9 +137,7 @@ function get_gradient(
 end
 function get_gradient(
     M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{
-        InplaceEvaluation,<:ManifoldCostGradientObjective
-    },
+    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
     p,
 )
     scop_neq_p = sco.p != p
@@ -175,9 +171,7 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    sco::SimpleManifoldCachedObjective{
-        InplaceEvaluation,<:ManifoldCostGradientObjective
-    },
+    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
     p,
 )
     scop_neq_p = sco.p != p

@@ -333,8 +333,8 @@ g(N, p4) - f_star
 ```
 
 For this example, or maybe even [`gradient_descent`](@ref) in general it seems,
-the last this additional cache does not improve the result further,
-it is one the same effort both time and allocation-wise.
+this additional (second, inner) cache does not improve the result further,
+it is about the same effort both time and allocation-wise.
 
 ## Summary
 
