@@ -126,9 +126,9 @@ get_solver_result(r)
 
 ## Advanced Caching Examples
 
-Besides caching single calls to elements of the objective.
-A specific scenario might be, that you want to cache intermediate results
-of computing the cost and share that with the gradient. We will present
+There are more options other than caching single calls to specific parts of the objective.
+For example you may want to cache intermediate results
+of computing the cost and share that with the gradient computation. We will present
 three solutions to this:
 
 1. An easy approach from within `Manopt.jl`: The [`ManifoldCostGradientObjective`]
@@ -219,13 +219,12 @@ It is beneficial, when the gradient and the cost are very often required togethe
 
 ### A shared storage approach using a functor
 
-So compared to the previous approach, which might be beneficial.
-An alternative is the usage of a functor, that introduces a “shared storage”
+An alternative to the previous approach is the usage of a functor that introduces a “shared storage”
 of the result of computing `A*p`. We additionally have to store `p` though,
-since we have to check that we are still evaluation the cost and/or gradient
-at the same point, respectively.
+since we have to check that we are still evaluating the cost and/or gradient
+at the same point at which the cached `A*p` was computed.
 We again consider the (more efficient) inplace variant.
-The can be done as follows
+This can be done as follows
 
 ```{julia}
 struct StorageG{T,M}
@@ -233,26 +232,26 @@ struct StorageG{T,M}
     Ap::T
     p::T
 end
-function (g::StorageG)(::Val{:Cost}, M, p)
+function (g::StorageG)(::Val{:Cost}, M::AbstractManifold, p)
     if !(p==g.p) #We are at a new point -> Update
         g.Ap .= g.A*p
         g.p .= p
     end
     return -g.p'*g.Ap
 end
-function (g::StorageG)(::Val{:Gradient}, M, X, p)
+function (g::StorageG)(::Val{:Gradient}, M::AbstractManifold, X, p)
     if !(p==g.p) #We are at a new point -> Update
         g.Ap .= g.A*p
         g.p .= p
     end
-    copyto!(M, X, p, -2.0 .* g.Ap)
+    X .= -2 .* g.Ap
     project!(M, X, p, X)
     return X
 end
 ```
 
-Here we use a first parameter do distinguish both functions. For the mutating
-case the signatures are even different, but for an allocating case, the signatures of the cost and the gradient function are the same.
+Here we use the first parameter to distinguish both functions. For the mutating
+case the signatures are different regardless of the additional argument but for the allocating case, the signatures of the cost and the gradient function are the same.
 
 
 ```{julia}
@@ -301,7 +300,7 @@ function (g::CacheG)(::Val{:Gradient}, M, X, p)
     Ap = get!(g.cache, copy(M,p)) do
         g.A*p
     end
-    copyto!(M, X, p, -2.0 .* Ap)
+    X .= -2 .* Ap
     project!(M, X, p, X)
     return X
 end
