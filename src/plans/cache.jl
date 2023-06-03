@@ -20,7 +20,7 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 * `initialized` (`true`) – whether to initialize the cached `X` and `c` or not.
 """
 mutable struct SimpleManifoldCachedObjective{
-    E<:AbstractEvaluationType,TC,TG,O<:AbstractManifoldGradientObjective{E,TC,TG},P,T,C
+    E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E},P,T,C
 } <: AbstractDecoratedManifoldObjective{E,O}
     objective::O
     p::P # a point
@@ -37,9 +37,9 @@ function SimpleManifoldCachedObjective(
     p=rand(M),
     X=initialized ? get_gradient(M, obj, p) : zero_vector(M, p),
     c=initialized ? get_cost(M, obj, p) : 0.0,
-) where {E<:AbstractEvaluationType,TC,TG,O<:AbstractManifoldGradientObjective{E,TC,TG}}
+) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}}
     q = copy(M, p)
-    return SimpleManifoldCachedObjective{E,TC,TG,O,typeof(q),typeof(X),typeof(c)}(
+    return SimpleManifoldCachedObjective{E,O,typeof(q),typeof(X),typeof(c)}(
         obj, q, X, initialized, c, initialized
     )
 end
@@ -91,10 +91,10 @@ end
 function get_cost(
     M::AbstractManifold,
     sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective
+        AllocatingEvaluation,<:ManifoldCostGradientObjective
     },
     p,
-) where {TC,TG}
+)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.c_valid
         sco.c, sco.X = sco.objective.costgrad!!(M, p)
@@ -107,10 +107,10 @@ end
 function get_cost(
     M::AbstractManifold,
     sco::SimpleManifoldCachedObjective{
-        InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective
+        InplaceEvaluation,<:ManifoldCostGradientObjective
     },
     p,
-) where {TC,TG}
+)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.c_valid
         sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
@@ -123,10 +123,10 @@ end
 function get_gradient(
     M::AbstractManifold,
     sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective
+        AllocatingEvaluation,<:ManifoldCostGradientObjective
     },
     p,
-) where {TC,TG}
+)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         sco.c, sco.X = sco.objective.costgrad!!(M, p)
@@ -140,10 +140,10 @@ end
 function get_gradient(
     M::AbstractManifold,
     sco::SimpleManifoldCachedObjective{
-        InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective
+        InplaceEvaluation,<:ManifoldCostGradientObjective
     },
     p,
-) where {TC,TG}
+)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
@@ -158,10 +158,10 @@ function get_gradient!(
     M::AbstractManifold,
     X,
     sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,TC,TG,<:ManifoldCostGradientObjective
+        AllocatingEvaluation,<:ManifoldCostGradientObjective
     },
     p,
-) where {TC,TG}
+)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         sco.c, sco.X = sco.objective.costgrad!!(M, p)
@@ -176,10 +176,10 @@ function get_gradient!(
     M::AbstractManifold,
     X,
     sco::SimpleManifoldCachedObjective{
-        InplaceEvaluation,TC,TG,<:ManifoldCostGradientObjective
+        InplaceEvaluation,<:ManifoldCostGradientObjective
     },
     p,
-) where {TC,TG}
+)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
