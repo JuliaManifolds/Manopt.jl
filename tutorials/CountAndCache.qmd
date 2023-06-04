@@ -168,7 +168,7 @@ But since both the cost and the gradient require the computation of the matrix-v
 The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the inplace variant as
 
 ```{julia}
-function g_grad_g!(M, X, p)
+function g_grad_g!(M::AbstractManifold, X, p)
     X .= -A*p
     c = p'*X
     X .*= 2
@@ -264,7 +264,7 @@ grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
     stopping_criterion = StopWhenGradientNormLess(1e-5),
     evaluation=InplaceEvaluation(),
     count=[:Cost, :Gradient],
-    cache=(:LRU, [:Cost, :Gradient], 25),
+    cache=(:LRU, [:Cost, :Gradient], 2),
     return_objective=true#, return_state=true
 )
 ```
@@ -276,13 +276,13 @@ p3 = get_solver_result(s3)
 g(N, p3) - f_star
 ```
 
-And while we again have a split of the cost and gradient evaluations, we can observer that the allocations are less thatn half of the previous approach.
+And while we again have a split off the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.
 
-### A local Cache approach
+### A local cache approach
 
 This variant is very similar to the previous one, but uses a whole cache instead
 of just one place to store `A*p`. This makes the code a bit nicer,
-and it is possivle to store more than just the last `p` either cost or gradient
+and it is possible to store more than just the last `p` either cost or gradient
 was called with.
 
 ```{julia}
