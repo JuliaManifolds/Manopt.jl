@@ -18,6 +18,17 @@ include("../utils/dummy_types.jl")
     msgo_vf = ManifoldStochasticGradientObjective(sgrad_f2; cost=f)
     msgo_fv = ManifoldStochasticGradientObjective(sgrad_f1; cost=f2)
     msgo_vv = ManifoldStochasticGradientObjective(sgrad_f2; cost=f2)
+    @testset "Elementwide Cost access" begin
+        for msgo in [msgo_ff, msgo_vf]
+            @test get_cost(M, msgo, p) == get_cost(M, msgo, p, 1)
+            @test_throws ErrorException get_cost(M, msgo, p, 2)
+        end
+        for msgo in [msgo_fv, msgo_vv]
+            for i in 1:length(f2)
+                @test get_cost(M, msgo, p, i) == f2[i](M, p)
+            end
+        end
+    end
     @testset "Objetive Decorator passthrough" begin
         X = zero_vector(M, p)
         Y = zero_vector(M, p)

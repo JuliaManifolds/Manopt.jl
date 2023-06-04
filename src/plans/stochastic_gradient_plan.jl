@@ -58,6 +58,28 @@ function get_cost(
 end
 
 @doc raw"""
+    get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
+
+Evaluate the `i`th summand of the cost.
+
+If you use a single function for the stochastic cost, then only the index `ì=1`` is available
+to evaluate the whole cost.
+"""
+function get_cost(
+    M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{E,C}, p, i
+) where {E<:AbstractEvaluationType,C<:AbstractVector{<:Function}}
+    return sgo.cost[i](M, p)
+end
+function get_cost(
+    M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{E,C}, p, i
+) where {E<:AbstractEvaluationType,C<:Function}
+    (i == 1) && return sgo.cost(M, p)
+    return error(
+        "The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.",
+    )
+end
+
+@doc raw"""
     get_gradients(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
 
