@@ -62,7 +62,7 @@ Pkg.develop(path="../") # a trick to work on the local dev version
 
 ```{julia}
 #| output: false
-using Manopt, Manifolds, Random, LRUCache
+using Manopt, Manifolds, Random, LRUCache, LinearAlgebra
 ```
 
 ## Counting
@@ -74,6 +74,7 @@ n = 100
 σ = π / 8
 M = Sphere(2)
 p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+Random.seed!(42)
 data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
@@ -122,3 +123,221 @@ result as usual:
 ```{julia}
 get_solver_result(r)
 ```
+
+## Advanced Caching Examples
+
+There are more options other than caching single calls to specific parts of the objective.
+For example you may want to cache intermediate results
+of computing the cost and share that with the gradient computation. We will present
+three solutions to this:
+
+1. An easy approach from within `Manopt.jl`: The [`ManifoldCostGradientObjective`](@ref)
+2. A shared storage approach using a functor
+3. A shared (internal) cache approach also using a functor
+
+For that we switch to another example:
+The Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A\in\mathbb R^{m+1\times m+1}$ and $x\in\mathbb R^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
+(as many other optimization toolboxes) minimizes, we consider
+
+```math
+g(p) = -p^{\mathrm{T}}Ap,\qquad p\in\mathbb S^{m}
+```
+
+The Euclidean gradient (that is in $ R^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.
+
+```{julia}
+m = 25
+Random.seed!(42)
+A = randn(m + 1, m + 1)
+A = Symmetric(A)
+p_star = eigvecs(A)[:, end] # minimizer (or similarly -p)
+f_star = -eigvals(A)[end] # cost (note that we get - the largest Eigenvalue)
+
+N = Sphere(m);
+
+g(M, p) = -p' * A*p
+∇g(p) = -2 * A * p
+grad_g(M,p) = project(M, p, ∇g(p))
+grad_g!(M,X, p) = project!(M, X, p, ∇g(p))
+```
+
+But since both the cost and the gradient require the computation of the matrix-vector product $Ap$, it might be beneficial to only compute this once.
+
+### The [`ManifoldCostGradientObjective`](@ref) approach
+
+The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the inplace variant as
+
+```{julia}
+function g_grad_g!(M::AbstractManifold, X, p)
+    X .= -A*p
+    c = p'*X
+    X .*= 2
+    project!(M, X, p, X)
+    return (c, X)
+end
+```
+
+where we only compute the matrix-vector product once.
+The small disadvantage might be, that we always compute _both_, the gradient and the cost. Luckily, the cache we used before, takes this into account and caches both results, such that we indeed end up computing `A*p` only once when asking to a cost and a gradient.
+
+Let's compare both methods
+```{julia}
+p0 = [(1/5 .* ones(5))..., zeros(m-4)...];
+@time s1 = gradient_descent(N, g, grad_g!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    evaluation=InplaceEvaluation(),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true,
+)
+```
+
+versus
+
+```{julia}
+obj = ManifoldCostGradientObjective(g_grad_g!; evaluation=InplaceEvaluation())
+@time s2 = gradient_descent(N, obj, p0;
+    stopping_criterion=StopWhenGradientNormLess(1e-5),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true,
+)
+```
+
+first of all both yield the same result
+
+```{julia}
+p1 = get_solver_result(s1)
+p2 = get_solver_result(s2)
+[distance(N, p1, p2), g(N, p1), g(N, p2), f_star]
+```
+
+and we can see that the combined number of evaluations is once 2051, once
+just the number of cost evaluations 1449. Note that the involved additional 847
+gradient evaluations are merely a multiplication with 2. On the other hand, the additional caching of the gradient in these cases might be less beneficial.
+It is beneficial, when the gradient and the cost are very often required together.
+
+### A shared storage approach using a functor
+
+An alternative to the previous approach is the usage of a functor that introduces a “shared storage”
+of the result of computing `A*p`. We additionally have to store `p` though,
+since we have to check that we are still evaluating the cost and/or gradient
+at the same point at which the cached `A*p` was computed.
+We again consider the (more efficient) inplace variant.
+This can be done as follows
+
+```{julia}
+struct StorageG{T,M}
+    A::M
+    Ap::T
+    p::T
+end
+function (g::StorageG)(::Val{:Cost}, M::AbstractManifold, p)
+    if !(p==g.p) #We are at a new point -> Update
+        g.Ap .= g.A*p
+        g.p .= p
+    end
+    return -g.p'*g.Ap
+end
+function (g::StorageG)(::Val{:Gradient}, M::AbstractManifold, X, p)
+    if !(p==g.p) #We are at a new point -> Update
+        g.Ap .= g.A*p
+        g.p .= p
+    end
+    X .= -2 .* g.Ap
+    project!(M, X, p, X)
+    return X
+end
+```
+
+Here we use the first parameter to distinguish both functions. For the mutating
+case the signatures are different regardless of the additional argument but for the allocating case, the signatures of the cost and the gradient function are the same.
+
+
+```{julia}
+#Define the new functor
+storage_g = StorageG(A, zero(p0), zero(p0))
+# and cost and gradient that use this functor as
+g3(M,p) = storage_g(Val(:Cost), M, p)
+grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
+@time s3 = gradient_descent(N, g3, grad_g3!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    evaluation=InplaceEvaluation(),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 2),
+    return_objective=true#, return_state=true
+)
+```
+
+This of course still yields the same result
+
+```{julia}
+p3 = get_solver_result(s3)
+g(N, p3) - f_star
+```
+
+And while we again have a split off the cost and gradient evaluations, we can observe that the allocations are less than half of the previous approach.
+
+### A local cache approach
+
+This variant is very similar to the previous one, but uses a whole cache instead
+of just one place to store `A*p`. This makes the code a bit nicer,
+and it is possible to store more than just the last `p` either cost or gradient
+was called with.
+
+```{julia}
+struct CacheG{C,M}
+    A::M
+    cache::C
+end
+function (g::CacheG)(::Val{:Cost}, M, p)
+    Ap = get!(g.cache, copy(M,p)) do
+        g.A*p
+    end
+    return -p'*Ap
+end
+function (g::CacheG)(::Val{:Gradient}, M, X, p)
+    Ap = get!(g.cache, copy(M,p)) do
+        g.A*p
+    end
+    X .= -2 .* Ap
+    project!(M, X, p, X)
+    return X
+end
+```
+
+However, the resulting solver run is not always faster, since
+the whole cache instead of storing just `Ap` and `p` is a bit more costly.
+Then the tradeoff is, whether this pays off.
+
+```{julia}
+#Define the new functor
+cache_g = CacheG(A, LRU{typeof(p0),typeof(p0)}(; maxsize=25))
+# and cost and gradient that use this functor as
+g4(M,p) = cache_g(Val(:Cost), M, p)
+grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
+@time s4 = gradient_descent(N, g4, grad_g4!, p0;
+    stopping_criterion = StopWhenGradientNormLess(1e-5),
+    evaluation=InplaceEvaluation(),
+    count=[:Cost, :Gradient],
+    cache=(:LRU, [:Cost, :Gradient], 25),
+    return_objective=true,
+)
+```
+
+and for safety let's check that we are reasonably close
+
+```{julia}
+p4 = get_solver_result(s4)
+g(N, p4) - f_star
+```
+
+For this example, or maybe even [`gradient_descent`](@ref) in general it seems,
+this additional (second, inner) cache does not improve the result further,
+it is about the same effort both time and allocation-wise.
+
+## Summary
+
+While the second approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
+All three are an improvement over the first implementation without sharing interms results.
+The results with storage or cache have further advantage of being more flexible, i.e. the stored information could also be reused in a third function, for example when also computing the Hessian.
