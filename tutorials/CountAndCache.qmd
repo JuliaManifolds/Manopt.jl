@@ -131,7 +131,7 @@ For example you may want to cache intermediate results
 of computing the cost and share that with the gradient computation. We will present
 three solutions to this:
 
-1. An easy approach from within `Manopt.jl`: The [`ManifoldCostGradientObjective`]
+1. An easy approach from within `Manopt.jl`: The [`ManifoldCostGradientObjective`](@ref)
 2. A shared storage approach using a functor
 3. A shared (internal) cache approach also using a functor
 
