@@ -37,6 +37,7 @@ mutable struct BundleMethodState{
     R<:Real,
 } <: AbstractManoptSolverState where {P,T}
     bundle::AbstractVector{Tuple{P,T}}
+    bundle_size::Integer
     inverse_retraction_method::IR
     lin_errors::L
     p::P
@@ -58,6 +59,7 @@ mutable struct BundleMethodState{
     function BundleMethodState(
         M::TM,
         p::P;
+        bundle_size::Integer=50,
         m::R=1e-2,
         diam::R=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -88,6 +90,7 @@ mutable struct BundleMethodState{
         transported_subgradients = [copy(M, p, X)]
         return new{IR,typeof(lin_errors),P,T,TR,SC,VT,R}(
             bundle,
+            bundle_size,
             inverse_retraction_method,
             lin_errors,
             p,
@@ -177,6 +180,7 @@ function bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
+    bundle_size=50,
     m=1e-2,
     diam=1.0,
     filter1=eps(Float64),
@@ -195,6 +199,7 @@ function bundle_method!(
     bms = BundleMethodState(
         M,
         p;
+        bundle_size=bundle_size,
         m=m,
         diam=diam,
         filter1=filter1,
@@ -237,7 +242,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
     end
+    l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+    if l == bms.bundle_size
+        deleteat!(bms.bundle, l - bms.bundle_size + 1)
+    end
     if !isempty(findall(λj -> λj ≤ bms.filter1, bms.λ))
         #y = bms.bundle[1][1]
         deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
@@ -251,7 +260,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.diam -= bms.δ * bms.diam
         end
     end
-    ## Check lin errors to not be negative
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
@@ -267,33 +275,39 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             ),
         ) *
-        norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-    ]
-    bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
-    while !isempty(findall(ej -> ej < -bms.filter2, bms.lin_errors))
-        bms.diam += bms.δ * bms.diam
-        if isinf(bms.diam)
-            break
-        end
-        bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
-            M,
-            qj,
-            Xj,
-            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        ) +
-        bms.diam *
-        sqrt(
-            2 * norm(
-                M,
-                qj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ),
+        norm(
+            M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
         ]
+    ## Check lin errors to not be negative
+    bms.lin_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.lin_errors]
+    d = bms.diam
+    while !isempty(findall(ej -> ej < -bms.filter2, bms.lin_errors))
+        d += bms.δ * bms.diam
+        if d ≥ 100.0
+            break
+        end
+        bms.lin_errors = [
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+                M,
+                qj,
+                Xj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            ) +
+            d *
+            sqrt(
+                2 * norm(
+                    M,
+                    qj,
+                    inverse_retract(
+                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
+                    ),
+                ),
+            ) *
+            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+        ]
     end
-    ##
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
