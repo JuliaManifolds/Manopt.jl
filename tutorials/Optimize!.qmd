@@ -55,6 +55,7 @@ Fortunately the gradient can be computed and is
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
@@ -119,8 +120,10 @@ m2 = gradient_descent(M, f, grad_f, data[1];
 
 See [here](https://manoptjl.org/stable/plans/debug/#Manopt.DebugActionFactory-Tuple{Symbol}) for the list of available symbols.
 
-| !!! info \"Technical Detail\"
-|     The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
+```{=commonmark}
+!!! info \"Technical Detail\"
+    The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
+```
 
 The default stopping criterion for [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) is, to either stopwhen the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback.
 Combining stopping-criteria can be done by `|` or `&`.
@@ -189,8 +192,10 @@ s = cyclic_proximal_point(N, g, proxes_g, data2[1];
     );
 ```
 
-| !!!note \"Technical Detail\"
-|    The recording is realised by [`RecordActions`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
+```{=commonmark}
+!!! note \"Technical Detail\"
+    The recording is realised by [`RecordActions`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
+```{=commonmark}
 
 First, the computed median can be accessed as
 ```{julia}

@@ -16,6 +16,7 @@ The meaning of “best explain” has still to be clarified. We distinguish two 
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 img_folder = "img/regression";
 mkpath(img_folder)
@@ -176,7 +177,7 @@ A = hcat(
     map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data)...
 )
 pca1 = get_vector(S, m, svd(A).U[:, 1], DefaultOrthonormalBasis())
-x0 = ProductRepr(m, pca1)
+x0 = ArrayPartition(m, pca1)
 ```
 
 The optimal “time labels” are then just the projections $t_i = ⟨d_i,X^*⟩$, $i=1,\ldots,n$.
@@ -200,7 +201,7 @@ y = gradient_descent(
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
-        linesearch_stopsize=1e-9,
+        stop_when_stepsize_less=1e-9,
     ),
     stopping_criterion=StopAfterIteration(200) |
                         StopWhenGradientNormLess(1e-8) |
@@ -271,7 +272,7 @@ A2 = hcat(
     map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...
 )
 pca2 = get_vector(S, m, svd(A2).U[:, 1], DefaultOrthonormalBasis())
-x1 = ProductRepr(m, pca2)
+x1 = ArrayPartition(m, pca2)
 t2 = map(d -> inner(S, m2, pca2, log(S, m2, d)), data2)
 ```
 
@@ -289,7 +290,7 @@ y2 = gradient_descent(
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
-        linesearch_stopsize=1e-9,
+        stop_when_stepsize_less=1e-9,
     ),
     stopping_criterion=StopAfterIteration(200) |
                         StopWhenGradientNormLess(1e-8) |
@@ -440,7 +441,7 @@ end
 We can reuse the computed initial values from before, just that now we are on a product manifold
 
 ```{julia}
-x2 = ProductRepr(x1, t2)
+x2 = ArrayPartition(x1, t2)
 F3 = RegressionCost2(data2)
 gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)];
 ```
@@ -455,7 +456,13 @@ y3 = alternating_gradient_descent(
     x2;
     evaluation=InplaceEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(M; contraction_factor=0.999, sufficient_decrease=0.066, linesearch_stopsize=1e-11, retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction())),
+    stepsize=ArmijoLinesearch(
+        M;
+        contraction_factor=0.999,
+        sufficient_decrease=0.066,
+        stop_when_stepsize_less=1e-11,
+        retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction()),
+    ),
     inner_iterations=1,
 )
 ```

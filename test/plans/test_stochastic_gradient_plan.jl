@@ -11,16 +11,30 @@ include("../utils/dummy_types.jl")
         X in [zeros(3), [s, 0.0, 0.0], [-s, 0.0, 0.0], [0.0, s, 0.0], [0.0, -s, 0.0]]
     ]
     f(M, y) = 1 / 2 * sum([distance(M, y, x)^2 for x in pts])
+    f2 = [(M, y) -> 1 / 2 * distance(M, y, x) for x in pts]
     sgrad_f1(M, y) = [-log(M, y, x) for x in pts]
     sgrad_f2 = [((M, y) -> -log(M, y, x)) for x in pts]
-    msgo1 = ManifoldStochasticGradientObjective(sgrad_f1; cost=f)
-    msgo2 = ManifoldStochasticGradientObjective(sgrad_f2; cost=f)
+    msgo_ff = ManifoldStochasticGradientObjective(sgrad_f1; cost=f)
+    msgo_vf = ManifoldStochasticGradientObjective(sgrad_f2; cost=f)
+    msgo_fv = ManifoldStochasticGradientObjective(sgrad_f1; cost=f2)
+    msgo_vv = ManifoldStochasticGradientObjective(sgrad_f2; cost=f2)
+    @testset "Elementwide Cost access" begin
+        for msgo in [msgo_ff, msgo_vf]
+            @test get_cost(M, msgo, p) == get_cost(M, msgo, p, 1)
+            @test_throws ErrorException get_cost(M, msgo, p, 2)
+        end
+        for msgo in [msgo_fv, msgo_vv]
+            for i in 1:length(f2)
+                @test get_cost(M, msgo, p, i) == f2[i](M, p)
+            end
+        end
+    end
     @testset "Objetive Decorator passthrough" begin
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
         Xa = [zero_vector(M, p) for p in pts]
         Ya = [zero_vector(M, p) for p in pts]
-        for obj in [msgo1, msgo2]
+        for obj in [msgo_ff, msgo_vf, msgo_fv, msgo_vv]
             ddo = DummyDecoratedObjective(obj)
             @test get_gradients(M, obj, p) == get_gradients(M, ddo, p)
             get_gradients!(M, Xa, obj, p)
@@ -39,7 +53,7 @@ include("../utils/dummy_types.jl")
         Y = zero_vector(M, p)
         Xa = [zero_vector(M, p) for p in pts]
         Ya = [zero_vector(M, p) for p in pts]
-        for obj in [msgo1, msgo2]
+        for obj in [msgo_ff, msgo_vf, msgo_fv, msgo_vv]
             ddo = ManifoldCountObjective(
                 M, obj, [:StochasticGradient, :StochasticGradients]
             )
@@ -62,7 +76,7 @@ include("../utils/dummy_types.jl")
         Y = zero_vector(M, p)
         Xa = [zero_vector(M, p) for p in pts]
         Ya = [zero_vector(M, p) for p in pts]
-        for obj in [msgo1, msgo2]
+        for obj in [msgo_ff, msgo_vf, msgo_fv, msgo_vv]
             ddo = ManifoldCountObjective(
                 M, obj, [:StochasticGradient, :StochasticGradients]
             )

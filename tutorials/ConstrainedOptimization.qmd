@@ -25,6 +25,7 @@ This can be seen as a balance between moving constraints into the geometry of a 
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 

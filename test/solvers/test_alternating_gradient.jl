@@ -14,13 +14,13 @@ using Manopt, Manifolds, Test
     grad_f1!(N, X, p) = (X .= -log(N[1], p[N, 1], data[1]))
     grad_f2(N, p) = -log(N[2], p[N, 2], data[2])
     grad_f2!(N, X, p) = (X .= -log(N[2], p[N, 2], data[2]))
-    grad_f(N, p) = ProductRepr([-log(N[i], p[N, i], data[i]) for i in [1, 2]]...)
+    grad_f(N, p) = ArrayPartition([-log(N[i], p[N, i], data[i]) for i in [1, 2]]...)
     function grad_f!(N, X, p)
         log!(N[1], X[N, 1], p[N, 1], data[1])
         log!(N[2], X[N, 2], p[N, 2], data[2])
         return X .*= -1
     end
-    p = ProductRepr([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
+    p = ArrayPartition([0.0, 0.0, 1.0], [0.0, 0.0, 1.0])
 
     @testset "Test gradient access" begin
         objf = ManifoldAlternatingGradientObjective(f, grad_f)

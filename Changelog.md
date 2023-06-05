@@ -5,6 +5,32 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.24] - 04/06/2023
+
+### Added
+
+* another workflow that deletes old PR renderings from the docs to keep them smaller in overall size.
+
+### Changes
+
+* bump dependencies since the extension between Manifolds.jl and ManifoldsDiff.jl has been moved to Manifolds.jl
+
+## [0.4.23] - 04/06/2023
+
+### Added
+
+* More details on the Count and Cache toturial
+
+### Changed
+
+* loosen constraints slightly
+
+## [0.4.22] - 31/05/2023
+
+### Added
+
+* A tutorial on how to implement a solver
+
 ## [0.4.21] - 22/05/2023
 
 ### Added
