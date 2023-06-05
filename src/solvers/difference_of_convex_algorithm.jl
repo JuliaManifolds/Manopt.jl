@@ -229,7 +229,15 @@ function difference_of_convex_algorithm(
     grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
     ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
     rs = difference_of_convex_algorithm(
-        M, f_, g_, ∂h_, q; gradient=gradient_, grad_g=grad_g_, kwargs...
+        M,
+        f_,
+        g_,
+        ∂h_,
+        q;
+        gradient=gradient_,
+        grad_g=grad_g_,
+        evaluation=evaluation,
+        kwargs...,
     )
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
@@ -264,7 +272,9 @@ function difference_of_convex_algorithm!(
     mdco = ManifoldDifferenceOfConvexObjective(
         f, ∂h; gradient=gradient, evaluation=evaluation
     )
-    return difference_of_convex_algorithm!(M, mdco, p; g=g, kwargs...)
+    return difference_of_convex_algorithm!(
+        M, mdco, p; g=g, evalutaiont=evaluation, kwargs...
+    )
 end
 function difference_of_convex_algorithm!(
     M::AbstractManifold,
