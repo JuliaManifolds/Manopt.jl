@@ -263,13 +263,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         get_subgradient!(mp, bms.X, bms.p)
         bms.α = 0.0
     else
-        retract!(
-            M,
-            bms.p,
-            bms.p_last_serious,
-            bms.ε * bms.d / nd,
-            bms.retraction_method,
-        )
+        retract!(M, bms.p, bms.p_last_serious, bms.ε * bms.d / nd, bms.retraction_method)
         get_subgradient!(mp, bms.X, bms.p)
         bms.α =
             -inner(
