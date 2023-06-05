@@ -54,6 +54,7 @@ mutable struct ProxBundleMethodState{
     α::R
     α₀::R
     ε::R
+    δ::R
     η::R
     λ::AbstractVector{R}
     μ::R
@@ -70,6 +71,7 @@ mutable struct ProxBundleMethodState{
         X::T=zero_vector(M, p),
         α₀::R=1.2,
         ε::R=1e-2,
+        δ::R=1.0,
         μ::R=0.5,
     ) where {
         IR<:AbstractInverseRetractionMethod,
@@ -111,6 +113,7 @@ mutable struct ProxBundleMethodState{
             α,
             α₀,
             ε,
+            δ,
             η,
             λ,
             μ,
@@ -197,6 +200,7 @@ function prox_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
+    δ=1.0,
     μ=1.0,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -214,6 +218,7 @@ function prox_bundle_method!(
         vector_transport_method=vector_transport_method,
         α₀=α₀,
         ε=ε,
+        δ=δ,
         μ=μ,
     )
     bms = decorate_state!(bms; kwargs...)
@@ -251,8 +256,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
     bms.λ = bundle_method_sub_solver(M, bms)
     bms.c = sum(bms.λ .* bms.approx_errors)
     bms.d .= -1 / bms.μ * sum(bms.λ .* bms.transported_subgradients)
-    bms.ν = -norm(M, bms.p_last_serious, bms.d)^2 - bms.c
-    if norm(M, bms.p_last_serious, bms.d) ≤ bms.ε
+    nd = norm(M, bms.p_last_serious, bms.d)
+    bms.ν = -nd^2 - bms.c
+    if nd ≤ bms.ε
         retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
         get_subgradient!(mp, bms.X, bms.p)
         bms.α = 0.0
@@ -261,7 +267,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
             M,
             bms.p,
             bms.p_last_serious,
-            bms.ε * bms.d / norm(M, bms.p_last_serious, bms.d),
+            bms.ε * bms.d / nd,
             bms.retraction_method,
         )
         get_subgradient!(mp, bms.X, bms.p)
@@ -273,7 +279,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
                 vector_transport_to(
                     M, bms.p, bms.X, bms.p_last_serious, bms.vector_transport_method
                 ),
-            ) / (bms.ε * norm(M, bms.p_last_serious, bms.d))
+            ) / (bms.ε * nd)
     end
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ν)
         # bms.μ = bms.μ * 
@@ -339,7 +345,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         #                 bms.vector_transport_method,
         #             ),
         #         )
-        bms.μ += 0.1 * bms.μ
+        (length(bms.bundle) < bms.bundle_size) && (bms.μ += bms.δ * bms.μ)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     l = length(bms.bundle)
