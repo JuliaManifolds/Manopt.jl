@@ -174,7 +174,7 @@ difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
 * `sub_state`             - ([`TrustRegionsState`](@ref) by default, requires `sub_hessian` to be provided; decorated with `sub_kwargs`).
   Choose the solver by specifying a solver state to solve the `sub_problem`
   if the `sub_problem` if a function (i.e. a closed form solution), this is set to `evaluation`
-  and can be changed to the evalution type of the closed form solution accordingly.
+  and can be changed to the evaluation type of the closed form solution accordingly.
 * `sub_stopping_criterion` - ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping crierion used withing the default `sub_state=`
 * `sub_stepsize`           - ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
@@ -273,7 +273,7 @@ function difference_of_convex_algorithm!(
         f, ∂h; gradient=gradient, evaluation=evaluation
     )
     return difference_of_convex_algorithm!(
-        M, mdco, p; g=g, evalutaiont=evaluation, kwargs...
+        M, mdco, p; g=g, evaluation=evaluation, kwargs...
     )
 end
 function difference_of_convex_algorithm!(
