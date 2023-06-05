@@ -237,7 +237,7 @@ function difference_of_convex_algorithm(
     M::AbstractManifold, mdco::O, p; kwargs...
 ) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
-    return difference_of_convex_algorithm!(M, mdco, p; kwargs...)
+    return difference_of_convex_algorithm!(M, mdco, q; kwargs...)
 end
 
 @doc raw"""
