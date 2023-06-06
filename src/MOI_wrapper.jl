@@ -1,7 +1,7 @@
-import LinearAlgebra
+using LinearAlgebra
 import MathOptInterface as MOI
-import ManifoldsBase
-import ManifoldDiff
+using ManifoldsBase
+using ManifoldDiff
 
 include("qp_block_data.jl")
 
@@ -86,7 +86,8 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
 end
 
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
-    return !isnothing(model.manifold) && 1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
+    return !isnothing(model.manifold) &&
+           1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
 end
 
 function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
@@ -201,7 +202,9 @@ end
 
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     size = ManifoldsBase.representation_size(m)
-    return JuMP.VariablesConstrainedOnCreation(func, VectorizedManifold(m), ArrayShape(size))
+    return JuMP.VariablesConstrainedOnCreation(
+        func, VectorizedManifold(m), ArrayShape(size)
+    )
 end
 
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
