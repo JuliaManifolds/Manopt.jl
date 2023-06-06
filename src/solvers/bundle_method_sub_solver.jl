@@ -1,7 +1,7 @@
 function bundle_method_sub_solver(
     M::A, bms::Union{BundleMethodState,ProxBundleMethodState}
 ) where {A<:AbstractManifold}
-    d = length(bms.lin_errors)
+    d = length(bms.approx_errors)
     if typeof(bms) === ProxBundleMethodState # Use multiple dispatch later
         H =
             1 / bms.μ * [
@@ -16,7 +16,7 @@ function bundle_method_sub_solver(
     end
     B = reshape(ones(d), 1, d)
     qm = QuadraticModel(
-        bms.lin_errors,
+        bms.approx_errors,
         tril(H);
         A=B,
         lcon=[1.0],
