@@ -146,7 +146,7 @@ end
 
 function MOI.eval_objective_gradient(model::Optimizer, grad, x)
     if model.sense == MOI.FEASIBILITY_SENSE
-        grad .= zero(eltype(y))
+        grad .= zero(eltype(grad))
     elseif model.nlp_data.has_objective
         MOI.eval_objective_gradient(model.nlp_data.evaluator, grad, x)
     else
