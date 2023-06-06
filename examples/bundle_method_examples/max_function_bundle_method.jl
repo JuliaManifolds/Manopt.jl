@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Random, QuadraticModels, RipQP
 include("level_set_diameter.jl")
 function check_maxfunc(M)
-    println(manifold_dimension(M))
+    println(M)
     # for i in 1:10
     # println("Test $i")
     l = Int(1e2)
@@ -40,7 +40,7 @@ function check_maxfunc(M)
         F3,
         subgradF3,
         p0;
-        δ=2.,
+        δ=10.,#sqrt(2),
         diam=.8,
         stopping_criterion=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
         debug=[
@@ -61,18 +61,55 @@ function check_maxfunc(M)
         F3,
         subgradF3,
         p0;
-        stopping_criterion=StopWhenSubgradientNormLess(1e-8) | StopAfterIteration(5000),
+        stopping_criterion=StopWhenSubgradientNormLess(1e-4) | StopAfterIteration(5000),
         debug=["    ", :Iteration, (:Cost, "F(p): %1.9e"), "\n", :Stop, 1000],
     )
-    println("Distance between p0 and b: $(distance(M, bundle_min, p0))")
-    println("Distance between minima: $(distance(M, bundle_min, subgrad_min))")
+
+    prox_min = prox_bundle_method(
+        M,
+        F3,
+        subgradF3,
+        p0;
+        δ=.0,
+        μ=1.,
+        stopping_criterion=StopWhenProxBundleLess(1e-8) | StopAfterIteration(5000),
+        debug=[
+            :Iteration,
+            :Stop,
+            (:Cost, "F(p): %1.16f "),
+            (:ν, "ν: %1.16f "),
+            (:c, "c: %1.16f "),
+            (:μ, "μ: %1.16f "),
+            (:η, "η: %1.16f "),
+            :Stop,
+            1000,
+            "\n",
+        ],
+    )
+
+    println("Distance between p0 and bundle_min: $(distance(M, bundle_min, p0))")
+    println("Distance between bundle_min and subgrad_min: $(distance(M, bundle_min, subgrad_min))")
+    println("Distance between bundle_min and prox_min: $(distance(M, bundle_min, subgrad_min))")
     println(
         "$(F3(M, bundle_min) < F3(M, subgrad_min) ? "F3(bundle_min) < F3(subgrad_min)" : "F3(bundle_min) ≥ F3(subgrad_min)")",
     )
-    return println(
+    println(
         "    |F3(bundle_min) - F3(subgrad_min)| = $(abs(F3(M, bundle_min) - F3(M, subgrad_min)))",
     )
-    # end
+    println(
+        "$(F3(M, prox_min) < F3(M, subgrad_min) ? "F3(prox_min) < F3(subgrad_min)" : "F3(prox_min) ≥ F3(subgrad_min)")",
+    )
+    println(
+        "    |F3(prox_min) - F3(subgrad_min)| = $(abs(F3(M, prox_min) - F3(M, subgrad_min)))",
+    )
+    println(
+        "$(F3(M, prox_min) < F3(M, bundle_min) ? "F3(prox_min) < F3(bundle_min)" : "F3(prox_min) ≥ F3(bundle_min)")",
+    )
+    return println(
+        "    |F3(prox_min) - F3(bundle_min)| = $(abs(F3(M, prox_min) - F3(M, bundle_min))) \n\n",
+    )
 end
 
-check_maxfunc(SymmetricPositiveDefinite(2))
+check_maxfunc(SymmetricPositiveDefinite(7))
+check_maxfunc(SymmetricPositiveDefinite(37))
+check_maxfunc(Hyperbolic(37))
