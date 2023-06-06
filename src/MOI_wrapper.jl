@@ -1,13 +1,11 @@
 import MathOptInterface as MOI
-import ManifoldsBase
-import Manifolds
+using ManifoldsBase: ManifoldsBase
+using Manifolds: Manifolds
 
 include("qp_block_data.jl")
 
 const _FUNCTIONS = Union{
-    MOI.VariableIndex,
-    MOI.ScalarAffineFunction{Float64},
-    MOI.ScalarQuadraticFunction{Float64},
+    MOI.VariableIndex,MOI.ScalarAffineFunction{Float64},MOI.ScalarQuadraticFunction{Float64}
 }
 
 struct VectorizedManifold{M} <: MOI.AbstractVectorSet
@@ -44,10 +42,10 @@ end
 
 function MOI.is_empty(model::Optimizer)
     return iszero(model.num_variables) &&
-        isnothing(model.manifold) &&
-        isempty(model.variable_primal_start) &&
-        model.nlp_data.evaluator isa _EmptyNLPEvaluator &&
-        model.sense == MOI.FEASIBILITY_SENSE
+           isnothing(model.manifold) &&
+           isempty(model.variable_primal_start) &&
+           model.nlp_data.evaluator isa _EmptyNLPEvaluator &&
+           model.sense == MOI.FEASIBILITY_SENSE
 end
 
 function MOI.empty!(model::Optimizer)
@@ -57,7 +55,7 @@ function MOI.empty!(model::Optimizer)
     model.sense = MOI.FEASIBILITY_SENSE
     model.nlp_data = MOI.NLPBlockData([], _EmptyNLPEvaluator(), false)
     model.qp_data = QPBlockData{Float64}()
-    return
+    return nothing
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "Manopt"
@@ -68,20 +66,18 @@ function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
     return MOI.default_copy_to(dest, src)
 end
 
-function MOI.supports_add_constrained_variables(
-    ::Optimizer,
-    ::Type{<:VectorizedManifold},
-)
+function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
     return true
 end
 
-function MOI.add_constrained_variables(
-    model::Optimizer,
-    set::VectorizedManifold,
-)
+function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
-        throw(AddConstraintNotAllowed{F,typeof(set)}("Only one manifold allowed, variables in `$(model.manifold)` have already been added."))
+        throw(
+            AddConstraintNotAllowed{F,typeof(set)}(
+                "Only one manifold allowed, variables in `$(model.manifold)` have already been added.",
+            ),
+        )
     end
     model.manifold = set.manifold
     n = MOI.dimension(set)
@@ -97,11 +93,7 @@ function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
     return 1 <= vi.value <= model.num_variables
 end
 
-function MOI.supports(
-    ::Optimizer,
-    ::MOI.VariablePrimalStart,
-    ::Type{MOI.VariableIndex},
-)
+function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
     return true
 end
 
@@ -113,46 +105,38 @@ function MOI.set(
 )
     MOI.throw_if_not_valid(model, vi)
     model.variable_primal_start[vi.value] = value
-    return
+    return nothing
 end
 
 MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
 
 function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
     model.nlp_data = nlp_data
-    return
+    return nothing
 end
 
 function MOI.supports(
-    ::Optimizer,
-    ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction{F}},
+    ::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction{F}}
 ) where {F<:_FUNCTIONS}
     return true
 end
 
-function MOI.set(
-    model::Optimizer,
-    ::MOI.ObjectiveSense,
-    sense::MOI.OptimizationSense,
-)
+function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
-    return
+    return nothing
 end
 
 function MOI.get(
-    model::Optimizer,
-    attr::Union{MOI.ObjectiveFunctionType,MOI.ObjectiveFunction},
+    model::Optimizer, attr::Union{MOI.ObjectiveFunctionType,MOI.ObjectiveFunction}
 )
     return MOI.get(model.qp_data, attr)
 end
 
 function MOI.set(
-    model::Optimizer,
-    attr::MOI.ObjectiveFunction{F},
-    func::F,
+    model::Optimizer, attr::MOI.ObjectiveFunction{F}, func::F
 ) where {F<:_FUNCTIONS}
     MOI.set(model.qp_data, attr, func)
-    return
+    return nothing
 end
 
 function MOI.eval_objective(model::Optimizer, x)
@@ -172,7 +156,7 @@ function MOI.eval_objective_gradient(model::Optimizer, grad, x)
     else
         MOI.eval_objective_gradient(model.qp_data, grad, x)
     end
-    return
+    return nothing
 end
 
 function MOI.optimize!(model::Optimizer)
@@ -181,8 +165,7 @@ function MOI.optimize!(model::Optimizer)
             error("No starting value specified for `$i`th variable.")
         else
             model.variable_primal_start[i]
-        end
-        for i in eachindex(model.variable_primal_start)
+        end for i in eachindex(model.variable_primal_start)
     ]
     eval_f_cb(M, x) = MOI.eval_objective(model, x)
     # TODO: this is the Euclidean gradient in the ambient space,
@@ -193,11 +176,13 @@ function MOI.optimize!(model::Optimizer)
         return grad_f
     end
     MOI.initialize(model.nlp_data.evaluator, [:Grad])
-    model.solution = Manopt.gradient_descent(model.manifold, eval_f_cb, eval_grad_f_cb, start)
-    return
+    model.solution = Manopt.gradient_descent(
+        model.manifold, eval_f_cb, eval_grad_f_cb, start
+    )
+    return nothing
 end
 
-import JuMP
+using JuMP: JuMP
 
 # TODO reshaping
 
@@ -233,11 +218,7 @@ MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 
 MOI.get(::Optimizer, ::MOI.RawStatusString) = "TODO"
 
-function MOI.get(
-    model::Optimizer,
-    attr::MOI.VariablePrimal,
-    vi::MOI.VariableIndex,
-)
+function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)
     return model.solution[vi.value]

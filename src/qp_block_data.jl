@@ -30,12 +30,7 @@ _function_info(::MOI.VariableIndex) = _kFunctionTypeVariableIndex
 _function_info(::MOI.ScalarAffineFunction) = _kFunctionTypeScalarAffine
 _function_info(::MOI.ScalarQuadraticFunction) = _kFunctionTypeScalarQuadratic
 
-@enum(
-    _BoundType,
-    _kBoundTypeLessThan,
-    _kBoundTypeGreaterThan,
-    _kBoundTypeEqualTo,
-)
+@enum(_BoundType, _kBoundTypeLessThan, _kBoundTypeGreaterThan, _kBoundTypeEqualTo,)
 
 _set_info(s::MOI.LessThan) = _kBoundTypeLessThan, -Inf, s.upper
 _set_info(s::MOI.GreaterThan) = _kBoundTypeGreaterThan, s.lower, Inf
@@ -87,9 +82,7 @@ function _value(variable::MOI.VariableIndex, x::Vector, p::Dict)
 end
 
 function eval_function(
-    f::MOI.ScalarQuadraticFunction{T},
-    x::Vector{T},
-    p::Dict{Int64,T},
+    f::MOI.ScalarQuadraticFunction{T}, x::Vector{T}, p::Dict{Int64,T}
 )::T where {T}
     y = f.constant
     for term in f.affine_terms
@@ -108,10 +101,7 @@ function eval_function(
 end
 
 function eval_dense_gradient(
-    ∇f::Vector{T},
-    f::MOI.ScalarQuadraticFunction{T},
-    x::Vector{T},
-    p::Dict{Int64,T},
+    ∇f::Vector{T}, f::MOI.ScalarQuadraticFunction{T}, x::Vector{T}, p::Dict{Int64,T}
 )::Nothing where {T}
     for term in f.affine_terms
         if !_is_parameter(term.variable)
@@ -128,7 +118,7 @@ function eval_dense_gradient(
             ∇f[term.variable_2.value] += term.coefficient * v
         end
     end
-    return
+    return nothing
 end
 
 function sparse_gradient_structure(f::MOI.ScalarQuadraticFunction{T}) where {T}
@@ -150,10 +140,7 @@ function sparse_gradient_structure(f::MOI.ScalarQuadraticFunction{T}) where {T}
 end
 
 function eval_sparse_gradient(
-    ∇f::AbstractVector{T},
-    f::MOI.ScalarQuadraticFunction{T},
-    x::Vector{T},
-    p::Dict{Int64,T},
+    ∇f::AbstractVector{T}, f::MOI.ScalarQuadraticFunction{T}, x::Vector{T}, p::Dict{Int64,T}
 )::Int where {T}
     i = 0
     for term in f.affine_terms
@@ -191,9 +178,7 @@ function sparse_hessian_structure(f::MOI.ScalarQuadraticFunction{T}) where {T}
 end
 
 function eval_sparse_hessian(
-    ∇²f::AbstractVector{T},
-    f::MOI.ScalarQuadraticFunction{T},
-    σ::T,
+    ∇²f::AbstractVector{T}, f::MOI.ScalarQuadraticFunction{T}, σ::T
 )::Int where {T}
     i = 0
     for term in f.quadratic_terms
@@ -209,20 +194,13 @@ end
 Base.length(block::QPBlockData) = length(block.bound_type)
 
 function MOI.set(
-    block::QPBlockData{T},
-    ::MOI.ObjectiveFunction{F},
-    f::F,
+    block::QPBlockData{T}, ::MOI.ObjectiveFunction{F}, f::F
 ) where {
-    T,
-    F<:Union{
-        MOI.VariableIndex,
-        MOI.ScalarAffineFunction{T},
-        MOI.ScalarQuadraticFunction{T},
-    },
+    T,F<:Union{MOI.VariableIndex,MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}}
 }
     block.objective = convert(MOI.ScalarQuadraticFunction{T}, f)
     block.objective_function_type = _function_info(f)
-    return
+    return nothing
 end
 
 function MOI.get(block::QPBlockData{T}, ::MOI.ObjectiveFunctionType) where {T}
@@ -233,10 +211,7 @@ function MOI.get(block::QPBlockData{T}, ::MOI.ObjectiveFunction{F}) where {T,F}
     return convert(F, block.objective)
 end
 
-function MOI.get(
-    block::QPBlockData{T},
-    ::MOI.ListOfConstraintTypesPresent,
-) where {T}
+function MOI.get(block::QPBlockData{T}, ::MOI.ListOfConstraintTypesPresent) where {T}
     constraints = Set{Tuple{Type,Type}}()
     for i in 1:length(block)
         F = _function_type_to_set(T, block.function_type[i])
@@ -247,8 +222,7 @@ function MOI.get(
 end
 
 function MOI.is_valid(
-    block::QPBlockData{T},
-    ci::MOI.ConstraintIndex{F,S},
+    block::QPBlockData{T}, ci::MOI.ConstraintIndex{F,S}
 ) where {
     T,
     F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
@@ -258,8 +232,7 @@ function MOI.is_valid(
 end
 
 function MOI.get(
-    block::QPBlockData{T},
-    ::MOI.ListOfConstraintIndices{F,S},
+    block::QPBlockData{T}, ::MOI.ListOfConstraintIndices{F,S}
 ) where {
     T,
     F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
@@ -278,8 +251,7 @@ function MOI.get(
 end
 
 function MOI.get(
-    block::QPBlockData{T},
-    ::MOI.NumberOfConstraints{F,S},
+    block::QPBlockData{T}, ::MOI.NumberOfConstraints{F,S}
 ) where {
     T,
     F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
@@ -304,17 +276,13 @@ function MOI.add_constraint(
 end
 
 function MOI.get(
-    block::QPBlockData{T},
-    ::MOI.ConstraintFunction,
-    c::MOI.ConstraintIndex{F,S},
+    block::QPBlockData{T}, ::MOI.ConstraintFunction, c::MOI.ConstraintIndex{F,S}
 ) where {T,F,S}
     return convert(F, block.constraints[c.value])
 end
 
 function MOI.get(
-    block::QPBlockData{T},
-    ::MOI.ConstraintSet,
-    c::MOI.ConstraintIndex{F,S},
+    block::QPBlockData{T}, ::MOI.ConstraintSet, c::MOI.ConstraintIndex{F,S}
 ) where {T,F,S}
     row = c.value
     if block.bound_type[row] == _kBoundTypeEqualTo
@@ -335,7 +303,7 @@ function MOI.set(
 ) where {T,F}
     row = c.value
     block.g_U[row] = set.upper
-    return
+    return nothing
 end
 
 function MOI.set(
@@ -346,7 +314,7 @@ function MOI.set(
 ) where {T,F}
     row = c.value
     block.g_L[row] = set.lower
-    return
+    return nothing
 end
 
 function MOI.set(
@@ -358,53 +326,41 @@ function MOI.set(
     row = c.value
     block.g_L[row] = set.value
     block.g_U[row] = set.value
-    return
+    return nothing
 end
 
 function MOI.get(
-    block::QPBlockData{T},
-    ::MOI.ConstraintDualStart,
-    c::MOI.ConstraintIndex{F,S},
+    block::QPBlockData{T}, ::MOI.ConstraintDualStart, c::MOI.ConstraintIndex{F,S}
 ) where {T,F,S}
     return block.mult_g[c.value]
 end
 
 function MOI.set(
-    block::QPBlockData{T},
-    ::MOI.ConstraintDualStart,
-    c::MOI.ConstraintIndex{F,S},
-    value,
+    block::QPBlockData{T}, ::MOI.ConstraintDualStart, c::MOI.ConstraintIndex{F,S}, value
 ) where {T,F,S}
     block.mult_g[c.value] = value
-    return
+    return nothing
 end
 
-function MOI.eval_objective(
-    block::QPBlockData{T},
-    x::AbstractVector{T},
-) where {T}
+function MOI.eval_objective(block::QPBlockData{T}, x::AbstractVector{T}) where {T}
     return eval_function(block.objective, x, block.parameters)
 end
 
 function MOI.eval_objective_gradient(
-    block::QPBlockData{T},
-    ∇f::AbstractVector{T},
-    x::AbstractVector{T},
+    block::QPBlockData{T}, ∇f::AbstractVector{T}, x::AbstractVector{T}
 ) where {T}
     ∇f .= zero(T)
     eval_dense_gradient(∇f, block.objective, x, block.parameters)
-    return
+    return nothing
 end
 
 function MOI.eval_constraint(
-    block::QPBlockData{T},
-    g::AbstractVector{T},
-    x::AbstractVector{T},
+    block::QPBlockData{T}, g::AbstractVector{T}, x::AbstractVector{T}
 ) where {T}
     for i in 1:length(block.constraints)
         g[i] = eval_function(block.constraints[i], x, block.parameters)
     end
-    return
+    return nothing
 end
 
 function MOI.jacobian_structure(block::QPBlockData)
@@ -418,9 +374,7 @@ function MOI.jacobian_structure(block::QPBlockData)
 end
 
 function MOI.eval_constraint_jacobian(
-    block::QPBlockData{T},
-    J::AbstractVector{T},
-    x::AbstractVector{T},
+    block::QPBlockData{T}, J::AbstractVector{T}, x::AbstractVector{T}
 ) where {T}
     i = 1
     for constraint in block.constraints
