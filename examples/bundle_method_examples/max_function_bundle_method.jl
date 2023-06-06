@@ -32,17 +32,28 @@ function check_maxfunc(M)
 
     p0 = data[1]
 
-    diam = level_set_diameter(M, F3, subgradF3, p0)
-    println("Level set diameter = $diam")
+    # diam = level_set_diameter(M, F3, subgradF3, p0)
+    # println("Level set diameter = $diam")
 
     bundle_min = bundle_method(
         M,
         F3,
         subgradF3,
         p0;
-        diam=diam,
-        stopping_criterion=StopWhenBundleLess(1e-10) | StopAfterIteration(5000),
-        debug=["    ", :Iteration, (:Cost, "F(p): %1.13e"), "\n", :Stop, 100],
+        δ=2.,
+        diam=.8,
+        stopping_criterion=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
+        debug=[
+            :Iteration,
+            :Stop,
+            (:Cost, "F(p): %1.16f "),
+            (:ξ, "ξ: %1.16f "),
+            (:ε, "ε: %1.16f "),
+            (:diam, "diam: %1.16f "),
+            :Stop,
+            1000,
+            "\n",
+        ],
     )
 
     subgrad_min = subgradient_method(
@@ -53,7 +64,7 @@ function check_maxfunc(M)
         stopping_criterion=StopWhenSubgradientNormLess(1e-8) | StopAfterIteration(5000),
         debug=["    ", :Iteration, (:Cost, "F(p): %1.9e"), "\n", :Stop, 1000],
     )
-
+    println("Distance between p0 and b: $(distance(M, bundle_min, p0))")
     println("Distance between minima: $(distance(M, bundle_min, subgrad_min))")
     println(
         "$(F3(M, bundle_min) < F3(M, subgrad_min) ? "F3(bundle_min) < F3(subgrad_min)" : "F3(bundle_min) ≥ F3(subgrad_min)")",
