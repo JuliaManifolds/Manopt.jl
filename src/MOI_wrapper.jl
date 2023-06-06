@@ -1,6 +1,7 @@
+import LinearAlgebra
 import MathOptInterface as MOI
-using ManifoldsBase: ManifoldsBase
-using Manifolds: Manifolds
+import ManifoldsBase
+import ManifoldDiff
 
 include("qp_block_data.jl")
 
@@ -11,8 +12,8 @@ const _FUNCTIONS = Union{
 struct VectorizedManifold{M} <: MOI.AbstractVectorSet
     manifold::M
 end
-function MOI.dimension(::VectorizedManifold{<:Manifolds.Sphere{N}}) where {N}
-    return N + 1
+function MOI.dimension(set::VectorizedManifold)
+    return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
 struct _EmptyNLPEvaluator <: MOI.AbstractNLPEvaluator end
@@ -20,7 +21,6 @@ MOI.features_available(::_EmptyNLPEvaluator) = [:Grad, :Jac, :Hess]
 MOI.initialize(::_EmptyNLPEvaluator, ::Any) = nothing
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
-    num_variables::Int
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
     variable_primal_start::Vector{Union{Nothing,Float64}}
     solution::Union{Nothing,Vector{Float64}}
@@ -29,7 +29,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     qp_data::QPBlockData{Float64}
     function Optimizer()
         return new(
-            0,
             nothing,
             Union{Nothing,Float64}[],
             nothing,
@@ -41,15 +40,13 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 function MOI.is_empty(model::Optimizer)
-    return iszero(model.num_variables) &&
-           isnothing(model.manifold) &&
+    return isnothing(model.manifold) &&
            isempty(model.variable_primal_start) &&
            model.nlp_data.evaluator isa _EmptyNLPEvaluator &&
            model.sense == MOI.FEASIBILITY_SENSE
 end
 
 function MOI.empty!(model::Optimizer)
-    model.num_variables = 0
     model.manifold = nothing
     empty!(model.variable_primal_start)
     model.sense = MOI.FEASIBILITY_SENSE
@@ -81,7 +78,6 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
     end
     model.manifold = set.manifold
     n = MOI.dimension(set)
-    model.num_variables = n
     v = MOI.VariableIndex.(1:n)
     for _ in 1:n
         push!(model.variable_primal_start, nothing)
@@ -90,7 +86,7 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
 end
 
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
-    return 1 <= vi.value <= model.num_variables
+    return !isnothing(model.manifold) && 1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
 end
 
 function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
@@ -150,7 +146,7 @@ end
 
 function MOI.eval_objective_gradient(model::Optimizer, grad, x)
     if model.sense == MOI.FEASIBILITY_SENSE
-        grad .= zero(eltype(grad))
+        grad .= zero(eltype(y))
     elseif model.nlp_data.has_objective
         MOI.eval_objective_gradient(model.nlp_data.evaluator, grad, x)
     else
@@ -167,13 +163,20 @@ function MOI.optimize!(model::Optimizer)
             model.variable_primal_start[i]
         end for i in eachindex(model.variable_primal_start)
     ]
-    eval_f_cb(M, x) = MOI.eval_objective(model, x)
-    # TODO: this is the Euclidean gradient in the ambient space,
-    #       how do we project it ?
+    function eval_f_cb(M, x)
+        obj = MOI.eval_objective(model, x)
+        if model.sense == MOI.MAX_SENSE
+            obj = -obj
+        end
+        return obj
+    end
     function eval_grad_f_cb(M, x)
         grad_f = zeros(length(x))
         MOI.eval_objective_gradient(model, grad_f, x)
-        return grad_f
+        if model.sense == MOI.MAX_SENSE
+            LinearAlgebra.rmul!(grad_f, -1)
+        end
+        return ManifoldDiff.riemannian_gradient(model.manifold, x, grad_f)
     end
     MOI.initialize(model.nlp_data.evaluator, [:Grad])
     model.solution = Manopt.gradient_descent(
@@ -184,10 +187,21 @@ end
 
 using JuMP: JuMP
 
-# TODO reshaping
+struct ArrayShape{N} <: JuMP.AbstractShape
+    size::NTuple{N,Int}
+end
 
-function JuMP.build_variable(err::Function, func, m::ManifoldsBase.AbstractManifold)
-    return JuMP.build_variable(err, func, VectorizedManifold(m))
+function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
+    return vec(array)
+end
+
+function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
+    return reshape(vector, shape.size)
+end
+
+function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
+    size = ManifoldsBase.representation_size(m)
+    return JuMP.VariablesConstrainedOnCreation(func, VectorizedManifold(m), ArrayShape(size))
 end
 
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
