@@ -65,53 +65,60 @@ function check_maxfunc(M)
         debug=["    ", :Iteration, (:Cost, "F(p): %1.9e"), "\n", :Stop, 1000],
     )
 
-    prox_min = prox_bundle_method(
-        M,
-        F3,
-        subgradF3,
-        p0;
-        δ=.0,
-        μ=1.,
-        stopping_criterion=StopWhenProxBundleLess(1e-8) | StopAfterIteration(5000),
-        debug=[
-            :Iteration,
-            :Stop,
-            (:Cost, "F(p): %1.16f "),
-            (:ν, "ν: %1.16f "),
-            (:c, "c: %1.16f "),
-            (:μ, "μ: %1.16f "),
-            (:η, "η: %1.16f "),
-            :Stop,
-            1000,
-            "\n",
-        ],
-    )
-
+    try
+        prox_min = prox_bundle_method(
+            M,
+            F3,
+            subgradF3,
+            p0;
+            δ=.0,
+            μ=1.,
+            stopping_criterion=StopWhenProxBundleLess(1e-8) | StopAfterIteration(5000),
+            debug=[
+                :Iteration,
+                :Stop,
+                (:Cost, "F(p): %1.16f "),
+                (:ν, "ν: %1.16f "),
+                (:c, "c: %1.16f "),
+                (:μ, "μ: %1.16f "),
+                (:η, "η: %1.16f "),
+                :Stop,
+                1000,
+                "\n",
+            ],
+        )
+    catch y
+        println("The prox_bundle_method got stuck at the subsolver level.")
+    end
     println("Distance between p0 and bundle_min: $(distance(M, bundle_min, p0))")
     println("Distance between bundle_min and subgrad_min: $(distance(M, bundle_min, subgrad_min))")
-    println("Distance between bundle_min and prox_min: $(distance(M, bundle_min, subgrad_min))")
     println(
         "$(F3(M, bundle_min) < F3(M, subgrad_min) ? "F3(bundle_min) < F3(subgrad_min)" : "F3(bundle_min) ≥ F3(subgrad_min)")",
-    )
+        )
     println(
         "    |F3(bundle_min) - F3(subgrad_min)| = $(abs(F3(M, bundle_min) - F3(M, subgrad_min)))",
-    )
-    println(
-        "$(F3(M, prox_min) < F3(M, subgrad_min) ? "F3(prox_min) < F3(subgrad_min)" : "F3(prox_min) ≥ F3(subgrad_min)")",
-    )
-    println(
-        "    |F3(prox_min) - F3(subgrad_min)| = $(abs(F3(M, prox_min) - F3(M, subgrad_min)))",
-    )
-    println(
-        "$(F3(M, prox_min) < F3(M, bundle_min) ? "F3(prox_min) < F3(bundle_min)" : "F3(prox_min) ≥ F3(bundle_min)")",
-    )
-    return println(
+        )
+    println("Distance between bundle_min and prox_min: $(distance(M, bundle_min, subgrad_min))")
+    try
+        println(
+            "$(F3(M, prox_min) < F3(M, subgrad_min) ? "F3(prox_min) < F3(subgrad_min)" : "F3(prox_min) ≥ F3(subgrad_min)")",
+        )
+        println(
+            "    |F3(prox_min) - F3(subgrad_min)| = $(abs(F3(M, prox_min) - F3(M, subgrad_min)))",
+        )
+        println(
+            "$(F3(M, prox_min) < F3(M, bundle_min) ? "F3(prox_min) < F3(bundle_min)" : "F3(prox_min) ≥ F3(bundle_min)")",
+        )
+        println(
         "    |F3(prox_min) - F3(bundle_min)| = $(abs(F3(M, prox_min) - F3(M, bundle_min))) \n\n",
-    )
+        )
+    catch y
+        println("prox_min is not defined")
+    end
 end
 
 # check_maxfunc(SymmetricPositiveDefinite(7)) # prox_bundle_method yields a lower minimum (by 1e-11), but takes 50 more iterations
 # check_maxfunc(Hyperbolic(2)) # bundle_method is by far better, whereas for bigger dimensions the prox_bundle_method errors at the subsolver level: AssertionError: all(pt0.x .> fd.lvar) && all(pt0.x .< fd.uvar)
 
-check_maxfunc(SymmetricPositiveDefinite(37)) # bundle_method is much faster: I'm still waiting for the prox_bundle_method to stop
-# check_maxfunc(Hyperbolic(37))
+# check_maxfunc(SymmetricPositiveDefinite(37)) # bundle_method is much faster: I'm still waiting for the prox_bundle_method to stop
+check_maxfunc(Hyperbolic(37))
