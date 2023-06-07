@@ -339,7 +339,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         #                 bms.vector_transport_method,
         #             ),
         #         )
-        bms.μ += bms.δ * bms.μ
+        # bms.μ += bms.δ * bms.μ
+        (length(bms.bundle) < bms.bundle_size) && (bms.μ = (π / (4 * i))^-1)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     l = length(bms.bundle)
