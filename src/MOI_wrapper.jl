@@ -109,7 +109,7 @@ function MOI.set(
     MOI.throw_if_not_valid(model, vi)
     model.variable_primal_start[vi.value] = value
     model.state = nothing
-    return
+    return nothing
 end
 
 MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
@@ -129,7 +129,7 @@ end
 
 function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
-    return
+    return nothing
 end
 
 function MOI.get(
@@ -144,7 +144,7 @@ function MOI.set(
     MOI.set(model.qp_data, attr, func)
     model.problem = nothing
     model.state = nothing
-    return
+    return nothing
 end
 
 function MOI.eval_objective(model::Optimizer, x)
@@ -191,10 +191,7 @@ function MOI.optimize!(model::Optimizer)
         return ManifoldDiff.riemannian_gradient(model.manifold, x, grad_f)
     end
     MOI.initialize(model.nlp_data.evaluator, [:Grad])
-    mgo = Manopt.ManifoldGradientObjective(
-        eval_f_cb,
-        eval_grad_f_cb,
-    )
+    mgo = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
     dmgo = decorate_objective!(model.manifold, mgo)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
     s = GradientDescentState(model.manifold, start)
