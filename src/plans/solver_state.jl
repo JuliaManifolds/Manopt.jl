@@ -108,10 +108,10 @@ _get_solver_return(s::AbstractManoptSolverState, ::Val{false}) = get_solver_resu
 _get_solver_return(s::AbstractManoptSolverState, ::Val{true}) = get_solver_return(s.state)
 get_solver_return(s::ReturnSolverState) = s.state
 function get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
-    #resolve objevctive first
+    #resolve objective first
     return _get_solver_return(o, s, dispatch_objective_decorator(o))
 end
-#carefully undecorate both and check whether a solver/obejctive return happens
+#carefully undecorate both and check whether a solver/objective return happens
 function _get_solver_return(o::AbstractManifoldObjective, s, ::Val{true})
     return get_solver_return(get_objective(o, false), s)
 end
