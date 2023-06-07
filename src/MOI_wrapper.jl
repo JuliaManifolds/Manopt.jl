@@ -22,16 +22,18 @@ MOI.initialize(::_EmptyNLPEvaluator, ::Any) = nothing
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
+    problem::Union{Nothing,AbstractManoptProblem}
+    state::Union{Nothing,AbstractManoptSolverState}
     variable_primal_start::Vector{Union{Nothing,Float64}}
-    solution::Union{Nothing,Vector{Float64}}
     sense::MOI.OptimizationSense
     nlp_data::MOI.NLPBlockData
     qp_data::QPBlockData{Float64}
     function Optimizer()
         return new(
             nothing,
-            Union{Nothing,Float64}[],
             nothing,
+            nothing,
+            Union{Nothing,Float64}[],
             MOI.FEASIBILITY_SENSE,
             MOI.NLPBlockData([], _EmptyNLPEvaluator(), false),
             QPBlockData{Float64}(),
@@ -48,6 +50,8 @@ end
 
 function MOI.empty!(model::Optimizer)
     model.manifold = nothing
+    model.problem = nothing
+    model.state = nothing
     empty!(model.variable_primal_start)
     model.sense = MOI.FEASIBILITY_SENSE
     model.nlp_data = MOI.NLPBlockData([], _EmptyNLPEvaluator(), false)
@@ -77,6 +81,8 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
         )
     end
     model.manifold = set.manifold
+    model.problem = nothing
+    model.state = nothing
     n = MOI.dimension(set)
     v = MOI.VariableIndex.(1:n)
     for _ in 1:n
@@ -102,13 +108,16 @@ function MOI.set(
 )
     MOI.throw_if_not_valid(model, vi)
     model.variable_primal_start[vi.value] = value
-    return nothing
+    model.state = nothing
+    return
 end
 
 MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
 
 function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
     model.nlp_data = nlp_data
+    model.problem = nothing
+    model.state = nothing
     return nothing
 end
 
@@ -120,7 +129,7 @@ end
 
 function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
-    return nothing
+    return
 end
 
 function MOI.get(
@@ -133,7 +142,9 @@ function MOI.set(
     model::Optimizer, attr::MOI.ObjectiveFunction{F}, func::F
 ) where {F<:_FUNCTIONS}
     MOI.set(model.qp_data, attr, func)
-    return nothing
+    model.problem = nothing
+    model.state = nothing
+    return
 end
 
 function MOI.eval_objective(model::Optimizer, x)
@@ -180,9 +191,15 @@ function MOI.optimize!(model::Optimizer)
         return ManifoldDiff.riemannian_gradient(model.manifold, x, grad_f)
     end
     MOI.initialize(model.nlp_data.evaluator, [:Grad])
-    model.solution = Manopt.gradient_descent(
-        model.manifold, eval_f_cb, eval_grad_f_cb, start
+    mgo = Manopt.ManifoldGradientObjective(
+        eval_f_cb,
+        eval_grad_f_cb,
     )
+    dmgo = decorate_objective!(model.manifold, mgo)
+    model.problem = DefaultManoptProblem(model.manifold, dmgo)
+    s = GradientDescentState(model.manifold, start)
+    model.state = decorate_state!(s)
+    solve!(model.problem, model.state)
     return nothing
 end
 
@@ -208,7 +225,7 @@ function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold
 end
 
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
-    if isnothing(model.solution)
+    if isnothing(model.state)
         return MOI.OPTIMIZE_NOT_CALLED
     else
         return MOI.LOCALLY_SOLVED
@@ -216,7 +233,7 @@ function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
 end
 
 function MOI.get(model::Optimizer, ::MOI.ResultCount)
-    if isnothing(model.solution)
+    if isnothing(model.state)
         return 0
     else
         return 1
@@ -224,7 +241,7 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
 end
 
 function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
-    if isnothing(model.solution)
+    if isnothing(model.state)
         return MOI.NO_SOLUTION
     else
         return MOI.FEASIBLE_POINT
@@ -233,10 +250,13 @@ end
 
 MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 
-MOI.get(::Optimizer, ::MOI.RawStatusString) = "TODO"
+function MOI.get(model::Optimizer, ::MOI.RawStatusString)
+    return status_summary(model.state)
+end
 
 function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)
-    return model.solution[vi.value]
+    solution = get_solver_return(get_objective(model.problem), model.state)
+    return solution[vi.value]
 end
