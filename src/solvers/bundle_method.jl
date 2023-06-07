@@ -70,7 +70,7 @@ mutable struct BundleMethodState{
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         filter1::R=eps(Float64),
         filter2::R=eps(Float64),
-        δ::R=0.0,
+        δ::R=√2,
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -188,7 +188,7 @@ function bundle_method!(
     diam=1.0,
     filter1=eps(Float64),
     filter2=eps(Float64),
-    δ=0.0,
+    δ=√2,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -259,9 +259,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    if !isempty(findall(λj -> λj ≤ bms.filter1, bms.λ))
+    v = findall(λj -> λj ≤ bms.filter1, bms.λ)
+    if !isempty(v)
         y = copy(M, bms.bundle[1][1])
-        deleteat!(bms.bundle, findall(λj -> λj ≤ bms.filter1, bms.λ))
+        deleteat!(bms.bundle, v)
         s =
            (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
            distance(M, bms.bundle[1][1], y)
