@@ -16,11 +16,15 @@ function test_sphere()
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test dual_status(model) == MOI.NO_SOLUTION
     @test value.(x) ≈ -inv(√3) * ones(3) rtol = 1e-2
+    @test raw_status(model) isa String
+    @test raw_status(model)[end] != '\n'
 
     @objective(model, Max, sum(x))
     set_start_value.(x, start)
     optimize!(model)
     @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
+    @test raw_status(model) isa String
+    @test raw_status(model)[end] != '\n'
 
     # Creating a model directly with `@NLobjective` wouldn't work
     # because of https://github.com/jump-dev/MathOptInterface.jl/blob/32dbf6056b0b5fb9d44dc583ecc8249f6fd703ea/src/Utilities/copy.jl#L485-L500
@@ -31,6 +35,8 @@ function test_sphere()
     set_start_value.(x, start)
     optimize!(model)
     @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
+    @test raw_status(model) isa String
+    @test raw_status(model)[end] != '\n'
 end
 
 test_sphere()

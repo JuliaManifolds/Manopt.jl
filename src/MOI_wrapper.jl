@@ -248,7 +248,9 @@ end
 MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 
 function MOI.get(model::Optimizer, ::MOI.RawStatusString)
-    return status_summary(model.state)
+    # `strip` removes the `\n` at the end and returns an `AbstractString`
+    # Since MOI wants a `String`, we pass it through `string`
+    return string(strip(get_reason(model.state)))
 end
 
 function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
