@@ -39,4 +39,35 @@ function test_sphere()
     @test raw_status(model)[end] != '\n'
 end
 
-test_sphere()
+@testset "JuMP tests" begin
+    test_sphere()
+end
+
+function test_runtests()
+    optimizer = Manopt.Optimizer()
+    config = MOI.Test.Config(
+        exclude = Any[
+            MOI.ListOfModelAttributesSet,
+        ],
+    )
+    MOI.Test.runtests(
+        optimizer,
+        config,
+        exclude = String[
+            # See https://github.com/jump-dev/MathOptInterface.jl/pull/2195
+            "test_model_copy_to_UnsupportedConstraint",
+            "test_model_copy_to_UnsupportedAttribute",
+            "test_model_ScalarFunctionConstantNotZero",
+            # See https://github.com/jump-dev/MathOptInterface.jl/pull/2196/
+            "test_objective_ScalarQuadraticFunction_in_ListOfModelAttributesSet",
+            "test_objective_ScalarAffineFunction_in_ListOfModelAttributesSet",
+            "test_objective_VariableIndex_in_ListOfModelAttributesSet",
+            "test_objective_set_via_modify",
+            "test_objective_ObjectiveSense_in_ListOfModelAttributesSet",
+        ],
+    )
+end
+
+@testset "MOI tests" begin
+    test_runtests()
+end

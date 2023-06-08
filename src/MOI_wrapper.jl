@@ -12,6 +12,7 @@ const _FUNCTIONS = Union{
 struct VectorizedManifold{M} <: MOI.AbstractVectorSet
     manifold::M
 end
+
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
@@ -41,6 +42,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     end
 end
 
+MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.25"
+
 function MOI.is_empty(model::Optimizer)
     return isnothing(model.manifold) &&
            isempty(model.variable_primal_start) &&
@@ -64,7 +67,7 @@ MOI.get(::Optimizer, ::MOI.SolverName) = "Manopt"
 MOI.supports_incremental_interface(::Optimizer) = true
 
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
-    return MOI.default_copy_to(dest, src)
+    return MOI.Utilities.default_copy_to(dest, src)
 end
 
 function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
@@ -94,6 +97,14 @@ end
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
            1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
+end
+
+function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
+    if isnothing(model.manifold)
+        return 0
+    else
+        return MOI.dimension(VectorizedManifold(model.manifold))
+    end
 end
 
 function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
@@ -131,6 +142,8 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.Optimization
     model.sense = sense
     return nothing
 end
+
+MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 
 function MOI.get(
     model::Optimizer, attr::Union{MOI.ObjectiveFunctionType,MOI.ObjectiveFunction}
