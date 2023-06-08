@@ -45,15 +45,11 @@ end
 
 function test_runtests()
     optimizer = Manopt.Optimizer()
-    config = MOI.Test.Config(
-        exclude = Any[
-            MOI.ListOfModelAttributesSet,
-        ],
-    )
-    MOI.Test.runtests(
+    config = MOI.Test.Config(; exclude=Any[MOI.ListOfModelAttributesSet])
+    return MOI.Test.runtests(
         optimizer,
-        config,
-        exclude = String[
+        config;
+        exclude=String[
             # See https://github.com/jump-dev/MathOptInterface.jl/pull/2195
             "test_model_copy_to_UnsupportedConstraint",
             "test_model_copy_to_UnsupportedAttribute",
