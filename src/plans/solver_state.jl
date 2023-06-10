@@ -59,7 +59,7 @@ _get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 @doc raw"""
     get_stopping_criterion(ams::AbstractManoptSolverState)
 
-return the [`StoppingCriterion`](@ref) stored within the [`AbstractManoptSolverState`](@ref) `ams`.
+Return the [`StoppingCriterion`](@ref) stored within the [`AbstractManoptSolverState`](@ref) `ams`.
 
 For an undecorated state, this is assumed to be in `ams.stop`.
 Overwrite `_get_stopping_criterion(yms::YMS)`
@@ -135,7 +135,7 @@ function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverSt
 end
 
 @doc raw"""
-    get_state(s::AbstractManoptSolverState, recursive=truue)
+    get_state(s::AbstractManoptSolverState, recursive::Bool=true)
 
 return the (one step) undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `s`.
 As long as your decorated state stores the state within `s.state` and
@@ -148,7 +148,7 @@ for both the recursive and the nonrecursive case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
-function get_state(s::AbstractManoptSolverState, recursive=true)
+function get_state(s::AbstractManoptSolverState, recursive::Bool=true)
     return _get_state(s, dispatch_state_decorator(s), recursive)
 end
 _get_state(s::AbstractManoptSolverState, ::Val{false}, rec=true) = s
