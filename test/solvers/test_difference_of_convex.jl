@@ -130,7 +130,13 @@ import Manifolds: inner
         p5b = difference_of_convex_proximal_point(M, grad_h; g=g, grad_g=grad_g)
         # using gradient descent
         p5c = difference_of_convex_proximal_point(
-            M, grad_h, p0; g=g, grad_g=grad_g, sub_hess=nothing
+            M,
+            grad_h,
+            p0;
+            g=g,
+            grad_g=grad_g,
+            sub_hess=nothing,
+            stopping_criterion=StopAfterIteration(20), # is not that stable
         )
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f, return_state=true
