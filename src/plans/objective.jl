@@ -105,8 +105,8 @@ If `recursive` is set to `false`, only the most outer decorator is taken away in
 function get_objective(o::AbstractManifoldObjective, recursive=true)
     return _get_objective(o, dispatch_objective_decorator(o), recursive)
 end
-_get_objective(o::AbstractManifoldObjective, ::Val{false}, rec) = o
-function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec)
+_get_objective(o::AbstractManifoldObjective, ::Val{false}, rec=true) = o
+function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec=true)
     return rec ? get_objective(o.objective) : o.objective
 end
 function status_summary(o::AbstractManifoldObjective{E}) where {E}

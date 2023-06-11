@@ -56,6 +56,20 @@ _get_message(s::AbstractManoptSolverState, ::Val{true}) = get_message(s.state)
 #INtroduce a default that there is no message
 _get_message(s::AbstractManoptSolverState, ::Val{false}) = ""
 
+@doc raw"""
+    get_stopping_criterion(ams::AbstractManoptSolverState)
+
+Return the [`StoppingCriterion`](@ref) stored within the [`AbstractManoptSolverState`](@ref) `ams`.
+
+For an undecorated state, this is assumed to be in `ams.stop`.
+Overwrite `_get_stopping_criterion(yms::YMS)`
+to change this for your manopt solver (`yms`) assuming it has type YMS`.
+"""
+function get_stopping_criterion(ams::AbstractManoptSolverState)
+    return _get_stopping_criterion(get_state(ams, true))
+end
+_get_stopping_criterion(ams::AbstractManoptSolverState) = ams.stop
+
 """
     is_state_decorator(s::AbstractManoptSolverState)
 
@@ -121,16 +135,26 @@ function get_solver_return(o::ReturnManifoldObjective, s::AbstractManoptSolverSt
 end
 
 @doc raw"""
-    get_state(s::AbstractManoptSolverState)
+    get_state(s::AbstractManoptSolverState, recursive::Bool=true)
 
-return the undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `s`.
-As long as your decorated state store the state within `s.state` and
-the [`dispatch_state_decorator`](@ref) is set to `Val{true}`,
-the internal state are extracted.
+return the (one step) undecorated [`AbstractManoptSolverState`](@ref) of the (possibly) decorated `s`.
+As long as your decorated state stores the state within `s.state` and
+the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
+the internal state are extracted automatically.
+
+By default the state that is stored within a decorated state is assumed to be at
+`s.state`. Overwrtie `_get_state(s, ::Val{true}, recursive) to change this bevahiour for your state `s`
+for both the recursive and the nonrecursive case.
+
+If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
-get_state(s::AbstractManoptSolverState) = _get_state(s, dispatch_state_decorator(s))
-_get_state(s::AbstractManoptSolverState, ::Val{false}) = s
-_get_state(s::AbstractManoptSolverState, ::Val{true}) = get_state(s.state)
+function get_state(s::AbstractManoptSolverState, recursive::Bool=true)
+    return _get_state(s, dispatch_state_decorator(s), recursive)
+end
+_get_state(s::AbstractManoptSolverState, ::Val{false}, rec=true) = s
+function _get_state(s::AbstractManoptSolverState, ::Val{true}, rec=true)
+    return rec ? get_state(s.state) : s.state
+end
 
 """
     get_gradient(s::AbstractManoptSolverState)
