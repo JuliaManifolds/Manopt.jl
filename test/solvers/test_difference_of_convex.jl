@@ -157,7 +157,7 @@ import Manifolds: inner
         )
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0)
         @test_throws ErrorException difference_of_convex_proximal_point(
-            M, grad_h, p0; g=g, grad_g=grad_g, sub_hess=nothing
+            M, grad_h, p0; g=g, grad_g=grad_g, sub_grad=nothing
         )
         # we need both g and grad g here
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0; g=g)
