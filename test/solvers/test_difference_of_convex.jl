@@ -130,7 +130,7 @@ import Manifolds: inner
         p5b = difference_of_convex_proximal_point(M, grad_h; g=g, grad_g=grad_g)
         # using gradient descent
         p5c = difference_of_convex_proximal_point(
-            M, grad_h; g=g, grad_g=grad_g, sub_hess=nothing
+            M, grad_h, p0; g=g, grad_g=grad_g, sub_hess=nothing
         )
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f, return_state=true
@@ -145,8 +145,8 @@ import Manifolds: inner
         @test isapprox(M, p3, p4)
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
-        @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min
-        @test isapprox(f(M, p5c), 0.0; atol=2e-16) # bit might be a different min
+        @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min due to rand
+        @test isapprox(f(M, p5c), 0.0; atol=2e-16) # might be a bit inprecise
         @test isapprox(f(M, p4), 0.0; atol=2e-16)
 
         Random.seed!(23)
@@ -158,10 +158,10 @@ import Manifolds: inner
         @test isapprox(M, p8, p2)
 
         # using GD - only very inprecise
-        p8 = difference_of_convex_algorithm(
-            M, f, g, grad_h; grad_g=grad_g, sub_hess=nothing
+        p9 = difference_of_convex_algorithm(
+            M, f, g, grad_h, p0; grad_g=grad_g, sub_hess=nothing
         )
-        @test isapprox(f(M, p8), 0.0; atol=3e-5)
+        @test isapprox(M, p9, p2)
 
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing
