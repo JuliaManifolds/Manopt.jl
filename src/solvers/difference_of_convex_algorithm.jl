@@ -306,10 +306,20 @@ function difference_of_convex_algorithm!(
     sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) | StopWhenGradientNormLess(1e-8),
-    sub_objective=if isnothing(sub_cost) || isnothing(sub_grad) || isnothing(sub_hess)
+    sub_objective=if isnothing(sub_cost) || isnothing(sub_grad)
         nothing
     else
-        ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+        decorate_objective!(
+            M,
+            if isnothing(sub_hess)
+                ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+            else
+                ManifoldHessianObjective(
+                    sub_cost, sub_grad, sub_hess; evaluation=evaluation
+                )
+            end;
+            sub_kwargs...,
+        )
     end,
     sub_problem::Union{AbstractManoptProblem,Function,Nothing}=if isnothing(sub_objective)
         nothing
@@ -321,7 +331,13 @@ function difference_of_convex_algorithm!(
         evaluation
     else
         decorate_state!(
-            TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion),
+            if isnothing(sub_hess)
+                GradientDescentState(
+                    M, copy(M, p); stopping_criterion=sub_stopping_criterion
+                )
+            else
+                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+            end,
             sub_kwargs...,
         )
     end,
