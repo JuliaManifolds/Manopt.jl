@@ -5,6 +5,20 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.26] - 11/06/2023
+
+### Added
+
+* simplify usage of gradient descent as sub solver in the DoC solvers.
+* add a `get_state` function
+* document `indicates_convergence`.
+
+## [0.4.25] - 05/06/2023
+
+### Fixed
+
+* Fixes an allocation bug in the difference of convex algorithm
+
 ## [0.4.24] - 04/06/2023
 
 ### Added
