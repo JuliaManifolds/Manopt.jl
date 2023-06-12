@@ -167,6 +167,8 @@ function LevenbergMarquardt!(
                                           StopWhenStepsizeLess(1e-12),
     debug=[DebugWarnIfCostIncreases()],
     expect_zero_residual::Bool=false,
+    initial_residual_values=similar(p, get_objective(nlso).num_components),
+    initial_jacF=similar(p, get_objective(nlso).num_components, manifold_dimension(M)),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     i_nlso = get_objective(nlso) # undeecorate – for safety
@@ -175,8 +177,8 @@ function LevenbergMarquardt!(
     lms = LevenbergMarquardtState(
         M,
         p,
-        similar(p, i_nlso.num_components),
-        similar(p, i_nlso.num_components, manifold_dimension(M));
+        initial_residual_values,
+        initial_jacF;
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
