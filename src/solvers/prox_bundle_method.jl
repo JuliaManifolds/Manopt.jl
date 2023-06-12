@@ -200,7 +200,7 @@ function prox_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
-    δ=1.0,
+    δ=0.0,
     μ=1.0,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -339,8 +339,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
         #                 bms.vector_transport_method,
         #             ),
         #         )
-        # bms.μ += bms.δ * bms.μ
-        (length(bms.bundle) < bms.bundle_size) && (bms.μ = (π / (4 * i))^-1)
+        bms.μ += bms.δ * bms.μ
+        # (length(bms.bundle) < bms.bundle_size) && (bms.μ = (π / (4 * i))^-1)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     l = length(bms.bundle)
