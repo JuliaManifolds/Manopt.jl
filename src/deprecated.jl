@@ -1,2 +1,4 @@
 Base.@deprecate_binding HeestenesStiefelCoefficient HestenesStiefelCoefficient
 export HeestenesStiefelCoefficient
+Base.@deprecate_binding SimpleCacheObjective SimpleManifoldCachedObjective
+export SimpleCacheObjective

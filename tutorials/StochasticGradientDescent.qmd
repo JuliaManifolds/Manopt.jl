@@ -1,5 +1,6 @@
 ---
 title: How to Run Stochastic Gradient Descent
+author: Ronny Bergmann
 ---
 
 This tutorial illustrates how to use the [`stochastic_gradient_descent`](https://manoptjl.org/stable/solvers/stochastic_gradient_descent.html)
@@ -27,6 +28,7 @@ We first initialize the packages
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 

@@ -11,7 +11,7 @@ An alternating gradient objective consists of
 
 !!! note
 
-    This Objective is usually defied using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
+    This Objective is usually defined using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
 
 # Constructors
     ManifoldAlternatingGradientObjective(F, gradF::Function;
@@ -44,27 +44,12 @@ function ManifoldAlternatingGradientObjective(
     )
 end
 
-@doc raw"""
-    X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
-    get_gradient!(M::ProductManifold, P::ManifoldAlternatingGradientObjective, X, p)
-
-Evaluate all summands gradients at a point `p` on the `ProductManifold M` (in place of `X`)
-"""
-get_gradient(M::ProductManifold, ::ManifoldAlternatingGradientObjective, ::Any...)
-
 function get_gradient(
     M::AbstractManifold,
     mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:Function},
     p,
 ) where {TC}
     return mago.gradient!!(M, p)
-end
-function get_gradient(
-    M::AbstractManifold,
-    mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:AbstractVector},
-    p,
-) where {TC}
-    return ProductRepr([gi(M, p) for gi in mago.gradient!!]...)
 end
 function get_gradient!(
     M::AbstractManifold,
@@ -111,32 +96,7 @@ function get_gradient!(
     mago.gradient!!(M, X, p)
     return X
 end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    mago::ManifoldAlternatingGradientObjective{InplaceEvaluation,TC,<:AbstractVector},
-    p,
-) where {TC}
-    for (gi, Xi) in zip(mago.gradient!!, submanifold_components(M, X))
-        gi(M, Xi, p)
-    end
-    return X
-end
 
-@doc raw"""
-    X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, k)
-    get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, k)
-
-Evaluate one of the component gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
-"""
-function get_gradient(
-    M::ProductManifold,
-    mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:Function},
-    p,
-    k,
-) where {TC}
-    return get_gradient(M, mago, p)[M, k]
-end
 function get_gradient(
     M::AbstractManifold,
     mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:AbstractVector},
@@ -144,16 +104,6 @@ function get_gradient(
     k,
 ) where {TC}
     return mago.gradient!![k](M, p)
-end
-function get_gradient!(
-    M::ProductManifold,
-    X,
-    mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:Function},
-    p,
-    k,
-) where {TC}
-    copyto!(M[k], X, mago.gradient!!(M, p)[M, k])
-    return X
 end
 function get_gradient!(
     M::AbstractManifold,

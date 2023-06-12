@@ -79,7 +79,8 @@ function default_stepsize(M::AbstractManifold, ::Type{SubGradientMethodState})
 end
 
 @doc raw"""
-    subgradient_method(M, f, ∂f, p)
+    subgradient_method(M, f, ∂f, p; kwargs...)
+    subgradient_method(M; sgo, p; kwargs...)
 
 perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
 
@@ -99,6 +100,9 @@ not necessarily deterministic.
   a mutating function `(M, X, p) -> X`, see `evaluation`.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
+alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
+
+
 # Optional
 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
@@ -108,21 +112,53 @@ not necessarily deterministic.
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-...
+
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
-function subgradient_method(
-    M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...
-) where {TF,TdF}
-    p_star = copy(M, p)
-    return subgradient_method!(M, f, ∂f, p_star; kwargs...)
+subgradient_method(::AbstractManifold, args...; kwargs...)
+function subgradient_method(M::AbstractManifold, f, ∂f; kwargs...)
+    return subgradient_method(M, f, ∂f, rand(M); kwargs...)
 end
+function subgradient_method(
+    M::AbstractManifold,
+    f,
+    ∂f,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation=evaluation)
+    return subgradient_method(M, sgo, p; evaluation=evaluation, kwargs...)
+end
+function subgradient_method(
+    M::AbstractManifold,
+    f,
+    ∂f,
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    q = [p]
+    f_(M, p) = f(M, p[])
+    ∂f_ = _to_mutating_gradient(∂f, evaluation)
+    rs = subgradient_method(M, f_, ∂f_, q; evaluation=evaluation, kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+function subgradient_method(
+    M::AbstractManifold, sgo::O, p; kwargs...
+) where {O<:Union{ManifoldSubgradientObjective,AbstractDecoratedManifoldObjective}}
+    q = copy(M, p)
+    return subgradient_method!(M, sgo, q; kwargs...)
+end
+
 @doc raw"""
-    subgradient_method!(M, f, ∂f, x)
+    subgradient_method!(M, f, ∂f, p)
+    subgradient_method!(M, sgo, p)
 
 perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
 
@@ -136,20 +172,31 @@ perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
   a mutating function `(M, X, p) -> X`, see `evaluation`.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
+alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
+
 for more details and all optional parameters, see [`subgradient_method`](@ref).
 """
+subgradient_method!(M::AbstractManifold, args...; kwargs...)
 function subgradient_method!(
     M::AbstractManifold,
-    f::TF,
-    ∂f!!::TdF,
+    f,
+    ∂f,
     p;
-    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation=evaluation)
+    return subgradient_method!(M, sgo, p; evaluation=evaluation, kwargs...)
+end
+function subgradient_method!(
+    M::AbstractManifold,
+    sgo::O,
+    p;
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(M, SubGradientMethodState),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs..., #especially may contain debug
-) where {TF,TdF,TRetr}
-    sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
+    kwargs...,
+) where {O<:Union{ManifoldSubgradientObjective,AbstractDecoratedManifoldObjective}}
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sgs = SubGradientMethodState(
@@ -159,8 +206,9 @@ function subgradient_method!(
         stepsize=stepsize,
         retraction_method=retraction_method,
     )
-    sgs = decorate_state!(sgs; kwargs...)
-    return get_solver_return(solve!(mp, sgs))
+    dsgs = decorate_state!(sgs; kwargs...)
+    solve!(mp, dsgs)
+    return get_solver_return(get_objective(mp), dsgs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState)
     M = get_manifold(mp)

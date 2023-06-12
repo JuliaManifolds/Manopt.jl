@@ -28,11 +28,16 @@ All following fields are keyword arguments.
 [`gradient_descent`](@ref)
 """
 mutable struct GradientDescentState{
-    P,T,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
+    P,
+    T,
+    TStop<:StoppingCriterion,
+    TStepsize<:Stepsize,
+    TDirection<:DirectionUpdateRule,
+    TRTM<:AbstractRetractionMethod,
 } <: AbstractGradientSolverState
     p::P
     X::T
-    direction::DirectionUpdateRule
+    direction::TDirection
     stepsize::TStepsize
     stop::TStop
     retraction_method::TRTM
@@ -45,14 +50,14 @@ mutable struct GradientDescentState{
         retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         direction::DirectionUpdateRule=IdentityUpdateRule(),
     ) where {P,T}
-        o = new{P,T,typeof(stop),typeof(step),typeof(retraction_method)}()
-        o.direction = direction
-        o.p = p
-        o.retraction_method = retraction_method
-        o.stepsize = step
-        o.stop = stop
-        o.X = X
-        return o
+        s = new{P,T,typeof(stop),typeof(step),typeof(direction),typeof(retraction_method)}()
+        s.direction = direction
+        s.p = p
+        s.retraction_method = retraction_method
+        s.stepsize = step
+        s.stop = stop
+        s.X = X
+        return s
     end
 end
 function GradientDescentState(
@@ -82,6 +87,10 @@ function default_stepsize(
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
+function get_message(gds::GradientDescentState)
+    # for now only step size is quipped with messages
+    return get_message(gds.stepsize)
+end
 function show(io::IO, gds::GradientDescentState)
     i = get_count(gds, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -102,7 +111,8 @@ function show(io::IO, gds::GradientDescentState)
 end
 
 @doc raw"""
-    gradient_descent(M, f, grad_f, p; kwargs...)
+    gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
+    gradient_descent(M, gradient_objective, p=rand(M); kwargs...)
 
 perform a gradient descent
 
@@ -114,14 +124,18 @@ p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
 with different choices of the stepsize ``s_k`` available (see `stepsize` option below).
 
 # Input
+
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
 * `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   - as a function `(M, p) -> X` or a function `(M, X, p) -> X`
 * `p` – an initial value `p` ``= p_0 ∈ \mathcal M``
 
+Alternatively to `f` and `grad_f` you can prodive
+the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+
 # Optional
-* `direction` – [`IdentityUpdateRule`](@ref) perform a processing of the direction, e.g.
+* `direction` – ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)`.
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use
@@ -130,21 +144,58 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
+
+All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
+[`decorate_objective!`](@ref) for objective, respectively.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
-function gradient_descent(
-    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
-) where {TF,TDF}
-    x_res = copy(M, x)
-    return gradient_descent!(M, F, gradF, x_res; kwargs...)
+gradient_descent(M::AbstractManifold, args...; kwargs...)
+function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
+    return gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end
+function gradient_descent(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    return gradient_descent(M, mgo, p; kwargs...)
+end
+function gradient_descent(
+    M::AbstractManifold,
+    f,
+    grad_f,
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    # redefine our initial point
+    q = [p]
+    f_(M, p) = f(M, p[])
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
+    rs = gradient_descent(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+function gradient_descent(
+    M::AbstractManifold, mgo::O, p; kwargs...
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+    q = copy(M, p)
+    return gradient_descent!(M, mgo, q; kwargs...)
+end
+
 @doc raw"""
-    gradient_descent!(M, f, grad_f, p)
+    gradient_descent!(M, f, grad_f, p; kwargs...)
+    gradient_descent!(M, gradient_objective, p; kwargs...)
 
 perform a gradient_descent
 
@@ -160,12 +211,26 @@ in place of `p` with different choices of ``s_k`` available.
 * `grad_f` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
 * `p` – an initial value ``p ∈ \mathcal M``
 
+Alternatively to `f` and `grad_f` you can prodive
+the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
 """
+gradient_descent!(M::AbstractManifold, args...; kwargs...)
 function gradient_descent!(
     M::AbstractManifold,
-    F::TF,
-    gradF::TDF,
+    f,
+    grad_f,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    return gradient_descent!(M, mgo, p; kwargs...)
+end
+function gradient_descent!(
+    M::AbstractManifold,
+    mgo::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
@@ -175,12 +240,10 @@ function gradient_descent!(
                                           StopWhenGradientNormLess(1e-9),
     debug=stepsize isa ConstantStepsize ? [DebugWarnIfCostIncreases()] : [],
     direction=IdentityUpdateRule(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs..., #collect rest
-) where {TF,TDF}
-    mgo = ManifoldGradientObjective(F, gradF; evaluation=evaluation)
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
-    mp = DefaultManoptProblem(M, dmgo)
+    dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
         M,
         p;
@@ -189,8 +252,9 @@ function gradient_descent!(
         direction=direction,
         retraction_method=retraction_method,
     )
-    s = decorate_state!(s; debug=debug, kwargs...)
-    return get_solver_return(solve!(mp, s))
+    ds = decorate_state!(s; debug=debug, kwargs...)
+    solve!(dmp, ds)
+    return get_solver_return(get_objective(dmp), ds)
 end
 #
 # Solver functions

@@ -15,7 +15,8 @@ function show(io::IO, cpps::CyclicProximalPointState)
     return print(io, s)
 end
 @doc raw"""
-    cyclic_proximal_point(M, f, proxes_f, x)
+    cyclic_proximal_point(M, f, proxes_f, p)
+    cyclic_proximal_point(M, mpo, p)
 
 perform a cyclic proximal point algorithm.
 
@@ -26,8 +27,10 @@ perform a cyclic proximal point algorithm.
 * `proxes_f` – an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
 * `p` – an initial value ``p ∈ \mathcal M``
 
+where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
+
 # Optional
-the default values are given in brackets
+
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
 * `evaluation_order` – (`:Linear`) – whether
@@ -37,21 +40,56 @@ the default values are given in brackets
   summable) sequence of λi
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
 
-and the ones that are passed to [`decorate_state!`](@ref) for decorators.
+All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
+[`decorate_objective!`](@ref), respectively.
+If you provide the [`ManifoldProximalMapObjective`](@ref) directly, these decorations can still be specified.
 
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+cyclic_proximal_point(M::AbstractManifold, args...; kwargs...)
 function cyclic_proximal_point(
-    M::AbstractManifold, f::TF, proxes_f::Union{Tuple,AbstractVector}, p; kwargs...
-) where {TF}
+    M::AbstractManifold,
+    f,
+    proxes_f::Union{Tuple,AbstractVector},
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
+    return cyclic_proximal_point(M, mpo, p; evaluation=evaluation, kwargs...)
+end
+function cyclic_proximal_point(
+    M::AbstractManifold,
+    f,
+    proxes_f::Union{Tuple,AbstractVector},
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    # redefine our initial point and encapsulate functons
+    q = [p]
+    f_(M, p) = f(M, p[])
+    if evaluation isa AllocatingEvaluation
+        proxes_f_ = [(M, λ, p) -> [pf(M, λ, p[])] for pf in proxes_f]
+    else
+        proxes_f_ = [(M, q, λ, p) -> (q .= [pf(M, λ, p[])]) for pf in proxes_f]
+    end
+    rs = cyclic_proximal_point(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+function cyclic_proximal_point(
+    M::AbstractManifold, mpo::O, p; kwargs...
+) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
-    return cyclic_proximal_point!(M, f, proxes_f, q; kwargs...)
+    return cyclic_proximal_point!(M, mpo, q; kwargs...)
 end
 
 @doc raw"""
-    cyclic_proximal_point!(M, F, proxes, x)
+    cyclic_proximal_point!(M, F, proxes, p)
+    cyclic_proximal_point!(M, mpo, p)
 
 perform a cyclic proximal point algorithm in place of `p`.
 
@@ -62,29 +100,41 @@ perform a cyclic proximal point algorithm in place of `p`.
 * `proxes` – an Array of proximal maps (`Function`s) `(M, λ, p) -> q` or `(M, q, λ, p)` for the summands of ``F``
 * `p` – an initial value ``p ∈ \mathcal M``
 
+where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
+
 for all options, see [`cyclic_proximal_point`](@ref).
 """
+cyclic_proximal_point!(M::AbstractManifold, args...; kwargs...)
 function cyclic_proximal_point!(
     M::AbstractManifold,
-    f::TF,
+    f,
     proxes_f::Union{Tuple,AbstractVector},
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
+    return cyclic_proximal_point(M, mpo, p; evaluation=evaluation, kwargs...)
+end
+function cyclic_proximal_point!(
+    M::AbstractManifold,
+    mpo::O,
+    p;
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)
     ),
     λ=i -> 1 / i,
-    kwargs..., #decorator options
-) where {TF}
-    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
+    kwargs...,
+) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(
         M, p; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
     )
-    cpps = decorate_state!(cpps; kwargs...)
-    return get_solver_return(solve!(dmp, cpps))
+    dcpps = decorate_state!(cpps; kwargs...)
+    solve!(dmp, dcpps)
+    return get_solver_return(get_objective(dmp), dcpps)
 end
 function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)
     c = length(get_objective(amp).proximal_maps!!)

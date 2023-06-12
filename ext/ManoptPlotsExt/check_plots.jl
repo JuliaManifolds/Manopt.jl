@@ -1,13 +1,5 @@
-"""
-plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1,j=length(x))
 
-plot the result from the [`check_gradient`](@ref)
-on data `x,y` with two comparison lines
-
-1) `line_base`+ t`slope`  as the goal the plot should have
-2) `a`+ `b`t` on the interval [`x[i]`, `x[j]`] for some (best fitting) comparison slope
-"""
-function plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1, j=length(x))
+function Manopt.plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1, j=length(x))
     fig = plot(
         x,
         y;
@@ -19,7 +11,9 @@ function plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1, j=length(x))
         color=:lightblue,
     )
     s_line = [exp10(line_base + t * slope) for t in log10.(x)]
-    plot!(fig, x, s_line; label="slope s=2", linestyle=:dash, color=:black, linewidth=2)
+    plot!(
+        fig, x, s_line; label="slope s=$slope", linestyle=:dash, color=:black, linewidth=2
+    )
     if (i != 0) && (j != 0)
         best_line = [exp10(a + t * b) for t in log10.(x[i:j])]
         plot!(

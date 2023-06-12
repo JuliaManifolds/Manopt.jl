@@ -1,6 +1,10 @@
 project:
   title: "Manopt.jl Tutorials"
   output-dir: ../docs/src/tutorials
+  render:
+    - "*.qmd"
+    - "!GeodesicRegression.qmd"
+    - "!InplaceGradient.qmd"
 
 crossref:
   fig-prefix: Figure
@@ -22,4 +26,4 @@ format:
     variant: -raw_html+tex_math_dollars
     wrap: preserve
 
-jupyter: julia-1.8
+jupyter: julia-1.9

@@ -4,7 +4,7 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
-* `bundle_points` - bundle that collects each iterate with the computed subgradient at the iterate
+* `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
 * `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
 * `inverse_retraction_method` - the inverse retraction to use within
 * `lin_errors` - linearization errors at the last serious step
@@ -16,7 +16,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
     `p` that was last evaluated.
-* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε 
+* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε
 
 # Constructor
 
@@ -33,10 +33,12 @@ mutable struct BundleMethodState{
     T,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
-    S<:Set,
     VT<:AbstractVectorTransportMethod,
+    R<:Real,
 } <: AbstractManoptSolverState where {P,T}
-    bundle_points::AbstractVector{Tuple{P,T}}
+    approx_errors::AbstractVector{R}
+    bundle::AbstractVector{Tuple{P,T}}
+    bundle_size::Integer
     inverse_retraction_method::IR
     lin_errors::L
     p::P
@@ -44,21 +46,31 @@ mutable struct BundleMethodState{
     X::T
     retraction_method::TR
     stop::TSC
-    index_set::S
     vector_transport_method::VT
-    m::Real
-    ξ::Real
-    diam::Real
+    m::R
+    ξ::R
+    diam::R
+    λ::AbstractVector{R}
+    g::T
+    ε::R
+    transported_subgradients::AbstractVector{T}
+    filter1::R
+    filter2::R
+    δ::R
     function BundleMethodState(
         M::TM,
         p::P;
-        m::Real=0.0125,
-        diam::Real=1.0,
+        bundle_size::Integer=50,
+        m::R=1e-2,
+        diam::R=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopWhenBundleLess(1e-8),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
+        filter1::R=eps(Float64),
+        filter2::R=eps(Float64),
+        δ::R=√2,
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -67,47 +79,56 @@ mutable struct BundleMethodState{
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
+        R<:Real,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
-        index_set = Set(1)
-        bundle_points = [(p, X)]
+        approx_errors = [0.0]
+        bundle = [(copy(M, p), copy(M, p, X))]
         lin_errors = [0.0]
         ξ = 0.0
-        return new{IR,typeof(lin_errors),P,T,TR,SC,typeof(index_set),VT}(
-            bundle_points,
+        λ = [1.0]
+        g = copy(M, p, X)
+        ε = 0.0
+        transported_subgradients = [copy(M, p, X)]
+        return new{IR,typeof(approx_errors),P,T,TR,SC,VT,R}(
+            approx_errors,
+            bundle,
+            bundle_size,
             inverse_retraction_method,
             lin_errors,
             p,
-            deepcopy(p),
+            copy(M, p),
             X,
             retraction_method,
             stopping_criterion,
-            index_set,
             vector_transport_method,
             m,
             ξ,
             diam,
+            λ,
+            g,
+            ε,
+            transported_subgradients,
+            filter1,
+            filter2,
+            δ,
         )
     end
 end
 get_iterate(bms::BundleMethodState) = bms.p_last_serious
-get_subgradient(bms::BundleMethodState) = bms.X
-function set_iterate!(bms::BundleMethodState, M, p)
-    copyto!(M, bms.p, p)
-    return bms
-end
+get_subgradient(bms::BundleMethodState) = bms.g
 
 @doc raw"""
     bundle_method(M, f, ∂f, p)
 
-perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, 
+perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
 
 where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
 
 with ``X_{q_j}\in∂f(q_j)``, and
 
-where ``\mathrm{retr}`` is a retraction and `p_k` is the last serious iterate. 
-Though the subgradient might be set valued, the argument `∂f` should always 
+where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate.
+Though the subgradient might be set valued, the argument `∂f` should always
 return _one_ element from the subgradient, but not necessarily deterministic.
 
 # Input
@@ -125,8 +146,8 @@ return _one_ element from the subgradient, but not necessarily deterministic.
    allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
-* `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,p,X)` to use.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `stopping_criterion` – ([`StopWhenBundleLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 ...
@@ -162,12 +183,16 @@ function bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    m::Real=0.0125,
-    diam::Real=1.0,
+    bundle_size=50,
+    m=1e-2,
+    diam=1.0,
+    filter1=eps(),
+    filter2=eps(),
+    δ=1.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-8),
+    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-4),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -177,8 +202,12 @@ function bundle_method!(
     bms = BundleMethodState(
         M,
         p;
+        bundle_size=bundle_size,
         m=m,
         diam=diam,
+        filter1=filter1,
+        filter2=filter2,
+        δ=δ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -190,72 +219,122 @@ end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
-    bms.X = zero_vector(M, bms.p)
+    get_subgradient!(mp, bms.X, bms.p)
+    copyto!(M, bms.g, bms.p_last_serious, bms.X)
+    bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
     return bms
 end
-function bundle_method_sub_solver(::Any, ::Any, ::Any)
+function bundle_method_sub_solver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    transported_subgradients = [
-        vector_transport_to(
-            M,
-            bms.bundle_points[j][1],
-            get_subgradient!(mp, bms.bundle_points[j][2], bms.bundle_points[j][1]),
-            bms.p_last_serious,
-            bms.vector_transport_method,
-        ) for j in bms.index_set
+    # v = [
+    #     -ej / (
+    #         2 *
+    #         norm(
+    #             M,
+    #             bms.p_last_serious,
+    #             inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method),
+    #         )^(1 / 2) *
+    #         norm(M, qj, Xj)
+    #     ) for
+    #     (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if !(qj ≈ bms.p_last_serious)
+    # ]
+    bms.transported_subgradients = [
+        vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
+        (qj, Xj) in bms.bundle
     ]
-    λ = bundle_method_sub_solver(M, bms, transported_subgradients)
-    g = sum(λ .* transported_subgradients)
-    ε = sum(λ .* bms.lin_errors)
-
-    # Check transported subgradients ε-inequality
-    v = rand(M; vector_at = bms.p_last_serious)
-    v = rand(0.0:bms.diam) * v/norm(M, bms.p_last_serious, v)
-    r = retract(M, bms.p_last_serious, v, Manifolds.default_retraction_method(M, typeof(bms.p_last_serious)))
-    r = rand(M)
-    if (
-        get_cost(mp, r) <
-        get_cost(mp, bms.p_last_serious) +
-        inner(M, bms.p_last_serious, g, log(M, bms.p_last_serious, r)) - ε
-    )
-        println("No")
-    end
-
-    bms.ξ = -norm(M, bms.p_last_serious, g)^2 - ε
-    retract!(M, bms.p, bms.p_last_serious, -g, bms.retraction_method)
+    bms.λ = bundle_method_sub_solver(M, bms)
+    bms.g .= sum(bms.λ .* bms.transported_subgradients)
+    ε_old = bms.ε
+    bms.ε = sum(bms.λ .* bms.approx_errors)
+    bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
+    retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
-        bms.p_last_serious = bms.p
-        push!(bms.bundle_points, (bms.p_last_serious, bms.X))
-    else
-        push!(bms.bundle_points, (bms.p, bms.X))
+        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.p_last_serious, bms.p))
+        copyto!(M, bms.p_last_serious, bms.p)
     end
-    positive_indices = intersect(bms.index_set, Set(findall(j -> j > eps(Float64), λ)))
-    bms.index_set = union(positive_indices, i + 1)
+    l = length(bms.bundle)
+    push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+    v = findall(λj -> λj ≤ bms.filter1, bms.λ)
+    if !isempty(v)
+        # y = copy(M, bms.bundle[1][1])
+        deleteat!(bms.bundle, v)
+        # s =
+        #    (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+        #    distance(M, bms.bundle[1][1], y)
+        # if !isnan(s)
+        #    bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
+        # end
+        # if abs(ε_old - bms.ε) < 1e-6
+        #     bms.diam -= bms.δ * bms.diam
+        # end
+    end
+    if l == bms.bundle_size
+        # y = copy(M, bms.bundle[1][1])
+        deleteat!(bms.bundle, l - bms.bundle_size + 1)
+        # s = (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+        #     distance(M, bms.bundle[1][1], y)
+        # if !isnan(s) && !isinf(s)
+        #     bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
+        # end
+    end
+    # bms.diam = maximum([bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle])
+    # bms.diam = [bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle]
     bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle_points[j][1]) - inner(
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
-            bms.bundle_points[j][1],
-            bms.bundle_points[j][2],
-            inverse_retract(
-                M,
-                bms.bundle_points[j][1],
-                bms.p_last_serious,
-                bms.inverse_retraction_method,
-            ),
-        ) +
-        bms.diam * 
-        sqrt(
-            2 *
-            distance(M, bms.p_last_serious, bms.bundle_points[j][1])
-        ) *
-        norm(M, bms.bundle_points[j][1], bms.bundle_points[j][2]) for j in bms.index_set
+            qj,
+            Xj,
+            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+        ) for (qj, Xj) in bms.bundle
     ]
+    bms.approx_errors =
+        bms.lin_errors +
+        [bms.diam *
+            sqrt(
+                2 * norm(
+                    M,
+                    qj,
+                    inverse_retract(
+                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
+                    ),
+                ),
+            ) *
+            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+        ]
+    ## Check lin errors to not be negative
+    bms.approx_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.approx_errors]
+    # d = bms.diam
+    # while !isempty(findall(ej -> ej < -bms.filter2, bms.lin_errors))
+    #     d += bms.δ * bms.diam
+    #     if d ≥ 20.0
+    #         break
+    #     end
+    #     bms.lin_errors = [
+    #         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+    #             M,
+    #             qj,
+    #             Xj,
+    #             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+    #         ) +
+    #         d *
+    #         sqrt(
+    #             2 * norm(
+    #                 M,
+    #                 qj,
+    #                 inverse_retract(
+    #                     M, qj, bms.p_last_serious, bms.inverse_retraction_method
+    #                 ),
+    #             ),
+    #         ) *
+    #         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+    #     ]
+    # end
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
@@ -263,32 +342,54 @@ get_solver_result(bms::BundleMethodState) = bms.p_last_serious
 """
     StopWhenBundleLess <: StoppingCriterion
 
-A stopping criterion for [`bundle_method`](@ref) to indicate to stop when
+Two stopping criteria for [`bundle_method`](@ref) to indicate to stop when either
 
-* the parameter ξ = -\norm{g}^2 - ε 
+* the parameters ε and |g|
 
-is less than a given tolerance tol.
+are less than given tolerances tole and tolg respectively, or
 
-# Constructor
+* the parameter -ξ = - |g|^2 - ε
 
-    StopWhenBundleLess(tol::Real=1e-8)
+is less than a given tolerance tolxi.
+
+# Constructors
+
+    StopWhenBundleLess(tole=1e-4, tolg=1e-2)
+
+    StopWhenBundleLess(tolxi=1e-4)
 
 """
-mutable struct StopWhenBundleLess{T<:Real} <: StoppingCriterion
-    tol::T
+mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
+    tole::T
+    tolg::T
+    tolxi::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess(tol::Real=1e-8)
-        return new{typeof(tol)}(tol, "", 0)
+    function StopWhenBundleLess{Real,Nothing}(tole=1e-4, tolg=1e-2)
+        return new{typeof(tole),Nothing}(tole, tolg, nothing, "", 0)
     end
+    function StopWhenBundleLess(tole::Real, tolg::Real)
+        return StopWhenBundleLess{Real,Nothing}(tole, tolg)
+    end
+    function StopWhenBundleLess{Nothing,Real}(tolxi=1e-4)
+        return new{Nothing,typeof(tolxi)}(nothing, nothing, tolxi, "", 0)
+    end
+    StopWhenBundleLess(tolxi::Real) = StopWhenBundleLess{Nothing,Real}(tolxi)
 end
 function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int)
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
     end
-    if -bms.ξ ≤ b.tol && i > 0
-        b.reason = "After $i iterations the parameter -ξ = $(-bms.ξ) is less than tol = $(b.tol).\n"
+    M = get_manifold(mp)
+    if b.tolxi == nothing
+        if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g) ≤ b.tolg) && i > 0
+            b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
+            b.at_iteration = i
+            return true
+        end
+    elseif -bms.ξ ≤ b.tolxi && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tolxi).\n"
         b.at_iteration = i
         return true
     end
@@ -297,8 +398,18 @@ end
 function status_summary(b::StopWhenBundleLess)
     has_stopped = length(b.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Stopping parameter: -ξ ≤ $(b.tol):\t$s"
+    if b.tolxi == nothing
+        return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
+    else
+        return "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
+    end
 end
 function show(io::IO, b::StopWhenBundleLess)
-    return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
+    if b.tolxi == nothing
+        return print(
+            io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))"
+        )
+    else
+        return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
+    end
 end

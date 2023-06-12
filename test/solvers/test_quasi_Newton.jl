@@ -4,14 +4,15 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
 @testset "Riemannian quasi-Newton Methods" begin
     @testset "Show & Status" begin
         M = Euclidean(4)
-        p = zeros(Float64, 4)
         qnu = InverseBFGS()
         d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
         @test Manopt.status_summary(d) ==
             "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
         s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
         @test repr(d) == s
+        @test Manopt.get_message(d) == ""
     end
+
     @testset "Mean of 3 Matrices" begin
         # Mean of 3 matrices
         A = [18.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0]
@@ -44,6 +45,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
         set_gradient!(lrbfgs_s, M, p, grad_f(M, p))
         @test isapprox(M, p, Manopt.get_gradient(lrbfgs_s), grad_f(M, p))
+        @test Manopt.get_message(lrbfgs_s) == ""
         # with Cached Basis
         x_lrbfgs_cached = quasi_Newton(
             M,
@@ -107,47 +109,32 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             end
         end
     end
+
     @testset "Rayleigh Quotient Minimzation" begin
         n = 4
-        rayleigh_atol = 1e-8
+        rayleigh_atol = 1e-7
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
         A = (A + A') / 2
         M = Sphere(n - 1)
         f(::Sphere, X) = X' * A * X
         grad_f(::Sphere, X) = 2 * (A * X - X * (X' * A * X))
-        x_solution = abs.(eigvecs(A)[:, 1])
+        grad_f!(::Sphere, Y, X) = (Y .= 2 * (A * X - X * (X' * A * X)))
+        x_solution = eigvecs(A)[:, 1]
 
         x = Matrix{Float64}(I, n, n)[n, :]
-        x_lrbfgs = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            x;
-            basis=get_basis(M, x, DefaultOrthonormalBasis()),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(1e-9),
+        x_lrbfgs = quasi_Newton(M, f, grad_f, x; memory_size=-1)
+        @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
+        x_lrbfgs2 = copy(M, x)
+        quasi_Newton!(
+            M, f, grad_f!, x_lrbfgs2; evaluation=InplaceEvaluation(), memory_size=-1
         )
-        @test norm(abs.(x_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
+        @test isapprox(M, x_lrbfgs2, x_lrbfgs)
 
-        x_clrbfgs = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            x;
-            cautious_update=true,
-            stopping_criterion=StopWhenGradientNormLess(1e-9),
-        )
+        x_clrbfgs = quasi_Newton(M, f, grad_f, x; cautious_update=true)
+        @test isapprox(M, x_clrbfgs, x_solution; atol=rayleigh_atol)
 
-        x_cached_lrbfgs = quasi_Newton(
-            M,
-            f,
-            grad_f,
-            x;
-            basis=get_basis(M, x, DefaultOrthonormalBasis()),
-            memory_size=-1,
-            stopping_criterion=StopWhenGradientNormLess(1e-9),
-        )
-        @test norm(abs.(x_cached_lrbfgs) - x_solution) ≈ 0 atol = rayleigh_atol
+        x_cached_lrbfgs = quasi_Newton(M, f, grad_f, x; memory_size=-1)
+        @test isapprox(M, x_cached_lrbfgs, x_solution; atol=rayleigh_atol)
 
         for T in [
                 InverseDFP(),
@@ -162,19 +149,13 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             c in [true, false]
 
             x_direction = quasi_Newton(
-                M,
-                f,
-                grad_f,
-                x;
-                direction_update=T,
-                cautious_update=c,
-                memory_size=-1,
-                stopping_criterion=StopWhenGradientNormLess(5 * 1e-8),
+                M, f, grad_f, x; direction_update=T, cautious_update=c, memory_size=-1
             )
-            @test norm(abs.(x_direction) - x_solution) ≈ 0 atol = rayleigh_atol
+            @test isapprox(M, x_direction, x_solution; atol=rayleigh_atol)
         end
     end
-    @testset "Brockett" begin
+
+    @testset "Brocket" begin
         struct GradF
             A::Matrix{Float64}
             N::Diagonal{Float64,Vector{Float64}}
@@ -335,5 +316,36 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         p0 = [2.0, 1 + im]
         p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion=StopAfterIteration(3))
         @test fc(M, p4) ≤ fc(M, p0)
+    end
+
+    @testset "Boundary cases and safeguards" begin
+        M = Euclidean(2)
+        p = [0.0, 0.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 * sum(p)
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        qns = QuasiNewtonState(M, p)
+        # push zeros to memory
+        push!(qns.direction_update.memory_s, copy(p))
+        push!(qns.direction_update.memory_s, copy(p))
+        push!(qns.direction_update.memory_y, copy(p))
+        push!(qns.direction_update.memory_y, copy(p))
+        qns.direction_update(mp, qns)
+        # Update (1) says at i=1 inner prodcucts are zero (2) all are zero -> gradient proposal
+        @test contains(qns.direction_update.message, "i=1,2")
+        @test contains(qns.direction_update.message, "gradient")
+    end
+
+    @testset "A Circle example" begin
+        M = Circle()
+        data = [-π / 2, π / 4, 0.0, π / 4]
+        pstar = sum([-π / 2, π / 4, 0.0, π / 4]) / length(data)
+        f(M, p) = 1 / 10 * sum(distance.(Ref(M), data, Ref(p)) .^ 2)
+        grad_f(M, p) = 1 / 5 * sum(-log.(Ref(M), Ref(p), data))
+        p = quasi_Newton(M, f, grad_f, data[1])
+        @test isapprox(M, pstar, p)
+        s = quasi_Newton(M, f, grad_f, data[1]; return_state=true)
+        @test get_solver_result(s)[] == p
     end
 end

@@ -1,4 +1,6 @@
-using Manopt, ManifoldsBase, Test
+using LRUCache, Manopt, ManifoldsBase, Test
+
+include("../utils/dummy_types.jl")
 
 @testset "Constrained Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
@@ -178,6 +180,209 @@ using Manopt, ManifoldsBase, Test
                 wg3 = sum(gh .* (c[2] ./ sqrt.(c[2] .^ 2 .+ u^2)) .* ρ)
                 @test EPGh(M, p) ≈ gf + wg1 .+ wg2 .+ wg3
             end
+        end
+    end
+    @testset "Objetive Decorator passthrough" begin
+        for obj in [cofa, cofm, cova, covm]
+            ddo = DummyDecoratedObjective(obj)
+            @test get_constraints(M, ddo, p) == get_constraints(M, obj, p)
+            @test get_equality_constraints(M, ddo, p) == get_equality_constraints(M, obj, p)
+            @test get_inequality_constraints(M, ddo, p) ==
+                get_inequality_constraints(M, obj, p)
+            Xe = get_grad_equality_constraints(M, ddo, p)
+            Ye = get_grad_equality_constraints(M, obj, p)
+            @test Ye == Xe
+            get_grad_equality_constraints!(M, Xe, ddo, p)
+            get_grad_equality_constraints!(M, Ye, obj, p)
+            @test Ye == Xe
+            for i in 1:1 #num of equ constr
+                @test get_equality_constraint(M, ddo, p, i) ==
+                    get_equality_constraint(M, obj, p, i)
+                X = get_grad_equality_constraint(M, ddo, p, i)
+                Y = get_grad_equality_constraint(M, obj, p, i)
+                @test X == Y
+                X = get_grad_equality_constraint!(M, X, ddo, p, i)
+                Y = get_grad_equality_constraint!(M, Y, obj, p, i)
+                @test X == Y
+            end
+            for j in 1:2 # num eq constr
+                @test get_inequality_constraint(M, ddo, p, j) ==
+                    get_inequality_constraint(M, obj, p, j)
+                X = get_grad_inequality_constraint(M, ddo, p, j)
+                Y = get_grad_inequality_constraint(M, obj, p, j)
+                @test X == Y
+                X = get_grad_inequality_constraint!(M, X, ddo, p, j)
+                Y = get_grad_inequality_constraint!(M, Y, obj, p, j)
+                @test X == Y
+            end
+            Xe = get_grad_inequality_constraints(M, ddo, p)
+            Ye = get_grad_inequality_constraints(M, obj, p)
+            @test Ye == Xe
+            get_grad_inequality_constraints!(M, Xe, ddo, p)
+            get_grad_inequality_constraints!(M, Ye, obj, p)
+            @test Ye == Xe
+        end
+    end
+    @testset "Count Objective" begin
+        ccofa = Manopt.objective_count_factory(
+            M,
+            cofa,
+            [
+                :Constraints,
+                :InequalityConstraints,
+                :InequalityConstraint,
+                :EqualityConstraints,
+                :EqualityConstraint,
+                :GradInequalityConstraints,
+                :GradInequalityConstraint,
+                :GradEqualityConstraints,
+                :GradEqualityConstraint,
+            ],
+        )
+        @test get_constraints(M, ccofa, p) == get_constraints(M, cofa, p)
+        @test get_count(ccofa, :Constraints) == 1
+        @test get_equality_constraints(M, ccofa, p) == get_equality_constraints(M, cofa, p)
+        @test get_count(ccofa, :EqualityConstraints) == 1
+        @test get_equality_constraint(M, ccofa, p, 1) ==
+            get_equality_constraint(M, cofa, p, 1)
+        @test get_count(ccofa, :EqualityConstraint) == 1
+        @test get_count(ccofa, :EqualityConstraint, 1) == 1
+        @test get_inequality_constraints(M, ccofa, p) ==
+            get_inequality_constraints(M, cofa, p)
+        @test get_count(ccofa, :InequalityConstraints) == 1
+        @test get_inequality_constraint(M, ccofa, p, 1) ==
+            get_inequality_constraint(M, cofa, p, 1)
+        @test get_inequality_constraint(M, ccofa, p, 2) ==
+            get_inequality_constraint(M, cofa, p, 2)
+        @test get_count(ccofa, :InequalityConstraint) == [1, 1]
+        @test get_count(ccofa, :InequalityConstraint, 1) == 1
+        @test get_count(ccofa, :InequalityConstraint, 2) == 1
+        @test get_count(ccofa, :InequalityConstraint, [1, 2, 3]) == -1
+
+        Xe = get_grad_equality_constraints(M, cofa, p)
+        @test get_grad_equality_constraints(M, ccofa, p) == Xe
+        Ye = copy.(Ref(M), Ref(p), Xe)
+        get_grad_equality_constraints!(M, Ye, ccofa, p)
+        @test Ye == Xe
+        @test get_count(ccofa, :GradEqualityConstraints) == 2
+        X = get_grad_equality_constraint(M, cofa, p, 1)
+        @test get_grad_equality_constraint(M, ccofa, p, 1) == X
+        Y = copy(M, p, X)
+        get_grad_equality_constraint!(M, Y, ccofa, p, 1) == X
+        @test Y == X
+        @test get_count(ccofa, :GradEqualityConstraint) == 2
+        @test get_count(ccofa, :GradEqualityConstraint, 1) == 2
+        Xi = get_grad_inequality_constraints(M, cofa, p)
+        @test get_grad_inequality_constraints(M, ccofa, p) == Xi
+        Yi = copy.(Ref(M), Ref(p), Xi)
+        @test get_grad_inequality_constraints!(M, Yi, ccofa, p) == Xi
+        @test get_count(ccofa, :GradInequalityConstraints) == 2
+        X1 = get_grad_inequality_constraint(M, cofa, p, 1)
+        @test get_grad_inequality_constraint(M, ccofa, p, 1) == X1
+        @test get_grad_inequality_constraint!(M, Y, ccofa, p, 1) == X1
+        X2 = get_grad_inequality_constraint(M, cofa, p, 2)
+        @test get_grad_inequality_constraint(M, ccofa, p, 2) == X2
+        @test get_grad_inequality_constraint!(M, Y, ccofa, p, 2) == X2
+        @test get_count(ccofa, :GradInequalityConstraint) == [2, 2]
+        @test get_count(ccofa, :GradInequalityConstraint, 1) == 2
+        @test get_count(ccofa, :GradInequalityConstraint, 2) == 2
+        @test get_count(ccofa, :GradInequalityConstraint, [1, 2, 3]) == -1
+        # test vectorial reset
+        reset_counters!(ccofa)
+        @test get_count(ccofa, :GradInequalityConstraint) == [0, 0]
+    end
+    @testset "Cache Objective" begin
+        cache_and_count = [
+            :Constraints,
+            :InequalityConstraints,
+            :InequalityConstraint,
+            :EqualityConstraints,
+            :EqualityConstraint,
+            :GradInequalityConstraints,
+            :GradInequalityConstraint,
+            :GradEqualityConstraints,
+            :GradEqualityConstraint,
+        ]
+        ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
+        cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
+        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # counts
+        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # cached
+        @test get_count(cccofa, :Constraints) == 1
+
+        ce = get_equality_constraints(M, cofa, p)
+        @test get_equality_constraints(M, cccofa, p) == ce # counts
+        @test get_equality_constraints(M, cccofa, p) == ce # cached
+        @test get_count(cccofa, :EqualityConstraints) == 1
+        for i in 1
+            ce_i = get_equality_constraint(M, cofa, p, i)
+            @test get_equality_constraint(M, cccofa, p, i) == ce_i # counts
+            @test get_equality_constraint(M, cccofa, p, i) == ce_i # cached
+            @test get_count(cccofa, :EqualityConstraint, i) == 1
+        end
+        ci = get_inequality_constraints(M, cofa, p)
+        @test ci == get_inequality_constraints(M, cccofa, p) # counts
+        @test ci == get_inequality_constraints(M, cccofa, p) #cached
+        @test get_count(cccofa, :InequalityConstraints) == 1
+        for j in 1:2
+            ci_j = get_inequality_constraint(M, cofa, p, j)
+            @test get_inequality_constraint(M, cccofa, p, j) == ci_j # count
+            @test get_inequality_constraint(M, cccofa, p, j) == ci_j # cached
+            @test get_count(cccofa, :InequalityConstraint, j) == 1
+        end
+
+        Xe = get_grad_equality_constraints(M, cofa, p)
+        @test get_grad_equality_constraints(M, cccofa, p) == Xe # counts
+        @test get_grad_equality_constraints(M, cccofa, p) == Xe # cached
+        Ye = copy.(Ref(M), Ref(p), Xe)
+        get_grad_equality_constraints!(M, Ye, cccofa, p) # cached
+        @test Ye == Xe
+        @test get_count(ccofa, :GradEqualityConstraints) == 1
+        Xe = get_grad_equality_constraints(M, cofa, -p)
+        get_grad_equality_constraints!(M, Ye, cccofa, -p) # ccounts
+        @test Ye == Xe
+        get_grad_equality_constraints!(M, Ye, cccofa, -p) # cached
+        @test Ye == Xe
+        @test get_grad_equality_constraints(M, cccofa, -p) == Xe # cached
+        for i in 1:1
+            X = get_grad_equality_constraint(M, cofa, p, i)
+            @test get_grad_equality_constraint(M, cccofa, p, i) == X #counts
+            @test get_grad_equality_constraint(M, cccofa, p, i) == X #cached
+            Y = copy(M, p, X)
+            get_grad_equality_constraint!(M, Y, cccofa, p, i) == X # cached
+            @test Y == X
+            @test get_count(cccofa, :GradEqualityConstraint, i) == 1
+            X = get_grad_equality_constraint(M, cofa, -p, i)
+            get_grad_equality_constraint!(M, Y, cccofa, -p, i) == X # counts
+            @test Y == X
+            get_grad_equality_constraint!(M, Y, cccofa, -p, i) == X # cached
+            @test Y == X
+            @test get_grad_equality_constraint(M, cccofa, -p, i) == X #cached
+            @test get_count(cccofa, :GradEqualityConstraint, i) == 2
+        end
+
+        Xi = get_grad_inequality_constraints(M, cofa, p)
+        @test get_grad_inequality_constraints(M, cccofa, p) == Xi # counts
+        @test get_grad_inequality_constraints(M, cccofa, p) == Xi # cached
+        Yi = copy.(Ref(M), Ref(p), Xi)
+        @test get_grad_inequality_constraints!(M, Yi, cccofa, p) == Xi # cached
+        @test get_count(cccofa, :GradInequalityConstraints) == 1
+        Xi = get_grad_inequality_constraints(M, cofa, -p)
+        @test get_grad_inequality_constraints!(M, Yi, cccofa, -p) == Xi # counts
+        @test get_grad_inequality_constraints!(M, Yi, cccofa, -p) == Xi # cached
+        @test get_grad_inequality_constraints(M, cccofa, -p) == Xi # cached
+        @test get_count(cccofa, :GradInequalityConstraints) == 2
+        for j in 1:2
+            X = get_grad_inequality_constraint(M, cofa, p, j)
+            @test get_grad_inequality_constraint(M, cccofa, p, j) == X # counts
+            @test get_grad_inequality_constraint(M, cccofa, p, j) == X # cached
+            Y = copy(M, p, X)
+            @test get_grad_inequality_constraint!(M, Y, cccofa, p, j) == X # cached
+            @test get_count(ccofa, :GradInequalityConstraint, j) == 1
+            X = get_grad_inequality_constraint(M, cofa, -p, j)
+            @test get_grad_inequality_constraint!(M, Y, cccofa, -p, j) == X # counts
+            @test get_grad_inequality_constraint!(M, Y, cccofa, -p, j) == X # cached
+            @test get_grad_inequality_constraint(M, cccofa, p, j) == X # cached
+            @test get_count(ccofa, :GradInequalityConstraint, j) == 2
         end
     end
 end

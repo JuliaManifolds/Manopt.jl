@@ -18,6 +18,7 @@ In this tutorial we will take a look at a few possibilities to approximate or de
 #| code-fold: true
 #| output: false
 using Pkg;
+cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 

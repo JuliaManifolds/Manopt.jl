@@ -16,8 +16,8 @@ function F(M, y)
         ] for j in 1:Manifolds.number_of_components(M)
     ]
 end
-G(M, y) = -minimum(minimum.(F(M, y)))
-gradG(M, y) = ManifoldDiff.gradient(M, G, y, r_backend)
+G(y) = -minimum(minimum.(F(M, y)))
+gradG(y) = ManifoldDiff.gradient(M, G, y, r_backend)
 
 # The paramer m is very influent here! For small m the bundle method loops at the first iterate!
 b = bundle_method(

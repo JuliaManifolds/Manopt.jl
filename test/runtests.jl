@@ -1,23 +1,30 @@
 using Manifolds, Manopt, ManifoldsBase, Test
 
+include("utils/example_tasks.jl")
+
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin
+        include("plans/test_objective.jl")
         include("plans/test_problem.jl")
         include("plans/test_state.jl")
         include("plans/test_conjugate_gradient_plan.jl")
+        include("plans/test_counts.jl")
         include("plans/test_debug.jl")
+        include("plans/test_difference_of_convex_plan.jl")
         include("plans/test_storage.jl")
-        include("plans/test_cache_plan.jl")
+        include("plans/test_cache.jl")
         include("plans/test_nelder_mead_plan.jl")
-        include("plans/test_nonmutating.jl")
         include("plans/test_gradient_plan.jl")
         include("plans/test_constrained_plan.jl")
         include("plans/test_hessian_plan.jl")
         include("plans/test_primal_dual_plan.jl")
+        include("plans/test_proximal_plan.jl")
         include("plans/test_higher_order_primal_dual_plan.jl")
         include("plans/test_record.jl")
         include("plans/test_stepsize.jl")
+        include("plans/test_stochastic_gradient_plan.jl")
         include("plans/test_stopping_criteria.jl")
+        include("plans/test_subgradient_plan.jl")
     end
     @testset "Function Tests     " begin
         include("functions/test_adjoint_differentials.jl")
@@ -40,6 +47,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_bundle_method.jl")
         include("solvers/test_ChambollePock.jl")
         include("solvers/test_conjugate_gradient.jl")
+        include("solvers/test_difference_of_convex.jl")
         include("solvers/test_Douglas_Rachford.jl")
         include("solvers/test_cyclic_proximal_point.jl")
         include("solvers/test_exact_penalty.jl")
@@ -54,7 +62,6 @@ using Manifolds, Manopt, ManifoldsBase, Test
         include("solvers/test_subgradient_method.jl")
         include("solvers/test_truncated_cg.jl")
         include("solvers/test_trust_regions.jl")
-        include("solvers/test_trust_regions_hessian_update.jl")
     end
     include("test_deprecated.jl")
 end

@@ -1,6 +1,6 @@
 ---
 references:
-- id: AbsilMahonySepulchre:2008
+- id: AbsilMahonySepulchre2008
   author:
     - family: Absil
       given: P.-A.
@@ -8,7 +8,7 @@ references:
       given: R.
     - family: Sepulchre
       given: R.
-  citation-key: AbsilMahonySepulchre:2008
+  citation-key: AbsilMahonySepulchre2008
   DOI: 10.1515/9781400830244
   issued:
     - year: 2008
@@ -16,21 +16,80 @@ references:
   title: Optimization algorithms on matrix manifolds
   type: book
 
+- id: AlmeidadaCruzNetoOliveiraSouza:2020
+  accessed:
+    - year: 2023
+      month: 3
+      day: 21
+  author:
+    - family: Almeida
+      given: Yldenilson Torres
+    - family: Cruz Neto
+      given: João Xavier
+      non-dropping-particle: da
+    - family: Oliveira
+      given: Paulo Roberto
+    - family: Souza
+      given: João Carlos de Oliveira
+  citation-key: AlmeidadaCruzNetoOliveiraSouza:2020
+  container-title: Computational Optimization and Applications
+  container-title-short: Comput Optim Appl
+  DOI: 10.1007/s10589-020-00173-3
+  ISSN: 0926-6003, 1573-2894
+  issue: '3'
+  issued:
+    - year: 2020
+      month: 7
+  language: en
+  page: 649-673
+  source: DOI.org (Crossref)
+  title: A modified proximal point method for DC functions on Hadamard manifolds
+  type: article-journal
+  URL: http://link.springer.com/10.1007/s10589-020-00173-3
+  volume: '76'
+
 - id: Bacak:2014
   author:
     - family: Bačák
-      given: Miroslav
+      given: M.
   citation-key: Bacak:2014
-  collection-title: De gruyter series in nonlinear analysis and applications
-  DOI: 10.1515/9783110361629
-  event-place: Berlin
+  container-title: SIAM Journal on Optimization
+  DOI: 10.1137/140953393
+  issue: '3'
   issued:
     - year: 2014
-  publisher: De Gruyter
-  publisher-place: Berlin
-  title: Convex analysis and optimization in hadamard spaces
-  type: book
-  volume: '22'
+  page: 1542–1566
+  title: Computing medians and means in Hadamard spaces
+  type: article-journal
+  volume: '24'
+
+- id: Bergmann:2022
+  author:
+    - family: Bergmann
+      given: Ronny
+  citation-key: Bergmann:2022
+  container-title: Journal of Open Source Software
+  DOI: 10.21105/joss.03866
+  issue: '70'
+  issued:
+    - year: 2022
+  page: '3866'
+  publisher: The Open Journal
+  title: 'Manopt.jl: Optimization on manifolds in Julia'
+  type: article-journal
+  volume: '7'
+
+- id: Bergmann:2022m
+  author:
+    - family: Bergmann
+      given: Ronny
+  citation-key: Bergmann:2022m
+  DOI: 10.5281/zenodo.4290905
+  issued:
+    - year: 2022
+  publisher: Zenodo
+  title: Manopt.jl
+  type: software
 
 - id: BergmannFitschenPerschSteidl:2018:1
   author:
@@ -114,17 +173,33 @@ references:
   type: article-journal
   volume: '29'
 
-- id: Boumal:2020:1
+- id: Boumal2023
   author:
     - family: Boumal
       given: Nicolas
-  citation-key: Boumal:2020:1
+  citation-key: Boumal2023
   issued:
-    - year: 2020
-      month: 8
+    - year: 2022
+      month: 6
   title: An introduction to optimization on smooth manifolds
   type: book
-  URL: http://www.nicolasboumal.net/book
+  URL: https://www.nicolasboumal.net/book
+
+- id: doCarmo1992
+  author:
+    - family: Carmo
+      given: Manfredo Perdigão
+      non-dropping-particle: do
+  citation-key: doCarmo1992
+  collection-title: 'Mathematics: Theory & applications'
+  DOI: 10.1007/978-1-4757-2201-7
+  ISBN: 0-8176-3490-8
+  issued:
+    - year: 1992
+  page: xiv+300
+  publisher: Birkhäuser Boston, Inc., Boston, MA
+  title: Riemannian geometry
+  type: book
 
 - id: FerreiraSantosSouza:2021
   abstract: >-
@@ -164,7 +239,7 @@ references:
   author:
     - family: Fletcher
       given: P. Thomas
-  citation-key: Fletcher2013
+  citation-key: Fletcher:2013
   container-title: International Journal of Computer Vision
   DOI: 10.1007/s11263-012-0591-y
   issue: '2'
@@ -176,46 +251,6 @@ references:
   volume: '105'
 
 - id: HanMishraJawanpuriaGao:2021
-  abstract: >-
-    This paper proposes a generalized Bures-Wasserstein (BW) Riemannian geometry
-    for the manifold of symmetric positive definite matrices. We explore the
-    generalization of the BW geometry in three different ways: 1) by
-    generalizing the Lyapunov operator in the metric, 2) by generalizing the
-    orthogonal Procrustes distance, and 3) by generalizing the Wasserstein
-    distance between the Gaussians. We show that they all lead to the same
-    geometry. The proposed generalization is parameterized by a symmetric
-    positive definite matrix $\mathbf{M}$ such that when $\mathbf{M} =
-    \mathbf{I}$, we recover the BW geometry. We derive expressions for the
-    distance, geodesic, exponential/logarithm maps, Levi-Civita connection, and
-    sectional curvature under the generalized BW geometry. We also present
-    applications and experiments that illustrate the efficacy of the proposed
-    geometry.
-  accessed:
-    - year: 2022
-      month: 5
-      day: 19
-  author:
-    - family: Han
-      given: Andi
-    - family: Mishra
-      given: Bamdev
-    - family: Jawanpuria
-      given: Pratik
-    - family: Gao
-      given: Junbin
-  citation-key: HanMishraJawanpuriaGao:2021
-  issued:
-    - year: 2021
-      month: 10
-      day: 20
-  number: arXiv:2110.10464
-  publisher: arXiv
-  source: arXiv.org
-  title: Generalized Bures-Wasserstein Geometry for Positive Definite Matrices
-  type: article
-  URL: http://arxiv.org/abs/2110.10464
-
-- id: HanMishraJawanpuriaGao:2021a
   abstract: >-
     In this paper, we comparatively analyze the Bures-Wasserstein (BW) geometry
     with the popular Affine-Invariant (AI) geometry for Riemannian optimization
@@ -243,7 +278,7 @@ references:
       given: Pratik
     - family: Gao
       given: Junbin
-  citation-key: HanMishraJawanpuriaGao:2021a
+  citation-key: HanMishraJawanpuriaGao:2021
   issued:
     - year: 2021
       month: 6
@@ -256,6 +291,61 @@ references:
     Bures-Wasserstein Geometry
   type: article
   URL: http://arxiv.org/abs/2106.00286
+
+- id: HanMishraJawanpuriaGao:2021a
+  abstract: >-
+    This paper proposes a generalized Bures-Wasserstein (BW) Riemannian geometry
+    for the manifold of symmetric positive definite matrices. We explore the
+    generalization of the BW geometry in three different ways: 1) by
+    generalizing the Lyapunov operator in the metric, 2) by generalizing the
+    orthogonal Procrustes distance, and 3) by generalizing the Wasserstein
+    distance between the Gaussians. We show that they all lead to the same
+    geometry. The proposed generalization is parameterized by a symmetric
+    positive definite matrix $\mathbf{M}$ such that when $\mathbf{M} =
+    \mathbf{I}$, we recover the BW geometry. We derive expressions for the
+    distance, geodesic, exponential/logarithm maps, Levi-Civita connection, and
+    sectional curvature under the generalized BW geometry. We also present
+    applications and experiments that illustrate the efficacy of the proposed
+    geometry.
+  accessed:
+    - year: 2022
+      month: 5
+      day: 19
+  author:
+    - family: Han
+      given: Andi
+    - family: Mishra
+      given: Bamdev
+    - family: Jawanpuria
+      given: Pratik
+    - family: Gao
+      given: Junbin
+  citation-key: HanMishraJawanpuriaGao:2021a
+  issued:
+    - year: 2021
+      month: 10
+      day: 20
+  number: arXiv:2110.10464
+  publisher: arXiv
+  source: arXiv.org
+  title: Generalized Bures-Wasserstein Geometry for Positive Definite Matrices
+  type: article
+  URL: http://arxiv.org/abs/2110.10464
+
+- id: Karcher1977
+  author:
+    - family: Karcher
+      given: Hermann
+  citation-key: Karcher1977
+  container-title: Communications on Pure and Applied Mathematics
+  DOI: 10.1002/cpa.3160300502
+  issue: '5'
+  issued:
+    - year: 1977
+  page: 509–541
+  title: Riemannian center of mass and mollifier smoothing
+  type: article-journal
+  volume: '30'
 
 - id: LiuBoumal:2019
   author:
@@ -331,32 +421,30 @@ references:
   URL: https://epubs.siam.org/doi/10.1137/21M1400699
   volume: '32'
 
-- id: YamakawaSato:2022
+- id: SouzaOliveira:2015
   accessed:
-    - year: 2022
-      month: 4
-      day: 28
-  author:
-    - family: Yamakawa
-      given: Yuya
-    - family: Sato
-      given: Hiroyuki
-  citation-key: YamakawaSato:2022
-  container-title: Computational Optimization and Applications
-  container-title-short: Comput Optim Appl
-  DOI: 10.1007/s10589-021-00336-w
-  ISSN: 0926-6003, 1573-2894
-  issue: '2'
-  issued:
-    - year: 2022
+    - year: 2023
       month: 3
+      day: 21
+  author:
+    - family: Souza
+      given: J. C. O.
+    - family: Oliveira
+      given: P. R.
+  citation-key: SouzaOliveira:2015
+  container-title: Journal of Global Optimization
+  container-title-short: J Glob Optim
+  DOI: 10.1007/s10898-015-0282-7
+  ISSN: 0925-5001, 1573-2916
+  issue: '4'
+  issued:
+    - year: 2015
+      month: 12
   language: en
-  page: 397-421
+  page: 797-810
   source: DOI.org (Crossref)
-  title: >-
-    Sequential optimality conditions for nonlinear optimization on Riemannian
-    manifolds and a globally convergent augmented Lagrangian method
+  title: A proximal point algorithm for DC fuctions on Hadamard manifolds
   type: article-journal
-  URL: https://link.springer.com/10.1007/s10589-021-00336-w
-  volume: '81'
+  URL: http://link.springer.com/10.1007/s10898-015-0282-7
+  volume: '63'
 ...

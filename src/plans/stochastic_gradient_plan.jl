@@ -24,8 +24,11 @@ respectively.
         cost=Missing(), evaluation=AllocatingEvaluation()
     )
 
-Create a Stochastic gradient problem with an optional `cost` and the gradient either as one
+Create a Stochastic gradient problem with the gradient either as one
 function (returning an array of tangent vectors) or a vector of functions (each returning one tangent vector).
+
+The optional cost can also be given as either a single function (returning a number)
+pr a vector of functions, each returning a value.
 
 # Used with
 [`stochastic_gradient_descent`](@ref)
@@ -39,25 +42,40 @@ struct ManifoldStochasticGradientObjective{T<:AbstractEvaluationType,TCost,TGrad
     gradient!!::TGradient
 end
 function ManifoldStochasticGradientObjective(
-    grad_f!!;
-    cost::Union{Function,Missing}=Missing(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-)
-    return ManifoldStochasticGradientObjective{
-        typeof(evaluation),typeof(cost),typeof(grad_f!!)
-    }(
-        cost, grad_f!!
-    )
+    grad_f!!::G; cost::C=Missing(), evaluation::E=AllocatingEvaluation()
+) where {
+    E<:AbstractEvaluationType,
+    G<:Union{Function,AbstractVector{<:Function}},
+    C<:Union{Function,AbstractVector{<:Function},Missing},
+}
+    return ManifoldStochasticGradientObjective{E,C,G}(cost, grad_f!!)
 end
-function ManifoldStochasticGradientObjective(
-    grad_f!!::AbstractVector{<:Function};
-    cost::Union{Function,Missing}=Missing(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-)
-    return ManifoldStochasticGradientObjective{
-        typeof(evaluation),typeof(cost),typeof(grad_f!!)
-    }(
-        cost, grad_f!!
+
+function get_cost(
+    M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{E,C}, p
+) where {E<:AbstractEvaluationType,C<:AbstractVector{<:Function}}
+    return sum(f(M, p) for f in sgo.cost)
+end
+
+@doc raw"""
+    get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
+
+Evaluate the `i`th summand of the cost.
+
+If you use a single function for the stochastic cost, then only the index `ì=1`` is available
+to evaluate the whole cost.
+"""
+function get_cost(
+    M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{E,C}, p, i
+) where {E<:AbstractEvaluationType,C<:AbstractVector{<:Function}}
+    return sgo.cost[i](M, p)
+end
+function get_cost(
+    M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{E,C}, p, i
+) where {E<:AbstractEvaluationType,C<:Function}
+    (i == 1) && return sgo.cost(M, p)
+    return error(
+        "The cost is implemented as a single function and can not be accessed element wise at $i since the index is larger than 1.",
     )
 end
 
@@ -84,6 +102,10 @@ function get_gradients(
 ) where {TC}
     return [grad_i(M, p) for grad_i in sgo.gradient!!]
 end
+function get_gradients(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradients(M, get_objective(admo, false), p)
+end
+
 function get_gradients!(
     M::AbstractManifold,
     X,
@@ -102,6 +124,10 @@ function get_gradients!(
     copyto!.(Ref(M), X, [grad_i(M, p) for grad_i in sgo.gradient!!])
     return X
 end
+function get_gradients!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
+    return get_gradients!(M, X, get_objective(admo, false), p)
+end
+
 function get_gradients(
     ::AbstractManifold,
     ::ManifoldStochasticGradientObjective{InplaceEvaluation,TC,<:Function},
@@ -182,6 +208,10 @@ function get_gradient(
     X = zero_vector(M, p)
     return get_gradient!(M, X, sgo, p, k)
 end
+function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, k)
+    return get_gradient(M, get_objective(admo, false), p, k)
+end
+
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -222,6 +252,12 @@ function get_gradient!(
 ) where {TC}
     return sgo.gradient!![k](M, X, p)
 end
+function get_gradient!(
+    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p, k
+)
+    return get_gradient!(M, X, get_objective(admo, false), p, k)
+end
+
 # Passdown from problem
 function get_gradient(mp::AbstractManoptProblem, p, k)
     return get_gradient(get_manifold(mp), get_objective(mp), p, k)

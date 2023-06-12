@@ -18,6 +18,8 @@ The following algorithms are currently available
 [Chambolle-Pock](@ref ChambollePockSolver) | [`ChambollePock`](@ref), [`ChambollePockState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}``, ``\operatorname{prox}_{τ G^*}``, ``Λ`` |
 [Conjugate Gradient Descent](@ref CGSolver) | [`conjugate_gradient_descent`](@ref), [`ConjugateGradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f``
 [Cyclic Proximal Point](@ref CPPSolver) | [`cyclic_proximal_point`](@ref), [`CyclicProximalPointState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
+[Difference of Convex Algorithm](@ref DCASolver) | [`difference_of_convex_algorithm`](@ref), [`DifferenceOfConvexState`](@ref) | ``f=g-h``, ``∂h``, and e.g. ``g``, ``\operatorname{grad} g`` |
+[Difference of Convex Proximal Point](@ref DCPPASolver) | [`difference_of_convex_proximal_point`](@ref), [`DifferenceOfConvexProximalState`](@ref) | ``f=g-h``, ``∂h``, and e.g. ``g``, ``\operatorname{grad} g`` |
 [Douglas–Rachford](@ref DRSolver) | [`DouglasRachford`](@ref), [`DouglasRachfordState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
 [Exact Penalty Method](@ref ExactPenaltySolver) | [`exact_penalty_method`](@ref), [`ExactPenaltyMethodState`](@ref) | ``f``, ``\operatorname{grad} f``, ``g``, ``\operatorname{grad} g_i``, ``h``, ``\operatorname{grad} h_j`` |
 [Frank-Wolfe algorithm](@ref FrankWolfe) | [`Frank_Wolfe_method`](@ref), [`FrankWolfeState`](@ref) | sub-problem solver |
@@ -53,4 +55,55 @@ step_solver!
 get_solver_result
 get_solver_return
 stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, Any)
+```
+
+## API for solvers
+
+this is a short overview of the different types of high-level functions are usually
+available for a solver. Let's assume the solver is called `new_solver` and requires
+a cost `f` and some first order information `df` as well as a starting point `p` on `M`.
+`f` and `df` form the objective together called `obj`.
+
+Then there are basically two different variants to call
+
+### The easy to access call
+
+```
+new_solver(M, f, df, p=rand(M); kwargs...)
+new_solver!(M, f, df, p; kwargs...)
+```
+
+Where the start point should be optional.
+Keyword arguments include the type of evaluation, decorators like `debug=` or `record=`
+as well as algorithm specific ones.
+If you provide an immutable point `p` or the `rand(M)` point is immutable, like on the `Circle()` this method should turn the point into a mutable one as well.
+
+The third variant works in place of `p`, so it is mandatory.
+
+This first interface would set up the objective and pass all keywords on the the
+objective based call.
+
+### The objective-based call
+
+```
+new_solver(M, obj, p=rand(M); kwargs...)
+new_solver!(M, obj, p; kwargs...)
+```
+
+Here the objective would be created beforehand, e.g. to compare different solvers on the
+same objective, and for the first variant the start point is optional.
+Keyword arguments include decorators like `debug=` or `record=`
+as well as algorithm specific ones.
+
+this variant would generate the `problem` and the `state` and check validity of all provided
+keyword arguments that affect the state.
+Then it would call the iterate process.
+
+### The manual call
+
+If you generate the correctsponding `problem` and `state` as the previous step does, you can
+also use the third (lowest level) and just call
+
+```
+solve!(problem, state)
 ```

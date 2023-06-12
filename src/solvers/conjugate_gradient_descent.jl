@@ -28,7 +28,8 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
 end
 
 @doc raw"""
-    conjugate_gradient_descent(M, F, gradF, x)
+    conjugate_gradient_descent(M, F, gradF, p=rand(M))
+    conjugate_gradient_descent(M, gradient_objective, p)
 
 perform a conjugate gradient based descent
 
@@ -40,6 +41,9 @@ where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction ``δ_k`` based on
 the last direction ``δ_{k-1}`` and both gradients ``\operatorname{grad}f(x_k)``,``\operatorname{grad}f(x_{k-1})``.
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
+
+Alternatively to `f` and `grad_f` you can prodive
+the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficient`](@ref), [`FletcherReevesCoefficient`](@ref),
@@ -74,18 +78,48 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 * `vector_transport_method` – (`default_vector_transport_method(M, typeof(p))`) vector transport method to transport
   the old descent direction when computing the new descent direction.
 
+If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
+
 # Output
 
-the obtained (approximate) minimizer ``x^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
-function conjugate_gradient_descent(
-    M::AbstractManifold, F::TF, gradF::TDF, x; kwargs...
-) where {TF,TDF}
-    x_res = copy(M, x)
-    return conjugate_gradient_descent!(M, F, gradF, x_res; kwargs...)
+conjugate_gradient_descent(M::AbstractManifold, args...; kwargs...)
+function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
+    return conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end
+function conjugate_gradient_descent(
+    M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation=AllocatingEvaluation(), kwargs...
+) where {TF,TDF}
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    return conjugate_gradient_descent(M, mgo, p; evaluation=evaluation, kwargs...)
+end
+function conjugate_gradient_descent(
+    M::AbstractManifold,
+    f::TF,
+    grad_f::TDF,
+    p::Number;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    # redefine our initial point
+    q = [p]
+    f_(M, p) = f(M, p[])
+    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
+    rs = conjugate_gradient_descent(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
+    #return just a number if  the return type is the same as the type of q
+    return (typeof(q) == typeof(rs)) ? rs[] : rs
+end
+function conjugate_gradient_descent(
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+    q = copy(M, p)
+    return conjugate_gradient_descent!(M, mgo, q; kwargs...)
+end
+
 @doc raw"""
     conjugate_gradient_descent!(M, F, gradF, x)
+    conjugate_gradient_descent!(M, gradient_objective, p; kwargs...)
 
 perform a conjugate gradient based descent in place of `x`, i.e.
 ````math
@@ -99,16 +133,30 @@ where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`
 * `grad_f`: the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
 * `p` : an initial value ``p∈\mathcal M``
 
+Alternatively to `f` and `grad_f` you can prodive
+the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+
 for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
  see [`conjugate_gradient_descent`](@ref).
 """
+conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(
     M::AbstractManifold,
     f::TF,
     grad_f::TDF,
     p;
-    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {TF,TDF}
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    dmgo = decorate_objective!(M, mgo; kwargs...)
+    return conjugate_gradient_descent!(M, dmgo, p; kwargs...)
+end
+function conjugate_gradient_descent!(
+    M::AbstractManifold,
+    mgo::O,
+    p;
+    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -118,8 +166,7 @@ function conjugate_gradient_descent!(
     ),
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
     kwargs...,
-) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     X = zero_vector(M, p)
@@ -133,8 +180,9 @@ function conjugate_gradient_descent!(
         vector_transport_method,
         X,
     )
-    cgs = decorate_state!(cgs; kwargs...)
-    return get_solver_return(solve!(dmp, cgs))
+    dcgs = decorate_state!(cgs; kwargs...)
+    solve!(dmp, dcgs)
+    return get_solver_return(get_objective(dmp), dcgs)
 end
 function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState)
     cgs.X = get_gradient(amp, cgs.p)
