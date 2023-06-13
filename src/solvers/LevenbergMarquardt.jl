@@ -35,6 +35,8 @@ then the keyword `jacobian_tangent_basis` below is ignored
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `expect_zero_residual` – (`false`) whether or not the algorithm might expect that the value of
   residual (objective) at mimimum is equal to 0.
+* `initial_residual_values` – the initial residual vector of the cost function `f`.
+* `initial_jacobian_f` – the initial Jacobian of the cost function `f`.
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
