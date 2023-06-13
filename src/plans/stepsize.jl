@@ -1057,7 +1057,7 @@ function AdaptiveWNGradient(
         end,
     ),
     kwargs...,
-) where {I<:Integer,R<:Real,F<:Function, E<:AbstractEvaluationType}
+) where {I<:Integer,R<:Real,F<:Function,E<:AbstractEvaluationType}
     return AdaptiveWNGradient{I,R,F}(
         count_threshold,
         minimal_bound,
