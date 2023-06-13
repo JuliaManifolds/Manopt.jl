@@ -178,7 +178,7 @@ function LevenbergMarquardt!(
         M,
         p,
         initial_residual_values,
-        initial_jacF;
+        initial_jacobian_f;
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
