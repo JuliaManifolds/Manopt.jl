@@ -170,7 +170,9 @@ function LevenbergMarquardt!(
     debug=[DebugWarnIfCostIncreases()],
     expect_zero_residual::Bool=false,
     initial_residual_values=similar(p, get_objective(nlso).num_components),
-    initial_jacobian_f=similar(p, get_objective(nlso).num_components, manifold_dimension(M)),
+    initial_jacobian_f=similar(
+        p, get_objective(nlso).num_components, manifold_dimension(M)
+    ),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     i_nlso = get_objective(nlso) # undeecorate – for safety
