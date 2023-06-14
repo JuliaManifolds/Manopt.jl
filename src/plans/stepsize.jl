@@ -973,25 +973,24 @@ Set ``c_0=0`` and use ``\omega_0 = \lVert \operatorname{grad} f(p_0) \rvert_{p_0
 For the first iterate we use the initial step size ``s_0 = \frac{1}{b_0}``
 
 Then, given the last gradient ``X_{k-1} = \operatorname{grad} f(x_{k-1})``,
-and a previous ``\omega_{k-1}``
+and a previous ``\omega_{k-1}``, the values ``(b_k, \omega_k, c_k)`` are computed
+using ``X_k = \operatorname{grad} f(p_k)`` and the following cases
 
-The values ``(b_k, \omega_k, c_k)`` are computed with the following cases
-
-1. ``\lVert X_k \rVert_{p_k} \leq \alpha\omega_{k-1}``. Then let ``\hat b_[k-1] \in [b_\mathrm{min},b_{k-1}]``
-and set
+If ``\lVert X_k \rVert_{p_k} \leq \alpha\omega_{k-1}``, then let
+``\hat b_{k-1} \in [b_\mathrm{min},b_{k-1}]`` and set
 
 ```math
 (b_k, \omega_k, c_k) = \begin{cases}
-  \bigl(\hat b_{k-1}, \lVert X_k\rVert_{p_k}, 0 \bigr) & \text[ if } c_{k-1}+1 = \hat c\\
-  \Bigl(b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, c_{k-1}+1 ) & \text{ if } c_{k-1}+1<\hat c
+\bigl(\hat b_{k-1}, \lVert X_k\rVert_{p_k}, 0 \bigr) & \text{ if } c_{k-1}+1 = \hat c\\
+\Bigl(b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, c_{k-1}+1 \Bigr) & \text{ if } c_{k-1}+1<\hat c
 \end{cases}
 ```
 
-2. ``\lVert X_k \rVert_{p_k} > \alpha\omega_{k-1}``. Then set
+If ``\lVert X_k \rVert_{p_k} > \alpha\omega_{k-1}``, the set
 
 ```math
 (b_k, \omega_k, c_k) =
-  \Bigl( b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, 0)
+\Bigl( b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, 0)
 ```
 
 and return the step size ``s_k = \frac{1}{b_k}``.
@@ -1004,22 +1003,22 @@ Note that for ``α=0`` this is the Riemannian variant of WNGRad
 * `alternate_bound::Function` (`(bmin, bk, hat_c) -> min(b0, max(b_min, bk/(3*hat_c)`)
   how to determine ``\hat b_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
 * `gradient_reduction::Float64` (`0.9`)
-* `gradient_bound` `norm(M, p0, grad_f(M,p0))` the bound ``b_k`` - if none is provided, `1.0` is used.
+* `gradient_bound` `norm(M, p0, grad_f(M,p0))` the bound ``b_k``.
 
 as well as the internal fields
 
-* `weight` for ``\omega_k`` initialised to `weight=(`norm(M, p0, grad_f(M,p0))`)``
-* `count` for the ``c_k``, initialised to `count=0`
+* `weight` for ``ω_k`` initialised to ``ω_0 = ```norm(M, p0, grad_f(M,p0))` if this is not zero, `1.0` otherwise.
+* `count` for the ``c_k``, initialised to ``c_0 = 0``.
 
 # Constructor
 
-    AdaptiveWNGrad(M::DefaultManifold, grad_f=(M,p) -> zero_vector(M,p), p=rand(M); kwargs...)
+    AdaptiveWNGrad(M=DefaultManifold, grad_f=(M,p) -> zero_vector(M,rand(M)), p=rand(M); kwargs...)
 
 Where all above fields with defaults are keyword arguments.
 An additional keyword arguments
 
 * `adaptive` (`true`) switches the `gradient_reduction ``α`` to `0`.
-* `evaluation` (`AllocatingEvaluation()`) specifies whether the gradient (for initialisationonly) is mutating or allocating
+* `evaluation` (`AllocatingEvaluation()`) specifies whether the gradient (that is used for initialisation only) is mutating or allocating
 
 [^GrapigliaStella:2023]:
     > Grapiglia, G. N., Stella, G. F. D.:
@@ -1037,8 +1036,8 @@ struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
     count::I
 end
 function AdaptiveWNGradient(
-    M::AbstractManifold,
-    grad_f!!,
+    M::AbstractManifold=DefaultManifold,
+    (grad_f!!)=(M, p) -> zero_vector(M, rand(M)),
     p=rand(M);
     evaluation::E=AllocatingEvaluation(),
     adaptive::Bool=true,
@@ -1063,7 +1062,7 @@ function AdaptiveWNGradient(
         alternate_bound,
         gradient_reduction,
         gradient_bound,
-        gradient_bound, #initialise also the weight to grad norm
+        gradient_bound == 0 ? 1.0 : gradient_bound, # initialise weight to grad norm or 1.0 if grad norm is 0
         0,
     )
 end
