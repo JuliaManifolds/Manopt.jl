@@ -389,6 +389,7 @@ export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLag
 export Stepsize
 export ArmijoLinesearch,
     ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
+export AdaptiveWNGradient
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
