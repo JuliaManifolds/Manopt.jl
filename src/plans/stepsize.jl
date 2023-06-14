@@ -958,7 +958,7 @@ function status_summary(a::WolfePowellBinaryLinesearch)
     return "$a$s"
 end
 
-@docs raw"""
+@doc raw"""
     AdaptiveWNGradient <: DirectionUpdateRule
 
 Represent an adaptive gradient method introduced by [^GrapigliaStella:2023].
@@ -1027,7 +1027,6 @@ An additional keyword arguments
     > Journal of Optimization Theory and Applications (197), pp. 1140–1160, 2023.
     > doi: [10.1007/s10957-023-02227-y](https://doi.org/10.1007/s10957-023-02227-y)
 """
-
 struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
     count_threshold::I
     minimal_bound::R
@@ -1039,8 +1038,8 @@ struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
 end
 function AdaptiveWNGradient(
     M::AbstractManifold,
-    p=rand(M),
-    grad_f!!;
+    grad_f!!,
+    p=rand(M);
     evaluation::E=AllocatingEvaluation(),
     adaptive::Bool=true,
     count_threshold::I=4,
