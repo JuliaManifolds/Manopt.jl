@@ -961,9 +961,9 @@ end
 @doc raw"""
     AdaptiveWNGradient <: DirectionUpdateRule
 
-Represent an adaptive gradient method introduced by [^GrapigliaStella:2023].
+Represent an adaptive gradient method introduced by [^GrapigliaStella2023].
 
-Given a threshold `\hat c \mathbb N > 0`,
+Given a positive threshold ``\hat c \mathbb N``,
 an minimal bound ``b_{\mathrm{min}} > 0``,
 an initial ``b_0 ≥ b_{\mathrm{min}}``, and a
 gradient reduction factor threshold ``\alpha \in [0,1).
@@ -1020,7 +1020,7 @@ An additional keyword arguments
 * `adaptive` (`true`) switches the `gradient_reduction ``α`` to `0`.
 * `evaluation` (`AllocatingEvaluation()`) specifies whether the gradient (that is used for initialisation only) is mutating or allocating
 
-[^GrapigliaStella:2023]:
+[^GrapigliaStella2023]:
     > Grapiglia, G. N., Stella, G. F. D.:
     > An Adaptive Riemannian Gradient Method Without Function Evaluations
     > Journal of Optimization Theory and Applications (197), pp. 1140–1160, 2023.
