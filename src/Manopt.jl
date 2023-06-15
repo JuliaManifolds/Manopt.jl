@@ -389,6 +389,7 @@ export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLag
 export Stepsize
 export ArmijoLinesearch,
     ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
+export AdaptiveWNGradient
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
@@ -408,7 +409,8 @@ export StopAfter,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenTrustRegionIsExceeded
-export get_active_stopping_criteria, get_stopping_criteria, get_reason
+export get_active_stopping_criteria,
+    get_stopping_criteria, get_reason, get_stopping_criterion
 export update_stopping_criterion!
 #
 # Data functions

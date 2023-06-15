@@ -53,4 +53,29 @@ using Manopt, Manifolds, Test
         )
         @test startswith(s5[2], "Max increase steps (1)")
     end
+    @testset "Adaptive WN Gradient" begin
+        # Build a dummy f, grad_f
+        f(M, p) = 0
+        grad_f(M, p) = [0.0, 0.75, 0.0] # We only stay at north pole
+        M = Sphere(2)
+        p = [1.0, 0.0, 0.0]
+        mgo = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, mgo)
+        s = AdaptiveWNGradient(; gradient_reduction=0.5, count_threshold=2)
+        gds = GradientDescentState(M, p)
+        @test get_initial_stepsize(s) == 1.0
+        @test get_last_stepsize(s) == 1.0
+        @test s(mp, gds, 0) == 1.0
+        @test s(mp, gds, 1) == 0.64 # running into the last case
+        @test s.count == 0 # unchanged
+        @test s.weight == 0.75 # unchanged
+        # tweak bound
+        s.gradient_reduction = 10.0
+        @test s(mp, gds, 2) ≈ 0.5201560468140443 # running into the last case
+        @test s.count == 1 # We ran into case 2
+        @test s(mp, gds, 3) ≈ 3.1209362808842656
+        @test s.count == 0 # was reset
+        @test s.weight == 0.75 #also reset to orig
+        @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
+    end
 end
