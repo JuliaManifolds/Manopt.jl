@@ -1000,7 +1000,7 @@ Note that for ``α=0`` this is the Riemannian variant of WNGRad
 # Fields
 * `count_threshold::Int` (`4`) an `Integer` for ``\hat c``
 * `minimal_bound::Float64` (`1e-4`) for ``b_{\mathrm{min}}``
-* `alternate_bound::Function` (`(bmin, bk, hat_c) -> min(b0, max(b_min, bk/(3*hat_c)`)
+* `alternate_bound::Function` (`(bk, hat_c) -> min(gradient_bound, max(gradient_bound, bk/(3*hat_c)`)
   how to determine ``\hat b_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
 * `gradient_reduction::Float64` (`0.9`)
 * `gradient_bound` `norm(M, p0, grad_f(M,p0))` the bound ``b_k``.
