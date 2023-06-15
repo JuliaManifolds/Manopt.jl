@@ -255,33 +255,36 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
-        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.p_last_serious, bms.p))
+        # bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.p_last_serious, bms.p))
         copyto!(M, bms.p_last_serious, bms.p)
     end
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     v = findall(λj -> λj ≤ bms.filter1, bms.λ)
     if !isempty(v)
-        # y = copy(M, bms.bundle[1][1])
+        y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, v)
-        # s =
-        #    (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
-        #    distance(M, bms.bundle[1][1], y)
-        # if !isnan(s)
+        s =
+           (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+           distance(M, bms.bundle[1][1], y)
+        # if !isnan(s) && !isinf(s)# && !(bms.p ≈ bms.p_last_serious)
         #    bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         # end
         # if abs(ε_old - bms.ε) < 1e-6
         #     bms.diam -= bms.δ * bms.diam
         # end
+        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
     if l == bms.bundle_size
-        # y = copy(M, bms.bundle[1][1])
+        y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, l - bms.bundle_size + 1)
         # s = (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
         #     distance(M, bms.bundle[1][1], y)
-        # if !isnan(s) && !isinf(s)
+        # if !isnan(s) && !isinf(s)# && !(bms.p ≈ bms.p_last_serious)
         #     bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         # end
+        # bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.p_last_serious, bms.p))
+        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
     # bms.diam = maximum([bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle])
     # bms.diam = [bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle]
