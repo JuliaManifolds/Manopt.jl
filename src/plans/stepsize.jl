@@ -1024,7 +1024,8 @@ An additional keyword arguments
     > Grapiglia, G. N., Stella, G. F. D.:
     > An Adaptive Riemannian Gradient Method Without Function Evaluations
     > Journal of Optimization Theory and Applications (197), pp. 1140–1160, 2023.
-    > doi: [10.1007/s10957-023-02227-y](https://doi.org/10.1007/s10957-023-02227-y)
+    > doi: [10.1007/s10957-023-02227-y](https://doi.org/10.1007/s10957-023-02227-y),
+    > preprint: [optimization-online.org/wp-content/uploads/2022/04/8864.pdf](https://optimization-online.org/wp-content/uploads/2022/04/8864.pdf)
 """
 mutable struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
     count_threshold::I
