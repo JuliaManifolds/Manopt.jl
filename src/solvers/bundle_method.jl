@@ -1,127 +1,4 @@
 @doc raw"""
-    BundleMethodState <: AbstractManoptSolverState
-stores option values for a [`bundle_method`](@ref) solver
-
-# Fields
-
-* `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
-* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
-* `inverse_retraction_method` - the inverse retraction to use within
-* `lin_errors` - linearization errors at the last serious step
-* `m` - the parameter to test the decrease of the cost
-* `p` - current iterate
-* `p_last_serious` - last serious iterate
-* `retraction_method` – the retraction to use within
-* `stop` – a [`StoppingCriterion`](@ref)
-* `vector_transport_method` - the vector transport method to use within
-* `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
-    `p` that was last evaluated.
-* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε
-
-# Constructor
-
-BundleMethodState(M::AbstractManifold, p; kwargs...)
-
-with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
-You can use e.g. `X=` to specify the type of tangent vector to use
-
-"""
-mutable struct BundleMethodState{
-    R<:Real,
-    P,
-    T,
-    A<:AbstractVector{<:R},
-    B<:AbstractVector{Tuple{<:P,<:T}},
-    C<:AbstractVector{T},
-    I<:Integer,
-    IR<:AbstractInverseRetractionMethod,
-    TR<:AbstractRetractionMethod,
-    TSC<:StoppingCriterion,
-    VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {P,T}
-    approx_errors::A
-    bundle::B
-    bundle_size::I
-    inverse_retraction_method::IR
-    lin_errors::A
-    p::P
-    p_last_serious::P
-    X::T
-    retraction_method::TR
-    stop::TSC
-    vector_transport_method::VT
-    m::R
-    ξ::R
-    diam::R
-    λ::A
-    g::T
-    ε::R
-    transported_subgradients::C
-    filter1::R
-    filter2::R
-    δ::R
-    function BundleMethodState(
-        M::TM,
-        p::P;
-        bundle_size::Integer=50,
-        m::R=1e-2,
-        diam::R=1.0,
-        inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
-        retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenBundleLess(1e-8),
-        X::T=zero_vector(M, p),
-        vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        filter1::R=eps(Float64),
-        filter2::R=eps(Float64),
-        δ::R=√2,
-    ) where {
-        IR<:AbstractInverseRetractionMethod,
-        P,
-        T,
-        TM<:AbstractManifold,
-        TR<:AbstractRetractionMethod,
-        SC<:StoppingCriterion,
-        VT<:AbstractVectorTransportMethod,
-        R<:Real,
-    }
-        # Initialize indes set, bundle points, linearization errors, and stopping parameter
-        approx_errors = [0.0]
-        bundle = [(copy(M, p), copy(M, p, X))]
-        lin_errors = [0.0]
-        ξ = 0.0
-        λ = [1.0]
-        g = copy(M, p, X)
-        ε = 0.0
-        transported_subgradients = [copy(M, p, X)]
-        return new{typeof(m),P,T,typeof(approx_errors),typeof(bundle),typeof(transported_subgradients),typeof(bundle_size),IR,TR,SC,VT}(
-            approx_errors,
-            bundle,
-            bundle_size,
-            inverse_retraction_method,
-            lin_errors,
-            p,
-            copy(M, p),
-            X,
-            retraction_method,
-            stopping_criterion,
-            vector_transport_method,
-            m,
-            ξ,
-            diam,
-            λ,
-            g,
-            ε,
-            transported_subgradients,
-            filter1,
-            filter2,
-            δ,
-        )
-    end
-end
-get_iterate(bms::BundleMethodState) = bms.p_last_serious
-get_subgradient(bms::BundleMethodState) = bms.g
-
-@doc raw"""
     bundle_method(M, f, ∂f, p)
 
 perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
@@ -268,8 +145,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, v)
         s =
-           (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
-           distance(M, bms.bundle[1][1], y)
+            (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+            distance(M, bms.bundle[1][1], y)
         # if !isnan(s) && !isinf(s)# && !(bms.p ≈ bms.p_last_serious)
         #    bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         # end
@@ -300,9 +177,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         ) for (qj, Xj) in bms.bundle
     ]
     bms.approx_errors =
-        bms.lin_errors +
-        [
-        bms.diam *
+        bms.lin_errors + [
+            bms.diam *
             sqrt(
                 2 * norm(
                     M,
