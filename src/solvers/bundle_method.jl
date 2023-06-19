@@ -27,20 +27,23 @@ You can use e.g. `X=` to specify the type of tangent vector to use
 
 """
 mutable struct BundleMethodState{
-    IR<:AbstractInverseRetractionMethod,
-    L<:Array,
+    R<:Real,
     P,
     T,
+    A<:AbstractVector{<:R},
+    B<:AbstractVector{Tuple{<:P,<:T}},
+    C<:AbstractVector{T},
+    I<:Integer,
+    IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-    R<:Real,
 } <: AbstractManoptSolverState where {P,T}
-    approx_errors::AbstractVector{R}
-    bundle::AbstractVector{Tuple{P,T}}
-    bundle_size::Integer
+    approx_errors::A
+    bundle::B
+    bundle_size::I
     inverse_retraction_method::IR
-    lin_errors::L
+    lin_errors::A
     p::P
     p_last_serious::P
     X::T
@@ -50,10 +53,10 @@ mutable struct BundleMethodState{
     m::R
     ξ::R
     diam::R
-    λ::AbstractVector{R}
+    λ::A
     g::T
     ε::R
-    transported_subgradients::AbstractVector{T}
+    transported_subgradients::C
     filter1::R
     filter2::R
     δ::R
@@ -90,7 +93,7 @@ mutable struct BundleMethodState{
         g = copy(M, p, X)
         ε = 0.0
         transported_subgradients = [copy(M, p, X)]
-        return new{IR,typeof(approx_errors),P,T,TR,SC,VT,R}(
+        return new{typeof(m),P,T,typeof(approx_errors),typeof(bundle),typeof(transported_subgradients),typeof(bundle_size),IR,TR,SC,VT}(
             approx_errors,
             bundle,
             bundle_size,
@@ -277,7 +280,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     if l == bms.bundle_size
         y = copy(M, bms.bundle[1][1])
-        deleteat!(bms.bundle, l - bms.bundle_size + 1)
+        deleteat!(bms.bundle, 1)
         # s = (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
         #     distance(M, bms.bundle[1][1], y)
         # if !isnan(s) && !isinf(s)# && !(bms.p ≈ bms.p_last_serious)
@@ -288,7 +291,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     # bms.diam = maximum([bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle])
     # bms.diam = [bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle]
-    bms.lin_errors = [isapprox(qj, bms.p_last_serious) ? 0.0 :
+    bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
             qj,
@@ -298,7 +301,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ]
     bms.approx_errors =
         bms.lin_errors +
-        [bms.diam *
+        [
+        bms.diam *
             sqrt(
                 2 * norm(
                     M,
