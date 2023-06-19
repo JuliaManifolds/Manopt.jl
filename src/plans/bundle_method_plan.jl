@@ -1,3 +1,4 @@
+import Base: deleteat!, push!
 
 mutable struct BundleStruct{
     I<:Integer,Is<:AbstractVector{<:I},P,Ps<:AbstractVector{<:P},T,Ts<:AbstractVector{<:T}
@@ -5,18 +6,28 @@ mutable struct BundleStruct{
     points::Ps
     vectors::Ts
     indices::Is
-
+    size::I
     function BundleStruct(
         M::AM, p::P, X::T, size::I
     ) where {AM<:AbstractManifold,I<:Integer,P,T}
         points = [copy(M, p) for _ in 1:size]
         vectors = [copy(M, p, X) for _ in 1:size]
         indices = [1]
-        return new{I, P, T, typeof(points),typeof(vectors),typeof(indices)}(points, vectors, indices)
+        size = size
+        return new{I,P,T,typeof(points),typeof(vectors),typeof(indices)}(
+            points, vectors, indices, size
+        )
     end
 end
-function push!(bs::BundleStruct, pX)
-
+function push!(bs::BundleStruct, pX::Tuple, i::Int)
+    copyto!(bs.points[bs.indices[end]], pX[1])
+    copyto!(bs.vectors[bs.indices[end]], pX[2])
+    push!(bs.indices, i)
+    return bs
+end
+function deleteat!(bs::BundleStruct, i::Int)
+    bs.indices[i] = 0
+    return bs
 end
 
 @doc raw"""
@@ -55,14 +66,15 @@ mutable struct BundleMethodState{
     B<:AbstractVector{Tuple{<:P,<:T}},
     C<:AbstractVector{T},
     I<:Integer,
+    D<:AbstractVector{<:I},
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
 } <: AbstractManoptSolverState where {P,T}
-    approx_errors::A
     bundle::B
     bundle_size::I
+    indices::D
     inverse_retraction_method::IR
     lin_errors::A
     p::P
@@ -106,9 +118,9 @@ mutable struct BundleMethodState{
         R<:Real,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
-        approx_errors = [0.0]
-        bundle = [(copy(M, p), copy(M, p, X))]
-        lin_errors = [0.0]
+        bundle = [(copy(M, p), copy(M, p, X)) for _ in 1:bundle_size]
+        indices = [i for i in 1:bundle_size]
+        lin_errors = zeros(bundle_size)
         ξ = 0.0
         λ = [1.0]
         g = copy(M, p, X)
@@ -118,18 +130,19 @@ mutable struct BundleMethodState{
             typeof(m),
             P,
             T,
-            typeof(approx_errors),
+            typeof(lin_errors),
             typeof(bundle),
             typeof(transported_subgradients),
             typeof(bundle_size),
+            typeof(indices),
             IR,
             TR,
             SC,
             VT,
         }(
-            approx_errors,
             bundle,
             bundle_size,
+            indices,
             inverse_retraction_method,
             lin_errors,
             p,
