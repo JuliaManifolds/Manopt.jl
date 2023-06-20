@@ -291,17 +291,13 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     # bms.diam = maximum([bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle])
     # bms.diam = [bms.δ*distance(M, qj, bms.p_last_serious) for (qj, Xj) in bms.bundle]
-    bms.lin_errors = [
+    bms.approx_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
             qj,
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        ) for (qj, Xj) in bms.bundle
-    ]
-    bms.approx_errors =
-        bms.lin_errors +
-        [
+        )+
         bms.diam *
             sqrt(
                 2 * norm(
