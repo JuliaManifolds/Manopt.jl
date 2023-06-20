@@ -4,11 +4,10 @@ function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:Abstra
         inner(M, bms.p_last_serious, X, Y) for X in bms.transported_subgradients,
         Y in bms.transported_subgradients
     ]
-    B = reshape(ones(d), 1, d)
     qm = QuadraticModel(
-        bms.lin_errors,
-        sparse(tril(H));
-        A=B,
+        bms.lin_errors[1:d],
+        tril(H);
+        A=reshape(ones(d), 1, d),
         lcon=[1.0],
         ucon=[1.0],
         lvar=zeros(d),

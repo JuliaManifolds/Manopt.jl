@@ -101,7 +101,7 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
     copyto!(M, bms.g, bms.p_last_serious, bms.X)
-    bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X)) for _ in 1:(bms.bundle_size)]
+    bms.bundle[1] = (copy(M, bms.p), copy(M, bms.p, bms.X))
     return bms
 end
 function bundle_method_sub_solver(::Any, ::Any)
@@ -129,19 +129,20 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
     end
-    j = mod1(i, bms.bundle_size)
-    p0 = bms.bundle[j][1]
-    bms.indices = [mod1(l, bms.bundle_size) for l in 1:i]
-    if length(bms.indices) > bms.bundle_size
-        for h in 1:(length(bms.indices) - bms.bundle_size)
-            bms.indices[h] = 0
-        end
+    bms.j = mod1(i, bms.bundle_size)
+    bms.p0 .= bms.bundle[bms.indices[1]][1]
+    if i ≤ bms.bundle_size
+        bms.indices[i] = i
+        bms.indices_ref[i] = i
+    else
+        circshift!(bms.indices, bms.indices_ref, -bms.j)
     end
-    copyto!(M, bms.bundle[j][1], bms.p)
-    copyto!(M, bms.bundle[j][2], bms.p, bms.X)
-    t = bms.indices[findfirst(x -> x != 0, bms.indices)]
-    q0 = bms.bundle[t][1]
-    bms.diam = max(0.0, bms.diam - bms.δ * distance(M, q0, p0))
+    copyto!(M, bms.bundle[bms.j][1], bms.p)
+    copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
+    if bms.indices[2] != 0
+        bms.q0 .= bms.bundle[bms.indices[2]][1]
+        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.q0, bms.p0))
+    end
     # v = findall(λj -> λj ≤ bms.filter1, bms.λ)
     # if !isempty(v)
     #     k = findfirst(x -> x == minimum(bms.indices), bms.indices)

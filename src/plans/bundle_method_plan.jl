@@ -75,10 +75,14 @@ mutable struct BundleMethodState{
     bundle::B
     bundle_size::I
     indices::D
+    indices_ref::D
     inverse_retraction_method::IR
+    j::I
     lin_errors::A
     p::P
     p_last_serious::P
+    p0::P
+    q0::P
     X::T
     retraction_method::TR
     stop::TSC
@@ -119,7 +123,10 @@ mutable struct BundleMethodState{
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         bundle = [(copy(M, p), copy(M, p, X)) for _ in 1:bundle_size]
-        indices = [i for i in 1:bundle_size]
+        indices = [0 for _ in 1:bundle_size]
+        indices[1] = 1
+        indices_ref = copy(indices)
+        j = 1
         lin_errors = zeros(bundle_size)
         ξ = 0.0
         λ = [1.0]
@@ -143,9 +150,13 @@ mutable struct BundleMethodState{
             bundle,
             bundle_size,
             indices,
+            indices_ref,
             inverse_retraction_method,
+            j,
             lin_errors,
             p,
+            copy(M, p),
+            copy(M, p),
             copy(M, p),
             X,
             retraction_method,
