@@ -36,13 +36,33 @@ function test_sphere()
     @NLobjective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)
     optimize!(model)
+    @test objective_value(model) ≈ 1 / 3 rtol = 1e-4
     @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
 end
 
+function test_rank()
+    v = [
+        1 -1
+        -1 1
+        1 1
+    ]
+    A = v * v'
+    model = Model(Manopt.Optimizer)
+    @variable(model, U[1:3, 1:2] in FixedRankMatrices(3, 2, 2), start = 1.0)
+
+    # We don't do the sum of the squares of the entry on purpose
+    # to tests quadratic objective (and not quartic)
+    @objective(model, Min, sum(A - U * U'))
+    optimize!(model)
+    @show objective_value(model)
+    return
+end
+
 @testset "JuMP tests" begin
     test_sphere()
+    test_rank()
 end
 
 function test_runtests()

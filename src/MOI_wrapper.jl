@@ -201,13 +201,15 @@ function MOI.optimize!(model::Optimizer)
         if model.sense == MOI.MAX_SENSE
             LinearAlgebra.rmul!(grad_f, -1)
         end
-        return ManifoldDiff.riemannian_gradient(model.manifold, x, grad_f)
+        reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
+        return ManifoldDiff.riemannian_gradient(model.manifold, x, reshaped_grad_f)
     end
     MOI.initialize(model.nlp_data.evaluator, [:Grad])
     mgo = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
     dmgo = decorate_objective!(model.manifold, mgo)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
-    s = GradientDescentState(model.manifold, start)
+    reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
+    s = GradientDescentState(model.manifold, reshaped_start)
     model.state = decorate_state!(s)
     solve!(model.problem, model.state)
     return nothing
@@ -227,10 +229,14 @@ function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
     return reshape(vector, shape.size)
 end
 
+function _shape(m::ManifoldsBase.AbstractManifold)
+    return ArrayShape(ManifoldsBase.representation_size(m))
+end
+
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-    size = ManifoldsBase.representation_size(m)
+    shape = _shape(m)
     return JuMP.VariablesConstrainedOnCreation(
-        func, VectorizedManifold(m), ArrayShape(size)
+        JuMP.vectorize(func, shape), VectorizedManifold(m), shape
     )
 end
 
