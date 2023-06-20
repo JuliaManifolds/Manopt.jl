@@ -32,7 +32,6 @@ function check_maxfunc(M, tol=1e-8)
 
     println(check_gradient(M, F3, subgradF3, m))
 
-
     p0 = m
 
     # diam = level_set_diameter(M, F3, subgradF3, p0)
@@ -44,7 +43,7 @@ function check_maxfunc(M, tol=1e-8)
         subgradF3,
         p0;
         δ=sqrt(2),
-        diam=2.,#.8,
+        diam=2.0,#.8,
         stopping_criterion=StopWhenBundleLess(tol) | StopAfterIteration(5000),
         debug=[
             :Iteration,
@@ -64,14 +63,9 @@ function check_maxfunc(M, tol=1e-8)
         F3,
         subgradF3,
         p0;
-        stopping_criterion=StopWhenSubgradientNormLess(sqrt(tol)) | StopAfterIteration(5000),
-        debug=[
-            :Iteration,
-            (:Cost, "F(p): %1.16f"),
-            :Stop,
-            1000,
-            "\n",
-        ],
+        stopping_criterion=StopWhenSubgradientNormLess(sqrt(tol)) |
+                           StopAfterIteration(5000),
+        debug=[:Iteration, (:Cost, "F(p): %1.16f"), :Stop, 1000, "\n"],
     )
     # prox_min = p0
     try
@@ -80,8 +74,8 @@ function check_maxfunc(M, tol=1e-8)
             F3,
             subgradF3,
             p0;
-            δ=.0,
-            μ=1.,
+            δ=0.0,
+            μ=1.0,
             stopping_criterion=StopWhenProxBundleLess(tol) | StopAfterIteration(5000),
             debug=[
                 :Iteration,
@@ -100,14 +94,18 @@ function check_maxfunc(M, tol=1e-8)
         println("The prox_bundle_method got stuck at the subsolver level.")
     end
     println("Distance between p0 and bundle_min: $(distance(M, bundle_min, p0))")
-    println("Distance between bundle_min and subgrad_min: $(distance(M, bundle_min, subgrad_min))")
+    println(
+        "Distance between bundle_min and subgrad_min: $(distance(M, bundle_min, subgrad_min))",
+    )
     println(
         "$(F3(M, bundle_min) < F3(M, subgrad_min) ? "F3(bundle_min) < F3(subgrad_min)" : "F3(bundle_min) ≥ F3(subgrad_min)")",
-        )
+    )
     println(
         "    |F3(bundle_min) - F3(subgrad_min)| = $(abs(F3(M, bundle_min) - F3(M, subgrad_min)))",
-        )
-    println("Distance between bundle_min and prox_min: $(distance(M, bundle_min, subgrad_min))")
+    )
+    println(
+        "Distance between bundle_min and prox_min: $(distance(M, bundle_min, subgrad_min))"
+    )
     try
         println(
             "$(F3(M, prox_min) < F3(M, subgrad_min) ? "F3(prox_min) < F3(subgrad_min)" : "F3(prox_min) ≥ F3(subgrad_min)")",
@@ -119,7 +117,7 @@ function check_maxfunc(M, tol=1e-8)
             "$(F3(M, prox_min) < F3(M, bundle_min) ? "F3(prox_min) < F3(bundle_min)" : "F3(prox_min) ≥ F3(bundle_min)")",
         )
         println(
-        "    |F3(prox_min) - F3(bundle_min)| = $(abs(F3(M, prox_min) - F3(M, bundle_min))) \n\n",
+            "    |F3(prox_min) - F3(bundle_min)| = $(abs(F3(M, prox_min) - F3(M, bundle_min))) \n\n",
         )
     catch y
         println("prox_min is not defined")

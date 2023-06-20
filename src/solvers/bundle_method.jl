@@ -39,7 +39,7 @@ mutable struct BundleMethodState{
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {R<:Float64, P,T, I<:Int64}
+} <: AbstractManoptSolverState where {R<:Float64,P,T,I<:Int64}
     bundle::B
     bundle_size::I
     indices::D
@@ -278,7 +278,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
                 bms.bundle[l][2],
                 bms.p_last_serious,
                 bms.vector_transport_method,
-            ) 
+            )
         end
     end
     bms.λ[1:length(findall(x -> x != 0, bms.indices))] .= bundle_method_sub_solver(M, bms)
@@ -296,7 +296,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size#bms.indices[2] != 0
-        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[2]][1], bms.p0))
+        bms.diam = max(
+            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[2]][1], bms.p0)
+        )
     end
     # v = findall(λj -> λj ≤ bms.filter1, bms.λ)
     # if !isempty(v)
@@ -311,25 +313,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     # end
     for l in bms.indices
         if l != 0
+            logs = inverse_retract(
+                M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
+            )
             bms.lin_errors[l] =
-                get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) - inner(
-                    M,
-                    bms.bundle[l][1],
-                    bms.bundle[l][2],
-                    inverse_retract(
-                        M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
-                    ),
-                ) +
+                get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) -
+                inner(M, bms.bundle[l][1], bms.bundle[l][2], logs) +
                 bms.diam *
-                sqrt(
-                    2 * norm(
-                        M,
-                        bms.bundle[l][1],
-                        inverse_retract(
-                            M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
-                        ),
-                    ),
-                ) *
+                sqrt(2 * norm(M, bms.bundle[l][1], logs)) *
                 norm(M, bms.bundle[l][1], bms.bundle[l][2])
         end
     end
@@ -408,6 +399,6 @@ function show(io::IO, b::StopWhenBundleLess)
             io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))"
         )
     else
-        return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
+        return print(io, "StopWhenBundleLess($(b.tolxi)\n    $(status_summary(b))")
     end
 end
