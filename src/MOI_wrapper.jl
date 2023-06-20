@@ -29,6 +29,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     sense::MOI.OptimizationSense
     nlp_data::MOI.NLPBlockData
     qp_data::QPBlockData{Float64}
+    options::Dict{String,Any}
     function Optimizer()
         return new(
             nothing,
@@ -38,6 +39,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             MOI.FEASIBILITY_SENSE,
             MOI.NLPBlockData([], _EmptyNLPEvaluator(), false),
             QPBlockData{Float64}(),
+            Dict{String,Any}(),
         )
     end
 end
@@ -60,6 +62,26 @@ function MOI.empty!(model::Optimizer)
     model.nlp_data = MOI.NLPBlockData([], _EmptyNLPEvaluator(), false)
     model.qp_data = QPBlockData{Float64}()
     return nothing
+end
+
+function MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
+    # FIXME It should depend on `attr.name`
+    return true
+end
+
+function MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
+    if !MOI.supports(model, attr)
+        throw(MOI.UnsupportedAttribute(attr))
+    end
+    return model.options[attr.name]
+end
+
+function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
+    if !MOI.supports(model, attr)
+        throw(MOI.UnsupportedAttribute(attr))
+    end
+    model.options[attr.name] = value
+    return
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "Manopt"
@@ -180,6 +202,8 @@ function MOI.eval_objective_gradient(model::Optimizer, grad, x)
     return nothing
 end
 
+const DESCENT_STATE_TYPE = "descent_state_type"
+
 function MOI.optimize!(model::Optimizer)
     start = Float64[
         if isnothing(model.variable_primal_start[i])
@@ -189,27 +213,34 @@ function MOI.optimize!(model::Optimizer)
         end for i in eachindex(model.variable_primal_start)
     ]
     function eval_f_cb(M, x)
-        obj = MOI.eval_objective(model, x)
+        obj = MOI.eval_objective(model, JuMP.vectorize(x, _shape(model.manifold)))
         if model.sense == MOI.MAX_SENSE
             obj = -obj
         end
         return obj
     end
-    function eval_grad_f_cb(M, x)
+    function eval_grad_f_cb(M, X)
+        x = JuMP.vectorize(X, _shape(model.manifold))
         grad_f = zeros(length(x))
         MOI.eval_objective_gradient(model, grad_f, x)
         if model.sense == MOI.MAX_SENSE
             LinearAlgebra.rmul!(grad_f, -1)
         end
         reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
-        return ManifoldDiff.riemannian_gradient(model.manifold, x, reshaped_grad_f)
+        return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     MOI.initialize(model.nlp_data.evaluator, [:Grad])
     mgo = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
     dmgo = decorate_objective!(model.manifold, mgo)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
     reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
-    s = GradientDescentState(model.manifold, reshaped_start)
+    descent_state_type = get(model.options, DESCENT_STATE_TYPE, GradientDescentState)
+    kws = Dict{Symbol,Any}(
+        Symbol(key) => value
+        for (key, value) in model.options
+        if key != DESCENT_STATE_TYPE
+    )
+    s = descent_state_type(model.manifold, reshaped_start; kws...)
     model.state = decorate_state!(s)
     solve!(model.problem, model.state)
     return nothing

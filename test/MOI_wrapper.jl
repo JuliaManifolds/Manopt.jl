@@ -50,6 +50,7 @@ function test_rank()
     ]
     A = v * v'
     model = Model(Manopt.Optimizer)
+    set_attribute(model, "stepsize", ConstantStepsize(1))
     @variable(model, U[1:3, 1:2] in FixedRankMatrices(3, 2, 2), start = 1.0)
 
     # We don't do the sum of the squares of the entry on purpose
