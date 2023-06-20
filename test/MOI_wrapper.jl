@@ -57,7 +57,7 @@ function test_rank()
     @objective(model, Min, sum(A - U * U'))
     optimize!(model)
     @show objective_value(model)
-    return
+    return nothing
 end
 
 @testset "JuMP tests" begin
