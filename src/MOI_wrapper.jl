@@ -81,7 +81,7 @@ function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
         throw(MOI.UnsupportedAttribute(attr))
     end
     model.options[attr.name] = value
-    return
+    return nothing
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "Manopt"
@@ -236,9 +236,7 @@ function MOI.optimize!(model::Optimizer)
     reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
     descent_state_type = get(model.options, DESCENT_STATE_TYPE, GradientDescentState)
     kws = Dict{Symbol,Any}(
-        Symbol(key) => value
-        for (key, value) in model.options
-        if key != DESCENT_STATE_TYPE
+        Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
     )
     s = descent_state_type(model.manifold, reshaped_start; kws...)
     model.state = decorate_state!(s)
