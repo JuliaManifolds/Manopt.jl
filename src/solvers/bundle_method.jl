@@ -140,8 +140,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if bms.indices[2] != 0
-        bms.q0 .= bms.bundle[bms.indices[2]][1]
-        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.q0, bms.p0))
+        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[2]][1], bms.p0))
     end
     # v = findall(λj -> λj ≤ bms.filter1, bms.λ)
     # if !isempty(v)

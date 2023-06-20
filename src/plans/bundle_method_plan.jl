@@ -1,7 +1,7 @@
 import Base: deleteat!, push!
 
 mutable struct BundleStruct{
-    I<:Integer,Is<:AbstractVector{<:I},P,Ps<:AbstractVector{<:P},T,Ts<:AbstractVector{<:T}
+    I<:Integer,Is<:Vector{<:I},P,Ps<:Vector{<:P},T,Ts<:Vector{<:T}
 }
     points::Ps
     vectors::Ts
@@ -59,19 +59,19 @@ You can use e.g. `X=` to specify the type of tangent vector to use
 
 """
 mutable struct BundleMethodState{
-    R<:Real,
+    R,
     P,
     T,
-    A<:AbstractVector{<:R},
-    B<:AbstractVector{Tuple{<:P,<:T}},
-    C<:AbstractVector{T},
-    I<:Integer,
-    D<:AbstractVector{<:I},
+    A<:Vector{<:R},
+    B<:Vector{Tuple{<:P,<:T}},
+    C<:Vector{T},
+    I,
+    D<:Vector{<:I},
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {P,T}
+} <: AbstractManoptSolverState where {R<:Float64, P,T, I<:Int64}
     bundle::B
     bundle_size::I
     indices::D
