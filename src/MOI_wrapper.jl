@@ -274,7 +274,7 @@ end
 
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
-    solution = get_solver_return(get_objective(model.problem), model.state)
+    solution = get_solver_return(model.state)
     return get_cost(model.problem, solution)
 end
 
