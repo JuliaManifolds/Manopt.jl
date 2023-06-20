@@ -266,6 +266,12 @@ function MOI.get(model::Optimizer, ::MOI.RawStatusString)
     return string(strip(get_reason(model.state)))
 end
 
+function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
+    MOI.check_result_index_bounds(model, attr)
+    solution = get_solver_return(get_objective(model.problem), model.state)
+    return get_cost(model.problem, solution)
+end
+
 function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)

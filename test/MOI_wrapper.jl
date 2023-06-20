@@ -15,6 +15,7 @@ function test_sphere()
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test dual_status(model) == MOI.NO_SOLUTION
+    @test objective_value(model) ≈ -√3
     @test value.(x) ≈ -inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
@@ -22,6 +23,7 @@ function test_sphere()
     @objective(model, Max, sum(x))
     set_start_value.(x, start)
     optimize!(model)
+    @test objective_value(model) ≈ -√3
     @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
