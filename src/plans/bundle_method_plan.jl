@@ -129,10 +129,11 @@ mutable struct BundleMethodState{
         j = 1
         lin_errors = zeros(bundle_size)
         ξ = 0.0
-        λ = [1.0]
+        λ = zeros(bundle_size)
+        λ[1] = 1.0
         g = copy(M, p, X)
         ε = 0.0
-        transported_subgradients = [copy(M, p, X)]
+        transported_subgradients = [copy(M, p, X) for _ in 1:bundle_size]
         return new{
             typeof(m),
             P,

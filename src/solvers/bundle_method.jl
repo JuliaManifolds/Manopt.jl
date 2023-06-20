@@ -109,18 +109,30 @@ function bundle_method_sub_solver(::Any, ::Any)
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
+function update_indices!(indices, indices_ref, i, j, bundle_size)
+    if i ≤ bundle_size
+        indices[i] = i
+        indices_ref[i] = i
+    else
+        circshift!(indices, indices_ref, -j)
+    end
+    return indices
+end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    bms.transported_subgradients = [
-        vector_transport_to(
-            M,
-            bms.bundle[l][1],
-            bms.bundle[l][2],
-            bms.p_last_serious,
-            bms.vector_transport_method,
-        ) for l in bms.indices if l != 0
-    ]
-    bms.λ = bundle_method_sub_solver(M, bms)
+    for l in bms.indices
+        if l != 0
+            vector_transport_to!(
+                M,
+                bms.transported_subgradients[l],
+                bms.bundle[l][1],
+                bms.bundle[l][2],
+                bms.p_last_serious,
+                bms.vector_transport_method,
+            ) 
+        end
+    end
+    bms.λ[1:length(findall(x -> x != 0, bms.indices))] .= bundle_method_sub_solver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
@@ -131,15 +143,10 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     bms.j = mod1(i, bms.bundle_size)
     bms.p0 .= bms.bundle[bms.indices[1]][1]
-    if i ≤ bms.bundle_size
-        bms.indices[i] = i
-        bms.indices_ref[i] = i
-    else
-        circshift!(bms.indices, bms.indices_ref, -bms.j)
-    end
+    update_indices!(bms.indices, bms.indices_ref, i, bms.j, bms.bundle_size)
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
-    if bms.indices[2] != 0
+    if i > bms.bundle_size#bms.indices[2] != 0
         bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[2]][1], bms.p0))
     end
     # v = findall(λj -> λj ≤ bms.filter1, bms.λ)
@@ -153,27 +160,30 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     #         bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     #     end
     # end
-    bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) - inner(
-            M,
-            bms.bundle[l][1],
-            bms.bundle[l][2],
-            inverse_retract(
-                M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
-            ),
-        ) +
-        bms.diam *
-        sqrt(
-            2 * norm(
-                M,
-                bms.bundle[l][1],
-                inverse_retract(
-                    M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
-                ),
-            ),
-        ) *
-        norm(M, bms.bundle[l][1], bms.bundle[l][2]) for l in bms.indices if l != 0
-    ]
+    for l in bms.indices
+        if l != 0
+            bms.lin_errors[l] =
+                get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) - inner(
+                    M,
+                    bms.bundle[l][1],
+                    bms.bundle[l][2],
+                    inverse_retract(
+                        M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
+                    ),
+                ) +
+                bms.diam *
+                sqrt(
+                    2 * norm(
+                        M,
+                        bms.bundle[l][1],
+                        inverse_retract(
+                            M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
+                        ),
+                    ),
+                ) *
+                norm(M, bms.bundle[l][1], bms.bundle[l][2])
+        end
+    end
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
