@@ -9,6 +9,14 @@ const _FUNCTIONS = Union{
     MOI.VariableIndex,MOI.ScalarAffineFunction{Float64},MOI.ScalarQuadraticFunction{Float64}
 }
 
+"""
+    struct VectorizedManifold{M} <: MOI.AbstractVectorSet
+        manifold::M
+    end
+
+Representation of points of `manifold` as a vector of `R^n` where `n` is
+`MOI.dimension(VectorizedManifold(manifold))`.
+"""
 struct VectorizedManifold{M} <: MOI.AbstractVectorSet
     manifold::M
 end
@@ -21,6 +29,19 @@ struct _EmptyNLPEvaluator <: MOI.AbstractNLPEvaluator end
 MOI.features_available(::_EmptyNLPEvaluator) = [:Grad, :Jac, :Hess]
 MOI.initialize(::_EmptyNLPEvaluator, ::Any) = nothing
 
+"""
+    Manopt.Optimizer()
+
+Creates a new optimizer object.
+
+The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
+over a manifold `M` starting at `X0`, can be modeled as follows:
+```julia
+using JuMP
+@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
+@objective(model, Min, f(X))
+```
+"""
 mutable struct Optimizer <: MOI.AbstractOptimizer
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
     problem::Union{Nothing,AbstractManoptProblem}
@@ -182,6 +203,12 @@ function MOI.set(
     return nothing
 end
 
+"""
+    MOI.eval_objective(model::Manopt.Optimizer, x)
+
+Return the objective value at the vector of values `x` for the vectorization of
+the problem.
+"""
 function MOI.eval_objective(model::Optimizer, x)
     if model.sense == MOI.FEASIBILITY_SENSE
         return 0.0
@@ -191,6 +218,12 @@ function MOI.eval_objective(model::Optimizer, x)
     return MOI.eval_objective(model.qp_data, x)
 end
 
+"""
+    MOI.eval_objective_gradient(model::Manopt.Optimizer, grad, x)
+
+Store the Riemannian gradient at the vector of values `x` for the vectorization
+of the problem.
+"""
 function MOI.eval_objective_gradient(model::Optimizer, grad, x)
     if model.sense == MOI.FEASIBILITY_SENSE
         grad .= zero(eltype(grad))
@@ -246,6 +279,13 @@ end
 
 using JuMP: JuMP
 
+"""
+    struct ArrayShape{N} <: JuMP.AbstractShape
+        size::NTuple{N,Int}
+    end
+
+Shape of an `Array{T,N}` of size `size`.
+"""
 struct ArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
 end
