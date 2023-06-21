@@ -10,7 +10,7 @@ function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:Abstra
     ]
     qm = QuadraticModel(
         bms.lin_errors[1:d],
-        tril(H);
+        sparse(tril(H));
         A=reshape(ones(d), 1, d),
         lcon=[1.0],
         ucon=[1.0],
