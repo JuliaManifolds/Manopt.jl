@@ -50,7 +50,6 @@ mutable struct BundleMethodState{
     p::P
     p_last_serious::P
     p0::P
-    q0::P
     X::T
     retraction_method::TR
     stop::TSC
@@ -124,7 +123,6 @@ mutable struct BundleMethodState{
             j,
             lin_errors,
             p,
-            copy(M, p),
             copy(M, p),
             copy(M, p),
             X,
@@ -297,7 +295,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size#bms.indices[2] != 0
         bms.diam = max(
-            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[2]][1], bms.p0)
+            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[1]][1], bms.p0)
         )
     end
     # v = findall(λj -> λj ≤ bms.filter1, bms.λ)
