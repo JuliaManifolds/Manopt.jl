@@ -42,28 +42,24 @@ function test_sphere()
     @test raw_status(model)[end] != '\n'
 end
 
-function test_rank()
-    v = [
+function test_stiefel()
+    A = [
         1 -1
         -1 1
-        1 1
     ]
-    A = v * v'
     model = Model(Manopt.Optimizer)
-    set_attribute(model, "stepsize", ConstantStepsize(1))
-    @variable(model, U[1:3, 1:2] in FixedRankMatrices(3, 2, 2), start = 1.0)
+    @variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
 
-    # We don't do the sum of the squares of the entry on purpose
-    # to tests quadratic objective (and not quartic)
-    @objective(model, Min, sum(A - U * U'))
+    @objective(model, Min, sum((A - U) .^ 2))
     optimize!(model)
-    @show objective_value(model)
+    @test objective_value(model) ≈ 2
+    @test value.(U) ≈ [1 0; 0 1]
     return nothing
 end
 
 @testset "JuMP tests" begin
     test_sphere()
-    test_rank()
+    test_stiefel()
 end
 
 function test_runtests()
