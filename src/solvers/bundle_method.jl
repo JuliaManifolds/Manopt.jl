@@ -30,11 +30,11 @@ mutable struct BundleMethodState{
     R,
     P,
     T,
-    A<:Vector{<:R},
-    B<:Vector{Tuple{<:P,<:T}},
-    C<:Vector{T},
+    A<:AbstractVector{<:R},
+    B<:AbstractVector{Tuple{<:P,<:T}},
+    C<:AbstractVector{T},
     I,
-    D<:Vector{<:I},
+    D<:AbstractVector{<:I},
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
@@ -53,6 +53,7 @@ mutable struct BundleMethodState{
     X::T
     retraction_method::TR
     stop::TSC
+    v::D
     vector_transport_method::VT
     m::R
     ξ::R
@@ -89,18 +90,19 @@ mutable struct BundleMethodState{
         R<:Real,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
-        bundle = [(copy(M, p), copy(M, p, X)) for _ in 1:bundle_size]
+        bundle = [(zero.(p), zero.(X)) for _ in 1:bundle_size]
         indices = [0 for _ in 1:bundle_size]
         indices[1] = 1
+        v = [1]
         indices_ref = copy(indices)
         j = 1
         lin_errors = zeros(bundle_size)
         ξ = 0.0
-        λ = zeros(bundle_size)
+        λ = [Inf for _ in 1:bundle_size]
         λ[1] = 1.0
-        g = copy(M, p, X)
+        g = zero.(X)
         ε = 0.0
-        transported_subgradients = [copy(M, p, X) for _ in 1:bundle_size]
+        transported_subgradients = [zero.(X) for _ in 1:bundle_size]
         return new{
             typeof(m),
             P,
@@ -128,6 +130,7 @@ mutable struct BundleMethodState{
             X,
             retraction_method,
             stopping_criterion,
+            v,
             vector_transport_method,
             m,
             ξ,
@@ -247,7 +250,6 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
-    copyto!(M, bms.g, bms.p_last_serious, bms.X)
     bms.bundle[1] = (copy(M, bms.p), copy(M, bms.p, bms.X))
     return bms
 end
@@ -256,32 +258,40 @@ function bundle_method_sub_solver(::Any, ::Any)
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
-function update_indices!(indices, indices_ref, i, j, bundle_size)
-    if i ≤ bundle_size
-        indices[i] = i
-        indices_ref[i] = i
-    else
-        circshift!(indices, indices_ref, -j)
+function _zero_indices!(bms::BundleMethodState)
+    for k in 1:length(bms.indices)
+        if bms.indices[k] != 0 &&  bms.λ[bms.indices[k]] ≤ bms.filter1
+            bms.indices[k] = 0
+        end
     end
-    return indices
+    return bms.indices
+end
+function _update_indices!(bms::BundleMethodState, i::Int)
+    if i ≤ bms.bundle_size
+        bms.indices[i] = i
+        bms.indices_ref[i] = i
+    else
+        circshift!(bms.indices, bms.indices_ref, -bms.j)
+    end
+    _zero_indices!(bms)
+    return bms.indices
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    for l in bms.indices
-        if l != 0
-            vector_transport_to!(
-                M,
-                bms.transported_subgradients[l],
-                bms.bundle[l][1],
-                bms.bundle[l][2],
-                bms.p_last_serious,
-                bms.vector_transport_method,
-            )
-        end
+    bms.v = findall(x -> x != 0, bms.indices)
+    for l in bms.v
+        vector_transport_to!(
+            M,
+            bms.transported_subgradients[l],
+            bms.bundle[l][1],
+            bms.bundle[l][2],
+            bms.p_last_serious,
+            bms.vector_transport_method,
+        )
     end
-    bms.λ[1:length(findall(x -> x != 0, bms.indices))] .= bundle_method_sub_solver(M, bms)
-    bms.g .= sum(bms.λ .* bms.transported_subgradients)
-    bms.ε = sum(bms.λ .* bms.lin_errors)
+    bms.λ[bms.v] .= bundle_method_sub_solver(M, bms)
+    bms.g .= sum(bms.λ[bms.v] .* bms.transported_subgradients[bms.v])
+    bms.ε = sum(bms.λ[bms.v] .* bms.lin_errors[bms.v])
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
@@ -289,38 +299,27 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     bms.j = mod1(i, bms.bundle_size)
-    bms.p0 .= bms.bundle[bms.indices[1]][1]
-    update_indices!(bms.indices, bms.indices_ref, i, bms.j, bms.bundle_size)
+    bms.p0 .= bms.bundle[bms.indices[bms.v[1]]][1]
+    _update_indices!(bms, i)
+    bms.v = findall(x -> x != 0, bms.indices)
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
-    if i > bms.bundle_size#bms.indices[2] != 0
+    if i > bms.bundle_size
         bms.diam = max(
-            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.indices[1]][1], bms.p0)
+            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.v[1]][1], bms.p0)
         )
     end
-    # v = findall(λj -> λj ≤ bms.filter1, bms.λ)
-    # if !isempty(v)
-    #     k = findfirst(x -> x == minimum(bms.indices), bms.indices)
-    #     y = copy(M, bms.bundle[k][1])
-    #     bms.indices[v] = 0
-    #     if k < bms.bundle_size
-    #         bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[k + 1][1], y))
-    #     else
-    #         bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
-    #     end
-    # end
-    for l in bms.indices
-        if l != 0
-            logs = inverse_retract(
-                M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
-            )
-            bms.lin_errors[l] =
-                get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) -
-                inner(M, bms.bundle[l][1], bms.bundle[l][2], logs) +
-                bms.diam *
-                sqrt(2 * norm(M, bms.bundle[l][1], logs)) *
-                norm(M, bms.bundle[l][1], bms.bundle[l][2])
-        end
+    for l in bms.v
+        logs = inverse_retract(
+            M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
+        )
+        bms.lin_errors[l] =
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) -
+            inner(M, bms.bundle[l][1], bms.bundle[l][2], logs) +
+            bms.diam *
+            sqrt(2 * norm(M, bms.bundle[l][1], logs)) *
+            norm(M, bms.bundle[l][1], bms.bundle[l][2])
+        (0 ≥ bms.lin_errors[l] ≥ -bms.filter2) && (bms.lin_errors[l] == 0)
     end
     return bms
 end
