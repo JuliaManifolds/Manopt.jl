@@ -83,7 +83,7 @@ mutable struct BundleMethodState{
         p::P;
         atol_λ::R=eps(R),
         atol_errors::R=eps(R),
-        bundle_size::Integer=50,
+        bundle_size::Integer=25,
         m::R=1e-2,
         diam::R=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -234,7 +234,7 @@ function bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-4),
+    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-8),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
