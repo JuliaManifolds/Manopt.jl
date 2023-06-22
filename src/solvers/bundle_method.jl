@@ -4,19 +4,32 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
+* `atol_λ` - tolerance parameter for the convex coefficients in λ
+* `atol_errors` - tolerance parameter for the linearization errors
 * `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
-* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
+* `bundle_size` - (25) the size of the bundle
+* `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
+* `g`- descent direction
+* `indices` - the index array that keeps track of the historical order of the elements of the bundle
+* `indices_ref` - a reference for the indices array
 * `inverse_retraction_method` - the inverse retraction to use within
+* `j` - index to cycle through the bundle given by mod1(iteration, bundle_size)
 * `lin_errors` - linearization errors at the last serious step
 * `m` - the parameter to test the decrease of the cost
-* `p` - current iterate
+* `p` - current candidate point
 * `p_last_serious` - last serious iterate
+* `p0` - oldest point in the bundle
+* `positive_indices` - an array that keeps track of the strictly positive convex coefficients of the subproblem
 * `retraction_method` – the retraction to use within
 * `stop` – a [`StoppingCriterion`](@ref)
+* `transported_subgradients` - subgradients of the bundle that are transported to p_last_serious
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
     `p` that was last evaluated.
-* `ξ` - the stopping parameter given by ξ = -\norm{g}^2 - ε
+* `δ` - update parameter for the diameter
+* `ε` - convex combination of the linearization errors
+* `λ` - convex coefficients that solve the subproblem
+* `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
 
 # Constructor
 
@@ -39,35 +52,37 @@ mutable struct BundleMethodState{
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {R<:Float64,P,T,I<:Int64}
+    } <: AbstractManoptSolverState where {R<:Float64,P,T,I<:Int64}
+    atol_λ::R
+    atol_errors::R
     bundle::B
     bundle_size::I
+    diam::R
+    g::T
     indices::D
     indices_ref::D
     inverse_retraction_method::IR
     j::I
     lin_errors::A
+    m::R
     p::P
     p_last_serious::P
     p0::P
-    X::T
+    positive_indices::D
     retraction_method::TR
     stop::TSC
-    v::D
-    vector_transport_method::VT
-    m::R
-    ξ::R
-    diam::R
-    λ::A
-    g::T
-    ε::R
     transported_subgradients::C
-    filter1::R
-    filter2::R
+    vector_transport_method::VT
+    X::T
     δ::R
+    ε::R
+    ξ::R
+    λ::A
     function BundleMethodState(
         M::TM,
         p::P;
+        atol_λ::R=eps(R),
+        atol_errors::R=eps(R),
         bundle_size::Integer=50,
         m::R=1e-2,
         diam::R=1.0,
@@ -76,9 +91,7 @@ mutable struct BundleMethodState{
         stopping_criterion::SC=StopWhenBundleLess(1e-8),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        filter1::R=eps(Float64),
-        filter2::R=eps(Float64),
-        δ::R=√2,
+        δ::R=one(R),
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -89,20 +102,19 @@ mutable struct BundleMethodState{
         VT<:AbstractVectorTransportMethod,
         R<:Real,
     }
-        # Initialize indes set, bundle points, linearization errors, and stopping parameter
         bundle = [(zero.(p), zero.(X)) for _ in 1:bundle_size]
+        g = zero.(X)
         indices = [0 for _ in 1:bundle_size]
         indices[1] = 1
-        v = [1]
         indices_ref = copy(indices)
         j = 1
         lin_errors = zeros(bundle_size)
-        ξ = 0.0
+        positive_indices = [1]
+        transported_subgradients = [zero.(X) for _ in 1:bundle_size]
+        ε = 0.0
         λ = [Inf for _ in 1:bundle_size]
         λ[1] = 1.0
-        g = zero.(X)
-        ε = 0.0
-        transported_subgradients = [zero.(X) for _ in 1:bundle_size]
+        ξ = 0.0
         return new{
             typeof(m),
             P,
@@ -117,31 +129,31 @@ mutable struct BundleMethodState{
             SC,
             VT,
         }(
+            atol_λ,
+            atol_errors,
             bundle,
             bundle_size,
+            diam,
+            g,
             indices,
             indices_ref,
             inverse_retraction_method,
             j,
             lin_errors,
+            m,
             p,
             copy(M, p),
             copy(M, p),
-            X,
+            positive_indices,
             retraction_method,
             stopping_criterion,
-            v,
-            vector_transport_method,
-            m,
-            ξ,
-            diam,
-            λ,
-            g,
-            ε,
             transported_subgradients,
-            filter1,
-            filter2,
+            vector_transport_method,
+            X,
             δ,
+            ε,
+            ξ,
+            λ,
         )
     end
 end
@@ -213,11 +225,11 @@ function bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    bundle_size=50,
+    atol_λ=eps(),
+    atol_errors=eps(),
+    bundle_size=25,
+    diam=50.0,
     m=1e-2,
-    diam=1.0,
-    filter1=eps(),
-    filter2=eps(),
     δ=1.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -232,11 +244,11 @@ function bundle_method!(
     bms = BundleMethodState(
         M,
         p;
+        atol_λ=atol_λ,
+        atol_errors=atol_errors,
         bundle_size=bundle_size,
-        m=m,
         diam=diam,
-        filter1=filter1,
-        filter2=filter2,
+        m=m,
         δ=δ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
@@ -260,7 +272,7 @@ function bundle_method_sub_solver(::Any, ::Any)
 end
 function _zero_indices!(bms::BundleMethodState)
     for k in 1:length(bms.indices)
-        if bms.indices[k] != 0 &&  bms.λ[bms.indices[k]] ≤ bms.filter1
+        if bms.indices[k] != 0 &&  bms.λ[bms.indices[k]] ≤ bms.atol_λ
             bms.indices[k] = 0
         end
     end
@@ -278,8 +290,8 @@ function _update_indices!(bms::BundleMethodState, i::Int)
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    bms.v = findall(x -> x != 0, bms.indices)
-    for l in bms.v
+    bms.positive_indices = findall(x -> x != 0, bms.indices)
+    for l in bms.positive_indices
         vector_transport_to!(
             M,
             bms.transported_subgradients[l],
@@ -289,9 +301,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.vector_transport_method,
         )
     end
-    bms.λ[bms.v] .= bundle_method_sub_solver(M, bms)
-    bms.g .= sum(bms.λ[bms.v] .* bms.transported_subgradients[bms.v])
-    bms.ε = sum(bms.λ[bms.v] .* bms.lin_errors[bms.v])
+    bms.λ[bms.positive_indices] .= bundle_method_sub_solver(M, bms)
+    bms.g .= sum(bms.λ[bms.positive_indices] .* bms.transported_subgradients[bms.positive_indices])
+    bms.ε = sum(bms.λ[bms.positive_indices] .* bms.lin_errors[bms.positive_indices])
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
@@ -299,17 +311,17 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     bms.j = mod1(i, bms.bundle_size)
-    bms.p0 .= bms.bundle[bms.indices[bms.v[1]]][1]
+    bms.p0 .= bms.bundle[bms.indices[bms.positive_indices[1]]][1]
     _update_indices!(bms, i)
-    bms.v = findall(x -> x != 0, bms.indices)
+    bms.positive_indices = findall(x -> x != 0, bms.indices)
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size
         bms.diam = max(
-            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.v[1]][1], bms.p0)
+            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.positive_indices[1]][1], bms.p0)
         )
     end
-    for l in bms.v
+    for l in bms.positive_indices
         logs = inverse_retract(
             M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
         )
@@ -319,7 +331,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.diam *
             sqrt(2 * norm(M, bms.bundle[l][1], logs)) *
             norm(M, bms.bundle[l][1], bms.bundle[l][2])
-        (0 ≥ bms.lin_errors[l] ≥ -bms.filter2) && (bms.lin_errors[l] == 0)
+        (0 > bms.lin_errors[l] ≥ -bms.atol_errors) && (bms.lin_errors[l] == 0)
     end
     return bms
 end
