@@ -66,7 +66,7 @@ end
 function AdaptiveRegularizationState(
     M::AbstractManifold,
     p::P=rand(M);
-    substate::St=NewLanczosState(M, p),
+    substate::St=LanczosState(M, p),
     subcost::SCO=substate.subcost, # ManifoldHessianObjective((M,p)->0,(M,p)->0,(M,p,X)->0)
     subprob::SPR=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
     X::T=zero_vector(M, p),
@@ -149,7 +149,7 @@ function adaptive_regularization_with_cubics!(
     γ1::R=0.1,
     γ2::R=2.0,
     γ3::R=2.0,
-    substate::AbstractManoptSolverState=NewLanczosState(
+    substate::AbstractManoptSolverState=LanczosState(
         M,
         copy(M, p);       #tried adding copy
         maxIterLanczos=maxIterLanczos,
@@ -468,7 +468,7 @@ function realroots(rootvec)
     return realrootvec
 end
 
-mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverState
+mutable struct LanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverState
     p::P
     objective::ManifoldHessianObjective
     subcost::SCO # Ronny: Why is that here?
@@ -487,7 +487,7 @@ mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverSta
     d::I #number of dimensions of current subspace solution
 end
 
-function NewLanczosState(
+function LanczosState(
     M::AbstractManifold,
     p::P=rand(M);
     # Ronny: Maybe not necessary?
@@ -516,7 +516,7 @@ function NewLanczosState(
     d=1,                     #Y=zeros(maxIterLanczos),
     subcost::SCO=CubicSubCost(1, gradnorm, ς, Tmatrix, y),
 ) where {P,SCO,SC<:StoppingCriterion,I,R,T,TM,V,Y}
-    return NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y}(
+    return LanczosState{P,SCO,SC,I,R,T,TM,V,Y}(
         M,
         p,
         objective,
@@ -537,9 +537,9 @@ function NewLanczosState(
     )
 end
 
-get_solver_result(ls::NewLanczosState) = ls.S
+get_solver_result(ls::LanczosState) = ls.S
 
-function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
+function initialize_solver!(dmp::AbstractManoptProblem, s::LanczosState)
     #in the intialization we set the first orthonormal vector, the first element of the Tmatrix and the r vector.
     M = get_manifold(dmp)
     mho = s.objective
@@ -572,8 +572,8 @@ function initialize_solver!(dmp::AbstractManoptProblem, s::NewLanczosState)
     return s
 end
 
-#step solver for the NewLanczosState (will change to LanczosState when its done and its correct)
-function step_solver!(dmp::AbstractManoptProblem, s::NewLanczosState, j)
+#step solver for the LanczosState (will change to LanczosState when its done and its correct)
+function step_solver!(dmp::AbstractManoptProblem, s::LanczosState, j)
     M = get_manifold(dmp)
     mho = s.objective #mho = get_objective(dmp)
     β = norm(M, s.p, s.r)
@@ -677,14 +677,14 @@ end
 #How to make the below less confusing?
 #The the iterates in in the Lanczos stepsolver is strictly a sequence of tangent vectors that minimize the problem in TₚM.
 #However we must set the correct inital point in the LanczosState
-get_iterate(s::NewLanczosState) = s.S
+get_iterate(s::LanczosState) = s.S
 
-function set_iterate!(s::NewLanczosState, M::AbstractManifold, p)
+function set_iterate!(s::LanczosState, M::AbstractManifold, p)
     s.p = p                         #copyto!(M, s.p, p)
     return s
 end
 
-function set_manopt_parameter!(s::NewLanczosState, ::Val{:ς}, ς)
+function set_manopt_parameter!(s::LanczosState, ::Val{:ς}, ς)
     s.ς = ς
     return s
 end
@@ -718,7 +718,7 @@ mutable struct StopWhenLanczosModelGradLess <: StoppingCriterion
     StopWhenLanczosModelGradLess(ε::Float64) = new(ε, "")
 end
 function (c::StopWhenLanczosModelGradLess)(
-    ::AbstractManoptProblem, s::NewLanczosState, i::Int
+    ::AbstractManoptProblem, s::LanczosState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
     # Ronny: maybe s.y[1:s.k] ?
@@ -751,7 +751,7 @@ end
 #
 # Switch to a sub state? What‘s j?
 #
-function min_cubic_Newton(s::NewLanczosState, j)
+function min_cubic_Newton(s::LanczosState, j)
     maxiter = s.maxIterNewton
     tol = s.tolNewton
 
