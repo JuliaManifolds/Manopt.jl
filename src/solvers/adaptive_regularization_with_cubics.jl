@@ -44,7 +44,7 @@ mutable struct AdaptiveRegularizationState{
     p::P
     substate::St
     subcost::SCO # Ronny: not necessary because its included in the cubproblem
-    subprob::SPR
+    subproblem::SPR
     X::T
     H::T
     S::T
@@ -68,7 +68,7 @@ function AdaptiveRegularizationState(
     p::P=rand(M);
     substate::St=LanczosState(M, p),
     subcost::SCO=substate.subcost, # ManifoldHessianObjective((M,p)->0,(M,p)->0,(M,p,X)->0)
-    subprob::SPR=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
+    subproblem::SPR=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
     X::T=zero_vector(M, p),
     H::T=zero_vector(M, p),
     S::T=zero_vector(M, p),
@@ -91,7 +91,7 @@ function AdaptiveRegularizationState(
         p,
         substate,
         subcost,
-        subprob,
+        subproblem,
         X,
         H,
         S,
@@ -158,7 +158,7 @@ function adaptive_regularization_with_cubics!(
         objective=ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation),
     ),
     subcost=substate.subcost,
-    subprob=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
+    subproblem=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
     kwargs...,
 ) where {T,R,TF,TDF,THF}
     mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation)
@@ -169,7 +169,7 @@ function adaptive_regularization_with_cubics!(
         p;
         substate=substate,
         subcost=subcost,
-        subprob=subprob,
+        subproblem=subproblem,
         X=X,
         H=H,
         S=S,
@@ -193,12 +193,12 @@ function adaptive_regularization_with_cubics!(
 end
 get_iterate(s::AdaptiveRegularizationState) = s.p
 function set_iterate!(s::AdaptiveRegularizationState, p)
-    copyto!(M, s.p, p)
+    s.p = p
     return s
 end
 get_gradient(s::AdaptiveRegularizationState) = s.X
 function set_gradient!(s::AdaptiveRegularizationState, X)
-    copyto!(M, s.X, s.p, X)
+    s.X = X
     return s
 end
 
@@ -215,7 +215,8 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     set_manopt_parameter!(arcs.substate, :ς, arcs.ς)
 
     #Solve the subproblem
-    arcs.S = get_solver_result(solve!(arcs.subprob, decorate_state!(arcs.substate)))
+    solve!(arcs.subproblem, decorate_state!(arcs.substate))
+    arcs.S = get_solver_result(arcs.subproblem)
 
     if !arcs.optimized_updating_rule #check if we want to use the optimized procedure
         #Regular updating procedure
