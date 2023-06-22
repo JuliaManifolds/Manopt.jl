@@ -1,9 +1,3 @@
-
-#Starting with writing the doc for the state for keeping an overview. Surley containing errors to be corrected.
-
-#Idea: Add the set of orthonormal vectors to the state. With a vector of tangent space dimension containing the orthonormal vectors
-# preallocated,we then we compute the k<=n orthonormal vectors needed in each iteration in-place.
-
 @doc raw"""
     AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState
 
@@ -67,52 +61,6 @@ mutable struct AdaptiveRegularizationState{
     γ1::R
     γ2::R
     γ3::R
-    function AdaptiveRegularizationState{P,St,SCO,SPR,T,R}(
-        M::AbstractManifold,
-        p::P=rand(M),
-        substate::St=NewLanczosState(M, p), # Why i subcost in the state?
-        subcost::SCO=substate.subcost,
-        subprob::SPR=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
-        X::T=zero_vector(M, p),
-        H::T=zero_vector(M, p),
-        S::T=zero_vector(M, p),
-        ς::R=1.0,
-        ρ::R=0.0,
-        ρ_regularization::R=1.0,
-        stop::StoppingCriterion=StopAfterIteration(100),       #TRTM?
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        optimized_updating_rule::Bool=false,
-        ςmin::R=1.0, #Set the below to appropriate default vals.
-        θ::R=1.0,
-        η1::R=1.0,
-        η2::R=1.0,
-        γ1::R=1.0,
-        γ2::R=1.0,
-        γ3::R=1.0,
-    ) where {P,St,SCO,SPR,T,R}
-        o = new{P,St,SCO,SPR,T,R,typeof(stop),typeof(retraction_method)}()
-        o.p = p
-        o.substate = substate
-        o.subcost = subcost
-        o.subprob = subprob
-        o.X = X
-        o.H = H
-        o.S = S
-        o.ς = ς
-        o.ρ = ρ
-        o.ρ_regularization = ρ_regularization
-        o.stop = stop
-        o.retraction_method = retraction_method
-        o.optimized_updating_rule = optimized_updating_rule
-        o.ςmin = ςmin
-        o.θ = θ
-        o.η1 = η1
-        o.η2 = η2
-        o.γ1 = γ1
-        o.γ2 = γ2
-        o.γ3 = γ3
-        return o
-    end
 end
 
 function AdaptiveRegularizationState(
@@ -163,22 +111,27 @@ function AdaptiveRegularizationState(
     )
 end
 
+@doc raw"""
+    adaptive_regularization_with_cubicsM, f, grad_f, Hess_f, p=rand(M); kwargs...)
+
+
+"""
 function adaptive_regularization_with_cubics(
-    M::AbstractManifold, f::TF, gradf::TDF, hessf::THF, p0=rand(M); kwargs...
+    M::AbstractManifold, f::TF, grad_f::TDF, Hess_f::THF, p=rand(M); kwargs...
 ) where {TF,TDF,THF}
-    q0 = copy(M, p0)
-    return adaptive_regularization_with_cubics!(M, f, gradf, hessf, q0; kwargs...)
+    q = copy(M, p)
+    return adaptive_regularization_with_cubics!(M, f, grad_f, Hess_f, q; kwargs...)
 end
 
 function adaptive_regularization_with_cubics!(
     M::AbstractManifold,
     f::TF,
-    gradf::TDF,
-    hessf::THF,
-    p0=rand(M);
-    X::T=zero_vector(M, p0),
-    H::T=zero_vector(M, p0),
-    S::T=zero_vector(M, p0),
+    grad_f::TDF,
+    Hess_f::THF,
+    p=rand(M);
+    X::T=zero_vector(M, p),
+    H::T=zero_vector(M, p),
+    S::T=zero_vector(M, p),
     ς::R=100.0 / sqrt(manifold_dimension(M)),
     maxIterLanczos=200,
     ρ::R=0.0, #1.0
@@ -198,22 +151,22 @@ function adaptive_regularization_with_cubics!(
     γ3::R=2.0,
     substate::AbstractManoptSolverState=NewLanczosState(
         M,
-        copy(M, p0);       #tried adding copy
+        copy(M, p);       #tried adding copy
         maxIterLanczos=maxIterLanczos,
         θ=θ,
         ς=ς,
-        objective=ManifoldHessianObjective(f, gradf, hessf; evaluation=evaluation),
+        objective=ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation),
     ),
     subcost=substate.subcost,
     subprob=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
     kwargs...,
 ) where {T,R,TF,TDF,THF}
-    mho = ManifoldHessianObjective(f, gradf, hessf; evaluation=evaluation)
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation)
     dmho = decorate_objective!(M, mho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,
-        p0;
+        p;
         substate=substate,
         subcost=subcost,
         subprob=subprob,
@@ -249,18 +202,16 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
     return s
 end
 
-#removed here
 function initialize_solver!(dmp::AbstractManoptProblem, s::AdaptiveRegularizationState)
     get_gradient!(dmp, s.X, s.p)
     return s
 end
-
 function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState, i)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
 
     #Set iterate and update the regularization parameter
-    set_iterate!(arcs.substate, M, copy(M, arcs.p))                        #should i also copy here? #changed the set_iterate as well
+    set_iterate!(arcs.substate, M, copy(M, arcs.p))
     set_manopt_parameter!(arcs.substate, :ς, arcs.ς)
 
     #Solve the subproblem
@@ -534,44 +485,6 @@ mutable struct NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y} <: AbstractManoptSolverSta
     S::V # store the tangent vector that solves the minimization problem
     y::Y # store the y vector
     d::I #number of dimensions of current subspace solution
-    function NewLanczosState{P,SCO,SC,I,R,T,TM,V,Y}(                               #sc_lanzcos
-        M::AbstractManifold,
-        p::P,
-        objective::ManifoldHessianObjective,
-        subcost::SCO,
-        stop::SC,
-        maxIterNewton::I,
-        ς::R,
-        θ::R,
-        gradnorm::R,
-        modelGradnorm::R,
-        tolNewton::R,
-        Q::T,
-        Tmatrix::TM,
-        r::V,
-        S::V,
-        y::Y,
-        d::I,
-    ) where {P,SCO,SC,I,R,T,TM,V,Y}
-        s = new{P,SCO,SC,I,R,T,TM,V,Y}()
-        s.p = p
-        s.objective = objective
-        s.subcost = subcost
-        s.stop = stop      #sc_lanzcos
-        s.maxIterNewton = maxIterNewton # ? better: NewtonSate
-        s.ς = ς
-        s.θ = θ
-        s.gradnorm = gradnorm
-        s.modelGradnorm = modelGradnorm
-        s.tolNewton = tolNewton
-        s.Q = Q
-        s.Tmatrix = Tmatrix
-        s.r = r
-        s.S = S
-        s.y = y
-        s.d = d
-        return s
-    end
 end
 
 function NewLanczosState(
@@ -582,7 +495,8 @@ function NewLanczosState(
         (M, p) -> 0, (M, p) -> 0, (M, p, X) -> 0
     ),
     θ=0.5,
-    maxIterLanczos=200,                     #maxIterLanczos-1 since the first Lanczos vector is constructed in the intialization
+    maxIterLanczos=200,
+    #maxIterLanczos-1 since the first Lanczos vector is constructed in the intialization
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos - 1) |
                            StopWhenLanczosModelGradLess(θ),
     maxIterNewton::I=100,
@@ -834,6 +748,9 @@ function (c::StopWhenAllLanczosVectorsUsed)(
     return false
 end
 
+#
+# Switch to a sub state? What‘s j?
+#
 function min_cubic_Newton(s::NewLanczosState, j)
     maxiter = s.maxIterNewton
     tol = s.tolNewton
