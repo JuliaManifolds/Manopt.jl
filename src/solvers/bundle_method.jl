@@ -279,7 +279,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             )
         end
     end
-    bms.λ[1:length(findall(x -> x != 0, bms.indices))] .= bundle_method_sub_solver(M, bms)
+    @time bms.λ[1:length(findall(x -> x != 0, bms.indices))] .= bundle_method_sub_solver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε

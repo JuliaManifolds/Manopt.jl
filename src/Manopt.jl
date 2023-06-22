@@ -187,10 +187,13 @@ function __init__()
             include("../ext/ManoptLRUCacheExt.jl")
         end
     end
-    @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
-        using .QuadraticModels: QuadraticModel
-        @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
-            using .RipQP: ripqp
+    @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin#QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
+        #using .QuadraticModels: QuadraticModel
+        using .JuMP: Model, set_optimizer_attribute, @variable, @constraint, @objective, optimize!, value
+        # @require COSMO = "1e616198-aa4e-51ec-90a2-23f7fbd31d8d" begin#RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
+        @require Ipopt = "b6b21f68-93f8-5de0-b562-5493be1d77c9" begin
+            # using .RipQP: ripqp
+            using .Ipopt: Optimizer
             include("solvers/bundle_method_sub_solver.jl")
         end
     end
