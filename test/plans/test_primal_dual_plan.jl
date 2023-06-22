@@ -15,7 +15,7 @@ include("../utils/dummy_types.jl")
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
-    Λ(M, x) = ProductRepr(x, forward_logs(M, x))
+    Λ(M, x) = ArrayPartition(x, forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
         copyto!(M, Y[N, :point], x)
@@ -28,7 +28,7 @@ include("../utils/dummy_types.jl")
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     prox_f!(M, y, λ, x) = prox_distance!(M, y, λ / α, data, x, 2)
     function prox_g_dual(N, n, λ, ξ)
-        return ProductRepr(
+        return ArrayPartition(
             ξ[N, :point],
             project_collaborative_TV(
                 base_manifold(N), λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
@@ -42,7 +42,7 @@ include("../utils/dummy_types.jl")
         )
         return η
     end
-    DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
+    DΛ(M, m, X) = ArrayPartition(zero_vector(M, m), differential_forward_logs(M, m, X))
     function DΛ!(M, Y, m, X)
         N = TangentBundle(M)
         zero_vector!(M, Y[N, :point], m)
@@ -59,7 +59,7 @@ include("../utils/dummy_types.jl")
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
     p0 = deepcopy(data)
-    X0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
+    X0 = ArrayPartition(zero_vector(M, m), zero_vector(M, m))
 
     pdmoe = PrimalDualManifoldObjective(f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ)
     p_exact = TwoManifoldProblem(M, N, pdmoe)
@@ -69,9 +69,9 @@ include("../utils/dummy_types.jl")
     p_linearized = TwoManifoldProblem(M, N, pdmol)
     s_exact = ChambollePockState(M, m, n, zero.(p0), X0; variant=:exact)
     s_linearized = ChambollePockState(M, m, n, p0, X0; variant=:linearized)
-    n_old = ProductRepr(n[N, :point], n[N, :vector])
+    n_old = ArrayPartition(n[N, :point], n[N, :vector])
     p_old = copy(p0)
-    ξ_old = ProductRepr(X0[N, :point], X0[N, :vector])
+    ξ_old = ArrayPartition(X0[N, :point], X0[N, :vector])
 
     set_iterate!(s_exact, p0)
     @test all(get_iterate(s_exact) .== p0)

@@ -1,5 +1,5 @@
-How to perform Geodesic Regression
-================
+# How to perform Geodesic Regression
+Ronny Bergmann
 
 Geodesic regression generalizes [linear regression](https://en.wikipedia.org/wiki/Linear_regression)
 to Riemannian manifolds. Let’s first phrase it informally as follows:
@@ -134,20 +134,10 @@ A = hcat(
     map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data)...
 )
 pca1 = get_vector(S, m, svd(A).U[:, 1], DefaultOrthonormalBasis())
-x0 = ProductRepr(m, pca1)
+x0 = ArrayPartition(m, pca1)
 ```
 
-    ProductRepr with 2 submanifold components:
-     Component 1 =
-      3-element Vector{Float64}:
-        0.6998621681746481
-       -0.013681674945026617
-        0.7141468737791822
-     Component 2 =
-      3-element Vector{Float64}:
-        0.5931302057517891
-       -0.5459465115717783
-       -0.5917254139611092
+    ([0.6998621681746481, -0.013681674945026638, 0.7141468737791822], [0.5931302057517893, -0.5459465115717783, -0.5917254139611094])
 
 The optimal “time labels” are then just the projections $t_i = ⟨d_i,X^*⟩$, $i=1,\ldots,n$.
 
@@ -156,13 +146,13 @@ t = map(d -> inner(S, m, pca1, log(S, m, d)), data)
 ```
 
     7-element Vector{Float64}:
-      1.076390494988832
-      0.45940601933184433
-     -0.503019587483368
-      0.02135686940521722
-     -0.6158692507563631
-     -0.24431652575028745
-     -0.22590124926666635
+      1.0763904949888323
+      0.4594060193318443
+     -0.5030195874833682
+      0.02135686940521725
+     -0.6158692507563633
+     -0.24431652575028764
+     -0.2259012492666664
 
 And we can call the gradient descent. Note that since `gradF!` works in place of `Y`, we have to set the
 `evalutation` type accordingly.
@@ -179,7 +169,7 @@ y = gradient_descent(
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
-        linesearch_stopsize=1e-9,
+        stop_when_stepsize_less=1e-9,
     ),
     stopping_criterion=StopAfterIteration(200) |
                         StopWhenGradientNormLess(1e-8) |
@@ -189,19 +179,13 @@ y = gradient_descent(
 ```
 
     Initial  | F(x): 0.142862
-    The algorithm computed a step size (9.99473445704817e-10) less than 1.0e-9.
+    # 50     | F(x): 0.141113
+    # 100    | F(x): 0.141113
+    # 150    | F(x): 0.141113
+    # 200    | F(x): 0.141113
+    The algorithm reached its maximal number of iterations (200).
 
-    ProductRepr with 2 submanifold components:
-     Component 1 =
-      3-element Vector{Float64}:
-       0.71236300247793
-       0.011495460180353627
-       0.7017170420446341
-     Component 2 =
-      3-element Vector{Float64}:
-        0.5851204767715789
-       -0.5650151350275181
-       -0.5847414927571538
+    ([0.7119768725361988, 0.009463059143003981, 0.7021391482357537], [0.590008151835008, -0.5543272518659472, -0.5908038715512287])
 
 For the result, we can generate and plot all involved geodesics
 
@@ -233,7 +217,7 @@ inner(
 )
 ```
 
-    0.005231440678640918
+    0.002487393068917863
 
 But we also started with one of the best scenarios, i.e. equally spaced points on a geodesic obstructed by noise.
 
@@ -247,18 +231,18 @@ A2 = hcat(
     map(x -> get_coordinates(S, m, log(S, m, x), DefaultOrthonormalBasis()), data2)...
 )
 pca2 = get_vector(S, m, svd(A2).U[:, 1], DefaultOrthonormalBasis())
-x1 = ProductRepr(m, pca2)
+x1 = ArrayPartition(m, pca2)
 t2 = map(d -> inner(S, m2, pca2, log(S, m2, d)), data2)
 ```
 
     7-element Vector{Float64}:
-      0.8226008307680275
-      0.4709526437000039
-      0.797419553740308
-      0.015339492412643475
-     -0.6546705405852388
-     -0.8913273825362388
-     -0.5775954445730888
+      0.8226008307680276
+      0.470952643700004
+      0.7974195537403082
+      0.01533949241264346
+     -0.6546705405852389
+     -0.8913273825362389
+     -0.5775954445730889
 
 then we run again
 
@@ -274,7 +258,7 @@ y2 = gradient_descent(
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
-        linesearch_stopsize=1e-9,
+        stop_when_stepsize_less=1e-9,
     ),
     stopping_criterion=StopAfterIteration(200) |
                         StopWhenGradientNormLess(1e-8) |
@@ -284,7 +268,73 @@ y2 = gradient_descent(
 ```
 
     Initial  | F(x): 0.089844
-    The algorithm computed a step size (9.99473445704817e-10) less than 1.0e-9.
+    # 3      | F(x): 0.085364
+    # 6      | F(x): 0.085364
+    # 9      | F(x): 0.085364
+    # 12     | F(x): 0.085364
+    # 15     | F(x): 0.085364
+    # 18     | F(x): 0.085364
+    # 21     | F(x): 0.085364
+    # 24     | F(x): 0.085364
+    # 27     | F(x): 0.085364
+    # 30     | F(x): 0.085364
+    # 33     | F(x): 0.085364
+    # 36     | F(x): 0.085364
+    # 39     | F(x): 0.085364
+    # 42     | F(x): 0.085364
+    # 45     | F(x): 0.085364
+    # 48     | F(x): 0.085364
+    # 51     | F(x): 0.085364
+    # 54     | F(x): 0.085364
+    # 57     | F(x): 0.085364
+    # 60     | F(x): 0.085364
+    # 63     | F(x): 0.085364
+    # 66     | F(x): 0.085364
+    # 69     | F(x): 0.085364
+    # 72     | F(x): 0.085364
+    # 75     | F(x): 0.085364
+    # 78     | F(x): 0.085364
+    # 81     | F(x): 0.085364
+    # 84     | F(x): 0.085364
+    # 87     | F(x): 0.085364
+    # 90     | F(x): 0.085364
+    # 93     | F(x): 0.085364
+    # 96     | F(x): 0.085364
+    # 99     | F(x): 0.085364
+    # 102    | F(x): 0.085364
+    # 105    | F(x): 0.085364
+    # 108    | F(x): 0.085364
+    # 111    | F(x): 0.085364
+    # 114    | F(x): 0.085364
+    # 117    | F(x): 0.085364
+    # 120    | F(x): 0.085364
+    # 123    | F(x): 0.085364
+    # 126    | F(x): 0.085364
+    # 129    | F(x): 0.085364
+    # 132    | F(x): 0.085364
+    # 135    | F(x): 0.085364
+    # 138    | F(x): 0.085364
+    # 141    | F(x): 0.085364
+    # 144    | F(x): 0.085364
+    # 147    | F(x): 0.085364
+    # 150    | F(x): 0.085364
+    # 153    | F(x): 0.085364
+    # 156    | F(x): 0.085364
+    # 159    | F(x): 0.085364
+    # 162    | F(x): 0.085364
+    # 165    | F(x): 0.085364
+    # 168    | F(x): 0.085364
+    # 171    | F(x): 0.085364
+    # 174    | F(x): 0.085364
+    # 177    | F(x): 0.085364
+    # 180    | F(x): 0.085364
+    # 183    | F(x): 0.085364
+    # 186    | F(x): 0.085364
+    # 189    | F(x): 0.085364
+    # 192    | F(x): 0.085364
+    # 195    | F(x): 0.085364
+    # 198    | F(x): 0.085364
+    The algorithm reached its maximal number of iterations (200).
 
 For plotting we again generate all data
 
@@ -410,7 +460,7 @@ end
 We can reuse the computed initial values from before, just that now we are on a product manifold
 
 ``` julia
-x2 = ProductRepr(x1, t2)
+x2 = ArrayPartition(x1, t2)
 F3 = RegressionCost2(data2)
 gradF3_vector = [RegressionGradient2a!(data2), RegressionGradient2b!(data2)];
 ```
@@ -425,39 +475,23 @@ y3 = alternating_gradient_descent(
     x2;
     evaluation=InplaceEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(M; contraction_factor=0.999, sufficient_decrease=0.066, linesearch_stopsize=1e-11, retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction())),
+    stepsize=ArmijoLinesearch(
+        M;
+        contraction_factor=0.999,
+        sufficient_decrease=0.066,
+        stop_when_stepsize_less=1e-11,
+        retraction_method=ProductRetraction(SasakiRetraction(2), ExponentialRetraction()),
+    ),
     inner_iterations=1,
 )
 ```
 
     Initial  | F(x): 0.089844
-
-    # 50     | F(x): 0.083345
-    # 100    | F(x): 0.083345
+    # 50     | F(x): 0.091097
+    # 100    | F(x): 0.091097
     The algorithm reached its maximal number of iterations (100).
 
-    ProductRepr with 2 submanifold components:
-     Component 1 =
-      ProductRepr with 2 submanifold components:
-       Component 1 =
-        3-element Vector{Float64}:
-         0.7475454150616512
-         0.022600038488777046
-         0.6638260997283922
-       Component 2 =
-        3-element Vector{Float64}:
-          0.6540777772724538
-         -0.3875395950977551
-         -0.7233738383065659
-     Component 2 =
-      7-element Vector{Float64}:
-        0.7731372683436369
-        0.40130929065796256
-        0.7113080326744893
-       -0.007157156964749066
-       -0.6190772956426692
-       -0.8252497315227745
-       -0.5366391263357471
+    (ArrayPartition{Float64, Tuple{Vector{Float64}, Vector{Float64}}}(([0.750222090700214, 0.031464227399200885, 0.6604368380243274], [0.6636489079535082, -0.3497538263293046, -0.737208025444054])), [0.7965909273713889, 0.43402264218923514, 0.755822122896529, 0.001059348203453764, -0.6421135044471217, -0.8635572995105818, -0.5546338813212247])
 
 which we render can collect into an image creating the geodesics again
 

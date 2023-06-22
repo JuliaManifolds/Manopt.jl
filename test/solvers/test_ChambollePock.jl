@@ -13,7 +13,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     x_hat = shortest_geodesic(M, data, reverse(data), δ)
     N = TangentBundle(M)
     fidelity(M, x) = 1 / 2 * distance(M, x, f)^2
-    Λ(M, x) = ProductRepr(x, forward_logs(M, x))
+    Λ(M, x) = ArrayPartition(x, forward_logs(M, x))
     function Λ!(M, Y, x)
         N = TangentBundle(M)
         copyto!(M, Y[N, :point], x)
@@ -24,7 +24,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
     function prox_g_dual(N, n, λ, ξ)
-        return ProductRepr(
+        return ArrayPartition(
             ξ[N, :point],
             project_collaborative_TV(
                 base_manifold(N), λ, n[N, :point], ξ[N, :vector], Inf, Inf, 1.0
@@ -38,13 +38,13 @@ using Manopt, Manifolds, ManifoldsBase, Test
         )
         return η
     end
-    DΛ(M, m, X) = ProductRepr(zero_vector(M, m), differential_forward_logs(M, m, X))
+    DΛ(M, m, X) = ArrayPartition(zero_vector(M, m), differential_forward_logs(M, m, X))
     adjoint_DΛ(N, m, n, ξ) = adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)
     x0 = deepcopy(data)
-    ξ0 = ProductRepr(zero_vector(M, m), zero_vector(M, m))
+    ξ0 = ArrayPartition(zero_vector(M, m), zero_vector(M, m))
     @testset "Test Variants" begin
         callargs_linearized = [M, N, f, x0, ξ0, m, n, prox_f, prox_g_dual, adjoint_DΛ]
         o1 = ChambollePock(

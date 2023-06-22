@@ -8,13 +8,13 @@ CurrentModule = Manopt
 Manopt.Manopt
 ```
 
-For a function $f:\mathcal M → ℝ$ defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) $\mathcal M$ we aim to solve
+For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M`` we aim to solve
 
 ```math
 \operatorname*{argmin}_{p ∈ \mathcal M} f(p),
 ```
 
-or in other words: find the point $x$ on the manifold, where $f$ reaches its minimal function value.
+or in other words: find the point ``p`` on the manifold, where ``f`` reaches its minimal function value.
 
 `Manopt.jl` provides a framework for optimization on manifolds as well as a Library of optimization algorithms in [Julia](https://julialang.org).
 It belongs to the “Manopt family”, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python).

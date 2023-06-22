@@ -207,23 +207,6 @@ function _to_mutating_gradient(grad_f, evaluation::InplaceEvaluation)
     return grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
 end
 
-"""
-    DirectionUpdateRule
-
-A general functor, that handles direction update rules. It's field(s) is usually
-only a [`StoreStateAction`](@ref) by default initialized to the fields required
-for the specific coefficient, but can also be replaced by a (common, global)
-individual one that provides these values.
-"""
-abstract type DirectionUpdateRule end
-
-"""
-    IdentityUpdateRule <: DirectionUpdateRule
-
-The default gradient direction update is the identity, i.e. it just evaluates the gradient.
-"""
-struct IdentityUpdateRule <: DirectionUpdateRule end
-
 @doc raw"""
     get_gradient(agst::AbstractGradientSolverState)
 
@@ -261,6 +244,23 @@ function set_iterate!(agst::AbstractGradientSolverState, M, p)
     copyto!(M, agst.p, p)
     return agst
 end
+
+"""
+    DirectionUpdateRule
+
+A general functor, that handles direction update rules. It's field(s) is usually
+only a [`StoreStateAction`](@ref) by default initialized to the fields required
+for the specific coefficient, but can also be replaced by a (common, global)
+individual one that provides these values.
+"""
+abstract type DirectionUpdateRule end
+
+"""
+    IdentityUpdateRule <: DirectionUpdateRule
+
+The default gradient direction update is the identity, i.e. it just evaluates the gradient.
+"""
+struct IdentityUpdateRule <: DirectionUpdateRule end
 
 """
     MomentumGradient <: DirectionUpdateRule

@@ -15,3 +15,7 @@ tutorials/*.ipynb
 tutorials/*_files/*
 tutorials/_freeze
 tutorials/img
+docs/src/tutorials/*/
+docs/src/tutorials/*.md
+docs/.CondaPkg
+docs/src/tutorials/Optimize!_files

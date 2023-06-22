@@ -1,5 +1,5 @@
-Speedup using Inplace Evaluation
-================
+# Speedup using Inplace Evaluation
+Ronny Bergmann
 
 When it comes to time critital operations, a main ingredient in Julia is given by
 mutating functions, i.e. those that compute in place without additional memory
@@ -46,7 +46,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 We further set the stopping criterion to be a little more strict. Then we obtain
 
 ``` julia
-sc = StopWhenGradientNormLess(1e-10)
+sc = StopWhenGradientNormLess(3e-10)
 p0 = zeros(Float64, m + 1); p0[1] = 1/sqrt(2); p0[2] = 1/sqrt(2)
 m1 = gradient_descent(M, f, grad_f, p0; stopping_criterion=sc);
 ```
@@ -57,16 +57,16 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-    BenchmarkTools.Trial: 78 samples with 1 evaluation.
-     Range (min … max):  58.693 ms … 83.403 ms  ┊ GC (min … max):  9.66% … 25.11%
-     Time  (median):     63.903 ms              ┊ GC (median):    13.39%
-     Time  (mean ± σ):   64.770 ms ±  4.887 ms  ┊ GC (mean ± σ):  12.71% ±  3.19%
+    BenchmarkTools.Trial: 102 samples with 1 evaluation.
+     Range (min … max):  47.810 ms …  53.557 ms  ┊ GC (min … max): 5.09% … 6.53%
+     Time  (median):     48.820 ms               ┊ GC (median):    5.34%
+     Time  (mean ± σ):   49.060 ms ± 818.642 μs  ┊ GC (mean ± σ):  5.77% ± 0.64%
 
-         █▆    ▁  ▆▃▆█▃ ▁    ▁    ▁▁                               
-      ▇▇▄██▄▇▄▄█▇▇█████▄█▄▄▄▁█▄▁▄▁██▁▁▇▁▁▁▄▁▁▁▁▁▁▄▁▁▁▁▁▁▁▁▁▁▄▄▁▁▄ ▁
-      58.7 ms         Histogram: frequency by time          80 ms <
+                ▅▅█      ▃▃                                         
+      ▄▃▁▅▄▁▅▃▃▄███▅▅▇▃▁▆███▁▃▅▁▃▁▁▁▁▁▁▁▁▁▁▁▃▃▃▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃ ▃
+      47.8 ms         Histogram: frequency by time         52.4 ms <
 
-     Memory estimate: 203.70 MiB, allocs estimate: 745626.
+     Memory estimate: 194.10 MiB, allocs estimate: 655347.
 
 ## In-place Computation of the Gradient
 
@@ -115,16 +115,16 @@ We can again benchmark this
 ) setup = (m2 = deepcopy($p0))
 ```
 
-    BenchmarkTools.Trial: 159 samples with 1 evaluation.
-     Range (min … max):  29.785 ms … 37.723 ms  ┊ GC (min … max): 0.00% … 13.76%
-     Time  (median):     31.089 ms              ┊ GC (median):    0.00%
-     Time  (mean ± σ):   31.590 ms ±  1.498 ms  ┊ GC (mean ± σ):  0.80% ±  3.10%
+    BenchmarkTools.Trial: 179 samples with 1 evaluation.
+     Range (min … max):  27.027 ms …  31.367 ms  ┊ GC (min … max): 0.00% … 11.00%
+     Time  (median):     27.712 ms               ┊ GC (median):    0.00%
+     Time  (mean ± σ):   27.939 ms ± 779.920 μs  ┊ GC (mean ± σ):  0.84% ±  2.56%
 
-        ▄█▂   ▅                                                    
-      ▃▄███▅▅▇███▆▆▆▄▆▄▆▇▅▃▄▆▅▃▅█▄▃▅▄▄▄▇▃▄▅▄▁▁▁▁▁▁▁▃▃▃▁▁▁▁▃▁▁▁▄▁▃ ▃
-      29.8 ms         Histogram: frequency by time          36 ms <
+             ▄▃▆█▇▄▇                                                
+      ▅▁▁▅▅▅▇████████▅▇▆▁▅▁▁▅▁▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▅▁▁▁▅▁▁▁▁▁▅▆▁▅▅▁▁▁▇▁▇ ▅
+      27 ms         Histogram: log(frequency) by time      30.7 ms <
 
-     Memory estimate: 4.24 MiB, allocs estimate: 6832.
+     Memory estimate: 3.76 MiB, allocs estimate: 5949.
 
 which is faster by about a factor of 2 compared to the first solver-call.
 Note that the results `m1` and `m2` are of course the same.
@@ -133,4 +133,4 @@ Note that the results `m1` and `m2` are of course the same.
 distance(M, m1, m2)
 ```
 
-    0.0
+    2.0004809792350595e-10

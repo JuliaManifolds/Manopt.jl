@@ -957,6 +957,172 @@ function status_summary(a::WolfePowellBinaryLinesearch)
     s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
     return "$a$s"
 end
+
+@doc raw"""
+    AdaptiveWNGradient <: DirectionUpdateRule
+
+Represent an adaptive gradient method introduced by [^GrapigliaStella2023].
+
+Given a positive threshold ``\hat c \mathbb N``,
+an minimal bound ``b_{\mathrm{min}} > 0``,
+an initial ``b_0 ≥ b_{\mathrm{min}}``, and a
+gradient reduction factor threshold ``\alpha \in [0,1).
+
+Set ``c_0=0`` and use ``\omega_0 = \lVert \operatorname{grad} f(p_0) \rvert_{p_0}``.
+
+For the first iterate we use the initial step size ``s_0 = \frac{1}{b_0}``
+
+Then, given the last gradient ``X_{k-1} = \operatorname{grad} f(x_{k-1})``,
+and a previous ``\omega_{k-1}``, the values ``(b_k, \omega_k, c_k)`` are computed
+using ``X_k = \operatorname{grad} f(p_k)`` and the following cases
+
+If ``\lVert X_k \rVert_{p_k} \leq \alpha\omega_{k-1}``, then let
+``\hat b_{k-1} \in [b_\mathrm{min},b_{k-1}]`` and set
+
+```math
+(b_k, \omega_k, c_k) = \begin{cases}
+\bigl(\hat b_{k-1}, \lVert X_k\rVert_{p_k}, 0 \bigr) & \text{ if } c_{k-1}+1 = \hat c\\
+\Bigl(b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, c_{k-1}+1 \Bigr) & \text{ if } c_{k-1}+1<\hat c
+\end{cases}
+```
+
+If ``\lVert X_k \rVert_{p_k} > \alpha\omega_{k-1}``, the set
+
+```math
+(b_k, \omega_k, c_k) =
+\Bigl( b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, 0)
+```
+
+and return the step size ``s_k = \frac{1}{b_k}``.
+
+Note that for ``α=0`` this is the Riemannian variant of WNGRad
+
+# Fields
+* `count_threshold::Int` (`4`) an `Integer` for ``\hat c``
+* `minimal_bound::Float64` (`1e-4`) for ``b_{\mathrm{min}}``
+* `alternate_bound::Function` (`(bk, hat_c) -> min(gradient_bound, max(gradient_bound, bk/(3*hat_c)`)
+  how to determine ``\hat b_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
+* `gradient_reduction::Float64` (`0.9`)
+* `gradient_bound` `norm(M, p0, grad_f(M,p0))` the bound ``b_k``.
+
+as well as the internal fields
+
+* `weight` for ``ω_k`` initialised to ``ω_0 = ```norm(M, p0, grad_f(M,p0))` if this is not zero, `1.0` otherwise.
+* `count` for the ``c_k``, initialised to ``c_0 = 0``.
+
+# Constructor
+
+    AdaptiveWNGrad(M=DefaultManifold, grad_f=(M,p) -> zero_vector(M,rand(M)), p=rand(M); kwargs...)
+
+Where all above fields with defaults are keyword arguments.
+An additional keyword arguments
+
+* `adaptive` (`true`) switches the `gradient_reduction ``α`` to `0`.
+* `evaluation` (`AllocatingEvaluation()`) specifies whether the gradient (that is used for initialisation only) is mutating or allocating
+
+[^GrapigliaStella2023]:
+    > Grapiglia, G. N., Stella, G. F. D.:
+    > An Adaptive Riemannian Gradient Method Without Function Evaluations
+    > Journal of Optimization Theory and Applications (197), pp. 1140–1160, 2023.
+    > doi: [10.1007/s10957-023-02227-y](https://doi.org/10.1007/s10957-023-02227-y),
+    > preprint: [optimization-online.org/wp-content/uploads/2022/04/8864.pdf](https://optimization-online.org/wp-content/uploads/2022/04/8864.pdf)
+"""
+mutable struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
+    count_threshold::I
+    minimal_bound::R
+    alternate_bound::F
+    gradient_reduction::R
+    gradient_bound::R
+    weight::R
+    count::I
+end
+function AdaptiveWNGradient(
+    M::AbstractManifold=DefaultManifold(),
+    (grad_f!!)=(M, p) -> zero_vector(M, rand(M)),
+    p=rand(M);
+    evaluation::E=AllocatingEvaluation(),
+    adaptive::Bool=true,
+    count_threshold::I=4,
+    minimal_bound::R=1e-4,
+    gradient_reduction::R=adaptive ? 0.9 : 0.0,
+    gradient_bound::R=norm(
+        M,
+        p,
+        if evaluation == AllocatingEvaluation()
+            grad_f!!(M, p)
+        else
+            grad_f!!(M, zero_vector(M, p), p)
+        end,
+    ),
+    alternate_bound::F=(bk, hat_c) -> min(
+        gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))
+    ),
+    kwargs...,
+) where {I<:Integer,R<:Real,F<:Function,E<:AbstractEvaluationType}
+    if gradient_bound == 0
+        # If the gradient bound defaults to zero, we set it to 1
+        gradient_bound = 1.0
+    end
+    return AdaptiveWNGradient{I,R,F}(
+        count_threshold,
+        minimal_bound,
+        alternate_bound,
+        gradient_reduction,
+        gradient_bound,
+        gradient_bound,
+        0,
+    )
+end
+function (awng::AdaptiveWNGradient)(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...; kwargs...
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    X = get_gradient(mp, p)
+    isnan(awng.weight) || (awng.weight = norm(M, p, X)) # init ω_0
+    if i == 0 # init fields
+        awng.weight = norm(M, p, X) # init ω_0
+        (awng.weight == 0) && (awng.weight = 1.0)
+        awng.count = 0
+        return 1 / awng.gradient_bound
+    end
+    grad_norm = norm(M, p, X)
+    if grad_norm < awng.gradient_reduction * awng.weight # grad norm < αω_{k-1}
+        if awng.count + 1 == awng.count_threshold
+            awng.gradient_bound = awng.alternate_bound(
+                awng.gradient_bound, awng.count_threshold
+            )
+            awng.weight = grad_norm
+            awng.count = 0
+        else
+            awng.gradient_bound = awng.gradient_bound + grad_norm^2 / awng.gradient_bound
+            #weight stays unchanged
+            awng.count += 1
+        end
+    else
+        awng.gradient_bound = awng.gradient_bound + grad_norm^2 / awng.gradient_bound
+        #weight stays unchanged
+        awng.count = 0
+    end
+    return 1 / awng.gradient_bound
+end
+get_initial_stepsize(awng::AdaptiveWNGradient) = 1 / awng.gradient_bound
+get_last_stepsize(awng::AdaptiveWNGradient) = 1 / awng.gradient_bound
+function show(io::IO, awng::AdaptiveWNGradient)
+    s = """
+    AdaptiveWNGradient(;
+      count_threshold=$(awng.count_threshold),
+      minimal_bound=$(awng.minimal_bound),
+      alternate_bound=$(awng.alternate_bound),
+      gradient_reduction=$(awng.gradient_reduction),
+      gradient_bound=$(awng.gradient_bound)
+    )
+
+    as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
+    """
+    return print(io, s)
+end
+
 @doc raw"""
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
 

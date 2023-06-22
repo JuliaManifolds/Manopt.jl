@@ -160,7 +160,7 @@ perform an alternating gradient descent
 * `M` – the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
 * `f` – the objective function (cost) defined on `M`.
 * `grad_f` – a gradient, that can be of two cases
-  * is a single function returning a `ProductRepr` or
+  * is a single function returning an `ArrayPartition` or
   * is a vector functions each returning a component part of the whole gradient
 * `p` – an initial value ``p_0 ∈ \mathcal M``
 

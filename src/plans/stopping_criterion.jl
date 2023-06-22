@@ -15,7 +15,28 @@ details when a criterion is met (and that is empty otherwise).
 """
 abstract type StoppingCriterion end
 
+"""
+    indicates_convergence(c::StoppingCriterion)
+
+Return whether (true) or not (false) a [`StoppingCriterion`](@ref) does _always_
+mean that, when it indicates to stop, the solver has converged to a
+minimizer or critical point.
+
+Note that this is independent of the actual state of the stopping criterion,
+i.e. whether some of them indicate to stop, but a purely type-based, static
+decision
+
+# Examples
+
+With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` we have
+
+* `indicates_convergence(s1)` is `false`
+* `indicates_convergence(s2)` is `true`
+* `indicates_convergence(s1 | s2)` is `false`, since this might also stop after 20 iterations
+* `indicates_convergence(s1 & s2)` is `true`, since `s2` is fulfilled if this stops.
+"""
 indicates_convergence(c::StoppingCriterion) = false
+
 function get_count(c::StoppingCriterion, ::Val{:Iterations})
     if hasfield(typeof(c), :at_iteration)
         return getfield(c, :at_iteration)
