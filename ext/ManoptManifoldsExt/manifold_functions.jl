@@ -11,6 +11,16 @@ function max_stepsize(M::TangentBundle, p)
 end
 
 """
+    max_stepsize(M::FixedRankMatrices, p)
+
+Return a reasonable guess of maximum step size on `FixedRankMatrices` following
+the choice of typical distance in Matlab Manopt, i.e. dimension of `M`.
+"""
+function max_stepsize(M::FixedRankMatrices, p)
+    return manifold_dimension(M)
+end
+
+"""
     mid_point(M, p, q, x)
     mid_point!(M, y, p, q, x)
 
