@@ -36,8 +36,8 @@ function check_maxfunc(M, tol=1e-8)
 
     # diam = level_set_diameter(M, F3, subgradF3, p0)
     # println("Level set diameter = $diam")
-
-    bundle_min = bundle_method(
+    println("Convex bundle method")
+    @time bundle_min = bundle_method(
         M,
         F3,
         subgradF3,
@@ -57,8 +57,8 @@ function check_maxfunc(M, tol=1e-8)
             "\n",
         ],
     )
-
-    subgrad_min = subgradient_method(
+    println("Subgradient method")
+    @time subgrad_min = subgradient_method(
         M,
         F3,
         subgradF3,
@@ -68,8 +68,9 @@ function check_maxfunc(M, tol=1e-8)
         debug=[:Iteration, (:Cost, "F(p): %1.16f"), :Stop, 1000, "\n"],
     )
     # prox_min = p0
+    println("Prox bundle")
     try
-        global prox_min = prox_bundle_method(
+        @time global prox_min = prox_bundle_method(
             M,
             F3,
             subgradF3,
