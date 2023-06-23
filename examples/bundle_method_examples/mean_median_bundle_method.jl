@@ -1,6 +1,6 @@
 using Manopt, Manifolds, ManifoldDiff, Random, QuadraticModels, RipQP
 
-N = 1000
+N = 10000
 # M = Hyperbolic(9)
 M = SymmetricPositiveDefinite(4)
 Random.seed!(42)
@@ -47,12 +47,12 @@ gradF2(M, y) = sum(1 / length(data) * ManifoldDiff.subgrad_distance.(Ref(M), dat
         :Stop,
     ],
 )
-@time m_median = median(M, data)
-median_dist = distance(M, b_median, m_median)
-println("Distance between medians: $median_dist")
-println(
-    "$(F2(M, b_median) < F2(M,m_median) ? "F2(bundle_median) < F2(manifolds_median)" : "F2(bundle_median) ≥ F2(manifolds_median)")",
-)
-println(
-    "    |F2(bundle_median) - F2(manifolds_median)| = $(abs(F2(M, b_median) - F2(M, m_median)))",
-)
+# @time m_median = median(M, data)
+# median_dist = distance(M, b_median, m_median)
+# println("Distance between medians: $median_dist")
+# println(
+#     "$(F2(M, b_median) < F2(M,m_median) ? "F2(bundle_median) < F2(manifolds_median)" : "F2(bundle_median) ≥ F2(manifolds_median)")",
+# )
+# println(
+#     "    |F2(bundle_median) - F2(manifolds_median)| = $(abs(F2(M, b_median) - F2(M, m_median)))",
+# )
