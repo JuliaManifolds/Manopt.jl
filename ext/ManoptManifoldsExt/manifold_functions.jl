@@ -14,7 +14,8 @@ end
     max_stepsize(M::FixedRankMatrices, p)
 
 Return a reasonable guess of maximum step size on `FixedRankMatrices` following
-the choice of typical distance in Matlab Manopt, i.e. dimension of `M`.
+the choice of typical distance in Matlab Manopt, i.e. dimension of `M`. See
+https://github.com/NicolasBoumal/manopt/blob/97b6eb6b185334ab7b3991585ed2c044d69ee905/manopt/manifolds/fixedrank/fixedrankembeddedfactory.m#L76-L78
 """
 function max_stepsize(M::FixedRankMatrices, p)
     return manifold_dimension(M)
