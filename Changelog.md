@@ -5,6 +5,12 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.28] - 24/06/2023
+
+### Changed
+
+* `max_stepsize` was specialized for `FixedRankManifold` to follow Matlab Manopt.
+
 ## [0.4.27] - 15/06/2023
 
 ### Added
