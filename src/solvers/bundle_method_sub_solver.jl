@@ -12,11 +12,11 @@ function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:Abstra
         bms.lin_errors[bms.positive_indices],
         sparse(tril(H));
         A=reshape(ones(d), 1, d),
-        lcon=[one(eltype(d))],
-        ucon=[one(eltype(d))],
+        lcon=[one(eltype(bms.lin_errors))],
+        ucon=[one(eltype(bms.lin_errors))],
         lvar=zeros(d),
         uvar=[Inf for i in 1:d],
-        c0=zero(eltype(d)),
+        c0=zero(eltype(bms.lin_errors)),
     )
     return ripqp(qm; display=false).solution
     # return ripqp(qm; itol=RipQP.InputTol(ϵ_rb=1e-6, ϵ_rc=1e-6), mode=:zoom).solution
@@ -34,11 +34,11 @@ function bundle_method_sub_solver(
         pbms.approx_errors,
         sparse(tril(H));
         A=reshape(ones(d), 1, d),
-        lcon=[one(eltype(d))],
-        ucon=[one(eltype(d))],
+        lcon=[one(eltype(pbms.lin_errors))],
+        ucon=[one(eltype(pbms.lin_errors))],
         lvar=zeros(d),
         uvar=[Inf for i in 1:d],
-        c0=zero(eltype(d)),
+        c0=zero(eltype(pbms.lin_errors)),
     )
     return ripqp(qm; display=false).solution
 end
