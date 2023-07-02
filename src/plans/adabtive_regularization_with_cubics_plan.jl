@@ -1,29 +1,60 @@
 @doc raw"""
-    AdaptiveRegularizzationCubiCCost
+    AdaptiveRegularizationCubicCost
+
+We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k`` as
 
 ```math
-    m(X) = <X, g> + .5 <X, H[X]> +  \frac{σ}{3} \lVert η \rVert^3
+    m(X) = f(p) + <X, \operatorname{grad}f(p)>
+      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3
 ```
 
-where `g` is a tangent vector (usually a gradient) and `H` is a matrix (usually the Hessian
-of some function ``f``).
+# Fields
+* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_Hessian`](@ref).
+* `σ` – the current regularization parameter
+
+# Constructor
+    AdaptiveRegularizationCubicCost(mho, σ)
+
 """
-struct AdaptiveRegularizationCubicCost{F,R}
-    gradnorm::R
-    ς::R
-    Tmatrix::T #submatrix
-    y::Y # Solution of of argmin m(s), s= sum y[i]q[i]
-end
-mutable struct CubicSubCost{Y,T,I,R}
-    k::I #number of Lanczos vectors
-    gradnorm::R
+mutable struct AdaptiveRegularizationCubicCost{R,O<:AbstractManifoldObjective}
+    mho::O
     σ::R
-    Tmatrix::T #submatrix
-    y::Y # Solution of of argmin m(s), s= sum y[i]q[i]
 end
-function (C::CubicSubCost)(::AbstractManifold, y)# Ronny: M is Euclidean (R^k) but p should be y. I can change it to y a just input c.y when computing the subcost
-    #C.y[1]*C.gradnorm + 0.5*dot(C.y[1:C.k],@view(C.Tmatrix[1:C.k,1:C.k])*C.y[1:C.k]) + C.σ/3*norm(C.y[1:C.k],2)^3
-    return y[1] * C.gradnorm +
-           0.5 * dot(y, @view(C.Tmatrix[1:(C.k), 1:(C.k)]) * y) +
-           C.σ / 3 * norm(y, 2)^3
+function (f::AdaptiveRegularizationCubicCost)(M, p, X)
+    return get_cost(M, f.mho, p) +
+           inner(M, p, X, get_gradient(M, f.mho, p)) +
+           1 / 2 * inner(M, p, X, get_hessian(M, f.mho, p, X)) +
+           f.σ / 3 * norm(M, p, X)^3
+end
+
+@doc raw"""
+    AdaptiveRegularizationCubicGrad
+
+We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k`` as
+
+```math
+    m(X) = f(p) + <X, \operatorname{grad}f(p)>
+      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3
+```
+
+This struct represents its gradient, given by
+
+```math
+    \operatorname{grad} m(X) = \operatorname{grad}f(p) + \operatorname{Hess} f(p)[X] + σ \lVert X \rVert^2X
+```
+
+# Fields
+* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_Hessian`](@ref).
+* `σ` – the current regularization parameter
+
+# Constructor
+    AdaptiveRegularizationCubicGrad(mho, σ)
+"""
+struct AdaptiveRegularizationCubicGrad{R,O<:AbstractManifoldObjective}
+    mho::O
+    σ::R
+end
+function (grad_f::AdaptiveRegularizationCubicCost)(M, p, X)
+    return get_gradient(M, f.mho, p) get_hessian(M, f.mho, p, X) +
+           f.σ * norm(M, p, X)^2 * X
 end

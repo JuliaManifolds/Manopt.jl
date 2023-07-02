@@ -57,6 +57,7 @@ end
 makedocs(;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
+    authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
     pages=[
         "Home" => "index.md",

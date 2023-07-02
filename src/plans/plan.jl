@@ -24,6 +24,7 @@ include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")
 
+include("adabtive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("constrained_plan.jl")
