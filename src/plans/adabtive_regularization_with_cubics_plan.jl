@@ -54,7 +54,6 @@ struct AdaptiveRegularizationCubicGrad{R,O<:AbstractManifoldObjective}
     mho::O
     σ::R
 end
-function (grad_f::AdaptiveRegularizationCubicCost)(M, p, X)
-    return get_gradient(M, f.mho, p) get_hessian(M, f.mho, p, X) +
-           f.σ * norm(M, p, X)^2 * X
+function (grad_f::AdaptiveRegularizationCubicGrad)(M, p, X)
+    return get_gradient(M, f.mho, p)get_hessian(M, f.mho, p, X) + f.σ * norm(M, p, X)^2 * X
 end

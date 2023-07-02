@@ -38,7 +38,7 @@ mutable struct AdaptiveRegularizationState{
     T,
     TStop<:StoppingCriterion,
     SSt<:AbstractManoptSolverState,
-    Spr<:AbstractManoptProblem,
+    SPr<:AbstractManoptProblem,
     R,
     TRTM<:AbstractRetractionMethod,          #,
 } <: AbstractManoptSolverState#AbstractHessianSolverState
@@ -74,7 +74,7 @@ function AdaptiveRegularizationState(
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to inital value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ::R=1.0,
     ρ_regularization::R=1e3,
-    stop::StoppingCriterion=StopAfterIteration(100),
+    stop::SC=StopAfterIteration(100),
     retraction_method::RTM=default_retraction_method(M),
     optimized_updating_rule::Bool=false,
     σmin::R=1e-10, #Set the below to appropriate default vals.
@@ -88,8 +88,8 @@ function AdaptiveRegularizationState(
     T,
     R,
     St<:Union{<:AbstractManoptSolverState,<:Function},
-    Ob<:Union{<:AbstractManifoldObjective,<:AbstractEvaluationType}SCO,
-    SPR,
+    Ob<:Union{<:AbstractManifoldObjective,<:AbstractEvaluationType},
+    SC<:StoppingCriterion,
     RTM<:AbstractRetractionMethod,
 }
     return AdaptiveRegularizationState{P,St,SCO,SPR,T,R,RTM}(
@@ -252,14 +252,14 @@ function solve_arc_subproblem(
     return s
 end
 function solve_arc_subproblem(
-    M, s, problem::P, state::AllocatingEvaluation, p
+    M, s, problem::P, ::AllocatingEvaluation, p
 ) where {P<:Function}
     copyto!(M, p, s, problem(M, p))
     return s
 end
 function solve_arc_subproblem(
-    M, s, problem!::P, state::InplaceEvaluation, p
-) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
+    M, s, problem!::P, ::InplaceEvaluation, p
+) where {P<:AbstractManoptProblem}
     problem!(M, s, p)
     return s
 end
@@ -270,124 +270,117 @@ end
 
 @doc raw"""
     LanczosState{P,T,SC,B,I,R,TM,V,Y} <: AbstractManoptSolverState
+
+Solve the adaptive regularized subproblem with a Lanczos iteration
+
+# Fields
+* `p` the current iterate
+* `stop` – the stopping criterion
+* `σ` – the current regularization parameter
+* `X` the current gradient
+* `Lanczos_vectors` – the obtained Lanczos vectors
+* `tridig_matrix` the tridigonal coefficient matrix T
+* `coeffcients` the coefficients `y_1,...y_k`` that deteermine the solution
+* `Y` – a temporary vector containing the evaluation of the Hessian
+* `S` – the current obtained / approximated solution
 """
-mutable struct LanczosState{P,T,SC,B<:AbstractBasis,I,R,TM,Y} <: AbstractManoptSolverState
+mutable struct LanczosState{P,T,R,SC,B,TM,C} <: AbstractManoptSolverState
     p::P
-    stop::SC #maximum number of iterations
-    σ::R # current reg parameter, must update with set manopt parameter.
-    θ::R
-    gradnorm::R # norm of gradient at current point p
-    modelGradnorm::R # R; seems to never be used?
-    Q::B #store orthonormal basis
-    Tmatrix::TM #store triddiagonal matrix
-    r::T # store the r vector
+    X::T
+    σ::R
+    stop::SC
+    Lanczos_vectors::B # qi
+    tridig_matrix::TM # T
+    coeffcients::C
+    Y::T # A temporary vector for evaluations of the hessian
     S::T # store the tangent vector that solves the minimization problem
-    y::T # store the y vector
-    d::I #number of dimensions of current subspace solution
 end
 function LanczosState(
     M::AbstractManifold,
     p::P=rand(M);
-    # Ronny: Maybe not necessary?
-    θ=0.5,
+    X::T=zero_vector(M, p),
     maxIterLanczos=200,
-    #maxIterLanczos-1 since the first Lanczos vector is constructed in the intialization
-    stopping_criterion::SC=StopAfterIteration(maxIterLanczos - 1) |
-                           StopWhenLanczosModelGradLess(θ),
+    stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |
+                           StopWhenLanczosModelGradLess(0.5),
     σ::R=10.0,
-    gradnorm::R=1.0,
-    modelGradnorm::R=Inf,
-    tolNewton::R=1e-16,
-    Q::T=[zero_vector(M, p) for _ in 1:maxIterLanczos],
-    Tmatrix::TM=spdiagm(
-        -1 => zeros(maxIterLanczos - 1),
-        0 => zeros(maxIterLanczos),
-        1 => zeros(maxIterLanczos - 1),
-    ),
-    r::V=zero_vector(M, p),
-    S::V=zero_vector(M, p),
-    y::Y=[0.0],
-    d=1,
-) where {P,SCO,SC<:StoppingCriterion,I,R,T,TM,V,Y}
-    return LanczosState{P,SCO,SC,I,R,T,TM,V,Y}(
-        M,
+) where {P,T,SC<:StoppingCriterion,R}
+    tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
+    coeffs = zeros(maxIterLanczos)
+    Lanczos_vectors = [zero_vector(M, p) for _ in 1:maxIterLanczos]
+    return LanczosState{P,T,R,SC,typeof(Lanczos_vectors),typeof(tridig),typeof(coeffs)}(
         p,
-        stopping_criterion,
-        maxIterNewton,
+        X,
         σ,
-        θ,
-        gradnorm,
-        modelGradnorm,
-        tolNewton,
-        Q,
-        Tmatrix,
-        r,
-        S,
-        y,
-        d,
+        stopping_criterion,
+        Lanczos_vectors,
+        T,
+        coeffs,
+        copy(M, p, X),
+        copy(M, p, X),
     )
 end
-
 get_solver_result(ls::LanczosState) = ls.S
 
-function initialize_solver!(dmp::AbstractManoptProblem, s::LanczosState)
+function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
+    # Ronny: No let's to the first iteration in the first step.
+    # adapt to follow closer to the Paper by Cartis, Boumal et al.
     #in the intialization we set the first orthonormal vector, the first element of the Tmatrix and the r vector.
     M = get_manifold(dmp)
-    mho = s.objective
+    mho = ls.objective
 
-    g = get_gradient(M, mho, s.p)   #added ! and s.X
-    s.gradnorm = norm(M, s.p, g)
+    g = get_gradient(M, mho, ls.p)   #added ! and s.X
+    ls.gradnorm = norm(M, ls.p, g)
 
     #q = g / s.gradnorm
     #s.Q[1] .= q #store it directly above
-    s.Q[1] .= g / s.gradnorm
+    ls.Q[1] .= g / ls.gradnorm
 
-    r = get_hessian(M, mho, s.p, s.Q[1])#changed from q to       #save memory here use s.r, and below use @. s.r = s.r -...
-    α = inner(M, s.p, s.Q[1], r) #q change
-    s.Tmatrix[1, 1] = α
-    s.r = r - α * s.Q[1] #q change
+    r = get_hessian(M, mho, ls.p, ls.Q[1])#changed from q to       #save memory here use s.r, and below use @. s.r = s.r -...
+    α = inner(M, ls.p, ls.Q[1], r) #q change
+    ls.Tmatrix[1, 1] = α
+    ls.r = r - α * ls.Q[1] #q change
 
     #idea in the initalize_solver we set dim of subspace sol to d=1.
 
     #argmin of one dimensional model
-    s.y = [(α - sqrt(α^2 + 4 * s.σ * s.gradnorm)) / (2 * s.σ)] # store y in the state.
-    return s
+    ls.y = [(α - sqrt(α^2 + 4 * ls.σ * ls.gradnorm)) / (2 * ls.σ)] # store y in the state.
+    return ls
 end
 
 #step solver for the LanczosState (will change to LanczosState when its done and its correct)
-function step_solver!(dmp::AbstractManoptProblem, s::LanczosState, j)
+function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, j)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
-    β = norm(M, s.p, s.r)
+    β = norm(M, ls.p, ls.r)
     #Had to move it here to avoid logic error: earlier we computed only new y if stopping criterion failed, however this would lead to updating the y in s.y, and when the stopping_criterion is called after the step, it would be checked with a new y.
     if j > 1
-        s.y = min_cubic_Newton(s, j)
+        ls.y = min_cubic_Newton(ls, j)
     end
 
     #Note: not doing MGS causes fast loss of orthogonality. Do full orthogonalization for robustness?
     if β > 1e-12  # β large enough-> Do regular procedure: MGS of r wrt. Q
-        s.Q[j + 1] .= project(M, s.p, s.r / β) #s.r/β
+        ls.Q[j + 1] .= project(M, ls.p, ls.r / β) #s.r/β
     #for i in 1:j
     #    s.r=s.r-inner(M,s.p,s.Q[i],s.r)*s.Q[i]
     #end
     # s.Q[j + 1] .= project(M,s.p,s.r/norm(M,s.p,s.r))    #q=r/norm(M,s.p,r) #/β                                      #s.r / β # project(M::Grassmann, p, X)
     else # Generate new random vec and MGS of new vec wrt. Q
         println("maxed out! gen rand vec")
-        r = rand(M; vector_at=s.p)
+        r = rand(M; vector_at=ls.p)
         for i in 1:j
-            r .= r - inner(M, s.p, s.Q[i], r) * s.Q[i]  #use @.
+            r .= r - inner(M, ls.p, ls.Q[i], r) * ls.Q[i]  #use @.
         end
-        s.Q[j + 1] .= project(M, s.p, r / norm(M, s.p, r))  #r / norm(M, s.p, r)                            # r / norm(M, s.p, r)
+        ls.Q[j + 1] .= project(M, ls.p, r / norm(M, ls.p, r))  #r / norm(M, s.p, r)                            # r / norm(M, s.p, r)
     end
 
-    rh = get_hessian(M, mho, s.p, s.Q[j + 1])
-    r = rh - β * s.Q[j] #also store this in s.r to save memory
-    α = inner(M, s.p, r, s.Q[j + 1])
-    s.r = r - α * s.Q[j + 1]
+    rh = get_hessian(M, mho, ls.p, ls.Q[j + 1])
+    r = rh - β * ls.Q[j] #also store this in s.r to save memory
+    α = inner(M, ls.p, r, ls.Q[j + 1])
+    ls.r = r - α * ls.Q[j + 1]
 
-    s.Tmatrix[j + 1, j + 1] = α
-    s.Tmatrix[j, j + 1] = β
-    s.Tmatrix[j + 1, j] = β
+    ls.Tmatrix[j + 1, j + 1] = α
+    ls.Tmatrix[j, j + 1] = β
+    ls.Tmatrix[j + 1, j] = β
 
     #Compute the norm of the gradient of the model.
 
@@ -399,53 +392,32 @@ function step_solver!(dmp::AbstractManoptProblem, s::LanczosState, j)
     #This was only necessary since
     if j == 1
         modelGradnorm = norm(
-            s.gradnorm * e1 +
-            @view(s.Tmatrix[1:(j + 1), 1:j]) * s.y' +
-            s.σ * norm(s.y, 2) * vcat(s.y, 0),
+            ls.gradnorm * e1 +
+            @view(ls.Tmatrix[1:(j + 1), 1:j]) * ls.y' +
+            ls.σ * norm(ls.y, 2) * vcat(ls.y, 0),
             2,
         )
     else
         modelGradnorm = norm(
-            s.gradnorm * e1 +
-            @view(s.Tmatrix[1:(j + 1), 1:j]) * s.y +
-            s.σ * norm(s.y, 2) * vcat(s.y, 0),
+            ls.gradnorm * e1 +
+            @view(ls.Tmatrix[1:(j + 1), 1:j]) * ls.y +
+            ls.σ * norm(ls.y, 2) * vcat(ls.y, 0),
             2,
         )
     end
-    if modelGradnorm <= s.θ * norm(s.y, 2)^2
+    if modelGradnorm <= ls.θ * norm(ls.y, 2)^2
         #The condition is satisifed. Assemble the optimal tangent vector
-        project!(M, s.S, s.p, sum(s.Q[i] * s.y[i] for i in 1:j))
+        project!(M, ls.S, ls.p, sum(ls.Q[i] * ls.y[i] for i in 1:j))
     end
-    return s
+    return ls
 end
 get_iterate(s::LanczosState) = s.S
-function set_iterate!(s::LanczosState, M::AbstractManifold, p)
+function set_manopt_parameter!(s::LanczosState, ::Val{:p}, p)
     s.p = p
     return s
 end
 function set_manopt_parameter!(s::LanczosState, ::Val{:σ}, σ)
     s.σ = σ
-    return s
-end
-#Sub cost set_manopt_parameter!'s
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:k}, k)
-    s.k = k
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:gradnorm}, gradnorm)
-    s.gradnorm = gradnorm
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:σ}, σ)
-    s.σ = σ
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:Tmatrix}, Tmatrix)
-    s.Tmatrix = Tmatrix
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:y}, y)
-    s.y = y
     return s
 end
 
@@ -759,4 +731,26 @@ function (C::CubicSubCost)(::AbstractManifold, y)# Ronny: M is Euclidean (R^k) b
     return y[1] * C.gradnorm +
            0.5 * dot(y, @view(C.Tmatrix[1:(C.k), 1:(C.k)]) * y) +
            C.σ / 3 * norm(y, 2)^3
+end
+
+#Sub cost set_manopt_parameter!'s
+function set_manopt_parameter!(s::CubicSubCost, ::Val{:k}, k)
+    s.k = k
+    return s
+end
+function set_manopt_parameter!(s::CubicSubCost, ::Val{:gradnorm}, gradnorm)
+    s.gradnorm = gradnorm
+    return s
+end
+function set_manopt_parameter!(s::CubicSubCost, ::Val{:σ}, σ)
+    s.σ = σ
+    return s
+end
+function set_manopt_parameter!(s::CubicSubCost, ::Val{:Tmatrix}, Tmatrix)
+    s.Tmatrix = Tmatrix
+    return s
+end
+function set_manopt_parameter!(s::CubicSubCost, ::Val{:y}, y)
+    s.y = y
+    return s
 end
