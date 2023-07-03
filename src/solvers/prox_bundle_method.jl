@@ -276,7 +276,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     end
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
-        if pbms.δ != zero(eltype(pbms.μ))
+        if pbms.δ == zero(eltype(pbms.μ))
             pbms.μ = log(i+1)
         else
             pbms.μ += pbms.δ * pbms.μ
