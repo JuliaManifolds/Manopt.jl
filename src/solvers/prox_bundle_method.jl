@@ -234,6 +234,11 @@ function initialize_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodSta
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     M = get_manifold(mp)
+    pbms.transported_subgradients = [qj ≈ pbms.p_last_serious ? Xj :
+        vector_transport_to(M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method) +
+        pbms.η * inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method)
+        for (qj, Xj) in pbms.bundle
+    ]
     v = [
         -2 * ej /
         norm(
