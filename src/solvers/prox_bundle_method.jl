@@ -200,8 +200,8 @@ function prox_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
-    δ=0.0,
-    μ=0.5,
+    δ=-1.0,
+    μ=1.0,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -276,7 +276,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     end
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
-        if pbms.δ == zero(eltype(pbms.μ))
+        if pbms.δ < zero(eltype(pbms.μ))
             pbms.μ = log(i+1)
         else
             pbms.μ += pbms.δ * pbms.μ
