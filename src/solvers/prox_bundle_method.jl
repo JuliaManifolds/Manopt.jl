@@ -84,16 +84,16 @@ mutable struct ProxBundleMethodState{
         R<:Real,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
-        approx_errors = [0.0]
+        approx_errors = [zero(R)]
         bundle = [(copy(M, p), copy(M, p, X))]
-        c = 0.0
+        c = zero(R)
         d = copy(M, p, X)
-        lin_errors = [0.0]
+        lin_errors = [zero(R)]
         transported_subgradients = [copy(M, p, X)]
-        α = 0.0
-        λ = [0.0]
-        η = 0.0
-        ν = 0.0
+        α = zero(R)
+        λ = [zero(R)]
+        η = zero(R)
+        ν = zero(R)
         return new{IR,P,T,TR,SC,VT,R}(
             approx_errors,
             bundle,
@@ -228,7 +228,6 @@ function initialize_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodSta
     M = get_manifold(mp)
     copyto!(M, pbms.p_last_serious, pbms.p)
     get_subgradient!(mp, pbms.X, pbms.p)
-    copyto!(M, pbms.d, pbms.p_last_serious, pbms.X)
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     return pbms
 end
@@ -253,16 +252,11 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    pbms.transported_subgradients = [
-        vector_transport_to(M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method) +
-        pbms.η * inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method)
-        for (qj, Xj) in pbms.bundle
-    ]
     pbms.λ = bundle_method_sub_solver(M, pbms)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
-    pbms.d .= -1 / pbms.μ * sum(pbms.λ .* pbms.transported_subgradients)
-    nd = norm(M, pbms.p_last_serious, pbms.d)
-    pbms.ν = -nd^2 - pbms.c
+    pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
+    nd = norm(M, pbms.p_last_serious, pbms.d) 
+    pbms.ν = -pbms.μ * norm(M, pbms.p_last_serious, pbms.d)^2 - pbms.c
     if nd ≤ pbms.ε
         retract!(M, pbms.p, pbms.p_last_serious, pbms.d, pbms.retraction_method)
         get_subgradient!(mp, pbms.X, pbms.p)
@@ -281,95 +275,36 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
             ) / (pbms.ε * nd)
     end
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
-        # pbms.μ = pbms.μ * 
-        #     norm(
-        #         M,
-        #         pbms.p,
-        #         pbms.X - vector_transport_to(
-        #             M,
-        #             pbms.p_last_serious,
-        #             get_subgradient(mp, pbms.p_last_serious),
-        #             pbms.p,
-        #             pbms.vector_transport_method,
-        #         ),
-        #     )^2 / (
-        #         norm(
-        #             M,
-        #             pbms.p,
-        #             pbms.X - vector_transport_to(
-        #                 M,
-        #                 pbms.p_last_serious,
-        #                 get_subgradient(mp, pbms.p_last_serious),
-        #                 pbms.p,
-        #                 pbms.vector_transport_method,
-        #             ),
-        #         )^2 -
-        #         pbms.μ * inner(
-        #             M,
-        #             pbms.p,
-        #             inverse_retract(
-        #                 M, pbms.p, pbms.p_last_serious, pbms.inverse_retraction_method
-        #             ),
-        #             pbms.X - vector_transport_to(
-        #                 M,
-        #                 pbms.p_last_serious,
-        #                 get_subgradient(mp, pbms.p_last_serious),
-        #                 pbms.p,
-        #                 pbms.vector_transport_method,
-        #             ),
-        #         )
-        #     )
-        # pbms.μ = norm(
-        #     M,
-        #     pbms.p,
-        #     pbms.X - vector_transport_to(
-        #         M,
-        #         pbms.p_last_serious,
-        #         get_subgradient(mp, pbms.p_last_serious),
-        #         pbms.p,
-        #         pbms.vector_transport_method,
-        #     ),
-        # )^2 / 
-        # inner(
-        #             M,
-        #             pbms.p,
-        #             inverse_retract(
-        #                 M, pbms.p, pbms.p_last_serious, pbms.inverse_retraction_method
-        #             ),
-        #             pbms.X - vector_transport_to(
-        #                 M,
-        #                 pbms.p_last_serious,
-        #                 get_subgradient(mp, pbms.p_last_serious),
-        #                 pbms.p,
-        #                 pbms.vector_transport_method,
-        #             ),
-        #         )
-        pbms.μ += pbms.δ * pbms.μ
-        # (length(pbms.bundle) < pbms.bundle_size) && (pbms.μ = (π / (4 * i))^-1)
         copyto!(M, pbms.p_last_serious, pbms.p)
-    end
-    l = length(pbms.bundle)
-    push!(pbms.bundle, (copy(M, pbms.p), copy(M, pbms.p, pbms.X)))
-    if l == pbms.bundle_size
-        deleteat!(pbms.bundle, l - pbms.bundle_size + 1)
-    end
-    pbms.lin_errors = [
-        get_cost(mp, pbms.p_last_serious) - get_cost(mp, qj) + inner(
+        pbms.μ = log(i+1)#pbms.δ #log(i+1)
+        pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
+        pbms.lin_errors = [0.0]
+        pbms.approx_errors = [0.0]
+    else
+        push!(pbms.bundle, (copy(M, pbms.p), copy(M, pbms.p, pbms.X)))
+        push!(pbms.lin_errors, get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
             M,
-            qj,
-            vector_transport_to(M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method),
-            inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
-        ) for (qj, Xj) in pbms.bundle
-    ]
-    pbms.approx_errors =
-        pbms.lin_errors + [
-            pbms.η / 2 *
-            norm(
-                M,
-                pbms.p_last_serious,
-                inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
-            )^2 for (qj, Xj) in pbms.bundle
-        ]
+            pbms.p_last_serious,
+            vector_transport_to(M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method),
+            inverse_retract(M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method),
+        ))
+        push!(pbms.approx_errors, get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
+            M,
+            pbms.p_last_serious,
+            vector_transport_to(M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method),
+            inverse_retract(M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method),
+        ) + pbms.η / 2 *
+        norm(
+            M,
+            pbms.p_last_serious,
+            inverse_retract(M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method),
+        )^2)
+        if length(pbms.bundle) == pbms.bundle_size
+            deleteat!(pbms.bundle, 1)
+            deleteat!(pbms.lin_errors, 1)
+            deleteat!(pbms.approx_errors, 1)
+        end
+    end
     return pbms
 end
 get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
