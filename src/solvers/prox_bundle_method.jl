@@ -200,7 +200,7 @@ function prox_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
-    δ=1.0,
+    δ=0.0,
     μ=0.5,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
@@ -276,7 +276,11 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     end
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
-        pbms.μ = log(i+1)#pbms.δ #log(i+1)
+        if pbms.δ != zero(eltype(pbms.μ))
+            pbms.μ = log(i+1)
+        else
+            pbms.μ += pbms.δ * pbms.μ
+        end
         pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
         pbms.lin_errors = [0.0]
         pbms.approx_errors = [0.0]
