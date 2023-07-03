@@ -196,7 +196,8 @@ function prox_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     bundle_size=50,
-    stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8),
+    stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8) |
+                                          StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,

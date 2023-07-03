@@ -88,7 +88,7 @@ mutable struct BundleMethodState{
         diam::R=1.0,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenBundleLess(1e-8),
+        stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         δ::R=one(R),
