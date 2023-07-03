@@ -65,7 +65,7 @@ mutable struct ProxBundleMethodState{
         m::R=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenProxBundleLess(1e-8),
+        stopping_criterion::SC=StopWhenProxBundleLess(1e-8) | StopAfterIteration(5000),
         bundle_size::Integer=50,
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         X::T=zero_vector(M, p),
@@ -238,8 +238,8 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
             Xj
         else
             vector_transport_to(
-            M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method
-        ) +
+                M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method
+            ) +
             pbms.η *
             inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method)
         end for (qj, Xj) in pbms.bundle

@@ -234,7 +234,8 @@ function bundle_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
-    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-8),
+    stopping_criterion::StoppingCriterion=StopWhenBundleLess(1e-8) |
+                                          StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
