@@ -229,7 +229,7 @@ function bundle_method!(
     atol_errors=eps(),
     bundle_size=25,
     diam=50.0,
-    m=1e-2,
+    m=1e-3,
     δ=1.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -272,7 +272,7 @@ function bundle_method_sub_solver(::Any, ::Any)
 end
 function _zero_indices!(bms::BundleMethodState)
     for k in 1:length(bms.indices)
-        if bms.indices[k] != 0 &&  bms.λ[bms.indices[k]] ≤ bms.atol_λ
+        if bms.indices[k] != 0 && bms.λ[bms.indices[k]] ≤ bms.atol_λ
             bms.indices[k] = 0
         end
     end
