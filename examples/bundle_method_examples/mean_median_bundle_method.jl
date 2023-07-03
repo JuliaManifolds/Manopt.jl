@@ -28,13 +28,18 @@ tol = 1e-8
 # println("    |F(bundle_mean) - F(manifolds_mean)| = $(abs(F(M, b_mean) - F(M, m_mean)))")
 
 F2(M, y) = sum(1 / length(data) * distance.(Ref(M), Ref(y), data))
-gradF2(M, y) = sum(1 / length(data) * ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(y), 1; atol = √eps()))
+function gradF2(M, y)
+    return sum(
+        1 / length(data) *
+        ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(y), 1; atol=√eps()),
+    )
+end
 @time b_median = bundle_method(
     M,
     F2,
     gradF2,
     data[1];
-    diam = 2.5,
+    diam=2.5,
     stopping_criterion=StopWhenBundleLess(tol),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
     debug=[
         :Iteration,

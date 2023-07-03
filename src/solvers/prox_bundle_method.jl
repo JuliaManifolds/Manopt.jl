@@ -233,10 +233,16 @@ function initialize_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodSta
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     M = get_manifold(mp)
-    pbms.transported_subgradients = [qj ≈ pbms.p_last_serious ? Xj :
-        vector_transport_to(M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method) +
-        pbms.η * inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method)
-        for (qj, Xj) in pbms.bundle
+    pbms.transported_subgradients = [
+        if qj ≈ pbms.p_last_serious
+            Xj
+        else
+            vector_transport_to(
+            M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method
+        ) +
+            pbms.η *
+            inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method)
+        end for (qj, Xj) in pbms.bundle
     ]
     v = [
         -2 * ej /
@@ -255,14 +261,16 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     pbms.λ = bundle_method_sub_solver(M, pbms)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
-    nd = norm(M, pbms.p_last_serious, pbms.d) 
+    nd = norm(M, pbms.p_last_serious, pbms.d)
     pbms.ν = -pbms.μ * norm(M, pbms.p_last_serious, pbms.d)^2 - pbms.c
     if nd ≤ pbms.ε
         retract!(M, pbms.p, pbms.p_last_serious, pbms.d, pbms.retraction_method)
         get_subgradient!(mp, pbms.X, pbms.p)
         pbms.α = 0.0
     else
-        retract!(M, pbms.p, pbms.p_last_serious, pbms.ε * pbms.d / nd, pbms.retraction_method)
+        retract!(
+            M, pbms.p, pbms.p_last_serious, pbms.ε * pbms.d / nd, pbms.retraction_method
+        )
         get_subgradient!(mp, pbms.X, pbms.p)
         pbms.α =
             -inner(
@@ -277,7 +285,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
         if pbms.δ < zero(eltype(pbms.μ))
-            pbms.μ = log(i+1)
+            pbms.μ = log(i + 1)
         else
             pbms.μ += pbms.δ * pbms.μ
         end
@@ -286,23 +294,41 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
         pbms.approx_errors = [0.0]
     else
         push!(pbms.bundle, (copy(M, pbms.p), copy(M, pbms.p, pbms.X)))
-        push!(pbms.lin_errors, get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
-            M,
-            pbms.p_last_serious,
-            vector_transport_to(M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method),
-            inverse_retract(M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method),
-        ))
-        push!(pbms.approx_errors, get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
-            M,
-            pbms.p_last_serious,
-            vector_transport_to(M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method),
-            inverse_retract(M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method),
-        ) + pbms.η / 2 *
-        norm(
-            M,
-            pbms.p_last_serious,
-            inverse_retract(M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method),
-        )^2)
+        push!(
+            pbms.lin_errors,
+            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
+                M,
+                pbms.p_last_serious,
+                vector_transport_to(
+                    M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method
+                ),
+                inverse_retract(
+                    M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method
+                ),
+            ),
+        )
+        push!(
+            pbms.approx_errors,
+            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) +
+            inner(
+                M,
+                pbms.p_last_serious,
+                vector_transport_to(
+                    M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method
+                ),
+                inverse_retract(
+                    M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method
+                ),
+            ) +
+            pbms.η / 2 *
+            norm(
+                M,
+                pbms.p_last_serious,
+                inverse_retract(
+                    M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method
+                ),
+            )^2,
+        )
         if length(pbms.bundle) == pbms.bundle_size
             deleteat!(pbms.bundle, 1)
             deleteat!(pbms.lin_errors, 1)

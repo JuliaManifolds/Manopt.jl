@@ -52,7 +52,7 @@ mutable struct BundleMethodState{
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-    } <: AbstractManoptSolverState where {R<:Float64,P,T,I<:Int64}
+} <: AbstractManoptSolverState where {R<:Float64,P,T,I<:Int64}
     atol_λ::R
     atol_errors::R
     bundle::B
@@ -302,7 +302,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         )
     end
     bms.λ[bms.positive_indices] .= bundle_method_sub_solver(M, bms)
-    bms.g .= sum(bms.λ[bms.positive_indices] .* bms.transported_subgradients[bms.positive_indices])
+    bms.g .= sum(
+        bms.λ[bms.positive_indices] .* bms.transported_subgradients[bms.positive_indices]
+    )
     bms.ε = sum(bms.λ[bms.positive_indices] .* bms.lin_errors[bms.positive_indices])
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
@@ -318,7 +320,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size
         bms.diam = max(
-            0.0, bms.diam - bms.δ * distance(M, bms.bundle[bms.positive_indices[1]][1], bms.p0)
+            0.0,
+            bms.diam - bms.δ * distance(M, bms.bundle[bms.positive_indices[1]][1], bms.p0),
         )
     end
     for l in bms.positive_indices
