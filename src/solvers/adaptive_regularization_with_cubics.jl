@@ -377,17 +377,23 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
     min_cubic_Newton!(dmp, ls, i)
     return ls
 end
-function get_iterate(s::LanczosState)
-    project!(M, ls.S, ls.p, sum(ls.Q[k] * ls.y[k] for k in 1:length(y)))
+# Only recreate S when asked for
+function get_iterate(ls::LanczosState)
+    copyto!(
+        M,
+        ls.S,
+        ls.p,
+        sum(ls.Lanczos_vectors[k] * ls.coeffcients[k] for k in 1:length(ls.coeffcients)),
+    )
     return ls.S
 end
-function set_manopt_parameter!(s::LanczosState, ::Val{:p}, p)
-    s.p = p
-    return s
+function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
+    ls.p = p
+    return ls
 end
-function set_manopt_parameter!(s::LanczosState, ::Val{:σ}, σ)
-    s.σ = σ
-    return s
+function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
+    ls.σ = σ
+    return ls
 end
 #
 # Solve Lanczos sub problem
