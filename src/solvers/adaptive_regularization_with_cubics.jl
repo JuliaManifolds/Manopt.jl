@@ -36,17 +36,17 @@ Furthermore the following interal fields are defined
 mutable struct AdaptiveRegularizationState{
     P,
     T,
+    Pr<:AbstractManoptProblem,
+    St<:AbstractManoptSolverState,
     TStop<:StoppingCriterion,
-    SSt<:AbstractManoptSolverState,
-    SPr<:AbstractManoptProblem,
     R,
-    TRTM<:AbstractRetractionMethod,          #,
-} <: AbstractManoptSolverState#AbstractHessianSolverState
+    TRTM<:AbstractRetractionMethod,
+} <: AbstractManoptSolverState
     p::P
-    q::P
-    sub_state::SSt
-    sub_problem::SPr
     X::T
+    sub_problem::Pr
+    sub_state::St
+    q::P
     H::T
     S::T
     σ::R
@@ -54,7 +54,6 @@ mutable struct AdaptiveRegularizationState{
     ρ_regularization::R
     stop::TStop
     retraction_method::TRTM
-    #   optimized_updating_rule::Bool
     σmin::R
     θ::R
     η1::R
@@ -68,15 +67,17 @@ function AdaptiveRegularizationState(
     p::P=rand(M),
     X::T=zero_vector(M, p);
     sub_state::St=LanczosState(M, p),
-    sub_problem::Ob=ManifoldCostObjective(subcost),
-    H::T=zero_vector(M, p),
-    S::T=zero_vector(M, p),
+    sub_objective=nothing,
+    sub_problem::Pr=if isnothing(sub_objective)
+        nothing
+    else
+        DefaultManoptProblem(M, sub_objective)
+    end,
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to inital value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ::R=1.0,
     ρ_regularization::R=1e3,
     stop::SC=StopAfterIteration(100),
     retraction_method::RTM=default_retraction_method(M),
-    optimized_updating_rule::Bool=false,
     σmin::R=1e-10, #Set the below to appropriate default vals.
     θ::R=2.0,
     η1::R=0.1,
@@ -87,27 +88,26 @@ function AdaptiveRegularizationState(
     P,
     T,
     R,
-    St<:Union{<:AbstractManoptSolverState,<:Function},
-    Ob<:Union{<:AbstractManifoldObjective,<:AbstractEvaluationType},
+    Pr<:Union{<:AbstractManoptProblem,<:Function,Nothing},
+    St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType},
     SC<:StoppingCriterion,
     RTM<:AbstractRetractionMethod,
 }
-    return AdaptiveRegularizationState{P,St,SCO,SPR,T,R,RTM}(
-        M,
+    isnothing(sub_problem) && error("No sub_problem provided,")
+
+    return AdaptiveRegularizationState{P,T,Pr,St,SC,R,RTM}(
         p,
-        copy(M, p),
-        sub_state,
-        subcost,
-        sub_problem,
         X,
-        H,
-        S,
+        sub_problem,
+        sub_state,
+        copy(M, p),
+        copy(M, p, X),
+        copy(M, p, X),
         σ,
         ρ,
         ρ_regularization,
         stop,
         retraction_method,
-        optimized_updating_rule,
         σmin,
         θ,
         η1,
@@ -134,9 +134,7 @@ function adaptive_regularization_with_cubics!(
     grad_f::TDF,
     Hess_f::THF,
     p=rand(M);
-    X::T=zero_vector(M, p),
-    H::T=zero_vector(M, p),
-    S::T=zero_vector(M, p),
+    initial_tangent_vector::T=zero_vector(M, p),
     σ::R=100.0 / sqrt(manifold_dimension(M)),
     maxIterLanczos=200,
     ρ::R=0.0, #1.0
@@ -145,7 +143,6 @@ function adaptive_regularization_with_cubics!(
                             StopWhenGradientNormLess(1e-9) |
                             StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    optimized_updating_rule::Bool=false,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     σmin::R=1e-10,
     θ::R=2.0,
@@ -154,34 +151,27 @@ function adaptive_regularization_with_cubics!(
     γ1::R=0.1,
     γ2::R=2.0,
     sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=LanczosState(
-        M,
-        copy(M, p);       #tried adding copy
-        maxIterLanczos=maxIterLanczos,
-        θ=θ,
-        σ=σ,
+        M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ
     ),
-    subcost=ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation),
-    sub_problem=DefaultManoptProblem(M, ManifoldCostObjective(subcost)),
+    sub_cost=ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation),
+    sub_problem=DefaultManoptProblem(M, sub_cost),
     kwargs...,
 ) where {T,R,TF,TDF,THF}
+    X = copy(M, p, initial_tangent_vector)
     mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation)
     dmho = decorate_objective!(M, mho; kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,
-        p;
+        p,
+        X;
         sub_state=sub_state,
-        subcost=subcost,
         sub_problem=sub_problem,
-        X=X,
-        H=H,
-        S=S,
         σ=σ,
         ρ=ρ,
         ρ_regularization=ρ_regularization,
         stop=stop,
         retraction_method=retraction_method,
-        optimized_updating_rule=optimized_updating_rule,
         σmin=σmin,
         θ=θ,
         η1=η1,
@@ -244,20 +234,20 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
 end
 
 # Dispatch on different forms of sub_solvers
-function solve_arc_subproblem(
+function solve_arc_subproblem!(
     M, s, problem::P, state::S, p
 ) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
     solve!(problem, state)
     copyto!(M, p, s, get_solver_result(arcs.sub_problem))
     return s
 end
-function solve_arc_subproblem(
+function solve_arc_subproblem!(
     M, s, problem::P, ::AllocatingEvaluation, p
 ) where {P<:Function}
     copyto!(M, p, s, problem(M, p))
     return s
 end
-function solve_arc_subproblem(
+function solve_arc_subproblem!(
     M, s, problem!::P, ::InplaceEvaluation, p
 ) where {P<:AbstractManoptProblem}
     problem!(M, s, p)
@@ -285,12 +275,12 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 * `Hp_residual` – a temporary vector containing the residual to the Hessian
 * `S` – the current obtained / approximated solution
 """
-mutable struct LanczosState{P,T,R,SC,B,TM,C} <: AbstractManoptSolverState
+mutable struct LanczosState{P,T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
     p::P
     X::T
     σ::R
     stop::SC           # Notation in ABBC
-    stop_newton::SC
+    stop_newton::SCN
     Lanczos_vectors::B # qi
     tridig_matrix::TM  # T
     coeffcients::C     # y
@@ -305,29 +295,50 @@ function LanczosState(
     maxIterLanczos=200,
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |
                            StopWhenLanczosModelGradLess(0.5),
-    stopping_criterion_newtown=StopAfterIteration(200),
+    stopping_criterion_newtown::SCN=StopAfterIteration(200),
     σ::R=10.0,
-) where {P,T,SC<:StoppingCriterion,R}
+) where {P,T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     coeffs = zeros(maxIterLanczos)
     Lanczos_vectors = [zero_vector(M, p) for _ in 1:maxIterLanczos]
-    return LanczosState{P,T,R,SC,typeof(Lanczos_vectors),typeof(tridig),typeof(coeffs)}(
+    return LanczosState{P,T,R,SC,SCN,typeof(Lanczos_vectors),typeof(tridig),typeof(coeffs)}(
         p,
         X,
         σ,
         stopping_criterion,
         stopping_criterion_newtown,
         Lanczos_vectors,
-        T,
+        tridig,
         coeffs,
         copy(M, p, X),
         copy(M, p, X),
         copy(M, p, X),
     )
 end
-get_solver_result(ls::LanczosState) = ls.S
+function get_solver_result(ls::LanczosState)
+    copyto!(
+        M,
+        ls.S,
+        ls.p,
+        sum(ls.Lanczos_vectors[k] * ls.coeffcients[k] for k in 1:length(ls.coeffcients)),
+    )
+    return ls.S
+end
+function set_iterate!(ls::LanczosState, M, p)
+    ls.p = p
+    return ls
+end
 
-function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
+function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
+    ls.p = p
+    return ls
+end
+function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
+    ls.σ = σ
+    return ls
+end
+
+function initialize_solver!(::AbstractManoptProblem, ls::LanczosState)
     return ls
 end
 
@@ -375,24 +386,6 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
         ls.tridig_matrix[i, i - 1] = β
     end
     min_cubic_Newton!(dmp, ls, i)
-    return ls
-end
-# Only recreate S when asked for
-function get_iterate(ls::LanczosState)
-    copyto!(
-        M,
-        ls.S,
-        ls.p,
-        sum(ls.Lanczos_vectors[k] * ls.coeffcients[k] for k in 1:length(ls.coeffcients)),
-    )
-    return ls.S
-end
-function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
-    ls.p = p
-    return ls
-end
-function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
-    ls.σ = σ
     return ls
 end
 #
@@ -453,13 +446,12 @@ mutable struct StopWhenLanczosModelGradLess <: StoppingCriterion
     StopWhenLanczosModelGradLess(ε::Float64) = new(ε, "")
 end
 function (c::StopWhenLanczosModelGradLess)(
-    ::AbstractManoptProblem, ls::LanczosState, i::Int
+    dmp::AbstractManoptProblem, ls::LanczosState, i::Int
 )
     (i == 0) && (c.reason = "") # reset on init
     #Update Gradient
     M = get_manifold(dmp)
-    mho = get_objective(dmp)
-    get_gradient!(M, ls.X, mho, ls.p)
+    get_gradient!(dmp, ls.X, ls.p)
     model_grad_norm = norm(
         norm(M, ls.p, ls.X) .* ones(i + 1) +
         @view(ls.tridig_matrix[1:(i + 1), 1:i]) * ls.coeffcients +
