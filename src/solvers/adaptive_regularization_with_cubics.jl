@@ -332,12 +332,16 @@ function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     return ls
 end
 
-function initialize_solver!(::AbstractManoptProblem, ls::LanczosState)
+function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
+    M = get_manifold(dmp)
     # Maybe better to allocate once and just reset the number of vectors k?
-    maxIterLanczos = size(ls.tridig_matrix,1)
+    maxIterLanczos = size(ls.tridig_matrix, 1)
     ls.tridig_matrix = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     ls.coeffcients = Float64[]
     ls.Lanczos_vectors = typeof(ls.X)[]
+    zero_vector!(M, ls.Hp, ls.p)
+    zero_vector!(M, ls.X, ls.p)
+    zero_vector!(M, ls.Hp_residual, ls.p)
     return ls
 end
 
@@ -477,10 +481,12 @@ mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
     StopWhenAllLanczosVectorsUsed(maxIts::Int64) = new(maxIts, "")
 end
 function (c::StopWhenAllLanczosVectorsUsed)(
-    ::AbstractManoptProblem, arcs::AdaptiveRegularizationState{P,T,Pr,<:LanczosState}, i::Int
+    ::AbstractManoptProblem,
+    arcs::AdaptiveRegularizationState{P,T,Pr,<:LanczosState},
+    i::Int,
 ) where {P,T,Pr}
     (i == 0) && (c.reason = "") # reset on init
-    if (i > 0) && size(arcs.sub_state.tridig_matrix,1) == c.maxInnerIter
+    if (i > 0) && size(arcs.sub_state.tridig_matrix, 1) == c.maxInnerIter
         c.reason = "The algorithm used all preallocated Lanczos vectors and may have stagnated. Allocate more by variable maxIterLanczos.\n"
         return true
     end
