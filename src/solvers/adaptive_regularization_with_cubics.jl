@@ -219,7 +219,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
 
     #Update iterate
     if arcs.ρ >= arcs.η1
-        copyto!(M, arcs.p, arsc, q)
+        copyto!(M, arcs.p, arcs.q)
         get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
         #retract(M, arcs.p, arcs.S) #changed to .=
     end
@@ -238,7 +238,7 @@ function solve_arc_subproblem!(
     M, s, problem::P, state::S, p
 ) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
     solve!(problem, state)
-    copyto!(M, p, s, get_solver_result(arcs.sub_problem))
+    copyto!(M, p, s, get_solver_result(state))
     return s
 end
 function solve_arc_subproblem!(
@@ -286,6 +286,7 @@ mutable struct LanczosState{P,T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
     coeffcients::C     # y
     Hp::T              # Hess_f A temporary vector for evaluations of the hessian
     Hp_residual::T     # A residual vector
+    # Maybe not necessary?
     S::T               # store the tangent vector that solves the minimization problem
 end
 function LanczosState(
@@ -299,8 +300,8 @@ function LanczosState(
     σ::R=10.0,
 ) where {P,T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
-    coeffs = zeros(maxIterLanczos)
-    Lanczos_vectors = [zero_vector(M, p) for _ in 1:maxIterLanczos]
+    coeffs = Float64[]
+    Lanczos_vectors = typeof(X)[]
     return LanczosState{P,T,R,SC,SCN,typeof(Lanczos_vectors),typeof(tridig),typeof(coeffs)}(
         p,
         X,
@@ -316,19 +317,12 @@ function LanczosState(
     )
 end
 function get_solver_result(ls::LanczosState)
-    copyto!(
-        M,
-        ls.S,
-        ls.p,
-        sum(ls.Lanczos_vectors[k] * ls.coeffcients[k] for k in 1:length(ls.coeffcients)),
-    )
-    return ls.S
+    return sum(ls.Lanczos_vectors[k] * ls.coeffcients[k] for k in 1:length(ls.coeffcients))
 end
 function set_iterate!(ls::LanczosState, M, p)
     ls.p = p
     return ls
 end
-
 function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
     ls.p = p
     return ls
@@ -339,6 +333,11 @@ function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
 end
 
 function initialize_solver!(::AbstractManoptProblem, ls::LanczosState)
+    # Maybe better to allocate once and just reset the number of vectors k?
+    maxIterLanczos = size(ls.tridig_matrix,1)
+    ls.tridig_matrix = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
+    ls.coeffcients = Float64[]
+    ls.Lanczos_vectors = typeof(ls.X)[]
     return ls
 end
 
@@ -353,8 +352,8 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
     if i == 1 #we can easily compute the first Lanczos vector
         nX = norm(M, ls.p, ls.X)
         push!(ls.Lanczos_vectors, ls.X ./ nX)
-        get_hessian!(M, ls.Hp, mho, ls.p, ls.Q[1])
-        α = inner(M, ls.p, ls.Q[1], r)
+        get_hessian!(M, ls.Hp, mho, ls.p, ls.Lanczos_vectors[1])
+        α = inner(M, ls.p, ls.Lanczos_vectors[1], ls.Hp_residual)
         # This is also the first coefficient in the tridigianoal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
@@ -376,10 +375,10 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
             push!(ls.Lanczos_vectors, ls.Hp_residual ./ norm(M, ls.p, ls.Hp_residual))
         end
         # Update Hessian and residual
-        get_hessian!(M, ls.Hp, mho, ls.p, ls.Q[i])
-        ls.Hp_residual .= ls.Hp - β * ls.Q[i - 1]
-        α = inner(M, ls.p, ls.Hp_residual, ls.Q[i])
-        ls.Hp_residual .= ls.Hp_residual - α * ls.Q[i]
+        get_hessian!(M, ls.Hp, mho, ls.p, ls.Lanczos_vectors[i])
+        ls.Hp_residual .= ls.Hp - β * ls.Lanczos_vectors[i - 1]
+        α = inner(M, ls.p, ls.Hp_residual, ls.Lanczos_vectors[i])
+        ls.Hp_residual .= ls.Hp_residual - α * ls.Lanczos_vectors[i]
         # Update tridiagonal matric
         ls.tridig_matrix[i, i] = α
         ls.tridig_matrix[i - 1, i] = β
@@ -391,17 +390,19 @@ end
 #
 # Solve Lanczos sub problem
 #
-function min_cubic_Newton(mp::AbstractManoptProblem, ls::LanczosState, i)
+function min_cubic_Newton!(mp::AbstractManoptProblem, ls::LanczosState, i)
+    M = get_manifold(mp)
     tol = 1e-6 # TODO: Put into a stopping criterion
 
     gvec = zeros(i)
     gvec[1] = norm(M, ls.p, ls.X)
     λ = opnorm(Array(@view ls.tridig_matrix[1:i, 1:i])) + 2
-    T_λ = @view(s.Tmatrix[1:i, 1:i]) + λ * I
+    T_λ = @view(ls.tridig_matrix[1:i, 1:i]) + λ * I
 
-    λ_min = eigmin(Array(@view s.Tmatrix[1:i, 1:i]))
+    λ_min = eigmin(Array(@view ls.tridig_matrix[1:i, 1:i]))
     lower_barrier = max(0, -λ_min)
     k = 0
+    y = zeros(i)
     while !ls.stop_newton(mp, ls, k)
         k += 1
         y = -(T_λ \ gvec)
@@ -448,7 +449,10 @@ end
 function (c::StopWhenLanczosModelGradLess)(
     dmp::AbstractManoptProblem, ls::LanczosState, i::Int
 )
-    (i == 0) && (c.reason = "") # reset on init
+    if (i == 0)
+        c.reason = ""
+        return false
+    end
     #Update Gradient
     M = get_manifold(dmp)
     get_gradient!(dmp, ls.X, ls.p)
@@ -457,7 +461,7 @@ function (c::StopWhenLanczosModelGradLess)(
         @view(ls.tridig_matrix[1:(i + 1), 1:i]) * ls.coeffcients +
         ls.σ * norm(ls.coeffcients) * [ls.coeffcients..., 0],
     )
-    if (i > 0) && model_grad_norm <= c.relative_threshold * norm(ls.y, 2)^2
+    if (i > 0) && model_grad_norm <= c.relative_threshold * norm(ls.coeffcients, 2)^2
         c.reason = "The algorithm has reduced the model grad norm by $(c.relative_threshold).\n"
         return true
     end
@@ -473,10 +477,10 @@ mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
     StopWhenAllLanczosVectorsUsed(maxIts::Int64) = new(maxIts, "")
 end
 function (c::StopWhenAllLanczosVectorsUsed)(
-    ::AbstractManoptProblem, s::AdaptiveRegularizationState, i::Int
-)
+    ::AbstractManoptProblem, arcs::AdaptiveRegularizationState{P,T,Pr,<:LanczosState}, i::Int
+) where {P,T,Pr}
     (i == 0) && (c.reason = "") # reset on init
-    if (i > 0) && s.subcost.k == c.maxInnerIter
+    if (i > 0) && size(arcs.sub_state.tridig_matrix,1) == c.maxInnerIter
         c.reason = "The algorithm used all preallocated Lanczos vectors and may have stagnated. Allocate more by variable maxIterLanczos.\n"
         return true
     end
