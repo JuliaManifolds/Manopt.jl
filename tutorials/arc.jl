@@ -1,33 +1,16 @@
----
-title: Running second order solvers
-author:
-  - Ronny Bergmann
-  - Mathias Ravn Munkvold
----
-
-```{julia}
-#| echo: false
-#| code-fold: true
-#| output: false
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
-```
 
-```{julia}
 using Manopt, Manifolds, Random, LinearAlgebra, LRUCache
-```
 
-```{julia}
 n=32#n=512
 p=2#p=12
 A_init=randn(n,n)
 A=(A_init+A_init')/2
 M=Grassmann(n,p)
-```
 
-```{julia}
 function f(M,p)
 	return -0.5*tr(p'*A*p)
 end
@@ -37,9 +20,7 @@ end
 function Hess_f(M,p,X)
 	return -A*X +p*p'*A*X+X*p'*A*p
 end
-```
 
-```{julia}
 p0 = rand(M)
 opt3=adaptive_regularization_with_cubics!(
     M,f, grad_f, Hess_f, p0;
@@ -52,4 +33,3 @@ opt3=adaptive_regularization_with_cubics!(
     return_objective=true,
     #return_state=true
 )
-```

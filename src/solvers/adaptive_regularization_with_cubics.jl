@@ -270,7 +270,7 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 * `X` the current gradient
 * `Lanczos_vectors` – the obtained Lanczos vectors
 * `tridig_matrix` the tridigonal coefficient matrix T
-* `coeffcients` the coefficients `y_1,...y_k`` that deteermine the solution
+* `coefficients` the coefficients `y_1,...y_k`` that deteermine the solution
 * `Hp` – a temporary vector containing the evaluation of the Hessian
 * `Hp_residual` – a temporary vector containing the residual to the Hessian
 * `S` – the current obtained / approximated solution
@@ -283,7 +283,7 @@ mutable struct LanczosState{P,T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
     stop_newton::SCN
     Lanczos_vectors::B # qi
     tridig_matrix::TM  # T
-    coeffcients::C     # y
+    coefficients::C     # y
     Hp::T              # Hess_f A temporary vector for evaluations of the hessian
     Hp_residual::T     # A residual vector
     # Maybe not necessary?
@@ -300,7 +300,7 @@ function LanczosState(
     σ::R=10.0,
 ) where {P,T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
-    coeffs = Float64[]
+    coeffs = zeros(maxIterLanczos)
     Lanczos_vectors = typeof(X)[]
     return LanczosState{P,T,R,SC,SCN,typeof(Lanczos_vectors),typeof(tridig),typeof(coeffs)}(
         p,
@@ -317,7 +317,7 @@ function LanczosState(
     )
 end
 function get_solver_result(ls::LanczosState)
-    return sum(ls.Lanczos_vectors[k] * ls.coeffcients[k] for k in 1:length(ls.coeffcients))
+    return ls.S
 end
 function set_iterate!(ls::LanczosState, M, p)
     ls.p = p
@@ -337,8 +337,10 @@ function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
     # Maybe better to allocate once and just reset the number of vectors k?
     maxIterLanczos = size(ls.tridig_matrix, 1)
     ls.tridig_matrix = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
-    ls.coeffcients = Float64[]
-    ls.Lanczos_vectors = typeof(ls.X)[]
+    ls.coefficients = zeros(maxIterLanczos)
+    for X in ls.Lanczos_vectors
+        zero_vector!(M, X, ls.p)
+    end
     zero_vector!(M, ls.Hp, ls.p)
     zero_vector!(M, ls.X, ls.p)
     zero_vector!(M, ls.Hp_residual, ls.p)
@@ -355,19 +357,26 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
 
     if i == 1 #we can easily compute the first Lanczos vector
         nX = norm(M, ls.p, ls.X)
-        push!(ls.Lanczos_vectors, ls.X ./ nX)
+        if length(ls.Lanczos_vectors) == 0
+            push!(ls.Lanczos_vectors, ls.X ./ nX)
+        else
+            copyto!(M, ls.Lanczos_vectors[1], ls.p, ls.X ./ nX)
+        end
         get_hessian!(M, ls.Hp, mho, ls.p, ls.Lanczos_vectors[1])
         α = inner(M, ls.p, ls.Lanczos_vectors[1], ls.Hp_residual)
         # This is also the first coefficient in the tridigianoal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
         #argmin of one dimensional model
-        push!(ls.coeffcients, (α - sqrt(α^2 + 4 * ls.σ * nX)) / (2 * ls.σ))
-        return ls
+        ls.coefficients[1] = (α - sqrt(α^2 + 4 * ls.σ * nX)) / (2 * ls.σ)
     else # i > 1
         β = norm(M, ls.p, ls.Hp_residual)
         if β > 1e-12 # Obtained new orth Lanczos long enough cf. to num stability
-            push!(ls.Lanczos_vectors, ls.Hp_residual / β) #s.r/β
+            if length(ls.Lanczos_vectors) < i
+                push!(ls.Lanczos_vectors, ls.Hp_residual ./ β)
+            else
+                copyto!(M, ls.Lanczos_vectors[i], ls.p, ls.Hp_residual ./ β)
+            end
         else # Generate new random vec and MGS of new vec wrt. Q
             rand!(M, ls.Hp_residual; vector_at=ls.p)
             for k in 1:(i - 1)
@@ -376,7 +385,16 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
                     inner(M, ls.p, ls.Lanczos_vectors[k], ls.Hq_resudial) *
                     ls.Lanczos_vectors[k]
             end
-            push!(ls.Lanczos_vectors, ls.Hp_residual ./ norm(M, ls.p, ls.Hp_residual))
+            if length(ls.Lanczos_vectors) < i
+                push!(ls.Lanczos_vectors, ls.Hp_residual ./ norm(M, ls.p, ls.Hp_residual))
+            else
+                copyto!(
+                    M,
+                    ls.Lanczos_vectors[i],
+                    ls.p,
+                    ls.Hp_residual ./ norm(M, ls.p, ls.Hp_residual),
+                )
+            end
         end
         # Update Hessian and residual
         get_hessian!(M, ls.Hp, mho, ls.p, ls.Lanczos_vectors[i])
@@ -387,8 +405,10 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
         ls.tridig_matrix[i, i] = α
         ls.tridig_matrix[i - 1, i] = β
         ls.tridig_matrix[i, i - 1] = β
+        min_cubic_Newton!(dmp, ls, i)
     end
-    min_cubic_Newton!(dmp, ls, i)
+    copyto!(M, ls.S, ls.p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:i))
+    return ls
     return ls
 end
 #
@@ -438,8 +458,8 @@ function min_cubic_Newton!(mp::AbstractManoptProblem, ls::LanczosState, i)
         T_λ = T_λ + Δλ * I
         λ = λ + Δλ
     end
-    ls.coeffcients = y
-    return ls.coeffcients
+    ls.coefficients[1:i] .= y
+    return ls.coefficients
 end
 
 #
@@ -460,12 +480,13 @@ function (c::StopWhenLanczosModelGradLess)(
     #Update Gradient
     M = get_manifold(dmp)
     get_gradient!(dmp, ls.X, ls.p)
+    y = @view(ls.coefficients[1:i])
     model_grad_norm = norm(
         norm(M, ls.p, ls.X) .* ones(i + 1) +
-        @view(ls.tridig_matrix[1:(i + 1), 1:i]) * ls.coeffcients +
-        ls.σ * norm(ls.coeffcients) * [ls.coeffcients..., 0],
+        @view(ls.tridig_matrix[1:(i + 1), 1:i]) * y +
+        ls.σ * norm(y) * [y..., 0],
     )
-    if (i > 0) && model_grad_norm <= c.relative_threshold * norm(ls.coeffcients, 2)^2
+    if (i > 0) && model_grad_norm <= c.relative_threshold * norm(y, 2)^2
         c.reason = "The algorithm has reduced the model grad norm by $(c.relative_threshold).\n"
         return true
     end
@@ -496,271 +517,10 @@ end
 #
 # Old code, not yet reviewed nor reworked.
 #
-function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState, i, j) #old dummy
-    M = get_manifold(dmp)
-    mho = get_objective(dmp)
-
-    #Set iterate and update the regularization parameter
-    set_iterate!(arcs.sub_state, M, copy(M, arcs.p))
-    set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
-
-    #Solve the sub_problem
-    solve!(arcs.sub_problem, decorate_state!(arcs.sub_state))
-    arcs.S = get_solver_result(arcs.sub_problem)
-
-    if !arcs.optimized_updating_rule #check if we want to use the optimized procedure
-        #Regular updating procedure
-        #Computing the regularized ratio between actual improvement and model improvement.
-        retrx = retract(M, arcs.p, arcs.S, arcs.retraction_method)
-        cost = get_cost(M, mho, arcs.p)
-        ρ_num = cost - get_cost(M, mho, retrx)
-        ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
-        ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
-        ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
-        ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
-
-        arcs.ρ = ρ
-        sub_fail = (ρ_den + ρ_reg <= 0)
-        if sub_fail
-            println("sub_problem failure!")    #if this is the case we should reject the step!
-        end
-
-        #Update iterate
-        if arcs.ρ >= arcs.η1
-            arcs.p = retrx                    #retract(M, arcs.p, arcs.S) #changed to .=
-            get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
-        end
-
-        #Update regularization parameter
-        if arcs.ρ >= arcs.η2 #very successful
-            arcs.σ = max(arcs.σmin, arcs.γ1 * arcs.σ)
-        elseif arcs.η1 <= arcs.ρ < arcs.η2
-            #leave regParam unchanged
-        else #unsuccessful
-            arcs.σ = arcs.γ2 * arcs.σ
-        end
-
-    else #optimized updating procedure - where is this from or where described?
-
-        #temporarly set the parameters here. Will move them to the arc state so they can be adjusted.
-        ϵχ = 1e-10
-        β = 0.01
-        δ1 = 0.1
-        δ2 = 0.1
-        δ3 = 2.0
-        δmax = 100.0
-        αmax = 2
-        η = arcs.η1
-
-        #compute retraction and cost
-        retrx = retract(M, arcs.p, arcs.S, arcs.retraction_method)
-        cost = get_cost(M, mho, arcs.p)
-        newcost = get_cost(M, mho, retrx)
-
-        #compute ρ (not regularized)
-        ρ_num = cost - newcost
-        ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
-        ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
-        ρ = ρ_num / ρ_den
-        arcs.ρ = ρ
-
-        #Update iterate
-        if arcs.ρ >= arcs.η1
-            arcs.p = retrx                    #retract(M, arcs.p, arcs.S) #changed to .=
-            get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
-        end
-
-        #useful variables
-        ck = (arcs.subcost)(M, arcs.subcost.y) #compute subcost  (arcs.sub_state.y)
-        qk = ck - arcs.σ / 3 * norm(arcs.subcost.y, 2)^3 #compute quadratic model
-        χk = ck - max(newcost, qk) #compute gap
-        pk = newcost - qk
-        gs = arcs.subcost.y[1] * arcs.subcost.gradnorm
-        sHs =
-            0.5 * dot(
-                arcs.subcost.y,
-                @view(arcs.subcost.Tmatrix[1:(arcs.subcost.k), 1:(arcs.subcost.k)]) *
-                arcs.subcost.y,
-            )
-
-        if arcs.ρ >= 1 && χk >= ϵχ
-            if newcost >= qk
-                #solve cubic equation (3.29) given by 3*pk*α^3 + sHs*α^2 + gs*α + 3*β*χk=0
-                roots = solvecubic(3 * pk, sHs, gs, 3 * β * χk)
-                realrootsvec = realroots(roots)
-                A = realrootsvec[realrootsvec .>= cbrt(β)]
-                if length(A) == 0
-                    arcs.σ = max(δ1 * arcs.σ, eps())
-                end
-                if length(A) > 0
-                    Aβ = A .- cbrt(β)
-                    min_index = argmin(Aβ) #computes αβ=argmin{(α-cbrt(β))| α ∈ A }
-                    αβ = A[min_index]
-
-                    if αβ <= αmax
-                        σβ =
-                            arcs.σ +
-                            3.0 * χk / (norm(arcs.subcost.y, 2)^3) * ((β - αβ^3) / (αβ^3))                      #σβ =arcs.σ*β/(αβ)^3
-                        arcs.σ = max(σβ, eps())
-                    end
-                    if αβ > αmax
-                        arcs.σ = max(δ1 * arcs.σ, eps())
-                    end
-                end
-            elseif newcost < qk
-                # solve quadratic equation (3.34) sHs*α^2 + gs*α + 3*β*χk=0
-                disc = (gs)^2 - 4 * sHs * 3 * β * χk #compute discriminant
-                real_roots = []
-                if isapprox(disc, 0.0; atol=1e-15, rtol=0)
-                    r1 = -gs / (2 * sHs)
-                    append!(real_roots, r1)
-                elseif disc > 0
-                    r1 = (-gs + sqrt(disc)) / (2 * sHs)
-                    r2 = (-gs - sqrt(disc)) / (2 * sHs)
-                    append!(real_roots, r1)
-                    append!(real_roots, r2)
-                end
-                A = real_roots[real_roots .>= cbrt(β)]
-
-                if length(A) == 0
-                    arcs.σ = max(δ1 * arcs.σ, eps())
-                end
-                if length(A) > 0
-                    Aβ = A .- cbrt(β)
-                    min_index = argmin(Aβ) #computes αβ=argmin{(α-cbrt(β))| α ∈ A }
-                    αβ = A[min_index]
-                    if αβ <= αmax
-                        σβ = arcs.σ * β / (αβ)^3
-                        arcs.σ = max(σβ, eps())
-                    end
-                    if αβ > αmax
-                        arcs.σ = max(δ1 * arcs.σ, eps())
-                    end
-                end
-            end
-        elseif arcs.ρ >= 1.0 && χk < ϵχ
-            arcs.σ = max(δ1 * arcs.σ, eps())
-        elseif arcs.η2 <= arcs.ρ < 1.0
-            arcs.σ = max(δ2 * arcs.σ, eps())
-        elseif arcs.η1 <= arcs.ρ < arcs.η2
-            println("we enter unchange elseif")
-            #leave unchanged
-        elseif 0 <= arcs.ρ < arcs.η1
-            arcs.σ = δ3 * arcs.σ
-        else
-            arcs.ρ < 0
-            #solve the quadratic equation (3.38) 6*pk*α^2 + (3-η)*sHs*α + 2*(3-2*η)*gs = 0
-            disc = ((3 - η) * sHs)^2 - 48 * pk * (3 - 2 * η) * gs
-            r1 = (-(3 - η) * sHs + sqrt(disc)) / (12 * pk)
-            r2 = (-(3 - η) * sHs - sqrt(disc)) / (12 * pk)
-            αη = max(r1, r2)
-            ση = -(gs + sHs * αη) / (αη^2 * norm(arcs.subcost.y, 2)^3)
-            arcs.σ = min(max(ση, δ3 * arcs.σ), δmax * arcs.σ)
-        end
-    end
-
-    return arcs
-end
-
-#solver for cubic equations taken from github since we dont have have Polynomial roots package.
-#needed for the optimized updating rule
-
-function solvecubic(a, b, c, d)
-    if a == 0 && b == 0                    # Case for handling Liner Equation
-        return [(-d * 1.0) / c]# Returning
-    elseif a == 0                             # Case for handling Quadratic
-        D = c * c - 4.0 * b * d                       # Helper Temporary Variable
-        if D >= 0
-            D = sqrt(D)
-            x1 = (-c + D) / (2.0 * b)
-            x2 = (-c - D) / (2.0 * b)
-        else
-            D = sqrt(-D)
-            x1 = (-c + D * im) / (2.0 * b)
-            x2 = (-c - D * im) / (2.0 * b)
-        end
-        return [x1, x2]
-    end
-    # Returning Quadratic Roots as numpy array.
-
-    f = findF(a, b, c)                          # Helper Temporary Variable
-    g = findG(a, b, c, d)                       # Helper Temporary Variable
-    h = findH(g, f)                             # Helper Temporary Variable
-
-    if f == 0 && g == 0 && h == 0            # All 3 Roots are Real and Equal
-        if (d / a) >= 0
-            x = (d / (1.0 * a))^(1 / 3.0) * -1
-        else
-            x = (-d / (1.0 * a))^(1 / 3.0)
-        end
-        return [x, x, x]           # Returning Equal Roots as numpy array.
-
-    elseif h <= 0                               # All 3 roots are Real
-        i = sqrt(((g^2.0) / 4.0) - h)   # Helper Temporary Variable
-        j = i^(1 / 3.0)                      # Helper Temporary Variable
-        k = acos(-(g / (2 * i)))           # Helper Temporary Variable
-        L = j * -1                              # Helper Temporary Variable
-        M = cos(k / 3.0)                   # Helper Temporary Variable
-        N = sqrt(3) * sin(k / 3.0)    # Helper Temporary Variable
-        P = (b / (3.0 * a)) * -1                # Helper Temporary Variable
-
-        x1 = 2 * j * cos(k / 3.0) - (b / (3.0 * a))
-        x2 = L * (M + N) + P
-        x3 = L * (M - N) + P
-
-        return [x1, x2, x3]          # Returning Real Roots as numpy array.
-
-    elseif h > 0                               # One Real Root and two Complex Roots
-        R = -(g / 2.0) + sqrt(h)           # Helper Temporary Variable
-        if R >= 0
-            S = R^(1 / 3.0)                  # Helper Temporary Variable
-        else
-            S = (-R)^(1 / 3.0) * -1
-        end                 # Helper Temporary Variable
-        T = -(g / 2.0) - sqrt(h)
-        if T >= 0
-            U = (T^(1 / 3.0))                # Helper Temporary Variable
-        else
-            U = ((-T)^(1 / 3.0)) * -1
-        end# Helper Temporary Variable
-
-        x1 = (S + U) - (b / (3.0 * a))
-        x2 = -(S + U) / 2 - (b / (3.0 * a)) + (S - U) * sqrt(3) * 0.5 * im
-        x3 = -(S + U) / 2 - (b / (3.0 * a)) - (S - U) * sqrt(3) * 0.5 * im
-        return [x1, x2, x3]
-    end
-end
-# Returning One Real Root and two Complex Roots
-# Helper function to return float value of f.
-function findF(a, b, c)
-    return ((3.0 * c / a) - ((b^2.0) / (a^2.0))) / 3.0
-end
-# Helper function to return float value of g.
-function findG(a, b, c, d)
-    return (((2.0 * (b^3.0)) / (a^3.0)) - ((9.0 * b * c) / (a^2.0)) + (27.0 * d / a)) / 27.0
-end
-# Helper function to return float value of h.
-function findH(g, f)
-    return ((g^2.0) / 4.0 + (f^3.0) / 27.0)
-end
-
-#find the real roots from the cubic solver
-function realroots(rootvec)
-    #find the real roots of the cubic equation ax^3+bx^2+cx+d=0
-    #input rootvec=[x1,x2,x3]
-    realrootvec = []
-    im_part = imag.(rootvec)
-    for i in 1:length(rootvec)
-        if isapprox(im_part[i], 0.0; atol=1e-15, rtol=0) # check if im part is zero
-            append!(realrootvec, real(rootvec[i]))
-        end
-    end
-    return realrootvec
-end
 
 #
 # Nowehere used?
-#
+# Maybe use in a ARCNewtonState?
 
 mutable struct CubicSubCost{Y,T,I,R}
     k::I #number of Lanczos vectors
