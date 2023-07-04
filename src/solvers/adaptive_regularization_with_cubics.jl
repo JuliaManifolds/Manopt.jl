@@ -194,11 +194,11 @@ function set_gradient!(s::AdaptiveRegularizationState, X)
     return s
 end
 
-function initialize_solver!(dmp::AbstractManoptProblem, s::AdaptiveRegularizationState)
-    get_gradient!(dmp, s.X, s.p)
-    return s
+function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState)
+    get_gradient!(dmp, arcs.X, arcs.p)
+    return arcs
 end
-function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState, i) #old dummy
+function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState, i)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
     # Update sub state
@@ -221,9 +221,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     if arcs.ρ >= arcs.η1
         copyto!(M, arcs.p, arcs.q)
         get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
-        #retract(M, arcs.p, arcs.S) #changed to .=
     end
-
     #Update regularization parameter - in the mid interval between η1 and η2 we leave it as is
     if arcs.ρ >= arcs.η2 #very successful, reduce
         arcs.σ = max(arcs.σmin, arcs.γ1 * arcs.σ)
@@ -238,7 +236,7 @@ function solve_arc_subproblem!(
     M, s, problem::P, state::S, p
 ) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
     solve!(problem, state)
-    copyto!(M, p, s, get_solver_result(state))
+    copyto!(M, s, p, get_solver_result(state))
     return s
 end
 function solve_arc_subproblem!(
@@ -342,7 +340,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
         zero_vector!(M, X, ls.p)
     end
     zero_vector!(M, ls.Hp, ls.p)
-    zero_vector!(M, ls.X, ls.p)
+    get_gradient!(dmp, ls.X, ls.p)
     zero_vector!(M, ls.Hp_residual, ls.p)
     return ls
 end
@@ -351,10 +349,6 @@ end
 function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
-
-    # get current gradient
-    get_gradient!(M, ls.X, mho, ls.p)
-
     if i == 1 #we can easily compute the first Lanczos vector
         nX = norm(M, ls.p, ls.X)
         if length(ls.Lanczos_vectors) == 0
@@ -408,7 +402,6 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
         min_cubic_Newton!(dmp, ls, i)
     end
     copyto!(M, ls.S, ls.p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:i))
-    return ls
     return ls
 end
 #
