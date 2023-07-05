@@ -1,12 +1,13 @@
 using Pkg;
-cd(@__DIR__)
-Pkg.activate("."); # for reproducibility use the local tutorial environment.
-Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
+#cd(@__DIR__)
+#Pkg.activate("."); # for reproducibility use the local tutorial environment.
+#Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
 
 using Manopt, Manifolds, Random, LinearAlgebra, LRUCache
+Random.seed!(23)
 
-n=32#n=512
-p=2#p=12
+n=512
+p=12
 A_init=randn(n,n)
 A=(A_init+A_init')/2
 M=Grassmann(n,p)

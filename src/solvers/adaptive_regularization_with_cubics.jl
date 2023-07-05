@@ -357,7 +357,7 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
             copyto!(M, ls.Lanczos_vectors[1], ls.p, ls.X ./ nX)
         end
         get_hessian!(M, ls.Hp, mho, ls.p, ls.Lanczos_vectors[1])
-        α = inner(M, ls.p, ls.Lanczos_vectors[1], ls.Hp_residual)
+        α = inner(M, ls.p, ls.Lanczos_vectors[1], ls.Hp)
         # This is also the first coefficient in the tridigianoal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
