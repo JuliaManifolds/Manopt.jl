@@ -359,14 +359,14 @@ end
     trust_regions!(M, f, grad_f, Hess_f, p; kwargs...)
     trust_regions!(M, f, grad_f, p; kwargs...)
 
-evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `p`.
+evaluate the Riemannian trust-regions solver in place of `p`.
 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
 * `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
-* `x` – an initial value ``x  ∈  \mathcal M``
+* `p` – an initial value ``p  ∈  \mathcal M``
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
