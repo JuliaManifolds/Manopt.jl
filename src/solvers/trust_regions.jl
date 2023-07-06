@@ -457,11 +457,11 @@ function trust_regions!(
         ),
     )
     dmho = decorate_objective!(M, mho; kwargs...)
-    mp = DefaultManoptProblem(M, dmho)
+    dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M,
         p,
-        get_gradient(mp, p),
+        get_gradient(dmp, p),
         sub_state;
         trust_region_radius=trust_region_radius,
         max_trust_region_radius=max_trust_region_radius,
@@ -475,8 +475,8 @@ function trust_regions!(
         (project!)=project!,
     )
     dtrs = decorate_state!(trs; kwargs...)
-    solve!(mp, dtrs)
-    return get_solver_return(get_objective(mp), dtrs)
+    solve!(dmp, dtrs)
+    return get_solver_return(get_objective(dmp), dtrs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

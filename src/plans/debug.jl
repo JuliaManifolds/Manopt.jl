@@ -308,7 +308,7 @@ specified how to print the entry.
 
 # Constructor
 
-    DebugEntry(f[, prefix="$f:", format = "$prefix %s", io=stdout])
+    DebugEntry(f; prefix="$f:", format = "$prefix %s", io=stdout)
 
 """
 mutable struct DebugEntry <: DebugAction
@@ -325,6 +325,50 @@ function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState,
 end
 function show(io::IO, di::DebugEntry)
     return print(io, "DebugEntry(:$(di.field); format=\"$(di.format)\")")
+end
+
+@doc raw"""
+    DebugIfEntry <: DebugAction
+
+Issue a warning, info or error if a certain field does not pass a check
+
+# Fields
+
+* `io`    – an io stream
+* `check` – a function that takes the value of the `field` as input and returns a boolean
+* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `msg`   - is the check fails, this message is displayed
+* `type`  – Symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
+            where `:print` prints to `io`.
+
+# Constructor
+
+    DebugEntry(f, check=(>(0)); type=:warn, message=":$f is nonnegative", io=stdout)
+
+"""
+mutable struct DebugIfEntry{F} <: DebugAction
+    io::IO
+    check::F
+    field::Symbol
+    msg::String
+    type::Symbol
+    function DebugEntry(
+        f::Symbol, check::F=(>(0)); type=:warn, message=":$f nonpositive.", io::IO=stdout
+    ) where {F}
+        return new{F}(io, check, f, message, type)
+    end
+end
+function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
+    if (i >= 0) && (!d.check(getfield(st, d.field)))
+        d.type === :warn && warn(d.msg)
+        d.type === :info && info(d.msg)
+        d.type === :error && error(d.msg)
+        d.type === :print && print(d.io, msg)
+    end
+    return nothing
+end
+function show(io::IO, di::DebugIfEntry)
+    return print(io, "DebugIfEntry(:$(di.field) $(check); type=:$(di.type))")
 end
 
 @doc raw"""

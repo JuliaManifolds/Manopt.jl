@@ -8,7 +8,6 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 * `η1`, `η2`           – (`0.1`, `0.9`) bounds for evaluating the regularization parameter
 * `γ1`, `γ2`           – (`0.1`, `2.0`) shrinking and exansion factors for regularization parameter `σ`
-* `H`                  – (`zero_vector(M,p)`) the current hessian, $\operatorname{Hess}F(p)[⋅]$
 * `p`                  – (`rand(M)` the current iterate
 * `X`                  – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``
 * `s`                  - (`zero_vector(M,p)`) the tangent vector step resulting from minimizing the model
@@ -26,12 +25,16 @@ a default value is given in brackets if a parameter can be left out in initializ
 Furthermore the following interal fields are defined
 
 * `q`                  - (`copy(M,p)`) a point for the candidates to evaluate model and ρ
+* `H`                  – (`copy(M, p, X)`) the current hessian, $\operatorname{Hess}F(p)[⋅]$
+* `S`                  – (`copy(M, p, X)`) the current solution from the subsolver
+* `ρ_denominator`      – (`one(ρ)`) a value to store the denominator from the computation of ρ
+                         to allow for a warning or error when this value is non-positive.
 
 # Constructor
 
     AdaptiveRegularizationState(M, p=rand(M); X=zero_vector(M, p); kwargs...)
 
-
+Construct the solver state with all fields stated above as keyword arguments.
 """
 mutable struct AdaptiveRegularizationState{
     P,
@@ -51,6 +54,7 @@ mutable struct AdaptiveRegularizationState{
     S::T
     σ::R
     ρ::R
+    ρ_denonimator::R
     ρ_regularization::R
     stop::TStop
     retraction_method::TRTM
@@ -66,13 +70,13 @@ function AdaptiveRegularizationState(
     M::AbstractManifold,
     p::P=rand(M),
     X::T=zero_vector(M, p);
-    sub_state::St=LanczosState(M, p),
     sub_objective=nothing,
     sub_problem::Pr=if isnothing(sub_objective)
         nothing
     else
         DefaultManoptProblem(M, sub_objective)
     end,
+    sub_state::St=sub_problem isa Function ? AllocatingEvaluation() : LanczosState(M, p),
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to inital value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ::R=1.0,
     ρ_regularization::R=1e3,
@@ -105,6 +109,7 @@ function AdaptiveRegularizationState(
         copy(M, p, X),
         σ,
         ρ,
+        one(ρ),
         ρ_regularization,
         stop,
         retraction_method,
@@ -116,6 +121,18 @@ function AdaptiveRegularizationState(
         γ2,
     )
 end
+
+get_iterate(s::AdaptiveRegularizationState) = s.p
+function set_iterate!(s::AdaptiveRegularizationState, p)
+    s.p = p
+    return s
+end
+get_gradient(s::AdaptiveRegularizationState) = s.X
+function set_gradient!(s::AdaptiveRegularizationState, X)
+    s.X = X
+    return s
+end
+
 @doc raw"""
     adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
 
@@ -251,15 +268,18 @@ function adaptive_regularization_with_cubics!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TH<:Function}
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
+    mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation)
     return adaptive_regularization_with_cubics!(M, mho, p; evaluation=evaluation, kwargs...)
 end
 function adaptive_regularization_with_cubics!(
     M::AbstractManifold,
     mho::O,
     p=rand(M);
+    debug=DebugIfEntry(
+        :ρ_denonimator, >(0); message="Denominator nonpositive", type=:error
+    ),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     initial_tangent_vector::T=zero_vector(M, p),
-    σ::R=100.0 / sqrt(manifold_dimension(M)),
     maxIterLanczos=200,
     ρ::R=0.0, #1.0
     ρ_regularization::R=1e3,
@@ -267,8 +287,8 @@ function adaptive_regularization_with_cubics!(
                             StopWhenGradientNormLess(1e-9) |
                             StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     σmin::R=1e-10,
+    σ::R=100.0 / sqrt(manifold_dimension(M)),
     θ::R=2.0,
     η1::R=0.1,
     η2::R=0.9,
@@ -277,7 +297,7 @@ function adaptive_regularization_with_cubics!(
     sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=LanczosState(
         M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ
     ),
-    sub_cost=ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation),
+    sub_cost=mho,
     sub_problem=DefaultManoptProblem(M, sub_cost),
     kwargs...,
 ) where {T,R,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
@@ -302,20 +322,9 @@ function adaptive_regularization_with_cubics!(
         γ1=γ1,
         γ2=γ2,
     )
-    darcs = decorate_state!(arcs; kwargs...)
+    darcs = decorate_state!(arcs; debug, kwargs...)
     solve!(dmp, darcs)
     return get_solver_return(get_objective(dmp), darcs)
-end
-
-get_iterate(s::AdaptiveRegularizationState) = s.p
-function set_iterate!(s::AdaptiveRegularizationState, p)
-    s.p = p
-    return s
-end
-get_gradient(s::AdaptiveRegularizationState) = s.X
-function set_gradient!(s::AdaptiveRegularizationState, X)
-    s.X = X
-    return s
 end
 
 function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState)
@@ -337,9 +346,8 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
     ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
+    arcs.ρ_denonimator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
     arcs.ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
-
-    # if  (ρ_den + ρ_reg <= 0) -> add a warning Debug that is there by default
 
     #Update iterate
     if arcs.ρ >= arcs.η1
