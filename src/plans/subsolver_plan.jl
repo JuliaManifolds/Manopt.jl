@@ -27,7 +27,21 @@ function set_manopt_parameter!(amp::AbstractManoptProblem, e::Symbol, f::Symbol,
     return set_manopt_parameter!(amp, Val(e), Val(f), v)
 end
 function set_manopt_parameter!(amp::AbstractManoptProblem, ev::Val, fv::Val, v)
-    return set_manopt_parameter!(get_objective(amp), ev, fv, v)
+    set_manopt_parameter!(get_objective(amp), ev, fv, v)
+    return amp
+end
+function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, fv::Val, v)
+    set_manopt_parameter!(get_manifold(amp), fv, v)
+    return amp
+end
+function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, fv::Val, v)
+    set_manopt_parameter!(get_manifold(amp), fv, v)
+    return amp
+end
+function set_manopt_parameter!(amp::AbstractManoptProblem, fv::Val, v)
+    set_manopt_parameter!(get_objective(amp), fv, v)
+    set_manopt_parameter!(get_manifold(amp), fv, v)
+    return amp
 end
 
 """

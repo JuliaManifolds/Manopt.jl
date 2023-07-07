@@ -43,10 +43,6 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
-
-#Note for ManifoldGradientObjective
-#Makes struct ManifoldGradientObjective specifying with subtype operator <: that its a subtype of AbstractManifoldGradientObjective.
-
 struct ManifoldGradientObjective{T<:AbstractEvaluationType,C,G} <:
        AbstractManifoldGradientObjective{T,C,G}
     cost::C

@@ -71,6 +71,7 @@ using ManifoldsBase:
     allocate,
     allocate_result,
     allocate_result_type,
+    base_manifold,
     copy,
     copyto!,
     default_inverse_retraction_method,
@@ -241,6 +242,7 @@ export AbstractGradientSolverState,
     ExactPenaltyMethodState,
     FrankWolfeState,
     GradientDescentState,
+    LanczosState,
     LevenbergMarquardtState,
     NelderMeadState,
     ParticleSwarmState,
@@ -282,9 +284,6 @@ export get_proximal_map,
     get_stopping_criterion,
     set_gradient!,
     set_iterate!,
-    set_manopt_parameter!,
-    set_manopt_parameter!,
-    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -388,6 +387,7 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
+export AdaptiveRegularizationCubicCost, AdaptiveRegularizationCubicGrad
 #
 # Stepsize
 export Stepsize
@@ -487,7 +487,8 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
-export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugMessages
+export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugIfEntry
+export DebugMessages
 #
 # Records - and access functions
 export get_record, get_record_state, get_record_action, has_record

@@ -29,5 +29,5 @@ include("nonmutating_manifolds_functions.jl")
 include("artificialDataFunctionsManifolds.jl")
 include("ChambollePockManifolds.jl")
 include("alternating_gradient.jl")
-
+include("ARC_CG.jl")
 end

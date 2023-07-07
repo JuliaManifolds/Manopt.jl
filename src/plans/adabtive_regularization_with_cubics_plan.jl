@@ -9,22 +9,31 @@ We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k
 ```
 
 # Fields
-* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_Hessian`](@ref).
+* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_hessian`](@ref).
 * `σ` – the current regularization parameter
+* `X` – a storage for the gradient at `p` of the original cost
 
-# Constructor
-    AdaptiveRegularizationCubicCost(mho, σ)
+# Constructors
 
+    AdaptiveRegularizationCubicCost(mho, σ, X)
+    AdaptiveRegularizationCubicCost(M, mho, σ; p=rand(M), X=get_gradient(M, mho, p))
+
+Initialize the cubic cost to the objective `mho`, regularization parameter `σ`, and
+(temporary) gradient `X`.
+
+!!! note
+    For this gradient function to work, we require the [`TangentSpaceAtPoint`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/vector_bundle.html#Manifolds.TangentSpaceAtPoint)
+    from `Manifolds.jl`
 """
-mutable struct AdaptiveRegularizationCubicCost{R,O<:AbstractManifoldObjective}
+mutable struct AdaptiveRegularizationCubicCost{T,R,O<:AbstractManifoldObjective}
     mho::O
     σ::R
+    X::T
 end
-function (f::AdaptiveRegularizationCubicCost)(M, p, X)
-    return get_cost(M, f.mho, p) +
-           inner(M, p, X, get_gradient(M, f.mho, p)) +
-           1 / 2 * inner(M, p, X, get_hessian(M, f.mho, p, X)) +
-           f.σ / 3 * norm(M, p, X)^3
+function AdaptiveRegularizationCubicCost(
+    M, mho::O, σ::R; p::P=rand(M), X::T=get_gradient(M, mho, p)
+) where {P,T,R,O}
+    return AdaptiveRegularizationCubicCost{T,R,O}(mho, σ, X)
 end
 
 @doc raw"""
@@ -40,20 +49,35 @@ We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k
 This struct represents its gradient, given by
 
 ```math
-    \operatorname{grad} m(X) = \operatorname{grad}f(p) + \operatorname{Hess} f(p)[X] + σ \lVert X \rVert^2X
+    \operatorname{grad} m(X) = \operatorname{grad}f(p) + \operatorname{Hess} f(p)[X] + σ \lVert X \rVert^2 X
 ```
 
 # Fields
-* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_Hessian`](@ref).
-* `σ` – the current regularization parameter
 
-# Constructor
-    AdaptiveRegularizationCubicGrad(mho, σ)
+* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_hessian`](@ref).
+* `σ` – the current regularization parameter
+* `X` – a storage for the gradient at `p` of the original cost
+
+# Constructors
+
+    AdaptiveRegularizationCubicGrad(mho, σ, X)
+    AdaptiveRegularizationCubicGrad(M, mho, σ; p=rand(M), X=get_gradient(M, mho, p))
+
+Initialize the cubic cost to the original objective `mho`, regularization parameter `σ`, and
+(temporary) gradient `X`.
+
+!!! note
+    * For this gradient function to work, we require the [`TangentSpaceAtPoint`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/vector_bundle.html#Manifolds.TangentSpaceAtPoint)
+    from `Manifolds.jl`
+    * The gradient functor provides both an allocating as well as an in-place variant.
 """
-struct AdaptiveRegularizationCubicGrad{R,O<:AbstractManifoldObjective}
+struct AdaptiveRegularizationCubicGrad{T,R,O<:AbstractManifoldObjective}
     mho::O
     σ::R
+    X::T
 end
-function (grad_f::AdaptiveRegularizationCubicGrad)(M, p, X)
-    return get_gradient(M, f.mho, p)get_hessian(M, f.mho, p, X) + f.σ * norm(M, p, X)^2 * X
+function AdaptiveRegularizationCubicGrad(
+    M, mho::O, σ::R; p::P=rand(M), X::T=get_gradient(M, mho, p)
+) where {P,T,R,O}
+    return AdaptiveRegularizationCubicGrad{T,R,O}(mho, σ, p, X)
 end

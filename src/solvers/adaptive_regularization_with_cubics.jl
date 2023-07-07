@@ -1,7 +1,7 @@
 @doc raw"""
     AdaptiveRegularizationState{P,T} <: AbstractHessianSolverState
 
-Describes ... algorithm, with
+A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
@@ -14,19 +14,18 @@ a default value is given in brackets if a parameter can be left out in initializ
   problem in the tangent space ``\mathcal T_{p} \mathcal M``
 * `σσ`                 – the current cubic regularization parameter
 * `σmin`               – (`1e-7`) lower bound for the cubic regularization parameter
-* `ρ`                  – the current regularized ratio of actual improvement and model improvement.
 * `ρ_regularization`   – (1e3) regularization paramter for computing ρ. As we approach convergence the ρ may be difficult to compute with numerator and denominator approachign zero. Regularizing the the ratio lets ρ go to 1 near convergence.
 * `retraction_method`  – (`default_retraction_method(M)`) the retraction to use
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `sub_problem`      -
 * `sub_state`          - sub state for solving the sub problem
-* `θ`                  – reduction factor for the norm ``\lVert Y \rVert_p`` compared to the gradient of the model.
 
 Furthermore the following interal fields are defined
 
 * `q`                  - (`copy(M,p)`) a point for the candidates to evaluate model and ρ
 * `H`                  – (`copy(M, p, X)`) the current hessian, $\operatorname{Hess}F(p)[⋅]$
 * `S`                  – (`copy(M, p, X)`) the current solution from the subsolver
+* `ρ`                  – the current regularized ratio of actual improvement and model improvement.
 * `ρ_denominator`      – (`one(ρ)`) a value to store the denominator from the computation of ρ
                          to allow for a warning or error when this value is non-positive.
 
@@ -59,7 +58,6 @@ mutable struct AdaptiveRegularizationState{
     stop::TStop
     retraction_method::TRTM
     σmin::R
-    θ::R
     η1::R
     η2::R
     γ1::R
@@ -78,12 +76,10 @@ function AdaptiveRegularizationState(
     end,
     sub_state::St=sub_problem isa Function ? AllocatingEvaluation() : LanczosState(M, p),
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to inital value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
-    ρ::R=1.0,
     ρ_regularization::R=1e3,
     stop::SC=StopAfterIteration(100),
     retraction_method::RTM=default_retraction_method(M),
     σmin::R=1e-10, #Set the below to appropriate default vals.
-    θ::R=2.0,
     η1::R=0.1,
     η2::R=0.9,
     γ1::R=0.1,
@@ -108,13 +104,12 @@ function AdaptiveRegularizationState(
         copy(M, p, X),
         copy(M, p, X),
         σ,
-        ρ,
-        one(ρ),
+        zero(σ),
+        one(σ),
         ρ_regularization,
         stop,
         retraction_method,
         σmin,
-        θ,
         η1,
         η2,
         γ1,
@@ -136,7 +131,64 @@ end
 @doc raw"""
     adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
 
+Solve an optimization problem on the manifold `M` by iteratively minimizing
 
+```math
+m_k(X) = f(p_k) + ⟨X, \operatorname{grad} f(p_k)⟩ + \frac{1}{2}⟨X, \operatorname{Hess} f(p_k)[X]⟩ + \frac{σ_k}{3}\lVert X \rVert^3
+```
+
+on the tangent space at the current iterate ``p_k``, i.e. ``X ∈ T_{p_k}\mathcal M`` and
+where ``σ_k > 0`` is a regularization parameter.
+
+Let ``X_k`` denote the minimizer of the model ``m_k``, then we use the model improvement
+
+```math
+ρ_k = \frac{f(p_k) - f(\operatorname{retr}_{p_k}(X_k))}{m_k(0) - m_k(s) + \frac{σ_k}{3}\lVert X_k\rVert^3}.
+```
+
+The larger this value is, the better does the model predict an actual reduction of the cost.
+
+We use two thresholds ``η_2 ≥ η_1 > 0`` and set
+``p_{k+1} = \operatorname{retr}_{p_k}(X_k)`` if ``ρ ≥ η_1`` and reject the candidate otherwise, i.e. set ``p_{k+1} = p_k``.
+
+We further update the regularozation parameter using factors ``0 < γ_1 < 1 < γ_2``
+
+```math
+σ_{k+1} =
+\begin{cases}
+    \max\{σ_{\min}, γ_1σ_k\} & \text{ if } ρ \geq η_2 &\text{   (the model was very successful)},\\
+    σ_k & \text{ if } ρ \in [η_1, η_2)&\text{   (the model was succesful)},\\
+    γ_2σ_k & \text{ if } ρ < η_1&\text{   (the model was unsuccesful)}.
+\end{cases}
+```
+
+## Keyword arguments
+the default values are given in brackets
+
+* `σ`                      - (`100.0 / sqrt(manifold_dimension(M)`) initial regularization parameter
+* `σmin`                   - (`1e-10`) minimal regularization value ``σ_{\min}``
+* `η1`                     - (`0.1`) lower model success threshold
+* `η2`                     - (`0.9`) upper model success threshold
+* `γ1`                     - (`0.1`) regularization reduction factor (for the success case)
+* `γ2`                     - (`2.0`) regularization increment factor (for the non-success case)
+* `evaluation`             – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
+                             or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)` and analogously for the hessian.
+* `retraction_method`      – (`default_retraction_method(M, typeof(p))`) a retraction to use
+* `initial_tangent_vector` - (`zero_vector(M, p)`) initialize any tangent vector data,
+* `maxIterLanczos`         - (`200`) a shortcut to set the stopping criterion in the sub_solver,
+* `ρ_regularization`       - (`1e3`) a regularization to avoid dividing by zero for small values of cost and model
+* `stopping_criterion`     - ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)``
+* `sub_state`              - [`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)
+                             a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a funtion.
+* `sub_cost`               - a shortcut to modify the subcost in the
+* `sub_problem`            - [`DefaultManoptProblem`](@ref)`(M, sub_cost)` the problem (or a function) for the sub problem
+
+All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
+[`decorate_objective!`](@ref) for objective, respectively.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
+
+By default teh `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denonimator, >(0); message="Denominator nonpositive", type=:error)``
+to avoid that by rounding errors the denominator in the computation of `ρ` gets nonpositive.
 
 """
 adaptive_regularization_with_cubics(M::AbstractManifold, args...; kwargs...)
@@ -281,15 +333,13 @@ function adaptive_regularization_with_cubics!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     initial_tangent_vector::T=zero_vector(M, p),
     maxIterLanczos=200,
-    ρ::R=0.0, #1.0
     ρ_regularization::R=1e3,
-    stop::StoppingCriterion=StopAfterIteration(40) |
-                            StopWhenGradientNormLess(1e-9) |
-                            StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
+                                          StopWhenGradientNormLess(1e-9) |
+                                          StopWhenAllLanczosVectorsUsed(maxIterLanczos),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     σmin::R=1e-10,
     σ::R=100.0 / sqrt(manifold_dimension(M)),
-    θ::R=2.0,
     η1::R=0.1,
     η2::R=0.9,
     γ1::R=0.1,
@@ -311,16 +361,16 @@ function adaptive_regularization_with_cubics!(
         sub_state=sub_state,
         sub_problem=sub_problem,
         σ=σ,
-        ρ=ρ,
         ρ_regularization=ρ_regularization,
-        stop=stop,
+        stop=stopping_criterion,
         retraction_method=retraction_method,
         σmin=σmin,
-        θ=θ,
         η1=η1,
         η2=η2,
         γ1=γ1,
         γ2=γ2,
+        # Just init
+        ρ=zero(σ),
     )
     darcs = decorate_state!(arcs; debug, kwargs...)
     solve!(dmp, darcs)
@@ -337,13 +387,19 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     # Update sub state
     set_iterate!(arcs.sub_state, M, copy(M, arcs.p))
     set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
+    # Set point also in the sub problem (eventually the tangent space)
+    get_gradient!(M, arcs.X, mho, arcs.p)
+    set_manopt_parameter!(arcs.sub_problem, :p, copy(M, arcs.p))
+    set_manopt_parameter!(arcs.sub_problem, :Cost, :X, copy(M, arcs.p, arcs.X))
+    set_manopt_parameter!(arcs.sub_problem, :Gradient, :X, copy(M, arcs.p, arcs.X))
+    set_manopt_parameter!(arcs.sub_state, :X, arcs.X)
     #Solve the sub_problem – via dispatch depending on type
     solve_arc_subproblem!(M, arcs.S, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ
     retract!(M, arcs.q, arcs.p, arcs.S, arcs.retraction_method)
     cost = get_cost(M, mho, arcs.p)
     ρ_num = cost - get_cost(M, mho, arcs.q)
-    ρ_vec = get_gradient(M, mho, arcs.p) + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
+    ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
     ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     arcs.ρ_denonimator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
@@ -620,6 +676,9 @@ end
 #A new stopping criterion that deals with the scenario when a step needs more Lanczos vectors than preallocated.
 #Previously this would just cause an error due to out of bounds error. So this stopping criterion deals both with the scenario
 #of too few allocated vectors and stagnation in the solver.
+@doc raw"""
+    StopWhenAllLanczosVectorsUsed
+"""
 mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
     maxInnerIter::Int64
     reason::String
@@ -631,7 +690,7 @@ function (c::StopWhenAllLanczosVectorsUsed)(
     i::Int,
 ) where {P,T,Pr}
     (i == 0) && (c.reason = "") # reset on init
-    if (i > 0) && size(arcs.sub_state.tridig_matrix, 1) == c.maxInnerIter
+    if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxInnerIter
         c.reason = "The algorithm used all preallocated Lanczos vectors and may have stagnated. Allocate more by variable maxIterLanczos.\n"
         return true
     end
