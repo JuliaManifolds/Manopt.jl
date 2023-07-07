@@ -191,11 +191,11 @@ end
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
-mehtod is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
+method is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 ≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
 
 # Fields
-* `reason` – stores a reason of stopping if the stopping criterion has one be
+* `reason` – stores a reason of stopping if the stopping criterion has been
     reached, see [`get_reason`](@ref).
 
 # Constructor
@@ -245,7 +245,7 @@ In this case, the model is not strictly convex, and the stepsize as computed
 does not give a reduction of the model.
 
 # Fields
-* `reason` – stores a reason of stopping if the stopping criterion has one be
+* `reason` – stores a reason of stopping if the stopping criterion has been
     reached, see [`get_reason`](@ref).
 
 # Constructor
@@ -278,7 +278,7 @@ end
 function status_summary(c::StopWhenCurvatureIsNegative)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Cuvature is negative:\t$s"
+    return "Curvature is negative:\t$s"
 end
 function show(io::IO, c::StopWhenCurvatureIsNegative)
     return print(io, "StopWhenCurvatureIsNegative()\n    $(status_summary(c))")
@@ -290,7 +290,7 @@ end
 A functor for testing if the curvature of the model value increased.
 
 # Fields
-* `reason` – stores a reason of stopping if the stopping criterion has one be
+* `reason` – stores a reason of stopping if the stopping criterion has been
     reached, see [`get_reason`](@ref).
 
 # Constructor
@@ -515,7 +515,7 @@ function truncated_conjugate_gradient_descent(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 #
-# Objetive -> Allocate and call !
+# Objective -> Allocate and call !
 #
 function truncated_conjugate_gradient_descent(
     M::AbstractManifold, mho::O, p, X; kwargs...
