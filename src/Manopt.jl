@@ -107,6 +107,7 @@ using ManifoldsBase:
     power_dimensions,
     project,
     project!,
+    rand!,
     representation_size,
     requires_caching,
     retract,

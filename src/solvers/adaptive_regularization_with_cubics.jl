@@ -162,7 +162,19 @@ We further update the regularozation parameter using factors ``0 < γ_1 < 1 < γ
 \end{cases}
 ```
 
-## Keyword arguments
+# Input
+
+* `M` – a manifold ``\mathcal M``
+* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
+* `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
+* `p` – an initial value ``p  ∈  \mathcal M``
+
+For the case that no hessian is provided, the Hessian is computed using finite difference, see
+[`ApproxHessianFiniteDifference`](@ref).
+
+
+# Keyword arguments
 the default values are given in brackets
 
 * `σ`                      - (`100.0 / sqrt(manifold_dimension(M)`) initial regularization parameter
@@ -177,7 +189,7 @@ the default values are given in brackets
 * `initial_tangent_vector` - (`zero_vector(M, p)`) initialize any tangent vector data,
 * `maxIterLanczos`         - (`200`) a shortcut to set the stopping criterion in the sub_solver,
 * `ρ_regularization`       - (`1e3`) a regularization to avoid dividing by zero for small values of cost and model
-* `stopping_criterion`     - ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)``
+* `stopping_criterion`     - ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`)
 * `sub_state`              - [`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)
                              a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a funtion.
 * `sub_cost`               - a shortcut to modify the subcost in the
@@ -189,7 +201,6 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 
 By default teh `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denonimator, >(0); message="Denominator nonpositive", type=:error)``
 to avoid that by rounding errors the denominator in the computation of `ρ` gets nonpositive.
-
 """
 adaptive_regularization_with_cubics(M::AbstractManifold, args...; kwargs...)
 
@@ -369,8 +380,6 @@ function adaptive_regularization_with_cubics!(
         η2=η2,
         γ1=γ1,
         γ2=γ2,
-        # Just init
-        ρ=zero(σ),
     )
     darcs = decorate_state!(arcs; debug, kwargs...)
     solve!(dmp, darcs)
@@ -385,14 +394,14 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     M = get_manifold(dmp)
     mho = get_objective(dmp)
     # Update sub state
-    set_iterate!(arcs.sub_state, M, copy(M, arcs.p))
-    set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
     # Set point also in the sub problem (eventually the tangent space)
     get_gradient!(M, arcs.X, mho, arcs.p)
     set_manopt_parameter!(arcs.sub_problem, :p, copy(M, arcs.p))
     set_manopt_parameter!(arcs.sub_problem, :Cost, :X, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_problem, :Gradient, :X, copy(M, arcs.p, arcs.X))
-    set_manopt_parameter!(arcs.sub_state, :X, arcs.X)
+    set_manopt_parameter!(arcs.sub_state, :X, copy(M, arcs.p, arcs.X))
+    set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
+    set_manopt_parameter!(arcs.sub_state, :p, copy(M, arcs.p))
     #Solve the sub_problem – via dispatch depending on type
     solve_arc_subproblem!(M, arcs.S, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ
@@ -450,6 +459,7 @@ end
 Solve the adaptive regularized subproblem with a Lanczos iteration
 
 # Fields
+
 * `p` the current iterate
 * `stop` – the stopping criterion
 * `σ` – the current regularization parameter
@@ -505,12 +515,12 @@ end
 function get_solver_result(ls::LanczosState)
     return ls.S
 end
-function set_iterate!(ls::LanczosState, M, p)
+function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
     ls.p = p
     return ls
 end
-function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
-    ls.p = p
+function set_manopt_parameter!(ls::LanczosState, ::Val{:X}, X)
+    ls.X = X
     return ls
 end
 function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
@@ -528,7 +538,6 @@ function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
         zero_vector!(M, X, ls.p)
     end
     zero_vector!(M, ls.Hp, ls.p)
-    get_gradient!(dmp, ls.X, ls.p)
     zero_vector!(M, ls.Hp_residual, ls.p)
     return ls
 end
@@ -563,7 +572,7 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
             for k in 1:(i - 1)
                 ls.Hp_residual .=
                     ls.Hp_residual -
-                    inner(M, ls.p, ls.Lanczos_vectors[k], ls.Hq_resudial) *
+                    inner(M, ls.p, ls.Lanczos_vectors[k], ls.Hp_residual) *
                     ls.Lanczos_vectors[k]
             end
             if length(ls.Lanczos_vectors) < i
@@ -645,8 +654,13 @@ end
 #
 # Stopping Criteria
 #
+@doc raw"""
+    StopWhenLanczosModelGradLess <: StoppingCriterion
+
+TODO Name still to be improves – check second order progress criterion.
+"""
 mutable struct StopWhenLanczosModelGradLess <: StoppingCriterion
-    relative_threshold::Float64
+    relative_threshold::Float64 #θ
     reason::String
     StopWhenLanczosModelGradLess(ε::Float64) = new(ε, "")
 end
