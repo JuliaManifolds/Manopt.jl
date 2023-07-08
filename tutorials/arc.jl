@@ -25,7 +25,6 @@ end
 p0 = rand(M)
 opt3=adaptive_regularization_with_cubics!(
     M,f, grad_f, Hess_f, p0;
-    θ=0.5,
     σ=28.86751,
     retraction_method=PolarRetraction(),
     debug=[:Iteration,:Cost,:ρ, " ", DebugGradientNorm(),"\n", :Stop],

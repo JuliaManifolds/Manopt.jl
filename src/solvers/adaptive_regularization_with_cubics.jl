@@ -104,7 +104,7 @@ function AdaptiveRegularizationState(
         copy(M, p, X),
         copy(M, p, X),
         σ,
-        zero(σ),
+        one(σ),
         one(σ),
         ρ_regularization,
         stop,
@@ -345,9 +345,9 @@ function adaptive_regularization_with_cubics!(
     initial_tangent_vector::T=zero_vector(M, p),
     maxIterLanczos=200,
     ρ_regularization::R=1e3,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
+    stopping_criterion::StoppingCriterion=StopAfterIteration(40) |
                                           StopWhenGradientNormLess(1e-9) |
-                                          StopWhenAllLanczosVectorsUsed(maxIterLanczos),
+                                          StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     σmin::R=1e-10,
     σ::R=100.0 / sqrt(manifold_dimension(M)),
@@ -398,7 +398,9 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     get_gradient!(M, arcs.X, mho, arcs.p)
     set_manopt_parameter!(arcs.sub_problem, :p, copy(M, arcs.p))
     set_manopt_parameter!(arcs.sub_problem, :Cost, :X, copy(M, arcs.p, arcs.X))
+    set_manopt_parameter!(arcs.sub_problem, :Cost, :σ, arcs.σ)
     set_manopt_parameter!(arcs.sub_problem, :Gradient, :X, copy(M, arcs.p, arcs.X))
+    set_manopt_parameter!(arcs.sub_problem, :Gradient, :σ, arcs.σ)
     set_manopt_parameter!(arcs.sub_state, :X, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
     set_manopt_parameter!(arcs.sub_state, :p, copy(M, arcs.p))
