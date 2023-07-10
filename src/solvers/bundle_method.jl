@@ -170,8 +170,8 @@ where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
 with ``X_{q_j}\in∂f(q_j)``, and
 
 where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate.
-Though the subgradient might be set valued, the argument `∂f` should always
-return _one_ element from the subgradient, but not necessarily deterministic.
+Though the subdifferential might be set valued, the argument `∂f` should always
+return _one_ element from the subdifferential, but not necessarily deterministic.
 
 # Input
 * `M` – a manifold ``\mathcal M``
