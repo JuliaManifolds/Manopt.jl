@@ -607,7 +607,7 @@ end
 #
 function min_cubic_Newton!(mp::AbstractManoptProblem, ls::LanczosState, i)
     M = get_manifold(mp)
-    tol = 1e-6 # TODO: Put into a stopping criterion
+    tol = 1e-16 # TODO: Put into a stopping criterion
 
     gvec = zeros(i)
     gvec[1] = norm(M, ls.p, ls.X)
@@ -676,10 +676,10 @@ function (c::StopWhenLanczosModelGradLess)(
     #Update Gradient
     M = get_manifold(dmp)
     get_gradient!(dmp, ls.X, ls.p)
-    y = @view(ls.coefficients[1:i])
+    y = @view(ls.coefficients[1:(i - 1)])
     model_grad_norm = norm(
-        norm(M, ls.p, ls.X) .* ones(i + 1) +
-        @view(ls.tridig_matrix[1:(i + 1), 1:i]) * y +
+        norm(M, ls.p, ls.X) .* [1, zeros(i - 1)...] +
+        @view(ls.tridig_matrix[1:i, 1:(i - 1)]) * y +
         ls.σ * norm(y) * [y..., 0],
     )
     if (i > 0) && model_grad_norm <= c.relative_threshold * norm(y, 2)^2
