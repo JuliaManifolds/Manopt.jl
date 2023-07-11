@@ -137,7 +137,7 @@ function cyclic_proximal_point!(
     return get_solver_return(get_objective(dmp), dcpps)
 end
 function initialize_solver!(amp::AbstractManoptProblem, cpps::CyclicProximalPointState)
-    c = length(get_objective(amp).proximal_maps!!)
+    c = length(get_objective(amp, true).proximal_maps!!)
     cpps.order = collect(1:c)
     (cpps.order_type == :FixedRandom) && shuffle!(cpps.order)
     return cpps

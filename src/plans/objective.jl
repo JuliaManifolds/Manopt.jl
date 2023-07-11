@@ -110,7 +110,7 @@ function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec=true)
     return rec ? get_objective(o.objective) : o.objective
 end
 function status_summary(o::AbstractManifoldObjective{E}) where {E}
-    return "$(nameof(typeof(o))){$E}"
+    return ""#"$(nameof(typeof(o))){$E}"
 end
 # Default undecorate for summary
 function status_summary(co::AbstractDecoratedManifoldObjective)
@@ -126,11 +126,9 @@ function show(io::IO, co::AbstractDecoratedManifoldObjective)
 end
 
 function show(io::IO, t::Tuple{<:AbstractManifoldObjective,P}) where {P}
+    s = "$(status_summary(t[1]))"
+    length(s) > 0 && (s = "$(s)\n\n")
     return print(
-        io,
-        """
-$(status_summary(t[1]))
-
-To access the solver result, call `get_solver_result` on this variable.""",
+        io, "$(s)To access the solver result, call `get_solver_result` on this variable."
     )
 end
