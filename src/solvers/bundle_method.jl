@@ -93,7 +93,19 @@ mutable struct BundleMethodState{
         g = copy(M, p, X)
         ε = 0.0
         transported_subgradients = [copy(M, p, X)]
-        return new{typeof(m),P,T,typeof(approx_errors),typeof(bundle),typeof(transported_subgradients),typeof(bundle_size),IR,TR,SC,VT}(
+        return new{
+            typeof(m),
+            P,
+            T,
+            typeof(approx_errors),
+            typeof(bundle),
+            typeof(transported_subgradients),
+            typeof(bundle_size),
+            IR,
+            TR,
+            SC,
+            VT,
+        }(
             approx_errors,
             bundle,
             bundle_size,
@@ -268,8 +280,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, v)
         s =
-           (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
-           distance(M, bms.bundle[1][1], y)
+            (get_cost(mp, bms.bundle[1][1]) - get_cost(mp, y)) /
+            distance(M, bms.bundle[1][1], y)
         # if !isnan(s) && !isinf(s)# && !(bms.p ≈ bms.p_last_serious)
         #    bms.diam = max(0.0, bms.diam + bms.δ * s * bms.diam)
         # end
@@ -297,19 +309,17 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             qj,
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        )+
+        ) +
         bms.diam *
-            sqrt(
-                2 * norm(
-                    M,
-                    qj,
-                    inverse_retract(
-                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
-                    ),
-                ),
-            ) *
-            norm(M, qj, Xj) for (qj, Xj) in bms.bundle
-        ]
+        sqrt(
+            2 * norm(
+                M,
+                qj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            ),
+        ) *
+        norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+    ]
     ## Check lin errors to not be negative
     bms.approx_errors = [0.0 ≥ x ≥ -bms.filter2 ? 0.0 : x for x in bms.approx_errors]
     # d = bms.diam
@@ -357,7 +367,7 @@ is less than a given tolerance tolxi.
 
 # Constructors
 
-    StopWhenBundleLess(tole=1e-4, tolg=1e-2)
+    StopWhenBundleLess(tole, tolg)
 
     StopWhenBundleLess(tolxi=1e-4)
 
@@ -368,16 +378,12 @@ mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
     tolxi::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess{Real,Nothing}(tole=1e-4, tolg=1e-2)
-        return new{typeof(tole),Nothing}(tole, tolg, nothing, "", 0)
+    function StopWhenBundleLess(tole::T, tolg::T) where {T}
+        return new{T,Nothing}(tole, tolg, nothing, "", 0)
     end
-    function StopWhenBundleLess(tole::Real, tolg::Real)
-        return StopWhenBundleLess{Real,Nothing}(tole, tolg)
+    function StopWhenBundleLess(tolxi::R=1e-4) where {R}
+        return new{Nothing,R}(nothing, nothing, tolxi, "", 0)
     end
-    function StopWhenBundleLess{Nothing,Real}(tolxi=1e-4)
-        return new{Nothing,typeof(tolxi)}(nothing, nothing, tolxi, "", 0)
-    end
-    StopWhenBundleLess(tolxi::Real) = StopWhenBundleLess{Nothing,Real}(tolxi)
 end
 function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int)
     if i == 0 # reset on init
@@ -398,21 +404,17 @@ function (b::StopWhenBundleLess)(mp::AbstractManoptProblem, bms::BundleMethodSta
     end
     return false
 end
-function status_summary(b::StopWhenBundleLess)
-    has_stopped = length(b.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    if b.tolxi == nothing
-        return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
-    else
-        return "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
-    end
+function status_summary(b::StopWhenBundleLess{T,Nothing}) where {T}
+    s = length(b.reason) > 0 ? "reached" : "not reached"
+    return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
 end
-function show(io::IO, b::StopWhenBundleLess)
-    if b.tolxi == nothing
-        return print(
-            io, "StopWhenBundleLess($(b.tole), $(b.tolg)\n    $(status_summary(b))"
-        )
-    else
-        return print(io, "StopWhenBundleLess($(b.tol)\n    $(status_summary(b))")
-    end
+function status_summary(b::StopWhenBundleLess{Nothing,R}) where {R}
+    s = length(b.reason) > 0 ? "reached" : "not reached"
+    return "Stopping parameter: -ξ ≤ $(b.tolxi):\t$s"
+end
+function show(io::IO, b::StopWhenBundleLess{T,Nothing}) where {T}
+    return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg))\n    $(status_summary(b))")
+end
+function show(io::IO, b::StopWhenBundleLess{Nothing,R}) where {R}
+    return print(io, "StopWhenBundleLess($(b.tolxi))\n    $(status_summary(b))")
 end
