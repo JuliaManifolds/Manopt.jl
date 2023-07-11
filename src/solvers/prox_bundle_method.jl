@@ -347,41 +347,65 @@ Stopping criterion for [`prox_bundle_method`](@ref) to indicate to stop when
 
 * the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
 
-is less than a given tolerance tol.
+is less than a given tolcrance tol.
 
-# Constructor
+# Constructors
 
-    StopWhenProxBundleLess(tol=1e-8)
+    StopWhenProxBundleLess(tolc=1e-6, told=1e-3)
+
+    StopWhenProxBundleLess(tolν=1e-6)
 
 """
-mutable struct StopWhenProxBundleLess{R} <: StoppingCriterion
-    tol::R
+mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
+    tolc::T
+    told::T
+    tolν::R
     reason::String
     at_iteration::Int
-    function StopWhenProxBundleLess(tol=1e-8)
-        return new{typeof(tol)}(tol, "", 0)
+    function StopWhenProxBundleLess(tolc::T=1e-6, told::T=1e-3) where {T}
+        return new{T,Nothing}(tolc, told, nothing, "", 0)
+    end
+    function StopWhenProxBundleLess(tolν::R=1e-6) where {R}
+        return new{Nothing,R}(nothing, nothing, tolν, "", 0)
     end
 end
-function (b::StopWhenProxBundleLess)(
-    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
-)
+function (b::StopWhenProxBundleLess{T, Nothing})(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int) where {T}
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if -pbms.ν ≤ b.tol && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) is less than $(b.tol).\n"
+    if (pbms.c ≤ b.tolc && norm(M, pbms.p_last_serious, pbms.d) ≤ b.told) && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) is less than $(b.tolc) and |d| = $(norm(M, pbms.p_last_serious, pbms.d)) is less than $(b.told).\n"
         b.at_iteration = i
         return true
     end
     return false
 end
-function status_summary(b::StopWhenProxBundleLess)
-    has_stopped = length(b.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "Stopping parameter: -ν ≤ $(b.tol):\t$s"
+function (b::StopWhenProxBundleLess{Nothing, R})(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int) where {R}
+    if i == 0 # reset on init
+        b.reason = ""
+        b.at_iteration = 0
+    end
+    M = get_manifold(mp)
+    if -pbms.ν ≤ b.tolν && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) is less than $(b.tolν).\n"
+        b.at_iteration = i
+        return true
+    end
+    return false
 end
-function show(io::IO, b::StopWhenProxBundleLess)
-    return print(io, "StopWhenProxBundleLess($(b.tol)\n    $(status_summary(b))")
+function status_summary(b::StopWhenProxBundleLess{T, Nothing}) where {T}
+    s = length(b.reason) > 0 ? "reached" : "not reached"
+    return "Stopping parameter: c ≤ $(b.tolc), |d| ≤ $(b.told):\t$s"
+end
+function status_summary(b::StopWhenProxBundleLess{Nothing, R}) where {R}
+    s = length(b.reason) > 0 ? "reached" : "not reached"
+    return "Stopping parameter: -ν ≤ $(b.tolν):\t$s"
+end
+function show(io::IO, b::StopWhenProxBundleLess{T, Nothing}) where {T}
+    return print(io, "StopWhenProxBundleLess($(b.tolc), $(b.told))\n    $(status_summary(b))")
+end
+function show(io::IO, b::StopWhenProxBundleLess{Nothing, R}) where {R}
+    return print(io, "StopWhenProxBundleLess($(b.tolν))\n    $(status_summary(b))")
 end
