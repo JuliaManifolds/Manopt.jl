@@ -11,7 +11,6 @@ stores option values for a [`bundle_method`](@ref) solver
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
 * `g`- descent direction
 * `indices` - the index array that keeps track of the historical order of the elements of the bundle
-* `indices_ref` - a reference for the indices array
 * `inverse_retraction_method` - the inverse retraction to use within
 * `j` - index to cycle through the bundle given by mod1(iteration, bundle_size)
 * `lin_errors` - linearization errors at the last serious step
@@ -60,7 +59,6 @@ mutable struct BundleMethodState{
     diam::R
     g::T
     indices::D
-    indices_ref::D
     inverse_retraction_method::IR
     j::I
     lin_errors::A
@@ -106,7 +104,6 @@ mutable struct BundleMethodState{
         g = zero.(X)
         indices = [0 for _ in 1:bundle_size]
         indices[1] = 1
-        indices_ref = copy(indices)
         j = 1
         lin_errors = zeros(bundle_size)
         positive_indices = [1]
@@ -136,7 +133,6 @@ mutable struct BundleMethodState{
             diam,
             g,
             indices,
-            indices_ref,
             inverse_retraction_method,
             j,
             lin_errors,
@@ -282,9 +278,8 @@ end
 function _update_indices!(bms::BundleMethodState, i::Int)
     if i ≤ bms.bundle_size
         bms.indices[i] = i
-        bms.indices_ref[i] = i
     else
-        circshift!(bms.indices, bms.indices_ref, -bms.j)
+        circshift!(bms.indices, copy(bms.indices), -bms.j)
     end
     _zero_indices!(bms)
     return bms.indices
@@ -304,7 +299,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     bms.λ[bms.positive_indices] .= bundle_method_sub_solver(M, bms)
     bms.g .= sum(
-        bms.λ[bms.positive_indices] .* bms.transported_subgradients[bms.positive_indices]
+       @view(bms.λ[bms.positive_indices]) .* @view(bms.transported_subgradients[bms.positive_indices])
     )
     bms.ε = sum(bms.λ[bms.positive_indices] .* bms.lin_errors[bms.positive_indices])
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
