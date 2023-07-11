@@ -320,15 +320,16 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.diam - bms.δ * distance(M, bms.bundle[bms.positive_indices[1]][1], bms.p0),
         )
     end
+    Y = zero_vector(M, bms.p_last_serious)
     for l in bms.positive_indices
-        logs = inverse_retract(
-            M, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
+        inverse_retract!(
+            M, Y, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
         )
         bms.lin_errors[l] =
             get_cost(mp, bms.p_last_serious) - get_cost(mp, bms.bundle[l][1]) -
-            inner(M, bms.bundle[l][1], bms.bundle[l][2], logs) +
+            inner(M, bms.bundle[l][1], bms.bundle[l][2], Y) +
             bms.diam *
-            sqrt(2 * norm(M, bms.bundle[l][1], logs)) *
+            sqrt(2 * norm(M, bms.bundle[l][1], Y)) *
             norm(M, bms.bundle[l][1], bms.bundle[l][2])
         (0 > bms.lin_errors[l] ≥ -bms.atol_errors) && (bms.lin_errors[l] == 0)
     end
