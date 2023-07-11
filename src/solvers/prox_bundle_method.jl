@@ -343,11 +343,15 @@ get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
 """
     StopWhenProxBundleLess <: StoppingCriterion
 
-Stopping criterion for [`prox_bundle_method`](@ref) to indicate to stop when
+Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when either
 
-* the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
-
-is less than a given tolcrance tol.
+    * the parameters c and |d|
+    
+    are less than given tolerances tolc and told respectively, or
+    
+    * the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
+    
+    is less than a given tolerance tolν.
 
 # Constructors
 
