@@ -18,7 +18,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `p` - current candidate point
 * `p_last_serious` - last serious iterate
 * `p0` - oldest point in the bundle
-* `positive_indices` - an array that keeps track of the strictly positive convex coefficients of the subproblem
+* `active_indices` - an array that keeps track of the strictly positive convex coefficients of the subproblem
 * `retraction_method` – the retraction to use within
 * `stop` – a [`StoppingCriterion`](@ref)
 * `transported_subgradients` - subgradients of the bundle that are transported to p_last_serious
@@ -51,7 +51,7 @@ mutable struct BundleMethodState{
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {R<:Float64,P,T,I<:Int64}
+} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int64}
     atol_λ::R
     atol_errors::R
     bundle::B
@@ -66,7 +66,7 @@ mutable struct BundleMethodState{
     p::P
     p_last_serious::P
     p0::P
-    positive_indices::D
+    active_indices::D
     retraction_method::TR
     stop::TSC
     transported_subgradients::C
@@ -106,7 +106,7 @@ mutable struct BundleMethodState{
         indices[1] = 1
         j = 1
         lin_errors = zeros(bundle_size)
-        positive_indices = [1]
+        active_indices = [1]
         transported_subgradients = [zero.(X) for _ in 1:bundle_size]
         ε = 0.0
         λ = [Inf for _ in 1:bundle_size]
@@ -140,7 +140,7 @@ mutable struct BundleMethodState{
             p,
             copy(M, p),
             copy(M, p),
-            positive_indices,
+            active_indices,
             retraction_method,
             stopping_criterion,
             transported_subgradients,
@@ -286,8 +286,8 @@ function _update_indices!(bms::BundleMethodState, i::Int)
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    bms.positive_indices = findall(x -> x != 0, bms.indices)
-    for l in bms.positive_indices
+    bms.active_indices = findall(x -> x != 0, bms.indices)
+    for l in bms.active_indices
         vector_transport_to!(
             M,
             bms.transported_subgradients[l],
@@ -297,11 +297,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             bms.vector_transport_method,
         )
     end
-    bms.λ[bms.positive_indices] .= bundle_method_sub_solver(M, bms)
+    bms.λ[bms.active_indices] .= bundle_method_sub_solver(M, bms)
     bms.g .= sum(
-       @view(bms.λ[bms.positive_indices]) .* @view(bms.transported_subgradients[bms.positive_indices])
+       @view(bms.λ[bms.active_indices]) .* @view(bms.transported_subgradients[bms.active_indices])
     )
-    bms.ε = sum(bms.λ[bms.positive_indices] .* bms.lin_errors[bms.positive_indices])
+    bms.ε = sum(bms.λ[bms.active_indices] .* bms.lin_errors[bms.active_indices])
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
@@ -309,19 +309,19 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     bms.j = mod1(i, bms.bundle_size)
-    bms.p0 .= bms.bundle[bms.indices[bms.positive_indices[1]]][1]
+    bms.p0 .= bms.bundle[bms.indices[bms.active_indices[1]]][1]
     _update_indices!(bms, i)
-    bms.positive_indices = findall(x -> x != 0, bms.indices)
+    bms.active_indices = findall(x -> x != 0, bms.indices)
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size
         bms.diam = max(
             0.0,
-            bms.diam - bms.δ * distance(M, bms.bundle[bms.positive_indices[1]][1], bms.p0),
+            bms.diam - bms.δ * distance(M, bms.bundle[bms.active_indices[1]][1], bms.p0),
         )
     end
     Y = zero_vector(M, bms.p_last_serious)
-    for l in bms.positive_indices
+    for l in bms.active_indices
         inverse_retract!(
             M, Y, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
         )
