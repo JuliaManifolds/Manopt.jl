@@ -100,14 +100,14 @@ mutable struct BundleMethodState{
         VT<:AbstractVectorTransportMethod,
         R<:Real,
     }
-        bundle = [(zero.(p), zero.(X)) for _ in 1:bundle_size]
-        g = zero.(X)
+        bundle = [(copy(M, p), zero_vector(M, p)) for _ in 1:bundle_size]
+        g = zero_vector(M, p)
         indices = [0 for _ in 1:bundle_size]
         indices[1] = 1
         j = 1
         lin_errors = zeros(bundle_size)
         active_indices = indices .!= 0
-        transported_subgradients = [zero.(X) for _ in 1:bundle_size]
+        transported_subgradients = [zero_vector(M, p) for _ in 1:bundle_size]
         ε = 0.0
         λ = [Inf for _ in 1:bundle_size]
         λ[1] = 1.0
@@ -226,7 +226,7 @@ function bundle_method!(
     bundle_size=25,
     diam=50.0,
     m=1e-3,
-    δ=1.0,
+    δ=2.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -260,7 +260,7 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
     bms.bundle[1] = (copy(M, bms.p), copy(M, bms.p, bms.X))
-    bms.active_indices .= bms.indices .!= 0
+    # bms.active_indices .= bms.indices .!= 0
     return bms
 end
 function bundle_method_sub_solver(::Any, ::Any)
@@ -268,26 +268,18 @@ function bundle_method_sub_solver(::Any, ::Any)
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
-function _zero_indices!(bms::BundleMethodState)
+function _update_indices!(bms::BundleMethodState)
     for k in 1:length(bms.indices)
         if bms.indices[k] != 0 && bms.λ[bms.indices[k]] ≤ bms.atol_λ
             bms.indices[k] = 0
         end
     end
-    return bms.indices
-end
-function _update_indices!(bms::BundleMethodState, i::Int)
-    if i ≤ bms.bundle_size
-        bms.indices[i] = i
-    else
-        circshift!(bms.indices, copy(bms.indices), -bms.j)
-    end
-    _zero_indices!(bms)
-    return bms.indices
+    bms.active_indices .= bms.indices .!= 0
+    return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    for l in bms.active_indices
+    for l in bms.indices[bms.active_indices]
         vector_transport_to!(
             M,
             bms.transported_subgradients[l],
@@ -308,20 +300,18 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
     end
-    bms.j = mod1(i, bms.bundle_size)
-    bms.p0 .= bms.bundle[bms.indices[bms.active_indices[1]]][1] # check
-    _update_indices!(bms, i)
-    bms.active_indices .= bms.indices .!= 0
-    copyto!(M, bms.bundle[bms.j][1], bms.p)
-    copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size
+        # s = (get_cost(mp, bms.bundle[mod1(i+1, bms.bundle_size)][1]) - get_cost(mp, bms.bundle[mod1(i+2, bms.bundle_size)][1]))/distance(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.bundle[mod1(i+2, bms.bundle_size)][1])
         bms.diam = max(
             0.0,
-            bms.diam - bms.δ * distance(M, bms.bundle[bms.active_indices[1]][1], bms.p0),
-        )
+            bms.diam - bms.δ * norm(M, bms.p_last_serious, bms.g),
+            )
     end
+    copyto!(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.p)
+    copyto!(M, bms.bundle[mod1(i+1, bms.bundle_size)][2], bms.p, bms.X)
+    _update_indices!(bms)
     Y = zero_vector(M, bms.p_last_serious)
-    for l in bms.active_indices
+    for l in bms.indices[bms.active_indices]
         inverse_retract!(
             M, Y, bms.bundle[l][1], bms.p_last_serious, bms.inverse_retraction_method
         )
