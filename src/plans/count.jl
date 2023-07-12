@@ -414,8 +414,8 @@ function status_summary(co::ManifoldCountObjective)
         "  * :$(rpad("$(c[1])",longest_key_length)) :  $(c[2])" for c in co.counts
     ]
     s2 = status_summary(co.objective)
-    !(co.objective isa AbstractDecoratedManifoldObjective) && (s2 = "on a $(s2)")
-    return "$(s)$(join(count_strings,"\n"))\n$s2"
+    (length(s2) > 0) && (s2 = "\n$(s2)")
+    return "$(s)$(join(count_strings,"\n"))$s2"
 end
 
 function show(io::IO, co::ManifoldCountObjective)

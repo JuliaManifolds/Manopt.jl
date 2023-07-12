@@ -799,22 +799,23 @@ end
 function show(
     io::IO, t::Tuple{<:ManifoldCachedObjective,S}
 ) where {S<:AbstractManoptSolverState}
-    return print(io, "$(t[2])\n\n$(t[1])")
+    return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
 
-function status_summary(::SimpleManifoldCachedObjective)
-    s = "## Cache\nA `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively"
-    s2 = status_summary(co.objective)
+function status_summary(smco::SimpleManifoldCachedObjective)
+    s = "## Cache\nA `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively\n"
+    s2 = status_summary(smco.objective)
     return "$(s)$(s2)"
 end
 function status_summary(mco::ManifoldCachedObjective)
     s = "## Cache\n"
+    longest_key_length = max(length.(["$k" for k in keys(mco.cache)])...)
     cache_strings = [
-        "* " *
-        rpad("$k:", 25, " ") *
-        "$(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
+        "  * :" *
+        rpad("$k", longest_key_length, " ") *
+        " : $(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
         (k, v) in zip(keys(mco.cache), values(mco.cache))
     ]
     s2 = status_summary(mco.objective)
-    return "$(s)$(join(cache_strings,"\n"))\n$s2"
+    return "$(s)$(join(cache_strings,"\n"))\n\n$s2"
 end
