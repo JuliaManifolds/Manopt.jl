@@ -223,10 +223,10 @@ function bundle_method!(
     p;
     atol_λ=eps(),
     atol_errors=eps(),
-    bundle_size=8,
-    diam=10.0,
+    bundle_size=25,
+    diam=50.0,
     m=1e-3,
-    δ=2.0,
+    δ=√2,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
