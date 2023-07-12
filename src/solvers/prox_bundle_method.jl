@@ -373,7 +373,9 @@ mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
         return new{Nothing,R}(nothing, nothing, tolν, "", 0)
     end
 end
-function (b::StopWhenProxBundleLess{T, Nothing})(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int) where {T}
+function (b::StopWhenProxBundleLess{T,Nothing})(
+    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
+) where {T}
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
@@ -386,7 +388,9 @@ function (b::StopWhenProxBundleLess{T, Nothing})(mp::AbstractManoptProblem, pbms
     end
     return false
 end
-function (b::StopWhenProxBundleLess{Nothing, R})(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int) where {R}
+function (b::StopWhenProxBundleLess{Nothing,R})(
+    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
+) where {R}
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
@@ -399,17 +403,19 @@ function (b::StopWhenProxBundleLess{Nothing, R})(mp::AbstractManoptProblem, pbms
     end
     return false
 end
-function status_summary(b::StopWhenProxBundleLess{T, Nothing}) where {T}
+function status_summary(b::StopWhenProxBundleLess{T,Nothing}) where {T}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: c ≤ $(b.tolc), |d| ≤ $(b.told):\t$s"
 end
-function status_summary(b::StopWhenProxBundleLess{Nothing, R}) where {R}
+function status_summary(b::StopWhenProxBundleLess{Nothing,R}) where {R}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: -ν ≤ $(b.tolν):\t$s"
 end
-function show(io::IO, b::StopWhenProxBundleLess{T, Nothing}) where {T}
-    return print(io, "StopWhenProxBundleLess($(b.tolc), $(b.told))\n    $(status_summary(b))")
+function show(io::IO, b::StopWhenProxBundleLess{T,Nothing}) where {T}
+    return print(
+        io, "StopWhenProxBundleLess($(b.tolc), $(b.told))\n    $(status_summary(b))"
+    )
 end
-function show(io::IO, b::StopWhenProxBundleLess{Nothing, R}) where {R}
+function show(io::IO, b::StopWhenProxBundleLess{Nothing,R}) where {R}
     return print(io, "StopWhenProxBundleLess($(b.tolν))\n    $(status_summary(b))")
 end

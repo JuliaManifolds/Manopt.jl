@@ -291,9 +291,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     bms.λ[bms.active_indices] .= bundle_method_sub_solver(M, bms)
     bms.g .= sum(
-       @view(bms.λ[bms.active_indices]).* @view(bms.transported_subgradients[bms.active_indices])
+        @view(bms.λ[bms.active_indices]) .*
+        @view(bms.transported_subgradients[bms.active_indices]),
     )
-    bms.ε = sum(@view(bms.λ[bms.active_indices]) .* @view(bms.lin_errors[bms.active_indices]))
+    bms.ε = sum(
+        @view(bms.λ[bms.active_indices]) .* @view(bms.lin_errors[bms.active_indices])
+    )
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
@@ -303,11 +306,16 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if i > bms.bundle_size
         bms.diam = max(
             0.0,
-            bms.diam - bms.δ * distance(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.bundle[mod1(i+2, bms.bundle_size)][1]),
-            )
+            bms.diam -
+            bms.δ * distance(
+                M,
+                bms.bundle[mod1(i + 1, bms.bundle_size)][1],
+                bms.bundle[mod1(i + 2, bms.bundle_size)][1],
+            ),
+        )
     end
-    copyto!(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.p)
-    copyto!(M, bms.bundle[mod1(i+1, bms.bundle_size)][2], bms.p, bms.X)
+    copyto!(M, bms.bundle[mod1(i + 1, bms.bundle_size)][1], bms.p)
+    copyto!(M, bms.bundle[mod1(i + 1, bms.bundle_size)][2], bms.p, bms.X)
     _update_indices!(bms)
     Y = zero_vector(M, bms.p_last_serious)
     for l in bms.indices[bms.active_indices]
@@ -359,7 +367,9 @@ mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
         return new{Nothing,R}(nothing, nothing, tolξ, "", 0)
     end
 end
-function (b::StopWhenBundleLess{T, Nothing})(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int) where {T}
+function (b::StopWhenBundleLess{T,Nothing})(
+    mp::AbstractManoptProblem, bms::BundleMethodState, i::Int
+) where {T}
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
@@ -372,7 +382,9 @@ function (b::StopWhenBundleLess{T, Nothing})(mp::AbstractManoptProblem, bms::Bun
     end
     return false
 end
-function (b::StopWhenBundleLess{Nothing, R})(mp::AbstractManoptProblem, bms::BundleMethodState, i::Int) where {R}
+function (b::StopWhenBundleLess{Nothing,R})(
+    mp::AbstractManoptProblem, bms::BundleMethodState, i::Int
+) where {R}
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
@@ -385,17 +397,17 @@ function (b::StopWhenBundleLess{Nothing, R})(mp::AbstractManoptProblem, bms::Bun
     end
     return false
 end
-function status_summary(b::StopWhenBundleLess{T, Nothing}) where {T}
+function status_summary(b::StopWhenBundleLess{T,Nothing}) where {T}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
 end
-function status_summary(b::StopWhenBundleLess{Nothing, R}) where {R}
+function status_summary(b::StopWhenBundleLess{Nothing,R}) where {R}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: -ξ ≤ $(b.tolξ):\t$s"
 end
-function show(io::IO, b::StopWhenBundleLess{T, Nothing}) where {T}
+function show(io::IO, b::StopWhenBundleLess{T,Nothing}) where {T}
     return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg))\n    $(status_summary(b))")
 end
-function show(io::IO, b::StopWhenBundleLess{Nothing, R}) where {R}
+function show(io::IO, b::StopWhenBundleLess{Nothing,R}) where {R}
     return print(io, "StopWhenBundleLess($(b.tolξ))\n    $(status_summary(b))")
 end
