@@ -53,13 +53,16 @@ get_manifold(::AbstractManoptProblem)
 get_manifold(amp::DefaultManoptProblem) = amp.manifold
 
 @doc raw"""
-    get_objective(mp::AbstractManoptProblem)
+    get_objective(mp::AbstractManoptProblem, recursive=false)
 
 return the objective [`AbstractManifoldObjective`](@ref) stored within an [`AbstractManoptProblem`](@ref).
+If `recursive is set to true, it additionally unwraps all decorators of the objective`
 """
 get_objective(::AbstractManoptProblem)
 
-get_objective(amp::DefaultManoptProblem) = amp.objective
+function get_objective(amp::DefaultManoptProblem, recursive=false)
+    return recursive ? get_objective(amp.objective, true) : amp.objective
+end
 
 @doc raw"""
     get_cost(amp::AbstractManoptProblem, p)
