@@ -1,12 +1,12 @@
 function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
-    d = length(bms.positive_indices)
+    d = length(bms.active_indices)
     H = [
         inner(M, bms.p_last_serious, X, Y) for
-        X in bms.transported_subgradients[bms.positive_indices],
-        Y in bms.transported_subgradients[bms.positive_indices]
+        X in @view(bms.transported_subgradients[bms.active_indices]),
+        Y in @view(bms.transported_subgradients[bms.active_indices])
     ]
     qm = QuadraticModel(
-        bms.lin_errors[bms.positive_indices],
+        bms.lin_errors[bms.active_indices],
         sparse(tril(H));
         A=reshape(ones(d), 1, d),
         lcon=[one(eltype(bms.lin_errors))],

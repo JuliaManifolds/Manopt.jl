@@ -66,7 +66,7 @@ mutable struct BundleMethodState{
     p::P
     p_last_serious::P
     p0::P
-    active_indices::D
+    active_indices::BitVector
     retraction_method::TR
     stop::TSC
     transported_subgradients::C
@@ -106,7 +106,7 @@ mutable struct BundleMethodState{
         indices[1] = 1
         j = 1
         lin_errors = zeros(bundle_size)
-        active_indices = [1]
+        active_indices = indices .!= 0
         transported_subgradients = [zero.(X) for _ in 1:bundle_size]
         ε = 0.0
         λ = [Inf for _ in 1:bundle_size]
@@ -260,6 +260,7 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
     bms.bundle[1] = (copy(M, bms.p), copy(M, bms.p, bms.X))
+    bms.active_indices .= bms.indices .!= 0
     return bms
 end
 function bundle_method_sub_solver(::Any, ::Any)
@@ -286,7 +287,6 @@ function _update_indices!(bms::BundleMethodState, i::Int)
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
-    bms.active_indices = findall(x -> x != 0, bms.indices)
     for l in bms.active_indices
         vector_transport_to!(
             M,
@@ -299,9 +299,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     bms.λ[bms.active_indices] .= bundle_method_sub_solver(M, bms)
     bms.g .= sum(
-       @view(bms.λ[bms.active_indices]) .* @view(bms.transported_subgradients[bms.active_indices])
+       @view(bms.λ[bms.active_indices]).* @view(bms.transported_subgradients[bms.active_indices])
     )
-    bms.ε = sum(bms.λ[bms.active_indices] .* bms.lin_errors[bms.active_indices])
+    bms.ε = sum(@view(bms.λ[bms.active_indices]) .* @view(bms.lin_errors[bms.active_indices]))
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
@@ -309,9 +309,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     bms.j = mod1(i, bms.bundle_size)
-    bms.p0 .= bms.bundle[bms.indices[bms.active_indices[1]]][1]
+    bms.p0 .= bms.bundle[bms.indices[bms.active_indices[1]]][1] # check
     _update_indices!(bms, i)
-    bms.active_indices = findall(x -> x != 0, bms.indices)
+    bms.active_indices .= bms.indices .!= 0
     copyto!(M, bms.bundle[bms.j][1], bms.p)
     copyto!(M, bms.bundle[bms.j][2], bms.p, bms.X)
     if i > bms.bundle_size
@@ -363,7 +363,7 @@ mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
     tolξ::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess(tole::T=1e-6, tolg::T=1e-3) where {T}
+    function StopWhenBundleLess(tole::T, tolg::T) where {T}
         return new{T,Nothing}(tole, tolg, nothing, "", 0)
     end
     function StopWhenBundleLess(tolξ::R=1e-6) where {R}

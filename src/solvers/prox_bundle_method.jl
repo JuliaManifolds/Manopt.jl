@@ -346,11 +346,11 @@ get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
 Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when either
 
     * the parameters c and |d|
-    
+
     are less than given tolerances tolc and told respectively, or
-    
+
     * the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
-    
+
     is less than a given tolerance tolν.
 
 # Constructors
@@ -366,7 +366,7 @@ mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
     tolν::R
     reason::String
     at_iteration::Int
-    function StopWhenProxBundleLess(tolc::T=1e-6, told::T=1e-3) where {T}
+    function StopWhenProxBundleLess(tolc::T, told::T) where {T}
         return new{T,Nothing}(tolc, told, nothing, "", 0)
     end
     function StopWhenProxBundleLess(tolν::R=1e-6) where {R}
