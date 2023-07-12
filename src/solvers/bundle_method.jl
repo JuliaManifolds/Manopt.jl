@@ -226,7 +226,7 @@ function bundle_method!(
     bundle_size=8,
     diam=10.0,
     m=1e-3,
-    δ=√2,
+    δ=2.0,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -268,11 +268,16 @@ function bundle_method_sub_solver(::Any, ::Any)
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
-function _update_indices!(bms::BundleMethodState)
+function _update_indices!(bms::BundleMethodState, i)
     for k in 1:length(bms.indices)
         if bms.indices[k] != 0 && bms.λ[bms.indices[k]] ≤ bms.atol_λ
             bms.indices[k] = 0
         end
+    end
+    if i ≤ bms.bundle_size
+        bms.indices[i] = i
+    else
+        circshift!(bms.indices, copy(bms.indices), -mod1(i, bms.bundle_size))
     end
     bms.active_indices .= bms.indices .!= 0
     return bms
@@ -316,7 +321,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     end
     copyto!(M, bms.bundle[mod1(i + 1, bms.bundle_size)][1], bms.p)
     copyto!(M, bms.bundle[mod1(i + 1, bms.bundle_size)][2], bms.p, bms.X)
-    _update_indices!(bms)
+    _update_indices!(bms, i)
     Y = zero_vector(M, bms.p_last_serious)
     for l in bms.indices[bms.active_indices]
         inverse_retract!(
