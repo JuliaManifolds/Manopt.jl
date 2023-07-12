@@ -1,5 +1,5 @@
 function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
-    d = length(findall(x -> x == true, bms.active_indices))
+    d = sum(bms.active_indices)
     H = [
         inner(M, bms.p_last_serious, X, Y) for
         X in @view(bms.transported_subgradients[bms.active_indices]),
