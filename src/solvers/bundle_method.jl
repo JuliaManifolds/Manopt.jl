@@ -223,10 +223,10 @@ function bundle_method!(
     p;
     atol_λ=eps(),
     atol_errors=eps(),
-    bundle_size=25,
-    diam=50.0,
+    bundle_size=8,
+    diam=10.0,
     m=1e-3,
-    δ=2.0,
+    δ=√2,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -301,10 +301,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         copyto!(M, bms.p_last_serious, bms.p)
     end
     if i > bms.bundle_size
-        # s = (get_cost(mp, bms.bundle[mod1(i+1, bms.bundle_size)][1]) - get_cost(mp, bms.bundle[mod1(i+2, bms.bundle_size)][1]))/distance(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.bundle[mod1(i+2, bms.bundle_size)][1])
         bms.diam = max(
             0.0,
-            bms.diam - bms.δ * norm(M, bms.p_last_serious, bms.g),
+            bms.diam - bms.δ * distance(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.bundle[mod1(i+2, bms.bundle_size)][1]),
             )
     end
     copyto!(M, bms.bundle[mod1(i+1, bms.bundle_size)][1], bms.p)
