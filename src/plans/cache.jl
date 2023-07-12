@@ -791,7 +791,7 @@ end
 function show(
     io::IO, t::Tuple{<:SimpleManifoldCachedObjective,S}
 ) where {S<:AbstractManoptSolverState}
-    return print(io, "$(t[2])\n\n$(t[1])")
+    return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
 end
 function show(io::IO, mco::ManifoldCachedObjective)
     return print(io, "$(status_summary(mco))")
@@ -803,8 +803,9 @@ function show(
 end
 
 function status_summary(smco::SimpleManifoldCachedObjective)
-    s = "## Cache\nA `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively\n"
+    s = "## Cache\nA `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively"
     s2 = status_summary(smco.objective)
+    length(s2) > 0 && (s2 = "\n$(s2)")
     return "$(s)$(s2)"
 end
 function status_summary(mco::ManifoldCachedObjective)
