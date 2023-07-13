@@ -94,6 +94,7 @@ A functor that represents several decreasing step sizes
 * `exponent` – (`1`) a value ``e`` the current iteration numbers ``e``th exponential
   is taken of
 * `shift` – (`0`) shift the denominator iterator ``i`` by ``s```.
+* `type` - a symbol that indicates whether the stepsize is relatively (to the gradient norm) or absolutely constant
 
 In total the complete formulae reads for the ``i``th iterate as
 
@@ -105,7 +106,7 @@ and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 # Constructor
 
-    DecreasingStepsize(l=1,f=1,a=0,e=1,s=0)
+    DecreasingStepsize(l=1,f=1,a=0,e=1,s=0,type=:relative)
 
 Alternatively one can also use the following keyword.
 
@@ -122,8 +123,9 @@ mutable struct DecreasingStepsize <: Stepsize
     subtrahend::Float64
     exponent::Float64
     shift::Int
-    function DecreasingStepsize(l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0)
-        return new(l, f, a, e, s)
+    type::Symbol
+    function DecreasingStepsize(l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0, type::Symbol=:relative)
+        return new(l, f, a, e, s, type)
     end
 end
 function DecreasingStepsize(
@@ -133,13 +135,18 @@ function DecreasingStepsize(
     subtrahend=0.0,
     exponent=1.0,
     shift=0,
+    type::Symbol = :relative,
 )
     return DecreasingStepsize(length, factor, subtrahend, exponent, shift)
 end
 function (s::DecreasingStepsize)(
-    ::P, ::O, i::Int, args...; kwargs...
+    amp::P, ams::O, i::Int, args...; kwargs...
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
-    return (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
+    ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
+    if s.type == :absolute
+        ds /= norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
+    end
+    return ds
 end
 get_initial_stepsize(s::DecreasingStepsize) = s.length
 function show(io::IO, s::DecreasingStepsize)

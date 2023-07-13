@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
 * `prox_bundle_method` optimization algorithm for non-smooth functions.
-* `ConstantStepsize` now has an additional field `type::Symbol` to assess whether the step-size should be
-  relatively (to the gradient norm) or absolutely constant.
+* `ConstantStepsize` and `DecreasingStepsize` now have an additional field `type::Symbol` to assess whether the
+  step-size should be relatively (to the gradient norm) or absolutely constant.
 
 ## [0.4.28] - 24/06/2023
 

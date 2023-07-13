@@ -234,3 +234,12 @@ function (cs::ConstantStepsize)(
     end
     return s
 end
+function (s::DecreasingStepsize)(
+    amp::AbstractManoptProblem, sgs::SubGradientMethodState, i::Int, args...; kwargs...
+)
+    ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
+    if s.type == :absolute
+        ds /= norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+    end
+    return ds
+end
