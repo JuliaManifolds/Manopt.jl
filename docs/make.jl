@@ -125,7 +125,6 @@ makedocs(bib;
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",
         "References" => "references.md",
-        "Function Index" => "list.md",
     ],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)

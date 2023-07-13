@@ -91,5 +91,5 @@ which are both available online for free
 
 ```@bibliography
 Pages = ["index.md"]
-Canonical = false
+Canonical=false
 ```

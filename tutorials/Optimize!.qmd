@@ -6,8 +6,8 @@ author: Ronny Bergmann
 In this tutorial, we will both introduce the basics of optimisation on manifolds as well as
 how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifolds in [Julia](https://julialang.org).
 
-For more theoretical background, see e.g. [@doCarmo:1992] for an introduction to Riemannian manifolds
-and [@AbsilMahonySepulchre2008] or [@Boumal:2023] to read more about optimisation thereon.
+For more theoretical background, see e.g. [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
+and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
 
 Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
 and let $f\colon \mathcal M → ℝ$ be a cost function.
@@ -35,7 +35,7 @@ But the mean can also be charcterised as
   \operatorname*{arg\,min}_{x\in\mathbb R^d} \frac{1}{2n}\sum_{i=1}^n \lVert x - y_i\rVert^2
 ```
 
-and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [@Karcher1977]
+and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [Karcher:1977](@cite)
 
 ```math
   \operatorname*{arg\,min}_{p\in\mathbb R^d}
@@ -167,7 +167,7 @@ data2 = [exp(N, q, σ * rand(N; vector_at=q)) for i in 1:m];
 ```
 
 Instead of the mean, let's consider a non-smooth optimisation task:
-The median can be generalized to Manifolds as the minimiser of the sum of distances, see e.g. [@Bacak:2014]. We define
+The median can be generalized to Manifolds as the minimiser of the sum of distances, see e.g. [Bacak:2014](@cite). We define
 
 ```{julia}
 g(N, q) = sum(1 / (2 * m) * distance.(Ref(N), Ref(q), data2))
@@ -221,5 +221,9 @@ plot(x,y,xaxis=:log, label="CPPA Cost")
 
 ## Literature
 
-::: {#refs}
-:::
+````{=commonmark}
+```@bibliography
+Pages = ["tutorials/Optimize!.md"]
+Canonical=false
+```
+````
