@@ -5,6 +5,15 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.x] - dd/mm/2023
+
+### Added
+
+* `bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
+* `prox_bundle_method` optimization algorithm for non-smooth functions.
+* `ConstantStepsize` now has an additional field `type::Symbol` to assess whether the step-size should be
+  relatively (to the gradient norm) or absolutely constant.
+
 ## [0.4.28] - 24/06/2023
 
 ### Changed
