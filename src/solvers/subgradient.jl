@@ -225,3 +225,12 @@ function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, i)
     return sgs
 end
 get_solver_result(sgs::SubGradientMethodState) = sgs.p_star
+function (cs::ConstantStepsize)(
+    amp::AbstractManoptProblem, sgs::SubGradientMethodState, ::Any, args...; kwargs...
+)
+    s = cs.length
+    if cs.type == :absolute
+        s /= norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+    end
+    return s
+end

@@ -45,7 +45,8 @@ end
 A functor that always returns a fixed step size.
 
 # Fields
-* `length` – constant value for the step size.
+* `length` – constant value for the step size
+* `type` - a symbol that indicates whether the stepsize is relatively (to the gradient norm) or absolutely constant
 
 # Constructors
 
@@ -60,17 +61,23 @@ radius, unless the radius is infinity, then the default step size is `1`.
 """
 mutable struct ConstantStepsize{T} <: Stepsize
     length::T
+    type::Symbol
 end
 function ConstantStepsize(
     M::AbstractManifold=DefaultManifold(2);
     stepsize=isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
+    type::Symbol = :relative,
 )
     return ConstantStepsize{typeof(stepsize)}(stepsize)
 end
 function (cs::ConstantStepsize)(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Any, args...; kwargs...
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Any, args...; kwargs...
 )
-    return cs.length
+    s = cs.length
+    if cs.type == :absolute
+        s /= norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
+    end
+    return s
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
 show(io::IO, cs::ConstantStepsize) = print(io, "ConstantStepsize($(cs.length))")
