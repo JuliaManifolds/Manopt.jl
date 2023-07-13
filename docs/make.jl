@@ -55,7 +55,7 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 # (e) ...finally! make docs
-bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:authoryear)
+bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(bib;
     format=Documenter.HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
