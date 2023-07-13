@@ -84,11 +84,12 @@ To visualize and interpret results, `Manopt.jl` aims to provide both easy plot f
 
 ## Literature
 
-If you want to get started with manifolds, one book is [doCarmo1992](@cite),
+If you want to get started with manifolds, one book is [doCarmo:1992](@cite),
 and if you want do directly dive into optimization on manifolds, good references are
-[AbsilMahonySepulchre2008](@cite) and [Boumal2023](@cite),
+[AbsilMahonySepulchre:2008](@cite) and [Boumal:2023](@cite),
 which are both available online for free
 
 ```@bibliography
 Pages = ["index.md"]
+Canonical = false
 ```
