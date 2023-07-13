@@ -30,7 +30,7 @@ if "--quarto" ∈ ARGS
 end
 
 # (c) load necessary packages for the docs
-using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using Documenter
 using DocumenterCitations
 using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
@@ -57,7 +57,7 @@ end
 # (e) ...finally! make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:authoryear)
 makedocs(bib;
-    format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
+    format=Documenter.HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
     sitename="Manopt.jl",
     pages=[
@@ -122,8 +122,9 @@ makedocs(bib;
             "Exports" => "helpers/exports.md",
         ],
         "Contributing to Manopt.jl" => "contributing.md",
-        "Notation" => "notation.md",
         "Extensions" => "extensions.md",
+        "Notation" => "notation.md",
+        "References" => "references.md",
         "Function Index" => "list.md",
     ],
 )
