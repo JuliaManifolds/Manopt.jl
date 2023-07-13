@@ -84,34 +84,11 @@ To visualize and interpret results, `Manopt.jl` aims to provide both easy plot f
 
 ## Literature
 
-If you want to get started with manifolds, one book is [[do Carmo, 1992](#doCarmo1992)],
-and if you want do directly dive into optimization on manifolds, my favorites references are
-[[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)] and [[Boumal 2023](#Boumal2023)],
+If you want to get started with manifolds, one book is [doCarmo1992](@cite),
+and if you want do directly dive into optimization on manifolds, good references are
+[AbsilMahonySepulchre2008](@cite) and [Boumal2023](@cite),
 which are both available online for free
 
-```@raw html
-<ul>
-<li id="AbsilMahonySepulchre2008">
-    [<a>Absil, Mahony, Sepulchre, 2008</a>]
-    P.-A. Absil, R. Mahony and R. Sepulchre,
-    <emph>Optimization Algorithms on Matrix Manifolds</emph>,
-    Princeton University Press, 2008,
-    doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
-    <a href="http://press.princeton.edu/chapters/absil/">open access</a>.
-</li>
-<li id="Boumal2023">
-    [<a>Boumal, 2022</a>]
-    N. Boumal,
-    <emph>An introduction to optimization on smooth manifolds</emph>,
-    to appear with Cambridge University Press, 2023,
-    <a href="https://www.nicolasboumal.net/book/index.html">open access</a>.
-</li>
-<li id="doCarmo1992">
-    [<a>doCarmo, 1992</a>]
-    M. P. do Carmo,
-    <emph>Riemannian Geometry</emph>,
-    Birkhäuser Boston, 1992,
-    ISBN: 0-8176-3490-8.
-</li>
-</ul>
+```@bibliography
+Pages = ["index.md"]
 ```

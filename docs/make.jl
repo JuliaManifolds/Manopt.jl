@@ -31,6 +31,7 @@ end
 
 # (c) load necessary packages for the docs
 using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using DocumenterCitations
 using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (d) add contributing.md to docs
@@ -54,7 +55,8 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 # (e) ...finally! make docs
-makedocs(;
+bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:authoryear)
+makedocs(bib;
     format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
     modules=[Manopt],
     sitename="Manopt.jl",
