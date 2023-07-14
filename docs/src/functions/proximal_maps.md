@@ -29,6 +29,6 @@ Pages   = ["proximal_maps.jl"]
 # Literature
 
 ```@bibliography
-Pages = ["functions/proximal\_maps.md"]
+Pages = ["functions/proximal_maps.md"]
 Canonical=false
 ```
