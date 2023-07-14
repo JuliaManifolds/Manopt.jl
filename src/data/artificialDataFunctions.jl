@@ -8,14 +8,7 @@
 generate an artificial InSAR image, i.e. phase valued data, of size `pts` x
 `pts` points.
 
-This data set was introduced for the numerical examples in
-
-> Bergmann, R., Laus, F., Steidl, G., Weinmann, A.:
-> _Second Order Differences of Cyclic Data and Applications in Variational Denoising_
-> SIAM J. Imaging Sci., 7(4), 2916–2953, 2014.
-> doi: [10.1137/140969993](https://dx.doi.org/10.1137/140969993)
-> arxiv: [1405.5349](https://arxiv.org/abs/1405.5349)
-
+This data set was introduced for the numerical examples in [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1).
 """
 function artificialIn_SAR_image(pts::Integer)
     # variables

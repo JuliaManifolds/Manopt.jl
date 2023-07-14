@@ -8,3 +8,8 @@ that can be loaded using the following data functions
 Modules = [Manopt]
 Pages   = ["artificialDataFunctions.jl"]
 ```
+
+```@bibliography
+Pages = ["helpers/data.md"]
+Canonical=false
+```
