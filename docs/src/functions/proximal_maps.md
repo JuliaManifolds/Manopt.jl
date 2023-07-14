@@ -25,3 +25,10 @@ extend the `functions/proximal_maps.jl` file.
 Modules = [Manopt]
 Pages   = ["proximal_maps.jl"]
 ```
+
+# Literature
+
+```@bibliography
+Pages = ["functions/proximal\_maps.md"]
+Canonical=false
+```

@@ -19,18 +19,11 @@ where for this formula the `pts` along the curve are equispaced and denoted by
 together with the `degrees` of the segments and assuming a differentiable curve, the segments
 can internally be reconstructed.
 
-This acceleration discretization was introduced in[^BergmannGousenbourger2018].
+This acceleration discretization was introduced in [Bergmann, Gousenbourger, Front. Appl. Math. Stat., 2018](@cite BergmannGousenbourger:2018).
 
 # See also
 
 [`grad_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref), [`grad_L2_acceleration_bezier`](@ref)
-
-[^BergmannGousenbourger2018]:
-    > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
-    > manifolds by minimizing the acceleration of a Bézier curve.
-    > Frontiers in Applied Mathematics and Statistics (2018).
-    > doi [10.3389/fams.2018.00059](http://dx.doi.org/10.3389/fams.2018.00059),
-    > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function cost_acceleration_bezier(
     M::AbstractManifold,

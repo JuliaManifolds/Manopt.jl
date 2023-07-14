@@ -91,7 +91,7 @@ end
     DouglasRachford(M, mpo, p)
 
 Compute the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial
-data ``p`` and the (two) proximal maps `proxMaps`.
+data ``p`` and the (two) proximal maps `proxMaps`, see [Bergmann, Presch, Steidl, SIAM J Imag Sci, 2016](@cite BergmannPerschSteidl:2016).
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 A vectorial proximal map on the power manifold ``\mathcal M^k`` is introduced as the first

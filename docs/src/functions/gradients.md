@@ -16,3 +16,10 @@ This page collects the available gradients.
 Modules = [Manopt]
 Pages   = ["gradients.jl"]
 ```
+
+# Literature
+
+```@bibliography
+Pages = ["functions/gradients.md"]
+Canonical=false
+```
