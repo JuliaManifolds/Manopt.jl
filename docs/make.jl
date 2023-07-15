@@ -113,7 +113,7 @@ makedocs(
             "Bézier curves" => "functions/bezier.md",
             "Cost functions" => "functions/costs.md",
             "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjointdifferentials.md",
+            "Adjoint Differentials" => "functions/adjoint_differentials.md",
             "Gradients" => "functions/gradients.md",
             "Proximal Maps" => "functions/proximal_maps.md",
             "Specific Manifold Functions" => "functions/manifold.md",
