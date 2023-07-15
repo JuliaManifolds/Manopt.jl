@@ -6,10 +6,6 @@ project:
 crossref:
   fig-prefix: Figure
   tbl-prefix: Table
-bibliography:
-  - CITATION.bib
-  - bib/manopt-bibliography.yaml
-csl: journal-of-the-royal-statistical-society.csl
 fig-format: png
 
 execute:
