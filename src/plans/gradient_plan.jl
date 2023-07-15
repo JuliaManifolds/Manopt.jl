@@ -412,7 +412,7 @@ Given
 * and a current iterate ``x_k``
 * as well as the interims values ``γ_k`` and ``v_k`` from the previous iterate.
 
-This compute a Nesterov type update using the following steps, see [^ZhangSra2018]
+This compute a Nesterov type update using the following steps, see [Zhang, Sra, Preprint, 2018](@cite ZhangSra:2018)
 
 1. Copute the positive root, i.e. ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
 2. Set ``\bar γ_k+1 = (1-α_k)γ_k + α_kμ``
@@ -428,10 +428,6 @@ Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1
         inverse_retraction_method=LogarithmicInverseRetraction())
 
 Initialize the Nesterov acceleration, where `x0` initializes `v`.
-
-[^ZhangSra2018]:
-    > H. Zhang, S. Sra: _Towards Riemannian Accelerated Gradient Methods_,
-    > Preprint, 2018, arXiv: [1806.02812](https://arxiv.org/abs/1806.02812)
 """
 mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
     γ::R

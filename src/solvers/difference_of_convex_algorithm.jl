@@ -113,7 +113,7 @@ end
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
     difference_of_convex_algorithm(M, mdco, p; kwargs...)
 
-Compute the difference of convex algorithm[^FerreiraSantosSouza2021] to minimize
+Compute the difference of convex algorithm [Bergmann, Ferreira, Santos, Souza, preprint, 2023](@cite BergmannFerreiraSantosSouza:2023) to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M}\  g(p) - h(p)
@@ -184,11 +184,6 @@ difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
-[^FerreiraSantosSouza2021]:
-    > Ferreira, O. P., Santos, E. M., Souza, J. C. O.:
-    > _The difference of convex algorithm on Riemannian manifolds_,
-    > 2021, arXiv: [2112.05250](http://arxiv.org/abs/2112.05250).
 """
 difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h; kwargs...)

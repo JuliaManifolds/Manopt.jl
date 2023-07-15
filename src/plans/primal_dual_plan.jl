@@ -30,7 +30,7 @@ abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P}
 @doc raw"""
     PrimalDualManifoldObjective{E<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{E}
 
-Describes an Objective linearized or exact Chambolle-Pock algorithm.[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020][^ChambollePock2011]
+Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergmann et al., Found. Comput. Math., 2021](@cite BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021), [Chambolle, Pock, JMIV, 201](@cite ChambollePock:2011)
 
 # Fields
 
@@ -58,18 +58,6 @@ The last optional argument can be used to provide the 4 or 5 functions as alloca
 mutating (in place computation) ones.
 Note that the first argument is always the manifold under consideration, the mutated one is
 the second.
-
-[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
-    > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
-    > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
-    > Foundations of Computational Mathematics, 2021.
-    > doi: [10.1007/s10208-020-09486-5](http://dx.doi.org/10.1007/s10208-020-09486-5)
-    > arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
-[^ChambollePock2011]:
-    > A. Chambolle, T. Pock:
-    > _A first-order primal-dual algorithm for convex problems with applications to imaging_,
-    > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
-    > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
 """
 mutable struct PrimalDualManifoldObjective{
     T<:AbstractEvaluationType,TC,TP,TDP,LFO,ALFO,L

@@ -42,3 +42,12 @@ RecordGradient
 RecordGradientNorm
 RecordStepsize
 ```
+
+## Literature
+
+```@bibliography
+Pages = ["solvers/gradient_descent.md"]
+Canonical=false
+
+Luenberger:1972
+```

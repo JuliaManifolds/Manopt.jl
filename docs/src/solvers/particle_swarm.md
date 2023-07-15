@@ -16,3 +16,8 @@ ParticleSwarmState
 ```
 
 ## Literature
+
+```@bibliography
+Pages = ["solvers/particle_swarm.md"]
+Canonical=false
+```
