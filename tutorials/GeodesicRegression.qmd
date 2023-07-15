@@ -37,7 +37,7 @@ TolVibrantBlue = RGBA{Float64}(colorant"#0077BB")
 TolVibrantTeal = RGBA{Float64}(colorant"#009988")
 TolVibrantMagenta = RGBA{Float64}(colorant"#EE3377")
 TolVibrantCyan = RGBA{Float64}(colorant"#33BBEE");
-render_size = 1
+render_size = 0
 ```
 
 We use the following data, where we want to highlight one of the points.
@@ -65,8 +65,9 @@ asymptote_export_S2_signals(
     img_folder * "/regression_data.asy";
     points=[data],
     colors=Dict(:points => [TolVibrantBlue]),
-    dot_size=3.5,
+    dot_size=9.0,
     camera_position=(1.0, 0.5, 0.5),
+    size=(600,0),
 );
 render_asymptote(img_folder * "/regression_data.asy"; render=render_size);
 ```
@@ -235,9 +236,10 @@ asymptote_export_S2_signals(
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal],
         :tvectors => [TolVibrantOrange],
     ),
-    dot_sizes=[3.5, 3.5, 2],
-    line_widths=[0.33, 0.66, 0.33, 1.0],
+    dot_sizes=[9.0, 9.0, 6.0],
+    line_widths=[1.25, 1.5, 1.25, 1.5],
     camera_position=(1.0, 0.5, 0.5),
+    size=(600,0),
 );
 render_asymptote(img_folder * "/regression_result1.asy"; render=render_size);
 ```
@@ -323,9 +325,10 @@ asymptote_export_S2_signals(
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal],
         :tvectors => [TolVibrantOrange],
     ),
-    dot_sizes=[3.5, 3.5, 2.5],
-    line_widths=[0.33, 0.66, 0.33, 1.0],
+    dot_sizes=[9.0, 9.0, 6.0],
+    line_widths=[1.25, 1.5, 1.25, 1.5],
     camera_position=(1.0, 0.5, 0.5),
+    size=(600, 0),
 );
 render_asymptote(img_folder * "/regression_result2.asy"; render=render_size);
 ```
@@ -494,9 +497,10 @@ asymptote_export_S2_signals(
         :points => [TolVibrantBlue, TolVibrantOrange, TolVibrantTeal],
         :tvectors => [TolVibrantOrange],
     ),
-    dot_sizes=[3.5, 3.5, 2.5],
-    line_widths=[0.33, 0.66, repeat([0.33], length(geo_conns))..., 1.0],
+    dot_sizes=[9.0, 6.0, 9.0],
+    line_widths=[1.25, 1.5, repeat([1.25], length(geo_conns))..., 1.5],
     camera_position=(1.0, 0.5, 0.5),
+    size=(600, 0),
 );
 render_asymptote(img_folder * "/regression_result3.asy"; render=render_size);
 ```

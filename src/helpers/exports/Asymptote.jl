@@ -19,15 +19,16 @@ to Asymptote.
   from within `colors`
 
 # Optional Arguments (Asymptote)
-* `arrow_head_size` - (`6.0`) size of the arrowheads of the tangent vectors
-* `arrow_head_sizes` – overrides the previous value to specify a value per tVector set.
-* `camera_position` - (`(1., 1., 0.)`) position of the camera in the Asymptote
+* `arrow_head_size`   - (`6.0`) size of the arrowheads of the tangent vectors
+* `arrow_head_sizes`  – overrides the previous value to specify a value per tVector set.
+* `camera_position`   - (`(1., 1., 0.)`) position of the camera in the Asymptote
   szene
-* `line_width` – (`1.0`) size of the lines used to draw the curves.
-* `line_widths` – overrides the previous value to specify a value per curve and tVector set.
-* `dot_size` – (`1.0`) size of the dots used to draw the points.
-* `dot_sizes` – overrides the previous value to specify a value per point set.
-* `sphere_color` – (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere
+* `line_width`        – (`1.0`) size of the lines used to draw the curves.
+* `line_widths`       – overrides the previous value to specify a value per curve and tVector set.
+* `dot_size`          – (`1.0`) size of the dots used to draw the points.
+* `dot_sizes`         – overrides the previous value to specify a value per point set.
+* `size`              - (`nothing`) a tuple for the image size, otherwise a relative size `4cm` is used.
+* `sphere_color`      – (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere
   the data is drawn on
 * `sphere_line_color` –  (`RGBA{Float64}(0.75, 0.75, 0.75, 0.6)`) color of the lines on the sphere
 * `sphere_line_width` – (`0.5`) line width of the lines on the sphere
@@ -52,6 +53,7 @@ function asymptote_export_S2_signals(
     ),
     dot_size::Float64=1.0,
     dot_sizes::Array{Float64,1}=fill(dot_size, length(points)),
+    size::Union{Nothing, Tuple{Int,Int}} = nothing,
     sphere_color::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
     sphere_line_color::RGBA{Float64}=RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
     sphere_line_width::Float64=0.5,
@@ -66,7 +68,8 @@ function asymptote_export_S2_signals(
             io,
             string(
                 "import settings;\nimport three;\nimport solids;",
-                "unitsize(4cm);\n\n",
+                isnothing(size) ? "unitsize(4cm);" : "size$(size);",
+                "\n\n",
                 "currentprojection=perspective( ",
                 "camera = $(camera_position), ",
                 "target = $(target) );\n",
@@ -368,16 +371,21 @@ be given as a relative or full path
 
 the default values are given in brackets
 
-* `render` – (`4`) render level of asymptote, i.e. its `-render` option
+* `render` – (`4`) render level of asymptote, i.e. its `-render` option.
+   This can be removed from the command by setting it to `nothing`.
 * `format` – (`"png"`) final rendered format, i.e. asymptote's `-f` option
 * `export_file` - (the filename with format as ending) specify the export filename
 """
 function render_asymptote(
     filename;
-    render::Int=4,
+    render::Union{Int,Nothing}=4,
     format="png",
     export_folder=string(filename[1:([findlast(".", filename)...][1])], format),
 )
-    renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`
+    if isnothing(render)
+        renderCmd = `asy -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`
+    else
+        renderCmd = `asy -render $(render) -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`
+    end
     return run(renderCmd)
 end
