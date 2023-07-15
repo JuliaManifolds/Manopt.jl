@@ -53,7 +53,7 @@ function asymptote_export_S2_signals(
     ),
     dot_size::Float64=1.0,
     dot_sizes::Array{Float64,1}=fill(dot_size, length(points)),
-    size::Union{Nothing, Tuple{Int,Int}} = nothing,
+    size::Union{Nothing,Tuple{Int,Int}}=nothing,
     sphere_color::RGBA{Float64}=RGBA{Float64}(0.85, 0.85, 0.85, 0.6),
     sphere_line_color::RGBA{Float64}=RGBA{Float64}(0.75, 0.75, 0.75, 0.6),
     sphere_line_width::Float64=0.5,
