@@ -252,5 +252,9 @@ maximum(g(M, w1))
 
 ## Literature
 
-::: {#refs}
-:::
+````{=commonmark}
+```@bibliography
+Pages = ["tutorials/ConstrainedOptimization.md"]
+Canonical=false
+```
+````
