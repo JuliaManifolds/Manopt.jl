@@ -50,9 +50,9 @@ A functor that always returns a fixed step size.
 
 # Constructors
 
-    ConstantStepsize(s::Real)
+    ConstantStepsize(s::Real, t::Symbol)
 
-initialize the stepsize to a constant `s`.
+initialize the stepsize to a constant `s` of type `t`.
 
     ConstantStepsize(M::AbstractManifold=DefaultManifold(2); stepsize=injectivity_radius(M)/2)
 
@@ -66,9 +66,14 @@ end
 function ConstantStepsize(
     M::AbstractManifold=DefaultManifold(2);
     stepsize=isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
-    type::Symbol = :relative,
+    type=:relative,
 )
-    return ConstantStepsize{typeof(stepsize)}(stepsize)
+    return ConstantStepsize{typeof(stepsize)}(stepsize, type)
+end
+function ConstantStepsize(
+    stepsize::T,
+) where {T<:Number}
+    return ConstantStepsize{T}(stepsize, :relative)
 end
 function (cs::ConstantStepsize)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Any, args...; kwargs...
@@ -80,7 +85,7 @@ function (cs::ConstantStepsize)(
     return s
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
-show(io::IO, cs::ConstantStepsize) = print(io, "ConstantStepsize($(cs.length))")
+show(io::IO, cs::ConstantStepsize) = print(io, "ConstantStepsize($(cs.length), $(cs.type))")
 
 @doc raw"""
     DecreasingStepsize()
@@ -137,7 +142,7 @@ function DecreasingStepsize(
     shift=0,
     type::Symbol = :relative,
 )
-    return DecreasingStepsize(length, factor, subtrahend, exponent, shift)
+    return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
 end
 function (s::DecreasingStepsize)(
     amp::P, ams::O, i::Int, args...; kwargs...
