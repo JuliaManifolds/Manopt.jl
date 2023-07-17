@@ -70,9 +70,7 @@ function ConstantStepsize(
 )
     return ConstantStepsize{typeof(stepsize)}(stepsize, type)
 end
-function ConstantStepsize(
-    stepsize::T,
-) where {T<:Number}
+function ConstantStepsize(stepsize::T) where {T<:Number}
     return ConstantStepsize{T}(stepsize, :relative)
 end
 function (cs::ConstantStepsize)(
@@ -132,7 +130,9 @@ mutable struct DecreasingStepsize <: Stepsize
     exponent::Float64
     shift::Int
     type::Symbol
-    function DecreasingStepsize(l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0, type::Symbol=:relative)
+    function DecreasingStepsize(
+        l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0, type::Symbol=:relative
+    )
         return new(l, f, a, e, s, type)
     end
 end
@@ -143,7 +143,7 @@ function DecreasingStepsize(
     subtrahend=0.0,
     exponent=1.0,
     shift=0,
-    type::Symbol = :relative,
+    type::Symbol=:relative,
 )
     return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
 end
