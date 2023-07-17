@@ -230,7 +230,10 @@ function (cs::ConstantStepsize)(
 )
     s = cs.length
     if cs.type == :absolute
-        s /= norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        if ns > eps(eltype(s))
+            s /= ns
+        end
     end
     return s
 end
@@ -239,7 +242,10 @@ function (s::DecreasingStepsize)(
 )
     ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
     if s.type == :absolute
-        ds /= norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        if ns > eps(eltype(ds))
+            ds /= ns
+        end
     end
     return ds
 end
