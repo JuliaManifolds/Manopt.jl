@@ -9,10 +9,6 @@ project:
 crossref:
   fig-prefix: Figure
   tbl-prefix: Table
-bibliography:
-  - ../CITATION.bib
-  - ../bib/manopt-bibliography.yaml
-csl: ../bib/harvard1.csl
 fig-format: png
 
 execute:

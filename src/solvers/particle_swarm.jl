@@ -137,7 +137,7 @@ end
     patricle_swarm(M, mco::AbstractManifoldCostObjective; kwargs..)
     patricle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
 
-perform the particle swarm optimization algorithm (PSO), starting with an initial `swarm`[^Borckmans2010].
+perform the particle swarm optimization algorithm (PSO), starting with an initial `swarm` [Borkmanns, Ishteva, Absil, 7th IC Swarm Intelligence, 2010](@cite BorckmansIshtevaAbsil:2010).
 If no `swarm` is provided, `swarm_size` many random points are used. Note that since this method does not
 work in-place – these points are duplicated internally.
 
@@ -181,11 +181,6 @@ g_{k}^{(i)}, & \text{else,}
 \end{cases}
 ```
 i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i)}`` is the global best known position ever visited up to step ``i``.
-
-[^Borckmans2010]:
-    > P. B. Borckmans, M. Ishteva, P.-A. Absil, __A Modified Particle Swarm Optimization Algorithm for the Best Low Multilinear Rank Approximation of Higher-Order Tensors__,
-    > In: Dorigo M. et al. (eds) Swarm Intelligence. ANTS 2010. Lecture Notes in Computer Science, vol 6234. Springer, Berlin, Heidelberg,
-    > doi [10.1007/978-3-642-15461-4_2](https://doi.org/10.1007/978-3-642-15461-4_2)
 
 # Input
 
@@ -261,8 +256,7 @@ end
     patricle_swarm!(M, f, swarm; kwargs...)
     patricle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
 
-perform the particle swarm optimization algorithm (PSO), starting with the initial `swarm` [^Borckmans2010]
-whichis then modified in place.
+perform the particle swarm optimization algorithm (PSO), starting with the initial `swarm` whichis then modified in place.
 
 # Input
 

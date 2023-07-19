@@ -152,11 +152,7 @@ respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert s_k\rVert_{x_{k+1}}\lVert y_k - \widetilde{H}^\mathrm{SR1}_k s_k \rVert_{x_{k+1}}``
-for some ``r>0``. For more details, see Section 6.2 in [^NocedalWright2006]
-
-[^NocedalWright2006]:
-    > Nocedal, J., Wright, S.: Numerical Optimization, Second Edition, Springer, 2006.
-    > doi: [10.1007/978-0-387-40065-5](https://doi.org/10.1007/978-0-387-40065-5)
+for some ``r>0``. For more details, see Section 6.2 in [Nocedal, Wright, Springer, 2006](@cite NocedalWright:2006).
 
 # Constructor
     SR1(r::Float64=-1.0)
@@ -196,7 +192,7 @@ respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert y_k\rVert_{x_{k+1}}\lVert s_k - \widetilde{H}^\mathrm{SR1}_k y_k \rVert_{x_{k+1}}``
-for some ``r>0``. For more details, see Section 6.2 in [^NocedalWright2006].
+for some ``r>0``. For more details, see Section 6.2 in [Nocedal, Wright, Springer, 2006](@cite NocedalWright:2006).
 
 # Constructor
     InverseSR1(r::Float64=-1.0)
@@ -386,7 +382,7 @@ end
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemanian BFGS update, where the approximating  operator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
-For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [^HuangGallivanAbsil2015]), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator
+For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [Huang, Gallican, Absil, SIAM J. Optim., 2015](@cite HuangGallivanAbsil:2015)), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator
 
 ```math
 \mathcal{B}^{(0)}_k[⋅] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \; \mathrm{id}_{T_{x_k} \mathcal{M}}[⋅]
@@ -420,11 +416,6 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
 [`InverseBFGS`](@ref)
 [`QuasiNewtonCautiousDirectionUpdate`](@ref)
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
-
-[^HuangGallivanAbsil2015]:
-    > Huang, Wen and Gallivan, K. A. and Absil, P.-A., A Broyden Class of Quasi-Newton Methods for Riemannian Optimization,
-    > SIAM J. Optim., 25 (2015), pp. 1660-1685.
-    > doi: [10.1137/140955483](https://doi.org/10.1137/140955483)
 """
 mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     NT<:AbstractQuasiNewtonUpdateRule,
@@ -539,7 +530,7 @@ discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}
 into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
 If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
-method follows the method of [^HuangAbsilGallivan2018], taking into account that
+method follows the method of [Huang, Absil, Gallivan, SIAM J. Optim., 2018](@cite HuangAbsilGallivan:2018), taking into account that
 the corresponding step size is chosen.
 
 # Fields
@@ -558,11 +549,6 @@ Generate a cautious update for either a matrix based or a limited memorz based u
 
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
-
-[^HuangAbsilGallivan2018]:
-    > Huang, Wen and Absil, P.-A and Gallivan, Kyle, A Riemannian BFGS Method Without Differentiated Retraction for Nonconvex Optimization Problems,
-    > SIAM J. Optim., 28 (2018), pp. 470-495.
-    > doi: [10.1137/17M1127582](https://doi.org/10.1137/17M1127582)
 """
 mutable struct QuasiNewtonCautiousDirectionUpdate{U} <:
                AbstractQuasiNewtonDirectionUpdate where {

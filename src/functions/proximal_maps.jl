@@ -426,11 +426,8 @@ where ``\mathcal G`` is the set of indices for ``x∈\mathcal M`` and ``\mathcal
 is the set of its forward neighbors.
 The computation can also be done in place of `Θ`.
 
-This is adopted from the paper by Duran, Möller, Sbert, Cremers:
-_Collaborative Total Variation: A General Framework for Vectorial TV Models_
-(arxiv: [1508.01308](https://arxiv.org/abs/1508.01308)), where the most inner
-norm is not on a manifold but on a vector space, see their Example 3 for
-details.
+This is adopted from the paper [Duran, Möller, Sbert, Cremers, SIAM J Imag Sci, 2016](@cite DuranMoelleSbertCremers:2016),
+see their Example 3 for details.
 """
 function project_collaborative_TV(N::PowerManifold, λ, x, Ξ, p=2.0, q=1.0, α=1.0)
     pdims = power_dimensions(N)

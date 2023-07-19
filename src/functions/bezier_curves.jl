@@ -29,8 +29,8 @@ Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
 ``β(⋅;b_0,…,b_n): [0,1] → \mathcal M`` defined by the control points
 ``b_0,…,b_n∈\mathcal M``, ``n∈\mathbb N``, as a [`BezierSegment`](@ref).
-This function implements de Casteljau's algorithm[^Casteljau1959][^Casteljau1963] gneralized
-to manifolds[^PopielNoakes2007]: Let ``γ_{a,b}(t)`` denote the
+This function implements de Casteljau's algorithm [Casteljau, 1959](@cite deCasteljau:1959), [Casteljau, 1963](@cite deCasteljau:1963) gneralized
+to manifolds by [Popiel, Noakes, J Approx Theo, 2007](@cite PopielNoakes:2007): Let ``γ_{a,b}(t)`` denote the
 shortest geodesic connecting ``a,b∈\mathcal M``. Then the curve is defined by the recursion
 
 ````math
@@ -71,17 +71,6 @@ de_casteljau(
 ````
 
 Evaluate the Bézier curve at time `t` or at times `t` in `T`.
-
-[^Casteljau1959]:
-    > de Casteljau, P.: Outillage methodes calcul, Enveloppe Soleau 40.040 (1959),
-    > Institute National de la Propriété Industrielle, Paris.
-[^Casteljau1963]:
-    > de Casteljau, P.: Courbes et surfaces à pôles, Microfiche P 4147-1,
-    > André Citroën Automobile SA, Paris, (1963).
-[^PopielNoakes2007]:
-    > Popiel, T. and Noakes, L.: Bézier curves and ``C^2`` interpolation in Riemannian
-    > manifolds. Journal of Approximation Theory (2007), 148(2), pp. 111–127.-
-    > doi: [10.1016/j.jat.2007.03.002](https://doi.org/10.1016/j.jat.2007.03.002).
 """
 de_casteljau(M::AbstractManifold, ::Any...)
 function de_casteljau(M::AbstractManifold, b::BezierSegment)

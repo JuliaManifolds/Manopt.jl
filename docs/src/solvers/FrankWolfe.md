@@ -23,3 +23,8 @@ For the inner sub-problem you can easily create the corresponding cost and gradi
 FrankWolfeCost
 FrankWolfeGradient
 ```
+
+```@bibliography
+Pages = ["solvers/FrankWolfe.md"]
+Canonical=false
+```

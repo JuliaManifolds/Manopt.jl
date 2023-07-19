@@ -112,7 +112,7 @@ realized in this method by [`StopWhenResidualIsReducedByFactorOrPower`](@ref).
 It can be shown shown that under appropriate conditions the iterates ``x_k``
 of the underlying trust-region method converge to nondegenerate critical
 points with an order of convergence of at least ``\min \left( θ + 1, 2 \right)``,
-see [[Absil, Mahony, Sepulchre, 2008](#AbsilMahonySepulchre2008)].
+see [Absil, Mahony, Sepulchre, Princeton University Press, 2008](@cite AbsilMahonySepulchre:2008).
 The method also aborts if the curvature of the model is negative, i.e. if
 ``\langle \delta_k, \mathcal{H}[δ_k] \rangle_x \leqq 0``, which is realised by
 [`StopWhenCurvatureIsNegative`](@ref). If the next possible approximate
@@ -150,13 +150,7 @@ update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:Re
 
 ## Literature
 
-```@raw html
-<ul>
-<li id="AbsilMahonySepulchre2008">[<a>Absil, Mahony, Sepulchre, 2008</a>]
-  Absil, Pierre-Antoine and Mahony, Robert and Sepulchre, Rodolphe:
-  <emph> Optimization Algorithms on Matrix Manifolds </emph>
-  Mathematics of Computation - Math. Comput., Volume 78.
-  doi: <a href="https://doi.org/10.1515/9781400830244">10.1515/9781400830244</a>,
-</li>
-</ul>
+```@bibliography
+Pages = ["solvers/truncated_conjugate_gradient_descent.md"]
+Canonical=false
 ```

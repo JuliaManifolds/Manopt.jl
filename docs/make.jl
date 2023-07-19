@@ -30,7 +30,8 @@ if "--quarto" ∈ ARGS
 end
 
 # (c) load necessary packages for the docs
-using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using Documenter
+using DocumenterCitations
 using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (d) add contributing.md to docs
@@ -54,8 +55,12 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 # (e) ...finally! make docs
-makedocs(;
-    format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
+bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
+makedocs(
+    bib;
+    format=Documenter.HTML(;
+        mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
+    ),
     modules=[Manopt],
     sitename="Manopt.jl",
     pages=[
@@ -108,7 +113,7 @@ makedocs(;
             "Bézier curves" => "functions/bezier.md",
             "Cost functions" => "functions/costs.md",
             "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjointdifferentials.md",
+            "Adjoint Differentials" => "functions/adjoint_differentials.md",
             "Gradients" => "functions/gradients.md",
             "Proximal Maps" => "functions/proximal_maps.md",
             "Specific Manifold Functions" => "functions/manifold.md",
@@ -120,9 +125,9 @@ makedocs(;
             "Exports" => "helpers/exports.md",
         ],
         "Contributing to Manopt.jl" => "contributing.md",
-        "Notation" => "notation.md",
         "Extensions" => "extensions.md",
-        "Function Index" => "list.md",
+        "Notation" => "notation.md",
+        "References" => "references.md",
     ],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)

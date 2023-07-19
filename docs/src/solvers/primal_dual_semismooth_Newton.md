@@ -71,3 +71,10 @@ primal_dual_semismooth_Newton!
 ```@docs
 PrimalDualSemismoothNewtonState
 ```
+
+## Literature
+
+```@bibliography
+Pages = ["solvers/primal_dual_semismooth_Newton.md"]
+Canonical=false
+```

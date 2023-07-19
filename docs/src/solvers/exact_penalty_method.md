@@ -25,4 +25,10 @@ LinearQuadraticHuber
 LogarithmicSumOfExponentials
 ```
 
+
 ## Literature
+
+```@bibliography
+Pages = ["solvers/exact_penalty_method.md"]
+Canonical=false
+```
