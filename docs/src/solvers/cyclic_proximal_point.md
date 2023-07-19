@@ -14,7 +14,7 @@ might differ and the proximal parameter $λ_k$ changes after each cycle $k$.
 
 For a convergence result on
 [Hadamard manifolds](https://en.wikipedia.org/wiki/Hadamard_manifold)
-see [Bačák, SIAM J. Optim., 2014](@cite Bacak:2014).
+see [Bacak:2014](@citet*).
 
 ```@docs
 cyclic_proximal_point

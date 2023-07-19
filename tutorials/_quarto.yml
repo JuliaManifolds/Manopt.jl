@@ -3,8 +3,6 @@ project:
   output-dir: ../docs/src/tutorials
   render:
     - "*.qmd"
-    - "!GeodesicRegression.qmd"
-    - "!InplaceGradient.qmd"
 
 crossref:
   fig-prefix: Figure

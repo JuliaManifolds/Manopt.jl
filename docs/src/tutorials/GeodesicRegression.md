@@ -34,7 +34,7 @@ highlighted = 4;
 ## Time Labeled Data
 
 If for each data item $d_i$ we are also given a time point $t_i\in\mathbb R$, which are pairwise different,
-then we can use the least squares error to state the objetive function as [Fletcher, IJCV, 2013](@cite Fletcher:2013).
+then we can use the least squares error to state the objetive function as [Fletcher:2013](@cite)
 
 ``` math
 F(p,X) = \frac{1}{2}\sum_{i=1}^n d_{\mathcal M}^2(γ_{p,X}(t_i), d_i),
@@ -71,8 +71,7 @@ Due to linearity, the gradient of $F(p,X)$ is the sum of the single gradients of
 ```
 
 which can be computed using a chain rule of the squared distance and the exponential map,
-see for example [Bergmann, Gousenbourger, Front. Appl. Math. Stat., 2018](@cite BergmannGousenbourger:2018) for details or Equations (7) and (8) of [Fletcher, IJCV, 2013](@cite Fletcher:2013):
-““”
+see for example [BergmannGousenbourger:2018](@cite) for details or Equations (7) and (8) of [Fletcher:2013](@cite):
 
 ``` julia
 M = TangentBundle(S)

@@ -54,3 +54,10 @@ ProximalDCGrad
 ```@docs
 get_subtrahend_gradient
 ```
+
+## Literature
+
+```@bibliography
+Pages = ["solvers/difference_of_convex.md"]
+Canonical=false
+```
