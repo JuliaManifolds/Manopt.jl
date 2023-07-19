@@ -1,7 +1,7 @@
 # [Douglas–Rachford Algorithm](@id DRSolver)
 
 The (Parallel) Douglas–Rachford ((P)DR) Algorithm was generalized to Hadamard
-manifolds in [[Bergmann, Persch, Steidl, 2016](#BergmannPerschSteidl2016)].
+manifolds in [BergmannPerschSteidl:2016](@cite).
 
 The aim is to minimize the sum
 
@@ -60,15 +60,6 @@ For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also
 
 ## Literature
 
-```@raw html
-<ul>
-<li id="BergmannPerschSteidl2016">[<a>Bergmann, Persch, Steidl, 2016</a>]
-  Bergmann, R; Persch, J.; Steidl, G.: <emph>A Parallel Douglas–Rachford
-  Algorithm for Minimizing ROF-like Functionals on Images with Values in
-  Symmetric Hadamard Manifolds.</emph>
-  SIAM Journal on Imaging Sciences, Volume 9, Number 3, pp. 901–937, 2016.
-  doi: <a href="https://doi.org/10.1137/15M1052858">10.1137/15M1052858</a>,
-  arXiv: <a href="https://arxiv.org/abs/1512.02814">1512.02814</a>.
-</li>
-</ul>
+```@bibliography
+Pages = ["solvers/DouglasRachford.md"]
 ```

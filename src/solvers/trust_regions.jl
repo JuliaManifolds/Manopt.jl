@@ -195,18 +195,13 @@ end
     trust_regions(M, f, grad_f, hess_f, p)
     trust_regions(M, f, grad_f, p)
 
-run the Riemannian trust-regions solver for optimization on manifolds to minmize `f`.
+run the Riemannian trust-regions solver for optimization on manifolds to minmize `f`
+cf. [[Absil, Baker, Gallivan, FoCM, 2006](@cite AbsilBakerGallivan:2006); [Conn, Gould, Toint, SIAM, 2000](@cite ConnGouldToint:2000)].
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
 For solving the the inner trust-region subproblem of finding an update-vector,
 see [`truncated_conjugate_gradient_descent`](@ref).
-
-* P.-A. Absil, C.G. Baker, K.A. Gallivan,
-    Trust-region methods on Riemannian manifolds, FoCM, 2007.
-    doi: [10.1007/s10208-005-0179-9](https://doi.org/10.1007/s10208-005-0179-9)
-* A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
-    MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
 
 # Input
 * `M` – a manifold ``\mathcal M``

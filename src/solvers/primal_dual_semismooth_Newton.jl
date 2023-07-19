@@ -17,7 +17,7 @@ and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
 * `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
 * `diff_prox_F, diff_prox_dual_G` the (Clarke Generalized) differentials of the proximal maps of $F$ and $G^\ast_n$
 
-For more details on the algorithm, see[^DiepeveenLellmann2021].
+For more details on the algorithm, see [Diepeveen, Lellmann, SIAM J. Imag. Sci., 2021](@cite DiepeveenLellmann:2021).
 
 # Optional Parameters
 
@@ -37,12 +37,6 @@ Note that this changes the arguments the `forward_operator` will be called.
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
-[^DiepeveenLellmann2021]:
-    > W. Diepeveen, J. Lellmann:
-    > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
-    > SIAM Journal on Imaging Sciences, 2021.
-    > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
 function primal_dual_semismooth_Newton(
     M::AbstractManifold,

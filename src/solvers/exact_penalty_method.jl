@@ -117,7 +117,7 @@ end
     exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
     exact_penalty_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
-perform the exact penalty method (EPM)[^LiuBoumal2020].
+perform the exact penalty method (EPM) [Liu, Boumal, 2019, Appl. Math. Optim](@cite LiuBoumal:2019)
 The aim of the EPM is to find a solution of the constrained optimisation task
 
 ```math
@@ -165,14 +165,6 @@ Last, we update the penalty parameter ``ρ`` according to
 ```
 
 where ``θ_ρ \in (0,1)`` is a constant scaling factor.
-
-
-[^LiuBoumal2020]:
-    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
-    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
-    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
-    > arXiv: [1901.10000](https://arxiv.org/abs/1901.10000).
-    > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 
 # Input
 
@@ -270,7 +262,7 @@ end
     exact_penalty_method!(M, f, grad_f, p; kwargs...)
     exact_penalty_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
 
-perform the exact penalty method (EPM)[^LiuBoumal2020] in place of `p`.
+perform the exact penalty method (EPM) performed in place of `p`.
 
 For all options, see [`exact_penalty_method`](@ref).
 """

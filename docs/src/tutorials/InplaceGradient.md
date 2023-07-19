@@ -57,14 +57,14 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-    BenchmarkTools.Trial: 102 samples with 1 evaluation.
-     Range (min … max):  47.810 ms …  53.557 ms  ┊ GC (min … max): 5.09% … 6.53%
-     Time  (median):     48.820 ms               ┊ GC (median):    5.34%
-     Time  (mean ± σ):   49.060 ms ± 818.642 μs  ┊ GC (mean ± σ):  5.77% ± 0.64%
+    BenchmarkTools.Trial: 100 samples with 1 evaluation.
+     Range (min … max):  48.285 ms … 56.649 ms  ┊ GC (min … max): 4.84% … 6.96%
+     Time  (median):     49.552 ms              ┊ GC (median):    5.41%
+     Time  (mean ± σ):   50.151 ms ±  1.731 ms  ┊ GC (mean ± σ):  5.56% ± 0.64%
 
-                ▅▅█      ▃▃                                         
-      ▄▃▁▅▄▁▅▃▃▄███▅▅▇▃▁▆███▁▃▅▁▃▁▁▁▁▁▁▁▁▁▁▁▃▃▃▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃ ▃
-      47.8 ms         Histogram: frequency by time         52.4 ms <
+       ▂▃ █▃▃▆    ▂                                                
+      ▅████████▅█▇█▄▅▇▁▅█▅▇▄▇▅▁▅▄▄▄▁▄▁▁▁▄▄▁▁▁▁▁▁▄▁▁▁▁▁▁▄▁▄▁▁▁▁▁▁▄ ▄
+      48.3 ms         Histogram: frequency by time        56.6 ms <
 
      Memory estimate: 194.10 MiB, allocs estimate: 655347.
 
@@ -115,14 +115,14 @@ We can again benchmark this
 ) setup = (m2 = deepcopy($p0))
 ```
 
-    BenchmarkTools.Trial: 179 samples with 1 evaluation.
-     Range (min … max):  27.027 ms …  31.367 ms  ┊ GC (min … max): 0.00% … 11.00%
-     Time  (median):     27.712 ms               ┊ GC (median):    0.00%
-     Time  (mean ± σ):   27.939 ms ± 779.920 μs  ┊ GC (mean ± σ):  0.84% ±  2.56%
+    BenchmarkTools.Trial: 176 samples with 1 evaluation.
+     Range (min … max):  27.419 ms … 34.154 ms  ┊ GC (min … max): 0.00% … 0.00%
+     Time  (median):     28.001 ms              ┊ GC (median):    0.00%
+     Time  (mean ± σ):   28.412 ms ±  1.079 ms  ┊ GC (mean ± σ):  0.73% ± 2.24%
 
-             ▄▃▆█▇▄▇                                                
-      ▅▁▁▅▅▅▇████████▅▇▆▁▅▁▁▅▁▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▅▁▁▁▅▁▁▁▁▁▅▆▁▅▅▁▁▁▇▁▇ ▅
-      27 ms         Histogram: log(frequency) by time      30.7 ms <
+        ▁▅▇█▅▂▄ ▁                                                  
+      ▄▁███████▆█▇█▄▆▃▃▃▃▁▁▃▁▁▃▁▃▃▁▄▁▁▃▃▁▁▄▁▁▃▅▃▃▃▁▃▃▁▁▁▁▁▁▁▁▃▁▁▃ ▃
+      27.4 ms         Histogram: frequency by time        31.9 ms <
 
      Memory estimate: 3.76 MiB, allocs estimate: 5949.
 

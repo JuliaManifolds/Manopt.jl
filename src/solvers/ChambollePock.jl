@@ -195,7 +195,7 @@ allocating functions `(Manifolds, parameters) -> result`  or as mutating functio
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the optional parameter
 `DΛ` for their linearized variant.
 
-For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
+For more details on the algorithm, see [Bergmann et al., Found. Comput. Math., 2021](@cite BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021).
 
 # Optional Parameters
 
@@ -220,14 +220,7 @@ For more details on the algorithm, see[^BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 # Output
 
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
-[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020]:
-    > R. Bergmann, R. Herzog, M. Silva Louzeiro, D. Tenbrinck, J. Vidal-Núñez:
-    > _Fenchel Duality Theory and a Primal-Dual Algorithm on Riemannian Manifolds_,
-    > Foundations of Computational Mathematics, 2021.
-    > doi: [10.1007/s10208-020-09486-5](http://dx.doi.org/10.1007/s10208-020-09486-5)
-    > arXiv: [1908.02022](http://arxiv.org/abs/1908.02022)
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details.
 """
 function ChambollePock(
     M::AbstractManifold,

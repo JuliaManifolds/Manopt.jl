@@ -14,7 +14,7 @@ might differ and the proximal parameter $λ_k$ changes after each cycle $k$.
 
 For a convergence result on
 [Hadamard manifolds](https://en.wikipedia.org/wiki/Hadamard_manifold)
-see [[Bačák, 2014](#Bačák2014)].
+see [Bacak:2014](@citet*).
 
 ```@docs
 cyclic_proximal_point
@@ -41,13 +41,7 @@ RecordProximalParameter
 
 ## Literature
 
-```@raw html
-<ul>
-<li id="Bačák2014">[<a>Bačák, 2014</a>]
-  Bačák, M: <emph>Computing Medians and Means in Hadamard Spaces.</emph>,
-  SIAM Journal on Optimization, Volume 24, Number 3, pp. 1542–1566,
-  doi: <a href="https://doi.org/10.1137/140953393">10.1137/140953393</a>,
-  arxiv: <a href="https://arxiv.org/abs/1210.2145">1210.2145</a>.
-  </li>
-</ul>
+```@bibliography
+Pages = ["solvers/cyclic_proximal_point.md"]
+Canonical=false
 ```

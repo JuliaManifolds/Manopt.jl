@@ -13,19 +13,12 @@ evaluated at the points given in `T` (elementwise in ``[0,N]``, where ``N`` is t
 number of segments of the Bézier curve). The [`get_bezier_junctions`](@ref) are fixed for
 this gradient (interpolation constraint). For the unconstrained gradient,
 see [`grad_L2_acceleration_bezier`](@ref) and set ``λ=0`` therein. This gradient is computed using
-`adjoint_Jacobi_field`s. For details, see [^BergmannGousenbourger2018].
+`adjoint_Jacobi_field`s. For details, see [Bergmann, Gousenbourger, Front. Appl. Math. Stat., 2018](@cite BergmannGousenbourger:2018).
 See [`de_casteljau`](@ref) for more details on the curve.
 
 # See also
 
 [`cost_acceleration_bezier`](@ref),  [`grad_L2_acceleration_bezier`](@ref), [`cost_L2_acceleration_bezier`](@ref).
-
-[^BergmannGousenbourger2018]:
-    > Bergmann, R. and Gousenbourger, P.-Y.: A variational model for data fitting on
-    > manifolds by minimizing the acceleration of a Bézier curve.
-    > Frontiers in Applied Mathematics and Statistics (2018).
-    > doi [10.3389/fams.2018.00059](http://dx.doi.org/10.3389/fams.2018.00059),
-    > arXiv: [1807.10090](https://arxiv.org/abs/1807.10090)
 """
 function grad_acceleration_bezier(
     M::AbstractManifold,

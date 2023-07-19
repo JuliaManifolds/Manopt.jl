@@ -1,6 +1,6 @@
 # [The Riemannian Chambolle-Pock Algorithm](@id ChambollePockSolver)
 
-The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm[^ChambollePock2011].
+The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm [ChambollePock:2011](@citet*)
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over $p∈\mathcal M§ the cost function consisting of
@@ -17,7 +17,7 @@ such that $Λ(\mathcal C) \subset \mathcal D$.
 
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
-[^BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez2020].
+[BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@citet*).
 In the following we note the case of the exact, primal relaxed Riemannian Chambolle–Pock algorithm.
 
 Given base points $m∈\mathcal C$, $n=Λ(m)∈\mathcal D$,
@@ -107,8 +107,9 @@ RecordPrimalIterate
 Manopt.update_prox_parameters!
 ```
 
-[^ChambollePock2011]:
-    > A. Chambolle, T. Pock:
-    > _A first-order primal-dual algorithm for convex problems with applications to imaging_,
-    > Journal of Mathematical Imaging and Vision 40(1), 120–145, 2011.
-    > doi: [10.1007/s10851-010-0251-1](https://dx.doi.org/10.1007/s10851-010-0251-1)
+## Literature
+
+```@bibliography
+Pages = ["solvers/ChambollePock.md"]
+Canonical=false
+```

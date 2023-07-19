@@ -127,10 +127,10 @@ end
 Perform the Frank-Wolfe algorithm to compute for ``\mathcal C \subset \mathcal M``
 
 ```math
-    \operatorname*{arg\,min}_{p∈\mathcal C} f(p)
+    \operatorname*{arg\,min}_{p∈\mathcal C} f(p),
 ```
 
-Where the main step is a constrained optimisation is within the algorithm,
+where the main step is a constrained optimisation is within the algorithm,
 that is the sub problem (Oracle)
 
 ```math
@@ -138,6 +138,7 @@ that is the sub problem (Oracle)
 ```
 
 for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``.
+This algorithm is inspired by but slightly more general than [Weber, Sra, Math. Prog., 2022](@cite WeberSra:2022).
 
 The next iterate is then given by ``p_{k+1} = γ_{p_k,q_k}(s_k)``,
 where by default ``γ`` is the shortest geodesic between the two points but can also be changed to

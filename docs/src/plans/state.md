@@ -30,10 +30,16 @@ set_gradient!
 ```
 
 An internal function working on the state and elements within a state is used to
-pass messages from (sub) activties of a state to the corresponding [`DebugMessages`](@ref)
+pass messages from (sub) activities of a state to the corresponding [`DebugMessages`](@ref)
 
 ```@docs
 get_message
+```
+
+Furthermore, to access the stopping criterion use
+
+```@docs
+get_stopping_criterion
 ```
 
 ## Decorators for AbstractManoptSolverState
