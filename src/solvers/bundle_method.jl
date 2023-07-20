@@ -55,15 +55,11 @@ mutable struct BundleMethodState{
     bundle_size::I
     diam::R
     g::T
-    indices::D
     inverse_retraction_method::IR
-    j::I
     lin_errors::A
     m::R
     p::P
     p_last_serious::P
-    p0::P
-    active_indices::BitVector
     retraction_method::TR
     stop::TSC
     transported_subgradients::C
