@@ -112,7 +112,6 @@ mutable struct BundleMethodState{
             typeof(bundle),
             typeof(transported_subgradients),
             typeof(bundle_size),
-            typeof(indices),
             IR,
             TR,
             SC,
@@ -265,7 +264,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ]
     bms.λ = bundle_method_sub_solver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
-    bms.ε = sum(bms.λ .* bms.approx_errors)
+    bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     get_subgradient!(mp, bms.X, bms.p)
@@ -286,7 +285,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         deleteat!(bms.bundle, 1)
         bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
-    bms.approx_errors = [
+    bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
             M,
             qj,
@@ -303,7 +302,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
-    bms.approx_errors = [zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for x in bms.approx_errors]
+    bms.lin_errors = [zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for x in bms.lin_errors]
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious

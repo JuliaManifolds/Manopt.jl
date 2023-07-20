@@ -1,18 +1,18 @@
 function bundle_method_sub_solver(M::A, bms::BundleMethodState) where {A<:AbstractManifold}
-    d = length(bms.approx_errors)
+    d = length(bms.lin_errors)
     H = [
         inner(M, bms.p_last_serious, X, Y) for X in bms.transported_subgradients,
         Y in bms.transported_subgradients
     ]
     qm = QuadraticModel(
-        bms.approx_errors,
+        bms.lin_errors,
         sparse(tril(H));
         A=reshape(ones(d), 1, d),
-        lcon=[one(eltype(bms.approx_errors))],
-        ucon=[one(eltype(bms.approx_errors))],
+        lcon=[one(eltype(bms.lin_errors))],
+        ucon=[one(eltype(bms.lin_errors))],
         lvar=zeros(d),
         uvar=[Inf for i in 1:d],
-        c0=zero(eltype(bms.approx_errors)),
+        c0=zero(eltype(bms.lin_errors)),
     )
     return ripqp(qm; display=false).solution
 end
