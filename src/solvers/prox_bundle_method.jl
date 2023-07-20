@@ -65,7 +65,7 @@ mutable struct ProxBundleMethodState{
         m::R=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenProxBundleLess(1e-8),
+        stopping_criterion::SC=StopWhenProxBundleLess(1e-8) | StopAfterIteration(5000),
         bundle_size::Integer=50,
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         X::T=zero_vector(M, p),
@@ -84,16 +84,16 @@ mutable struct ProxBundleMethodState{
         R<:Real,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
-        approx_errors = [0.0]
+        approx_errors = [zero(R)]
         bundle = [(copy(M, p), copy(M, p, X))]
-        c = 0.0
+        c = zero(R)
         d = copy(M, p, X)
-        lin_errors = [0.0]
+        lin_errors = [zero(R)]
         transported_subgradients = [copy(M, p, X)]
-        α = 0.0
-        λ = [0.0]
-        η = 0.0
-        ν = 0.0
+        α = zero(R)
+        λ = [zero(R)]
+        η = zero(R)
+        ν = zero(R)
         return new{IR,P,T,TR,SC,VT,R}(
             approx_errors,
             bundle,
@@ -121,8 +121,8 @@ mutable struct ProxBundleMethodState{
         )
     end
 end
-get_iterate(bms::ProxBundleMethodState) = bms.p_last_serious
-get_subgradient(bms::ProxBundleMethodState) = bms.d
+get_iterate(pbms::ProxBundleMethodState) = pbms.p_last_serious
+get_subgradient(pbms::ProxBundleMethodState) = pbms.d
 
 @doc raw"""
     prox_bundle_method(M, f, ∂f, p)
@@ -134,8 +134,8 @@ where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
 with ``X_{q_j}\in∂f(q_j)``, and
 
 where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate.
-Though the subgradient might be set valued, the argument `∂f` should always
-return _one_ element from the subgradient, but not necessarily deterministic.
+Though the subdifferential might be set valued, the argument `∂f` should always
+return _one_ element from the subdifferential, but not necessarily deterministic.
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -196,7 +196,8 @@ function prox_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     bundle_size=50,
-    stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8),
+    stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8) |
+                                          StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
@@ -207,7 +208,7 @@ function prox_bundle_method!(
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    bms = ProxBundleMethodState(
+    pbms = ProxBundleMethodState(
         M,
         p;
         m=m,
@@ -221,196 +222,200 @@ function prox_bundle_method!(
         δ=δ,
         μ=μ,
     )
-    bms = decorate_state!(bms; kwargs...)
-    return get_solver_return(solve!(mp, bms))
+    pbms = decorate_state!(pbms; kwargs...)
+    return get_solver_return(solve!(mp, pbms))
 end
-function initialize_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState)
+function initialize_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState)
     M = get_manifold(mp)
-    copyto!(M, bms.p_last_serious, bms.p)
-    get_subgradient!(mp, bms.X, bms.p)
-    copyto!(M, bms.d, bms.p_last_serious, bms.X)
-    bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
-    return bms
+    copyto!(M, pbms.p_last_serious, pbms.p)
+    get_subgradient!(mp, pbms.X, pbms.p)
+    pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
+    return pbms
 end
-function step_solver!(mp::AbstractManoptProblem, bms::ProxBundleMethodState, i)
+function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     M = get_manifold(mp)
+    pbms.transported_subgradients = [
+        if qj ≈ pbms.p_last_serious
+            Xj
+        else
+            vector_transport_to(
+                M, qj, Xj, pbms.p_last_serious, pbms.vector_transport_method
+            ) +
+            pbms.η *
+            inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method)
+        end for (qj, Xj) in pbms.bundle
+    ]
     v = [
         -2 * ej /
         norm(
             M,
-            bms.p_last_serious,
-            inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method),
+            pbms.p_last_serious,
+            inverse_retract(M, pbms.p_last_serious, qj, pbms.inverse_retraction_method),
         )^2 for
-        (ej, (qj, Xj)) in zip(bms.lin_errors, bms.bundle) if !(qj ≈ bms.p_last_serious)
+        (ej, (qj, Xj)) in zip(pbms.lin_errors, pbms.bundle) if !(qj ≈ pbms.p_last_serious)
     ]
     if !isempty(v)
-        bms.η = bms.α₀ + max(bms.α₀, bms.α, maximum(v))
+        pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α, maximum(v))
     else
-        bms.η = bms.α₀ + max(bms.α₀, bms.α)
+        pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    bms.transported_subgradients = [
-        vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) +
-        bms.η * inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method)
-        for (qj, Xj) in bms.bundle
-    ]
-    bms.λ = bundle_method_sub_solver(M, bms)
-    bms.c = sum(bms.λ .* bms.approx_errors)
-    bms.d .= -1 / bms.μ * sum(bms.λ .* bms.transported_subgradients)
-    nd = norm(M, bms.p_last_serious, bms.d)
-    bms.ν = -nd^2 - bms.c
-    if nd ≤ bms.ε
-        retract!(M, bms.p, bms.p_last_serious, bms.d, bms.retraction_method)
-        get_subgradient!(mp, bms.X, bms.p)
-        bms.α = 0.0
+    pbms.λ = bundle_method_sub_solver(M, pbms)
+    pbms.c = sum(pbms.λ .* pbms.approx_errors)
+    pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
+    nd = norm(M, pbms.p_last_serious, pbms.d)
+    pbms.ν = -pbms.μ * norm(M, pbms.p_last_serious, pbms.d)^2 - pbms.c
+    if nd ≤ pbms.ε
+        retract!(M, pbms.p, pbms.p_last_serious, pbms.d, pbms.retraction_method)
+        get_subgradient!(mp, pbms.X, pbms.p)
+        pbms.α = 0.0
     else
-        retract!(M, bms.p, bms.p_last_serious, bms.ε * bms.d / nd, bms.retraction_method)
-        get_subgradient!(mp, bms.X, bms.p)
-        bms.α =
+        retract!(
+            M, pbms.p, pbms.p_last_serious, pbms.ε * pbms.d / nd, pbms.retraction_method
+        )
+        get_subgradient!(mp, pbms.X, pbms.p)
+        pbms.α =
             -inner(
                 M,
-                bms.p_last_serious,
-                bms.d,
+                pbms.p_last_serious,
+                pbms.d,
                 vector_transport_to(
-                    M, bms.p, bms.X, bms.p_last_serious, bms.vector_transport_method
+                    M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method
                 ),
-            ) / (bms.ε * nd)
+            ) / (pbms.ε * nd)
     end
-    if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ν)
-        # bms.μ = bms.μ * 
-        #     norm(
-        #         M,
-        #         bms.p,
-        #         bms.X - vector_transport_to(
-        #             M,
-        #             bms.p_last_serious,
-        #             get_subgradient(mp, bms.p_last_serious),
-        #             bms.p,
-        #             bms.vector_transport_method,
-        #         ),
-        #     )^2 / (
-        #         norm(
-        #             M,
-        #             bms.p,
-        #             bms.X - vector_transport_to(
-        #                 M,
-        #                 bms.p_last_serious,
-        #                 get_subgradient(mp, bms.p_last_serious),
-        #                 bms.p,
-        #                 bms.vector_transport_method,
-        #             ),
-        #         )^2 -
-        #         bms.μ * inner(
-        #             M,
-        #             bms.p,
-        #             inverse_retract(
-        #                 M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
-        #             ),
-        #             bms.X - vector_transport_to(
-        #                 M,
-        #                 bms.p_last_serious,
-        #                 get_subgradient(mp, bms.p_last_serious),
-        #                 bms.p,
-        #                 bms.vector_transport_method,
-        #             ),
-        #         )
-        #     )
-        # bms.μ = norm(
-        #     M,
-        #     bms.p,
-        #     bms.X - vector_transport_to(
-        #         M,
-        #         bms.p_last_serious,
-        #         get_subgradient(mp, bms.p_last_serious),
-        #         bms.p,
-        #         bms.vector_transport_method,
-        #     ),
-        # )^2 / 
-        # inner(
-        #             M,
-        #             bms.p,
-        #             inverse_retract(
-        #                 M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
-        #             ),
-        #             bms.X - vector_transport_to(
-        #                 M,
-        #                 bms.p_last_serious,
-        #                 get_subgradient(mp, bms.p_last_serious),
-        #                 bms.p,
-        #                 bms.vector_transport_method,
-        #             ),
-        #         )
-        bms.μ += bms.δ * bms.μ
-        # (length(bms.bundle) < bms.bundle_size) && (bms.μ = (π / (4 * i))^-1)
-        copyto!(M, bms.p_last_serious, bms.p)
-    end
-    l = length(bms.bundle)
-    push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    if l == bms.bundle_size
-        deleteat!(bms.bundle, l - bms.bundle_size + 1)
-    end
-    bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) + inner(
-            M,
-            qj,
-            vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method),
-            inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method),
-        ) for (qj, Xj) in bms.bundle
-    ]
-    bms.approx_errors =
-        bms.lin_errors + [
-            bms.η / 2 *
+    if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
+        copyto!(M, pbms.p_last_serious, pbms.p)
+        if pbms.δ < zero(eltype(pbms.μ))
+            pbms.μ = log(i + 1)
+        else
+            pbms.μ += pbms.δ * pbms.μ
+        end
+        pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
+        pbms.lin_errors = [0.0]
+        pbms.approx_errors = [0.0]
+    else
+        push!(pbms.bundle, (copy(M, pbms.p), copy(M, pbms.p, pbms.X)))
+        push!(
+            pbms.lin_errors,
+            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) + inner(
+                M,
+                pbms.p_last_serious,
+                vector_transport_to(
+                    M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method
+                ),
+                inverse_retract(
+                    M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method
+                ),
+            ),
+        )
+        push!(
+            pbms.approx_errors,
+            get_cost(mp, pbms.p_last_serious) - get_cost(mp, pbms.p) +
+            inner(
+                M,
+                pbms.p_last_serious,
+                vector_transport_to(
+                    M, pbms.p, pbms.X, pbms.p_last_serious, pbms.vector_transport_method
+                ),
+                inverse_retract(
+                    M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method
+                ),
+            ) +
+            pbms.η / 2 *
             norm(
                 M,
-                bms.p_last_serious,
-                inverse_retract(M, bms.p_last_serious, qj, bms.inverse_retraction_method),
-            )^2 for (qj, Xj) in bms.bundle
-        ]
-    return bms
+                pbms.p_last_serious,
+                inverse_retract(
+                    M, pbms.p_last_serious, pbms.p, pbms.inverse_retraction_method
+                ),
+            )^2,
+        )
+        if length(pbms.bundle) == pbms.bundle_size
+            deleteat!(pbms.bundle, 1)
+            deleteat!(pbms.lin_errors, 1)
+            deleteat!(pbms.approx_errors, 1)
+        end
+    end
+    return pbms
 end
-get_solver_result(bms::ProxBundleMethodState) = bms.p_last_serious
+get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
 
 """
     StopWhenProxBundleLess <: StoppingCriterion
 
-Stopping criterion for [`prox_bundle_method`](@ref) to indicate to stop when
+Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when either
 
-* the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
+    * the parameters c and |d|
 
-is less than a given tolerance tol.
+    are less than given tolerances tolc and told respectively, or
 
-# Constructor
+    * the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
 
-    StopWhenProxBundleLess(tol=1e-8)
+    is less than a given tolerance tolν.
+
+# Constructors
+
+    StopWhenProxBundleLess(tolc=1e-6, told=1e-3)
+
+    StopWhenProxBundleLess(tolν=1e-6)
 
 """
-mutable struct StopWhenProxBundleLess{R} <: StoppingCriterion
-    tol::R
+mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
+    tolc::T
+    told::T
+    tolν::R
     reason::String
     at_iteration::Int
-    function StopWhenProxBundleLess(tol=1e-8)
-        return new{typeof(tol)}(tol, "", 0)
+    function StopWhenProxBundleLess(tolc::T, told::T) where {T}
+        return new{T,Nothing}(tolc, told, nothing, "", 0)
+    end
+    function StopWhenProxBundleLess(tolν::R=1e-6) where {R}
+        return new{Nothing,R}(nothing, nothing, tolν, "", 0)
     end
 end
-function (b::StopWhenProxBundleLess)(
-    mp::AbstractManoptProblem, bms::ProxBundleMethodState, i::Int
-)
+function (b::StopWhenProxBundleLess{T,Nothing})(
+    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
+) where {T}
     if i == 0 # reset on init
         b.reason = ""
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if -bms.ν ≤ b.tol && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-bms.ν) is less than $(b.tol).\n"
+    if (pbms.c ≤ b.tolc && norm(M, pbms.p_last_serious, pbms.d) ≤ b.told) && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) is less than $(b.tolc) and |d| = $(norm(M, pbms.p_last_serious, pbms.d)) is less than $(b.told).\n"
         b.at_iteration = i
         return true
     end
     return false
 end
-function status_summary(b::StopWhenProxBundleLess)
-    has_stopped = length(b.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "Stopping parameter: -ν ≤ $(b.tol):\t$s"
+function (b::StopWhenProxBundleLess{Nothing,R})(
+    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
+) where {R}
+    if i == 0 # reset on init
+        b.reason = ""
+        b.at_iteration = 0
+    end
+    M = get_manifold(mp)
+    if -pbms.ν ≤ b.tolν && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) is less than $(b.tolν).\n"
+        b.at_iteration = i
+        return true
+    end
+    return false
 end
-function show(io::IO, b::StopWhenProxBundleLess)
-    return print(io, "StopWhenProxBundleLess($(b.tol)\n    $(status_summary(b))")
+function status_summary(b::StopWhenProxBundleLess{T,Nothing}) where {T}
+    s = length(b.reason) > 0 ? "reached" : "not reached"
+    return "Stopping parameter: c ≤ $(b.tolc), |d| ≤ $(b.told):\t$s"
+end
+function status_summary(b::StopWhenProxBundleLess{Nothing,R}) where {R}
+    s = length(b.reason) > 0 ? "reached" : "not reached"
+    return "Stopping parameter: -ν ≤ $(b.tolν):\t$s"
+end
+function show(io::IO, b::StopWhenProxBundleLess{T,Nothing}) where {T}
+    return print(
+        io, "StopWhenProxBundleLess($(b.tolc), $(b.told))\n    $(status_summary(b))"
+    )
+end
+function show(io::IO, b::StopWhenProxBundleLess{Nothing,R}) where {R}
+    return print(io, "StopWhenProxBundleLess($(b.tolν))\n    $(status_summary(b))")
 end
