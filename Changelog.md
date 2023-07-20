@@ -5,6 +5,49 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.x] - dd/mm/2023
+
+### Added
+
+* `bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
+* `prox_bundle_method` optimization algorithm for non-smooth functions.
+* `ConstantStepsize` and `DecreasingStepsize` now have an additional field `type::Symbol` to assess whether the
+  step-size should be relatively (to the gradient norm) or absolutely constant.
+* `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
+  `StopWhenProxBundleLess` stopping criteria.
+
+## [0.4.28] - 24/06/2023
+
+### Changed
+
+* `max_stepsize` was specialized for `FixedRankManifold` to follow Matlab Manopt.
+
+## [0.4.27] - 15/06/2023
+
+### Added
+
+* The `AdaptiveWNGrad` stepsize is now availablbe as a new stepsize functor.
+
+### Fixed
+
+* Levenberg-Marquardt now posesses its parameters `initial_residual_values` and
+  `initial_jacobian_f` also as keyword arguments, such that their default initialisations
+  can be adapted, if necessary
+
+## [0.4.26] - 11/06/2023
+
+### Added
+
+* simplify usage of gradient descent as sub solver in the DoC solvers.
+* add a `get_state` function
+* document `indicates_convergence`.
+
+## [0.4.25] - 05/06/2023
+
+### Fixed
+
+* Fixes an allocation bug in the difference of convex algorithm
+
 ## [0.4.24] - 04/06/2023
 
 ### Added

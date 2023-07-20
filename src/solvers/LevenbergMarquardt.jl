@@ -35,6 +35,8 @@ then the keyword `jacobian_tangent_basis` below is ignored
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `expect_zero_residual` – (`false`) whether or not the algorithm might expect that the value of
   residual (objective) at mimimum is equal to 0.
+* `initial_residual_values` – the initial residual vector of the cost function `f`.
+* `initial_jacobian_f` – the initial Jacobian of the cost function `f`.
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
@@ -167,6 +169,10 @@ function LevenbergMarquardt!(
                                           StopWhenStepsizeLess(1e-12),
     debug=[DebugWarnIfCostIncreases()],
     expect_zero_residual::Bool=false,
+    initial_residual_values=similar(p, get_objective(nlso).num_components),
+    initial_jacobian_f=similar(
+        p, get_objective(nlso).num_components, manifold_dimension(M)
+    ),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     i_nlso = get_objective(nlso) # undeecorate – for safety
@@ -175,8 +181,8 @@ function LevenbergMarquardt!(
     lms = LevenbergMarquardtState(
         M,
         p,
-        similar(p, i_nlso.num_components),
-        similar(p, i_nlso.num_components, manifold_dimension(M));
+        initial_residual_values,
+        initial_jacobian_f;
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,

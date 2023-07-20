@@ -92,6 +92,27 @@ end
 end
 
 @testset "Stopping Criterion print&summary" begin
+    f = StopWhenStepsizeLess(1e-6)
+    sf1 = "Stepsize s < 1.0e-6:\tnot reached"
+    @test Manopt.status_summary(f) == sf1
+    sf2 = "StopWhenStepsizeLess(1.0e-6)\n    $(sf1)"
+    @test repr(f) == sf2
+    g = StopWhenCostLess(1e-4)
+    @test Manopt.status_summary(g) == "f(x) < $(1e-4):\tnot reached"
+    @test repr(g) == "StopWhenCostLess(0.0001)\n    $(Manopt.status_summary(g))"
+    gf(M, p) = norm(p)
+    grad_gf(M, p) = p
+    gp = DefaultManoptProblem(Euclidean(2), ManifoldGradientObjective(gf, grad_gf))
+    gs = GradientDescentState(Euclidean(2))
+    Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1e-2])
+    g(gp, gs, 0) # reset
+    @test length(g.reason) == 0
+    @test !g(gp, gs, 1)
+    Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1e-8])
+    @test g(gp, gs, 2)
+    @test length(g.reason) > 0
+    h = StopWhenSmallerOrEqual(:p, 1e-4)
+    @test repr(h) == "StopWhenSmallerOrEqual(:p, $(1e-4))\n    $(Manopt.status_summary(h))"
     swgcl1 = StopWhenGradientChangeLess(Euclidean(2), 1e-8)
     swgcl2 = StopWhenGradientChangeLess(1e-8)
     for swgcl in [swgcl1, swgcl2]

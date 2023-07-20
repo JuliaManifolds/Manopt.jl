@@ -174,7 +174,7 @@ difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
 * `sub_state`             - ([`TrustRegionsState`](@ref) by default, requires `sub_hessian` to be provided; decorated with `sub_kwargs`).
   Choose the solver by specifying a solver state to solve the `sub_problem`
   if the `sub_problem` if a function (i.e. a closed form solution), this is set to `evaluation`
-  and can be changed to the evalution type of the closed form solution accordingly.
+  and can be changed to the evaluation type of the closed form solution accordingly.
 * `sub_stopping_criterion` - ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping crierion used withing the default `sub_state=`
 * `sub_stepsize`           - ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
@@ -229,7 +229,15 @@ function difference_of_convex_algorithm(
     grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
     ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
     rs = difference_of_convex_algorithm(
-        M, f_, g_, ∂h_, q; gradient=gradient_, grad_g=grad_g_, kwargs...
+        M,
+        f_,
+        g_,
+        ∂h_,
+        q;
+        gradient=gradient_,
+        grad_g=grad_g_,
+        evaluation=evaluation,
+        kwargs...,
     )
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
@@ -237,7 +245,7 @@ function difference_of_convex_algorithm(
     M::AbstractManifold, mdco::O, p; kwargs...
 ) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
-    return difference_of_convex_algorithm!(M, mdco, p; kwargs...)
+    return difference_of_convex_algorithm!(M, mdco, q; kwargs...)
 end
 
 @doc raw"""
@@ -264,7 +272,9 @@ function difference_of_convex_algorithm!(
     mdco = ManifoldDifferenceOfConvexObjective(
         f, ∂h; gradient=gradient, evaluation=evaluation
     )
-    return difference_of_convex_algorithm!(M, mdco, p; g=g, kwargs...)
+    return difference_of_convex_algorithm!(
+        M, mdco, p; g=g, evaluation=evaluation, kwargs...
+    )
 end
 function difference_of_convex_algorithm!(
     M::AbstractManifold,
@@ -296,10 +306,20 @@ function difference_of_convex_algorithm!(
     sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=[],
     sub_stopping_criterion=StopAfterIteration(300) | StopWhenGradientNormLess(1e-8),
-    sub_objective=if isnothing(sub_cost) || isnothing(sub_grad) || isnothing(sub_hess)
+    sub_objective=if isnothing(sub_cost) || isnothing(sub_grad)
         nothing
     else
-        ManifoldHessianObjective(sub_cost, sub_grad, sub_hess; evaluation=evaluation)
+        decorate_objective!(
+            M,
+            if isnothing(sub_hess)
+                ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+            else
+                ManifoldHessianObjective(
+                    sub_cost, sub_grad, sub_hess; evaluation=evaluation
+                )
+            end;
+            sub_kwargs...,
+        )
     end,
     sub_problem::Union{AbstractManoptProblem,Function,Nothing}=if isnothing(sub_objective)
         nothing
@@ -311,7 +331,13 @@ function difference_of_convex_algorithm!(
         evaluation
     else
         decorate_state!(
-            TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion),
+            if isnothing(sub_hess)
+                GradientDescentState(
+                    M, copy(M, p); stopping_criterion=sub_stopping_criterion
+                )
+            else
+                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+            end,
             sub_kwargs...,
         )
     end,

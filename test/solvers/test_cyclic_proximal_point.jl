@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, Dates
+using Manifolds, Manopt, Test, Dates, LRUCache
 
 @testset "Cyclic Proximal Point" begin
     @testset "Allocating" begin
@@ -70,6 +70,20 @@ using Manifolds, Manopt, Test, Dates
         @test startswith(
             repr(r), "# Solver state for `Manopt.jl`s Cyclic Proximal Point Algorithm"
         )
+        @testset "Caching" begin
+            r2 = cyclic_proximal_point(
+                N,
+                f,
+                proxes!,
+                q;
+                λ=i -> π / (2 * i),
+                cache=(:LRU, [:Cost, :ProximalMap], 50),
+                stopping_criterion=StopAfterIteration(100),
+                evaluation=InplaceEvaluation(),
+                return_state=true,
+                return_objective=true,
+            )
+        end
     end
     @testset "Problem access functions" begin
         n = 3

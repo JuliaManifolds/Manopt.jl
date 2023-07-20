@@ -18,7 +18,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test repr(str) == "StopWhenTrustRegionIsExceeded()\n    $(str1)"
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
-    @test scn1 == "Cuvature is negative:\tnot reached"
+    @test scn1 == "Curvature is negative:\tnot reached"
     @test repr(scn) == "StopWhenCurvatureIsNegative()\n    $(scn1)"
     smi = StopWhenModelIncreased()
     smi1 = Manopt.status_summary(smi)

@@ -128,6 +128,16 @@ import Manifolds: inner
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
         p5b = difference_of_convex_proximal_point(M, grad_h; g=g, grad_g=grad_g)
+        # using gradient descent
+        p5c = difference_of_convex_proximal_point(
+            M,
+            grad_h,
+            p0;
+            g=g,
+            grad_g=grad_g,
+            sub_hess=nothing,
+            stopping_criterion=StopAfterIteration(10), # is not that stable
+        )
         s2 = difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, gradient=grad_f, return_state=true
         )
@@ -141,7 +151,8 @@ import Manifolds: inner
         @test isapprox(M, p3, p4)
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
-        @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min
+        @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min due to rand
+        @test isapprox(f(M, p5c), 0.0; atol=1e-9) # might be a bit inprecise
         @test isapprox(f(M, p4), 0.0; atol=2e-16)
 
         Random.seed!(23)
@@ -152,12 +163,18 @@ import Manifolds: inner
         difference_of_convex_algorithm!(M, f, g, grad_h, p8; grad_g=grad_g)
         @test isapprox(M, p8, p2)
 
+        # using GD - only very inprecise
+        p9 = difference_of_convex_algorithm(
+            M, f, g, grad_h, p0; grad_g=grad_g, sub_hess=nothing
+        )
+        @test isapprox(M, p9, p2; atol=1e-7)
+
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing
         )
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0)
         @test_throws ErrorException difference_of_convex_proximal_point(
-            M, grad_h, p0; g=g, grad_g=grad_g, sub_hess=nothing
+            M, grad_h, p0; g=g, grad_g=grad_g, sub_grad=nothing
         )
         # we need both g and grad g here
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0; g=g)

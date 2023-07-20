@@ -785,3 +785,38 @@ function objective_cache_factory(M, o, cache::Tuple{Symbol,<:AbstractArray})
     (cache[1] === :LRU) && return ManifoldCachedObjective(M, o, cache[2])
     return o
 end
+function show(io::IO, smco::SimpleManifoldCachedObjective{E}) where {E}
+    return print(io, "SimpleManifoldCachedObjective{$E,$(smco.objective)}")
+end
+function show(
+    io::IO, t::Tuple{<:SimpleManifoldCachedObjective,S}
+) where {S<:AbstractManoptSolverState}
+    return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
+end
+function show(io::IO, mco::ManifoldCachedObjective)
+    return print(io, "$(status_summary(mco))")
+end
+function show(
+    io::IO, t::Tuple{<:ManifoldCachedObjective,S}
+) where {S<:AbstractManoptSolverState}
+    return print(io, "$(t[2])\n\n$(status_summary(t[1]))")
+end
+
+function status_summary(smco::SimpleManifoldCachedObjective)
+    s = "## Cache\nA `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively"
+    s2 = status_summary(smco.objective)
+    length(s2) > 0 && (s2 = "\n$(s2)")
+    return "$(s)$(s2)"
+end
+function status_summary(mco::ManifoldCachedObjective)
+    s = "## Cache\n"
+    longest_key_length = max(length.(["$k" for k in keys(mco.cache)])...)
+    cache_strings = [
+        "  * :" *
+        rpad("$k", longest_key_length, " ") *
+        " : $(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
+        (k, v) in zip(keys(mco.cache), values(mco.cache))
+    ]
+    s2 = status_summary(mco.objective)
+    return "$(s)$(join(cache_strings,"\n"))\n\n$s2"
+end
