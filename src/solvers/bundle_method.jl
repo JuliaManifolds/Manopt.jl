@@ -11,7 +11,6 @@ stores option values for a [`bundle_method`](@ref) solver
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
 * `g`- descent direction
 * `inverse_retraction_method` - the inverse retraction to use within
-* `j` - index to cycle through the bundle given by mod1(iteration, bundle_size)
 * `lin_errors` - linearization errors at the last serious step
 * `m` - the parameter to test the decrease of the cost
 * `p` - current candidate point
@@ -43,7 +42,6 @@ mutable struct BundleMethodState{
     B<:AbstractVector{Tuple{<:P,<:T}},
     C<:AbstractVector{T},
     I,
-    D<:AbstractVector{<:I},
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
@@ -98,7 +96,7 @@ mutable struct BundleMethodState{
         lin_errors = zeros(bundle_size)
         transported_subgradients = [zero_vector(M, p)]
         ε = zero(R)
-        λ = zero(R)
+        λ = [zero(R)]
         ξ = zero(R)
         return new{
             typeof(m),
@@ -120,7 +118,6 @@ mutable struct BundleMethodState{
             diam,
             g,
             inverse_retraction_method,
-            j,
             lin_errors,
             m,
             p,
