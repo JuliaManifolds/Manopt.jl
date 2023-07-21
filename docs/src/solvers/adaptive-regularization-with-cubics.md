@@ -49,5 +49,13 @@ and use your favourite gradient based solver for the `sub_state` keyword, for ex
 ## Additional Stopping Criteria
 
 ```@docs
-Manopt.StopWhenAllLanczosVectorsUsed
+StopWhenAllLanczosVectorsUsed
+StopWhenLanczosModelGradLess
+```
+
+## Literature
+
+```@bibliography
+Pages = ["solvers/adaptive-regularization-with-cubics.md"]
+Canonical=false
 ```

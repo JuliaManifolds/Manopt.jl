@@ -146,8 +146,6 @@ Let ``X_k`` denote the minimizer of the model ``m_k``, then we use the model imp
 ρ_k = \frac{f(p_k) - f(\operatorname{retr}_{p_k}(X_k))}{m_k(0) - m_k(s) + \frac{σ_k}{3}\lVert X_k\rVert^3}.
 ```
 
-The larger this value is, the better does the model predict an actual reduction of the cost.
-
 We use two thresholds ``η_2 ≥ η_1 > 0`` and set
 ``p_{k+1} = \operatorname{retr}_{p_k}(X_k)`` if ``ρ ≥ η_1`` and reject the candidate otherwise, i.e. set ``p_{k+1} = p_k``.
 
@@ -162,6 +160,8 @@ We further update the regularozation parameter using factors ``0 < γ_1 < 1 < γ
 \end{cases}
 ```
 
+For more details see [Agarwal, Boumal, Bullins, Cartis, Math. Prog., 2020](@cite AgarwalBoumalBullinsCartis:2020).
+
 # Input
 
 * `M` – a manifold ``\mathcal M``
@@ -172,7 +172,6 @@ We further update the regularozation parameter using factors ``0 < γ_1 < 1 < γ
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
-
 
 # Keyword arguments
 the default values are given in brackets
@@ -296,7 +295,7 @@ evaluate the Riemannian adaptive regularization with cubics solver in place of `
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
 
-for more details and all options, see [`adaptive_regularization_with_cubics`](@ref)
+for more details and all options, see [`adaptive_regularization_with_cubics`](@ref).
 """
 adaptive_regularization_with_cubics!(M::AbstractManifold, args...; kwargs...)
 function adaptive_regularization_with_cubics!(
