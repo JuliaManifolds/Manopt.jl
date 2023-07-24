@@ -354,8 +354,16 @@ function adaptive_regularization_with_cubics!(
     η2::R=0.9,
     γ1::R=0.1,
     γ2::R=2.0,
+    θ::R=0.5,
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(maxIterLanczos - 1) |
+                                              StopWhenLanczosModelGradLess(θ),
     sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=LanczosState(
-        M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ
+        M,
+        copy(M, p);
+        maxIterLanczos=maxIterLanczos,
+        σ=σ,
+        θ=θ,
+        stopping_criterion=sub_stopping_criterion,
     ),
     sub_cost=mho,
     sub_problem=DefaultManoptProblem(M, sub_cost),
@@ -491,8 +499,9 @@ function LanczosState(
     p::P=rand(M);
     X::T=zero_vector(M, p),
     maxIterLanczos=200,
+    θ=0.5,
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |
-                           StopWhenLanczosModelGradLess(0.5),
+                           StopWhenLanczosModelGradLess(θ),
     stopping_criterion_newtown::SCN=StopAfterIteration(200),
     σ::R=10.0,
 ) where {P,T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
