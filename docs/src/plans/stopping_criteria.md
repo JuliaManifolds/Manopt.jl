@@ -41,6 +41,3 @@ Modules = [Manopt]
 Pages = ["plans/stopping_criterion.jl"]
 Order = [:function]
 ```
-```@docs
-get_stopping_criterion
-```
