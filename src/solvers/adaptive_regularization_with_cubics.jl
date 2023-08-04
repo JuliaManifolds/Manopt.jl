@@ -12,12 +12,12 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `X`                  – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``
 * `s`                  - (`zero_vector(M,p)`) the tangent vector step resulting from minimizing the model
   problem in the tangent space ``\mathcal T_{p} \mathcal M``
-* `σσ`                 – the current cubic regularization parameter
+* `σ`                 – the current cubic regularization parameter
 * `σmin`               – (`1e-7`) lower bound for the cubic regularization parameter
 * `ρ_regularization`   – (1e3) regularization paramter for computing ρ. As we approach convergence the ρ may be difficult to compute with numerator and denominator approachign zero. Regularizing the the ratio lets ρ go to 1 near convergence.
 * `retraction_method`  – (`default_retraction_method(M)`) the retraction to use
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `sub_problem`      -
+* `sub_problem`        - sub problem solved in each iteration
 * `sub_state`          - sub state for solving the sub problem
 
 Furthermore the following interal fields are defined
@@ -126,6 +126,30 @@ get_gradient(s::AdaptiveRegularizationState) = s.X
 function set_gradient!(s::AdaptiveRegularizationState, X)
     s.X = X
     return s
+end
+
+function show(io::IO, arcs::AdaptiveRegularizationState)
+    i = get_count(arcs, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(arcs.stop) ? "Yes" : "No"
+    sub = repr(arcs.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
+    s = """
+    # Solver state for `Manopt.jl`s Adaptive Regularization with Cubics (ARC)
+    $Iter
+    ## Parameters
+    * η1 | η2              : $(arcs.η1) | $(arcs.η2)
+    * γ1 | γ2              : $(arcs.γ1) | $(arcs.γ2)
+    * σ (σmin)             : $(arcs.σ) ($(arcs.σmin))
+    * ρ (ρ_regularization) : $(arcs.ρ)
+    * retraction method    : $(arcs.retraction_method)
+    * sub solver state     :
+        | $(sub)
+
+    ## Stopping Criterion
+    $(status_summary(arcs.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 
 @doc raw"""
@@ -538,6 +562,29 @@ function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     return ls
 end
 
+function show(io::IO, ls::LanczosState)
+    i = get_count(ls, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(ls.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Lanczos Iteration
+    $Iter
+    ## Parameters
+    * σ                         : $(ls.σ)
+    * # of Lanczos vectors used : $(length(ls.Lanczos_vectors))
+
+    ## Stopping Criteria
+    (a) For the Lanczos Iteration
+    $(status_summary(ls.stop))
+    (b) For the Newton sub solver
+    $(status_summary(ls.stop_newton))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
+#
+# The Lanczos Subsolver implementation
+#
 function initialize_solver!(dmp::AbstractManoptProblem, ls::LanczosState)
     M = get_manifold(dmp)
     # Maybe better to allocate once and just reset the number of vectors k?
@@ -696,6 +743,18 @@ function (c::StopWhenLanczosModelGradLess)(
     end
     return false
 end
+function status_summary(c::StopWhenLanczosModelGradLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "Lanczos Model gradient relative less than $(c.relative_threshold):\t$s"
+end
+indicates_convergence(c::StopWhenLanczosModelGradLess) = false
+function show(io::IO, c::StopWhenLanczosModelGradLess)
+    return print(
+        io,
+        "StopWhenLanczosModelGradLess($(repr(c.maxInnerIter)))\n    $(status_summary(c))",
+    )
+end
 
 #A new stopping criterion that deals with the scenario when a step needs more Lanczos vectors than preallocated.
 #Previously this would just cause an error due to out of bounds error. So this stopping criterion deals both with the scenario
@@ -719,6 +778,18 @@ function (c::StopWhenAllLanczosVectorsUsed)(
         return true
     end
     return false
+end
+function status_summary(c::StopWhenAllLanczosVectorsUsed)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "All Lanczos vectors ($(c.maxInnerIter)) used:\t$s"
+end
+indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
+function show(io::IO, c::StopWhenAllLanczosVectorsUsed)
+    return print(
+        io,
+        "StopWhenAllLanczosVectorsUsed($(repr(c.maxInnerIter)))\n    $(status_summary(c))",
+    )
 end
 
 #
