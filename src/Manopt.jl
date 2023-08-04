@@ -490,7 +490,7 @@ export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugIfEntry
-export DebugMessages
+export DebugMessages, DebugIfEntry
 #
 # Records - and access functions
 export get_record, get_record_state, get_record_action, has_record

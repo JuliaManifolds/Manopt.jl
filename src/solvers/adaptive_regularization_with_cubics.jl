@@ -300,7 +300,7 @@ function adaptive_regularization_with_cubics(
     M::AbstractManifold, mho::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
-    return adaptive_regularization_with_cubics!(M, f, grad_f, Hess_f, q; kwargs...)
+    return adaptive_regularization_with_cubics!(M, mho, q; kwargs...)
 end
 
 @doc raw"""

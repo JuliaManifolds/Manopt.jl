@@ -352,7 +352,7 @@ mutable struct DebugIfEntry{F} <: DebugAction
     field::Symbol
     msg::String
     type::Symbol
-    function DebugEntry(
+    function DebugIfEntry(
         f::Symbol, check::F=(>(0)); type=:warn, message=":$f nonpositive.", io::IO=stdout
     ) where {F}
         return new{F}(io, check, f, message, type)
