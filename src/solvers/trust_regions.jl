@@ -531,11 +531,11 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
             fx +
             real(inner(M, trs.p, trs.X, trs.η)) +
             0.5 * real(inner(M, trs.p, trs.Hη, trs.η))
-        modle_value_Cauchy = fx
-        -trs.τ * trs.trust_region_radius * norm_grad
-        +0.5 * trs.τ^2 * trs.trust_region_radius^2 / (norm_grad^2) *
-        real(inner(M, trs.p, trs.Hgrad, trs.X))
-        if modle_value_Cauchy < model_value
+        model_value_Cauchy =
+            fx - trs.τ * trs.trust_region_radius * norm_grad +
+            0.5 * trs.τ^2 * trs.trust_region_radius^2 / (norm_grad^2) *
+            real(inner(M, trs.p, trs.Hgrad, trs.X))
+        if model_value_Cauchy < model_value
             copyto!(M, trs.η, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.X)
             copyto!(M, trs.Hη, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.Hgrad)
         end
