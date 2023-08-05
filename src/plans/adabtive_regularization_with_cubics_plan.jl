@@ -31,7 +31,7 @@ mutable struct AdaptiveRegularizationCubicCost{T,R,O<:AbstractManifoldObjective}
     X::T
 end
 function AdaptiveRegularizationCubicCost(
-    M, mho::O, σ::R; p::P=rand(M), X::T=get_gradient(M, mho, p)
+    M, mho::O, σ::R=1.0; p::P=rand(M), X::T=get_gradient(M, mho, p)
 ) where {P,T,R,O}
     return AdaptiveRegularizationCubicCost{T,R,O}(mho, σ, X)
 end
@@ -77,7 +77,7 @@ struct AdaptiveRegularizationCubicGrad{T,R,O<:AbstractManifoldObjective}
     X::T
 end
 function AdaptiveRegularizationCubicGrad(
-    M, mho::O, σ::R; p::P=rand(M), X::T=get_gradient(M, mho, p)
+    M, mho::O, σ::R=1.0; p::P=rand(M), X::T=get_gradient(M, mho, p)
 ) where {P,T,R,O}
-    return AdaptiveRegularizationCubicGrad{T,R,O}(mho, σ, p, X)
+    return AdaptiveRegularizationCubicGrad{T,R,O}(mho, σ, X)
 end

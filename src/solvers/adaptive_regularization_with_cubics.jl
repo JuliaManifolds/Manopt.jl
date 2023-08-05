@@ -368,9 +368,6 @@ function adaptive_regularization_with_cubics!(
     initial_tangent_vector::T=zero_vector(M, p),
     maxIterLanczos=200,
     ρ_regularization::R=1e3,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(40) |
-                                          StopWhenGradientNormLess(1e-9) |
-                                          StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     σmin::R=1e-10,
     σ::R=100.0 / sqrt(manifold_dimension(M)),
@@ -391,6 +388,13 @@ function adaptive_regularization_with_cubics!(
     ),
     sub_cost=mho,
     sub_problem=DefaultManoptProblem(M, sub_cost),
+    stopping_criterion::StoppingCriterion=if sub_state isa LanczosState
+        StopAfterIteration(40) |
+        StopWhenGradientNormLess(1e-9) |
+        StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1)
+    else
+        StopAfterIteration(40) | StopWhenGradientNormLess(1e-9)
+    end,
     kwargs...,
 ) where {T,R,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     X = copy(M, p, initial_tangent_vector)
