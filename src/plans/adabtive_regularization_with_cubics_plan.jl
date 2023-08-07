@@ -35,6 +35,14 @@ function AdaptiveRegularizationCubicCost(
 ) where {P,T,R,O}
     return AdaptiveRegularizationCubicCost{T,R,O}(mho, σ, X)
 end
+function set_manopt_parameter!(f::AdaptiveRegularizationCubicCost, ::Val{:X}, X)
+    f.X = X
+    return f
+end
+function set_manopt_parameter!(f::AdaptiveRegularizationCubicCost, ::Val{:σ}, σ)
+    f.σ = σ
+    return f
+end
 
 @doc raw"""
     AdaptiveRegularizationCubicGrad
@@ -49,7 +57,7 @@ We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k
 This struct represents its gradient, given by
 
 ```math
-    \operatorname{grad} m(X) = \operatorname{grad}f(p) + \operatorname{Hess} f(p)[X] + σ \lVert X \rVert^2 X
+    \operatorname{grad} m(X) = \operatorname{grad}f(p) + \operatorname{Hess} f(p)[X] + σ \lVert X \rVert X
 ```
 
 # Fields
@@ -71,7 +79,7 @@ Initialize the cubic cost to the original objective `mho`, regularization parame
     from `Manifolds.jl`
     * The gradient functor provides both an allocating as well as an in-place variant.
 """
-struct AdaptiveRegularizationCubicGrad{T,R,O<:AbstractManifoldObjective}
+mutable struct AdaptiveRegularizationCubicGrad{T,R,O<:AbstractManifoldObjective}
     mho::O
     σ::R
     X::T
@@ -80,4 +88,12 @@ function AdaptiveRegularizationCubicGrad(
     M, mho::O, σ::R=1.0; p::P=rand(M), X::T=get_gradient(M, mho, p)
 ) where {P,T,R,O}
     return AdaptiveRegularizationCubicGrad{T,R,O}(mho, σ, X)
+end
+function set_manopt_parameter!(f::AdaptiveRegularizationCubicGrad, ::Val{:X}, X)
+    f.X = X
+    return f
+end
+function set_manopt_parameter!(f::AdaptiveRegularizationCubicGrad, ::Val{:σ}, σ)
+    f.σ = σ
+    return f
 end

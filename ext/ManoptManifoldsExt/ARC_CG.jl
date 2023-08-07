@@ -15,7 +15,7 @@ end
 function (grad_f::Manopt.AdaptiveRegularizationCubicGrad)(M, X)
     return grad_f.X +
            get_hessian(base_manifold(M), grad_f.mho, M.point, X) +
-           grad_f.σ * norm(base_manifold(M), M.point, X)^2 * X
+           grad_f.σ * norm(base_manifold(M), M.point, X) * X
 end
 function (grad_f::Manopt.AdaptiveRegularizationCubicGrad)(M, Y, X)
     get_hessian!(base_manifold(M), Y, f.mho, M.point, X)
