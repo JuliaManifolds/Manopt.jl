@@ -431,12 +431,13 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     # Update sub state
     # Set point also in the sub problem (eventually the tangent space)
     get_gradient!(M, arcs.X, mho, arcs.p)
-    set_manopt_parameter!(arcs.sub_problem, :p, copy(M, arcs.p))
+    # Update base point in manifold
+    set_manopt_parameter!(arcs.sub_problem, :Manifold, :p, copy(M, arcs.p))
     set_manopt_parameter!(arcs.sub_problem, :Cost, :X, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_problem, :Cost, :σ, arcs.σ)
     set_manopt_parameter!(arcs.sub_problem, :Gradient, :X, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_problem, :Gradient, :σ, arcs.σ)
-    set_manopt_parameter!(arcs.sub_state, :X, copy(M, arcs.p, arcs.X))
+    set_iterate!(arcs.sub_state, M, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
     set_manopt_parameter!(arcs.sub_state, :p, copy(M, arcs.p))
     #Solve the sub_problem – via dispatch depending on type
@@ -557,7 +558,7 @@ function set_manopt_parameter!(ls::LanczosState, ::Val{:p}, p)
     ls.p = p
     return ls
 end
-function set_manopt_parameter!(ls::LanczosState, ::Val{:X}, X)
+function set_iterate!(ls::LanczosState, M, X)
     ls.X = X
     return ls
 end

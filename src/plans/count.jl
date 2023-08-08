@@ -411,7 +411,7 @@ function status_summary(co::ManifoldCountObjective)
     longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     s = "## Statistics on function calls\n"
     count_strings = [
-        "  * :$(rpad("$(c[1])",longest_key_length)) :  $(c[2])" for c in co.counts
+        "  * :$(rpad("$(c[1])",longest_key_length)) : $(c[2])" for c in co.counts
     ]
     s2 = status_summary(co.objective)
     (length(s2) > 0) && (s2 = "\n$(s2)")
