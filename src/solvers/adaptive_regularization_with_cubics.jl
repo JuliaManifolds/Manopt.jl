@@ -141,7 +141,7 @@ function show(io::IO, arcs::AdaptiveRegularizationState)
     * η1 | η2              : $(arcs.η1) | $(arcs.η2)
     * γ1 | γ2              : $(arcs.γ1) | $(arcs.γ2)
     * σ (σmin)             : $(arcs.σ) ($(arcs.σmin))
-    * ρ (ρ_regularization) : $(arcs.ρ)
+    * ρ (ρ_regularization) : $(arcs.ρ) ($(arcs.ρ_regularization))
     * retraction method    : $(arcs.retraction_method)
     * sub solver state     :
         | $(sub)
@@ -770,9 +770,9 @@ end
 function status_summary(c::StopWhenFirstOrderProgress)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Lanczos Model gradient relative less than $(c.θ):\t$s"
+    return "First order progress with θ=$(c.θ):\t$s"
 end
-indicates_convergence(c::StopWhenFirstOrderProgress) = false
+indicates_convergence(c::StopWhenFirstOrderProgress) = true
 function show(io::IO, c::StopWhenFirstOrderProgress)
     return print(io, "StopWhenFirstOrderProgress($(repr(c.θ)))\n    $(status_summary(c))")
 end
