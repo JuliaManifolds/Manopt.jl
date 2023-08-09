@@ -366,7 +366,7 @@ function adaptive_regularization_with_cubics!(
     ),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     initial_tangent_vector::T=zero_vector(M, p),
-    maxIterLanczos=200,
+    maxIterLanczos=300,
     ρ_regularization::R=1e3,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     σmin::R=1e-10,
@@ -377,7 +377,7 @@ function adaptive_regularization_with_cubics!(
     γ2::R=2.0,
     θ::R=0.5,
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(maxIterLanczos - 1) |
-                                              StopWhenLanczosModelGradLess(θ),
+                                              StopWhenFirstOrderProgress(θ),
     sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=LanczosState(
         M,
         copy(M, p);
@@ -530,7 +530,7 @@ function LanczosState(
     maxIterLanczos=200,
     θ=0.5,
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |
-                           StopWhenLanczosModelGradLess(θ),
+                           StopWhenFirstOrderProgress(θ),
     stopping_criterion_newtown::SCN=StopAfterIteration(200),
     σ::R=10.0,
 ) where {P,T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
@@ -717,16 +717,36 @@ end
 # Stopping Criteria
 #
 @doc raw"""
-    StopWhenLanczosModelGradLess <: StoppingCriterion
+    StopWhenFirstOrderProgress <: StoppingCriterion
 
-TODO Name still to be improves – check second order progress criterion.
+A stopping criterion related to the Riemannian adaptive regularization with cubics (ARC)
+solver indicating that the model function at the current (outer) iterate, i.e.
+
+```math
+    m(X) = f(p) + <X, \operatorname{grad}f(p)>
+      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3,
+```
+
+defined on the tangent space ``T_{p}\mathcal M``
+fulfills at the current iterate ``X_k`` that
+
+```math
+m(X_k) \leq m(0)
+\quad\text{ and }\quad
+\lVert \operatorname{grad} m(X_k) \rVert ≤ θ \lVert X_k \rVert^2
+```
+
+# Fields
+
+* `θ` – the factor ``θ`` in the second condition above
+* `reason` – a String indicating the reason if the criterion indicated to stop
 """
-mutable struct StopWhenLanczosModelGradLess <: StoppingCriterion
-    relative_threshold::Float64 #θ
+mutable struct StopWhenFirstOrderProgress <: StoppingCriterion
+    θ::Float64 #θ
     reason::String
-    StopWhenLanczosModelGradLess(ε::Float64) = new(ε, "")
+    StopWhenFirstOrderProgress(θ::Float64) = new(θ, "")
 end
-function (c::StopWhenLanczosModelGradLess)(
+function (c::StopWhenFirstOrderProgress)(
     dmp::AbstractManoptProblem, ls::LanczosState, i::Int
 )
     if (i == 0)
@@ -736,41 +756,54 @@ function (c::StopWhenLanczosModelGradLess)(
     #Update Gradient
     M = get_manifold(dmp)
     get_gradient!(dmp, ls.X, ls.p)
+    nX = norm(M, ls.p, ls.X)
     y = @view(ls.coefficients[1:(i - 1)])
-    model_grad_norm = norm(
-        norm(M, ls.p, ls.X) .* [1, zeros(i - 1)...] +
-        @view(ls.tridig_matrix[1:i, 1:(i - 1)]) * y +
-        ls.σ * norm(y) * [y..., 0],
-    )
-    if (i > 0) && model_grad_norm <= c.relative_threshold * norm(y, 2)^2
-        c.reason = "The algorithm has reduced the model grad norm by $(c.relative_threshold).\n"
+    Ty = @view(ls.tridig_matrix[1:i, 1:(i - 1)]) * y
+    ny = norm(y)
+    model_grad_norm = norm(nX .* [1, zeros(i - 1)...] + Ty + ls.σ * ny * [y..., 0])
+    if (i > 0) && (model_grad_norm <= c.θ * ny^2)
+        c.reason = "The subproblem has reached a point with ||grad m(X)|| ≤ θ ||X||^2, θ = $(c.θ)."
         return true
     end
     return false
 end
-function status_summary(c::StopWhenLanczosModelGradLess)
+function status_summary(c::StopWhenFirstOrderProgress)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "Lanczos Model gradient relative less than $(c.relative_threshold):\t$s"
+    return "Lanczos Model gradient relative less than $(c.θ):\t$s"
 end
-indicates_convergence(c::StopWhenLanczosModelGradLess) = false
-function show(io::IO, c::StopWhenLanczosModelGradLess)
-    return print(
-        io,
-        "StopWhenLanczosModelGradLess($(repr(c.maxInnerIter)))\n    $(status_summary(c))",
-    )
+indicates_convergence(c::StopWhenFirstOrderProgress) = false
+function show(io::IO, c::StopWhenFirstOrderProgress)
+    return print(io, "StopWhenFirstOrderProgress($(repr(c.θ)))\n    $(status_summary(c))")
 end
 
 #A new stopping criterion that deals with the scenario when a step needs more Lanczos vectors than preallocated.
 #Previously this would just cause an error due to out of bounds error. So this stopping criterion deals both with the scenario
 #of too few allocated vectors and stagnation in the solver.
 @doc raw"""
-    StopWhenAllLanczosVectorsUsed
+    StopWhenAllLanczosVectorsUsed <: StoppingCriterion
+
+When an inner iteration has used up all Lanczos vectors, then this stoping crtierion is
+a fallback / security stopping criterion in order to not access a non-existing field
+in the array allocated for vectors.
+
+Note that this stopping criterion (for now) is only implemented for the case that an
+[`AdaptiveRegularizationState`](@ref) when using a [`LanczosState`](@ref) subsolver
+
+# Fields
+
+* `maxLanczosVectors` – maximal number of Lanczos vectors
+* `reason` – a String indicating the reason if the criterion indicated to stop
+
+# Constructor
+
+    StopWhenAllLanczosVectorsUsed(maxLancosVectors::Int)
+
 """
 mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
-    maxInnerIter::Int64
+    maxLanczosVectors::Int
     reason::String
-    StopWhenAllLanczosVectorsUsed(maxIts::Int64) = new(maxIts, "")
+    StopWhenAllLanczosVectorsUsed(maxLanczosVectors::Int) = new(maxLanczosVectors, "")
 end
 function (c::StopWhenAllLanczosVectorsUsed)(
     ::AbstractManoptProblem,
@@ -778,8 +811,8 @@ function (c::StopWhenAllLanczosVectorsUsed)(
     i::Int,
 ) where {P,T,Pr}
     (i == 0) && (c.reason = "") # reset on init
-    if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxInnerIter
-        c.reason = "The algorithm used all preallocated Lanczos vectors and may have stagnated. Allocate more by variable maxIterLanczos.\n"
+    if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
+        c.reason = "The algorithm used all ($(c.maxLanczosVectors)) preallocated Lanczos vectors and may have stagnated.\n Consider increasing this value.\n"
         return true
     end
     return false
@@ -787,55 +820,12 @@ end
 function status_summary(c::StopWhenAllLanczosVectorsUsed)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "All Lanczos vectors ($(c.maxInnerIter)) used:\t$s"
+    return "All Lanczos vectors ($(c.maxLanczosVectors)) used:\t$s"
 end
 indicates_convergence(c::StopWhenAllLanczosVectorsUsed) = false
 function show(io::IO, c::StopWhenAllLanczosVectorsUsed)
     return print(
         io,
-        "StopWhenAllLanczosVectorsUsed($(repr(c.maxInnerIter)))\n    $(status_summary(c))",
+        "StopWhenAllLanczosVectorsUsed($(repr(c.maxLanczosVectors)))\n    $(status_summary(c))",
     )
-end
-
-#
-# Old code, not yet reviewed nor reworked.
-#
-
-#
-# Nowehere used?
-# Maybe use in a ARCNewtonState?
-
-mutable struct CubicSubCost{Y,T,I,R}
-    k::I #number of Lanczos vectors
-    gradnorm::R
-    Tmatrix::T #submatrix
-    y::Y # Solution of of argmin m(s), s= sum y[i]q[i]
-end
-function (C::CubicSubCost)(::AbstractManifold, y)# Ronny: M is Euclidean (R^k) but p should be y. I can change it to y a just input c.y when computing the subcost
-    #C.y[1]*C.gradnorm + 0.5*dot(C.y[1:C.k],@view(C.Tmatrix[1:C.k,1:C.k])*C.y[1:C.k]) + C.σ/3*norm(C.y[1:C.k],2)^3
-    return y[1] * C.gradnorm +
-           0.5 * dot(y, @view(C.Tmatrix[1:(C.k), 1:(C.k)]) * y) +
-           C.σ / 3 * norm(y, 2)^3
-end
-
-#Sub cost set_manopt_parameter!'s
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:k}, k)
-    s.k = k
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:gradnorm}, gradnorm)
-    s.gradnorm = gradnorm
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:σ}, σ)
-    s.σ = σ
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:Tmatrix}, Tmatrix)
-    s.Tmatrix = Tmatrix
-    return s
-end
-function set_manopt_parameter!(s::CubicSubCost, ::Val{:y}, y)
-    s.y = y
-    return s
 end

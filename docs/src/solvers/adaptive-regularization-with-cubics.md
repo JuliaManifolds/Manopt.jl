@@ -50,7 +50,7 @@ and use your favourite gradient based solver for the `sub_state` keyword, for ex
 
 ```@docs
 StopWhenAllLanczosVectorsUsed
-StopWhenLanczosModelGradLess
+StopWhenFirstOrderProgress
 ```
 
 ## Literature
