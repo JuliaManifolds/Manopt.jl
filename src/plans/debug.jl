@@ -330,7 +330,7 @@ end
 @doc raw"""
     DebugIfEntry <: DebugAction
 
-Issue a warning, info or error if a certain field does not pass a check
+Issue a warning, info or error if a certain field does _not_ pass a check
 
 # Fields
 
@@ -343,7 +343,7 @@ Issue a warning, info or error if a certain field does not pass a check
 
 # Constructor
 
-    DebugEntry(f, check=(>(0)); type=:warn, message=":$f is nonnegative", io=stdout)
+    DebugEntry(field, check=(>(0)); type=:warn, message=":$f is nonnegative", io=stdout)
 
 """
 mutable struct DebugIfEntry{F} <: DebugAction
@@ -360,15 +360,15 @@ mutable struct DebugIfEntry{F} <: DebugAction
 end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if (i >= 0) && (!d.check(getfield(st, d.field)))
-        d.type === :warn && warn(d.msg)
-        d.type === :info && info(d.msg)
+        d.type === :warn && (@warn "$(d.msg)")
+        d.type === :info && (@info "$(d.msg)")
         d.type === :error && error(d.msg)
-        d.type === :print && print(d.io, msg)
+        d.type === :print && print(d.io, d.msg)
     end
     return nothing
 end
 function show(io::IO, di::DebugIfEntry)
-    return print(io, "DebugIfEntry(:$(di.field) $(check); type=:$(di.type))")
+    return print(io, "DebugIfEntry(:$(di.field), $(di.check); type=:$(di.type))")
 end
 
 @doc raw"""

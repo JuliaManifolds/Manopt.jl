@@ -35,12 +35,7 @@ function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, fv:
     return amp
 end
 function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, fv::Val, v)
-    set_manopt_parameter!(get_manifold(amp), fv, v)
-    return amp
-end
-function set_manopt_parameter!(amp::AbstractManoptProblem, fv::Val, v)
     set_manopt_parameter!(get_objective(amp), fv, v)
-    set_manopt_parameter!(get_manifold(amp), fv, v)
     return amp
 end
 

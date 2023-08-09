@@ -29,6 +29,13 @@ using LinearAlgebra: I, tr, Symmetric
         M2 = TangentSpaceAtPoint(M, p0)
         g = AdaptiveRegularizationCubicCost(M2, mho)
         grad_g = AdaptiveRegularizationCubicGrad(M2, mho)
+        # test both inplace and allocating variants of grad_g
+        X0 = grad_f(M, p0)
+        X1 = grad_g(M2, X0)
+        X2 = zero_vector(M, p0)
+        grad_g(M2, X2, X0)
+        @test isapprox(M, p0, X1, X2)
+
         sub_problem = DefaultManoptProblem(M2, ManifoldGradientObjective(g, grad_g))
         sub_state = GradientDescentState(
             M2,

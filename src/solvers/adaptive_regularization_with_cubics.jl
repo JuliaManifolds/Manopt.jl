@@ -222,7 +222,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 [`decorate_objective!`](@ref) for objective, respectively.
 If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
-By default teh `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denonimator, >(0); message="Denominator nonpositive", type=:error)``
+By default the `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denonimator, >(0); message="Denominator nonpositive", type=:error)``
 to avoid that by rounding errors the denominator in the computation of `ρ` gets nonpositive.
 """
 adaptive_regularization_with_cubics(M::AbstractManifold, args...; kwargs...)
@@ -683,9 +683,7 @@ function min_cubic_Newton!(mp::AbstractManoptProblem, ls::LanczosState, i)
         y = -(T_λ \ gvec)
         ynorm = norm(y, 2)
         ϕ = 1 / ynorm - ls.σ / λ #when ϕ is "zero", y is the solution.
-        if abs(ϕ) < tol * ynorm
-            break
-        end
+        (abs(ϕ) < tol * ynorm) && break
         #compute the newton step
         ψ = ynorm^2
         Δy = -(T_λ) \ y
@@ -700,12 +698,10 @@ function min_cubic_Newton!(mp::AbstractManoptProblem, ls::LanczosState, i)
 
         Δλ = max(r1, r2) - λ
 
-        if λ + Δλ <= lower_barrier #if we jumped past the lower barrier for λ, jump to midpoint between current and lower λ.
-            Δλ = -0.5 * (λ - lower_barrier)
-        end
-        if abs(Δλ) <= eps(λ) #if the steps we make are to small, terminate -> Stopping criterion?
-            break
-        end
+        #if we jumped past the lower barrier for λ, jump to midpoint between current and lower λ.
+        (λ + Δλ <= lower_barrier) && (Δλ = -0.5 * (λ - lower_barrier))
+        #if the steps we make are to small, terminate
+        (abs(Δλ) <= eps(λ)) && break
         T_λ = T_λ + Δλ * I
         λ = λ + Δλ
     end
