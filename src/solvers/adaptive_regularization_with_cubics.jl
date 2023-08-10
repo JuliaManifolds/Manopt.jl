@@ -80,7 +80,7 @@ function AdaptiveRegularizationState(
     sub_state::St=sub_problem isa Function ? AllocatingEvaluation() : LanczosState(M, p),
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to inital value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ_regularization::R=1e3,
-    stop::SC=StopAfterIteration(100),
+    stopping_criterion::SC=StopAfterIteration(100),
     retraction_method::RTM=default_retraction_method(M),
     σmin::R=1e-10, #Set the below to appropriate default vals.
     η1::R=0.1,
@@ -110,7 +110,7 @@ function AdaptiveRegularizationState(
         one(σ),
         one(σ),
         ρ_regularization,
-        stop,
+        stopping_criterion,
         retraction_method,
         σmin,
         η1,
@@ -418,7 +418,7 @@ function adaptive_regularization_with_cubics!(
         sub_problem=sub_problem,
         σ=σ,
         ρ_regularization=ρ_regularization,
-        stop=stopping_criterion,
+        stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         σmin=σmin,
         η1=η1,

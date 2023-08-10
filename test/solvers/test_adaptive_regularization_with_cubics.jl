@@ -45,12 +45,17 @@ include("../utils/example_tasks.jl")
         set_gradient!(arcs, X1)
         @test arcs.X == X1
         arcs2 = AdaptiveRegularizationState(
-            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=1)
+            M,
+            p0;
+            sub_objective=mho,
+            sub_state=LanczosState(M; maxIterLanczos=1),
+            stopping_criterion=StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
         push!(arcs2.sub_state.Lanczos_vectors, X1)
         # we reached 1 Lanczos
         @test stop_solver!(arcs2.sub_problem, arcs2.sub_state, 1)
+        @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
         arcs3 = AdaptiveRegularizationState(
             M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
@@ -194,5 +199,9 @@ include("../utils/example_tasks.jl")
             Mc, fc, grad_fc, hess_fc, p0; θ=0.5, σ=100.0
         )
         @test fc(Mc, p0) > fc(Mc, p1)
+        p2 = adaptive_regularization_with_cubics(
+            Mc, fc, grad_fc, hess_fc, p0; θ=0.5, σ=100.0, evaluation=InplaceEvaluation()
+        )
+        @test fc(Mc, p0) > fc(Mc, p2)
     end
 end
