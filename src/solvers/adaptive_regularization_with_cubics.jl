@@ -487,12 +487,12 @@ end
 function solve_arc_subproblem!(
     M, s, problem::P, ::AllocatingEvaluation, p
 ) where {P<:Function}
-    copyto!(M, p, s, problem(M, p))
+    copyto!(M, s, p, problem(M, p))
     return s
 end
 function solve_arc_subproblem!(
     M, s, problem!::P, ::InplaceEvaluation, p
-) where {P<:AbstractManoptProblem}
+) where {P<:Function}
     problem!(M, s, p)
     return s
 end

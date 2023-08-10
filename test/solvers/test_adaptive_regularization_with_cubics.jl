@@ -52,12 +52,61 @@ include("../utils/example_tasks.jl")
         # we reached 1 Lanczos
         @test stop_solver!(arcs2.sub_problem, arcs2.sub_state, 1)
 
+        arcs3 = AdaptiveRegularizationState(
+            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
+        )
+        #add a fake Lanczos
+        push!(arcs3.sub_state.Lanczos_vectors, copy(M, p1, X1))
+        step_solver!(arcs3.sub_problem, arcs3.sub_state, 2) # to introduce a random new one
+        # test orthognality of the new 2 ones
+        @test isapprox(
+            inner(
+                M,
+                p1,
+                arcs3.sub_state.Lanczos_vectors[1],
+                arcs3.sub_state.Lanczos_vectors[2],
+            ),
+            0.0,
+            atol=1e-14,
+        )
+        # a second that copies
+        arcs4 = AdaptiveRegularizationState(
+            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
+        )
+        #add a fake Lanczos
+        push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
+        push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
+        step_solver!(arcs4.sub_problem, arcs4.sub_state, 2) # to introduce a random new one but cupy to 2
+        # test orthognality of the new 2 ones
+        @test isapprox(
+            inner(
+                M,
+                p1,
+                arcs4.sub_state.Lanczos_vectors[1],
+                arcs4.sub_state.Lanczos_vectors[2],
+            ),
+            0.0,
+            atol=1e-14,
+        )
+
         st1 = StopWhenFirstOrderProgress(0.5)
         @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)\n")
         @test Manopt.indicates_convergence(st1)
         st2 = StopWhenAllLanczosVectorsUsed(2)
         @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)\n")
         @test !Manopt.indicates_convergence(st2)
+        @test startswith(
+            repr(arcs2.sub_state), "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
+        )
+
+        f1(M, p) = p
+        f1!(M, q, p) = copyto!(M, q, p)
+        r = copy(M, p1)
+        Manopt.solve_arc_subproblem!(M, r, f1, AllocatingEvaluation(), p0)
+        @test r == p0
+        r = copy(M, p1)
+        Manopt.solve_arc_subproblem!(M, r, f1!, InplaceEvaluation(), p0)
+        @test r == p0
     end
 
     @testset "A few solver runs" begin
