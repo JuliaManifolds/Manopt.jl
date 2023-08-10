@@ -15,10 +15,13 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `σ`                 – the current cubic regularization parameter
 * `σmin`               – (`1e-7`) lower bound for the cubic regularization parameter
 * `ρ_regularization`   – (1e3) regularization paramter for computing ρ. As we approach convergence the ρ may be difficult to compute with numerator and denominator approachign zero. Regularizing the the ratio lets ρ go to 1 near convergence.
+* `evaluation`         - (`AllocatingEvaluation()`) if you provide a
 * `retraction_method`  – (`default_retraction_method(M)`) the retraction to use
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `sub_problem`        - sub problem solved in each iteration
-* `sub_state`          - sub state for solving the sub problem
+* `sub_state`          - sub state for solving the sub problem – either a solver state if
+                         the problem is an [`AbstractManoptProblem`](@ref) or an [`AbstractEvaluationType`](@ref) if it is a function,
+                         where it defaults to [`AllocatingEvaluation`](@ref).
 
 Furthermore the following interal fields are defined
 
@@ -154,6 +157,8 @@ end
 
 @doc raw"""
     adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
+    adaptive_regularization_with_cubics(M, f, grad_f, p=rand(M); kwargs...)
+    adaptive_regularization_with_cubics(M, mho, p=rand(M); kwargs...)
 
 Solve an optimization problem on the manifold `M` by iteratively minimizing
 
@@ -197,6 +202,8 @@ For more details see [Agarwal, Boumal, Bullins, Cartis, Math. Prog., 2020](@cite
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
 
+the cost `f` and its gradient and hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
+
 # Keyword arguments
 the default values are given in brackets
 
@@ -215,8 +222,8 @@ the default values are given in brackets
 * `stopping_criterion`     - ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`)
 * `sub_state`              - [`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)
                              a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a funtion.
-* `sub_cost`               - a shortcut to modify the subcost in the
-* `sub_problem`            - [`DefaultManoptProblem`](@ref)`(M, sub_cost)` the problem (or a function) for the sub problem
+* `sub_objective`               - a shortcut to modify the objective of the subproblem used within in the
+* `sub_problem`            - [`DefaultManoptProblem`](@ref)`(M, sub_objective)` the problem (or a function) for the sub problem
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
@@ -306,6 +313,7 @@ end
 @doc raw"""
     adaptive_regularization_with_cubics!(M, f, grad_f, Hess_f, p; kwargs...)
     adaptive_regularization_with_cubics!(M, f, grad_f, p; kwargs...)
+    adaptive_regularization_with_cubics!(M, mho, p; kwargs...)
 
 evaluate the Riemannian adaptive regularization with cubics solver in place of `p`.
 
@@ -318,6 +326,8 @@ evaluate the Riemannian adaptive regularization with cubics solver in place of `
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
+
+the cost `f` and its gradient and hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
 
 for more details and all options, see [`adaptive_regularization_with_cubics`](@ref).
 """
@@ -386,8 +396,8 @@ function adaptive_regularization_with_cubics!(
         θ=θ,
         stopping_criterion=sub_stopping_criterion,
     ),
-    sub_cost=mho,
-    sub_problem=DefaultManoptProblem(M, sub_cost),
+    sub_objective=mho,
+    sub_problem=DefaultManoptProblem(M, sub_objective),
     stopping_criterion::StoppingCriterion=if sub_state isa LanczosState
         StopAfterIteration(40) |
         StopWhenGradientNormLess(1e-9) |

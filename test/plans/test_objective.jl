@@ -1,4 +1,4 @@
-using Manopt, Test
+using ManifoldsBase, Manopt, Test
 
 include("../utils/dummy_types.jl")
 
@@ -22,5 +22,10 @@ include("../utils/dummy_types.jl")
         d = DummyDecoratedObjective(o)
         r2 = Manopt.ReturnManifoldObjective(d)
         @test repr(r) == "ManifoldCostObjective{AllocatingEvaluation}"
+    end
+    @testset "set_manopt_parameter!" begin
+        o = ManifoldCostObjective(x -> x)
+        mp = DefaultManoptProblem(ManifoldsBase.DefaultManifold(2), o)
+        set_manopt_parameter!(mp, :Objective, :Dummy, 1)
     end
 end
