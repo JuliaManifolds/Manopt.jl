@@ -1,6 +1,8 @@
 using Manifolds, ManifoldsBase, Manopt, Test, Random
 using LinearAlgebra: I, tr, Symmetric
 
+include("../utils/example_tasks.jl")
+
 @testset "Adaptive Reguilarization with Cubics" begin
     Random.seed!(42)
     n = 8
@@ -74,7 +76,7 @@ using LinearAlgebra: I, tr, Symmetric
         )
         @test isapprox(M, p1, p3)
         # Fourth with approximate Hessian _and_ random point
-        Random.seed!(42)
+        Random.seed!(36)
         p4 = adaptive_regularization_with_cubics(
             M, f, grad_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
@@ -135,5 +137,13 @@ using LinearAlgebra: I, tr, Symmetric
         )
         @test isapprox(M, p1, q3)
     end
-    @testset "A short solver run on the circle" begin end
+    @testset "A short solver run on the circle" begin
+        Mc, fc, grad_fc, pc0, pc_star = Circle_mean_task()
+        hess_fc(Mc, p, X) = 1.0
+        p0 = 0.2
+        p1 = adaptive_regularization_with_cubics(
+            Mc, fc, grad_fc, hess_fc, p0; θ=0.5, σ=100.0
+        )
+        @test fc(Mc, p0) > fc(Mc, p1)
+    end
 end
