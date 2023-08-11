@@ -19,13 +19,15 @@ AdaptiveRegularizationState
 
 ## Sub solvers
 
+There are several ways to approach the subsolver. The default is the first one.
+
 ## Lanczos Iteration
 
 ```@docs
 Manopt.LanczosState
 ```
 
-## Gradient based sub
+## (Conjugate) Gradient Descent
 
 There are two generic functors, that implement the sub problem
 
@@ -42,6 +44,7 @@ grad_g = AdaptiveRegularizationCubicGrad(M, mho, σ)
 sub_problem = DefaultProblem(TangentSpaceAt(M,p), ManifoldGradienObjective(g, grad_g))
 ```
 
+where `mho` is the hessian objective of `f` to solve.
 Then use this for the `sub_problem` keyword
 and use your favourite gradient based solver for the `sub_state` keyword, for example a
 [`ConjugateGradientDescentState`](@ref)
