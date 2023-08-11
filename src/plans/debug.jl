@@ -125,6 +125,12 @@ function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
     return print(io, "DebugGroup([$s])")
 end
+function set_manopt_parameter!(dg::DebugGroup, fv::Val, v)
+    for di in dg.group
+        set_manopt_parameter!(di, fv, v)
+    end
+    return dg
+end
 
 @doc raw"""
     DebugEvery <: DebugAction
@@ -154,6 +160,8 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     elseif d.always_update
         d.debug(p, st, -1)
     end
+    # set activity for the next iterate in subsolvers
+    return set_manopt_parameter!(st, :SubState, :Debug, :active, (rem(i + 1, d.every) == 0))
 end
 function show(io::IO, de::DebugEvery)
     return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
@@ -167,6 +175,11 @@ function status_summary(de::DebugEvery)
     end
     return "[$s, $(de.every)]"
 end
+function set_manopt_parameter!(de::DebugEvery, fv, v)
+    set_manopt_parameter!(de.debug, fv, v)
+    return de
+end
+
 #
 # Special single ones
 #
@@ -577,6 +590,63 @@ show(io::IO, ::DebugStoppingCriterion) = print(io, "DebugStoppingCriterion()")
 status_summary(::DebugStoppingCriterion) = ":Stop"
 
 @doc raw"""
+    DebugWhenActive <: DebugAction
+
+evaluate and print debug only if the active boolean is set.
+This can be set from outside and is for example triggered by [`DebugEvery`](@ref)
+on debugs on the subsolver.
+
+This method does not perform any print itself but relies on it's childrens print.
+
+For now, the main interaction is with [`DebugEvery`](@ref) which might activate or
+deactivate this debug
+
+# Fields
+* `always_update` – whether or not to call the order debugs with iteration `-1` in in active state
+* `active` – a boolean that can (de-)activated from outside to enable/disable debug
+
+# Constructor
+
+    DebugEvery(d::DebugAction, active=true, always_update=true)
+
+Initialise the DebugSubsolver.
+"""
+mutable struct DebugWhenActive <: DebugAction
+    debug::DebugAction
+    active::Bool
+    always_update::Bool
+    function DebugWhenActive(d::DebugAction, active::Bool=true, always_update::Bool=true)
+        return new(d, active, always_update)
+    end
+end
+function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
+    if dwa.active
+        dwa.debug(p, st, i)
+    elseif dwa.always_update
+        dwa.debug(p, st, -1)
+    end
+end
+function show(io::IO, dwa::DebugWhenActive)
+    return print(io, "DebugWhenActive($(dwa.debug), $(dwa.active), $(dwa.always_update))")
+end
+function status_summary(dwa::DebugWhenActive)
+    s = ""
+    if dwa.debug isa DebugGroup #remove the first 2 and last two characters of the Group
+        s = status_summary(dwa.debug)[3:(end - 2)]
+    else
+        s = "$(dwa.debug)"
+    end
+    return "[$s, $(dwa.actve)]"
+end
+function set_manopt_parameter!(dwa::DebugWhenActive, fv, v)
+    set_manopt_parameter!(dwa.debug, fv, v)
+    return dwa
+end
+function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:active}, v)
+    return dwa.active = v
+end
+
+@doc raw"""
     DebugTime()
 
 Measure time and print the intervals. Using `start=true` you can start the timer on construction,
@@ -808,6 +878,7 @@ given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
 
 * The symbol `:Stop` creates an entry of to display the stopping criterion at the end
   (`:Stop => DebugStoppingCriterion()`), for further symbols see [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
+* The symbol `:Subsolver` wraps all `dictionary` entries with [`DebugWhenActive`](@ref) that can be set from outside.
 * Tuples of a symbol and a string can be used to also specify a format, see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
 * any string creates a [`DebugDivider`](@ref)
 * any [`DebugAction`](@ref) is directly included
@@ -836,7 +907,7 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the di
 function DebugFactory(a::Array{<:Any,1})
     # filter out every
     group = Array{DebugAction,1}()
-    for s in filter(x -> !isa(x, Int) && x != :Stop, a) # filter ints and stop
+    for s in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter ints and stop
         push!(group, DebugActionFactory(s))
     end
     dictionary = Dict{Symbol,DebugAction}()
@@ -849,8 +920,11 @@ function DebugFactory(a::Array{<:Any,1})
         end
         dictionary[:All] = debug
     end
-    if :Stop in a
-        dictionary[:Stop] = DebugStoppingCriterion()
+    (:Stop in a) && (dictionary[:Stop] = DebugStoppingCriterion())
+    if (:Subsolver in a)
+        for k in keys(dictionary)
+            dictionary[k] = DebugWhenActive(dictionary[k])
+        end
     end
     return dictionary
 end

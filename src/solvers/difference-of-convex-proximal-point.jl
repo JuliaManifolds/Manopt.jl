@@ -28,7 +28,7 @@ mutable struct DifferenceOfConvexProximalState{
     RTR<:AbstractRetractionMethod,
     ITR<:AbstractInverseRetractionMethod,
     Tλ,
-} <: AbstractManoptSolverState
+} <: AbstractSubProblemSolverState
     λ::Tλ
     p::P
     q::P

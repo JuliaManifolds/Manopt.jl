@@ -5,6 +5,22 @@ An abstract type for problems that involve a subsolver
 """
 abstract type AbstractSubProblemSolverState <: AbstractManoptSolverState end
 
+@doc raw"""
+    get_sub_problem(ams::AbstractSubProblemSolverState)
+
+Access the sub problem of a solver state that involves a sub optimisation task.
+By default this returns `ams.sub_problem`.
+"""
+get_sub_problem(ams::AbstractSubProblemSolverState) = ams.sub_problem
+
+@doc raw"""
+    get_sub_state(ams::AbstractSubProblemSolverState)
+
+Access the sub state of a solver state that involves a sub optimisation task.
+By default this returns `ams.sub_state`.
+"""
+get_sub_state(ams::AbstractSubProblemSolverState) = ams.sub_state
+
 """
     set_manopt_parameter!(ams::AbstractManoptSolverState, element::Symbol, value)
 
@@ -13,6 +29,41 @@ This function should dispatch on `Val(element)`.
 """
 function set_manopt_parameter!(ams::AbstractManoptSolverState, e::Symbol, v)
     return set_manopt_parameter!(ams, Val(e), v)
+end
+"""
+    set_manopt_parameter!(amo::AbstractManoptSolverState, element::Symbol, field::Symbol , value)
+
+Set a certain field/element from the [`AbstractManoptSolverState`](@ref) `amo` to `value.
+This function should dispatch on `Val(element)` and `Val{field}`.
+"""
+function set_manopt_parameter!(ams::AbstractManoptSolverState, e::Symbol, f::Symbol, v)
+    return set_manopt_parameter!(ams, Val(e), Val(f), v)
+end
+
+function set_manopt_parameter!(ams::AbstractManoptSolverState, ::Val{:Debug}, fv, v)
+    return ams
+end
+function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, fv, v)
+    for d in values(dss.debugDictionary)
+        set_manopt_parameter!(d, fv, v)
+    end
+    return dss
+end
+function set_manopt_parameter!(ams::AbstractSubProblemSolverState, v::Symbol, args...)
+    set_manopt_parameter!(ams, Val(v), args...)
+    return ams
+end
+function set_manopt_parameter!(
+    ams::AbstractSubProblemSolverState, ::Val{:SubProblem}, args...
+)
+    set_manopt_parameter!(get_sub_problem(ams), args...)
+    return ams
+end
+function set_manopt_parameter!(
+    ams::AbstractSubProblemSolverState, ::Val{:SubState}, args...
+)
+    set_manopt_parameter!(get_sub_state(ams), args...)
+    return ams
 end
 
 """

@@ -42,14 +42,14 @@ in the keyword arguments.
 mutable struct AugmentedLagrangianMethodState{
     P,
     Pr<:AbstractManoptProblem,
-    Op<:AbstractManoptSolverState,
+    St<:AbstractManoptSolverState,
     R<:Real,
     V<:AbstractVector{<:R},
     TStopping<:StoppingCriterion,
-} <: AbstractManoptSolverState
+} <: AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
-    sub_state::Op
+    sub_state::St
     ϵ::R
     ϵ_min::R
     λ_max::R

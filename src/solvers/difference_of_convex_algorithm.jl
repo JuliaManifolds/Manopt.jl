@@ -43,7 +43,7 @@ result if `q`.
 
 """
 mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
-               AbstractManoptSolverState
+               AbstractSubProblemSolverState
     p::P
     X::T
     sub_problem::Pr
