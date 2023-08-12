@@ -323,8 +323,8 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         # check that a nondefault manifold works as well - not sure how to test this then
         d = DebugChange(Euclidean(2))
 
-        @test repr(DebugCost()) == "DebugCost(; format=\"F(x): %f\")"
-        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"F(x): %f\")"
+        @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\")"
+        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"f(x): %f\")"
 
         @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\")"
         @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
