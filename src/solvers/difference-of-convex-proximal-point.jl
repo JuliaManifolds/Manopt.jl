@@ -362,7 +362,7 @@ function difference_of_convex_proximal_point!(
                 )
             else
                 TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
-            end,
+            end;
             sub_kwargs...,
         )
     end,
