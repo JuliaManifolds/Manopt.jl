@@ -319,7 +319,7 @@ function exact_penalty_method!(
             ),
             stopping_criterion=sub_stopping_criterion,
             stepsize=default_stepsize(M, QuasiNewtonState),
-        ),
+        );
         sub_kwargs...,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (

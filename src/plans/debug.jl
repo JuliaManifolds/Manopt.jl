@@ -165,7 +165,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
     # set activity for the next iterate in subsolvers
-    set_manopt_parameter!(st, :SubState, :Debug, :active, (rem(i + 1, d.every) == 0))
+    set_manopt_parameter!(st, :SubState, :Debug, :active, !(i<1) && (rem(i + 1, d.every) == 0))
     return nothing
 end
 function show(io::IO, de::DebugEvery)
@@ -278,13 +278,13 @@ print the current cost function value, see [`get_cost`](@ref).
 
 * `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
 * `io` – (`stdout`) default steream to print the debug to.
-* `long` - (`false`) short form to set the format to `F(x):` (default) or `current cost: ` and the cost
+* `long` - (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
     format::String
     function DebugCost(;
-        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "F(x): %f"
+        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "f(x): %f"
     )
         return new(io, format)
     end
@@ -964,8 +964,8 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Time` creates a [`DebugTime`](@ref)
 * `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
-* `:ErrorMessages`creates a [`DebugMessages`](@ref)`(:Error)`
-* `:Messages`creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
+* `:ErrorMessages` creates a [`DebugMessages`](@ref)`(:Error)`
+* `:Messages` creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """

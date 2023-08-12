@@ -49,7 +49,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         # Debug Cost
         @test DebugCost(; format="A %f").format == "A %f"
         DebugCost(; long=false, io=io)(mp, st, 0)
-        @test String(take!(io)) == "F(x): 0.000000"
+        @test String(take!(io)) == "f(x): 0.000000"
         DebugCost(; long=false, io=io)(mp, st, -1)
         @test String(take!(io)) == ""
         # entry
