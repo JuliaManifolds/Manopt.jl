@@ -18,7 +18,7 @@ set some `args...` in `f` or one of uts sub elements.
 function set_manopt_parameter!(f, e::Symbol, args...)
     return set_manopt_parameter!(f, Val(e), args...)
 end
-function set_manopt_parameter!(f, ::Val, args...)
+function set_manopt_parameter!(f, args...)
     return f
 end
 

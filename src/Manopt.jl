@@ -480,6 +480,7 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
+export DebugWhenActive
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugMessages
 #
 # Records - and access functions

@@ -125,10 +125,14 @@ function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
     return print(io, "DebugGroup([$s])")
 end
-function set_manopt_parameter!(dg::DebugGroup, fv::Val, v)
+function set_manopt_parameter!(dg::DebugGroup, v::Val, args...)
     for di in dg.group
-        set_manopt_parameter!(di, fv, v)
+        set_manopt_parameter!(di, v, args...)
     end
+    return dg
+end
+function set_manopt_parameter!(dg::DebugGroup, e::Symbol, args...)
+    set_manopt_parameter!(dg, Val(e), args...)
     return dg
 end
 
@@ -176,8 +180,12 @@ function status_summary(de::DebugEvery)
     end
     return "[$s, $(de.every)]"
 end
-function set_manopt_parameter!(de::DebugEvery, fv, v)
-    set_manopt_parameter!(de.debug, fv, v)
+function set_manopt_parameter!(de::DebugEvery, e::Symbol, args...)
+    set_manopt_parameter!(de, Val(e), args...)
+    return de
+end
+function set_manopt_parameter!(de::DebugEvery, args...)
+    set_manopt_parameter!(de.debug, args...)
     return de
 end
 
@@ -631,16 +639,10 @@ function show(io::IO, dwa::DebugWhenActive)
     return print(io, "DebugWhenActive($(dwa.debug), $(dwa.active), $(dwa.always_update))")
 end
 function status_summary(dwa::DebugWhenActive)
-    s = ""
-    if dwa.debug isa DebugGroup #remove the first 2 and last two characters of the Group
-        s = status_summary(dwa.debug)[3:(end - 2)]
-    else
-        s = "$(dwa.debug)"
-    end
-    return "[$s, $(dwa.actve)]"
+    return repr(dwa)
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, fv, v)
-    set_manopt_parameter!(dwa.debug, fv, v)
+function set_manopt_parameter!(dwa::DebugWhenActive, v::Val, args...)
+    set_manopt_parameter!(dwa.debug, v, args...)
     return dwa
 end
 function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:active}, v)
