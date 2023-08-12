@@ -161,7 +161,8 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
     # set activity for the next iterate in subsolvers
-    return set_manopt_parameter!(st, :SubState, :Debug, :active, (rem(i + 1, d.every) == 0))
+    set_manopt_parameter!(st, :SubState, :Debug, :active, (rem(i + 1, d.every) == 0))
+    return nothing
 end
 function show(io::IO, de::DebugEvery)
     return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
@@ -607,7 +608,7 @@ deactivate this debug
 
 # Constructor
 
-    DebugEvery(d::DebugAction, active=true, always_update=true)
+    DebugWhenActive(d::DebugAction, active=true, always_update=true)
 
 Initialise the DebugSubsolver.
 """

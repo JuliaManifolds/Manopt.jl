@@ -458,10 +458,10 @@ function step_solver!(
     # do a step in that direction
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
     # use this point (q) for the prox
-    set_manopt_parameter!(dcps.sub_problem, :Cost, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Cost, :λ, dcps.λ(i))
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(i))
     set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
     solve!(dcps.sub_problem, dcps.sub_state)
     copyto!(M, dcps.r, get_solver_result(dcps.sub_state))

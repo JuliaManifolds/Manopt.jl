@@ -109,12 +109,26 @@ _get_objective(o::AbstractManifoldObjective, ::Val{false}, rec=true) = o
 function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec=true)
     return rec ? get_objective(o.objective) : o.objective
 end
-function status_summary(o::AbstractManifoldObjective{E}) where {E}
-    return ""#"$(nameof(typeof(o))){$E}"
+
+"""
+    set_manopt_parameter!(amo::AbstractManifoldObjective, element::Symbol, args...)
+
+Set a certain `args...` from the [`AbstractManifoldObjective`](@ref) `amo` to `value.
+This function should dispatch on `Val(element)`.
+
+Currently supported
+* `:Cost` passes to the [`get_cost_function`](@ref)
+* `:Gradient` passes to the [`get_gradient_function`](@ref)
+"""
+set_manopt_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
+
+function set_manopt_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
+    set_manopt_parameter!(get_cost_function(amo), args...)
+    return amo
 end
-# Default undecorate for summary
-function status_summary(co::AbstractDecoratedManifoldObjective)
-    return status_summary(get_objective(co, false))
+function set_manopt_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
+    set_manopt_parameter!(get_gradient_function(amo), args...)
+    return amo
 end
 
 function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
@@ -124,11 +138,18 @@ end
 function show(io::IO, co::AbstractDecoratedManifoldObjective)
     return show(io, get_objective(co, false))
 end
-
 function show(io::IO, t::Tuple{<:AbstractManifoldObjective,P}) where {P}
     s = "$(status_summary(t[1]))"
     length(s) > 0 && (s = "$(s)\n\n")
     return print(
         io, "$(s)To access the solver result, call `get_solver_result` on this variable."
     )
+end
+
+function status_summary(o::AbstractManifoldObjective{E}) where {E}
+    return ""
+end
+# Default undecorate for summary
+function status_summary(co::AbstractDecoratedManifoldObjective)
+    return status_summary(get_objective(co, false))
 end

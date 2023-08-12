@@ -98,3 +98,10 @@ AbstractGradientSolverState
 AbstractHessianSolverState
 AbstractPrimalDualSolverState
 ```
+
+For the sub problem state, there are two access functions
+
+```@docs
+get_sub_problem
+get_sub_state
+```

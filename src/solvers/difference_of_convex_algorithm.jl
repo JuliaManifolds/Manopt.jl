@@ -384,10 +384,10 @@ function step_solver!(
 )
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p)
-    set_manopt_parameter!(dcs.sub_problem, :Cost, :p, dcs.p)
-    set_manopt_parameter!(dcs.sub_problem, :Cost, :X, dcs.X)
-    set_manopt_parameter!(dcs.sub_problem, :Gradient, :p, dcs.p)
-    set_manopt_parameter!(dcs.sub_problem, :Gradient, :X, dcs.X)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :p, dcs.p)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :X, dcs.X)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Gradient, :p, dcs.p)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Gradient, :X, dcs.X)
     set_iterate!(dcs.sub_state, M, copy(M, dcs.p))
     solve!(dcs.sub_problem, dcs.sub_state) # call the subsolver
     # copy result from subsolver to current iterate
