@@ -387,7 +387,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test DebugFactory([:Subsolver, " | "])[:All] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
-        set_manopt_parameter!(dst, :active, true)
+        set_manopt_parameter!(dst, :Debug, :active, true)
         @test dA.active
     end
 end
