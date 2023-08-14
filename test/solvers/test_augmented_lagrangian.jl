@@ -23,15 +23,17 @@ using LinearAlgebra: I, tr
         co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g)
         mp = DefaultManoptProblem(M, co)
         # dummy ALM problem
-        alms = AugmentedLagrangianMethodState(
-            M, co, p0, DefaultManoptProblem(M, ManifoldCostObjective(f)), NelderMeadState(M)
-        )
+        sp = DefaultManoptProblem(M, ManifoldCostObjective(f))
+        ss = NelderMeadState(M)
+        alms = AugmentedLagrangianMethodState(M, co, p0, sp, ss)
         set_iterate!(alms, M, 2 .* p0)
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0
         @test startswith(
             repr(alms), "# Solver state for `Manopt.jl`s Augmented Lagrangian Method\n"
         )
+        @test Manopt.get_sub_problem(alms) === sp
+        @test Manopt.get_sub_state(alms) === ss
     end
     @testset "Numbers" begin
         M = Euclidean()

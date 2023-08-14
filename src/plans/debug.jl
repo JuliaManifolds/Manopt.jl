@@ -125,6 +125,16 @@ function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
     return print(io, "DebugGroup([$s])")
 end
+function set_manopt_parameter!(dg::DebugGroup, v::Val, args...)
+    for di in dg.group
+        set_manopt_parameter!(di, v, args...)
+    end
+    return dg
+end
+function set_manopt_parameter!(dg::DebugGroup, e::Symbol, args...)
+    set_manopt_parameter!(dg, Val(e), args...)
+    return dg
+end
 
 @doc raw"""
     DebugEvery <: DebugAction
@@ -154,6 +164,11 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     elseif d.always_update
         d.debug(p, st, -1)
     end
+    # set activity for the next iterate in subsolvers
+    set_manopt_parameter!(
+        st, :SubState, :Debug, :active, !(i < 1) && (rem(i + 1, d.every) == 0)
+    )
+    return nothing
 end
 function show(io::IO, de::DebugEvery)
     return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
@@ -167,6 +182,15 @@ function status_summary(de::DebugEvery)
     end
     return "[$s, $(de.every)]"
 end
+function set_manopt_parameter!(de::DebugEvery, e::Symbol, args...)
+    set_manopt_parameter!(de, Val(e), args...)
+    return de
+end
+function set_manopt_parameter!(de::DebugEvery, args...)
+    set_manopt_parameter!(de.debug, args...)
+    return de
+end
+
 #
 # Special single ones
 #
@@ -256,13 +280,13 @@ print the current cost function value, see [`get_cost`](@ref).
 
 * `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
 * `io` – (`stdout`) default steream to print the debug to.
-* `long` - (`false`) short form to set the format to `F(x):` (default) or `current cost: ` and the cost
+* `long` - (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
     format::String
     function DebugCost(;
-        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "F(x): %f"
+        long::Bool=false, io::IO=stdout, format=long ? "current cost: %f" : "f(x): %f"
     )
         return new(io, format)
     end
@@ -621,6 +645,57 @@ show(io::IO, ::DebugStoppingCriterion) = print(io, "DebugStoppingCriterion()")
 status_summary(::DebugStoppingCriterion) = ":Stop"
 
 @doc raw"""
+    DebugWhenActive <: DebugAction
+
+evaluate and print debug only if the active boolean is set.
+This can be set from outside and is for example triggered by [`DebugEvery`](@ref)
+on debugs on the subsolver.
+
+This method does not perform any print itself but relies on it's childrens print.
+
+For now, the main interaction is with [`DebugEvery`](@ref) which might activate or
+deactivate this debug
+
+# Fields
+* `always_update` – whether or not to call the order debugs with iteration `-1` in in active state
+* `active` – a boolean that can (de-)activated from outside to enable/disable debug
+
+# Constructor
+
+    DebugWhenActive(d::DebugAction, active=true, always_update=true)
+
+Initialise the DebugSubsolver.
+"""
+mutable struct DebugWhenActive <: DebugAction
+    debug::DebugAction
+    active::Bool
+    always_update::Bool
+    function DebugWhenActive(d::DebugAction, active::Bool=true, always_update::Bool=true)
+        return new(d, active, always_update)
+    end
+end
+function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
+    if dwa.active
+        dwa.debug(p, st, i)
+    elseif dwa.always_update
+        dwa.debug(p, st, -1)
+    end
+end
+function show(io::IO, dwa::DebugWhenActive)
+    return print(io, "DebugWhenActive($(dwa.debug), $(dwa.active), $(dwa.always_update))")
+end
+function status_summary(dwa::DebugWhenActive)
+    return repr(dwa)
+end
+function set_manopt_parameter!(dwa::DebugWhenActive, v::Val, args...)
+    set_manopt_parameter!(dwa.debug, v, args...)
+    return dwa
+end
+function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:active}, v)
+    return dwa.active = v
+end
+
+@doc raw"""
     DebugTime()
 
 Measure time and print the intervals. Using `start=true` you can start the timer on construction,
@@ -852,6 +927,7 @@ given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
 
 * The symbol `:Stop` creates an entry of to display the stopping criterion at the end
   (`:Stop => DebugStoppingCriterion()`), for further symbols see [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
+* The symbol `:Subsolver` wraps all `dictionary` entries with [`DebugWhenActive`](@ref) that can be set from outside.
 * Tuples of a symbol and a string can be used to also specify a format, see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
 * any string creates a [`DebugDivider`](@ref)
 * any [`DebugAction`](@ref) is directly included
@@ -880,7 +956,7 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the di
 function DebugFactory(a::Array{<:Any,1})
     # filter out every
     group = Array{DebugAction,1}()
-    for s in filter(x -> !isa(x, Int) && x != :Stop, a) # filter ints and stop
+    for s in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter ints and stop
         push!(group, DebugActionFactory(s))
     end
     dictionary = Dict{Symbol,DebugAction}()
@@ -893,8 +969,11 @@ function DebugFactory(a::Array{<:Any,1})
         end
         dictionary[:All] = debug
     end
-    if :Stop in a
-        dictionary[:Stop] = DebugStoppingCriterion()
+    (:Stop in a) && (dictionary[:Stop] = DebugStoppingCriterion())
+    if (:Subsolver in a)
+        for k in keys(dictionary)
+            dictionary[k] = DebugWhenActive(dictionary[k])
+        end
     end
     return dictionary
 end
@@ -931,8 +1010,8 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Time` creates a [`DebugTime`](@ref)
 * `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
-* `:ErrorMessages`creates a [`DebugMessages`](@ref)`(:Error)`
-* `:Messages`creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
+* `:ErrorMessages` creates a [`DebugMessages`](@ref)`(:Error)`
+* `:Messages` creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """

@@ -28,7 +28,7 @@ mutable struct DifferenceOfConvexProximalState{
     RTR<:AbstractRetractionMethod,
     ITR<:AbstractInverseRetractionMethod,
     Tλ,
-} <: AbstractManoptSolverState
+} <: AbstractSubProblemSolverState
     λ::Tλ
     p::P
     q::P
@@ -362,7 +362,7 @@ function difference_of_convex_proximal_point!(
                 )
             else
                 TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
-            end,
+            end;
             sub_kwargs...,
         )
     end,
@@ -458,10 +458,10 @@ function step_solver!(
     # do a step in that direction
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
     # use this point (q) for the prox
-    set_manopt_parameter!(dcps.sub_problem, :Cost, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Cost, :λ, dcps.λ(i))
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(i))
     set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
     solve!(dcps.sub_problem, dcps.sub_state)
     copyto!(M, dcps.r, get_solver_result(dcps.sub_state))

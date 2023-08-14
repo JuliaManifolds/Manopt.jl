@@ -32,7 +32,7 @@ using Manopt, Manifolds, Test
         )
         p = get_solver_result(s)[]
         res_debug = String(take!(my_io))
-        @test res_debug === " F(x): 1.357071\n"
+        @test res_debug === " f(x): 1.357071\n"
         p2 = gradient_descent(
             M,
             f,

@@ -87,6 +87,7 @@ makedocs(
             "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
             "Count and use a Cache" => "tutorials/CountAndCache.md",
+            "Perform Debug Output" => "tutorials/HowToDebug.md",
             "Record values" => "tutorials/HowToRecord.md",
             "Implement a Solver" => "tutorials/ImplementASolver.md",
             "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
