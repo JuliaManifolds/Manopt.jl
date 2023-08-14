@@ -174,10 +174,10 @@ include("../utils/example_tasks.jl")
             zero_vector(M, p0);
             stopping_criterion=StopAfterIteration(500) |
                                StopWhenGradientNormLess(1e-11) |
-                               StopWhenFirstOrderProgress(0.5),
+                               StopWhenFirstOrderProgress(0.1),
         )
-        q3 = copy(M, p0) # we compute in-place of this variable
-        r = adaptive_regularization_with_cubics!(
+        q3 = copy(M, p0)
+        adaptive_regularization_with_cubics!(
             M,
             mho,
             q3;
