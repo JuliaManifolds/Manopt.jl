@@ -279,8 +279,6 @@ export get_proximal_map,
     set_gradient!,
     set_iterate!,
     set_manopt_parameter!,
-    set_manopt_parameter!,
-    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -482,6 +480,7 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
+export DebugWhenActive
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugMessages
 #
 # Records - and access functions

@@ -5,6 +5,7 @@ project:
     - "*.qmd"
     - "!GeodesicRegression.qmd"
     - "!InplaceGradient.qmd"
+    - "!HowToDebug.qmd"
 
 crossref:
   fig-prefix: Figure

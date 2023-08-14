@@ -9,6 +9,19 @@ It might also be more verbose in explaining, or hide internal information.
 """
 status_summary(e) = "$(e)"
 
+"""
+    set_manopt_parameter!(f, element::Symbol , args...)
+
+For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
+set some `args...` in `f` or one of uts sub elements.
+"""
+function set_manopt_parameter!(f, e::Symbol, args...)
+    return set_manopt_parameter!(f, Val(e), args...)
+end
+function set_manopt_parameter!(f, args...)
+    return f
+end
+
 include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")

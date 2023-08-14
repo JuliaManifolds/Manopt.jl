@@ -274,7 +274,7 @@ function Frank_Wolfe_method!(
                 stepsize=default_stepsize(
                     M, GradientDescentState; retraction_method=retraction_method
                 ),
-            ),
+            );
             sub_kwargs...,
         )
     end,

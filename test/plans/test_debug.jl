@@ -49,7 +49,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         # Debug Cost
         @test DebugCost(; format="A %f").format == "A %f"
         DebugCost(; long=false, io=io)(mp, st, 0)
-        @test String(take!(io)) == "F(x): 0.000000"
+        @test String(take!(io)) == "f(x): 0.000000"
         DebugCost(; long=false, io=io)(mp, st, -1)
         @test String(take!(io)) == ""
         # entry
@@ -323,8 +323,8 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         # check that a nondefault manifold works as well - not sure how to test this then
         d = DebugChange(Euclidean(2))
 
-        @test repr(DebugCost()) == "DebugCost(; format=\"F(x): %f\")"
-        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"F(x): %f\")"
+        @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\")"
+        @test Manopt.status_summary(DebugCost()) == "(:Cost, \"f(x): %f\")"
 
         @test repr(DebugDivider("|")) == "DebugDivider(; divider=\"|\")"
         @test Manopt.status_summary(DebugDivider("a")) == "\"a\""
@@ -349,5 +349,45 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test repr(d) == "DebugMessages(:Info)"
         @test Manopt.status_summary(d) == ":Messages"
         @test_logs (:info, "DebugTest") d(mp, s, 0)
+    end
+    @testset "DebugWhenActive" begin
+        io = IOBuffer()
+        M = ManifoldsBase.DefaultManifold(2)
+        p = [4.0, 2.0]
+        st = GradientDescentState(
+            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        )
+        f(M, q) = distance(M, q, p) .^ 2
+        grad_f(M, q) = -2 * log(M, q, p)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        dD = DebugDivider(" | "; io=io)
+        dA = DebugWhenActive(dD, false)
+        @test !dA.active
+        set_manopt_parameter!(dA, :Dummy, true) # passdown
+        set_manopt_parameter!(dA, :active, true) # activate
+        @test dA.active
+        @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"
+        @test Manopt.status_summary(dA) == repr(dA)
+        #issue active
+        dA(mp, st, 1)
+        @test endswith(String(take!(io)), " | ")
+        dE = DebugEvery(dA, 2)
+        dE(mp, st, 2)
+        @test endswith(String(take!(io)), " | ")
+        set_manopt_parameter!(dE, :active, false) # deactivate
+        dE(mp, st, 2)
+        @test endswith(String(take!(io)), "")
+        @test !dA.active
+        dG = DebugGroup([dA])
+        set_manopt_parameter!(dG, :active, true) # activate in group
+        dG(mp, st, 2)
+        @test endswith(String(take!(io)), " | ")
+        # test its usage in the factory independent of position
+        @test DebugFactory([" | ", :Subsolver])[:All] isa DebugWhenActive
+        @test DebugFactory([:Subsolver, " | "])[:All] isa DebugWhenActive
+
+        dst = DebugSolverState(st, dA)
+        set_manopt_parameter!(dst, :Debug, :active, true)
+        @test dA.active
     end
 end

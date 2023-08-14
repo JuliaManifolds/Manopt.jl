@@ -14,7 +14,7 @@ using Manopt, Manifolds, Test
         cpi = DefaultManoptProblem(M, moi)
         @test Manopt.evaluation_type(cpi) === InplaceEvaluation
     end
-    @testset "set_*_parameter functions" begin
+    @testset "set_manopt_parameter functions" begin
         f(M, p) = 1 # dummy cost
         mco = ManifoldCostObjective(f)
         dmp = DefaultManoptProblem(Euclidean(3), mco)
@@ -23,7 +23,5 @@ using Manopt, Manifolds, Test
         set_manopt_parameter!(dmp, :Cost, :Dummy, 1)
         set_manopt_parameter!(mco, :Cost, :Dummy, 1)
         # but the objective here does not have a gradient
-        @test_throws MethodError set_manopt_parameter!(dmp, :Gradient, :Dummy, 1)
-        @test_throws MethodError set_manopt_parameter!(mco, :Gradient, :Dummy, 1)
     end
 end

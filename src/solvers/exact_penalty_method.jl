@@ -319,7 +319,7 @@ function exact_penalty_method!(
             ),
             stopping_criterion=sub_stopping_criterion,
             stepsize=default_stepsize(M, QuasiNewtonState),
-        ),
+        );
         sub_kwargs...,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
@@ -359,10 +359,10 @@ function step_solver!(
 ) where {P}
     M = get_manifold(amp)
     # use subsolver to minimize the smoothed penalized function
-    set_manopt_parameter!(epms.sub_problem, :Cost, :ρ, epms.ρ)
-    set_manopt_parameter!(epms.sub_problem, :Cost, :u, epms.u)
-    set_manopt_parameter!(epms.sub_problem, :Gradient, :ρ, epms.ρ)
-    set_manopt_parameter!(epms.sub_problem, :Gradient, :u, epms.u)
+    set_manopt_parameter!(epms.sub_problem, :Objective, :Cost, :ρ, epms.ρ)
+    set_manopt_parameter!(epms.sub_problem, :Objective, :Cost, :u, epms.u)
+    set_manopt_parameter!(epms.sub_problem, :Objective, :Gradient, :ρ, epms.ρ)
+    set_manopt_parameter!(epms.sub_problem, :Objective, :Gradient, :u, epms.u)
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
     update_stopping_criterion!(epms, :MinIterateChange, epms.ϵ)
 
