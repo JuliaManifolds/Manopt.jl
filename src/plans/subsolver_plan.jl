@@ -45,18 +45,6 @@ function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     end
     return dss
 end
-function set_manopt_parameter!(amp::AbstractManoptProblem, ev::Val, fv::Val, v)
-    set_manopt_parameter!(get_objective(amp), ev, fv, v)
-    return amp
-end
-function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, fv::Val, v)
-    set_manopt_parameter!(get_manifold(amp), fv, v)
-    return amp
-end
-function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, fv::Val, v)
-    set_manopt_parameter!(get_objective(amp), fv, v)
-    return amp
-end
 
 """
     set_manopt_parameter!(ams::DebugSolverState, ::Val{:SubProblem}, args...)
