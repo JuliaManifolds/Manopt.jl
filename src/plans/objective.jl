@@ -47,9 +47,18 @@ do not allocate memory but work on their input, i.e. in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
-struct ReturnManifoldObjective{E,P,O<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,P}
-    objective::O
+@doc raw"""
+ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{E,O2}
+
+A wrapper to indicate that `get_solver_result` should return the inner objetcive.
+
+The types are such that one can still dispatch on the undecorated type `O2` of the
+original objective as well.
+"""
+struct ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{E,O2}
+    objective::O1
 end
 function ReturnManifoldObjective(
     o::O
@@ -57,13 +66,136 @@ function ReturnManifoldObjective(
     return ReturnManifoldObjective{E,O,O}(o)
 end
 function ReturnManifoldObjective(
-    o::O
+    o::O1
 ) where {
     E<:AbstractEvaluationType,
-    P<:AbstractManifoldObjective,
-    O<:AbstractDecoratedManifoldObjective{E,P},
+    O2<:AbstractManifoldObjective,
+    O1<:AbstractDecoratedManifoldObjective{E,O2},
 }
-    return ReturnManifoldObjective{E,P,O}(o)
+    return ReturnManifoldObjective{E,O2,O1}(o)
+end
+
+@doc raw"""
+    EmbeddedManifoldObjective{P, T, E, O2, O1<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{O2, O1}
+
+Declare an objective to be defined in the embedding.
+This also declares the gradient to be defined in the embedding,
+and especially being the Riesz representer with respect to the metric in the embedding.
+The types can be used to still dispatch on also the undecorated objective type `O2`.
+
+# Fields
+* `objective` – the objective that is defined in the embedding
+* `p`         - (`nothing`) a point in the embedding.
+* `X`         - (`nothing`) a tangent vector in the embedding
+
+When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
+memory allocations. Similarly `X` is used when embedding tangent vectors
+
+"""
+struct EmbeddedManifoldObjective{P,T,E,O2,O1<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{E,O2}
+    objective::O1
+    p::P
+    X::T
+end
+function EmbeddedManifoldObjective(
+    o::O, p::P=nothing, X::T=nothing
+) where {P,T,E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E}}
+    return EmbeddedManifoldObjective{P,T,E,O,O}(o, p, X)
+end
+function EmbeddedManifoldObjective(
+    o::O1, p::P=nothing, X::T=nothing
+) where {
+    P,
+    T,
+    E<:AbstractEvaluationType,
+    O2<:AbstractManifoldObjective,
+    O1<:AbstractDecoratedManifoldObjective{E,O2},
+}
+    return EmbeddedManifoldObjective{P,T,E,P,O}(o, p, X)
+end
+function EmbeddedManifoldObjective(
+    M::AbstractManifold,
+    o::O;
+    q=rand(M),
+    p::P=embed(M, q),
+    X::T=embed(M, q, rand(M; vector_at=q)),
+) where {P,T,O<:AbstractManifoldObjective}
+    return EmbeddedManifoldObjective(o, p, X)
+end
+
+@doc raw"""
+    get_cost(M, emo::EmbeddedManifoldObjective, p)
+
+Evaluate the cost function of an objective defined in the embedding, that is
+call [`embed`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.embed-Tuple{AbstractManifold,%20Any})
+on the point `p` and call the original cost on this point.
+
+if `emo.p` is not nothing, the embedding is done in place of `emo.p`
+"""
+function get_cost(M, emo::EmbeddedManifoldObjective{Nothing}, p)
+    return get_cost(get_embedding(M), emo.objective, embed(M, p))
+end
+function get_cost(M, emo::EmbeddedManifoldObjective{P}, p) where {P}
+    embed!(M, emo.p, p)
+    return get_cost(get_embedding(M), emo.objective, emo.p)
+end
+
+function get_cost_function(emo::EmbeddedManifoldObjective)
+    return (M, p) -> get_cost(M, emo, p)
+end
+
+@doc raw"""
+    get_gradient(M, emo::EmbeddedManifoldObjective, p)
+    get_gradient(M, X, emo::EmbeddedManifoldObjective, p)
+
+Evaluate the gradient function of an objective defined in the embedding, that is
+call [`embed`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.embed-Tuple{AbstractManifold,%20Any})
+on the point `p` and call the original cost on this point.
+And convert the gradient using [`riemannian_gradient`]() on the result.
+
+if `emo.p` is not nothing, the embedding is done in place of `emo.p`
+"""
+function get_gradient(M, emo::EmbeddedManifoldObjective{Nothing,Nothing}, p)
+    return riemannian_gradient(
+        M, p, get_gradient(get_embedding(M), emo.objective, embed(M, p))
+    )
+end
+function get_gradient(M, emo::EmbeddedManifoldObjective{P,Nothing}, p) where {P}
+    embed!(M, emo.p, p)
+    return riemannian_gradient(M, p, get_gradient(get_embedding(M), emo.objective, emo.p))
+end
+function get_gradient(M, emo::EmbeddedManifoldObjective{Nothing,T}, p) where {T}
+    get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
+    return riemannian_gradient(M, p, emo.X)
+end
+function get_gradient(M, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
+    embed!(M, emo.p, p)
+    get_gradient!(get_embedding(M), emo.X, emo.objective, emo.p)
+    return riemannian_gradient(M, p, emo.X)
+end
+function get_gradient!(M, X, emo::EmbeddedManifoldObjective{Nothing,Nothing}, p)
+    riemannian_gradient!(
+        M, X, p, get_gradient(get_embedding(M), emo.objective, embed(M, p))
+    )
+    return X
+end
+function get_gradient!(M, X, emo::EmbeddedManifoldObjective{P,Nothing}, p) where {P}
+    embed!(M, emo.p, p)
+    riemannian_gradient!(M, X, p, get_gradient(get_embedding(M), emo, emo.p))
+    return X
+end
+function get_gradient!(M, X, emo::EmbeddedManifoldObjective{Nothing,T}, p) where {T}
+    get_gradient!(get_embedding(M), emo.X, emo, embed(M, p))
+    riemannian_gradient!(M, X, p, emo.X)
+    return X
+end
+function get_gradient!(M, X, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
+    embed!(M, emo.p, p)
+    get_gradient!(get_embedding(M), emo.X, emo, emo.p)
+    riemannian_gradient!(M, X, p, emo.X)
+    return X
 end
 
 """

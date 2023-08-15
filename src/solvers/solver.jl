@@ -64,12 +64,13 @@ decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators.
 A specific one is used to activate certain decorators.
 
-* `cache` – (`missing`) specify a cache. Currenlty `:Simple` is supported and `:LRU` if you
+* `cache`     – (`missing`) specify a cache. Currenlty `:Simple` is supported and `:LRU` if you
   load `LRUCache.jl`. For this case a tuple specifying what to cache and how many can be provided,
   i.e. `(:LRU, [:Cost, :Gradient], 10)`, where the number specifies the size of each cache.
   and 10 is the default if one omits the last tuple entry
-* `count` – (`missing`) specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
-
+* `count`     – (`missing`) specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
+* `objective` - (`missing`) specify that an objective is `:Euclidean`, which is equivalent to specifying the default embedding
+                the equivalent statement here is `:Embedded`, which fits better in naming when `M` is an []`
 other keywords are ignored.
 
 # See also
@@ -83,12 +84,25 @@ function decorate_objective!(
         Missing,Symbol,Tuple{Symbol,<:AbstractArray},Tuple{Symbol,<:AbstractArray,P}
     }=missing,
     count::Union{Missing,AbstractVector{<:Symbol}}=missing,
+    objective::Union{Missing,Symbol}=missing,
+    _p=ismissing(objective) ? missing : rand(M),
+    embedded_p=ismissing(objective) ? missing : embed(M, _p),
+    embedded_X=ismissing(objective) ? missing : embed(M, _p, rand(M; vector_at=p)),
     return_objective=false,
     kwargs...,
 ) where {O<:AbstractManifoldObjective,P}
-    # Order: First count _then_ cache, so that cache is the outer decorator and
-    # we only count _after_ cache misses
-    deco_o = ismissing(count) ? o : objective_count_factory(M, o, count)
+    # Order:
+    # 1) wrap embedding,
+    # 2) _then_ count
+    # 3) _then_ cache,
+    # count should not be affected by 1) but cache should be on manifold not embedding
+    # => we only count _after_ cache misses
+    # and always last wrapper: ReturnObjective.
+    deco_o = o
+    if !ismissing(objective) && objective ∈ [:Embedding, :Euclidan]
+        deco_o = EmbeddedManifoldObjective(o, embedded_p, embedded_X)
+    end
+    deco_o = ismissing(count) ? o : objective_count_factory(M, deco_o, count)
     deco_o = ismissing(cache) ? deco_o : objective_cache_factory(M, deco_o, cache)
     deco_o = return_objective ? ReturnManifoldObjective(deco_o) : deco_o
     return deco_o
