@@ -132,7 +132,7 @@ Evaluate the cost function of an objective defined in the embedding, that is
 call [`embed`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.embed-Tuple{AbstractManifold,%20Any})
 on the point `p` and call the original cost on this point.
 
-if `emo.p` is not nothing, the embedding is done in place of `emo.p`
+If `emo.p` is not `nothing`, the embedding is done in place of `emo.p`.
 """
 function get_cost(M, emo::EmbeddedManifoldObjective{Nothing}, p)
     return get_cost(get_embedding(M), emo.objective, embed(M, p))
@@ -148,14 +148,14 @@ end
 
 @doc raw"""
     get_gradient(M, emo::EmbeddedManifoldObjective, p)
-    get_gradient(M, X, emo::EmbeddedManifoldObjective, p)
+    get_gradient!(M, X, emo::EmbeddedManifoldObjective, p)
 
 Evaluate the gradient function of an objective defined in the embedding, that is
 call [`embed`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.embed-Tuple{AbstractManifold,%20Any})
 on the point `p` and call the original cost on this point.
 And convert the gradient using [`riemannian_gradient`]() on the result.
 
-if `emo.p` is not nothing, the embedding is done in place of `emo.p`
+If `emo.p` is not `nothing`, the embedding is done in place of `emo.p`.
 """
 function get_gradient(M, emo::EmbeddedManifoldObjective{Nothing,Nothing}, p)
     return riemannian_gradient(
