@@ -69,7 +69,7 @@ A specific one is used to activate certain decorators.
   i.e. `(:LRU, [:Cost, :Gradient], 10)`, where the number specifies the size of each cache.
   and 10 is the default if one omits the last tuple entry
 * `count`     – (`missing`) specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
-* `objective` - (`:Riemannian`) specify that an objective is `:Riemannian` or `:Euclidean`.
+* `objective_type` - (`:Riemannian`) specify that an objective is `:Riemannian` or `:Euclidean`.
                 The `:Euclidean` symbol is equivalent to specifying it as `:Embedded`,
                 since in the end, both refer to convertiing an objective from the embedding (whether its Euclidean or not)
                 to the Riemannian one.
@@ -85,10 +85,10 @@ function decorate_objective!(
         Missing,Symbol,Tuple{Symbol,<:AbstractArray},Tuple{Symbol,<:AbstractArray,P}
     }=missing,
     count::Union{Missing,AbstractVector{<:Symbol}}=missing,
-    objective::Symbol=:Riemannian,
-    p=objective !== :Riemannian ? missing : rand(M),
-    embedded_p=objective !== :Riemannian ? missing : embed(M, p),
-    embedded_X=objective !== :Riemannian ? missing : embed(M, p, rand(M; vector_at=p)),
+    objective_type::Symbol=:Riemannian,
+    p=objective_type !== :Riemannian ? missing : rand(M),
+    embedded_p=objective_type !== :Riemannian ? missing : embed(M, p),
+    embedded_X=objective_type !== :Riemannian ? missing : embed(M, p, rand(M; vector_at=p)),
     return_objective=false,
     kwargs...,
 ) where {O<:AbstractManifoldObjective,P}
@@ -100,7 +100,7 @@ function decorate_objective!(
     # => we only count _after_ cache misses
     # and always last wrapper: ReturnObjective.
     deco_o = o
-    if objective ∈ [:Embedding, :Euclidan]
+    if objective_type ∈ [:Embedding, :Euclidan]
         deco_o = EmbeddedManifoldObjective(o, embedded_p, embedded_X)
     end
     deco_o = ismissing(count) ? o : objective_count_factory(M, deco_o, count)

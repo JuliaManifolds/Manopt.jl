@@ -61,7 +61,30 @@ makedocs(
     format=Documenter.HTML(;
         mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
     ),
-    modules=[Manopt],
+    modules=[
+        Manopt,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptLineSearchesExt)
+        else
+            Manifolds.ManoptLineSearchesExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptLRUCacheExt)
+        else
+            Manifolds.ManoptLRUCacheExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptManifoldsExt)
+        else
+            Manifolds.ManoptManifoldsExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptPlotsExt)
+        else
+            Manifolds.ManoptPlotsExt
+        end,
+    ],
+    authors="Ronny Bergmann, and contributors.",
     sitename="Manopt.jl",
     strict=[
         :doctest,
