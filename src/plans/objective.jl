@@ -153,7 +153,7 @@ end
 Evaluate the gradient function of an objective defined in the embedding, that is
 call [`embed`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.embed-Tuple{AbstractManifold,%20Any})
 on the point `p` and call the original cost on this point.
-And convert the gradient using [`riemannian_gradient`]() on the result.
+And convert the gradient using [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}) on the result.
 
 If `emo.p` is not `nothing`, the embedding is done in place of `emo.p`.
 """
@@ -196,6 +196,97 @@ function get_gradient!(M, X, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
     get_gradient!(get_embedding(M), emo.X, emo, emo.p)
     riemannian_gradient!(M, X, p, emo.X)
     return X
+end
+
+@doc raw"""
+    get_hessian(M, emo::EmbeddedManifoldObjective, p, X)
+    get_hessian!(M, Y, emo::EmbeddedManifoldObjective, p, X)
+
+Evaluate the Hessian of an objective defined in the embedding, that is
+call [`embed`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.embed-Tuple{AbstractManifold,%20Any})
+on the point `p` and the direction `X` before passing them to the embedded Hessian,
+and use [`riemannian_Hessian`]() on the result to convert it to a Riemannian one.
+
+If `emo.p` and/or `emp.X` are not `nothing`, the embedding and Hessian evaluation is done in place of these variables.
+"""
+function get_hessian(M, emo::EmbeddedManifoldObjective{Nothing,Nothing}, p, X)
+    q = embed(M, p)
+    return riemannian_Hessian(
+        M,
+        p,
+        get_gradient(get_embedding(M), emo.objective, q),
+        get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)),
+        X,
+    )
+end
+function get_hessian(M, emo::EmbeddedManifoldObjective{P,Nothing}, p) where {P}
+    embed!(M, emo.p, p)
+    return riemannian_Hessian(
+        M,
+        p,
+        get_gradient(get_embedding(M), emo.objective, emo.p),
+        get_hessian(get_embedding(M), emo.objective, emo.p, embed(M, p, X)),
+        X,
+    )
+end
+function get_hessian(M, emo::EmbeddedManifoldObjective{Nothing,T}, p) where {T}
+    get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
+    q = embed(M, p)
+    return riemannian_Hessian(
+        M, p, emo.X, get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)), X
+    )
+end
+function get_hessian(M, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
+    embed!(M, emo.p, p)
+    get_gradient!(get_embedding(M), emo.X, emo.objective, emo.p)
+    return riemannian_Hessian(
+        M, p, emo.X, get_hessian(get_embedding(M), emo.objective, emo.p, embed(M, p, X)), X
+    )
+end
+function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{Nothing,Nothing}, p, X)
+    q = embed(M, p)
+    riemannian_Hessian!(
+        M,
+        Y,
+        p,
+        get_gradient(get_embedding(M), emo.objective, q),
+        get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)),
+        X,
+    )
+    return Y
+end
+function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{P,Nothing}, p) where {P}
+    embed!(M, emo.p, p)
+    riemannian_Hessian!(
+        M,
+        Y,
+        p,
+        get_gradient(get_embedding(M), emo.objective, emo.p),
+        get_hessian(get_embedding(M), emo.objective, emo.p, embed(M, p, X)),
+        X,
+    )
+    return Y
+end
+function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{Nothing,T}, p) where {T}
+    get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
+    q = embed(M, p)
+    riemannian_Hessian!(
+        M, Y, p, emo.X, get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)), X
+    )
+    return Y
+end
+function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
+    embed!(M, emo.p, p)
+    get_gradient!(get_embedding(M), emo.X, emo.objective, emo.p)
+    riemannian_Hessian!(
+        M,
+        Y,
+        p,
+        emo.X,
+        get_hessian(get_embedding(M), emo.objective, emo.p, embed(M, p, X)),
+        X,
+    )
+    return Y
 end
 
 """

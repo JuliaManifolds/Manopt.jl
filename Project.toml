@@ -40,7 +40,7 @@ DataStructures = "0.17, 0.18"
 LRUCache = "1.4"
 ManifoldDiff = "0.2, 0.3.3"
 Manifolds = "0.8.69"
-ManifoldsBase = "0.14.4"
+ManifoldsBase = "0.14.10"
 Requires = "0.5, 1"
 julia = "1.6"
 

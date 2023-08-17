@@ -44,7 +44,11 @@ using ManifoldDiff:
     differential_shortest_geodesic_startpoint,
     differential_shortest_geodesic_startpoint!,
     jacobi_field,
-    jacobi_field!
+    jacobi_field!,
+    riemannian_gradient,
+    riemannian_gradient!,
+    riemannian_Hessian,
+    riemannian_Hessian!
 using ManifoldsBase:
     AbstractBasis,
     AbstractDecoratorManifold,
