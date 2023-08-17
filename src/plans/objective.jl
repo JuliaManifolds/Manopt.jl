@@ -278,7 +278,7 @@ function show(io::IO, t::Tuple{<:AbstractManifoldObjective,P}) where {P}
     )
 end
 
-function status_summary(o::AbstractManifoldObjective{E}) where {E}
+function status_summary(::AbstractManifoldObjective{E}) where {E}
     return ""
 end
 # Default undecorate for summary
