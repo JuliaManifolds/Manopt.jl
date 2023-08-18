@@ -66,22 +66,22 @@ makedocs(
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptLineSearchesExt)
         else
-            Manifolds.ManoptLineSearchesExt
+            Manopt.ManoptLineSearchesExt
         end,
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptLRUCacheExt)
         else
-            Manifolds.ManoptLRUCacheExt
+            Manopt.ManoptLRUCacheExt
         end,
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptManifoldsExt)
         else
-            Manifolds.ManoptManifoldsExt
+            Manopt.ManoptManifoldsExt
         end,
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptPlotsExt)
         else
-            Manifolds.ManoptPlotsExt
+            Manopt.ManoptPlotsExt
         end,
     ],
     authors="Ronny Bergmann, and contributors.",

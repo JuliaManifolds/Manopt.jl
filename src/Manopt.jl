@@ -80,6 +80,8 @@ using ManifoldsBase:
     default_retraction_method,
     default_vector_transport_method,
     distance,
+    embed,
+    embded!,
     embed_project,
     embed_project!,
     exp,
