@@ -91,6 +91,11 @@ By default this passes on to the inner objective, see [`set_manopt_parameter!`](
 """
 set_manopt_parameter!(amp::AbstractManoptProblem, e::Symbol, args...)
 
+function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, args...)
+    set_manopt_parameter!(get_manifold(amp), args...)
+    return amp
+end
+
 function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, args...)
     set_manopt_parameter!(get_objective(amp), args...)
     return amp

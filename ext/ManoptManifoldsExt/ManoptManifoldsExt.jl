@@ -9,7 +9,8 @@ import Manopt:
     alternating_gradient_descent,
     alternating_gradient_descent!,
     get_gradient,
-    get_gradient!
+    get_gradient!,
+    set_manopt_parameter!
 using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu, I, Diagonal
 import ManifoldsBase: copy, mid_point, mid_point!
 
@@ -29,5 +30,5 @@ include("nonmutating_manifolds_functions.jl")
 include("artificialDataFunctionsManifolds.jl")
 include("ChambollePockManifolds.jl")
 include("alternating_gradient.jl")
-
+include("ARC_CG.jl")
 end

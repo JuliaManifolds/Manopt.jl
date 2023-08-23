@@ -26,14 +26,24 @@ specify options for a conjugate gradient descent algorithm, that solves a
 [`DefaultManoptProblem`].
 
 # Fields
-* `p` – the current iterate, a point on a manifold
-* `X` – the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
-* `δ` – the current descent direction, i.e. also tangent vector
-* `β` – the current update coefficient rule, see .
-* `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
-* `stepsize` – a [`Stepsize`](@ref) function
-* `stop` – a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
+* `p`                       – the current iterate, a point on a manifold
+* `X`                       – the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
+* `δ`                       – the current descent direction, i.e. also tangent vector
+* `β`                       – the current update coefficient rule, see .
+* `coefficient`             – ([`ConjugateDescentCoefficient`](@ref)`()`) a [`DirectionUpdateRule`](@ref) function to determine the new `β`
+* `stepsize`                – ([`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`) a [`Stepsize`](@ref) function
+* `stop`                    – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
+* `retraction_method`       – (`default_retraction_method(M, typeof(p))`) a type of retraction
+* `vector_transport_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
+
+# Constructor
+
+    ConjugateGradientState(M, p)
+
+where the last five fields above can be set by their names as keyword and the
+`X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,
+and `δ` is initialized to a copy of this vector.
+
 
 # See also
 
@@ -85,17 +95,48 @@ mutable struct ConjugateGradientDescentState{
         return cgs
     end
 end
-function ConjugateGradientDescentState(
+@deprecate ConjugateGradientDescentState(
     M::AbstractManifold,
-    p::P,
+    p,
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     vtr::AbstractVectorTransportMethod=default_vector_transport_method(M, typeof(p)),
+    initial_gradient=zero_vector(M, p),
+) ConjugateGradientDescentState(
+    M,
+    p;
+    stopping_criterion=sC,
+    stepsize=s,
+    coefficient=dU,
+    retraction_method=retr,
+    vector_transport_method=vtr,
+    initial_gradient=initial_gradient,
+)
+function ConjugateGradientDescentState(
+    M::AbstractManifold,
+    p::P;
+    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    stepsize::Stepsize=default_stepsize(
+        M, ConjugateGradientDescentState; retraction_method=retraction_method
+    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+                                          StopWhenGradientNormLess(1e-8),
+    vector_transport_method=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
 ) where {P,T}
-    return ConjugateGradientDescentState{P,T}(M, p, sC, s, dU, retr, vtr, initial_gradient)
+    return ConjugateGradientDescentState{P,T}(
+        M,
+        p,
+        stopping_criterion,
+        stepsize,
+        coefficient,
+        retraction_method,
+        vector_transport_method,
+        initial_gradient,
+    )
 end
 
 function get_message(cgs::ConjugateGradientDescentState)

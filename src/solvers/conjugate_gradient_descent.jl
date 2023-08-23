@@ -165,20 +165,20 @@ function conjugate_gradient_descent!(
         StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
     ),
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
+    initial_gradient=zero_vector(M, p),
     kwargs...,
 ) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
-    X = zero_vector(M, p)
     cgs = ConjugateGradientDescentState(
         M,
-        p,
-        stopping_criterion,
-        stepsize,
-        coefficient,
-        retraction_method,
-        vector_transport_method,
-        X,
+        p;
+        stopping_criterion=stopping_criterion,
+        stepsize=stepsize,
+        coefficient=coefficient,
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        initial_gradient=initial_gradient,
     )
     dcgs = decorate_state!(cgs; kwargs...)
     solve!(dmp, dcgs)
