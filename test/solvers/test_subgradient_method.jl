@@ -11,10 +11,16 @@ include("../utils/example_tasks.jl")
         M, p0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
     )
     sgs_ac = SubGradientMethodState(
-        M, q0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(1.0, :absolute)
+        M,
+        q0;
+        stopping_criterion=StopAfterIteration(200),
+        stepsize=ConstantStepsize(1.0, :absolute),
     )
     sgs_ad = SubGradientMethodState(
-        M, q0; stopping_criterion=StopAfterIteration(200), stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :absolute)
+        M,
+        q0;
+        stopping_criterion=StopAfterIteration(200),
+        stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :absolute),
     )
     @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
     @test get_iterate(sgs) == p0
@@ -41,12 +47,16 @@ include("../utils/example_tasks.jl")
         @test get_last_stepsize(mp, sgs, 1) == 1.0
         # Check absolute constant stepsize
         @test get_initial_stepsize(mp, sgs_ac) == 1.0
-        @test get_stepsize(mp, sgs_ac, 1) == 1.0 / norm(get_manifold(mp), get_iterate(sgs_ac), get_subgradient(sgs_ac))
-        @test get_last_stepsize(mp, sgs_ac, 1) ==  1.0 / norm(get_manifold(mp), get_iterate(sgs_ac), get_subgradient(sgs_ac))
+        @test get_stepsize(mp, sgs_ac, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(sgs_ac), get_subgradient(sgs_ac))
+        @test get_last_stepsize(mp, sgs_ac, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(sgs_ac), get_subgradient(sgs_ac))
         # Check absolute decreasing stepsize
         @test get_initial_stepsize(mp, sgs_ad) == 1.0
-        @test get_stepsize(mp, sgs_ad, 1) == 1.0 / norm(get_manifold(mp), get_iterate(sgs_ad), get_subgradient(sgs_ad))
-        @test get_stepsize(mp, sgs_ad, 200) ==  0.005 / norm(get_manifold(mp), get_iterate(sgs_ad), get_subgradient(sgs_ad))
+        @test get_stepsize(mp, sgs_ad, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(sgs_ad), get_subgradient(sgs_ad))
+        @test get_stepsize(mp, sgs_ad, 200) ==
+            0.005 / norm(get_manifold(mp), get_iterate(sgs_ad), get_subgradient(sgs_ad))
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
