@@ -78,7 +78,7 @@ function (cs::ConstantStepsize)(
 )
     s = cs.length
     if cs.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
         if ns > eps(eltype(s))
             s /= ns
         end
@@ -152,7 +152,7 @@ function (s::DecreasingStepsize)(
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
     if s.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
         if ns > eps(eltype(ds))
             ds /= ns
         end
