@@ -46,15 +46,18 @@ A functor that always returns a fixed step size.
 
 # Fields
 * `length` – constant value for the step size
-* `type` - a symbol that indicates whether the stepsize is relatively (to the gradient norm) or absolutely constant
+* `type` - a symbol that indicates whether the stepsize is relatively (:relative),
+    with respect to the gradient norm, or absolutely (:absolute) constant.
 
 # Constructors
 
-    ConstantStepsize(s::Real, t::Symbol)
+    ConstantStepsize(s::Real, t::Symbol=:relative)
 
 initialize the stepsize to a constant `s` of type `t`.
 
-    ConstantStepsize(M::AbstractManifold=DefaultManifold(2); stepsize=injectivity_radius(M)/2)
+    ConstantStepsize(M::AbstractManifold=DefaultManifold(2); 
+        stepsize=injectivity_radius(M)/2, type::Symbol=:relative
+    )
 
 initialize the stepsize to a constant `stepsize`, which by default is half the injectivity
 radius, unless the radius is infinity, then the default step size is `1`.
@@ -100,7 +103,8 @@ A functor that represents several decreasing step sizes
 * `exponent` – (`1`) a value ``e`` the current iteration numbers ``e``th exponential
   is taken of
 * `shift` – (`0`) shift the denominator iterator ``i`` by ``s```.
-* `type` - a symbol that indicates whether the stepsize is relatively (to the gradient norm) or absolutely constant
+* `type` - a symbol that indicates whether the stepsize is relatively (:relative),
+    with respect to the gradient norm, or absolutely (:absolute) constant.
 
 In total the complete formulae reads for the ``i``th iterate as
 
@@ -118,9 +122,11 @@ Alternatively one can also use the following keyword.
 
     DecreasingStepsize(
         M::AbstractManifold=DefaultManifold(3);
-        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0, 
+        exponent=1.0, shift=0, type=:relative
+    )
 
-initialiszes all fields above, where none of them is mandatory and the length is set to
+initializes all fields above, where none of them is mandatory and the length is set to
 half and to $1$ if the injectivity radius is infinite.
 """
 mutable struct DecreasingStepsize <: Stepsize
