@@ -1,15 +1,16 @@
 """
     SubGradientMethodState <: AbstractManoptSolverState
 
-stories option values for a [`subgradient_method`](@ref) solver
+stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
+
 * `retraction_method` – the retration to use within
 * `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stop` – ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
 * `p` – (initial or current) value the algorithm is at
 * `p_star` – optimal value (initialized to a copy of `p`.)
-* `X` (`zero_vector(M, p)`) the current element from the possible subgradients at
+* `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
    `p` that was last evaluated.
 
 # Constructor
@@ -93,8 +94,8 @@ not necessarily deterministic.
 
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of F
-  restricted to always only returning one value/element from the subgradient.
+* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of f
+  restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
@@ -105,8 +106,8 @@ alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` c
 # Optional
 
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂F(M, y)` or [`InplaceEvaluation`](@ref) in place, i.e. is
-   of the form `∂F!(M, X, x)`.
+   allocation (default) form `∂f(M, y)` or [`InplaceEvaluation`](@ref) in place, i.e. is
+   of the form `∂f!(M, X, x)`.
 * `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
@@ -166,7 +167,7 @@ perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
 * `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of F
-  restricted to always only returning one value/element from the subgradient.
+  restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
@@ -224,3 +225,27 @@ function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, i)
     return sgs
 end
 get_solver_result(sgs::SubGradientMethodState) = sgs.p_star
+function (cs::ConstantStepsize)(
+    amp::AbstractManoptProblem, sgs::SubGradientMethodState, ::Any, args...; kwargs...
+)
+    s = cs.length
+    if cs.type == :absolute
+        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        if ns > eps(eltype(s))
+            s /= ns
+        end
+    end
+    return s
+end
+function (s::DecreasingStepsize)(
+    amp::AbstractManoptProblem, sgs::SubGradientMethodState, i::Int, args...; kwargs...
+)
+    ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
+    if s.type == :absolute
+        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        if ns > eps(eltype(ds))
+            ds /= ns
+        end
+    end
+    return ds
+end
