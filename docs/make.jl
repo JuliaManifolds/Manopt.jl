@@ -30,7 +30,8 @@ if "--quarto" ∈ ARGS
 end
 
 # (c) load necessary packages for the docs
-using Documenter: DocMeta, HTML, MathJax3, deploydocs, makedocs
+using Documenter
+using DocumenterCitations
 using LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (d) add contributing.md to docs
@@ -54,10 +55,30 @@ open(joinpath(generated_path, "contributing.md"), "w") do io
 end
 
 # (e) ...finally! make docs
-makedocs(;
-    format=HTML(; mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"),
+bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
+makedocs(
+    bib;
+    format=Documenter.HTML(;
+        mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
+    ),
     modules=[Manopt],
+    authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
+    strict=[
+        :doctest,
+        :linkcheck,
+        :parse_error,
+        :example_block,
+        :autodocs_block,
+        :cross_references,
+        :docs_block,
+        :eval_block,
+        :example_block,
+        :footnote,
+        :meta_block,
+        :missing_docs,
+        :setup_block,
+    ],
     pages=[
         "Home" => "index.md",
         "About" => "about.md",
@@ -66,6 +87,7 @@ makedocs(;
             "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
             "Count and use a Cache" => "tutorials/CountAndCache.md",
+            "Perform Debug Output" => "tutorials/HowToDebug.md",
             "Record values" => "tutorials/HowToRecord.md",
             "Implement a Solver" => "tutorials/ImplementASolver.md",
             "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
@@ -73,6 +95,7 @@ makedocs(;
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
+            "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
@@ -108,7 +131,7 @@ makedocs(;
             "Bézier curves" => "functions/bezier.md",
             "Cost functions" => "functions/costs.md",
             "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjointdifferentials.md",
+            "Adjoint Differentials" => "functions/adjoint_differentials.md",
             "Gradients" => "functions/gradients.md",
             "Proximal Maps" => "functions/proximal_maps.md",
             "Specific Manifold Functions" => "functions/manifold.md",
@@ -120,9 +143,9 @@ makedocs(;
             "Exports" => "helpers/exports.md",
         ],
         "Contributing to Manopt.jl" => "contributing.md",
-        "Notation" => "notation.md",
         "Extensions" => "extensions.md",
-        "Function Index" => "list.md",
+        "Notation" => "notation.md",
+        "References" => "references.md",
     ],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)

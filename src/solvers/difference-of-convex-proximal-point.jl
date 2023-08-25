@@ -28,7 +28,7 @@ mutable struct DifferenceOfConvexProximalState{
     RTR<:AbstractRetractionMethod,
     ITR<:AbstractInverseRetractionMethod,
     Tλ,
-} <: AbstractManoptSolverState
+} <: AbstractSubProblemSolverState
     λ::Tλ
     p::P
     q::P
@@ -121,7 +121,7 @@ end
     difference_of_convex_proximal_point(M, grad_h, p=rand(M); kwargs...)
     difference_of_convex_proximal_point(M, mdcpo, p=rand(M); kwargs...)
 
-Compute the difference of convex proximal point algorithm [^SouzaOliveira2015] to minimize
+Compute the difference of convex proximal point algorithm [Souza, Oliveira, J. Glob. Optim., 2015](@cite SouzaOliveira:2015) to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M} g(p) - h(p)
@@ -144,7 +144,7 @@ Then repeat for ``k=0,1,\ldots``
 6. set ``p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(s_kX^{(k)})``.
 
 until the `stopping_criterion` is fulfilled.
-See [^AlmeidaNetoOliveiraSouza2020] for more details on the modified variant,
+See [Almeida, da Cruz Neto, Oliveira, Souza, Comput. Optim. Appl., 2020](@cite AlmeidaNetoOliveiraSouza:2020) for more details on the modified variant,
 where we slightly changed step 4-6, sine here we get the classical proximal point
 method for DC functions for ``s_k = 1`` and we can employ linesearches similar to other solvers.
 
@@ -200,17 +200,6 @@ difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
 
 # Output
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
-[^SouzaOliveira2015]:
-    > de Oliveira Souza, J. C., Oliveira, P. R.:
-    > _A proximal point algorithm for {DC} fuctions on Hadamard manifolds_,
-    > Journal of Global Optimization (64), 4, 2015, pp. 797–810,
-    > doi: [10.1007/s10898-015-0282-7](https://doi.org/10.1007/s10898-015-0282-7).
-[^AlmeidaNetoOliveiraSouza2020]:
-    > Almeida, Y. T., de Cruz Neto, J. X. Oliveira, P. R., de Oliveira Souza, J. C.:
-    > _A modified proximal point method for DC functions on Hadamard manifolds_,
-    > Computational Optimization and Applications (76), 2020, pp. 649–673.
-    > doi: [10.1007/s10589-020-00173-3](https://doi.org/10.1007/s10589-020-00173-3)
 """
 difference_of_convex_proximal_point(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_proximal_point(M::AbstractManifold, grad_h; kwargs...)
@@ -373,7 +362,7 @@ function difference_of_convex_proximal_point!(
                 )
             else
                 TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
-            end,
+            end;
             sub_kwargs...,
         )
     end,
@@ -469,10 +458,10 @@ function step_solver!(
     # do a step in that direction
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
     # use this point (q) for the prox
-    set_manopt_parameter!(dcps.sub_problem, :Cost, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Cost, :λ, dcps.λ(i))
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Gradient, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(i))
     set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
     solve!(dcps.sub_problem, dcps.sub_state)
     copyto!(M, dcps.r, get_solver_result(dcps.sub_state))

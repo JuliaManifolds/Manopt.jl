@@ -7,10 +7,9 @@ Modules = [Manopt]
 Pages   = ["checks.jl"]
 ```
 
-## Internal methods
+## Literature
 
-```@autodocs
-Modules = [Manopt]
-Pages   = ["check_plots.jl"]
-Private = true
+```@bibliography
+Pages = ["helpers/checks.md"]
+Canonical=false
 ```

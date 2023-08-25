@@ -5,4 +5,9 @@ Modules = [Manopt]
 Pages   = ["bezier_curves.jl"]
 ```
 
-## Literature
+# Literature
+
+```@bibliography
+Pages = ["functions/bezier.md"]
+Canonical=false
+```

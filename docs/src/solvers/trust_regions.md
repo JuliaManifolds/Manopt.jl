@@ -155,3 +155,10 @@ as well as their (non-exported) common supertype
 ```@docs
 Manopt.AbstractApproxHessian
 ```
+
+## Literature
+
+```@bibliography
+Pages = ["solvers/trust_regions.md"]
+Canonical=false
+```

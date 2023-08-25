@@ -49,7 +49,7 @@ For specific quasi-Newton updates, the fulfillment of the Riemannian curvature c
 g_{x_{k+1}}(s_k, y_k) > 0
 ```
 
-holds, is a requirement for the inheritance of the self-adjointness and positive definiteness of the ``\mathcal{H}_k`` or ``\mathcal{B}_k`` to the operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``. Unfortunately, the fulfillment of the Riemannian curvature condition is not given by a step size ``\alpha_k > 0`` that satisfies the generalized Wolfe conditions. However, in order to create a positive definite operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` in each iteration, the so-called locking condition was introduced in [^HuangGallivanAbsil2015], which requires that the isometric vector transport ``T^S``, which is used in the update formula, and its associate retraction ``R`` fulfill
+holds, is a requirement for the inheritance of the self-adjointness and positive definiteness of the ``\mathcal{H}_k`` or ``\mathcal{B}_k`` to the operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``. Unfortunately, the fulfillment of the Riemannian curvature condition is not given by a step size ``\alpha_k > 0`` that satisfies the generalized Wolfe conditions. However, in order to create a positive definite operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` in each iteration, the so-called locking condition was introduced in [Huang, Gallican, Absil, SIAM J. Optim., 2015](@cite HuangGallivanAbsil:2015), which requires that the isometric vector transport ``T^S``, which is used in the update formula, and its associate retraction ``R`` fulfill
 
 ```math
 T^{S}{x, ξ_x}(ξ_x) = β T^{R}{x, ξ_x}(ξ_x), \quad β = \frac{\lVert ξ_x \rVert_x}{\lVert T^{R}{x, ξ_x}(ξ_x) \rVert_{R_{x}(ξ_x)}},
@@ -113,3 +113,8 @@ QuasiNewtonState
 ```
 
 ## Literature
+
+```@bibliography
+Pages = ["solvers/quasi_Newton.md"]
+Canonical=false
+```

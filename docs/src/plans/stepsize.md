@@ -25,3 +25,10 @@ Pages = ["plans/stepsize.jl"]
 Order = [:type,:function]
 Filter = t -> t != Stepsize
 ```
+
+## Literature
+
+```@bibliography
+Pages = ["plans/stepsize.md"]
+Canonical=false
+```

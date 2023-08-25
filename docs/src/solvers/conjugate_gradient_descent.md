@@ -33,3 +33,8 @@ SteepestDirectionUpdateRule
 ```
 
 # Literature
+
+```@bibliography
+Pages = ["solvers/conjugate_gradient_descent.md"]
+Canonical=false
+```

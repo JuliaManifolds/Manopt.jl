@@ -129,7 +129,7 @@ function set_manopt_parameter!(ldc::LinearizedDCCost, ::Val{:p}, p)
     return ldc
 end
 function set_manopt_parameter!(ldc::LinearizedDCCost, ::Val{:X}, X)
-    ldc.Xk = X
+    ldc.Xk .= X
     return ldc
 end
 
@@ -203,7 +203,7 @@ function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:p}, p)
     return ldcg
 end
 function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:X}, X)
-    ldcg.Xk = X
+    ldcg.Xk .= X
     return ldcg
 end
 

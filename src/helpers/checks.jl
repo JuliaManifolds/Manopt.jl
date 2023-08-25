@@ -88,7 +88,7 @@ end
 
 Check numerivcally whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
-This implements the method described in Section 4.8 [^Boumal2022].
+This implements the method described in [Section 4.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot will be generated,
@@ -107,10 +107,6 @@ no plot will be generated,
 * `throw_error` - (`false`) throw an error message if the differential is wrong
 * `window` – (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
-
-[^Boumal2022]:
-    > Boumal, N.: _An Introduction to Optimization on Smooth Manifolds_, book in preparation, 2022.
-    > url: [http://www.nicolasboumal.net/book](http://www.nicolasboumal.net/book).
 """
 function check_differential(
     M::AbstractManifold,
@@ -166,7 +162,7 @@ f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \math
 
 or in other words, that the error between the function ``f`` and its first order Taylor
 behaves in error ``\mathcal O(t^2)``, which indicates that the gradient is correct,
-cf. also Section 4.8 [^Boumal2022].
+cf. also [Section 4.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot will be generated.
@@ -229,7 +225,7 @@ f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac
 
 or in other words, that the error between the function ``f`` and its second order Taylor
 behaves in error ``\mathcal O(t^3)``, which indicates that the Hessian is correct,
-cf. also Section 6.8 [^Boumal2022].
+cf. also [Section 6.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot will be generated.

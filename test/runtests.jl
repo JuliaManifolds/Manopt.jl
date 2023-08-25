@@ -42,6 +42,7 @@ include("utils/example_tasks.jl")
         include("helpers/test_linesearches.jl")
     end
     @testset "Solver Tests       " begin
+        include("solvers/test_adaptive_regularization_with_cubics.jl")
         include("solvers/test_alternating_gradient.jl")
         include("solvers/test_augmented_lagrangian.jl")
         # include("solvers/test_bundle_method.jl")

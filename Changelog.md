@@ -11,10 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
 * `prox_bundle_method` optimization algorithm for non-smooth functions.
-* `ConstantStepsize` and `DecreasingStepsize` now have an additional field `type::Symbol` to assess whether the
-  step-size should be relatively (to the gradient norm) or absolutely constant.
 * `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
   `StopWhenProxBundleLess` stopping criteria.
+
+## [0.4.33] - 24/08/2023
+
+### Added
+
+* `ConstantStepsize` and `DecreasingStepsize` now have an additional field `type::Symbol` to assess whether the
+  step-size should be relatively (to the gradient norm) or absolutely constant.
+
+## [0.4.32] - 23/08/2023
+
+### Added
+
+* The adaptive regularization with cubics (ARC) solver.
+
+## [0.4.31] - 14/08/2023
+
+### Added
+
+* A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive``
+  to de/activate subsolver debug from the main solvers `DebugEvery`.
+
+## [0.4.30] - 03/08/2023
+
+### Changed
+
+* References in the documentation are now rendered using [DocumenterCitations.jl](https://github.com/JuliaDocs/DocumenterCitations.jl)
+* Asymptote export now also accepts a size in pixel instead of its default `4cm` size and `render` can be deactivated setting it to `nothing`.
+
+## [0.4.29] - 12/07/2023
+
+### Fixed
+
+* fixed a bug, where `cyclic_proximal_point` did not work with decorated objectives.
+
 
 ## [0.4.28] - 24/06/2023
 

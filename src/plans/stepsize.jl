@@ -46,15 +46,18 @@ A functor that always returns a fixed step size.
 
 # Fields
 * `length` – constant value for the step size
-* `type` - a symbol that indicates whether the stepsize is relatively (to the gradient norm) or absolutely constant
+* `type` - a symbol that indicates whether the stepsize is relatively (:relative),
+    with respect to the gradient norm, or absolutely (:absolute) constant.
 
 # Constructors
 
-    ConstantStepsize(s::Real, t::Symbol)
+    ConstantStepsize(s::Real, t::Symbol=:relative)
 
 initialize the stepsize to a constant `s` of type `t`.
 
-    ConstantStepsize(M::AbstractManifold=DefaultManifold(2); stepsize=injectivity_radius(M)/2)
+    ConstantStepsize(M::AbstractManifold=DefaultManifold(2); 
+        stepsize=injectivity_radius(M)/2, type::Symbol=:relative
+    )
 
 initialize the stepsize to a constant `stepsize`, which by default is half the injectivity
 radius, unless the radius is infinity, then the default step size is `1`.
@@ -78,7 +81,7 @@ function (cs::ConstantStepsize)(
 )
     s = cs.length
     if cs.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
         if ns > eps(eltype(s))
             s /= ns
         end
@@ -100,7 +103,8 @@ A functor that represents several decreasing step sizes
 * `exponent` – (`1`) a value ``e`` the current iteration numbers ``e``th exponential
   is taken of
 * `shift` – (`0`) shift the denominator iterator ``i`` by ``s```.
-* `type` - a symbol that indicates whether the stepsize is relatively (to the gradient norm) or absolutely constant
+* `type` - a symbol that indicates whether the stepsize is relatively (:relative),
+    with respect to the gradient norm, or absolutely (:absolute) constant.
 
 In total the complete formulae reads for the ``i``th iterate as
 
@@ -118,9 +122,11 @@ Alternatively one can also use the following keyword.
 
     DecreasingStepsize(
         M::AbstractManifold=DefaultManifold(3);
-        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0, exponent=1.0, shift=0)
+        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0, 
+        exponent=1.0, shift=0, type=:relative
+    )
 
-initialiszes all fields above, where none of them is mandatory and the length is set to
+initializes all fields above, where none of them is mandatory and the length is set to
 half and to $1$ if the injectivity radius is infinite.
 """
 mutable struct DecreasingStepsize <: Stepsize
@@ -152,7 +158,7 @@ function (s::DecreasingStepsize)(
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
     ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
     if s.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
+        ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
         if ns > eps(eltype(ds))
             ds /= ns
         end
@@ -407,8 +413,8 @@ end
 @doc raw"""
     NonmonotoneLinesearch <: Linesearch
 
-A functor representing a nonmonotone line search using the Barzilai-Borwein step size[^Iannazzo2018]. Together with a gradient descent algorithm
-this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
+A functor representing a nonmonotone line search using the Barzilai-Borwein step size [Iannazzo, Porcelli, IMA J. Numer. Anal., 2017](@cite IannazzoPorcelli:2017).
+Together with a gradient descent algorithm this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
 by Iannazzo and Porcelli so that in each iteration we first find
 
 ```math
@@ -459,11 +465,6 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 ```math
 α_k = σ^h α_k^{\text{BB}}.
 ```
-
-[^Iannazzo2018]:
-    > B. Iannazzo, M. Porcelli, __The Riemannian Barzilai–Borwein Method with Nonmonotone Line Search and the Matrix Geometric Mean Computation__,
-    > In: IMA Journal of Numerical Analysis. Volume 38, Issue 1, January 2018, Pages 495–517,
-    > doi [10.1093/imanum/drx015](https://doi.org/10.1093/imanum/drx015)
 
 # Fields
 * `initial_stepsize` – (`1.0`) the step size we start the search with
@@ -873,7 +874,8 @@ W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 �
 ```
 
 where ``x_+ = \operatorname{retr}_x(tη)`` is the current trial point, and ``\text{V}`` is a
-vector transport, we perform the following Algorithm similar to Algorithm 7 from [^Huang2014]
+vector transport, we perform the following Algorithm similar to Algorithm 7 from [Huang, Thesis, 2014](@cite Huang:2014)
+
 1. set ``α=0``, ``β=∞`` and ``t=1``.
 2. While either ``A(t)`` does not hold or ``W(t)`` does not hold do steps 3-5.
 3. If ``A(t)`` fails, set ``β=t``.
@@ -895,11 +897,6 @@ The other constructor is kept for backward compatibility.
         vector_transport_method = default_vector_transport(M),
         linesearch_stopsize = 0.0
     )
-
-[^Huang2014]:
-    > Huang, W.: _Optimization algorithms on Riemannian manifolds with applications_,
-    > Dissertation, Flordia State University, 2014.
-    > [pdf](https://www.math.fsu.edu/~whuang2/pdf/Huang_W_Dissertation_2013.pdf)
 """
 mutable struct WolfePowellBinaryLinesearch{
     TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
@@ -986,7 +983,7 @@ end
 @doc raw"""
     AdaptiveWNGradient <: DirectionUpdateRule
 
-Represent an adaptive gradient method introduced by [^GrapigliaStella2023].
+Represent an adaptive gradient method introduced by [Grapiglia,Stella, J. Optim. Theory Appl., 2023](@cite GrapigliaStella:2023).
 
 Given a positive threshold ``\hat c \mathbb N``,
 an minimal bound ``b_{\mathrm{min}} > 0``,
@@ -1044,13 +1041,6 @@ An additional keyword arguments
 
 * `adaptive` (`true`) switches the `gradient_reduction ``α`` to `0`.
 * `evaluation` (`AllocatingEvaluation()`) specifies whether the gradient (that is used for initialisation only) is mutating or allocating
-
-[^GrapigliaStella2023]:
-    > Grapiglia, G. N., Stella, G. F. D.:
-    > An Adaptive Riemannian Gradient Method Without Function Evaluations
-    > Journal of Optimization Theory and Applications (197), pp. 1140–1160, 2023.
-    > doi: [10.1007/s10957-023-02227-y](https://doi.org/10.1007/s10957-023-02227-y),
-    > preprint: [optimization-online.org/wp-content/uploads/2022/04/8864.pdf](https://optimization-online.org/wp-content/uploads/2022/04/8864.pdf)
 """
 mutable struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
     count_threshold::I

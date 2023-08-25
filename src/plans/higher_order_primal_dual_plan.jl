@@ -1,7 +1,7 @@
 @doc raw"""
     PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
 
-Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [^DiepeveenLellmann2021]
+Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [Diepeveen, Lellmann, SIAM J. Imag. Sci., 2021](@cite DiepeveenLellmann:2021)
 
 # Fields
 
@@ -18,12 +18,6 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 # Constructor
 
     PrimalDualManifoldSemismoothNewtonObjective(cost, prox_F, prox_G_dual, forward_operator, adjoint_linearized_operator,Λ)
-
-[^DiepeveenLellmann2021]:
-    > W. Diepeveen, J. Lellmann:
-    > _An Inexact Semismooth Newton Method on Riemannian Manifolds with Application to Duality-Based Total Variation Denoising_,
-    > SIAM Journal on Imaging Sciences, 2021.
-    > doi: [10.1137/21M1398513](https://doi.org/10.1137/21M1398513)
 """
 mutable struct PrimalDualManifoldSemismoothNewtonObjective{
     E<:AbstractEvaluationType,TC,PF,DPF,PG,DPG,LFO,ALO,L

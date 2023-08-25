@@ -15,7 +15,8 @@ using ColorTypes
 using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
-using LinearAlgebra: Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky
+using LinearAlgebra:
+    Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm
 using ManifoldDiff:
     adjoint_Jacobi_field,
     adjoint_Jacobi_field!,
@@ -70,6 +71,7 @@ using ManifoldsBase:
     allocate,
     allocate_result,
     allocate_result_type,
+    base_manifold,
     copy,
     copyto!,
     default_inverse_retraction_method,
@@ -105,6 +107,7 @@ using ManifoldsBase:
     power_dimensions,
     project,
     project!,
+    rand!,
     representation_size,
     requires_caching,
     retract,
@@ -138,6 +141,7 @@ include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
+include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/bundle_method.jl")
@@ -237,6 +241,7 @@ export AbstractGradientSolverState,
     AbstractHessianSolverState,
     AbstractManoptSolverState,
     AbstractPrimalDualSolverState,
+    AdaptiveRegularizationState,
     AlternatingGradientDescentState,
     AugmentedLagrangianMethodState,
     BundleMethodState,
@@ -249,6 +254,7 @@ export AbstractGradientSolverState,
     ExactPenaltyMethodState,
     FrankWolfeState,
     GradientDescentState,
+    LanczosState,
     LevenbergMarquardtState,
     NelderMeadState,
     ParticleSwarmState,
@@ -288,11 +294,8 @@ export get_proximal_map,
     get_dual_prox!,
     get_differential_dual_prox,
     get_differential_dual_prox!,
-    get_stopping_criterion,
     set_gradient!,
     set_iterate!,
-    set_manopt_parameter!,
-    set_manopt_parameter!,
     set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
@@ -329,8 +332,7 @@ export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
-export WolfePowellLinesearch,
-    operator_to_matrix, square_matrix_vector_product, WolfePowellBinaryLinesearch
+export WolfePowellLinesearch, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
@@ -350,7 +352,9 @@ export DirectionUpdateRule,
     ConjugateGradientBealeRestart
 #
 # Solvers
-export alternating_gradient_descent,
+export adaptive_regularization_with_cubics,
+    adaptive_regularization_with_cubics!,
+    alternating_gradient_descent,
     alternating_gradient_descent!,
     augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
@@ -400,6 +404,7 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
+export AdaptiveRegularizationCubicCost, AdaptiveRegularizationCubicGrad
 #
 # Stepsize
 export Stepsize
@@ -414,6 +419,7 @@ export StopAfter,
     StopAfterIteration,
     StopWhenResidualIsReducedByFactorOrPower,
     StopWhenAll,
+    StopWhenAllLanczosVectorsUsed,
     StopWhenAny,
     StopWhenBundleLess,
     StopWhenChangeLess,
@@ -422,6 +428,7 @@ export StopAfter,
     StopWhenCurvatureIsNegative,
     StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
+    StopWhenFirstOrderProgress,
     StopWhenIterNan,
     StopWhenSubgradientNormLess,
     StopWhenModelIncreased,
@@ -504,6 +511,7 @@ export DebugDualBaseChange, DebugDualBaseIterate, DebugDualChange, DebugDualIter
 export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
+export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugMessages
 #
 # Records - and access functions

@@ -141,8 +141,8 @@ mutable struct StopAfterIteration <: StoppingCriterion
     StopAfterIteration(mIter::Int) = new(mIter, "", 0)
 end
 function (c::StopAfterIteration)(
-    ::P, ::O, i::Int
-) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
+    ::P, ::S, i::Int
+) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
     if i == 0 # reset on init
         c.reason = ""
         c.at_iteration = 0

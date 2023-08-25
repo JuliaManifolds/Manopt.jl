@@ -42,14 +42,14 @@ in the keyword arguments.
 mutable struct AugmentedLagrangianMethodState{
     P,
     Pr<:AbstractManoptProblem,
-    Op<:AbstractManoptSolverState,
+    St<:AbstractManoptSolverState,
     R<:Real,
     V<:AbstractVector{<:R},
     TStopping<:StoppingCriterion,
-} <: AbstractManoptSolverState
+} <: AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
-    sub_state::Op
+    sub_state::St
     ϵ::R
     ϵ_min::R
     λ_max::R
@@ -148,7 +148,7 @@ end
     augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
     augmented_Lagrangian_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
-perform the augmented Lagrangian method (ALM)[^LiuBoumal2020].
+perform the augmented Lagrangian method (ALM) [Liu, Boumal, 2019, Appl. Math. Optim](@cite LiuBoumal:2019).
 The aim of the ALM is to find the solution of the constrained optimisation task
 
 ```math
@@ -234,13 +234,6 @@ Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newt
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
-[^LiuBoumal2020]:
-    > C. Liu, N. Boumal, __Simple Algorithms for Optimization on Riemannian Manifolds with Constraints__,
-    > In: Applied Mathematics & Optimization, vol 82, 949–981 (2020),
-    > doi [10.1007/s00245-019-09564-3](https://doi.org/10.1007/s00245-019-09564-3),
-    > arXiv: [1901.10000](https://arxiv.org/abs/1901.10000)
-    > Matlab source: [https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints](https://github.com/losangle/Optimization-on-manifolds-with-extra-constraints)
 """
 function augmented_Lagrangian_method(
     M::AbstractManifold,
@@ -397,12 +390,12 @@ end
 function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethodState, iter)
     M = get_manifold(mp)
     # use subsolver to minimize the augmented Lagrangian
-    set_manopt_parameter!(alms.sub_problem, :Cost, :ρ, alms.ρ)
-    set_manopt_parameter!(alms.sub_problem, :Cost, :μ, alms.μ)
-    set_manopt_parameter!(alms.sub_problem, :Cost, :λ, alms.λ)
-    set_manopt_parameter!(alms.sub_problem, :Gradient, :ρ, alms.ρ)
-    set_manopt_parameter!(alms.sub_problem, :Gradient, :μ, alms.μ)
-    set_manopt_parameter!(alms.sub_problem, :Gradient, :λ, alms.λ)
+    set_manopt_parameter!(alms.sub_problem, :Objective, :Cost, :ρ, alms.ρ)
+    set_manopt_parameter!(alms.sub_problem, :Objective, :Cost, :μ, alms.μ)
+    set_manopt_parameter!(alms.sub_problem, :Objective, :Cost, :λ, alms.λ)
+    set_manopt_parameter!(alms.sub_problem, :Objective, :Gradient, :ρ, alms.ρ)
+    set_manopt_parameter!(alms.sub_problem, :Objective, :Gradient, :μ, alms.μ)
+    set_manopt_parameter!(alms.sub_problem, :Objective, :Gradient, :λ, alms.λ)
     set_iterate!(alms.sub_state, M, copy(M, alms.p))
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)

@@ -26,14 +26,23 @@ specify options for a conjugate gradient descent algorithm, that solves a
 [`DefaultManoptProblem`].
 
 # Fields
-* `p` – the current iterate, a point on a manifold
-* `X` – the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
-* `δ` – the current descent direction, i.e. also tangent vector
-* `β` – the current update coefficient rule, see .
-* `coefficient` – a [`DirectionUpdateRule`](@ref) function to determine the new `β`
-* `stepsize` – a [`Stepsize`](@ref) function
-* `stop` – a [`StoppingCriterion`](@ref)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
+* `p`                       – the current iterate, a point on a manifold
+* `X`                       – the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
+* `δ`                       – the current descent direction, i.e. also tangent vector
+* `β`                       – the current update coefficient rule, see .
+* `coefficient`             – ([`ConjugateDescentCoefficient`](@ref)`()`) a [`DirectionUpdateRule`](@ref) function to determine the new `β`
+* `stepsize`                – ([`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`) a [`Stepsize`](@ref) function
+* `stop`                    – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
+* `retraction_method`       – (`default_retraction_method(M, typeof(p))`) a type of retraction
+* `vector_transport_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
+
+# Constructor
+
+    ConjugateGradientState(M, p)
+
+where the last five fields above can be set by their names as keyword and the
+`X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,
+and `δ` is initialized to a copy of this vector.
 
 
 # See also
@@ -86,17 +95,48 @@ mutable struct ConjugateGradientDescentState{
         return cgs
     end
 end
-function ConjugateGradientDescentState(
+@deprecate ConjugateGradientDescentState(
     M::AbstractManifold,
-    p::P,
+    p,
     sC::StoppingCriterion,
     s::Stepsize,
     dU::DirectionUpdateRule,
     retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     vtr::AbstractVectorTransportMethod=default_vector_transport_method(M, typeof(p)),
+    initial_gradient=zero_vector(M, p),
+) ConjugateGradientDescentState(
+    M,
+    p;
+    stopping_criterion=sC,
+    stepsize=s,
+    coefficient=dU,
+    retraction_method=retr,
+    vector_transport_method=vtr,
+    initial_gradient=initial_gradient,
+)
+function ConjugateGradientDescentState(
+    M::AbstractManifold,
+    p::P;
+    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    stepsize::Stepsize=default_stepsize(
+        M, ConjugateGradientDescentState; retraction_method=retraction_method
+    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+                                          StopWhenGradientNormLess(1e-8),
+    vector_transport_method=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
 ) where {P,T}
-    return ConjugateGradientDescentState{P,T}(M, p, sC, s, dU, retr, vtr, initial_gradient)
+    return ConjugateGradientDescentState{P,T}(
+        M,
+        p,
+        stopping_criterion,
+        stepsize,
+        coefficient,
+        retraction_method,
+        vector_transport_method,
+        initial_gradient,
+    )
 end
 
 function get_message(cgs::ConjugateGradientDescentState)
@@ -110,7 +150,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [^Flethcer1987] adapted to manifolds:
+and the last update direction ``\delta=\delta_k``,  based on [Fletcher, 1987](@cite Fletcher:1987) adapted to manifolds:
 
 ```math
 β_k =
@@ -124,10 +164,6 @@ See also [`conjugate_gradient_descent`](@ref)
     ConjugateDescentCoefficient(a::StoreStateAction=())
 
 Construct the conjugate descent coefficient update rule, a new storage is created by default.
-
-[^Flethcer1987]:
-    > R. Fletcher, __Practical Methods of Optimization vol. 1: Unconstrained Optimization__
-    > John Wiley & Sons, New York, 1987. doi [10.1137/1024028](https://doi.org/10.1137/1024028)
 """
 struct ConjugateDescentCoefficient <: DirectionUpdateRule end
 
@@ -157,7 +193,7 @@ show(io::IO, ::ConjugateDescentCoefficient) = print(io, "ConjugateDescentCoeffic
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``, based on [^DaiYuan1999] adapted to manifolds:
+and the last update direction ``\delta=\delta_k``, based on [Dai, Yuan, Siam J Optim, 1999](@cite DaiYuan:1999) adapted to manifolds:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
@@ -180,11 +216,6 @@ See also [`conjugate_gradient_descent`](@ref)
 
 Construct the Dai Yuan coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
-
-[^DaiYuan1999]:
-    > [Y. H. Dai and Y. Yuan, A nonlinear conjugate gradient method with a strong global convergence property,
-    > SIAM J. Optim., 10 (1999), pp. 177–182.
-    > doi: [10.1137/S1052623497318992](https://doi.org/10.1137/S1052623497318992)
 """
 struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
@@ -230,7 +261,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [^FletcherReeves1964] adapted to manifolds:
+and the last update direction ``\delta=\delta_k``,  based on [Flecther, Reeves, Comput. J, 1964](@cite FletcherReeves:1964) adapted to manifolds:
 
 ````math
 β_k =
@@ -243,11 +274,6 @@ See also [`conjugate_gradient_descent`](@ref)
     FletcherReevesCoefficient(a::StoreStateAction=())
 
 Construct the Fletcher Reeves coefficient update rule, a new storage is created by default.
-
-[^FletcherReeves1964]:
-    > R. Fletcher and C. Reeves, Function minimization by conjugate gradients,
-    > Comput. J., 7 (1964), pp. 149–154.
-    > doi: [10.1093/comjnl/7.2.149](http://dx.doi.org/10.1093/comjnl/7.2.149)
 """
 struct FletcherReevesCoefficient <: DirectionUpdateRule end
 
@@ -278,7 +304,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``, based on [^HagerZhang2005]
+and the last update direction ``\delta=\delta_k``, based on [Hager, Zhang, SIAM J Optim, 2005](@cite HagerZhang:2005).
 adapted to manifolds: let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
@@ -300,11 +326,6 @@ See also [`conjugate_gradient_descent`](@ref)
 
 Construct the Hager Zhang coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
-
-[^HagerZhang2005]:
-    > [W. W. Hager and H. Zhang, __A new conjugate gradient method with guaranteed descent and an efficient line search__,
-    > SIAM J. Optim, (16), pp. 170-192, 2005.
-    > doi: [10.1137/030601880](https://doi.org/10.1137/030601880)
 """
 mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
@@ -360,7 +381,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [^HeestensStiefel1952]
+and the last update direction ``\delta=\delta_k``,  based on [Heestenes, Stiefel, J. Research Nat. Bur. Standards, 1952](@cite HestenesStiefel:1952)
 adapted to manifolds as follows:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``.
@@ -381,11 +402,6 @@ Construct the Heestens Stiefel coefficient update rule, where the parallel trans
 default vector transport and a new storage is created by default.
 
 See also [`conjugate_gradient_descent`](@ref)
-
-[^HeestensStiefel1952]:
-    > M.R. Hestenes, E.L. Stiefel, Methods of conjugate gradients for solving linear systems,
-    > J. Research Nat. Bur. Standards, 49 (1952), pp. 409–436.
-    > doi: [10.6028/jres.049.044](http://dx.doi.org/10.6028/jres.049.044)
 """
 struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
        DirectionUpdateRule
@@ -432,7 +448,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [^LuiStorey1991]
+and the last update direction ``\delta=\delta_k``,  based on [Lui, Storey, J. Optim. Theoru Appl., 1991](@cite LiuStorey:1991)
 adapted to manifolds:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
@@ -454,11 +470,6 @@ See also [`conjugate_gradient_descent`](@ref)
 
 Construct the Lui Storey coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
-
-[^LuiStorey1991]:
-    > Y. Liu and C. Storey, Efficient generalized conjugate gradient algorithms, Part 1: Theory
-    > J. Optim. Theory Appl., 69 (1991), pp. 129–137.
-    > doi: [10.1007/BF00940464](https://doi.org/10.1007/BF00940464)
 """
 struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
@@ -501,8 +512,8 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [^PolakRibiere1969][^Polyak1969]
-adapted to manifolds:
+and the last update direction ``\delta=\delta_k``,  based on [Poliak, Ribiere, ESIAM Math. Modelling Num. Anal., 1969](@cite PolakRibiere:1969)
+and [Polyak, USSR Comp. Math. Math. Phys., 1969](@cite Polyak:1969) adapted to manifolds:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
@@ -526,16 +537,6 @@ Construct the PolakRibiere coefficient update rule, where the parallel transport
 default vector transport and a new storage is created by default.
 
 See also [`conjugate_gradient_descent`](@ref)
-
-[^PolakRibiere1969]:
-    > E. Polak, G. Ribiere, Note sur la convergence de méthodes de directions conjuguées
-    > ESAIM: Mathematical Modelling and Numerical Analysis - Modélisation Mathématique et Analyse Numérique, Tome 3 (1969) no. R1, p. 35-43,
-    > url: [http://www.numdam.org/item/?id=M2AN_1969__3_1_35_0](http://www.numdam.org/item/?id=M2AN_1969__3_1_35_0)
-
-[^Polyak1969]:
-    > B. T. Polyak, The conjugate gradient method in extreme problems,
-    > USSR Comp. Math. Math. Phys., 9 (1969), pp. 94–112.
-    > doi: [10.1016/0041-5553(69)90035-4](https://doi.org/10.1016/0041-5553(69)90035-4)
 """
 struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
@@ -594,8 +595,8 @@ end
     ConjugateGradientBealeRestart <: DirectionUpdateRule
 
 An update rule might require a restart, that is using pure gradient as descent direction,
-if the last two gradients are nearly orthogonal, cf. [^HagerZhang2006], page 12 (in the pdf, 46 in Journal page numbers).
-This method is named after E. Beale [^Beale1972].
+if the last two gradients are nearly orthogonal, cf. [Hager, Zhang, Pacific J Optim, 2006](@cite HagerZhang:2006), page 12 (in the pdf, 46 in Journal page numbers).
+This method is named after E. Beale from his proceedings paper in 1972 [Beale:1972](@cite).
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
 When obtain from the [`ConjugateGradientDescentState`](@ref)` cgs` the last
@@ -608,7 +609,7 @@ Then a restart is performed, i.e. ``β_k = 0`` returned if
 ```
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``,
 and ``ξ`` is the `threshold`.
-The default threshold is chosen as `0.2` as recommended in [^Powell1977].
+The default threshold is chosen as `0.2` as recommended in [Powell, Math. Prog., 1977](@cite Powell:1977)
 
 # Constructor
 
@@ -618,21 +619,6 @@ The default threshold is chosen as `0.2` as recommended in [^Powell1977].
         manifold::AbstractManifold = DefaultManifold(),
         vector_transport_method::V=default_vector_transport_method(manifold),
     )
-
-[^Beale1972]:
-    > E.M.L. Beale:, _A derivation of conjugate gradients_,
-    > in: F.A. Lootsma, ed., Numerical methods for nonlinear optimization,
-    > Academic Press, London, 1972, pp. 39-43, ISBN 9780124556508.
-
-[^HagerZhang2006]:
-    > W. W. Hager and H. Zhang, _A Survey of Nonlinear Conjugate Gradient Methods_
-    > Pacific Journal of Optimization 2, 2006, pp. 35-58.
-    > url: [http://www.yokohamapublishers.jp/online2/pjov2-1.html](http://www.yokohamapublishers.jp/online2/pjov2-1.html)
-
-[^Powell1977]:
-    > M.J.D. Powell, _Restart Procedures for the Conjugate Gradient Method_,
-    > Methematical Programming 12, 1977, pp. 241–254
-    > doi: [10.1007/BF01593790](https://doi.org/10.1007/BF01593790)
 """
 mutable struct ConjugateGradientBealeRestart{
     DUR<:DirectionUpdateRule,VT<:AbstractVectorTransportMethod,F

@@ -8,8 +8,8 @@ Solve an optimization problem of the form
 ```
 
 where ``f\colon\mathcal M \to ℝ^d`` is a continuously differentiable function,
-using the Riemannian Levenberg-Marquardt algorithm [^Peeters1993].
-The implementation follows Algorithm 1[^Adachi2022].
+using the Riemannian Levenberg-Marquardt algorithm [Peeters, Tech. Rep., 1993](@cite Peeters:1993).
+The implementation follows Algorithm 1 [Adachi, Okuno, Takeda, Preprint, 2022](@cite AdachiOkunoTakeda:2022)
 
 # Input
 * `M` – a manifold ``\mathcal M``
@@ -48,16 +48,6 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 # References
-
-[^Adachi2022]:
-    > S. Adachi, T. Okuno, and A. Takeda, “Riemannian Levenberg-Marquardt Method with Global
-    > and Local Convergence Properties.” arXiv, Oct. 01, 2022.
-    > arXiv: [2210.00253](https://doi.org/10.48550/arXiv.2210.00253).
-[^Peeters1993]:
-    > R. L. M. Peeters, “On a Riemannian version of the Levenberg-Marquardt algorithm,”
-    > VU University Amsterdam, Faculty of Economics, Business Administration and Econometrics,
-    > Serie Research Memoranda 0011, 1993.
-    > link: [https://econpapers.repec.org/paper/vuawpaper/1993-11.htm](https://econpapers.repec.org/paper/vuawpaper/1993-11.htm).
 """
 LevenbergMarquardt(M::AbstractManifold, args...; kwargs...)
 function LevenbergMarquardt(

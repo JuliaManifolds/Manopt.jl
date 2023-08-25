@@ -43,7 +43,7 @@ result if `q`.
 
 """
 mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
-               AbstractManoptSolverState
+               AbstractSubProblemSolverState
     p::P
     X::T
     sub_problem::Pr
@@ -113,7 +113,7 @@ end
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
     difference_of_convex_algorithm(M, mdco, p; kwargs...)
 
-Compute the difference of convex algorithm[^FerreiraSantosSouza2021] to minimize
+Compute the difference of convex algorithm [Bergmann, Ferreira, Santos, Souza, preprint, 2023](@cite BergmannFerreiraSantosSouza:2023) to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M}\  g(p) - h(p)
@@ -184,11 +184,6 @@ difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
-[^FerreiraSantosSouza2021]:
-    > Ferreira, O. P., Santos, E. M., Souza, J. C. O.:
-    > _The difference of convex algorithm on Riemannian manifolds_,
-    > 2021, arXiv: [2112.05250](http://arxiv.org/abs/2112.05250).
 """
 difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h; kwargs...)
@@ -337,7 +332,7 @@ function difference_of_convex_algorithm!(
                 )
             else
                 TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
-            end,
+            end;
             sub_kwargs...,
         )
     end,
@@ -389,10 +384,10 @@ function step_solver!(
 )
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p)
-    set_manopt_parameter!(dcs.sub_problem, :Cost, :p, dcs.p)
-    set_manopt_parameter!(dcs.sub_problem, :Cost, :X, dcs.X)
-    set_manopt_parameter!(dcs.sub_problem, :Gradient, :p, dcs.p)
-    set_manopt_parameter!(dcs.sub_problem, :Gradient, :X, dcs.X)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :p, dcs.p)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :X, dcs.X)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Gradient, :p, dcs.p)
+    set_manopt_parameter!(dcs.sub_problem, :Objective, :Gradient, :X, dcs.X)
     set_iterate!(dcs.sub_state, M, copy(M, dcs.p))
     solve!(dcs.sub_problem, dcs.sub_state) # call the subsolver
     # copy result from subsolver to current iterate

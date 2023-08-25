@@ -18,7 +18,7 @@ A constraint optimisation problem is given by
 ```
 where $f\colon \mathcal M → ℝ$ is a cost function, and $g\colon \mathcal M → ℝ^m$ and $h\colon \mathcal M → ℝ^n$ are the inequality and equality constraints, respectively. The $\leq$ and $=$ in (P) are meant elementwise.
 
-This can be seen as a balance between moving constraints into the geometry of a manifold $\mathcal M$ and keeping some, since they can be handled well in algorithms, see [@BergmannHerzog:2019], [@LiuBoumal:2019] for details.
+This can be seen as a balance between moving constraints into the geometry of a manifold $\mathcal M$ and keeping some, since they can be handled well in algorithms, see [BergmannHerzog:2019](@cite), [LiuBoumal:2019](@cite)  for details.
 
 ```{julia}
 #| echo: false
@@ -36,7 +36,7 @@ Random.seed!(42);
 
 In this tutorial we want to look at different ways to specify the problem and its implications. We start with specifying an example problems to illustrayte the different available forms.
 
-We will consider the problem of a Nonnegative PCA, cf. Section 5.1.2 in [@LiuBoumal:2019]:
+We will consider the problem of a Nonnegative PCA, cf. Section 5.1.2 in [LiuBoumal:2019](@cite)
 
 let $v_0 ∈ ℝ^d$, $\lVert v_0 \rVert=1$ be given spike signal, that is a signal that is sparse with only $s=\lfloor δd \rfloor$ nonzero entries.
 
@@ -252,5 +252,9 @@ maximum(g(M, w1))
 
 ## Literature
 
-::: {#refs}
-:::
+````{=commonmark}
+```@bibliography
+Pages = ["tutorials/ConstrainedOptimization.md"]
+Canonical=false
+```
+````

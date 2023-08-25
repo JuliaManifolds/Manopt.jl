@@ -45,6 +45,8 @@ import Manifolds: inner
         @test dcs.p == p1
         set_gradient!(dcs, M, p1, X1)
         @test dcs.X == X1
+        set_manopt_parameter!(dcs, :SubProblem, :X, X1)
+        set_manopt_parameter!(dcs, :SubState, :X, X1)
 
         dcppa_sub_cost = ProximalDCCost(g, copy(M, p0), 1.0)
         dcppa_sub_grad = ProximalDCGrad(grad_g, copy(M, p0), 1.0)

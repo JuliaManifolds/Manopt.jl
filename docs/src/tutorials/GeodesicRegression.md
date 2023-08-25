@@ -34,7 +34,7 @@ highlighted = 4;
 ## Time Labeled Data
 
 If for each data item $d_i$ we are also given a time point $t_i\in\mathbb R$, which are pairwise different,
-then we can use the least squares error to state the objetive function as (Fletcher, 2013)
+then we can use the least squares error to state the objetive function as [Fletcher:2013](@cite)
 
 ``` math
 F(p,X) = \frac{1}{2}\sum_{i=1}^n d_{\mathcal M}^2(γ_{p,X}(t_i), d_i),
@@ -71,8 +71,7 @@ Due to linearity, the gradient of $F(p,X)$ is the sum of the single gradients of
 ```
 
 which can be computed using a chain rule of the squared distance and the exponential map,
-see for example (Bergmann and Gousenbourger, 2018) for details or Equations (7) and (8) of (Fletcher, 2013):
-““”
+see for example [BergmannGousenbourger:2018](@cite) for details or Equations (7) and (8) of [Fletcher:2013](@cite):
 
 ``` julia
 M = TangentBundle(S)
@@ -514,6 +513,8 @@ Note that the geodesics from the data to the regression geodesic meet at a nearl
 
 ## Literature
 
-Bergmann, R. and Gousenbourger, P.-Y. (2018) “A variational model for data fitting on manifolds by minimizing the acceleration of a Bézier curve,” *Frontiers in Applied Mathematics and Statistics*, 4. Available at: <https://doi.org/10.3389/fams.2018.00059>.
+```@bibliography
+Pages = ["tutorials/GeodesicRegression.md"]
+Canonical=false
+```
 
-Fletcher, P.T. (2013) “Geodesic regression and the theory of least squares on Riemannian manifolds,” *International Journal of Computer Vision*, 105(2), pp. 171–185. Available at: <https://doi.org/10.1007/s11263-012-0591-y>.

@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Test
+using Manopt, Manifolds, Test, Random
 
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
@@ -32,7 +32,7 @@ using Manopt, Manifolds, Test
         )
         p = get_solver_result(s)[]
         res_debug = String(take!(my_io))
-        @test res_debug === " F(x): 1.357071\n"
+        @test res_debug === " f(x): 1.357071\n"
         p2 = gradient_descent(
             M,
             f,
@@ -124,6 +124,7 @@ using Manopt, Manifolds, Test
         # Since we called gradient_descent n2 is newly allocated
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
+        Random.seed!(43)
         n2a = gradient_descent(M, f, grad_f)
         # Since we called gradient_descent n2 is newly allocated
         @test isapprox(M, north, n2a)

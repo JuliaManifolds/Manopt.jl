@@ -14,3 +14,10 @@ LevenbergMarquardt!
 ```@docs
 LevenbergMarquardtState
 ```
+
+## Literature
+
+```@bibliography
+Pages = ["solvers/LevenbergMarquardt.md"]
+Canonical=false
+```

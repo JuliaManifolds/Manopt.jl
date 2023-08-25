@@ -78,4 +78,23 @@ using Manopt, Manifolds, Test
         @test s.weight == 0.75 #also reset to orig
         @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
     end
+    @testset "Absolute stepsizes" begin
+        # Build a dummy f, grad_f
+        f(M, p) = 0
+        grad_f(M, p) = [0.0, 0.75, 0.0] # We only stay at north pole
+        M = Sphere(2)
+        p = [1.0, 0.0, 0.0]
+        mgo = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, mgo)
+        gds = GradientDescentState(M, p)
+        abs_dec_step = DecreasingStepsize(;
+            length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
+        )
+        solve!(mp, gds)
+        @test abs_dec_step(mp, gds, 1) ==
+            10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
+        abs_const_step = ConstantStepsize(1.0, :absolute)
+        @test abs_const_step(mp, gds, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
+    end
 end

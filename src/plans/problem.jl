@@ -80,3 +80,23 @@ end
 evaluate the cost function `f` defined on `M` stored within the [`AbstractManifoldObjective`](@ref) at the point `p`.
 """
 get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
+
+"""
+    set_manopt_parameter!(ams::AbstractManoptProblem, element::Symbol, field::Symbol , value)
+
+Set a certain field/element from the [`AbstractManoptProblem`](@ref) `ams` to `value.
+This function should dispatch on `Val(element)`.
+
+By default this passes on to the inner objective, see [`set_manopt_parameter!`](@ref)
+"""
+set_manopt_parameter!(amp::AbstractManoptProblem, e::Symbol, args...)
+
+function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, args...)
+    set_manopt_parameter!(get_manifold(amp), args...)
+    return amp
+end
+
+function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, args...)
+    set_manopt_parameter!(get_objective(amp), args...)
+    return amp
+end
