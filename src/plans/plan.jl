@@ -34,6 +34,8 @@ include("stepsize.jl")
 
 include("cost_plan.jl")
 include("gradient_plan.jl")
+include("embedded_objective.jl")
+
 include("alternating_gradient_plan.jl")
 include("constrained_plan.jl")
 include("augmented_lagrangian_plan.jl")

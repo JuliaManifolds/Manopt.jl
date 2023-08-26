@@ -7,8 +7,10 @@
 * 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
 """
 module Manopt
+
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
+import ManifoldsBase: embed!
 
 using ColorSchemes
 using ColorTypes
@@ -81,7 +83,6 @@ using ManifoldsBase:
     default_vector_transport_method,
     distance,
     embed,
-    embded!,
     embed_project,
     embed_project!,
     exp,
