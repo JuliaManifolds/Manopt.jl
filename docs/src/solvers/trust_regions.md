@@ -156,6 +156,8 @@ as well as their (non-exported) common supertype
 Manopt.AbstractApproxHessian
 ```
 
+## Literature
+
 ```@bibliography
 Pages = ["solvers/trust_regions.md"]
 Canonical=false

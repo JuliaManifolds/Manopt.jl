@@ -6,8 +6,21 @@ include("../utils/example_tasks.jl")
     M = Euclidean(2)
     p = [4.0, 2.0]
     p0 = [5.0, 2.0]
+    q0 = [10.0, 5.0]
     sgs = SubGradientMethodState(
         M, p0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
+    )
+    sgs_ac = SubGradientMethodState(
+        M,
+        q0;
+        stopping_criterion=StopAfterIteration(200),
+        stepsize=ConstantStepsize(1.0, :absolute),
+    )
+    sgs_ad = SubGradientMethodState(
+        M,
+        q0;
+        stopping_criterion=StopAfterIteration(200),
+        stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :absolute),
     )
     @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
     @test get_iterate(sgs) == p0
@@ -26,11 +39,25 @@ include("../utils/example_tasks.jl")
         get_subgradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
         oR = solve!(mp, sgs)
+        solve!(mp, sgs_ac)
+        solve!(mp, sgs_ad)
         q1 = get_solver_result(oR)
         @test get_initial_stepsize(mp, sgs) == 1.0
         @test get_stepsize(mp, sgs, 1) == 1.0
         @test get_last_stepsize(mp, sgs, 1) == 1.0
-        # Check Fallbacks of Problen
+        # Check absolute constant stepsize
+        @test get_initial_stepsize(mp, sgs_ac) == 1.0
+        @test get_stepsize(mp, sgs_ac, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(sgs_ac), get_subgradient(sgs_ac))
+        @test get_last_stepsize(mp, sgs_ac, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(sgs_ac), get_subgradient(sgs_ac))
+        # Check absolute decreasing stepsize
+        @test get_initial_stepsize(mp, sgs_ad) == 1.0
+        @test get_stepsize(mp, sgs_ad, 1) ==
+            1.0 / norm(get_manifold(mp), get_iterate(sgs_ad), get_subgradient(sgs_ad))
+        @test get_stepsize(mp, sgs_ad, 200) ==
+            0.005 / norm(get_manifold(mp), get_iterate(sgs_ad), get_subgradient(sgs_ad))
+        # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, sgs.p)

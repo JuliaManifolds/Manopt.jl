@@ -84,7 +84,7 @@ makedocs(
             Manopt.ManoptPlotsExt
         end,
     ],
-    authors="Ronny Bergmann, and contributors.",
+    authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
     strict=[
         :doctest,
@@ -117,6 +117,7 @@ makedocs(
         ],
         "Solvers" => [
             "Introduction" => "solvers/index.md",
+            "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",

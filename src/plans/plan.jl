@@ -31,21 +31,23 @@ include("record.jl")
 
 include("stopping_criterion.jl")
 include("stepsize.jl")
-
 include("cost_plan.jl")
 include("gradient_plan.jl")
-include("embedded_objective.jl")
+include("hessian_plan.jl")
+include("proximal_plan.jl")
+include("subgradient_plan.jl")
 
 include("alternating_gradient_plan.jl")
+
 include("constrained_plan.jl")
+
+include("adabtive_regularization_with_cubics_plan.jl")
+include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
 include("exact_penalty_method_plan.jl")
 include("frank_wolfe_plan.jl")
 include("quasi_newton_plan.jl")
-include("hessian_plan.jl")
-include("proximal_plan.jl")
-include("subgradient_plan.jl")
 include("nonlinear_least_squares_plan.jl")
 include("difference_of_convex_plan.jl")
 
@@ -54,6 +56,7 @@ include("higher_order_primal_dual_plan.jl")
 
 include("stochastic_gradient_plan.jl")
 
+include("embedded_objective.jl")
 include("subsolver_plan.jl")
 
 include("cache.jl")

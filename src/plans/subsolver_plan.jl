@@ -45,6 +45,7 @@ function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     end
     return dss
 end
+
 """
     set_manopt_parameter!(ams::DebugSolverState, ::Val{:SubProblem}, args...)
 

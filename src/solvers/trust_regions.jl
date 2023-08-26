@@ -354,14 +354,14 @@ end
     trust_regions!(M, f, grad_f, Hess_f, p; kwargs...)
     trust_regions!(M, f, grad_f, p; kwargs...)
 
-evaluate the Riemannian trust-regions solver for optimization on manifolds in place of `p`.
+evaluate the Riemannian trust-regions solver in place of `p`.
 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
 * `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
 * `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
-* `x` – an initial value ``x  ∈  \mathcal M``
+* `p` – an initial value ``p  ∈  \mathcal M``
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
@@ -452,11 +452,11 @@ function trust_regions!(
         ),
     )
     dmho = decorate_objective!(M, mho; kwargs...)
-    mp = DefaultManoptProblem(M, dmho)
+    dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M,
         p,
-        get_gradient(mp, p),
+        get_gradient(dmp, p),
         sub_state;
         trust_region_radius=trust_region_radius,
         max_trust_region_radius=max_trust_region_radius,
@@ -470,8 +470,8 @@ function trust_regions!(
         (project!)=project!,
     )
     dtrs = decorate_state!(trs; kwargs...)
-    solve!(mp, dtrs)
-    return get_solver_return(get_objective(mp), dtrs)
+    solve!(dmp, dtrs)
+    return get_solver_return(get_objective(dmp), dtrs)
 end
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)

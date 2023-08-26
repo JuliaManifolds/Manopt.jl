@@ -350,6 +350,28 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test Manopt.status_summary(d) == ":Messages"
         @test_logs (:info, "DebugTest") d(mp, s, 0)
     end
+    @testset "DebugIfEntry" begin
+        io = IOBuffer()
+        M = ManifoldsBase.DefaultManifold(2)
+        p = [-4.0, 2.0]
+        st = GradientDescentState(
+            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        )
+        f(M, y) = Inf
+        grad_f(M, y) = Inf .* ones(2)
+        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+
+        die1 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:warn, message="test1")
+        @test startswith(repr(die1), "DebugIfEntry(:p, ")
+        @test_logs (:warn, "test1") die1(mp, st, 1)
+        die2 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:info, message="test2")
+        @test_logs (:info, "test2") die2(mp, st, 1)
+        die3 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:error, message="test3")
+        @test_throws ErrorException die3(mp, st, 1)
+        die4 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:print, message="test4", io=io)
+        die4(mp, st, 1)
+        @test String(take!(io)) == "test4"
+    end
     @testset "DebugWhenActive" begin
         io = IOBuffer()
         M = ManifoldsBase.DefaultManifold(2)

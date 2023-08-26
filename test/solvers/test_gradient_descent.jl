@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Test
+using Manopt, Manifolds, Test, Random
 
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
@@ -124,6 +124,7 @@ using Manopt, Manifolds, Test
         # Since we called gradient_descent n2 is newly allocated
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
+        Random.seed!(43)
         n2a = gradient_descent(M, f, grad_f)
         # Since we called gradient_descent n2 is newly allocated
         @test isapprox(M, north, n2a)

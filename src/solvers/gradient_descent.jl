@@ -60,6 +60,7 @@ mutable struct GradientDescentState{
         return s
     end
 end
+
 function GradientDescentState(
     M::AbstractManifold,
     p::P=rand(M);

@@ -97,7 +97,7 @@ end
 function get_hessian!(
     M::AbstractManifold, Y, mho::ManifoldHessianObjective{AllocatingEvaluation}, p, X
 )
-    copyto!(M, Y, mho.hessian!!(M, p, X))
+    copyto!(M, Y, p, mho.hessian!!(M, p, X))
     return Y
 end
 function get_hessian!(

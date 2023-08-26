@@ -5,7 +5,27 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.x] - dd/mm/2023
+## [0.4.33] - 24/08/2023
+
+### Added
+
+* `ConstantStepsize` and `DecreasingStepsize` now have an additional field `type::Symbol` to assess whether the
+  step-size should be relatively (to the gradient norm) or absolutely constant.
+
+## [0.4.32] - 23/08/2023
+
+### Added
+
+* The adaptive regularization with cubics (ARC) solver.
+
+## [0.4.31] - 14/08/2023
+
+### Added
+
+* A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive``
+  to de/activate subsolver debug from the main solvers `DebugEvery`.
+
+## [0.4.30] - 03/08/2023
 
 ### Changed
 
