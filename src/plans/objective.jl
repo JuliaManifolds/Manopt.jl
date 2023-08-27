@@ -48,7 +48,7 @@ do not allocate memory but work on their input, i.e. in place.
 struct InplaceEvaluation <: AbstractEvaluationType end
 
 @doc raw"""
-ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
+    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
        AbstractDecoratedManifoldObjective{E,O2}
 
 A wrapper to indicate that `get_solver_result` should return the inner objetcive.
