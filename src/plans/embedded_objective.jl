@@ -115,8 +115,8 @@ end
 # Hessian
 #
 @doc raw"""
-    get_Hessian(M, emo::EmbeddedManifoldObjective, p, X)
-    get_Hessian!(M, Y, emo::EmbeddedManifoldObjective, p, X)
+    get_hessian(M, emo::EmbeddedManifoldObjective, p, X)
+    get_hessian!(M, Y, emo::EmbeddedManifoldObjective, p, X)
 
 Evaluate the Hessian of an objective defined in the embedding, that is embed `p` and `X`
 before calling the Hessiand function stored in the [`EmbeddedManifoldObjective`](@ref).
