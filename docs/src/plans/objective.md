@@ -153,7 +153,7 @@ get_grad_inequality_constraints
 get_grad_inequality_constraints!
 ```
 
-## Decorators for AbstractManoptSolverState
+## Decorators for Objectives
 
 An objective can be decorated using the following trait and function to initialize
 
@@ -161,6 +161,22 @@ An objective can be decorated using the following trait and function to initiali
 dispatch_objective_decorator
 is_objective_decorator
 decorate_objective!
+```
+
+### [Embedded Objectives](@id ManifoldEmbeddedObjective)
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/embedded_objective.jl"]
+Order = [:type]
+```
+
+#### Available functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/embedded_objective.jl"]
+Order = [:function]
 ```
 
 ### [Cache Objective](@id CacheSection)
@@ -198,4 +214,10 @@ init_caches
 
 ```@docs
 ManifoldCountObjective
+```
+
+### Internal Decorators
+
+```@docs
+ReturnManifoldObjective
 ```
