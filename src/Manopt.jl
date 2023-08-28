@@ -94,6 +94,7 @@ using ManifoldsBase:
     get_component,
     get_coordinates,
     get_coordinates!,
+    get_embedding,
     get_iterator,
     get_vector,
     get_vector!,

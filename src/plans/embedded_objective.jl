@@ -47,29 +47,34 @@ function EmbeddedManifoldObjective(
     return EmbeddedManifoldObjective(o, p, X)
 end
 
-function embed!(M::AbstractManifold, ::EmbeddedManifoldObjective{Nothing}, p)
+# dispatch whether to do this in place or not
+function local_embed!(M::AbstractManifold, ::EmbeddedManifoldObjective{Missing}, p)
     return embed(M, p)
 end
-function embed!(M::AbstractManifold, emo::EmbeddedManifoldObjective{P}, p) where {P}
+function local_embed!(M::AbstractManifold, emo::EmbeddedManifoldObjective{P}, p) where {P}
     embed!(M, emo.p, p)
     return emo.p
 end
-function embed!(M::AbstractManifold, ::EmbeddedManifoldObjective{P,Nothing}, p, X) where {P}
+function local_embed!(
+    M::AbstractManifold, ::EmbeddedManifoldObjective{P,Missing}, p, X
+) where {P}
     return embed(M, p, X)
 end
-function embed!(M::AbstractManifold, emo::EmbeddedManifoldObjective{P,T}, p, X) where {P,T}
+function local_embed!(
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,T}, p, X
+) where {P,T}
     embed!(M, emo.X, p, X)
     return emo.X
 end
 
 @doc raw"""
-    get_cost(M, emo::EmbeddedManifoldObjective, p)
+    get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
 
 Evaluate the cost function of an objective defined in the embedding, i.e. embed `p`
 before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref).
 """
-function get_cost(M, emo::EmbeddedManifoldObjective, p)
-    q = embed!(M, emo, p)
+function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
+    q = local_embed!(M, emo, p)
     return get_cost(get_embedding(M), emo.objective, q)
 end
 function get_cost_function(emo::EmbeddedManifoldObjective)
@@ -77,8 +82,8 @@ function get_cost_function(emo::EmbeddedManifoldObjective)
 end
 
 @doc raw"""
-    get_gradient(M, emo::EmbeddedManifoldObjective, p)
-    get_gradient!(M, X, emo::EmbeddedManifoldObjective, p)
+    get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
+    get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
 
 Evaluate the gradient function of an objective defined in the embedding, that is embed `p`
 before calling the gradient function stored in the [`EmbeddedManifoldObjective`](@ref).
@@ -86,27 +91,30 @@ before calling the gradient function stored in the [`EmbeddedManifoldObjective`]
 The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
 """
-function get_gradient(M, emo::EmbeddedManifoldObjective{P,Nothing}, p) where {P}
-    q = embed!(M, emo, p)
+function get_gradient(
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,Missing}, p
+) where {P}
+    q = local_embed!(M, emo, p)
     return riemannian_gradient(M, p, get_gradient(get_embedding(M), emo.objective, q))
 end
-function get_gradient(M, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
-    q = embed!(M, emo, p)
+function get_gradient(
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,T}, p
+) where {P,T}
+    q = local_embed!(M, emo, p)
     get_gradient!(get_embedding(M), emo.X, emo.objective, q)
     return riemannian_gradient(M, p, emo.X)
 end
-function get_gradient!(M, X, emo::EmbeddedManifoldObjective{P,Nothing}, p) where {P}
-    q = embed!(M, emo, p)
+function get_gradient!(
+    M::AbstractManifold, X, emo::EmbeddedManifoldObjective{Missing,Missing}, p
+) where {P}
+    q = local_embed!(M, emo, p)
     riemannian_gradient!(M, X, p, get_gradient(get_embedding(M), emo.objective, q))
     return X
 end
-function get_gradient!(M, X, emo::EmbeddedManifoldObjective{Nothing,T}, p) where {T}
-    get_gradient!(get_embedding(M), emo.X, emo, embed(M, p))
-    riemannian_gradient!(M, X, p, emo.X)
-    return X
-end
-function get_gradient!(M, X, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
-    q = embed!(M, emo, p)
+function get_gradient!(
+    M::AbstractManifold, X, emo::EmbeddedManifoldObjective{P,T}, p
+) where {P,T}
+    q = local_embed!(M, emo, p)
     get_gradient!(get_embedding(M), emo.X, emo, q)
     riemannian_gradient!(M, X, p, emo.X)
     return X
@@ -115,8 +123,8 @@ end
 # Hessian
 #
 @doc raw"""
-    get_hessian(M, emo::EmbeddedManifoldObjective, p, X)
-    get_hessian!(M, Y, emo::EmbeddedManifoldObjective, p, X)
+    get_hessian(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, X)
+    get_hessian!(M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p, X)
 
 Evaluate the Hessian of an objective defined in the embedding, that is embed `p` and `X`
 before calling the Hessiand function stored in the [`EmbeddedManifoldObjective`](@ref).
@@ -124,8 +132,10 @@ before calling the Hessiand function stored in the [`EmbeddedManifoldObjective`]
 The returned Hessian is then converted to a Riemannian Hessian calling
  [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any}).
 """
-function get_hessian(M, emo::EmbeddedManifoldObjective{P,Nothing}, p, X) where {P}
-    q = embed!(M, emo, p)
+function get_hessian(
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,Missing}, p, X
+) where {P}
+    q = local_embed!(M, emo, p)
     return riemannian_Hessian(
         M,
         p,
@@ -134,15 +144,19 @@ function get_hessian(M, emo::EmbeddedManifoldObjective{P,Nothing}, p, X) where {
         X,
     )
 end
-function get_hessian(M, emo::EmbeddedManifoldObjective{P,T}, p) where {P,T}
-    q = embed!(M, emo, p)
+function get_hessian(
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,T}, p
+) where {P,T}
+    q = local_embed!(M, emo, p)
     get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
     return riemannian_Hessian(
         M, p, emo.X, get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)), X
     )
 end
-function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{P,Nothing}, p, X) where {P}
-    q = embed!(M, emo, p)
+function get_hessian!(
+    M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P,Missing}, p, X
+) where {P}
+    q = local_embed!(M, emo, p)
     riemannian_Hessian!(
         M,
         Y,
@@ -153,8 +167,10 @@ function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{P,Nothing}, p, X) whe
     )
     return Y
 end
-function get_hessian!(M, Y, emo::EmbeddedManifoldObjective{Nothing,T}, p) where {T}
-    q = embed!(M, emo, p)
+function get_hessian!(
+    M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{Missing,T}, p
+) where {T}
+    q = local_embed!(M, emo, p)
     get_gradient!(get_embedding(M), emo.X, emo.objective, embed(M, p))
     riemannian_Hessian!(
         M, Y, p, emo.X, get_hessian(get_embedding(M), emo.objective, q, embed(M, p, X)), X
@@ -171,7 +187,7 @@ Return the vector ``(g_1(p),...g_m(p),h_1(p),...,h_n(p))`` defined in the embedd
 before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     return [
         get_inequality_constraints(M, emo.objective, q),
         get_equality_constraints(M, emo.objective, q),
@@ -185,7 +201,7 @@ defined in the embedding, that is embed `p`
 before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_equality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     return get_equality_constraints(M, emo.objective, q)
 end
 @doc raw"""
@@ -195,7 +211,7 @@ evaluate the `j`s equality constraint ``h_j(p)`` defined in the embedding, that 
 before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     return get_equality_constraint(M, emo.objective, q, j)
 end
 @doc raw"""
@@ -206,7 +222,7 @@ defined in the embedding, that is embed `p`
 before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_inequality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     return get_inequality_constraints(M, emo.objective, q)
 end
 
@@ -219,7 +235,7 @@ before calling the constraint function(s) stored in the [`EmbeddedManifoldObject
 function get_inequality_constraint(
     M::AbstractManifold, emo::EmbeddedManifoldObjective, p, i
 )
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     return get_inequality_constraint(M, emo.objective, q, i)
 end
 @doc raw"""
@@ -233,23 +249,23 @@ The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
 """
 function get_grad_equality_constraint(
-    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,Nothing}, p, j
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,Missing}, p, j
 ) where {P}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M)emo.objective, q, j)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_equality_constraint(
     M::AbstractManifold, emo::AbstractDecoratedManifoldObjective{P,T}, p, j
 ) where {P,T}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     get_grad_equality_constraint!(get_embedding(M), emo.X, emo.objective, q, j)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_equality_constraint!(
-    M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P,Nothing}, p, j
+    M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P,Missing}, p, j
 ) where {P}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraint(get_embedding(M)emo.objective, q, j)
     riemannian_gradient!(M, Y, p, Z)
     return Y
@@ -257,7 +273,7 @@ end
 function get_grad_equality_constraint!(
     M::AbstractManifold, Y, emo::AbstractDecoratedManifoldObjective{P,T}, p, j
 ) where {P,T}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     get_grad_equality_constraint!(get_embedding(M), emo.X, emo.objective, q, j)
     riemannian_gradient!(M, Y, p, Z)
     return Y
@@ -275,14 +291,14 @@ The returned gradients are then converted to a Riemannian gradient calling
 function get_grad_equality_constraints(
     M::AbstractManifold, emo::EmbeddedManifoldObjective, p
 )
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraints(get_embedding(M)emo.objective, q)
     return [riemannian_gradient(M, p, Zj) for Zj in Z]
 end
 function get_grad_equality_constraints!(
     M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p
 )
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_equality_constraints(get_embedding(M)emo.objective, q)
     for (Yj, Zj) in zip(Y, Z)
         riemannian_gradient!(M, Yj, p, Zj)
@@ -300,23 +316,23 @@ The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
 """
 function get_grad_inequality_constraint(
-    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,Nothing}, p, j
+    M::AbstractManifold, emo::EmbeddedManifoldObjective{P,Missing}, p, j
 ) where {P}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M)emo.objective, q, j)
     return riemannian_gradient(M, p, Z)
 end
 function get_grad_inequality_constraint(
     M::AbstractManifold, emo::AbstractDecoratedManifoldObjective{P,T}, p, j
 ) where {P,T}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     get_grad_inequality_constraint!(get_embedding(M), emo.X, emo.objective, q, j)
     return riemannian_gradient(M, p, emo.X)
 end
 function get_grad_inequality_constraint!(
-    M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P,Nothing}, p, j
+    M::AbstractManifold, Y, emo::EmbeddedManifoldObjective{P,Missing}, p, j
 ) where {P}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraint(get_embedding(M)emo.objective, q, j)
     riemannian_gradient!(M, Y, p, Z)
     return Y
@@ -324,7 +340,7 @@ end
 function get_grad_inequality_constraint!(
     M::AbstractManifold, Y, emo::AbstractDecoratedManifoldObjective{P,T}, p, j
 ) where {P,T}
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     get_grad_inequality_constraint!(get_embedding(M), emo.X, emo.objective, q, j)
     riemannian_gradient!(M, Y, p, Z)
     return Y
@@ -342,14 +358,14 @@ The returned gradients are then converted to a Riemannian gradient calling
 function get_grad_inequality_constraints(
     M::AbstractManifold, emo::EmbeddedManifoldObjective, p
 )
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraints(get_embedding(M)emo.objective, q)
     return [riemannian_gradient(M, p, Zj) for Zj in Z]
 end
 function get_grad_inequality_constraints!(
     M::AbstractManifold, Y, emo::EmbeddedManifoldObjective, p
 )
-    q = embed!(M, emo, p)
+    q = local_embed!(M, emo, p)
     Z = get_grad_inequality_constraints(get_embedding(M)emo.objective, q)
     for (Yj, Zj) in zip(Y, Z)
         riemannian_gradient!(M, Yj, p, Zj)

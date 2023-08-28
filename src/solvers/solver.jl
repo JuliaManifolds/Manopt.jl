@@ -100,10 +100,10 @@ function decorate_objective!(
     # => we only count _after_ cache misses
     # and always last wrapper: ReturnObjective.
     deco_o = o
-    if objective_type ∈ [:Embedding, :Euclidan]
+    if objective_type ∈ [:Embedding, :Euclidean]
         deco_o = EmbeddedManifoldObjective(o, embedded_p, embedded_X)
     end
-    deco_o = ismissing(count) ? o : objective_count_factory(M, deco_o, count)
+    deco_o = ismissing(count) ? deco_o : objective_count_factory(M, deco_o, count)
     deco_o = ismissing(cache) ? deco_o : objective_cache_factory(M, deco_o, cache)
     deco_o = return_objective ? ReturnManifoldObjective(deco_o) : deco_o
     return deco_o
