@@ -118,7 +118,7 @@ norm(M, p, X1 - X2)
 
 We obtain quite a good approximation of the gradient.
 
-## [2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold](@id Embeddedgradient)
+``## [2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold](@id EmbeddedGradient)``{=commonmark}
 
 Let $\tilde f\colon\mathbb R^m \to \mathbb R$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset \mathbb R^m$and let $f\colon \mathcal M \to \mathbb R$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
 

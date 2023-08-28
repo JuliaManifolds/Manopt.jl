@@ -108,6 +108,7 @@ makedocs(
             "Get started: Optimize!" => "tutorials/Optimize!.md",
             "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
+            "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
             "Count and use a Cache" => "tutorials/CountAndCache.md",
             "Print Debug Output" => "tutorials/HowToDebug.md",
             "Record values" => "tutorials/HowToRecord.md",
