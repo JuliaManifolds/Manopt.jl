@@ -71,7 +71,7 @@ end
     get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
 
 Evaluate the cost function of an objective defined in the embedding, i.e. embed `p`
-before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref).
+before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref Manopt.EmbeddedManifoldObjective).
 """
 function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
@@ -106,7 +106,7 @@ function get_gradient(
 end
 function get_gradient!(
     M::AbstractManifold, X, emo::EmbeddedManifoldObjective{Missing,Missing}, p
-) where {P}
+)
     q = local_embed!(M, emo, p)
     riemannian_gradient!(M, X, p, get_gradient(get_embedding(M), emo.objective, q))
     return X

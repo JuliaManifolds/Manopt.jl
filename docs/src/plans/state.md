@@ -25,7 +25,7 @@ This might be useful to continue investigation at the current iterate, or to set
 ```@docs
 get_iterate
 set_iterate!
-get_gradient(::AbstractManifoldGradientObjective)
+get_gradient(s::AbstractManoptSolverState)
 set_gradient!
 ```
 

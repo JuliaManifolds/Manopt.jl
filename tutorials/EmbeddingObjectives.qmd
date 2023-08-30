@@ -27,8 +27,7 @@ one can call the solver, depending on which gradient and/or Hessian one provides
 # For now use the local one since Manifolds.jl #644 is required for this
 using Pkg;
 cd(@__DIR__)
-#Pkg.activate("."); # for reproducibility use the local tutorial environment.
-Pkg.activate();
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
 ```{julia}
