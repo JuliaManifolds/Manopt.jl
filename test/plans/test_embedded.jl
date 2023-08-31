@@ -38,5 +38,24 @@ using Manifolds, Manopt, Test, LinearAlgebra
     end
     # Without interims caches for p and X
     @test repr(eo4) ==
-        "EmbeddedManifoldObjective{Missing,Missing} of an $(repr(eo.objective))"
+        "EmbeddedManifoldObjective{Missing,Missing} of an $(repr(eo4.objective))"
+
+    # Constraints, though this is not the most practical constraint
+    o2 = ConstrainedManifoldObjective(f, ∇f, [f], [∇f], [f], [∇f])
+    eco1 = EmbeddedManifoldObjective(M, o2)
+    eco2 = EmbeddedManifoldObjective(o2, missing, copy(X))
+    eco3 = EmbeddedManifoldObjective(o2, copy(p), missing)
+    eco4 = EmbeddedManifoldObjective(o2)
+
+    for eco in [eco1, eco2, eco3, eco4]
+        @test get_constraints(M, eco, p) == [[f(E, p)], [f(E, p)]]
+        @test get_equality_constraints(M, eco, p) == [f(E, p)]
+        @test get_equality_constraint(M, eco, p, 1) == f(E, p)
+        @test get_inequality_constraints(M, eco, p) == [f(E, p)]
+        @test get_inequality_constraint(M, eco, p, 1) == f(E, p)
+        @test get_grad_equality_constraints(M, eco, p) == [grad_f(M, p)]
+        @test get_grad_equality_constraint(M, eco, p, 1) == grad_f(M, p)
+        @test get_grad_inequality_constraints(M, eco, p) == [grad_f(M, p)]
+        @test get_grad_inequality_constraint(M, eco, p, 1) == grad_f(M, p)
+    end
 end
