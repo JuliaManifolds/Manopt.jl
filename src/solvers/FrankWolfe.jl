@@ -251,6 +251,7 @@ function Frank_Wolfe_method!(
     p;
     initial_vector=zero_vector(M, p),
     evaluation=AllocatingEvaluation(),
+    objective_type=:Riemannian,
     retraction_method=default_retraction_method(M, typeof(p)),
     stepsize::TStep=default_stepsize(M, FrankWolfeState),
     stopping_criterion::TStop=StopAfterIteration(200) |
@@ -258,9 +259,12 @@ function Frank_Wolfe_method!(
                               StopWhenChangeLess(1.0e-8),
     sub_cost=FrankWolfeCost(p, initial_vector),
     sub_grad=FrankWolfeGradient(p, initial_vector),
-    sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
-    sub_problem=DefaultManoptProblem(M, sub_objective),
     sub_kwargs=[],
+    sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
+    sub_problem=DefaultManoptProblem(
+        M,
+        decorate_objective!(M, sub_objective; objective_type=objective_type, sub_kwargs...),
+    ),
     sub_stopping_criterion=StopAfterIteration(300) | StopWhenStepsizeLess(1e-8),
     sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
         Function
@@ -275,6 +279,7 @@ function Frank_Wolfe_method!(
                     M, GradientDescentState; retraction_method=retraction_method
                 ),
             );
+            objective_type=objective_type,
             sub_kwargs...,
         )
     end,
@@ -284,7 +289,7 @@ function Frank_Wolfe_method!(
     TStep<:Stepsize,
     O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective},
 }
-    dmgo = decorate_objective!(M, mgo; kwargs...)
+    dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     fws = FrankWolfeState(
         M,

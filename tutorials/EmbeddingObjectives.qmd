@@ -155,7 +155,7 @@ r2 = adaptive_regularization_with_cubics(
     p0;
     # The one line different to specify our grad/Hess are Eucldiean:
     objective_type=:Euclidean,
-    debug=[:Iteration, :Cost, "\n",10],
+    debug=[:Iteration, :Cost, "\n"],
     return_objective=true,
     return_state=true,
 )
@@ -163,15 +163,13 @@ q2 = get_solver_result(r2)
 r2
 ```
 
-which returns a similar same result, though slightly different since the Hessian is
-a bit inexact numerically
+which returns a the same result, see
 
 ```{julia}
 distance(M, q1, q2)
 ```
 
-So while the conversion _might_ suffer a bit from efficiency and stability, it is a good start usually,
-when the Euclidean gradient and Hessian are easily available, and it is easy to state for the solver with just one keyword.
+
 
 This conversion also works for the gradients of constraints.
 

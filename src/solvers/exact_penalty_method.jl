@@ -296,16 +296,23 @@ function exact_penalty_method!(
     u::Real=1e-1,
     u_min::Real=1e-6,
     u_exponent=1 / 100,
-    θ_u=(u_min / u)^(u_exponent),
     ρ::Real=1.0,
+    objective_type=:Riemannian,
     θ_ρ::Real=0.3,
+    θ_u=(u_min / u)^(u_exponent),
     smoothing=LogarithmicSumOfExponentials(),
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
-    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
-        M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
-    ),
     sub_kwargs=[],
+    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
+        M,
+        decorate_objective!(
+            M,
+            ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation);
+            objective_type=objective_type,
+            sub_kwargs...,
+        ),
+    ),
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
@@ -342,7 +349,7 @@ function exact_penalty_method!(
         θ_u=θ_u,
         stopping_criterion=stopping_criterion,
     )
-    deco_o = decorate_objective!(M, cmo; kwargs...)
+    deco_o = decorate_objective!(M, cmo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, deco_o)
     epms = decorate_state!(emps; kwargs...)
     solve!(dmp, epms)

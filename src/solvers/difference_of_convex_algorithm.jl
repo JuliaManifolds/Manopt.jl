@@ -280,6 +280,7 @@ function difference_of_convex_algorithm!(
     grad_g=nothing,
     gradient=nothing,
     initial_vector=zero_vector(M, p),
+    objective_type=:Riemannian,
     stopping_criterion=if isnothing(gradient)
         StopAfterIteration(300) | StopWhenChangeLess(1e-9)
     else
@@ -313,6 +314,7 @@ function difference_of_convex_algorithm!(
                     sub_cost, sub_grad, sub_hess; evaluation=evaluation
                 )
             end;
+            objective_type=objective_type,
             sub_kwargs...,
         )
     end,
@@ -338,7 +340,7 @@ function difference_of_convex_algorithm!(
     end,
     kwargs..., #collect rest
 ) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
-    dmdco = decorate_objective!(M, mdco; kwargs...)
+    dmdco = decorate_objective!(M, mdco; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
     # For now only subsolvers - TODO closed form solution init here
     if isnothing(sub_problem)
