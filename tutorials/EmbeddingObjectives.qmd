@@ -34,7 +34,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 #| output: false
 using Manifolds, Manopt, ManifoldDiff
 using LinearAlgebra, Random, Colors, Plots
-Random.seed!(42)
+Random.seed!(123)
 ```
 
 We consider the cost function on the [`Grassmann`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/grassmann.html) manifold given by
