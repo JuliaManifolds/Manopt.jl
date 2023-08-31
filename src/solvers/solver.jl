@@ -86,9 +86,9 @@ function decorate_objective!(
     }=missing,
     count::Union{Missing,AbstractVector{<:Symbol}}=missing,
     objective_type::Symbol=:Riemannian,
-    p=objective_type !== :Riemannian ? missing : rand(M),
+    p=objective_type == :Riemannian ? missing : rand(M),
     embedded_p=objective_type == :Riemannian ? missing : embed(M, p),
-    embedded_X=objective_type == :Riemannian ? missing : embed(M, p, rand(M; vector_at=p)),
+    embedded_X=objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
     return_objective=false,
     kwargs...,
 ) where {O<:AbstractManifoldObjective,P}

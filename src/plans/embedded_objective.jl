@@ -77,9 +77,6 @@ function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
     return get_cost(get_embedding(M), emo.objective, q)
 end
-function get_cost_function(emo::EmbeddedManifoldObjective)
-    return (M, p) -> get_cost(M, emo, p)
-end
 
 @doc raw"""
     get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
