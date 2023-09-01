@@ -27,6 +27,8 @@ one can call the solver, depending on which gradient and/or Hessian one provides
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
+# But for this version use here the most recent dev version from the parent folder
+Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
 ```
 
 ```{julia}
@@ -195,3 +197,11 @@ Pages = ["tutorials/EmbeddingObjectives.md"]
 Canonical=false
 ```
 ````
+
+## Technical Details
+
+This notebook was rendered with the following environment
+
+```{julia}
+Pkg.status()
+```
