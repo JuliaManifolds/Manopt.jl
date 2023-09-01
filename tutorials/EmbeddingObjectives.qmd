@@ -97,7 +97,8 @@ manifolds from [`Manifolds.jl`](https://github.com/JuliaManifolds/Manifolds.jl),
 So we can define
 
 ```{julia}
-grad2_f(M,p) = riemannian_gradient(M, p, ∇f(get_embedding(M), embed(M, p)))
+#| output: false
+grad2_f(M, p) = riemannian_gradient(M, p, ∇f(get_embedding(M), embed(M, p)))
 ```
 
 where only formally we here call `embed(M,p)` before passing `p` to the Euclidean gradient,
@@ -106,13 +107,16 @@ though here (for the Grassmann manifold with Stiefel representation) the embeddi
 Similarly for the Hessian, where in our example the embeddings of both the points and tangent vectors are the identity.
 
 ```{julia}
-Hess2_f(M, p, X) = riemannian_Hessian(
-    M,
-    p,
-    ∇f(get_embedding(M), embed(M, p)),
-    ∇²f(get_embedding(M), embed(M, p), embed(M, p, X)),
-    X
-)
+#| output: false
+function Hess2_f(M, p, X)
+    return riemannian_Hessian(
+        M,
+        p,
+        ∇f(get_embedding(M), embed(M, p)),
+        ∇²f(get_embedding(M), embed(M, p), embed(M, p, X)),
+        X
+    )
+end
 ```
 
 And we can again check these numerically,
