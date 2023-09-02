@@ -515,9 +515,9 @@ eevaluate all gradients of the equality constraints ``\operatorname{grad} h(x)``
 of the [`ConstrainedManifoldObjective`](@ref) `P` at `p`.
 
 !!! note
-   for the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
-   this function currently also calls [`get_equality_constraints`](@ref),
-   since this is the only way to determine the number of cconstraints.
+    For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
+    this function currently also calls [`get_equality_constraints`](@ref),
+    since this is the only way to determine the number of cconstraints.
 """
 get_grad_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
 function get_grad_equality_constraints(

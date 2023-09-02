@@ -61,7 +61,29 @@ makedocs(
     format=Documenter.HTML(;
         mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
     ),
-    modules=[Manopt],
+    modules=[
+        Manopt,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptLineSearchesExt)
+        else
+            Manopt.ManoptLineSearchesExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptLRUCacheExt)
+        else
+            Manopt.ManoptLRUCacheExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptManifoldsExt)
+        else
+            Manopt.ManoptManifoldsExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptPlotsExt)
+        else
+            Manopt.ManoptPlotsExt
+        end,
+    ],
     authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
     strict=[
@@ -86,8 +108,9 @@ makedocs(
             "Get started: Optimize!" => "tutorials/Optimize!.md",
             "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
             "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
+            "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
             "Count and use a Cache" => "tutorials/CountAndCache.md",
-            "Perform Debug Output" => "tutorials/HowToDebug.md",
+            "Print Debug Output" => "tutorials/HowToDebug.md",
             "Record values" => "tutorials/HowToRecord.md",
             "Implement a Solver" => "tutorials/ImplementASolver.md",
             "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",

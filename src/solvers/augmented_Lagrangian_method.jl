@@ -327,6 +327,7 @@ function augmented_Lagrangian_method!(
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
+    objective_type=:Riemannian,
     sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
     sub_kwargs=[],
@@ -347,7 +348,14 @@ function augmented_Lagrangian_method!(
         sub_kwargs...,
     ),
     sub_problem::AbstractManoptProblem=DefaultManoptProblem(
-        M, ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
+        M,
+        # pass down objective type to subsolvers
+        decorate_objective!(
+            M,
+            ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation);
+            objective_type=objective_type,
+            sub_kwargs...,
+        ),
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
@@ -373,7 +381,7 @@ function augmented_Lagrangian_method!(
         θ_ϵ=θ_ϵ,
         stopping_criterion=stopping_criterion,
     )
-    dcmo = decorate_objective!(M, cmo; kwargs...)
+    dcmo = decorate_objective!(M, cmo; objective_type=objective_type, kwargs...)
     mp = DefaultManoptProblem(M, dcmo)
     alms = decorate_state!(alms; kwargs...)
     solve!(mp, alms)

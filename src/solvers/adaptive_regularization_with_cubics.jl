@@ -377,6 +377,7 @@ function adaptive_regularization_with_cubics!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     initial_tangent_vector::T=zero_vector(M, p),
     maxIterLanczos=min(300, manifold_dimension(M)),
+    objective_type=:Riemannian,
     ρ_regularization::R=1e3,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     σmin::R=1e-10,
@@ -386,6 +387,7 @@ function adaptive_regularization_with_cubics!(
     γ1::R=0.1,
     γ2::R=2.0,
     θ::R=0.5,
+    sub_kwargs=[],
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(maxIterLanczos) |
                                               StopWhenFirstOrderProgress(θ),
     sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=LanczosState(
@@ -396,7 +398,7 @@ function adaptive_regularization_with_cubics!(
         θ=θ,
         stopping_criterion=sub_stopping_criterion,
     ),
-    sub_objective=mho,
+    sub_objective=decorate_objective!(M, mho; objective_type=objective_type, sub_kwargs...),
     sub_problem=DefaultManoptProblem(M, sub_objective),
     stopping_criterion::StoppingCriterion=if sub_state isa LanczosState
         StopAfterIteration(40) |
@@ -408,7 +410,7 @@ function adaptive_regularization_with_cubics!(
     kwargs...,
 ) where {T,R,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     X = copy(M, p, initial_tangent_vector)
-    dmho = decorate_objective!(M, mho; kwargs...)
+    dmho = decorate_objective!(M, mho; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,

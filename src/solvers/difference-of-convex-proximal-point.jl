@@ -310,6 +310,7 @@ function difference_of_convex_proximal_point!(
     λ=i -> 1 / 2,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method=default_inverse_retraction_method(M),
+    objective_type=:Riemannian,
     retraction_method=default_retraction_method(M),
     stepsize=ConstantStepsize(M),
     stopping_criterion=if isnothing(get_gradient_function(mdcpo))
@@ -338,6 +339,7 @@ function difference_of_convex_proximal_point!(
                     sub_cost, sub_grad, sub_hess; evaluation=evaluation
                 )
             end;
+            objective_type=objective_type,
             sub_kwargs...,
         )
     end,
@@ -383,7 +385,7 @@ function difference_of_convex_proximal_point!(
             """,
         )
     end
-    dmdcpo = decorate_objective!(M, mdcpo; kwargs...)
+    dmdcpo = decorate_objective!(M, mdcpo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdcpo)
     dcps = DifferenceOfConvexProximalState(
         M,

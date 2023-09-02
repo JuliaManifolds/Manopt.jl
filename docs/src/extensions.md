@@ -45,6 +45,11 @@ x_opt = quasi_Newton(
 )
 ```
 
+### Manifolds.jl
+
 ```@docs
 Manopt.LineSearchesStepsize
+mid_point
+Manopt.max_stepsize(::TangentBundle, ::Any)
+Manopt.max_stepsize(::FixedRankMatrices, ::Any)
 ```
