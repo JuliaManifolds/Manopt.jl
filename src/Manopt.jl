@@ -7,8 +7,10 @@
 * 🎯 Issues: [github.com/JuliaManifolds/Manopt.jl/issues](https://github.com/JuliaManifolds/Manopt.jl/issues)
 """
 module Manopt
+
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
+import ManifoldsBase: embed!
 
 using ColorSchemes
 using ColorTypes
@@ -45,7 +47,11 @@ using ManifoldDiff:
     differential_shortest_geodesic_startpoint,
     differential_shortest_geodesic_startpoint!,
     jacobi_field,
-    jacobi_field!
+    jacobi_field!,
+    riemannian_gradient,
+    riemannian_gradient!,
+    riemannian_Hessian,
+    riemannian_Hessian!
 using ManifoldsBase:
     AbstractBasis,
     AbstractDecoratorManifold,
@@ -78,6 +84,7 @@ using ManifoldsBase:
     default_retraction_method,
     default_vector_transport_method,
     distance,
+    embed,
     embed_project,
     embed_project!,
     exp,
@@ -87,6 +94,7 @@ using ManifoldsBase:
     get_component,
     get_coordinates,
     get_coordinates!,
+    get_embedding,
     get_iterator,
     get_vector,
     get_vector!,
@@ -216,6 +224,7 @@ export AbstractDecoratedManifoldObjective,
     AbstractManifoldObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
+    EmbeddedManifoldObjective,
     ManifoldCountObjective,
     NonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,

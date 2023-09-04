@@ -47,9 +47,18 @@ do not allocate memory but work on their input, i.e. in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
-struct ReturnManifoldObjective{E,P,O<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{E,P}
-    objective::O
+@doc raw"""
+    ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{E,O2}
+
+A wrapper to indicate that `get_solver_result` should return the inner objetcive.
+
+The types are such that one can still dispatch on the undecorated type `O2` of the
+original objective as well.
+"""
+struct ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
+       AbstractDecoratedManifoldObjective{E,O2}
+    objective::O1
 end
 function ReturnManifoldObjective(
     o::O
@@ -57,13 +66,13 @@ function ReturnManifoldObjective(
     return ReturnManifoldObjective{E,O,O}(o)
 end
 function ReturnManifoldObjective(
-    o::O
+    o::O1
 ) where {
     E<:AbstractEvaluationType,
-    P<:AbstractManifoldObjective,
-    O<:AbstractDecoratedManifoldObjective{E,P},
+    O2<:AbstractManifoldObjective,
+    O1<:AbstractDecoratedManifoldObjective{E,O2},
 }
-    return ReturnManifoldObjective{E,P,O}(o)
+    return ReturnManifoldObjective{E,O2,O1}(o)
 end
 
 """
@@ -146,7 +155,7 @@ function show(io::IO, t::Tuple{<:AbstractManifoldObjective,P}) where {P}
     )
 end
 
-function status_summary(o::AbstractManifoldObjective{E}) where {E}
+function status_summary(::AbstractManifoldObjective{E}) where {E}
     return ""
 end
 # Default undecorate for summary

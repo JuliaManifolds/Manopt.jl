@@ -1,0 +1,207 @@
+---
+title: How to define the cost in the embedding
+author: Ronny Bergmann
+---
+
+Specifying a cost function $f\colon \mathcal M \to \mathbb R$ on a manifold
+is usually the model one starts with.
+Specifying its gradient $\operatorname{grad} f\colon\mathcal M \to T\mathcal M$, or more precisely $\operatorname{grad}f(p) \in T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f\colon T_p\mathcal M \to T_p\mathcal M$ are then necessary to perform optimization.
+Since these might be challenging to compute, especially when manifolds and differential geometry are not
+the main area of a user – easier to use methods might be welcome.
+
+This tutorial discusses how to specify $f$ in the embedding as $\tilde f$, maybe only locally around the manifold,
+and use the Euclidean gradient $∇ \tilde f$ and Hessian $∇^2 \tilde f$ within `Manopt.jl`.
+
+For the theoretical background see ``[convert an Euclidean to an Riemannian Gradient](@ref EmbeddedGradient)``{=commonmark},
+or Section 4.7 of [Boumal:2023](@cite) for the gradient part or Section 5.11 as well as [Nguyen:2023](@cite)
+for the background on converting Hessians.
+
+Here we use the Examples 9.40 and 9.49 of [Boumal:2023](@cite) and compare the different methods,
+one can call the solver, depending on which gradient and/or Hessian one provides.
+
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+# For now use the local one since Manifolds.jl #644 is required for this
+using Pkg;
+cd(@__DIR__)
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
+# But for this version use here the most recent dev version from the parent folder
+Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
+```
+
+```{julia}
+#| output: false
+using Manifolds, Manopt, ManifoldDiff
+using LinearAlgebra, Random, Colors, Plots
+Random.seed!(123)
+```
+
+We consider the cost function on the [`Grassmann`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/grassmann.html) manifold given by
+
+```{julia}
+n = 5
+k = 2
+M = Grassmann(5,2)
+A = Symmetric(rand(n,n));
+```
+
+```{julia}
+#| output: false
+f(M, p) = 1 / 2 * tr(p' * A * p)
+```
+
+Note that this implementation is already also a valid implementation / continuation
+of $f$ into the (lifted) embedding of the Grassmann manifold.
+In the implementation we can use `f` for both the Euclidean $\tilde f$ and the Grassmann case $f$.
+
+Its Euclidean gradient $\nabla f$ and Hessian $\nabla^2f$ are easy to compute as
+
+```{julia}
+#| output: false
+∇f(M, p) = A * p
+∇²f(M,p,X) = A*X
+```
+
+On the other hand, from the aforementioned Example 9.49 we can also state
+the Riemannian gradient and Hessian for comparison as
+
+```{julia}
+#| output: false
+grad_f(M, p) = A * p - p * (p' * A * p)
+Hess_f(M, p, X) = A * X - p * p' * A * X - X * p' * A * p
+```
+
+We can check that these are the correct at least numerically by calling
+the [`check_gradient`](@ref)
+
+```{julia}
+check_gradient(M, f, grad_f; plot=true)
+```
+
+and the [`check_Hessian`](@ref), which requires a bit more tolerance in its linearity check
+
+```{julia}
+check_Hessian(M, f, grad_f, Hess_f; plot=true, throw_error=true, atol=1e-15)
+```
+
+While they look reasonable here and were already derived – for the general case this derivation
+might be more complicated.
+
+Luckily there exist two functions in [`ManifoldDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) that are implemented for several
+manifolds from [`Manifolds.jl`](https://github.com/JuliaManifolds/Manifolds.jl), namely [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any})`(M, p, eG)` that converts a Riemannian gradient
+`eG=`$\nabla \tilde f(p)$  into a the Riemannain one $\operatorname{grad} f(p)$
+ and [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any})`(M, p, eG, eH, X)`
+ which converts the Euclidean Hessian `eH=`$\nabla^2 \tilde f(p)[X]$  into $\operatorname{Hess} f(p)[X]$,
+ where we also require the Euclidean gradient `eG=`$\nabla \tilde f(p)$.
+
+So we can define
+
+```{julia}
+#| output: false
+grad2_f(M, p) = riemannian_gradient(M, p, ∇f(get_embedding(M), embed(M, p)))
+```
+
+where only formally we here call `embed(M,p)` before passing `p` to the Euclidean gradient,
+though here (for the Grassmann manifold with Stiefel representation) the embedding function is the identity.
+
+Similarly for the Hessian, where in our example the embeddings of both the points and tangent vectors are the identity.
+
+```{julia}
+#| output: false
+function Hess2_f(M, p, X)
+    return riemannian_Hessian(
+        M,
+        p,
+        ∇f(get_embedding(M), embed(M, p)),
+        ∇²f(get_embedding(M), embed(M, p), embed(M, p, X)),
+        X
+    )
+end
+```
+
+And we can again check these numerically,
+
+```{julia}
+check_gradient(M, f, grad2_f; plot=true)
+```
+
+and
+
+```{julia}
+check_Hessian(M, f, grad2_f, Hess2_f; plot=true, throw_error=true, atol=1e-14)
+```
+
+which yields the same result, but we see that the Euclidean conversion might be a bit less stable.
+
+Now if we want to use these in optimization we would require these two functions to call e.g.
+
+```{julia}
+p0 = [1.0 0.0; 0.0 1.0; 0.0 0.0; 0.0 0.0; 0.0 0.0]
+r1 = adaptive_regularization_with_cubics(
+    M,
+    f,
+    grad_f,
+    Hess_f,
+    p0;
+    debug=[:Iteration, :Cost, "\n"],
+    return_objective=true,
+    return_state=true,
+)
+q1 = get_solver_result(r1)
+r1
+```
+
+but if you choose to go for the conversions, then, thinking of the embedding and defining two new functions might be tedious. There is a shortcut for these, which performs the change internally, when necessary
+by specifying `objective_type=:Euclidean`.
+
+```{julia}
+r2 = adaptive_regularization_with_cubics(
+    M,
+    f,
+    ∇f,
+    ∇²f,
+    p0;
+    # The one line different to specify our grad/Hess are Eucldiean:
+    objective_type=:Euclidean,
+    debug=[:Iteration, :Cost, "\n"],
+    return_objective=true,
+    return_state=true,
+)
+q2 = get_solver_result(r2)
+r2
+```
+
+which returns the same result, see
+
+```{julia}
+distance(M, q1, q2)
+```
+
+
+This conversion also works for the gradients of constraints, and is passed down to
+subsolvers by deault when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
+
+## Summary
+
+If you have the Euclidean gradient (or Hessian) available for a solver call,
+all you need to provide is `objective_type=:Euclidean` to convert the objective
+to a Riemannian one.
+
+## Literature
+
+````{=commonmark}
+```@bibliography
+Pages = ["tutorials/EmbeddingObjectives.md"]
+Canonical=false
+```
+````
+
+## Technical Details
+
+This notebook was rendered with the following environment
+
+```{julia}
+Pkg.status()
+```
