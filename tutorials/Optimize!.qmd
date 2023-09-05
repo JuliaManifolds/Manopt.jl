@@ -9,7 +9,7 @@ how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifo
 For more theoretical background, see e.g. [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
 and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
 
-Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
+Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/#ManifoldsBase.Manifold)
 and let $f\colon \mathcal M → ℝ$ be a cost function.
 We aim to compute a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
 

@@ -7,7 +7,7 @@ parameter λ of ``φ(x) = \frac{1}{p}d_{\mathcal M}^p(f,x)``.
 For the mutating variant the computation is done in place of `y`.
 
 # Input
-* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) ``\mathcal M``
+* `M` – a manifold `M`
 * `λ` – the prox parameter
 * `f` – a point ``f ∈ \mathcal M`` (the data)
 * `x` – the argument of the proximal map
@@ -59,7 +59,7 @@ parameter `λ`.
 
 # Input
 
-* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
+* `M` – a manifold `M`
 * `λ` – a real value, parameter of the proximal map
 * `(x1,x2)` – a tuple of two points,
 
@@ -117,7 +117,7 @@ elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
 The parameter `λ` is the prox parameter.
 
 # Input
-* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
+* `M` – a manifold `M`
 * `λ` – a real value, parameter of the proximal map
 * `x` – a point.
 
@@ -365,7 +365,7 @@ neighbors (along any dimension in the array of `x`).
 The parameter `λ` is the prox parameter.
 
 # Input
-* `M` – a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)
+* `M` – a manifold `M`
 * `λ` – a real value, parameter of the proximal map
 * `x` – a points.
 

@@ -55,7 +55,7 @@ A functor that always returns a fixed step size.
 
 initialize the stepsize to a constant `s` of type `t`.
 
-    ConstantStepsize(M::AbstractManifold=DefaultManifold(2); 
+    ConstantStepsize(M::AbstractManifold=DefaultManifold(2);
         stepsize=injectivity_radius(M)/2, type::Symbol=:relative
     )
 
@@ -122,7 +122,7 @@ Alternatively one can also use the following keyword.
 
     DecreasingStepsize(
         M::AbstractManifold=DefaultManifold(3);
-        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0, 
+        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0,
         exponent=1.0, shift=0, type=:relative
     )
 
@@ -232,7 +232,7 @@ with the Fields above as keyword arguments and the retraction is set to the defa
 The constructors return the functor to perform Armijo line search, where two interfaces are available:
 * based on a tuple `(amp, ams, i)` of a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams`
   and a current iterate `i`.
-* with `(M, x, F, gradFx[,η=-gradFx]) -> s` where [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#Manifold) `M`, a current
+* with `(M, x, F, gradFx[,η=-gradFx]) -> s` where  `M`, a current
   point `x` a function `F`, that maps from the manifold to the reals,
   its gradient (a tangent vector) `gradFx```=\operatorname{grad}F(x)`` at  `x` and an optional
   search direction tangent vector `η=-gradFx` are the arguments.

@@ -158,7 +158,7 @@ end
     costTV(M, x, p)
 
 Compute the ``\operatorname{TV}^p`` functional for a tuple `pT` of pointss
-on a [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`, i.e.
+on a manifold `M`, i.e.
 
 ```math
 E(x_1,x_2) = d_{\mathcal M}^p(x_1,x_2), \quad x_1,x_2 ∈ \mathcal M
@@ -217,7 +217,7 @@ end
     costTV2(M,(x1,x2,x3) [,p=1])
 
 Compute the ``\operatorname{TV}_2^p`` functional for the 3-tuple of points
-`(x1,x2,x3)`on the [Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) `M`. Denote by
+`(x1,x2,x3)`on the manifold `M`. Denote by
 
 ```math
   \mathcal C = \bigl\{ c ∈  \mathcal M \ |\ g(\tfrac{1}{2};x_1,x_3) \text{ for some geodesic }g\bigr\}
