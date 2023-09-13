@@ -360,4 +360,15 @@ include("../utils/example_tasks.jl")
         )
         @test abs(Y1) ≈ 0.5
     end
+    @testset "Euclidean Embedding" begin
+        Random.seed!(42)
+        n = 5
+        A = Symmetric(randn(n + 1, n + 1))
+        # Euclidean variant with conversion
+        M = Sphere(n)
+        f(E, p) = p' * A * p
+        ∇f(E, p) = A * p
+        q = trust_regions(M, f, ∇f; objective_type=:Euclidean)
+        @test min(eigvals(A)...) ≈ f(M, q)
+    end
 end

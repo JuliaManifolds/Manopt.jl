@@ -1,4 +1,5 @@
 using Manifolds, Manopt, Test
+using Manopt: get_cost_function, get_gradient_function
 
 include("../utils/dummy_types.jl")
 

@@ -8,17 +8,24 @@ abstract type AbstractManifoldGradientObjective{E<:AbstractEvaluationType,TC,TG}
               AbstractManifoldCostObjective{E,TC} end
 
 @doc raw"""
-    get_gradient_function(amgo::AbstractManifoldGradientObjective{E<:AbstractEvaluationType})
+    get_gradient_function(amgo::AbstractManifoldGradientObjective, recursive=false)
 
-return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``.
+return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``,
+where either the gradient function using the decorator or without the decorator is used.
+
+By default `recursive` is set to `false`, since usually to just pass the gradient function
+somewhere, you still want e.g. the cached one or the one that still counts calls.
+
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 
 * `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
 * `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
 """
-get_gradient_function(amgo::AbstractManifoldGradientObjective) = amgo.gradient!!
-function get_gradient_function(admo::AbstractDecoratedManifoldObjective)
-    return get_gradient_function(get_objective(admo, false))
+function get_gradient_function(amgo::AbstractManifoldGradientObjective, recursive=false)
+    return amgo.gradient!!
+end
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+    return get_gradient_function(get_objective(admo, recursive))
 end
 
 @doc raw"""
