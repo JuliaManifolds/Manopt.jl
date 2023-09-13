@@ -28,4 +28,25 @@ include("../utils/dummy_types.jl")
         mp = DefaultManoptProblem(ManifoldsBase.DefaultManifold(2), o)
         set_manopt_parameter!(mp, :Objective, :Dummy, 1)
     end
+    @testset "functions" begin
+        M = ManifoldsBase.DefaultManifold(2)
+        p = [1.0, 2.0]
+        X = [3.0, 4.0]
+        oa = ManifoldHessianObjective((M, p) -> p[1], (M, p) -> p, (M, p, X) -> X)
+        @test Manopt.get_cost_function(oa)(M, p) == p[1]
+        @test Manopt.get_gradient_function(oa)(M, p) == p
+        @test Manopt.get_hessian_function(oa)(M, p, X) == X
+        oi = ManifoldHessianObjective(
+            (M, p) -> p[1],
+            (M, X, p) -> (X .= p),
+            (M, Y, p, X) -> (Y .= X);
+            evaluation=InplaceEvaluation(),
+        )
+        @test Manopt.get_cost_function(oi)(M, p) == p[1]
+        Y = similar(X)
+        @test Manopt.get_gradient_function(oi)(M, Y, p) == p
+        @test Y == p
+        @test Manopt.get_hessian_function(oi)(M, Y, p, X) == X
+        @test Y == X
+    end
 end

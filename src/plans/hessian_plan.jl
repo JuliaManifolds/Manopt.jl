@@ -117,8 +117,8 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `Y`.
 """
 get_hessian_function(mho::ManifoldHessianObjective, recursive=false) = mho.hessian!!
-function get_hessian_function(admo::AbstractDecoratedManifoldObjective)
-    return get_hessian_function(get_objective(admo, false))
+function get_hessian_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+    return get_hessian_function(get_objective(admo, recursive))
 end
 
 @doc raw"""

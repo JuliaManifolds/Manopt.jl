@@ -366,9 +366,20 @@ include("../utils/example_tasks.jl")
         A = Symmetric(randn(n + 1, n + 1))
         # Euclidean variant with conversion
         M = Sphere(n)
+        p0 = rand(M)
         f(E, p) = p' * A * p
         ∇f(E, p) = A * p
-        q = trust_regions(M, f, ∇f; objective_type=:Euclidean)
-        @test min(eigvals(A)...) ≈ f(M, q)
+        ∇²f(M, p, X) = A * X
+        λ = min(eigvals(A)...)
+        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean)
+        q2 = trust_regions(M, f, ∇f, ∇²f, p0; objective_type=:Euclidean)
+        @test λ ≈ f(M, q)
+        @test λ ≈ f(M, q2)
+        grad_f(M, p) = A * p - (p' * A * p) * p
+        Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
+        q3 = trust_regions(M, f, grad_f, p0)
+        q4 = trust_regions(M, f, grad_f, Hess_f, p0)
+        @test λ ≈ f(M, q3) atol = 2e-1 # Riemannian Hessian a bit inprecise?
+        @test λ ≈ f(M, q4)
     end
 end

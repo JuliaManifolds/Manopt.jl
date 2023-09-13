@@ -290,7 +290,7 @@ function get_hessian_function(
     sco::ManifoldCountObjective{InplaceEvaluation}, recursive=false
 )
     recursive && return get_hessian_function(sco.objective, recursive)
-    return (M, Y, p, X) -> get_hessiant!(M, Y, sco, p, X)
+    return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)
 end
 
 function get_preconditioner(M::AbstractManifold, co::ManifoldCountObjective, p, X)

@@ -88,13 +88,13 @@ end
 function get_gradient_function(
     sco::SimpleManifoldCachedObjective{AllocatingEvaluation}, recursive=false
 )
-    recursive && return get_gradient_function(sco.objective, recursive)
+    recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, p) -> get_gradient(M, sco, p)
 end
 function get_gradient_function(
     sco::SimpleManifoldCachedObjective{InplaceEvaluation}, recursive=false
 )
-    recursive && return get_gradient_function(sco.objective, recursive)
+    recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
@@ -312,7 +312,7 @@ function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
 end
 
 function get_cost_function(co::ManifoldCachedObjective, recursive=false)
-    recursive && return get_cost_function(co.objective, recursive)
+    recursive && (return get_cost_function(co.objective, recursive))
     return (M, p) -> get_cost(M, co, p)
 end
 
@@ -344,13 +344,13 @@ end
 function get_gradient_function(
     sco::ManifoldCachedObjective{AllocatingEvaluation}, recursive=false
 )
-    recursive && return get_gradient_function(sco.objective, recursive)
+    recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, p) -> get_gradient(M, sco, p)
 end
 function get_gradient_function(
     sco::ManifoldCachedObjective{InplaceEvaluation}, recursive=false
 )
-    recursive && return get_gradient_function(sco.objective, recursive)
+    recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
@@ -606,14 +606,14 @@ end
 function get_hessian_function(
     emo::ManifoldCachedObjective{AllocatingEvaluation}, recursive=false
 )
-    recursive && return get_hessian_function(emo.objective, recursive)
+    recursive && (return get_hessian_function(emo.objective, recursive))
     return (M, p, X) -> get_hessian(M, emo, p, X)
 end
 function get_hessian_function(
     emo::ManifoldCachedObjective{InplaceEvaluation}, recursive=false
 )
-    recursive && return get_hessian_function(emo.objective, recursive)
-    return (M, Y, p, X) -> get_hessiant!(M, Y, emo, p, X)
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
 end
 #
 # Preconditioner
