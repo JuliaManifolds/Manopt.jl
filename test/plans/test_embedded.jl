@@ -86,7 +86,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         obj = ManifoldHessianObjective(f, ∇f, ∇²f)
-        e_obj = EmbeddedManifoldObjective(M, obj)
+        e_obj = EmbeddedManifoldObjective(obj)
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(e_obj, true)
         # otherise different
@@ -111,7 +111,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
         Hess_f!(M, Y, p, X) = (Y .= A * X - (p' * A * X) .* p - (p' * A * p) .* X)
         obj_i = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation=InplaceEvaluation())
-        e_obj_i = EmbeddedManifoldObjective(M, obj_i)
+        e_obj_i = EmbeddedManifoldObjective(obj_i)
         @test Manopt.get_cost_function(obj_i) === Manopt.get_cost_function(e_obj_i, true)
         f2 = Manopt.get_cost_function(e_obj_i)
         @test f2 != f
