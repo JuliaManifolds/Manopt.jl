@@ -48,6 +48,7 @@ include("../utils/dummy_types.jl")
             get_preconditioner!(M, Y1, obj, p, X)
             get_preconditioner!(M, Y2, ddo, p, X)
             @test Y1 == Y2
+            @test Manopt.get_hessian_function(ddo) == Manopt.get_hessian_function(obj)
         end
     end
     @testset "Counting Objective" begin

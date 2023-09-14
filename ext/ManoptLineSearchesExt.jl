@@ -26,7 +26,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     p_tmp = copy(M, p)
     X_tmp = copy(M, p, X)
     Y_tmp = copy(M, p, X)
-    f = get_cost_function(get_objective(mp))
+    f = Manopt.get_cost_function(get_objective(mp))
     dphi_0 = real(inner(M, p, X, η))
 
     # guess initial alpha

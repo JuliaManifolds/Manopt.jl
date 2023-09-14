@@ -551,8 +551,9 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
 
     model_decreased = ρden ≥ 0
-    # Update the Hessian approximation
-    update_hessian!(M, mho.hessian!!, trs.p, trs.p_proposal, trs.η)
+    # Update the Hessian approximation - i.e. really unwrap the original Hessian function
+    # and update it if it is an approxiate Hessian.
+    update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.η)
     # Choose the new TR radius based on the model performance.
     # If the actual decrease is smaller than reduction_threshold of the predicted decrease,
     # then reduce the TR radius.
@@ -569,7 +570,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     if model_decreased &&
         (ρ > trs.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
         copyto!(trs.p, trs.p_proposal)
-        update_hessian_basis!(M, mho.hessian!!, trs.p)
+        update_hessian_basis!(M, get_hessian_function(mho, true), trs.p)
     end
     return trs
 end

@@ -269,13 +269,11 @@ export AlternatingGradient
 #
 # Accessors and helpers for AbstractManoptSolverState
 export default_stepsize
-export get_cost, get_cost_function
-export get_gradient, get_gradient_function, get_gradient!
+export get_cost, get_gradient, get_gradient!
 export get_subgradient, get_subgradient!
 export get_subtrahend_gradient!, get_subtrahend_gradient
-export get_proximal_map,
-    get_proximal_map!,
-    get_state,
+export get_proximal_map, get_proximal_map!
+export get_state,
     get_initial_stepsize,
     get_iterate,
     get_gradients,
@@ -302,7 +300,8 @@ export get_proximal_map,
     forward_operator!,
     get_objective
 export set_manopt_parameter!
-export get_hessian, get_hessian!, ApproxHessianFiniteDifference
+export get_hessian, get_hessian!
+export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export get_constraints,

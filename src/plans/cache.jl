@@ -56,9 +56,9 @@ function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     end
     return sco.c
 end
-get_cost_function(sco::SimpleManifoldCachedObjective) = (M, p) -> get_cost(M, sco, p)
-function get_gradient_function(sco::SimpleManifoldCachedObjective)
-    return (M, p) -> get_gradient(M, sco, p)
+function get_cost_function(sco::SimpleManifoldCachedObjective, recursive=false)
+    recursive && return get_cost_function(sco.objective, recursive)
+    return (M, p) -> get_cost(M, sco, p)
 end
 
 function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
@@ -83,6 +83,19 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjectiv
     end
     copyto!(M, X, sco.p, sco.X)
     return X
+end
+
+function get_gradient_function(
+    sco::SimpleManifoldCachedObjective{AllocatingEvaluation}, recursive=false
+)
+    recursive && (return get_gradient_function(sco.objective, recursive))
+    return (M, p) -> get_gradient(M, sco, p)
+end
+function get_gradient_function(
+    sco::SimpleManifoldCachedObjective{InplaceEvaluation}, recursive=false
+)
+    recursive && (return get_gradient_function(sco.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
 #
@@ -297,8 +310,11 @@ function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
         get_cost(M, co.objective, p)
     end
 end
-get_cost_function(co::ManifoldCachedObjective) = (M, p) -> get_cost(M, co, p)
-get_gradient_function(co::ManifoldCachedObjective) = (M, p) -> get_gradient(M, co, p)
+
+function get_cost_function(co::ManifoldCachedObjective, recursive=false)
+    recursive && (return get_cost_function(co.objective, recursive))
+    return (M, p) -> get_cost(M, co, p)
+end
 
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Gradient)) && return get_gradient(M, co.objective, p)
@@ -323,6 +339,19 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
         end, #and we copy the values back to X
     )
     return X
+end
+
+function get_gradient_function(
+    sco::ManifoldCachedObjective{AllocatingEvaluation}, recursive=false
+)
+    recursive && (return get_gradient_function(sco.objective, recursive))
+    return (M, p) -> get_gradient(M, sco, p)
+end
+function get_gradient_function(
+    sco::ManifoldCachedObjective{InplaceEvaluation}, recursive=false
+)
+    recursive && (return get_gradient_function(sco.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
 #
@@ -574,6 +603,18 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
     return Y
 end
 
+function get_hessian_function(
+    emo::ManifoldCachedObjective{AllocatingEvaluation}, recursive=false
+)
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, p, X) -> get_hessian(M, emo, p, X)
+end
+function get_hessian_function(
+    emo::ManifoldCachedObjective{InplaceEvaluation}, recursive=false
+)
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
+end
 #
 # Preconditioner
 function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)

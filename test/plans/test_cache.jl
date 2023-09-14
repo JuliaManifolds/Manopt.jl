@@ -1,4 +1,4 @@
-using LinearAlgebra, LRUCache, Manifolds, Manopt, Test
+using LinearAlgebra, LRUCache, Manifolds, Manopt, Test, Random
 
 include("../utils/dummy_types.jl")
 
@@ -96,8 +96,8 @@ end
         @test get_gradient(M, sco1, r) == X # cached
         @test X == r
         @test sco1.objective.gradient!!.i == 3
-        @test get_cost_function(sco1) != get_cost_function(mgoa)
-        @test get_gradient_function(sco1) != get_gradient_function(mgoa)
+        @test Manopt.get_cost_function(sco1) != Manopt.get_cost_function(mgoa)
+        @test Manopt.get_gradient_function(sco1) != Manopt.get_gradient_function(mgoa)
 
         mgoi = ManifoldGradientObjective(
             TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
@@ -190,8 +190,8 @@ end
         ro = DummyDecoratedObjective(o)
         #indecorated works as well
         lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
-        @test get_cost_function(lco2) != get_cost_function(o)
-        @test get_gradient_function(lco2) != get_gradient_function(o)
+        @test Manopt.get_cost_function(lco2) != Manopt.get_cost_function(o)
+        @test Manopt.get_gradient_function(lco2) != Manopt.get_gradient_function(o)
         p = [1.0, 0.0, 0.0]
         a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
         @test get_cost(M, lco, p) == 2.0
@@ -258,6 +258,99 @@ end
         # Check default trigger
         @test_throws DomainError Manopt.init_caches(M, [:Cost], Nothing)
         @test_throws ErrorException Manopt.init_caches(M, [:None], LRU)
+    end
+    @testset "Function passthrough" begin
+        Random.seed!(42)
+        n = 4
+        A = Symmetric(randn(n, n))
+        M = Sphere(n - 1)
+        p = [1.0, zeros(n - 1)...]
+        X = [0.0, 1.0, zeros(n - 2)...]
+        f(M, p) = 0.5 * p' * A * p
+        grad_f(M, p) = A * p - (p' * A * p) * p
+        Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
+        obj = ManifoldHessianObjective(f, grad_f, Hess_f)
+        c_obj = objective_cache_factory(
+            M, obj, (:LRU, [:Cost, :Gradient, :Hessian], [:cache_size => 1])
+        )
+        # undecorated / recursive cost -> exactly f
+        @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)
+        # otherise different
+        f1 = Manopt.get_cost_function(c_obj)
+        @test f1 != f
+        @test f1(M, p) == f(M, p)
+        # The same for gradient
+        @test Manopt.get_gradient_function(obj) ===
+            Manopt.get_gradient_function(c_obj, true)
+        grad_f1 = Manopt.get_gradient_function(c_obj)
+        @test grad_f1 != grad_f
+        @test grad_f1(M, p) == grad_f(M, p)
+        # And Hessian
+        @test Manopt.get_hessian_function(obj) === Manopt.get_hessian_function(c_obj, true)
+        Hess_f1 = Manopt.get_hessian_function(c_obj)
+        @test Hess_f1 != Hess_f
+        @test Hess_f1(M, p, X) == Hess_f(M, p, X)
+        #
+        # And all three for mutating again
+        grad_f!(M, X, p) = (X .= A * p - (p' * A * p) * p)
+        Hess_f!(M, Y, p, X) = (Y .= A * X - (p' * A * X) .* p - (p' * A * p) .* X)
+        obj_i = ManifoldHessianObjective(
+            f, grad_f!, Hess_f!; evaluation=InplaceEvaluation()
+        )
+        c_obj_i = objective_cache_factory(
+            M, obj_i, (:LRU, [:Cost, :Gradient, :Hessian], [:cache_size => 1])
+        )
+        @test Manopt.get_cost_function(obj_i) === Manopt.get_cost_function(c_obj_i, true)
+        f2 = Manopt.get_cost_function(c_obj_i)
+        @test f2 != f
+        @test f2(M, p) == f(M, p)
+        # The same for gradient
+        @test Manopt.get_gradient_function(obj_i) ===
+            Manopt.get_gradient_function(c_obj_i, true)
+        grad_f1! = Manopt.get_gradient_function(c_obj_i)
+        @test grad_f1! != grad_f!
+        Y = similar(X)
+        Z = similar(X)
+        @test grad_f1!(M, Y, p) == grad_f!(M, Z, p)
+        # And Hessian
+        @test Manopt.get_hessian_function(obj_i) ===
+            Manopt.get_hessian_function(c_obj_i, true)
+        Hess_f1! = Manopt.get_hessian_function(c_obj_i)
+        @test Hess_f1 != Hess_f
+        @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
+        #
+        # Simple
+        obj_g = ManifoldGradientObjective(f, grad_f)
+        s_obj = Manopt.SimpleManifoldCachedObjective(M, obj_g; p=similar(p), X=similar(X))
+        # undecorated / recursive cost -> exactly f
+        @test Manopt.get_cost_function(obj_g) === Manopt.get_cost_function(s_obj, true)
+        # otherise different
+        f1 = Manopt.get_cost_function(s_obj)
+        @test f1 != f
+        @test f1(M, p) == f(M, p)
+        # The same for gradient
+        @test Manopt.get_gradient_function(obj_g) ===
+            Manopt.get_gradient_function(s_obj, true)
+        grad_f1 = Manopt.get_gradient_function(s_obj)
+        @test grad_f1 != grad_f
+        @test grad_f1(M, p) == grad_f(M, p)
+        # Simple Mutating
+        obj_g_i = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
+        s_obj_i = Manopt.SimpleManifoldCachedObjective(
+            M, obj_g_i; p=similar(p), X=similar(X)
+        )
+        @test Manopt.get_cost_function(obj_g_i) === Manopt.get_cost_function(s_obj_i, true)
+        f2 = Manopt.get_cost_function(s_obj_i)
+        @test f2 != f
+        @test f2(M, p) == f(M, p)
+        # The same for gradient
+        @test Manopt.get_gradient_function(obj_g_i) ===
+            Manopt.get_gradient_function(s_obj_i, true)
+        grad_f1! = Manopt.get_gradient_function(s_obj_i)
+        @test grad_f1! != grad_f!
+        Y = similar(X)
+        Z = similar(X)
+        @test grad_f1!(M, Y, p) == grad_f!(M, Z, p)
     end
     # Other tests are included with their respectives objective tests in the corresponding plans
 end

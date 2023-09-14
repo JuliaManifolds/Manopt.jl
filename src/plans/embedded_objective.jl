@@ -67,6 +67,10 @@ function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     return get_cost(get_embedding(M), emo.objective, q)
 end
 
+function get_cost_function(emo::EmbeddedManifoldObjective, recursive=false)
+    recursive && (return get_cost_function(emo.objective, recursive))
+    return (M, p) -> get_cost(M, emo, p)
+end
 @doc raw"""
     get_gradient(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     get_gradient!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
@@ -104,6 +108,19 @@ function get_gradient!(
     get_gradient!(get_embedding(M), emo.X, emo.objective, q)
     riemannian_gradient!(M, X, p, emo.X)
     return X
+end
+
+function get_gradient_function(
+    emo::EmbeddedManifoldObjective{P,T,AllocatingEvaluation}, recursive=false
+) where {P,T}
+    recursive && (return get_gradient_function(emo.objective, recursive))
+    return (M, p) -> get_gradient(M, emo, p)
+end
+function get_gradient_function(
+    emo::EmbeddedManifoldObjective{P,T,InplaceEvaluation}, recursive=false
+) where {P,T}
+    recursive && (return get_gradient_function(emo.objective, recursive))
+    return (M, X, p) -> get_gradient!(M, X, emo, p)
 end
 #
 # Hessian
@@ -163,6 +180,20 @@ function get_hessian!(
     )
     return Y
 end
+
+function get_hessian_function(
+    emo::EmbeddedManifoldObjective{P,T,AllocatingEvaluation}, recursive=false
+) where {P,T}
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, p, X) -> get_hessian(M, emo, p, X)
+end
+function get_hessian_function(
+    emo::EmbeddedManifoldObjective{P,T,InplaceEvaluation}, recursive=false
+) where {P,T}
+    recursive && (return get_hessian_function(emo.objective, recursive))
+    return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
+end
+
 #
 # Constraints
 #
