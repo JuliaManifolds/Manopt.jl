@@ -72,6 +72,8 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test Y == grad_f(M, p)
             end
         end
+        # just check that this also works for double decorated ones.
+        o3 = EmbeddedManifoldObjective(ManifoldCountObjective(M, o, [:Cost]), p, X)
     end
     @testset "Function passthrough" begin
         Random.seed!(42)
