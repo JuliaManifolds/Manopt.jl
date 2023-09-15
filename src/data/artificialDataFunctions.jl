@@ -60,7 +60,7 @@ end
     artificial_S1_slope_signal([pts=500, slope=4.])
 
 Creates a Signal of (phase-valued) data represented on the
-[Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold)` `[Manifold](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) with increasing slope.
+[`Circle`](hhttps://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/circle.html) with increasing slope.
 
 # Optional
 * `pts` – (`500`) number of points to sample the function.
@@ -97,8 +97,8 @@ end
 
 generate a real-valued signal having piecewise constant, linear and quadratic
 intervals with jumps in between. If the resulting manifold the data lives on,
-is the [Circle](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.Manifold) the data is also wrapped
-to $[-\pi,\pi)$. This is data for an example from  [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1).
+is the [`Circle`](hhttps://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/circle.html)
+the data is also wrapped to $[-\pi,\pi)$. This is data for an example from  [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1).
 
 # Optional
 * `pts` – (`500`) number of points to sample the function
@@ -217,7 +217,7 @@ where each segment is a cubic Bezér curve, i.e. each point, except $p_3$ has a 
 within the following segment $b_i^+$, $i=0,1,2$ and a last point within the previous
 segment, except for $p_0$, which are denoted by $b_i^-$, $i=1,2,3$.
 This curve is differentiable by the conditions $b_i^- = \gamma_{b_i^+,p_i}(2)$, $i=1,2$,
-where $\gamma_{a,b}$ is the [`shortest_geodesic`](https://juliamanifolds.github.io/Manifolds.jl/stable/interface.html#ManifoldsBase.shortest_geodesic-Tuple{Manifold,Any,Any}) connecting $a$ and $b$.
+where $\gamma_{a,b}$ is the [`shortest_geodesic`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.shortest_geodesic-Tuple{AbstractManifold,%20Any,%20Any}) connecting $a$ and $b$.
 The remaining points are defined as
 
 ````math

@@ -218,7 +218,10 @@ function get_cost(
     c, _ = get_cost_and_gradient(M, co, p)
     return c
 end
-get_cost_function(co::ManifoldCountObjective) = (M, p) -> get_cost(M, co, p)
+function get_cost_function(co::ManifoldCountObjective, recursive=false)
+    recursive && return get_cost_function(co.objective, recursive)
+    return (M, p) -> get_cost(M, co, p)
+end
 
 function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
@@ -232,7 +235,19 @@ function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjecti
     return get_cost_and_gradient!(M, X, co.objective, p)
 end
 
-get_gradient_function(co::ManifoldCountObjective) = (M, p) -> get_gradient(M, co, p)
+function get_gradient_function(
+    sco::ManifoldCountObjective{AllocatingEvaluation}, recursive=false
+)
+    recursive && return get_gradient_function(sco.objective, recursive)
+    return (M, p) -> get_gradient(M, sco, p)
+end
+function get_gradient_function(
+    sco::ManifoldCountObjective{InplaceEvaluation}, recursive=false
+)
+    recursive && return get_gradient_function(sco.objective, recursive)
+    return (M, X, p) -> get_gradient!(M, X, sco, p)
+end
+
 function get_gradient(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Gradient)
     return get_gradient(M, co.objective, p)
@@ -263,6 +278,19 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCountObjective, p, X)
     _count_if_exists(co, :Hessian)
     get_hessian!(M, Y, co.objective, p, X)
     return Y
+end
+
+function get_hessian_function(
+    sco::ManifoldCountObjective{AllocatingEvaluation}, recursive=false
+)
+    recursive && return get_hessian_function(sco.objective, recursive)
+    return (M, p, X) -> get_hessian(M, sco, p, X)
+end
+function get_hessian_function(
+    sco::ManifoldCountObjective{InplaceEvaluation}, recursive=false
+)
+    recursive && return get_hessian_function(sco.objective, recursive)
+    return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)
 end
 
 function get_preconditioner(M::AbstractManifold, co::ManifoldCountObjective, p, X)

@@ -108,6 +108,20 @@ function get_hessian!(
 end
 
 @doc raw"""
+    get_gradient_function(amgo::AbstractManifoldGradientObjective{E<:AbstractEvaluationType})
+
+return the function to evaluate (just) the hessian ``\operatorname{Hess} f(p)``.
+Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
+
+* `(M, p, X) -> Y` for the [`AllocatingEvaluation`](@ref) case
+* `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `Y`.
+"""
+get_hessian_function(mho::ManifoldHessianObjective, recursive=false) = mho.hessian!!
+function get_hessian_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+    return get_hessian_function(get_objective(admo, recursive))
+end
+
+@doc raw"""
     get_preconditioner(amp::AbstractManoptProblem, p, X)
 
 evaluate the symmetric, positive definite preconditioner (approximation of the

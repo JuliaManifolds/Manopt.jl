@@ -52,7 +52,7 @@ end
 
 return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) -> c`.
 """
-get_cost_function(mco::AbstractManifoldCostObjective) = mco.cost
-function get_cost_function(admo::AbstractDecoratedManifoldObjective)
-    return get_cost_function(get_objective(admo, false))
+get_cost_function(mco::AbstractManifoldCostObjective, recursive=false) = mco.cost
+function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+    return get_cost_function(get_objective(admo, recursive))
 end

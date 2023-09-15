@@ -93,6 +93,11 @@ ManifoldCostObjective
 
 ```@docs
 get_cost
+```
+
+and internally
+
+```@docs
 get_cost_function
 ```
 
@@ -117,6 +122,11 @@ ManifoldCostGradientObjective
 ```@docs
 get_gradient
 get_gradients
+```
+
+and internally
+
+```@docs
 get_gradient_function
 ```
 
@@ -156,6 +166,12 @@ ManifoldHessianObjective
 ```@docs
 get_hessian
 get_preconditioner
+```
+
+and internally
+
+```@docs
+get_hessian_function
 ```
 
 ### Primal-Dual based Objectives

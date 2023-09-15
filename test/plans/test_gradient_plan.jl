@@ -1,4 +1,6 @@
 using Manopt, ManifoldsBase, Test
+using Manopt: get_cost_function, get_gradient_function
+
 include("../utils/dummy_types.jl")
 
 @testset "Gradient Plan" begin
