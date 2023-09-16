@@ -20,7 +20,7 @@ Wrapper for line searches available in the `LineSearches.jl` library.
 
 Wrap `linesearch` (for example [`HagerZhang`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.HagerZhang)
 or [`MoreThuente`](https://julianlsolvers.github.io/LineSearches.jl/latest/reference/linesearch.html#LineSearches.MoreThuente)).
-The initial step selection from Lineseaches.jl is not yet supported and the value 1.0 is used.
+The initial step selection from Linesearches.jl is not yet supported and the value 1.0 is used.
 The retraction used for determining the line along which the search is performed can be
  provided as `retraction_method`. Gradient vectors are transported between points using
 `vector_transport_method`.

@@ -308,7 +308,7 @@ function show(io::IO, als::ArmijoLinesearch)
     return print(
         io,
         """
-        ArmijoLineseach() with keyword parameters
+        ArmijoLinesearch() with keyword parameters
           * initial_stepsize    = $(als.initial_stepsize)
           * retraction_method   = $(als.retraction_method)
           * contraction_factor  = $(als.contraction_factor)
