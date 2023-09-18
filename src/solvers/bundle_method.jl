@@ -245,19 +245,19 @@ function bundle_method_sub_solver(::Any, ::Any)
     )
 end
 function sectional_curvature(M, p)
-    X = rand(M; vector_at = p)
-    Y = rand(M; vector_at = p)
+    X = rand(M; vector_at=p)
+    Y = rand(M; vector_at=p)
     Y = Y - inner(M, p, X, Y) / norm(M, p, X)^2 * X
     R = riemann_tensor(M, p, X, Y, Y)
     return inner(M, p, R, X) / (norm(M, p, X)^2 * norm(M, p, Y)^2 - inner(M, p, X, Y)^2)
 end
 function ζ_1(κ_min, diam)
-    (κ_min < zero(κ_min)) && return sqrt(-κ_min)*diam*coth(sqrt(-κ_min)*diam)
+    (κ_min < zero(κ_min)) && return sqrt(-κ_min) * diam * coth(sqrt(-κ_min) * diam)
     (κ_min ≥ zero(κ_min)) && return one(κ_min)
 end
 function ζ_2(κ_max, diam)
     (κ_max ≤ zero(κ_max)) && return one(κ_max)
-    (κ_max > zero(κ_max)) && return sqrt(κ_max)*diam*cot(sqrt(κ_max)*diam)
+    (κ_max > zero(κ_max)) && return sqrt(κ_max) * diam * cot(sqrt(κ_max) * diam)
 end
 function curvature_bound(M, diam)
     s = [sectional_curvature(M, rand(M)) for _ in 1:1000]
@@ -315,15 +315,16 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
         ) +
-        bms.K*
+        bms.K *
         norm(
-            M,
-            qj,
-            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
-    bms.lin_errors = [zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for x in bms.lin_errors]
+    bms.lin_errors = [
+        zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for
+        x in bms.lin_errors
+    ]
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
@@ -405,4 +406,3 @@ end
 function show(io::IO, b::StopWhenBundleLess{Nothing,R}) where {R}
     return print(io, "StopWhenBundleLess($(b.tolξ))\n    $(status_summary(b))")
 end
-
