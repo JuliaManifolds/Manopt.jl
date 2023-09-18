@@ -116,6 +116,8 @@ using ManifoldsBase:
     project,
     project!,
     rand!,
+    riemann_tensor,
+    riemann_tensor!,
     representation_size,
     requires_caching,
     retract,
