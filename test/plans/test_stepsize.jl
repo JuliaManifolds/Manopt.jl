@@ -3,9 +3,9 @@ using Manopt, Manifolds, Test
 @testset "Stepsize" begin
     @test Manopt.get_message(ConstantStepsize(1.0)) == ""
     s = ArmijoLinesearch()
-    @test startswith(repr(s), "ArmijoLineseach() with keyword parameters\n")
+    @test startswith(repr(s), "ArmijoLinesearch() with keyword parameters\n")
     s_stat = Manopt.status_summary(s)
-    @test startswith(s_stat, "ArmijoLineseach() with keyword parameters\n")
+    @test startswith(s_stat, "ArmijoLinesearch() with keyword parameters\n")
     @test endswith(s_stat, "of 1.0")
     @test Manopt.get_message(s) == ""
 

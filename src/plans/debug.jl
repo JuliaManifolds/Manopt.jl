@@ -263,10 +263,10 @@ end
 function show(io::IO, dc::DebugChange)
     return print(
         io,
-        "DebugChange(; format=\"$(dc.format)\", inverse_retraction=$(dc.inverse_retraction_method))",
+        "DebugChange(; format=\"$(escape_string(dc.format))\", inverse_retraction=$(dc.inverse_retraction_method))",
     )
 end
-status_summary(dc::DebugChange) = "(:Change, \"$(dc.format)\")"
+status_summary(dc::DebugChange) = "(:Change, \"$(escape_string(dc.format))\")"
 
 @doc raw"""
     DebugCost <: DebugAction
@@ -295,8 +295,10 @@ function (d::DebugCost)(p::AbstractManoptProblem, st::AbstractManoptSolverState,
     (i >= 0) && Printf.format(d.io, Printf.Format(d.format), get_cost(p, get_iterate(st)))
     return nothing
 end
-show(io::IO, di::DebugCost) = print(io, "DebugCost(; format=\"$(di.format)\")")
-status_summary(di::DebugCost) = "(:Cost, \"$(di.format)\")"
+function show(io::IO, di::DebugCost)
+    return print(io, "DebugCost(; format=\"$(escape_string(di.format))\")")
+end
+status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 
 @doc raw"""
     DebugDivider <: DebugAction
@@ -318,8 +320,10 @@ function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState,
     end
     return nothing
 end
-show(io::IO, di::DebugDivider) = print(io, "DebugDivider(; divider=\"$(di.divider)\")")
-status_summary(di::DebugDivider) = "\"$(di.divider)\""
+function show(io::IO, di::DebugDivider)
+    return print(io, "DebugDivider(; divider=\"$(escape_string(di.divider))\")")
+end
+status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
 
 @doc raw"""
     DebugEntry <: DebugAction
@@ -348,7 +352,7 @@ function (d::DebugEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState,
     return nothing
 end
 function show(io::IO, di::DebugEntry)
-    return print(io, "DebugEntry(:$(di.field); format=\"$(di.format)\")")
+    return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\")")
 end
 
 @doc raw"""
@@ -458,7 +462,8 @@ function (d::DebugEntryChange)(
 end
 function show(io::IO, dec::DebugEntryChange)
     return print(
-        io, "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(dec.format)\")"
+        io,
+        "DebugEntryChange(:$(dec.field), $(dec.distance); format=\"$(escape_string(dec.format))\")",
     )
 end
 
@@ -519,10 +524,12 @@ end
 function show(io::IO, dgc::DebugGradientChange)
     return print(
         io,
-        "DebugGradientChange(; format=\"$(dgc.format)\", vector_transport_method=$(dgc.vector_transport_method))",
+        "DebugGradientChange(; format=\"$(escape_string(dgc.format))\", vector_transport_method=$(dgc.vector_transport_method))",
     )
 end
-status_summary(di::DebugGradientChange) = "(:GradientChange, \"$(di.format)\")"
+function status_summary(di::DebugGradientChange)
+    return "(:GradientChange, \"$(escape_string(di.format))\")"
+end
 
 @doc raw"""
     DebugIterate <: DebugAction
@@ -554,9 +561,9 @@ function (d::DebugIterate)(::AbstractManoptProblem, st::AbstractManoptSolverStat
     return nothing
 end
 function show(io::IO, di::DebugIterate)
-    return print(io, "DebugIterate(; format=\"$(di.format)\")")
+    return print(io, "DebugIterate(; format=\"$(escape_string(di.format))\")")
 end
-status_summary(di::DebugIterate) = "(:Iterate, \"$(di.format)\")"
+status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 
 @doc raw"""
     DebugIteration <: DebugAction
@@ -582,8 +589,10 @@ function (d::DebugIteration)(::AbstractManoptProblem, ::AbstractManoptSolverStat
     (i > 0) && Printf.format(d.io, Printf.Format(d.format), i)
     return nothing
 end
-show(io::IO, di::DebugIteration) = print(io, "DebugIteration(; format=\"$(di.format)\")")
-status_summary(di::DebugIteration) = "(:Iteration, \"$(di.format)\")"
+function show(io::IO, di::DebugIteration)
+    return print(io, "DebugIteration(; format=\"$(escape_string(di.format))\")")
+end
+status_summary(di::DebugIteration) = "(:Iteration, \"$(escape_string(di.format))\")"
 
 @doc raw"""
     DebugMessages <: DebugAction
@@ -745,13 +754,15 @@ function (d::DebugTime)(::AbstractManoptProblem, ::AbstractManoptSolverState, i)
     return nothing
 end
 function show(io::IO, di::DebugTime)
-    return print(io, "DebugTime(; format=\"$(di.format)\", mode=:$(di.mode))")
+    return print(
+        io, "DebugTime(; format=\"$(escape_string(di.format))\", mode=:$(di.mode))"
+    )
 end
 function status_summary(di::DebugTime)
     if di.mode === :iterative
-        return "(:IterativeTime, \"$(di.format)\")"
+        return "(:IterativeTime, \"$(escape_string(di.format))\")"
     end
-    return "(:Time, \"$(di.format)\")"
+    return "(:Time, \"$(escape_string(di.format))\")"
 end
 """
     reset!(d::DebugTime)
