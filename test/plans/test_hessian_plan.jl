@@ -104,4 +104,26 @@ include("../utils/dummy_types.jl")
             @test get_count(ccobj, :Preconditioner) == 2
         end
     end
+    @testset "Fixedrank – nonmatrix point/vector types" begin
+        m=5
+        n=3
+        k=2
+        M = FixedRankMatrices(m,n,k)
+        L = randn(m, k);
+        R = randn(n, k);
+        A = L*R';
+        # Generate a mask
+        P = zeros(m,n)
+        P[1:9] .= 1
+        PA = P.*A;
+        f2(M, p) = .5*norm( P.*embed(M,p) - PA)^2
+        # Project convecrts the Gradient in the Embedding to an UMVTVector
+        grad_f2(M, p) = project(M, p, P.*embed(M,p) - PA)
+        grad_f2!(M, X, p) = project!(M, X, p, P.*embed(M,p) - PA)
+        Random.seed!(42)
+        p0 = rand(M)
+        q1 = trust_regions(M, f2, grad_f2, p0)
+        q2 = trust_regions(M, f2, grad_f2!, p0; evaluation=InplaceEvaluation())
+        @test isapprox(M, q1, q2)
+    end
 end
