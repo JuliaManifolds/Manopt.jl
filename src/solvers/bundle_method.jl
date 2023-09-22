@@ -11,6 +11,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
 * `g`- descent direction
 * `inverse_retraction_method` - the inverse retraction to use within
+* `K` - curvature-dependent bound
 * `lin_errors` - linearization errors at the last serious step
 * `m` - the parameter to test the decrease of the cost
 * `p` - current candidate point
@@ -21,7 +22,6 @@ stores option values for a [`bundle_method`](@ref) solver
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
     `p` that was last evaluated.
-* `δ` - update parameter for the diameter
 * `ε` - convex combination of the linearization errors
 * `λ` - convex coefficients that solve the subproblem
 * `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
@@ -54,6 +54,7 @@ mutable struct BundleMethodState{
     diam::R
     g::T
     inverse_retraction_method::IR
+    K::R
     lin_errors::A
     m::R
     p::P
@@ -63,11 +64,9 @@ mutable struct BundleMethodState{
     transported_subgradients::C
     vector_transport_method::VT
     X::T
-    δ::R
     ε::R
     ξ::R
     λ::A
-    K::R
     function BundleMethodState(
         M::TM,
         p::P;
@@ -81,7 +80,6 @@ mutable struct BundleMethodState{
         stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        δ::R=one(R),
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -94,12 +92,12 @@ mutable struct BundleMethodState{
     }
         bundle = [(copy(M, p), zero_vector(M, p))]
         g = zero_vector(M, p)
+        K = zero(R)
         lin_errors = zeros(bundle_size)
         transported_subgradients = [zero_vector(M, p)]
         ε = zero(R)
         λ = [zero(R)]
         ξ = zero(R)
-        K = zero(R)
         return new{
             typeof(m),
             P,
@@ -120,6 +118,7 @@ mutable struct BundleMethodState{
             diam,
             g,
             inverse_retraction_method,
+            K,
             lin_errors,
             m,
             p,
@@ -129,11 +128,9 @@ mutable struct BundleMethodState{
             transported_subgradients,
             vector_transport_method,
             X,
-            δ,
             ε,
             ξ,
             λ,
-            K,
         )
     end
 end
@@ -210,7 +207,6 @@ function bundle_method!(
     bundle_size=25,
     diam=50.0,
     m=1e-3,
-    δ=√2,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -230,7 +226,6 @@ function bundle_method!(
         bundle_size=bundle_size,
         diam=diam,
         m=m,
-        δ=δ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -260,15 +255,9 @@ function ζ_2(κ_max, diam)
     (κ_max > zero(κ_max)) && return sqrt(κ_max) * diam * cot(sqrt(κ_max) * diam)
 end
 function curvature_bound(M, diam)
-    s = [sectional_curvature(M, rand(M)) for _ in 1:1000]
+    s = [sectional_curvature(M, rand(M)) for _ in 1:10000]
     κ_min = minimum(s)
     κ_max = maximum(s)
-    # if κ_min < zero(κ_min)
-    #     κ_max = zero(κ_min)
-    # else
-    #     κ_max = maximum(s)
-    #     κ_min = zero(κ_min)
-    # end
     return max(ζ_1(κ_min, diam) - one(κ_min), one(κ_max) - ζ_2(κ_max, diam))
 end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
@@ -299,14 +288,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if !isempty(v)
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, v)
-        #bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     if l == bms.bundle_size
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, 1)
-        #bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
