@@ -4,16 +4,18 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Fields
 
-* `atol_λ` - tolerance parameter for the convex coefficients in λ
-* `atol_errors` - tolerance parameter for the linearization errors
+* `atol_λ` - (eps()) tolerance parameter for the convex coefficients in λ
+* `atol_errors` - (eps()) tolerance parameter for the linearization errors
 * `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
 * `bundle_size` - (25) the size of the bundle
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
 * `g`- descent direction
 * `inverse_retraction_method` - the inverse retraction to use within
-* `K` - curvature-dependent bound
+* `k_min` - lower bound on the sectional curvature of the manifold
+* `k_max` - upper bound on the sectional curvature of the manifold
+* `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold
 * `lin_errors` - linearization errors at the last serious step
-* `m` - the parameter to test the decrease of the cost
+* `m` - (1e-3) the parameter to test the decrease of the cost
 * `p` - current candidate point
 * `p_last_serious` - last serious iterate
 * `retraction_method` – the retraction to use within
@@ -21,10 +23,11 @@ stores option values for a [`bundle_method`](@ref) solver
 * `transported_subgradients` - subgradients of the bundle that are transported to p_last_serious
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
-    `p` that was last evaluated.
+`p` that was last evaluated.
 * `ε` - convex combination of the linearization errors
 * `λ` - convex coefficients that solve the subproblem
-* `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
+* `ϱ` - curvature-dependent bound
+* `ξ` - (1e-8) the stopping parameter given by ξ = -|g|^2 - ε
 
 # Constructor
 
@@ -38,6 +41,7 @@ mutable struct BundleMethodState{
     R,
     P,
     T,
+    NR<:Union{Nothing,R},
     A<:AbstractVector{<:R},
     B<:AbstractVector{Tuple{<:P,<:T}},
     C<:AbstractVector{T},
@@ -54,7 +58,9 @@ mutable struct BundleMethodState{
     diam::R
     g::T
     inverse_retraction_method::IR
-    K::R
+    k_min::NR
+    k_max::NR
+    k_size::I
     lin_errors::A
     m::R
     p::P
@@ -67,6 +73,7 @@ mutable struct BundleMethodState{
     ε::R
     ξ::R
     λ::A
+    ϱ::R
     function BundleMethodState(
         M::TM,
         p::P;
@@ -75,6 +82,9 @@ mutable struct BundleMethodState{
         bundle_size::Integer=25,
         m::R=1e-2,
         diam::R=1.0,
+        k_min::Union{Nothing,R}=nothing,
+        k_max::Union{Nothing,R}=nothing,
+        k_size::Int=100,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
@@ -92,7 +102,7 @@ mutable struct BundleMethodState{
     }
         bundle = [(copy(M, p), zero_vector(M, p))]
         g = zero_vector(M, p)
-        K = zero(R)
+        ϱ = zero(R)
         lin_errors = zeros(bundle_size)
         transported_subgradients = [zero_vector(M, p)]
         ε = zero(R)
@@ -102,6 +112,7 @@ mutable struct BundleMethodState{
             typeof(m),
             P,
             T,
+            typeof(k_min),
             typeof(lin_errors),
             typeof(bundle),
             typeof(transported_subgradients),
@@ -118,7 +129,9 @@ mutable struct BundleMethodState{
             diam,
             g,
             inverse_retraction_method,
-            K,
+            k_min,
+            k_max,
+            k_size,
             lin_errors,
             m,
             p,
@@ -131,6 +144,7 @@ mutable struct BundleMethodState{
             ε,
             ξ,
             λ,
+            ϱ,
         )
     end
 end
@@ -202,11 +216,14 @@ function bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    atol_λ=eps(),
-    atol_errors=eps(),
-    bundle_size=25,
-    diam=50.0,
-    m=1e-3,
+    atol_λ::R=eps(),
+    atol_errors::R=eps(),
+    bundle_size::Int=25,
+    diam::R=50.0,
+    m::R=1e-3,
+    k_min::Union{Nothing,R}=nothing,
+    k_max::Union{Nothing,R}=nothing,
+    k_size::Int=100,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -214,7 +231,7 @@ function bundle_method!(
                                           StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     kwargs..., #especially may contain debug
-) where {TF,TdF,TRetr,IR,VTransp}
+) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
@@ -226,6 +243,9 @@ function bundle_method!(
         bundle_size=bundle_size,
         diam=diam,
         m=m,
+        k_min=k_min,
+        k_max=k_max,
+        k_size=k_size,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -246,19 +266,22 @@ function sectional_curvature(M, p)
     R = riemann_tensor(M, p, X, Y, Y)
     return inner(M, p, R, X) / (norm(M, p, X)^2 * norm(M, p, Y)^2 - inner(M, p, X, Y)^2)
 end
-function ζ_1(κ_min, diam)
-    (κ_min < zero(κ_min)) && return sqrt(-κ_min) * diam * coth(sqrt(-κ_min) * diam)
-    (κ_min ≥ zero(κ_min)) && return one(κ_min)
+function ζ_1(k_min, diam)
+    (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
+    (k_min ≥ zero(k_min)) && return one(k_min)
 end
-function ζ_2(κ_max, diam)
-    (κ_max ≤ zero(κ_max)) && return one(κ_max)
-    (κ_max > zero(κ_max)) && return sqrt(κ_max) * diam * cot(sqrt(κ_max) * diam)
+function ζ_2(k_max, diam)
+    (k_max ≤ zero(k_max)) && return one(k_max)
+    (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
 end
-function curvature_bound(M, diam)
-    s = [sectional_curvature(M, rand(M)) for _ in 1:10000]
-    κ_min = minimum(s)
-    κ_max = maximum(s)
-    return max(ζ_1(κ_min, diam) - one(κ_min), one(κ_max) - ζ_2(κ_max, diam))
+function curvature_bound(M, diam, k_min::Nothing, k_max::Nothing, k_size)
+    s = [sectional_curvature(M, rand(M)) for _ in 1:k_size]
+    k_min = minimum(s)
+    k_max = maximum(s)
+    return max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
+end
+function curvature_bound(M, diam, k_min::R, k_max::R, k_size) where R<:Real
+    return max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
 end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
@@ -266,7 +289,7 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     get_subgradient!(mp, bms.X, bms.p)
     copyto!(M, bms.g, bms.p_last_serious, bms.X)
     bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
-    bms.K = curvature_bound(M, bms.diam)
+    bms.ϱ = curvature_bound(M, bms.diam, bms.k_min, bms.k_max, bms.k_size)
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
@@ -302,7 +325,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
         ) +
-        bms.K *
+        bms.ϱ *
         norm(
             M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
         ) *
