@@ -50,7 +50,7 @@ mutable struct BundleMethodState{
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int64}
+} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int}
     atol_λ::R
     atol_errors::R
     bundle::B
@@ -174,7 +174,12 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
 # Optional
-* `m` - a real number that controls the decrease of the cost function
+* `m` - a real number that controls the decrease of the cost function.
+* `diam` - estimate of the diameter of the level set of `f` at `p_0`.
+* `k_min` - lower bound on the sectional curvature of the manifold.
+* `k_max` - upper bound on the sectional curvature of the manifold.
+* `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
+    and `k_max` are not provided.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
@@ -280,7 +285,7 @@ function curvature_bound(M, diam, k_min::Nothing, k_max::Nothing, k_size)
     k_max = maximum(s)
     return max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
 end
-function curvature_bound(M, diam, k_min::R, k_max::R, k_size) where R<:Real
+function curvature_bound(M, diam, k_min::R, k_max::R, k_size) where {R<:Real}
     return max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
 end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
