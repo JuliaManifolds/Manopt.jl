@@ -67,6 +67,7 @@ mutable struct BundleMethodState{
     ε::R
     ξ::R
     λ::A
+    K::R
     function BundleMethodState(
         M::TM,
         p::P;
@@ -98,6 +99,7 @@ mutable struct BundleMethodState{
         ε = zero(R)
         λ = [zero(R)]
         ξ = zero(R)
+        K = zero(R)
         return new{
             typeof(m),
             P,
@@ -131,6 +133,7 @@ mutable struct BundleMethodState{
             ε,
             ξ,
             λ,
+            K,
         )
     end
 end
@@ -236,18 +239,46 @@ function bundle_method!(
     bms = decorate_state!(bms; kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
+function bundle_method_sub_solver(::Any, ::Any)
+    throw(
+        ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
+    )
+end
+function sectional_curvature(M, p)
+    X = rand(M; vector_at=p)
+    Y = rand(M; vector_at=p)
+    Y = Y - inner(M, p, X, Y) / norm(M, p, X)^2 * X
+    R = riemann_tensor(M, p, X, Y, Y)
+    return inner(M, p, R, X) / (norm(M, p, X)^2 * norm(M, p, Y)^2 - inner(M, p, X, Y)^2)
+end
+function ζ_1(κ_min, diam)
+    (κ_min < zero(κ_min)) && return sqrt(-κ_min) * diam * coth(sqrt(-κ_min) * diam)
+    (κ_min ≥ zero(κ_min)) && return one(κ_min)
+end
+function ζ_2(κ_max, diam)
+    (κ_max ≤ zero(κ_max)) && return one(κ_max)
+    (κ_max > zero(κ_max)) && return sqrt(κ_max) * diam * cot(sqrt(κ_max) * diam)
+end
+function curvature_bound(M, diam)
+    s = [sectional_curvature(M, rand(M)) for _ in 1:1000]
+    κ_min = minimum(s)
+    κ_max = maximum(s)
+    # if κ_min < zero(κ_min)
+    #     κ_max = zero(κ_min)
+    # else
+    #     κ_max = maximum(s)
+    #     κ_min = zero(κ_min)
+    # end
+    return max(ζ_1(κ_min, diam) - one(κ_min), one(κ_max) - ζ_2(κ_max, diam))
+end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
     copyto!(M, bms.g, bms.p_last_serious, bms.X)
     bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
+    bms.K = curvature_bound(M, bms.diam)
     return bms
-end
-function bundle_method_sub_solver(::Any, ::Any)
-    throw(
-        ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
-    )
 end
 function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     M = get_manifold(mp)
@@ -268,14 +299,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     if !isempty(v)
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, v)
-        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
+        #bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     if l == bms.bundle_size
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, 1)
-        bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
+        #bms.diam = max(0.0, bms.diam - bms.δ * distance(M, bms.bundle[1][1], y))
     end
     bms.lin_errors = [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
@@ -284,17 +315,16 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
         ) +
-        bms.diam *
-        sqrt(
-            2 * norm(
-                M,
-                qj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            ),
+        bms.K *
+        norm(
+            M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
         ) *
         norm(M, qj, Xj) for (qj, Xj) in bms.bundle
     ]
-    bms.lin_errors = [zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for x in bms.lin_errors]
+    bms.lin_errors = [
+        zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for
+        x in bms.lin_errors
+    ]
     return bms
 end
 get_solver_result(bms::BundleMethodState) = bms.p_last_serious
