@@ -1,5 +1,5 @@
 function set_manopt_parameter!(M::TangentSpaceAtPoint, ::Val{:p}, v)
-    M.point .= v
+    copyto!(M.fiber.manifold, M.point, v)
     return M
 end
 function (f::Manopt.AdaptiveRegularizationCubicCost)(M::TangentSpaceAtPoint, X)

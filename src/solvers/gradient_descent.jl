@@ -7,7 +7,7 @@ Describes a Gradient based descent algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p – (`rand(M)` the current iterate
+* `p` – (`rand(M)` the current iterate
 * `X` – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)

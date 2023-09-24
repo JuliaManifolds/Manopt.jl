@@ -50,8 +50,8 @@ end
 We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k`` as
 
 ```math
-    m(X) = f(p) + <X, \operatorname{grad}f(p)>
-      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3
+    m(X) = f(p) + ⟨X, \operatorname{grad}f(p)⟩
+      + \frac{1}{2} ⟨X, \operatorname{Hess} f(p)[X]⟩ +  \frac{σ}{3} \lVert X \rVert^3
 ```
 
 This struct represents its gradient, given by
