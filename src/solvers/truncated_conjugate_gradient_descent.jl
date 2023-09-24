@@ -112,20 +112,27 @@ end
 
 @doc raw"""
     StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
+
 A functor for testing if the norm of residual at the current iterate is reduced
 either by a power of 1+θ or by a factor κ compared to the norm of the initial
 residual, i.e. $\Vert r_k \Vert_x \leqq \Vert r_0 \Vert_{x} \
 \min \left( \kappa, \Vert r_0 \Vert_{x}^{\theta} \right)$.
+
 # Fields
+
 * `κ` – the reduction factor
 * `θ` – part of the reduction power
 * `reason` – stores a reason of stopping if the stopping criterion has one be
     reached, see [`get_reason`](@ref).
+
 # Constructor
+
     StopWhenResidualIsReducedByFactorOrPower(; κ=0.1, θ=1.0)
-initialize the StopWhenResidualIsReducedByFactorOrPower functor to indicate to stop after
+
+Initialize the StopWhenResidualIsReducedByFactorOrPower functor to indicate to stop after
 the norm of the current residual is lesser than either the norm of the initial residual
 to the power of 1+θ or the norm of the initial residual times κ.
+
 # See also
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
@@ -195,6 +202,7 @@ method is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
 ≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
 
 # Fields
+
 * `reason` – stores a reason of stopping if the stopping criterion has been
     reached, see [`get_reason`](@ref).
 
@@ -339,25 +347,17 @@ end
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{η ∈ T_pM}
-m_p(η) \quad\text{where}
-m_p(η) = f(p) + ⟨\operatorname{grad} f(p),η⟩_x + \frac{1}{2}⟨\operatorname{Hess} f(p)[η],η⟩_x,
+\operatorname*{arg\,min}_{η ∈ T_pM}\ m_p(η), \quad\text{where }
+m_p(η) = f(p) + ⟨\operatorname{grad} f(p),η⟩_p + \frac{1}{2}⟨\operatorname{Hess} f(p)[η],η⟩_p,
 ```
 
 ```math
-\text{such that}\quad ⟨η,η⟩_x ≤ Δ^2
+\text{such that}\quad ⟨η,η⟩_p ≤ Δ^2
 ```
 
-on a manifold M by using the Steihaug-Toint truncated conjugate-gradient method,
-abbreviated tCG-method.
+on a manifold M by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
 For a description of the algorithm and theorems offering convergence guarantees,
-see the reference:
-
-* P.-A. Absil, C.G. Baker, K.A. Gallivan,
-    Trust-region methods on Riemannian manifolds, FoCM, 2007.
-    doi: [10.1007/s10208-005-0179-9](https://doi.org/10.1007/s10208-005-0179-9)
-* A. R. Conn, N. I. M. Gould, P. L. Toint, Trust-region methods, SIAM,
-    MPS, 2000. doi: [10.1137/1.9780898719857](https://doi.org/10.1137/1.9780898719857)
+see [Absil, Baker, Gallivan, FoCM, 2007](@cite AbsilBakerGallivan:2006), [Conn, Gould, Toint, 2000](@cite ConnGouldToint:2000).
 
 # Input
 

@@ -473,6 +473,7 @@ function trust_regions!(
     solve!(dmp, dtrs)
     return get_solver_return(get_objective(dmp), dtrs)
 end
+
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)
     get_gradient!(mp, trs.X, trs.p)
