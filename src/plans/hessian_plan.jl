@@ -271,10 +271,10 @@ function (f::ApproxHessianFiniteDifference{AllocatingEvaluation})(M, p, X)
     (norm_X ≈ zero(norm_X)) && return zero_vector(M, p)
     c = f.steplength / norm_X
     f.grad_tmp .= f.gradient!!(M, p)
-    f.p_dir .= retract(M, p, c * X, f.retraction_method)
+    retract!(M, f.p_dir, p, c * X, f.retraction_method)
     f.grad_tmp_dir .= f.gradient!!(M, f.p_dir)
-    f.grad_tmp_dir .= vector_transport_to(
-        M, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
+    vector_transport_to!(
+        M, f.grad_tmp_dir, f.p_dir, f.grad_tmp_dir, p, f.vector_transport_method
     )
     return (1 / c) * (f.grad_tmp_dir - f.grad_tmp)
 end
