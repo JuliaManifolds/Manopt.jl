@@ -244,6 +244,7 @@ end
 function show(io::IO, c::StopWhenTrustRegionIsExceeded)
     return print(io, "StopWhenTrustRegionIsExceeded()\n    $(status_summary(c))")
 end
+
 @doc raw"""
     StopWhenCurvatureIsNegative <: StoppingCriterion
 

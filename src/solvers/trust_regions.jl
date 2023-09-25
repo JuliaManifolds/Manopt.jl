@@ -65,7 +65,7 @@ mutable struct TrustRegionsState{
     p_proposal::P
     f_proposal::R
     # Only required for Random mode Random
-    Hgrad::T
+    HX::T
     Y::T
     HY::T
     Z::T
@@ -480,7 +480,7 @@ function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
         trs.Z = zero_vector(M, trs.p)
         trs.HZ = zero_vector(M, trs.p)
         trs.τ = zero(trs.trust_region_radius)
-        trs.Hgrad = zero_vector(M, trs.p)
+        trs.HX = zero_vector(M, trs.p)
     end
     return trs
 end
@@ -489,19 +489,19 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     M = get_manifold(mp)
     mho = get_objective(mp)
     # Determine the initial tangent vector used as start point for the subsolvereta0
-    if trs.randomize
-        # Random vector in T_x M (this has to be very small)
-        trs.Y = 10.0^(-6) * rand(M; vector_at=trs.p)
-        while norm(M, trs.p, trs.Y) > trs.trust_region_radius
-            # inside trust-region
-            trs.Y *= sqrt(sqrt(eps(Float64)))
+    if trs.σ > 0
+        rand!(M, trs.Y; vector_at=trs.p, σ=trs.σ)
+        nY = norm(M, trs.p, trs.Y)
+        while nY > trs.trust_region_radius # move inside if outside
+            trs.Y *= trs.trust_region_radius / (2 * nY)
         end
     else
         zero_vector!(M, trs.Y, trs.p)
     end
     # Solve TR subproblem - update options
-    # TODO Evalaute and set gradient here? That should not change in the subsolver anyways
-    set_paramater!(trs.sub_problem, :Basepoint, trs.p)
+    get_gradient!(M, trs.X, mho, p)
+    # TODO provide these setters for the sub problem / sub state
+    set_paramater!(trs.sub_problem, :Basepoint, trs.p) # Update base point in ptoblem, is that uses it
     set_parameter!(trs.sub_state, :Basepoint, trs.p) # was: trs.sub_state.p = trs.p
     set_parameter!(trs.sub_state, :Iterate, trs.Y) # was: trs.sub_state.η = trs.η
     set_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius) # was trs.sub_state.trust_region_radius = trs.trust_region_radius
@@ -509,18 +509,16 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     #
     copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state)) # was trs.η = trs.sub_state.η
     get_hessian!(M, trs.HY, hno, trs.p, trs.Y) # was trs.Hη = trs.sub_state.Hη
-    get_gradient!(M, trs.X, mho, p) # was trs.X = trs.sub_state.X
     fx = get_cost(mp, trs.p)
-    # If using randomized approach, compare result with the Cauchy point.
-    if trs.randomize
-        norm_grad = norm(M, trs.p, trs.X)
+    if trs.σ > 0 # randomized approach: compare result with the Cauchy point.
+        nX = norm(M, trs.p, trs.X)
         # Check the curvature,
-        get_hessian!(mp, trs.Hgrad, trs.p, trs.X)
-        trs.τ = real(inner(M, trs.p, trs.X, trs.Hgrad))
+        get_hessian!(mp, trs.HX, trs.p, trs.X)
+        trs.τ = real(inner(M, trs.p, trs.X, trs.HX))
         trs.τ = if (trs.τ <= 0)
             one(trs.τ)
         else
-            min(norm_grad^3 / (trs.trust_region_radius * trs.τ), 1)
+            min(nX^3 / (trs.trust_region_radius * trs.τ), 1)
         end
         # compare to Cauchy point and store best
         model_value =
@@ -528,12 +526,12 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
             real(inner(M, trs.p, trs.X, trs.Y)) +
             0.5 * real(inner(M, trs.p, trs.HY, trs.Y))
         model_value_Cauchy =
-            fx - trs.τ * trs.trust_region_radius * norm_grad +
-            0.5 * trs.τ^2 * trs.trust_region_radius^2 / (norm_grad^2) *
-            real(inner(M, trs.p, trs.Hgrad, trs.X))
+            fx - trs.τ * trs.trust_region_radius * nX +
+            0.5 * trs.τ^2 * trs.trust_region_radius^2 / (nX^2) *
+            real(inner(M, trs.p, trs.HX, trs.X))
         if model_value_Cauchy < model_value
-            copyto!(M, trs.Y, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.X)
-            copyto!(M, trs.HY, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.Hgrad)
+            copyto!(M, trs.Y, (-trs.τ * trs.trust_region_radius / nX) * trs.X)
+            copyto!(M, trs.HY, (-trs.τ * trs.trust_region_radius / nX) * trs.HX)
         end
     end
     # Compute the tentative next iterate (the proposal)
@@ -551,9 +549,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # and update it if it is an approxiate Hessian.
     update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.Y)
     # Choose the new TR radius based on the model performance.
-    # If the actual decrease is smaller than reduction_threshold of the predicted decrease,
-    # then reduce the TR radius.
-    # TODO Decouple from substate
+    # TODO Decouple from substate - check update factors we use
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius /= 4
     elseif ρ > trs.augmentation_threshold / 4 &&
