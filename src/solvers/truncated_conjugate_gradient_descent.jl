@@ -6,12 +6,10 @@ describe the Steihaug-Toint truncated conjugate-gradient method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `x` : a point, where the trust-region subproblem needs
-    to be solved
-* `η` : a tangent vector (called update vector), which solves the
-    trust-region subproblem after successful calculation by the algorithm
+* `p` : a point, where we use the tangent space to solve the trust-region subproblem
+* `Y` : Current iterate
 * `stop` : a [`StoppingCriterion`](@ref).
-* `gradient` : the gradient at the current iterate
+* `X` : the gradient ``\operatorname{grad}f(p)```
 * `δ` : search direction
 * `trust_region_radius` : (`injectivity_radius(M)/4`) the trust-region radius
 * `residual` : the gradient
@@ -23,9 +21,16 @@ a default value is given in brackets if a parameter can be left out in initializ
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
 
+# Internal interims vields
+
+* `Hδ`, `HY`                 – temporary results of the Hessian applied to `δ` and `Y`, respectively.
+* `δHδ`, `YPδ`, `δPδ`, `YPδ` – temporary inner products with `Hδ` and preconditioned inner products.
+* `z`, `z_r`                 – the preconditioned residual
+* `z_r`                      - inner product of the residual and `z`
+
 # Constructor
 
-    TruncatedConjugateGradientState(M, p=rand(M), η=zero_vector(M,p);
+    TruncatedConjugateGradientState(M, p=rand(M), Y=zero_vector(M,p);
         trust_region_radius=injectivity_radius(M)/4,
         randomize=false,
         θ=1.0,
@@ -44,27 +49,26 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
     p::P
     stop::SC
     X::T
-    η::T
-    Hη::T
+    Y::T
+    HY::T
     δ::T
     Hδ::T
     δHδ::R
-    ηPδ::R
+    YPδ::R
     δPδ::R
-    ηPη::R
+    YPY::R
     z::T
     z_r::R
     residual::T
     trust_region_radius::R
     model_value::R
-    new_model_value::R
     randomize::Bool
     project!::Proj
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
         M::AbstractManifold,
         p::P=rand(M),
-        η::T=zero_vector(M, p);
+        Y::T=zero_vector(M, p);
         trust_region_radius::R=injectivity_radius(M) / 4.0,
         randomize::Bool=false,
         project!::F=copyto!,
@@ -81,7 +85,7 @@ mutable struct TruncatedConjugateGradientState{P,T,R<:Real,SC<:StoppingCriterion
         tcgs = new{P,T,R,typeof(stopping_criterion),F}()
         tcgs.p = p
         tcgs.stop = stopping_criterion
-        tcgs.η = η
+        tcgs.Y = Y
         tcgs.trust_region_radius = trust_region_radius
         tcgs.randomize = randomize
         tcgs.project! = project!
@@ -198,7 +202,7 @@ end
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the  Steihaug-Toint tcg
-method is larger than the trust-region radius, i.e. $\Vert η_{k}^{*} \Vert_x
+method is larger than the trust-region radius, i.e. $\Vert Y_{k}^{*} \Vert_x
 ≧ trust_region_radius$. terminate the algorithm when the trust region has been left.
 
 # Fields
@@ -229,8 +233,8 @@ function (c::StopWhenTrustRegionIsExceeded)(
         c.reason = ""
         c.at_iteration = 0
     end
-    if tcgs.ηPη >= tcgs.trust_region_radius^2 && i >= 0
-        c.reason = "Trust-region radius violation (‖η‖² = $(tcgs.ηPη)) >= $(tcgs.trust_region_radius^2) = trust_region_radius²). \n"
+    if tcgs.YPY >= tcgs.trust_region_radius^2 && i >= 0
+        c.reason = "Trust-region radius violation (‖Y‖² = $(tcgs.YPY)) >= $(tcgs.trust_region_radius^2) = trust_region_radius²). \n"
         c.at_iteration = i
         return true
     end
@@ -313,19 +317,22 @@ A functor for testing if the curvature of the model value increased.
 mutable struct StopWhenModelIncreased <: StoppingCriterion
     reason::String
     at_iteration::Int
+    model_value::Float64
 end
-StopWhenModelIncreased() = StopWhenModelIncreased("", 0)
+StopWhenModelIncreased() = StopWhenModelIncreased("", 0, Inf)
 function (c::StopWhenModelIncreased)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
     if i == 0 # reset on init
         c.reason = ""
         c.at_iteration = 0
+        c.model_value = Inf
     end
-    if i > 0 && (tcgs.new_model_value > tcgs.model_value)
-        c.reason = "Model value increased from $(tcgs.model_value) to $(tcgs.new_model_value).\n"
+    if i > 0 && (tcgs.model_value > c.model_value)
+        c.reason = "Model value increased from $(c.model_value) to $(tcgs.model_value).\n"
         return true
     end
+    c.model_value = tcgs.model_value
     return false
 end
 function status_summary(c::StopWhenModelIncreased)
@@ -348,12 +355,12 @@ end
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{η ∈ T_pM}\ m_p(η), \quad\text{where }
-m_p(η) = f(p) + ⟨\operatorname{grad} f(p),η⟩_p + \frac{1}{2}⟨\operatorname{Hess} f(p)[η],η⟩_p,
+\operatorname*{arg\,min}_{Y ∈ T_pM}\ m_p(Y), \quad\text{where }
+m_p(Y) = f(p) + ⟨\operatorname{grad} f(p),Y⟩_p + \frac{1}{2}⟨\operatorname{Hess} f(p)[Y],Y⟩_p,
 ```
 
 ```math
-\text{such that}\quad ⟨η,η⟩_p ≤ Δ^2
+\text{such that}\quad ⟨Y,Y⟩_p ≤ Δ^2
 ```
 
 on a manifold M by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
@@ -529,8 +536,8 @@ end
 # Deprecated - even keeping old notation.
 #
 @deprecate truncated_conjugate_gradient_descent(
-    M::AbstractManifold, F, gradF, x, η, H::TH; kwargs...
-) where {TH<:Function} truncated_conjugate_gradient_descent(M, F, gradF, H, x, η; kwargs...)
+    M::AbstractManifold, F, gradF, x, Y, H::TH; kwargs...
+) where {TH<:Function} truncated_conjugate_gradient_descent(M, F, gradF, H, x, Y; kwargs...)
 
 @doc raw"""
     truncated_conjugate_gradient_descent!(M, f, grad_f, Hess_f, p, X; kwargs...)
@@ -635,9 +642,9 @@ end
 #
 # Deprecated - even kept old notation
 @deprecate truncated_conjugate_gradient_descent!(
-    M::AbstractManifold, F::TF, gradF::TG, x, η, H::TH; kwargs...
+    M::AbstractManifold, F::TF, gradF::TG, x, Y, H::TH; kwargs...
 ) where {TF<:Function,TG<:Function,TH<:Function} truncated_conjugate_gradient_descent!(
-    M, F, gradF, H, x, η; kwargs...
+    M, F, gradF, H, x, Y; kwargs...
 )
 
 #
@@ -647,21 +654,21 @@ function initialize_solver!(
     mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState
 )
     M = get_manifold(mp)
-    (tcgs.randomize) || zero_vector!(M, tcgs.η, tcgs.p)
-    tcgs.Hη = tcgs.randomize ? get_hessian(mp, tcgs.p, tcgs.η) : zero_vector(M, tcgs.p)
-    tcgs.X = get_gradient(mp, tcgs.p)
-    tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.Hη : tcgs.X
+    (tcgs.randomize) || zero_vector!(M, tcgs.Y, tcgs.p)
+    tcgs.HY = tcgs.randomize ? get_hessian(mp, tcgs.p, tcgs.Y) : zero_vector(M, tcgs.p)
+    get_gradient!(mp, tcgs.X, tcgs.p)
+    tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.HY : tcgs.X
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
     tcgs.δ = -copy(M, tcgs.p, tcgs.z)
     tcgs.Hδ = zero_vector(M, tcgs.p)
     tcgs.δHδ = real(inner(M, tcgs.p, tcgs.δ, tcgs.Hδ))
-    tcgs.ηPδ = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.η, tcgs.δ)) : zero(tcgs.δHδ)
+    tcgs.YPδ = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.Y, tcgs.δ)) : zero(tcgs.δHδ)
     tcgs.δPδ = real(inner(M, tcgs.p, tcgs.residual, tcgs.z))
-    tcgs.ηPη = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.η, tcgs.η)) : zero(tcgs.δHδ)
+    tcgs.YPY = tcgs.randomize ? real(inner(M, tcgs.p, tcgs.Y, tcgs.Y)) : zero(tcgs.δHδ)
     if tcgs.randomize
         tcgs.model_value =
-            real(inner(M, tcgs.p, tcgs.η, tcgs.X)) +
-            0.5 * real(inner(M, tcgs.p, tcgs.η, tcgs.Hη))
+            real(inner(M, tcgs.p, tcgs.Y, tcgs.X)) +
+            0.5 * real(inner(M, tcgs.p, tcgs.Y, tcgs.HY))
     else
         tcgs.model_value = 0
     end
@@ -676,29 +683,33 @@ function step_solver!(
     get_hessian!(mp, tcgs.Hδ, tcgs.p, tcgs.δ)
     tcgs.δHδ = real(inner(M, tcgs.p, tcgs.δ, tcgs.Hδ))
     α = tcgs.z_r / tcgs.δHδ
-    ηPη_new = tcgs.ηPη + 2 * α * tcgs.ηPδ + α^2 * tcgs.δPδ
+    YPY_new = tcgs.YPY + 2 * α * tcgs.YPδ + α^2 * tcgs.δPδ
     # Check against negative curvature and trust-region radius violation.
-    if tcgs.δHδ <= 0 || ηPη_new >= tcgs.trust_region_radius^2
+    if tcgs.δHδ <= 0 || YPY_new >= tcgs.trust_region_radius^2
         τ =
             (
-                -tcgs.ηPδ +
-                sqrt(tcgs.ηPδ^2 + tcgs.δPδ * (tcgs.trust_region_radius^2 - tcgs.ηPη))
+                -tcgs.YPδ +
+                sqrt(tcgs.YPδ^2 + tcgs.δPδ * (tcgs.trust_region_radius^2 - tcgs.YPY))
             ) / tcgs.δPδ
-        copyto!(M, tcgs.η, tcgs.p, tcgs.η + τ * tcgs.δ)
-        copyto!(M, tcgs.Hη, tcgs.p, tcgs.Hη + τ * tcgs.Hδ)
-        tcgs.ηPη = ηPη_new
+        copyto!(M, tcgs.Y, tcgs.p, tcgs.Y + τ * tcgs.δ)
+        copyto!(M, tcgs.HY, tcgs.p, tcgs.HY + τ * tcgs.Hδ)
+        tcgs.YPY = YPY_new
         return tcgs
     end
-    tcgs.ηPη = ηPη_new
-    new_η = tcgs.η + α * tcgs.δ
-    new_Hη = tcgs.Hη + α * tcgs.Hδ
-    # No negative curvature and s.η - α * (s.δ) inside TR: accept it.
-    tcgs.new_model_value =
-        real(inner(M, tcgs.p, new_η, tcgs.X)) + 0.5 * real(inner(M, tcgs.p, new_η, new_Hη))
-    tcgs.new_model_value >= tcgs.model_value && return tcgs
-    copyto!(M, tcgs.η, tcgs.p, new_η)
-    tcgs.model_value = tcgs.new_model_value
-    copyto!(M, tcgs.Hη, tcgs.p, new_Hη)
+    tcgs.YPY = YPY_new
+    new_Y = tcgs.Y + α * tcgs.δ # Update iterate Y
+    new_HY = tcgs.HY + α * tcgs.Hδ # Update HY
+    new_model_value =
+        real(inner(M, tcgs.p, new_Y, tcgs.X)) + 0.5 * real(inner(M, tcgs.p, new_Y, new_HY))
+    # If we did not improved the model with this iterate -> end iteration
+    if new_model_value >= tcgs.model_value
+        tcgs.model_value = new_model_value
+        return tcgs
+    end
+    # otherweise accept step
+    copyto!(M, tcgs.Y, tcgs.p, new_Y)
+    tcgs.model_value = new_model_value
+    copyto!(M, tcgs.HY, tcgs.p, new_HY)
     tcgs.residual = tcgs.residual + α * tcgs.Hδ
 
     # Precondition the residual.
@@ -709,8 +720,8 @@ function step_solver!(
     tcgs.z_r = zr
     tcgs.δ = -tcgs.z + β * tcgs.δ
     tcgs.project!(M, tcgs.δ, tcgs.p, tcgs.δ)
-    tcgs.ηPδ = β * (α * tcgs.δPδ + tcgs.ηPδ)
+    tcgs.YPδ = β * (α * tcgs.δPδ + tcgs.YPδ)
     tcgs.δPδ = tcgs.z_r + β^2 * tcgs.δPδ
     return tcgs
 end
-get_solver_result(s::TruncatedConjugateGradientState) = s.η
+get_solver_result(s::TruncatedConjugateGradientState) = s.Y
