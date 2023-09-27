@@ -365,5 +365,8 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
 end
 get_solver_result(drs::DouglasRachfordState) = drs.parallel ? drs.p[1] : drs.p
 
-_reflect!(M, r, p, x, R, ::AllocatingEvaluation) = (r = R(M, p, x))
-_reflect!(M, r, p, x, R, ::InplaceEvaluation) = (R(M, r, p, x))
+function _reflect!(M, r, p, x, R, ::AllocatingEvaluation)
+    copyto!(M, r, R(M, p, x))
+    return r
+end
+_reflect!(M, r, p, x, R, ::InplaceEvaluation) = R(M, r, p, x)
