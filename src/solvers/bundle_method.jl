@@ -108,11 +108,11 @@ mutable struct BundleMethodState{
         ξ = zero(R)
         if ϱ === nothing
             if (k_min === nothing) || (k_max === nothing)
-                s = [sectional_curvature(M, rand(M)) for _ in 1:k_size]
+                s = [sectional_curvature(M, close_point(M, p, 2 * diam)) for _ in 1:k_size]
             end
             (k_min === nothing) && (k_min = minimum(s))
             (k_max === nothing) && (k_max = maximum(s))
-            (ϱ = max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam)))
+            ϱ = max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
         end
         return new{
             typeof(m),
@@ -282,6 +282,11 @@ end
 function ζ_2(k_max, diam)
     (k_max ≤ zero(k_max)) && return one(k_max)
     (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
+end
+function close_point(M, p, tol)
+    X = rand(M; vector_at=p)
+    X .= tol * rand() * X / norm(M, p, X)
+    return retract(M, p, X, default_retraction_method(M, typeof(p)))
 end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
