@@ -35,6 +35,10 @@ then the keyword `jacobian_tangent_basis` below is ignored
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `expect_zero_residual` – (`false`) whether or not the algorithm might expect that the value of
   residual (objective) at mimimum is equal to 0.
+* `η` – parameter of the algorithm, the higher it is the more likely the algorithm will be
+  to reject new proposal points
+* `damping_term_min` – initial (and also minimal) value of the damping term
+* `β` – parameter by which the damping term is multiplied when the current new point is rejected
 * `initial_residual_values` – the initial residual vector of the cost function `f`.
 * `initial_jacobian_f` – the initial Jacobian of the cost function `f`.
 
@@ -159,6 +163,9 @@ function LevenbergMarquardt!(
                                           StopWhenStepsizeLess(1e-12),
     debug=[DebugWarnIfCostIncreases()],
     expect_zero_residual::Bool=false,
+    β::Real=5.0,
+    η::Real=0.2,
+    damping_term_min::Real=0.1,
     initial_residual_values=similar(p, get_objective(nlso).num_components),
     initial_jacobian_f=similar(
         p, get_objective(nlso).num_components, manifold_dimension(M)
@@ -173,6 +180,9 @@ function LevenbergMarquardt!(
         p,
         initial_residual_values,
         initial_jacobian_f;
+        β,
+        η,
+        damping_term_min,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
@@ -254,7 +264,7 @@ function step_solver!(
     nlso = get_objective(dmp)
     basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
     get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
-    λk = lms.damping_term * norm(lms.residual_values)
+    λk = lms.damping_term * norm(lms.residual_values)^2
 
     JJ = transpose(lms.jacF) * lms.jacF + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
@@ -271,9 +281,9 @@ function step_solver!(
     get_residuals!(dmp, lms.candidate_residual_values, temp_x)
 
     ρk =
-        2 * (normFk2 - norm(lms.candidate_residual_values)^2) / (
+        (normFk2 - norm(lms.candidate_residual_values)^2) / (
             -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacF * sk)^2 -
-            λk * norm(sk)
+            λk * norm(sk)^2
         )
     if ρk >= lms.η
         copyto!(M, lms.p, temp_x)
