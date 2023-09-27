@@ -231,7 +231,13 @@ function DouglasRachford!(
     p;
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
-    R::TR=Manopt.reflect,
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(M, typeof(p)),
+    # Adapt to evaluation type
+    R::TR=(M,p,q) -> Manopt.reflect(M, p, q;
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method
+    ),
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopWhenAny(
         StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
