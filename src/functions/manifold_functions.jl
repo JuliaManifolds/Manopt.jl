@@ -1,6 +1,6 @@
 @doc raw"""
-    reflect(M, f, x)
-    reflect!(M, q, f, x)
+    reflect(M, f, x; kwargs...)
+    reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
 function ``f: \mathcal M → \mathcal M``, i.e.,
@@ -11,30 +11,62 @@ function ``f: \mathcal M → \mathcal M``, i.e.,
 
 Compute the result in `q`.
 
-see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`.
+see also [`reflect`](@ref reflect(M::AbstractManifold, p, x))`(M,p,x)`, to which the keywords are also passed to.
 """
-reflect(M::AbstractManifold, pr::Function, x) = reflect(M, pr(x), x)
-reflect!(M::AbstractManifold, q, pr::Function, x) = reflect!(M, q, pr(x), x)
+reflect(M::AbstractManifold, pr::Function, x; kwargs...) = reflect(M, pr(x), x; kwargs...)
+function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
+    return reflect!(M, q, pr(x), x; kwargs...)
+end
 
 @doc raw"""
-    reflect(M, p, x)
-    reflect!(M, q, p, x)
+    reflect(M, p, x, kwargs...)
+    reflect!(M, q, p, x, kwargs...)
 
 Reflect the point `x` from the manifold `M` at point `p`, i.e.
 
 ````math
-    \operatorname{refl}_p(x) = \exp_p(-\log_p x).
+    \operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{iretr}_p x).
 ````
 
-where exp and log denote the exponential and logarithmic map on `M`.
+where $\operatorname{retr}$ and $\operatorname{iretr}$ denote a retraction and an inverse
+retraction, respecivelu.
 This can also be done in place of `q`.
-"""
-reflect(M::AbstractManifold, p, x) = exp(M, p, -log(M, p, x))
-reflect!(M::AbstractManifold, q, p, x) = exp!(M, q, p, -log(M, p, x))
 
-function reflect(M::AbstractManifold, p, x;
-    rectraction_method=default_retract_method(M),
-    inverse_retraction_method=default_inverse_retraction_method(M)
+## Keyword arguments
+* `retraction_method` - (`default_retration_metiod(M, typeof(p))`) the retraction to use in the reflection
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within the reflection
+
+and for the `reflect!` additionally
+
+* `X` (`zero_vector(M,p)`) a temporary memory to compute the inverse retraction in place.
+  otherwise this is the memory that would be allocated anyways.
+
+Passing `X` to `reflect` will just have no effect.
+"""
+function reflect(
+    M::AbstractManifold,
+    p,
+    x;
+    retraction_method=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method=default_inverse_retraction_method(M, typeof(p)),
+    X=nothing,
 )
-    return retract(M, p, -inverse_retract(M, p, x, inverse_retraction_method), rectraction_method)
+    return retract(
+        M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
+    )
+end
+
+# TODO: adapt
+function reflect!(
+    M::AbstractManifold,
+    q,
+    p,
+    x;
+    retraction_method=default_retraction_method(M),
+    inverse_retraction_method=default_inverse_retraction_method(M),
+    X=zero_vector(M, p),
+)
+    inverse_retract!(M, X, p, x, inverse_retraction_method)
+    X .*= -1
+    return retract!(M, q, p, X, retraction_method)
 end
