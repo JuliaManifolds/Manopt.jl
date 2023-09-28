@@ -130,8 +130,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `gradient` – the current gradient of ``F``
 * `step_vector` – the tangent vector at `x` that is used to move to the next point
 * `last_stepsize` – length of `step_vector`
-* `η` – parameter of the algorithm, the higher it is the more likely the algorithm will be
-  to reject new proposal points
+* `η` – Scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `damping_term` – current value of the damping term
 * `damping_term_min` – initial (and also minimal) value of the damping term
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
