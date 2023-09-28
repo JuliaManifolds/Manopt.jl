@@ -27,7 +27,7 @@ Generate the options for a Manifold `M` and an initial point `p`, where the foll
 * `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
   of the double reflection involved in the DR algorithm
-* `R` – ([`reflect`](@ref) or [`reflect!`](@ref)) method employed in the iteration to perform the reflection of `x` at
+* `R` – ([`reflect`](@ref) or `reflect!`) method employed in the iteration to perform the reflection of `x` at
   the prox `p`, which function is used depends on `reflection_evaluation`.
 * reflection_evaluation – ([`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works inplace or allocating (default)
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
@@ -137,9 +137,9 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
   of the double reflection involved in the DR algorithm
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within the reflection (ignored, if you set `R` directly)
 * `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
-  This uses by default [`reflect!`](@ref) or [`reflect!`](@ref) depending on `reflection_evaluation` and
+  This uses by default `reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
-* `reflection_evaluation` – ([`AllocatingEvaluation`](@ef) whether `R` works inplace or allocating
+* `reflection_evaluation` – ([`AllocatingEvaluation`](@ref) whether `R` works inplace or allocating
 * `retraction_method` - (`default_retration_metiod(M, typeof(p))`) the retraction to use in the reflection (ignored, if you set `R` directly)
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
