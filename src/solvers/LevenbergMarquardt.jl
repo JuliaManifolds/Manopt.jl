@@ -35,8 +35,7 @@ then the keyword `jacobian_tangent_basis` below is ignored
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `expect_zero_residual` – (`false`) whether or not the algorithm might expect that the value of
   residual (objective) at mimimum is equal to 0.
-* `η` – parameter of the algorithm, the higher it is the more likely the algorithm will be
-  to reject new proposal points
+* `η` – Scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `damping_term_min` – initial (and also minimal) value of the damping term
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
 * `initial_residual_values` – the initial residual vector of the cost function `f`.
