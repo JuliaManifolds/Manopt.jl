@@ -29,7 +29,7 @@ Reflect the point `x` from the manifold `M` at point `p`, i.e.
 ````
 
 where $\operatorname{retr}$ and $\operatorname{iretr}$ denote a retraction and an inverse
-retraction, respecivelu.
+retraction, respectively.
 This can also be done in place of `q`.
 
 ## Keyword arguments

@@ -12,7 +12,7 @@ Store all options required for the DouglasRachford algorithm,
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
   of the double reflection involved in the DR algorithm
 * `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
-* `reflection_evaluation` – whether `R` works inplace or allocating`
+* `reflection_evaluation` – whether `R` works inplace or allocating
 * `stop` – a [`StoppingCriterion`](@ref)
 * `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
 
