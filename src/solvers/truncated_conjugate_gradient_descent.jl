@@ -110,6 +110,19 @@ function show(io::IO, tcgs::TruncatedConjugateGradientState)
     return print(io, s)
 end
 
+function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Basepoint}, p)
+    return tcgs.p = p
+end
+function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
+    return tcgs.Y = Y
+end
+function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r)
+    return tcgs.trust_region_radius = r
+end
+
+function get_parameter(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionExceeded})
+    return tcgs.YPY >= tcgs.trust_region_radius^2
+end
 #
 # Spcial stopping Criteria
 #

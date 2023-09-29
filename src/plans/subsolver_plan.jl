@@ -24,8 +24,10 @@ get_sub_state(ams::AbstractSubProblemSolverState) = ams.sub_state
 """
     set_manopt_parameter!(ams::AbstractManoptSolverState, element::Symbol, args...)
 
-Set a certain field/element from the [`AbstractManoptSolverState`](@ref) `ams` to `value.
-This function dispatches on `Val(element)`.
+Set a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams` to `value`.
+This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
+
+By default, this function just does nothing.
 """
 function set_manopt_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
     return set_manopt_parameter!(ams, Val(e), args...)
@@ -67,4 +69,14 @@ function set_manopt_parameter!(
 )
     set_manopt_parameter!(get_sub_state(ams), args...)
     return ams
+end
+
+"""
+    get_manopt_parameter(ams::AbstractManoptSolverState, element::Symbol, args...)
+
+Obtain a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams`.
+This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
+"""
+function get_manopt_parameter(ams::AbstractManoptSolverState, e::Symbol, args...)
+    return get_manopt_parameter(ams, Val(e), args...)
 end
