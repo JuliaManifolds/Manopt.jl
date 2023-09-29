@@ -11,13 +11,17 @@ using Manifolds, Manopt, Test
     prox1a = (M, η, p) -> prox_distance(M, η, d1, p)
     prox2a = (M, η, p) -> prox_distance(M, η, d2, p)
     @test_throws ErrorException DouglasRachford(M, f, Array{Function,1}([prox1a]), p) # we need more than one prox
-    q1 = DouglasRachford(M, f, [prox1a, prox2a], p)
-    @test isapprox(M, q1, p_star; atol=1e-14)
+    q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
+    @test isapprox(M, q1a, p_star; atol=1e-14)
+    q1i = DouglasRachford(
+        M, f, [prox1a, prox2a], p; reflection_evaluation=InplaceEvaluation()
+    )
+    @test isapprox(M, q1i, p_star; atol=1e-14)
     prox1i = (M, q, η, p) -> prox_distance!(M, q, η, d1, p)
     prox2i = (M, q, η, p) -> prox_distance!(M, q, η, d2, p)
     q2 = copy(M, p)
     DouglasRachford!(M, f, [prox1i, prox2i], q2; evaluation=InplaceEvaluation())
-    @test isapprox(M, q1, q2)
+    @test isapprox(M, q1a, q2)
     # but we can also compute the riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works
     F2(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2 + distance(M, p, d3)^2
