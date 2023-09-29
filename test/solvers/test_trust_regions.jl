@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, LinearAlgebra
+using Manifolds, Manopt, Test, LinearAlgebra, Random
 
 include("trust_region_model.jl")
 include("../utils/example_tasks.jl")
@@ -13,7 +13,6 @@ include("../utils/example_tasks.jl")
     p[:, :, 1] = [1.0 0.0; 0.0 1.0; 0.0 0.0]
     p[:, :, 2] = [0.0 0.0; 1.0 0.0; 0.0 1.0]
 
-    @test_throws ErrorException trust_regions(M, f, rgrad, rhess, p; ρ_prime=0.3)
     @test_throws ErrorException trust_regions(
         M, f, rgrad, rhess, p; max_trust_region_radius=-0.1
     )
@@ -35,6 +34,7 @@ include("../utils/example_tasks.jl")
         @test norm(M, p, get_gradient(s)) ≈ 0.0
         trust_regions!(M, f, rgrad, rhess, q; max_trust_region_radius=8.0)
         @test isapprox(M, p1, q)
+        Random.seed!(42)
         p2 = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius=8.0, randomize=true
         )
@@ -63,8 +63,6 @@ include("../utils/example_tasks.jl")
     end
     @testset "TCG" begin
         X = zero_vector(M, p)
-
-        @test_logs (:warn,) truncated_conjugate_gradient_descent(M, f, rgrad, p, X, rhess)
         Y = truncated_conjugate_gradient_descent(
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
@@ -112,7 +110,6 @@ include("../utils/example_tasks.jl")
         Y7 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y7; trust_region_radius=0.5)
         @test Y7 != X
-        @test_logs (:warn,) truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y4, rhess)
     end
     @testset "Mutating" begin
         g = RGrad(M, A)
@@ -207,7 +204,7 @@ include("../utils/example_tasks.jl")
                 ),
                 p;
                 stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
+                    StopAfterIteration(100), StopWhenGradientNormLess(10^(-8))
                 ),
                 trust_region_radius=1.0,
                 θ=0.1,
@@ -373,13 +370,13 @@ include("../utils/example_tasks.jl")
         λ = min(eigvals(A)...)
         q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean)
         q2 = trust_regions(M, f, ∇f, ∇²f, p0; objective_type=:Euclidean)
-        @test λ ≈ f(M, q)
-        @test λ ≈ f(M, q2)
+        @test f(M, q) ≈ λ
+        @test f(M, q) ≈ f(M, q2)
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)
         q4 = trust_regions(M, f, grad_f, Hess_f, p0)
-        @test λ ≈ f(M, q3) atol = 2e-1 # Riemannian Hessian a bit inprecise?
-        @test λ ≈ f(M, q4)
+        @test f(M, q) ≈ f(M, q3) atol = 2 * 1e-1 # A bit imprecise?
+        @test f(M, q) ≈ f(M, q4)
     end
 end

@@ -12,7 +12,8 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `X` : the gradient ``\operatorname{grad}f(p)```
 * `δ` : search direction
 * `trust_region_radius` : (`injectivity_radius(M)/4`) the trust-region radius
-* `residual` : the gradient
+* `residual` : the gradient (TODO)
+(TODO)
 * `randomize` : indicates if the trust-region solve and so the algorithm is to be
         initiated with a random tangent vector. If set to true, no
         preconditioner will be used. This option is set to true in some
@@ -110,18 +111,22 @@ function show(io::IO, tcgs::TruncatedConjugateGradientState)
     return print(io, s)
 end
 
-function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Basepoint}, p)
+function set_manopt_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Basepoint}, p)
     return tcgs.p = p
 end
-function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
+function set_manopt_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
     return tcgs.Y = Y
 end
-function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r)
+function set_manopt_parameter!(
+    tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r
+)
     return tcgs.trust_region_radius = r
 end
 
-function get_parameter(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionExceeded})
-    return tcgs.YPY >= tcgs.trust_region_radius^2
+function get_manopt_parameter(
+    tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionExceeded}
+)
+    return (tcgs.YPY >= tcgs.trust_region_radius^2)
 end
 #
 # Spcial stopping Criteria
@@ -669,7 +674,7 @@ function initialize_solver!(
     M = get_manifold(mp)
     (tcgs.randomize) || zero_vector!(M, tcgs.Y, tcgs.p)
     tcgs.HY = tcgs.randomize ? get_hessian(mp, tcgs.p, tcgs.Y) : zero_vector(M, tcgs.p)
-    get_gradient!(mp, tcgs.X, tcgs.p)
+    tcgs.X = get_gradient(mp, tcgs.p) # Initialize gradient
     tcgs.residual = tcgs.randomize ? tcgs.X + tcgs.HY : tcgs.X
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
     tcgs.δ = -copy(M, tcgs.p, tcgs.z)

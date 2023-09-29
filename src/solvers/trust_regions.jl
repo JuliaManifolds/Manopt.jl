@@ -164,7 +164,7 @@ function TrustRegionsState(
         reduction_threshold,
         augmentation_threshold,
         sub_state,
-        project!;
+        project!,
         reduction_factor,
         augmentation_factor,
         σ,
@@ -423,7 +423,7 @@ function trust_regions!(
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
     # ToDo – Tangent Space in Base? Implement TR Model, otherwise like below
-    sub_problem=TangentSpaceModelProblem(M, p, TrustRegionModel(mho)),
+    # sub_problem=TangentSpaceModelProblem(M, p, TrustRegionModel(mho)),
     sub_state::AbstractHessianSolverState=TruncatedConjugateGradientState(
         M,
         p,
@@ -450,9 +450,9 @@ function trust_regions!(
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M,
-        p,
-        get_gradient(dmp, p),
-        sub_state;
+        p;
+        X=get_gradient(dmp, p),
+        sub_state=sub_state,
         trust_region_radius=trust_region_radius,
         max_trust_region_radius=max_trust_region_radius,
         acceptance_rate=acceptance_rate,
@@ -495,27 +495,27 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     if trs.σ > 0
         rand!(M, trs.Y; vector_at=trs.p, σ=trs.σ)
         nY = norm(M, trs.p, trs.Y)
-        while nY > trs.trust_region_radius # move inside if outside
+        if nY > trs.trust_region_radius # move inside if outside
             trs.Y *= trs.trust_region_radius / (2 * nY)
         end
     else
         zero_vector!(M, trs.Y, trs.p)
     end
     # Update the current gradient
-    get_gradient!(M, trs.X, mho, p)
+    get_gradient!(M, trs.X, mho, trs.p)
     # Solve TR subproblem - update options
     # TODO provide these setters for the sub problem / sub state
-    set_paramater!(trs.sub_problem, :Basepoint, trs.p)
-    set_parameter!(trs.sub_state, :Basepoint, trs.p)
-    set_parameter!(trs.sub_state, :Iterate, trs.Y)
-    set_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
+    # set_paramater!(trs.sub_problem, :Basepoint, trs.p)
+    set_manopt_parameter!(trs.sub_state, :Basepoint, trs.p)
+    set_manopt_parameter!(trs.sub_state, :Iterate, trs.Y)
+    set_manopt_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
     solve!(mp, trs.sub_state)
     #
     copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
-    get_hessian!(M, trs.HY, hno, trs.p, trs.Y)
     f = get_cost(mp, trs.p)
     if trs.σ > 0 # randomized approach: compare result with the Cauchy point.
         nX = norm(M, trs.p, trs.X)
+        get_hessian!(M, trs.HY, mho, trs.p, trs.Y)
         # Check the curvature,
         get_hessian!(mp, trs.HX, trs.p, trs.X)
         trs.τ = real(inner(M, trs.p, trs.X, trs.HX))
@@ -547,7 +547,6 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
     ρ = ρnum / ρden
-
     model_decreased = ρden ≥ 0
     # Update the Hessian approximation - i.e. really unwrap the original Hessian function
     # and update it if it is an approxiate Hessian.
@@ -555,9 +554,9 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     # Choose the new TR radius based on the model performance
     # Case (a) we performe poorly -> decrease radius
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
-        trs.trust_region_radius * trs.reduction
+        trs.trust_region_radius *= trs.reduction_factor
     elseif ρ > trs.augmentation_threshold &&
-        get_parameter(trs.sub_state, :TrustRegionExceeded)
+        get_manopt_parameter(trs.sub_state, :TrustRegionExceeded)
         # (b) We perform great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius

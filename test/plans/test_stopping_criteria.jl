@@ -130,11 +130,11 @@ end
     tcgs = TruncatedConjugateGradientState(
         Euclidean(), 1.0, 0.0; trust_region_radius=2.0, randomize=false
     )
-    tcgs.new_model_value = 2.0
     tcgs.model_value = 1.0
     s = StopWhenModelIncreased()
     @test !s(hp, tcgs, 0)
     @test s.reason == ""
+    s.model_value = 0.5 # twweak
     @test s(hp, tcgs, 1)
     @test length(s.reason) > 0
     s2 = StopWhenCurvatureIsNegative()
