@@ -83,6 +83,7 @@ mutable struct BundleMethodState{
         k_min=nothing,
         k_max=nothing,
         k_size::Int=100,
+        p_estimate=p,
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -108,7 +109,7 @@ mutable struct BundleMethodState{
         ξ = zero(R)
         if ϱ === nothing
             if (k_min === nothing) || (k_max === nothing)
-                s = [sectional_curvature(M, close_point(M, p, 2 * diam)) for _ in 1:k_size]
+                s = [sectional_curvature(M, close_point(M, p_estimate, diam/2)) for _ in 1:k_size]
             end
             (k_min === nothing) && (k_min = minimum(s))
             (k_max === nothing) && (k_max = maximum(s))
@@ -231,6 +232,7 @@ function bundle_method!(
     k_min=nothing,
     k_max=nothing,
     k_size::Int=100,
+    p_estimate=p,
     ϱ=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -254,6 +256,7 @@ function bundle_method!(
         k_min=k_min,
         k_max=k_max,
         k_size=k_size,
+        p_estimate=p_estimate,
         ϱ=ϱ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
