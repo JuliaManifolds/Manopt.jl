@@ -45,7 +45,7 @@ stores option values for a [`bundle_method`](@ref) solver
 * `ε` - convex combination of the linearization errors
 * `λ` - convex coefficients that solve the subproblem
 * `ϱ` - curvature-dependent bound
-* `ξ` - (1e-8) the stopping parameter given by ξ = -|g|^2 - ε
+* `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
 
 # Constructor
 
@@ -258,7 +258,7 @@ function bundle_method!(
     k_size::Int=100,
     p_estimate=nothing,
     ϱ=nothing,
-    debug=[DebugWarnIfStopIncreases()],
+    debug=[DebugWarnIfStoppingParameterIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -360,7 +360,7 @@ Two stopping criteria for [`bundle_method`](@ref) to indicate to stop when eithe
 
 are less than given tolerances tole and tolg respectively, or
 
-* the parameter -ξ = - |g|^2 - ε
+* the parameter -ξ = |g|^2 + ε
 
 is less than a given tolerance tolξ.
 
@@ -427,4 +427,54 @@ function show(io::IO, b::StopWhenBundleLess{T,Nothing}) where {T}
 end
 function show(io::IO, b::StopWhenBundleLess{Nothing,R}) where {R}
     return print(io, "StopWhenBundleLess($(b.tolξ))\n    $(status_summary(b))")
+end
+
+@doc raw"""
+    DebugWarnIfStoppingParameterIncreases <: DebugAction
+
+print a warning if the stopping parameter of the bundle method increases.
+
+# Constructor
+    DebugWarnIfStoppingParameterIncreases(warn=:Once; tol=1e2)
+
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always:`
+"""
+mutable struct DebugWarnIfStoppingParameterIncreases <: DebugAction
+    # store if we need to warn – :Once, :Always, :No, where all others are handled
+    # the same as :Always
+    status::Symbol
+    old_value::Float64
+    tol::Float64
+    DebugWarnIfStoppingParameterIncreases(warn::Symbol=:Once; tol=1e2) = new(warn, Float64(Inf), tol)
+end
+function (d::DebugWarnIfStoppingParameterIncreases)(
+    p::AbstractManoptProblem, st::BundleMethodState, i::Int
+)
+    (i < 1) && (return nothing)
+    if d.status !== :No
+        new_value = -st.ξ
+        if new_value ≥ d.old_value * d.tol
+            @warn """The stopping parameter increased by at least $(d.tol).
+            At iteration #$i the stopping parameter -ξ increased from $(d.old_value) to $(new_value).\n
+            Consider decreasing either the diameter by changing the `diam` keyword argument, or one 
+            of the parameters involved in the estimation of the sectional curvature, such as `k_min`
+            or `k_max`, in the `bundle_method` call.
+            """
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfStoppingParameterIncreases(:Always) to get all warnings."
+                d.status = :No
+            end
+        else
+            d.old_value = min(d.old_value, new_value)
+        end
+    end
+    return nothing
+end
+function show(io::IO, di::DebugWarnIfStoppingParameterIncreases)
+    return print(io, "DebugWarnIfStoppingParameterIncreases(; tol=\"$(di.tol)\")")
 end
