@@ -83,7 +83,7 @@ mutable struct BundleMethodState{
         k_min=nothing,
         k_max=nothing,
         k_size::Int=100,
-        p_estimate=nothing,
+        p_estimate=p,
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -110,13 +110,8 @@ mutable struct BundleMethodState{
         ξ = zero(R)
         if ϱ === nothing
             if (k_min === nothing) || (k_max === nothing)
-                if p_estimate === nothing
-                    p_estimate = retract(
-                        M, p, -diam / 2 * subgradient(M, p) / norm(M, p, subgradient(M, p)), retraction_method
-                    )
-                end
                 s = [
-                    sectional_curvature(M, close_point(M, p_estimate, diam / 2)) for
+                    sectional_curvature(M, close_point(M, p_estimate, diam / 2; retraction_method=retraction_method)) for
                     _ in 1:k_size
                 ]
             end
@@ -265,13 +260,12 @@ function bundle_method!(
         k_min=k_min,
         k_max=k_max,
         k_size=k_size,
-        p_estimate=p_estimate,
+        p_estimate=p,
         ϱ=ϱ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
-        subgradient=∂f!!,
     )
     bms = decorate_state!(bms; kwargs...)
     return get_solver_return(solve!(mp, bms))
@@ -296,10 +290,10 @@ function ζ_2(k_max, diam)
     (k_max ≤ zero(k_max)) && return one(k_max)
     (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
 end
-function close_point(M, p, tol)
+function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
     X = rand(M; vector_at=p)
     X .= tol * rand() * X / norm(M, p, X)
-    return retract(M, p, X, default_retraction_method(M, typeof(p)))
+    return retract(M, p, X, retraction_method)
 end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)
