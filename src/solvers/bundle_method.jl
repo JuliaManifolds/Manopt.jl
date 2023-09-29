@@ -1,3 +1,24 @@
+function sectional_curvature(M, p)
+    X = rand(M; vector_at=p)
+    Y = rand(M; vector_at=p)
+    Y = Y - inner(M, p, X, Y) / norm(M, p, X)^2 * X
+    R = riemann_tensor(M, p, X, Y, Y)
+    return inner(M, p, R, X) / (norm(M, p, X)^2 * norm(M, p, Y)^2 - inner(M, p, X, Y)^2)
+end
+function ζ_1(k_min, diam)
+    (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
+    (k_min ≥ zero(k_min)) && return one(k_min)
+end
+function ζ_2(k_max, diam)
+    (k_max ≤ zero(k_max)) && return one(k_max)
+    (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
+end
+function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
+    X = rand(M; vector_at=p)
+    X .= tol * rand() * X / norm(M, p, X)
+    return retract(M, p, X, retraction_method)
+end
+
 @doc raw"""
     BundleMethodState <: AbstractManoptSolverState
 stores option values for a [`bundle_method`](@ref) solver
@@ -90,7 +111,6 @@ mutable struct BundleMethodState{
         stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        subgradient,
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -238,6 +258,7 @@ function bundle_method!(
     k_size::Int=100,
     p_estimate=nothing,
     ϱ=nothing,
+    debug=[DebugWarnIfStopIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
@@ -267,33 +288,13 @@ function bundle_method!(
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
     )
-    bms = decorate_state!(bms; kwargs...)
+    bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
 function bundle_method_sub_solver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
-end
-function sectional_curvature(M, p)
-    X = rand(M; vector_at=p)
-    Y = rand(M; vector_at=p)
-    Y = Y - inner(M, p, X, Y) / norm(M, p, X)^2 * X
-    R = riemann_tensor(M, p, X, Y, Y)
-    return inner(M, p, R, X) / (norm(M, p, X)^2 * norm(M, p, Y)^2 - inner(M, p, X, Y)^2)
-end
-function ζ_1(k_min, diam)
-    (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
-    (k_min ≥ zero(k_min)) && return one(k_min)
-end
-function ζ_2(k_max, diam)
-    (k_max ≤ zero(k_max)) && return one(k_max)
-    (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
-end
-function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
-    X = rand(M; vector_at=p)
-    X .= tol * rand() * X / norm(M, p, X)
-    return retract(M, p, X, retraction_method)
 end
 function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     M = get_manifold(mp)

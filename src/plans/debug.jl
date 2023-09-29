@@ -932,6 +932,59 @@ function show(io::IO, dw::DebugWarnIfFieldNotFinite)
 end
 
 @doc raw"""
+    DebugWarnIfStopIncreases <: DebugAction
+
+print a warning if the stopping parameter of the bundle method increases.
+
+Note that this provides an additional warning for gradient descent
+with its default constant step size.
+
+# Constructor
+    DebugWarnIfStopIncreases(warn=:Once; tol=1e2)
+
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e-13`.
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always:`
+"""
+mutable struct DebugWarnIfStopIncreases <: DebugAction
+    # store if we need to warn – :Once, :Always, :No, where all others are handled
+    # the same as :Always
+    status::Symbol
+    old_value::Float64
+    tol::Float64
+    DebugWarnIfStopIncreases(warn::Symbol=:Once; tol=1e2) = new(warn, Float64(Inf), tol)
+end
+function (d::DebugWarnIfStopIncreases)(
+    p::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
+)
+    (i < 1) && (return nothing)
+    if d.status !== :No
+        new_value = -st.ξ
+        if new_value ≥ d.old_value * d.tol
+            # Default case in Gradient Descent, include a tipp
+            @warn """The new_value increased.
+            At iteration #$i the stopping parameter increased from $(d.old_value) to $(new_value).\n
+            Consider decreasing either the diameter by changing the `diam` keyword argument, or one 
+            of the parameters involved in the estimation of the sectional curvature, in the `bundle_method` call.
+            """
+            if d.status === :Once
+                @warn "Further warnings will be supressed, use DebugWarnIfStopIncreases(:Always) to get all warnings."
+                d.status = :No
+            end
+        else
+            d.old_value = min(d.old_value, new_value)
+        end
+    end
+    return nothing
+end
+function show(io::IO, di::DebugWarnIfStopIncreases)
+    return print(io, "DebugWarnIfStopIncreases(; tol=\"$(di.tol)\")")
+end
+
+@doc raw"""
     DebugFactory(a)
 
 given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
