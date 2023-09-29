@@ -112,9 +112,14 @@ mutable struct BundleMethodState{
             if (k_min === nothing) || (k_max === nothing)
                 if p_estimate === nothing
                     get_subgradient!(mp, X, p)
-                    p_estimate = retract(M, p, - diam / 2 * X / norm(M, p, X), retraction_method)
+                    p_estimate = retract(
+                        M, p, -diam / 2 * X / norm(M, p, X), retraction_method
+                    )
                 end
-                s = [sectional_curvature(M, close_point(M, p_estimate, diam/2)) for _ in 1:k_size]
+                s = [
+                    sectional_curvature(M, close_point(M, p_estimate, diam / 2)) for
+                    _ in 1:k_size
+                ]
             end
             (k_min === nothing) && (k_min = minimum(s))
             (k_max === nothing) && (k_max = maximum(s))
