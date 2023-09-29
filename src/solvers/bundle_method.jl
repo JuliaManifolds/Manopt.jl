@@ -83,13 +83,14 @@ mutable struct BundleMethodState{
         k_min=nothing,
         k_max=nothing,
         k_size::Int=100,
-        p_estimate=p,
+        p_estimate=nothing,
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
         stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
+        mp,
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -109,6 +110,10 @@ mutable struct BundleMethodState{
         ξ = zero(R)
         if ϱ === nothing
             if (k_min === nothing) || (k_max === nothing)
+                if p_estimate === nothing
+                    get_subgradient!(mp, X, p)
+                    p_estimate = retract(M, p, - diam / 2 * X / norm(M, p, X), retraction_method)
+                end
                 s = [sectional_curvature(M, close_point(M, p_estimate, diam/2)) for _ in 1:k_size]
             end
             (k_min === nothing) && (k_min = minimum(s))
@@ -232,7 +237,7 @@ function bundle_method!(
     k_min=nothing,
     k_max=nothing,
     k_size::Int=100,
-    p_estimate=p,
+    p_estimate=nothing,
     ϱ=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -262,6 +267,7 @@ function bundle_method!(
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
+        mp=mp,
     )
     bms = decorate_state!(bms; kwargs...)
     return get_solver_return(solve!(mp, bms))
