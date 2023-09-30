@@ -55,8 +55,6 @@ function reflect(
         M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
     )
 end
-
-# TODO: adapt
 function reflect!(
     M::AbstractManifold,
     q,

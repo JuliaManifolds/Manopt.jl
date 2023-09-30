@@ -85,7 +85,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
                 return Y
             elseif p == 2
                 norms = norm.(Ref(N.manifold), x, Ξ)
-                norms_ = sqrt.(sum(norms .^ 2; dims=length(pdims))) # TODO check size
+                norms_ = sqrt.(sum(norms .^ 2; dims=length(pdims)))
 
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations

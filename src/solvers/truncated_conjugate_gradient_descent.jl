@@ -6,40 +6,29 @@ describe the Steihaug-Toint truncated conjugate-gradient method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p` : a point, where we use the tangent space to solve the trust-region subproblem
-* `Y` : Current iterate
-* `stop` : a [`StoppingCriterion`](@ref).
-* `X` : the gradient ``\operatorname{grad}f(p)```
-* `δ` : search direction
-* `trust_region_radius` : (`injectivity_radius(M)/4`) the trust-region radius
-* `residual` : the gradient (TODO)
-(TODO)
-* `randomize` : indicates if the trust-region solve and so the algorithm is to be
-        initiated with a random tangent vector. If set to true, no
-        preconditioner will be used. This option is set to true in some
-        scenarios to escape saddle points, but is otherwise seldom activated.
-* `project!` : (`copyto!`) specify a projection operation for tangent vectors
-    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
-    per default, no projection is perfomed, set it to `project!` to activate projection.
+* `p`                   – (`rand(M)` a point, where we use the tangent space to solve the trust-region subproblem
+* `Y`                   – (`zero_vector(M,p)`) Current iterate, whose type is also used for the other, internal, tangent vector fields
+* `stop`                – a [`StoppingCriterion`](@ref).
+* `X`                   – the gradient ``\operatorname{grad}f(p)```
+* `δ`                   – the conjugate gradient search direction
+* `θ`                   – (`1.0`) 1+θ is the superlinear convergence target rate.
+* `κ`                   – (`0.1`) the linear convergence target rate.
+* `trust_region_radius` – (`injectivity_radius(M)/4`) the trust-region radius
+* `residual`            – the gradient of the model ``m(Y)``
+* `randomize`           … (`false`)
+* `project!`            – (`copyto!`) for numerical stability it is possivle to project onto
+  the tangent space after every iteration. By default this only copies instead.
 
-# Internal interims vields
+# Internal (temporary) Fields
 
 * `Hδ`, `HY`                 – temporary results of the Hessian applied to `δ` and `Y`, respectively.
 * `δHδ`, `YPδ`, `δPδ`, `YPδ` – temporary inner products with `Hδ` and preconditioned inner products.
-* `z`, `z_r`                 – the preconditioned residual
+* `z`                        – the preconditioned residual
 * `z_r`                      - inner product of the residual and `z`
 
 # Constructor
 
-    TruncatedConjugateGradientState(M, p=rand(M), Y=zero_vector(M,p);
-        trust_region_radius=injectivity_radius(M)/4,
-        randomize=false,
-        θ=1.0,
-        κ=0.1,
-        project!=copyto!,
-    )
-
-    and a slightly involved `stopping_criterion`
+    TruncatedConjugateGradientState(M, p=rand(M), Y=zero_vector(M,p); kwargs...)
 
 # See also
 
@@ -373,12 +362,11 @@ end
 solve the trust-region subproblem
 
 ```math
-\operatorname*{arg\,min}_{Y ∈ T_pM}\ m_p(Y), \quad\text{where }
-m_p(Y) = f(p) + ⟨\operatorname{grad} f(p),Y⟩_p + \frac{1}{2}⟨\operatorname{Hess} f(p)[Y],Y⟩_p,
-```
-
-```math
-\text{such that}\quad ⟨Y,Y⟩_p ≤ Δ^2
+\begin{align*}
+\operatorname*{arg\,min}_{Y  ∈  T_p\mathcal{M}}&\ m_p(Y) = f(p) +
+⟨\operatorname{grad}f(p), Y⟩_p + \frac{1}{2} ⟨\mathcal{H}_p[Y], Y⟩_p\\
+\text{such that}& \ \lVert Y \rVert_p ≤ Δ
+\end{align*}
 ```
 
 on a manifold M by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
@@ -390,40 +378,33 @@ see [Absil, Baker, Gallivan, FoCM, 2007](@cite AbsilBakerGallivan:2006), [Conn, 
 See signatures above, you can leave out only the Hessian,
 the vector, the point and the vector, or all 3.
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
+* `M`      – a manifold ``\mathcal M``
+* `f`      – a cost function ``f: \mathcal M → ℝ`` to minimize
 * `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of `F`
 * `Hess_f` – (optional, cf. [`ApproxHessianFiniteDifference`](@ref)) the hessian ``\operatorname{Hess}f: T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
-* `p` – a point on the manifold ``p ∈ \mathcal M``
-* `X` – an update tangential vector ``X ∈ T_p\mathcal M``
+* `p`      – a point on the manifold ``p ∈ \mathcal M``
+* `X`      – an initial tangential vector ``X ∈ T_p\mathcal M``
 
 # Optional
 
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
+* `evaluation`          – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
    allocation (default) or [`InplaceEvaluation`](@ref) in place
-* `preconditioner` – a preconditioner for the hessian H
-* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate. The method aborts
-    if the residual is less than or equal to the initial residual to the power of 1+θ.
-* `κ` – (`0.1`) the linear convergence target rate. The method aborts if the
-    residual is less than or equal to κ times the initial residual.
-* `randomize` – set to true if the trust-region solve is to be initiated with a
-    random tangent vector. If set to true, no preconditioner will be
-    used. This option is set to true in some scenarios to escape saddle
-    points, but is otherwise seldom activated.
+* `preconditioner`      – a preconditioner for the hessian H
+* `θ`                   – (`1.0`) 1+θ is the superlinear convergence target rate.
+* `κ`                   – (`0.1`) the linear convergence target rate.
+* `randomize`           – set to true if the trust-region solve is initialized to a random tangent vector.
+  This disables preconditioning.
 * `trust_region_radius` – (`injectivity_radius(M)/4`) a trust-region radius
-* `project!` : (`copyto!`) specify a projection operation for tangent vectors
-    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
-    per default, no projection is perfomed, set it to `project!` to activate projection.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)` | [`StopWhenResidualIsReducedByFactorOrPower`](@ref)` | '[`StopWhenCurvatureIsNegative`](@ref)` | `[`StopWhenTrustRegionIsExceeded`](@ref) )
-    a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
-    where for the default, the maximal number of iterations is set to the dimension of the
-    manifold, the power factor is `θ`, the reduction factor is `κ`.
+* `project!`            – (`copyto!`) for numerical stability it is possivle to project onto
+  the tangent space after every iteration. By default this only copies instead.
+* `stopping_criterion`  – ([`StopAfterIteration`](@ref)`(manifol_dimension(M)) | `[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(;κ=κ, θ=θ) | `[`StopWhenCurvatureIsNegative`](@ref)`() | `[`StopWhenTrustRegionIsExceeded`](@ref)`() | `[`StopWhenModelIncreased`](@ref)`()`)
+  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
 
-the obtained (approximate) minimizer ``\eta^*``, see [`get_solver_return`](@ref) for details
+the obtained (approximate) minimizer ``Y^*``, see [`get_solver_return`](@ref) for details
 
 # see also
 [`trust_regions`](@ref)
@@ -730,7 +711,7 @@ function step_solver!(
     copyto!(M, tcgs.HY, tcgs.p, new_HY)
     tcgs.residual = tcgs.residual + α * tcgs.Hδ
 
-    # Precondition the residual.
+    # Precondition the residual if we are not running in random mode
     tcgs.z = tcgs.randomize ? tcgs.residual : get_preconditioner(mp, tcgs.p, tcgs.residual)
     zr = real(inner(M, tcgs.p, tcgs.z, tcgs.residual))
     # Compute new search direction.

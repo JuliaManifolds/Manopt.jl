@@ -287,7 +287,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     q₄ = retract(M, qb, q₅, pdsn.retraction_method)
     q₃ = -inverse_retract(M, pdsn.p, q₄, pdsn.inverse_retraction_method)
     q₂ = retract(M, pdsn.p, q₃, pdsn.retraction_method)
-    q₁ = get_primal_prox(tmp, pdsn.primal_stepsize, q₂)  # TODO hier gebleven met debuggen
+    q₁ = get_primal_prox(tmp, pdsn.primal_stepsize, q₂)
 
     # (1) compute update direction
     η₁ = linearized_forward_operator(

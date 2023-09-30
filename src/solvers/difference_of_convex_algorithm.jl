@@ -342,7 +342,6 @@ function difference_of_convex_algorithm!(
 ) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     dmdco = decorate_objective!(M, mdco; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
-    # For now only subsolvers - TODO closed form solution init here
     if isnothing(sub_problem)
         error(
             """
