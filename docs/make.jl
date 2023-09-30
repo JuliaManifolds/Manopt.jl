@@ -11,6 +11,9 @@ if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
     Pkg.resolve()
     Pkg.instantiate()
+    if "--quarto" ∈ ARGS
+        Pkg.build("IJulia") # to activate the right kernel version on current Julia
+    end
 end
 
 # (b) Did someone say render? Then we render!
@@ -23,7 +26,6 @@ if "--quarto" ∈ ARGS
         Pkg.activate(tutorials_folder)
         Pkg.resolve()
         Pkg.instantiate()
-        Pkg.build("IJulia") # build IJulia to the right version.
         Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
@@ -56,10 +58,11 @@ end
 
 # (e) ...finally! make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
-makedocs(
-    bib;
+makedocs(;
     format=Documenter.HTML(;
-        mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
+        mathengine=MathJax3(),
+        prettyurls=false,
+        assets=["assets/favicon.ico", "assets/citations.css"],
     ),
     modules=[
         Manopt,
@@ -86,21 +89,6 @@ makedocs(
     ],
     authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
-    strict=[
-        :doctest,
-        :linkcheck,
-        :parse_error,
-        :example_block,
-        :autodocs_block,
-        :cross_references,
-        :docs_block,
-        :eval_block,
-        :example_block,
-        :footnote,
-        :meta_block,
-        :missing_docs,
-        :setup_block,
-    ],
     pages=[
         "Home" => "index.md",
         "About" => "about.md",
@@ -170,6 +158,7 @@ makedocs(
         "Notation" => "notation.md",
         "References" => "references.md",
     ],
+    plugins=[bib],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)
 #back to main env
