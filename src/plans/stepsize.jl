@@ -127,7 +127,7 @@ Alternatively one can also use the following keyword.
     )
 
 initializes all fields above, where none of them is mandatory and the length is set to
-half and to $1$ if the injectivity radius is infinite.
+half and to ``1`` if the injectivity radius is infinite.
 """
 mutable struct DecreasingStepsize <: Stepsize
     length::Float64

@@ -7,8 +7,8 @@ Minimize a function
 ```
 
 by using the Riemannian trust-regions solver following [AbsilBakerGallivan:2006](@cite),
-i.e. by building a lifted model at the ``k``th iterate $p_k$ by locally mapping the
-cost function $f$ to the tangent space as ``f_k: T_{p_k}\mathcal M → \mathbb R`` as
+i.e. by building a lifted model at the ``k``th iterate ``p_k`` by locally mapping the
+cost function ``f`` to the tangent space as ``f_k: T_{p_k}\mathcal M → \mathbb R`` as
 ``f_k(X) = f(\operatorname{retr}_{p_k}(X))``.
 We then define the trust region subproblem as
 

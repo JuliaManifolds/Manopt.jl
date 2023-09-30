@@ -5,13 +5,13 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 # Fields
 
-* `cost` $F + G(Λ(⋅))$ to evaluate interims cost function values
-* `linearized_operator` the linearization $DΛ(⋅)[⋅]$ of the operator $Λ(⋅)$.
-* `linearized_adjoint_operator` The adjoint differential $(DΛ)^* \colon \mathcal N \to T\mathcal M$
-* `prox_F` the proximal map belonging to $f$
-* `diff_prox_F` the (Clarke Generalized) differential of the proximal maps of $F$
-* `prox_G_dual` the proximal map belonging to $g_n^*$
-* `diff_prox_dual_G` the (Clarke Generalized) differential of the proximal maps of $G^\ast_n$
+* `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
+* `linearized_operator` the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
+* `linearized_adjoint_operator` The adjoint differential ``(DΛ)^* \colon \mathcal N \to T\mathcal M``
+* `prox_F` the proximal map belonging to ``F``
+* `diff_prox_F` the (Clarke Generalized) differential of the proximal maps of ``F``
+* `prox_G_dual` the proximal map belonging to ``g_n^*``
+* `diff_prox_dual_G` the (Clarke Generalized) differential of the proximal maps of ``G^\ast_n``
 * `Λ` – the exact forward operator.
   This operator is required if `Λ(m)=n` does not hold.
 
@@ -67,10 +67,10 @@ end
 @doc raw"""
     PrimalDualSemismoothNewtonState <: AbstractPrimalDualSolverState
 
-* `m` - base point on $ \mathcal M $
-* `n` - base point on $ \mathcal N $
-* `x` - an initial point on $x^{(0)} \in \mathcal M$ (and its previous iterate)
-* `ξ` - an initial tangent vector $\xi^{(0)}\in T_{n}^*\mathcal N$ (and its previous iterate)
+* `m` - base point on ``\mathcal M``
+* `n` - base point on ``\mathcal N``
+* `x` - an initial point on ``x^{(0)} \in \mathcal M`` (and its previous iterate)
+* `ξ` - an initial tangent vector ``\xi^{(0)}\in T_{n}^*\mathcal N`` (and its previous iterate)
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
 * `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `reg_param` – (`1e-5`) regularisation parameter for the Newton matrix

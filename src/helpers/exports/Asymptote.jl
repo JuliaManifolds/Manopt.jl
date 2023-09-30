@@ -1,6 +1,6 @@
 @doc raw"""
     asymptote_export_S2_signals(filename; points, curves, tangent_vectors, colors, options...)
-Export given `points`, `curves`, and `tangent_vectors` on the sphere $\mathbb S^2$
+Export given `points`, `curves`, and `tangent_vectors` on the sphere ``\mathbb S^2``
 to Asymptote.
 
 # Input

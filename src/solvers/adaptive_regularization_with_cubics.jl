@@ -26,7 +26,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 Furthermore the following interal fields are defined
 
 * `q`                  - (`copy(M,p)`) a point for the candidates to evaluate model and ρ
-* `H`                  – (`copy(M, p, X)`) the current hessian, $\operatorname{Hess}F(p)[⋅]$
+* `H`                  – (`copy(M, p, X)`) the current hessian, ``\operatorname{Hess}F(p)[⋅]``
 * `S`                  – (`copy(M, p, X)`) the current solution from the subsolver
 * `ρ`                  – the current regularized ratio of actual improvement and model improvement.
 * `ρ_denominator`      – (`one(ρ)`) a value to store the denominator from the computation of ρ

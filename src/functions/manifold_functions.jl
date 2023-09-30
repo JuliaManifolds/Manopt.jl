@@ -28,7 +28,7 @@ Reflect the point `x` from the manifold `M` at point `p`, i.e.
     \operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x).
 ````
 
-where $\operatorname{retr}$ and $\operatorname{retr}^{-1}$ denote a retraction and an inverse
+where ``\operatorname{retr}`` and ``\operatorname{retr}^{-1}`` denote a retraction and an inverse
 retraction, respectively.
 This can also be done in place of `q`.
 

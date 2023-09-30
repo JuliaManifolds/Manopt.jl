@@ -3,19 +3,19 @@
 
 Perform the Primal-Dual Riemannian Semismooth Newton algorithm.
 
-Given a `cost` function $\mathcal E\colon\mathcal M \to \overline{ℝ}$ of the form
+Given a `cost` function ``\mathcal E\colon\mathcal M \to \overline{ℝ}`` of the form
 ```math
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
-where $F\colon\mathcal M \to \overline{ℝ}$, $G\colon\mathcal N \to \overline{ℝ}$,
-and $\Lambda\colon\mathcal M \to \mathcal N$. The remaining input parameters are
+where ``F\colon\mathcal M \to \overline{ℝ}``, ``G\colon\mathcal N \to \overline{ℝ}``,
+and ``\Lambda\colon\mathcal M \to \mathcal N``. The remaining input parameters are
 
-* `p, X` primal and dual start points $x\in\mathcal M$ and $\xi\in T_n\mathcal N$
-* `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
-* `linearized_forward_operator` the linearization $DΛ(⋅)[⋅]$ of the operator $Λ(⋅)$.
-* `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N$
-* `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
-* `diff_prox_F, diff_prox_dual_G` the (Clarke Generalized) differentials of the proximal maps of $F$ and $G^\ast_n$
+* `p, X` primal and dual start points ``x\in\mathcal M`` and ``ξ ∈ T_n\mathcal N``
+* `m,n` base points on ``\mathcal M`` and ``\mathcal N``, respectively.
+* `linearized_forward_operator` the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
+* `adjoint_linearized_operator` the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N``
+* `prox_F, prox_G_Dual` the proximal maps of ``F`` and ``G^\ast_n``
+* `diff_prox_F, diff_prox_dual_G` the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^\ast_n``
 
 For more details on the algorithm, see [Diepeveen, Lellmann, SIAM J. Imag. Sci., 2021](@cite DiepeveenLellmann:2021).
 
@@ -201,7 +201,7 @@ end
 raw"""
     construct_primal_dual_residual_vector(p, o)
 
-Constructs the vector representation of $X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
+Constructs the vector representation of ``X(p^{(k)}, ξ_{n}^{(k)}) \in \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 """
 function construct_primal_dual_residual_vector(
     tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
@@ -264,7 +264,7 @@ end
 raw"""
 onstruct_primal_dual_residual_covariant_derivative_matrix(p, o)
 
-Constructs the matrix representation of $V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
+Constructs the matrix representation of ``V^{(k)}:\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}\rightarrow \mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 """
 function construct_primal_dual_residual_covariant_derivative_matrix(
     tmp::TwoManifoldProblem, pdsn::PrimalDualSemismoothNewtonState
