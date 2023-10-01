@@ -51,6 +51,11 @@
             "affiliation": "NTNU Trondheim",
             "name": "Kjemsås, Even Stephansen",
             "type": "ProjectMember"
+        },
+        {
+            "name": "Daniel VandenHeuvel",
+            "type" = "other",
+            "orcid" = "0000-0001-6462-0135"
         }
     ],
     "creators": [
