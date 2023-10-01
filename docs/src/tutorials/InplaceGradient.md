@@ -1,7 +1,7 @@
 # Speedup using Inplace Evaluation
 Ronny Bergmann
 
-When it comes to time critital operations, a main ingredient in Julia is given by
+When it comes to time critical operations, a main ingredient in Julia is given by
 mutating functions, i.e. those that compute in place without additional memory
 allocations. In the following, we illustrate how to do this with `Manopt.jl`.
 

@@ -109,7 +109,7 @@ is to stop as soon as an iteration ``k`` is reached for which
 
 holds, where ``0 < κ < 1`` and ``θ > 0`` are chosen in advance. This is
 realized in this method by [`StopWhenResidualIsReducedByFactorOrPower`](@ref).
-It can be shown shown that under appropriate conditions the iterates ``x_k``
+It can be shown that under appropriate conditions the iterates ``x_k``
 of the underlying trust-region method converge to nondegenerate critical
 points with an order of convergence of at least ``\min \left( θ + 1, 2 \right)``,
 see [Absil, Mahony, Sepulchre, Princeton University Press, 2008](@cite AbsilMahonySepulchre:2008).
