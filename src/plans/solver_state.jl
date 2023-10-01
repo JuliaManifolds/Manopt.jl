@@ -143,7 +143,7 @@ the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
 the internal state are extracted automatically.
 
 By default the state that is stored within a decorated state is assumed to be at
-`s.state`. Overwrtie `_get_state(s, ::Val{true}, recursive) to change this bevahiour for your state `s`
+`s.state`. Overwrite `_get_state(s, ::Val{true}, recursive) to change this behaviour for your state `s`
 for both the recursive and the nonrecursive case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
@@ -309,7 +309,7 @@ _storage_copy_vector(::AbstractManifold, X::Number) = StorageRef(X)
 internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields from an
 [`AbstractManoptSolverState`](@ref)s
 
-This functor posesses the usual interface of functions called during an
+This functor possesses the usual interface of functions called during an
 iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref),
 `o` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
 
@@ -338,12 +338,12 @@ To handle the general storage, use `get_storage` and `has_storage` with keys as 
 For the point storage use `PointStorageKey`. For tangent vector storage use
 `VectorStorageKey`. Point and tangent storage have been optimized to be more efficient.
 
-# Constructiors
+# Constructors
 
    StoreStateAction(s::Vector{Symbol})
 
 This is equivalent as providing `s` to the keyword `store_fields`, just that here, no manifold
-is necessay for the construciton.
+is necessity for the construction.
 
     StoreStateAction(M)
 
@@ -493,7 +493,7 @@ end
     get_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
 
 Return the internal value of the [`AbstractStateAction`](@ref) `a` at the
-`Symbol` `key` that represents a vector vector.
+`Symbol` `key` that represents a vector.
 """
 @inline function get_storage(a::AbstractStateAction, ::VectorStorageKey{key}) where {key}
     if haskey(a.vector_values, key)
@@ -618,7 +618,7 @@ This function returns 0 if there was nothing to count
 Available symbols from within the solver state
 
 * `:Iterations` is passed on to the `stop` field to obtain the
-  iterataion at which the solver stopped.
+  iteration at which the solver stopped.
 """
 function get_count(ams::AbstractManoptSolverState, s::Symbol)
     return get_count(ams, Val(s))

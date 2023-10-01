@@ -13,7 +13,7 @@ to Asymptote.
 * `curves` – an `Array` of `Arrays` of points on the sphere, where each inner array is
   interpreted as a curve and is accompanied by an entry within `colors`
 * `points` – an `Array` of `Arrays` of points on the sphere where each inner array is
-  itnerpreted as a set of points and is accompanied by an entry within `colors`
+  interpreted as a set of points and is accompanied by an entry within `colors`
 * `tangent_vectors` – an `Array` of `Arrays` of tuples, where the first is a points, the second a
   tangent vector and each set of vectors is accompanied by an entry
   from within `colors`
@@ -206,7 +206,7 @@ or three-dimensional data with points on the [Sphere](https://juliamanifolds.git
 
 # Optional Arguments (Asymptote)
 * `arrow_head_size` - (`1.8`) size of the arrowheads of the vectors (in mm)
-* `camera_position` - position of the camrea (default: centered above xy-plane)
+* `camera_position` - position of the camera (default: centered above xy-plane)
   szene
 * `target` - position the camera points at (default: center of xy-plane within
   data).
@@ -246,7 +246,7 @@ function asymptote_export_S2_data(
                     # map elevation to colormap
                     c = get(elevation_color_scheme, el + π / 2, (0.0, Float64(π)))
                     # write arrow in this colormap
-                    # transpose image to comply with image adresses (first index column downwards, second rows)
+                    # transpose image to comply with image addresses (first index column downwards, second rows)
                     write(
                         io,
                         string(
@@ -277,10 +277,10 @@ definite matrices.
 * `color_scheme` - A `ColorScheme` for Geometric Anisotropy Index
 * `scale_axes` - (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
   closer to each other by a factor per direction compared to the distance
-  esimated by the maximal eigenvalue of all involved SPD points
+  estimated by the maximal eigenvalue of all involved SPD points
 
 # Optional Arguments (Asymptote)
-* `camera_position` - position of the camrea (default: centered above xy-plane)
+* `camera_position` - position of the camera (default: centered above xy-plane)
   szene.
 * `target` - position the camera points at (default: center of xy-plane within data).
 

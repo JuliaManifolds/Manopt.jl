@@ -21,7 +21,7 @@ include("../utils/dummy_types.jl")
     @test get_initial_stepsize(mp, gst) == 1.0
     @test get_stepsize(mp, gst, 1) == 1.0
     @test get_last_stepsize(mp, gst, 1) == 1.0
-    # Check Fallbacks of Problen
+    # Check Fallbacks of Problem
     @test get_cost(mp, gst.p) == 0.0
     @test get_gradient(mp, gst.p) == zero_vector(M, p)
     @test_throws MethodError get_proximal_map(mp, 1.0, gst.p, 1)
@@ -86,7 +86,7 @@ include("../utils/dummy_types.jl")
         @test get_count(cmcgo, :Gradient) == 3
         @test get_count(cmcgo, :Cost) == 3
     end
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         ddo = DummyDecoratedObjective(mgo)
         @test get_cost(M, mgo, p) == get_cost(M, ddo, p)
         @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)

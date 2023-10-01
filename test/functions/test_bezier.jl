@@ -137,7 +137,7 @@ using Manopt, Manifolds, Test
         @test_throws ErrorException adjoint_differential_bezier_control(
             M, B, 7.0, zero_vector(M, B[1].pts[1])
         )
-        # a shortcut to evaluate the adjoint at several points is equal to seperate evals
+        # a shortcut to evaluate the adjoint at several points is equal to separate evals
         b = B[2]
         Xi = [log(M, b.pts[1], b.pts[2]), -log(M, b.pts[4], b.pts[3])]
         Xs = adjoint_differential_bezier_control(M, b, [0.0, 1.0], Xi)

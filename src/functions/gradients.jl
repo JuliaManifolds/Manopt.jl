@@ -63,7 +63,7 @@ Here the [`get_bezier_junctions`](@ref) are included in the optimization, i.e. s
 yields the unconstrained acceleration minimization. Note that this is ill-posed, since
 any Bézier curve identical to a geodesic is a minimizer.
 
-Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+Note that the Bézier-curve is given in reduces form as a point on a `PowerManifold`,
 together with the `degrees` of the segments and assuming a differentiable curve, the segments
 can internally be reconstructed.
 
@@ -120,7 +120,7 @@ function _grad_acceleration_bezier(
         adjoint_differential_shortest_geodesic_endpoint.(
             Ref(M), forward, backward, Ref(0.5), inner
         )
-    # effect of these to the centrol points is the preliminary gradient
+    # effect of these to the control points is the preliminary gradient
     grad_B = [
         BezierSegment(a.pts .+ b.pts .+ c.pts) for (a, b, c) in zip(
             adjoint_differential_bezier_control(M, Bt, T[[1, 3:n..., n]], asForward),
@@ -288,7 +288,7 @@ and ``\mathcal I_i`` denotes the forward neighbors of ``i``.
 * `M` – a `PowerManifold` manifold
 * `x` – a point.
 
-# Ouput
+# Output
 * X – resulting tangent vector in ``T_x\mathcal M``. The computation can also be done in place.
 """
 function grad_TV(M::PowerManifold, x, p::Int=1)
@@ -362,9 +362,9 @@ where ``\mathcal G`` is the set of indices of the `PowerManifold` manifold `M` a
 * `M` – a `PowerManifold` manifold
 * `x` – a point.
 
-# Ouput
+# Output
 * `Y` – resulting tangent vector in ``T_x\mathcal M`` representing the logs, where
-  ``\mathcal N`` is thw power manifold with the number of dimensions added to `size(x)`.
+  ``\mathcal N`` is the power manifold with the number of dimensions added to `size(x)`.
   The computation can be done in place of `Y`.
 """
 function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSize,TPR}
@@ -389,7 +389,7 @@ function forward_logs(M::PowerManifold{𝔽,TM,TSize,TPR}, p) where {𝔽,TM,TSi
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             end
         end # directions
@@ -416,7 +416,7 @@ function forward_logs!(M::PowerManifold{𝔽,TM,TSize,TPR}, X, p) where {𝔽,TM
             I = i.I
             J = I .+ 1 .* e_k_vals[k] #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
                 X[N, i.I..., k] = log(M.manifold, p[M, i.I...], p[M, j.I...])
             end
         end # directions

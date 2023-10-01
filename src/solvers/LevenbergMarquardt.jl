@@ -34,7 +34,7 @@ then the keyword `jacobian_tangent_basis` below is ignored
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(1e-12))`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `expect_zero_residual` – (`false`) whether or not the algorithm might expect that the value of
-  residual (objective) at mimimum is equal to 0.
+  residual (objective) at minimum is equal to 0.
 * `η` – Scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `damping_term_min` – initial (and also minimal) value of the damping term
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
@@ -171,7 +171,7 @@ function LevenbergMarquardt!(
     ),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
-    i_nlso = get_objective(nlso) # undeecorate – for safety
+    i_nlso = get_objective(nlso) # undecorate – for safety
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
@@ -258,7 +258,7 @@ function step_solver!(
     lms::LevenbergMarquardtState,
     i::Integer,
 ) where {mT<:AbstractManifold}
-    # o.residual_values is either initialized by initialize_solver! or taken from the previous iteraion
+    # o.residual_values is either initialized by initialize_solver! or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)

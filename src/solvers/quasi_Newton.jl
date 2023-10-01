@@ -363,7 +363,7 @@ end
 @doc raw"""
     update_hessian!(d, amp, st, p_old, iter)
 
-update the hessian wihtin the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `amp`
+update the hessian within the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `amp`
 as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
 Note that the current (`iter`th) iterate is already stored in `o.x`.
 
@@ -572,7 +572,7 @@ function update_hessian!(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    # computing the bound used in the decission rule
+    # computing the bound used in the decision rule
     bound = d.θ(norm(M, p, X))
     sk_normsq = norm(M, p, st.sk)^2
     if sk_normsq != 0 && (inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
@@ -614,17 +614,17 @@ function update_hessian!(
     p_old,
     iter,
 )
-    # computing the bound used in the decission rule
+    # computing the bound used in the decision rule
     M = get_manifold(mp)
     p = get_iterate(st)
     bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, p, st.sk)^2
 
-    # if the decission rule is fulfilled, the new sk and yk are added
+    # if the decision rule is fulfilled, the new sk and yk are added
     if sk_normsq != 0 && (inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
     else
-        # the stored vectores are just transported to the new tangent space, sk and yk are not added
+        # the stored vectors are just transported to the new tangent space, sk and yk are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
                 M,

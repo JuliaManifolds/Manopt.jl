@@ -9,7 +9,7 @@ The cost function reads
 F(q) = ⟨X, \log_p q⟩
 ```
 
-The values `p`and `X` are stored within this functor and hsould be references to the
+The values `p` and `X` are stored within this functor and should be references to the
 iterate and gradient from within [`FrankWolfeState`](@ref).
 """
 mutable struct FrankWolfeCost{P,T}
@@ -23,7 +23,7 @@ end
 @doc raw"""
     FrankWolfeGradient{P,T}
 
-A structure to represent the gradeint of the oracle sub problem in the [`Frank_Wolfe_method`](@ref),
+A structure to represent the gradient of the oracle sub problem in the [`Frank_Wolfe_method`](@ref),
 that is for a given point `p` and a tangent vector `X` we have
 
 ```math
@@ -32,7 +32,7 @@ F(q) = ⟨X, \log_p q⟩
 
 Its gradient can be computed easily using `adjoint_differential_log_argument`.
 
-The values `p`and `X` are stored within this functor and hsould be references to the
+The values `p` and `X` are stored within this functor and should be references to the
 iterate and gradient from within [`FrankWolfeState`](@ref).
 """
 mutable struct FrankWolfeGradient{P,T}

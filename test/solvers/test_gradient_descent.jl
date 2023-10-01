@@ -162,7 +162,7 @@ using Manopt, Manifolds, Test, Random
         M = Sphere(2)
         q = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
         f(M, p) = distance(M, p, q) .^ 2
-        # chosse a wrong gradient such that ConstantStepsize yields an increase
+        # choose a wrong gradient such that ConstantStepsize yields an increase
         grad_f(M, p) = -grad_distance(M, q, p)
         # issues three warnings
         @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(

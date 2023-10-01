@@ -35,7 +35,7 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 # Fields
 
 All fields with !! can either be mutating or nonmutating functions, which should be set
-depenting on the parameter `T <: AbstractEvaluationType`.
+depending on the parameter `T <: AbstractEvaluationType`.
 
 * `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
 * `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
@@ -568,7 +568,7 @@ Compute the dual residual at current iterate ``k`` given the necessary values ``
 X_{k-1}``, and ``n_{k-1}`` from the previous iterate. The formula is slightly different depending
 on the `o.variant` used:
 
-For the `:lineaized` it reads
+For the `:linearized` it reads
 ```math
 \Bigl\lVert
 \frac{1}{τ}\bigl(

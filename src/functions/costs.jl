@@ -15,7 +15,7 @@ compute the value of the discrete Acceleration of the composite Bezier curve
 
 where for this formula the `pts` along the curve are equispaced and denoted by
 ``t_i``, ``i=1,…,N``, and ``d_2`` refers to the second order absolute difference [`costTV2`](@ref)
-(squared). Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+(squared). Note that the Bézier-curve is given in reduces form as a point on a `PowerManifold`,
 together with the `degrees` of the segments and assuming a differentiable curve, the segments
 can internally be reconstructed.
 
@@ -56,7 +56,7 @@ where for this formula the `pts` along the curve are equispaced and denoted by
 (squared), the junction points are denoted by ``p_i``, and to each ``p_i`` corresponds
 one data item in the manifold points given in `d`. For details on the acceleration
 approximation, see [`cost_acceleration_bezier`](@ref).
-Note that the Beziér-curve is given in reduces form as a point on a `PowerManifold`,
+Note that the Bézier-curve is given in reduces form as a point on a `PowerManifold`,
 together with the `degrees` of the segments and assuming a differentiable curve, the
 segments can internally be reconstructed.
 
@@ -157,7 +157,7 @@ end
 @doc raw"""
     costTV(M, x, p)
 
-Compute the ``\operatorname{TV}^p`` functional for a tuple `pT` of pointss
+Compute the ``\operatorname{TV}^p`` functional for a tuple `pT` of points
 on a manifold `M`, i.e.
 
 ```math

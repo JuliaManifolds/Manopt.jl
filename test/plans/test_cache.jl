@@ -2,7 +2,7 @@ using LinearAlgebra, LRUCache, Manifolds, Manopt, Test, Random
 
 include("../utils/dummy_types.jl")
 
-# Three dummy functors that are just meant to cound their calls
+# Three dummy functors that are just meant to count their calls
 mutable struct TestCostCount
     i::Int
 end
@@ -352,5 +352,5 @@ end
         Z = similar(X)
         @test grad_f1!(M, Y, p) == grad_f!(M, Z, p)
     end
-    # Other tests are included with their respectives objective tests in the corresponding plans
+    # Other tests are included with their respective objective tests in the corresponding plans
 end

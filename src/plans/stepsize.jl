@@ -175,7 +175,7 @@ end
 """
     Linesearch <: Stepsize
 
-An abstract functor to represent line search type step size deteminations, see
+An abstract functor to represent line search type step size determinations, see
 [`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearch`](@ref)
 functor.
 
@@ -206,7 +206,7 @@ last step size.
 # Fields
 
 * `initial_stepsize`    – (`1.0`) and initial step size
-* `retraction_method`   – (`default_retraction_method(M)`) the rectraction to use
+* `retraction_method`   – (`default_retraction_method(M)`) the retraction to use
 * `contraction_factor`  – (`0.95`) exponent for line search reduction
 * `sufficient_decrease` – (`0.1`) gain within Armijo's rule
 * `last_stepsize`       – (`initialstepsize`) the last step size we start the search with
@@ -219,7 +219,7 @@ Furthermore the following fields act as safeguards
 * `stop_when_stepsize_less    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds - ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
 * `stop_increasing_at_step`   - (^100`) last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`   - (`1000`) last step size to decrese the stepsize (phase 2),
+* `stop_decreasing_at_step`   - (`1000`) last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
@@ -369,7 +369,7 @@ function linesearch_backtrack(
     fNew = f(M, p_new)
     search_dir_inner = real(inner(M, p, η, grad_f_at_p))
     if search_dir_inner >= 0
-        msg = "The search direction η might not be a descent directon, since ⟨η, grad_f(p)⟩ ≥ 0."
+        msg = "The search direction η might not be a descent direction, since ⟨η, grad_f(p)⟩ ≥ 0."
     end
     i = 0
     while fNew < f0 + decrease * s * search_dir_inner # increase
@@ -471,7 +471,7 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 * `memory_size` – (`10`) number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
-* `retraction_method` – (`ExponentialRetraction()`) the rectraction to use
+* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
 * `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
 * `storage` – (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 * `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
@@ -483,7 +483,7 @@ Furthermore the following fields act as safeguards
 * `stop_when_stepsize_less    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds - ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
 * `stop_increasing_at_step`   - (^100`) last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`   - (`1000`) last step size to decrese the stepsize (phase 2),
+* `stop_decreasing_at_step`   - (`1000`) last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
@@ -496,7 +496,7 @@ with the Fields above in their order as optional arguments (deprecated).
     NonmonotoneLinesearch(M)
 
 with the Fields above in their order as keyword arguments and where the retraction
-and vector transport are set to the default ones on `M`, repsectively.
+and vector transport are set to the default ones on `M`, respectively.
 
 The constructors return the functor to perform nonmonotone line search.
 """
@@ -624,7 +624,7 @@ end
 function (a::NonmonotoneLinesearch)(
     M::mT, x, F::TF, gradFx::T, η::T, old_x, old_gradient, iter::Int; kwargs...
 ) where {mT<:AbstractManifold,TF,T}
-    #find the difference between the current and previous gardient after the previous gradient is transported to the current tangent space
+    #find the difference between the current and previous gradient after the previous gradient is transported to the current tangent space
     grad_diff =
         gradFx - vector_transport_to(M, old_x, old_gradient, x, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point

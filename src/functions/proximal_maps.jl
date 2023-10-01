@@ -15,7 +15,7 @@ For the mutating variant the computation is done in place of `y`.
 # Optional argument
 * `p` – (`2`) exponent of the distance.
 
-# Ouput
+# Output
 * `y` – the result of the proximal map of ``φ``
 """
 function prox_distance(M::AbstractManifold, λ, f, x, p::Int=2)
@@ -68,7 +68,7 @@ parameter `λ`.
 (default is given in brackets)
 * `p` – (1) exponent of the distance of the TV term
 
-# Ouput
+# Output
 
 * `(y1,y2)` – resulting tuple of points of the ``\operatorname{prox}_{λφ}(```(x1,x2)```)``.
   The result can also be computed in place.
@@ -113,7 +113,7 @@ end
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
 all forward differences occurring in the power manifold array, i.e.
 ``\varphi(xi,xj) = d_{\mathcal M}^p(xi,xj)`` with `xi` and `xj` are array
-elemets of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
+elements of `x` and `j = i+e_k`, where `e_k` is the ``k``th unit vector.
 The parameter `λ` is the prox parameter.
 
 # Input
@@ -125,7 +125,7 @@ The parameter `λ` is the prox parameter.
 (default is given in brackets)
 * `p` – (1) exponent of the distance of the TV term
 
-# Ouput
+# Output
 * `y` – resulting  point containing with all mentioned proximal
   points evaluated (in a cyclic order). The computation can also be done in place
 """
@@ -142,7 +142,7 @@ function prox_TV(M::PowerManifold, λ, x, p::Int=1)
                 if (i[k] % 2) == l
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
                         (y[i], y[j]) = prox_TV(M.manifold, λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -164,7 +164,7 @@ function prox_TV!(M::PowerManifold, y, λ, x, p::Int=1)
                 if (i[k] % 2) == l # even/odd splitting
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
+                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
                         prox_TV!(M.manifold, [y[i], y[j]], λ, (y[i], y[j]), p) # Compute TV on these
                     end
                 end
@@ -192,7 +192,7 @@ The parameter `λ` is the prox parameter.
 (default is given in brackets)
 * `p` – (`1`) exponent of the distance of the TV term
 
-# Ouput
+# Output
 * `y`  – resulting Array of points with all mentioned proximal
   points evaluated (in a parallel within the arrays elements).
   The computation can also be done in place.
@@ -221,8 +221,8 @@ function prox_parallel_TV(M::PowerManifold, λ, x::AbstractVector, p::Int=1)
                 if (i[k] % 2) == l
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
-                        # parallel means we apply each (direction even/odd) to a seperate copy of the data.
+                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        # parallel means we apply each (direction even/odd) to a separate copy of the data.
                         (yV[k, l + 1][i], yV[k, l + 1][j]) = prox_TV(
                             M.manifold, λ, (xV[k, l + 1][i], xV[k, l + 1][j]), p
                         ) # Compute TV on these
@@ -259,8 +259,8 @@ function prox_parallel_TV!(
                 if (i[k] % 2) == l
                     J = i.I .+ ek.I #i + e_k is j
                     if all(J .<= maxInd) # is this neighbor in range?
-                        j = CartesianIndex(J...) # neigbbor index as Cartesian Index
-                        # parallel means we apply each (direction even/odd) to a seperate copy of the data.
+                        j = CartesianIndex(J...) # neighbour index as Cartesian Index
+                        # parallel means we apply each (direction even/odd) to a separate copy of the data.
                         prox_TV!(
                             M.manifold,
                             [yV[k, l + 1][i], yV[k, l + 1][j]],
@@ -359,7 +359,7 @@ end
     prox_TV2!(M, y, λ, x[, p=1])
 
 compute the proximal maps ``\operatorname{prox}_{λ\varphi}`` of
-all centered second order differences occuring in the power manifold array, i.e.
+all centered second order differences occurring in the power manifold array, i.e.
 ``\varphi(x_k,x_i,x_j) = d_2(x_k,x_i.x_j)``, where ``k,j`` are backward and forward
 neighbors (along any dimension in the array of `x`).
 The parameter `λ` is the prox parameter.
@@ -374,7 +374,7 @@ The parameter `λ` is the prox parameter.
 * `p` – (`1`) exponent of the distance of the TV term
 
 # Output
-* `y` – resulting point with all mentioned proximal points evaluated (in a cylic order).
+* `y` – resulting point with all mentioned proximal points evaluated (in a cyclic order).
   The computation can also be done in place.
 """
 function prox_TV2(M::PowerManifold{N,T}, λ, x, p::Int=1) where {N,T}

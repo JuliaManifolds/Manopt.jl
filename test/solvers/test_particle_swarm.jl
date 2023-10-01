@@ -3,7 +3,7 @@ using Random
 @testset "Particle Swarm" begin
     # Test the particle swarm algorithm
     A = [1.0 3.0 4.0; 3.0 -2.0 -6.0; 4.0 -6.0 5.0]
-    @testset "Eucliedean Particle Swarm" begin
+    @testset "Euclidean Particle Swarm" begin
         M = Euclidean(3)
         f(::Euclidean, p) = (p' * A * p) / (p' * p)
         p1 = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]

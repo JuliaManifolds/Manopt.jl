@@ -179,7 +179,7 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 * `grad_g` – (`nothing`) the gradient of the inequality constraints
 * `grad_h` – (`nothing`) the gradient of the equality constraints
 
-Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be proviede.
+Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provide.
 Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
 
 # Optional
@@ -193,8 +193,8 @@ Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newt
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `min_stepsize` – (`1e-10`) the minimal step size
-* `sub_cost` – ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality cost, expecially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_grad` – ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penality gradient, expecially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_cost` – ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_grad` – ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact venality gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
 * `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
 * `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
 * `sub_problem` – ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)` – ` problem for the subsolver

@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Test
 @testset "Alternating Gradient Descent" begin
-    # Note that this is mereely an alternating gradient descent toy example
+    # Note that this is merely an alternating gradient descent toy example
     M = Sphere(2)
     N = M × M
     data = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
