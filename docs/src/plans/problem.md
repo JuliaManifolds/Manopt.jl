@@ -18,7 +18,7 @@ Usually, such a problem is determined by the manifold or domain of the optimisat
 DefaultManoptProblem
 ```
 
-The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref ChambollePockSolver) and the [PD Semismooth Newton](@ref PDRSSNSolver)]), which both need two manifolds as their domain(s), hence thre also exists a
+The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref ChambollePockSolver) and the [PD Semismooth Newton](@ref PDRSSNSolver)]), which both need two manifolds as their domain(s), hence there also exists a
 
 ```@docs
 TwoManifoldProblem

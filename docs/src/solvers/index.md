@@ -101,7 +101,7 @@ Then it would call the iterate process.
 
 ### The manual call
 
-If you generate the correctsponding `problem` and `state` as the previous step does, you can
+If you generate the corresponding `problem` and `state` as the previous step does, you can
 also use the third (lowest level) and just call
 
 ```

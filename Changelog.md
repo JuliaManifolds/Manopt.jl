@@ -48,11 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* The `AdaptiveWNGrad` stepsize is now availablbe as a new stepsize functor.
+* The `AdaptiveWNGrad` stepsize is now available as a new stepsize functor.
 
 ### Fixed
 
-* Levenberg-Marquardt now posesses its parameters `initial_residual_values` and
+* Levenberg-Marquardt now possesses its parameters `initial_residual_values` and
   `initial_jacobian_f` also as keyword arguments, such that their default initialisations
   can be adapted, if necessary
 
@@ -84,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* More details on the Count and Cache toturial
+* More details on the Count and Cache tutorial
 
 ### Changed
 
@@ -104,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   using LRU Caches as a weak dependency. For now this works with cost and gradient evaluations
 * A `ManifoldCountObjective` as a decorator for objectives to enable counting of calls to for example the cost and the gradient
 * adds a `return_objective` keyword, that switches the return of a solver to a tuple `(o, s)`,
-  where `o` is the (possibly decorated) objective, and `s` os the “classical” solver return (state or point).
+  where `o` is the (possibly decorated) objective, and `s` is the “classical” solver return (state or point).
   This way the counted values can be accessed and the cache can be reused.
 * change solvers on the mid level (form `solver(M, objective, p)`) to also accept decorated objectives
 
@@ -123,7 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* the sub solver for `trust_regions` is now costumizable, i.e. can be exchanged.
+* the sub solver for `trust_regions` is now customizable, i.e. can be exchanged.
 
 ### Changed
 
