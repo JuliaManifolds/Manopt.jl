@@ -522,7 +522,8 @@ export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
-export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugWarnIfStoppingParameterIncreases, DebugMessages
+export DebugWarnIfCostNotFinite,
+    DebugWarnIfFieldNotFinite, DebugWarnIfStoppingParameterIncreases, DebugMessages
 #
 # Records - and access functions
 export get_record, get_record_state, get_record_action, has_record

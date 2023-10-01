@@ -44,7 +44,6 @@ stores option values for a [`bundle_method`](@ref) solver
 `p` that was last evaluated.
 * `ε` - convex combination of the linearization errors
 * `λ` - convex coefficients that solve the subproblem
-* `ϱ` - curvature-dependent bound
 * `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
 
 # Constructor
@@ -52,13 +51,15 @@ stores option values for a [`bundle_method`](@ref) solver
 BundleMethodState(M::AbstractManifold, p; kwargs...)
 
 with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
-You can use e.g. `X=` to specify the type of tangent vector to use
-
+    You can use e.g. `X=` to specify the type of tangent vector to use
+    
 ## Keyword arguments
 
 * `k_min` - lower bound on the sectional curvature of the manifold
 * `k_max` - upper bound on the sectional curvature of the manifold
 * `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold
+* `p_estimate` - (p) the point around which to estimate the sectional curvature of the manifold
+* `ϱ` - curvature-dependent bound
 """
 mutable struct BundleMethodState{
     R,
@@ -131,8 +132,12 @@ mutable struct BundleMethodState{
         if ϱ === nothing
             if (k_min === nothing) || (k_max === nothing)
                 s = [
-                    sectional_curvature(M, close_point(M, p_estimate, diam / 2; retraction_method=retraction_method)) for
-                    _ in 1:k_size
+                    sectional_curvature(
+                        M,
+                        close_point(
+                            M, p_estimate, diam / 2; retraction_method=retraction_method
+                        ),
+                    ) for _ in 1:k_size
                 ]
             end
             (k_min === nothing) && (k_min = minimum(s))
@@ -193,7 +198,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 
 # Input
 * `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
+* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
 * `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
@@ -207,6 +212,8 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `k_max` - upper bound on the sectional curvature of the manifold.
 * `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
     and `k_max` are not provided.
+* `p_estimate` - (p) the point around which to estimate the sectional curvature of the manifold.
+* `ϱ` - curvature-dependent bound.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
@@ -450,7 +457,9 @@ mutable struct DebugWarnIfStoppingParameterIncreases <: DebugAction
     status::Symbol
     old_value::Float64
     tol::Float64
-    DebugWarnIfStoppingParameterIncreases(warn::Symbol=:Once; tol=1e2) = new(warn, Float64(Inf), tol)
+    function DebugWarnIfStoppingParameterIncreases(warn::Symbol=:Once; tol=1e2)
+        return new(warn, Float64(Inf), tol)
+    end
 end
 function (d::DebugWarnIfStoppingParameterIncreases)(
     p::AbstractManoptProblem, st::BundleMethodState, i::Int
