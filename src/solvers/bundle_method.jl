@@ -462,13 +462,20 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             @warn """The stopping parameter increased by at least $(d.tol).
             At iteration #$i the stopping parameter -ξ increased from $(d.old_value) to $(new_value).\n
             Consider decreasing either the diameter by changing the `diam` keyword argument, or one 
-            of the parameters involved in the estimation of the sectional curvature, such as `k_min`
-            or `k_max`, in the `bundle_method` call.
+            of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
+            `k_max`, or `ϱ` in the `bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWarnIfStoppingParameterIncreases(:Always) to get all warnings."
                 d.status = :No
             end
+        elseif new_value < zero(number_eltype(st.ξ))
+            @warn """The stopping parameter is negative.
+            At iteration #$i the stopping parameter -ξ became negative.\n
+            Consider increasing either the diameter by changing the `diam` keyword argument, or changing 
+            one of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
+            `k_max`, or `ϱ` in the `bundle_method` call.
+            """
         else
             d.old_value = min(d.old_value, new_value)
         end

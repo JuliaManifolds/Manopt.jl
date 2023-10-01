@@ -429,14 +429,21 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
         if new_value ≥ d.old_value * d.tol
             @warn """The stopping parameter increased by at least $(d.tol).
             At iteration #$i the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
-            Consider changin either the proximal parameter `μ`, its update coefficient `δ`, or by
-            changing the stepsize-like parameter `ε` related to the invectivity radius of the manifold
-            in the `prox_bundle_method` call.
+            Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
+            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the 
+            `prox_bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWarnIfStoppingParameterIncreases(:Always) to get all warnings."
                 d.status = :No
             end
+        elseif new_value < zero(number_eltype(st.ν))
+            @warn """The stopping parameter is negative.
+            At iteration #$i the stopping parameter -ν became negative.\n
+            Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
+            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the 
+            `prox_bundle_method` call.
+            """
         else
             d.old_value = min(d.old_value, new_value)
         end
