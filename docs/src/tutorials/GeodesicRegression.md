@@ -34,7 +34,7 @@ highlighted = 4;
 ## Time Labeled Data
 
 If for each data item $d_i$ we are also given a time point $t_i\in\mathbb R$, which are pairwise different,
-then we can use the least squares error to state the objetive function as [Fletcher:2013](@cite)
+then we can use the least squares error to state the objective function as [Fletcher:2013](@cite)
 
 ``` math
 F(p,X) = \frac{1}{2}\sum_{i=1}^n d_{\mathcal M}^2(γ_{p,X}(t_i), d_i),
@@ -362,7 +362,7 @@ where $t = (t_1,\ldots,t_n) \in \mathbb R^n$ is now an additional parameter of t
 We write $F_1(p, X)$ to refer to the function on the tangent bundle for fixed values of $t$ (as the one in the last part)
 and $F_2(t)$ for the function $F(p, X, t)$ as a function in $t$ with fixed values $(p, X)$.
 
-For the Euclidean case, there is no neccessity to optimize with respect to $t$, as we saw
+For the Euclidean case, there is no necessity to optimize with respect to $t$, as we saw
 above for the initialization of the fixed time points.
 
 On a Riemannian manifold this can be stated as a problem on the product manifold $\mathcal N = \mathrm{T}\mathcal M \times \mathbb R^n$, i.e.
@@ -380,7 +380,7 @@ N = M × Euclidean(length(t2))
 ```
 
 In this tutorial we present an approach to solve this using an alternating gradient descent scheme.
-To be precise, we define the cost funcion now on the product manifold
+To be precise, we define the cost function now on the product manifold
 
 ``` julia
 struct RegressionCost2{T}
@@ -430,7 +430,7 @@ function (a::RegressionGradient2a!)(N, Y, x)
 end
 ```
 
-Finally, we addionally look for a fixed point $x=(p,X) ∈ \mathrm{T}\mathcal M$ at
+Finally, we additionally look for a fixed point $x=(p,X) ∈ \mathrm{T}\mathcal M$ at
 the gradient with respect to $t∈\mathbb R^n$, i.e. the second component, which is given by
 
 ``` math
