@@ -83,7 +83,7 @@ function status_summary(dst::DebugSolverState)
                $(dst.state)
 
                ## Debug$s"""
-    else # for length 1 the group is equivvalent to the summary of the single state
+    else # for length 1 the group is equivalent to the summary of the single state
         return status_summary(dst.state)
     end
 end
@@ -203,7 +203,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 # Keyword Parameters
 * `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default steream to print the debug to.
+* `io` – (`stdout`) default stream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) the inverse retraction to be
   used for approximating distance.
@@ -279,7 +279,7 @@ print the current cost function value, see [`get_cost`](@ref).
 # Parameters
 
 * `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
-* `io` – (`stdout`) default steream to print the debug to.
+* `io` – (`stdout`) default stream to print the debug to.
 * `long` - (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
@@ -476,7 +476,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 # Keyword Parameters
 * `storage` – (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default steream to print the debug to.
+* `io` – (`stdout`) default stream to print the debug to.
 * `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
 """
 mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
@@ -541,7 +541,7 @@ debug for the current iterate (stored in `get_iterate(o)`).
 
 # Parameters
 
-* `io` – (`stdout`) default steream to print the debug to.
+* `io` – (`stdout`) default stream to print the debug to.
 * `long::Bool` whether to print `x:` or `current iterate`
 """
 mutable struct DebugIterate <: DebugAction
@@ -575,7 +575,7 @@ status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 # Keyword parameters
 
 * `format` - (`"# %-6d"`) format to print the output using an sprintf format.
-* `io` – (`stdout`) default steream to print the debug to.
+* `io` – (`stdout`) default stream to print the debug to.
 
 debug for the current iteration (prefixed with `#` by )
 """
@@ -598,7 +598,7 @@ status_summary(di::DebugIteration) = "(:Iteration, \"$(escape_string(di.format))
     DebugMessages <: DebugAction
 
 An [`AbstractManoptSolverState`](@ref) or one of its substeps like a
-[`Stepsize`](@ref) might generate warnings throughout their compuations.
+[`Stepsize`](@ref) might generate warnings throughout their computations.
 This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
 depending on the message type.
 
@@ -606,7 +606,7 @@ depending on the message type.
     DebugMessages(mode=:Info; io::IO=stdout)
 
 Initialize the messages debug to a certain `mode`. Available modes are
-* `:Error` – issue the messages as an error and hence stop at any issue occuring
+* `:Error` – issue the messages as an error and hence stop at any issue occurring
 * `:Info` – issue the messages as an `@info`
 * `:Print` – print messages to the steam `io`.
 * `:Warning` – issue the messages as a warning
@@ -715,7 +715,7 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 # Keyword Parameters
 
 * `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default steream to print the debug to.
+* `io` – (`stdout`) default strea to print the debug to.
 * `format` - ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
 * `mode` – (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
 * `start` – (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
@@ -825,7 +825,7 @@ function (d::DebugWarnIfCostIncreases)(
                 `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,st,i))."""
             end
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
                 d.status = :No
             end
         else
@@ -866,7 +866,7 @@ function (d::DebugWarnIfCostNotFinite)(
             @warn """The cost is not finite.
             At iteration #$i the cost evaluated to $(cost)."""
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings."
                 d.status = :No
             end
         end
@@ -920,7 +920,7 @@ function (d::DebugWarnIfFieldNotFinite)(
             @warn """$s is or contains values that are not finite.
             At iteration #$i it evaluated to $(v)."""
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
                 d.status = :No
             end
         end
@@ -949,7 +949,7 @@ given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
 This function returns a dictionary with an entry `:All` containing one general [`DebugAction`](@ref),
 possibly a [`DebugGroup`](@ref) of entries.
 It might contain an entry `:Start`, `:Step`, `:Stop` with an action (each) to specify what to do
-at the start, after a step or at the end of an Algorithm, respectively. On all three occastions the `:All` action is exectued.
+at the start, after a step or at the end of an Algorithm, respectively. On all three occasions the `:All` action is executed.
 Note that only the `:Stop` entry is actually filled when specifying the `:Stop` symbol.
 
 # Example
@@ -993,7 +993,7 @@ end
 
 create a [`DebugAction`](@ref) where
 
-* a `String`yields the correspoinding divider
+* a `String`yields the corresponding divider
 * a [`DebugAction`](@ref) is passed through
 * a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.

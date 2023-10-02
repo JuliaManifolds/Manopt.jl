@@ -1,7 +1,7 @@
 @doc raw"""
     ManifoldDifferenceOfConvexObjective{E} <: AbstractManifoldCostObjective{E}
 
-Specify an objetive for a [`difference_of_convex_algorithm`](@ref).
+Specify an objective for a [`difference_of_convex_algorithm`](@ref).
 
 The objective ``f: \mathcal M \to ℝ`` is given as
 
@@ -227,12 +227,12 @@ where both ``g`` and ``h`` are convex, lsc. and proper.
 * `gradient` - the gradient of the cost
 * `grad_h!!` – a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
 
-Note that both the gradients miht be given in two possible signatures
+Note that both the gradients might be given in two possible signatures
 as allocating or Inplace.
 
  # Constructor
 
-    ManifoldDifferenceOfConvexProximalObjective(gradh; cost=norhting, gradient=nothing)
+    ManifoldDifferenceOfConvexProximalObjective(gradh; cost=nothing, gradient=nothing)
 
 an note that neither cost nor gradient are required for the algorithm,
 just for eventual debug or stopping criteria.

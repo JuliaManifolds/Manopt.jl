@@ -1,7 +1,7 @@
 @doc doc"""
     BezierSegment
 
-A type to capture a Bezier segment. With ``n`` points, a Beziér segment of degree ``n-1``
+A type to capture a Bezier segment. With ``n`` points, a Bézier segment of degree ``n-1``
 is stored. On the Euclidean manifold, this yields a polynomial of degree ``n-1``.
 
 This type is mainly used to encapsulate the points within a composite Bezier curve, which
@@ -29,7 +29,7 @@ Base.show(io::IO, b::BezierSegment) = print(io, "BezierSegment($(b.pts))")
 return the [Bézier curve](https://en.wikipedia.org/wiki/Bézier_curve)
 ``β(⋅;b_0,…,b_n): [0,1] → \mathcal M`` defined by the control points
 ``b_0,…,b_n∈\mathcal M``, ``n∈\mathbb N``, as a [`BezierSegment`](@ref).
-This function implements de Casteljau's algorithm [Casteljau, 1959](@cite deCasteljau:1959), [Casteljau, 1963](@cite deCasteljau:1963) gneralized
+This function implements de Casteljau's algorithm [Casteljau, 1959](@cite deCasteljau:1959), [Casteljau, 1963](@cite deCasteljau:1963) generalized
 to manifolds by [Popiel, Noakes, J Approx Theo, 2007](@cite PopielNoakes:2007): Let ``γ_{a,b}(t)`` denote the
 shortest geodesic connecting ``a,b∈\mathcal M``. Then the curve is defined by the recursion
 
@@ -199,7 +199,7 @@ This method reduces the points depending on the optional `reduce` symbol
   ``b_{0,i}=b_{n_{i-1},i-1}``, so only ``b_{0,i}`` is in the vector.
 * `:differentiable` – for a differentiable function additionally
   ``\log_{b_{0,i}}b_{1,i} = -\log_{b_{n_{i-1},i-1}}b_{n_{i-1}-1,i-1}`` holds.
-  hence ``b_{n_{i-1}-1,i-1}`` is ommited.
+  hence ``b_{n_{i-1}-1,i-1}`` is omitted.
 
 If only one segment is given, all points of `b` – i.e. `b.pts` is returned.
 """
@@ -291,7 +291,7 @@ function get_bezier_segments(
     ::AbstractManifold, c::Array{P,1}, d, ::Val{:continuous}
 ) where {P}
     length(c) != (sum(d) + 1) && error(
-        "The number of control points $(length(c)) does not match (for degrees $(d) expcted $(sum(d)+1) points.",
+        "The number of control points $(length(c)) does not match (for degrees $(d) expected $(sum(d)+1) points.",
     )
     nums = d .+ [(i == length(d)) ? 1 : 0 for i in 1:length(d)]
     endindices = cumsum(nums)

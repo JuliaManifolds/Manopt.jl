@@ -52,7 +52,7 @@ end
 @doc raw"""
     NelderMeadState <: AbstractManoptSolverState
 
-Describes all parameters and the state of a Nealer-Mead heuristic based
+Describes all parameters and the state of a Nelder-Mead heuristic based
 optimization algorithm.
 
 # Fields
@@ -69,14 +69,14 @@ after the description
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
 * `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
 * `p` – (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use.
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 # Constructors
 
     NelderMead(M[, population::NelderMeadSimplex]; kwargs...)
 
-Construct a Nelder-Mead Option with a default popultion (if not provided) of set of
+Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
 In the constructor all fields (besides the population) are keyword arguments.
@@ -194,7 +194,7 @@ and
 * `γ` – (`2.`) expansion parameter (``γ``)
 * `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
 * `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
@@ -355,9 +355,9 @@ A stopping criterion for [`NelderMead`](@ref) to indicate to stop when
 both
 
 * the maximal distance of the first to the remaining the cost values and
-* the maximal diistance of the first to the remaining the population points
+* the maximal distance of the first to the remaining the population points
 
-drops below a ceertain tolerance `tol_f` and `tol_p`, respectively.
+drops below a certain tolerance `tol_f` and `tol_p`, respectively.
 
 # Constructor
 

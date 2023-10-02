@@ -188,7 +188,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     )
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         # PDNSSN additionals
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
             f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;

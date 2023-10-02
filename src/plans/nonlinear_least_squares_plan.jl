@@ -135,7 +135,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `damping_term_min` – initial (and also minimal) value of the damping term
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
 * `expect_zero_residual` – (`false`) if true, the algorithm expects that the value of
-  residual (objective) at mimimum is equal to 0.
+  residual (objective) at minimum is equal to 0.
 
 # Constructor
 

@@ -7,14 +7,14 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 a default value is given in brackets if a parameter can be left out in initialization.
 
 * `η1`, `η2`           – (`0.1`, `0.9`) bounds for evaluating the regularization parameter
-* `γ1`, `γ2`           – (`0.1`, `2.0`) shrinking and exansion factors for regularization parameter `σ`
+* `γ1`, `γ2`           – (`0.1`, `2.0`) shrinking and expansion factors for regularization parameter `σ`
 * `p`                  – (`rand(M)` the current iterate
 * `X`                  – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``
 * `s`                  - (`zero_vector(M,p)`) the tangent vector step resulting from minimizing the model
   problem in the tangent space ``\mathcal T_{p} \mathcal M``
 * `σ`                 – the current cubic regularization parameter
 * `σmin`               – (`1e-7`) lower bound for the cubic regularization parameter
-* `ρ_regularization`   – (1e3) regularization paramter for computing ρ. As we approach convergence the ρ may be difficult to compute with numerator and denominator approachign zero. Regularizing the the ratio lets ρ go to 1 near convergence.
+* `ρ_regularization`   – (1e3) regularization parameter for computing ρ. As we approach convergence the ρ may be difficult to compute with numerator and denominator approaching zero. Regularizing the the ratio lets ρ go to 1 near convergence.
 * `evaluation`         - (`AllocatingEvaluation()`) if you provide a
 * `retraction_method`  – (`default_retraction_method(M)`) the retraction to use
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
@@ -23,7 +23,7 @@ a default value is given in brackets if a parameter can be left out in initializ
                          the problem is an [`AbstractManoptProblem`](@ref) or an [`AbstractEvaluationType`](@ref) if it is a function,
                          where it defaults to [`AllocatingEvaluation`](@ref).
 
-Furthermore the following interal fields are defined
+Furthermore the following integral fields are defined
 
 * `q`                  - (`copy(M,p)`) a point for the candidates to evaluate model and ρ
 * `H`                  – (`copy(M, p, X)`) the current hessian, $\operatorname{Hess}F(p)[⋅]$
@@ -78,7 +78,7 @@ function AdaptiveRegularizationState(
         DefaultManoptProblem(M, sub_objective)
     end,
     sub_state::St=sub_problem isa Function ? AllocatingEvaluation() : LanczosState(M, p),
-    σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to inital value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
+    σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to initial value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ_regularization::R=1e3,
     stopping_criterion::SC=StopAfterIteration(100),
     retraction_method::RTM=default_retraction_method(M),
@@ -178,14 +178,14 @@ Let ``X_k`` denote the minimizer of the model ``m_k``, then we use the model imp
 We use two thresholds ``η_2 ≥ η_1 > 0`` and set
 ``p_{k+1} = \operatorname{retr}_{p_k}(X_k)`` if ``ρ ≥ η_1`` and reject the candidate otherwise, i.e. set ``p_{k+1} = p_k``.
 
-We further update the regularozation parameter using factors ``0 < γ_1 < 1 < γ_2``
+We further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2``
 
 ```math
 σ_{k+1} =
 \begin{cases}
     \max\{σ_{\min}, γ_1σ_k\} & \text{ if } ρ \geq η_2 &\text{   (the model was very successful)},\\
-    σ_k & \text{ if } ρ \in [η_1, η_2)&\text{   (the model was succesful)},\\
-    γ_2σ_k & \text{ if } ρ < η_1&\text{   (the model was unsuccesful)}.
+    σ_k & \text{ if } ρ \in [η_1, η_2)&\text{   (the model was successful)},\\
+    γ_2σ_k & \text{ if } ρ < η_1&\text{   (the model was unsuccessful)}.
 \end{cases}
 ```
 
@@ -221,7 +221,7 @@ the default values are given in brackets
 * `ρ_regularization`       - (`1e3`) a regularization to avoid dividing by zero for small values of cost and model
 * `stopping_criterion`     - ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`)
 * `sub_state`              - [`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)
-                             a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a funtion.
+                             a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a function.
 * `sub_objective`               - a shortcut to modify the objective of the subproblem used within in the
 * `sub_problem`            - [`DefaultManoptProblem`](@ref)`(M, sub_objective)` the problem (or a function) for the sub problem
 
@@ -517,8 +517,8 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 * `σ` – the current regularization parameter
 * `X` the current gradient
 * `Lanczos_vectors` – the obtained Lanczos vectors
-* `tridig_matrix` the tridigonal coefficient matrix T
-* `coefficients` the coefficients `y_1,...y_k`` that deteermine the solution
+* `tridig_matrix` the tridiagonal coefficient matrix T
+* `coefficients` the coefficients `y_1,...y_k`` that determine the solution
 * `Hp` – a temporary vector containing the evaluation of the Hessian
 * `Hp_residual` – a temporary vector containing the residual to the Hessian
 * `S` – the current obtained / approximated solution
@@ -630,7 +630,7 @@ function step_solver!(dmp::AbstractManoptProblem, ls::LanczosState, i)
         end
         get_hessian!(M, ls.Hp, mho, ls.p, ls.Lanczos_vectors[1])
         α = inner(M, ls.p, ls.Lanczos_vectors[1], ls.Hp)
-        # This is also the first coefficient in the tridigianoal matrix
+        # This is also the first coefficient in the tridiagonal matrix
         ls.tridig_matrix[1, 1] = α
         ls.Hp_residual .= ls.Hp - α * ls.Lanczos_vectors[1]
         #argmin of one dimensional model
@@ -793,7 +793,7 @@ end
 @doc raw"""
     StopWhenAllLanczosVectorsUsed <: StoppingCriterion
 
-When an inner iteration has used up all Lanczos vectors, then this stoping crtierion is
+When an inner iteration has used up all Lanczos vectors, then this stopping criterion is
 a fallback / security stopping criterion in order to not access a non-existing field
 in the array allocated for vectors.
 

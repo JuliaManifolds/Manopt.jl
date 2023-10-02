@@ -30,7 +30,7 @@ Note that this changes the arguments the `forward_operator` will be called.
 * `stopping_criterion` – (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 

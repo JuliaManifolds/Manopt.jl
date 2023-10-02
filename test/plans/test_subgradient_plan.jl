@@ -11,7 +11,7 @@ include("../utils/dummy_types.jl")
         return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
     end
     mso = ManifoldSubgradientObjective(f, ∂f)
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         ddo = DummyDecoratedObjective(mso)
         @test get_cost(M, mso, p) == get_cost(M, ddo, p)
         @test get_subgradient(M, mso, p) == get_subgradient(M, ddo, p)

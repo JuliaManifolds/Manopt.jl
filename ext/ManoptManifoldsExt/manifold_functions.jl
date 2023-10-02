@@ -26,7 +26,7 @@ end
     mid_point!(M, y, p, q, x)
 
 Compute the mid point between `p` and `q`. If there is more than one mid point
-of (not neccessarily minimizing) geodesics (e.g. on the sphere), the one nearest
+of (not necessarily minimizing) geodesics (e.g. on the sphere), the one nearest
 to `x` is returned (in place of `y`).
 """
 mid_point(M::AbstractManifold, p, q, ::Any) = mid_point(M, p, q)

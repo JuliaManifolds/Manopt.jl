@@ -107,7 +107,7 @@ function show(io::IO, tcgs::TruncatedConjugateGradientState)
 end
 
 #
-# Spcial stopping Criteria
+# Special stopping Criteria
 #
 
 @doc raw"""
@@ -480,7 +480,7 @@ function truncated_conjugate_gradient_descent(
     M::AbstractManifold,
     f,
     grad_f,
-    Hess_f::TH, #we first fill a default below bwfore dispatching on p::Number
+    Hess_f::TH, #we first fill a default below before dispatching on p::Number
     p::Number,
     X::Number;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -640,7 +640,7 @@ end
 )
 
 #
-# Maybe these could be improved a bit in readablility some time
+# Maybe these could be improved a bit in readability some time
 #
 function initialize_solver!(
     mp::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState

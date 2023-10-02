@@ -159,7 +159,7 @@ function adjoint_differential_bezier_control!(
     t,
     X,
 )
-    # doubly nested broadbast on the Array(Array) of CPs (note broadcast _and_ .)
+    # doubly nested broadcast on the Array(Array) of CPs (note broadcast _and_ .)
     if (0 > t) || (t > length(B))
         error(
             "The parameter ",
@@ -225,7 +225,7 @@ end
     Y = adjoint_differential_forward_logs(M, p, X)
     adjoint_differential_forward_logs!(M, Y, p, X)
 
-Compute the adjoint differential of [`forward_logs`](@ref) ``F`` orrucirng,
+Compute the adjoint differential of [`forward_logs`](@ref) ``F`` occurring,
 in the power manifold array `p`, the differential of the function
 
 ``F_i(p) = \sum_{j ∈ \mathcal I_i} \log_{p_i} p_j``
@@ -242,7 +242,7 @@ The adjoint differential can be computed in place of `Y`.
 * `p`     – an array of points on a manifold
 * `X`     – a tangent vector to from the n-fold power of `p`, where n is the `ndims` of `p`
 
-# Ouput
+# Output
 
 `Y` – resulting tangent vector in ``T_p\mathcal M`` representing the adjoint
   differentials of the logs.
@@ -268,7 +268,7 @@ function adjoint_differential_forward_logs!(
             I = [i.I...] # array of index
             J = I .+ 1 .* (1:d .== k) #i + e_k is j
             if all(J .<= maxInd) # is this neighbor in range?
-                j = CartesianIndex{d}(J...) # neigbbor index as Cartesian Index
+                j = CartesianIndex{d}(J...) # neighbour index as Cartesian Index
                 Y[M, I...] =
                     Y[M, I...] + adjoint_differential_log_basepoint(
                         M.manifold, p[M, I...], p[M, J...], X[N, I..., k]

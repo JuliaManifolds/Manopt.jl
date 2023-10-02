@@ -9,7 +9,7 @@ abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
 @doc raw"""
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 
-speficy an [`AbstractManifoldObjective`](@ref) that does only have information about
+specify an [`AbstractManifoldObjective`](@ref) that does only have information about
 the cost function ``f\colon \mathbb M → ℝ`` implemented as a function `(M, p) -> c`
 to compute the cost value `c` at `p` on the manifold `M`.
 

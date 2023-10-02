@@ -12,7 +12,7 @@ include("../utils/dummy_types.jl")
         grad_f(M, p) = project(M, p, 2 * A * p)
         obj = ManifoldGradientObjective(f, grad_f)
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient])
-        # function acessors are different since the right is still counting.
+        # function accessors are different since the right is still counting.
         @test get_cost_function(obj) != get_cost_function(c_obj)
         @test get_gradient_function(obj) != get_gradient_function(c_obj)
         p = [1.0, 0.0, 0.0]

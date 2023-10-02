@@ -154,7 +154,7 @@ import Manifolds: inner
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
         @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min due to rand
-        @test isapprox(f(M, p5c), 0.0; atol=1e-9) # might be a bit inprecise
+        @test isapprox(f(M, p5c), 0.0; atol=1e-9) # might be a bit imprecise
         @test isapprox(f(M, p4), 0.0; atol=2e-16)
 
         Random.seed!(23)
@@ -165,7 +165,7 @@ import Manifolds: inner
         difference_of_convex_algorithm!(M, f, g, grad_h, p8; grad_g=grad_g)
         @test isapprox(M, p8, p2)
 
-        # using GD - only very inprecise
+        # using GD - only very imprecise
         p9 = difference_of_convex_algorithm(
             M, f, g, grad_h, p0; grad_g=grad_g, sub_hess=nothing
         )

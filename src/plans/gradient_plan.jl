@@ -31,7 +31,7 @@ end
 @doc raw"""
     ManifoldGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
 
-specify an objetive containing a cost and its gradient
+specify an objective containing a cost and its gradient
 
 # Fields
 
@@ -64,7 +64,7 @@ end
 @doc raw"""
     ManifoldCostGradientObjective{T} <: AbstractManifoldObjective{T}
 
-specify an objetive containing one function to perform a combined computation of cost and its gradient
+specify an objective containing one function to perform a combined computation of cost and its gradient
 
 # Fields
 
@@ -156,7 +156,7 @@ The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory withi
 When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
 
-Note that the order of parameters follows the philisophy of `Manifolds.jl`, namely that
+Note that the order of parameters follows the philosophy of `Manifolds.jl`, namely that
 even for the mutating variant, the manifold is the first parameter and the (inplace) tangent
 vector `X` comes second.
 """
@@ -214,7 +214,7 @@ end
     get_gradient(agst::AbstractGradientSolverState)
 
 return the gradient stored within gradient options.
-THe default resturns `agst.X`.
+THe default returns `agst.X`.
 """
 get_gradient(agst::AbstractGradientSolverState) = agst.X
 
@@ -233,7 +233,7 @@ end
     get_iterate(agst::AbstractGradientSolverState)
 
 return the iterate stored within gradient options.
-THe default resturns `agst.p`.
+THe default returns `agst.p`.
 """
 get_iterate(agst::AbstractGradientSolverState) = agst.p
 
@@ -293,8 +293,8 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
         vector_transport_method=default_vector_transport_method(M, typeof(p)),
     )
 
-Initialize a momentum gradient rule to `s`. Note that the keyword agruments `p` and `X`
-will be overriden often, so their initialisation is meant to set the to certain types of
+Initialize a momentum gradient rule to `s`. Note that the keyword arguments `p` and `X`
+will be overridden often, so their initialisation is meant to set the to certain types of
 points or tangent vectors, if you do not use the default types with respect to `M`.
 """
 mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
@@ -421,7 +421,7 @@ Given
 
 This compute a Nesterov type update using the following steps, see [Zhang, Sra, Preprint, 2018](@cite ZhangSra:2018)
 
-1. Copute the positive root, i.e. ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
+1. Compute the positive root, i.e. ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
 2. Set ``\bar γ_k+1 = (1-α_k)γ_k + α_kμ``
 3. ``y_k = \operatorname{retr}_{x_k}\Bigl(\frac{α_kγ_k}{γ_k + α_kμ}\operatorname{retr}^{-1}_{x_k}v_k \Bigr)``
 4. ``x_{k+1} = \operatorname{retr}_{y_k}(-h_k \operatorname{grad}f(y_k))``
@@ -431,7 +431,7 @@ This compute a Nesterov type update using the following steps, see [Zhang, Sra, 
 Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
 
 # Constructor
-    Nesterov(M::AbstractManifold, p::P; γ=0.001, μ=0.9, schrinkage = k -> 0.8;
+    Nesterov(M::AbstractManifold, p::P; γ=0.001, μ=0.9, shrinkage = k -> 0.8;
         inverse_retraction_method=LogarithmicInverseRetraction())
 
 Initialize the Nesterov acceleration, where `x0` initializes `v`.

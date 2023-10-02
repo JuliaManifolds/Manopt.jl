@@ -379,7 +379,7 @@ include("../utils/example_tasks.jl")
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)
         q4 = trust_regions(M, f, grad_f, Hess_f, p0)
-        @test λ ≈ f(M, q3) atol = 2e-1 # Riemannian Hessian a bit inprecise?
+        @test λ ≈ f(M, q3) atol = 2e-1 # Riemannian Hessian a bit imprecise?
         @test λ ≈ f(M, q4)
     end
 end

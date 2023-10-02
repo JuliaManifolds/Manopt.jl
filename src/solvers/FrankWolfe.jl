@@ -152,12 +152,12 @@ use a retraction and its inverse.
   - as a function `(M, p) -> X` or a function `(M, X, p) -> X` working in place of `X`.
 * `p`      – an initial value ``p ∈ \mathcal C``, note that it really has to be a feasible point
 
-Alternatively to `f` and `grad_f` you can prodive
+Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 ## Keyword Arguments
 
-* `evaluation`         - ([`AllocatingEvaluation`](@ref)) whether `grad_f` is an inplace or allocating (default) funtion
+* `evaluation`         - ([`AllocatingEvaluation`](@ref)) whether `grad_f` is an inplace or allocating (default) function
 * `initial_vector`     – (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a stopping criterion
 * `retraction_method`  – (`default_retraction_method(M, typeof(p))`) a type of retraction
@@ -229,7 +229,7 @@ end
     Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
     Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
 
-Peform the Frank Wolfe method in place of `p`.
+Perform the Frank Wolfe method in place of `p`.
 
 For all options and keyword arguments, see [`Frank_Wolfe_method`](@ref).
 """
@@ -332,7 +332,7 @@ function step_solver!(
     return fws
 end
 #
-# Variant II: subtask is a mutating function providing a closed form soltuion
+# Variant II: subtask is a mutating function providing a closed form solution
 #
 function step_solver!(
     amp::AbstractManoptProblem, fws::FrankWolfeState{P,T,F,InplaceEvaluation}, i
@@ -353,7 +353,7 @@ function step_solver!(
     return fws
 end
 #
-# Variant II: subtask is an allocating function providing a closed form soltuion
+# Variant II: subtask is an allocating function providing a closed form solution
 #
 function step_solver!(
     amp::AbstractManoptProblem, fws::FrankWolfeState{P,T,F,AllocatingEvaluation}, i

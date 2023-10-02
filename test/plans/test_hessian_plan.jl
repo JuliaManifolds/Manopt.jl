@@ -35,7 +35,7 @@ include("../utils/dummy_types.jl")
         get_preconditioner!(mp, Y, p, X)
         @test Y == X
     end
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         Y1 = zero_vector(M, p)
         Y2 = zero_vector(M, p)
         for obj in [mho1, mho2, mho3, mho4]
@@ -117,7 +117,7 @@ include("../utils/dummy_types.jl")
         P[1:9] .= 1
         PA = P .* A
         f2(M, p) = 0.5 * norm(P .* embed(M, p) - PA)^2
-        # Project convecrts the Gradient in the Embedding to an UMVTVector
+        # Project converts the Gradient in the Embedding to an UMVTVector
         grad_f2(M, p) = project(M, p, P .* embed(M, p) - PA)
         grad_f2!(M, X, p) = project!(M, X, p, P .* embed(M, p) - PA)
         Random.seed!(42)
