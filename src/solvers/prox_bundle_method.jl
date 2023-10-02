@@ -201,8 +201,8 @@ function prox_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
-    δ=0.0,
-    μ=1.0,
+    δ=-1.0,#0.0,
+    μ=0.5,#1.0,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
