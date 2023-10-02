@@ -108,7 +108,7 @@ since its norm is approximately `0.858`. But even projecting this back onto the 
 
 In the following figure the data `pts` (teal) and the resulting mean (orange) as well as the projected Euclidean mean (small, cyan) are shown.
 
-![40 random points `pts` and the result from the gradient descent to compute the `x_mean` (orange) compared to a projection of their (Eucliean) mean onto the sphere (cyan).](src/img/MeanIllustr.png)
+![40 random points `pts` and the result from the gradient descent to compute the `x_mean` (orange) compared to a projection of their (Euclidean) mean onto the sphere (cyan).](src/img/MeanIllustr.png)
 
 In order to print the current iteration number, change and cost every iteration as well as the stopping reason, you can provide a `debug` keyword with the corresponding symbols interleaved with strings. The Symbol `:Stop` indicates that the reason for stopping reason should be printed at the end. The last integer in this array specifies that debugging information should be printed only every $i$th iteration.
 While `:x` could be used to also print the current iterate, this usually takes up too much space.

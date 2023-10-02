@@ -119,7 +119,7 @@ function (ag::AlternatingGradient)(
     (i == 1) && zero_vector!(M, ag.dir, agds.p)
     # update order(k)th component inplace
     get_gradient!(amp, ag.dir[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    return agds.stepsize(amp, agds, i), ag.dir # return urrent full gradient
+    return agds.stepsize(amp, agds, i), ag.dir # return current full gradient
 end
 
 # update Armijo to work on the kth gradient only.

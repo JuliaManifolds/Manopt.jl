@@ -74,7 +74,7 @@ There is two more advanced variants that can be used. The first is a tuple of a 
 
 We can for example change the way the `:ϵ` is printed by adding a format string
 and use [`DebugCost`](@ref)`()` which is equivalent to using `:Cost`.
-Especially with the format change, the lines are more coniststent in length.
+Especially with the format change, the lines are more consistent in length.
 
 ``` julia
 p2 = exact_penalty_method(

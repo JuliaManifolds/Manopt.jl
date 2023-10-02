@@ -16,7 +16,7 @@ specify a problem for solvers based on the evaluation of proximal map(s).
 * `number_of_proxes` - (`ones(length(proxes))`` number of proximal Maps per function,
   e.g. if one of the maps is a combined one such that the proximal Maps
   functions return more than one entry per function, you have to adapt this value.
-  if not speciifed, it is set to one prox per function.
+  if not specified, it is set to one prox per function.
 # See also
 
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
@@ -211,7 +211,7 @@ end
 @doc raw"""
     RecordProximalParameter <: RecordAction
 
-recoed the current iterates proximal point algorithm parameter given by in
+record the current iterates proximal point algorithm parameter given by in
 [`AbstractManoptSolverState`](@ref)s `o.λ`.
 """
 mutable struct RecordProximalParameter <: RecordAction

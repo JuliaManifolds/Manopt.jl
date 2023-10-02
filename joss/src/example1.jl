@@ -13,7 +13,7 @@ gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), pts, Ref(y)))
 x_mean = gradient_descent(M, F, gradF, pts[1])
 
 euclidean_mean = mean(pts)
-print("Norm of Euclieadn mean:", norm(euclidean_mean), "\n\n")
+print("Norm of Euclidean mean:", norm(euclidean_mean), "\n\n")
 euclidean_mean_normed = euclidean_mean / norm(euclidean_mean)
 
 ## Second example block

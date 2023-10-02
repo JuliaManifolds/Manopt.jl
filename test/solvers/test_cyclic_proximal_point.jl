@@ -111,7 +111,7 @@ using Manifolds, Manopt, Test, Dates, LRUCache
             @test isapprox(N, r, get_proximal_map(dmp2, 1.0, q, i))
         end
     end
-    @testset "State accsess functions" begin
+    @testset "State access functions" begin
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M, zeros(3))

@@ -112,7 +112,7 @@ end
     artificial_S1_signal(x)
 evaluate the example signal ``f(x), x ∈  [0,1]``,
 of phase-valued data introduces in Sec. 5.1 of  [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1)
-for values outside that intervall, this Signal is `missing`.
+for values outside that interval, this Signal is `missing`.
 """
 function artificial_S1_signal(x::Real)
     if x < 0
@@ -213,7 +213,7 @@ p_2 = \begin{bmatrix}-1&0&0\end{bmatrix}^{\mathrm{T}},
 p_3 = \begin{bmatrix}0&0&-1\end{bmatrix}^{\mathrm{T}},
 ````
 
-where each segment is a cubic Bezér curve, i.e. each point, except ``p_3`` has a first point
+where each segment is a cubic Bézier curve, i.e. each point, except ``p_3`` has a first point
 within the following segment ``b_i^+``, ``i=0,1,2`` and a last point within the previous
 segment, except for ``p_0``, which are denoted by ``b_i^-``, ``i=1,2,3``.
 This curve is differentiable by the conditions ``b_i^- = \gamma_{b_i^+,p_i}(2)``, ``i=1,2``,
@@ -284,7 +284,7 @@ artificial_SPD_image2(pts, fraction)
 
 Generate a point from the signal on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``\mathbb S^2`` by
 creating the [Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
-in the tangent space of `p` sampled at `t` and use èxp` to obtain a point on
+in the tangent space of `p` sampled at `t` and use exp` to obtain a point on
 the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html).
 
 # Input

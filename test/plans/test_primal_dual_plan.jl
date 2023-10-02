@@ -275,7 +275,7 @@ include("../utils/dummy_types.jl")
             @test length(get_record(r)) == 1
         end
     end
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         # PD
         pdmo = PrimalDualManifoldObjective(
             f, prox_f, prox_g_dual, adjoint_DΛ; Λ=Λ, linearized_forward_operator=DΛ

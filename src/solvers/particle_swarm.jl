@@ -10,7 +10,7 @@ Describes a particle swarm optimizing algorithm, with
 
 * `x` – a set of points (of type `AbstractVector{P}`) on a manifold as initial particle positions
 * `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
-* `inertia` – (`0.65`) the inertia of the patricles
+* `inertia` – (`0.65`) the inertia of the particles
 * `social_weight` – (`1.4`) a social weight factor
 * `cognitive_weight` – (`1.4`) a cognitive weight factor
 * `p_temp` – temporary storage for a point to avoid allocations during a step of the algorithm
@@ -18,7 +18,7 @@ Describes a particle swarm optimizing algorithm, with
 * `cognitive_vector` -  temporary storage for a tangent vector related to `cognitive_weight`
 * `stopping_criterion` – (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `retraction_method` – (`default_retraction_method(M, eltype(x))`) the rectraction to use
+* `retraction_method` – (`default_retraction_method(M, eltype(x))`) the retraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(x))`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M, eltype(x))`) a vector transport to use
 
@@ -193,7 +193,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 # Optional
 
 * `cognitive_weight`          – (`1.4`) a cognitive weight factor
-* `inertia`                   – (`0.65`) the inertia of the patricles
+* `inertia`                   – (`0.65`) the inertia of the particles
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(x))`) an `inverse_retraction(M,x,y)` to use.
 * `swarm_size`                - (`100`) number of random initial positions of x0
 * `retraction_method`         – (`default_retraction_method(M, eltype(x))`) a `retraction(M,x,ξ)` to use.
@@ -201,7 +201,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 * `stopping_criterion`        – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `vector_transport_mthod`    - (`default_vector_transport_method(M, eltype(x))`) a vector transport method to use.
-* `velocity`                  – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per inital position
+* `velocity`                  – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
@@ -256,7 +256,7 @@ end
     patricle_swarm!(M, f, swarm; kwargs...)
     patricle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
 
-perform the particle swarm optimization algorithm (PSO), starting with the initial `swarm` whichis then modified in place.
+perform the particle swarm optimization algorithm (PSO), starting with the initial `swarm` which is then modified in place.
 
 # Input
 

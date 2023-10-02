@@ -132,7 +132,7 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
   - as a function `(M, p) -> X` or a function `(M, X, p) -> X`
 * `p` – an initial value `p` ``= p_0 ∈ \mathcal M``
 
-Alternatively to `f` and `grad_f` you can prodive
+Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 # Optional
@@ -212,7 +212,7 @@ in place of `p` with different choices of ``s_k`` available.
 * `grad_f` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
 * `p` – an initial value ``p ∈ \mathcal M``
 
-Alternatively to `f` and `grad_f` you can prodive
+Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)

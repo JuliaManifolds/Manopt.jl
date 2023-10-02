@@ -149,7 +149,7 @@ end
         length(ts_r2) * 2;
     )
     @test isapprox(M, p_star, p2; atol=p_atol)
-    # tsting inplace
+    # testing inplace
     p3 = copy(M, p0)
     LevenbergMarquardt!(
         M,

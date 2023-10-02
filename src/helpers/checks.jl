@@ -26,7 +26,7 @@ no plot will be generated,
 
 * `exactness_tol` - (`1e3*eps(eltype(errors))`) is all errors are below this tolerance, the check is considered to be exact
 * `io` – (`nothing`) provide an `IO` to print the check result to
-* `name` (`"differntial"`) – name to display in the check (e.g. if checking gradient)
+* `name` (`"differential"`) – name to display in the check (e.g. if checking gradient)
 * `plot`- (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 * `slope_tol` – (`0.1`) tolerance for the slope (global) of the approximation
 * `throw_error` - (`false`) throw an error message if the gradient or Hessian is wrong
@@ -46,7 +46,7 @@ function prepare_check_result(
     if max(errors...) < exactness_tol
         (io !== nothing) && print(
             io,
-            "All errors are below the exactness tolerance $(exactness_tol). Your check can be considered exact, hence there is no use to cheeck for a slope.\n",
+            "All errors are below the exactness tolerance $(exactness_tol). Your check can be considered exact, hence there is no use to check for a slope.\n",
         )
         return true
     end
@@ -86,7 +86,7 @@ end
 @doc raw"""
     check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
-Check numerivcally whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
+Check numerically whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
 This implements the method described in [Section 4.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
 
@@ -153,7 +153,7 @@ end
 @doc raw"""
     check_gradient(M, F, gradF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
-Check numerivcally whether the gradient `gradF(M,p)` of `F(M,p)` is correct, that is whether
+Check numerically whether the gradient `gradF(M,p)` of `F(M,p)` is correct, that is whether
 
 
 ```math
@@ -213,7 +213,7 @@ end
 @doc raw"""
     check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M, vector_at=p); kwargs...)
 
-Check numerivcally whether the Hessian `{operatorname{Hess} f(M,p, X)` of `f(M,p)` is correct.
+Check numerically whether the Hessian `{operatorname{Hess} f(M,p, X)` of `f(M,p)` is correct.
 
 For this we require either a second-order retraction or a critical point ``p`` of `f`.
 
@@ -237,7 +237,7 @@ no plot will be generated.
 * `check_symmetry`   – (`true`) check whether the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector`     – (`false`) check whether ``\operatorname{Hess} f(p)[X] \in T_p\mathcal M`` using `is_vector`.
 * `mode`             - (`:Default`) specify the mode, by default we assume to have a second order retraction given by `retraction_method=`
-  you can also this method if you already _have_ a cirtical point `p`.
+  you can also this method if you already _have_ a critical point `p`.
   Set to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
   Note: This requires (and evaluates) new tangent vectors `X` and `Y`
 
@@ -495,7 +495,7 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
             end
             # not best interval - maybe best slope if we have not yet found an r?
             if r_best == 0 && abs(b - slope) < abs(b_best - slope)
-                # but do not upate `r` since this indicates we only get the best r
+                # but do not update `r` since this indicates we only get the best r
                 a_best = a
                 b_best = b
                 i_best = j

@@ -205,7 +205,7 @@ end
     trust_regions(M, f, grad_f, hess_f, p=rand(M))
     trust_regions(M, f, grad_f, p=rand(M))
 
-run the Riemannian trust-regions solver for optimization on manifolds to minmize `f`
+run the Riemannian trust-regions solver for optimization on manifolds to minimize `f`
 cf. [[Absil, Baker, Gallivan, FoCM, 2006](@cite AbsilBakerGallivan:2006); [Conn, Gould, Toint, SIAM, 2000](@cite ConnGouldToint:2000)].
 
 For the case that no hessian is provided, the Hessian is computed using finite differences,
@@ -290,7 +290,7 @@ function trust_regions(
     M::AbstractManifold,
     f,
     grad_f,
-    Hess_f::TH, #we first fill a default below bwfore dispatching on p::Number
+    Hess_f::TH, #we first fill a default below before dispatching on p::Number
     p::Number;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     preconditioner=(M, p, X) -> X,
@@ -554,10 +554,10 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     ρden = ρden + ρ_reg
     ρ = ρnum / ρden
     model_decreased = ρden ≥ 0
-    # Update the Hessian approximation – i.e. really unwrap the original Hessian function
-    # and update it if it is an approxiate Hessian.
+    # Update the Hessian approximation - i.e. really unwrap the original Hessian function
+    # and update it if it is an approximate Hessian.
     update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.Y)
-    # Choose the new TR radius based on the model performance
+    # Choose the new TR radius based on the model performance.
     # Case (a) we performe poorly -> decrease radius
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor

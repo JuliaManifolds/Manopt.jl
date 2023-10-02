@@ -131,7 +131,7 @@ using Manopt, Manifolds, Test
         q2 = copy(M, p)
         stochastic_gradient_descent!(M, msgo2, q2)
     end
-    @testset "Circle ecample" begin
+    @testset "Circle example" begin
         Mc = Circle()
         pc = 0.0
         data = [-π / 4, 0.0, π / 4]

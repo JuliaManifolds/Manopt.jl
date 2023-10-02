@@ -10,8 +10,7 @@ Solve the constraint optimization problem on the tangent space
 \end{align*}
 ```
 
-on the tangent space ``T_p\mathcal M`` of a Riemannian manifold ``\mathcal M`` by using
-the Steihaug-Toint truncated conjugate-gradient (tCG) method,
+on the tangent space ``T_p\mathcal M`` of a Riemannian manifold ``\mathcal M`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method,
 see [AbsilBakerGallivan:2006](@cite), Algorithm 2, and [ConnGouldToint:2000](@cite).
 Here ``\mathcal H_p`` is either the Hessian ``\operatorname{Hess} f(p)`` or a linear symmetric operator on the tangent space approximating the Hessian.
 

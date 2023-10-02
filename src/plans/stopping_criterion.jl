@@ -191,7 +191,7 @@ For the storage a [`StoreStateAction`](@ref) is used
 
 initialize the stopping criterion to a threshold `ε` using the
 [`StoreStateAction`](@ref) `a`, which is initialized to just store `:Iterate` by
-default. You can also provide an inverse_retraction_method for the `distance` or a manifol
+default. You can also provide an inverse_retraction_method for the `distance` or a manifold
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
@@ -309,7 +309,7 @@ end
 """
     update_stopping_criterion!(c::StopWhenCostLess, :MinCost, v)
 
-Update the minimal cost below which the slgorithm shall stop
+Update the minimal cost below which the algorithm shall stop
 """
 function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
@@ -515,7 +515,7 @@ end
 """
     update_stopping_criterion!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
-Update the minimal step size below which the slgorithm shall stop
+Update the minimal step size below which the algorithm shall stop
 """
 function update_stopping_criterion!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}, v)
     c.threshold = v

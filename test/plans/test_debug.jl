@@ -229,7 +229,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test Manopt.status_summary(w1) == ":WarnCost"
         @test_logs (:warn,) (
             :warn,
-            "Further warnings will be supressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
+            "Further warnings will be suppressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
         ) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
         @test_logs (
@@ -241,7 +241,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test repr(w3) == "DebugWarnIfFieldNotFinite(:X)"
         @test_logs (:warn,) (
             :warn,
-            "Further warnings will be supressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",
+            "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",
         ) w3(mp, st, 0)
         w4 = DebugWarnIfFieldNotFinite(:X, :Always)
         @test_logs (

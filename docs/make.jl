@@ -99,7 +99,7 @@ makedocs(;
             "Print Debug Output" => "tutorials/HowToDebug.md",
             "Record values" => "tutorials/HowToRecord.md",
             "Implement a Solver" => "tutorials/ImplementASolver.md",
-            "Do Contrained Optimization" => "tutorials/ConstrainedOptimization.md",
+            "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
             "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
         ],
         "Solvers" => [

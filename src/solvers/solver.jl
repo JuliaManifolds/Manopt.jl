@@ -10,7 +10,7 @@ one is used to activate certain decorators.
 * `debug` – (`Array{Union{Symbol,DebugAction,String,Int},1}()`) a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a subsampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:All` to the
-  [`DebugSolverState`](@ref) decorator dictionary. Only excention is `:Stop` that is passed to `:Stop`.
+  [`DebugSolverState`](@ref) decorator dictionary. Only exception is `:Stop` that is passed to `:Stop`.
 * `record` – (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly. The integer can again
   be used for only recording every ``i``th iteration.
@@ -38,7 +38,7 @@ function decorate_state!(
         RecordAction, # single action
         Array{RecordAction,1}, # a group to be set in :All
         Dict{Symbol,RecordAction}, # a dictionary for precise settings
-        Array{<:Any,1}, # a formated string with symbols or AbstractStateActions
+        Array{<:Any,1}, # a formatted string with symbols or AbstractStateActions
     }=missing,
     return_state=false,
     kwargs..., # ignore all others
@@ -64,14 +64,14 @@ decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators.
 A specific one is used to activate certain decorators.
 
-* `cache`         – (`missing`) specify a cache. Currenlty `:Simple` is supported and `:LRU` if you
+* `cache`         – (`missing`) specify a cache. Currently `:Simple` is supported and `:LRU` if you
   load `LRUCache.jl`. For this case a tuple specifying what to cache and how many can be provided,
   i.e. `(:LRU, [:Cost, :Gradient], 10)`, where the number specifies the size of each cache.
   and 10 is the default if one omits the last tuple entry
 * `count`          – (`missing`) specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
 * `objective_type` – (`:Riemannian`) specify that an objective is `:Riemannian` or `:Euclidean`.
                 The `:Euclidean` symbol is equivalent to specifying it as `:Embedded`,
-                since in the end, both refer to convertiing an objective from the embedding (whether its Euclidean or not)
+                since in the end, both refer to converting an objective from the embedding (whether its Euclidean or not)
                 to the Riemannian one.
 
 # See also

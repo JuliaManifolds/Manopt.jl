@@ -77,7 +77,7 @@ end
 * `stop` - a [`StoppingCriterion`](@ref)
 * `update_primal_base` (`( amp, ams, i) -> o.m`) function to update the primal base
 * `update_dual_base` (`(amp, ams, i) -> o.n`) function to update the dual base
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the rectraction to use
+* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 * `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 

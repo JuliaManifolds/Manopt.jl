@@ -12,7 +12,7 @@ include("../utils/dummy_types.jl")
 
     dc_obj = ManifoldDifferenceOfConvexObjective(f, grad_h)
     dcp_obj = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost=f)
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         for obj in [dc_obj, dcp_obj]
             ddo = DummyDecoratedObjective(obj)
             X = get_subtrahend_gradient(M, ddo, p)

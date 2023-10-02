@@ -42,7 +42,7 @@ and one can employ different rules to update the descent direction ``δ_k`` base
 the last direction ``δ_{k-1}`` and both gradients ``\operatorname{grad}f(x_k)``,``\operatorname{grad}f(x_{k-1})``.
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
-Alternatively to `f` and `grad_f` you can prodive
+Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
@@ -133,7 +133,7 @@ where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`
 * `grad_f`: the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
 * `p` : an initial value ``p∈\mathcal M``
 
-Alternatively to `f` and `grad_f` you can prodive
+Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
