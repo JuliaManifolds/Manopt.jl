@@ -158,9 +158,7 @@ function MOI.set(
     return nothing
 end
 
-function MOI.supports(
-    ::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction}
-)
+function MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
     return true
 end
 
@@ -177,9 +175,7 @@ function MOI.get(
     return MOI.get(model.nlp_model, attr)
 end
 
-function MOI.set(
-    model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F
-) where {F}
+function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
     nl = convert(MOI.ScalarNonlinearFunction, func)
     MOI.Nonlinear.set_objective(model.nlp_model, nl)
     model.problem = nothing
