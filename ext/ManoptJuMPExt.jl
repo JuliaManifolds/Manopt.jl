@@ -1,7 +1,15 @@
+module ManoptJuMPExt
+
 using LinearAlgebra
-import MathOptInterface as MOI
+import JuMP
+const MOI = JuMP.MOI
 using ManifoldsBase
 using ManifoldDiff
+
+function __init__()
+    # So that the user can use the convenient `Manopt.Optimizer`
+    setglobal!(Manopt, :Optimizer, Optimizer)
+end
 
 """
     struct VectorizedManifold{M} <: MOI.AbstractVectorSet
@@ -235,8 +243,6 @@ function MOI.optimize!(model::Optimizer)
     return nothing
 end
 
-using JuMP: JuMP
-
 """
     struct ArrayShape{N} <: JuMP.AbstractShape
         size::NTuple{N,Int}
@@ -311,3 +317,5 @@ function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableInd
     solution = get_solver_return(get_objective(model.problem), model.state)
     return solution[vi.value]
 end
+
+end # module

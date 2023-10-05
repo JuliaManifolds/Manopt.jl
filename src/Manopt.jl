@@ -526,6 +526,4 @@ export get_count, reset_counters!
 # Helpers
 export check_gradient, check_differential, check_Hessian
 
-include("MOI_wrapper.jl")
-
 end
