@@ -3,12 +3,6 @@ import MathOptInterface as MOI
 using ManifoldsBase
 using ManifoldDiff
 
-include("qp_block_data.jl")
-
-const _FUNCTIONS = Union{
-    MOI.VariableIndex,MOI.ScalarAffineFunction{Float64},MOI.ScalarQuadraticFunction{Float64}
-}
-
 """
     struct VectorizedManifold{M} <: MOI.AbstractVectorSet
         manifold::M
@@ -24,10 +18,6 @@ end
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
-
-struct _EmptyNLPEvaluator <: MOI.AbstractNLPEvaluator end
-MOI.features_available(::_EmptyNLPEvaluator) = [:Grad, :Jac, :Hess]
-MOI.initialize(::_EmptyNLPEvaluator, ::Any) = nothing
 
 """
     Manopt.Optimizer()
@@ -48,8 +38,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     state::Union{Nothing,AbstractManoptSolverState}
     variable_primal_start::Vector{Union{Nothing,Float64}}
     sense::MOI.OptimizationSense
-    nlp_data::MOI.NLPBlockData
-    qp_data::QPBlockData{Float64}
+    nlp_model::MOI.Nonlinear.Model
     options::Dict{String,Any}
     function Optimizer()
         return new(
@@ -58,19 +47,21 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             nothing,
             Union{Nothing,Float64}[],
             MOI.FEASIBILITY_SENSE,
-            MOI.NLPBlockData([], _EmptyNLPEvaluator(), false),
-            QPBlockData{Float64}(),
+            MOI.Nonlinear.Model(),
             Dict{String,Any}(),
         )
     end
 end
 
-MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.25"
+MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.37"
 
 function MOI.is_empty(model::Optimizer)
+    # TODO replace `isnothing(model.nlp_model.objective)`
+    #      by `MOI.is_empty` once the following is fixed
+    #      https://github.com/jump-dev/MathOptInterface.jl/issues/2302
     return isnothing(model.manifold) &&
            isempty(model.variable_primal_start) &&
-           model.nlp_data.evaluator isa _EmptyNLPEvaluator &&
+           isnothing(model.nlp_model.objective) &&
            model.sense == MOI.FEASIBILITY_SENSE
 end
 
@@ -80,8 +71,9 @@ function MOI.empty!(model::Optimizer)
     model.state = nothing
     empty!(model.variable_primal_start)
     model.sense = MOI.FEASIBILITY_SENSE
-    model.nlp_data = MOI.NLPBlockData([], _EmptyNLPEvaluator(), false)
-    model.qp_data = QPBlockData{Float64}()
+    # TODO replace by `MOI.empty!` once the following is fixed
+    #      https://github.com/jump-dev/MathOptInterface.jl/issues/2302
+    model.nlp_model.objective = nothing
     return nothing
 end
 
@@ -166,18 +158,9 @@ function MOI.set(
     return nothing
 end
 
-MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
-
-function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
-    model.nlp_data = nlp_data
-    model.problem = nothing
-    model.state = nothing
-    return nothing
-end
-
 function MOI.supports(
-    ::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction{F}}
-) where {F<:_FUNCTIONS}
+    ::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction}
+)
     return true
 end
 
@@ -191,47 +174,16 @@ MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 function MOI.get(
     model::Optimizer, attr::Union{MOI.ObjectiveFunctionType,MOI.ObjectiveFunction}
 )
-    return MOI.get(model.qp_data, attr)
+    return MOI.get(model.nlp_model, attr)
 end
 
 function MOI.set(
-    model::Optimizer, attr::MOI.ObjectiveFunction{F}, func::F
-) where {F<:_FUNCTIONS}
-    MOI.set(model.qp_data, attr, func)
+    model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F
+) where {F}
+    nl = convert(MOI.ScalarNonlinearFunction, func)
+    MOI.Nonlinear.set_objective(model.nlp_model, nl)
     model.problem = nothing
     model.state = nothing
-    return nothing
-end
-
-"""
-    MOI.eval_objective(model::Manopt.Optimizer, x)
-
-Return the objective value at the vector of values `x` for the vectorization of
-the problem.
-"""
-function MOI.eval_objective(model::Optimizer, x)
-    if model.sense == MOI.FEASIBILITY_SENSE
-        return 0.0
-    elseif model.nlp_data.has_objective
-        return MOI.eval_objective(model.nlp_data.evaluator, x)
-    end
-    return MOI.eval_objective(model.qp_data, x)
-end
-
-"""
-    MOI.eval_objective_gradient(model::Manopt.Optimizer, grad, x)
-
-Store the Riemannian gradient at the vector of values `x` for the vectorization
-of the problem.
-"""
-function MOI.eval_objective_gradient(model::Optimizer, grad, x)
-    if model.sense == MOI.FEASIBILITY_SENSE
-        grad .= zero(eltype(grad))
-    elseif model.nlp_data.has_objective
-        MOI.eval_objective_gradient(model.nlp_data.evaluator, grad, x)
-    else
-        MOI.eval_objective_gradient(model.qp_data, grad, x)
-    end
     return nothing
 end
 
@@ -245,8 +197,15 @@ function MOI.optimize!(model::Optimizer)
             model.variable_primal_start[i]
         end for i in eachindex(model.variable_primal_start)
     ]
+    backend = MOI.Nonlinear.SparseReverseMode()
+    vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
+    evaluator = MOI.Nonlinear.Evaluator(model.nlp_model, backend, vars)
+    MOI.initialize(evaluator, [:Grad])
     function eval_f_cb(M, x)
-        obj = MOI.eval_objective(model, JuMP.vectorize(x, _shape(model.manifold)))
+        if model.sense == MOI.FEASIBILITY_SENSE
+            return 0.0
+        end
+        obj = MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
         if model.sense == MOI.MAX_SENSE
             obj = -obj
         end
@@ -255,14 +214,17 @@ function MOI.optimize!(model::Optimizer)
     function eval_grad_f_cb(M, X)
         x = JuMP.vectorize(X, _shape(model.manifold))
         grad_f = zeros(length(x))
-        MOI.eval_objective_gradient(model, grad_f, x)
+        if model.sense == MOI.FEASIBILITY_SENSE
+            grad_f .= zero(eltype(grad))
+        else
+            MOI.eval_objective_gradient(evaluator, grad_f, x)
+        end
         if model.sense == MOI.MAX_SENSE
             LinearAlgebra.rmul!(grad_f, -1)
         end
         reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
-    MOI.initialize(model.nlp_data.evaluator, [:Grad])
     mgo = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
     dmgo = decorate_objective!(model.manifold, mgo)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)

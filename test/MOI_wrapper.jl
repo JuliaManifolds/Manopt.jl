@@ -28,12 +28,7 @@ function test_sphere()
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
 
-    # Creating a model directly with `@NLobjective` wouldn't work
-    # because of https://github.com/jump-dev/MathOptInterface.jl/blob/32dbf6056b0b5fb9d44dc583ecc8249f6fd703ea/src/Utilities/copy.jl#L485-L500
-    # so we need to wait for https://github.com/jump-dev/JuMP.jl/pull/3106 for NL objectives to work with `@objective`
-    # Here, we are by-passing that because we are modifying the objective
-    # so we don't call `copy_to`.
-    @NLobjective(model, Min, sum(xi^4 for xi in x))
+    @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)
     optimize!(model)
     @test objective_value(model) ≈ 1 / 3 rtol = 1e-4
