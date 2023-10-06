@@ -70,6 +70,18 @@ function get_cost(
     return 1//2 * norm(residual_values)^2
 end
 
+"""
+    get_gradient_from_Jacobian!(
+        M::AbstractManifold,
+        X,
+        nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
+        p,
+        Jval=zeros(nlso.num_components, manifold_dimension(M)),
+    )
+
+Compute gradient of [`NonlinearLeastSquaresObjective`](@ref) `nlso` at point `p` in place of
+`X`, with temporary Jacobian stored in the optional argument `Jval`.
+"""
 function get_gradient_from_Jacobian!(
     M::AbstractManifold,
     X,
