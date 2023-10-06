@@ -207,7 +207,7 @@ function initialize_solver!(
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
     get_objective(dmp).f(get_manifold(dmp), lms.residual_values, lms.p)
-    lms.X = get_gradient(dmp, lms.p)
+    get_gradient!(dmp, lms.X, lms.p, lms.jacF)
     return lms
 end
 

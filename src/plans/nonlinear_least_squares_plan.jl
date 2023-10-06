@@ -99,10 +99,13 @@ function get_gradient!(
 end
 
 function get_gradient!(
-    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+    M::AbstractManifold, 
+    X,
+    nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
+    p,
+    Jval = zeros(nlso.num_components, manifold_dimension(M))
 )
     basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = zeros(nlso.num_components, manifold_dimension(M))
     nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
     residual_values = zeros(nlso.num_components)
     nlso.f(M, residual_values, p)
