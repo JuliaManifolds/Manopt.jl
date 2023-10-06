@@ -9,7 +9,7 @@ using ManifoldDiff
 function __init__()
     # So that the user can use the convenient `Manopt.Optimizer`
     setglobal!(Manopt, :Optimizer, Optimizer)
-    return
+    return nothing
 end
 
 """
