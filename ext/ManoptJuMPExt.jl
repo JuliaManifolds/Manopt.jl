@@ -1,10 +1,12 @@
 module ManoptJuMPExt
 
+using Manopt
 using LinearAlgebra
 using JuMP: JuMP
 const MOI = JuMP.MOI
 using ManifoldsBase
 using ManifoldDiff
+using Manifolds
 
 function __init__()
     # So that the user can use the convenient `Manopt.Optimizer`
@@ -43,8 +45,8 @@ using JuMP
 """
 mutable struct Optimizer <: MOI.AbstractOptimizer
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
-    problem::Union{Nothing,AbstractManoptProblem}
-    state::Union{Nothing,AbstractManoptSolverState}
+    problem::Union{Nothing,Manopt.AbstractManoptProblem}
+    state::Union{Nothing,Manopt.AbstractManoptSolverState}
     variable_primal_start::Vector{Union{Nothing,Float64}}
     sense::MOI.OptimizationSense
     nlp_model::MOI.Nonlinear.Model
@@ -308,14 +310,14 @@ end
 
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
-    solution = get_solver_return(model.state)
+    solution = Manopt.get_solver_return(model.state)
     return get_cost(model.problem, solution)
 end
 
 function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)
-    solution = get_solver_return(get_objective(model.problem), model.state)
+    solution = Manopt.get_solver_return(get_objective(model.problem), model.state)
     return solution[vi.value]
 end
 
