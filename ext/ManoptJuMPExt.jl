@@ -22,10 +22,16 @@ end
 Representation of points of `manifold` as a vector of `R^n` where `n` is
 `MOI.dimension(VectorizedManifold(manifold))`.
 """
-struct VectorizedManifold{M} <: MOI.AbstractVectorSet
+struct VectorizedManifold{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
 
+"""
+    MOI.dimension(set::VectorizedManifold)
+
+Return the dimension of the vectorized Manifold. As the MOI variables are real
+if the dimension is `n`, it means that the vectorization is a subset of `R^n`.
+"""
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
@@ -42,14 +48,23 @@ using JuMP
 @variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
 @objective(model, Min, f(X))
 ```
+The optimizer assumes that `M` has a `Array` shape described
+by `ManifoldsBase.representation_size`.
 """
 mutable struct Optimizer <: MOI.AbstractOptimizer
+    # Manifold in which all the decision variables leave
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
+    # Description of the problem in Manopt
     problem::Union{Nothing,Manopt.AbstractManoptProblem}
+    # State of the optimizer
     state::Union{Nothing,Manopt.AbstractManoptSolverState}
+    # Starting value for each variable
     variable_primal_start::Vector{Union{Nothing,Float64}}
+    # Sense of the optimization, e.g., min, max or no objective
     sense::MOI.OptimizationSense
+    # Model used to compute gradient of the objective function with AD
     nlp_model::MOI.Nonlinear.Model
+    # Solver parameters set with `MOI.RawOptimizerAttribute`
     options::Dict{String,Any}
     function Optimizer()
         return new(
@@ -88,6 +103,12 @@ function MOI.empty!(model::Optimizer)
     return nothing
 end
 
+"""
+    MOI.supports(::Optimizer, attr::MOI.RawOptimizerAttribute)
+
+Return a `Bool` indicating whether `attr.name` is a valid option name
+for `Manopt`.
+"""
 function MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
     # FIXME It should depend on `attr.name`
     return true
@@ -110,16 +131,43 @@ end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "Manopt"
 
+"""
+    MOI.supports_incremental_interface(::Optimizer)
+
+Return `true` indicating that `Manopt.Optimizer` implements
+`MOI.add_constrained_variables` and `MOI.set` for
+`MOI.ObjectiveFunction` so it can be used with `JuMP.direct_model`
+and does not require a `MOI.Utilities.CachingOptimizer`.
+"""
 MOI.supports_incremental_interface(::Optimizer) = true
 
+"""
+    MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
+
+Because `supports_incremental_interface(dest)` is `true` we can simply
+use `MOI.Utilities.default_copy_to`.
+"""
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
     return MOI.Utilities.default_copy_to(dest, src)
 end
 
+"""
+    MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
+
+Return `true` indicating that `Manopt.Optimizer` support optimization on
+variables constrained to belong in a vectorized manifold.
+"""
 function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
     return true
 end
 
+"""
+    MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
+
+Add `MOI.dimension(set)` variables constrained in `set` and return the list
+of variable indices that can be used to reference them as well a constraint
+index for the constraint enforcing the membership of the variables in `set`.
+"""
 function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
@@ -140,6 +188,11 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
     return v, MOI.ConstraintIndex{F,typeof(set)}(1)
 end
 
+"""
+    MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
+
+Return whether `vi` is a valid variable index.
+"""
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
            1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
@@ -157,6 +210,17 @@ function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.Variabl
     return true
 end
 
+"""
+    function MOI.set(
+        model::Optimizer,
+        ::MOI.VariablePrimalStart,
+        vi::MOI.VariableIndex,
+        value::Union{Real,Nothing},
+    )
+
+Set the starting value of the variable of index `vi` to `value` if it is a
+`Real` and unset it if `value` is `nothing`.
+"""
 function MOI.set(
     model::Optimizer,
     ::MOI.VariablePrimalStart,
