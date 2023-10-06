@@ -70,6 +70,21 @@ function get_cost(
     return 1//2 * norm(residual_values)^2
 end
 
+function get_gradient_from_Jacobian!(
+    M::AbstractManifold,
+    X,
+    nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
+    p,
+    Jval=zeros(nlso.num_components, manifold_dimension(M)),
+)
+    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
+    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
+    residual_values = zeros(nlso.num_components)
+    nlso.f(M, residual_values, p)
+    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
+    return X
+end
+
 function get_gradient(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
@@ -101,12 +116,7 @@ end
 function get_gradient!(
     M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
-    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = zeros(nlso.num_components, manifold_dimension(M))
-    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
+    get_gradient_from_Jacobian!(M, X, nlso, p)
     return X
 end
 

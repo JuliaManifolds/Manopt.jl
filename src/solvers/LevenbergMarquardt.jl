@@ -206,8 +206,9 @@ function initialize_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
-    get_objective(dmp).f(get_manifold(dmp), lms.residual_values, lms.p)
-    lms.X = get_gradient(dmp, lms.p)
+    M = get_manifold(dmp)
+    get_objective(dmp).f(M, lms.residual_values, lms.p)
+    get_gradient_from_Jacobian!(M, lms.X, get_objective(dmp), lms.p, lms.jacF)
     return lms
 end
 
