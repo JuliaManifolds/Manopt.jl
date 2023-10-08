@@ -6,7 +6,6 @@ using JuMP: JuMP
 const MOI = JuMP.MOI
 using ManifoldsBase
 using ManifoldDiff
-using Manifolds
 
 function __init__()
     # So that the user can use the convenient `Manopt.Optimizer`
