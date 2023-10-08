@@ -130,6 +130,12 @@ and internally
 get_gradient_function
 ```
 
+#### Internal Helpers
+
+```@docs
+get_gradient_from_Jacobian!
+```
+
 ### Subgradient Objective
 
 ```@docs
