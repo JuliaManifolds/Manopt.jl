@@ -165,13 +165,14 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
   - the reflection (ignored, if you set `R` directly)
   - the relaxation step
 * `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
-  This uses by default `reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
+  This uses by default [`reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
 * `reflection_evaluation` – ([`AllocatingEvaluation`](@ref) whether `R` works inplace or allocating
-* `retraction_method` - (`default_retration_metiod(M, typeof(p))`) the retraction to use in
+* `retraction_method` - (`default_retraction_metiod(M, typeof(p))`) the retraction to use in
   - the reflection (ignored, if you set `R` directly)
   - the relaxation step
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
+* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`)
+  a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
   parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
