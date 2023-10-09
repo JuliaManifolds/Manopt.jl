@@ -11,8 +11,10 @@ Store all options required for the DouglasRachford algorithm,
 * `α` – relaxation of the step from old to new iterate, i.e.
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
   of the double reflection involved in the DR algorithm
+* `inverse_retraction_method` – an inverse retraction method
 * `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
 * `reflection_evaluation` – whether `R` works inplace or allocating
+* `retraction_method` – a retraction method
 * `stop` – a [`StoppingCriterion`](@ref)
 * `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
 
@@ -34,7 +36,16 @@ Generate the options for a Manifold `M` and an initial point `p`, where the foll
 * `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
   or not.
 """
-mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S,E} <: AbstractManoptSolverState
+mutable struct DouglasRachfordState{
+    P,
+    Tλ,
+    Tα,
+    TR,
+    S,
+    E<:AbstractEvaluationType,
+    TM<:AbstractRetractionMethod,
+    ITM<:AbstractInverseRetractionMethod,
+} <: AbstractManoptSolverState
     p::P
     p_tmp::P
     s::P
@@ -43,6 +54,8 @@ mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S,E} <: AbstractManoptSolverSta
     α::Tα
     R::TR
     reflection_evaluation::E
+    retraction_method::TM
+    inverse_retraction_method::ITM
     stop::S
     parallel::Bool
     function DouglasRachfordState(
@@ -54,8 +67,19 @@ mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S,E} <: AbstractManoptSolverSta
         reflection_evaluation::E=AllocatingEvaluation(),
         stopping_criterion::S=StopAfterIteration(300),
         parallel=false,
-    ) where {P,Fλ,Fα,FR,S<:StoppingCriterion,E<:AbstractEvaluationType}
-        return new{P,Fλ,Fα,FR,S,E}(
+        retraction_method::TM=default_retraction_method(M, typeof(p)),
+        inverse_retraction_method::ITM=default_inverse_retraction_method(M, typeof(p)),
+    ) where {
+        P,
+        Fλ,
+        Fα,
+        FR,
+        S<:StoppingCriterion,
+        E<:AbstractEvaluationType,
+        TM<:AbstractRetractionMethod,
+        ITM<:AbstractInverseRetractionMethod,
+    }
+        return new{P,Fλ,Fα,FR,S,E,TM,ITM}(
             p,
             copy(M, p),
             copy(M, p),
@@ -64,6 +88,8 @@ mutable struct DouglasRachfordState{P,Tλ,Tα,TR,S,E} <: AbstractManoptSolverSta
             α,
             R,
             reflection_evaluation,
+            retraction_method,
+            inverse_retraction_method,
             stopping_criterion,
             parallel,
         )
@@ -135,12 +161,16 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 * `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
   ``t_{k+1} = g(α_k; t_k, s_k)``, where ``s_k`` is the result
   of the double reflection involved in the DR algorithm
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within the reflection (ignored, if you set `R` directly)
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within
+  - the reflection (ignored, if you set `R` directly)
+  - the relaxation step
 * `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
   This uses by default `reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
 * `reflection_evaluation` – ([`AllocatingEvaluation`](@ref) whether `R` works inplace or allocating
-* `retraction_method` - (`default_retration_metiod(M, typeof(p))`) the retraction to use in the reflection (ignored, if you set `R` directly)
+* `retraction_method` - (`default_retration_metiod(M, typeof(p))`) the retraction to use in
+  - the reflection (ignored, if you set `R` directly)
+  - the relaxation step
 * `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`) a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
@@ -296,6 +326,8 @@ function DouglasRachford!(
         α=α,
         R=R,
         reflection_evaluation=reflection_evaluation,
+        retraction_method=retraction_method,
+        inverse_retraction_method=inverse_retraction_method,
         stopping_criterion=stopping_criterion,
         parallel=parallel > 0,
     )
@@ -360,7 +392,13 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
     get_proximal_map!(amp, drs.p, drs.λ(i), drs.s_tmp, 2)
     _reflect!(M, drs.s_tmp, drs.p, drs.s_tmp, drs.R, drs.reflection_evaluation)
     # relaxation
-    drs.s = shortest_geodesic(M, drs.s, drs.s_tmp, drs.α(i))
+    drs.s = retract(
+        M,
+        drs.s,
+        inverse_retract(M, drs.s, drs.s_tmp, drs.inverse_retraction_method),
+        drs.α(i),
+        drs.retraction_method,
+    )
     return drs
 end
 get_solver_result(drs::DouglasRachfordState) = drs.parallel ? drs.p[1] : drs.p
