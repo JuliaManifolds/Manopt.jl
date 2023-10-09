@@ -5,7 +5,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-* `retraction_method` – the retration to use within
+* `retraction_method` – the rectration to use within
 * `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stop` – ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
 * `p` – (initial or current) value the algorithm is at
