@@ -75,7 +75,7 @@ function ManifoldCountObjective(
     init::I=0;
     p::P=rand(M),
 ) where {P,I<:Integer,O<:AbstractManifoldObjective}
-    # Infere the sizes of the counters from the symbols if possible
+    # Infer the sizes of the counters from the symbols if possible
     counts = Pair{Symbol,Union{I,Vector{I}}}[]
     for symbol in count
         l = _get_counter_size(M, objective, symbol, p)
@@ -116,7 +116,7 @@ end
 """
     get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
 
-Get the number of counts for a certain symbel `s`.
+Get the number of counts for a certain symbol `s`.
 
 Depending on the `mode` different results appear if the symbol does not exist in the dictionary
 

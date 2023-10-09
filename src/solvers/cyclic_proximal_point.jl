@@ -68,7 +68,7 @@ function cyclic_proximal_point(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    # redefine our initial point and encapsulate functons
+    # redefine our initial point and encapsulate functions
     q = [p]
     f_(M, p) = f(M, p[])
     if evaluation isa AllocatingEvaluation

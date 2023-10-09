@@ -149,7 +149,7 @@ end
         length(ts_r2) * 2;
     )
     @test isapprox(M, p_star, p2; atol=p_atol)
-    # tsting inplace
+    # testing inplace
     p3 = copy(M, p0)
     LevenbergMarquardt!(
         M,
@@ -217,6 +217,7 @@ end
     X_r2 = similar(x0)
     get_gradient!(p_r2, X_r2, x0)
     @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
+    @test isapprox(get_gradient(p_r2, x0), [270.3617451389837, 677.6730784956912])
 
     p_r2_mut = DefaultManoptProblem(
         M,
@@ -228,6 +229,7 @@ end
     X_r2 = similar(x0)
     get_gradient!(p_r2_mut, X_r2, x0)
     @test isapprox(X_r2, [270.3617451389837, 677.6730784956912])
+    @test isapprox(get_gradient(p_r2_mut, x0), [270.3617451389837, 677.6730784956912])
 
     @testset "errors" begin
         @test_throws ArgumentError LevenbergMarquardtState(

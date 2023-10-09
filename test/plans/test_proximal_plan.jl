@@ -16,7 +16,7 @@ include("../utils/dummy_types.jl")
     f(M, p) = sum(distance(M, p, q) for q in Q)
     proxes_f = Tuple((N, λ, p) -> prox_distance(N, λ, q, p) for q in Q)
     ppo = ManifoldProximalMapObjective(f, proxes_f)
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         dppo = DummyDecoratedObjective(ppo)
         for i in 1:2
             @test get_proximal_map(M, ppo, 0.1, p, i) ==

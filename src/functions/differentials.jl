@@ -200,7 +200,7 @@ and ``\mathcal I_i`` denotes the forward neighbors of ``i``.
 * `p`     – a point.
 * `X`     – a tangent vector.
 
-# Ouput
+# Output
 * `Y` – resulting tangent vector in ``T_x\mathcal N`` representing the differentials of the
     logs, where ``\mathcal N`` is the power manifold with the number of dimensions added
     to `size(x)`. The computation can also be done in place.

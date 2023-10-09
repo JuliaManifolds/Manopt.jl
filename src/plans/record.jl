@@ -155,12 +155,12 @@ get_record(r::RecordAction) = r.recorded_values
     get_index(rs::RecordSolverState, s::Symbol)
     ro[s]
 
-Get the recorded values for reording type `s`, see [`get_record`](@ref) for details.
+Get the recorded values for recorded type `s`, see [`get_record`](@ref) for details.
 
     get_index(rs::RecordSolverState, s::Symbol, i...)
     ro[s, i...]
 
-Acces the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
+Access the recording type of type `s` and call its [`RecordAction`](@ref) with `[i...]`.
 """
 getindex(rs::RecordSolverState, s::Symbol) = get_record(rs, s)
 getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...]
@@ -185,7 +185,7 @@ end
 
 group a set of [`RecordAction`](@ref)s into one action, where the internal [`RecordAction`](@ref)s
 act independently, but the results can be collected in a grouped fashion, i.e. tuples per calls of this group.
-The enries can be later addressed either by index or semantic Symbols
+The entries can be later addressed either by index or semantic Symbols
 
 # Constructors
     RecordGroup(g::Array{<:RecordAction, 1})
@@ -201,7 +201,7 @@ A RecordGroup to record the current iteration and the cost. The cost can then be
 
     r = RecordGroup([RecordIteration(), RecordCost()], Dict(:Cost => 2))
 
-A RecordGroup to record the current iteration and the cost, wich can then be accesed using `get_record(:Cost)` or `r[:Cost]`.
+A RecordGroup to record the current iteration and the cost, which can then be accessed using `get_record(:Cost)` or `r[:Cost]`.
 
     r = RecordGroup([RecordIteration(), :Cost => RecordCost()])
 
@@ -581,7 +581,7 @@ mutable struct RecordTime <: RecordAction
     end
 end
 function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    # At iteartion zero also reset start
+    # At iteration zero also reset start
     (i == 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
@@ -640,9 +640,9 @@ create a [`RecordAction`](@ref) where
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
   of
-  * `:Change` - to recorde the change of the iterates in `o.x``
+  * `:Change` - to record the change of the iterates in `o.x``
   * `:Iterate` - to record the iterate
-  * `:Iteration` - to record the current iteration numner
+  * `:Iteration` - to record the current iteration number
   * `:Cost` - to record the current cost function value
   * `:Time` - to record the total time taken after every iteration
   * `:IterativeTime` – to record the times taken for each iteration.

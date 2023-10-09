@@ -110,7 +110,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         end
     end
 
-    @testset "Rayleigh Quotient Minimzation" begin
+    @testset "Rayleigh Quotient Minimization" begin
         n = 4
         rayleigh_atol = 1e-7
         A = [2.0 1.0 0.0 3.0; 1.0 3.0 4.0 5.0; 0.0 4.0 3.0 2.0; 3.0 5.0 2.0 6.0]
@@ -332,7 +332,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         push!(qns.direction_update.memory_y, copy(p))
         push!(qns.direction_update.memory_y, copy(p))
         qns.direction_update(mp, qns)
-        # Update (1) says at i=1 inner prodcucts are zero (2) all are zero -> gradient proposal
+        # Update (1) says at i=1 inner products are zero (2) all are zero -> gradient proposal
         @test contains(qns.direction_update.message, "i=1,2")
         @test contains(qns.direction_update.message, "gradient")
     end

@@ -43,10 +43,10 @@ It consists of
 
 There are two ways to specify the constraints ``g`` and ``h``.
 
-1. as one `Function` returning a vector in ``\mathbb R^m`` and ``\mathbb R^n`` respecively.
+1. as one `Function` returning a vector in ``\mathbb R^m`` and ``\mathbb R^n`` respectively.
    This might be easier to implement but requires evaluating _all_ constraints even if only one is needed.
 2. as a `AbstractVector{<:Function}` where each function returns a real number.
-   This requires each constrant to be implemented as a single function, but it is possible to evaluate also only a single constraint.
+   This requires each constraint to be implemented as a single function, but it is possible to evaluate also only a single constraint.
 
 The gradients ``\operatorname{grad}g``, ``\operatorname{grad}h`` have to follow the
 same form. Additionally they can be implemented as in-place functions or as allocating ones.
@@ -59,7 +59,7 @@ This difference is indicated by the `evaluation` keyword.
         evaluation=AllocatingEvaluation()
     )
 
-Where `f, g, h` describe the cost, inequality and equality constraints, respecitvely, as
+Where `f, g, h` describe the cost, inequality and equality constraints, respectively, as
 described above and `grad_f, grad_g, grad_h` are the corresponding gradient functions in
 one of the 4 formats. If the objective does not have inequality constraints, you can set `G` and `gradG` no `nothing`.
 If the problem does not have equality constraints, you can set `H` and `gradH` no `nothing` or leave them out.
@@ -396,7 +396,7 @@ evaluate the gradient of the `j` th equality constraint ``(\operatorname{grad} h
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
     For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_equality_constraints`](@ref),
-    since this is the only way to determine the number of cconstraints. It also allocates a full tangent vector.
+    since this is the only way to determine the number of constraints. It also allocates a full tangent vector.
 """
 get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j)
 function get_grad_equality_constraint(
@@ -452,7 +452,7 @@ Evaluate the gradient of the `j`th equality constraint ``(\operatorname{grad} h(
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
     For the [`InplaceEvaluation`](@ref) of the [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
-    since this is the only way to determine the number of cconstraints and allocates a full vector of tangent vectors
+    since this is the only way to determine the number of constraints and allocates a full vector of tangent vectors
 """
 get_grad_equality_constraint!(
     M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j
@@ -511,13 +511,13 @@ end
 @doc raw"""
     get_grad_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
 
-eevaluate all gradients of the equality constraints ``\operatorname{grad} h(x)`` or ``\bigl(\operatorname{grad} h_1(x), \operatorname{grad} h_2(x),\ldots, \operatorname{grad}h_n(x)\bigr)``
+evaluate all gradients of the equality constraints ``\operatorname{grad} h(x)`` or ``\bigl(\operatorname{grad} h_1(x), \operatorname{grad} h_2(x),\ldots, \operatorname{grad}h_n(x)\bigr)``
 of the [`ConstrainedManifoldObjective`](@ref) `P` at `p`.
 
 !!! note
     For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
     this function currently also calls [`get_equality_constraints`](@ref),
-    since this is the only way to determine the number of cconstraints.
+    since this is the only way to determine the number of constraints.
 """
 get_grad_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
 function get_grad_equality_constraints(
@@ -624,7 +624,7 @@ Evaluate the gradient of the `i` th inequality constraints ``(\operatorname{grad
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
     For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
-    since this is the only way to determine the number of cconstraints.
+    since this is the only way to determine the number of constraints.
 """
 get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i)
 function get_grad_inequality_constraint(
@@ -681,7 +681,7 @@ of the [`ConstrainedManifoldObjective`](@ref) `P` in place of ``X``
 !!! note
     For the [`FunctionConstraint`](@ref) variant of the problem, this function still evaluates the full gradient.
     For the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) of the problem, this function currently also calls [`get_inequality_constraints`](@ref),
-  since this is the only way to determine the number of cconstraints.
+  since this is the only way to determine the number of constraints.
 evaluate all gradients of the inequality constraints ``\operatorname{grad} h(x)`` or ``\bigl(g_1(x), g_2(x),\ldots,g_m(x)\bigr)``
 of the [`ConstrainedManifoldObjective`](@ref) ``p`` at ``x`` in place of `X``, which is a vector of ``m`` tangent vectors .
 """
@@ -745,7 +745,7 @@ of the [`ConstrainedManifoldObjective`](@ref) ``P`` at ``p``.
 !!! note
    for the [`InplaceEvaluation`](@ref) and [`FunctionConstraint`](@ref) variant of the problem,
    this function currently also calls [`get_equality_constraints`](@ref),
-   since this is the only way to determine the number of cconstraints.
+   since this is the only way to determine the number of constraints.
 """
 get_grad_inequality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, x)
 function get_grad_inequality_constraints(

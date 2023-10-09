@@ -150,7 +150,7 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-    @testset "Exact Penaltiy Cost & Grad" begin
+    @testset "Exact Penalties Cost & Grad" begin
         u = 1.0
         ρ = 0.1
         for P in [cofa, cofm, cova, covm]
@@ -182,7 +182,7 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         for obj in [cofa, cofm, cova, covm]
             ddo = DummyDecoratedObjective(obj)
             @test get_constraints(M, ddo, p) == get_constraints(M, obj, p)

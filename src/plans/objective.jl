@@ -9,7 +9,7 @@ abstract type AbstractEvaluationType end
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
 Describe the collection of the optimization function ``f\colon \mathcal M → \bbR` (or even a vectorial range)
-and its corresponding elements, which might for example be a gradient or (one or more) prxomial maps.
+and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions
 `(M, p) -> ...`, or `(M, X, p) -> ...` that is
@@ -51,7 +51,7 @@ struct InplaceEvaluation <: AbstractEvaluationType end
     ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
        AbstractDecoratedManifoldObjective{E,O2}
 
-A wrapper to indicate that `get_solver_result` should return the inner objetcive.
+A wrapper to indicate that `get_solver_result` should return the inner objective.
 
 The types are such that one can still dispatch on the undecorated type `O2` of the
 original objective as well.
@@ -101,12 +101,12 @@ end
     get_objective(o::AbstractManifoldObjective, recursive=true)
 
 return the (one step) undecorated [`AbstractManifoldObjective`](@ref) of the (possibly) decorated `o`.
-As long as your decorated objective stores the objetive within `o.objective` and
+As long as your decorated objective stores the objective within `o.objective` and
 the [`dispatch_objective_decorator`](@ref) is set to `Val{true}`,
 the internal state are extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
-`o.objective`. Overwrtie `_get_objective(o, ::Val{true}, recursive) to change this bevahiour for your objective `o`
+`o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive) to change this behaviour for your objective `o`
 for both the recursive and the nonrecursive case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.

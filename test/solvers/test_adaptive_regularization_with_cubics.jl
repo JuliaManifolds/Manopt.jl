@@ -3,7 +3,7 @@ using LinearAlgebra: I, tr, Symmetric
 
 include("../utils/example_tasks.jl")
 
-@testset "Adaptive Reguilarization with Cubics" begin
+@testset "Adaptive Regularization with Cubics" begin
     Random.seed!(42)
     n = 8
     k = 3
@@ -63,7 +63,7 @@ include("../utils/example_tasks.jl")
         #add a fake Lanczos
         push!(arcs3.sub_state.Lanczos_vectors, copy(M, p1, X1))
         step_solver!(arcs3.sub_problem, arcs3.sub_state, 2) # to introduce a random new one
-        # test orthognality of the new 2 ones
+        # test orthogonality of the new 2 ones
         @test isapprox(
             inner(
                 M,
@@ -82,7 +82,7 @@ include("../utils/example_tasks.jl")
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
         step_solver!(arcs4.sub_problem, arcs4.sub_state, 2) # to introduce a random new one but cupy to 2
-        # test orthognality of the new 2 ones
+        # test orthogonality of the new 2 ones
         @test isapprox(
             inner(
                 M,

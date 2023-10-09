@@ -43,7 +43,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @test length(m.captures) == 2 # both have to be active
     update_stopping_criterion!(s3, :MinCost, 1e-2)
     @test s3.threshold == 1e-2
-    # Dummy withoout iterations has a reasonable fallback
+    # Dummy without iterations has a reasonable fallback
     @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
 end
 

@@ -70,6 +70,33 @@ function get_cost(
     return 1//2 * norm(residual_values)^2
 end
 
+"""
+    get_gradient_from_Jacobian!(
+        M::AbstractManifold,
+        X,
+        nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
+        p,
+        Jval=zeros(nlso.num_components, manifold_dimension(M)),
+    )
+
+Compute gradient of [`NonlinearLeastSquaresObjective`](@ref) `nlso` at point `p` in place of
+`X`, with temporary Jacobian stored in the optional argument `Jval`.
+"""
+function get_gradient_from_Jacobian!(
+    M::AbstractManifold,
+    X,
+    nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
+    p,
+    Jval=zeros(nlso.num_components, manifold_dimension(M)),
+)
+    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
+    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
+    residual_values = zeros(nlso.num_components)
+    nlso.f(M, residual_values, p)
+    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
+    return X
+end
+
 function get_gradient(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
 )
@@ -101,12 +128,7 @@ end
 function get_gradient!(
     M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
-    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = zeros(nlso.num_components, manifold_dimension(M))
-    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
+    get_gradient_from_Jacobian!(M, X, nlso, p)
     return X
 end
 
@@ -135,7 +157,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `damping_term_min` – initial (and also minimal) value of the damping term
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
 * `expect_zero_residual` – (`false`) if true, the algorithm expects that the value of
-  residual (objective) at mimimum is equal to 0.
+  residual (objective) at minimum is equal to 0.
 
 # Constructor
 

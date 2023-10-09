@@ -18,7 +18,7 @@ include("../utils/dummy_types.jl")
     msgo_vf = ManifoldStochasticGradientObjective(sgrad_f2; cost=f)
     msgo_fv = ManifoldStochasticGradientObjective(sgrad_f1; cost=f2)
     msgo_vv = ManifoldStochasticGradientObjective(sgrad_f2; cost=f2)
-    @testset "Elementwide Cost access" begin
+    @testset "Elementwise Cost access" begin
         for msgo in [msgo_ff, msgo_vf]
             @test get_cost(M, msgo, p) == get_cost(M, msgo, p, 1)
             @test_throws ErrorException get_cost(M, msgo, p, 2)
@@ -29,7 +29,7 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-    @testset "Objetive Decorator passthrough" begin
+    @testset "Objective Decorator passthrough" begin
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
         Xa = [zero_vector(M, p) for p in pts]
@@ -48,7 +48,7 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-    @testset "Count Objetive" begin
+    @testset "Count Objective" begin
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
         Xa = [zero_vector(M, p) for p in pts]
@@ -71,7 +71,7 @@ include("../utils/dummy_types.jl")
             @test get_count(ddo, :StochasticGradients) == 2
         end
     end
-    @testset "Cache Objetive" begin
+    @testset "Cache Objective" begin
         X = zero_vector(M, p)
         Y = zero_vector(M, p)
         Xa = [zero_vector(M, p) for p in pts]
