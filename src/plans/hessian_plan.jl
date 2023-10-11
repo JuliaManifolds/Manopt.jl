@@ -6,8 +6,17 @@ These options are assumed to have a field (`gradient`) to store the current grad
 """
 abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
+"""
+    AbstractManifoldHessianObjective{T<:AbstractEvaluationType,TC,TG,TH} <: AbstractManifoldGradientObjective{T,TC,TG}
+
+An abstract type for all objectives that provide a (full) Hessian, where
+`T` is a [`AbstractEvaluationType`](@ref) for the gradient and Hessian functions.
+"""
+abstract type AbstractManifoldHessianObjective{T<:AbstractEvaluationType,TC,TG,TH} <:
+              AbstractManifoldGradientObjective{T,TC,TG} end
+
 @doc raw"""
-    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldGradientObjective{T}
+    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
 
 specify a problem for hessian based algorithms.
 
@@ -36,7 +45,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
-       AbstractManifoldGradientObjective{T,C,G}
+       AbstractManifoldGradientObjective{T,C,G,H}
     cost::C
     gradient!!::G
     hessian!!::H

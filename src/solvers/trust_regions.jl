@@ -202,6 +202,60 @@ function show(io::IO, trs::TrustRegionsState)
 end
 
 @doc raw"""
+    TrustRegionTangentSpaceModelObjective{TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T} <: AbstractManifoldSubObjective{O}
+
+A trust region model of the form
+
+```math
+    \operatorname{arg\,min}_{X \in T_p\mathcal M} c + ⟨G, X⟩_p + \frac{1}(2} ⟨B(X), X⟩_p
+    ,\qquad
+    \lVert X \rVert ≤ Δ
+```
+
+where
+
+* ``G`` is (a tangent vector that is an approximation of) the gradient ``\operatorname{grad} f(p)``
+* ``B`` is (a bilinear form that is an approximantion of) the Hessian ``\operatorname{Hess} f(p)``
+* ``c`` is the current cost ``f(p)``, but might be set to zero for simplicity, since we are only interested in the minimizer
+* ``Δ`` is the current trust region radius
+
+# Fields
+
+* `objective` – an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `c` the current cost
+* `G` the current Gradient
+* `H` the current bilinear form (Approximation of the Hessian)
+* `Δ` the current trust region radius
+
+If `H` is set to nothing, the hessian from the `objective` is used.
+"""
+struct TrustRegionTangentSpaceModelObjective{
+    TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T,R
+} <: AbstractManifoldSubObjective{O}
+    objective::O
+    c::R
+    G::T
+    H::TH
+    Δ::R
+end
+function TrustRegionTangentSpaceModelObjective(TpM::TangentSpace, mho, p=rand(M); kwargs...)
+    return TrustRegionTangentSpaceModelObjective(base_manifold(TpM), p; kwargs...)
+end
+function TrustRegionTangentSpaceModelObjective(
+    M::AbstractManifold,
+    mho::O,
+    p=rand(M);
+    c::R=get_cost(M, mho, p),
+    Δ::R=injectivity_radius(M) / 4,
+    G::T=get_gradient(M, mho, p),
+    H::TH=nothing,
+) where {TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T,R}
+    return TrustRegionTangentSpaceModelObjective{TH,O,T,R}(mho, c, G, H, Δ)
+end
+
+get_objective(trm::TrustRegionTangentSpaceModelObjective) = trom.objective
+
+@doc raw"""
     trust_regions(M, f, grad_f, hess_f, p=rand(M))
     trust_regions(M, f, grad_f, p=rand(M))
 

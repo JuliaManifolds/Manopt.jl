@@ -5,6 +5,67 @@ An abstract type for problems that involve a subsolver
 """
 abstract type AbstractSubProblemSolverState <: AbstractManoptSolverState end
 
+"""
+   AbstractManifoldSubObjective{O<:AbstractManifoldObjective} <: AbstractManifoldObjective
+
+An abstract type for objectives of sub problems within a solver but still store the
+original objective internally to generate generic objectives for sub solvers.
+"""
+abstract type AbstractManifoldSubObjective{O<:AbstractManifoldObjective} <:
+              AbstractManifoldObjective end
+
+@doc raw"""
+    get_objective(amso::AbstractManifoldSubObjective)
+
+Return the (original) objective stored within the sub obective.
+"""
+get_objective(amso::AbstractManifoldSubObjective)
+
+@doc raw"""
+    get_objective_cost(M, amso::AbstractManifoldSubObjective, p)
+
+Evaluate the cost of the (original) objective stored within the subobjective.
+"""
+function get_objective_cost(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p
+) where {O<:AbstractManifoldCostObjective}
+    return get_cost(M, get_objective(amso), p)
+end
+
+@doc raw"""
+    X = get_objective_gradient(M, amso::AbstractManifoldSubObjective, p)
+    get_objective_gradient!(M, X, amso::AbstractManifoldSubObjective, p)
+
+Evaluate the gradient of the (original) objective stored within the subobjective `amso`.
+"""
+function get_objective_gadient(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p
+) where {O<:AbstractManifoldGradientObjective}
+    return get_gradient(M, get_objective(amso), p)
+end
+function get_objective_gadient!(
+    M::AbstractManifold, X, amso::AbstractManifoldSubObjective{O}, p
+) where {O<:AbstractManifoldGradientObjective}
+    return get_gradient!(M, X, get_objective(amso), p)
+end
+
+@doc raw"""
+    Y = get_objective_Hessian(M, amso::AbstractManifoldSubObjective, p, X)
+    get_objective_Hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
+
+Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
+"""
+function get_objective_Hessian(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p, X
+) where {O<:AbstractManifoldHessianObjective}
+    return get_Hessian(M, get_objective(amso), p, X)
+end
+function get_objective_gadient!(
+    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{O}, p, X
+) where {O<:AbstractManifoldHessianObjective}
+    return get_Hessian!(M, Y, get_objective(amso), p, X)
+end
+
 @doc raw"""
     get_sub_problem(ams::AbstractSubProblemSolverState)
 
