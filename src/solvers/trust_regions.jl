@@ -245,12 +245,14 @@ function TrustRegionTangentSpaceModelObjective(
     M::AbstractManifold,
     mho::O,
     p=rand(M);
-    c::R=get_cost(M, mho, p),
-    Δ::R=injectivity_radius(M) / 4,
-    G::T=get_gradient(M, mho, p),
-    H::TH=nothing,
+    cost::R=get_cost(M, mho, p),
+    trust_region_radius::R=injectivity_radius(M) / 8,
+    gradient::T=get_gradient(M, mho, p),
+    bilinear_form::TH=nothing,
 ) where {TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T,R}
-    return TrustRegionTangentSpaceModelObjective{TH,O,T,R}(mho, c, G, H, Δ)
+    return TrustRegionTangentSpaceModelObjective{TH,O,T,R}(
+        mho, cost, gradient, bilinear_form, trust_region_radius
+    )
 end
 
 get_objective(trm::TrustRegionTangentSpaceModelObjective) = trom.objective
@@ -483,7 +485,12 @@ function trust_regions!(
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
     # ToDo – Tangent Space in Base? Implement TR Model, otherwise like below
-    # sub_problem=TangentSpaceModelProblem(M, p, TrustRegionModel(mho)),
+    sub_problem=DefaultManoptProblem(
+        TangentSpace(M, p),
+        TrustRegionTangentSpaceModelObjective(
+            M, mho, p; trust_region_radius=trust_region_radius
+        ),
+    )TangentSpaceModelProblem(M, p, TrustRegionModel(mho)),
     sub_state::AbstractHessianSolverState=TruncatedConjugateGradientState(
         M,
         p,
