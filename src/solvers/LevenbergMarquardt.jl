@@ -40,6 +40,7 @@ then the keyword `jacobian_tangent_basis` below is ignored
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
 * `initial_residual_values` – the initial residual vector of the cost function `f`.
 * `initial_jacobian_f` – the initial Jacobian of the cost function `f`.
+* `jacobian_tangent_basis` - [`AbstractBasis`](@ref) specify the basis of the tangent space for `jacobian_f`.
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
