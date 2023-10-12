@@ -263,7 +263,10 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
-    get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+    # a new Jacobian is only  needed if the last step was successful
+    if lms.last_step_successful
+        get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+    end
     λk = lms.damping_term * norm(lms.residual_values)^2
 
     JJ = transpose(lms.jacF) * lms.jacF + λk * I
@@ -291,8 +294,10 @@ function step_solver!(
         if lms.expect_zero_residual
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
+        lms.last_step_successful = true
     else
         lms.damping_term *= lms.β
+        lms.last_step_successful = false
     end
     return lms
 end
