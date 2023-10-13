@@ -230,8 +230,12 @@ where
 If `H` is set to nothing, the hessian from the `objective` is used.
 """
 struct TrustRegionTangentSpaceModelObjective{
-    TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T,R
-} <: AbstractManifoldSubObjective{O}
+    E<:AbstractEvaluationType,
+    TH<:Union{Function,Nothing},
+    O<:AbstractManifoldHessianObjective,
+    T,
+    R,
+} <: AbstractManifoldSubObjective{E,O}
     objective::O
     c::R
     G::T
@@ -239,7 +243,7 @@ struct TrustRegionTangentSpaceModelObjective{
     Δ::R
 end
 function TrustRegionTangentSpaceModelObjective(TpM::TangentSpace, mho, p=rand(M); kwargs...)
-    return TrustRegionTangentSpaceModelObjective(base_manifold(TpM), p; kwargs...)
+    return TrustRegionTangentSpaceModelObjective(base_manifold(TpM), mho, p; kwargs...)
 end
 function TrustRegionTangentSpaceModelObjective(
     M::AbstractManifold,

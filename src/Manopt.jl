@@ -71,6 +71,7 @@ using ManifoldsBase:
     PowerManifold,
     ProjectionTransport,
     QRRetraction,
+    TangentSpace,
     ^,
     _read,
     _write,
