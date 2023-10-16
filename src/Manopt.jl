@@ -188,6 +188,9 @@ function __init__()
     # Requires fallback for Julia < 1.9
     #
     @static if !isdefined(Base, :get_extension)
+        @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin
+            include("../ext/ManoptJuMPExt.jl")
+        end
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
         end
