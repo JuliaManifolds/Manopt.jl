@@ -53,3 +53,21 @@ mid_point
 Manopt.max_stepsize(::TangentBundle, ::Any)
 Manopt.max_stepsize(::FixedRankMatrices, ::Any)
 ```
+
+## JuMP.jl
+
+Manopt can be used using the [JuMP.jl](https://github.com/jump-dev/JuMP.jl) interface.
+The manifold is provided in the `@variable` macro (note that only array manifolds are supported).
+The algebraic expression of the objective function is specified in the `@objective` macro.
+The `descent_state_type` attribute specifies the solver.
+
+```julia
+using JuMP, Manopt, Manifolds
+model = Model(Manopt.Optimizer)
+# Change the solver with this option, `GradientDescentState` is the default
+set_attribute("descent_state_type", GradientDescentState)
+@variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
+@objective(model, Min, sum((A - U) .^ 2))
+optimize!(model)
+solution_summary(model)
+```
