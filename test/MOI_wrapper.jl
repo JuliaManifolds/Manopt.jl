@@ -5,7 +5,7 @@ using Manopt
 using JuMP
 
 function test_sphere()
-    model = Model(Manopt.Optimizer)
+    model = Model(Manopt.JuMP_Optimizer)
     start = normalize(1:3)
     @variable(model, x[i=1:3] in Sphere(2), start = start[i])
 
@@ -42,7 +42,7 @@ function test_stiefel()
         1 -1
         -1 1
     ]
-    model = Model(Manopt.Optimizer)
+    model = Model(Manopt.JuMP_Optimizer)
     @variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
 
     @objective(model, Min, sum((A - U) .^ 2))
@@ -58,7 +58,7 @@ end
 end
 
 function test_runtests()
-    optimizer = Manopt.Optimizer()
+    optimizer = Manopt.JuMP_Optimizer()
     config = MOI.Test.Config(; exclude=Any[MOI.ListOfModelAttributesSet])
     return MOI.Test.runtests(
         optimizer,

@@ -71,3 +71,24 @@ set_attribute("descent_state_type", GradientDescentState)
 optimize!(model)
 solution_summary(model)
 ```
+
+```@docs
+VectorizedManifold
+MOI.dimension(::VectorizedManifold)
+MOI.dimension(::VectorizedManifold)
+Optimizer
+MOI.empty!(::ManoptJuMPExt.Optimizer)
+MathOptInterface.supports(::ManoptJuMPExt.Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.get(::Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.set(::Optimizer, ::MOI.RawOptimizerAttribute, ::Any)
+MOI.supports_incremental_interface(::Optimizer)
+MOI.copy_to(::Optimizer, ::MOI.ModelLike)
+MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
+MOI.add_constrained_variables(::Optimizer, ::VectorizedManifold)
+MOI.is_valid(model::Optimizer, ::MOI.VariableIndex)
+MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
+MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.set(::Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
+
+ArrayShape
+```

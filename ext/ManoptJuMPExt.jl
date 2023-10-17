@@ -9,7 +9,11 @@ using ManifoldDiff
 
 function __init__()
     # So that the user can use the convenient `Manopt.Optimizer`
-    setglobal!(Manopt, :Optimizer, Optimizer)
+    if isdefined(Base, :setglobal!)
+        setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
+    else
+        Manopt.eval(:(const JuMP_Optimizer = $Optimizer))
+    end
     return nothing
 end
 
@@ -29,21 +33,23 @@ end
     MOI.dimension(set::VectorizedManifold)
 
 Return the representation side of points on the (vectorized in representation) manifold.
-As the MOI variables are real, this means if the [`representation_size`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.representation_size-Tuple{AbstractManifold}) yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of```\mathbb R^n``.
+As the MOI variables are real, this means if the [`representation_size`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.representation_size-Tuple{AbstractManifold}) yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``\\mathbb R^n``).
 """
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
 """
-    Manopt.Optimizer()
+    Manopt.ManoptJuMPExt.Optimizer()
 
-Creates a new optimizer object.
+Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
+An alias `Manopt.JuMP_Optimizer` is defined for convenience.
 
 The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
 over a manifold `M` starting at `X0`, can be modeled as follows:
 ```julia
 using JuMP
+model = Model(Manopt.JuMP_Optimizer)
 @variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
 @objective(model, Min, f(X))
 ```
@@ -73,7 +79,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             Union{Nothing,Float64}[],
             MOI.FEASIBILITY_SENSE,
             MOI.Nonlinear.Model(),
-            Dict{String,Any}(),
+            Dict{String,Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
         )
     end
 end
@@ -90,6 +96,11 @@ function MOI.is_empty(model::Optimizer)
            model.sense == MOI.FEASIBILITY_SENSE
 end
 
+"""
+    MOI.empty!(model::ManoptJuMPExt.Optimizer)
+
+Clear all model data from `model` but keep the `options` set.
+"""
 function MOI.empty!(model::Optimizer)
     model.manifold = nothing
     model.problem = nothing
@@ -109,10 +120,17 @@ Return a `Bool` indicating whether `attr.name` is a valid option name
 for `Manopt`.
 """
 function MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
-    # FIXME It should depend on `attr.name`
+    # FIXME Ideally, this should only return `true` if it is a valid keyword argument for
+    #       one of the `...DescentState()` constructors. Is there an easy way to check this ?
+    #       Does it depend on the different solvers ?
     return true
 end
 
+"""
+    MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
+
+Return last `value` set by `MOI.set(model, attr, value)`.
+"""
 function MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
     if !MOI.supports(model, attr)
         throw(MOI.UnsupportedAttribute(attr))
@@ -120,6 +138,12 @@ function MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
     return model.options[attr.name]
 end
 
+"""
+    MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
+
+Set the value for the keyword argument `attr.name` to give for the constructor
+`model.options[DESCENT_STATE_TYPE]`.
+"""
 function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
     if !MOI.supports(model, attr)
         throw(MOI.UnsupportedAttribute(attr))
@@ -128,15 +152,18 @@ function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
     return nothing
 end
 
-MOI.get(::Optimizer, ::MOI.SolverName) = "Manopt"
+function MOI.get(model::Optimizer, ::MOI.SolverName)
+    return "Manopt with $(model.options[DESCENT_STATE_TYPE])"
+end
 
 """
     MOI.supports_incremental_interface(::Optimizer)
 
 Return `true` indicating that `Manopt.Optimizer` implements
 `MOI.add_constrained_variables` and `MOI.set` for
-`MOI.ObjectiveFunction` so it can be used with `JuMP.direct_model`
+`MOI.ObjectiveFunction` so it can be used with [`JuMP.direct_model`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.direct_model)
 and does not require a `MOI.Utilities.CachingOptimizer`.
+See [`MOI.supports_incremental_interface`](https://jump.dev/JuMP.jl/stable/moi/reference/models/#MathOptInterface.supports_incremental_interface).
 """
 MOI.supports_incremental_interface(::Optimizer) = true
 
@@ -144,7 +171,9 @@ MOI.supports_incremental_interface(::Optimizer) = true
     MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
 
 Because `supports_incremental_interface(dest)` is `true` we can simply
-use `MOI.Utilities.default_copy_to`.
+use `MOI.Utilities.default_copy_to`. This copies the variables with
+`MOI.add_constrained_variables` and the objective sense with `MOI.set`.
+`
 """
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
     return MOI.Utilities.default_copy_to(dest, src)
@@ -154,7 +183,7 @@ end
     MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
 
 Return `true` indicating that `Manopt.Optimizer` support optimization on
-variables constrained to belong in a vectorized manifold.
+variables constrained to belong in a vectorized manifold [`VectorizedManifold`](@ref).
 """
 function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
     return true
@@ -165,7 +194,8 @@ end
 
 Add `MOI.dimension(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
-index for the constraint enforcing the membership of the variables in `set`.
+index for the constraint enforcing the membership of the variables in the
+[`VectorizedManifold`](@ref) `set`.
 """
 function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
     F = MOI.VectorOfVariables
@@ -197,6 +227,12 @@ function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
            1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
 end
 
+"""
+    MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
+
+Return the number of variables added in the model, this corresponds
+to the [`MOI.dimension`](@ref) of the [`VectorizedManifold`](@ref).
+"""
 function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
         return 0
@@ -205,6 +241,12 @@ function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
     end
 end
 
+"""
+    MOI.supports(::Optimizer, attr::MOI.RawOptimizerAttribute)
+
+Return `true` indicating that `Manopt.Optimizer` supports starting values
+for the variables.
+"""
 function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
     return true
 end
@@ -217,8 +259,9 @@ end
         value::Union{Real,Nothing},
     )
 
-Set the starting value of the variable of index `vi` to `value` if it is a
-`Real` and unset it if `value` is `nothing`.
+Set the starting value of the variable of index `vi` to `value`. Note that if
+`value` is `nothing` then it essentially unset any previous starting values set
+and hence [`MOI.optimize!`](@ref) unless another starting value is set.
 """
 function MOI.set(
     model::Optimizer,
@@ -299,7 +342,7 @@ function MOI.optimize!(model::Optimizer)
     dmgo = decorate_objective!(model.manifold, mgo)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
     reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
-    descent_state_type = get(model.options, DESCENT_STATE_TYPE, GradientDescentState)
+    descent_state_type = model.options[DESCENT_STATE_TYPE]
     kws = Dict{Symbol,Any}(
         Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
     )
