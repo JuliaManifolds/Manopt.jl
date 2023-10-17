@@ -192,6 +192,7 @@ mutable struct LevenbergMarquardtState{
     damping_term_min::Tparams
     β::Tparams
     expect_zero_residual::Bool
+    last_step_successful::Bool
     function LevenbergMarquardtState(
         M::AbstractManifold,
         p::P,
@@ -244,6 +245,7 @@ mutable struct LevenbergMarquardtState{
             damping_term_min,
             β,
             expect_zero_residual,
+            true,
         )
     end
 end
