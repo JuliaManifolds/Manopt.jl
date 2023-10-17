@@ -72,16 +72,10 @@ optimize!(model)
 solution_summary(model)
 ```
 
-```@meta
-using Manopt, JuMP
-CurrentModule = Manopt.ManoptJuMPExt
-```
-
 ```@docs
-VectorizedManifold
-MOI.dimension(::VectorizedManifold)
-MOI.dimension(::VectorizedManifold)
-Optimizer
+Manopt.ManoptJuMPExt.VectorizedManifold
+MOI.dimension(::Manopt.ManoptJuMPExt.VectorizedManifold)
+Manopt.ManoptJuMPExt.Optimizer
 MOI.empty!(::Optimizer)
 MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
 MOI.get(::Optimizer, ::MOI.RawOptimizerAttribute)
