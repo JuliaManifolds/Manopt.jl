@@ -28,8 +28,8 @@ end
 """
     MOI.dimension(set::VectorizedManifold)
 
-Return the dimension of the vectorized Manifold. As the MOI variables are real
-if the dimension is `n`, it means that the vectorization is a subset of `R^n`.
+Return the representation side of points on the (vectorized in representation) manifold.
+As the MOI variables are real, this means if the [`representation_size`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.representation_size-Tuple{AbstractManifold}) yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of```\mathbb R^n``.
 """
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
