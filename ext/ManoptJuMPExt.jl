@@ -2,7 +2,13 @@ module ManoptJuMPExt
 
 using Manopt
 using LinearAlgebra
-using JuMP: JuMP
+if isdefined(Base, :get_extension)
+    using JuMP: JuMP
+else
+    # imports need to be relative for Requires.jl-based workflows:
+    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
+    using ..JuMP: JuMP
+end
 const MOI = JuMP.MOI
 using ManifoldsBase
 using ManifoldDiff
