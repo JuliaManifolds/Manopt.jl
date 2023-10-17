@@ -73,6 +73,7 @@ solution_summary(model)
 ```
 
 ```@meta
+using Manopt, JuMP
 CurrentModule = Manopt.ManoptJuMPExt
 ```
 
