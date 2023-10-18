@@ -17,8 +17,12 @@ function __init__()
     # So that the user can use the convenient `Manopt.Optimizer`
     if isdefined(Base, :setglobal!)
         setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
+        setglobal!(Manopt, :JuMP_VectorizedManifold, VectorizedManifold)
+        setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
     else
         Manopt.eval(:(const JuMP_Optimizer = $Optimizer))
+        Manopt.eval(:(const JuMP_VectorizedManifold = $VectorizedManifold))
+        Manopt.eval(:(const JuMP_ArrayShape = $ArrayShape))
     end
     return nothing
 end

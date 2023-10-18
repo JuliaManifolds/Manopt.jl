@@ -73,21 +73,20 @@ solution_summary(model)
 ```
 
 ```@docs
-Manopt.ManoptJuMPExt.VectorizedManifold
-MOI.dimension(::Manopt.ManoptJuMPExt.VectorizedManifold)
-Manopt.ManoptJuMPExt.Optimizer
-MOI.empty!(::Optimizer)
-MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.get(::Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.set(::Optimizer, ::MOI.RawOptimizerAttribute, ::Any)
-MOI.supports_incremental_interface(::Optimizer)
-MOI.copy_to(::Optimizer, ::MOI.ModelLike)
-MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
-MOI.add_constrained_variables(::Optimizer, ::VectorizedManifold)
-MOI.is_valid(model::Optimizer, ::MOI.VariableIndex)
-MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
-MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.set(::Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
-
-ArrayShape
+JuMP_VectorizedManifold
+MOI.dimension(::JuMP_VectorizedManifold)
+JuMP_Optimizer
+MOI.empty!(::JuMP_Optimizer)
+MOI.supports(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.get(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.set(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute, ::Any)
+MOI.supports_incremental_interface(::JuMP_Optimizer)
+MOI.copy_to(::JuMP_Optimizer, ::MOI.ModelLike)
+MOI.supports_add_constrained_variables(::JuMP_Optimizer, ::Type{<:JuMP_VectorizedManifold})
+MOI.add_constrained_variables(::JuMP_Optimizer, ::JuMP_VectorizedManifold)
+MOI.is_valid(model::JuMP_Optimizer, ::MOI.VariableIndex)
+MOI.get(model::JuMP_Optimizer, ::MOI.NumberOfVariables)
+MOI.supports(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.set(::JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
+JuMP_ArrayShape
 ```
