@@ -1,5 +1,9 @@
 # Extensions
 
+```@meta
+CurrentModule = Manopt
+```
+
 ## LineSearches.jl
 
 Manopt can be used with line search algorithms implemented in [LineSearches.jl](https://github.com/JuliaNLSolvers/LineSearches.jl).
