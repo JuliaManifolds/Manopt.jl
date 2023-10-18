@@ -72,14 +72,8 @@ optimize!(model)
 solution_summary(model)
 ```
 
-```@meta
-CurrentModule = Manopt
-```
-
 ```@docs
-JuMP_VectorizedManifold
 MOI.dimension(::JuMP_VectorizedManifold)
-JuMP_Optimizer
 MOI.empty!(::JuMP_Optimizer)
 MOI.supports(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
 MOI.get(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
@@ -92,5 +86,4 @@ MOI.is_valid(model::JuMP_Optimizer, ::MOI.VariableIndex)
 MOI.get(model::JuMP_Optimizer, ::MOI.NumberOfVariables)
 MOI.supports(::JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
 MOI.set(::JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
-JuMP_ArrayShape
 ```
