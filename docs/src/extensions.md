@@ -1,9 +1,5 @@
 # Extensions
 
-```@meta
-CurrentModule = Manopt
-```
-
 ## LineSearches.jl
 
 Manopt can be used with line search algorithms implemented in [LineSearches.jl](https://github.com/JuliaNLSolvers/LineSearches.jl).
@@ -74,6 +70,10 @@ set_attribute("descent_state_type", GradientDescentState)
 @objective(model, Min, sum((A - U) .^ 2))
 optimize!(model)
 solution_summary(model)
+```
+
+```@meta
+CurrentModule = Manopt
 ```
 
 ```@docs
