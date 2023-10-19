@@ -27,14 +27,12 @@ function __init__()
     return nothing
 end
 
-"""
-    struct VectorizedManifold{M} <: MOI.AbstractVectorSet
-        manifold::M
-    end
-
-Representation of points of `manifold` as a vector of `R^n` where `n` is
-`MOI.dimension(VectorizedManifold(manifold))`.
-"""
+#     struct VectorizedManifold{M} <: MOI.AbstractVectorSet
+#         manifold::M
+#     end
+#
+# Representation of points of `manifold` as a vector of `R^n` where `n` is
+# `MOI.dimension(VectorizedManifold(manifold))`.
 struct VectorizedManifold{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
@@ -49,23 +47,21 @@ function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
-"""
-    Manopt.ManoptJuMPExt.Optimizer()
-
-Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
-An alias `Manopt.JuMP_Optimizer` is defined for convenience.
-
-The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
-over a manifold `M` starting at `X0`, can be modeled as follows:
-```julia
-using JuMP
-model = Model(Manopt.JuMP_Optimizer)
-@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
-@objective(model, Min, f(X))
-```
-The optimizer assumes that `M` has a `Array` shape described
-by `ManifoldsBase.representation_size`.
-"""
+#     Manopt.ManoptJuMPExt.Optimizer()
+#
+# Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
+# An alias `Manopt.JuMP_Optimizer` is defined for convenience.
+#
+# The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
+# over a manifold `M` starting at `X0`, can be modeled as follows:
+# ```julia
+# using JuMP
+# model = Model(Manopt.JuMP_Optimizer)
+# @variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
+# @objective(model, Min, f(X))
+# ```
+# The optimizer assumes that `M` has a `Array` shape described
+# by `ManifoldsBase.representation_size`.
 mutable struct Optimizer <: MOI.AbstractOptimizer
     # Manifold in which all the decision variables leave
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
@@ -193,7 +189,7 @@ end
     MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
 
 Return `true` indicating that `Manopt.Optimizer` support optimization on
-variables constrained to belong in a vectorized manifold [`VectorizedManifold`](@ref).
+variables constrained to belong in a vectorized manifold `VectorizedManifold`.
 """
 function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
     return true
@@ -205,7 +201,7 @@ end
 Add `MOI.dimension(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables in the
-[`VectorizedManifold`](@ref) `set`.
+`VectorizedManifold` `set`.
 """
 function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
     F = MOI.VectorOfVariables
@@ -241,7 +237,7 @@ end
     MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@ref) of the [`VectorizedManifold`](@ref).
+to the [`MOI.dimension`](@ref) of the `VectorizedManifold`.
 """
 function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
@@ -271,7 +267,7 @@ end
 
 Set the starting value of the variable of index `vi` to `value`. Note that if
 `value` is `nothing` then it essentially unset any previous starting values set
-and hence [`MOI.optimize!`](@ref) unless another starting value is set.
+and hence `MOI.optimize!` unless another starting value is set.
 """
 function MOI.set(
     model::Optimizer,
@@ -362,13 +358,9 @@ function MOI.optimize!(model::Optimizer)
     return nothing
 end
 
-"""
-    struct ArrayShape{N} <: JuMP.AbstractShape
-        size::NTuple{N,Int}
-    end
-
-Shape of an `Array{T,N}` of size `size`.
-"""
+#     struct ArrayShape{N} <: JuMP.AbstractShape
+#
+# Shape of an `Array{T,N}` of size `size`.
 struct ArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
 end

@@ -73,7 +73,6 @@ solution_summary(model)
 ```
 
 ```@docs
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
 MOI.dimension(::Manopt.JuMP_VectorizedManifold)
 MOI.empty!(::Manopt.JuMP_Optimizer)
 MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
@@ -85,6 +84,6 @@ MOI.supports_add_constrained_variables(::Manopt.JuMP_Optimizer, ::Type{<:Manopt.
 MOI.add_constrained_variables(::Manopt.JuMP_Optimizer, ::Manopt.JuMP_VectorizedManifold)
 MOI.is_valid(model::Manopt.JuMP_Optimizer, ::MOI.VariableIndex)
 MOI.get(model::Manopt.JuMP_Optimizer, ::MOI.NumberOfVariables)
-MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
+MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
 MOI.set(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
 ```
