@@ -113,6 +113,11 @@ makedocs(;
     modules=[
         Manopt,
         if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptJuMPExt)
+        else
+            Manopt.ManoptJuMPExt
+        end,
+        if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptLineSearchesExt)
         else
             Manopt.ManoptLineSearchesExt
