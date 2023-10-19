@@ -1,8 +1,8 @@
-function set_manopt_parameter!(M::TangentSpaceAtPoint, ::Val{:p}, v)
-    copyto!(M.fiber.manifold, M.point, v)
+function set_manopt_parameter!(M::TangentSpace, ::Val{:p}, v)
+    M.point .= v
     return M
 end
-function (f::Manopt.AdaptiveRegularizationCubicCost)(M::TangentSpaceAtPoint, X)
+function (f::Manopt.AdaptiveRegularizationCubicCost)(M::TangentSpace, X)
     ## (33) in Agarwal et al.
     return get_cost(base_manifold(M), f.mho, M.point) +
            inner(base_manifold(M), M.point, X, f.X) +
@@ -14,19 +14,19 @@ function (f::Manopt.AdaptiveRegularizationCubicCost)(M::TangentSpaceAtPoint, X)
            ) +
            f.σ / 3 * norm(base_manifold(M), M.point, X)^3
 end
-function (grad_f::Manopt.AdaptiveRegularizationCubicGrad)(M::TangentSpaceAtPoint, X)
+function (grad_f::Manopt.AdaptiveRegularizationCubicGrad)(M::TangentSpace, X)
     # (37) in Agarwal et
     return grad_f.X +
            get_hessian(base_manifold(M), grad_f.mho, M.point, X) +
            grad_f.σ * norm(base_manifold(M), M.point, X) * X
 end
-function (grad_f::Manopt.AdaptiveRegularizationCubicGrad)(M::TangentSpaceAtPoint, Y, X)
+function (grad_f::Manopt.AdaptiveRegularizationCubicGrad)(M::TangentSpace, Y, X)
     get_hessian!(base_manifold(M), Y, grad_f.mho, M.point, X)
     Y .= Y + grad_f.X + grad_f.σ * norm(base_manifold(M), M.point, X) * X
     return Y
 end
 function (c::StopWhenFirstOrderProgress)(
-    dmp::AbstractManoptProblem{<:TangentSpaceAtPoint},
+    dmp::AbstractManoptProblem{<:TangentSpace},
     ams::AbstractManoptSolverState,
     i::Int,
 )
