@@ -75,7 +75,7 @@ solution_summary(model)
 ```@docs
 MOI.dimension
 MOI.empty!
-MOI.support
+MOI.supports
 MOI.get
 MOI.set
 MOI.supports_incremental_interface
