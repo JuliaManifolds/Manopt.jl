@@ -73,6 +73,7 @@ solution_summary(model)
 ```
 
 ```@docs
+Manopt.JuMP_Optimizer
 MOI.dimension(::Manopt.JuMP_VectorizedManifold)
 MOI.empty!(::Manopt.JuMP_Optimizer)
 MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
