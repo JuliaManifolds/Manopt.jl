@@ -73,17 +73,5 @@ solution_summary(model)
 ```
 
 ```@docs
-MOI.dimension
-MOI.empty!
-MOI.supports
-MOI.get
-MOI.set
-MOI.supports_incremental_interface
-MOI.copy_to
-MOI.supports_add_constrained_variables
-MOI.add_constrained_variables
-MOI.is_valid
-MOI.get
-MOI.supports
-MOI.set
+MOI.supports_incremental_interface(::Manopt.JuMP_Optimizer)
 ```
