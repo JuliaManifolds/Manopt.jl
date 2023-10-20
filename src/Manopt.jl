@@ -183,7 +183,6 @@ include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
-
 """
     Manopt.JuMP_Optimizer()
 
