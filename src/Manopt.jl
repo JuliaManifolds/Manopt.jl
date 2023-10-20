@@ -183,6 +183,26 @@ include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
+
+"""
+    Manopt.JuMP_Optimizer()
+
+Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
+An alias `Manopt.JuMP_Optimizer` is defined for convenience.
+
+The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
+over a manifold `M` starting at `X0`, can be modeled as follows:
+```julia
+using JuMP
+model = Model(Manopt.JuMP_Optimizer)
+@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
+@objective(model, Min, f(X))
+```
+The optimizer assumes that `M` has a `Array` shape described
+by `ManifoldsBase.representation_size`.
+"""
+global JuMP_Optimizer
+
 function __init__()
     #
     # Requires fallback for Julia < 1.9

@@ -47,23 +47,6 @@ function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
-"""
-    Manopt.ManoptJuMPExt.JuMP_Optimizer()
-
-Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
-An alias `Manopt.JuMP_JuMP_Optimizer` is defined for convenience.
-
-The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
-over a manifold `M` starting at `X0`, can be modeled as follows:
-```julia
-using JuMP
-model = Model(Manopt.JuMP_JuMP_Optimizer)
-@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
-@objective(model, Min, f(X))
-```
-The optimizer assumes that `M` has a `Array` shape described
-by `ManifoldsBase.representation_size`.
-"""
 mutable struct JuMP_Optimizer <: MOI.AbstractOptimizer
     # Manifold in which all the decision variables leave
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
