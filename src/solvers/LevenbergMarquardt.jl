@@ -40,6 +40,7 @@ then the keyword `jacobian_tangent_basis` below is ignored
 * `β` – parameter by which the damping term is multiplied when the current new point is rejected
 * `initial_residual_values` – the initial residual vector of the cost function `f`.
 * `initial_jacobian_f` – the initial Jacobian of the cost function `f`.
+* `jacobian_tangent_basis` - [`AbstractBasis`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/bases/#ManifoldsBase.AbstractBasis) specify the basis of the tangent space for `jacobian_f`.
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
@@ -263,7 +264,10 @@ function step_solver!(
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
     basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
-    get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+    # a new Jacobian is only  needed if the last step was successful
+    if lms.last_step_successful
+        get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+    end
     λk = lms.damping_term * norm(lms.residual_values)^2
 
     JJ = transpose(lms.jacF) * lms.jacF + λk * I
@@ -291,8 +295,10 @@ function step_solver!(
         if lms.expect_zero_residual
             lms.damping_term = max(lms.damping_term_min, lms.damping_term / lms.β)
         end
+        lms.last_step_successful = true
     else
         lms.damping_term *= lms.β
+        lms.last_step_successful = false
     end
     return lms
 end

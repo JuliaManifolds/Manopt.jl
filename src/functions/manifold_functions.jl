@@ -33,7 +33,7 @@ retraction, respectively.
 This can also be done in place of `q`.
 
 ## Keyword arguments
-* `retraction_method` - (`default_retration_metiod(M, typeof(p))`) the retraction to use in the reflection
+* `retraction_method` - (`default_retraction_metiod(M, typeof(p))`) the retraction to use in the reflection
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within the reflection
 
 and for the `reflect!` additionally
