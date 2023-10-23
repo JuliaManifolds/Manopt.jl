@@ -4,20 +4,29 @@ stores option values for a [`prox_bundle_method`](@ref) solver
 
 # Fields
 
+* `approx_errors` - approximation of the linearization errors at the last serious step
 * `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
-* `index_set` - the index set that keeps track of the strictly positive convex coefficients of the subproblem
+* `bundle_size` - (50) the size of the bundle
+* `c` - convex combination of the approximation errors
+* `d`- descent direction
 * `inverse_retraction_method` - the inverse retraction to use within
-* `lin_errors` - linearization errors at the last serious step
-* `m` - the parameter to test the decrease of the cost
-* `p` - current iterate
+* `m` - (0.0125) the parameter to test the decrease of the cost
+* `p` - current candidate point
 * `p_last_serious` - last serious iterate
-* `prox_bundle` - bundle that collects each iterate with its computed proximal subgradient
 * `retraction_method` – the retraction to use within
 * `stop` – a [`StoppingCriterion`](@ref)
-* `bundle_size` - the maximal bundle_size of the bundle
+* `transported_subgradients` - subgradients of the bundle that are transported to p_last_serious
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
-    `p` that was last evaluated.
+`p` that was last evaluated.
+* `α₀` - (1.2) initalization value for α, used to update η
+* `α` - curvature-dependent parameter used to update η
+* `ε` - (1e-2) stepsize-like parameter related to the injectivity radius of the manifold
+* `δ` - parameter for updating μ: if δ < 0 then μ = log(i + 1), else μ += δ * μ
+* `η` - curvature-dependent term for updating the approximation errors
+* `λ` - convex coefficients that solve the subproblem
+* `μ` - (0.5) (initial) proximal parameter for the subproblem
+* `ν` - the stopping parameter given by ν = - μ * |d|^2 - c
 
 # Constructor
 
@@ -123,6 +132,32 @@ mutable struct ProxBundleMethodState{
 end
 get_iterate(pbms::ProxBundleMethodState) = pbms.p_last_serious
 get_subgradient(pbms::ProxBundleMethodState) = pbms.d
+
+function show(io::IO, pbms::ProxBundleMethodState)
+    i = get_count(pbms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Convex Bundle Method
+    $Iter
+    ## Parameters
+    * bundle size: $(pbms.bundle_size)
+    * inverse retraction: $(pbms.inverse_retraction_method)
+    * descent test parameter: $(pbms.m)
+    * retraction: $(pbms.retraction_method)
+    * vector transport: $(pbms.vector_transport_method)
+    * stopping parameter value: $(pbms.ν)
+    * curvature-dependent α: $(pbms.α)
+    * stepsize-like parameter ε: $(pbms.ε)
+    * update parameter for proximal parameter, δ: $(pbms.δ)
+    * curvature-dependent η: $(pbms.η)
+    * proximal parameter μ: $(pbms.μ)
+
+    ## Stopping Criterion
+    $(status_summary(pbms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 
 @doc raw"""
     prox_bundle_method(M, f, ∂f, p)
