@@ -138,7 +138,7 @@ function show(io::IO, pbms::ProxBundleMethodState)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
     s = """
-    # Solver state for `Manopt.jl`s Convex Bundle Method
+    # Solver state for `Manopt.jl`s Proximal Bundle Method
     $Iter
     ## Parameters
     * bundle size: $(pbms.bundle_size)
