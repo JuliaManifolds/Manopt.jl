@@ -21,7 +21,7 @@ end
 
 @doc raw"""
     ConvexBundleMethodState <: AbstractManoptSolverState
-stores option values for a [`convex_bundle_method`](@ref) solver
+stores option values for a [`convex_bundle_method`](@ref) solver.
 
 # Fields
 
@@ -211,20 +211,16 @@ end
 @doc raw"""
     convex_bundle_method(M, f, ∂f, p)
 
-perform a convex bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
-
-where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
-
-with ``X_{q_j}\in∂f(q_j)``, and
-
-where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate.
+perform a convex bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where ``\mathrm{retr}`` is a retraction and  
+``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},``
+``p_k`` is the last serious iterate, ``X_{q_j}\in∂f(q_j)``, and the ``λ_j^k`` are solutions to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
 Though the subdifferential might be set valued, the argument `∂f` should always
 return _one_ element from the subdifferential, but not necessarily deterministic.
 
 # Input
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of f
+* `∂f`– the subgradient ``\partial f: \mathcal M→ T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
@@ -232,7 +228,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 
 # Optional
 * `m` - a real number that controls the decrease of the cost function.
-* `diam` - estimate of the diameter of the level set of `f` at `p_0`.
+* `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point.
 * `k_min` - lower bound on the sectional curvature of the manifold.
 * `k_max` - upper bound on the sectional curvature of the manifold.
 * `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
@@ -263,7 +259,7 @@ end
 @doc raw"""
     convex_bundle_method!(M, f, ∂f, p)
 
-perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`
+perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`.
 
 # Input
 
@@ -330,6 +326,49 @@ end
     bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProxBundleMethodState})
 
 solver for the subproblem of both the convex and proximal bundle methods.
+
+The subproblem for the convex bundle method is
+```math
+    \arg\min_{\lambda \in \mathbb R^{|J_k|}}
+    \frac{1}{2} ||\sum_{j \in J_k} \lambda_j \mathrm{P}_{p_k←q_j} X_{q_j}||^2 + \sum_{j \in J_k} \lambda_j \, c_j^k
+```
+
+```math
+    \text{s. t.}
+    \quad
+    \sum_{j \in J_k} \lambda_j = 1
+    ,
+    \quad
+    \lambda_j
+    \ge
+    0
+    \quad \text{for all }
+    j \in J_k
+    ,
+```
+where ``J_k = \{j \in J_{k-1} \ | \ \lambda_j > 0\} \cup \{k\}``.
+
+The subproblem for the proximal bundle method is
+```math
+    \arg\min_{\lambda \in \mathbb R^{|L_l|}}
+    \quad
+    \frac{1}{2 \mu_l} ||\sum_{j \in L_l} \lambda_j \mathrm{P}_{p_k←q_j} X_{q_j}||^2 + \sum_{j \in L_l} \lambda_j \, c_j^k
+```
+
+```math
+    \text{s. t.}
+    \quad
+    \sum_{j \in L_l} \lambda_j = 1
+    ,
+    \quad
+    \lambda_j
+    \ge
+    0
+    \quad \text{for all }
+    j \in L_l
+    ,
+```
+where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
 """
 function bundle_method_subsolver(::Any, ::Any)
     throw(

@@ -1,8 +1,3 @@
-@doc raw"""
-    bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProxBundleMethodState})
-
-solver for the subproblem of both the convex and proximal bundle methods.
-"""
 function bundle_method_subsolver(
     M::A, cbms::ConvexBundleMethodState
 ) where {A<:AbstractManifold}
