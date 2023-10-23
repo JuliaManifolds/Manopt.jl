@@ -183,24 +183,6 @@ end
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
 
-function show(io::IO, cbms::DifferenceOfConvexState)
-    i = get_count(cbms, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
-    sub = repr(cbms.sub_state)
-    sub = replace(sub, "\n" => "\n    | ")
-    s = """
-    # Solver state for `Manopt.jl`s Difference of Convex Algorithm
-    $Iter
-    ## Parameters
-    * sub solver state:
-        | $(sub)
-
-    ## Stopping Criterion
-    $(status_summary(cbms.stop))
-    This indicates convergence: $Conv"""
-    return print(io, s)
-end
 @doc raw"""
     convex_bundle_method(M, f, ∂f, p)
 
