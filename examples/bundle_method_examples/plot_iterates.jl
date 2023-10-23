@@ -22,7 +22,7 @@ function plot_maxfunc_iterates(M)
         end
     end
 
-    bundle_min = bundle_method(
+    bundle_min = convex_bundle_method(
         M,
         F3,
         subgradF3,

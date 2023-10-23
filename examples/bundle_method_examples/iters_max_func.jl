@@ -26,7 +26,7 @@ function test_max_function(N, m_par)
 
     p = rand(data)
 
-    bundle_min = bundle_method(
+    bundle_min = convex_bundle_method(
         M,
         F3,
         subgradF3,

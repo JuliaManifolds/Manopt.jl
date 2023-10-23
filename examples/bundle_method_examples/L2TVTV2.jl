@@ -14,13 +14,13 @@ gradf(N, q) = grad_distance(N, img2, q) + α * grad_TV(N, q) + β * grad_TV2(N, 
 
 # diam = level_set_diameter(N, f, gradf, p0; debug_var=true)
 println("Bundle method:")
-# b1 = bundle_method(N, f, gradf, img2; 
+# b1 = convex_bundle_method(N, f, gradf, img2; 
 #     diam=1., 
 #     stopping_criterion=StopWhenSubgradientNormLess(1e-8),
 #     # debug=[:Stop],
 #     debug=["    ", :Iteration, (:Cost,"F(p): %1.20e"), "\n", :Stop, 1]
 # )
-b2 = bundle_method(
+b2 = convex_bundle_method(
     N,
     f,
     gradf,

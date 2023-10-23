@@ -20,8 +20,8 @@ function close_point(M, p, tol; retraction_method=default_retraction_method(M, t
 end
 
 @doc raw"""
-    BundleMethodState <: AbstractManoptSolverState
-stores option values for a [`bundle_method`](@ref) solver
+    ConvexBundleMethodState <: AbstractManoptSolverState
+stores option values for a [`convex_bundle_method`](@ref) solver
 
 # Fields
 
@@ -48,7 +48,7 @@ stores option values for a [`bundle_method`](@ref) solver
 
 # Constructor
 
-BundleMethodState(M::AbstractManifold, p; kwargs...)
+ConvexBundleMethodState(M::AbstractManifold, p; kwargs...)
 
 with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
     You can use e.g. `X=` to specify the type of tangent vector to use
@@ -61,7 +61,7 @@ with keywords for all fields above besides `p_last_serious` which obtains the sa
 * `p_estimate` - (p) the point around which to estimate the sectional curvature of the manifold
 * `ϱ` - curvature-dependent bound
 """
-mutable struct BundleMethodState{
+mutable struct ConvexBundleMethodState{
     R,
     P,
     T,
@@ -94,7 +94,7 @@ mutable struct BundleMethodState{
     ξ::R
     λ::A
     ϱ::R
-    function BundleMethodState(
+    function ConvexBundleMethodState(
         M::TM,
         p::P;
         atol_λ::R=eps(R),
@@ -180,11 +180,29 @@ mutable struct BundleMethodState{
         )
     end
 end
-get_iterate(bms::BundleMethodState) = bms.p_last_serious
-get_subgradient(bms::BundleMethodState) = bms.g
+get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
+get_subgradient(bms::ConvexBundleMethodState) = bms.g
 
+function show(io::IO, cbms::DifferenceOfConvexState)
+    i = get_count(cbms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
+    sub = repr(cbms.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
+    s = """
+    # Solver state for `Manopt.jl`s Difference of Convex Algorithm
+    $Iter
+    ## Parameters
+    * sub solver state:
+        | $(sub)
+
+    ## Stopping Criterion
+    $(status_summary(cbms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 @doc raw"""
-    bundle_method(M, f, ∂f, p)
+    convex_bundle_method(M, f, ∂f, p)
 
 perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
 
@@ -229,12 +247,14 @@ and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
-function bundle_method(M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...) where {TF,TdF}
+function convex_bundle_method(
+    M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...
+) where {TF,TdF}
     p_star = copy(M, p)
-    return bundle_method!(M, f, ∂f, p_star; kwargs...)
+    return convex_bundle_method!(M, f, ∂f, p_star; kwargs...)
 end
 @doc raw"""
-    bundle_method!(M, f, ∂f, p)
+    convex_bundle_method!(M, f, ∂f, p)
 
 perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`
 
@@ -248,9 +268,9 @@ perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`
   a mutating function `(M, X, p) -> X`, see `evaluation`.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
-for more details and all optional parameters, see [`bundle_method`](@ref).
+for more details and all optional parameters, see [`convex_bundle_method`](@ref).
 """
-function bundle_method!(
+function convex_bundle_method!(
     M::AbstractManifold,
     f::TF,
     ∂f!!::TdF,
@@ -277,7 +297,7 @@ function bundle_method!(
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    bms = BundleMethodState(
+    bms = ConvexBundleMethodState(
         M,
         p;
         atol_λ=atol_λ,
@@ -298,12 +318,12 @@ function bundle_method!(
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
-function bundle_method_sub_solver(::Any, ::Any)
+function convex_bundle_method_sub_solver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
 end
-function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
+function initialize_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
@@ -311,13 +331,13 @@ function initialize_solver!(mp::AbstractManoptProblem, bms::BundleMethodState)
     bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
     return bms
 end
-function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
+function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
     M = get_manifold(mp)
     bms.transported_subgradients = [
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
         (qj, Xj) in bms.bundle
     ]
-    bms.λ = bundle_method_sub_solver(M, bms)
+    bms.λ = convex_bundle_method_sub_solver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
@@ -356,12 +376,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::BundleMethodState, i)
     ]
     return bms
 end
-get_solver_result(bms::BundleMethodState) = bms.p_last_serious
+get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
 
 """
     StopWhenBundleLess <: StoppingCriterion
 
-Two stopping criteria for [`bundle_method`](@ref) to indicate to stop when either
+Two stopping criteria for [`convex_bundle_method`](@ref) to indicate to stop when either
 
 * the parameters ε and |g|
 
@@ -392,7 +412,7 @@ mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
     end
 end
 function (b::StopWhenBundleLess{T,Nothing})(
-    mp::AbstractManoptProblem, bms::BundleMethodState, i::Int
+    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 ) where {T}
     if i == 0 # reset on init
         b.reason = ""
@@ -407,7 +427,7 @@ function (b::StopWhenBundleLess{T,Nothing})(
     return false
 end
 function (b::StopWhenBundleLess{Nothing,R})(
-    mp::AbstractManoptProblem, bms::BundleMethodState, i::Int
+    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 ) where {R}
     if i == 0 # reset on init
         b.reason = ""
@@ -462,7 +482,7 @@ mutable struct DebugWarnIfStoppingParameterIncreases <: DebugAction
     end
 end
 function (d::DebugWarnIfStoppingParameterIncreases)(
-    p::AbstractManoptProblem, st::BundleMethodState, i::Int
+    p::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
 )
     (i < 1) && (return nothing)
     if d.status !== :No
@@ -472,7 +492,7 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             At iteration #$i the stopping parameter -ξ increased from $(d.old_value) to $(new_value).\n
             Consider decreasing either the diameter by changing the `diam` keyword argument, or one 
             of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
-            `k_max`, or `ϱ` in the `bundle_method` call.
+            `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWarnIfStoppingParameterIncreases(:Always) to get all warnings."
@@ -483,7 +503,7 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             At iteration #$i the stopping parameter -ξ became negative.\n
             Consider increasing either the diameter by changing the `diam` keyword argument, or changing 
             one of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
-            `k_max`, or `ϱ` in the `bundle_method` call.
+            `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """
         else
             d.old_value = min(d.old_value, new_value)

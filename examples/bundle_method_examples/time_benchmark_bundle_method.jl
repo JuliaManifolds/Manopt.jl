@@ -26,7 +26,7 @@ function compare_times(manifold_name, n::Int)
             end
         end
 
-        push!(t, @timed(bundle_method(
+        push!(t, @timed(convex_bundle_method(
             M,
             F3,
             subgradF3,

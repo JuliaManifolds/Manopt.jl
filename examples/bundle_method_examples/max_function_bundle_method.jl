@@ -37,7 +37,7 @@ function check_maxfunc(M, tol=1e-8)
     # diam = level_set_diameter(M, F3, subgradF3, p0)
     # println("Level set diameter = $diam")
     println("Convex bundle method")
-    @time bundle_min = bundle_method(
+    @time bundle_min = convex_bundle_method(
         M,
         F3,
         subgradF3,
@@ -127,7 +127,7 @@ end
 
 check_maxfunc(SymmetricPositiveDefinite(3))
 # check_maxfunc(SymmetricPositiveDefinite(7)) # prox_bundle_method yields a lower minimum (by 1e-11), but takes 50 more iterations
-# check_maxfunc(Hyperbolic(2)) # bundle_method is by far better, whereas for bigger dimensions the prox_bundle_method errors at the subsolver level: AssertionError: all(pt0.x .> fd.lvar) && all(pt0.x .< fd.uvar)
+# check_maxfunc(Hyperbolic(2)) # convex_bundle_method is by far better, whereas for bigger dimensions the prox_bundle_method errors at the subsolver level: AssertionError: all(pt0.x .> fd.lvar) && all(pt0.x .< fd.uvar)
 
-# check_maxfunc(SymmetricPositiveDefinite(60)) # bundle_method is much faster: I'm still waiting for the prox_bundle_method to stop
+# check_maxfunc(SymmetricPositiveDefinite(60)) # convex_bundle_method is much faster: I'm still waiting for the prox_bundle_method to stop
 # check_maxfunc(Hyperbolic(37))

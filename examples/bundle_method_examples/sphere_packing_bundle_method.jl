@@ -20,7 +20,7 @@ G(y) = -minimum(minimum.(F(M, y)))
 gradG(y) = ManifoldDiff.gradient(M, G, y, r_backend)
 
 # The paramer m is very influent here! For small m the bundle method loops at the first iterate!
-b = bundle_method(
+b = convex_bundle_method(
     M,
     G,
     gradG,

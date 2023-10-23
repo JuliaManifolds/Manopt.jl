@@ -35,7 +35,7 @@ end
 #s = subgradient_method(N, f, gradf, rand(N); stopping_criterion=StopAfterIteration(90), debug=[:Iteration, :Cost, "\n"])
 
 # ╔═╡ 23668e76-8b34-43f6-af65-64eaaeba7dd6
-#b = bundle_method(N, f, gradf, rand(N); stopping_criterion=StopAfterIteration(90), debug=[:Iteration, :Cost, "\n"])
+#b = convex_bundle_method(N, f, gradf, rand(N); stopping_criterion=StopAfterIteration(90), debug=[:Iteration, :Cost, "\n"])
 
 # ╔═╡ fc28e3af-33ca-4f1b-9dbd-a90a0717348a
 asymptote_export_SPD(
@@ -127,7 +127,7 @@ s = subgradient_method(
 )
 
 # ╔═╡ d9416139-6170-421a-b181-641d50c98695
-b = bundle_method(
+b = convex_bundle_method(
     L,
     g,
     gradg,
@@ -176,7 +176,7 @@ b_img = load("b.png")
 # imshow(b_img)
 
 # ╔═╡ ab48f6e5-d803-4872-845c-dfb92a61440a
-md"""b=bundle_method(L, g, gradg, data; 
+md"""b=convex_bundle_method(L, g, gradg, data; 
 m=1e-3, diam=.1, debug=[:Iteration, (:Cost,"F(p): %1.15e "), :Stop, "\n"], stopping_criterion=StopAfterIteration(1000)
 )
 	Initial F(p): 4.272619178099957e+01 

@@ -154,7 +154,7 @@ include("solvers/solver.jl")
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
-include("solvers/bundle_method.jl")
+include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
@@ -255,7 +255,7 @@ export AbstractGradientSolverState,
     AdaptiveRegularizationState,
     AlternatingGradientDescentState,
     AugmentedLagrangianMethodState,
-    BundleMethodState,
+    ConvexBundleMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
     CyclicProximalPointState,
@@ -368,8 +368,8 @@ export adaptive_regularization_with_cubics,
     alternating_gradient_descent!,
     augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
-    bundle_method,
-    bundle_method!,
+    convex_bundle_method,
+    convex_bundle_method!,
     ChambollePock,
     ChambollePock!,
     conjugate_gradient_descent,

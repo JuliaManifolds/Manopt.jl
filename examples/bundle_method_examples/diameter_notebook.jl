@@ -142,7 +142,7 @@ diam = level_set_diameter(M, F3, subgradF3, p0)
 # ╔═╡ 5f92e023-7360-479d-8841-7ea1ebfda6e3
 begin
     println("Bundle method:")
-    bundle_min = bundle_method(
+    bundle_min = convex_bundle_method(
         M,
         F3,
         subgradF3,

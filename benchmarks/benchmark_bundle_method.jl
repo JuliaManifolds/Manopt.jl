@@ -10,8 +10,8 @@ function ∂f(M, y)
     end
     return -2 * log(M, y, x) / max(10 * eps(Float64), distance(M, x, y))
 end
-x1 = bundle_method(M, f, ∂f, x0)
-@btime bundle_method($M, $f, $∂f, $x0)
+x1 = convex_bundle_method(M, f, ∂f, x0)
+@btime convex_bundle_method($M, $f, $∂f, $x0)
 
 function ∂f!(M, X, y)
     d = distance(M, x, y)
@@ -23,8 +23,8 @@ function ∂f!(M, X, y)
     return X
 end
 x2 = copy(x0)
-bundle_method!(M, f, ∂f!, x2; evaluation=InplaceEvaluation())
-@btime bundle_method!($M, $f, $∂f!, x3; evaluation=$(InplaceEvaluation())) setup = (
+convex_bundle_method!(M, f, ∂f!, x2; evaluation=InplaceEvaluation())
+@btime convex_bundle_method!($M, $f, $∂f!, x3; evaluation=$(InplaceEvaluation())) setup = (
     x3 = deepcopy($x0)
 )
 

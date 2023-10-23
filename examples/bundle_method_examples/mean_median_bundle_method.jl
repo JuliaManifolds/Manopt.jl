@@ -11,7 +11,7 @@ tol = 1e-8
 
 # F(M, y) = sum(1 / (2 * length(data)) * distance.(Ref(M), data, Ref(y)) .^ 2)
 # gradF(M, y) = sum(1 / length(data) * grad_distance.(Ref(M), data, Ref(y)))
-# @time b_mean = bundle_method(
+# @time b_mean = convex_bundle_method(
 #     M,
 #     F,
 #     gradF,
@@ -34,7 +34,7 @@ function gradF2(M, y)
         ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(y), 1; atol=√eps()),
     )
 end
-@time b_median = bundle_method(
+@time b_median = convex_bundle_method(
     M,
     F2,
     gradF2,

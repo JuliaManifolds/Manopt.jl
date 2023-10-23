@@ -12,7 +12,7 @@ function test_dist_function(N)
 
     m = rand(data)
 
-    bundle_min = bundle_method(
+    bundle_min = convex_bundle_method(
         M,
         F2,
         gradF2,
