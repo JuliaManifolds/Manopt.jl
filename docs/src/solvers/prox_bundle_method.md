@@ -19,9 +19,3 @@ ProxBundleMethodState
 ```@docs
 StopWhenProxBundleLess
 ```
-
-## Debug Functions
-
-```@docs
-DebugWarnIfStoppingParameterIncreases
-```

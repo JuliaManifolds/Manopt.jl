@@ -1,4 +1,5 @@
-# How to Print Debug Output
+How to Print Debug Output
+================
 Ronny Bergmann
 
 This tutorial aims to illustrate how to perform debug output. For that we consider an
@@ -61,7 +62,11 @@ p1 = exact_penalty_method(
 ```
 
     Initial f(x): -0.497512 | ϵ: 0.001
-    # 25    f(x): -0.499449 | ϵ: 0.0001778279410038921
+
+
+    # 25    
+
+    f(x): -0.499449 | ϵ: 0.0001778279410038921
     # 50    f(x): -0.499995 | ϵ: 3.1622776601683734e-5
     # 75    f(x): -0.500000 | ϵ: 5.623413251903474e-6
     # 100   f(x): -0.500000 | ϵ: 1.0e-6

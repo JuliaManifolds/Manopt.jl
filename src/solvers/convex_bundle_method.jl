@@ -240,7 +240,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `p_estimate` - (p) the point around which to estimate the sectional curvature of the manifold.
 * `ϱ` - curvature-dependent bound.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂f(M, q)` or [`MutatingEvaluation`](@ref) in place, i.e. is
+   allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
@@ -326,6 +326,11 @@ function convex_bundle_method!(
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
+@doc raw"""
+    bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProxBundleMethodState})
+
+solver for the subproblem of both the convex and proximal bundle methods.
+"""
 function bundle_method_subsolver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
