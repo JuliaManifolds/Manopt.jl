@@ -294,7 +294,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    pbms.λ = bundle_method_sub_solver(M, pbms)
+    pbms.λ = bundle_method_subsolver(M, pbms)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
     nd = norm(M, pbms.p_last_serious, pbms.d)
@@ -455,6 +455,21 @@ function show(io::IO, b::StopWhenProxBundleLess{Nothing,R}) where {R}
     return print(io, "StopWhenProxBundleLess($(b.tolν))\n    $(status_summary(b))")
 end
 
+@doc raw"""
+    DebugWarnIfStoppingParameterIncreases <: DebugAction
+
+print a warning if the stopping parameter of the bundle method increases.
+
+# Constructor
+    DebugWarnIfStoppingParameterIncreases(warn=:Once; tol=1e2)
+
+Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always:`
+"""
 function (d::DebugWarnIfStoppingParameterIncreases)(
     p::AbstractManoptProblem, st::ProxBundleMethodState, i::Int
 )

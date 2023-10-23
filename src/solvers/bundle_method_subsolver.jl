@@ -1,4 +1,9 @@
-function bundle_method_sub_solver(
+@doc raw"""
+    bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProxBundleMethodState})
+
+solver for the subproblem of both the convex and proximal bundle methods.
+"""
+function bundle_method_subsolver(
     M::A, cbms::ConvexBundleMethodState
 ) where {A<:AbstractManifold}
     d = length(cbms.lin_errors)
@@ -18,7 +23,7 @@ function bundle_method_sub_solver(
     )
     return ripqp(qm; display=false).solution
 end
-function bundle_method_sub_solver(
+function bundle_method_subsolver(
     M::A, pbms::ProxBundleMethodState
 ) where {A<:AbstractManifold}
     d = length(pbms.approx_errors)

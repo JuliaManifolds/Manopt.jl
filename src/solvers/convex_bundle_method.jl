@@ -326,7 +326,7 @@ function convex_bundle_method!(
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
-function bundle_method_sub_solver(::Any, ::Any)
+function bundle_method_subsolver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
@@ -345,7 +345,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
         (qj, Xj) in bms.bundle
     ]
-    bms.λ = bundle_method_sub_solver(M, bms)
+    bms.λ = bundle_method_subsolver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
