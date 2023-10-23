@@ -183,10 +183,35 @@ end
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
 
+function show(io::IO, cbms::ConvexBundleMethodState)
+    i = get_count(cbms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(cbms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Convex Bundle Method
+    $Iter
+    ## Parameters
+    * tolerance parameter for the convex coefficients: $(cbms.atol_λ)
+    * tolerance parameter for the linearization errors: $(cbms.atol_errors)
+    * bundle size: $(cbms.bundle_size)
+    * diameter: $(cbms.diam)
+    * inverse retraction: $(cbms.inverse_retraction_method)
+    * descent test parameter: $(cbms.m)
+    * retraction: $(cbms.retraction_method)
+    * vector transport: $(cbms.vector_transport_method)
+    * stopping parameter value: $(cbms.ξ)
+    * curvature-dependent bound: $(cbms.ϱ)
+
+    ## Stopping Criterion
+    $(status_summary(cbms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
 @doc raw"""
     convex_bundle_method(M, f, ∂f, p)
 
-perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
+perform a convex bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
 
 where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
 
@@ -300,7 +325,7 @@ function convex_bundle_method!(
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
-function convex_bundle_method_sub_solver(::Any, ::Any)
+function bundle_method_sub_solver(::Any, ::Any)
     throw(
         ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
     )
@@ -319,7 +344,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
         (qj, Xj) in bms.bundle
     ]
-    bms.λ = convex_bundle_method_sub_solver(M, bms)
+    bms.λ = bundle_method_sub_solver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
