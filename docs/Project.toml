@@ -22,6 +22,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 [compat]
 BenchmarkTools = "1.3"
 CondaPkg = "0.2"
-Documenter = "0.27"
+Documenter = "1"
 Manifolds = "0.8.81, 0.9"
 ManifoldsBase = "0.14.12, 0.15"
