@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.40] – 24/10/2023
 
-## Changes
+### Added
+
+* add a `--help` argument to `docs/make.jl` to document all availabel command line arguments
+* add a `--exclude-tutorials` argument to `docs/make.jl`. This way, when quarto is not available
+  on a computer, the docs can still be build with the tutorials not being added to the menu
+  such that documenter does not expect them to exist.
+
+### Changes
 
 * Bump dependencies to `ManifoldsBase.jl` 0.15 and `Manifolds.jl` 0.9
 * move the ARC CG subsolver to the main package, since `TangentSpace` is now already
@@ -15,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.39] – 02/09/2023
 
-## Changes
+### Changes
+
 * also use the pair of a retraction and the inverse retraction (see last update)
   to perform the relaxation within the Douglas-Rachford algorithm.
 
@@ -23,8 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
-* Fix a lot of typos in the documentation
 * avoid allocations when calling `get_jacobian!` within the Levenberg-Marquard Algorithm.
+
+### Fixed
+
+* Fix a lot of typos in the documentation
 
 ## [0.4.37] – 02/09/2023
 
@@ -37,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.36] – 20/09/2023
 
+### Fixed
+
+* Fixed a bug that caused non-matrix points and vectors to fail when working with approcimate
 
 ## [0.4.35] – 14/09/2023
 
@@ -330,7 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a `max_stepsize` per manifold to avoid leaving the injectivity radius,
   which it also defaults to
 
-## {0.4.0] - 10/01/2023
+## [0.4.0] - 10/01/2023
 
 ### Added
 
