@@ -2,6 +2,28 @@
 #
 #
 
+if "--help" ∈ ARGS
+    println(
+        """
+docs/make.jl
+
+Render the `Manopt.jl` documenation with optinal arguments
+
+Arguments
+* `--exclude-docs` - exclude the tutorials from the menu of Documenter,
+  this can be used if you do not have Quarto installed to still be able to render the docs
+  locally on this machine. This option should not be set on CI.
+* `--help`         - print this help and exit without rendering the documentation
+* `--quarto`       – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
+  this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
+  the documentation (see `--exclude-tutorials`) for the alternative.
+  If they are generated ones they are cached accordingly.
+  Then you can spare time in the rendering by not passing this argument.
+""",
+    )
+    exit(0)
+end
+
 #
 # (a) if docs is not the current active environment, switch to it
 # (from https://github.com/JuliaIO/HDF5.jl/pull/1020/) 
@@ -29,6 +51,17 @@ if "--quarto" ∈ ARGS
     end
 end
 
+tutorials_in_menu = true
+if "--exclude-tutorials" ∈ ARGS
+    @warn """
+    You are excluding the tutorials from the Menu,
+    which might be done if you can not render them locally.
+
+    Remember that this should never be done on CI for the full documentation.
+    """
+    tutorials_in_menu = false
+end
+
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations
@@ -38,26 +71,42 @@ using LineSearches, LRUCache, Manopt, Manifolds, Plots
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
-open(joinpath(generated_path, "contributing.md"), "w") do io
-    # Point to source license file
-    println(
-        io,
-        """
-        ```@meta
-        EditURL = "$(base_url)CONTRIBUTING.md"
-        ```
-        """,
-    )
-    # Write the contents out below the meta block
-    for line in eachline(joinpath(dirname(@__DIR__), "CONTRIBUTING.md"))
-        println(io, line)
+for (md_file, doc_file) in
+    [("CONTRIBUTING.md", "contributing.md"), ("Changelog.md", "changelog.md")]
+    open(joinpath(generated_path, doc_file), "w") do io
+        # Point to source license file
+        println(
+            io,
+            """
+            ```@meta
+            EditURL = "$(base_url)$(md_file)"
+            ```
+            """,
+        )
+        # Write the contents out below the meta block
+        for line in eachline(joinpath(dirname(@__DIR__), md_file))
+            println(io, line)
+        end
     end
 end
 
+## Build titorials menu
+tutorials_menu =
+    "How to..." => [
+        "Get started: Optimize!" => "tutorials/Optimize!.md",
+        "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
+        "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
+        "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
+        "Count and use a Cache" => "tutorials/CountAndCache.md",
+        "Print Debug Output" => "tutorials/HowToDebug.md",
+        "Record values" => "tutorials/HowToRecord.md",
+        "Implement a Solver" => "tutorials/ImplementASolver.md",
+        "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
+        "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
+    ]
 # (e) ...finally! make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
-makedocs(
-    bib;
+makedocs(;
     format=Documenter.HTML(;
         mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
     ),
@@ -86,36 +135,10 @@ makedocs(
     ],
     authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
-    strict=[
-        :doctest,
-        :linkcheck,
-        :parse_error,
-        :example_block,
-        :autodocs_block,
-        :cross_references,
-        :docs_block,
-        :eval_block,
-        :example_block,
-        :footnote,
-        :meta_block,
-        :missing_docs,
-        :setup_block,
-    ],
     pages=[
         "Home" => "index.md",
         "About" => "about.md",
-        "How to..." => [
-            "Get started: Optimize!" => "tutorials/Optimize!.md",
-            "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
-            "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
-            "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
-            "Count and use a Cache" => "tutorials/CountAndCache.md",
-            "Print Debug Output" => "tutorials/HowToDebug.md",
-            "Record values" => "tutorials/HowToRecord.md",
-            "Implement a Solver" => "tutorials/ImplementASolver.md",
-            "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
-            "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
-        ],
+        (tutorials_in_menu ? [tutorials_menu] : [])...,
         "Solvers" => [
             "Introduction" => "solvers/index.md",
             "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
@@ -168,8 +191,10 @@ makedocs(
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",
+        "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
+    plugins=[bib],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)
 #back to main env

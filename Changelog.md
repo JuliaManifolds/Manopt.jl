@@ -5,6 +5,68 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.40] – 24/10/2023
+
+### Added
+
+* add a `--help` argument to `docs/make.jl` to document all availabel command line arguments
+* add a `--exclude-tutorials` argument to `docs/make.jl`. This way, when quarto is not available
+  on a computer, the docs can still be build with the tutorials not being added to the menu
+  such that documenter does not expect them to exist.
+
+### Changes
+
+* Bump dependencies to `ManifoldsBase.jl` 0.15 and `Manifolds.jl` 0.9
+* move the ARC CG subsolver to the main package, since `TangentSpace` is now already
+  available from `ManifoldsBase`.
+
+## [0.4.39] – 09/10/2023
+
+### Changes
+
+* also use the pair of a retraction and the inverse retraction (see last update)
+  to perform the relaxation within the Douglas-Rachford algorithm.
+
+## [0.4.38] – 08/10/2023
+
+### Changes
+
+* avoid allocations when calling `get_jacobian!` within the Levenberg-Marquard Algorithm.
+
+### Fixed
+
+* Fix a lot of typos in the documentation
+
+## [0.4.37] – 28/09/2023
+
+### Changes
+
+* add more of the Riemannian Levenberg-Marquard algorithms parameters as keywords, so they
+  can be changed on call
+* generalize the internal reflection of Douglas-Rachford, such that is also works with an
+  arbitrary pair of a reflection and an inverse reflection.
+
+## [0.4.36] – 20/09/2023
+
+### Fixed
+
+* Fixed a bug that caused non-matrix points and vectors to fail when working with approcimate
+
+## [0.4.35] – 14/09/2023
+
+### Added
+
+* The access to functions of the objective is now unified and encapsulated in proper `get_`
+  functions.
+
+## [0.4.34] – 02/09/2023
+
+### Added
+
+* an `ManifoldEuclideanGradientObjetive` to allow the cost, gradient, and Hessian and other
+  first or second derivative based elements to be Euclidean and converted when needed.
+* a keyword `objective_type=:Euclidean` for all solvers, that specifies that an Objective shall be created of the above type
+
 ## [0.4.33] - 24/08/2023
 
 ### Added
@@ -282,7 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a `max_stepsize` per manifold to avoid leaving the injectivity radius,
   which it also defaults to
 
-## {0.4.0] - 10/01/2023
+## [0.4.0] - 10/01/2023
 
 ### Added
 
