@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * move the ARC CG subsolver to the main package, since `TangentSpace` is now already
   available from `ManifoldsBase`.
 
-## [0.4.39] – 02/09/2023
+## [0.4.39] – 09/10/2023
 
 ### Changes
 
@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Fix a lot of typos in the documentation
 
-## [0.4.37] – 02/09/2023
+## [0.4.37] – 28/09/2023
 
 ### Changes
 

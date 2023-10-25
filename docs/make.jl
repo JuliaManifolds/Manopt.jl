@@ -10,7 +10,7 @@ docs/make.jl
 Render the `Manopt.jl` documenation with optinal arguments
 
 Arguments
-* `--exclude-docs` - exlcude the tutorials from the menu of Documenter,
+* `--exclude-docs` - exclude the tutorials from the menu of Documenter,
   this can be used if you do not have Quarto installed to still be able to render the docs
   locally on this machine. This option should not be set on CI.
 * `--help`         - print this help and exit without rendering the documentation
