@@ -71,19 +71,22 @@ using LineSearches, LRUCache, Manopt, Manifolds, Plots
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
-open(joinpath(generated_path, "contributing.md"), "w") do io
-    # Point to source license file
-    println(
-        io,
-        """
-        ```@meta
-        EditURL = "$(base_url)CONTRIBUTING.md"
-        ```
-        """,
-    )
-    # Write the contents out below the meta block
-    for line in eachline(joinpath(dirname(@__DIR__), "CONTRIBUTING.md"))
-        println(io, line)
+for (md_file, doc_file) in
+    [("CONTRIBUTING.md", "contributing.md"), ("Changelog.md", "changelog.md")]
+    open(joinpath(generated_path, doc_file), "w") do io
+        # Point to source license file
+        println(
+            io,
+            """
+            ```@meta
+            EditURL = "$(base_url)$(md_file)"
+            ```
+            """,
+        )
+        # Write the contents out below the meta block
+        for line in eachline(joinpath(dirname(@__DIR__), md_file))
+            println(io, line)
+        end
     end
 end
 
@@ -188,6 +191,7 @@ makedocs(;
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",
+        "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
     plugins=[bib],
