@@ -333,6 +333,7 @@ function difference_of_convex_algorithm!(
                     M, copy(M, p); stopping_criterion=sub_stopping_criterion
                 )
             else
+                # TODO Fix constructor
                 TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
             end;
             sub_kwargs...,

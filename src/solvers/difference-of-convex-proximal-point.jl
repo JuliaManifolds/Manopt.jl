@@ -77,6 +77,12 @@ mutable struct DifferenceOfConvexProximalState{
         )
     end
 end
+# no point -> add point
+function DifferenceOfConvexProximalState(
+    M::AbstractManifold, sub_problem, sub_state; kwargs...
+)
+    return DifferenceOfConvexProximalState(M, rand(M), sub_problem, sub_state; kwargs...)
+end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
 function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
     copyto!(M, dcps.p, p)
