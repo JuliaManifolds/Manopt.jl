@@ -4,10 +4,13 @@ The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algo
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over ``p∈\mathcal M`` the cost function consisting of
+In order to minimize a cost function consisting of
 
 ```math
 F(p) + G(Λ(p)),
 ```
+
+ over ``p∈\mathcal M``
 
 where ``F:\mathcal M → \overline{ℝ}``, ``G:\mathcal N → \overline{ℝ}``, and
 ``Λ:\mathcal M →\mathcal N``.

@@ -147,7 +147,7 @@ function artificial_S2_whirl_image end
 Generate an artificial image of data on the 2 sphere,
 
 # Arguments
-* `pts` – (`64`) size of the image in `pts```\times```pts` pixel.
+* `pts` – (`64`) size of the image in `pts`×`pts` pixel.
 
 This example dataset was used in the numerical example in Section 5.5 of [Laus et al., SIAM J Imag Sci., 2017](@cite LausNikolovaPerschSteidl:2017)
 
@@ -172,7 +172,7 @@ artificial_S2_rotation_image()
 @doc raw"""
     artificial_S2_whirl_patch([pts=5])
 
-create a whirl within the `pts```\times```pts` patch of
+create a whirl within the `pts`×`pts` patch of
 [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html)(@ref)`(2)`-valued image data.
 
 These patches are used within [`artificial_S2_whirl_image`](@ref).
@@ -237,7 +237,7 @@ artificial_S2_composite_bezier_curve()
     artificial_SPD_image([pts=64, stepsize=1.5])
 
 create an artificial image of symmetric positive definite matrices of size
-`pts` ``\times```pts` pixel with a jump of size `stepsize`.
+`pts`×`pts` pixel with a jump of size `stepsize`.
 
 This dataset was used in the numerical example of Section 5.2 of [Bačák et al., SIAM J Sci Comput, 2016](@cite BacakBergmannSteidlWeinmann:2016).
 """
@@ -273,7 +273,7 @@ function artificial_SPD_image2 end
     artificial_SPD_image2([pts=64, fraction=.66])
 
 create an artificial image of symmetric positive definite matrices of size
-`pts```\times```pts` pixel with right hand side `fraction` is moved upwards.
+`pts`×`pts` pixel with right hand side `fraction` is moved upwards.
 
 This data set was introduced in the numerical examples of Section of [Bergmann, Presch, Steidl, SIAM J Imag Sci, 2016](@cite BergmannPerschSteidl:2016)
 """
