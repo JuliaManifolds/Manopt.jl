@@ -35,20 +35,41 @@ All the following fields (besides `p`) can be set by specifying them as keywords
 * `Z`                       – the Cauchy point (only used if random is activated)
 
 
-# Constructor
+# Constructors
 
-    TrustRegionsState(M, p=rand(M))
+All the following constructors have the above fields as keyword arguents with the defaults
+given in brackets. If no initial point `p` is provided, `p=rand(M)` is used
 
-construct a trust-regions Option with all fields from above with a default in brackets being
-keyword arguments.
+
+
+    TrustRegionsState(M, mho; kwargs...)
+    TrustRegionsState(M, p, mho; kwargs...)
+
+A trust region state, where the sub problem is set to a [`DefaultManoptProblem`](@ref) on the
+tangent space using the [`TrustRegionModelObjective`](@ref) to be solved with [`truncated_conjugate_gradient_descent!`](@ref)
+or in other words the sub state is set to [`TruncatedConjugateGradientState`](@ref).
+
+    TrustRegionsState(M, sub_problem, sub_state; kwargs...)
+    TrustRegionsState(M, p, sub_problem, sub_state; kwargs...)
+
+A trust region state, where the sub problem is solved using a [`AbstractManoptProblem`](@ref) `sub_problem`
+and an [`AbstractManoptSolverState`](@ref) `sub_state`.
+
+    TrustRegionsState(M, f::Function; evaluation=AllocatingEvaluation, kwargs...)
+    TrustRegionsState(M, p, f; evaluation=AllocatingEvaluation, kwargs...)
+
+A trust region state, where the sub problem is solved in closed form by a funtion
+`f(M, p, Y, Δ)`, where `p` is the current iterate, `Y` the inital tangent vector at `p` and
+`Δ` the current trust region radius.
+
 
 # See also
 
-[`trust_regions`](@ref)
+[`trust_regions`](@ref), [`trust_regions!`](@ref)
 """
 mutable struct TrustRegionsState{
     P,T,Pr,St,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
-} <: AbstractHessianSolverState
+} <: AbstractSubProblemSolverState
     p::P
     X::T
     stop::SC
@@ -115,10 +136,10 @@ mutable struct TrustRegionsState{
         return trs
     end
 end
-# No point no state -> add point
+# No point, no state -> add point
 function TrustRegionsState(
     M, sub_problem::Pr; kwargs...
-) where {Pr<:Union{AbstractManoptProblem,<:Function}}
+) where {Pr<:Union{AbstractManoptProblem,<:Function,AbstractManifoldHessianObjective}}
     return TrustRegionsState(M, rand(M), sub_problem; kwargs...)
 end
 # No point but state -> add point
@@ -127,7 +148,25 @@ function TrustRegionsState(
 ) where {Pr<:Union{AbstractManoptProblem,<:Function},St}
     return TrustRegionsState(M, rand(M), sub_problem, sub_state; kwargs...)
 end
-# HessianObjective (problem) provided -> Constructor like in ALM?
+# point, but no state for a function -> add evaluation as state
+function TrustRegionsState(
+    M,
+    p,
+    sub_problem::Pr;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {Pr<:Function}
+    return TrustRegionsState(M, p, sub_problem, evaluation; kwargs...)
+end
+function TrustRegionsState(
+    M, p, mho::H; kwargs...
+) where {H<:AbstractManifoldHessianObjective}
+    problem = DefaultManoptProblem(
+        TrustRegionModelObjective(TangentSpace(M, copy(M, p)), mho, copy(M, p))
+    )
+    state = TruncatedConjugateGradientState(M, copy(M, p))
+    return TrustRegionsState(M, p, problem, state; kwargs...)
+end
 function TrustRegionsState(
     M::TM,
     p::P,
@@ -150,7 +189,7 @@ function TrustRegionsState(
     σ=randomize ? 1e-4 : 0.0,
 ) where {
     TM<:AbstractManifold,
-    Pr,
+    Pr<:AbstractManoptProblem,
     St,
     P,
     T,
@@ -187,7 +226,10 @@ function set_iterate!(trs::TrustRegionsState, M, p)
     copyto!(M, trs.p, p)
     return trs
 end
-
+function get_message(dcs::TrustRegionsState)
+    # for now only the sub solver might have messages
+    return get_message(dcs.sub_state)
+end
 function show(io::IO, trs::TrustRegionsState)
     i = get_count(trs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -211,7 +253,7 @@ function show(io::IO, trs::TrustRegionsState)
 end
 
 @doc raw"""
-    TrustRegionTangentSpaceModelObjective{TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T} <: AbstractManifoldSubObjective{O}
+    TrustRegionModelObjective{TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T} <: AbstractManifoldSubObjective{O}
 
 A trust region model of the form
 
@@ -238,7 +280,7 @@ where
 
 If `H` is set to nothing, the hessian from the `objective` is used.
 """
-struct TrustRegionTangentSpaceModelObjective{
+struct TrustRegionModelObjective{
     E<:AbstractEvaluationType,
     TH<:Union{Function,Nothing},
     O<:AbstractManifoldHessianObjective,
@@ -251,10 +293,10 @@ struct TrustRegionTangentSpaceModelObjective{
     H::TH
     Δ::R
 end
-function TrustRegionTangentSpaceModelObjective(TpM::TangentSpace, mho, p=rand(M); kwargs...)
-    return TrustRegionTangentSpaceModelObjective(base_manifold(TpM), mho, p; kwargs...)
+function TrustRegionModelObjective(TpM::TangentSpace, mho, p=rand(M); kwargs...)
+    return TrustRegionModelObjective(base_manifold(TpM), mho, p; kwargs...)
 end
-function TrustRegionTangentSpaceModelObjective(
+function TrustRegionModelObjective(
     M::AbstractManifold,
     mho::O,
     p=rand(M);
@@ -269,12 +311,12 @@ function TrustRegionTangentSpaceModelObjective(
     T,
     R,
 }
-    return TrustRegionTangentSpaceModelObjective{E,TH,O,T,R}(
+    return TrustRegionModelObjective{E,TH,O,T,R}(
         mho, cost, gradient, bilinear_form, trust_region_radius
     )
 end
 
-get_objective(trm::TrustRegionTangentSpaceModelObjective) = trom.objective
+get_objective(trm::TrustRegionModelObjective) = trom.objective
 
 @doc raw"""
     trust_regions(M, f, grad_f, hess_f, p=rand(M))
@@ -503,7 +545,7 @@ function trust_regions!(
     reduction_factor::R=0.25,
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
-    sub_objective=TrustRegionTangentSpaceModelObjective(
+    sub_objective=TrustRegionModelObjective(
         M, mho, p; trust_region_radius=trust_region_radius
     ),
     sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),

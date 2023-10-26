@@ -63,6 +63,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
             p, initial_vector, sub_problem, sub_state, stopping_criterion
         )
     end
+    # Function
     function DifferenceOfConvexState(
         M::AbstractManifold,
         p::P,
@@ -334,7 +335,9 @@ function difference_of_convex_algorithm!(
                 )
             else
                 # TODO Fix constructor
-                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+                TrustRegionsState(
+                    M, copy(M, p), sub_objective; stopping_criterion=sub_stopping_criterion
+                )
             end;
             sub_kwargs...,
         )
