@@ -117,10 +117,10 @@ function get_manopt_parameter(
 )
     return (tcgs.YPY >= tcgs.trust_region_radius^2)
 end
+
 #
 # Special stopping Criteria
 #
-
 @doc raw"""
     StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
 
@@ -522,21 +522,39 @@ function truncated_conjugate_gradient_descent(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 #
-# Objective -> Allocate and call !
+# Objective I -> generate model
+function truncated_conjugate_gradient_descent(
+    M::AbstractManifold,
+    mho::O,
+    p,
+    X;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    trust_region_radius::Float64=injectivity_radius(M) / 4,
+    kwargs...,
+) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
+    trmo = TrustRegionModelObjective(
+        M,
+        mho,
+        copy(M, mp);
+        trust_region_radius=trust_region_radius,
+        cost=get_cost(M, mho, p),
+        gradient=get_gradient(M, mho, p),
+        bilinear_form=get_hessian_function(M, mho),
+    )
+    TpM = TangentSpace(M, copy(M, p))
+    return truncated_conjugate_gradient_descent(
+        TpM, trmo, p, X; evaluation=evaluation, trust_region_radius=trust_region_radius
+    )
+end
 #
+# Objective II; We have a tangent space model -> Allocate and call !
 function truncated_conjugate_gradient_descent(
     M::AbstractManifold, mho::O, p, X; kwargs...
-) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:AbstractManifoldSubObjective}
     q = copy(M, p)
     Y = copy(M, p, X)
     return truncated_conjugate_gradient_descent!(M, mho, q, Y; kwargs...)
 end
-#
-# Deprecated - even keeping old notation.
-#
-@deprecate truncated_conjugate_gradient_descent(
-    M::AbstractManifold, F, gradF, x, Y, H::TH; kwargs...
-) where {TH<:Function} truncated_conjugate_gradient_descent(M, F, gradF, H, x, Y; kwargs...)
 
 @doc raw"""
     truncated_conjugate_gradient_descent!(M, f, grad_f, Hess_f, p, X; kwargs...)
@@ -602,9 +620,34 @@ function truncated_conjugate_gradient_descent!(
         M, mho, p, X; evaluation=evaluation, kwargs...
     )
 end
+# Main Initiliaization I: We have an mho  -> generate tangent space model objective
 function truncated_conjugate_gradient_descent!(
     M::AbstractManifold,
     mho::O,
+    p,
+    X;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    trust_region_radius::Float64=injectivity_radius(M) / 4,
+    kwargs...,
+) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
+    trmo = TrustRegionModelObjective(
+        M,
+        mho,
+        copy(M, mp);
+        trust_region_radius=trust_region_radius,
+        cost=get_cost(M, mho, p),
+        gradient=get_gradient(M, mho, p),
+        bilinear_form=get_hessian_function(M, mho),
+    )
+    TpM = TangentSpace(M, copy(M, p))
+    trmp = DefaultManoptProblem(TpM, trmo)
+    return truncated_conjugate_gradient_descent!(
+        M, trmo, p, X; evaluation=evaluation, trust_region_radius=trust_region_radius
+    )
+end
+function truncated_conjugate_gradient_descent!(
+    M::AbstractManifold,
+    trm::TrustRegionModelObjective,
     p,
     X;
     trust_region_radius::Float64=injectivity_radius(M) / 4,
@@ -620,7 +663,7 @@ function truncated_conjugate_gradient_descent!(
                                           StopWhenModelIncreased(),
     project!::Proj=copyto!,
     kwargs..., #collect rest
-) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
+) where {Proj}
     dmho = decorate_objective!(M, mho; kwargs...)
     mp = DefaultManoptProblem(M, dmho)
     tcgs = TruncatedConjugateGradientState(
