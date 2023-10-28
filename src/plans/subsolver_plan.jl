@@ -44,13 +44,13 @@ end
 Evaluate the gradient of the (original) objective stored within the subobjective `amso`.
 """
 function get_objective_gradient(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p
-) where {O<:AbstractManifoldGradientObjective}
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
+) where {E,O<:AbstractManifoldGradientObjective{E}}
     return get_gradient(M, get_objective(amso), p)
 end
 function get_objective_gradient!(
-    M::AbstractManifold, X, amso::AbstractManifoldSubObjective{O}, p
-) where {O<:AbstractManifoldGradientObjective}
+    M::AbstractManifold, X, amso::AbstractManifoldSubObjective{E,O}, p
+) where {E,O<:AbstractManifoldGradientObjective{E}}
     return get_gradient!(M, X, get_objective(amso), p)
 end
 
@@ -60,15 +60,32 @@ end
 
 Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
 """
-function get_objective_Hessian(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p, X
-) where {O<:AbstractManifoldHessianObjective}
-    return get_Hessian(M, get_objective(amso), p, X)
+function get_objective_hessian(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return get_hessian(M, get_objective(amso), p, X)
 end
-function get_objective_gradient!(
-    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{O}, p, X
-) where {O<:AbstractManifoldHessianObjective}
-    return get_Hessian!(M, Y, get_objective(amso), p, X)
+function get_objective_hessian!(
+    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return get_hessian!(M, Y, get_objective(amso), p, X)
+end
+
+@doc raw"""
+    Y = get_objective_preconditioner(M, amso::AbstractManifoldSubObjective, p, X)
+    get_objective_preconditioner(M, Y, amso::AbstractManifoldSubObjective, p, X)
+
+Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
+"""
+function get_objective_preconditioner(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return get_preconditioner(M, get_objective(amso), p, X)
+end
+function get_objective_preconditioner!(
+    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return get_preconditioner!(M, Y, get_objective(amso), p, X)
 end
 
 @doc raw"""

@@ -5,61 +5,71 @@
 A trust region model of the form
 
 ```math
-    f(X) = c + ⟨G, X⟩_p + \frac{1}(2} ⟨B(X), X⟩_p
+    m(X) = f(p) + ⟨\operatorname{grad} f(p), X⟩_p + \frac{1}(2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
 ```
 
 where
-
-* ``G`` is (a tangent vector that is an approximation of) the gradient ``\operatorname{grad} f(p)``
-* ``B`` is (a bilinear form that is an approximantion of) the Hessian ``\operatorname{Hess} f(p)``
-* ``c`` is the current cost ``f(p)``, but might be set to zero for simplicity, since we are only interested in the minimizer
 
 and we further dtore the current trust region radius ``Δ`` is the current trust region radius
 
 # Fields
 
 * `objective` – an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
-* `c` the current cost at `p`
-* `G` the current Gradient at `p``
-* `H` the current bilinear form (Approximation of the Hessian)
-* `Δ` the current trust region radius
 
 If `H` is set to nothing, the hessian from the `objective` is used.
 """
 struct TrustRegionModelObjective{
     E<:AbstractEvaluationType,
-    TH<:Union{Function,Nothing},
     O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective},
-    T,
-    R,
 } <: AbstractManifoldSubObjective{E,O}
     objective::O
-    c::R
-    G::T
-    H::TH
-    Δ::R
 end
-function TrustRegionModelObjective(TpM::TangentSpace, mho, p=rand(M); kwargs...)
-    return TrustRegionModelObjective(base_manifold(TpM), mho, p; kwargs...)
+function TrustRegionModelObjective(mho::O) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return TrustRegionModelObjective{E,O}(mho)
 end
 function TrustRegionModelObjective(
-    M::AbstractManifold,
-    mho::O,
-    p=rand(M);
-    cost::R=get_cost(M, mho, p),
-    trust_region_radius::R=injectivity_radius(M) / 8,
-    gradient::T=get_gradient(M, mho, p),
-    bilinear_form::TH=nothing,
-) where {
-    TH<:Union{Function,Nothing},
-    E<:AbstractEvaluationType,
-    O<:AbstractManifoldHessianObjective{E},
-    T,
-    R,
-}
-    return TrustRegionModelObjective{E,TH,O,T,R}(
-        mho, cost, gradient, bilinear_form, trust_region_radius
-    )
+    mho::O
+) where {E,O<:AbstractDecoratedManifoldObjective{E}}
+    return TrustRegionModelObjective{E,O}(mho)
 end
 
-get_objective(trm::TrustRegionModelObjective) = trom.objective
+# TODO: Document
+
+get_objective(trmo::TrustRegionModelObjective) = trmo.objective
+
+function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    c = get_objective_cocst(M, trmo, p)
+    G = get_objective_gradient(M, trmo, p)
+    Y = get_objective_hessian(M, trmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
+end
+function get_gradient(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_gradient(M, trmo, p) + get_objective_hessian(M, trmo, p, X)
+end
+function get_gradient!(
+    TpM::TangentSpace, Y, trmo::TrustRegionModelObjective{InplaceEvaluation}, X
+)
+    M = base_manifold(TpM)
+    p = TpM.point
+    get_objective_hessian!(M, Y, trmo, p, X)
+    Y .+= get_objective_gradient(M, trmo, p)
+    return Y
+end
+function get_hessian(
+    TpM::TangentSpace, trmo::TrustRegionModelObjective{InplaceEvaluation}, X, V
+)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_hessian(M, trmo, p, V)
+end
+function get_hessian!(
+    TpM::TangentSpace, W, trmo::TrustRegionModelObjective{InplaceEvaluation}, V
+)
+    M = base_manifold(TpM)
+    p = TpM.point
+    return get_objective_hessian!(M, W, trmo, p, V)
+end

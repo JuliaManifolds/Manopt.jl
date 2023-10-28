@@ -369,7 +369,15 @@ function difference_of_convex_proximal_point!(
                     M, copy(M, p); stopping_criterion=sub_stopping_criterion
                 )
             else
-                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+                TrustRegionsState(
+                    M,
+                    copy(M, p),
+                    DefaultManoptProblem(
+                        TangentSpace(M, copy(M, p)),
+                        TrustRegionModelObjective(sub_objective),
+                    ),
+                    TruncatedConjugateGradientState(TangentSpace(M, p)),
+                )
             end;
             sub_kwargs...,
         )

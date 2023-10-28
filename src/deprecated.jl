@@ -3,8 +3,13 @@ export HeestenesStiefelCoefficient
 Base.@deprecate_binding SimpleCacheObjective SimpleManifoldCachedObjective
 export SimpleCacheObjective
 #
-# Deprecated - even keeping old notation where the Hessian was last -> move upfront.
+# Deprecated tCG calls
 #
 @deprecate truncated_conjugate_gradient_descent(
     M::AbstractManifold, F, gradF, x, Y, H::TH; kwargs...
 ) where {TH<:Function} truncated_conjugate_gradient_descent(M, F, gradF, H, x, Y; kwargs...)
+@deprecate truncated_conjugate_gradient_descent!(
+    M::AbstractManifold, F::TF, gradF::TG, x, Y, H::TH; kwargs...
+) where {TF<:Function,TG<:Function,TH<:Function} truncated_conjugate_gradient_descent!(
+    M, F, gradF, H, x, Y; kwargs...
+)

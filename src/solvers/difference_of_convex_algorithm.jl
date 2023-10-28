@@ -324,8 +324,11 @@ function difference_of_convex_algorithm!(
     else
         DefaultManoptProblem(M, sub_objective)
     end,
-    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
-        Function
+    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType,Nothing}=if isnothing(
+        sub_problem
+    )
+        nothing
+    elseif sub_problem isa Function
         evaluation
     else
         decorate_state!(
@@ -334,7 +337,6 @@ function difference_of_convex_algorithm!(
                     M, copy(M, p); stopping_criterion=sub_stopping_criterion
                 )
             else
-                # TODO Fix constructor
                 TrustRegionsState(
                     M, copy(M, p), sub_objective; stopping_criterion=sub_stopping_criterion
                 )

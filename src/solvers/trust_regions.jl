@@ -161,10 +161,9 @@ end
 function TrustRegionsState(
     M, p, mho::H; kwargs...
 ) where {H<:AbstractManifoldHessianObjective}
-    problem = DefaultManoptProblem(
-        TrustRegionModelObjective(TangentSpace(M, copy(M, p)), mho, copy(M, p))
-    )
-    state = TruncatedConjugateGradientState(M, copy(M, p))
+    TpM = TangentSpace(M, copy(M, p))
+    problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+    state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
     return TrustRegionsState(M, p, problem, state; kwargs...)
 end
 function TrustRegionsState(
@@ -482,13 +481,10 @@ function trust_regions!(
     reduction_factor::R=0.25,
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
-    sub_objective=TrustRegionModelObjective(
-        M, mho, p; trust_region_radius=trust_region_radius
-    ),
+    sub_objective=TrustRegionModelObjective(mho),
     sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),
     sub_state::Union{AbstractHessianSolverState,AbstractEvaluationType}=TruncatedConjugateGradientState(
-        M,
-        p,
+        TangentSpace(M, copy(M, p)),
         zero_vector(M, p);
         θ=θ,
         κ=κ,

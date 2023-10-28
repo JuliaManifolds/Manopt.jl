@@ -128,7 +128,7 @@ end
     ho = ManifoldHessianObjective(x -> x, (M, x) -> x, (M, x) -> x, x -> x)
     hp = DefaultManoptProblem(Euclidean(), ho)
     tcgs = TruncatedConjugateGradientState(
-        Euclidean(), 1.0, 0.0; trust_region_radius=2.0, randomize=false
+        TangentSpace(Euclidean(), 1.0), 0.0; trust_region_radius=2.0, randomize=false
     )
     tcgs.model_value = 1.0
     s = StopWhenModelIncreased()
