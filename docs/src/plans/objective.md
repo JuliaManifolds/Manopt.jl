@@ -160,10 +160,10 @@ ManifoldProximalMapObjective
 get_proximal_map
 ```
 
-
 ### Hessian Objective
 
 ```@docs
+AbstractManifoldHessianObjective
 ManifoldHessianObjective
 ```
 
@@ -233,4 +233,21 @@ get_grad_inequality_constraint
 get_grad_inequality_constraint!
 get_grad_inequality_constraints
 get_grad_inequality_constraints!
+```
+
+### Subproblem Objective
+
+This objective can be use when the objective of a sub problem
+solver still needs access to the (outer/main) objective.
+
+```@docs
+AbstractManifoldSubObjective
+```
+
+#### Access functions
+
+```@docs
+Manopt.get_objective_cost
+Manopt.get_objective_gradient
+Manopt.get_objective_Hessian
 ```

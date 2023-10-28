@@ -1,7 +1,7 @@
 """
     AbstractSubProblemSolverState <: AbstractManoptSolverState
 
-An abstract type for problems that involve a subsolver
+An abstract type for solvers that involve a subsolver.
 """
 abstract type AbstractSubProblemSolverState <: AbstractManoptSolverState end
 
@@ -14,6 +14,10 @@ original objective internally to generate generic objectives for sub solvers.
 abstract type AbstractManifoldSubObjective{
     E<:AbstractEvaluationType,O<:AbstractManifoldObjective
 } <: AbstractManifoldObjective{E} end
+
+function get_gradient_function(cgo::AbstractManifoldSubObjective)
+    return (M, p) -> get_gradient(M, cgo, p)
+end
 
 @doc raw"""
     get_objective(amso::AbstractManifoldSubObjective)
@@ -39,12 +43,12 @@ end
 
 Evaluate the gradient of the (original) objective stored within the subobjective `amso`.
 """
-function get_objective_gadient(
+function get_objective_gradient(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p
 ) where {O<:AbstractManifoldGradientObjective}
     return get_gradient(M, get_objective(amso), p)
 end
-function get_objective_gadient!(
+function get_objective_gradient!(
     M::AbstractManifold, X, amso::AbstractManifoldSubObjective{O}, p
 ) where {O<:AbstractManifoldGradientObjective}
     return get_gradient!(M, X, get_objective(amso), p)
@@ -61,7 +65,7 @@ function get_objective_Hessian(
 ) where {O<:AbstractManifoldHessianObjective}
     return get_Hessian(M, get_objective(amso), p, X)
 end
-function get_objective_gadient!(
+function get_objective_gradient!(
     M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{O}, p, X
 ) where {O<:AbstractManifoldHessianObjective}
     return get_Hessian!(M, Y, get_objective(amso), p, X)
@@ -98,17 +102,6 @@ end
 function set_manopt_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
     return ams
 end
-"""
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
-
-Set certain values specified by `args...` into the elements of the `debugDictionary`
-"""
-function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
-    for d in values(dss.debugDictionary)
-        set_manopt_parameter!(d, args...)
-    end
-    return dss
-end
 
 """
     set_manopt_parameter!(ams::DebugSolverState, ::Val{:SubProblem}, args...)
@@ -131,14 +124,4 @@ function set_manopt_parameter!(
 )
     set_manopt_parameter!(get_sub_state(ams), args...)
     return ams
-end
-
-"""
-    get_manopt_parameter(ams::AbstractManoptSolverState, element::Symbol, args...)
-
-Obtain a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams`.
-This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
-"""
-function get_manopt_parameter(ams::AbstractManoptSolverState, e::Symbol, args...)
-    return get_manopt_parameter(ams, Val(e), args...)
 end

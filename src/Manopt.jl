@@ -266,7 +266,7 @@ export AbstractGradientSolverState,
     TruncatedConjugateGradientState,
     TrustRegionsState
 
-export FrankWolfeCost, FrankWolfeGradient
+# Objectives and Costs
 export NelderMeadSimplex
 export AlternatingGradient
 #
@@ -324,6 +324,8 @@ export ConstraintType, FunctionConstraint, VectorConstraint
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
+export FrankWolfeCost, FrankWolfeGradient
+export TrustRegionModelObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate

@@ -218,14 +218,17 @@ function TrustRegionsState(
         σ,
     )
 end
-# TODO Given the HessianObjective of the main task -> generate the sub_problem and state
-# (default ones, similar to ALM, Check with the other subsolvers that they have the same)
-
 get_iterate(trs::TrustRegionsState) = trs.p
 function set_iterate!(trs::TrustRegionsState, M, p)
     copyto!(M, trs.p, p)
     return trs
 end
+get_gradient(agst::TrustRegionsState) = agst.X
+function set_gradient!(agst::TrustRegionsState, M, p, X)
+    copyto!(M, agst.X, p, X)
+    return agst
+end
+
 function get_message(dcs::TrustRegionsState)
     # for now only the sub solver might have messages
     return get_message(dcs.sub_state)

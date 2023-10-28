@@ -38,6 +38,12 @@ update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:Re
 update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
 ```
 
+## Trust Region Model
+
+```@docs
+TrustRegionModelObjective
+```
+
 ## Literature
 
 ```@bibliography
