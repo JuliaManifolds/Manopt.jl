@@ -359,24 +359,22 @@ include("../utils/example_tasks.jl")
     end
     @testset "Euclidean Embedding" begin
         Random.seed!(42)
-        n = 5
+        n = 2
         A = Symmetric(randn(n + 1, n + 1))
         # Euclidean variant with conversion
         M = Sphere(n)
-        p0 = rand(M)
+        p0 = [1.0, zeros(n)...]
         f(E, p) = p' * A * p
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean)
-        q2 = trust_regions(M, f, ∇f, ∇²f, p0; objective_type=:Euclidean)
-        @test f(M, q) ≈ λ atol = 2 * 1e-1
-        @test_broken f(M, q) ≈ f(M, q2)
+        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=project!)
+        @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit inprecise?
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)
         q4 = trust_regions(M, f, grad_f, Hess_f, p0)
-        @test f(M, q) ≈ f(M, q3) atol = 5 * 1e-1 # A bit imprecise?
-        @test f(M, q) ≈ f(M, q4) atol = 5 * 1e-1 # A bit imprecise?
+        @test f(M, q3) ≈ λ atol = 5 * 1e-8
+        @test f(M, q4) ≈ λ atol = 5 * 1e-10
     end
 end

@@ -249,5 +249,6 @@ AbstractManifoldSubObjective
 ```@docs
 Manopt.get_objective_cost
 Manopt.get_objective_gradient
-Manopt.get_objective_Hessian
+Manopt.get_objective_hessian
+Manopt.get_objective_preconditioner
 ```
