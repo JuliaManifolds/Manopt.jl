@@ -358,10 +358,12 @@ function difference_of_convex_proximal_point!(
             DefaultManoptProblem(M, sub_objective)
         end
     end,
-    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=if !isnothing(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState,Nothing}=if !isnothing(
         prox_g
     )
         evaluation
+    elseif isnothing(sub_objective)
+        nothing
     else
         decorate_state!(
             if isnothing(sub_hess)
