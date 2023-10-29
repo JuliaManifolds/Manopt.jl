@@ -75,9 +75,13 @@ function AdaptiveRegularizationState(
     sub_problem::Pr=if isnothing(sub_objective)
         nothing
     else
-        DefaultManoptProblem(TangentSpace(M, copy(M,p)), sub_objective)
+        DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
     end,
-    sub_state::St=sub_problem isa Function ? AllocatingEvaluation() : LanczosState(TangentSpace(M,copy(M,p))),
+    sub_state::St=if sub_problem isa Function
+        AllocatingEvaluation()
+    else
+        LanczosState(TangentSpace(M, copy(M, p)))
+    end,
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to initial value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ_regularization::R=1e3,
     stopping_criterion::SC=StopAfterIteration(100),

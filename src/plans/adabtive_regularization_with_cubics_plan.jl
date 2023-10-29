@@ -98,10 +98,7 @@ function get_gradient(
            arcmo.σ * norm(M, p, X) * X
 end
 function get_gradient!(
-    TpM::TangentSpace,
-    Y,
-    arcmo::AdaptiveRagularizationWithCubicsModelObjective,
-    X,
+    TpM::TangentSpace, Y, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
 )
     M = base_manifold(TpM)
     p = TpM.point
