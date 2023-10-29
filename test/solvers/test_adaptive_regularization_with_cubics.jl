@@ -19,19 +19,17 @@ include("../utils/example_tasks.jl")
     M2 = TangentSpace(M, p0)
 
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-    g = AdaptiveRegularizationCubicCost(M2, mho)
-    grad_g = AdaptiveRegularizationCubicGrad(M2, mho)
+
+    arcmo = AdaptiveRagularizationWithCubicsModelObjective(mho)
 
     @testset "State and repr" begin
         # if we neither provide a problem nor an objective, we expect an error
         @test_throws ErrorException AdaptiveRegularizationState(ℝ^2)
-        g = AdaptiveRegularizationCubicCost(M2, mho)
-        grad_g = AdaptiveRegularizationCubicGrad(M2, mho)
 
         arcs = AdaptiveRegularizationState(
             M,
             p0;
-            sub_problem=DefaultManoptProblem(M2, ManifoldGradientObjective(g, grad_g)),
+            sub_problem=DefaultManoptProblem(M2, arcmo),
             sub_state=GradientDescentState(M2, zero_vector(M, p0)),
         )
         @test startswith(
@@ -47,8 +45,8 @@ include("../utils/example_tasks.jl")
         arcs2 = AdaptiveRegularizationState(
             M,
             p0;
-            sub_objective=mho,
-            sub_state=LanczosState(M; maxIterLanczos=1),
+            sub_objective=arcmo,
+            sub_state=LanczosState(M2; maxIterLanczos=1),
             stopping_criterion=StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
@@ -58,7 +56,7 @@ include("../utils/example_tasks.jl")
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
         arcs3 = AdaptiveRegularizationState(
-            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
+            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
         )
         #add a fake Lanczos
         push!(arcs3.sub_state.Lanczos_vectors, copy(M, p1, X1))
@@ -76,7 +74,7 @@ include("../utils/example_tasks.jl")
         )
         # a second that copies
         arcs4 = AdaptiveRegularizationState(
-            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
+            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
         )
         #add a fake Lanczos
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))

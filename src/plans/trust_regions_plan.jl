@@ -1,6 +1,6 @@
 
 @doc raw"""
-    TrustRegionModelObjective{TH<:Union{Function,Nothing},O<:AbstractManifoldHessianObjective,T} <: AbstractManifoldSubObjective{O}
+    TrustRegionModelObjective{O<:AbstractManifoldHessianObjective} <: AbstractManifoldSubObjective{O}
 
 A trust region model of the form
 
@@ -8,15 +8,15 @@ A trust region model of the form
     m(X) = f(p) + ⟨\operatorname{grad} f(p), X⟩_p + \frac{1}(2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
 ```
 
-where
-
-and we further dtore the current trust region radius ``Δ`` is the current trust region radius
-
 # Fields
 
 * `objective` – an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
 
-If `H` is set to nothing, the hessian from the `objective` is used.
+# Constructors
+
+    TrustRegionModelObjective(objective)
+
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective
 """
 struct TrustRegionModelObjective{
     E<:AbstractEvaluationType,
@@ -33,10 +33,18 @@ function TrustRegionModelObjective(
     return TrustRegionModelObjective{E,O}(mho)
 end
 
-# TODO: Document
-
 get_objective(trmo::TrustRegionModelObjective) = trmo.objective
 
+# TODO: Document
+@doc raw"""
+    get_cost(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the tangent space [`TrustRegionModelObjective`](@ref)
+
+```math
+m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatorname{Hess} f(p)[X], X⟩_p.
+```
+"""
 function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
     M = base_manifold(TpM)
     p = TpM.point
@@ -45,30 +53,42 @@ function get_cost(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
     Y = get_objective_hessian(M, trmo, p, X)
     return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X)
 end
+@doc raw"""
+    get_gradient(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the gradient of the [`TrustRegionModelObjective`](@ref)
+
+```math
+\operatorname{grad} m(X) = \operatorname{grad} f(p) + \operatorname{Hess} f(p)[X].
+```
+"""
 function get_gradient(TpM::TangentSpace, trmo::TrustRegionModelObjective, X)
     M = base_manifold(TpM)
     p = TpM.point
     return get_objective_gradient(M, trmo, p) + get_objective_hessian(M, trmo, p, X)
 end
-function get_gradient!(
-    TpM::TangentSpace, Y, trmo::TrustRegionModelObjective{InplaceEvaluation}, X
-)
+function get_gradient!(TpM::TangentSpace, Y, trmo::TrustRegionModelObjective, X)
     M = base_manifold(TpM)
     p = TpM.point
     get_objective_hessian!(M, Y, trmo, p, X)
     Y .+= get_objective_gradient(M, trmo, p)
     return Y
 end
-function get_hessian(
-    TpM::TangentSpace, trmo::TrustRegionModelObjective{InplaceEvaluation}, X, V
-)
+@doc raw"""
+    get_gradient(TpM, trmo::TrustRegionModelObjective, X)
+
+Evaluate the gradient of the [`TrustRegionModelObjective`](@ref)
+
+```math
+\operatorname{Hess} m(X)[Y] = \operatorname{Hess} f(p)[Y].
+```
+"""
+function get_hessian(TpM::TangentSpace, trmo::TrustRegionModelObjective, X, V)
     M = base_manifold(TpM)
     p = TpM.point
     return get_objective_hessian(M, trmo, p, V)
 end
-function get_hessian!(
-    TpM::TangentSpace, W, trmo::TrustRegionModelObjective{InplaceEvaluation}, V
-)
+function get_hessian!(TpM::TangentSpace, W, trmo::TrustRegionModelObjective, V)
     M = base_manifold(TpM)
     p = TpM.point
     return get_objective_hessian!(M, W, trmo, p, V)

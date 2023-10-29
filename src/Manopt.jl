@@ -162,6 +162,7 @@ include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference-of-convex-proximal-point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
+include("solvers/Lanczos.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
@@ -401,7 +402,7 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
-export AdaptiveRegularizationCubicCost, AdaptiveRegularizationCubicGrad
+export AdaptiveRagularizationWithCubicsModelObjective
 #
 # Stepsize
 export Stepsize

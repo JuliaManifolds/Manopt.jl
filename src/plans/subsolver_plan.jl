@@ -22,7 +22,7 @@ end
 @doc raw"""
     get_objective(amso::AbstractManifoldSubObjective)
 
-Return the (original) objective stored within the sub obective.
+Return the (original) objective stored the sub obective is build on.
 """
 get_objective(amso::AbstractManifoldSubObjective)
 

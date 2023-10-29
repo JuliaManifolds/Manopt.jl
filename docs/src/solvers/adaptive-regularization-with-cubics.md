@@ -29,19 +29,17 @@ Manopt.LanczosState
 
 ## (Conjugate) Gradient Descent
 
-There are two generic functors, that implement the sub problem
+There is a generic objective, that implements the sub problem
 
 ```@docs
-AdaptiveRegularizationCubicCost
-AdaptiveRegularizationCubicGrad
+zAdaptiveRagularizationWithCubicsModelObjective
 ```
 
 Since the sub problem is given on the tangent space, you have to provide
 
 ```
-g = AdaptiveRegularizationCubicCost(M, mho, σ)
-grad_g = AdaptiveRegularizationCubicGrad(M, mho, σ)
-sub_problem = DefaultProblem(TangentSpaceAt(M,p), ManifoldGradienObjective(g, grad_g))
+arc_obj = AdaptiveRagularizationWithCubicsModelObjective(mho, σ)
+sub_problem = DefaultProblem(TangentSpaceAt(M,p), arc_obj)
 ```
 
 where `mho` is the hessian objective of `f` to solve.
