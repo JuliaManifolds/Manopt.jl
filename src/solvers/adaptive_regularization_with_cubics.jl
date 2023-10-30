@@ -468,7 +468,6 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
     arcs.ρ_denonimator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
     arcs.ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
-
     #Update iterate
     if arcs.ρ >= arcs.η1
         copyto!(M, arcs.p, arcs.q)

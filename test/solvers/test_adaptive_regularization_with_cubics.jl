@@ -8,7 +8,6 @@ include("../utils/example_tasks.jl")
     n = 8
     k = 3
     A = Symmetric(randn(n, n))
-
     M = Grassmann(n, k)
 
     f(M, p) = -0.5 * tr(p' * A * p)
@@ -16,10 +15,8 @@ include("../utils/example_tasks.jl")
     Hess_f(M, p, X) = -A * X + p * p' * A * X + X * p' * A * p
 
     p0 = Matrix{Float64}(I, n, n)[:, 1:k]
-    M2 = TangentSpace(M, p0)
-
+    M2 = TangentSpace(M, copy(M, p0))
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-
     arcmo = AdaptiveRagularizationWithCubicsModelObjective(mho)
 
     @testset "State and repr" begin
@@ -59,6 +56,7 @@ include("../utils/example_tasks.jl")
             M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
         )
         #add a fake Lanczos
+        initialize_solver!(arcs3.sub_problem, arcs3.sub_state)
         push!(arcs3.sub_state.Lanczos_vectors, copy(M, p1, X1))
         step_solver!(arcs3.sub_problem, arcs3.sub_state, 2) # to introduce a random new one
         # test orthogonality of the new 2 ones

@@ -35,7 +35,7 @@ mutable struct LanczosState{T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
 end
 function LanczosState(
     TpM::TangentSpace;
-    X::T=rand(TpM),
+    X::T=zero_vector(TpM.manifold, TpM.point),
     maxIterLanczos=200,
     θ=0.5,
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |

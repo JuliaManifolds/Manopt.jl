@@ -67,14 +67,14 @@ m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatornam
 at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
 """
 function get_cost(
-    TpM::TangentSpace, trmo::AdaptiveRagularizationWithCubicsModelObjective, X
+    TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
 )
     M = base_manifold(TpM)
     p = TpM.point
-    c = get_objective_cocst(M, trmo, p)
-    G = get_objective_gradient(M, trmo, p)
-    Y = get_objective_hessian(M, trmo, p, X)
-    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + σ * norm(M, p, X)^3
+    c = get_objective_cocst(M, arcmo, p)
+    G = get_objective_gradient(M, arcmo, p)
+    Y = get_objective_hessian(M, arcmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + σ / 3 * norm(M, p, X)^3
 end
 @doc raw"""
     get_gradient(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
@@ -93,9 +93,8 @@ function get_gradient(
 )
     M = base_manifold(TpM)
     p = TpM.point
-    return get_objective_gradient(M, arcmo, p) +
-           get_objective_hessian(M, arcmo, p, X) +
-           arcmo.σ * norm(M, p, X) * X
+    G = get_objective_gradient(M, arcmo, p)
+    return G + get_objective_hessian(M, arcmo, p, X) + arcmo.σ * norm(M, p, X) * X
 end
 function get_gradient!(
     TpM::TangentSpace, Y, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
@@ -103,7 +102,7 @@ function get_gradient!(
     M = base_manifold(TpM)
     p = TpM.point
     get_objective_hessian!(M, Y, arcmo, p, X)
-    Y .+= get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
+    Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
     return Y
 end
 # Also Implement the Hessian for Newton subsubsolver?
