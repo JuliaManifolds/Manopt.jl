@@ -32,8 +32,8 @@ get_objective(amso::AbstractManifoldSubObjective)
 Evaluate the cost of the (original) objective stored within the subobjective.
 """
 function get_objective_cost(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{O}, p
-) where {O<:AbstractManifoldCostObjective}
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
+) where {E,O<:AbstractManifoldCostObjective}
     return get_cost(M, get_objective(amso), p)
 end
 

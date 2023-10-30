@@ -456,7 +456,6 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     set_manopt_parameter!(arcs.sub_problem, :Objective, :σ, arcs.σ)
     set_iterate!(arcs.sub_state, M, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
-    set_manopt_parameter!(arcs.sub_state, :p, copy(M, arcs.p))
     #Solve the sub_problem – via dispatch depending on type
     solve_arc_subproblem!(M, arcs.S, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ

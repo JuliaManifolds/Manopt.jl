@@ -71,10 +71,13 @@ function get_cost(
 )
     M = base_manifold(TpM)
     p = TpM.point
-    c = get_objective_cocst(M, arcmo, p)
+    c = get_objective_cost(M, arcmo, p)
     G = get_objective_gradient(M, arcmo, p)
     Y = get_objective_hessian(M, arcmo, p, X)
-    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + σ / 3 * norm(M, p, X)^3
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
+end
+function get_cost_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
+    return (TpM, X) -> get_cost(TpM, arcmo, X)
 end
 @doc raw"""
     get_gradient(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
@@ -105,4 +108,8 @@ function get_gradient!(
     Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
     return Y
 end
+function get_gradient_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
+    return (TpM, X) -> get_gradient(TpM, arcmo, X)
+end
+
 # Also Implement the Hessian for Newton subsubsolver?

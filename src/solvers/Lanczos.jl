@@ -2,7 +2,6 @@
 #
 # Lanczos sub solver
 #
-
 @doc raw"""
     LanczosState{P,T,SC,B,I,R,TM,V,Y} <: AbstractManoptSolverState
 
@@ -263,8 +262,7 @@ function (c::StopWhenFirstOrderProgress)(
     TpM = get_manifold(dmp)
     p = TpM.point
     M = base_manifold(TpM)
-    get_gradient!(dmp, ls.X, p)
-    nX = norm(M, p, ls.X)
+    nX = norm(M, p, get_gradient(dmp, p))
     y = @view(ls.coefficients[1:(i - 1)])
     Ty = @view(ls.tridig_matrix[1:i, 1:(i - 1)]) * y
     ny = norm(y)

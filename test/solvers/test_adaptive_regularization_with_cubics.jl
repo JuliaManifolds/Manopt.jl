@@ -159,12 +159,12 @@ include("../utils/example_tasks.jl")
 
         # test both inplace and allocating variants of grad_g
         X0 = grad_f(M, p0)
-        X1 = grad_g(M2, X0)
+        X1 = get_gradient(M2, arcmo, X0)
         X2 = zero_vector(M, p0)
-        grad_g(M2, X2, X0)
+        get_gradient!(M2, X2, arcmo, X0)
         @test isapprox(M, p0, X1, X2)
 
-        sub_problem = DefaultManoptProblem(M2, ManifoldGradientObjective(g, grad_g))
+        sub_problem = DefaultManoptProblem(M2, arcmo)
         sub_state = GradientDescentState(
             M2,
             zero_vector(M, p0);
