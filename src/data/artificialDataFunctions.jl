@@ -98,7 +98,7 @@ end
 generate a real-valued signal having piecewise constant, linear and quadratic
 intervals with jumps in between. If the resulting manifold the data lives on,
 is the [`Circle`](hhttps://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/circle.html)
-the data is also wrapped to $[-\pi,\pi)$. This is data for an example from  [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1).
+the data is also wrapped to ``[-\pi,\pi)``. This is data for an example from  [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1).
 
 # Optional
 * `pts` – (`500`) number of points to sample the function
@@ -110,7 +110,7 @@ function artificial_S1_signal(pts::Integer=500)
 end
 @doc raw"""
     artificial_S1_signal(x)
-evaluate the example signal $f(x), x ∈  [0,1]$,
+evaluate the example signal ``f(x), x ∈  [0,1]``,
 of phase-valued data introduces in Sec. 5.1 of  [Bergmann et. al., SIAM J Imag Sci, 2014](@cite BergmannLausSteidlWeinmann:2014:1)
 for values outside that interval, this Signal is `missing`.
 """
@@ -147,7 +147,7 @@ function artificial_S2_whirl_image end
 Generate an artificial image of data on the 2 sphere,
 
 # Arguments
-* `pts` – (`64`) size of the image in `pts`$\times$`pts` pixel.
+* `pts` – (`64`) size of the image in `pts`×`pts` pixel.
 
 This example dataset was used in the numerical example in Section 5.5 of [Laus et al., SIAM J Imag Sci., 2017](@cite LausNikolovaPerschSteidl:2017)
 
@@ -172,7 +172,7 @@ artificial_S2_rotation_image()
 @doc raw"""
     artificial_S2_whirl_patch([pts=5])
 
-create a whirl within the `pts`$\times$`pts` patch of
+create a whirl within the `pts`×`pts` patch of
 [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html)(@ref)`(2)`-valued image data.
 
 These patches are used within [`artificial_S2_whirl_image`](@ref).
@@ -213,11 +213,11 @@ p_2 = \begin{bmatrix}-1&0&0\end{bmatrix}^{\mathrm{T}},
 p_3 = \begin{bmatrix}0&0&-1\end{bmatrix}^{\mathrm{T}},
 ````
 
-where each segment is a cubic Bézier curve, i.e. each point, except $p_3$ has a first point
-within the following segment $b_i^+$, $i=0,1,2$ and a last point within the previous
-segment, except for $p_0$, which are denoted by $b_i^-$, $i=1,2,3$.
-This curve is differentiable by the conditions $b_i^- = \gamma_{b_i^+,p_i}(2)$, $i=1,2$,
-where $\gamma_{a,b}$ is the [`shortest_geodesic`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.shortest_geodesic-Tuple{AbstractManifold,%20Any,%20Any}) connecting $a$ and $b$.
+where each segment is a cubic Bézier curve, i.e. each point, except ``p_3`` has a first point
+within the following segment ``b_i^+``, ``i=0,1,2`` and a last point within the previous
+segment, except for ``p_0``, which are denoted by ``b_i^-``, ``i=1,2,3``.
+This curve is differentiable by the conditions ``b_i^- = \gamma_{b_i^+,p_i}(2)``, ``i=1,2``,
+where ``\gamma_{a,b}`` is the [`shortest_geodesic`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.shortest_geodesic-Tuple{AbstractManifold,%20Any,%20Any}) connecting ``a`` and ``b``.
 The remaining points are defined as
 
 ````math
@@ -237,7 +237,7 @@ artificial_S2_composite_bezier_curve()
     artificial_SPD_image([pts=64, stepsize=1.5])
 
 create an artificial image of symmetric positive definite matrices of size
-`pts`$\times$`pts` pixel with a jump of size `stepsize`.
+`pts`×`pts` pixel with a jump of size `stepsize`.
 
 This dataset was used in the numerical example of Section 5.2 of [Bačák et al., SIAM J Sci Comput, 2016](@cite BacakBergmannSteidlWeinmann:2016).
 """
@@ -273,7 +273,7 @@ function artificial_SPD_image2 end
     artificial_SPD_image2([pts=64, fraction=.66])
 
 create an artificial image of symmetric positive definite matrices of size
-`pts`$\times$`pts` pixel with right hand side `fraction` is moved upwards.
+`pts`×`pts` pixel with right hand side `fraction` is moved upwards.
 
 This data set was introduced in the numerical examples of Section of [Bergmann, Presch, Steidl, SIAM J Imag Sci, 2016](@cite BergmannPerschSteidl:2016)
 """
@@ -282,7 +282,7 @@ artificial_SPD_image2(pts, fraction)
 @doc raw"""
     artificial_S2_lemniscate(p, t::Float64; a::Float64=π/2)
 
-Generate a point from the signal on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathbb S^2$ by
+Generate a point from the signal on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``\mathbb S^2`` by
 creating the [Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
 in the tangent space of `p` sampled at `t` and use exp` to obtain a point on
 the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html).
@@ -302,7 +302,7 @@ artificial_S2_lemniscate(p, t::Float64, a::Float64=π / 2.0)
 @doc raw"""
     artificial_S2_lemniscate(p [,pts=128,a=π/2,interval=[0,2π])
 
-Generate a Signal on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) $\mathbb S^2$ by creating the
+Generate a Signal on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) ``\mathbb S^2`` by creating the
 [Lemniscate of Bernoulli](https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli)
 in the tangent space of `p` sampled at `pts` points and use `exp` to get a
 signal on the [`Sphere`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html).

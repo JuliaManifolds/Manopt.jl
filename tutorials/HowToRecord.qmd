@@ -198,7 +198,7 @@ mutable struct RecordCount <: RecordAction
 end
 function (r::RecordCount)(p::AbstractManoptProblem, ::AbstractManoptSolverState, i)
     if i > 0
-        push!(r.recorded_values, get_cost_function(get_objective(p)).count)
+        push!(r.recorded_values, Manopt.get_cost_function(get_objective(p)).count)
     elseif i < 0 # reset if negative
         r.recorded_values = Vector{Int}()
     end

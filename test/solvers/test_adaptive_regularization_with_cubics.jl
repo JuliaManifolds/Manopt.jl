@@ -16,7 +16,7 @@ include("../utils/example_tasks.jl")
     Hess_f(M, p, X) = -A * X + p * p' * A * X + X * p' * A * p
 
     p0 = Matrix{Float64}(I, n, n)[:, 1:k]
-    M2 = TangentSpaceAtPoint(M, p0)
+    M2 = TangentSpace(M, p0)
 
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
     g = AdaptiveRegularizationCubicCost(M2, mho)
