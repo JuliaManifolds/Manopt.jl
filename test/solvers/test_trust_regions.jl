@@ -22,7 +22,33 @@ include("../utils/example_tasks.jl")
     @test_throws ErrorException trust_regions(
         M, f, rgrad, rhess, p; max_trust_region_radius=0.1, trust_region_radius=0.11
     )
-
+    @testset "State Constructors" begin
+        X = rgrad(M, p)
+        TpM = TangentSpace(M, copy(M, p))
+        mho = ManifoldHessianObjective(f, rgrad, rhess)
+        sub_problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+        sub_state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
+        trs1 = TrustRegionsState(M, sub_problem)
+        trs2 = TrustRegionsState(M, sub_problem, sub_state)
+        trs3 = TrustRegionsState(M, p, sub_problem)
+    end
+    @testset "Objective accessors" begin
+        mho = ManifoldHessianObjective(f, rgrad, rhess)
+        X = rgrad(M, p)
+        TpM = TangentSpace(M, copy(M, p))
+        trmo = TrustRegionModelObjective(mho)
+        c = f(M, p)
+        g = inner(M, p, X, X)
+        H = rhess(M, p, X)
+        @test get_cost(TpM, trmo, X) == c + g + 1 / 2 * inner(M, p, H, X)
+        @test get_gradient(TpM, trmo, X) == X + H
+        Y = similar(X)
+        get_gradient!(TpM, Y, trmo, X)
+        @test Y == X + H
+        @test get_hessian(TpM, trmo, Y, X) == H
+        get_hessian!(TpM, Y, trmo, Y, X)
+        @test Y == H
+    end
     @testset "Allocating Variant" begin
         s = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius=8.0, return_state=true

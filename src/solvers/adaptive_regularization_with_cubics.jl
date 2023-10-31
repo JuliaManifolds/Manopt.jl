@@ -41,8 +41,8 @@ Construct the solver state with all fields stated above as keyword arguments.
 mutable struct AdaptiveRegularizationState{
     P,
     T,
-    Pr<:AbstractManoptProblem,
-    St<:AbstractManoptSolverState,
+    Pr<:Union{AbstractManoptProblem,<:Function},
+    St<:Union{AbstractManoptSolverState,<:AbstractEvaluationType},
     TStop<:StoppingCriterion,
     R,
     TRTM<:AbstractRetractionMethod,

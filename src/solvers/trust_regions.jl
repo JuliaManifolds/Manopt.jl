@@ -170,7 +170,9 @@ function TrustRegionsState(
     M::TM,
     p::P,
     sub_problem::Pr,
-    sub_state::St=TruncatedConjugateGradientState(M, p, X);
+    sub_state::St=TruncatedConjugateGradientState(
+        TangentSpace(M, copy(M, p)), zero_vector(M, p)
+    );
     X::T=zero_vector(M, p),
     ρ_prime::R=0.1, #deprecated, remove on next breaking change
     acceptance_rate=ρ_prime,
@@ -236,6 +238,8 @@ function show(io::IO, trs::TrustRegionsState)
     i = get_count(trs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    sub = repr(trs.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
     $Iter
@@ -247,6 +251,8 @@ function show(io::IO, trs::TrustRegionsState)
     * retraction method:      $(trs.retraction_method)
     * ρ_regularization:       $(trs.ρ_regularization)
     * trust region radius:    $(trs.trust_region_radius) (max: $(trs.max_trust_region_radius))
+    * sub solver state     :
+        | $(sub)
 
     ## Stopping Criterion
     $(status_summary(trs.stop))

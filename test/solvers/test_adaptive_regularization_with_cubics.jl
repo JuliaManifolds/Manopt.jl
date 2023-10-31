@@ -19,6 +19,18 @@ include("../utils/example_tasks.jl")
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
     arcmo = AdaptiveRagularizationWithCubicsModelObjective(mho)
 
+    @testset "Accessors for the Objective" begin
+        isapprox(
+            M, p0, Manopt.get_objective_gradient(M, arcmo, p0), get_gradient(M, mho, p0)
+        )
+        g = get_gradient_function(arcmo)
+        isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
+        X0 = zero_vector(M, p0)
+        X1 = similar(X0)
+        Manopt.get_objective_preconditioner!(M, X1, arcmo, p0, X0)
+        isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+    end
+
     @testset "State and repr" begin
         # if we neither provide a problem nor an objective, we expect an error
         @test_throws ErrorException AdaptiveRegularizationState(ℝ^2)
@@ -108,6 +120,9 @@ include("../utils/example_tasks.jl")
         r = copy(M, p1)
         Manopt.solve_arc_subproblem!(M, r, f1!, InplaceEvaluation(), p0)
         @test r == p0
+        # Dummy construction with a function for the sub_problem
+        arcs4 = AdaptiveRegularizationState(M, p0; sub_problem=f1)
+        @test arcs4.sub_state isa AbstractEvaluationType
     end
 
     @testset "A few solver runs" begin
@@ -187,6 +202,7 @@ include("../utils/example_tasks.jl")
         )
         @test isapprox(M, p1, q3)
     end
+
     @testset "A short solver run on the circle" begin
         Mc, fc, grad_fc, pc0, pc_star = Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0

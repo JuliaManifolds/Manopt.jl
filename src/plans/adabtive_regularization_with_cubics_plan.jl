@@ -31,22 +31,15 @@ mutable struct AdaptiveRagularizationWithCubicsModelObjective{
 end
 function AdaptiveRagularizationWithCubicsModelObjective(
     mho::O, σ::R=1.0
-) where {E,O<:AbstractManifoldHessianObjective{E},R}
-    return AdaptiveRagularizationWithCubicsModelObjective{E,O,R}(mho, σ)
-end
-function AdaptiveRagularizationWithCubicsModelObjective(
-    mho::O, σ::R=1.0
-) where {E,O<:AbstractDecoratedManifoldObjective{E},R}
+) where {
+    E,O<:Union{AbstractManifoldHessianObjective{E},AbstractDecoratedManifoldObjective{E}},R
+}
     return AdaptiveRagularizationWithCubicsModelObjective{E,O,R}(mho, σ)
 end
 function set_manopt_parameter!(
-    f::AdaptiveRagularizationWithCubicsModelObjective, ::Val{:σ}, σ
-)
-    f.σ = σ
-    return f
-end
-function set_manopt_parameter!(
-    f::AdaptiveRagularizationWithCubicsModelObjective, ::Val{:RegularizationParameter}, σ
+    f::AdaptiveRagularizationWithCubicsModelObjective,
+    ::Union{Val{:σ},Val{:RegularizationParameter}},
+    σ,
 )
     f.σ = σ
     return f
@@ -111,5 +104,3 @@ end
 function get_gradient_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
     return (TpM, X) -> get_gradient(TpM, arcmo, X)
 end
-
-# Also Implement the Hessian for Newton subsubsolver?

@@ -62,8 +62,10 @@ import Manifolds: inner
         dcppa_sub_problem = DefaultManoptProblem(M, dcppa_sub_objective)
         dcppa_sub_state = GradientDescentState(M, copy(M, p0))
 
-        dcps = DifferenceOfConvexProximalState(
-            M, copy(M, p0), dcppa_sub_problem, dcppa_sub_objective
+        dcps = DifferenceOfConvexProximalState( #Initialize with random point
+            M,
+            dcppa_sub_problem,
+            dcppa_sub_objective,
         )
         set_iterate!(dcps, M, p1)
         @test dcps.p == p1
