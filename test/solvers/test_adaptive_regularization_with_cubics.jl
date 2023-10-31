@@ -122,7 +122,14 @@ include("../utils/example_tasks.jl")
         @test isapprox(M, p1, p2)
         # Third with approximate Hessian
         p3 = adaptive_regularization_with_cubics(
-            M, f, grad_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
+            M,
+            f,
+            grad_f,
+            p0;
+            θ=0.5,
+            σ=100.0,
+            retraction_method=PolarRetraction(),
+            debug=[:Iteration, :Cost, :σ, :ρ_denonimator, "\n"],
         )
         @test isapprox(M, p1, p3)
         # Fourth with approximate Hessian _and_ random point
