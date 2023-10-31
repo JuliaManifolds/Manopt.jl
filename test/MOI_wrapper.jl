@@ -10,7 +10,9 @@ function test_sphere()
     @variable(model, x[i=1:3] in Sphere(2), start = start[i])
 
     @objective(model, Min, sum(x))
+    @test MOI.get(unsafe_backend(model), MOI.ResultCount()) == 0
     optimize!(model)
+    @test MOI.get(unsafe_backend(model), MOI.NumberOfVariables()) == 3
     @test termination_status(model) == MOI.LOCALLY_SOLVED
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test primal_status(model) == MOI.FEASIBLE_POINT
@@ -35,14 +37,29 @@ function test_sphere()
     @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
+
+    set_objective_sense(model, MOI.FEASIBILITY_SENSE)
+    optimize!(model)
+    @test sum(value.(x).^2) ≈ 1
+
+    set_start_value(x[3], nothing)
+    err = ErrorException("No starting value specified for `3`th variable.")
+    @test_throws err optimize!(model)
+    set_start_value(x[3], 1.0)
+
+    @variable(model, [1:2, 1:2] in Stiefel(2, 2))
+    @test_throws MOI.AddConstraintNotAllowed optimize!(model)
 end
 
-function test_stiefel()
+function _test_stiefel(solver)
     A = [
         1 -1
         -1 1
     ]
-    model = Model(Manopt.JuMP_Optimizer)
+    # Use `add_bridges = false` in order to test `copy_to`
+    model = Model(Manopt.JuMP_Optimizer; add_bridges = false)
+    set_attribute(model, "descent_state_type", solver)
+    @test get_attribute(model, "descent_state_type") == solver
     @variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
 
     @objective(model, Min, sum((A - U) .^ 2))
@@ -50,6 +67,10 @@ function test_stiefel()
     @test objective_value(model) ≈ 2
     @test value.(U) ≈ [1 0; 0 1]
     return nothing
+end
+
+function test_stiefel()
+    _test_stiefel(Manopt.GradientDescentState)
 end
 
 @testset "JuMP tests" begin

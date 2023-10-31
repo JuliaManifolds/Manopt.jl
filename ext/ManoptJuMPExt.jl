@@ -69,15 +69,18 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     end
 end
 
+"""
+    MOI.get(::Optimizer, ::MOI.SolverVersion)
+
+Return the version of the Manopt solver, it corresponds to the version of
+Manopt.jl.
+"""
 MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.37"
 
 function MOI.is_empty(model::Optimizer)
-    # TODO replace `isnothing(model.nlp_model.objective)`
-    #      by `MOI.is_empty` once the following is fixed
-    #      https://github.com/jump-dev/MathOptInterface.jl/issues/2302
     return isnothing(model.manifold) &&
            isempty(model.variable_primal_start) &&
-           isnothing(model.nlp_model.objective) &&
+           MOI.is_empty(model.nlp_model) &&
            model.sense == MOI.FEASIBILITY_SENSE
 end
 
@@ -92,9 +95,7 @@ function MOI.empty!(model::Optimizer)
     model.state = nothing
     empty!(model.variable_primal_start)
     model.sense = MOI.FEASIBILITY_SENSE
-    # TODO replace by `MOI.empty!` once the following is fixed
-    #      https://github.com/jump-dev/MathOptInterface.jl/issues/2302
-    model.nlp_model.objective = nothing
+    MOI.empty!(model.nlp_model)
     return nothing
 end
 
@@ -117,9 +118,6 @@ end
 Return last `value` set by `MOI.set(model, attr, value)`.
 """
 function MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
-    if !MOI.supports(model, attr)
-        throw(MOI.UnsupportedAttribute(attr))
-    end
     return model.options[attr.name]
 end
 
@@ -130,9 +128,6 @@ Set the value for the keyword argument `attr.name` to give for the constructor
 `model.options[DESCENT_STATE_TYPE]`.
 """
 function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
-    if !MOI.supports(model, attr)
-        throw(MOI.UnsupportedAttribute(attr))
-    end
     model.options[attr.name] = value
     return nothing
 end
@@ -186,7 +181,7 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
         throw(
-            AddConstraintNotAllowed{F,typeof(set)}(
+            MOI.AddConstraintNotAllowed{F,typeof(set)}(
                 "Only one manifold allowed, variables in `$(model.manifold)` have already been added.",
             ),
         )
@@ -271,12 +266,6 @@ end
 
 MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 
-function MOI.get(
-    model::Optimizer, attr::Union{MOI.ObjectiveFunctionType,MOI.ObjectiveFunction}
-)
-    return MOI.get(model.nlp_model, attr)
-end
-
 function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
     nl = convert(MOI.ScalarNonlinearFunction, func)
     MOI.Nonlinear.set_objective(model.nlp_model, nl)
@@ -313,7 +302,7 @@ function MOI.optimize!(model::Optimizer)
         x = JuMP.vectorize(X, _shape(model.manifold))
         grad_f = zeros(length(x))
         if model.sense == MOI.FEASIBILITY_SENSE
-            grad_f .= zero(eltype(grad))
+            grad_f .= zero(eltype(grad_f))
         else
             MOI.eval_objective_gradient(evaluator, grad_f, x)
         end
