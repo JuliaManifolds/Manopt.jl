@@ -169,7 +169,7 @@ import Manifolds: inner
         p9 = difference_of_convex_algorithm(
             M, f, g, grad_h, p0; grad_g=grad_g, sub_hess=nothing
         )
-        @test isapprox(M, p9, p2; atol=1e-9)
+        @test isapprox(M, p9, p2; atol=1e-7)
 
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing

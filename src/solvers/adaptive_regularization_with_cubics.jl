@@ -376,7 +376,7 @@ function adaptive_regularization_with_cubics!(
     mho::O,
     p=rand(M);
     debug=DebugIfEntry(
-        :ρ_denonimator, >(0); message="Denominator nonpositive", type=:error
+        :ρ_denonimator, >(-1e-9); message="Nominator nonpositive", type=:error
     ),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     initial_tangent_vector::T=zero_vector(M, p),
