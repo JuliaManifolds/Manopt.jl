@@ -27,13 +27,13 @@ The following symbols are used.
 The column “generic” refers to a short hand that might be used – for readability if clear from context.
 
 | Symbol       | Used in | Description                                                | generic |
-| ------------ | ------- | ---------------------------------------------------------- | ------- |
+| :----------- | :------: | ;-------------------------------------------------------- | :------ |
 | `:active` | [`DebugWhenActive`](@ref) | activity of the debug action stored within | |
 | `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at           | `:p` |
 | `:Cost` | generic |the cost function (e.g. within an objective, as pass down) | |
 | `:Debug` | [`DebugSolverState`](@ref) | the stored `debugDictionary` | |
 | `:Gradient` | generic |the gradient function (e.g. within an objective, as pass down) | |
-| `:Iterate` | generic | the (current) iterate – similar to [`set_iterate`](@ref) – within a state | |
+| `:Iterate` | generic | the (current) iterate – similar to [`set_iterate!`](@ref) – within a state | |
 | `:Manifold` | generic |the manifold (e.g. within a problem, as pass down) | |
 | `:Objective` | generic | the objective (e.g. within a problem, as pass down) | |
 | `:SubProblem` | generic | the sub problem (e.g. within a state, as pass down) | |
