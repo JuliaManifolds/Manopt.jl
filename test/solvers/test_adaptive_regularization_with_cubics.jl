@@ -128,12 +128,7 @@ include("../utils/example_tasks.jl")
         # Fourth with approximate Hessian _and_ random point
         Random.seed!(36)
         p4 = adaptive_regularization_with_cubics(
-            M,
-            f,
-            grad_f;
-            θ=0.5,
-            σ=100.0,
-            retraction_method=PolarRetraction(),
+            M, f, grad_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
         @test isapprox(M, p1, p4)
         # with a large η1 to trigger the bad model case once
