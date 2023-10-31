@@ -56,7 +56,7 @@ mutable struct AdaptiveRegularizationState{
     S::T
     σ::R
     ρ::R
-    ρ_denonimator::R
+    ρ_denominator::R
     ρ_regularization::R
     stop::TStop
     retraction_method::TRTM
@@ -233,7 +233,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 [`decorate_objective!`](@ref) for objective, respectively.
 If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
-By default the `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denonimator, >(0); message="Denominator nonpositive", type=:error)``
+By default the `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denominator, >(0); message="Denominator nonpositive", type=:error)``
 to avoid that by rounding errors the denominator in the computation of `ρ` gets nonpositive.
 """
 adaptive_regularization_with_cubics(M::AbstractManifold, args...; kwargs...)
@@ -376,7 +376,7 @@ function adaptive_regularization_with_cubics!(
     mho::O,
     p=rand(M);
     debug=DebugIfEntry(
-        :ρ_denonimator, >(-1e-9); message="Nominator nonpositive", type=:error
+        :ρ_denominator, >(-1e-8); message="Nominator nonpositive", type=:error
     ),
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     initial_tangent_vector::T=zero_vector(M, p),
@@ -465,7 +465,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     ρ_vec = arcs.X + 0.5 * get_hessian(M, mho, arcs.p, arcs.S)
     ρ_den = -inner(M, arcs.p, arcs.S, ρ_vec)
     ρ_reg = arcs.ρ_regularization * eps(Float64) * max(abs(cost), 1)
-    arcs.ρ_denonimator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
+    arcs.ρ_denominator = ρ_den + ρ_reg # <= 0 -> the default debug kicks in
     arcs.ρ = (ρ_num + ρ_reg) / (ρ_den + ρ_reg)
     #Update iterate
     if arcs.ρ >= arcs.η1
