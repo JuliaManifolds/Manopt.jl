@@ -15,8 +15,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ` – (`1.0`) the penalty parameter
 * `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(300), `[`StopWhenAll`](@ref)`(`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min), `[`StopWhenChangeLess`](@ref)`(min_stepsize)))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(min_stepsize))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Constructor
 
@@ -59,9 +58,8 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         θ_u=(u_min / u)^(u_exponent),
         ρ::R=1.0,
         θ_ρ::R=0.3,
-        stopping_criterion::SC=StopWhenAny(
-            StopAfterIteration(300),
-            StopWhenAll(StopWhenSmallerOrEqual(:ϵ, ϵ_min), StopWhenChangeLess(1e-10)),
+        stopping_criterion::SC=StopAfterIteration(300) | (
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
         ),
     ) where {
         P,

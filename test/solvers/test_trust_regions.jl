@@ -229,9 +229,7 @@ include("../utils/example_tasks.jl")
                     M, p, grad_f!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
                 ),
                 p;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(100), StopWhenGradientNormLess(10^(-8))
-                ),
+                stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -247,9 +245,8 @@ include("../utils/example_tasks.jl")
                 grad_f,
                 ApproxHessianSymmetricRankOne(M, qaHSR1_2, grad_f; nu=eps(Float64)^2),
                 qaHSR1_2;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -263,9 +260,8 @@ include("../utils/example_tasks.jl")
                 grad_f,
                 ApproxHessianBFGS(M, p, grad_f),
                 p;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -280,9 +276,8 @@ include("../utils/example_tasks.jl")
                 grad_f,
                 ApproxHessianBFGS(M, qaHBFGS_2, grad_f),
                 qaHBFGS_2;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -325,9 +320,8 @@ include("../utils/example_tasks.jl")
                     M, qaHSR1_3, grad_f!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
                 ),
                 qaHSR1_3;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -343,9 +337,8 @@ include("../utils/example_tasks.jl")
                 grad_f!,
                 ApproxHessianBFGS(M, qaHBFGS_3, grad_f!; evaluation=InplaceEvaluation()),
                 qaHBFGS_3;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,

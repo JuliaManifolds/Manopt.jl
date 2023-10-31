@@ -26,7 +26,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     sn = StopWhenAny(StopAfterIteration(10), s3)
     @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iters
     @test startswith(repr(sn), "StopWhenAny with the")
-    sn2 = StopWhenAny([StopAfterIteration(10), s3])
+    sn2 = StopAfterIteration(10) | s3
     @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
     @test get_stopping_criteria(sn)[2].threshold == get_stopping_criteria(sn2)[2].threshold
     # then s3 is the only active one
@@ -80,7 +80,7 @@ end
     @test typeof(d) === typeof((a & b) & c)
     update_stopping_criterion!(d, :MinIterateChange, 1e-8)
     @test d.criteria[2].threshold == 1e-8
-    e = StopWhenAny(a, b, c)
+    e = a | b | c
     @test typeof(e) === typeof(a | b | c)
     @test typeof(e) === typeof(a | (b | c))
     @test typeof(e) === typeof((a | b) | c)

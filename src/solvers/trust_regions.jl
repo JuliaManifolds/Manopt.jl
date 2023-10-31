@@ -291,8 +291,7 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
   within the subsolver for numerical stability.
   this means we require a function `(M, Y, p, X) -> ...` working in place of `Y`.
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use
-* `stopping_criterion`      – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
-  [`StopWhenGradientNormLess`](@ref)`(1e-6)`) a functor inheriting
+* `stopping_criterion`      – ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
 * `trust_region_radius`     – the initial trust-region radius
 * `acceptance_rate`         – Accept/reject threshold: if ρ (the performance ratio for the

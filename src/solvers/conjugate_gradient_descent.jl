@@ -161,9 +161,8 @@ function conjugate_gradient_descent!(
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(500), StopWhenGradientNormLess(10^(-8))
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+                                          StopWhenGradientNormLess(1e-8),
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
     initial_gradient=zero_vector(M, p),
     kwargs...,

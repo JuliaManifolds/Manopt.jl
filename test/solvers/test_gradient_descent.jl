@@ -89,9 +89,7 @@ using Manopt, Manifolds, Test, Random
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopWhenAny(
-                StopAfterIteration(1000), StopWhenChangeLess(1e-16)
-            ),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
             direction=Nesterov(M, data[1]),
         )
         @test isapprox(M, p, p6; atol=1e-13)
