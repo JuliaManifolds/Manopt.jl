@@ -15,15 +15,6 @@ status_summary(e) = "$(e)"
 For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
 
-The following symbols are used.
-The generic ones are ofyen used as short hands, when clear from context,
-see also the “genric” column as short hand alternaytives to semantic symbols
-
-| Symbol      | Used in | Description                                                | generic |
-| ----------- | ------- | ---------------------------------------------------------- | ------- |
-| :Basepoint` | [`TAngentSpace`]() | set the point the tangent space is at | `:p` |
-| `:p`        | generic | set a certain point         | |
-| `:X`   | generic | set a certain tangent vector | |
 
 """
 function set_manopt_parameter!(f, e::Symbol, args...)
