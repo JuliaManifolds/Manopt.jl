@@ -379,6 +379,14 @@ function _shape(m::ManifoldsBase.AbstractManifold)
     return ArrayShape(ManifoldsBase.representation_size(m))
 end
 
+"""
+    JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
+
+Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
+and the [`VectorizedManifold`](@ref) in which they should belong as well as the
+`shape` that can be used to go from the vectorized MOI representation to the
+shape of the manifold, e.g., [`ArrayShape`](@ref).
+"""
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)
     return JuMP.VariablesConstrainedOnCreation(
@@ -386,6 +394,14 @@ function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold
     )
 end
 
+"""
+    MOI.get(model::Optimizer, ::MOI.ResultCount)
+
+Return `MOI.OPTIMIZE_NOT_CALLED` if `optimize!` hasn't been called yet and
+`MOI.LOCALLY_SOLVED` otherwise indicating that the solver has solved the
+problem to local optimality the the value of `MOI.RawStatusString` for more
+details on why the solver stopped.
+"""
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
     if isnothing(model.state)
         return MOI.OPTIMIZE_NOT_CALLED
@@ -394,6 +410,12 @@ function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
     end
 end
 
+"""
+    MOI.get(model::Optimizer, ::MOI.ResultCount)
+
+Return `0` if `optimize!` hasn't been called yet and
+`1` otherwise indicating that one solution is available.
+"""
 function MOI.get(model::Optimizer, ::MOI.ResultCount)
     if isnothing(model.state)
         return 0
@@ -402,6 +424,13 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
     end
 end
 
+"""
+    MOI.get(model::Optimizer, ::MOI.PrimalStatus)
+
+Return `MOI.NO_SOLUTION` if `optimize!` hasn't been called yet and
+`MOI.FEASIBLE_POINT` otherwise indicating that a solution is available
+to query with `MOI.VariablePrimalStart`.
+"""
 function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
     if isnothing(model.state)
         return MOI.NO_SOLUTION
@@ -410,20 +439,42 @@ function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
     end
 end
 
+"""
+    MOI.get(::Optimizer, ::MOI.DualStatus)
+
+Returns `MOI.NO_SOLUTION` indicating that there is no dual solution
+available.
+"""
 MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 
+"""
+    MOI.get(model::Optimizer, ::MOI.RawStatusString)
+
+Return a `String` containing `Manopt.get_reason` without the ending newline
+character.
+"""
 function MOI.get(model::Optimizer, ::MOI.RawStatusString)
     # `strip` removes the `\n` at the end and returns an `AbstractString`
     # Since MOI wants a `String`, we pass it through `string`
     return string(strip(get_reason(model.state)))
 end
 
+"""
+    MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
+
+Return the value of the objective function evaluated at the solution.
+"""
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
     solution = Manopt.get_solver_return(model.state)
     return get_cost(model.problem, solution)
 end
 
+"""
+    MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
+
+Return the value of the solution for the variable of index `vi`.
+"""
 function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)
