@@ -134,7 +134,6 @@ include("../utils/example_tasks.jl")
             θ=0.5,
             σ=100.0,
             retraction_method=PolarRetraction(),
-            debug=[:Iteration, :Cost, :σ, :ρ_denominator, "\n"],
         )
         @test isapprox(M, p1, p4)
         # with a large η1 to trigger the bad model case once
