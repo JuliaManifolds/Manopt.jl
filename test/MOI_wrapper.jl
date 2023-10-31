@@ -40,7 +40,7 @@ function test_sphere()
 
     set_objective_sense(model, MOI.FEASIBILITY_SENSE)
     optimize!(model)
-    @test sum(value.(x).^2) ≈ 1
+    @test sum(value.(x) .^ 2) ≈ 1
 
     set_start_value(x[3], nothing)
     err = ErrorException("No starting value specified for `3`th variable.")
@@ -57,7 +57,7 @@ function _test_stiefel(solver)
         -1 1
     ]
     # Use `add_bridges = false` in order to test `copy_to`
-    model = Model(Manopt.JuMP_Optimizer; add_bridges = false)
+    model = Model(Manopt.JuMP_Optimizer; add_bridges=false)
     set_attribute(model, "descent_state_type", solver)
     @test get_attribute(model, "descent_state_type") == solver
     @variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
@@ -70,7 +70,7 @@ function _test_stiefel(solver)
 end
 
 function test_stiefel()
-    _test_stiefel(Manopt.GradientDescentState)
+    return _test_stiefel(Manopt.GradientDescentState)
 end
 
 @testset "JuMP tests" begin

@@ -132,6 +132,12 @@ function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
     return nothing
 end
 
+"""
+    MOI.get(::Optimizer, ::MOI.SolverName)
+
+Return the name of the `Optimizer` with the value of
+the `descent_state_type` option.
+"""
 function MOI.get(model::Optimizer, ::MOI.SolverName)
     return "Manopt with $(model.options[DESCENT_STATE_TYPE])"
 end
@@ -255,17 +261,40 @@ function MOI.set(
     return nothing
 end
 
+"""
+    MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
+
+Return `true` indicating that `Optimizer` supports being set the objective
+sense (that is, min, max or feasibility) and the objective function.
+"""
 function MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
     return true
 end
 
+"""
+    MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
+
+Modify the objective sense to either `MOI.MAX_SENSE`, `MOI.MIN_SENSE` or
+`MOI.FEASIBILITY_SENSE`.
+"""
 function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
     return nothing
 end
 
+"""
+    MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
+
+Return the objective sense, defaults to `MOI.FEASIBILITY_SENSE` if no sense has
+already been set.
+"""
 MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 
+"""
+    MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
+
+Set the objective function as `func` for `model`.
+"""
 function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
     nl = convert(MOI.ScalarNonlinearFunction, func)
     MOI.Nonlinear.set_objective(model.nlp_model, nl)
@@ -274,6 +303,14 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F
     return nothing
 end
 
+"""
+    const DESCENT_STATE_TYPE = "descent_state_type"
+
+Name of the attribute for the type of the descent state to be used as follows:
+```julia
+set_attribute(model, "descent_state_type", Manopt.TrustRegionsState)
+```
+"""
 const DESCENT_STATE_TYPE = "descent_state_type"
 
 function MOI.optimize!(model::Optimizer)
