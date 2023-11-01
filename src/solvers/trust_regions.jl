@@ -322,11 +322,13 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 trust_regions(M::AbstractManifold, args...; kwargs...)
+# Hesian (Function) but no point
 function trust_regions(
     M::AbstractManifold, f, grad_f, Hess_f::TH; kwargs...
 ) where {TH<:Function}
     return trust_regions(M, f, grad_f, Hess_f, rand(M); kwargs...)
 end
+# Hesian (Function) and point
 function trust_regions(
     M::AbstractManifold,
     f,
@@ -344,6 +346,7 @@ function trust_regions(
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
     return trust_regions(M, mho, p; evaluation=evaluation, kwargs...)
 end
+# Hesian (Function) and point (but a number)
 function trust_regions(
     M::AbstractManifold,
     f,
@@ -373,9 +376,11 @@ function trust_regions(
     )
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
+# neither Hesian (Function) nor point
 function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)
     return trust_regions(M, f, grad_f, rand(M); kwargs...)
 end
+# no Hesian (Function), but point (any)
 function trust_regions(
     M::AbstractManifold,
     f::TF,
@@ -399,6 +404,7 @@ function trust_regions(
         kwargs...,
     )
 end
+# Objective
 function trust_regions(
     M::AbstractManifold, mho::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
@@ -425,6 +431,7 @@ For the case that no hessian is provided, the Hessian is computed using finite d
 for more details and all options, see [`trust_regions`](@ref)
 """
 trust_regions!(M::AbstractManifold, args...; kwargs...)
+# No Hessian but a point (Any)
 function trust_regions!(
     M::AbstractManifold,
     f,
@@ -448,6 +455,7 @@ function trust_regions!(
         kwargs...,
     )
 end
+# Hessian and point
 function trust_regions!(
     M::AbstractManifold,
     f,
@@ -465,6 +473,7 @@ function trust_regions!(
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
     return trust_regions!(M, mho, p; evaluation=evaluation, kwargs...)
 end
+# Objective
 function trust_regions!(
     M::AbstractManifold,
     mho::O,
