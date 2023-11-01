@@ -13,6 +13,6 @@ Pages   = ["artificialDataFunctions.jl"]
 # Literature
 
 ```@bibliography
-Pages = ["helpers/data.md"]
+Pages = ["data.md"]
 Canonical=false
 ```
