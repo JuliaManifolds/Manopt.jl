@@ -42,6 +42,6 @@ RecordProximalParameter
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/cyclic_proximal_point.md"]
+Pages = ["cyclic_proximal_point.md"]
 Canonical=false
 ```

@@ -29,6 +29,6 @@ LogarithmicSumOfExponentials
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/exact_penalty_method.md"]
+Pages = ["exact_penalty_method.md"]
 Canonical=false
 ```

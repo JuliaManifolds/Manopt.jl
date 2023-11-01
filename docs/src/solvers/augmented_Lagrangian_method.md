@@ -25,6 +25,6 @@ AugmentedLagrangianGrad
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/augmented_Lagrangian_method.md"]
+Pages = ["augmented_Lagrangian_method.md"]
 Canonical=false
 ```

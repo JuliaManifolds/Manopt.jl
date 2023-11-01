@@ -18,6 +18,6 @@ LevenbergMarquardtState
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/LevenbergMarquardt.md"]
+Pages = ["LevenbergMarquardt.md"]
 Canonical=false
 ```

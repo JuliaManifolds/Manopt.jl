@@ -401,13 +401,8 @@ function adaptive_regularization_with_cubics!(
         θ=θ,
         stopping_criterion=sub_stopping_criterion,
     ),
-    sub_objective=decorate_objective!(
-        M,
-        AdaptiveRagularizationWithCubicsModelObjective(mho, σ);
-        objective_type=objective_type,
-        sub_kwargs...,
-    ),
-    sub_problem=DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective),
+    sub_objective=nothing,
+    sub_problem=nothing,
     stopping_criterion::StoppingCriterion=if sub_state isa LanczosState
         StopAfterIteration(40) |
         StopWhenGradientNormLess(1e-9) |
@@ -417,8 +412,14 @@ function adaptive_regularization_with_cubics!(
     end,
     kwargs...,
 ) where {T,R,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
-    X = copy(M, p, initial_tangent_vector)
     dmho = decorate_objective!(M, mho; objective_type=objective_type, kwargs...)
+    if isnothing(sub_objective)
+        sub_objective = AdaptiveRagularizationWithCubicsModelObjective(dmho, σ)
+    end
+    if isnothing(sub_problem)
+        sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
+    end
+    X = copy(M, p, initial_tangent_vector)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,

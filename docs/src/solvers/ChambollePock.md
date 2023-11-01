@@ -113,6 +113,6 @@ Manopt.update_prox_parameters!
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/ChambollePock.md"]
+Pages = ["ChambollePock.md"]
 Canonical=false
 ```

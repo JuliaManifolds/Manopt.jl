@@ -62,6 +62,6 @@ Manopt.AbstractApproxHessian
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/trust_regions.md"]
+Pages = ["trust_regions.md"]
 Canonical=false
 ```

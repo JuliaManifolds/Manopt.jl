@@ -47,6 +47,6 @@ TrustRegionModelObjective
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/truncated_conjugate_gradient_descent.md"]
+Pages = ["truncated_conjugate_gradient_descent.md"]
 Canonical=false
 ```

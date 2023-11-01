@@ -45,12 +45,12 @@ Evaluate the gradient of the (original) objective stored within the subobjective
 """
 function get_objective_gradient(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
-) where {E,O<:AbstractManifoldGradientObjective{E}}
+) where {E,O<:AbstractManifoldObjective{E}}
     return get_gradient(M, get_objective(amso), p)
 end
 function get_objective_gradient!(
     M::AbstractManifold, X, amso::AbstractManifoldSubObjective{E,O}, p
-) where {E,O<:AbstractManifoldGradientObjective{E}}
+) where {E,O<:AbstractManifoldObjective{E}}
     return get_gradient!(M, X, get_objective(amso), p)
 end
 
@@ -62,13 +62,14 @@ Evaluate the Hessian of the (original) objective stored within the subobjective 
 """
 function get_objective_hessian(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
-) where {E,O<:AbstractManifoldHessianObjective{E}}
+) where {E,O<:AbstractManifoldObjective{E}}
     return get_hessian(M, get_objective(amso), p, X)
 end
 function get_objective_hessian!(
     M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
-) where {E,O<:AbstractManifoldHessianObjective{E}}
-    return get_hessian!(M, Y, get_objective(amso), p, X)
+) where {E,O<:AbstractManifoldObjective{E}}
+    get_hessian!(M, Y, get_objective(amso), p, X)
+    return Y
 end
 
 @doc raw"""

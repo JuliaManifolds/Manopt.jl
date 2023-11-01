@@ -19,6 +19,6 @@ Pages   = ["gradients.jl"]
 # Literature
 
 ```@bibliography
-Pages = ["functions/gradients.md"]
+Pages = ["gradients.md"]
 Canonical=false
 ```

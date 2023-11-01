@@ -54,7 +54,7 @@ The [`gradient_descent`](@ref) solver requires the following functions of your m
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/gradient_descent.md"]
+Pages = ["gradient_descent.md"]
 Canonical=false
 
 Luenberger:1972

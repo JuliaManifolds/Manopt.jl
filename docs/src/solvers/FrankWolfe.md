@@ -25,6 +25,6 @@ FrankWolfeGradient
 ```
 
 ```@bibliography
-Pages = ["solvers/FrankWolfe.md"]
+Pages = ["FrankWolfe.md"]
 Canonical=false
 ```

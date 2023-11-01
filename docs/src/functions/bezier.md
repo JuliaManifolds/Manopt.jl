@@ -8,6 +8,6 @@ Pages   = ["bezier_curves.jl"]
 # Literature
 
 ```@bibliography
-Pages = ["functions/bezier.md"]
+Pages = ["bezier.md"]
 Canonical=false
 ```

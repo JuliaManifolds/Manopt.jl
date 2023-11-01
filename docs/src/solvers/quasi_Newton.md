@@ -115,6 +115,6 @@ QuasiNewtonState
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/quasi_Newton.md"]
+Pages = ["quasi_Newton.md"]
 Canonical=false
 ```

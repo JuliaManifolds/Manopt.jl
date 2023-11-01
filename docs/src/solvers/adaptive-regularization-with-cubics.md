@@ -57,6 +57,6 @@ StopWhenFirstOrderProgress
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/adaptive-regularization-with-cubics.md"]
+Pages = ["adaptive-regularization-with-cubics.md"]
 Canonical=false
 ```
