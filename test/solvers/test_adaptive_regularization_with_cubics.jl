@@ -23,6 +23,10 @@ include("../utils/example_tasks.jl")
         isapprox(
             M, p0, Manopt.get_objective_gradient(M, arcmo, p0), get_gradient(M, mho, p0)
         )
+        X0 = zero_vector(M, p0)
+        Manopt.get_objective_gradient!(M, X0, arcmo, p0)
+        isapprox(M, p0, X0, get_gradient(M, mho, p0))
+
         g = get_gradient_function(arcmo)
         isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
         X0 = zero_vector(M, p0)

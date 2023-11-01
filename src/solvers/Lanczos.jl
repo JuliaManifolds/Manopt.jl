@@ -11,7 +11,7 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 
 * `stop` – the stopping criterion
 * `σ` – the current regularization parameter
-* `X` the current gradient
+* `X` the Iterate
 * `Lanczos_vectors` – the obtained Lanczos vectors
 * `tridig_matrix` the tridiagonal coefficient matrix T
 * `coefficients` the coefficients `y_1,...y_k`` that determine the solution
@@ -62,7 +62,7 @@ function get_solver_result(ls::LanczosState)
     return ls.S
 end
 function set_iterate!(ls::LanczosState, M, X)
-    ls.X = X
+    ls.X .= X
     return ls
 end
 function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
@@ -97,7 +97,6 @@ function initialize_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::Lanc
     TpM = get_manifold(dmp)
     M = base_manifold(TpM)
     p = TpM.point
-    # Maybe better to allocate once and just reset the number of vectors k?
     maxIterLanczos = size(ls.tridig_matrix, 1)
     ls.tridig_matrix = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
     ls.coefficients = zeros(maxIterLanczos)
@@ -267,11 +266,9 @@ function (c::StopWhenFirstOrderProgress)(
     Ty = @view(ls.tridig_matrix[1:i, 1:(i - 1)]) * y
     ny = norm(y)
     model_grad_norm = norm(nX .* [1, zeros(i - 1)...] + Ty + ls.σ * ny * [y..., 0])
-    if (i > 0) && (model_grad_norm <= c.θ * ny^2)
-        c.reason = "The subproblem has reached a point with ||grad m(X)|| ≤ θ ||X||^2, θ = $(c.θ)."
-        return true
-    end
-    return false
+    prog = (model_grad_norm <= c.θ * ny^2)
+    prog && (c.reason = "The algorithm has reduced the model grad norm by a factor $(c.θ).")
+    return prog
 end
 function (c::StopWhenFirstOrderProgress)(
     dmp::AbstractManoptProblem{<:TangentSpace}, ams::AbstractManoptSolverState, i::Int
@@ -287,11 +284,9 @@ function (c::StopWhenFirstOrderProgress)(
     nG = norm(base_manifold(TpM), p, get_gradient(dmp, q))
     # norm of current iterate
     nX = norm(base_manifold(TpM), p, q)
-    if (i > 0) && (nG <= c.θ * nX^2)
-        c.reason = "The algorithm has reduced the model grad norm by $(c.θ).\n"
-        return true
-    end
-    return false
+    prog = (nG <= c.θ * nX^2)
+    prog && (c.reason = "The algorithm has reduced the model grad norm by a factor $(c.θ).")
+    return prog
 end
 
 function status_summary(c::StopWhenFirstOrderProgress)
