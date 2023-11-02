@@ -58,8 +58,10 @@ function _test_stiefel(solver)
     ]
     # Use `add_bridges = false` in order to test `copy_to`
     model = Model(Manopt.JuMP_Optimizer; add_bridges=false)
-    set_attribute(model, "descent_state_type", solver)
-    @test get_attribute(model, "descent_state_type") == solver
+    dst = "descent_state_type"
+    @test MOI.supports(unsafe_backend(model), MOI.RawOptimizerAttribute(dst))
+    set_attribute(model, dst, solver)
+    @test get_attribute(model, dst) == solver
     @variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
 
     @objective(model, Min, sum((A - U) .^ 2))
