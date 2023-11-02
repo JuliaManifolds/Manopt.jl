@@ -254,7 +254,7 @@ maximum(g(M, w1))
 
 ````{=commonmark}
 ```@bibliography
-Pages = ["tutorials/ConstrainedOptimization.md"]
+Pages = ["ConstrainedOptimization.md"]
 Canonical=false
 ```
 ````

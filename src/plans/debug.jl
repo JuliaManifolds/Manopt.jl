@@ -69,6 +69,18 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
+
+"""
+    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
+
+Set certain values specified by `args...` into the elements of the `debugDictionary`
+"""
+function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
+    for d in values(dss.debugDictionary)
+        set_manopt_parameter!(d, args...)
+    end
+    return dss
+end
 function status_summary(dst::DebugSolverState)
     if length(dst.debugDictionary) > 0
         s = ""

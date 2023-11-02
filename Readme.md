@@ -74,7 +74,24 @@ To refer to a certain version or the source code in general we recommend to cite
 ```
 
 for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
-Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
+
+If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) please consider to cite
+
+```
+@article{AxenBaranBergmannRzecki:2023,
+    AUTHOR     = {Seth D. Axen and Mateusz Baran and Ronny Bergmann and Krzysztof Rzecki},
+    DOI        = {10.1145/3618296},
+    EPRINT     = {2021.08777},
+    EPRINTTYPE = {arXiv},
+    JOURNAL    = {AMS Transactions on Mathematical Software},
+    NOTE       = {accepted for publication},
+    TITLE      = {Manifolds.jl: An Extensible {J}ulia Framework for Data Analysis on Manifolds},
+    YEAR       = {2023}
+}
+```
+
+as well.
+Note that all citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
 
 ## Further and Similar Packages & Links
 

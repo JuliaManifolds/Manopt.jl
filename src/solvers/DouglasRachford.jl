@@ -171,7 +171,7 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 * `retraction_method` - (`default_retraction_metiod(M, typeof(p))`) the retraction to use in
   - the reflection (ignored, if you set `R` directly)
   - the relaxation step
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200),`[`StopWhenChangeLess`](@ref)`(10.0^-5))`)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-5)`)
   a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
@@ -307,9 +307,8 @@ function DouglasRachford!(
         )
     end,
     parallel::Int=0,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(200), StopWhenChangeLess(10.0^-5)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenChangeLess(1e-5),
     kwargs..., #especially may contain decorator options
 ) where {
     Tλ,

@@ -198,7 +198,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 * `swarm_size`                - (`100`) number of random initial positions of x0
 * `retraction_method`         – (`default_retraction_method(M, eltype(x))`) a `retraction(M,x,ξ)` to use.
 * `social_weight`             – (`1.4`) a social weight factor
-* `stopping_criterion`        – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(500)`, [`StopWhenChangeLess`](@ref)`(10^{-4})))`
+* `stopping_criterion`        – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 * `vector_transport_mthod`    - (`default_vector_transport_method(M, eltype(x))`) a vector transport method to use.
 * `velocity`                  – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position

@@ -1,3 +1,4 @@
+using Manifolds
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 
 f(M::PowerManifold, p) = -0.5 * norm(transpose(p[M, 1]) * A * p[M, 2])^2

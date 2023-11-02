@@ -8,7 +8,6 @@ include("../utils/example_tasks.jl")
     n = 8
     k = 3
     A = Symmetric(randn(n, n))
-
     M = Grassmann(n, k)
 
     f(M, p) = -0.5 * tr(p' * A * p)
@@ -16,22 +15,34 @@ include("../utils/example_tasks.jl")
     Hess_f(M, p, X) = -A * X + p * p' * A * X + X * p' * A * p
 
     p0 = Matrix{Float64}(I, n, n)[:, 1:k]
-    M2 = TangentSpace(M, p0)
-
+    M2 = TangentSpace(M, copy(M, p0))
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-    g = AdaptiveRegularizationCubicCost(M2, mho)
-    grad_g = AdaptiveRegularizationCubicGrad(M2, mho)
+    arcmo = AdaptiveRagularizationWithCubicsModelObjective(mho)
+
+    @testset "Accessors for the Objective" begin
+        isapprox(
+            M, p0, Manopt.get_objective_gradient(M, arcmo, p0), get_gradient(M, mho, p0)
+        )
+        X0 = zero_vector(M, p0)
+        Manopt.get_objective_gradient!(M, X0, arcmo, p0)
+        isapprox(M, p0, X0, get_gradient(M, mho, p0))
+
+        g = get_gradient_function(arcmo)
+        isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
+        X0 = zero_vector(M, p0)
+        X1 = similar(X0)
+        Manopt.get_objective_preconditioner!(M, X1, arcmo, p0, X0)
+        isapprox(M, p0, X1, get_preconditioner(M, mho, p0, X0))
+    end
 
     @testset "State and repr" begin
         # if we neither provide a problem nor an objective, we expect an error
         @test_throws ErrorException AdaptiveRegularizationState(ℝ^2)
-        g = AdaptiveRegularizationCubicCost(M2, mho)
-        grad_g = AdaptiveRegularizationCubicGrad(M2, mho)
 
         arcs = AdaptiveRegularizationState(
             M,
             p0;
-            sub_problem=DefaultManoptProblem(M2, ManifoldGradientObjective(g, grad_g)),
+            sub_problem=DefaultManoptProblem(M2, arcmo),
             sub_state=GradientDescentState(M2, zero_vector(M, p0)),
         )
         @test startswith(
@@ -47,8 +58,8 @@ include("../utils/example_tasks.jl")
         arcs2 = AdaptiveRegularizationState(
             M,
             p0;
-            sub_objective=mho,
-            sub_state=LanczosState(M; maxIterLanczos=1),
+            sub_objective=arcmo,
+            sub_state=LanczosState(M2; maxIterLanczos=1),
             stopping_criterion=StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
@@ -58,9 +69,10 @@ include("../utils/example_tasks.jl")
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
         arcs3 = AdaptiveRegularizationState(
-            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
+            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
         )
         #add a fake Lanczos
+        initialize_solver!(arcs3.sub_problem, arcs3.sub_state)
         push!(arcs3.sub_state.Lanczos_vectors, copy(M, p1, X1))
         step_solver!(arcs3.sub_problem, arcs3.sub_state, 2) # to introduce a random new one
         # test orthogonality of the new 2 ones
@@ -76,7 +88,7 @@ include("../utils/example_tasks.jl")
         )
         # a second that copies
         arcs4 = AdaptiveRegularizationState(
-            M, p0; sub_objective=mho, sub_state=LanczosState(M; maxIterLanczos=2)
+            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
         )
         #add a fake Lanczos
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
@@ -112,6 +124,9 @@ include("../utils/example_tasks.jl")
         r = copy(M, p1)
         Manopt.solve_arc_subproblem!(M, r, f1!, InplaceEvaluation(), p0)
         @test r == p0
+        # Dummy construction with a function for the sub_problem
+        arcs4 = AdaptiveRegularizationState(M, p0; sub_problem=f1)
+        @test arcs4.sub_state isa AbstractEvaluationType
     end
 
     @testset "A few solver runs" begin
@@ -163,12 +178,12 @@ include("../utils/example_tasks.jl")
 
         # test both inplace and allocating variants of grad_g
         X0 = grad_f(M, p0)
-        X1 = grad_g(M2, X0)
+        X1 = get_gradient(M2, arcmo, X0)
         X2 = zero_vector(M, p0)
-        grad_g(M2, X2, X0)
+        get_gradient!(M2, X2, arcmo, X0)
         @test isapprox(M, p0, X1, X2)
 
-        sub_problem = DefaultManoptProblem(M2, ManifoldGradientObjective(g, grad_g))
+        sub_problem = DefaultManoptProblem(M2, arcmo)
         sub_state = GradientDescentState(
             M2,
             zero_vector(M, p0);
@@ -191,6 +206,7 @@ include("../utils/example_tasks.jl")
         )
         @test isapprox(M, p1, q3)
     end
+
     @testset "A short solver run on the circle" begin
         Mc, fc, grad_fc, pc0, pc_star = Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0

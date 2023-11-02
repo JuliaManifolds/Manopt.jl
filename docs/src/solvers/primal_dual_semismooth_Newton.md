@@ -8,13 +8,13 @@ The aim is to solve an optimization problem on a manifold with a cost function o
 F(p) + G(Λ(p)),
 ```
 
-where $F:\mathcal M → \overline{ℝ}$, $G:\mathcal N → \overline{ℝ}$, and
-$Λ:\mathcal M →\mathcal N$.
-If the manifolds $\mathcal M$ or $\mathcal N$ are not Hadamard, it has to be considered locally,
-i.e. on geodesically convex sets $\mathcal C \subset \mathcal M$ and $\mathcal D \subset\mathcal N$
-such that $Λ(\mathcal C) \subset \mathcal D$.
+where ``F:\mathcal M → \overline{ℝ}``, ``G:\mathcal N → \overline{ℝ}``, and
+``Λ:\mathcal M →\mathcal N``.
+If the manifolds ``\mathcal M`` or ``\mathcal N`` are not Hadamard, it has to be considered locally,
+i.e. on geodesically convex sets ``\mathcal C \subset \mathcal M`` and ``\mathcal D \subset\mathcal N``
+such that ``Λ(\mathcal C) \subset \mathcal D``.
 
-The algorithm comes down to applying the Riemannian semismooth Newton method to the rewritten primal-dual optimality conditions, i.e., we define the vector field $X: \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N} \rightarrow \mathcal{T} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$ as
+The algorithm comes down to applying the Riemannian semismooth Newton method to the rewritten primal-dual optimality conditions, i.e., we define the vector field ``X: \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N} \rightarrow \mathcal{T} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}`` as
 
 ```math
 X\left(p, \xi_{n}\right):=\left(\begin{array}{c}
@@ -23,13 +23,13 @@ X\left(p, \xi_{n}\right):=\left(\begin{array}{c}
 \end{array}\right)
 ```
 
-and solve for $X(p,ξ_{n})=0$.
+and solve for ``X(p,ξ_{n})=0``.
 
-Given base points $m∈\mathcal C$, $n=Λ(m)∈\mathcal D$,
-initial primal and dual values $p^{(0)} ∈\mathcal C$, $ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N$,
-and primal and dual step sizes $\sigma$, $\tau$.
+Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
+initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_{n}^{(0)} ∈ \mathcal T_{n}^{*}\mathcal N``,
+and primal and dual step sizes ``\sigma``, ``\tau``.
 
-The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref) is reached)
+The algorithms performs the steps ``k=1,…,`` (until a [`StoppingCriterion`](@ref) is reached)
 
 1.  Choose any element
    ```math
@@ -40,7 +40,7 @@ The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref
    ```math
    V^{(k)} [(d_p^{(k)}, d_n^{(k)})] = - X(p^{(k)},ξ_n^{(k)})
    ```
-   in the vector space $\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}$
+   in the vector space ``\mathcal{T}_{p^{(k)}} \mathcal{M} \times \mathcal{T}_{n}^{*} \mathcal{N}``
 3. Update
    ```math
    p^{(k+1)} := \exp_{p^{(k)}}(d_p^{(k)})
@@ -53,9 +53,9 @@ The algorithms performs the steps $k=1,…,$ (until a [`StoppingCriterion`](@ref
 Furthermore you can exchange the exponential map, the logarithmic map, and the parallel transport
 by a retraction, an inverse retraction and a vector transport.
 
-Finally you can also update the base points $m$ and $n$ during the iterations.
+Finally you can also update the base points ``m`` and ``n`` during the iterations.
 This introduces a few additional vector transports. The same holds for the case that
-$Λ(m^{(k)})\neq n^{(k)}$ at some point. All these cases are covered in the algorithm.
+``Λ(m^{(k)})\neq n^{(k)}`` at some point. All these cases are covered in the algorithm.
 
 ```@meta
 CurrentModule = Manopt
@@ -75,6 +75,6 @@ PrimalDualSemismoothNewtonState
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/primal_dual_semismooth_Newton.md"]
+Pages = ["primal_dual_semismooth_Newton.md"]
 Canonical=false
 ```

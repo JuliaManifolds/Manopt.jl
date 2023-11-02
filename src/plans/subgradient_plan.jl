@@ -4,8 +4,8 @@
 A structure to store information about a objective for a subgradient based optimization problem
 
 # Fields
-* `cost` – the function $F$ to be minimized
-* `subgradient` – a function returning a subgradient $\partial F$ of $F$
+* `cost` – the function ``f`` to be minimized
+* `subgradient` – a function returning a subgradient ``\partial f`` of ``f``
 
 # Constructor
 

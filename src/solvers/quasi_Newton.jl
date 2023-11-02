@@ -185,7 +185,7 @@ The ``k``th iteration consists of
   directions to the tangent space to reduce numerical errors
 * `stepsize` – ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
   specify a [`Stepsize`](@ref).
-* `stopping_criterion` - (`StopWhenAny(StopAfterIteration(max(1000, memory_size)), StopWhenGradientNormLess(10^(-6))`)
+* `stopping_criterion` - ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method` – (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
 

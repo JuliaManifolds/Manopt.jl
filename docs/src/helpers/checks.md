@@ -10,6 +10,6 @@ Pages   = ["checks.jl"]
 ## Literature
 
 ```@bibliography
-Pages = ["helpers/checks.md"]
+Pages = ["checks.md"]
 Canonical=false
 ```

@@ -203,18 +203,15 @@ end
 _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
 
 """
-    set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)
+    get_manopt_parameter(ams::AbstractManoptSolverState, element::Symbol, args...)
 
-set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `p`.
+Obtain a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams`.
+This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
 """
-function set_iterate!(s::AbstractManoptSolverState, M, p)
-    return _set_iterate!(s, M, p, dispatch_state_decorator(s))
+function get_manopt_parameter(ams::AbstractManoptSolverState, e::Symbol, args...)
+    return get_manopt_parameter(ams, Val(e), args...)
 end
-function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Any, ::Val{false})
-    return error(
-        "It seems the AbstractManoptSolverState $s do not provide (write) access to an iterate",
-    )
-end
+
 _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
 """
@@ -248,6 +245,20 @@ function get_solver_result(::AbstractManifoldObjective, s)
 end
 _get_solver_result(s::AbstractManoptSolverState, ::Val{false}) = get_iterate(s)
 _get_solver_result(s::AbstractManoptSolverState, ::Val{true}) = get_solver_result(s.state)
+
+"""
+    set_iterate!(s::AbstractManoptSolverState, M::AbstractManifold, p)
+
+set the iterate within an [`AbstractManoptSolverState`](@ref) to some (start) value `p`.
+"""
+function set_iterate!(s::AbstractManoptSolverState, M, p)
+    return _set_iterate!(s, M, p, dispatch_state_decorator(s))
+end
+function _set_iterate!(s::AbstractManoptSolverState, ::Any, ::Any, ::Val{false})
+    return error(
+        "It seems the AbstractManoptSolverState $s do not provide (write) access to an iterate",
+    )
+end
 
 """
     struct PointStorageKey{key} end

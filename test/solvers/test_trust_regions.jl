@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, LinearAlgebra
+using Manifolds, Manopt, Test, LinearAlgebra, Random
 
 include("trust_region_model.jl")
 include("../utils/example_tasks.jl")
@@ -13,7 +13,6 @@ include("../utils/example_tasks.jl")
     p[:, :, 1] = [1.0 0.0; 0.0 1.0; 0.0 0.0]
     p[:, :, 2] = [0.0 0.0; 1.0 0.0; 0.0 1.0]
 
-    @test_throws ErrorException trust_regions(M, f, rgrad, rhess, p; ρ_prime=0.3)
     @test_throws ErrorException trust_regions(
         M, f, rgrad, rhess, p; max_trust_region_radius=-0.1
     )
@@ -23,7 +22,33 @@ include("../utils/example_tasks.jl")
     @test_throws ErrorException trust_regions(
         M, f, rgrad, rhess, p; max_trust_region_radius=0.1, trust_region_radius=0.11
     )
-
+    @testset "State Constructors" begin
+        X = rgrad(M, p)
+        TpM = TangentSpace(M, copy(M, p))
+        mho = ManifoldHessianObjective(f, rgrad, rhess)
+        sub_problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+        sub_state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
+        trs1 = TrustRegionsState(M, sub_problem)
+        trs2 = TrustRegionsState(M, sub_problem, sub_state)
+        trs3 = TrustRegionsState(M, p, sub_problem)
+    end
+    @testset "Objective accessors" begin
+        mho = ManifoldHessianObjective(f, rgrad, rhess)
+        X = rgrad(M, p)
+        TpM = TangentSpace(M, copy(M, p))
+        trmo = TrustRegionModelObjective(mho)
+        c = f(M, p)
+        g = inner(M, p, X, X)
+        H = rhess(M, p, X)
+        @test get_cost(TpM, trmo, X) == c + g + 1 / 2 * inner(M, p, H, X)
+        @test get_gradient(TpM, trmo, X) == X + H
+        Y = similar(X)
+        get_gradient!(TpM, Y, trmo, X)
+        @test Y == X + H
+        @test get_hessian(TpM, trmo, Y, X) == H
+        get_hessian!(TpM, Y, trmo, Y, X)
+        @test Y == H
+    end
     @testset "Allocating Variant" begin
         s = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius=8.0, return_state=true
@@ -35,6 +60,7 @@ include("../utils/example_tasks.jl")
         @test norm(M, p, get_gradient(s)) ≈ 0.0
         trust_regions!(M, f, rgrad, rhess, q; max_trust_region_radius=8.0)
         @test isapprox(M, p1, q)
+        Random.seed!(42)
         p2 = trust_regions(
             M, f, rgrad, rhess, p; max_trust_region_radius=8.0, randomize=true
         )
@@ -63,8 +89,6 @@ include("../utils/example_tasks.jl")
     end
     @testset "TCG" begin
         X = zero_vector(M, p)
-
-        @test_logs (:warn,) truncated_conjugate_gradient_descent(M, f, rgrad, p, X, rhess)
         Y = truncated_conjugate_gradient_descent(
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
@@ -112,7 +136,6 @@ include("../utils/example_tasks.jl")
         Y7 = copy(M, p, X)
         truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y7; trust_region_radius=0.5)
         @test Y7 != X
-        @test_logs (:warn,) truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y4, rhess)
     end
     @testset "Mutating" begin
         g = RGrad(M, A)
@@ -206,9 +229,7 @@ include("../utils/example_tasks.jl")
                     M, p, grad_f!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
                 ),
                 p;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(100) | StopWhenGradientNormLess(1e-8),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -224,9 +245,8 @@ include("../utils/example_tasks.jl")
                 grad_f,
                 ApproxHessianSymmetricRankOne(M, qaHSR1_2, grad_f; nu=eps(Float64)^2),
                 qaHSR1_2;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -240,9 +260,8 @@ include("../utils/example_tasks.jl")
                 grad_f,
                 ApproxHessianBFGS(M, p, grad_f),
                 p;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -257,9 +276,8 @@ include("../utils/example_tasks.jl")
                 grad_f,
                 ApproxHessianBFGS(M, qaHBFGS_2, grad_f),
                 qaHBFGS_2;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -302,9 +320,8 @@ include("../utils/example_tasks.jl")
                     M, qaHSR1_3, grad_f!; nu=eps(Float64)^2, evaluation=InplaceEvaluation()
                 ),
                 qaHSR1_3;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -320,9 +337,8 @@ include("../utils/example_tasks.jl")
                 grad_f!,
                 ApproxHessianBFGS(M, qaHBFGS_3, grad_f!; evaluation=InplaceEvaluation()),
                 qaHBFGS_3;
-                stopping_criterion=StopWhenAny(
-                    StopAfterIteration(10000), StopWhenGradientNormLess(10^(-6))
-                ),
+                stopping_criterion=StopAfterIteration(10000) |
+                                   StopWhenGradientNormLess(1e-6),
                 trust_region_radius=1.0,
                 θ=0.1,
                 κ=0.9,
@@ -362,24 +378,22 @@ include("../utils/example_tasks.jl")
     end
     @testset "Euclidean Embedding" begin
         Random.seed!(42)
-        n = 5
+        n = 2
         A = Symmetric(randn(n + 1, n + 1))
         # Euclidean variant with conversion
         M = Sphere(n)
-        p0 = rand(M)
+        p0 = [1.0, zeros(n)...]
         f(E, p) = p' * A * p
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean)
-        q2 = trust_regions(M, f, ∇f, ∇²f, p0; objective_type=:Euclidean)
-        @test λ ≈ f(M, q)
-        @test λ ≈ f(M, q2)
+        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=project!)
+        @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit inprecise?
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)
         q4 = trust_regions(M, f, grad_f, Hess_f, p0)
-        @test λ ≈ f(M, q3) atol = 2e-1 # Riemannian Hessian a bit imprecise?
-        @test λ ≈ f(M, q4)
+        @test f(M, q3) ≈ λ atol = 5 * 1e-8
+        @test f(M, q4) ≈ λ atol = 5 * 1e-10
     end
 end

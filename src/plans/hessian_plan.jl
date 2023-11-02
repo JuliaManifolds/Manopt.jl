@@ -6,21 +6,31 @@ These options are assumed to have a field (`gradient`) to store the current grad
 """
 abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
+"""
+    AbstractManifoldHessianObjective{T<:AbstractEvaluationType,TC,TG,TH} <: AbstractManifoldGradientObjective{T,TC,TG}
+
+An abstract type for all objectives that provide a (full) Hessian, where
+`T` is a [`AbstractEvaluationType`](@ref) for the gradient and Hessian functions.
+"""
+abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,TC,TG,TH} <:
+              AbstractManifoldGradientObjective{E,TC,TG} end
+
 @doc raw"""
-    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldGradientObjective{T}
+    ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
 
 specify a problem for hessian based algorithms.
 
 # Fields
 
-* `cost` : a function $F:\mathcal M→ℝ$ to minimize
-* `gradient`     : the gradient $\operatorname{grad}F:\mathcal M
-  → \mathcal T\mathcal M$ of the cost function $F$
-* `hessian`      : the hessian $\operatorname{Hess}F(x)[⋅]: \mathcal T_{x} \mathcal M
-  → \mathcal T_{x} \mathcal M$ of the cost function $F$
-* `preconditioner`       : the symmetric, positive definite preconditioner
-    as an approximation of the inverse of the Hessian of $f$, i.e. as a map with the same
-    input variables as the `hessian`.
+* `cost` : a function ``f:\mathcal M→ℝ`` to minimize
+* `gradient`     : the gradient ``\operatorname{grad}f:\mathcal M
+  → \mathcal T\mathcal M`` of the cost function ``f``
+* `hessian`      : the hessian ``\operatorname{Hess}f(x)[⋅]: \mathcal T_{x} \mathcal M
+  → \mathcal T_{x} \mathcal M`` of the cost function ``f``
+* `preconditioner` : the symmetric, positive definite preconditioner
+    as an approximation of the inverse of the Hessian of ``f``, i.e. as a map with the same
+    input variables as the `hessian` to numerically stabilize iterations when the Hessian is
+    ill-conditioned
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have to forms
 
@@ -36,7 +46,7 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
-       AbstractManifoldGradientObjective{T,C,G}
+       AbstractManifoldHessianObjective{T,C,G,H}
     cost::C
     gradient!!::G
     hessian!!::H

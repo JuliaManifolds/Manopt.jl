@@ -65,5 +65,5 @@ For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also
 ## Literature
 
 ```@bibliography
-Pages = ["solvers/DouglasRachford.md"]
+Pages = ["DouglasRachford.md"]
 ```

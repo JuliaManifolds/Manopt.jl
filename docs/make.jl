@@ -108,7 +108,7 @@ tutorials_menu =
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(;
     format=Documenter.HTML(;
-        mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
+        prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css"]
     ),
     modules=[
         Manopt,

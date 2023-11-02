@@ -127,7 +127,7 @@ Alternatively one can also use the following keyword.
     )
 
 initializes all fields above, where none of them is mandatory and the length is set to
-half and to $1$ if the injectivity radius is infinite.
+half and to ``1`` if the injectivity radius is infinite.
 """
 mutable struct DecreasingStepsize <: Stepsize
     length::Float64
@@ -216,9 +216,9 @@ last step size.
 
 Furthermore the following fields act as safeguards
 
-* `stop_when_stepsize_less    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less`    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds - ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
-* `stop_increasing_at_step`   - (^100`) last step to increase the stepsize (phase 1),
+* `stop_increasing_at_step`   - (`100`) last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step`   - (`1000`) last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
@@ -467,16 +467,16 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 ```
 
 # Fields
-* `initial_stepsize` – (`1.0`) the step size we start the search with
-* `memory_size` – (`10`) number of iterations after which the cost value needs to be lower than the current one
-* `bb_min_stepsize` – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
-* `bb_max_stepsize` – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
-* `retraction_method` – (`ExponentialRetraction()`) the retraction to use
-* `strategy` – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
-* `storage` – (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
-* `stepsize_reduction` – (`0.5`) step size reduction factor contained in the interval (0,1)
-* `sufficient_decrease` – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
-* `vector_transport_method` – (`ParallelTransport()`) the vector transport method to use
+* `initial_stepsize`          – (`1.0`) the step size we start the search with
+* `memory_size`               – (`10`) number of iterations after which the cost value needs to be lower than the current one
+* `bb_min_stepsize`           – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
+* `bb_max_stepsize`           – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
+* `retraction_method`         – (`ExponentialRetraction()`) the retraction to use
+* `strategy`                  – (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
+* `storage`                   – (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
+* `stepsize_reduction`        – (`0.5`) step size reduction factor contained in the interval (0,1)
+* `sufficient_decrease`       – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
+* `vector_transport_method`   – (`ParallelTransport()`) the vector transport method to use
 
 Furthermore the following fields act as safeguards
 
@@ -988,7 +988,7 @@ Represent an adaptive gradient method introduced by [Grapiglia,Stella, J. Optim.
 Given a positive threshold ``\hat c \mathbb N``,
 an minimal bound ``b_{\mathrm{min}} > 0``,
 an initial ``b_0 ≥ b_{\mathrm{min}}``, and a
-gradient reduction factor threshold ``\alpha \in [0,1).
+gradient reduction factor threshold ``\alpha \in [0,1)``.
 
 Set ``c_0=0`` and use ``\omega_0 = \lVert \operatorname{grad} f(p_0) \rvert_{p_0}``.
 
