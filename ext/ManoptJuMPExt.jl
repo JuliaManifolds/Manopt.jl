@@ -303,14 +303,10 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F
     return nothing
 end
 
-"""
-    const DESCENT_STATE_TYPE = "descent_state_type"
-
-Name of the attribute for the type of the descent state to be used as follows:
-```julia
-set_attribute(model, "descent_state_type", Manopt.TrustRegionsState)
-```
-"""
+# Name of the attribute for the type of the descent state to be used as follows:
+# ```julia
+# set_attribute(model, "descent_state_type", Manopt.TrustRegionsState)
+# ```
 const DESCENT_STATE_TYPE = "descent_state_type"
 
 function MOI.optimize!(model::Optimizer)
