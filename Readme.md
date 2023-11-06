@@ -2,7 +2,7 @@
 
 Optimization Algorithm on Riemannian Manifolds.
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://manoptjl.org/stable)
+[![](https://img.shields.io/badge/docs-stable-blue?logo=Julia&logoColor=white)](https://manoptjl.org/stable)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![CI](https://github.com/JuliaManifolds/Manopt.jl/workflows/CI/badge.svg)](https://github.com/JuliaManifolds/Manopt.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/JuliaManifolds/Manopt.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaManifolds/Manopt.jl)
