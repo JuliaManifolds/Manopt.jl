@@ -41,6 +41,7 @@ The following packages are related to `Manopt.jl`
 
 * [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) – a library of manifolds implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/) :octocat: [GitHub repository](https://github.com/JuliaManifolds/Manifolds.jl)
 * [`ManifoldsDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) – a package to use (Euclidean) AD tools on manifolds, that also provides several differentials and gradients. :octocat: [GitHub repository](https://github.com/JuliaManifolds/ManifoldDiff.jl)
+* [`JuMP.jl`](https://jump.dev/) can be used as interface to solve an optimization problem with Manopt. See [usage examples](https://manoptjl.org/stable/extensions/). :octocat: [GitHub repository](https://github.com/jump-dev/JuMP.jl)
 
 ## Citation
 

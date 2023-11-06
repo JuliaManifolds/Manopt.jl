@@ -65,7 +65,7 @@ end
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations
-using LineSearches, LRUCache, Manopt, Manifolds, Plots
+using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (d) add contributing.md to docs
 generated_path = joinpath(@__DIR__, "src")
@@ -112,6 +112,11 @@ makedocs(;
     ),
     modules=[
         Manopt,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptJuMPExt)
+        else
+            Manopt.ManoptJuMPExt
+        end,
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptLineSearchesExt)
         else
