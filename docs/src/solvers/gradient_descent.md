@@ -43,7 +43,7 @@ RecordGradientNorm
 RecordStepsize
 ```
 
-## Technical Details
+## [Technical Details](@id GradientDescent-Technical-Details)
 
 The [`gradient_descent`](@ref) solver requires the following functions of your manifold to be available
 

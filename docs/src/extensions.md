@@ -45,10 +45,17 @@ x_opt = quasi_Newton(
 )
 ```
 
-### Manifolds.jl
+In general this defines the following new [stepsize](@ref Stepsize)
 
 ```@docs
 Manopt.LineSearchesStepsize
+```
+
+## Manifolds.jl
+
+When loading `Manifolds.jl` we introduce the following further functions
+
+```@docs
 mid_point
 Manopt.max_stepsize(::TangentBundle, ::Any)
 Manopt.max_stepsize(::FixedRankMatrices, ::Any)
@@ -71,6 +78,8 @@ set_attribute("descent_state_type", GradientDescentState)
 optimize!(model)
 solution_summary(model)
 ```
+
+### Interface functions
 
 ```@docs
 Manopt.JuMP_ArrayShape

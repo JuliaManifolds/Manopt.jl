@@ -93,7 +93,7 @@ end
 ## Build titorials menu
 tutorials_menu =
     "How to..." => [
-        "Get started: Optimize!" => "tutorials/Optimize!.md",
+        "🏔️ Get started: Optimize!" => "tutorials/Optimize!.md",
         "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
         "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
         "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
@@ -101,6 +101,7 @@ tutorials_menu =
         "Print Debug Output" => "tutorials/HowToDebug.md",
         "Record values" => "tutorials/HowToRecord.md",
         "Implement a Solver" => "tutorials/ImplementASolver.md",
+        "Implement Manifold Features" => "tutorials/ImplementManifoldFeatures.md",
         "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
         "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
     ]

@@ -1,5 +1,5 @@
 ---
-title: "Get Started: Optimize!"
+title: "🏔️ Get Started: Optimize!"
 author: Ronny Bergmann
 ---
 
@@ -38,14 +38,14 @@ But the mean can also be charcterised as
 and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [Karcher:1977](@cite)
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathbb R^d}
+  \operatorname*{arg\,min}_{p\in\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
 Fortunately the gradient can be computed and is
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathbb R^d} \frac{1}{n} \sum_{i=1}^n -\log_p q_i
+ \frac{1}{n} \sum_{i=1}^n -\log_p q_i
 ```
 
 ## Loading the necessary packages
