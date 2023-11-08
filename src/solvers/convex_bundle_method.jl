@@ -33,7 +33,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `g`- descent direction
 * `inverse_retraction_method` - the inverse retraction to use within
 * `lin_errors` - linearization errors at the last serious step
-* `m` - (1e-3) the parameter to test the decrease of the cost
+* `m` - (1e-3) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `p` - current candidate point
 * `p_last_serious` - last serious iterate
 * `retraction_method` – the retraction to use within
@@ -227,7 +227,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
 # Optional
-* `m` - a real number that controls the decrease of the cost function.
+* `m` - (1e-3) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point.
 * `k_min` - lower bound on the sectional curvature of the manifold.
 * `k_max` - upper bound on the sectional curvature of the manifold.
