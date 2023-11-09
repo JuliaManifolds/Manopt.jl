@@ -30,6 +30,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
 * `bundle_size` - (25) the size of the bundle
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
+* `domain` - (@(M, p) -> isfinite(f(M, p))) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false
 * `g`- descent direction
 * `inverse_retraction_method` - the inverse retraction to use within
 * `lin_errors` - linearization errors at the last serious step
@@ -42,9 +43,11 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
 `p` that was last evaluated.
+* `α` - (@(j) -> one(number_eltype(X)) / j) (where j is an inner loop index) a function for evaluating suitable stepsizes when obtaining candidate points
 * `ε` - convex combination of the linearization errors
 * `λ` - convex coefficients that solve the subproblem
 * `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
+* `ϱ` - curvature-dependent bound
 
 # Constructor
 
@@ -59,7 +62,6 @@ with keywords for all fields above besides `p_last_serious` which obtains the sa
 * `k_max` - upper bound on the sectional curvature of the manifold
 * `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold
 * `p_estimate` - (p) the point around which to estimate the sectional curvature of the manifold
-* `ϱ` - curvature-dependent bound
 """
 mutable struct ConvexBundleMethodState{
     R,
@@ -68,6 +70,8 @@ mutable struct ConvexBundleMethodState{
     A<:AbstractVector{<:R},
     B<:AbstractVector{Tuple{<:P,<:T}},
     C<:AbstractVector{T},
+    D,
+    E,
     I,
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
@@ -79,6 +83,7 @@ mutable struct ConvexBundleMethodState{
     bundle::B
     bundle_size::I
     diam::R
+    domain::D
     g::T
     inverse_retraction_method::IR
     lin_errors::A
@@ -90,6 +95,7 @@ mutable struct ConvexBundleMethodState{
     transported_subgradients::C
     vector_transport_method::VT
     X::T
+    α::E
     ε::R
     ξ::R
     λ::A
@@ -102,10 +108,12 @@ mutable struct ConvexBundleMethodState{
         bundle_size::Integer=25,
         m::R=1e-2,
         diam::R=50.0,
+        domain::D=(M, p) -> isfinite(f(M, p)),
         k_min=nothing,
         k_max=nothing,
         k_size::Int=100,
         p_estimate=p,
+        α::E=j -> one(number_eltype(X)) / j,
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -113,6 +121,8 @@ mutable struct ConvexBundleMethodState{
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
     ) where {
+        D,
+        E,
         IR<:AbstractInverseRetractionMethod,
         P,
         T,
@@ -151,6 +161,8 @@ mutable struct ConvexBundleMethodState{
             typeof(lin_errors),
             typeof(bundle),
             typeof(transported_subgradients),
+            typeof(domain),
+            typeof(α),
             typeof(bundle_size),
             IR,
             TR,
@@ -162,6 +174,7 @@ mutable struct ConvexBundleMethodState{
             bundle,
             bundle_size,
             diam,
+            domain,
             g,
             inverse_retraction_method,
             lin_errors,
@@ -173,6 +186,7 @@ mutable struct ConvexBundleMethodState{
             transported_subgradients,
             vector_transport_method,
             X,
+            α,
             ε,
             ξ,
             λ,
@@ -229,11 +243,13 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 # Optional
 * `m` - (1e-3) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point.
+* `domain` - (@(M, p) -> isfinite(f(M, p))) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
 * `k_min` - lower bound on the sectional curvature of the manifold.
 * `k_max` - upper bound on the sectional curvature of the manifold.
 * `k_size` - (100) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
     and `k_max` are not provided.
 * `p_estimate` - (p) the point around which to estimate the sectional curvature of the manifold.
+* `α` - (@(j) -> one(number_eltype(X)) / j) (where j is an inner loop index) a function for evaluating suitable stepsizes when obtaining candidate points.
 * `ϱ` - curvature-dependent bound.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, i.e. is
@@ -282,11 +298,13 @@ function convex_bundle_method!(
     atol_errors::R=eps(),
     bundle_size::Int=25,
     diam::R=50.0,
+    domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_min=nothing,
     k_max=nothing,
     k_size::Int=100,
     p_estimate=nothing,
+    α=j -> one(number_eltype(∂f!!(M, p))) / j,
     ϱ=nothing,
     debug=[DebugWarnIfStoppingParameterIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -308,11 +326,13 @@ function convex_bundle_method!(
         atol_errors=atol_errors,
         bundle_size=bundle_size,
         diam=diam,
+        domain=domain,
         m=m,
         k_min=k_min,
         k_max=k_max,
         k_size=k_size,
         p_estimate=p,
+        α=α,
         ϱ=ϱ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
@@ -394,6 +414,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
+    j = 1
+    while !bms.domain(M, bms.p)
+        retract!(M, bms.p, bms.p_last_serious, -bms.α(j) * bms.g, bms.retraction_method)
+        println(bms.α(j))
+        j += 1
+    end
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
