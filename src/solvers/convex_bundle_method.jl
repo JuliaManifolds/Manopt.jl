@@ -416,8 +416,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     j = 1
     while !bms.domain(M, bms.p)
-        retract!(M, bms.p, bms.p_last_serious, -bms.α(j) * bms.g, bms.retraction_method)
-        println(bms.α(j))
+        bms.α(j) != one(number_eltype(bms.g)) &&
+            retract!(M, bms.p, bms.p_last_serious, -bms.α(j) * bms.g, bms.retraction_method)
         j += 1
     end
     get_subgradient!(mp, bms.X, bms.p)
