@@ -3,6 +3,12 @@ title: "Optimize on your own Manifold"
 author: Ronny Bergmann
 ---
 
+````{=commonmark}
+```@meta
+CurrentModule = Manopt
+```
+````
+
 When you have used a few solvers from [`Manopt.jl`](https://manoptjl.org/) for example like in the opening
 tutorial [🏔️ Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
 and also familiarized yourself with how to work with manifolds in general at
