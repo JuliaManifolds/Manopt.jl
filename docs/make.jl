@@ -101,7 +101,7 @@ tutorials_menu =
         "Print Debug Output" => "tutorials/HowToDebug.md",
         "Record values" => "tutorials/HowToRecord.md",
         "Implement a Solver" => "tutorials/ImplementASolver.md",
-        "Implement Manifold Features" => "tutorials/ImplementManifoldFeatures.md",
+        "Optimize on your own Manifold" => "tutorials/ImplementOwnManifold.md",
         "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
         "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
     ]

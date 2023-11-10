@@ -56,7 +56,6 @@ the _least recently used_ strategy for our caches.
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
-Pkg.develop(path="../") # a trick to work on the local dev version
 ```
 
 

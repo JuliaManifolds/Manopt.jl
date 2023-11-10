@@ -33,7 +33,7 @@ Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to li
 distance an algorithm is trying to move in a single step.
 """
 function max_stepsize(M::AbstractManifold, p)
-    return injectivity_radius(M, p)
+    return max_stepsize(M)
 end
 function max_stepsize(M::AbstractManifold)
     return injectivity_radius(M)
