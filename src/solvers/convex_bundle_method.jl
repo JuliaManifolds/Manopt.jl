@@ -1,4 +1,3 @@
-
 function sectional_curvature(M, p)
     X = rand(M; vector_at=p)
     Y = rand(M; vector_at=p)
@@ -87,6 +86,7 @@ mutable struct ConvexBundleMethodState{
     domain::D
     g::T
     inverse_retraction_method::IR
+    last_stepsize::R
     lin_errors::A
     m::R
     p::P
@@ -135,6 +135,7 @@ mutable struct ConvexBundleMethodState{
     }
         bundle = [(copy(M, p), zero_vector(M, p))]
         g = zero_vector(M, p)
+        last_stepsize = one(R)
         lin_errors = zeros(bundle_size)
         transported_subgradients = [zero_vector(M, p)]
         ε = zero(R)
@@ -178,6 +179,7 @@ mutable struct ConvexBundleMethodState{
             domain,
             g,
             inverse_retraction_method,
+            last_stepsize,
             lin_errors,
             m,
             p,
@@ -420,9 +422,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     while !bms.domain(M, bms.p)
         j += 1
         step = get_stepsize(mp, bms, j)
-        println("   STEP = $step")
         retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
     end
+    bms.last_stepsize = step
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
@@ -458,7 +460,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
-
+get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
 """
     StopWhenBundleLess <: StoppingCriterion
 
@@ -596,9 +598,9 @@ function show(io::IO, di::DebugWarnIfStoppingParameterIncreases)
     return print(io, "DebugWarnIfStoppingParameterIncreases(; tol=\"$(di.tol)\")")
 end
 function (d::DebugStepsize)(
-    p::P, s::O, i::Int
-) where {P<:AbstractManoptProblem,O<:ConvexBundleMethodState}
+    mp::P, bms::ConvexBundleMethodState, i::Int
+) where {P<:AbstractManoptProblem}
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, i))
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(bms))
     return nothing
 end
