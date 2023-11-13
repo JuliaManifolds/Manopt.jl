@@ -43,7 +43,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `vector_transport_method` - the vector transport method to use within
 * `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
 `p` that was last evaluated.
-* `α` - (@(j) -> one(number_eltype(X)) / j) (where j is an inner loop index) a function for evaluating suitable stepsizes when obtaining candidate points
+* `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `ε` - convex combination of the linearization errors
 * `λ` - convex coefficients that solve the subproblem
 * `ξ` - the stopping parameter given by ξ = -|g|^2 - ε
@@ -71,10 +71,10 @@ mutable struct ConvexBundleMethodState{
     B<:AbstractVector{Tuple{<:P,<:T}},
     C<:AbstractVector{T},
     D,
-    E,
     I,
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
+    TS<:Stepsize,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
 } <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int}
@@ -91,11 +91,11 @@ mutable struct ConvexBundleMethodState{
     p::P
     p_last_serious::P
     retraction_method::TR
+    stepsize::TS
     stop::TSC
     transported_subgradients::C
     vector_transport_method::VT
     X::T
-    α::E
     ε::R
     ξ::R
     λ::A
@@ -113,7 +113,7 @@ mutable struct ConvexBundleMethodState{
         k_max=nothing,
         k_size::Int=100,
         p_estimate=p,
-        α::E=j -> one(number_eltype(X)) / j,
+        stepsize::S=default_stepsize(M, SubGradientMethodState),
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -122,13 +122,13 @@ mutable struct ConvexBundleMethodState{
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
     ) where {
         D,
-        E,
         IR<:AbstractInverseRetractionMethod,
         P,
         T,
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
+        S<:Stepsize,
         VT<:AbstractVectorTransportMethod,
         R<:Real,
     }
@@ -162,10 +162,10 @@ mutable struct ConvexBundleMethodState{
             typeof(bundle),
             typeof(transported_subgradients),
             typeof(domain),
-            typeof(α),
             typeof(bundle_size),
             IR,
             TR,
+            S,
             SC,
             VT,
         }(
@@ -182,11 +182,11 @@ mutable struct ConvexBundleMethodState{
             p,
             copy(M, p),
             retraction_method,
+            stepsize,
             stopping_criterion,
             transported_subgradients,
             vector_transport_method,
             X,
-            α,
             ε,
             ξ,
             λ,
@@ -304,7 +304,7 @@ function convex_bundle_method!(
     k_max=nothing,
     k_size::Int=100,
     p_estimate=nothing,
-    α=j -> one(number_eltype(∂f!!(M, p))) / j,
+    stepsize::Stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :relative),
     ϱ=nothing,
     debug=[DebugWarnIfStoppingParameterIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -332,7 +332,7 @@ function convex_bundle_method!(
         k_max=k_max,
         k_size=k_size,
         p_estimate=p,
-        α=α,
+        stepsize=stepsize,
         ϱ=ϱ,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
@@ -413,12 +413,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2 - bms.ε
-    retract!(M, bms.p, bms.p_last_serious, -bms.g, bms.retraction_method)
     j = 1
+    step = get_stepsize(mp, bms, j)
+    retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
     while !bms.domain(M, bms.p)
-        bms.α(j) != one(number_eltype(bms.g)) &&
-            retract!(M, bms.p, bms.p_last_serious, -bms.α(j) * bms.g, bms.retraction_method)
         j += 1
+        step = get_stepsize(mp, bms, j)
+        println("   STEP = $step")
+        retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
     end
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
@@ -591,4 +593,11 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
 end
 function show(io::IO, di::DebugWarnIfStoppingParameterIncreases)
     return print(io, "DebugWarnIfStoppingParameterIncreases(; tol=\"$(di.tol)\")")
+end
+function (d::DebugStepsize)(
+    p::P, s::O, i::Int
+) where {P<:AbstractManoptProblem,O<:ConvexBundleMethodState}
+    (i < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, i))
+    return nothing
 end
