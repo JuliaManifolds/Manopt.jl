@@ -95,7 +95,10 @@ function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, arg
     set_manopt_parameter!(get_manifold(amp), args...)
     return amp
 end
-
+function set_manopt_parameter!(TpM::TangentSpace, ::Union{Val{:Basepoint},Val{:p}}, p)
+    copyto!(TpM.manifold, TpM.point, p)
+    return TpM
+end
 function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, args...)
     set_manopt_parameter!(get_objective(amp), args...)
     return amp

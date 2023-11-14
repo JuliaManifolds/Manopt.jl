@@ -38,7 +38,7 @@ where `f` and the proximal maps `proxes_f` can also be given directly as a [`Man
   cycle permuted sequence (`:Random`) or the default linear one.
 * `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
   summable) sequence of λi
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(5000),`[`StopWhenChangeLess`](@ref)`(10.0^-8))`) a [`StoppingCriterion`](@ref).
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000) | `[`StopWhenChangeLess`](@ref)`(1e-12)`) a [`StoppingCriterion`](@ref).
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
@@ -121,9 +121,8 @@ function cyclic_proximal_point!(
     mpo::O,
     p;
     evaluation_order::Symbol=:Linear,
-    stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopAfterIteration(5000), StopWhenChangeLess(10.0^-12)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(5000) |
+                                          StopWhenChangeLess(1e-12),
     λ=i -> 1 / i,
     kwargs...,
 ) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}

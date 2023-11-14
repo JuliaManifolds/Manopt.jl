@@ -77,6 +77,12 @@ mutable struct DifferenceOfConvexProximalState{
         )
     end
 end
+# no point -> add point
+function DifferenceOfConvexProximalState(
+    M::AbstractManifold, sub_problem, sub_state; kwargs...
+)
+    return DifferenceOfConvexProximalState(M, rand(M), sub_problem, sub_state; kwargs...)
+end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
 function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
     copyto!(M, dcps.p, p)
@@ -352,10 +358,12 @@ function difference_of_convex_proximal_point!(
             DefaultManoptProblem(M, sub_objective)
         end
     end,
-    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=if !isnothing(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState,Nothing}=if !isnothing(
         prox_g
     )
         evaluation
+    elseif isnothing(sub_objective)
+        nothing
     else
         decorate_state!(
             if isnothing(sub_hess)
@@ -363,7 +371,15 @@ function difference_of_convex_proximal_point!(
                     M, copy(M, p); stopping_criterion=sub_stopping_criterion
                 )
             else
-                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+                TrustRegionsState(
+                    M,
+                    copy(M, p),
+                    DefaultManoptProblem(
+                        TangentSpace(M, copy(M, p)),
+                        TrustRegionModelObjective(sub_objective),
+                    ),
+                    TruncatedConjugateGradientState(TangentSpace(M, p)),
+                )
             end;
             sub_kwargs...,
         )

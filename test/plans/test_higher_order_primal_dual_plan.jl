@@ -151,7 +151,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     n = m
     p0 = deepcopy(data)
     ξ0 = zero_vector(M, m)
-    X = log(M, p0, m)# TODO construct tangent vector
+    X = log(M, p0, m)
     Ξ = X
 
     @testset "test Mutating/Allocation Problem Variants" begin

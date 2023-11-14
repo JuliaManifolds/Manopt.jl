@@ -1,9 +1,93 @@
 """
     AbstractSubProblemSolverState <: AbstractManoptSolverState
 
-An abstract type for problems that involve a subsolver
+An abstract type for solvers that involve a subsolver.
 """
 abstract type AbstractSubProblemSolverState <: AbstractManoptSolverState end
+
+"""
+   AbstractManifoldSubObjective{O<:AbstractManifoldObjective} <: AbstractManifoldObjective
+
+An abstract type for objectives of sub problems within a solver but still store the
+original objective internally to generate generic objectives for sub solvers.
+"""
+abstract type AbstractManifoldSubObjective{
+    E<:AbstractEvaluationType,O<:AbstractManifoldObjective
+} <: AbstractManifoldObjective{E} end
+
+function get_gradient_function(cgo::AbstractManifoldSubObjective)
+    return (M, p) -> get_gradient(M, cgo, p)
+end
+
+@doc raw"""
+    get_objective(amso::AbstractManifoldSubObjective)
+
+Return the (original) objective stored the sub obective is build on.
+"""
+get_objective(amso::AbstractManifoldSubObjective)
+
+@doc raw"""
+    get_objective_cost(M, amso::AbstractManifoldSubObjective, p)
+
+Evaluate the cost of the (original) objective stored within the subobjective.
+"""
+function get_objective_cost(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
+) where {E,O<:AbstractManifoldCostObjective}
+    return get_cost(M, get_objective(amso), p)
+end
+
+@doc raw"""
+    X = get_objective_gradient(M, amso::AbstractManifoldSubObjective, p)
+    get_objective_gradient!(M, X, amso::AbstractManifoldSubObjective, p)
+
+Evaluate the gradient of the (original) objective stored within the subobjective `amso`.
+"""
+function get_objective_gradient(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
+) where {E,O<:AbstractManifoldObjective{E}}
+    return get_gradient(M, get_objective(amso), p)
+end
+function get_objective_gradient!(
+    M::AbstractManifold, X, amso::AbstractManifoldSubObjective{E,O}, p
+) where {E,O<:AbstractManifoldObjective{E}}
+    return get_gradient!(M, X, get_objective(amso), p)
+end
+
+@doc raw"""
+    Y = get_objective_Hessian(M, amso::AbstractManifoldSubObjective, p, X)
+    get_objective_Hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
+
+Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
+"""
+function get_objective_hessian(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldObjective{E}}
+    return get_hessian(M, get_objective(amso), p, X)
+end
+function get_objective_hessian!(
+    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldObjective{E}}
+    get_hessian!(M, Y, get_objective(amso), p, X)
+    return Y
+end
+
+@doc raw"""
+    Y = get_objective_preconditioner(M, amso::AbstractManifoldSubObjective, p, X)
+    get_objective_preconditioner(M, Y, amso::AbstractManifoldSubObjective, p, X)
+
+Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
+"""
+function get_objective_preconditioner(
+    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return get_preconditioner(M, get_objective(amso), p, X)
+end
+function get_objective_preconditioner!(
+    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
+) where {E,O<:AbstractManifoldHessianObjective{E}}
+    return get_preconditioner!(M, Y, get_objective(amso), p, X)
+end
 
 @doc raw"""
     get_sub_problem(ams::AbstractSubProblemSolverState)
@@ -24,8 +108,10 @@ get_sub_state(ams::AbstractSubProblemSolverState) = ams.sub_state
 """
     set_manopt_parameter!(ams::AbstractManoptSolverState, element::Symbol, args...)
 
-Set a certain field/element from the [`AbstractManoptSolverState`](@ref) `ams` to `value.
-This function dispatches on `Val(element)`.
+Set a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams` to `value`.
+This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
+
+By default, this function just does nothing.
 """
 function set_manopt_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
     return set_manopt_parameter!(ams, Val(e), args...)
@@ -33,17 +119,6 @@ end
 # Default: Do nothing
 function set_manopt_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
     return ams
-end
-"""
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
-
-Set certain values specified by `args...` into the elements of the `debugDictionary`
-"""
-function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
-    for d in values(dss.debugDictionary)
-        set_manopt_parameter!(d, args...)
-    end
-    return dss
 end
 
 """

@@ -223,7 +223,7 @@ plot(x,y,xaxis=:log, label="CPPA Cost")
 
 ````{=commonmark}
 ```@bibliography
-Pages = ["tutorials/Optimize!.md"]
+Pages = ["Optimize!.md"]
 Canonical=false
 ```
 ````

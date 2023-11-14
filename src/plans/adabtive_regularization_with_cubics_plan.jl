@@ -1,99 +1,106 @@
 @doc raw"""
-    AdaptiveRegularizationCubicCost
+    AdaptiveRagularizationWithCubicsModelObjective
 
-We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k`` as
+A model for the adaptive regularization with Cubics
 
 ```math
-    m(X) = f(p) + <X, \operatorname{grad}f(p)>
-      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3
+m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
+       +  \frac{σ}{3} \lVert X \rVert^3,
 ```
 
+cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
+
 # Fields
-* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_hessian`](@ref).
-* `σ` – the current regularization parameter
-* `X` – a storage for the gradient at `p` of the original cost
+
+* `objective` – an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `σ` – the current (cubic) regularization parameter
 
 # Constructors
 
-    AdaptiveRegularizationCubicCost(mho, σ, X)
-    AdaptiveRegularizationCubicCost(M, mho, σ; p=rand(M), X=get_gradient(M, mho, p))
+    AdaptiveRagularizationWithCubicsModelObjective(mho, σ=1.0)
 
-Initialize the cubic cost to the objective `mho`, regularization parameter `σ`, and
-(temporary) gradient `X`.
-
-!!! note
-    For this gradient function to work, we require the [`TangentSpaceAtPoint`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/vector_bundle.html#Manifolds.TangentSpaceAtPoint)
-    from `Manifolds.jl`
+with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective.
 """
-mutable struct AdaptiveRegularizationCubicCost{T,R,O<:AbstractManifoldObjective}
-    mho::O
+mutable struct AdaptiveRagularizationWithCubicsModelObjective{
+    E<:AbstractEvaluationType,
+    O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective},
+    R,
+} <: AbstractManifoldSubObjective{E,O}
+    objective::O
     σ::R
-    X::T
 end
-function AdaptiveRegularizationCubicCost(
-    M, mho::O, σ::R=1.0; p::P=rand(M), X::T=get_gradient(M, mho, p)
-) where {P,T,R,O}
-    return AdaptiveRegularizationCubicCost{T,R,O}(mho, σ, X)
+function AdaptiveRagularizationWithCubicsModelObjective(
+    mho::O, σ::R=1.0
+) where {
+    E,O<:Union{AbstractManifoldHessianObjective{E},AbstractDecoratedManifoldObjective{E}},R
+}
+    return AdaptiveRagularizationWithCubicsModelObjective{E,O,R}(mho, σ)
 end
-function set_manopt_parameter!(f::AdaptiveRegularizationCubicCost, ::Val{:X}, X)
-    f.X = X
-    return f
-end
-function set_manopt_parameter!(f::AdaptiveRegularizationCubicCost, ::Val{:σ}, σ)
+function set_manopt_parameter!(
+    f::AdaptiveRagularizationWithCubicsModelObjective,
+    ::Union{Val{:σ},Val{:RegularizationParameter}},
+    σ,
+)
     f.σ = σ
     return f
 end
+
+get_objective(arcmo::AdaptiveRagularizationWithCubicsModelObjective) = arcmo.objective
 
 @doc raw"""
-    AdaptiveRegularizationCubicGrad
+    get_cost(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
 
-We define the model ``m(X)`` in the tangent space of the current iterate ``p=p_k`` as
-
-```math
-    m(X) = f(p) + <X, \operatorname{grad}f(p)>
-      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3
-```
-
-This struct represents its gradient, given by
+Evaluate the tangent space [`AdaptiveRagularizationWithCubicsModelObjective`](@ref)
 
 ```math
-    \operatorname{grad} m(X) = \operatorname{grad}f(p) + \operatorname{Hess} f(p)[X] + σ \lVert X \rVert X
+m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatorname{Hess} f(p)[X], X⟩_p
+       +  \frac{σ}{3} \lVert X \rVert^3,
 ```
 
-# Fields
-
-* `mho` – an [`AbstractManifoldObjective`](@ref) that should provide at least [`get_cost`](@ref), [`get_gradient`](@ref) and [`get_hessian`](@ref).
-* `σ` – the current regularization parameter
-* `X` – a storage for the gradient at `p` of the original cost
-
-# Constructors
-
-    AdaptiveRegularizationCubicGrad(mho, σ, X)
-    AdaptiveRegularizationCubicGrad(M, mho, σ; p=rand(M), X=get_gradient(M, mho, p))
-
-Initialize the cubic cost to the original objective `mho`, regularization parameter `σ`, and
-(temporary) gradient `X`.
-
-!!! note
-    * For this gradient function to work, we require the [`TangentSpaceAtPoint`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/vector_bundle.html#Manifolds.TangentSpaceAtPoint)
-    from `Manifolds.jl`
-    * The gradient functor provides both an allocating as well as an in-place variant.
+at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
 """
-mutable struct AdaptiveRegularizationCubicGrad{T,R,O<:AbstractManifoldObjective}
-    mho::O
-    σ::R
-    X::T
+function get_cost(
+    TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+)
+    M = base_manifold(TpM)
+    p = TpM.point
+    c = get_objective_cost(M, arcmo, p)
+    G = get_objective_gradient(M, arcmo, p)
+    Y = get_objective_hessian(M, arcmo, p, X)
+    return c + inner(M, p, G, X) + 1 / 2 * inner(M, p, Y, X) + arcmo.σ / 3 * norm(M, p, X)^3
 end
-function AdaptiveRegularizationCubicGrad(
-    M, mho::O, σ::R=1.0; p::P=rand(M), X::T=get_gradient(M, mho, p)
-) where {P,T,R,O}
-    return AdaptiveRegularizationCubicGrad{T,R,O}(mho, σ, X)
+function get_cost_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
+    return (TpM, X) -> get_cost(TpM, arcmo, X)
 end
-function set_manopt_parameter!(f::AdaptiveRegularizationCubicGrad, ::Val{:X}, X)
-    f.X = X
-    return f
+@doc raw"""
+    get_gradient(TpM, trmo::AdaptiveRagularizationWithCubicsModelObjective, X)
+
+Evaluate the gradient of the [`AdaptiveRagularizationWithCubicsModelObjective`](@ref)
+
+```math
+\operatorname{grad} m(X) = \operatorname{grad} f(p) + \operatorname{Hess} f(p)[X]
+       + σ\lVert X \rVert X,
+```
+
+at `X`, cf. Eq. (37) in [AgarwalBoumalBullinsCartis:2020](@cite).
+"""
+function get_gradient(
+    TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+)
+    M = base_manifold(TpM)
+    p = TpM.point
+    G = get_objective_gradient(M, arcmo, p)
+    return G + get_objective_hessian(M, arcmo, p, X) + arcmo.σ * norm(M, p, X) * X
 end
-function set_manopt_parameter!(f::AdaptiveRegularizationCubicGrad, ::Val{:σ}, σ)
-    f.σ = σ
-    return f
+function get_gradient!(
+    TpM::TangentSpace, Y, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+)
+    M = base_manifold(TpM)
+    p = TpM.point
+    get_objective_hessian!(M, Y, arcmo, p, X)
+    Y .= Y + get_objective_gradient(M, arcmo, p) + arcmo.σ * norm(M, p, X) * X
+    return Y
+end
+function get_gradient_function(arcmo::AdaptiveRagularizationWithCubicsModelObjective)
+    return (TpM, X) -> get_gradient(TpM, arcmo, X)
 end

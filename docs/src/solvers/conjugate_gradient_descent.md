@@ -35,6 +35,6 @@ SteepestDirectionUpdateRule
 # Literature
 
 ```@bibliography
-Pages = ["solvers/conjugate_gradient_descent.md"]
+Pages = ["conjugate_gradient_descent.md"]
 Canonical=false
 ```

@@ -29,6 +29,6 @@ Filter = t -> t != Stepsize
 ## Literature
 
 ```@bibliography
-Pages = ["plans/stepsize.md"]
+Pages = ["stepsize.md"]
 Canonical=false
 ```

@@ -500,7 +500,7 @@ function grad_TV2!(M::PowerManifold, X, q, p::Int=1)
     c = costTV2(M, q, p, false)
     for i in R # iterate over all pixel
         di = 0.0
-        for k in 1:d # for all direction combinations (TODO)
+        for k in 1:d # for all direction combinations
             ek = CartesianIndex(ntuple(i -> (i == k) ? 1 : 0, d)) #k th unit vector
             jF = i + ek # compute forward neighbor
             jB = i - ek # compute backward neighbor

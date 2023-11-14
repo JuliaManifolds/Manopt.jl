@@ -14,6 +14,8 @@ status_summary(e) = "$(e)"
 
 For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
+
+
 """
 function set_manopt_parameter!(f, e::Symbol, args...)
     return set_manopt_parameter!(f, Val(e), args...)
@@ -37,7 +39,9 @@ include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")
 
+include("subsolver_plan.jl")
 include("constrained_plan.jl")
+include("trust_regions_plan.jl")
 
 include("adabtive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
@@ -55,7 +59,6 @@ include("higher_order_primal_dual_plan.jl")
 include("stochastic_gradient_plan.jl")
 
 include("embedded_objective.jl")
-include("subsolver_plan.jl")
 
 include("cache.jl")
 include("count.jl")

@@ -165,6 +165,7 @@ include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference-of-convex-proximal-point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
+include("solvers/Lanczos.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
@@ -186,11 +187,50 @@ include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
+"""
+    Manopt.JuMP_Optimizer()
+
+Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
+An alias `Manopt.JuMP_Optimizer` is defined for convenience.
+
+The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
+over a manifold `M` starting at `X0`, can be modeled as follows:
+```julia
+using JuMP
+model = Model(Manopt.JuMP_Optimizer)
+@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
+@objective(model, Min, f(X))
+```
+The optimizer assumes that `M` has a `Array` shape described
+by `ManifoldsBase.representation_size`.
+"""
+global JuMP_Optimizer
+
+"""
+    struct VectorizedManifold{M} <: MOI.AbstractVectorSet
+        manifold::M
+    end
+
+Representation of points of `manifold` as a vector of `R^n` where `n` is
+`MOI.dimension(VectorizedManifold(manifold))`.
+"""
+global JuMP_VectorizedManifold
+
+"""
+    struct ArrayShape{N} <: JuMP.AbstractShape
+
+Shape of an `Array{T,N}` of size `size`.
+"""
+global JuMP_ArrayShape
+
 function __init__()
     #
     # Requires fallback for Julia < 1.9
     #
     @static if !isdefined(Base, :get_extension)
+        @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin
+            include("../ext/ManoptJuMPExt.jl")
+        end
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
         end
@@ -280,7 +320,7 @@ export AbstractGradientSolverState,
     TruncatedConjugateGradientState,
     TrustRegionsState
 
-export FrankWolfeCost, FrankWolfeGradient
+# Objectives and Costs
 export NelderMeadSimplex
 export AlternatingGradient
 #
@@ -338,6 +378,8 @@ export ConstraintType, FunctionConstraint, VectorConstraint
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
+export FrankWolfeCost, FrankWolfeGradient
+export TrustRegionModelObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -417,7 +459,7 @@ export solve!
 export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessianBFGS
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
-export AdaptiveRegularizationCubicCost, AdaptiveRegularizationCubicGrad
+export AdaptiveRagularizationWithCubicsModelObjective
 #
 # Stepsize
 export Stepsize

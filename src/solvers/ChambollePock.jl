@@ -175,17 +175,17 @@ end
 
 Perform the Riemannian Chambolle–Pock algorithm.
 
-Given a `cost` function $\mathcal E:\mathcal M → ℝ$ of the form
+Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
 ```math
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
-where $F:\mathcal M → ℝ$, $G:\mathcal N → ℝ$,
-and $Λ:\mathcal M → \mathcal N$. The remaining input parameters are
+where ``F:\mathcal M → ℝ``, ``G:\mathcal N → ℝ``,
+and ``Λ:\mathcal M → \mathcal N``. The remaining input parameters are
 
-* `p, X` primal and dual start points $x∈\mathcal M$ and $ξ∈T_n\mathcal N$
-* `m,n` base points on $\mathcal M$ and $\mathcal N$, respectively.
-* `adjoint_linearized_operator` the adjoint $DΛ^*$ of the linearized operator $DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N$
-* `prox_F, prox_G_Dual` the proximal maps of $F$ and $G^\ast_n$
+* `p, X` primal and dual start points ``x∈\mathcal M`` and ``ξ∈T_n\mathcal N``
+* `m,n` base points on ``\mathcal M`` and ``\mathcal N``, respectively.
+* `adjoint_linearized_operator` the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N``
+* `prox_F, prox_G_Dual` the proximal maps of ``F`` and ``G^\ast_n``
 
 note that depending on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
 as well as the forward_operator `Λ` and the `linearized_forward_operator` can be given as
@@ -204,8 +204,8 @@ For more details on the algorithm, see [Bergmann et al., Found. Comput. Math., 2
 * `evaluation` ([`AllocatingEvaluation`](@ref)`()) specify whether the proximal maps and operators are
   allocating functions `(Manifolds, parameters) -> result`  or given as mutating functions
   `(Manifold, result, parameters)` -> result` to spare allocations.
-* `Λ` (`missing`) the (forward) operator $Λ(⋅)$ (required for the `:exact` variant)
-* `linearized_forward_operator` (`missing`) its linearization $DΛ(⋅)[⋅]$ (required for the `:linearized` variant)
+* `Λ` (`missing`) the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
+* `linearized_forward_operator` (`missing`) its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
 * `relaxation` – (`1.`)
 * `relax` – (`:primal`) whether to relax the primal or dual

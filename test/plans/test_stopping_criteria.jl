@@ -26,7 +26,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     sn = StopWhenAny(StopAfterIteration(10), s3)
     @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iters
     @test startswith(repr(sn), "StopWhenAny with the")
-    sn2 = StopWhenAny([StopAfterIteration(10), s3])
+    sn2 = StopAfterIteration(10) | s3
     @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
     @test get_stopping_criteria(sn)[2].threshold == get_stopping_criteria(sn2)[2].threshold
     # then s3 is the only active one
@@ -131,13 +131,13 @@ end
     ho = ManifoldHessianObjective(x -> x, (M, x) -> x, (M, x) -> x, x -> x)
     hp = DefaultManoptProblem(Euclidean(), ho)
     tcgs = TruncatedConjugateGradientState(
-        Euclidean(), 1.0, 0.0; trust_region_radius=2.0, randomize=false
+        TangentSpace(Euclidean(), 1.0), 0.0; trust_region_radius=2.0, randomize=false
     )
-    tcgs.new_model_value = 2.0
     tcgs.model_value = 1.0
     s = StopWhenModelIncreased()
     @test !s(hp, tcgs, 0)
     @test s.reason == ""
+    s.model_value = 0.5 # twweak
     @test s(hp, tcgs, 1)
     @test length(s.reason) > 0
     s2 = StopWhenCurvatureIsNegative()

@@ -65,5 +65,6 @@ include("utils/example_tasks.jl")
         include("solvers/test_truncated_cg.jl")
         include("solvers/test_trust_regions.jl")
     end
+    include("MOI_wrapper.jl")
     include("test_deprecated.jl")
 end

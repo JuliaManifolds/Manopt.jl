@@ -63,6 +63,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
             p, initial_vector, sub_problem, sub_state, stopping_criterion
         )
     end
+    # Function
     function DifferenceOfConvexState(
         M::AbstractManifold,
         p::P,
@@ -323,9 +324,11 @@ function difference_of_convex_algorithm!(
     else
         DefaultManoptProblem(M, sub_objective)
     end,
-    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType}=if sub_problem isa
+    sub_state::Union{AbstractManoptSolverState,AbstractEvaluationType,Nothing}=if sub_problem isa
         Function
         evaluation
+    elseif isnothing(sub_objective)
+        nothing
     else
         decorate_state!(
             if isnothing(sub_hess)
@@ -333,7 +336,9 @@ function difference_of_convex_algorithm!(
                     M, copy(M, p); stopping_criterion=sub_stopping_criterion
                 )
             else
-                TrustRegionsState(M, copy(M, p); stopping_criterion=sub_stopping_criterion)
+                TrustRegionsState(
+                    M, copy(M, p), sub_objective; stopping_criterion=sub_stopping_criterion
+                )
             end;
             sub_kwargs...,
         )
@@ -342,7 +347,6 @@ function difference_of_convex_algorithm!(
 ) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     dmdco = decorate_objective!(M, mdco; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
-    # For now only subsolvers - TODO closed form solution init here
     if isnothing(sub_problem)
         error(
             """

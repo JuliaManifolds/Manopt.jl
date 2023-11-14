@@ -514,7 +514,6 @@ Note that the geodesics from the data to the regression geodesic meet at a nearl
 ## Literature
 
 ```@bibliography
-Pages = ["tutorials/GeodesicRegression.md"]
+Pages = ["GeodesicRegression.md"]
 Canonical=false
 ```
-

@@ -65,7 +65,7 @@ end
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations
-using LineSearches, LRUCache, Manopt, Manifolds, Plots
+using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
 
 # (d) add contributing.md to docs
 generated_path = joinpath(@__DIR__, "src")
@@ -108,10 +108,15 @@ tutorials_menu =
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(;
     format=Documenter.HTML(;
-        mathengine=MathJax3(), prettyurls=get(ENV, "CI", nothing) == "true"
+        prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css"]
     ),
     modules=[
         Manopt,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptJuMPExt)
+        else
+            Manopt.ManoptJuMPExt
+        end,
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptLineSearchesExt)
         else

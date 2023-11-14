@@ -193,7 +193,7 @@ to a Riemannian one.
 
 ````{=commonmark}
 ```@bibliography
-Pages = ["tutorials/EmbeddingObjectives.md"]
+Pages = ["EmbeddingObjectives.md"]
 Canonical=false
 ```
 ````

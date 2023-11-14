@@ -2,64 +2,74 @@
 @doc raw"""
     TrustRegionsState <: AbstractHessianSolverState
 
-describe the trust-regions solver, with
-
+Store the state of the trust-regions solver.
 
 # Fields
-where all but `p` are keyword arguments in the constructor
 
-* `p` : the current iterate
-* `stop` : (`StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6))
-* `max_trust_region_radius` : (`sqrt(manifold_dimension(M))`) the maximum trust-region radius
-* `project!` : (`copyto!`) specify a projection operation for tangent vectors
+All the following fields (besides `p`) can be set by specifying them as keywords.
+
+* `acceptance_rate`         – (`0.1`) a lower bound of the performance ratio for the iterate that
+    decides if the iteration will be accepted or not.
+* `max_trust_region_radius` – (`sqrt(manifold_dimension(M))`) the maximum trust-region radius
+* `p`                       – (`rand(M)` if a manifold is provided) the current iterate
+* `project!`                – (`copyto!`) specify a projection operation for tangent vectors
     for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
     per default, no projection is perfomed, set it to `project!` to activate projection.
-* `randomize` : (`false`) indicates if the trust-region solve is to be initiated with a
-        random tangent vector. If set to true, no preconditioner will be
-        used. This option is set to true in some scenarios to escape saddle
-        points, but is otherwise seldom activated.
-* `ρ_prime` : (`0.1`) a lower bound of the performance ratio for the iterate that
-        decides if the iteration will be accepted or not. If not, the
-        trust-region radius will have been decreased. To ensure this,
-        ρ'>= 0 must be strictly smaller than 1/4. If ρ' is negative,
-        the algorithm is not guaranteed to produce monotonically decreasing
-        cost values. It is strongly recommended to set ρ' > 0, to aid
-        convergence.
-* `ρ_regularization` : (`10000.0`) Close to convergence, evaluating the performance ratio ρ
-        is numerically challenging. Meanwhile, close to convergence, the
-        quadratic model should be a good fit and the steps should be
-        accepted. Regularization lets ρ go to 1 as the model decrease and
-        the actual decrease go to zero. Set this option to zero to disable
-        regularization (not recommended). When this is not zero, it may happen
-        that the iterates produced are not monotonically improving the cost
-        when very close to convergence. This is because the corrected cost
-        improvement could change sign if it is negative but very small.
-* `trust_region_radius` : the (initial) trust-region radius
+* `stop`                    – ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
+* `randomize`               – (`false`) indicates if the trust-region solve is to be initiated with a
+    random tangent vector. If set to true, no preconditioner will be
+    used. This option is set to true in some scenarios to escape saddle
+    points, but is otherwise seldom activated.
+* `ρ_regularization`        – (`10000.0`) regularize the model fitness ``ρ`` to avoid division by zero
+* `sub_problem`             – an [`AbstractManoptProblem`](@ref) problem or a function `(M, p, X) -> q` or `(M, q, p, X)` for the a closed form solution of the sub problem
+* `sub_state`               – ([`TruncatedConjugateGradientState`](@ref)`(M, p, X)`)
+* `σ`                       – (`0.0` or `1e-6` depending on `randomize`) Gaussian standard deviation when creating the random initial tangent vector
+* `trust_region_radius`     – (`max_trust_region_radius / 8`) the (initial) trust-region radius
+* `X`                       – (`zero_vector(M,p)`) the current gradient `grad_f(p)`
+  Use this default to specify the type of tangent vector to allocate also for the internal (tangent vector) fields.
 
-# Constructor
+# Internal Fields
 
-    TrustRegionsState(M,
-        p=rand(M),
-        X=zero_vector(M,p),
-        sub_state=TruncatedConjugateGradientState(M, p, X),
-)
+* `HX`, `HY`, `HZ`          – interims storage (to avoid allocation) of ``\operatorname{Hess} f(p)[\cdot]` of `X`, `Y`, `Z`
+* `Y`                       – the solution (tangent vector) of the subsolver
+* `Z`                       – the Cauchy point (only used if random is activated)
 
-construct a trust-regions Option with all other fields from above being
-keyword arguments
+
+# Constructors
+
+All the following constructors have the above fields as keyword arguents with the defaults
+given in brackets. If no initial point `p` is provided, `p=rand(M)` is used
+
+
+
+    TrustRegionsState(M, mho; kwargs...)
+    TrustRegionsState(M, p, mho; kwargs...)
+
+A trust region state, where the sub problem is set to a [`DefaultManoptProblem`](@ref) on the
+tangent space using the [`TrustRegionModelObjective`](@ref) to be solved with [`truncated_conjugate_gradient_descent!`](@ref)
+or in other words the sub state is set to [`TruncatedConjugateGradientState`](@ref).
+
+    TrustRegionsState(M, sub_problem, sub_state; kwargs...)
+    TrustRegionsState(M, p, sub_problem, sub_state; kwargs...)
+
+A trust region state, where the sub problem is solved using a [`AbstractManoptProblem`](@ref) `sub_problem`
+and an [`AbstractManoptSolverState`](@ref) `sub_state`.
+
+    TrustRegionsState(M, f::Function; evaluation=AllocatingEvaluation, kwargs...)
+    TrustRegionsState(M, p, f; evaluation=AllocatingEvaluation, kwargs...)
+
+A trust region state, where the sub problem is solved in closed form by a funtion
+`f(M, p, Y, Δ)`, where `p` is the current iterate, `Y` the inital tangent vector at `p` and
+`Δ` the current trust region radius.
+
 
 # See also
 
-[`trust_regions`](@ref)
+[`trust_regions`](@ref), [`trust_regions!`](@ref)
 """
 mutable struct TrustRegionsState{
-    P,
-    T,
-    SC<:StoppingCriterion,
-    RTR<:AbstractRetractionMethod,
-    R<:Real,
-    Proj,
-    Op<:AbstractHessianSolverState,
-} <: AbstractHessianSolverState
+    P,T,Pr,St,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
+} <: AbstractSubProblemSolverState
     p::P
     X::T
     stop::SC
@@ -68,66 +78,104 @@ mutable struct TrustRegionsState{
     retraction_method::RTR
     randomize::Bool
     project!::Proj
-    ρ_prime::R
+    acceptance_rate::R
     ρ_regularization::R
-    sub_state::Op
+    sub_problem::Pr
+    sub_state::St
     p_proposal::P
     f_proposal::R
-    # Random
-    Hgrad::T
-    η::T
-    Hη::T
-    η_Cauchy::T
-    Hη_Cauchy::T
+    # Only required for Random mode Random
+    HX::T
+    Y::T
+    HY::T
+    Z::T
+    HZ::T
     τ::R
+    σ::R
     reduction_threshold::R
+    reduction_factor::R
     augmentation_threshold::R
-    function TrustRegionsState{P,T,SC,RTR,R,Proj,Op}(
+    augmentation_factor::R
+    function TrustRegionsState{P,T,Pr,St,SC,RTR,R,Proj}(
         p::P,
         X::T,
         trust_region_radius::R,
         max_trust_region_radius::R,
-        ρ_prime::R,
+        acceptance_rate::R,
         ρ_regularization::R,
         randomize::Bool,
         stopping_citerion::SC,
         retraction_method::RTR,
         reduction_threshold::R,
         augmentation_threshold::R,
-        sub_state::Op,
+        sub_problem::Pr,
+        sub_state::St,
         project!::Proj=copyto!,
-    ) where {
-        P,
-        T,
-        SC<:StoppingCriterion,
-        RTR<:AbstractRetractionMethod,
-        R<:Real,
-        Proj,
-        Op<:AbstractHessianSolverState,
-    }
-        trs = new{P,T,SC,RTR,R,Proj,Op}()
+        reduction_factor=0.25,
+        augmentation_factor=2.0,
+        σ::R=random ? 1e-6 : 0.0,
+    ) where {P,T,Pr,St,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
+        trs = new{P,T,Pr,St,SC,RTR,R,Proj}()
         trs.p = p
         trs.X = X
         trs.stop = stopping_citerion
         trs.retraction_method = retraction_method
         trs.trust_region_radius = trust_region_radius
         trs.max_trust_region_radius = max_trust_region_radius::R
-        trs.ρ_prime = ρ_prime
+        trs.acceptance_rate = acceptance_rate
         trs.ρ_regularization = ρ_regularization
         trs.randomize = randomize
+        trs.sub_problem = sub_problem
         trs.sub_state = sub_state
         trs.reduction_threshold = reduction_threshold
+        trs.reduction_factor = reduction_factor
         trs.augmentation_threshold = augmentation_threshold
+        trs.augmentation_factor = augmentation_factor
         trs.project! = project!
+        trs.σ = σ
         return trs
     end
 end
+# No point, no state -> add point
+function TrustRegionsState(
+    M, sub_problem::Pr; kwargs...
+) where {Pr<:Union{AbstractManoptProblem,<:Function,AbstractManifoldHessianObjective}}
+    return TrustRegionsState(M, rand(M), sub_problem; kwargs...)
+end
+# No point but state -> add point
+function TrustRegionsState(
+    M, sub_problem::Pr, sub_state::St; kwargs...
+) where {Pr<:Union{AbstractManoptProblem,<:Function},St}
+    return TrustRegionsState(M, rand(M), sub_problem, sub_state; kwargs...)
+end
+# point, but no state for a function -> add evaluation as state
+function TrustRegionsState(
+    M,
+    p,
+    sub_problem::Pr;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+) where {Pr<:Function}
+    return TrustRegionsState(M, p, sub_problem, evaluation; kwargs...)
+end
+function TrustRegionsState(
+    M, p, mho::H; kwargs...
+) where {H<:AbstractManifoldHessianObjective}
+    TpM = TangentSpace(M, copy(M, p))
+    problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+    state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
+    return TrustRegionsState(M, p, problem, state; kwargs...)
+end
 function TrustRegionsState(
     M::TM,
-    p::P=rand(M),
+    p::P,
+    sub_problem::Pr,
+    sub_state::St=TruncatedConjugateGradientState(
+        TangentSpace(M, copy(M, p)), zero_vector(M, p)
+    );
     X::T=zero_vector(M, p),
-    sub_state::Op=TruncatedConjugateGradientState(M, p, X);
-    ρ_prime::R=0.1,
+    ρ_prime::R=0.1, #deprecated, remove on next breaking change
+    acceptance_rate=ρ_prime,
     ρ_regularization::R=1000.0,
     randomize::Bool=false,
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
@@ -135,32 +183,40 @@ function TrustRegionsState(
     trust_region_radius::R=max_trust_region_radius / 8,
     retraction_method::RTR=default_retraction_method(M, typeof(p)),
     reduction_threshold::R=0.1,
+    reduction_factor=0.25,
     augmentation_threshold::R=0.75,
+    augmentation_factor=2.0,
     project!::Proj=copyto!,
+    σ=randomize ? 1e-4 : 0.0,
 ) where {
     TM<:AbstractManifold,
+    Pr<:AbstractManoptProblem,
+    St,
     P,
     T,
     R<:Real,
     SC<:StoppingCriterion,
     RTR<:AbstractRetractionMethod,
     Proj,
-    Op<:AbstractHessianSolverState,
 }
-    return TrustRegionsState{P,T,SC,RTR,R,Proj,Op}(
+    return TrustRegionsState{P,T,Pr,St,SC,RTR,R,Proj}(
         p,
         X,
         trust_region_radius,
         max_trust_region_radius,
-        ρ_prime,
+        acceptance_rate,
         ρ_regularization,
         randomize,
         stopping_criterion,
         retraction_method,
         reduction_threshold,
         augmentation_threshold,
+        sub_problem,
         sub_state,
         project!,
+        reduction_factor,
+        augmentation_factor,
+        σ,
     )
 end
 get_iterate(trs::TrustRegionsState) = trs.p
@@ -168,22 +224,35 @@ function set_iterate!(trs::TrustRegionsState, M, p)
     copyto!(M, trs.p, p)
     return trs
 end
+get_gradient(agst::TrustRegionsState) = agst.X
+function set_gradient!(agst::TrustRegionsState, M, p, X)
+    copyto!(M, agst.X, p, X)
+    return agst
+end
 
+function get_message(dcs::TrustRegionsState)
+    # for now only the sub solver might have messages
+    return get_message(dcs.sub_state)
+end
 function show(io::IO, trs::TrustRegionsState)
     i = get_count(trs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(trs.stop) ? "Yes" : "No"
+    sub = repr(trs.sub_state)
+    sub = replace(sub, "\n" => "\n    | ")
     s = """
     # Solver state for `Manopt.jl`s Trust Region Method
     $Iter
     ## Parameters
-    * augmentation threshold: $(trs.augmentation_threshold)
-    * randomize: $(trs.randomize)
-    * reduction threshold: $(trs.reduction_threshold)
-    * retraction method: $(trs.retraction_method)
-    * ρ‘: $(trs.ρ_prime)
-    * ρ_regularization: $(trs.ρ_regularization)
-    * trust region radius: $(trs.trust_region_radius) (max: $(trs.max_trust_region_radius))
+    * acceptance_rate (ρ'):   $(trs.acceptance_rate)
+    * augmentation threshold: $(trs.augmentation_threshold) (factor: $(trs.augmentation_factor))
+    * randomize:              $(trs.randomize)
+    * reduction threshold:    $(trs.reduction_threshold) (factor: $(trs.reduction_factor))
+    * retraction method:      $(trs.retraction_method)
+    * ρ_regularization:       $(trs.ρ_regularization)
+    * trust region radius:    $(trs.trust_region_radius) (max: $(trs.max_trust_region_radius))
+    * sub solver state     :
+        | $(sub)
 
     ## Stopping Criterion
     $(status_summary(trs.stop))
@@ -192,71 +261,58 @@ function show(io::IO, trs::TrustRegionsState)
 end
 
 @doc raw"""
-    trust_regions(M, f, grad_f, hess_f, p)
-    trust_regions(M, f, grad_f, p)
+    trust_regions(M, f, grad_f, hess_f, p=rand(M))
+    trust_regions(M, f, grad_f, p=rand(M))
 
 run the Riemannian trust-regions solver for optimization on manifolds to minimize `f`
 cf. [[Absil, Baker, Gallivan, FoCM, 2006](@cite AbsilBakerGallivan:2006); [Conn, Gould, Toint, SIAM, 2000](@cite ConnGouldToint:2000)].
 
-For the case that no hessian is provided, the Hessian is computed using finite difference, see
-[`ApproxHessianFiniteDifference`](@ref).
+For the case that no hessian is provided, the Hessian is computed using finite differences,
+see [`ApproxHessianFiniteDifference`](@ref).
 For solving the the inner trust-region subproblem of finding an update-vector,
-see [`truncated_conjugate_gradient_descent`](@ref).
+by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 
 # Input
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F : \mathcal M → ℝ`` to minimize
-* `grad_f`- the gradient ``\operatorname{grad}F : \mathcal M → T \mathcal M`` of ``F``
+* `M`      – a manifold ``\mathcal M``
+* `f`      – a cost function ``f : \mathcal M → ℝ`` to minimize
+* `grad_f` – the gradient ``\operatorname{grad}F : \mathcal M → T \mathcal M`` of ``F``
 * `Hess_f` – (optional), the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
-* `p` – an initial value ``x  ∈  \mathcal M``
+* `p`      – (`rand(M)`) an initial value ``x  ∈  \mathcal M``
 
 # Optional
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
+* `evaluation`              – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
    allocation (default) or [`InplaceEvaluation`](@ref) in place
 * `max_trust_region_radius` – the maximum trust-region radius
-* `preconditioner` – a preconditioner (a symmetric, positive definite operator
+* `preconditioner`          – a preconditioner (a symmetric, positive definite operator
   that should approximate the inverse of the Hessian)
-* `randomize` – set to true if the trust-region solve is to be initiated with a
-  random tangent vector. If set to true, no preconditioner will be
-  used. This option is set to true in some scenarios to escape saddle
-  points, but is otherwise seldom activated.
-* `project!` : (`copyto!`) specify a projection operation for tangent vectors within the TCG
-    for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
-    per default, no projection is perfomed, set it to `project!` to activate projection.
-* `retraction` – (`default_retraction_method(M, typeof(p))`) approximation of the exponential map
-* `stopping_criterion` – ([`StopWhenAny`](@ref)([`StopAfterIteration`](@ref)`(1000)`,
-  [`StopWhenGradientNormLess`](@ref)`(10^(-6))`) a functor inheriting
+* `randomize`               – set to true if the trust-region solve is to be initiated with a
+  random tangent vector and no preconditioner will be used.
+* `project!`                – (`copyto!`) specify a projection operation for tangent vectors
+  within the subsolver for numerical stability.
+  this means we require a function `(M, Y, p, X) -> ...` working in place of `Y`.
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use
+* `stopping_criterion`      – ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`) a functor inheriting
   from [`StoppingCriterion`](@ref) indicating when to stop.
-* `trust_region_radius` - the initial trust-region radius
-* `ρ_prime` – Accept/reject threshold: if ρ (the performance ratio for the
-  iterate) is at least ρ', the outer iteration is accepted.
-  Otherwise, it is rejected. In case it is rejected, the trust-region
-  radius will have been decreased. To ensure this, ρ' >= 0 must be
-  strictly smaller than 1/4. If ρ_prime is negative, the algorithm is not
-  guaranteed to produce monotonically decreasing cost values. It is
-  strongly recommended to set ρ' > 0, to aid convergence.
-* `ρ_regularization` – Close to convergence, evaluating the performance ratio ρ
-  is numerically challenging. Meanwhile, close to convergence, the
-  quadratic model should be a good fit and the steps should be
-  accepted. Regularization lets ρ go to 1 as the model decrease and
-  the actual decrease go to zero. Set this option to zero to disable
-  regularization (not recommended). When this is not zero, it may happen
-  that the iterates produced are not monotonically improving the cost
-  when very close to convergence. This is because the corrected cost
-  improvement could change sign if it is negative but very small.
-* `θ` – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
-    [`truncated_conjugate_gradient_descent`](@ref), which computes an
-    approximate solution for the trust-region subproblem. The tCG-method aborts
-    if the residual is less than or equal to the initial residual to the power of 1+θ.
-* `κ` – (`0.1`) the linear convergence target rate of the tCG-method
-    [`truncated_conjugate_gradient_descent`](@ref), which computes an
-    approximate solution for the trust-region subproblem. The method aborts if the
-    residual is less than or equal to κ times the initial residual.
-* `reduction_threshold` – (`0.1`) Trust-region reduction threshold: if ρ (the performance ratio for
-    the iterate) is less than this bound, the trust-region radius and thus the trust-regions
-    decreases.
-* `augmentation_threshold` – (`0.75`) Trust-region augmentation threshold: if ρ (the performance ratio for
-    the iterate) is greater than this and further conditions apply, the trust-region radius and thus the trust-regions increases.
+* `trust_region_radius`     – the initial trust-region radius
+* `acceptance_rate`         – Accept/reject threshold: if ρ (the performance ratio for the
+  iterate) is at least the acceptance rate ρ', the candidate is accepted.
+  This value should  be between ``0`` and ``\frac{1}{4}``
+  (formerly this was called `ρ_prime, which will be removed on the next breaking change)
+* `ρ_regularization`        – (`1e3`) regularize the performance evaluation ``ρ``
+  to avoid numerical inaccuracies.
+* `θ`                       – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping crierion therein
+* `κ`                       – (`0.1`) the linear convergence target rate of the tCG method
+    [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping crierion therein
+* `reduction_threshold`     – (`0.1`) trust-region reduction threshold: if ρ is below this threshold,
+  the trust region radius is reduced by `reduction_factor`.
+* `reduction_factor`        – (`0.25`) trust-region reduction factor
+* `augmentation_threshold`  – (`0.75`) trust-region augmentation threshold: if ρ is above this threshold,
+  we have a solution on the trust region boundary and negative curvature, we extend (augment) the radius
+* `augmentation_factor`     – (`2.0`) trust-region augmentation factor
+
+For the case that no hessian is provided, the Hessian is computed using finite difference, see
+[`ApproxHessianFiniteDifference`](@ref).
 
 # Output
 
@@ -266,11 +322,13 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 [`truncated_conjugate_gradient_descent`](@ref)
 """
 trust_regions(M::AbstractManifold, args...; kwargs...)
+# Hesian (Function) but no point
 function trust_regions(
     M::AbstractManifold, f, grad_f, Hess_f::TH; kwargs...
 ) where {TH<:Function}
     return trust_regions(M, f, grad_f, Hess_f, rand(M); kwargs...)
 end
+# Hesian (Function) and point
 function trust_regions(
     M::AbstractManifold,
     f,
@@ -288,6 +346,7 @@ function trust_regions(
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
     return trust_regions(M, mho, p; evaluation=evaluation, kwargs...)
 end
+# Hesian (Function) and point (but a number)
 function trust_regions(
     M::AbstractManifold,
     f,
@@ -317,9 +376,11 @@ function trust_regions(
     )
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
+# neither Hesian (Function) nor point
 function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)
     return trust_regions(M, f, grad_f, rand(M); kwargs...)
 end
+# no Hesian (Function), but point (any)
 function trust_regions(
     M::AbstractManifold,
     f::TF,
@@ -343,6 +404,7 @@ function trust_regions(
         kwargs...,
     )
 end
+# Objective
 function trust_regions(
     M::AbstractManifold, mho::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
@@ -357,11 +419,11 @@ end
 evaluate the Riemannian trust-regions solver in place of `p`.
 
 # Input
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
-* `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
-* `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
-* `p` – an initial value ``p  ∈  \mathcal M``
+* `M`      – a manifold ``\mathcal M``
+* `f`      – a cost function ``f: \mathcal M → ℝ`` to minimize
+* `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T \mathcal M`` of ``F``
+* `Hess_f` – (optional) the hessian ``\operatorname{Hess} f``
+* `p`      – an initial value ``p  ∈  \mathcal M``
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
@@ -369,6 +431,7 @@ For the case that no hessian is provided, the Hessian is computed using finite d
 for more details and all options, see [`trust_regions`](@ref)
 """
 trust_regions!(M::AbstractManifold, args...; kwargs...)
+# No Hessian but a point (Any)
 function trust_regions!(
     M::AbstractManifold,
     f,
@@ -392,6 +455,7 @@ function trust_regions!(
         kwargs...,
     )
 end
+# Hessian and point
 function trust_regions!(
     M::AbstractManifold,
     f,
@@ -409,6 +473,7 @@ function trust_regions!(
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
     return trust_regions!(M, mho, p; evaluation=evaluation, kwargs...)
 end
+# Objective
 function trust_regions!(
     M::AbstractManifold,
     mho::O,
@@ -416,19 +481,24 @@ function trust_regions!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
                                           StopWhenGradientNormLess(1e-6),
-    max_trust_region_radius=sqrt(manifold_dimension(M)),
-    trust_region_radius=max_trust_region_radius / 8,
-    randomize::Bool=false,
+    max_trust_region_radius::R=sqrt(manifold_dimension(M)),
+    trust_region_radius::R=max_trust_region_radius / 8,
+    randomize::Bool=false, # Deprecated, remove on next release (use just σ)
     project!::Proj=copyto!,
-    ρ_prime::Float64=0.1,
-    ρ_regularization=1000.0,
-    θ::Float64=1.0,
-    κ::Float64=0.1,
-    reduction_threshold::Float64=0.1,
-    augmentation_threshold::Float64=0.75,
-    sub_state::AbstractHessianSolverState=TruncatedConjugateGradientState(
-        M,
-        p,
+    ρ_prime::R=0.1, # Deprecated, remove on next breaking change (use acceptance_rate)
+    acceptance_rate::R=ρ_prime,
+    ρ_regularization=1e3,
+    θ::R=1.0,
+    κ::R=0.1,
+    σ=randomize ? 1e-3 : 0.0,
+    reduction_threshold::R=0.1,
+    reduction_factor::R=0.25,
+    augmentation_threshold::R=0.75,
+    augmentation_factor::R=2.0,
+    sub_objective=TrustRegionModelObjective(mho),
+    sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),
+    sub_state::Union{AbstractHessianSolverState,AbstractEvaluationType}=TruncatedConjugateGradientState(
+        TangentSpace(M, copy(M, p)),
         zero_vector(M, p);
         θ=θ,
         κ=κ,
@@ -437,10 +507,7 @@ function trust_regions!(
         (project!)=project!,
     ),
     kwargs..., #collect rest
-) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
-    (ρ_prime >= 0.25) && throw(
-        ErrorException("ρ_prime must be strictly smaller than 0.25 but it is $ρ_prime.")
-    )
+) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective},R}
     (max_trust_region_radius <= 0) && throw(
         ErrorException(
             "max_trust_region_radius must be positive but it is $max_trust_region_radius.",
@@ -456,120 +523,119 @@ function trust_regions!(
     trs = TrustRegionsState(
         M,
         p,
-        get_gradient(dmp, p),
+        sub_problem,
         sub_state;
+        X=get_gradient(dmp, p),
         trust_region_radius=trust_region_radius,
         max_trust_region_radius=max_trust_region_radius,
-        ρ_prime=ρ_prime,
+        acceptance_rate=acceptance_rate,
         ρ_regularization=ρ_regularization,
         randomize=randomize,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         reduction_threshold=reduction_threshold,
+        reduction_factor=reduction_factor,
         augmentation_threshold=augmentation_threshold,
+        augmentation_factor=augmentation_factor,
         (project!)=project!,
+        σ=σ,
     )
     dtrs = decorate_state!(trs; kwargs...)
     solve!(dmp, dtrs)
     return get_solver_return(get_objective(dmp), dtrs)
 end
+
 function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     M = get_manifold(mp)
     get_gradient!(mp, trs.X, trs.p)
-    trs.η = zero_vector(M, trs.p)
-    trs.Hη = zero_vector(M, trs.p)
+    trs.Y = zero_vector(M, trs.p)
+    trs.HY = zero_vector(M, trs.p)
     trs.p_proposal = deepcopy(trs.p)
     trs.f_proposal = zero(trs.trust_region_radius)
-
-    trs.η_Cauchy = zero_vector(M, trs.p)
-    trs.Hη_Cauchy = zero_vector(M, trs.p)
-    trs.τ = zero(trs.trust_region_radius)
-    trs.Hgrad = zero_vector(M, trs.p)
+    if trs.randomize #only init if necessary
+        trs.Z = zero_vector(M, trs.p)
+        trs.HZ = zero_vector(M, trs.p)
+        trs.τ = zero(trs.trust_region_radius)
+        trs.HX = zero_vector(M, trs.p)
+    end
     return trs
 end
 
 function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     M = get_manifold(mp)
     mho = get_objective(mp)
-    # Determine eta0
-    if trs.randomize
-        # Random vector in T_x M (this has to be very small)
-        trs.η = 10.0^(-6) * rand(M; vector_at=trs.p)
-        while norm(M, trs.p, trs.η) > trs.trust_region_radius
-            # inside trust-region
-            trs.η *= sqrt(sqrt(eps(Float64)))
+    # Determine the initial tangent vector used as start point for the subsolvereta0
+    if trs.σ > 0
+        rand!(M, trs.Y; vector_at=trs.p, σ=trs.σ)
+        nY = norm(M, trs.p, trs.Y)
+        if nY > trs.trust_region_radius # move inside if outside
+            trs.Y *= trs.trust_region_radius / (2 * nY)
         end
     else
-        zero_vector!(M, trs.η, trs.p)
+        zero_vector!(M, trs.Y, trs.p)
     end
-    # Solve TR subproblem - update options
-    trs.sub_state.p = trs.p
-    trs.sub_state.η = trs.η
-    trs.sub_state.trust_region_radius = trs.trust_region_radius
-    solve!(mp, trs.sub_state)
+    # Update the current gradient
+    get_gradient!(M, trs.X, mho, trs.p)
+    set_manopt_parameter!(trs.sub_problem, :Manifold, :Basepoint, copy(M, trs.p))
+    set_manopt_parameter!(trs.sub_state, :Iterate, copy(M, trs.p, trs.Y))
+    set_manopt_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
+    solve!(trs.sub_problem, trs.sub_state)
     #
-    trs.η = trs.sub_state.η
-    trs.Hη = trs.sub_state.Hη
-
-    # Initialize the cost function F und the gradient of the cost function
-    # gradF at the point x
-    trs.X = trs.sub_state.X
-    fx = get_cost(mp, trs.p)
-    # If using randomized approach, compare result with the Cauchy point.
-    if trs.randomize
-        norm_grad = norm(M, trs.p, trs.X)
+    copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
+    f = get_cost(mp, trs.p)
+    if trs.σ > 0 # randomized approach: compare result with the Cauchy point.
+        nX = norm(M, trs.p, trs.X)
+        get_hessian!(M, trs.HY, mho, trs.p, trs.Y)
         # Check the curvature,
-        get_hessian!(mp, trs.Hgrad, trs.p, trs.X)
-        trs.τ = real(inner(M, trs.p, trs.X, trs.Hgrad))
+        get_hessian!(mp, trs.HX, trs.p, trs.X)
+        trs.τ = real(inner(M, trs.p, trs.X, trs.HX))
         trs.τ = if (trs.τ <= 0)
             one(trs.τ)
         else
-            min(norm_grad^3 / (trs.trust_region_radius * trs.τ), 1)
+            min(nX^3 / (trs.trust_region_radius * trs.τ), 1)
         end
         # compare to Cauchy point and store best
         model_value =
-            fx +
-            real(inner(M, trs.p, trs.X, trs.η)) +
-            0.5 * real(inner(M, trs.p, trs.Hη, trs.η))
+            f +
+            real(inner(M, trs.p, trs.X, trs.Y)) +
+            0.5 * real(inner(M, trs.p, trs.HY, trs.Y))
         model_value_Cauchy =
-            fx - trs.τ * trs.trust_region_radius * norm_grad +
-            0.5 * trs.τ^2 * trs.trust_region_radius^2 / (norm_grad^2) *
-            real(inner(M, trs.p, trs.Hgrad, trs.X))
+            f - trs.τ * trs.trust_region_radius * nX +
+            0.5 * trs.τ^2 * trs.trust_region_radius^2 / (nX^2) *
+            real(inner(M, trs.p, trs.HX, trs.X))
         if model_value_Cauchy < model_value
-            copyto!(M, trs.η, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.X)
-            copyto!(M, trs.Hη, (-trs.τ * trs.trust_region_radius / norm_grad) * trs.Hgrad)
+            copyto!(M, trs.Y, (-trs.τ * trs.trust_region_radius / nX) * trs.X)
+            copyto!(M, trs.HY, (-trs.τ * trs.trust_region_radius / nX) * trs.HX)
         end
     end
     # Compute the tentative next iterate (the proposal)
-    retract!(M, trs.p_proposal, trs.p, trs.η, trs.retraction_method)
-    # Check the performance of the quadratic model against the actual cost.
-    ρ_reg = max(1, abs(fx)) * eps(Float64) * trs.ρ_regularization
-    ρnum = fx - get_cost(mp, trs.p_proposal)
-    ρden = -real(inner(M, trs.p, trs.η, trs.X)) - 0.5 * real(inner(M, trs.p, trs.η, trs.Hη))
+    retract!(M, trs.p_proposal, trs.p, trs.Y, trs.retraction_method)
+    # Compute ρ_k as in (8) of ABG2007
+    ρ_reg = max(1, abs(f)) * eps(Float64) * trs.ρ_regularization
+    ρnum = f - get_cost(mp, trs.p_proposal)
+    ρden = -real(inner(M, trs.p, trs.Y, trs.X)) - 0.5 * real(inner(M, trs.p, trs.Y, trs.HY))
     ρnum = ρnum + ρ_reg
     ρden = ρden + ρ_reg
-    ρ = (abs(ρnum / fx) < sqrt(eps(Float64))) ? 1 : ρnum / ρden # stability for small absolute relative model change
-
+    ρ = ρnum / ρden
     model_decreased = ρden ≥ 0
     # Update the Hessian approximation - i.e. really unwrap the original Hessian function
     # and update it if it is an approximate Hessian.
-    update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.η)
+    update_hessian!(M, get_hessian_function(mho, true), trs.p, trs.p_proposal, trs.Y)
     # Choose the new TR radius based on the model performance.
-    # If the actual decrease is smaller than reduction_threshold of the predicted decrease,
-    # then reduce the TR radius.
+    # Case (a) we performe poorly -> decrease radius
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
-        trs.trust_region_radius /= 4
-    elseif ρ > trs.augmentation_threshold / 4 &&
-        ((trs.sub_state.ηPη >= trs.trust_region_radius^2) || (trs.sub_state.δHδ <= 0))
+        trs.trust_region_radius *= trs.reduction_factor
+    elseif ρ > trs.augmentation_threshold &&
+        get_manopt_parameter(trs.sub_state, :TrustRegionExceeded)
+        # (b) We perform great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
-            2 * trs.trust_region_radius, trs.max_trust_region_radius
+            trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius
         )
     end
-    # Choose to accept or reject the proposed step based on the model
-    # performance. Note the strict inequality.
-    if model_decreased &&
-        (ρ > trs.ρ_prime || (abs((ρnum) / (abs(fx) + 1)) < sqrt(eps(Float64)) && 0 < ρnum))
+    # (c) if we decreased and perform well enough -> accept step
+    if model_decreased && (ρ > trs.acceptance_rate)
         copyto!(trs.p, trs.p_proposal)
+        # If we work with approximate hessians -> update base point there
         update_hessian_basis!(M, get_hessian_function(mho, true), trs.p)
     end
     return trs

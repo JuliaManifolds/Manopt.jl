@@ -7,7 +7,7 @@ Describes a Gradient based descent algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p – (`rand(M)` the current iterate
+* `p` – (`rand(M)` the current iterate
 * `X` – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `stepsize` – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
@@ -129,7 +129,7 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
 * `M` – a manifold ``\mathcal M``
 * `f` – a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
 * `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
-  - as a function `(M, p) -> X` or a function `(M, X, p) -> X`
+  as a function `(M, p) -> X` or a function `(M, X, p) -> X`
 * `p` – an initial value `p` ``= p_0 ∈ \mathcal M``
 
 Alternatively to `f` and `grad_f` you can provide
@@ -139,10 +139,9 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 * `direction` – ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
   or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)`.
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use
-* `stepsize` – ([`ConstantStepsize`](@ref)`(1.)`) specify a [`Stepsize`](@ref)
-  functor.
-* `stopping_criterion` – ([`StopWhenAny`](@ref)`(`[`StopAfterIteration`](@ref)`(200), `[`StopWhenGradientNormLess`](@ref)`(10.0^-8))`)
+* `retraction_method` – ([`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold})(M, typeof(p))`) a retraction to use
+* `stepsize` – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
+* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.

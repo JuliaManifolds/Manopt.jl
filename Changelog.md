@@ -13,68 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `prox_bundle_method` optimization algorithm for non-smooth functions.
 * `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
   `StopWhenProxBundleLess` stopping criteria.
-  
-## [0.4.40] – 24/10/2023
+
+## [Unreleased]
 
 ### Added
 
-* add a `--help` argument to `docs/make.jl` to document all availabel command line arguments
-* add a `--exclude-tutorials` argument to `docs/make.jl`. This way, when quarto is not available
-  on a computer, the docs can still be build with the tutorials not being added to the menu
-  such that documenter does not expect them to exist.
+* add `Manopt.JuMP_Optimizer` implementing JuMP's solver interface
 
-### Changes
+## [0.4.41] - 02/11/2023
 
-* Bump dependencies to `ManifoldsBase.jl` 0.15 and `Manifolds.jl` 0.9
-* move the ARC CG subsolver to the main package, since `TangentSpace` is now already
-  available from `ManifoldsBase`.
+### Changed
 
-## [0.4.39] – 09/10/2023
-
-### Changes
-
-* also use the pair of a retraction and the inverse retraction (see last update)
-  to perform the relaxation within the Douglas-Rachford algorithm.
-
-## [0.4.38] – 08/10/2023
-
-### Changes
-
-* avoid allocations when calling `get_jacobian!` within the Levenberg-Marquard Algorithm.
-
-### Fixed
-
-* Fix a lot of typos in the documentation
-
-## [0.4.37] – 28/09/2023
-
-### Changes
-
-* add more of the Riemannian Levenberg-Marquard algorithms parameters as keywords, so they
-  can be changed on call
-* generalize the internal reflection of Douglas-Rachford, such that is also works with an
-  arbitrary pair of a reflection and an inverse reflection.
-
-## [0.4.36] – 20/09/2023
-
-### Fixed
-
-* Fixed a bug that caused non-matrix points and vectors to fail when working with approcimate
-
-## [0.4.35] – 14/09/2023
-
-### Added
-
-* The access to functions of the objective is now unified and encapsulated in proper `get_`
-  functions.
-
-## [0.4.34] – 02/09/2023
-
-### Added
-
-* an `ManifoldEuclideanGradientObjetive` to allow the cost, gradient, and Hessian and other
-  first or second derivative based elements to be Euclidean and converted when needed.
-* a keyword `objective_type=:Euclidean` for all solvers, that specifies that an Objective shall be created of the above type
+– `trust_regions` is now more flexible and the sub solver (Steinhaug-Toint tCG by default)
+  can now be exchanged.
+- `adaptive_regularization_with_cubics` is now more flexible as well, where it previously was a bit too
+  much tightened to the Lanczos solver as well.
+- Unified documentation notation and bumped dependencies to use DocumenterCitations 1.3
 
 ## [0.4.40] – 24/10/2023
 
