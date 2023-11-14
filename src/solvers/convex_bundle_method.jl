@@ -244,6 +244,8 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
 # Optional
+* `atol_λ` - (eps()) tolerance parameter for the convex coefficients in λ.
+* `atol_errors` - (eps()) tolerance parameter for the linearization errors.
 * `m` - (1e-3) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point.
 * `domain` - (@(M, p) -> isfinite(f(M, p))) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
