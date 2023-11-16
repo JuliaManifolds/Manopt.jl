@@ -115,7 +115,7 @@ end
 ```
 
 For the Euclidean case, the result is given by the first principal component of a principal component analysis,
-see [PCR](https://en.wikipedia.org/wiki/Principal_component_regression), which is given by $p^* = \frac{1}{n}\displaystyle\sum_{i=1}^n d_i$ and
+see [PCR](https://en.wikipedia.org/wiki/Principal_component_regression) which is given by $p^* = \frac{1}{n}\displaystyle\sum_{i=1}^n d_i$ and
 the direction $X^*$ is obtained by defining the zero mean data matrix
 
 ``` math
@@ -177,11 +177,11 @@ y = gradient_descent(
 )
 ```
 
-    Initial  | F(x): 0.142862
-    # 50     | F(x): 0.141113
-    # 100    | F(x): 0.141113
-    # 150    | F(x): 0.141113
-    # 200    | F(x): 0.141113
+    Initial  | f(x): 0.142862
+    # 50     | f(x): 0.141113
+    # 100    | f(x): 0.141113
+    # 150    | f(x): 0.141113
+    # 200    | f(x): 0.141113
     The algorithm reached its maximal number of iterations (200).
 
     ([0.7119768725361988, 0.009463059143003981, 0.7021391482357537], [0.590008151835008, -0.5543272518659472, -0.5908038715512287])
@@ -266,73 +266,73 @@ y2 = gradient_descent(
 );
 ```
 
-    Initial  | F(x): 0.089844
-    # 3      | F(x): 0.085364
-    # 6      | F(x): 0.085364
-    # 9      | F(x): 0.085364
-    # 12     | F(x): 0.085364
-    # 15     | F(x): 0.085364
-    # 18     | F(x): 0.085364
-    # 21     | F(x): 0.085364
-    # 24     | F(x): 0.085364
-    # 27     | F(x): 0.085364
-    # 30     | F(x): 0.085364
-    # 33     | F(x): 0.085364
-    # 36     | F(x): 0.085364
-    # 39     | F(x): 0.085364
-    # 42     | F(x): 0.085364
-    # 45     | F(x): 0.085364
-    # 48     | F(x): 0.085364
-    # 51     | F(x): 0.085364
-    # 54     | F(x): 0.085364
-    # 57     | F(x): 0.085364
-    # 60     | F(x): 0.085364
-    # 63     | F(x): 0.085364
-    # 66     | F(x): 0.085364
-    # 69     | F(x): 0.085364
-    # 72     | F(x): 0.085364
-    # 75     | F(x): 0.085364
-    # 78     | F(x): 0.085364
-    # 81     | F(x): 0.085364
-    # 84     | F(x): 0.085364
-    # 87     | F(x): 0.085364
-    # 90     | F(x): 0.085364
-    # 93     | F(x): 0.085364
-    # 96     | F(x): 0.085364
-    # 99     | F(x): 0.085364
-    # 102    | F(x): 0.085364
-    # 105    | F(x): 0.085364
-    # 108    | F(x): 0.085364
-    # 111    | F(x): 0.085364
-    # 114    | F(x): 0.085364
-    # 117    | F(x): 0.085364
-    # 120    | F(x): 0.085364
-    # 123    | F(x): 0.085364
-    # 126    | F(x): 0.085364
-    # 129    | F(x): 0.085364
-    # 132    | F(x): 0.085364
-    # 135    | F(x): 0.085364
-    # 138    | F(x): 0.085364
-    # 141    | F(x): 0.085364
-    # 144    | F(x): 0.085364
-    # 147    | F(x): 0.085364
-    # 150    | F(x): 0.085364
-    # 153    | F(x): 0.085364
-    # 156    | F(x): 0.085364
-    # 159    | F(x): 0.085364
-    # 162    | F(x): 0.085364
-    # 165    | F(x): 0.085364
-    # 168    | F(x): 0.085364
-    # 171    | F(x): 0.085364
-    # 174    | F(x): 0.085364
-    # 177    | F(x): 0.085364
-    # 180    | F(x): 0.085364
-    # 183    | F(x): 0.085364
-    # 186    | F(x): 0.085364
-    # 189    | F(x): 0.085364
-    # 192    | F(x): 0.085364
-    # 195    | F(x): 0.085364
-    # 198    | F(x): 0.085364
+    Initial  | f(x): 0.089844
+    # 3      | f(x): 0.085364
+    # 6      | f(x): 0.085364
+    # 9      | f(x): 0.085364
+    # 12     | f(x): 0.085364
+    # 15     | f(x): 0.085364
+    # 18     | f(x): 0.085364
+    # 21     | f(x): 0.085364
+    # 24     | f(x): 0.085364
+    # 27     | f(x): 0.085364
+    # 30     | f(x): 0.085364
+    # 33     | f(x): 0.085364
+    # 36     | f(x): 0.085364
+    # 39     | f(x): 0.085364
+    # 42     | f(x): 0.085364
+    # 45     | f(x): 0.085364
+    # 48     | f(x): 0.085364
+    # 51     | f(x): 0.085364
+    # 54     | f(x): 0.085364
+    # 57     | f(x): 0.085364
+    # 60     | f(x): 0.085364
+    # 63     | f(x): 0.085364
+    # 66     | f(x): 0.085364
+    # 69     | f(x): 0.085364
+    # 72     | f(x): 0.085364
+    # 75     | f(x): 0.085364
+    # 78     | f(x): 0.085364
+    # 81     | f(x): 0.085364
+    # 84     | f(x): 0.085364
+    # 87     | f(x): 0.085364
+    # 90     | f(x): 0.085364
+    # 93     | f(x): 0.085364
+    # 96     | f(x): 0.085364
+    # 99     | f(x): 0.085364
+    # 102    | f(x): 0.085364
+    # 105    | f(x): 0.085364
+    # 108    | f(x): 0.085364
+    # 111    | f(x): 0.085364
+    # 114    | f(x): 0.085364
+    # 117    | f(x): 0.085364
+    # 120    | f(x): 0.085364
+    # 123    | f(x): 0.085364
+    # 126    | f(x): 0.085364
+    # 129    | f(x): 0.085364
+    # 132    | f(x): 0.085364
+    # 135    | f(x): 0.085364
+    # 138    | f(x): 0.085364
+    # 141    | f(x): 0.085364
+    # 144    | f(x): 0.085364
+    # 147    | f(x): 0.085364
+    # 150    | f(x): 0.085364
+    # 153    | f(x): 0.085364
+    # 156    | f(x): 0.085364
+    # 159    | f(x): 0.085364
+    # 162    | f(x): 0.085364
+    # 165    | f(x): 0.085364
+    # 168    | f(x): 0.085364
+    # 171    | f(x): 0.085364
+    # 174    | f(x): 0.085364
+    # 177    | f(x): 0.085364
+    # 180    | f(x): 0.085364
+    # 183    | f(x): 0.085364
+    # 186    | f(x): 0.085364
+    # 189    | f(x): 0.085364
+    # 192    | f(x): 0.085364
+    # 195    | f(x): 0.085364
+    # 198    | f(x): 0.085364
     The algorithm reached its maximal number of iterations (200).
 
 For plotting we again generate all data
@@ -350,7 +350,7 @@ geo_conn_highlighted2 = shortest_geodesic(
 
 ## Unlabeled Data
 
-If we are not given time points $t_i$, then the optimization problem extends informally speaking,
+If we are not given time points $t_i$, then the optimization problem extends, informally speaking,
 to also finding the “best fitting” (in the sense of smallest error).
 To formalize, the objective function here reads
 
@@ -373,7 +373,7 @@ N = M × Euclidean(length(t2))
 
     ProductManifold with 2 submanifolds:
      TangentBundle(Sphere(2, ℝ))
-     Euclidean(7; field = ℝ)
+     Euclidean(7; field=ℝ)
 
 ``` math
   \operatorname*{arg\,min}_{\bigl((p,X),t\bigr)\in\mathcal N} F(p, X, t).
@@ -485,9 +485,9 @@ y3 = alternating_gradient_descent(
 )
 ```
 
-    Initial  | F(x): 0.089844
-    # 50     | F(x): 0.091097
-    # 100    | F(x): 0.091097
+    Initial  | f(x): 0.089844
+    # 50     | f(x): 0.091097
+    # 100    | f(x): 0.091097
     The algorithm reached its maximal number of iterations (100).
 
     (ArrayPartition{Float64, Tuple{Vector{Float64}, Vector{Float64}}}(([0.750222090700214, 0.031464227399200885, 0.6604368380243274], [0.6636489079535082, -0.3497538263293046, -0.737208025444054])), [0.7965909273713889, 0.43402264218923514, 0.755822122896529, 0.001059348203453764, -0.6421135044471217, -0.8635572995105818, -0.5546338813212247])
@@ -517,3 +517,4 @@ Note that the geodesics from the data to the regression geodesic meet at a nearl
 Pages = ["GeodesicRegression.md"]
 Canonical=false
 ```
+
