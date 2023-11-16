@@ -1,4 +1,4 @@
-# [Adjoint Differentials](@id adjointDifferentialFunctions)
+# [Adjoint differentials](@id adjointDifferentialFunctions)
 
 ```@autodocs
 Modules = [Manopt]

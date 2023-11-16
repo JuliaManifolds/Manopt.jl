@@ -1,4 +1,4 @@
-# [A Manopt Problem](@id ProblemSection)
+# [A Manopt problem](@id ProblemSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -12,13 +12,13 @@ get_objective
 get_manifold
 ```
 
-Usually, such a problem is determined by the manifold or domain of the optimisation and the objective with all its properties used within an algorithm – see [The Objective](@ref ObjectiveSection). For that we can just use
+Usually, such a problem is determined by the manifold or domain of the optimisation and the objective with all its properties used within an algorithm, see [The Objective](@ref ObjectiveSection). For that one can just use
 
 ```@docs
 DefaultManoptProblem
 ```
 
-The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref ChambollePockSolver) and the [PD Semismooth Newton](@ref PDRSSNSolver)]), which both need two manifolds as their domain(s), hence there also exists a
+The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref ChambollePockSolver) and the [PD Semi-smooth Newton](@ref PDRSSNSolver)), which both need two manifolds as their domains, hence there also exists a
 
 ```@docs
 TwoManifoldProblem

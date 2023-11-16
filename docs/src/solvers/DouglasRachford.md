@@ -1,6 +1,6 @@
-# [Douglas–Rachford Algorithm](@id DRSolver)
+# [Douglas—Rachford Algorithm](@id DRSolver)
 
-The (Parallel) Douglas–Rachford ((P)DR) Algorithm was generalized to Hadamard
+The (Parallel) Douglas—Rachford ((P)DR) Algorithm was generalized to Hadamard
 manifolds in [BergmannPerschSteidl:2016](@cite).
 
 The aim is to minimize the sum

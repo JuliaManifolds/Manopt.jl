@@ -20,7 +20,7 @@ or in other words: find the point ``p`` on the manifold, where ``f`` reaches its
 It belongs to the “Manopt family”, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python).
 
 If you want to delve right into `Manopt.jl` check out the
-[Get started: Optimize!](tutorials/Optimize!.md) tutorial.
+[🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial.
 
 `Manopt.jl` makes it easy to use an algorithm for your favourite
 manifold as well as a manifold for your favourite algorithm. It already provides
@@ -79,8 +79,8 @@ Several functions are available, implemented on an arbitrary manifold, [cost fun
 
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [Get Started: Optimize!](tutorials/Optimize!.md) tutorial on how to easily activate this.
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+[`RecordIterate`](@ref). Take a look at the [🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial on how to easily activate this.
 
 ## Literature
 

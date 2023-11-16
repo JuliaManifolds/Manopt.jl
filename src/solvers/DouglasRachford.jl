@@ -175,8 +175,8 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
   a [`StoppingCriterion`](@ref).
 * `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
   `PowerManifold` manifold with two proxes. This can be used to trigger
-  parallel Douglas–Rachford if you enter with two proxes. Keep in mind, that a
-  parallel Douglas–Rachford implicitly works on a `PowerManifold` manifold and
+  parallel Douglas—Rachford if you enter with two proxes. Keep in mind, that a
+  parallel Douglas—Rachford implicitly works on a `PowerManifold` manifold and
   its first argument is the result then (assuming all are equal after the second
   prox.
 

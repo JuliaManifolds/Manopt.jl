@@ -98,8 +98,8 @@ p^* = d^* - t^*X^*
 
 and hence the linear regression result is the line $γ_{p^*,X^*}(t) = p^* + tX^*$.
 
-On a Riemannian manifold we can phrase this as an optimization problem on the [tangent bundle](https://en.wikipedia.org/wiki/Tangent_bundle),
-i.e. the disjoint union of all tangent spaces, as
+On a Riemannian manifold we can phrase this as an optimization problem on the [tangent bundle](https://en.wikipedia.org/wiki/Tangent_bundle), which is
+the disjoint union of all tangent spaces, as
 
 ```math
 \operatorname*{arg\,min}_{(p,X) \in \mathrm{T}\mathcal M} F(p,X)
@@ -158,7 +158,7 @@ end
 ```
 
 For the Euclidean case, the result is given by the first principal component of a principal component analysis,
-see [PCR](https://en.wikipedia.org/wiki/Principal_component_regression), i.e. with $p^* = \frac{1}{n}\displaystyle\sum_{i=1}^n d_i$
+see [PCR](https://en.wikipedia.org/wiki/Principal_component_regression) which is given by $p^* = \frac{1}{n}\displaystyle\sum_{i=1}^n d_i$ and
 the direction $X^*$ is obtained by defining the zero mean data matrix
 
 ```math
@@ -261,7 +261,7 @@ inner(
 )
 ```
 
-But we also started with one of the best scenarios, i.e. equally spaced points on a geodesic obstructed by noise.
+But we also started with one of the best scenarios of equally spaced points on a geodesic obstructed by noise.
 
 This gets worse if you start with less evenly distributed data
 
@@ -336,7 +336,7 @@ render_asymptote(img_folder * "/regression_result2.asy"; render=render_size);
 
 ## Unlabeled Data
 
-If we are not given time points $t_i$, then the optimization problem extends – informally speaking –
+If we are not given time points $t_i$, then the optimization problem extends, informally speaking,
 to also finding the “best fitting” (in the sense of smallest error).
 To formalize, the objective function here reads
 
@@ -415,7 +415,7 @@ end
 ```
 
 Finally, we addionally look for a fixed point $x=(p,X) ∈ \mathrm{T}\mathcal M$ at
-the gradient with respect to $t∈\mathbb R^n$, i.e. the second component, which is given by
+the gradient with respect to $t∈\mathbb R^n$, the second component, which is given by
 
 ```math
   (\operatorname{grad}F_2(t))_i

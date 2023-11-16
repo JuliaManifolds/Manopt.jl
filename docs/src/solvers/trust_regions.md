@@ -1,4 +1,4 @@
-# [The Riemannian Trust-Regions Solver](@id trust_regions)
+# [The Riemannian trust-regions solver](@id trust_regions)
 
 Minimize a function
 
@@ -6,11 +6,11 @@ Minimize a function
 \operatorname*{\arg\,min}_{p ∈ \mathcal{M}}\ f(p)
 ```
 
-by using the Riemannian trust-regions solver following [AbsilBakerGallivan:2006](@cite),
-i.e. by building a lifted model at the ``k``th iterate ``p_k`` by locally mapping the
+by using the Riemannian trust-regions solver following [AbsilBakerGallivan:2006](@cite) a model is build by
+lifting the objective at the ``k``th iterate ``p_k`` by locally mapping the
 cost function ``f`` to the tangent space as ``f_k: T_{p_k}\mathcal M → \mathbb R`` as
 ``f_k(X) = f(\operatorname{retr}_{p_k}(X))``.
-We then define the trust region subproblem as
+The trust region subproblem is then defined as
 
 ```math
 \operatorname*{arg\,min}_{X ∈ T_{p_k}\mathcal M}\ m_k(X),
@@ -45,7 +45,7 @@ TrustRegionsState
 
 ## Approximation of the Hessian
 
-We currently provide a few different methods to approximate the Hessian.
+Several different methods to approximate the Hessian are available.
 
 ```@docs
 ApproxHessianFiniteDifference

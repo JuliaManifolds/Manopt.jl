@@ -1,10 +1,10 @@
 ---
-title: "Speedup using Inplace Evaluation"
+title: "Speedup using in-place evaluation"
 author: Ronny Bergmann
 ---
 
 When it comes to time critital operations, a main ingredient in Julia is given by
-mutating functions, i.e. those that compute in place without additional memory
+mutating functions, that is those that compute in place without additional memory
 allocations. In the following, we illustrate how to do this with `Manopt.jl`.
 
 Let's start with the same function as in [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
@@ -95,7 +95,7 @@ end
 
 For the actual call to the solver, we first have to generate an instance of `GradF!`
 and tell the solver, that the gradient is provided in an [`InplaceEvaluation`](https://manoptjl.org/stable/plans/objective/#Manopt.InplaceEvaluation).
-We can further also use [`gradient_descent!`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.gradient_descent!) to even work inplace of the initial point we pass.
+We can further also use [`gradient_descent!`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.gradient_descent!) to even work in-place of the initial point we pass.
 ```{julia}
 grad_f2! = GradF!(data, similar(data[1]))
 m2 = deepcopy(p0)

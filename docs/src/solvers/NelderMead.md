@@ -1,4 +1,4 @@
-# [Nelder Mead Method](@id NelderMeadSolver)
+# [Nelder Mead method](@id NelderMeadSolver)
 
 ```@meta
 CurrentModule = Manopt
@@ -21,7 +21,7 @@ CurrentModule = Manopt
 NelderMeadSimplex
 ```
 
-## Additional Stopping Criteria
+## Additional stopping criteria
 
 ```@docs
 StopWhenPopulationConcentrated

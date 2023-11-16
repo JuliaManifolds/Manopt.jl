@@ -1,6 +1,6 @@
 # Notation
 
-In this package, we follow the notation introduced in [Manifolds.jl – Notation](https://juliamanifolds.github.io/Manifolds.jl/latest/misc/notation.html)
+In this package, we follow the notation introduced in [Manifolds.jl Notation](https://juliamanifolds.github.io/Manifolds.jl/latest/misc/notation.html)
 
 with the following additional notation
 

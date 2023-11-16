@@ -1,11 +1,11 @@
-# Speedup using Inplace Evaluation
+# Speedup using in-place evaluation
 Ronny Bergmann
 
 When it comes to time critical operations, a main ingredient in Julia is given by
-mutating functions, i.e. those that compute in place without additional memory
+mutating functions, that is those that compute in place without additional memory
 allocations. In the following, we illustrate how to do this with `Manopt.jl`.
 
-Let’s start with the same function as in [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+Let’s start with the same function as in [🏔️ Get started: optimize.](https://manoptjl.org/stable/tutorials/Optimize.html)
 and compute the mean of some points, only that here we use the sphere $\mathbb S^{30}$
 and $n=800$ points.
 
@@ -62,7 +62,7 @@ We can also benchmark this as
      Time  (median):     49.552 ms              ┊ GC (median):    5.41%
      Time  (mean ± σ):   50.151 ms ±  1.731 ms  ┊ GC (mean ± σ):  5.56% ± 0.64%
 
-       ▂▃ █▃▃▆    ▂                                                
+       ▂▃ █▃▃▆    ▂
       ▅████████▅█▇█▄▅▇▁▅█▅▇▄▇▅▁▅▄▄▄▁▄▁▁▁▄▄▁▁▁▁▁▁▄▁▁▁▁▁▁▄▁▄▁▁▁▁▁▁▄ ▄
       48.3 ms         Histogram: frequency by time        56.6 ms <
 
@@ -97,7 +97,7 @@ end
 
 For the actual call to the solver, we first have to generate an instance of `GradF!`
 and tell the solver, that the gradient is provided in an [`InplaceEvaluation`](https://manoptjl.org/stable/plans/objective/#Manopt.InplaceEvaluation).
-We can further also use [`gradient_descent!`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.gradient_descent!) to even work inplace of the initial point we pass.
+We can further also use [`gradient_descent!`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.gradient_descent!) to even work in-place of the initial point we pass.
 
 ``` julia
 grad_f2! = GradF!(data, similar(data[1]))
@@ -120,7 +120,7 @@ We can again benchmark this
      Time  (median):     28.001 ms              ┊ GC (median):    0.00%
      Time  (mean ± σ):   28.412 ms ±  1.079 ms  ┊ GC (mean ± σ):  0.73% ± 2.24%
 
-        ▁▅▇█▅▂▄ ▁                                                  
+        ▁▅▇█▅▂▄ ▁
       ▄▁███████▆█▇█▄▆▃▃▃▃▁▁▃▁▁▃▁▃▃▁▄▁▁▃▃▁▁▄▁▁▃▅▃▃▃▁▃▃▁▁▁▁▁▁▁▁▃▁▁▃ ▃
       27.4 ms         Histogram: frequency by time        31.9 ms <
 

@@ -1,4 +1,4 @@
-# [Steihaug-Toint Truncated Conjugate-Gradient Method](@id tCG)
+# [Steihaug-Toint truncated conjugate gradient method](@id tCG)
 
 Solve the constraint optimization problem on the tangent space
 
@@ -27,7 +27,7 @@ Here ``\mathcal H_p`` is either the Hessian ``\operatorname{Hess} f(p)`` or a li
 TruncatedConjugateGradientState
 ```
 
-## Stopping Criteria
+## Stopping criteria
 
 ```@docs
 StopWhenResidualIsReducedByFactorOrPower
@@ -38,7 +38,7 @@ update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:Re
 update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
 ```
 
-## Trust Region Model
+## Trust region model
 
 ```@docs
 TrustRegionModelObjective

@@ -16,7 +16,7 @@ A constraint optimisation problem is given by
 &\quad h(p) = 0,\\
 \end{align*}
 ```
-where $f\colon \mathcal M → ℝ$ is a cost function, and $g\colon \mathcal M → ℝ^m$ and $h\colon \mathcal M → ℝ^n$ are the inequality and equality constraints, respectively. The $\leq$ and $=$ in (P) are meant elementwise.
+where $f\colon \mathcal M → ℝ$ is a cost function, and $g\colon \mathcal M → ℝ^m$ and $h\colon \mathcal M → ℝ^n$ are the inequality and equality constraints, respectively. The $\leq$ and $=$ in (P) are meant element-wise.
 
 This can be seen as a balance between moving constraints into the geometry of a manifold $\mathcal M$ and keeping some, since they can be handled well in algorithms, see [BergmannHerzog:2019](@cite), [LiuBoumal:2019](@cite)  for details.
 
@@ -34,7 +34,7 @@ using Distributions, LinearAlgebra, Manifolds, Manopt, Random
 Random.seed!(42);
 ```
 
-In this tutorial we want to look at different ways to specify the problem and its implications. We start with specifying an example problems to illustrayte the different available forms.
+In this tutorial we want to look at different ways to specify the problem and its implications. We start with specifying an example problems to illustrate the different available forms.
 
 We will consider the problem of a Nonnegative PCA, cf. Section 5.1.2 in [LiuBoumal:2019](@cite)
 
@@ -44,7 +44,7 @@ let $v_0 ∈ ℝ^d$, $\lVert v_0 \rVert=1$ be given spike signal, that is a sign
 Z = \sqrt{σ} v_0v_0^{\mathrm{T}}+N,
 ```
 
-where $\sigma$ is a signal-to-noise ratio and $N$ is a matrix with random entries, where the diagonal entries are distributed with zero mean and standard deviation $1/d$ on the off-diagonals and $2/d$ on the daigonal
+where $\sigma$ is a signal-to-noise ratio and $N$ is a matrix with random entries, where the diagonal entries are distributed with zero mean and standard deviation $1/d$ on the off-diagonals and $2/d$ on the diagonal
 
 ```{julia}
 d = 150; # dimension of v0
@@ -71,7 +71,7 @@ or in the previous notation $f(p) = -p^{\mathrm{T}}Zp^{\mathrm{T}}$ and $g(p) = 
 M = Sphere(d - 1)
 ```
 
-## A first Augmented Lagrangian Run
+## A first augmented Lagrangian run
 
 We first defined $f$  and $g$ as usual functions
 
@@ -134,10 +134,9 @@ f(M, v1)
 maximum( g(M, v1) )
 ```
 
-## A faster Augmented Lagrangian Run
+## A faster augmented Lagrangian run
 
-
-Now this is a little slow, so we can modify two things, that we will directly do both – but one could also just change one of these – :
+Now this is a little slow, so we can modify two things:
 
 1. Gradients should be evaluated in place, so for example
 
@@ -183,9 +182,9 @@ maximum(g(M, v2))
 
 These are the very similar to the previous values but the solver took much less time and less memory allocations.
 
-## Exact Penalty Method
+## Exact penalty method
 
-As a second solver, we have the [Exact Penalty Method](https://manoptjl.org/stable/solvers/exact_penalty_method/), which currenlty is available with two smoothing variants, which make an inner solver for smooth optimisationm, that is by default again [quasi Newton] possible:
+As a second solver, we have the [Exact Penalty Method](https://manoptjl.org/stable/solvers/exact_penalty_method/), which currently is available with two smoothing variants, which make an inner solver for smooth optimization, that is by default again [quasi Newton] possible:
 [`LogarithmicSumOfExponentials`](https://manoptjl.org/stable/solvers/exact_penalty_method/#Manopt.LogarithmicSumOfExponentials)
 and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_method/#Manopt.LinearQuadraticHuber). We compare both here as well. The first smoothing technique is the default, so we can just call
 
@@ -227,9 +226,9 @@ f(M, v4)
 maximum(g(M, v4))
 ```
 
-## Comparing to the unconstraint solver
+## Comparing to the unconstrained solver
 
-We can compare this to the _global_ optimum on the sphere, which is the unconstraint optimisation problem; we can just use Quasi Newton.
+We can compare this to the _global_ optimum on the sphere, which is the unconstrained optimisation problem, where we can just use Quasi Newton.
 
 Note that this is much faster, since every iteration of the algorithms above does a quasi-Newton call as well.
 
@@ -243,7 +242,7 @@ Note that this is much faster, since every iteration of the algorithms above doe
 f(M, w1)
 ```
 
-But for sure here the constraints here are not fulfilled and we have veru positive entries in $g(w_1)$
+But for sure here the constraints here are not fulfilled and we have quite positive entries in $g(w_1)$
 
 ```{julia}
 maximum(g(M, w1))

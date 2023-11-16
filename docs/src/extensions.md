@@ -53,7 +53,7 @@ Manopt.LineSearchesStepsize
 
 ## Manifolds.jl
 
-When loading `Manifolds.jl` we introduce the following further functions
+Loading `Manifolds.jl` introduces the following additional functions
 
 ```@docs
 mid_point
@@ -64,7 +64,8 @@ Manopt.max_stepsize(::FixedRankMatrices, ::Any)
 ## JuMP.jl
 
 Manopt can be used using the [JuMP.jl](https://github.com/jump-dev/JuMP.jl) interface.
-The manifold is provided in the `@variable` macro. Note that until now, only variables (points on manifolds) are supported, that are arrays, i.e. especially structs do not yet work.
+The manifold is provided in the `@variable` macro. Note that until now,
+only variables (points on manifolds) are supported, that are arrays, especially structs do not yet work.
 The algebraic expression of the objective function is specified in the `@objective` macro.
 The `descent_state_type` attribute specifies the solver.
 

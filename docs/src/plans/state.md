@@ -1,4 +1,4 @@
-# [The Solver State](@id SolverStateSection)
+# [The solver state](@id SolverStateSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -6,7 +6,7 @@ CurrentModule = Manopt
 
 Given an [`AbstractManoptProblem`](@ref), that is a certain optimisation task,
 the state specifies the solver to use. It contains the parameters of a solver and all
-fields necessary during the algorithm, e.g. the current iterate, a [`StoppingCriterion`](@ref)
+fields necessary during the algorithm, for example the current iterate, a [`StoppingCriterion`](@ref)
 or a [`Stepsize`](@ref).
 
 ```@docs
@@ -17,9 +17,9 @@ Manopt.get_count
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,
 the concrete states are documented together with the corresponding [solvers](@ref SolversSection).
-This page documents the general functionality available for every state.
+This page documents the general features available for every state.
 
-A first example is to access, i.e. obtain or set, the current iterate.
+A first example is to obtain or set, the current iterate.
 This might be useful to continue investigation at the current iterate, or to set up a solver for a next experiment, respectively.
 
 ```@docs
@@ -42,7 +42,7 @@ Furthermore, to access the stopping criterion use
 get_stopping_criterion
 ```
 
-## Decorators for AbstractManoptSolverState
+## Decorators for `AbstractManoptSolverState`s
 
 A solver state can be decorated using the following trait and function to initialize
 
@@ -60,7 +60,7 @@ ReturnSolverState
 
 as well as [`DebugSolverState`](@ref) and [`RecordSolverState`](@ref).
 
-## State Actions
+## State actions
 
 A state action is a struct for callback functions that can be attached within
 for example the just mentioned debug decorator or the record decorator.
@@ -88,7 +88,7 @@ _storage_copy_vector
 _storage_copy_point
 ```
 
-## Abstract States
+## Abstract states
 
 In a few cases it is useful to have a hierarchy of types. These are
 

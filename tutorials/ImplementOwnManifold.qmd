@@ -1,5 +1,5 @@
 ---
-title: "Optimize on your own Manifold"
+title: "Optimize on your own manifold"
 author: Ronny Bergmann
 ---
 
@@ -22,7 +22,7 @@ is maybe not completely necessary.
 This tutorial aims to help you through these steps to implement necessary parts of a manifold
 to get started with the `[solver](@ref SolversSection)`{=commonmark} you have in mind.
 
-## Our Example Problem
+## An example problem
 
 We get started by loading the packages we need.
 
@@ -72,8 +72,8 @@ struct ScaledSphere <: AbstractManifold{ℝ}
 end
 ```
 
-And we would like to compute a mean and/or median similar to [🏔️ Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html),
-i.e. given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
+We would like to compute a mean and/or median similar to [🏔️ Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
+For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math
   \operatorname*{arg\,min}_{p\in\mathcal M}
@@ -102,9 +102,9 @@ pts = [ [zeros(d)..., M.radius] .+ 0.5.*([rand(d)...,0.5] .- 0.5) for _=1:N]
 pts = [ r/norm(p) .* p for p in pts]
 ```
 
-Then – before starting with optimization, we need the distance on the manifold,
+Then, before starting with optimization, we need the distance on the manifold,
 to define the cost function, as well as the logarithmic map to defined the gradient.
-For both, we here use the “lazy” approach of using the [Sphere]() as a fallback
+For both, we here use the “lazy” approach of using the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) as a fallback
 
 ```{julia}
 #| output : false
@@ -133,9 +133,9 @@ for our case that is [The gradient descent's Technical Details](https://manoptjl
 
 They list all details, but we can start even step by step here if we are a bit careful.
 
-### A Retraction
+### A retraction
 
-We first implement a [retract](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)ion. Informally – given a current point and a direction to “walk into” we need a function that performs that walk.
+We first implement a [retract](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
 Since we take an easy one that just projects onto
 the sphere, we use the [`ProjectionRetraction`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.ProjectionRetraction) type.
 To be precise, we have to implement the [in-place variant](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/design/#inplace-and-noninplace) [`retract_project!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract_project!-Tuple{AbstractManifold,%20Vararg{Any,%204}})
@@ -163,7 +163,7 @@ p0 = [zeros(d)...,1.0]
 f(M,p0)
 ```
 
-Then we can run our first solver – where we have to overwrite a few
+Then we can run our first solver, where we have to overwrite a few
 defaults, which would use functions we do not (yet) have.
 We will discuss these in the next steps.
 
@@ -177,7 +177,7 @@ q1 = gradient_descent(M, f, grad_f, p0;
 f(M,q1)
 ```
 
-We at least see, that the function value descreased.
+We at least see, that the function value decreased.
 
 ### Norm and maximal step size.
 
@@ -225,7 +225,7 @@ q3 = gradient_descent(M, f, grad_f, p0)
 f(M, q3)
 ```
 
-But we for example automaticaly also get the possibility to obtain debug information like
+But we for example automatically also get the possibility to obtain debug information like
 
 ```{julia}
 gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :GradientNorm, :Stop, "\n"]);

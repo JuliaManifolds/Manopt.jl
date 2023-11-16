@@ -1,9 +1,9 @@
 ---
-title: "How to Count and Cache Function Calls"
+title: "How to count and cache function calls"
 author: Ronny Bergmann
 ---
 
-In this tutorial, we want to investigate the caching and counting (i.e. statistics) features
+In this tutorial, we want to investigate the caching and counting (statistics) features
 of [Manopt.jl](https://manoptjl.org). We will reuse the optimization tasks from the
 introductory tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
 
@@ -164,7 +164,7 @@ But since both the cost and the gradient require the computation of the matrix-v
 
 ### The [`ManifoldCostGradientObjective`](@ref) approach
 
-The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the inplace variant as
+The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the in-place variant as
 
 ```{julia}
 function g_grad_g!(M::AbstractManifold, X, p)
@@ -222,7 +222,7 @@ An alternative to the previous approach is the usage of a functor that introduce
 of the result of computing `A*p`. We additionally have to store `p` though,
 since we have to check that we are still evaluating the cost and/or gradient
 at the same point at which the cached `A*p` was computed.
-We again consider the (more efficient) inplace variant.
+We again consider the (more efficient) in-place variant.
 This can be done as follows
 
 ```{julia}
@@ -338,5 +338,5 @@ it is about the same effort both time and allocation-wise.
 ## Summary
 
 While the second approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
-All three are an improvement over the first implementation without sharing interms results.
-The results with storage or cache have further advantage of being more flexible, i.e. the stored information could also be reused in a third function, for example when also computing the Hessian.
+All three are an improvement over the first implementation without sharing interims results.
+The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.
