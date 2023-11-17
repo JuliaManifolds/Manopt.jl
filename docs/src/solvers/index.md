@@ -31,7 +31,7 @@ The following algorithms are currently available
 [Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | [`primal_dual_semismooth_Newton`](@ref),  [`PrimalDualSemismoothNewtonState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}`` & diff., ``\operatorname{prox}_{τ G^*}`` & diff., ``Λ``
 [Quasi-Newton Method](@ref quasiNewton) | [`quasi_Newton`](@ref), [`QuasiNewtonState`](@ref) | ``f``, ``\operatorname{grad} f`` |
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref), [`TruncatedConjugateGradientState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
-[Subgradient Method](@ref SubgradientSolver) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |
+[Subgradient Method](@refsec-subgradient-method) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |
 [Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref) | ``f = \sum_i f_i``, ``\operatorname{grad} f_i`` |
 [The Riemannian Trust-Regions Solver](@ref trust_regions) | [`trust_regions`](@ref), [`TrustRegionsState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
 

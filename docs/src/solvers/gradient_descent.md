@@ -43,9 +43,9 @@ RecordGradientNorm
 RecordStepsize
 ```
 
-## [Technical Details](@id GradientDescent-Technical-Details)
+## [Technical Details](@id sec-gradient-descent-technical-details)
 
-The [`gradient_descent`](@ref) solver requires the following functions of your manifold to be available
+The [`gradient_descent`](@ref) solver requires the following functions of a manifold to be available
 
 * A [retract!](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)ion; it is recommended to set the [`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}) to a favourite retraction,
 for this case it does not have to be specified.

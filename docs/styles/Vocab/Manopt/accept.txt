@@ -1,7 +1,6 @@
 Absil
 Adagrad
-Adjoint
-adjoint
+[A|a]djoint
 Armijo
 Bergmann
 Chambolle
@@ -26,14 +25,11 @@ Lanczos
 LineSearches.jl
 Manifolds.jl
 ManifoldsBase.jl
-manopt
-manopt.org
-Manopt
-Manopt.jl
+[Mm]anopt(:?.org|.jl)?
 Munkvold
 Mead
 Nelder
-parametrising
+[Pp]arametrising
 Parametrising
 Pock
 preconditioner

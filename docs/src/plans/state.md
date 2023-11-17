@@ -1,4 +1,4 @@
-# [The solver state](@id SolverStateSection)
+# [The solver state](@id sec-solver-state)
 
 ```@meta
 CurrentModule = Manopt
