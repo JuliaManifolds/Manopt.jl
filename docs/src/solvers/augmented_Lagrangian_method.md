@@ -15,7 +15,7 @@ CurrentModule = Manopt
 AugmentedLagrangianMethodState
 ```
 
-## Helping Functions
+## Helping functions
 
 ```@docs
 AugmentedLagrangianCost

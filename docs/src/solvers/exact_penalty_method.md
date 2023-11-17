@@ -15,7 +15,7 @@ CurrentModule = Manopt
 ExactPenaltyMethodState
 ```
 
-## Helping Functions
+## Helping functions
 
 ```@docs
 ExactPenaltyCost

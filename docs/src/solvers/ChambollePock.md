@@ -20,7 +20,7 @@ such that ``Λ(\mathcal C) \subset \mathcal D``.
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
 [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@citet*).
-In the following we note the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm.
+In the following description is the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm.
 
 Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_n^{(0)} ∈T_n^*\mathcal N``,
@@ -67,7 +67,7 @@ ChambollePock!
 ChambollePockState
 ```
 
-## Useful Terms
+## Useful terms
 
 ```@docs
 primal_residual

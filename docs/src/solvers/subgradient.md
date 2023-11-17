@@ -1,4 +1,4 @@
-# [Subgradient method](@idsec-subgradient-method)
+# [Subgradient method](@id sec-subgradient-method)
 
 ```@docs
 subgradient_method

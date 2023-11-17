@@ -20,7 +20,6 @@ InplaceEvaluation
 evaluation_type
 ```
 
-
 ## Decorators for objectives
 
 An objective can be decorated using the following trait and function to initialize

@@ -18,7 +18,7 @@ difference_of_convex_proximal_point
 difference_of_convex_proximal_point!
 ```
 
-## Manopt Solver States
+## Solver states
 
 ```@docs
 DifferenceOfConvexState
