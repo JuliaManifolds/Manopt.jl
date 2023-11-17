@@ -1,17 +1,17 @@
-# [Difference of Convex](@id DifferenceOfConvexSolvers)
+# [Difference of convex](@id DifferenceOfConvexSolvers)
 
 ```@meta
 CurrentModule = Manopt
 ```
 
-## [Difference of Convex Algorithm](@id DCASolver)
+## [Difference of convex algorithm](@id DCASolver)
 
 ```@docs
 difference_of_convex_algorithm
 difference_of_convex_algorithm!
 ```
 
-## [Difference of Convex Proximal Point](@id DCPPASolver)
+## [Difference of convex proximal point](@id DCPPASolver)
 
 ```@docs
 difference_of_convex_proximal_point
@@ -49,7 +49,7 @@ ProximalDCCost
 ProximalDCGrad
 ```
 
-## Further helper functions
+## Helper functions
 
 ```@docs
 get_subtrahend_gradient

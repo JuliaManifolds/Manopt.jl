@@ -338,5 +338,5 @@ it is about the same effort both time and allocation-wise.
 ## Summary
 
 While the second approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
-All three are an improvement over the first implementation without sharing interims results.
+All three are an improvement over the first implementation without sharing interim results.
 The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.

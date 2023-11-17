@@ -8,13 +8,13 @@ CurrentModule = Manopt
 Solvers can be applied to [`AbstractManoptProblem`](@ref)s with solver
 specific [`AbstractManoptSolverState`](@ref).
 
-# List of Algorithms
+# List of algorithms
 
 The following algorithms are currently available
 
 | Solver   | Function & State    | Objective   |
 |:---------|:----------------|:---------|
-[Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | [`alternating_gradient_descent`](@ref) [`AlternatingGradientDescentState`](@ref) | ``f=(f_1,\ldots,f_n)``, ``\operatorname{grad} f_i`` |
+[Alternating Gradient Descent](@ref title-agds) | [`alternating_gradient_descent`](@ref) [`AlternatingGradientDescentState`](@ref) | ``f=(f_1,\ldots,f_n)``, ``\operatorname{grad} f_i`` |
 [Chambolle-Pock](@ref ChambollePockSolver) | [`ChambollePock`](@ref), [`ChambollePockState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}``, ``\operatorname{prox}_{τ G^*}``, ``Λ`` |
 [Conjugate Gradient Descent](@ref CGSolver) | [`conjugate_gradient_descent`](@ref), [`ConjugateGradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f``
 [Cyclic Proximal Point](@ref CPPSolver) | [`cyclic_proximal_point`](@ref), [`CyclicProximalPointState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
@@ -35,9 +35,9 @@ The following algorithms are currently available
 [Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref) | ``f = \sum_i f_i``, ``\operatorname{grad} f_i`` |
 [The Riemannian Trust-Regions Solver](@ref trust_regions) | [`trust_regions`](@ref), [`TrustRegionsState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
 
-Note that the solvers (their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection). This is done using the `debug=` and `record=` keywords in the function calls. Similarly, since 0.4 we provide a (simple) [caching of the objective function](@ref CacheSection) using the `cache=` keyword in any of the function calls..
+Note that the solvers (their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection). This is done using the `debug=` and `record=` keywords in the function calls. Similarly, since Manopt.jl 0.4 a (simple) [caching of the objective function](@ref CacheSection) using the `cache=` keyword is available in any of the function calls..
 
-## Technical Details
+## Technical details
 
  The main function a solver calls is
 
@@ -60,7 +60,7 @@ stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, Any)
 ## API for solvers
 
 this is a short overview of the different types of high-level functions are usually
-available for a solver. Let's assume the solver is called `new_solver` and requires
+available for a solver. Assume the solver is called `new_solver` and requires
 a cost `f` and some first order information `df` as well as a starting point `p` on `M`.
 `f` and `df` form the objective together called `obj`.
 
@@ -83,7 +83,7 @@ The third variant works in place of `p`, so it is mandatory.
 This first interface would set up the objective and pass all keywords on the
 objective based call.
 
-### The objective-based call
+### Objective based calls to solvers
 
 ```
 new_solver(M, obj, p=rand(M); kwargs...)
@@ -95,11 +95,11 @@ same objective, and for the first variant the start point is optional.
 Keyword arguments include decorators like `debug=` or `record=`
 as well as algorithm specific ones.
 
-this variant would generate the `problem` and the `state` and check validity of all provided
+This variant would generate the `problem` and the `state` and verify validity of all provided
 keyword arguments that affect the state.
 Then it would call the iterate process.
 
-### The manual call
+### Manual calls
 
 If you generate the corresponding `problem` and `state` as the previous step does, you can
 also use the third (lowest level) and just call

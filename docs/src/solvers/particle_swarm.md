@@ -1,4 +1,4 @@
-# [Particle Swarm Optimization](@id ParticleSwarmSolver)
+# [Particle swarm optimization](@id ParticleSwarmSolver)
 
 ```@meta
 CurrentModule = Manopt

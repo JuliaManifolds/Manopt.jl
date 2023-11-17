@@ -1,4 +1,4 @@
-# [Frank Wolfe Method](@id FrankWolfe)
+# [Frank—Wolfe method](@id FrankWolfe)
 
 ```@meta
 CurrentModule = Manopt

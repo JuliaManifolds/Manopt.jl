@@ -1,5 +1,5 @@
 
-# [Conjugate Gradient Descent](@id CGSolver)
+# [Conjugate gradient descent](@id CGSolver)
 
 ```@meta
 CurrentModule = Manopt
@@ -16,7 +16,7 @@ conjugate_gradient_descent!
 ConjugateGradientDescentState
 ```
 
-## [Available Coefficients](@id cg-coeffs)
+## [Available coefficients](@id cg-coeffs)
 
 The update rules act as [`DirectionUpdateRule`](@ref), which internally always first evaluate the gradient itself.
 

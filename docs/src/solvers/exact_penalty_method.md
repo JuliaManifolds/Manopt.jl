@@ -1,4 +1,4 @@
-# [Exact Penalty Method](@id ExactPenaltySolver)
+# [Exact penalty method](@id ExactPenaltySolver)
 
 ```@meta
 CurrentModule = Manopt

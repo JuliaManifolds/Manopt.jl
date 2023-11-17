@@ -1,4 +1,4 @@
-# [Douglas—Rachford Algorithm](@id DRSolver)
+# [Douglas—Rachford algorithm](@id DRSolver)
 
 The (Parallel) Douglas—Rachford ((P)DR) Algorithm was generalized to Hadamard
 manifolds in [BergmannPerschSteidl:2016](@cite).

@@ -1,4 +1,4 @@
-# [Proximal Maps](@id proximalMapFunctions)
+# [Proximal maps](@id proximalMapFunctions)
 
 For a function ``\varphi:\mathcal M →ℝ`` the proximal map is defined
 as

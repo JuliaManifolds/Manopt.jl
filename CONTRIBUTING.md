@@ -5,7 +5,7 @@ Any contribution is appreciated and welcome.
 
 The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.github.io/Manopt.jl/).
 
-#### Table of Contents
+#### Table of contents
 
 - [Contributing to `Manopt.jl`](#Contributing-to-manoptjl)
       - [Table of Contents](#Table-of-Contents)

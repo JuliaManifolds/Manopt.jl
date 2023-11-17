@@ -54,7 +54,7 @@ StopWhenAllLanczosVectorsUsed
 StopWhenFirstOrderProgress
 ```
 
-## [Technical Details](@id sec-arc-technical-details)
+## [Technical details](@id sec-arc-technical-details)
 
 The [`adaptive_regularization_with_cubics`](@ref) requires the following functions
 of a manifolds to be available

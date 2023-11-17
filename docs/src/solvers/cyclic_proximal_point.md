@@ -1,4 +1,4 @@
-# [Cyclic Proximal Point](@id CPPSolver)
+# [Cyclic proximal point](@id CPPSolver)
 
 The Cyclic Proximal Point (CPP) algorithm aims to minimize
 
@@ -27,13 +27,13 @@ cyclic_proximal_point!
 CyclicProximalPointState
 ```
 
-## Debug Functions
+## Debug functions
 
 ```@docs
 DebugProximalParameter
 ```
 
-## Record Functions
+## Record functions
 
 ```@docs
 RecordProximalParameter

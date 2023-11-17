@@ -80,7 +80,7 @@ Usually the problems variable is called `mp`.
 
 ### The solver: an `AbstractManoptSolverState`
 
-Everything that is needed by a solver during the iterations, all its parameters, interims
+Everything that is needed by a solver during the iterations, all its parameters, interim
 values that are needed beyond just one iteration, is stored in a subtype of the
 [`AbstractManoptSolverState`](@ref). This identifies the solver uniquely.
 
@@ -111,7 +111,7 @@ end
 
 The stopping criterion is usually stored in the state's `stop` field. If you have a reason to
 do otherwise, you have one more function to implement (see next section).
-For ease of use, we can provide a constructor, that for example chooses a good default for
+For ease of use, a constructor can be provided, that for example chooses a good default for
 the retraction based on a given manifold.
 
 ```{julia}
@@ -255,8 +255,9 @@ using Manopt: get_solver_return, indicates_convergence, status_summary
 
 ### A high level interface using the objective
 
-This could be considered as an interims step to the high-level interface:
-If we already have the objective, in our case a [`ManifoldCostObjective`](@ref) at hand, the high level interface consists of the steps
+This could be considered as an interim step to the high-level interface:
+If objective, a [`ManifoldCostObjective`](@ref) is already initialized,
+the high level interface consists of the steps
 
 1. possibly decorate the objective
 2. generate the problem
