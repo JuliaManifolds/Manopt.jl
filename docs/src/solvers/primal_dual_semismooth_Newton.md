@@ -81,7 +81,7 @@ The [`primal_dual_semismooth_Newton`](@ref) solver requires the following functi
 * A [`copyto!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copyto!-Tuple{AbstractManifold,%20Any,%20Any})`(M, q, p)` and [`copy`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copy-Tuple{AbstractManifold,%20Any})`(M,p)` for points.
 * A [`get_basis`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/bases/#ManifoldsBase.get_basis-Tuple{AbstractManifold,%20Any,%20ManifoldsBase.AbstractBasis}) for the [`DefaultOrthonormalBasis`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/bases/#ManifoldsBase.DefaultOrthonormalBasis) on ``\mathcal M``
 * [`exp`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.exp-Tuple{AbstractManifold,%20Any,%20Any}) and [`log`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.log-Tuple{AbstractManifold,%20Any,%20Any}) (on ``\mathcal M``)
-* A [`DiagonalizingOrthonormalBasis`](@ref) to compute the differentials of the exponential and logarithmic map
+* A [`DiagonalizingOrthonormalBasis`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/bases/#ManifoldsBase.DiagonalizingOrthonormalBasis) to compute the differentials of the exponential and logarithmic map
 * Tangent vectors storing the social and cognitive vectors are initialized calling [`zero_vector`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,p)`.
 
 ## Literature
