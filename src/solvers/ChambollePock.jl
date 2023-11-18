@@ -211,7 +211,7 @@ For more details on the algorithm, see [Bergmann et al., Found. Comput. Math., 2
 * `relax` – (`:primal`) whether to relax the primal or dual
 * `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
   Note that this changes the arguments the `forward_operator` will be called.
-* `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – (`[StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
