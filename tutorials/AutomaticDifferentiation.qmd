@@ -10,8 +10,8 @@ While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDiffe
 
 In this tutorial we will take a look at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M \to ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
-1. Working _instrinsically_, i.e. staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
-2. Working in an embedding – there we can use all tools from functions on Euclidean spaces – finite differences or automatic differenciation – and then compute the corresponding Riemannian gradient from there.
+1. Working _intrinsically_, that is staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
+2. Working in an embedding where all tools from functions on Euclidean spaces can be used, like finite differences or automatic differentiation, and then compute the corresponding Riemannian gradient from there.
 
 ```{julia}
 #| echo: false
@@ -34,7 +34,7 @@ Random.seed!(42);
 
 A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let $X_1,\ldots,X_d ∈ T_p\mathcal M$ denote an orthonormal basis of the tangent space $T_p\mathcal M$ at the point $p∈\mathcal M$ on the Riemannian manifold.
 
-We can generalize the notion of a directional derivative, i.e. for the “direction” $Y∈T_p\mathcal M$. Let $c\colon [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, e.g. $c(t)= \exp_p(tY)$. We obtain
+We can generalize the notion of a directional derivative to a “direction” $Y∈T_p\mathcal M$. Let $c\colon [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, for example $c(t)= \exp_p(tY)$. We obtain
 
 ```math
 	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
@@ -46,7 +46,7 @@ We can approximate $Df(p)[X]$ by a finite difference scheme for an $h>0$ as
 DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY))-f(p))
 ```
 
-Furthermore the gradient $\operatorname{grad}f$ is the Riesz representer of the differential, ie.
+Furthermore the gradient $\operatorname{grad}f$ is the Riesz representer of the differential:
 
 ```math
 	Df(p)[Y] = g_p(\operatorname{grad}f(p), Y),\qquad \text{ for all } Y ∈ T_p\mathcal M
@@ -141,7 +141,7 @@ or in words: we have to change the Riesz representer of the (restricted/projecte
 
 ### A Continued Example
 
-We continue with the Rayleigh Quotient from before, now just starting with the defintion of the Euclidean case in the embedding, the function $F$.
+We continue with the Rayleigh Quotient from before, now just starting with the definition of the Euclidean case in the embedding, the function $F$.
 
 ```{julia}
 F(x) = x' * A * x / (x' * x);
@@ -165,11 +165,11 @@ X3 = grad_f2_AD(M, p)
 norm(M, p, X1 - X3)
 ```
 
-### An Example for a Nonisometrically Embedded Manifold
+### An Example for a Non-isometrically Embedded Manifold
 
 on the manifold $\mathcal P(3)$ of symmetric positive definite matrices.
 
-The following function computes (half) the distance squared (with respect to the linear affine metric) on the manifold $\mathcal P(3)$ to the identity, i.e. $I_3$. Denoting the unit matrix we consider the function
+The following function computes (half) the distance squared (with respect to the linear affine metric) on the manifold $\mathcal P(3)$ to the identity matrix $I_3$. Denoting the unit matrix we consider the function
 
 ```math
     G(q)
@@ -214,7 +214,7 @@ end
 G1 = grad_G_FD(N, q)
 ```
 
-Now, we can again compare this to the (known) solution of the gradient, namely the gradient of (half of) the distance squared, i.e. $G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)$ is given by $\operatorname{grad} G(q) = -\operatorname{log}_q I_3$, where $\operatorname{log}$ is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
+Now, we can again compare this to the (known) solution of the gradient, namely the gradient of (half of) the distance squared $G(q) = \frac{1}{2}d^2_{\mathcal P(3)}(q,I_3)$ is given by $\operatorname{grad} G(q) = -\operatorname{log}_q I_3$, where $\operatorname{log}$ is the [logarithmic map](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/symmetricpositivedefinite.html#Base.log-Tuple{SymmetricPositiveDefinite,%20Vararg{Any,%20N}%20where%20N}) on the manifold.
 
 ```{julia}
 G2 = -log(N, q, Matrix{Float64}(I, 3, 3))

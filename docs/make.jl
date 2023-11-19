@@ -14,6 +14,7 @@ Arguments
   this can be used if you do not have Quarto installed to still be able to render the docs
   locally on this machine. This option should not be set on CI.
 * `--help`         - print this help and exit without rendering the documentation
+* `--prettyurls`   – toggle the prettyurls part to true (which is otherwise only true on CI)
 * `--quarto`       – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
@@ -93,22 +94,24 @@ end
 ## Build titorials menu
 tutorials_menu =
     "How to..." => [
-        "Get started: Optimize!" => "tutorials/Optimize!.md",
-        "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
-        "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
-        "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
-        "Count and use a Cache" => "tutorials/CountAndCache.md",
-        "Print Debug Output" => "tutorials/HowToDebug.md",
+        "🏔️ Get started: optimize." => "tutorials/Optimize.md",
+        "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
+        "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
+        "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
+        "Count and use a cache" => "tutorials/CountAndCache.md",
+        "Print debug output" => "tutorials/HowToDebug.md",
         "Record values" => "tutorials/HowToRecord.md",
-        "Implement a Solver" => "tutorials/ImplementASolver.md",
-        "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
-        "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
+        "Implement a solver" => "tutorials/ImplementASolver.md",
+        "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
+        "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
+        "Do geodesic regression" => "tutorials/GeodesicRegression.md",
     ]
 # (e) ...finally! make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(;
     format=Documenter.HTML(;
-        prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css"]
+        prettyurls=(get(ENV, "CI", nothing) == "true") || ("--prettyurls" ∈ ARGS),
+        assets=["assets/favicon.ico", "assets/citations.css"],
     ),
     modules=[
         Manopt,
@@ -153,7 +156,7 @@ makedocs(;
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
-            "Douglas–Rachford" => "solvers/DouglasRachford.md",
+            "Douglas—Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",

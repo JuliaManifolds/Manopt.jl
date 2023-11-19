@@ -1,4 +1,4 @@
-# [Cost Functions](@id CostFunctions)
+# [Cost functions](@id CostFunctions)
 
 The following cost functions are available
 

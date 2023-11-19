@@ -1,4 +1,4 @@
-# [A Manifold Objective](@id ObjectiveSection)
+# [A manifold objective](@id ObjectiveSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -11,7 +11,7 @@ AbstractManifoldObjective
 AbstractDecoratedManifoldObjective
 ```
 
-Which has two main different possibilities for its containing functions concerning the evaluation mode – not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
+Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
 
 ```@docs
 AbstractEvaluationType
@@ -20,8 +20,7 @@ InplaceEvaluation
 evaluation_type
 ```
 
-
-## Decorators for Objectives
+## Decorators for objectives
 
 An objective can be decorated using the following trait and function to initialize
 
@@ -31,15 +30,15 @@ is_objective_decorator
 decorate_objective!
 ```
 
-### [Embedded Objectives](@id ManifoldEmbeddedObjective)
+### [Embedded objectives](@id ManifoldEmbeddedObjective)
 
 ```@docs
 EmbeddedManifoldObjective
 ```
 
-### [Cache Objective](@id CacheSection)
+### [Cache objective](@id CacheSection)
 
-Since single function calls, e.g. to the cost or the gradient, might be expensive,
+Since single function calls, for example to the cost or the gradient, might be expensive,
 a simple cache objective exists as a decorator, that caches one cost value or gradient.
 
 It can be activated/used with the `cache=` keyword argument available for every solver.
@@ -57,7 +56,7 @@ A first generic cache is always available, but it only caches one gradient and o
 SimpleManifoldCachedObjective
 ```
 
-#### A Generic Cache
+#### A generic cache
 
 For the more advanced cache, you need to implement some type of cache yourself, that provides a `get!`
 and implement [`init_caches`](@ref).
@@ -68,13 +67,13 @@ ManifoldCachedObjective
 init_caches
 ```
 
-### [Count Objective](@id ManifoldCountObjective)
+### [Count objective](@id ManifoldCountObjective)
 
 ```@docs
 ManifoldCountObjective
 ```
 
-### Internal Decorators
+### Internal decorators
 
 ```@docs
 ReturnManifoldObjective
@@ -82,7 +81,7 @@ ReturnManifoldObjective
 
 ## Specific Objective typed and their access functions
 
-### Cost Objective
+### Cost objective
 
 ```@docs
 AbstractManifoldCostObjective
@@ -101,7 +100,7 @@ and internally
 get_cost_function
 ```
 
-### Gradient Objectives
+### Gradient objectives
 
 ```@docs
 AbstractManifoldGradientObjective
@@ -130,37 +129,37 @@ and internally
 get_gradient_function
 ```
 
-#### Internal Helpers
+#### Internal helpers
 
 ```@docs
 get_gradient_from_Jacobian!
 ```
 
-### Subgradient Objective
+### Subgradient objective
 
 ```@docs
 ManifoldSubgradientObjective
 ```
 
-#### Access Functions
+#### Access functions
 
 ```@docs
 get_subgradient
 ```
 
-### Proximal Map Objective
+### Proximal map objective
 
 ```@docs
 ManifoldProximalMapObjective
 ```
 
-#### Access Functions
+#### Access functions
 
 ```@docs
 get_proximal_map
 ```
 
-### Hessian Objective
+### Hessian objective
 
 ```@docs
 AbstractManifoldHessianObjective
@@ -180,7 +179,7 @@ and internally
 get_hessian_function
 ```
 
-### Primal-Dual based Objectives
+### Primal-dual based objectives
 
 ```@docs
 AbstractPrimalDualManifoldObjective
@@ -200,7 +199,7 @@ get_primal_prox
 linearized_forward_operator
 ```
 
-### Constrained Objective
+### Constrained objective
 
 Besides the [`AbstractEvaluationType`](@ref) there is one further property to
 distinguish among constraint functions, especially the gradients of the constraints.
@@ -235,7 +234,7 @@ get_grad_inequality_constraints
 get_grad_inequality_constraints!
 ```
 
-### Subproblem Objective
+### Subproblem objective
 
 This objective can be use when the objective of a sub problem
 solver still needs access to the (outer/main) objective.

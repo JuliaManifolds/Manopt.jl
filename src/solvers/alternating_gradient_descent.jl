@@ -183,10 +183,6 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
 
 !!! note
 
-    This Problem requires the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` needs to be loaded.
-
-!!! note
-
     The input of each of the (component) gradients is still the whole vector `X`,
     just that all other then the `i`th input component are assumed to be fixed and just
     the `i`th components gradient is computed / returned.

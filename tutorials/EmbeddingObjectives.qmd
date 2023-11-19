@@ -7,7 +7,7 @@ Specifying a cost function $f\colon \mathcal M \to \mathbb R$ on a manifold
 is usually the model one starts with.
 Specifying its gradient $\operatorname{grad} f\colon\mathcal M \to T\mathcal M$, or more precisely $\operatorname{grad}f(p) \in T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f\colon T_p\mathcal M \to T_p\mathcal M$ are then necessary to perform optimization.
 Since these might be challenging to compute, especially when manifolds and differential geometry are not
-the main area of a user – easier to use methods might be welcome.
+the main area of a user, easier to use methods might be welcome.
 
 This tutorial discusses how to specify $f$ in the embedding as $\tilde f$, maybe only locally around the manifold,
 and use the Euclidean gradient $∇ \tilde f$ and Hessian $∇^2 \tilde f$ within `Manopt.jl`.
@@ -86,12 +86,12 @@ and the [`check_Hessian`](@ref), which requires a bit more tolerance in its line
 check_Hessian(M, f, grad_f, Hess_f; plot=true, throw_error=true, atol=1e-15)
 ```
 
-While they look reasonable here and were already derived – for the general case this derivation
+While they look reasonable here and were already derived, for the general case this derivation
 might be more complicated.
 
 Luckily there exist two functions in [`ManifoldDiff.jl`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/) that are implemented for several
 manifolds from [`Manifolds.jl`](https://github.com/JuliaManifolds/Manifolds.jl), namely [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any})`(M, p, eG)` that converts a Riemannian gradient
-`eG=`$\nabla \tilde f(p)$  into a the Riemannain one $\operatorname{grad} f(p)$
+`eG=`$\nabla \tilde f(p)$  into a the Riemannian one $\operatorname{grad} f(p)$
  and [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any})`(M, p, eG, eH, X)`
  which converts the Euclidean Hessian `eH=`$\nabla^2 \tilde f(p)[X]$  into $\operatorname{Hess} f(p)[X]$,
  where we also require the Euclidean gradient `eG=`$\nabla \tilde f(p)$.
@@ -181,7 +181,7 @@ distance(M, q1, q2)
 
 
 This conversion also works for the gradients of constraints, and is passed down to
-subsolvers by deault when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
+subsolvers by default when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
 
 ## Summary
 

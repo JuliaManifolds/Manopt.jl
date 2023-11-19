@@ -8,7 +8,7 @@ tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize
 you might come to the idea of implementing a solver yourself.
 
 After a short introduction of the algorithm we will implement,
-this tutorial first discusses the structural details, i.e. what a solver consists of and “works with”.
+this tutorial first discusses the structural details, for example what a solver consists of and “works with”.
 Afterwards, we will show how to implement the algorithm.
 Finally, we will discuss how to make the algorithm both nice for the user as well as
 initialized in a way, that it can benefit from features already available in `Manopt.jl`.
@@ -55,16 +55,16 @@ We can run the following steps of the algorithm
 2. set our best point $q = p^{(0)}$
 2. Repeat until a stopping criterion is fulfilled
     1. Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
-    2. “Walk” along this direction, i.e. $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
+    2. “Walk” along this direction, that is $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
     3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
 4. Return $q$ as the resulting best point we visited
 
-## Preliminaries – Elements a Solver works on
+## Preliminaries: elements a solver works on
 
 There are two main ingredients a solver needs:
 a problem to work on and the state of a solver, which “identifies” the solver and stores intermediate results.
 
-### The “Task” – An `AbstractManoptProblem`
+### The “task”: an `AbstractManoptProblem`
 
 A problem in `Manopt.jl` usually consists of a manifold (an [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold)) and an [`AbstractManifoldObjective`](@ref)
 describing the function we have and its features.
@@ -73,14 +73,14 @@ In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that store
 or any other information we have about our task.
 
 This is something independent of the solver itself, since it only identifies the problem we
-want to solve independent of how we want to solve it – or in other words, this type contains
+want to solve independent of how we want to solve it, or in other words, this type contains
 all information that is static and independent of the specific solver at hand.
 
 Usually the problems variable is called `mp`.
 
-### The Solver – An `AbstractManoptSolverState`
+### The solver: an `AbstractManoptSolverState`
 
-Everything that is needed by a solver during the iterations, all its parameters, interims
+Everything that is needed by a solver during the iterations, all its parameters, interim
 values that are needed beyond just one iteration, is stored in a subtype of the
 [`AbstractManoptSolverState`](@ref). This identifies the solver uniquely.
 
@@ -90,7 +90,7 @@ In our case we want to store five things
 - the best visited point $q$
 - the variable $\sigma > 0$
 - the retraction $\operatorname{retr}$ to use (cf. [retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions.html))
-- a criterion, when to stop, i.e. a [`StoppingCriterion`](@ref)
+- a criterion, when to stop: a [`StoppingCriterion`](@ref)
 
 We can defined this as
 
@@ -111,7 +111,7 @@ end
 
 The stopping criterion is usually stored in the state's `stop` field. If you have a reason to
 do otherwise, you have one more function to implement (see next section).
-For ease of use, we can provide a constructor, that for example chooses a good default for
+For ease of use, a constructor can be provided, that for example chooses a good default for
 the retraction based on a given manifold.
 
 ```{julia}
@@ -131,7 +131,7 @@ in `Manopt.jl` and provide an easy way to construct this state now.
 
 States usually have a shortened name as their variable, we will use `rws` for our state here.
 
-## Implementing the Your solver
+## Implementing your solver
 
 There is basically only two methods we need to implement for our solver
 
@@ -158,9 +158,9 @@ If your choice is different, you need to reimplement
 - `get_iterate(rws)` to access the current iterate
 
 We recommend to follow the general scheme with the `stop` field. If you have specific criteria
-when to stop, consider implementing your own [stoping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead.
+when to stop, consider implementing your own [stopping criterion](https://manoptjl.org/stable/plans/stopping_criteria/) instead.
 
-### Initialization & Iterate Access
+### Initialization and iterate access
 
 For our solver, there is not so much to initialize, just to be safe we should copy over the
 initial value in `p` we start with, to `q`. We do not have to care about remembering the iterate,
@@ -202,7 +202,7 @@ We could also store the cost of `q` in the state, but we will see how to easily 
 this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
 In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
-Now we can just run the solver already! We take the same example as for the other tutorials
+Now we can just run the solver already. We take the same example as for the other tutorials
 
 We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
@@ -240,7 +240,7 @@ solve!(mp, s2)
 get_solver_result(s2)
 ```
 
-## Ease of Use I: The high level interface(s)
+## Ease of use I: a high level interface
 
 `Manopt.jl` offers a few additional features for solvers in their high level interfaces,
 for example ``[`debug=` for debug](@ref DebugSection)``{=commonmark}, ``[`record=`](@ref RecordSection)``{=commonmark} keywords for debug and recording
@@ -255,12 +255,13 @@ using Manopt: get_solver_return, indicates_convergence, status_summary
 
 ### A high level interface using the objective
 
-This could be considered as an interims step to the high-level interface:
-If we already have the objective – in our case a [`ManifoldCostObjective`](@ref) at hand, the high level interface consists of the steps
+This could be considered as an interim step to the high-level interface:
+If objective, a [`ManifoldCostObjective`](@ref) is already initialized,
+the high level interface consists of the steps
 
 1. possibly decorate the objective
 2. generate the problem
-3. generate and possiblz generate the state
+3. generate and possibly generate the state
 4. call the solver
 5. determine the return value
 
@@ -311,6 +312,7 @@ about the reason it stopped and whether this indicates convergence.
  Here it would for example look like
 
 ```{julia}
+#| output: false
 import Base: show
 function show(io::IO, rws::RandomWalkState)
     i = get_count(rws, :Iterations)
@@ -330,8 +332,8 @@ function show(io::IO, rws::RandomWalkState)
 end
 ```
 
-Now the algorithm can be easily called and provides – if wanted – all features of a `Manopt.jl`
-algorithm. For example to see the summary, we could now just call
+Now the algorithm can be easily called and provides all features of a `Manopt.jl` algorithm.
+For example to see the summary, we could now just call
 
 ```{julia}
 q = random_walk_algorithm!(M, f; return_state=true)
@@ -341,4 +343,5 @@ q = random_walk_algorithm!(M, f; return_state=true)
 
 We saw in this tutorial how to implement a simple cost-based algorithm, to illustrate how optimization algorithms are covered in `Manopt.jl`.
 
-One feature we did not cover is that most algorithms allow for inplace and allocation functions, as soon as they work on more than just the cost, e.g. gradients, proximal maps or Hessians. This is usually a keyword argument of the objective and hence also part of the high-level interfaces.
+One feature we did not cover is that most algorithms allow for in-place and allocation functions, as soon as they work on more than just the cost, for example use gradients, proximal maps or Hessians.
+This is usually a keyword argument of the objective and hence also part of the high-level interfaces.

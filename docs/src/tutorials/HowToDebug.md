@@ -1,4 +1,4 @@
-# How to Print Debug Output
+# How to print debug output
 Ronny Bergmann
 
 This tutorial aims to illustrate how to perform debug output. For that we consider an
@@ -44,12 +44,12 @@ Any solver accepts the keyword `debug=`, which in the simplest case can be set t
 - the last number in the array is used with [`DebugEvery`](@ref) to print the debug only every $i$th iteration.
 - Any Symbol is converted into certain debug prints
 
-Certain symbols starting with a capital letter are mapped to certain prints, e.g. `:Cost` is mapped to [`DebugCost`](@ref)`()` to print the current cost function value. A full list is provided in the [`DebugActionFactory`](@ref).
+Certain symbols starting with a capital letter are mapped to certain prints, for example `:Cost` is mapped to [`DebugCost`](@ref)`()` to print the current cost function value. A full list is provided in the [`DebugActionFactory`](@ref).
 A special keyword is `:Stop`, which is only added to the final debug hook to print the stopping criterion.
 
 Any symbol with a small letter is mapped to fields of the [`AbstractManoptSolverState`](@ref) which is used. This way you can easily print internal data, if you know their names.
 
-Let’s look at an example first: If we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every 25th iteration.
+Let’s look at an example first: If we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twentyfifth iteration.
 
 Then we can write
 
@@ -68,13 +68,13 @@ p1 = exact_penalty_method(
     The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
     The algorithm performed a step with a change (6.5347623783315016e-9) less than 1.0e-6.
 
-## Advanced Debug output
+## Advanced debug output
 
 There is two more advanced variants that can be used. The first is a tuple of a symbol and a string, where the string is used as the format print, that most [`DebugAction`](@ref)s have. The second is, to directly provide a `DebugAction`.
 
 We can for example change the way the `:ϵ` is printed by adding a format string
 and use [`DebugCost`](@ref)`()` which is equivalent to using `:Cost`.
-Especially with the format change, the lines are more coniststent in length.
+Especially with the format change, the lines are more consistent in length.
 
 ``` julia
 p2 = exact_penalty_method(
@@ -91,7 +91,7 @@ p2 = exact_penalty_method(
     The value of the variable (ϵ) is smaller than or equal to its threshold (1.0e-6).
     The algorithm performed a step with a change (6.5347623783315016e-9) less than 1.0e-6.
 
-You can also write your own [`DebugAction`](@ref) functor, where the function to implement has the same signature as the `step` function, that is an [`AbstractManoptProblem`](@ref), an [`AbstractManoptSolverState`](@ref), as well as the current iterate. For example the already mentioned \[`DebugDivider](@ref)`(s)\` is given as
+You can also write your own [`DebugAction`](@ref) functor, where the function to implement has the same signature as the `step` function, that is an [`AbstractManoptProblem`](@ref), an [`AbstractManoptSolverState`](@ref), as well as the current iterate. For example the already mentioned[`DebugDivider`](@ref)`(s)` is given as
 
 ``` julia
 mutable struct DebugDivider{TIO<:IO} <: DebugAction
@@ -107,7 +107,7 @@ end
 
 or you could implement that of course just for your specific problem or state.
 
-## Subsolver Debug
+## Subsolver debug
 
 most subsolvers have a `sub_kwargs` keyword, such that you can pass keywords to the sub solver as well. This works well if you do not plan to change the subsolver. If you do you can wrap your own `solver_state=` argument in a [`decorate_state!`](@ref) and pass a `debug=` password to this function call.
 Keywords in a keyword have to be passed as pairs (`:debug => [...]`).

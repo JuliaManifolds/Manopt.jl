@@ -16,7 +16,7 @@ for given points $p_i ∈\mathcal M$, $i=1,…,N$ this optimization problem read
   \operatorname{d}^2_{\mathcal M}(x,p_i),
 ```
 
-which of course can be (and is) solved by a gradient descent, see the introductionary
+which of course can be (and is) solved by a gradient descent, see the introductory
 tutorial or [Statistics in Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/stable/features/statistics.html).
 If $N$ is very large, evaluating the complete gradient might be quite expensive.
 A remedy is to evaluate only one of the terms at a time and choose a random order for these.
@@ -63,7 +63,7 @@ For the mean, the gradient is
 ```
 
 which we define in `Manopt.jl` in two different ways:
-either as one function returning all gradients as a vector (see `gradF`), or – maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
+either as one function returning all gradients as a vector (see `gradF`), or, maybe more fitting for a large scale problem, as a vector of small gradient functions (see `gradf`)
 
 
 ```{julia}
@@ -73,7 +73,7 @@ gradf = [(M, p) -> grad_distance(M, q, p) for q in data];
 p0 = 1 / sqrt(3) * [1.0, 1.0, 1.0]
 ```
 
-The calls are only slightly different, but notice that accessing the 2nd gradient element
+The calls are only slightly different, but notice that accessing the second gradient element
 requires evaluating all logs in the first function, while we only call _one_
 of the functions in the second array of functions.
 So while you can use both `gradF` and `gradf` in the following call, the second one is (much) faster:
