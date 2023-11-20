@@ -51,6 +51,9 @@ jobs:
             ${{ runner.os }}-${{ env.cache-name }}-
       - name: "Documenter rendering (including Quarto)"
         run: "docs/make.jl --quarto --prettyurls"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
       - name: "vale.sh spell check"
         uses: errata-ai/vale-action@reviewdog
         with:
@@ -58,6 +61,3 @@ jobs:
           fail_on_error: true
           filter_mode: nofilter
           vale_flags: "--config=docs/.vale.ini"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
