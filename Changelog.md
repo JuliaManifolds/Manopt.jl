@@ -5,6 +5,18 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+
+### Changed
+
+* Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
+
+## [0.4.43] – November 19, 2023
+
+### Added
+
+* vale.sh as a CI to keep track of a consistent documenttion
+
 ## [0.4.42] - November 6, 2023
 
 ### Added
