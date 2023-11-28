@@ -7,9 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+Formally one could consider this version breaking, since a few functions
+have been moved, that in earlier versions (0.3.x) have been used in example scripts.
+These examples are now available again within [ManoptExamples.jl](), and with their
+“reappearance” the corresponding costs, gradients, (adjoint) differentials and proximal maps
+have been moved as well.
+Actually, we do not consider this breaking, since we do not expect these were used.
+We still document each and every of the functions below. They have partly been renamed,
+and their documentation and testing has been extendede.
+
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
+* `costIntrICTV12` is now available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
+* `costL2TV` is not available as `ManoptExamples.L2_Total_Variation`
 
 ## [0.4.43] – November 19, 2023
 
