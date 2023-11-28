@@ -141,14 +141,6 @@ using SparseArrays
 using Statistics: cor, cov, mean, std
 
 include("plans/plan.jl")
-# Functions
-include("functions/bezier_curves.jl")
-include("functions/adjoint_differentials.jl")
-include("functions/costs.jl")
-include("functions/differentials.jl")
-include("functions/gradients.jl")
-include("functions/proximal_maps.jl")
-include("functions/manifold_functions.jl")
 # solvers general framework
 include("solvers/solver.jl")
 # specific solvers
@@ -177,7 +169,6 @@ include("solvers/subgradient.jl")
 include("solvers/debug_solver.jl")
 include("solvers/record_solver.jl")
 include("helpers/checks.jl")
-include("helpers/errorMeasures.jl")
 include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
 include("data/artificialDataFunctions.jl")
@@ -442,6 +433,8 @@ export ApproxHessianFiniteDifference, ApproxHessianSymmetricRankOne, ApproxHessi
 export update_hessian!, update_hessian_basis!
 export ExactPenaltyCost, ExactPenaltyGrad, AugmentedLagrangianCost, AugmentedLagrangianGrad
 export AdaptiveRagularizationWithCubicsModelObjective
+export ExactPenaltyCost, ExactPenaltyGrad
+export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
@@ -484,53 +477,6 @@ export artificial_S2_composite_bezier_curve
 # Exports
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
 export render_asymptote
-#
-# Coeffs & Helpers for differentials
-#
-# Adjoint differentials
-export adjoint_differential_forward_logs, adjoint_differential_forward_logs!
-export adjoint_differential_bezier_control, adjoint_differential_bezier_control!
-#
-# Differentials
-export differential_forward_logs, differential_forward_logs!
-export differential_bezier_control, differential_bezier_control!
-#
-# Functions
-export costL2TV, costL2TVTV2, costL2TV2, costTV, costTV2, costIntrICTV12
-export cost_L2_acceleration_bezier, cost_acceleration_bezier
-export ExactPenaltyCost, ExactPenaltyGrad
-export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
-# Gradients
-export grad_TV,
-    grad_TV!,
-    grad_TV2,
-    grad_TV2!,
-    grad_intrinsic_infimal_convolution_TV12,
-    forward_logs,
-    forward_logs!,
-    grad_distance,
-    grad_distance!,
-    grad_acceleration_bezier,
-    grad_L2_acceleration_bezier
-# Proximal maps
-export prox_distance, prox_distance!
-export prox_TV, prox_TV!
-export prox_parallel_TV, prox_parallel_TV!
-export prox_TV2, prox_TV2!
-export project_collaborative_TV, project_collaborative_TV!
-# Error measures
-export meanSquaredError, meanAverageError
-#
-# Bézier
-export BezierSegment,
-    de_casteljau,
-    get_bezier_degrees,
-    get_bezier_degree,
-    get_bezier_inner_points,
-    get_bezier_junction_tangent_vectors,
-    get_bezier_junctions,
-    get_bezier_points,
-    get_bezier_segments
 #
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
