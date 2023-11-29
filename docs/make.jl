@@ -182,8 +182,6 @@ makedocs(;
         ],
         "Helpers" => [
             "Checks" => "helpers/checks.md",
-            "Data" => "helpers/data.md",
-            "Error Measures" => "helpers/errorMeasures.md",
             "Exports" => "helpers/exports.md",
         ],
         "Contributing to Manopt.jl" => "contributing.md",
