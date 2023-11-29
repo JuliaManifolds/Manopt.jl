@@ -20,20 +20,8 @@ using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
     Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm
 using ManifoldDiff:
-    adjoint_Jacobi_field,
-    adjoint_Jacobi_field!,
-    adjoint_differential_exp_argument,
-    adjoint_differential_exp_argument!,
-    adjoint_differential_exp_basepoint,
-    adjoint_differential_exp_basepoint!,
     adjoint_differential_log_argument,
     adjoint_differential_log_argument!,
-    adjoint_differential_log_basepoint,
-    adjoint_differential_log_basepoint!,
-    adjoint_differential_shortest_geodesic_endpoint,
-    adjoint_differential_shortest_geodesic_endpoint!,
-    adjoint_differential_shortest_geodesic_startpoint,
-    adjoint_differential_shortest_geodesic_startpoint!,
     differential_exp_argument,
     differential_exp_argument!,
     differential_exp_basepoint,

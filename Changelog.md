@@ -19,9 +19,14 @@ and their documentation and testing has been extendede.
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
-* `costIntrICTV12` is now available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
-* `costL2TV` is not available as `ManoptExamples.L2_Total_Variation`
-
+* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
+* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12``]()
+* `costL2TV` is available as [`ManoptExamples.L2_Total_Variation`]()
+* `costL2TV12` is available as [`ManoptExamples.L2_Total_Variation_1_2`]()
+* `costL2TV2` is available as [`ManoptExamples.L2_second_order_Total_Variation`]()
+* `costTV` is available as [`ManoptExamples.Total_Variation`]()
+* `costTV2` is available as [`ManoptExamples.second_order_Total_Variation`]()
+*
 ## [0.4.43] – November 19, 2023
 
 ### Added

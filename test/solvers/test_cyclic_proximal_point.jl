@@ -1,11 +1,13 @@
 using Manifolds, Manopt, Test, Dates, LRUCache
+using ManifoldDiff: prox_distance, prox_distance!
+using ManoptExamples: prox_TV, prox_TV!, L2_Total_Variation
 
 @testset "Cyclic Proximal Point" begin
     @testset "Allocating" begin
         n = 100
         N = PowerManifold(Circle(), n)
         q = artificial_S1_signal(n)
-        f(M, p) = costL2TV(M, q, 0.5, p)
+        f(M, p) = L2_Total_Variation(M, q, 0.5, p)
         proxes = (
             (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
         )
@@ -44,7 +46,7 @@ using Manifolds, Manopt, Test, Dates, LRUCache
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
         q = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
-        f(N, p) = costL2TV(N, q, 0.5, p)
+        f(N, p) = L2_Total_Variation(N, q, 0.5, p)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
             (N, q, λ, p) -> prox_TV!(N, q, 0.5 * λ, p),
@@ -90,7 +92,7 @@ using Manifolds, Manopt, Test, Dates, LRUCache
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
         q = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
-        f(N, x) = costL2TV(N, q, 0.5, x)
+        f(N, x) = L2_Total_Variation(N, q, 0.5, x)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
             (N, q, λ, p) -> prox_TV!(N, q, 0.5 * λ, p),
@@ -123,7 +125,7 @@ using Manifolds, Manopt, Test, Dates, LRUCache
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M, p)
-        f(M, p) = costL2TV(M, q, 0.5, p)
+        f(M, p) = L2_Total_Variation(M, q, 0.5, p)
         proxes = (
             (M, λ, p) -> prox_distance(M, λ, q, p), (M, λ, p) -> prox_TV(M, 0.5 * λ, p)
         )
