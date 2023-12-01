@@ -19,14 +19,36 @@ and their documentation and testing has been extendede.
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
+* `adjoint_differential_forward_logs` is available as [`ManoptExamples.adjoint_differential_forward_logs`]()
+* `adjoint:differential_bezier_control` is available as [`ManoptExamples.adjoint_differential_Bezier_control_points`]
+* `cost_acceleration_bezier` is avilable as [`ManoptExamples.acceleration_Bezier`]()
+* `cost_L2_acceleration_bezier` is available as [`ManoptExamples.L2_acceleration_Bezier`]()
 * `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
-* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12``]()
 * `costL2TV` is available as [`ManoptExamples.L2_Total_Variation`]()
 * `costL2TV12` is available as [`ManoptExamples.L2_Total_Variation_1_2`]()
 * `costL2TV2` is available as [`ManoptExamples.L2_second_order_Total_Variation`]()
 * `costTV` is available as [`ManoptExamples.Total_Variation`]()
 * `costTV2` is available as [`ManoptExamples.second_order_Total_Variation`]()
-*
+* `de_casteljau` is available as [`ManoptExamples.de_Casteljau`]()
+* `differential_forward_logs` is available as [`ManoptExamples.differential_forward_logs`]()
+* `differential_bezier_control` is available as [`ManoptExamples.differential_Bezier_control_points`]
+* `forward_logs` is available as [`ManoptExamples.forward_logs`]()
+* `get_bezier_degree` is available as [`ManoptExamples.get_Bezier_degree`]()
+* `get_Bezier_inner_points` is available as [`ManoptExamples.get_Bezier_inner_points`]()
+* `get_bezier_junction_tangent_vectors` is available as [`ManoptExamples.get_Bezier_junction_tangent_vectors`]()
+* `get_bezier_junctions` is available as [`ManoptExamples.get_Bezier_junctions`]()
+* `get_bezier_points` is available as [`ManoptExamples.get_Bezier_points`]()
+* `get_bezier_segments` is available as [`ManoptExamples.get_Bezier_segments`]()
+* `grad_acceleration_bezier` is available as [`ManoptExamples.grad_acceleration_Bezier`]()
+* `grad_L2_acceleration_bezier` is available as [`ManoptExamples.grad_L2_acceleration_Bezier`]()
+* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12``]()
+* `grad_TV` is available as [`ManoptExamples.grad_Total_Variation`]()
+* `costIntrICTV12` is now available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
+* `project_collaborative_TV` is available as [`ManoptExamples.project_collaborative_TV`]()
+* `prox_parallel_TV` is available as [`ManoptExamples.prox_parallel_TV`]()
+* `grad_TV2` is available as [`ManoptExamples.prox_second_order_Total_Variation`]()
+* `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`]()
+
 ## [0.4.43] – November 19, 2023
 
 ### Added
