@@ -10,12 +10,12 @@ docs/make.jl
 Render the `Manopt.jl` documenation with optinal arguments
 
 Arguments
-* `--exclude-docs` - exclude the tutorials from the menu of Documenter,
+* `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
   this can be used if you do not have Quarto installed to still be able to render the docs
   locally on this machine. This option should not be set on CI.
-* `--help`         - print this help and exit without rendering the documentation
-* `--prettyurls`   – toggle the prettyurls part to true (which is otherwise only true on CI)
-* `--quarto`       – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
+* `--help`              - print this help and exit without rendering the documentation
+* `--prettyurls`        – toggle the prettyurls part to true (which is otherwise only true on CI)
+* `--quarto`            – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
   If they are generated ones they are cached accordingly.
@@ -91,7 +91,7 @@ for (md_file, doc_file) in
     end
 end
 
-## Build titorials menu
+## Build tutorials menu
 tutorials_menu =
     "How to..." => [
         "🏔️ Get started: optimize." => "tutorials/Optimize.md",

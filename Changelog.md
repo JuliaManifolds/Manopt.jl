@@ -19,6 +19,7 @@ and their documentation and testing has been extendede.
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
+* `artificial_S2_composite_bezier_curve` is now available as [`ManoptExamples.artificial_S2_composite_Bezier_curve`]()
 * `adjoint_differential_forward_logs` is available as [`ManoptExamples.adjoint_differential_forward_logs`]()
 * `adjoint:differential_bezier_control` is available as [`ManoptExamples.adjoint_differential_Bezier_control_points`]
 * `cost_acceleration_bezier` is avilable as [`ManoptExamples.acceleration_Bezier`]()
