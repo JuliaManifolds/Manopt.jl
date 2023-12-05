@@ -159,7 +159,6 @@ include("solvers/record_solver.jl")
 include("helpers/checks.jl")
 include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
-include("data/artificialDataFunctions.jl")
 include("deprecated.jl")
 
 """
@@ -453,14 +452,6 @@ export StopAfter,
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion
 export update_stopping_criterion!
-#
-# Data functions
-export artificial_S1_signal, artificial_S1_slope_signal, artificialIn_SAR_image
-export artificial_SPD_image, artificial_SPD_image2
-export artificial_S2_whirl_image, artificial_S2_whirl_patch
-export artificial_S2_rotation_image
-export artificial_S2_whirl_patch, artificial_S2_lemniscate
-export artificial_S2_composite_bezier_curve
 #
 # Exports
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD
