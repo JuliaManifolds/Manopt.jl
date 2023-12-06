@@ -19,11 +19,11 @@ using Manopt, Manifolds, Test
     s3 = WolfePowellBinaryLinesearch()
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearch(DefaultManifold(), ")
-    # no stepsize yet so repr and summary are the same
+    # no stepsize yet so `repr` and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
     s4 = WolfePowellLinesearch()
     @test startswith(repr(s4), "WolfePowellLinesearch(DefaultManifold(), ")
-    # no stepsize yet so repr and summary are the same
+    # no stepsize yet so `repr` and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""
     @testset "Linesearch safeguards" begin
@@ -54,9 +54,9 @@ using Manopt, Manifolds, Test
         @test startswith(s5[2], "Max increase steps (1)")
     end
     @testset "Adaptive WN Gradient" begin
-        # Build a dummy f, grad_f
+        # Build a dummy function and gradient
         f(M, p) = 0
-        grad_f(M, p) = [0.0, 0.75, 0.0] # We only stay at north pole
+        grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)
@@ -72,16 +72,16 @@ using Manopt, Manifolds, Test
         # tweak bound
         s.gradient_reduction = 10.0
         @test s(mp, gds, 2) ≈ 0.5201560468140443 # running into the last case
-        @test s.count == 1 # We ran into case 2
+        @test s.count == 1 # running into case 2
         @test s(mp, gds, 3) ≈ 3.1209362808842656
         @test s.count == 0 # was reset
-        @test s.weight == 0.75 #also reset to orig
+        @test s.weight == 0.75 # also reset to orig
         @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
     end
     @testset "Absolute stepsizes" begin
-        # Build a dummy f, grad_f
+        # Build a dummy function and gradient
         f(M, p) = 0
-        grad_f(M, p) = [0.0, 0.75, 0.0] # We only stay at north pole
+        grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)

@@ -9,13 +9,14 @@ docs/make.jl
 
 Render the `Manopt.jl` documenation with optinal arguments
 
-Arguments
-* `--exclude-docs` - exclude the tutorials from the menu of Documenter,
+# Arguments
+
+* `--exclude-docs` exclude the tutorials from the menu of Documenter,
   this can be used if you do not have Quarto installed to still be able to render the docs
   locally on this machine. This option should not be set on CI.
-* `--help`         - print this help and exit without rendering the documentation
-* `--prettyurls`   – toggle the prettyurls part to true (which is otherwise only true on CI)
-* `--quarto`       – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
+* `--help`         print this help and exit without rendering the documentation
+* `--prettyurls`   toggle the prettyurls part to true (which is otherwise only true on CI)
+* `--quarto`       run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
   If they are generated ones they are cached accordingly.
@@ -36,7 +37,7 @@ if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     Pkg.instantiate()
 end
 
-# (b) Did someone say render? Then we render!
+# (b) Did someone say render?
 if "--quarto" ∈ ARGS
     using CondaPkg
     CondaPkg.withenv() do
@@ -46,7 +47,7 @@ if "--quarto" ∈ ARGS
         Pkg.activate(tutorials_folder)
         Pkg.resolve()
         Pkg.instantiate()
-        Pkg.build("IJulia") # build IJulia to the right version.
+        Pkg.build("IJulia") # build `IJulia` to the right version.
         Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
@@ -91,7 +92,7 @@ for (md_file, doc_file) in
     end
 end
 
-## Build titorials menu
+## Build tutorials menu
 tutorials_menu =
     "How to..." => [
         "🏔️ Get started: optimize." => "tutorials/Optimize.md",
@@ -106,7 +107,7 @@ tutorials_menu =
         "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
         "Do geodesic regression" => "tutorials/GeodesicRegression.md",
     ]
-# (e) ...finally! make docs
+# (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(;
     format=Documenter.HTML(;

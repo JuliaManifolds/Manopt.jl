@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
 
-## [0.4.43] – November 19, 2023
+## [0.4.43] — November 19, 2023
 
 ### Added
 

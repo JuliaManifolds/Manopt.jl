@@ -6,15 +6,15 @@
 @doc raw"""
     ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
 
-specify a problem for solvers based on the evaluation of proximal map(s).
+specify a problem for solvers based on the evaluation of proximal maps.
 
 # Fields
 * `cost` - a function ``F:\mathcal M→ℝ`` to
   minimize
 * `proxes` - proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
   as functions `(M, λ, p) -> q`.
-* `number_of_proxes` - (`ones(length(proxes))`` number of proximal Maps per function,
-  e.g. if one of the maps is a combined one such that the proximal Maps
+* `number_of_proxes` - (`ones(length(proxes))`` number of proximal maps per function,
+  to specify when one of the maps is a combined one such that the proximal maps
   functions return more than one entry per function, you have to adapt this value.
   if not specified, it is set to one prox per function.
 # See also
@@ -130,21 +130,20 @@ end
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
-* `p` – the current iterate
-* `stopping_criterion` – a [`StoppingCriterion`](@ref)
-* `λ` – (@(i) -> 1/i) a function for the values of ``λ_k`` per iteration(cycle ``ì``
-* `oder_type` – (`:LinearOrder`) – whether
-  to use a randomly permuted sequence (`:FixedRandomOrder`), a per
-  cycle permuted sequence (`:RandomOrder`) or the default linear one.
+* `p`                  the current iterate
+* `stopping_criterion` a [`StoppingCriterion`](@ref)
+* `λ`                  (@(i) -> 1/i) a function for the values of ``λ_k`` per iteration(cycle ``ì``
+* `oder_type`          (`:LinearOrder`) whether to use a randomly permuted sequence (`:FixedRandomOrder`),
+  a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
     CyclicProximalPointState(M, p)
 
 Generate the options with the following keyword arguments
 
-* `stopping_criterion` (`StopAfterIteration(2000)`) – a [`StoppingCriterion`](@ref).
-* `λ` ( `i -> 1.0 / i`) – a function to compute the ``λ_k, k ∈ \mathbb N``,
-* `evaluation_order` – (`:LinearOrder`) – a Symbol indicating the order the proxes are applied.
+* `stopping_criterion` (`StopAfterIteration(2000)`) a [`StoppingCriterion`](@ref).
+* `λ`                  ( `i -> 1.0 / i`) a function to compute the ``λ_k, k ∈ \mathbb N``,
+* `evaluation_order`   (`:LinearOrder`) a Symbol indicating the order the proximal maps are applied.
 
 # See also
 
@@ -176,8 +175,6 @@ end
 
 #
 # Debug
-#
-# overwrite defaults, since we store the result in the mean field
 #
 # Debug the Cyclic Proximal point parameter
 #

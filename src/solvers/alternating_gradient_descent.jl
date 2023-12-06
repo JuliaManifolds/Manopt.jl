@@ -5,24 +5,23 @@ Store the fields for an alternating gradient descent algorithm,
 see also [`alternating_gradient_descent`](@ref).
 
 # Fields
-* `direction` (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
-* `evaluation_order` – (`:Linear`) – whether
-* `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
-  to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
+* `direction`          (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
+* `evaluation_order`   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
+* `inner_iterations`   (`5`) how many gradient steps to take in a component before alternating to the next
 * `order` the current permutation
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
-* `stepsize` ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `p` the current iterate
-* `X` (`zero_vector(M,p)`) the current gradient tangent vector
-* `k`, ì` internal counters for the outer and inner iterations, respectively.
+* `retraction_method`  (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
+* `stepsize`           ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
+* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
+* `p`                  the current iterate
+* `X`                  (`zero_vector(M,p)`) the current gradient tangent vector
+* `k`, ì`              internal counters for the outer and inner iterations, respectively.
 
 # Constructors
 
     AlternatingGradientDescentState(M, p; kwargs...)
 
-Generate the options for point `p` and and where `inner_iterations`, `order_type`, `order`,
+Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
 `retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments
 """
 mutable struct AlternatingGradientDescentState{
@@ -117,7 +116,7 @@ function (ag::AlternatingGradient)(
     M = get_manifold(amp)
     # at begin of inner iterations reset internal vector to zero
     (i == 1) && zero_vector!(M, ag.dir, agds.p)
-    # update order(k)th component inplace
+    # update order(k)th component in-place
     get_gradient!(amp, ag.dir[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
     return agds.stepsize(amp, agds, i), ag.dir # return current full gradient
 end
@@ -157,12 +156,12 @@ perform an alternating gradient descent
 
 # Input
 
-* `M` – the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
-* `f` – the objective function (cost) defined on `M`.
-* `grad_f` – a gradient, that can be of two cases
+* `M`      the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
+* `f`      the objective function (cost) defined on `M`.
+* `grad_f` a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` or
   * is a vector functions each returning a component part of the whole gradient
-* `p` – an initial value ``p_0 ∈ \mathcal M``
+* `p`      an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by

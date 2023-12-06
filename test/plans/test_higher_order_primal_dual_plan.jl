@@ -84,7 +84,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
                             ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # end iterate over all pixel in R
                 return ζ
             elseif p1 == 2
                 norms = norm.(Ref(N.manifold), p, ξ)
@@ -124,7 +124,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
                             ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # end iterate over all pixel in R
                 return ζ
             else
                 throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))
