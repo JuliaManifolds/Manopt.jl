@@ -24,7 +24,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @test length(s3.reason) > 0
     # repack
     sn = StopWhenAny(StopAfterIteration(10), s3)
-    @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iters
+    @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iteration
     @test startswith(repr(sn), "StopWhenAny with the")
     sn2 = StopAfterIteration(10) | s3
     @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
@@ -134,7 +134,7 @@ end
     s = StopWhenModelIncreased()
     @test !s(hp, tcgs, 0)
     @test s.reason == ""
-    s.model_value = 0.5 # twweak
+    s.model_value = 0.5 # tweak the model value to trigger a test
     @test s(hp, tcgs, 1)
     @test length(s.reason) > 0
     s2 = StopWhenCurvatureIsNegative()

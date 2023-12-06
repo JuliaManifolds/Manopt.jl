@@ -64,8 +64,8 @@ struct NoIterateState <: AbstractManoptSolverState end
 
         @test_throws ErrorException get_gradient(s)
         @test_throws ErrorException get_gradient(r)
-        @test isnan(get_iterate(s)) # dummy returns nan
-        @test isnan(get_iterate(r)) # dummy returns nan
+        @test isnan(get_iterate(s)) # dummy returns not-a-number
+        @test isnan(get_iterate(r)) # dummy returns not-a-number
         @test_throws ErrorException set_iterate!(s, M, 0)
         @test_throws ErrorException set_iterate!(r, M, 0)
         s2 = NoIterateState()
@@ -115,7 +115,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test isnan(get_solver_result(o, NaN))
         # unless overwritten, objectives to not display in these tuples.
         @test repr((o, s)) == repr(s)
-        # Passdown
+        # test Pass down
         @test repr((ro, s)) == repr(s)
     end
 end
