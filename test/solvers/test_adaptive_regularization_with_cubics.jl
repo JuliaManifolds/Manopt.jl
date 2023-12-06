@@ -36,7 +36,7 @@ include("../utils/example_tasks.jl")
     end
 
     @testset "State and repr" begin
-        # if we neither provide a problem nor an objective, we expect an error
+        # neither provided a problem nor an objective yields an error
         @test_throws ErrorException AdaptiveRegularizationState(ℝ^2)
 
         arcs = AdaptiveRegularizationState(
@@ -64,7 +64,7 @@ include("../utils/example_tasks.jl")
         )
         #add a fake Lanczos
         push!(arcs2.sub_state.Lanczos_vectors, X1)
-        # we reached 1 Lanczos
+        # 1 Lanczos was reached
         @test stop_solver!(arcs2.sub_problem, arcs2.sub_state, 1)
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
@@ -93,7 +93,7 @@ include("../utils/example_tasks.jl")
         #add a fake Lanczos
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
-        step_solver!(arcs4.sub_problem, arcs4.sub_state, 2) # to introduce a random new one but cupy to 2
+        step_solver!(arcs4.sub_problem, arcs4.sub_state, 2) # to introduce a random new one but copy to 2
         # test orthogonality of the new 2 ones
         @test isapprox(
             inner(
@@ -124,7 +124,7 @@ include("../utils/example_tasks.jl")
         r = copy(M, p1)
         Manopt.solve_arc_subproblem!(M, r, f1!, InplaceEvaluation(), p0)
         @test r == p0
-        # Dummy construction with a function for the sub_problem
+        # Dummy construction with a function for the `sub_problem`
         arcs4 = AdaptiveRegularizationState(M, p0; sub_problem=f1)
         @test arcs4.sub_state isa AbstractEvaluationType
     end
@@ -144,7 +144,7 @@ include("../utils/example_tasks.jl")
             M, f, grad_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
         @test isapprox(M, p1, p3)
-        # Fourth with approximate Hessian _and_ random point
+        # Fourth with approximate Hessian and random point
         Random.seed!(36)
         p4 = adaptive_regularization_with_cubics(
             M, f, grad_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
@@ -176,7 +176,7 @@ include("../utils/example_tasks.jl")
         )
         @test isapprox(M, p1, q2)
 
-        # test both inplace and allocating variants of grad_g
+        # test both in-place and allocating variants of `grad_g``
         X0 = grad_f(M, p0)
         X1 = get_gradient(M2, arcmo, X0)
         X2 = zero_vector(M, p0)

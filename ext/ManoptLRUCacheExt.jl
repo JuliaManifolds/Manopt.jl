@@ -47,9 +47,9 @@ function Manopt.init_caches(
     for c in caches
         i = length(lru_caches)
         m = get(cache_sizes, c, cache_size)
-        # Float cache, e.g. Cost
+        # Float cache, like for f
         (c === :Cost) && push!(lru_caches, LRU{P,R}(; maxsize=m))
-        # vectors – e.g. Constraints/EqCOnstraints/InEqCOnstraints
+        # vectors, like for Constraints/EqCOnstraints/InEqCOnstraints
         # (a) store whole vectors
         (c === :EqualityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))
         (c === :InequalityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))

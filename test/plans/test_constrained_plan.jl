@@ -205,7 +205,7 @@ include("../utils/dummy_types.jl")
                 Y = get_grad_equality_constraint!(M, Y, obj, p, i)
                 @test X == Y
             end
-            for j in 1:2 # num eq constr
+            for j in 1:2 # for every equality constraint
                 @test get_inequality_constraint(M, ddo, p, j) ==
                     get_inequality_constraint(M, obj, p, j)
                 X = get_grad_inequality_constraint(M, ddo, p, j)
@@ -338,7 +338,7 @@ include("../utils/dummy_types.jl")
         @test Ye == Xe
         @test get_count(ccofa, :GradEqualityConstraints) == 1
         Xe = get_grad_equality_constraints(M, cofa, -p)
-        get_grad_equality_constraints!(M, Ye, cccofa, -p) # ccounts
+        get_grad_equality_constraints!(M, Ye, cccofa, -p) # counts
         @test Ye == Xe
         get_grad_equality_constraints!(M, Ye, cccofa, -p) # cached
         @test Ye == Xe

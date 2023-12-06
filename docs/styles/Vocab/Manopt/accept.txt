@@ -62,6 +62,7 @@ supertype
 th
 Tom-Christian
 Toint
+Vectorial
 Willem
 Wolfe
 vectorial

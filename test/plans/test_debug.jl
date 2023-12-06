@@ -320,7 +320,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange()) == "(:Change, \"Last Change: %f\")"
-        # check that a nondefault manifold works as well - not sure how to test this then
+        # verify that a non-default manifold works as well - not sure how to test this then
         d = DebugChange(Euclidean(2))
 
         @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\")"
@@ -385,7 +385,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         dD = DebugDivider(" | "; io=io)
         dA = DebugWhenActive(dD, false)
         @test !dA.active
-        set_manopt_parameter!(dA, :Dummy, true) # passdown
+        set_manopt_parameter!(dA, :Dummy, true) # pass down
         set_manopt_parameter!(dA, :active, true) # activate
         @test dA.active
         @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"

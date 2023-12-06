@@ -119,12 +119,12 @@ using Manopt, Manifolds, Test, Random
         grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
         n2 = gradient_descent(M, f, grad_f, pts[1])
         n2a = gradient_descent(M, f, grad_f)
-        # Since we called gradient_descent n2 is newly allocated
+        # `gradient_descent` allocated n2 newly
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         Random.seed!(43)
         n2a = gradient_descent(M, f, grad_f)
-        # Since we called gradient_descent n2 is newly allocated
+        # `gradient_descent` allocated n2 newly
         @test isapprox(M, north, n2a)
         n3 = gradient_descent(
             M,
@@ -144,7 +144,7 @@ using Manopt, Manifolds, Test, Random
         r = gradient_descent!(M, f, grad_f, n5; return_state=true)
         @test isapprox(M, n5, n2)
         @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent")
-        # State and a count objective – putting stats behind print
+        # State and a count objective, putting stats behind print
         n6 = gradient_descent(
             M,
             f,

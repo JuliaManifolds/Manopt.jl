@@ -81,7 +81,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
                             Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # `i` in R
                 return Y
             elseif p == 2
                 norms = norm.(Ref(N.manifold), x, Ξ)
@@ -121,7 +121,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
                             Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # `ì` in R
                 return Y
             else
                 throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
@@ -189,7 +189,7 @@ using Manopt, Manifolds, ManifoldsBase, Test
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7
     @testset "Objective Decorator passthrough" begin
-        # PDNSSN additionals
+        # PDNSSN additional tests
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
             f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
         )
