@@ -8,19 +8,19 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* `p` – the current iterate, i.e. a point on the manifold
-* `X` – the current subgradient, i.e. a tangent vector to `p`.
-* `sub_problem` – problem for the subsolver
-* `sub_state` – state of the subproblem
-* `stop` – a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `p`           the current iterate, a point on the manifold
+* `X`           the current subgradient, a tangent vector to `p`.
+* `sub_problem` problem for the subsolver
+* `sub_state`   state of the subproblem
+* `stop`        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
-For the sub task, we need a method to solve
+For the sub task, a method to solve
 
 ```math
     \operatorname*{argmin}_{q∈\mathcal M}\ g(p) - ⟨X, \log_p q⟩
 ```
 
-besides a problem and options, one can also provide a function and
+is needed. Besides a problem and options, one can also provide a function and
 an [`AbstractEvaluationType`](@ref), respectively, to indicate
 a closed form solution for the sub task.
 
@@ -39,8 +39,7 @@ result if `q`.
 ## Further keyword Arguments
 
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
-* `stopping_criterion` – [`StopAfterIteration`](@ref)`(200)` a stopping criterion
-
+* `stopping_criterion`         a [`StopAfterIteration`](@ref)`(200)` a stopping criterion
 """
 mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
                AbstractSubProblemSolverState
@@ -114,7 +113,7 @@ end
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
     difference_of_convex_algorithm(M, mdco, p; kwargs...)
 
-Compute the difference of convex algorithm [Bergmann, Ferreira, Santos, Souza, preprint, 2023](@cite BergmannFerreiraSantosSouza:2023) to minimize
+Compute the difference of convex algorithm [Bergmann, Ferreira, Santos, Souza, Preprint, 2023](@cite BergmannFerreiraSantosSouza:2023) to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M}\  g(p) - h(p)
