@@ -14,7 +14,7 @@ end
     max_stepsize(M::FixedRankMatrices, p)
 
 Return a reasonable guess of maximum step size on `FixedRankMatrices` following
-the choice of typical distance in Matlab Manopt, i.e. dimension of `M`. See
+the choice of typical distance in Matlab Manopt, the dimension of `M`. See
 [this note](https://github.com/NicolasBoumal/manopt/blob/97b6eb6b185334ab7b3991585ed2c044d69ee905/manopt/manifolds/fixedrank/fixedrankembeddedfactory.m#L76-L78)
 """
 function max_stepsize(M::FixedRankMatrices, p)
@@ -26,7 +26,7 @@ end
     mid_point!(M, y, p, q, x)
 
 Compute the mid point between `p` and `q`. If there is more than one mid point
-of (not necessarily minimizing) geodesics (e.g. on the sphere), the one nearest
+of (not necessarily minimizing) geodesics (for example on the sphere), the one nearest
 to `x` is returned (in place of `y`).
 """
 mid_point(M::AbstractManifold, p, q, ::Any) = mid_point(M, p, q)
@@ -66,7 +66,7 @@ function prox_TV2(::Euclidean, λ, pointTuple::Tuple{T,T,T}, p::Int=1) where {T}
         m = min.(Ref(λ), abs.(x .* w) / (dot(w, w)))
         s = sign.(sum(x .* w))
         return x .- m .* s .* w
-    elseif p == 2 # Theorem 3.6 ibd.
+    elseif p == 2 # Theorem 3.6 in Bergmann, Laus, Steidl, Weinmann, 2014.
         t = λ * sum(x .* w) / (1 + λ * dot(w, w))
         return x .- t .* w
     else

@@ -25,6 +25,7 @@ JuMP.jl
 Levenberg
 Lagrangian
 Lanczos
+Laus
 LineSearches.jl
 Manifolds.jl
 ManifoldsBase.jl
@@ -53,6 +54,7 @@ Rosenbrock
 Steihaug
 Stiefel
 semismooth
+Steidl
 Stephansen
 [Ss]tepsize
 [Ss]ubgradient
@@ -63,6 +65,7 @@ th
 Tom-Christian
 Toint
 Vectorial
+Weinmann
 Willem
 Wolfe
 vectorial
