@@ -4,7 +4,7 @@ Adagrad
 API
 Armijo
 Bergmann
-Chambolle
+[Cc]hambolle
 Constantin
 Diepeveen
 Dornig
@@ -37,7 +37,7 @@ Nelder
 Newton
 [Pp]arametrising
 Parametrising
-Pock
+[Pp]ock
 preconditioner
 [Pp]rox(:?imal)
 pullback

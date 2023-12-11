@@ -1,4 +1,4 @@
-# [A Manopt problem](@id ProblemSection)
+# [A Manopt problem](@id sec-problem)
 
 ```@meta
 CurrentModule = Manopt
@@ -18,7 +18,8 @@ Usually, such a problem is determined by the manifold or domain of the optimisat
 DefaultManoptProblem
 ```
 
-The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref ChambollePockSolver) and the [PD Semi-smooth Newton](@ref PDRSSNSolver)), which both need two manifolds as their domains, hence there also exists a
+The exception to these are the primal dual-based solvers ([Chambolle-Pock](@ref solver-chambolle-pock) and the [PD Semi-smooth Newton](@ref solver-pdrssn)),
+which both need two manifolds as their domains, hence there also exists a
 
 ```@docs
 TwoManifoldProblem

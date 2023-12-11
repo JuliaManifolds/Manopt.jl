@@ -25,8 +25,8 @@ If you want to delve right into `Manopt.jl` read the
 `Manopt.jl` makes it easy to use an algorithm for your favourite
 manifold as well as a manifold for your favourite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
-[record](@ref RecordSection) certain data or
-[debug output](@ref DebugSection) throughout iterations.
+[record](@ref sec-record) certain data or
+[debug output](@ref sec-debug) throughout iterations.
 
 If you use `Manopt.jl`in your work, please cite the following
 
@@ -65,7 +65,7 @@ Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format
 ### Optimization algorithms (solvers)
 
 For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, and stores values that are required between or for the next iteration.
-Together they form a [plan](@ref planSection).
+Together they form a [plan](@ref sec-plan).
 
 ## Manifolds
 
@@ -79,7 +79,7 @@ Several functions are available, implemented on an arbitrary manifold, [cost fun
 
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref sec-exports). Furthermore a system to get [debug](@ref sec-debug) during the iterations of an algorithms as well as [record](@ref sec-record) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial on how to easily activate this.
 
 ## Literature

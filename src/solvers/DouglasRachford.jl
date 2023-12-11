@@ -401,7 +401,6 @@ function _reflect!(M, r, p, x, R, ::AllocatingEvaluation)
 end
 _reflect!(M, r, p, x, R, ::InplaceEvaluation) = R(M, r, p, x)
 
-
 @doc raw"""
     DouglasRachford(M, f, proxes_f, p; kwargs...)
 

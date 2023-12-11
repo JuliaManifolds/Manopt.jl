@@ -28,7 +28,7 @@ Given a vector of symbols `caches`, this function sets up the
 # Keyword arguments
 
 * `p`           (`rand(M)`) a point on a manifold, to both infer its type for keys and initialize caches
-* `value`       (`0.0`) a value both typing and initialising number-caches, eg. for caching a cost.
+* `value`       (`0.0`) a value both typing and initialising number-caches, the default is for (Float) values like the cost.
 * `X`           (`zero_vector(M, p)` a tangent vector at `p` to both type and initialize tangent vector caches
 * `cache_size`  (`10`)  a default cache size to use
 * `cache_sizes` (`Dict{Symbol,Int}()`) a dictionary of sizes for the `caches` to specify different (non-default) sizes
@@ -78,9 +78,9 @@ function Manopt.init_caches(
         (c === :StochasticGradient) && push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
         (c === :StochasticGradients) && push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
         # Point caches
-        # (b) proximal point - we have to again use (p, λ, i) as key
+        # (b) proximal point - again use (p, λ, i) as key
         (c === :ProximalMap) && push!(lru_caches, LRU{Tuple{P,R,Int},P}(; maxsize=m))
-        # None of the above matched -> unknown cache type
+        # None of the previous cases matched -> unknown cache type
         if length(lru_caches) == i #nothing pushed
             error("""
             A cache for :$c seems to not be supported by LRU caches.

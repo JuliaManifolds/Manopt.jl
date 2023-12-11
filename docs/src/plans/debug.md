@@ -1,4 +1,4 @@
-# [Debug output](@id DebugSection)
+# [Debug output](@id sec-debug)
 
 ```@meta
 CurrentModule = Manopt

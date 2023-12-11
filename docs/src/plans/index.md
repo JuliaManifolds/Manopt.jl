@@ -1,4 +1,4 @@
-# [Plans for solvers](@id planSection)
+# [Plans for solvers](@id sec-plan)
 
 ```@meta
 CurrentModule = Manopt
@@ -8,7 +8,7 @@ For any optimisation performed in `Manopt.jl`
 information is required about both the optimisation task or “problem” at hand as well as the solver and all its parameters.
 This together is called a __plan__ in `Manopt.jl` and it consists of two data structures:
 
-* The [Manopt Problem](@ref ProblemSection) describes all _static_ data of a task, most prominently the manifold and the objective.
+* The [Manopt Problem](@ref sec-problem) describes all _static_ data of a task, most prominently the manifold and the objective.
 * The [Solver State](@ref sec-solver-state) describes all _varying_ data and parameters for the solver that is used. This also means that each solver has its own data structure for the state.
 
 By splitting these two parts, one problem can be define an then be solved  using different solvers.

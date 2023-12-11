@@ -9,7 +9,7 @@ abstract type ConstraintType end
     FunctionConstraint <: ConstraintType
 
 A type to indicate that constraints are implemented one whole functions,
-e.g. ``g(p) ∈ \mathbb R^m``.
+for example ``g(p) ∈ \mathbb R^m``.
 """
 struct FunctionConstraint <: ConstraintType end
 
@@ -17,7 +17,7 @@ struct FunctionConstraint <: ConstraintType end
     VectorConstraint <: ConstraintType
 
 A type to indicate that constraints are implemented a  vector of functions,
-e.g. ``g_i(p) ∈ \mathbb R, i=1,…,m``.
+for example ``g_i(p) ∈ \mathbb R, i=1,…,m``.
 """
 struct VectorConstraint <: ConstraintType end
 
@@ -34,17 +34,18 @@ Describes the constrained objective
 ```
 
 It consists of
+
 * an cost function ``f(p)``
-* the gradient of ``f``, ``\operatorname{grad}f(p)`` [`AbstractManifoldGradientObjective`](@ref)
-* inequality constraints ``g(p)``, either a function `g` returning a vector or a vector `[g1, g2,...,gm]` of functions.
-* equality constraints ``h(p)``, either a function `h` returning a vector or a vector `[h1, h2,...,hn]` of functions.
-* gradient(s) of the inequality constraints ``\operatorname{grad}g(p) ∈ (T_p\mathcal M)^m``, either a function or a vector of functions.
-* gradient(s) of the equality constraints ``\operatorname{grad}h(p) ∈ (T_p\mathcal M)^n``, either a function or a vector of functions.
+* the gradient of ``f``, ``\operatorname{grad}f(p)``
+* inequality constraints ``g(p)``, either a function `g` returning a vector or a vector `[g1, g2, ..., gm]` of functions.
+* equality constraints ``h(p)``, either a function `h` returning a vector or a vector `[h1, h2, ..., hn]` of functions.
+* gradients of the inequality constraints ``\operatorname{grad}g(p) ∈ (T_p\mathcal M)^m``, either a function or a vector of functions.
+* gradients of the equality constraints ``\operatorname{grad}h(p) ∈ (T_p\mathcal M)^n``, either a function or a vector of functions.
 
 There are two ways to specify the constraints ``g`` and ``h``.
 
 1. as one `Function` returning a vector in ``\mathbb R^m`` and ``\mathbb R^n`` respectively.
-   This might be easier to implement but requires evaluating _all_ constraints even if only one is needed.
+   This might be easier to implement but requires evaluating all constraints even if only one is needed.
 2. as a `AbstractVector{<:Function}` where each function returns a real number.
    This requires each constraint to be implemented as a single function, but it is possible to evaluate also only a single constraint.
 
@@ -60,7 +61,7 @@ This difference is indicated by the `evaluation` keyword.
     )
 
 Where `f, g, h` describe the cost, inequality and equality constraints, respectively, as
-described above and `grad_f, grad_g, grad_h` are the corresponding gradient functions in
+described previously and `grad_f, grad_g, grad_h` are the corresponding gradient functions in
 one of the 4 formats. If the objective does not have inequality constraints, you can set `G` and `gradG` no `nothing`.
 If the problem does not have equality constraints, you can set `H` and `gradH` no `nothing` or leave them out.
 
@@ -69,8 +70,8 @@ If the problem does not have equality constraints, you can set `H` and `gradH` n
         evaluation=AllocatingEvaluation()
     )
 
-A keyword argument variant of the constructor above, where you can leave out either
-`G` and `gradG` _or_ `H` and `gradH` but not both.
+A keyword argument variant of the preceding constructor, where you can leave out either
+`G` and `gradG` or `H` and `gradH` but not both pairs.
 """
 struct ConstrainedManifoldObjective{
     T<:AbstractEvaluationType,CT<:ConstraintType,TCost,GF,TG,GG,TH,GH
@@ -207,7 +208,7 @@ function ConstrainedManifoldObjective(
         f, grad_f, local_g, local_grad_g, h, grad_h
     )
 end
-# No eqality constraints provided
+# No equality constraints provided
 function ConstrainedManifoldObjective(
     f::TF,
     grad_f::TGF,

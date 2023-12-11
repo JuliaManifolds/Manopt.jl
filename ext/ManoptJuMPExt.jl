@@ -50,7 +50,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     state::Union{Nothing,Manopt.AbstractManoptSolverState}
     # Starting value for each variable
     variable_primal_start::Vector{Union{Nothing,Float64}}
-    # Sense of the optimization, e.g., min, max or no objective
+    # Sense of the optimization, that is whether it is for example min, max or no objective
     sense::MOI.OptimizationSense
     # Model used to compute gradient of the objective function with AD
     nlp_model::MOI.Nonlinear.Model
@@ -381,7 +381,7 @@ end
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
 and the [`Manopt.JuMP_VectorizedManifold`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, e.g., [`Manopt.JuMP_ArrayShape`](@ref).
+shape of the manifold, that is, [`Manopt.JuMP_ArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)
@@ -395,7 +395,7 @@ end
 
 Return `MOI.OPTIMIZE_NOT_CALLED` if `optimize!` hasn't been called yet and
 `MOI.LOCALLY_SOLVED` otherwise indicating that the solver has solved the
-problem to local optimality the the value of `MOI.RawStatusString` for more
+problem to local optimality the value of `MOI.RawStatusString` for more
 details on why the solver stopped.
 """
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
