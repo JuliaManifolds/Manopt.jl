@@ -1,5 +1,7 @@
 using Manopt, Manifolds, Test, Random
 
+using ManifoldDiff: grad_distance
+
 @testset "Gradient Descent" begin
     @testset "allocating Circle" begin
         M = Circle()

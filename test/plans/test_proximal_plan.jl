@@ -1,5 +1,7 @@
 using LRUCache, Manopt, Manifolds, Test
 import Manopt: get_proximal_map, get_proximal_map!
+using ManifoldDiff: prox_distance, adjoint_differential_log_basepoint
+
 function get_proximal_map(M, o::ManifoldProximalMapObjective, λ, p)
     return get_proximal_map(M, o, λ, p, 1)
 end

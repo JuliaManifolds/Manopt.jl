@@ -27,18 +27,7 @@ include("utils/example_tasks.jl")
         include("plans/test_stopping_criteria.jl")
         include("plans/test_subgradient_plan.jl")
     end
-    @testset "Function Tests     " begin
-        include("functions/test_adjoint_differentials.jl")
-        include("functions/test_bezier.jl")
-        include("functions/test_differentials.jl")
-        include("functions/test_costs.jl")
-        include("functions/test_gradients.jl")
-        include("functions/test_proximal_maps.jl")
-        include("functions/test_manifold.jl")
-    end
-    @testset "Helper & Data Tests" begin
-        include("helpers/test_error_measures.jl")
-        include("helpers/test_data.jl")
+    @testset "Helper Tests       " begin
         include("helpers/test_checks.jl")
         include("helpers/test_linesearches.jl")
     end
