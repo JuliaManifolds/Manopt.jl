@@ -1,6 +1,7 @@
 using Manifolds, Manopt, Test, Dates, LRUCache
 using ManifoldDiff: prox_distance, prox_distance!
-using ManoptExamples: prox_TV, prox_TV!, L2_Total_Variation
+using ManoptExamples: prox_Total_Variation, prox_Total_Variation!, L2_Total_Variation
+using ManoptExamples: artificial_S1_signal, Lemniscate
 
 @testset "Cyclic Proximal Point" begin
     @testset "Allocating" begin
@@ -9,7 +10,8 @@ using ManoptExamples: prox_TV, prox_TV!, L2_Total_Variation
         q = artificial_S1_signal(n)
         f(M, p) = L2_Total_Variation(M, q, 0.5, p)
         proxes = (
-            (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
+            (N, λ, p) -> prox_distance(N, λ, q, p),
+            (N, λ, p) -> prox_Total_Variation(N, 0.5 * λ, p),
         )
         q2 = cyclic_proximal_point(
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
@@ -45,14 +47,15 @@ using ManoptExamples: prox_TV, prox_TV!, L2_Total_Variation
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        q = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
+        q = Lemniscate(n)
         f(N, p) = L2_Total_Variation(N, q, 0.5, p)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
-            (N, q, λ, p) -> prox_TV!(N, q, 0.5 * λ, p),
+            (N, q, λ, p) -> prox_Total_Variation!(N, q, 0.5 * λ, p),
         )
         proxes = (
-            (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
+            (N, λ, p) -> prox_distance(N, λ, q, p),
+            (N, λ, p) -> prox_Total_Variation(N, 0.5 * λ, p),
         )
         s1 = cyclic_proximal_point(
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
@@ -91,14 +94,15 @@ using ManoptExamples: prox_TV, prox_TV!, L2_Total_Variation
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        q = artificial_S2_lemniscate([0.0, 0.0, 1.0], n)
+        q = Lemniscate(n)
         f(N, x) = L2_Total_Variation(N, q, 0.5, x)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
-            (N, q, λ, p) -> prox_TV!(N, q, 0.5 * λ, p),
+            (N, q, λ, p) -> prox_Total_Variation!(N, q, 0.5 * λ, p),
         )
         proxes = (
-            (N, λ, p) -> prox_distance(N, λ, q, p), (N, λ, p) -> prox_TV(N, 0.5 * λ, p)
+            (N, λ, p) -> prox_distance(N, λ, q, p),
+            (N, λ, p) -> prox_Total_Variation(N, 0.5 * λ, p),
         )
         for i in 1:2
             mpo1 = ManifoldProximalMapObjective(f, proxes)
@@ -127,7 +131,8 @@ using ManoptExamples: prox_TV, prox_TV!, L2_Total_Variation
         O = CyclicProximalPointState(M, p)
         f(M, p) = L2_Total_Variation(M, q, 0.5, p)
         proxes = (
-            (M, λ, p) -> prox_distance(M, λ, q, p), (M, λ, p) -> prox_TV(M, 0.5 * λ, p)
+            (M, λ, p) -> prox_distance(M, λ, q, p),
+            (M, λ, p) -> prox_Total_Variation(M, 0.5 * λ, p),
         )
         s = CyclicProximalPointState(
             M, f; stopping_criterion=StopAfterIteration(1), λ=i -> i
