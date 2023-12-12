@@ -1,4 +1,4 @@
-# [Alternating gradient descent](@id title-agds)
+# [Alternating gradient descent](@id solver-alternating-gradient-descent)
 
 ```@meta
 CurrentModule = Manopt

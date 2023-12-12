@@ -1,4 +1,4 @@
-# [The Riemannian trust regions solver](@id trust_regions)
+# The Riemannian trust regions solver
 
 Minimize a function
 

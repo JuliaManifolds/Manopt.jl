@@ -1,4 +1,4 @@
-# [The Riemannian Chambolle-Pock algorithm](@id solver-chambolle-pock)
+# The Riemannian Chambolle-Pock algorithm
 
 The Riemannian Chambolle—Pock is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*)
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.

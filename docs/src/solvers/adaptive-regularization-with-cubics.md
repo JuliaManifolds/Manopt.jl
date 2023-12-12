@@ -1,4 +1,4 @@
-# [Adaptive regularization with cubics](@id ARSSection)
+# Adaptive regularization with cubics
 
 
 

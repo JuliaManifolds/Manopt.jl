@@ -32,8 +32,8 @@ ManifoldsBase.jl
 [Mm]anopt(:?.org|.jl)?
 Marquardt
 Munkvold
-Mead
-Nelder
+[Mm]ead
+[Nn]elder
 Newton
 [Pp]arametrising
 Parametrising
