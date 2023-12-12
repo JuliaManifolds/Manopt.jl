@@ -243,8 +243,8 @@ get_solver_result(s2)
 ## Ease of use I: a high level interface
 
 `Manopt.jl` offers a few additional features for solvers in their high level interfaces,
-for example ``[`debug=` for debug](@ref sec-debug)``{=commonmark}, ``[`record=`](@ref sec-record)``{=commonmark} keywords for debug and recording
-within solver states or ``[`count=` and `cache`](@ref ObjectiveSection)``{=commonmark} keywords for the objective.
+for example [`debug=` for debug](../plans/debug.md), [`record=`](../plans/record.md) keywords for debug and recording
+within solver states or [`count=` and `cache`](../plans/objective.md) keywords for the objective.
 
 We can introduce these here as well with just a few lines of code. There are usually two steps.
 We further need three internal function from `Manopt.jl`

@@ -4,6 +4,7 @@ Adagrad
 API
 Armijo
 Bergmann
+Boumal
 [Cc]hambolle
 Constantin
 Diepeveen
@@ -22,6 +23,7 @@ Hessian
 injectivity
 Jax
 JuMP.jl
+kwargs
 Levenberg
 Lagrangian
 Lanczos

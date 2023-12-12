@@ -1,6 +1,6 @@
-# [Douglas—Rachford algorithm](@id DRSolver)
+# Douglas—Rachford algorithm
 
-The (Parallel) Douglas—Rachford ((P)DR) Algorithm was generalized to Hadamard
+The (Parallel) Douglas—Rachford ((P)DR) algorithm was generalized to Hadamard
 manifolds in [BergmannPerschSteidl:2016](@cite).
 
 The aim is to minimize the sum
@@ -60,7 +60,7 @@ DouglasRachfordState
 ```
 
 For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also
-[Cyclic Proximal Point](@ref CPPSolver).
+[Cyclic Proximal Point](cyclic_proximal_point.md).
 
 Furthermore, this solver has a short hand notation for the involved [`reflect`](@ref)ion.
 

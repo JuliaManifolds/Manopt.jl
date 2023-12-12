@@ -12,7 +12,7 @@ SubGradientMethodState
 ```
 
 For [`DebugAction`](@ref)s and [`RecordAction`](@ref)s to record (sub)gradient,
-its norm and the step sizes, see the [steepest Descent](solvers/gradient_descent.md)
+its norm and the step sizes, see the [gradient descent](gradient_descent.md)
 actions.
 
 

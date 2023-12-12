@@ -64,7 +64,7 @@ We also follow a few internal conventions:
 - AbstractManoptProblem and option structures are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand.
 - Within the source code of one algorithm, the high level interface should be first, then the initialization, then the step.
 - Otherwise an alphabetical order is preferable.
-- The above implies that the mutating variant of a function follows the non-mutating variant.
+- The preceding implies that the mutating variant of a function follows the non-mutating variant.
 - There should be no dangling `=` signs.
 - Always add a newline between things of different types (struct/method/const).
 - Always add a newline between methods for different functions (including mutating/nonmutating variants).

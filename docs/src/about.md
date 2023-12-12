@@ -5,9 +5,9 @@ This Julia package was started and is currently maintained by [Ronny Bergmann](h
 
 The following people contributed
 * [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential `check` functions](helpers/checks.md)
-* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](@ref ParticleSwarmSolver), the [Riemannian Augmented Lagrangian Method](@ref AugmentedLagrangianSolver), the [Exact Penalty Method](@ref ExactPenaltySolver), as well as the [`NonmonotoneLinesearch`](@ref)
-* [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](@ref solver-pdrssn) solver.
-* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](@ref FrankWolfe) solver
+* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref)
+* [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
+* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver
 * Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers.
 * [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs)

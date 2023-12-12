@@ -20,7 +20,7 @@ A challenge might be, which functions are necessary, since the overall interface
 is maybe not completely necessary.
 
 This tutorial aims to help you through these steps to implement necessary parts of a manifold
-to get started with the `[solver](@ref SolversSection)`{=commonmark} you have in mind.
+to get started with the [solver](../solvers/index.md) you have in mind.
 
 ## An example problem
 
