@@ -73,10 +73,6 @@ This project is build upon [ManifoldsBase.jl](https://juliamanifolds.github.io/M
 
 The notation in the documentation aims to follow the same [notation](https://juliamanifolds.github.io/Manifolds.jl/stable/misc/notation.html) from these packages.
 
-### Functions on manifolds
-
-Several functions are available, implemented on an arbitrary manifold, [cost functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions) and their [adjoints](@ref adjointDifferentialFunctions), and [gradients](@ref GradientFunctions) as well as [proximal maps](@ref proximalMapFunctions).
-
 ### Visualization
 
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref sec-exports). Furthermore a system to get [debug](@ref sec-debug) during the iterations of an algorithms as well as [record](@ref sec-record) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and

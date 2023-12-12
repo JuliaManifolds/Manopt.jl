@@ -66,7 +66,6 @@ Furthermore, this solver has a short hand notation for the involved [`reflect`](
 
 ```@docs
 reflect
-reflect!
 ```
 
 ## [Technical details](@id sec-dr-technical-details)
