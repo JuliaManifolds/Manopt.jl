@@ -3,7 +3,7 @@ title: "🏔️ Get started: optimize."
 author: Ronny Bergmann
 ---
 
-In this tutorial, we will both introduce the basics of optimisation on manifolds as well as
+This tutorial both introduces the basics of optimisation on manifolds as well as
 how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifolds in [Julia](https://julialang.org).
 
 For more theoretical background, see for example [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
@@ -11,16 +11,16 @@ and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more abou
 
 Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/#ManifoldsBase.Manifold)
 and let $f\colon \mathcal M → ℝ$ be a cost function.
-We aim to compute a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
+The aim is to determine or obtain a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
 
-We also write this as
+This can also be written as
 
 ```math
     \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
 ```
 
-and would like to find $p^*$ numerically.
-As an example we take the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+where the aim is to compute the minimizer $p^*$ numerically.
+As an example, consider the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
 In the Euclidean case with$d\in\mathbb N$, that is for $n\in \mathbb N$ data points $y_1,\ldots,y_n \in \mathbb R^d$ the mean
 
 ```math
@@ -28,14 +28,14 @@ In the Euclidean case with$d\in\mathbb N$, that is for $n\in \mathbb N$ data poi
 ```
 
 
-can not be directly generalised to data $q_1,\ldots,q_n$, since on a manifold we do not have an addition.
-But the mean can also be characterised as
+can not be directly generalised to data $q_1,\ldots,q_n \in \mathcal M$, since on a manifold there is no addition available.
+But the mean can also be characterised as the following minimizer
 
 ```math
   \operatorname*{arg\,min}_{x\in\mathbb R^d} \frac{1}{2n}\sum_{i=1}^n \lVert x - y_i\rVert^2
 ```
 
-and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [Karcher:1977](@cite)
+and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds, which is the so called _Riemannian Center of Mass_ [Karcher:1977](@cite)
 
 ```math
   \operatorname*{arg\,min}_{p\in\mathcal M}

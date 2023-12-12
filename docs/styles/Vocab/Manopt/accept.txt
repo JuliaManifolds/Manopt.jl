@@ -1,10 +1,13 @@
 Absil
 Adagrad
 [A|a]djoint
+Agarwal
 API
 Armijo
 Bergmann
 Boumal
+Bullins
+Cartis
 [Cc]hambolle
 Constantin
 Diepeveen
@@ -37,6 +40,7 @@ Munkvold
 [Mm]ead
 [Nn]elder
 Newton
+nonpositive
 [Pp]arametrising
 Parametrising
 [Pp]ock

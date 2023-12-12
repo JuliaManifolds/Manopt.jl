@@ -6,37 +6,39 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `η1`, `η2`           – (`0.1`, `0.9`) bounds for evaluating the regularization parameter
-* `γ1`, `γ2`           – (`0.1`, `2.0`) shrinking and expansion factors for regularization parameter `σ`
-* `p`                  – (`rand(M)` the current iterate
-* `X`                  – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``
-* `s`                  - (`zero_vector(M,p)`) the tangent vector step resulting from minimizing the model
+* `η1`, `η2`           (`0.1`, `0.9`) bounds for evaluating the regularization parameter
+* `γ1`, `γ2`           (`0.1`, `2.0`) shrinking and expansion factors for regularization parameter `σ`
+* `p`                  (`rand(M)` the current iterate
+* `X`                  (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``
+* `s`                  (`zero_vector(M,p)`) the tangent vector step resulting from minimizing the model
   problem in the tangent space ``\mathcal T_{p} \mathcal M``
-* `σ`                 – the current cubic regularization parameter
-* `σmin`               – (`1e-7`) lower bound for the cubic regularization parameter
-* `ρ_regularization`   – (1e3) regularization parameter for computing ρ. As we approach convergence the ρ may be difficult to compute with numerator and denominator approaching zero. Regularizing the the ratio lets ρ go to 1 near convergence.
-* `evaluation`         - (`AllocatingEvaluation()`) if you provide a
-* `retraction_method`  – (`default_retraction_method(M)`) the retraction to use
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `sub_problem`        - sub problem solved in each iteration
-* `sub_state`          - sub state for solving the sub problem – either a solver state if
-                         the problem is an [`AbstractManoptProblem`](@ref) or an [`AbstractEvaluationType`](@ref) if it is a function,
-                         where it defaults to [`AllocatingEvaluation`](@ref).
+* `σ`                  the current cubic regularization parameter
+* `σmin`               (`1e-7`) lower bound for the cubic regularization parameter
+* `ρ_regularization`   (`1e3`) regularization parameter for computing ρ.
+ When approaching convergence ρ may be difficult to compute with numerator and denominator approaching zero.
+ Regularizing the ratio lets ρ go to 1 near convergence.
+* `evaluation`         (`AllocatingEvaluation()`) if you provide a
+* `retraction_method`  (`default_retraction_method(M)`) the retraction to use
+* `stopping_criterion` ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
+* `sub_problem`        sub problem solved in each iteration
+* `sub_state`          sub state for solving the sub problem, either a solver state if
+  the problem is an [`AbstractManoptProblem`](@ref) or an [`AbstractEvaluationType`](@ref) if it is a function,
+  where it defaults to [`AllocatingEvaluation`](@ref).
 
 Furthermore the following integral fields are defined
 
-* `q`                  - (`copy(M,p)`) a point for the candidates to evaluate model and ρ
-* `H`                  – (`copy(M, p, X)`) the current hessian, ``\operatorname{Hess}F(p)[⋅]``
-* `S`                  – (`copy(M, p, X)`) the current solution from the subsolver
-* `ρ`                  – the current regularized ratio of actual improvement and model improvement.
-* `ρ_denominator`      – (`one(ρ)`) a value to store the denominator from the computation of ρ
-                         to allow for a warning or error when this value is non-positive.
+* `q`                  (`copy(M,p)`) a point for the candidates to evaluate model and ρ
+* `H`                  (`copy(M, p, X)`) the current Hessian, ``\operatorname{Hess}F(p)[⋅]``
+* `S`                  (`copy(M, p, X)`) the current solution from the subsolver
+* `ρ`                  the current regularized ratio of actual improvement and model improvement.
+* `ρ_denominator`      (`one(ρ)`) a value to store the denominator from the computation of ρ
+  to allow for a warning or error when this value is non-positive.
 
 # Constructor
 
     AdaptiveRegularizationState(M, p=rand(M); X=zero_vector(M, p); kwargs...)
 
-Construct the solver state with all fields stated above as keyword arguments.
+Construct the solver state with all fields stated as keyword arguments.
 """
 mutable struct AdaptiveRegularizationState{
     P,
@@ -167,22 +169,23 @@ end
 Solve an optimization problem on the manifold `M` by iteratively minimizing
 
 ```math
-m_k(X) = f(p_k) + ⟨X, \operatorname{grad} f(p_k)⟩ + \frac{1}{2}⟨X, \operatorname{Hess} f(p_k)[X]⟩ + \frac{σ_k}{3}\lVert X \rVert^3
+  m_k(X) = f(p_k) + ⟨X, \operatorname{grad} f(p_k)⟩ + \frac{1}{2}⟨X, \operatorname{Hess} f(p_k)[X]⟩ + \frac{σ_k}{3}\lVert X \rVert^3
 ```
 
-on the tangent space at the current iterate ``p_k``, i.e. ``X ∈ T_{p_k}\mathcal M`` and
-where ``σ_k > 0`` is a regularization parameter.
+on the tangent space at the current iterate ``p_k``, where ``X ∈ T_{p_k}\mathcal M`` and
+``σ_k > 0`` is a regularization parameter.
 
-Let ``X_k`` denote the minimizer of the model ``m_k``, then we use the model improvement
+Let ``X_k`` denote the minimizer of the model ``m_k`` and use the model improvement
 
 ```math
-ρ_k = \frac{f(p_k) - f(\operatorname{retr}_{p_k}(X_k))}{m_k(0) - m_k(s) + \frac{σ_k}{3}\lVert X_k\rVert^3}.
+  ρ_k = \frac{f(p_k) - f(\operatorname{retr}_{p_k}(X_k))}{m_k(0) - m_k(X_k) + \frac{σ_k}{3}\lVert X_k\rVert^3}.
 ```
 
-We use two thresholds ``η_2 ≥ η_1 > 0`` and set
-``p_{k+1} = \operatorname{retr}_{p_k}(X_k)`` if ``ρ ≥ η_1`` and reject the candidate otherwise, i.e. set ``p_{k+1} = p_k``.
+With two thresholds ``η_2 ≥ η_1 > 0``
+set ``p_{k+1} = \operatorname{retr}_{p_k}(X_k)`` if ``ρ ≥ η_1``
+and reject the candidate otherwise, that is, set ``p_{k+1} = p_k``.
 
-We further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2``
+Further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2``
 
 ```math
 σ_{k+1} =
@@ -197,43 +200,44 @@ For more details see [Agarwal, Boumal, Bullins, Cartis, Math. Prog., 2020](@cite
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
-* `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
-* `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
-* `p` – an initial value ``p  ∈  \mathcal M``
+* `M`      a manifold ``\mathcal M``
+* `f`      a cost function ``F: \mathcal M → ℝ`` to minimize
+* `grad_f` the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
+* `Hess_f` (optional) the Hessian ``H( \mathcal M, x, ξ)`` of ``F``
+* `p`      an initial value ``p ∈ \mathcal M``
 
-For the case that no hessian is provided, the Hessian is computed using finite difference, see
+For the case that no Hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
 
-the cost `f` and its gradient and hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
+the cost `f` and its gradient and Hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
 
 # Keyword arguments
+
 the default values are given in brackets
 
-* `σ`                      - (`100.0 / sqrt(manifold_dimension(M)`) initial regularization parameter
-* `σmin`                   - (`1e-10`) minimal regularization value ``σ_{\min}``
-* `η1`                     - (`0.1`) lower model success threshold
-* `η2`                     - (`0.9`) upper model success threshold
-* `γ1`                     - (`0.1`) regularization reduction factor (for the success case)
-* `γ2`                     - (`2.0`) regularization increment factor (for the non-success case)
-* `evaluation`             – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
-                             or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)` and analogously for the hessian.
-* `retraction_method`      – (`default_retraction_method(M, typeof(p))`) a retraction to use
-* `initial_tangent_vector` - (`zero_vector(M, p)`) initialize any tangent vector data,
-* `maxIterLanczos`         - (`200`) a shortcut to set the stopping criterion in the sub_solver,
-* `ρ_regularization`       - (`1e3`) a regularization to avoid dividing by zero for small values of cost and model
-* `stopping_criterion`     - ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`)
-* `sub_state`              - [`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)
-                             a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a function.
-* `sub_objective`               - a shortcut to modify the objective of the subproblem used within in the
-* `sub_problem`            - [`DefaultManoptProblem`](@ref)`(M, sub_objective)` the problem (or a function) for the sub problem
+* `σ`                      (`100.0 / sqrt(manifold_dimension(M)`) initial regularization parameter
+* `σmin`                   (`1e-10`) minimal regularization value ``σ_{\min}``
+* `η1`                     (`0.1`) lower model success threshold
+* `η2`                     (`0.9`) upper model success threshold
+* `γ1`                     (`0.1`) regularization reduction factor (for the success case)
+* `γ2`                     (`2.0`) regularization increment factor (for the non-success case)
+* `evaluation`             ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
+  or [`InplaceEvaluation`](@ref) in place, that is of the form `grad_f!(M, X, p)` and analogously for the Hessian.
+* `retraction_method`      (`default_retraction_method(M, typeof(p))`) a retraction to use
+* `initial_tangent_vector` (`zero_vector(M, p)`) initialize any tangent vector data,
+* `maxIterLanczos`         (`200`) a shortcut to set the stopping criterion in the sub solver,
+* `ρ_regularization`       (`1e3`) a regularization to avoid dividing by zero for small values of cost and model
+* `stopping_criterion`     ([`StopAfterIteration`](@ref)`(40) | `[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`)
+* `sub_state`              [`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)
+  a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a function.
+* `sub_objective`          a shortcut to modify the objective of the subproblem used within in the
+* `sub_problem`            [`DefaultManoptProblem`](@ref)`(M, sub_objective)` the problem (or a function) for the sub problem
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
 If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
-By default the `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denominator, >(0); message="Denominator nonpositive", type=:error)``
+By default the `debug=` keyword is set to [`DebugIfEntry`](@ref)`(:ρ_denominator, >(0); message="Denominator nonpositive", type=:error)`
 to avoid that by rounding errors the denominator in the computation of `ρ` gets nonpositive.
 """
 adaptive_regularization_with_cubics(M::AbstractManifold, args...; kwargs...)
@@ -322,16 +326,16 @@ end
 evaluate the Riemannian adaptive regularization with cubics solver in place of `p`.
 
 # Input
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F: \mathcal M → ℝ`` to minimize
-* `grad_f`- the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
-* `Hess_f` – (optional) the hessian ``H( \mathcal M, x, ξ)`` of ``F``
-* `p` – an initial value ``p  ∈  \mathcal M``
+* `M`      a manifold ``\mathcal M``
+* `f`      a cost function ``F: \mathcal M → ℝ`` to minimize
+* `grad_f` the gradient ``\operatorname{grad}F: \mathcal M → T \mathcal M`` of ``F``
+* `Hess_f` (optional) the Hessian ``H( \mathcal M, x, ξ)`` of ``F``
+* `p`      an initial value ``p  ∈  \mathcal M``
 
-For the case that no hessian is provided, the Hessian is computed using finite difference, see
+For the case that no Hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
 
-the cost `f` and its gradient and hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
+the cost `f` and its gradient and Hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
 
 for more details and all options, see [`adaptive_regularization_with_cubics`](@ref).
 """
@@ -482,7 +486,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     return arcs
 end
 
-# Dispatch on different forms of sub_solvers
+# Dispatch on different forms of `sub_solvers`
 function solve_arc_subproblem!(
     M, s, problem::P, state::S, p
 ) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
