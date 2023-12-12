@@ -30,6 +30,7 @@ include("utils/example_tasks.jl")
     @testset "Helper Tests       " begin
         include("helpers/test_checks.jl")
         include("helpers/test_linesearches.jl")
+        include("helpers/test_manifold_extra_functions.jl")
     end
     @testset "Solver Tests       " begin
         include("solvers/test_adaptive_regularization_with_cubics.jl")
