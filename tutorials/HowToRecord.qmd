@@ -30,7 +30,8 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 Let's first load the necessary packages.
 
 ```{julia}
-using Manopt, Manifolds, Random
+using Manopt, Manifolds, Random, ManifoldDiff
+using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
 

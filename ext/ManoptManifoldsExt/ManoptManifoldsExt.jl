@@ -4,8 +4,6 @@ using ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
 using Manopt
 import Manopt:
     max_stepsize,
-    prox_TV2,
-    grad_TV2,
     alternating_gradient_descent,
     alternating_gradient_descent!,
     get_gradient,
@@ -26,8 +24,6 @@ end
 
 const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
 include("manifold_functions.jl")
-include("nonmutating_manifolds_functions.jl")
-include("artificialDataFunctionsManifolds.jl")
 include("ChambollePockManifolds.jl")
 include("alternating_gradient.jl")
 end

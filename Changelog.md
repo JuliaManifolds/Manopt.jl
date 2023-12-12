@@ -5,11 +5,62 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [0.4.44] December 12, 2023
+
+Formally one could consider this version breaking, since a few functions
+have been moved, that in earlier versions (0.3.x) have been used in example scripts.
+These examples are now available again within [ManoptExamples.jl](https://juliamanifolds.github.io/ManoptExamples.jl/stable/), and with their
+“reappearance” the corresponding costs, gradients, differentials, adjoint differentials, and proximal maps
+have been moved there as well.
+This is not considered breaking, since the functions were only used in the old, removed examples.
+We still document each and every of the moved functions below. They have been partly renamed,
+and their documentation and testing has been extended.
 
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
+* `artificial_S2_lemniscate` is available as [`ManoptExample.Lemniscate`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.Lemniscate-Tuple{Number}) – and works on arbitrary manifolds now.
+* `artificial_S1_signal` is available as [`ManoptExample.artificial_S1_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_signal)
+* `artificial_S1_slope_signal` is available as [`ManoptExamples.artificial_S1_slope_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_slope_signal)
+* `artificial_S2_composite_bezier_curve` is available as [`ManoptExamples.artificial_S2_composite_Bezier_curve`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_composite_Bezier_curve-Tuple{})
+* `artificial_S2_rotation_image` is available as [`ManoptExamples.artificial_S2_rotation_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_rotation_image)
+* `artificial_S2_whirl_image` is available as [`ManoptExamples.artificial_S2_whirl_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_whirl_image)
+* `artificial_S2_whirl_patch` is available as [`ManoptExamples.artificial_S2_whirl_path`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_whirl_patch)
+* `artificial_SAR_image` is available as [`ManoptExamples.artificial_SAR_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificialIn_SAR_image-Tuple{Integer})
+* `artificial_SPD_image` is available as [`ManoptExamples.artificial_SPD_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_SPD_image)
+* `artificial_SPD_image2` is available as [`ManoptExamples.artificial_SPD_image`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_SPD_image2)
+* `adjoint_differential_forward_logs` is available as [`ManoptExamples.adjoint_differential_forward_logs`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_forward_logs-Union{Tuple{TPR},%20Tuple{TSize},%20Tuple{TM},%20Tuple{𝔽},%20Tuple{ManifoldsBase.PowerManifold{𝔽,%20TM,%20TSize,%20TPR},%20Any,%20Any}}%20where%20{𝔽,%20TM,%20TSize,%20TPR})
+* `adjoint:differential_bezier_control` is available as [`ManoptExamples.adjoint_differential_Bezier_control_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_Bezier_control_points-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment},%20AbstractVector,%20AbstractVector})
+* `BezierSegment` is available as [`ManoptExamples.BeziérSegment`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.BezierSegment)
+* `cost_acceleration_bezier` is avilable as [`ManoptExamples.acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat}}}%20where%20P)
+* `cost_L2_acceleration_bezier` is available as [`ManoptExamples.L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat},%20AbstractFloat,%20AbstractVector{P}}}%20where%20P)
+* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
+* `costL2TV` is available as [`ManoptExamples.L2_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation-NTuple{4,%20Any})
+* `costL2TV12` is available as [`ManoptExamples.L2_Total_Variation_1_2`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation_1_2-Tuple{ManifoldsBase.PowerManifold,%20Vararg{Any,%204}})
+* `costL2TV2` is available as [`ManoptExamples.L2_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_second_order_Total_Variation-Tuple{ManifoldsBase.PowerManifold,%20Any,%20Any,%20Any})
+* `costTV` is available as [`ManoptExamples.Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.Total_Variation)
+* `costTV2` is available as [`ManoptExamples.second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.second_order_Total_Variation)
+* `de_casteljau` is available as [`ManoptExamples.de_Casteljau`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.de_Casteljau-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any}})
+* `differential_forward_logs` is available as [`ManoptExamples.differential_forward_logs`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.differential_forward_logs-Tuple{ManifoldsBase.PowerManifold,%20Any,%20Any})
+* `differential_bezier_control` is available as [`ManoptExamples.differential_Bezier_control_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.differential_Bezier_control_points-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment},%20AbstractVector,%20AbstractVector{%3C:ManoptExamples.BezierSegment}})
+* `forward_logs` is available as [`ManoptExamples.forward_logs`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.forward_logs-Union{Tuple{TPR},%20Tuple{TSize},%20Tuple{TM},%20Tuple{𝔽},%20Tuple{ManifoldsBase.PowerManifold{𝔽,%20TM,%20TSize,%20TPR},%20Any}}%20where%20{𝔽,%20TM,%20TSize,%20TPR})
+* `get_bezier_degree` is available as [`ManoptExamples.get_Bezier_degree`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_degree-Tuple{ManifoldsBase.AbstractManifold,%20ManoptExamples.BezierSegment})
+* `get_bezier_degrees` is available as [`ManoptExamples.get_Bezier_degrees`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_degrees-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment}})
+* `get_Bezier_inner_points` is available as [`ManoptExamples.get_Bezier_inner_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_inner_points-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment}})
+* `get_bezier_junction_tangent_vectors` is available as [`ManoptExamples.get_Bezier_junction_tangent_vectors`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_junction_tangent_vectors-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment}})
+* `get_bezier_junctions` is available as [`ManoptExamples.get_Bezier_junctions`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_junctions)
+* `get_bezier_points` is available as [`ManoptExamples.get_Bezier_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_points)
+* `get_bezier_segments` is available as [`ManoptExamples.get_Bezier_segments`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_segments-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20Vector{P},%20Any},%20Tuple{ManifoldsBase.AbstractManifold,%20Vector{P},%20Any,%20Symbol}}%20where%20P)
+* `grad_acceleration_bezier` is available as [`ManoptExamples.grad_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_acceleration_Bezier-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector,%20AbstractVector{%3C:Integer},%20AbstractVector})
+* `grad_L2_acceleration_bezier` is available as [`ManoptExamples.grad_L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector,%20Any,%20AbstractVector{P}}}%20where%20P)
+* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12``](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
+* `grad_TV` is available as [`ManoptExamples.grad_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_Total_Variation)
+* `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.Intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
+* `project_collaborative_TV` is available as [`ManoptExamples.project_collaborative_TV`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.project_collaborative_TV)
+* `prox_parallel_TV` is available as [`ManoptExamples.prox_parallel_TV`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_parallel_TV)
+* `grad_TV2` is available as [`ManoptExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_second_order_Total_Variation)
+* `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_Total_Variation)
+* `prox_TV2` is available as [`ManopExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
 
 ## [0.4.43] – November 19, 2023
 
@@ -137,7 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* The `AdaptiveWNGrad` stepsize is now available as a new stepsize functor.
+* The `AdaptiveWNGrad` stepsize is available as a new stepsize functor.
 
 ### Fixed
 

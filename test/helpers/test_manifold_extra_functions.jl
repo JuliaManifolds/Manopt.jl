@@ -59,6 +59,8 @@ Random.seed!(42)
         @test mid_point(M, p, q, 1.0) ≈ π / 2
         @test mid_point(M, p, q, -1.0) ≈ -π / 2
         @test mid_point(M, 0, π / 2) ≈ π / 4
+        # Without being too far away -> classical mid point
+        @test mid_point(M, 0, 0.1, π / 2) == mid_point(M, 0, 0.1)
     end
 
     @testset "max_stepsize" begin

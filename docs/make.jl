@@ -10,12 +10,12 @@ docs/make.jl
 Render the `Manopt.jl` documenation with optinal arguments
 
 Arguments
-* `--exclude-docs` - exclude the tutorials from the menu of Documenter,
+* `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
   this can be used if you do not have Quarto installed to still be able to render the docs
   locally on this machine. This option should not be set on CI.
-* `--help`         - print this help and exit without rendering the documentation
-* `--prettyurls`   – toggle the prettyurls part to true (which is otherwise only true on CI)
-* `--quarto`       – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
+* `--help`              - print this help and exit without rendering the documentation
+* `--prettyurls`        – toggle the prettyurls part to true (which is otherwise only true on CI)
+* `--quarto`            – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
   If they are generated ones they are cached accordingly.
@@ -91,7 +91,7 @@ for (md_file, doc_file) in
     end
 end
 
-## Build titorials menu
+## Build tutorials menu
 tutorials_menu =
     "How to..." => [
         "🏔️ Get started: optimize." => "tutorials/Optimize.md",
@@ -112,6 +112,8 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=(get(ENV, "CI", nothing) == "true") || ("--prettyurls" ∈ ARGS),
         assets=["assets/favicon.ico", "assets/citations.css"],
+        size_threshold_warn=200 * 2^10, # raise slightly from 100 to 200 KiB
+        size_threshold=300 * 2^10,      # raise slightly 200 to to 300 KiB
     ),
     modules=[
         Manopt,
@@ -180,22 +182,7 @@ makedocs(;
             "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
         ],
-        "Functions" => [
-            "Introduction" => "functions/index.md",
-            "Bézier curves" => "functions/bezier.md",
-            "Cost functions" => "functions/costs.md",
-            "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjoint_differentials.md",
-            "Gradients" => "functions/gradients.md",
-            "Proximal Maps" => "functions/proximal_maps.md",
-            "Specific Manifold Functions" => "functions/manifold.md",
-        ],
-        "Helpers" => [
-            "Checks" => "helpers/checks.md",
-            "Data" => "helpers/data.md",
-            "Error Measures" => "helpers/errorMeasures.md",
-            "Exports" => "helpers/exports.md",
-        ],
+        "Helpers" => ["Checks" => "helpers/checks.md", "Exports" => "helpers/exports.md"],
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",
