@@ -61,7 +61,8 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 
 ```{julia}
 #| output: false
-using Manopt, Manifolds, Random, LRUCache, LinearAlgebra
+using Manopt, Manifolds, Random, LRUCache, LinearAlgebra, ManifoldDiff
+using ManifoldDiff: grad_distance
 ```
 
 ## Counting

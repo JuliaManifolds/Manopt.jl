@@ -47,7 +47,7 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        q = Lemniscate(n)
+        q = [Lemniscate(t) for t in range(0, 2π; length=n)]
         f(N, p) = L2_Total_Variation(N, q, 0.5, p)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
@@ -94,7 +94,7 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        q = Lemniscate(n)
+        q = [Lemniscate(t) for t in range(0, 2π; length=n)]
         f(N, x) = L2_Total_Variation(N, q, 0.5, x)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
