@@ -68,6 +68,12 @@ Furthermore, this solver has a short hand notation for the involved [`reflect`](
 reflect
 ```
 
+Furthermore, this solver has a short hand notation for the involved [`reflect`](@ref)ion.
+
+```@docs
+reflect
+```
+
 ## [Technical details](@id sec-dr-technical-details)
 
 The [`DouglasRachford`](@ref) solver requires the following functions of a manifold to be available

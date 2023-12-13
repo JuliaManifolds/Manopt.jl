@@ -33,7 +33,8 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
 ```{julia}
-using Manifolds, Manopt, Random, BenchmarkTools
+using Manifolds, Manopt, Random, BenchmarkTools, ManifoldDiff
+using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
 

@@ -63,7 +63,8 @@ Let's assume you have already installed both `Manopt.jl` and `Manifolds.jl` in J
 Then we can get started by loading both packages as well as `Random.jl` for persistency in this tutorial.
 
 ```{julia}
-using Manopt, Manifolds, Random, LinearAlgebra
+using Manopt, Manifolds, Random, LinearAlgebra, ManifoldDiff
+using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
 
