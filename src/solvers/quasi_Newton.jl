@@ -43,6 +43,7 @@ mutable struct QuasiNewtonState{
 } <: AbstractGradientSolverState
     p::P
     p_old::P
+    η::T
     X::T
     sk::T
     yk::T
@@ -82,6 +83,7 @@ function QuasiNewtonState(
     return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize),RM,VTM}(
         p,
         copy(M, p),
+        copy(M, p, initial_vector),
         initial_vector,
         sk_init,
         copy(M, sk_init),
@@ -333,16 +335,21 @@ end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
-    η = qns.direction_update(mp, qns)
-    α = qns.stepsize(mp, qns, iter, η)
+    qns.direction_update(qns.η, mp, qns)
+    α = qns.stepsize(mp, qns, iter, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))
-    αη = α * η
-    retract!(M, qns.p, qns.p, η, α, qns.retraction_method)
+    retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
+    qns.η .*= α
     β = locking_condition_scale(
-        M, qns.direction_update, qns.p_old, αη, qns.p, qns.vector_transport_method
+        M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method
     )
     vector_transport_to!(
-        M, qns.sk, qns.p_old, αη, qns.p, get_update_vector_transport(qns.direction_update)
+        M,
+        qns.sk,
+        qns.p_old,
+        qns.η,
+        qns.p,
+        get_update_vector_transport(qns.direction_update),
     )
     vector_transport_to!(
         M, qns.X, qns.p_old, qns.X, qns.p, get_update_vector_transport(qns.direction_update)

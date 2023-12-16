@@ -362,21 +362,27 @@ function QuasiNewtonMatrixDirectionUpdate(
         basis, m, scale, update, vector_transport_method
     )
 end
+function (d::QuasiNewtonMatrixDirectionUpdate)(mp, st)
+    r = zero_vector(get_manifold(mp), get_iterate(st))
+    return d(r, mp, st)
+end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    mp, st
+    r, mp, st
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    return get_vector(M, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
+    get_vector!(M, r, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
+    return r
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    mp, st
+    r, mp, st
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    return get_vector(M, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
+    get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
+    return r
 end
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
@@ -476,10 +482,14 @@ function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     return s
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
+    r = zero_vector(get_manifold(mp), get_iterate(st))
+    return d(r, mp, st)
+end
+function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
-    r = copy(M, p, get_gradient(st))
+    copyto!(M, r, p, get_gradient(st))
     m = length(d.memory_s)
     m == 0 && return -r
     for i in m:-1:1
