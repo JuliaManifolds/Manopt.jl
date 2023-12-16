@@ -256,13 +256,13 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
     stop_decreasing_at_step::Int
     function ArmijoLinesearch(
         M::AbstractManifold=DefaultManifold();
-        candidate_point::P=rand(M),
-        contraction_factor=0.95,
-        initial_stepsize=1.0,
+        candidate_point::P=allocate_result(M, rand),
+        contraction_factor::Real=0.95,
+        initial_stepsize::Real=1.0,
         initial_guess=armijo_initial_guess,
         retraction_method::TRM=default_retraction_method(M),
-        stop_when_stepsize_less=0.0,
-        stop_when_stepsize_exceeds=max_stepsize(M),
+        stop_when_stepsize_less::Real=0.0,
+        stop_when_stepsize_exceeds::Real=max_stepsize(M),
         stop_increasing_at_step::Int=100,
         stop_decreasing_at_step::Int=1000,
         sufficient_decrease=0.1,
@@ -796,14 +796,14 @@ mutable struct WolfePowellLinesearch{
         M::AbstractManifold=DefaultManifold(),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
-        candidate_point::P=rand(M),
-        candidate_tangent::T=zero_vector(M, candidate_point),
-        candidate_direction::T=zero_vector(M, candidate_point),
-        max_stepsize=max_stepsize(M, candidate_point),
+        candidate_point::P=allocate_result(M, rand),
+        candidate_tangent::T=allocate_result(M, zero_vector, candidate_point),
+        candidate_direction::T=allocate_result(M, zero_vector, candidate_point),
+        max_stepsize::Real=max_stepsize(M, candidate_point),
         retraction_method::TRM=default_retraction_method(M),
         vector_transport_method::VTM=default_vector_transport_method(M),
         linesearch_stopsize::Float64=0.0,            # deprecated remove on next breaking change
-        stop_when_stepsize_less=linesearch_stopsize, #
+        stop_when_stepsize_less::Float64=linesearch_stopsize, #
     ) where {TRM,VTM,P,T}
         (linesearch_stopsize > 0.0) && Base.depwarn(
             WolfePowellLinesearch,
