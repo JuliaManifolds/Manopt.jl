@@ -364,7 +364,7 @@ A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
 function linesearch_backtrack(
     M::AbstractManifold, f, p, X::T, s, decrease, contract, η::T=-X, f0=f(M, p); kwargs...
 ) where {T}
-    q = copy(M, p)
+    q = allocate(M, p)
     return linesearch_backtrack!(M, q, f, p, X, s, decrease, contract, η, f0; kwargs...)
 end
 
