@@ -491,7 +491,10 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     p = get_iterate(st)
     copyto!(M, r, p, get_gradient(st))
     m = length(d.memory_s)
-    m == 0 && return -r
+    if m == 0
+        r .*= -1
+        return r
+    end
     for i in m:-1:1
         # what if we divide by zero here? Setting to zero ignores this in the next step
         # precompute in case inner is expensive
@@ -590,6 +593,7 @@ function QuasiNewtonCautiousDirectionUpdate(
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)
+(d::QuasiNewtonCautiousDirectionUpdate)(r, mp, st) = d.update(r, mp, st)
 
 # access the inner vector transport method
 function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
