@@ -266,8 +266,8 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
         stop_increasing_at_step::Int=100,
         stop_decreasing_at_step::Int=1000,
         sufficient_decrease=0.1,
-    ) where {TRM, P}
-        return new{TRM, P, typeof(initial_guess)}(
+    ) where {TRM,P}
+        return new{TRM,P,typeof(initial_guess)}(
             candidate_point,
             contraction_factor,
             initial_guess,
@@ -363,15 +363,7 @@ These keywords are used as safeguards, where only the max stepsize is a very man
 A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
 """
 function linesearch_backtrack(
-    M::AbstractManifold,
-    f,
-    p,
-    X::T,
-    s,
-    decrease,
-    contract,
-    η::T=-X,
-    f0=f(M, p); kwargs...
+    M::AbstractManifold, f, p, X::T, s, decrease, contract, η::T=-X, f0=f(M, p); kwargs...
 ) where {T}
     q = copy(M, p)
     return linesearch_backtrack!(M, q, f, p, X, s, decrease, contract, η, f0; kwargs...)
@@ -577,7 +569,7 @@ mutable struct NonmonotoneLinesearch{
         strategy::Symbol=:direct,
         sufficient_decrease::Float64=1e-4,
         vector_transport_method::VTM=default_vector_transport_method(M),
-    ) where {TRM, VTM, P}
+    ) where {TRM,VTM,P}
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
                 "The strategy '",
@@ -605,9 +597,7 @@ mutable struct NonmonotoneLinesearch{
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
-        return new{
-            TRM, VTM, Vector{Float64}, typeof(storage), P,
-        }(
+        return new{TRM,VTM,Vector{Float64},typeof(storage),P}(
             bb_min_stepsize,
             bb_max_stepsize,
             candidate_point,
@@ -659,8 +649,7 @@ function (a::NonmonotoneLinesearch)(
     M::mT, p, f::TF, X::T, η::T, old_p, old_X, iter::Int; kwargs...
 ) where {mT<:AbstractManifold,TF,T}
     #find the difference between the current and previous gradient after the previous gradient is transported to the current tangent space
-    grad_diff =
-        X - vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
+    grad_diff = X - vector_transport_to(M, old_p, old_X, p, a.vector_transport_method)
     #transport the previous step into the tangent space of the current manifold point
     x_diff =
         -a.initial_stepsize *
@@ -772,40 +761,65 @@ There exist two constructors, where, when prodivind the manifold `M` as a first 
 parameter, its default retraction and vector transport are the default.
 In this case the retraction and the vector transport are also keyword arguments for ease of use.
 The other constructor is kept for backward compatibility.
-Note that the `linesearch_stopsize` to stop for too small stepsizes is only available in the
+Note that the `stop_when_stepsize_less` to stop for too small stepsizes is only available in the
 new signature including `M`.
 
-    WolfePowellLinesearch(
-        M,
-        c1::Float64=10^(-4),
-        c2::Float64=0.999;
-        retraction_method = default_retraction_method(M),
-        vector_transport_method = default_vector_transport(M),
-        linesearch_stopsize = 0.0
-    )
+    WolfePowellLinesearch(M, c1::Float64=10^(-4), c2::Float64=0.999; kwargs...
+
+Generate a Wolfe-Powell linesearch
+
+## Keyword Arguments
+
+* `candidate_point`      (`rand(M)`) memory for an internims candidate
+* `candidate_tangent`    (`zero_vector(M; vector_at=candidate_point)`) memory for a gradient
+* `candidate_direcntion` (`zero_vector(M; vector_at=candidate_point)`) memory for a direction
+* `max_stepsize`         ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize allowed here.
+* `retraction_method`         – (`ExponentialRetraction()`) the retraction to use
+* `stop_when_stepsize_less`    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
+* `vector_transport_method`   – (`ParallelTransport()`) the vector transport method to use
 """
 mutable struct WolfePowellLinesearch{
-    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,T
 } <: Linesearch
-    retraction_method::TRM
-    vector_transport_method::VTM
     c1::Float64
     c2::Float64
+    candidate_direction::T
+    candidate_point::P
+    candidate_tangent::T
     last_stepsize::Float64
-    linesearch_stopsize::Float64
+    max_stepsize::Float64
+    retraction_method::TRM
+    stop_when_stepsize_less::Float64
+    vector_transport_method::VTM
 
     function WolfePowellLinesearch(
         M::AbstractManifold=DefaultManifold(),
         c1::Float64=10^(-4),
         c2::Float64=0.999;
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-            M
-        ),
-        linesearch_stopsize::Float64=0.0,
-    )
-        return new{typeof(retraction_method),typeof(vector_transport_method)}(
-            retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
+        candidate_point::P=rand(M),
+        candidate_tangent::T=zero_vector(M, candidate_point),
+        candidate_direction::T=zero_vector(M, candidate_point),
+        max_stepsize=max_stepsize(M, candidate_point),
+        retraction_method::TRM=default_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
+        linesearch_stopsize::Float64=0.0,            # deprecated remove on next breaking change
+        stop_when_stepsize_less=linesearch_stopsize, #
+    ) where {TRM,VTM,P,T}
+        (linesearch_stopsize > 0.0) && Base.depwarn(
+            WolfePowellLinesearch,
+            "`linesearch_backtrack` is deprecated – use `stop_when_stepsize_less` instead´.",
+        )
+        return new{TRM,VTM,P,T}(
+            c1,
+            c2,
+            candidate_direction,
+            candidate_point,
+            candidate_tangent,
+            0.0,
+            max_stepsize,
+            retraction_method,
+            stop_when_stepsize_less,
+            vector_transport_method,
         )
     end
 end
@@ -816,65 +830,70 @@ function (a::WolfePowellLinesearch)(
     η=-get_gradient(mp, get_iterate(ams));
     kwargs...,
 )
+    # For readability extract a few variables
     M = get_manifold(mp)
-    cur_p = get_iterate(ams)
-    grad_norm = norm(M, cur_p, η)
-    max_step = max_stepsize(M, cur_p)
-    # max_step_increase is the upper limit for s_plus
-    max_step_increase = ifelse(isfinite(max_step), min(1e9, max_step / grad_norm), 1e9)
-    step = ifelse(isfinite(max_step), min(1.0, max_step / grad_norm), 1.0)
+    p = get_iterate(ams)
+    X = get_gradient(ams)
+    l = real(inner(M, p, η, X))
+    grad_norm = norm(M, p, η)
+    max_step_increase = ifelse(
+        isfinite(a.max_stepsize), min(1e9, a.max_stepsize / grad_norm), 1e9
+    )
+    step = ifelse(isfinite(a.max_stepsize), min(1.0, a.max_stepsize / grad_norm), 1.0)
     s_plus = step
     s_minus = step
 
-    f0 = get_cost(mp, cur_p)
-    p_new = retract(M, cur_p, η, step, a.retraction_method)
-    fNew = get_cost(mp, p_new)
-    η_xNew = vector_transport_to(M, cur_p, η, p_new, a.vector_transport_method)
-    if fNew > f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
-        while (
-            fNew > f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
-        ) && (s_minus > 10^(-9)) # decrease
+    f0 = get_cost(mp, p)
+    retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+    fNew = get_cost(mp, a.candidate_point)
+    vector_transport_to!(
+        M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
+    )
+    if fNew > f0 + a.c1 * step * l
+        while (fNew > f0 + a.c1 * step * l) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
-            retract!(M, p_new, get_iterate(ams), η, step, a.retraction_method)
-            fNew = get_cost(mp, p_new)
+            retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+            fNew = get_cost(mp, a.candidate_point)
         end
         s_plus = 2.0 * s_minus
     else
         vector_transport_to!(
-            M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
+            M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
         )
-        if real(inner(M, p_new, get_gradient(mp, p_new), η_xNew)) <
-            a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
-            while fNew <=
-                  f0 +
-                  a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams))) &&
-                (s_plus < max_step_increase)# increase
+        get_gradient!(mp, a.candidate_tangent, a.candidate_point)
+        if real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
+            a.c2 * l
+            while fNew <= f0 + a.c1 * step * l && (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
-                retract!(M, p_new, get_iterate(ams), η, step, a.retraction_method)
-                fNew = get_cost(mp, p_new)
+                retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+                fNew = get_cost(mp, a.candidate_point)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(M, p_new, get_iterate(ams), η, s_minus, a.retraction_method)
-    vector_transport_to!(M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method)
-    while real(inner(M, p_new, get_gradient(mp, p_new), η_xNew)) <
-          a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+    retract!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
+    vector_transport_to!(
+        M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
+    )
+    get_gradient!(mp, a.candidate_tangent, a.candidate_point)
+    while real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
+          a.c2 * l
         step = (s_minus + s_plus) / 2
-        retract!(M, p_new, get_iterate(ams), η, step, a.retraction_method)
-        fNew = get_cost(mp, p_new)
-        if fNew <= f0 + a.c1 * step * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+        retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+        fNew = get_cost(mp, a.candidate_point)
+        if fNew <= f0 + a.c1 * step * l
             s_minus = step
         else
             s_plus = step
         end
-        abs(s_plus - s_minus) <= a.linesearch_stopsize && break
-        retract!(M, p_new, get_iterate(ams), η, s_minus, a.retraction_method)
+        abs(s_plus - s_minus) <= a.stop_when_stepsize_less && break
+        retract!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
         vector_transport_to!(
-            M, η_xNew, get_iterate(ams), η, p_new, a.vector_transport_method
+            M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
         )
+        get_gradient!(mp, a.candidate_tangent, a.candidate_point)
     end
     step = s_minus
     a.last_stepsize = step
