@@ -287,7 +287,6 @@ function (a::ArmijoLinesearch)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     i::Int,
-    p=a.candidate_point,
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
