@@ -5,6 +5,14 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.45] unreleased
+
+## Changed
+
+* `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
+* `linesearch_backtrack!` is now available
+* Quasi Newton Updates can work inplace of a direction vector as well.
+
 ## [0.4.44] December 12, 2023
 
 Formally one could consider this version breaking, since a few functions
