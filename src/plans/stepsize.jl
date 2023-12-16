@@ -372,7 +372,7 @@ end
 """
     (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
 
-Perform a linesearch bachtrack in-place of `q`. For all details and options, see [`linesearch_backtrack`](@ref)
+Perform a linesearch backtrack in-place of `q`. For all details and options, see [`linesearch_backtrack`](@ref)
 """
 function linesearch_backtrack!(
     M::AbstractManifold,
