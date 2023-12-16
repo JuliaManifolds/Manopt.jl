@@ -215,7 +215,7 @@ last step size.
   this returns an initial guess. The default uses the last obtained stepsize
 
 as well as for internal use
-* `candidate_point`     (`rand(M)`)
+* `candidate_point`     (`allocate_result(M, rand)`)
 
 Furthermore the following fields act as safeguards
 
@@ -554,7 +554,7 @@ mutable struct NonmonotoneLinesearch{
         M::AbstractManifold=DefaultManifold();
         bb_min_stepsize::Float64=1e-3,
         bb_max_stepsize::Float64=1e3,
-        candidate_point::P=rand(M),
+        candidate_point::P=allocate_result(M, rand),
         initial_stepsize::Float64=1.0,
         memory_size::Int=10,
         retraction_method::TRM=default_retraction_method(M),
@@ -770,9 +770,9 @@ Generate a Wolfe-Powell linesearch
 
 ## Keyword Arguments
 
-* `candidate_point`      (`rand(M)`) memory for an internims candidate
-* `candidate_tangent`    (`zero_vector(M; vector_at=candidate_point)`) memory for a gradient
-* `candidate_direcntion` (`zero_vector(M; vector_at=candidate_point)`) memory for a direction
+* `candidate_point`      (`allocate_result(M, rand)`) memory for an internims candidate
+* `candidate_tangent`    (`allocate_result(M, zero_vector, candidate_point)`) memory for a gradient
+* `candidate_direcntion` (`allocate_result(M, zero_vector, candidate_point)`) memory for a direction
 * `max_stepsize`         ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize allowed here.
 * `retraction_method`         – (`ExponentialRetraction()`) the retraction to use
 * `stop_when_stepsize_less`    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
@@ -1088,7 +1088,7 @@ as well as the internal fields
 
 # Constructor
 
-    AdaptiveWNGrad(M=DefaultManifold, grad_f=(M,p) -> zero_vector(M,rand(M)), p=rand(M); kwargs...)
+    AdaptiveWNGrad(M=DefaultManifold, grad_f=(M, p) -> zero_vector(M, rand(M)), p=rand(M); kwargs...)
 
 Where all above fields with defaults are keyword arguments.
 An additional keyword arguments
