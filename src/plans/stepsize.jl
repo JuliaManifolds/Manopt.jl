@@ -200,29 +200,29 @@ end
 @doc raw"""
     ArmijoLinesearch <: Linesearch
 
-A functor representing Armijo line search including the last runs state, i.e. a
-last step size.
+A functor representing Armijo line search including the last runs state string the last stepsize.
 
 # Fields
 
-* `initial_stepsize`    (`1.0`) and initial step size
-* `retraction_method`   (`default_retraction_method(M)`) the retraction to use
-* `contraction_factor`  (`0.95`) exponent for line search reduction
-* `sufficient_decrease` (`0.1`) gain within Armijo's rule
-* `last_stepsize`       (`initialstepsize`) the last step size we start the search with
-* `initial_guess`       (`(p,s,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`,
+* `initial_stepsize`          (`1.0`) and initial step size
+* `retraction_method`         (`default_retraction_method(M)`) the retraction to use
+* `contraction_factor`        (`0.95`) exponent for line search reduction
+* `sufficient_decrease`       (`0.1`) gain within Armijo's rule
+* `last_stepsize`             (`initialstepsize`) the last step size we start the search with
+* `initial_guess`             (`(p,s,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`,
   [`AbstractManoptSolverState`](@ref) `s` and a current iterate `i` and a last step size `l`,
   this returns an initial guess. The default uses the last obtained stepsize
 
 as well as for internal use
-* `candidate_point`     (`allocate_result(M, rand)`)
+
+* `candidate_point`           (`allocate_result(M, rand)`) to store an interims result
 
 Furthermore the following fields act as safeguards
 
-* `stop_when_stepsize_less`    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
-* `stop_when_stepsize_exceeds - ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
-* `stop_increasing_at_step`   - (`100`) last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`   - (`1000`) last step size to decrease the stepsize (phase 2),
+* `stop_when_stepsize_less`   (`0.0`) smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize when to stop.
+* `stop_increasing_at_step`   (`100`) last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step`   (`1000`) last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
@@ -238,8 +238,12 @@ The constructors return the functor to perform Armijo line search, where
 
 of a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams` and a current iterate `i`
 with keywords
-  * `p` (`a.candidate_point`) to pass memory for the candidate, which in the end also stores the resulting point,
-  * `η` (`-get_gradient(mp, get_iterate(s));`) the search direction to use, by default the steepest descent direction.
+
+## Keyword Arguments
+
+  * `candidate_point` (`allocate_result(M, rand)`) to pass memory for the candidate point
+  * `η`               (`-get_gradient(mp, get_iterate(s));`) the search direction to use,
+  by default the steepest descent direction.
 """
 mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
     candidate_point::P
@@ -330,7 +334,7 @@ get_message(a::ArmijoLinesearch) = a.message
 
 @doc raw"""
     (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p))
-    (s, msg) = linesearch_backtrack(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
+    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
 
 perform a linesearch
 * on manifold `M`
@@ -349,11 +353,11 @@ with the step size `s` as second argument.
 
 ## Keywords
 
-* `retraction_method` (`default_retraction_method(M)`) the retraction to use.
-* `stop_when_stepsize_less (`0.0`) to avoid numerical underflow
+* `retraction_method`          (`default_retraction_method(M)`) the retraction to use.
+* `stop_when_stepsize_less     (`0.0`) to avoid numerical underflow
 * `stop_when_stepsize_exceeds` ([`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
-* `stop_increasing_at_step` (`100`) stop the inicial increase of step size after these many steps
-* `stop_decreasing_at_step` (`1000`) stop the decreasing search after these many steps
+* `stop_increasing_at_step`    (`100`) stop the inicial increase of step size after these many steps
+* `stop_decreasing_at_step`    (`1000`) stop the decreasing search after these many steps
 
 These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
 
@@ -371,7 +375,8 @@ end
 """
     (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
 
-Perform a linesearch backtrack in-place of `q`. For all details and options, see [`linesearch_backtrack`](@ref)
+Perform a linesearch backtrack in-place of `q`.
+For all details and options, see [`linesearch_backtrack`](@ref)
 """
 function linesearch_backtrack!(
     M::AbstractManifold,
@@ -504,6 +509,10 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 * `sufficient_decrease`       – (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
 * `vector_transport_method`   – (`ParallelTransport()`) the vector transport method to use
 
+as well as for internal use
+
+* `candidate_point`           (`allocate_result(M, rand)`) to store an interims result
+
 Furthermore the following fields act as safeguards
 
 * `stop_when_stepsize_less    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
@@ -518,6 +527,8 @@ Pass `:Messages` to a `debug=` to see `@info`s when these happen.
     NonmonotoneLinesearch()
 
 with the Fields above in their order as optional arguments (deprecated).
+THis is deprecated, since both defaults above and the memory allocation for the candidate
+would be for the default manifold.
 
     NonmonotoneLinesearch(M)
 
@@ -769,13 +780,13 @@ Generate a Wolfe-Powell linesearch
 
 ## Keyword Arguments
 
-* `candidate_point`      (`allocate_result(M, rand)`) memory for an internims candidate
-* `candidate_tangent`    (`allocate_result(M, zero_vector, candidate_point)`) memory for a gradient
-* `candidate_direcntion` (`allocate_result(M, zero_vector, candidate_point)`) memory for a direction
-* `max_stepsize`         ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize allowed here.
-* `retraction_method`         – (`ExponentialRetraction()`) the retraction to use
-* `stop_when_stepsize_less`    - (`0.0`) smallest stepsize when to stop (the last one before is taken)
-* `vector_transport_method`   – (`ParallelTransport()`) the vector transport method to use
+* `candidate_point`         (`allocate_result(M, rand)`) memory for an internims candidate
+* `candidate_tangent`       (`allocate_result(M, zero_vector, candidate_point)`) memory for a gradient
+* `candidate_direcntion`    (`allocate_result(M, zero_vector, candidate_point)`) memory for a direction
+* `max_stepsize`            ([`max_stepsize`](@ref)`(M, p)`) – largest stepsize allowed here.
+* `retraction_method`       (`ExponentialRetraction()`) the retraction to use
+* `stop_when_stepsize_less` (`0.0`) smallest stepsize when to stop (the last one before is taken)
+* `vector_transport_method` (`ParallelTransport()`) the vector transport method to use
 """
 mutable struct WolfePowellLinesearch{
     TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,T
