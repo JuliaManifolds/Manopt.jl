@@ -37,10 +37,16 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
+        # Check newton update direction works also allocating
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p_star = get_solver_result(lrbfgs_s)
+        D = zero_vector(M, p_star)
+        lrbfgs_s.direction_update(D, dmp, lrbfgs_s)
+        @test isapprox(M, p_star, D, lrbfgs_s.direction_update(dmp, lrbfgs_s))
+
         @test startswith(
             repr(lrbfgs_s), "# Solver state for `Manopt.jl`s Quasi Newton Method\n"
         )
-        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         @test get_last_stepsize(dmp, lrbfgs_s, lrbfgs_s.stepsize) > 0
         @test Manopt.get_iterate(lrbfgs_s) == x_lrbfgs
         set_gradient!(lrbfgs_s, M, p, grad_f(M, p))
@@ -68,14 +74,21 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         )
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
 
-        x_clrbfgs = quasi_Newton(
+        clrbfgs_s = quasi_Newton(
             M,
             f,
             grad_f,
             p;
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
+            return_state=true,
         )
+        # Test direction passthrough
+        x_clrbfgs = get_solver_result(clrbfgs_s)
+        D = zero_vector(M, x_clrbfgs)
+        clrbfgs_s.direction_update(D, dmp, clrbfgs_s)
+        @test isapprox(M, x_clrbfgs, D, clrbfgs_s.direction_update(dmp, clrbfgs_s))
+
         @test norm(x_clrbfgs - x_solution) ≈ 0 atol = 10.0^(-14)
 
         x_rbfgs_Huang = quasi_Newton(
@@ -95,7 +108,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
 
         for T in [InverseBFGS(), BFGS(), InverseDFP(), DFP(), InverseSR1(), SR1()]
             for c in [true, false]
-                x_direction = quasi_Newton(
+                x_state = quasi_Newton(
                     M,
                     f,
                     grad_f,
@@ -104,7 +117,12 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
                     cautious_update=c,
                     memory_size=-1,
                     stopping_criterion=StopWhenGradientNormLess(10^(-12)),
+                    return_state=true,
                 )
+                x_direction = get_solver_result(x_state)
+                D = zero_vector(M, x_direction)
+                x_state.direction_update(D, dmp, x_state)
+                @test isapprox(M, x_direction, D, x_state.direction_update(dmp, x_state))
                 @test norm(x_direction - x_solution) ≈ 0 atol = 10.0^(-14)
             end
         end
