@@ -5,7 +5,7 @@ Any contribution is appreciated and welcome.
 
 The following is a set of guidelines to [`Manopt.jl`](https://juliamanifolds.github.io/Manopt.jl/).
 
-#### Table of Contents
+#### Table of contents
 
 - [Contributing to `Manopt.jl`](#Contributing-to-manoptjl)
       - [Table of Contents](#Table-of-Contents)
@@ -32,7 +32,7 @@ If you found a bug or want to propose a feature, we track our issues within the 
 ### Add a missing method
 
 There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
-If you notice a method missing and can contribute an implementation, please do so!
+If you notice a method missing and can contribute an implementation, please do so, we help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm
@@ -55,7 +55,7 @@ where also their reproducible Quarto-Markdown files are stored.
 ### Code style
 
 We try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as [Blue Style](https://github.com/invenia/BlueStyle).
-We run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repo in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style.
+We run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repository in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style.
 
 We also follow a few internal conventions:
 
@@ -68,5 +68,5 @@ We also follow a few internal conventions:
 - There should be no dangling `=` signs.
 - Always add a newline between things of different types (struct/method/const).
 - Always add a newline between methods for different functions (including mutating/nonmutating variants).
-- Prefer to have no newline between methods for the same function; when reasonable, merge the docstrings.
+- Prefer to have no newline between methods for the same function; when reasonable, merge the documentation strings.
 - All `import`/`using`/`include` should be in the main module file.

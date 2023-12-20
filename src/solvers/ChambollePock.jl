@@ -173,7 +173,7 @@ end
         evaluation=AllocatingEvaluation()
     )
 
-Perform the Riemannian Chambolle–Pock algorithm.
+Perform the Riemannian Chambolle—Pock algorithm.
 
 Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
 ```math
@@ -211,7 +211,7 @@ For more details on the algorithm, see [Bergmann et al., Found. Comput. Math., 2
 * `relax` – (`:primal`) whether to relax the primal or dual
 * `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
   Note that this changes the arguments the `forward_operator` will be called.
-* `stopping_criterion` – (`stopAtIteration(100)`) a [`StoppingCriterion`](@ref)
+* `stopping_criterion` – (`[StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
 * `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
 * `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
@@ -260,7 +260,7 @@ end
 @doc raw"""
     ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_linear_operator)
 
-Perform the Riemannian Chambolle–Pock algorithm in place of `x`, `ξ`, and potentially `m`,
+Perform the Riemannian Chambolle—Pock algorithm in place of `x`, `ξ`, and potentially `m`,
 `n` if they are not fixed. See [`ChambollePock`](@ref) for details and optional parameters.
 """
 function ChambollePock!(

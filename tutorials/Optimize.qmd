@@ -1,12 +1,12 @@
 ---
-title: "Get Started: Optimize!"
+title: "🏔️ Get started: optimize."
 author: Ronny Bergmann
 ---
 
 In this tutorial, we will both introduce the basics of optimisation on manifolds as well as
 how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifolds in [Julia](https://julialang.org).
 
-For more theoretical background, see e.g. [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
+For more theoretical background, see for example [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
 and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
 
 Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/#ManifoldsBase.Manifold)
@@ -29,7 +29,7 @@ In the Euclidean case with$d\in\mathbb N$, that is for $n\in \mathbb N$ data poi
 
 
 can not be directly generalised to data $q_1,\ldots,q_n$, since on a manifold we do not have an addition.
-But the mean can also be charcterised as
+But the mean can also be characterised as
 
 ```math
   \operatorname*{arg\,min}_{x\in\mathbb R^d} \frac{1}{2n}\sum_{i=1}^n \lVert x - y_i\rVert^2
@@ -38,14 +38,14 @@ But the mean can also be charcterised as
 and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [Karcher:1977](@cite)
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathbb R^d}
+  \operatorname*{arg\,min}_{p\in\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
 Fortunately the gradient can be computed and is
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathbb R^d} \frac{1}{n} \sum_{i=1}^n -\log_p q_i
+ \frac{1}{n} \sum_{i=1}^n -\log_p q_i
 ```
 
 ## Loading the necessary packages
@@ -59,11 +59,12 @@ cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
-Let's assume you have already installed both Manotp and Manifolds in Julia (using e.g. `using Pkg; Pkg.add(["Manopt", "Manifolds"])`).
-Then we can get started by loading both packages – and `Random` for persistency in this tutorial.
+Let's assume you have already installed both `Manopt.jl` and `Manifolds.jl` in Julia (using for example `using Pkg; Pkg.add(["Manopt", "Manifolds"])`).
+Then we can get started by loading both packages as well as `Random.jl` for persistency in this tutorial.
 
 ```{julia}
-using Manopt, Manifolds, Random, LinearAlgebra
+using Manopt, Manifolds, Random, LinearAlgebra, ManifoldDiff
+using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
 
@@ -88,7 +89,7 @@ grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 
 and just call [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/).
 For a first start, we do not have to provide more than the manifold, the cost, the gradient,
-and a startig point, which we just set to the first data point
+and a starting point, which we just set to the first data point
 
 ```{julia}
 m1 = gradient_descent(M, f, grad_f, data[1])
@@ -107,8 +108,8 @@ The goal is to get an output of the form
 but where we also want to fix the display format for the change and the cost
 numbers (the `[...]`) to have a certain format. Furthermore, the reason why the solver stopped should be printed at the end
 
-These can easily be specified using either a Symbol – using the default format for numbers – or a tuple of a symbol and a format-string in the `debug=` keyword that is avaiable for every solver.
-We can also – for illustration reasons – just look at the first 6 steps by setting a [`stopping_criterion=`](https://manoptjl.org/stable/plans/stopping_criteria/)
+These can easily be specified using either a Symbol when using the default format for numbers, or a tuple of a symbol and a format-string in the `debug=` keyword that is available for every solver.
+We can also, for illustration reasons, just look at the first 6 steps by setting a [`stopping_criterion=`](https://manoptjl.org/stable/plans/stopping_criteria/)
 
 ```{julia}
 m2 = gradient_descent(M, f, grad_f, data[1];
@@ -125,7 +126,7 @@ See [here](https://manoptjl.org/stable/plans/debug/#Manopt.DebugActionFactory-Tu
     The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
 ```
 
-The default stopping criterion for [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) is, to either stopwhen the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback.
+The default stopping criterion for [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent/) is, to either stop when the gradient is small (`<1e-9`) or a max number of iterations is reached (as a fallback).
 Combining stopping-criteria can be done by `|` or `&`.
 We further pass a number `25` to `debug=` to only an output every `25`th iteration:
 
@@ -167,7 +168,7 @@ data2 = [exp(N, q, σ * rand(N; vector_at=q)) for i in 1:m];
 ```
 
 Instead of the mean, let's consider a non-smooth optimisation task:
-The median can be generalized to Manifolds as the minimiser of the sum of distances, see e.g. [Bacak:2014](@cite). We define
+The median can be generalized to Manifolds as the minimiser of the sum of distances, see [Bacak:2014](@cite). We define
 
 ```{julia}
 g(N, q) = sum(1 / (2 * m) * distance.(Ref(N), Ref(q), data2))
@@ -209,8 +210,8 @@ at the recorded values at iteration 42
 get_record(s)[42]
 ```
 
-But we can also access whole serieses and see that the cost does not decrease that fast; actually, the CPPA might converge relatively slow. For that we can for
-example access the `:Cost` that was recorded every `:Iterate` as well as the (maybe a little boring) `:Iteration`-number in a semilogplot.
+But we can also access whole series and see that the cost does not decrease that fast; actually, the CPPA might converge relatively slow. For that we can for
+example access the `:Cost` that was recorded every `:Iterate` as well as the (maybe a little boring) `:Iteration`-number in a semi-log-plot.
 
 ```{julia}
 x = get_record(s, :Iteration, :Iteration)
@@ -223,7 +224,7 @@ plot(x,y,xaxis=:log, label="CPPA Cost")
 
 ````{=commonmark}
 ```@bibliography
-Pages = ["Optimize!.md"]
+Pages = ["Optimize.md"]
 Canonical=false
 ```
 ````

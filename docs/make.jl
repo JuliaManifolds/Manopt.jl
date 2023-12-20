@@ -10,11 +10,12 @@ docs/make.jl
 Render the `Manopt.jl` documenation with optinal arguments
 
 Arguments
-* `--exclude-docs` - exclude the tutorials from the menu of Documenter,
+* `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
   this can be used if you do not have Quarto installed to still be able to render the docs
   locally on this machine. This option should not be set on CI.
-* `--help`         - print this help and exit without rendering the documentation
-* `--quarto`       – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
+* `--help`              - print this help and exit without rendering the documentation
+* `--prettyurls`        – toggle the prettyurls part to true (which is otherwise only true on CI)
+* `--quarto`            – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
   If they are generated ones they are cached accordingly.
@@ -90,25 +91,29 @@ for (md_file, doc_file) in
     end
 end
 
-## Build titorials menu
+## Build tutorials menu
 tutorials_menu =
     "How to..." => [
-        "Get started: Optimize!" => "tutorials/Optimize!.md",
-        "Speedup using Inplace computations" => "tutorials/InplaceGradient.md",
-        "Use Automatic Differentiation" => "tutorials/AutomaticDifferentiation.md",
-        "Define Objectives in the Embedding" => "tutorials/EmbeddingObjectives.md",
-        "Count and use a Cache" => "tutorials/CountAndCache.md",
-        "Print Debug Output" => "tutorials/HowToDebug.md",
+        "🏔️ Get started: optimize." => "tutorials/Optimize.md",
+        "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
+        "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
+        "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
+        "Count and use a cache" => "tutorials/CountAndCache.md",
+        "Print debug output" => "tutorials/HowToDebug.md",
         "Record values" => "tutorials/HowToRecord.md",
-        "Implement a Solver" => "tutorials/ImplementASolver.md",
-        "Do Constrained Optimization" => "tutorials/ConstrainedOptimization.md",
-        "Do Geodesic Regression" => "tutorials/GeodesicRegression.md",
+        "Implement a solver" => "tutorials/ImplementASolver.md",
+        "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
+        "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
+        "Do geodesic regression" => "tutorials/GeodesicRegression.md",
     ]
 # (e) ...finally! make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(;
     format=Documenter.HTML(;
-        prettyurls=false, assets=["assets/favicon.ico", "assets/citations.css"]
+        prettyurls=(get(ENV, "CI", nothing) == "true") || ("--prettyurls" ∈ ARGS),
+        assets=["assets/favicon.ico", "assets/citations.css"],
+        size_threshold_warn=200 * 2^10, # raise slightly from 100 to 200 KiB
+        size_threshold=300 * 2^10,      # raise slightly 200 to to 300 KiB
     ),
     modules=[
         Manopt,
@@ -155,7 +160,7 @@ makedocs(;
             "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
-            "Douglas–Rachford" => "solvers/DouglasRachford.md",
+            "Douglas—Rachford" => "solvers/DouglasRachford.md",
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
@@ -180,22 +185,7 @@ makedocs(;
             "Debug Output" => "plans/debug.md",
             "Recording values" => "plans/record.md",
         ],
-        "Functions" => [
-            "Introduction" => "functions/index.md",
-            "Bézier curves" => "functions/bezier.md",
-            "Cost functions" => "functions/costs.md",
-            "Differentials" => "functions/differentials.md",
-            "Adjoint Differentials" => "functions/adjoint_differentials.md",
-            "Gradients" => "functions/gradients.md",
-            "Proximal Maps" => "functions/proximal_maps.md",
-            "Specific Manifold Functions" => "functions/manifold.md",
-        ],
-        "Helpers" => [
-            "Checks" => "helpers/checks.md",
-            "Data" => "helpers/data.md",
-            "Error Measures" => "helpers/errorMeasures.md",
-            "Exports" => "helpers/exports.md",
-        ],
+        "Helpers" => ["Checks" => "helpers/checks.md", "Exports" => "helpers/exports.md"],
         "Contributing to Manopt.jl" => "contributing.md",
         "Extensions" => "extensions.md",
         "Notation" => "notation.md",

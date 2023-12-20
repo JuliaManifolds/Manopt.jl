@@ -1,4 +1,4 @@
-# [Steihaug-Toint Truncated Conjugate-Gradient Method](@id tCG)
+# [Steihaug-Toint truncated conjugate gradient method](@id tCG)
 
 Solve the constraint optimization problem on the tangent space
 
@@ -27,7 +27,7 @@ Here ``\mathcal H_p`` is either the Hessian ``\operatorname{Hess} f(p)`` or a li
 TruncatedConjugateGradientState
 ```
 
-## Stopping Criteria
+## Stopping criteria
 
 ```@docs
 StopWhenResidualIsReducedByFactorOrPower
@@ -38,11 +38,20 @@ update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:Re
 update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
 ```
 
-## Trust Region Model
+## Trust region model
 
 ```@docs
 TrustRegionModelObjective
 ```
+
+## [Technical details](@id sec-tr-technical-details)
+
+The [`trust_regions`](@ref) solver requires the following functions of a manifold to be available
+
+* if you do not provide a `trust_region_radius=`, then [`injectivity_radius`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}) on the manifold `M` is required.
+* the [`norm`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#LinearAlgebra.norm-Tuple{AbstractManifold,%20Any,%20Any}) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
+* A [`zero_vector!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,X,p)`.
+* A [`copyto!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copyto!-Tuple{AbstractManifold,%20Any,%20Any})`(M, q, p)` and [`copy`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copy-Tuple{AbstractManifold,%20Any})`(M,p)` for points.
 
 ## Literature
 

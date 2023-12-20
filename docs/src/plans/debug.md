@@ -1,4 +1,4 @@
-# [Debug Output](@id DebugSection)
+# [Debug output](@id DebugSection)
 
 ```@meta
 CurrentModule = Manopt
@@ -14,7 +14,7 @@ Order = [:type, :function]
 Private = true
 ```
 
-## Technical Details: The Debug Solver
+## Technical details
 
 The decorator to print debug during the iterations can be activated by
 decorating the state of a solver and implementing

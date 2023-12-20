@@ -1,5 +1,5 @@
 ---
-title: "How to Record Data During the Iterations"
+title: "How to record data during the iterations"
 author: Ronny Bergmann
 ---
 
@@ -30,7 +30,8 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 Let's first load the necessary packages.
 
 ```{julia}
-using Manopt, Manifolds, Random
+using Manopt, Manifolds, Random, ManifoldDiff
+using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
 
@@ -80,8 +81,8 @@ To record more than one value, you can pass an array of a mix of symbols and [`R
 R2 = gradient_descent(M, f, grad_f, data[1]; record=[:Iteration, :Cost], return_state=true)
 ```
 
-Here, the symbol `:Cost` is mapped to using the [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) action. The same holds for `:Iteration` obiously records the current iteration number `i`.
-To access these you can first extract the group of records (that is where the `:Iteration`s are recorded – note the plural) and then access the `:Cost`
+Here, the symbol `:Cost` is mapped to using the [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) action. The same holds for `:Iteration` obviously records the current iteration number `i`.
+To access these you can first extract the group of records (that is where the `:Iteration`s are recorded; note the plural) and then access the `:Cost`
 """
 
 ```{julia}
@@ -109,13 +110,14 @@ We can also pass a tuple as second argument to have our own order within the tup
 get_record(R2, :Iteration, (:Iteration, :Cost))
 ```
 
-## A more Complex Example
+## A more complex example
 
 To illustrate a complicated example let's record:
+
 * the iteration number, cost and gradient field, but only every sixth iteration;
 * the iteration at which we stop.
 
-We first generate the problem and the state, to also illustrate the low-level works when not using the high-level iterface [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html).
+We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html).
 
 ```{julia}
 p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
@@ -126,7 +128,7 @@ s = GradientDescentState(
 )
 ```
 
-We now first build a  [`RecordGroup`](https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup) to group the three entries we want to record per iteration. We then put this into a [`RecordEvery`](https://manoptjl.org/stable/plans/record/#Manopt.RecordEvery) to only record this every 6th iteration
+We now first build a  [`RecordGroup`](https://manoptjl.org/stable/plans/record/#Manopt.RecordGroup) to group the three entries we want to record per iteration. We then put this into a [`RecordEvery`](https://manoptjl.org/stable/plans/record/#Manopt.RecordEvery) to only record this every sixth iteration
 
 ```{julia}
 rI = RecordEvery(
@@ -139,13 +141,13 @@ rI = RecordEvery(
 )
 ```
 
-and for recodring the final iteration number
+and for recording the final iteration number
 
 ```{julia}
 sI = RecordIteration()
 ```
 
-We now combine both into the [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState) decorator. It acts completely the same as any [`AbstractManoptSolverState`](https://manoptjl.org/stable/plans/state/#Manopt.AbstractManoptSolverState) but records something in every iteration additionally. This is stored in a dictionary of [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s, where `:Iteration` is the action (here the only every 6th iteration group) and the `sI` which is executed at stop.
+We now combine both into the [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState) decorator. It acts completely the same as any [`AbstractManoptSolverState`](https://manoptjl.org/stable/plans/state/#Manopt.AbstractManoptSolverState) but records something in every iteration additionally. This is stored in a dictionary of [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s, where `:Iteration` is the action (here the only every sixth iteration group) and the `sI` which is executed at stop.
 
 Note that the keyword `record=` in the high level interface `gradient_descent` only would fill the `:Iteration` symbol of said dictionary.
 
@@ -189,7 +191,7 @@ function (c::MyCost)(M, x)
 end
 ```
 
-and we define an own, new [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction), which is a functor, i.e. a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration:
+and we define an own, new [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction), which is a functor, that is a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration:
 
 ```{julia}
 mutable struct RecordCount <: RecordAction
@@ -206,7 +208,7 @@ end
 ```
 
 Now we can initialize the new cost and call the gradient descent.
-Note that this illustrates also the last use case – you can pass symbol-action pairs into the `record=`array.
+Note that this illustrates also the last use case since you can pass symbol-action pairs into the `record=`array.
 
 ```{julia}
 f2 = MyCost(data)
@@ -244,7 +246,7 @@ R3[:Iteration, :Count]
 
 and we see that the cost function is called once per iteration.
 
-If we use this counting cost and run the default gradient descent with Armijo linesearch, we can infer how many Armijo linesearch backtracks are preformed:
+If we use this counting cost and run the default gradient descent with Armijo line search, we can infer how many Armijo line search backtracks are preformed:
 
 ```{julia}
 f3 = MyCost(data)
@@ -267,4 +269,4 @@ R4 = gradient_descent(
 get_record(R4)
 ```
 
-We can see that the number of cost function calls varies, depending on how many linesearch backtrack steps were required to obtain a good stepsize.
+We can see that the number of cost function calls varies, depending on how many line search backtrack steps were required to obtain a good stepsize.

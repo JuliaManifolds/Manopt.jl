@@ -50,7 +50,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
       - name: "Documenter rendering (including Quarto)"
-        run: "docs/make.jl --quarto"
+        run: "docs/make.jl --quarto --prettyurls"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

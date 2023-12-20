@@ -8,19 +8,19 @@ CurrentModule = Manopt
 Solvers can be applied to [`AbstractManoptProblem`](@ref)s with solver
 specific [`AbstractManoptSolverState`](@ref).
 
-# List of Algorithms
+# List of algorithms
 
 The following algorithms are currently available
 
 | Solver   | Function & State    | Objective   |
 |:---------|:----------------|:---------|
-[Alternating Gradient Descent](@ref AlternatingGradientDescentSolver) | [`alternating_gradient_descent`](@ref) [`AlternatingGradientDescentState`](@ref) | ``f=(f_1,\ldots,f_n)``, ``\operatorname{grad} f_i`` |
+[Alternating Gradient Descent](@ref title-agds) | [`alternating_gradient_descent`](@ref) [`AlternatingGradientDescentState`](@ref) | ``f=(f_1,\ldots,f_n)``, ``\operatorname{grad} f_i`` |
 [Chambolle-Pock](@ref ChambollePockSolver) | [`ChambollePock`](@ref), [`ChambollePockState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}``, ``\operatorname{prox}_{τ G^*}``, ``Λ`` |
 [Conjugate Gradient Descent](@ref CGSolver) | [`conjugate_gradient_descent`](@ref), [`ConjugateGradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f``
 [Cyclic Proximal Point](@ref CPPSolver) | [`cyclic_proximal_point`](@ref), [`CyclicProximalPointState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
-[Difference of Convex Algorithm](@ref DCASolver) | [`difference_of_convex_algorithm`](@ref), [`DifferenceOfConvexState`](@ref) | ``f=g-h``, ``∂h``, and e.g. ``g``, ``\operatorname{grad} g`` |
-[Difference of Convex Proximal Point](@ref DCPPASolver) | [`difference_of_convex_proximal_point`](@ref), [`DifferenceOfConvexProximalState`](@ref) | ``f=g-h``, ``∂h``, and e.g. ``g``, ``\operatorname{grad} g`` |
-[Douglas–Rachford](@ref DRSolver) | [`DouglasRachford`](@ref), [`DouglasRachfordState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
+[Difference of Convex Algorithm](@ref DCASolver) | [`difference_of_convex_algorithm`](@ref), [`DifferenceOfConvexState`](@ref) | ``f=g-h``, ``∂h``, and for example ``g``, ``\operatorname{grad} g`` |
+[Difference of Convex Proximal Point](@ref DCPPASolver) | [`difference_of_convex_proximal_point`](@ref), [`DifferenceOfConvexProximalState`](@ref) | ``f=g-h``, ``∂h``, and for example ``g``, ``\operatorname{grad} g`` |
+[Douglas—Rachford](@ref DRSolver) | [`DouglasRachford`](@ref), [`DouglasRachfordState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
 [Exact Penalty Method](@ref ExactPenaltySolver) | [`exact_penalty_method`](@ref), [`ExactPenaltyMethodState`](@ref) | ``f``, ``\operatorname{grad} f``, ``g``, ``\operatorname{grad} g_i``, ``h``, ``\operatorname{grad} h_j`` |
 [Frank-Wolfe algorithm](@ref FrankWolfe) | [`Frank_Wolfe_method`](@ref), [`FrankWolfeState`](@ref) | sub-problem solver |
 [Gradient Descent](@ref GradientDescentSolver) | [`gradient_descent`](@ref), [`GradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f`` |
@@ -31,13 +31,13 @@ The following algorithms are currently available
 [Primal-dual Riemannian semismooth Newton Algorithm](@ref PDRSSNSolver) | [`primal_dual_semismooth_Newton`](@ref),  [`PrimalDualSemismoothNewtonState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}`` & diff., ``\operatorname{prox}_{τ G^*}`` & diff., ``Λ``
 [Quasi-Newton Method](@ref quasiNewton) | [`quasi_Newton`](@ref), [`QuasiNewtonState`](@ref) | ``f``, ``\operatorname{grad} f`` |
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref), [`TruncatedConjugateGradientState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
-[Subgradient Method](@ref SubgradientSolver) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |
+[Subgradient Method](@ref sec-subgradient-method) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |
 [Stochastic Gradient Descent](@ref StochasticGradientDescentSolver) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref) | ``f = \sum_i f_i``, ``\operatorname{grad} f_i`` |
 [The Riemannian Trust-Regions Solver](@ref trust_regions) | [`trust_regions`](@ref), [`TrustRegionsState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
 
-Note that the solvers (their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection). This is done using the `debug=` and `record=` keywords in the function calls. Similarly, since 0.4 we provide a (simple) [caching of the objective function](@ref CacheSection) using the `cache=` keyword in any of the function calls..
+Note that the solvers (their [`AbstractManoptSolverState`](@ref), to be precise) can also be decorated to enhance your algorithm by general additional properties, see [debug output](@ref DebugSection) and [recording values](@ref RecordSection). This is done using the `debug=` and `record=` keywords in the function calls. Similarly, since Manopt.jl 0.4 a (simple) [caching of the objective function](@ref CacheSection) using the `cache=` keyword is available in any of the function calls..
 
-## Technical Details
+## Technical details
 
  The main function a solver calls is
 
@@ -60,7 +60,7 @@ stop_solver!(p::AbstractManoptProblem, s::AbstractManoptSolverState, Any)
 ## API for solvers
 
 this is a short overview of the different types of high-level functions are usually
-available for a solver. Let's assume the solver is called `new_solver` and requires
+available for a solver. Assume the solver is called `new_solver` and requires
 a cost `f` and some first order information `df` as well as a starting point `p` on `M`.
 `f` and `df` form the objective together called `obj`.
 
@@ -80,26 +80,26 @@ If you provide an immutable point `p` or the `rand(M)` point is immutable, like 
 
 The third variant works in place of `p`, so it is mandatory.
 
-This first interface would set up the objective and pass all keywords on the the
+This first interface would set up the objective and pass all keywords on the
 objective based call.
 
-### The objective-based call
+### Objective based calls to solvers
 
 ```
 new_solver(M, obj, p=rand(M); kwargs...)
 new_solver!(M, obj, p; kwargs...)
 ```
 
-Here the objective would be created beforehand, e.g. to compare different solvers on the
+Here the objective would be created beforehand for example to compare different solvers on the
 same objective, and for the first variant the start point is optional.
 Keyword arguments include decorators like `debug=` or `record=`
 as well as algorithm specific ones.
 
-this variant would generate the `problem` and the `state` and check validity of all provided
+This variant would generate the `problem` and the `state` and verify validity of all provided
 keyword arguments that affect the state.
 Then it would call the iterate process.
 
-### The manual call
+### Manual calls
 
 If you generate the corresponding `problem` and `state` as the previous step does, you can
 also use the third (lowest level) and just call

@@ -8,7 +8,7 @@ CurrentModule = Manopt
 Manopt.Manopt
 ```
 
-For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M`` we aim to solve
+For a function ``f:\mathcal M → ℝ`` defined on a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold) ``\mathcal M`` algorithms in this package aim to solve
 
 ```math
 \operatorname*{argmin}_{p ∈ \mathcal M} f(p),
@@ -19,8 +19,8 @@ or in other words: find the point ``p`` on the manifold, where ``f`` reaches its
 `Manopt.jl` provides a framework for optimization on manifolds as well as a Library of optimization algorithms in [Julia](https://julialang.org).
 It belongs to the “Manopt family”, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python).
 
-If you want to delve right into `Manopt.jl` check out the
-[Get started: Optimize!](tutorials/Optimize!.md) tutorial.
+If you want to delve right into `Manopt.jl` read the
+[🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial.
 
 `Manopt.jl` makes it easy to use an algorithm for your favourite
 manifold as well as a manifold for your favourite algorithm. It already provides
@@ -44,7 +44,7 @@ If you use `Manopt.jl`in your work, please cite the following
 }
 ```
 
-To refer to a certain version or the source code in general we recommend to cite for example
+To refer to a certain version or the source code in general cite for example
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
@@ -60,12 +60,12 @@ To refer to a certain version or the source code in general we recommend to cite
 for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
 Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
 
-## Main Features
+## Main features
 
-### Optimization Algorithms (Solvers)
+### Optimization algorithms (solvers)
 
-For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, store interims values. Together they
-form a [plan](@ref planSection).
+For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, and stores values that are required between or for the next iteration.
+Together they form a [plan](@ref planSection).
 
 ## Manifolds
 
@@ -73,14 +73,10 @@ This project is build upon [ManifoldsBase.jl](https://juliamanifolds.github.io/M
 
 The notation in the documentation aims to follow the same [notation](https://juliamanifolds.github.io/Manifolds.jl/stable/misc/notation.html) from these packages.
 
-### Functions on Manifolds
-
-Several functions are available, implemented on an arbitrary manifold, [cost functions](@ref CostFunctions), [differentials](@ref DifferentialFunctions) and their [adjoints](@ref adjointDifferentialFunctions), and [gradients](@ref GradientFunctions) as well as [proximal maps](@ref proximalMapFunctions).
-
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, i.e. to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [Get Started: Optimize!](tutorials/Optimize!.md) tutorial on how to easily activate this.
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+[`RecordIterate`](@ref). Take a look at the [🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial on how to easily activate this.
 
 ## Literature
 

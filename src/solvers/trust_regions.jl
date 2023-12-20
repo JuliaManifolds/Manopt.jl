@@ -40,8 +40,6 @@ All the following fields (besides `p`) can be set by specifying them as keywords
 All the following constructors have the above fields as keyword arguents with the defaults
 given in brackets. If no initial point `p` is provided, `p=rand(M)` is used
 
-
-
     TrustRegionsState(M, mho; kwargs...)
     TrustRegionsState(M, p, mho; kwargs...)
 

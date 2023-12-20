@@ -1,6 +1,6 @@
-# [The Riemannian Chambolle-Pock Algorithm](@id ChambollePockSolver)
+# [The Riemannian Chambolle-Pock algorithm](@id ChambollePockSolver)
 
-The Riemannian Chambolle–Pock is a generalization of the Chambolle–Pock algorithm [ChambollePock:2011](@citet*)
+The Riemannian Chambolle—Pock is a generalization of the Chambolle—Pock algorithm [ChambollePock:2011](@citet*)
 It is also known as primal-dual hybrid gradient (PDHG) or primal-dual proximal splitting (PDPS) algorithm.
 
 In order to minimize over ``p∈\mathcal M`` the cost function consisting of
@@ -14,14 +14,13 @@ F(p) + G(Λ(p)),
 
 where ``F:\mathcal M → \overline{ℝ}``, ``G:\mathcal N → \overline{ℝ}``, and
 ``Λ:\mathcal M →\mathcal N``.
-If the manifolds ``\mathcal M`` or ``\mathcal N`` are not Hadamard, it has to be considered locally,
-i.e. on geodesically convex sets ``\mathcal C \subset \mathcal M`` and ``\mathcal D \subset\mathcal N``
+If the manifolds ``\mathcal M`` or ``\mathcal N`` are not Hadamard, it has to be considered locally only, that is on geodesically convex sets ``\mathcal C \subset \mathcal M`` and ``\mathcal D \subset\mathcal N``
 such that ``Λ(\mathcal C) \subset \mathcal D``.
 
 The algorithm is available in four variants: exact versus linearized (see `variant`)
 as well as with primal versus dual relaxation (see `relax`). For more details, see
 [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@citet*).
-In the following we note the case of the exact, primal relaxed Riemannian Chambolle–Pock algorithm.
+In the following description is the case of the exact, primal relaxed Riemannian Chambolle—Pock algorithm.
 
 Given base points ``m∈\mathcal C``, ``n=Λ(m)∈\mathcal D``,
 initial primal and dual values ``p^{(0)} ∈\mathcal C``, ``ξ_n^{(0)} ∈T_n^*\mathcal N``,
@@ -68,7 +67,7 @@ ChambollePock!
 ChambollePockState
 ```
 
-## Useful Terms
+## Useful terms
 
 ```@docs
 primal_residual
@@ -110,7 +109,18 @@ RecordPrimalIterate
 Manopt.update_prox_parameters!
 ```
 
+## [Technical details](@id sec-cp-technical-details)
+
+The [`ChambollePock`](@ref) solver requires the following functions of a manifold to be available for both the manifold ``\mathcal M``and ``\mathcal N``
+
+* A [`retract!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}) to a favourite retraction. If this default is set, a `retraction_method=` or `retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
+* An [`inverse_retract!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)`(M, X, p, q)`; it is recommended to set the [`default_inverse_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}) to a favourite retraction. If this default is set, a `inverse_retraction_method=` or `inverse_retraction_method_dual=` (for ``\mathcal N``) does not have to be specified.
+* A [`vector_transport_to!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/vector_transports/)`M, Y, p, X, q)`; it is recommended to set the [`default_vector_transport_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/vector_transports/#ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}) to a favourite retraction. If this default is set, a `vector_transport_method=` or `vector_transport_method_dual=` (for ``\mathcal N``) does not have to be specified.
+* A [`copyto!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copyto!-Tuple{AbstractManifold,%20Any,%20Any})`(M, q, p)` and [`copy`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copy-Tuple{AbstractManifold,%20Any})`(M,p)` for points.
+
 ## Literature
+
+
 
 ```@bibliography
 Pages = ["ChambollePock.md"]

@@ -1,4 +1,15 @@
-using Manopt, Manifolds, ManifoldsBase, Test
+using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, ManoptExamples, Test
+
+using ManoptExamples:
+    forward_logs,
+    forward_logs!,
+    adjoint_differential_forward_logs,
+    adjoint_differential_forward_logs!,
+    project_collaborative_TV,
+    project_collaborative_TV!,
+    differential_forward_logs,
+    differential_forward_logs!
+using ManifoldDiff: prox_distance, prox_distance!, adjoint_differential_log_argument
 
 include("../utils/dummy_types.jl")
 

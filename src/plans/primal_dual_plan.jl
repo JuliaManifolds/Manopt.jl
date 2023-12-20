@@ -679,7 +679,7 @@ function dual_residual(
         throw(
             DomainError(
                 apds.variant,
-                "Unknown Chambolle–Pock variant, allowed are `:exact` or `:linearized`.",
+                "Unknown Chambolle—Pock variant, allowed are `:exact` or `:linearized`.",
             ),
         )
     end
