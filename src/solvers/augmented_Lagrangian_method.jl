@@ -84,6 +84,7 @@ mutable struct AugmentedLagrangianMethodState{
         stopping_criterion::SC=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
         ),
+        kwargs...,
     ) where {
         P,
         Pr<:AbstractManoptProblem,
@@ -344,6 +345,7 @@ function augmented_Lagrangian_method!(
             ),
             stopping_criterion=sub_stopping_criterion,
             stepsize=default_stepsize(M, QuasiNewtonState),
+            sub_kwargs...,
         );
         sub_kwargs...,
     ),
