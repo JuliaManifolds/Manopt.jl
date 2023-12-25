@@ -498,8 +498,8 @@ function trust_regions!(
     reduction_factor::R=0.25,
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
-    sub_kwargs=[],
-    sub_objective=TrustRegionModelObjective(mho),
+    sub_kwargs=(;),
+    sub_objective=decorate_objective!(M, TrustRegionModelObjective(mho), sub_kwargs...),
     sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopWhenResidualIsReducedByFactorOrPower(;

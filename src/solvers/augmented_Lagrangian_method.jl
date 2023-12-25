@@ -331,7 +331,7 @@ function augmented_Lagrangian_method!(
     objective_type=:Riemannian,
     sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
-    sub_kwargs=[],
+    sub_kwargs=(;),
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
