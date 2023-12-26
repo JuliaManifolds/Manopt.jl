@@ -180,7 +180,7 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
   For points 2 and 3 the `sub_state` has to be set to the corresponding [`AbstractEvaluationType`](@ref), [`AllocatingEvaluation`](@ref) and [`InplaceEvaluation`](@ref), respectively
 * `sub_state`          - (`evaluation` if `sub_problem` is a function, a decorated [`GradientDescentState`](@ref) otherwise)
   for a function, the evaluation is inherited from the Frank-Wolfe `evaluation` keyword.
-* `sub_kwargs`         - (`[]`) – keyword arguments to decorate the `sub_state` default state in case the sub_problem is not a function
+* `sub_kwargs`         - (`(;)`) – keyword arguments to decorate the `sub_state` default state in case the sub_problem is not a function
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
@@ -259,7 +259,7 @@ function Frank_Wolfe_method!(
                               StopWhenChangeLess(1.0e-8),
     sub_cost=FrankWolfeCost(p, initial_vector),
     sub_grad=FrankWolfeGradient(p, initial_vector),
-    sub_kwargs=[],
+    sub_kwargs=(;),
     sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
     sub_problem=DefaultManoptProblem(
         M,
@@ -278,6 +278,7 @@ function Frank_Wolfe_method!(
                 stepsize=default_stepsize(
                     M, GradientDescentState; retraction_method=retraction_method
                 ),
+                sub_kwargs...,
             );
             objective_type=objective_type,
             sub_kwargs...,

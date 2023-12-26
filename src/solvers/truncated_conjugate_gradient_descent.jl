@@ -71,6 +71,7 @@ mutable struct TruncatedConjugateGradientState{T,R<:Real,SC<:StoppingCriterion,P
                                               StopWhenTrustRegionIsExceeded() |
                                               StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
+        kwargs...,
     ) where {T,R<:Real,F}
         tcgs = new{T,R,typeof(stopping_criterion),F}()
         tcgs.stop = stopping_criterion
