@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.45] unreleased
 
-## Changed
+### Added
+
+* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in [#336](https://
+
+### Changed
 
 * `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
 * `linesearch_backtrack!` is now available
