@@ -60,7 +60,7 @@ function f_rosenbrock(x)
     end
     return result
 end
-function f_rosenbrock_manopt(::Euclidean, x)
+function f_rosenbrock_manopt(::AbstractManifold, x)
     return f_rosenbrock(x)
 end
 
@@ -76,11 +76,12 @@ end
 
 optimize(f_rosenbrock, g_rosenbrock!, [0.0, 0.0], LBFGS())
 
-function g_rosenbrock_manopt!(::Euclidean, storage, x)
+function g_rosenbrock_manopt!(M::AbstractManifold, storage, x)
     g_rosenbrock!(storage, x)
     if isnan(x[1])
         error("nan")
     end
+    riemannian_gradient!(M, storage, x, storage)
     return storage
 end
 
@@ -109,7 +110,7 @@ function prof()
     test_f(f_rosenbrock_manopt, g_rosenbrock_manopt!, x0, N)
 
     Profile.clear()
-    @profile for i in 1:10000
+    @profile for i in 1:100000
         test_f(f_rosenbrock_manopt, g_rosenbrock_manopt!, x0, N)
     end
     return ProfileView.view()
@@ -128,12 +129,12 @@ function generate_cmp(f, g!, f_manopt, g_manopt!)
     ls_hz = LineSearches.HagerZhang()
 
     gtol = 1e-6
-    mem_len = 1
+    mem_len = 10
     println("Benchmarking $f for gtol=$gtol")
     for N in N_vals
         println("Benchmarking for N=$N")
         M = Euclidean(N)
-        method_optim = LBFGS(; m=mem_len, linesearch=ls_hz)
+        method_optim = LBFGS(; m=mem_len, linesearch=ls_hz, manifold=Optim.Flat())
 
         x0 = zeros(N)
         manopt_sc = StopWhenGradientInfNormLess(gtol) | StopAfterIteration(1000)
@@ -161,12 +162,14 @@ function generate_cmp(f, g!, f_manopt, g_manopt!)
         )
         manopt_iters = get_count(manopt_state, :Iterations)
         push!(times_manopt, median(bench_manopt.times) / 1000)
+        println("Manopt.jl time: $(median(bench_manopt.times) / 1000) ms")
         println("Manopt.jl iterations: $(manopt_iters)")
 
         options_optim = Optim.Options(; g_tol=gtol)
         bench_optim = @benchmark optimize($f, $g!, $x0, $method_optim, $options_optim)
 
         optim_state = optimize(f_rosenbrock, g_rosenbrock!, x0, method_optim, options_optim)
+        println("Optim.jl  time: $(median(bench_optim.times) / 1000) ms")
         push!(times_optim, median(bench_optim.times) / 1000)
         println("Optim.jl  iterations: $(optim_state.iterations)")
     end

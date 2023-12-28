@@ -59,6 +59,7 @@ function (cs::Manopt.LineSearchesStepsize)(
         return α
     catch ex
         if isa(ex, LineSearches.LineSearchException)
+            println(ex)
             # maybe indicate failure?
             return zero(dphi_0)
         else
