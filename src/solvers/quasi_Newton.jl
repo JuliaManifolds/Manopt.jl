@@ -119,7 +119,7 @@ function show(io::IO, qns::QuasiNewtonState)
     ## Parameters
     * direction update:        $(status_summary(qns.direction_update))
     * retraction method:       $(qns.retraction_method)
-    * vector trnasport method: $(qns.vector_transport_method)
+    * vector transport method: $(qns.vector_transport_method)
 
     ## Stepsize
     $(qns.stepsize)
@@ -617,8 +617,8 @@ function update_hessian!(
     end
 
     # add newest
-    push!(d.memory_s, st.sk)
-    push!(d.memory_y, st.yk)
+    push!(d.memory_s, copy(M, st.sk))
+    push!(d.memory_y, copy(M, st.yk))
     return d
 end
 

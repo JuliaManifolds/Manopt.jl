@@ -531,6 +531,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
         r .*= -1
         return r
     end
+    # backward pass
     for i in m:-1:1
         # what if we divide by zero here? Setting to zero ignores this in the next step
         # precompute in case inner is expensive
@@ -562,7 +563,9 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
         r .*= -1
         return r
     end
-    r .*= 1 / (d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2)
+    # initial scaling guess
+    r ./= d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2
+    # forward pass
     for i in eachindex(d.ρ)
         if abs(d.ρ[i]) > 0
             coeff = d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)
