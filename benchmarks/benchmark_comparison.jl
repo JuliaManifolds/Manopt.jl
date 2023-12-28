@@ -118,7 +118,7 @@ end
 function generate_cmp(f, g!, f_manopt, g_manopt!)
     plt = plot()
     xlabel!("dimension")
-    ylabel!("time per iteration [ms]")
+    ylabel!("time [ms]")
     title!("Optimization times for $f")
 
     times_manopt = Float64[]
@@ -160,14 +160,14 @@ function generate_cmp(f, g!, f_manopt, g_manopt!)
             stopping_criterion=manopt_sc,
         )
         manopt_iters = get_count(manopt_state, :Iterations)
-        push!(times_manopt, median(bench_manopt.times) / (1000 * manopt_iters))
+        push!(times_manopt, median(bench_manopt.times) / 1000)
         println("Manopt.jl iterations: $(manopt_iters)")
 
         options_optim = Optim.Options(; g_tol=gtol)
         bench_optim = @benchmark optimize($f, $g!, $x0, $method_optim, $options_optim)
 
         optim_state = optimize(f_rosenbrock, g_rosenbrock!, x0, method_optim, options_optim)
-        push!(times_optim, median(bench_optim.times) / (1000 * optim_state.iterations))
+        push!(times_optim, median(bench_optim.times) / 1000)
         println("Optim.jl  iterations: $(optim_state.iterations)")
     end
     plot!(N_vals, times_manopt; label="Manopt.jl", xaxis=:log, yaxis=:log)
