@@ -558,12 +558,15 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     if (last_safe_index == -1)
         d.message = "$(d.message)$(length(d.message)>0 ? :"\n" : "")"
         d.message = "$(d.message) All memory yield zero inner products, falling back to a gradient step."
-        return -get_gradient(st)
+
+        r .*= -1
+        return r
     end
     r .*= 1 / (d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2)
     for i in eachindex(d.ρ)
         if abs(d.ρ[i]) > 0
-            r .+= (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
+            coeff = d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)
+            r .+= coeff .* d.memory_s[i]
         end
     end
     d.project && embed_project!(M, r, p, r)
