@@ -125,14 +125,15 @@ function generate_cmp(f, g!, f_manopt, g_manopt!)
     times_optim = Float64[]
 
     N_vals = [2^n for n in 1:3:16]
-    strong_wolfe_ls = LineSearches.StrongWolfe()
+    ls_hz = LineSearches.HagerZhang()
 
     gtol = 1e-6
+    mem_len = 1
     println("Benchmarking $f for gtol=$gtol")
     for N in N_vals
         println("Benchmarking for N=$N")
         M = Euclidean(N)
-        method_optim = LBFGS(; linesearch=strong_wolfe_ls)
+        method_optim = LBFGS(; m=mem_len, linesearch=ls_hz)
 
         x0 = zeros(N)
         manopt_sc = StopWhenGradientInfNormLess(gtol) | StopAfterIteration(1000)
@@ -141,10 +142,9 @@ function generate_cmp(f, g!, f_manopt, g_manopt!)
             $f_manopt,
             $g_manopt!,
             $x0;
-            # this causes an error for larger N
-            #stepsize=$(Manopt.LineSearchesStepsize(strong_wolfe_ls)),
+            stepsize=$(Manopt.LineSearchesStepsize(ls_hz)),
             evaluation=$(InplaceEvaluation()),
-            memory_size=10,
+            memory_size=$mem_len,
             stopping_criterion=$(manopt_sc),
         )
 
@@ -153,10 +153,10 @@ function generate_cmp(f, g!, f_manopt, g_manopt!)
             f_manopt,
             g_manopt!,
             x0;
-            #stepsize=Manopt.LineSearchesStepsize(strong_wolfe_ls),
+            stepsize=Manopt.LineSearchesStepsize(ls_hz),
             evaluation=InplaceEvaluation(),
             return_state=true,
-            memory_size=10,
+            memory_size=mem_len,
             stopping_criterion=manopt_sc,
         )
         manopt_iters = get_count(manopt_state, :Iterations)
