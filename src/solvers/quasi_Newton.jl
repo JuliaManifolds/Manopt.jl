@@ -617,8 +617,21 @@ function update_hessian!(
     end
 
     # add newest
-    push!(d.memory_s, copy(M, st.sk))
-    push!(d.memory_y, copy(M, st.yk))
+    # reuse old memory if buffer is full or allocate a copy if it is not
+    if isfull(d.memory_s)
+        old_sk = popfirst!(d.memory_s)
+        copyto!(M, old_sk, st.sk)
+        push!(d.memory_s, old_sk)
+    else
+        push!(d.memory_s, copy(M, st.sk))
+    end
+    if isfull(d.memory_y)
+        old_yk = popfirst!(d.memory_y)
+        copyto!(M, old_yk, st.yk)
+        push!(d.memory_y, old_yk)
+    else
+        push!(d.memory_y, copy(M, st.yk))
+    end
     return d
 end
 
