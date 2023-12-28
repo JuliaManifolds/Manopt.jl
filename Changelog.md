@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in [#336](https://github.com/JuliaManifolds/Manopt.jl/discussions/336)
+* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in [#336](https://
 
 ### Changed
 
+* `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
+* `linesearch_backtrack!` is now available
+* Quasi Newton Updates can work inplace of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
 ## [0.4.44] December 12, 2023

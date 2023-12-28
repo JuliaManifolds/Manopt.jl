@@ -287,33 +287,63 @@ InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
 @doc raw"""
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule, where the operator is stored as a matrix. A distinction is made between the update of the approximation of the Hessian, ``H_k \mapsto H_{k+1}``, and the update of the approximation of the Hessian inverse, ``B_k \mapsto B_{k+1}``. For the first case, the coordinates of the search direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are determined by solving a linear system of equations, i.e.
+The `QuasiNewtonMatrixDirectionUpdate` representa a quasi-Newton update rule,
+where the operator is stored as a matrix. A distinction is made between the update of the
+approximation of the Hessian, ``H_k \mapsto H_{k+1}``, and the update of the approximation
+of the Hessian inverse, ``B_k \mapsto B_{k+1}``.
+For the first case, the coordinates of the search direction ``η_k`` with respect to
+a basis ``\{b_i\}^{n}_{i=1}`` are determined by solving a linear system of equations
 
 ```math
-\text{Solve} \quad \hat{η_k} = - H_k \widehat{\operatorname{grad}f(x_k)}
+\text{Solve} \quad \hat{η_k} = - H_k \widehat{\operatorname{grad}f(x_k)},
 ```
 
-where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad}f(x_k)}`` represents the coordinates of the gradient of the objective function ``f`` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
-If a method is chosen where Hessian inverse is approximated, the coordinates of the search direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are obtained simply by matrix-vector multiplication, i.e.
+where ``H_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}``
+and ``\widehat{\operatorname{grad}f(x_k)}`` represents the coordinates of the gradient of
+the objective function ``f`` in ``x_k`` with respect to the basis ``\{b_i\}^{n}_{i=1}``.
+If a method is chosen where Hessian inverse is approximated, the coordinates of the search
+direction ``η_k`` with respect to a basis ``\{b_i\}^{n}_{i=1}`` are obtained simply by
+matrix-vector multiplication
 
 ```math
-\hat{η_k} = - B_k \widehat{\operatorname{grad}f(x_k)}
+\hat{η_k} = - B_k \widehat{\operatorname{grad}f(x_k)},
 ```
 
-where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}`` and ``\widehat{\operatorname{grad}f(x_k)}`` as above. In the end, the search direction ``η_k`` is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}`` in both variants.
-The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used. In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}`` and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport, or generated there.
+where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}``
+and ``\widehat{\operatorname{grad}f(x_k)}`` as above. In the end, the search direction ``η_k``
+is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}``
+in both variants.
+The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
+In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}``
+and ``B_{k+1}``, and the basis ``\{b_i\}^{n}_{i=1}`` is transported into the upcoming tangent
+space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport, or generated there.
+
+# Provided functors
+
+* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction inplace of `η`
 
 # Fields
-* `update` – a [`AbstractQuasiNewtonUpdateRule`](@ref).
-* `basis` – the basis.
-* `matrix` – (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`)
+
+* `basis`                   an `AbstractBasis` to use in the tangent spaces
+* `matrix`                  (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`)
   the matrix which represents the approximating operator.
-* `scale` – (`true) indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
-* `vector_transport_method` – (`vector_transport_method`)an `AbstractVectorTransportMethod`
+* `scale`                   (`true) indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
+* `update`                  a [`AbstractQuasiNewtonUpdateRule`](@ref).
+* `vector_transport_method` (`vector_transport_method`)an `AbstractVectorTransportMethod`
 
 # Constructor
-    QuasiNewtonMatrixDirectionUpdate(M::AbstractManifold, update, basis, matrix;
-    scale=true, vector_transport_method=default_vector_transport_method(M))
+    QuasiNewtonMatrixDirectionUpdate(
+        M::AbstractManifold,
+        update,
+        basis::B=DefaultOrthonormalBasis(),
+        m=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M));
+        kwargs...
+    )
+
+## Keyword Arguments
+
+* `scale`, `vector_transport_method` for the two fields above
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
 
@@ -362,43 +392,63 @@ function QuasiNewtonMatrixDirectionUpdate(
         basis, m, scale, update, vector_transport_method
     )
 end
+function (d::QuasiNewtonMatrixDirectionUpdate)(mp, st)
+    r = zero_vector(get_manifold(mp), get_iterate(st))
+    return d(r, mp, st)
+end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    mp, st
+    r, mp, st
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    return get_vector(M, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
+    get_vector!(M, r, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
+    return r
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    mp, st
+    r, mp, st
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    return get_vector(M, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
+    get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
+    return r
 end
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemannian BFGS update, where the approximating  operator is represented by ``m`` stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
-For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion is used (see [Huang, Gallican, Absil, SIAM J. Optim., 2015](@cite HuangGallivanAbsil:2015)), since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``. For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k`` and the positive definite self-adjoint operator
+This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemannian BFGS update,
+where the approximating operator is represented by ``m`` stored pairs of tangent
+vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
+For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion
+is used (see [Huang, Gallican, Absil, SIAM J. Optim., 2015](@cite HuangGallivanAbsil:2015)),
+since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``.
+For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``,
+the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k``
+and the positive definite self-adjoint operator
 
 ```math
 \mathcal{B}^{(0)}_k[⋅] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \; \mathrm{id}_{T_{x_k} \mathcal{M}}[⋅]
 ```
 
-are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[⋅]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [⋅]`` is directly applied on ``\operatorname{grad}f(x_k)``.
+are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update
+is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[⋅]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [⋅]`` is directly applied on ``\operatorname{grad}f(x_k)``.
 When updating there are two cases: if there is still free memory, i.e. ``k < m``, the previously stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``; if there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``. After that we calculate and store ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``. This process ensures that new information about the objective function is always included and the old, probably no longer relevant, information is discarded.
 
+# Provided functors
+
+* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction inplace of `η`
+
 # Fields
-* `memory_s` – the set of the stored (and transported) search directions times step size ``\{ \widetilde{s}_i\}_{i=k-m}^{k-1}``.
-* `memory_y` – set of the stored gradient differences ``\{ \widetilde{y}_i\}_{i=k-m}^{k-1}``.
-* `ξ` – a variable used in the two-loop recursion.
-* `ρ` – a variable used in the two-loop recursion.
-* `scale` –
-* `vector_transport_method` – a `AbstractVectorTransportMethod`
-* `message` – a string containing a potential warning that might have appeared
+
+* `memory_s`                the set of the stored (and transported) search directions times step size ``\{ \widetilde{s}_i\}_{i=k-m}^{k-1}``.
+* `memory_y`                set of the stored gradient differences ``\{ \widetilde{y}_i\}_{i=k-m}^{k-1}``.
+* `ξ`                       a variable used in the two-loop recursion.
+* `ρ`                       a variable used in the two-loop recursion.
+* `scale`                   initial scaling of the Hessian
+* `vector_transport_method` a `AbstractVectorTransportMethod`
+* `message`                 a string containing a potential warning that might have appeared
 
 # Constructor
     QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -409,7 +459,7 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
         initial_vector=zero_vector(M,x),
         scale=1.0
         project=true
-        )
+    )
 
 # See also
 
@@ -468,12 +518,19 @@ function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     return s
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
+    r = zero_vector(get_manifold(mp), get_iterate(st))
+    return d(r, mp, st)
+end
+function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
-    r = copy(M, p, get_gradient(st))
+    copyto!(M, r, p, get_gradient(st))
     m = length(d.memory_s)
-    m == 0 && return -r
+    if m == 0
+        r .*= -1
+        return r
+    end
     for i in m:-1:1
         # what if we divide by zero here? Setting to zero ignores this in the next step
         # precompute in case inner is expensive
@@ -540,6 +597,11 @@ If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the 
 method follows the method of [Huang, Absil, Gallivan, SIAM J. Optim., 2018](@cite HuangAbsilGallivan:2018), taking into account that
 the corresponding step size is chosen.
 
+# Provided functors
+
+* `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction inplace of `η`
+
 # Fields
 
 * `update` – an [`AbstractQuasiNewtonDirectionUpdate`](@ref)
@@ -572,6 +634,7 @@ function QuasiNewtonCautiousDirectionUpdate(
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)
+(d::QuasiNewtonCautiousDirectionUpdate)(r, mp, st) = d.update(r, mp, st)
 
 # access the inner vector transport method
 function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
