@@ -63,6 +63,7 @@ mutable struct AugmentedLagrangianMethodState{
     θ_ϵ::R
     penalty::R
     stop::TStopping
+    last_stepsize::R
     function AugmentedLagrangianMethodState(
         M::AbstractManifold,
         co::ConstrainedManifoldObjective,
@@ -81,9 +82,12 @@ mutable struct AugmentedLagrangianMethodState{
         θ_ρ::R=0.3,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        stopping_criterion::SC=StopAfterIteration(300) | (
-            StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
-        ),
+        stopping_criterion::SC=StopAfterIteration(300) |
+                               (
+                                   StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
+                                   StopWhenChangeLess(1e-10)
+                               ) |
+                               StopWhenChangeLess(1e-10),
         kwargs...,
     ) where {
         P,
@@ -110,6 +114,7 @@ mutable struct AugmentedLagrangianMethodState{
         alms.θ_ϵ = θ_ϵ
         alms.penalty = Inf
         alms.stop = stopping_criterion
+        alms.last_stepsize = Inf
         return alms
     end
 end
@@ -360,8 +365,11 @@ function augmented_Lagrangian_method!(
         ),
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
-                                          StopWhenSmallerOrEqual(:ϵ, ϵ_min) |
-                                          StopWhenChangeLess(1e-10),
+                                          (
+                                              StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
+                                              StopWhenChangeLess(1e-10)
+                                          ) |
+                                          StopWhenStepsizeLess(1e-10),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     alms = AugmentedLagrangianMethodState(
@@ -410,7 +418,9 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)
 
-    copyto!(M, alms.p, get_solver_result(solve!(alms.sub_problem, alms.sub_state)))
+    new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
+    alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
+    copyto!(M, alms.p, new_p)
 
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)
@@ -440,3 +450,7 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     return alms
 end
 get_solver_result(alms::AugmentedLagrangianMethodState) = alms.p
+
+function get_last_stepsize(p::AbstractManoptProblem, s::AugmentedLagrangianMethodState, i)
+    return s.last_stepsize
+end
