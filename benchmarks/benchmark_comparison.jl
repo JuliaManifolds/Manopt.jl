@@ -2,11 +2,13 @@ using Revise
 using Optim, Manopt
 using Manifolds
 using LineSearches
+using LinearAlgebra
 
 using Profile
 using ProfileView
 using BenchmarkTools
 using Plots
+using ManoptExamples
 
 """
     StopWhenGradientInfNormLess <: StoppingCriterion
@@ -224,11 +226,17 @@ function generate_cmp(
 end
 
 # generate_cmp(N -> (f_rosenbrock, g_rosenbrock!, f_rosenbrock_manopt, g_rosenbrock_manopt!), mem_len=4)
-# function gsn_problem_for_cmp(N)
-#     (f, g!) = make_gsn_problem(N, div(N, 10))
-#     return (f, g!, f, g!)
-# end
-# generate_cmp(gsn_problem_for_cmp, manifold_names=[:Sphere], mem_len=4)
+
+function generate_rayleigh_problem(N::Int)
+    A = Symmetric(randn(N, N))
+    f_manopt = ManoptExamples.RayleighQuotientCost(A)
+    g_manopt! = ManoptExamples.RayleighQuotientGrad!!(A)
+    M = Manifolds.Sphere(N - 1)
+    f(x) = f_manopt(M, x)
+    g!(storage, x) = g_manopt!(M, storage, x)
+    return (f, g!, f_manopt, g_manopt!)
+end
+# generate_cmp(generate_rayleigh_problem, manifold_names=[:Sphere], mem_len=4)
 
 function test_case_manopt()
     N = 2^16
