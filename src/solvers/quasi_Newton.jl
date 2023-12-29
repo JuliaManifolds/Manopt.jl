@@ -349,8 +349,13 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     copyto!(M, qns.p_old, get_iterate(qns))
     retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
-    β = locking_condition_scale(
-        M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method
+    # qns.yk update fails if α is equal to 0 because then β is NaN
+    β = ifelse(
+        iszero(α),
+        one(α),
+        locking_condition_scale(
+            M, qns.direction_update, qns.p_old, qns.η, qns.p, qns.vector_transport_method
+        ),
     )
     vector_transport_to!(
         M,

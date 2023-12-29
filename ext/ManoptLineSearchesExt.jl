@@ -54,18 +54,8 @@ function (cs::Manopt.LineSearchesStepsize)(
         return (phi, dphi)
     end
 
-    try
-        α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, α0, fp, dphi_0)
-        return α
-    catch ex
-        if isa(ex, LineSearches.LineSearchException)
-            println(ex)
-            # maybe indicate failure?
-            return zero(dphi_0)
-        else
-            rethrow(ex)
-        end
-    end
+    α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, α0, fp, dphi_0)
+    return α
 end
 
 end
