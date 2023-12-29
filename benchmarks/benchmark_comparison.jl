@@ -135,7 +135,9 @@ function manifold_maker(name::Symbol, N, lib::Symbol)
     end
 end
 
-function generate_cmp(problem_for_N; mem_len::Int=2, manifold_names=[:Euclidean, :Sphere])
+function generate_cmp(
+    problem_for_N; mem_len::Int=2, manifold_names=[:Euclidean, :Sphere], gtol::Real=1e-5
+)
     plt = plot()
     xlabel!(plt, "dimension")
     ylabel!(plt, "time [ms]")
@@ -144,7 +146,6 @@ function generate_cmp(problem_for_N; mem_len::Int=2, manifold_names=[:Euclidean,
     N_vals = [2^n for n in 1:3:16]
     ls_hz = LineSearches.HagerZhang()
 
-    gtol = 1e-6
     for manifold_name in manifold_names
         times_manopt = Float64[]
         times_optim = Float64[]

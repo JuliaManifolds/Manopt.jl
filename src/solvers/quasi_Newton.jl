@@ -276,7 +276,7 @@ function quasi_Newton!(
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     memory_size::Int=min(manifold_dimension(M), 20),
-    stabilize=true,
+    stabilize::Bool=true,
     initial_operator::AbstractMatrix=(
         if memory_size >= 0
             fill(1.0, 0, 0) # don't allocate initial_operator for limited memory operation

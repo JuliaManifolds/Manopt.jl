@@ -457,8 +457,8 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
         update::AbstractQuasiNewtonUpdateRule,
         memory_size;
         initial_vector=zero_vector(M,x),
-        scale=1.0
-        project=true
+        scale::Real=1.0
+        project::Bool=true
     )
 
 # See also
@@ -489,8 +489,8 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     ::NT,
     memory_size::Int;
     initial_vector::T=zero_vector(M, p),
-    scale=1.0,
-    project=true,
+    scale::Real=1.0,
+    project::Bool=true,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod}
     mT = allocate_result_type(

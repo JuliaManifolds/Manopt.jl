@@ -48,7 +48,7 @@ using Test
     @test get_last_stepsize(mp, x_opt, x_opt.stepsize, 1) > 0.0
 
     # this tests catching LineSearchException
-    @test iszero(ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0)))
+    @test_throws LineSearchException ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0))
 
     # test rethrowing errors
     function rosenbrock_throw(::AbstractManifold, x)
