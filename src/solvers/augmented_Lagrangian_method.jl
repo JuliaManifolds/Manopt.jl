@@ -241,7 +241,7 @@ function augmented_Lagrangian_method(
     f::TF,
     grad_f::TGF,
     p=rand(M);
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     h=nothing,
     grad_g=nothing,
@@ -265,7 +265,7 @@ function augmented_Lagrangian_method(
     f::TF,
     grad_f::TGF,
     p::Number;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     grad_g=nothing,
     grad_h=nothing,
@@ -287,7 +287,7 @@ function augmented_Lagrangian_method(
 end
 
 @doc raw"""
-    augmented_Lagrangian_method!(M, f, grad_f p=rand(M); kwargs...)
+    augmented_Lagrangian_method!(M, f, grad_f, p=rand(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM) in-place of `p`.
 
@@ -298,7 +298,7 @@ function augmented_Lagrangian_method!(
     f::TF,
     grad_f::TGF,
     p;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     h=nothing,
     grad_g=nothing,
@@ -315,7 +315,7 @@ function augmented_Lagrangian_method!(
     M::AbstractManifold,
     cmo::O,
     p;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
     ϵ_exponent=1 / 100,
@@ -341,7 +341,7 @@ function augmented_Lagrangian_method!(
             copy(p);
             initial_vector=zero_vector(M, p),
             direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
-                M, copy(M, p), InverseBFGS(), 30
+                M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30)
             ),
             stopping_criterion=sub_stopping_criterion,
             stepsize=default_stepsize(M, QuasiNewtonState),
