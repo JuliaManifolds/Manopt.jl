@@ -318,8 +318,8 @@ function augmented_Lagrangian_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
-    ϵ_exponent=1 / 100,
-    θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
+    ϵ_exponent::Real=1 / 100,
+    θ_ϵ::Real=(ϵ_min / ϵ)^(ϵ_exponent),
     μ::Vector=ones(length(get_inequality_constraints(M, cmo, p))),
     μ_max::Real=20.0,
     λ::Vector=ones(length(get_equality_constraints(M, cmo, p))),
@@ -332,9 +332,9 @@ function augmented_Lagrangian_method!(
     sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
     sub_kwargs=(;),
-    sub_stopping_criterion=StopAfterIteration(300) |
-                           StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-8),
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
+                                              StopWhenGradientNormLess(ϵ) |
+                                              StopWhenStepsizeLess(1e-8),
     sub_state::AbstractManoptSolverState=decorate_state!(
         QuasiNewtonState(
             M,
@@ -359,9 +359,9 @@ function augmented_Lagrangian_method!(
             sub_kwargs...,
         ),
     ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
+                                          StopWhenSmallerOrEqual(:ϵ, ϵ_min) |
+                                          StopWhenChangeLess(1e-10),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     alms = AugmentedLagrangianMethodState(
