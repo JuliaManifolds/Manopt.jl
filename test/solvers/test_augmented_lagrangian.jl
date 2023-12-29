@@ -16,6 +16,27 @@ using LinearAlgebra: I, tr
         p0 = project(M, ones(d))
         sol = augmented_Lagrangian_method(M, f, grad_f, p0; g=g, grad_g=grad_g)
         @test distance(M, sol, v0) < 8 * 1e-4
+        if isnan(distance(M, sol, v0))
+            print(sol)
+            augmented_Lagrangian_method(
+                M,
+                f,
+                grad_f,
+                p0;
+                g=g,
+                grad_g=grad_g,
+                debug=[
+                    :Iteration,
+                    :Cost,
+                    :Stop,
+                    :Iterate,
+                    " | ",
+                    (:Change, "Δp : %1.5e"),
+                    1,
+                    "\n",
+                ],
+            )
+        end
         sol2 = copy(M, p0)
         augmented_Lagrangian_method!(M, f, grad_f, sol2; g=g, grad_g=grad_g)
         @test sol2 == sol
