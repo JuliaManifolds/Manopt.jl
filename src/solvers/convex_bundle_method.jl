@@ -28,7 +28,8 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `atol_λ` - (eps()) tolerance parameter for the convex coefficients in λ
 * `atol_errors` - (eps()) tolerance parameter for the linearization errors
 * `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
-* `bundle_size` - (25) the size of the bundle
+* `bundle_cap` - (25) the maximal number of elements the bundle is allowed to remember
+* `bundle_size` - the current number of bundle elements
 * `diam` - (50.0) estimate for the diameter of the level set of the objective function at the starting point
 * `domain` - (@(M, p) -> isfinite(f(M, p))) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false
 * `g`- descent direction
@@ -81,6 +82,7 @@ mutable struct ConvexBundleMethodState{
     atol_λ::R
     atol_errors::R
     bundle::B
+    bundle_cap::I
     bundle_size::I
     diam::R
     domain::D
@@ -106,7 +108,7 @@ mutable struct ConvexBundleMethodState{
         p::P;
         atol_λ::R=eps(R),
         atol_errors::R=eps(R),
-        bundle_size::Integer=25,
+        bundle_cap::Integer=25,
         m::R=1e-2,
         diam::R=50.0,
         domain::D=(M, p) -> isfinite(f(M, p)),
@@ -134,15 +136,16 @@ mutable struct ConvexBundleMethodState{
         R<:Real,
     }
         bundle = [(copy(M, p), zero_vector(M, p))]
+        bundle_size = 1
         g = zero_vector(M, p)
         last_stepsize = one(R)
-        lin_errors = zeros(bundle_size)
+        lin_errors = zeros(bundle_cap)
         transported_subgradients = [zero_vector(M, p)]
         ε = zero(R)
         λ = [zero(R)]
         ξ = zero(R)
         if ϱ === nothing
-            if (k_min === nothing) || (k_max === nothing)
+            if (k_max === nothing)
                 s = [
                     sectional_curvature(
                         M,
@@ -152,9 +155,9 @@ mutable struct ConvexBundleMethodState{
                     ) for _ in 1:k_size
                 ]
             end
-            (k_min === nothing) && (k_min = minimum(s))
-            (k_max === nothing) && (k_max = maximum(s))
-            ϱ = max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
+            # (k_min === nothing) && (k_min = minimum(s))
+            # (k_max === nothing) && (k_max = maximum(s))
+            ϱ = ζ_2(k_max, diam)#max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
         end
         return new{
             typeof(m),
@@ -164,7 +167,7 @@ mutable struct ConvexBundleMethodState{
             typeof(bundle),
             typeof(transported_subgradients),
             typeof(domain),
-            typeof(bundle_size),
+            typeof(bundle_cap),
             IR,
             TR,
             S,
@@ -174,6 +177,7 @@ mutable struct ConvexBundleMethodState{
             atol_λ,
             atol_errors,
             bundle,
+            bundle_cap,
             bundle_size,
             diam,
             domain,
@@ -210,7 +214,8 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     ## Parameters
     * tolerance parameter for the convex coefficients: $(cbms.atol_λ)
     * tolerance parameter for the linearization errors: $(cbms.atol_errors)
-    * bundle size: $(cbms.bundle_size)
+    * bundle cap size: $(cbms.bundle_cap)
+    * current bundle size: $(cbms.bundle_size)
     * diameter: $(cbms.diam)
     * inverse retraction: $(cbms.inverse_retraction_method)
     * descent test parameter: $(cbms.m)
@@ -301,8 +306,8 @@ function convex_bundle_method!(
     p;
     atol_λ::R=eps(),
     atol_errors::R=eps(),
-    bundle_size::Int=25,
-    diam::R=50.0,
+    bundle_cap::Int=25,
+    diam::R=π/3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_min=nothing,
@@ -329,7 +334,7 @@ function convex_bundle_method!(
         p;
         atol_λ=atol_λ,
         atol_errors=atol_errors,
-        bundle_size=bundle_size,
+        bundle_cap=bundle_cap,
         diam=diam,
         domain=domain,
         m=m,
@@ -438,27 +443,30 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     end
     l = length(bms.bundle)
     push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    if l == bms.bundle_size
+    if l == bms.bundle_cap
         y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, 1)
     end
     bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - inner(
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - bms.ϱ * inner(
             M,
             qj,
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        ) +
-        bms.ϱ *
-        norm(
-            M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
-        ) *
-        norm(M, qj, Xj) for (qj, Xj) in bms.bundle
+        )
+        # +
+        # bms.ϱ *
+        # norm(
+        #     M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
+        # ) *
+        # norm(M, qj, Xj) 
+        for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [
         zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for
         x in bms.lin_errors
     ]
+    bms.bundle_size = length(bms.bundle)
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
