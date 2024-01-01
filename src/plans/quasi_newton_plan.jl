@@ -457,8 +457,8 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
         update::AbstractQuasiNewtonUpdateRule,
         memory_size;
         initial_vector=zero_vector(M,x),
-        scale=1.0
-        project=true
+        scale::Real=1.0
+        project::Bool=true
     )
 
 # See also
@@ -489,8 +489,8 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     ::NT,
     memory_size::Int;
     initial_vector::T=zero_vector(M, p),
-    scale=1.0,
-    project=true,
+    scale::Real=1.0,
+    project::Bool=true,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod}
     mT = allocate_result_type(
@@ -531,6 +531,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
         r .*= -1
         return r
     end
+    # backward pass
     for i in m:-1:1
         # what if we divide by zero here? Setting to zero ignores this in the next step
         # precompute in case inner is expensive
@@ -558,12 +559,17 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     if (last_safe_index == -1)
         d.message = "$(d.message)$(length(d.message)>0 ? :"\n" : "")"
         d.message = "$(d.message) All memory yield zero inner products, falling back to a gradient step."
-        return -get_gradient(st)
+
+        r .*= -1
+        return r
     end
-    r .*= 1 / (d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2)
+    # initial scaling guess
+    r ./= d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2
+    # forward pass
     for i in eachindex(d.ρ)
         if abs(d.ρ[i]) > 0
-            r .+= (d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)) .* d.memory_s[i]
+            coeff = d.ξ[i] - d.ρ[i] * inner(M, p, d.memory_y[i], r)
+            r .+= coeff .* d.memory_s[i]
         end
     end
     d.project && embed_project!(M, r, p, r)

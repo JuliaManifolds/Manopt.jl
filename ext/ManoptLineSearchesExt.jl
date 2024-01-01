@@ -42,7 +42,7 @@ function (cs::Manopt.LineSearchesStepsize)(
         retract!(M, p_tmp, p, η, α, cs.retraction_method)
         get_gradient!(mp, X_tmp, p_tmp)
         vector_transport_to!(M, Y_tmp, p, η, p_tmp, cs.vector_transport_method)
-        return real(inner(M, p_tmp, Y_tmp, Y_tmp))
+        return real(inner(M, p_tmp, X_tmp, Y_tmp))
     end
     function ϕdϕ(α)
         # TODO: optimize?
@@ -50,21 +50,12 @@ function (cs::Manopt.LineSearchesStepsize)(
         get_gradient!(mp, X_tmp, p_tmp)
         vector_transport_to!(M, Y_tmp, p, η, p_tmp, cs.vector_transport_method)
         phi = f(M, p_tmp)
-        dphi = real(inner(M, p_tmp, Y_tmp, Y_tmp))
+        dphi = real(inner(M, p_tmp, X_tmp, Y_tmp))
         return (phi, dphi)
     end
 
-    try
-        α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, α0, fp, dphi_0)
-        return α
-    catch ex
-        if isa(ex, LineSearches.LineSearchException)
-            # maybe indicate failure?
-            return zero(dphi_0)
-        else
-            rethrow(ex)
-        end
-    end
+    α, fp = cs.linesearch(ϕ, dϕ, ϕdϕ, α0, fp, dphi_0)
+    return α
 end
 
 end

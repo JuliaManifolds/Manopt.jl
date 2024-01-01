@@ -5,6 +5,20 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.46] January 1, 2024
+
+### Changed
+
+* An error is thrown when a line search from `LineSearches.jl` reports search failure.
+* Changed default stopping criterion in ALM algorithm to mitigate an issue occurring when step size is very small.
+* Default memory length in default ALM subsolver is now capped at manifold dimension.
+* Replaced CI testing on Julia 1.8 with testing on Julia 1.10.
+
+### Fixed
+
+* A bug in `LineSearches.jl` extension leading to slower convergence.
+* Fixed a bug in L-BFGS related to memory storage, which caused significantly slower convergence.
+
 ## [0.4.45] December 28, 2023
 
 ### Added
