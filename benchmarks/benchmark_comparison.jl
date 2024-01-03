@@ -149,10 +149,12 @@ function benchmark_time_state(
     x0,
     stepsize,
     mem_len::Int,
-    gtol::Real,
+    gtol::Real;
+    kwargs...,
 )
     manopt_sc = StopWhenGradientInfNormLess(gtol) | StopAfterIteration(1000)
     M = manifold_maker(manifold_name, N, :Manopt)
+    mem_len = min(mem_len, manifold_dimension(M))
     bench_manopt = @benchmark quasi_Newton(
         $M,
         $f_manopt,
@@ -162,6 +164,7 @@ function benchmark_time_state(
         evaluation=$(InplaceEvaluation()),
         memory_size=$mem_len,
         stopping_criterion=$(manopt_sc),
+        $kwargs...,
     )
     manopt_state = quasi_Newton(
         M,
@@ -173,6 +176,7 @@ function benchmark_time_state(
         return_state=true,
         memory_size=mem_len,
         stopping_criterion=manopt_sc,
+        kwargs...,
     )
     iters = get_count(manopt_state, :Iterations)
     final_val = f_manopt(M, manopt_state.p)
@@ -184,6 +188,7 @@ struct OptimQN <: AbstractOptimConfig end
 function benchmark_time_state(
     ::OptimQN, manifold_name, N, f, g!, x0, stepsize, mem_len::Int, gtol::Real
 )
+    mem_len = min(mem_len, manifold_dimension(manifold_maker(manifold_name, N, :Manopt)))
     options_optim = Optim.Options(; g_tol=gtol)
     method_optim = LBFGS(;
         m=mem_len, linesearch=stepsize, manifold=manifold_maker(manifold_name, N, :Optim)

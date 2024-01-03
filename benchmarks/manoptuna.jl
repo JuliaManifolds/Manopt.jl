@@ -1,4 +1,4 @@
-
+using Manifolds
 using PythonCall
 include("benchmark_comparison.jl")
 
@@ -58,6 +58,8 @@ function lbfgs_objective(trial)
     ls_hz = LineSearches.HagerZhang()
 
     N_range = [2^n for n in 1:3:16]
+    vts = [ParallelTransport(), ProjectionTransport()]
+    vt = vts[pyconvert(Int, trial.suggest_categorical("vector_transport_method", (1, 2)))]
 
     # TODO: ensure this actually somewhat realistic,
     # otherwise there is too little pruning (if values here are too low)
@@ -65,10 +67,16 @@ function lbfgs_objective(trial)
     # regenerate using
     # prunining_losses = lbfgs_compute_pruning_losses()
     # *but* with zeroed-out prunning_losses
-    prunining_losses = [56.403, 69.438, 96.36449999999999, 409.749, 2542.482, 6.366860307e6]
+    # padded with zeros for convenience
+    prunining_losses = vcat(
+        [56.403, 69.438, 96.36449999999999, 409.749, 2542.482, 6.366860307e6], zeros(100)
+    )
 
     loss = sum(prunining_losses)
 
+    # here iterate over problems we want to optimize for
+    # from smallest to largest; pruning should stop the iteration early
+    # if the hyperparameter set is not promising
     cur_i = 0
     for N in N_range
         x0 = zeros(N)
@@ -82,8 +90,10 @@ function lbfgs_objective(trial)
             x0,
             Manopt.LineSearchesStepsize(ls_hz),
             pyconvert(Int, mem_len),
-            gtol,
+            gtol;
+            vector_transport_method=vt,
         )
+        # TODO: take objective_value into account for loss?
         loss -= prunining_losses[cur_i + 1]
         loss += manopt_time
         trial.report(loss, cur_i)
@@ -97,6 +107,6 @@ end
 
 function lbfgs_study()
     study = optuna.create_study(; study_name="L-BFGS")
-    study.optimize(lbfgs_objective; n_trials=1000, timeout=200)
+    study.optimize(lbfgs_objective; n_trials=1000, timeout=500)
     return println("Best params is $(study.best_params) with value $(study.best_value)")
 end
