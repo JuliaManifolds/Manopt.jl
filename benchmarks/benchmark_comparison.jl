@@ -137,6 +137,66 @@ function manifold_maker(name::Symbol, N, lib::Symbol)
     end
 end
 
+abstract type AbstractOptimConfig end
+struct ManoptQN <: AbstractOptimConfig end
+
+function benchmark_time_state(
+    ::ManoptQN,
+    manifold_name::Symbol,
+    N,
+    f_manopt,
+    g_manopt!,
+    x0,
+    stepsize,
+    mem_len::Int,
+    gtol::Real,
+)
+    manopt_sc = StopWhenGradientInfNormLess(gtol) | StopAfterIteration(1000)
+    M = manifold_maker(manifold_name, N, :Manopt)
+    bench_manopt = @benchmark quasi_Newton(
+        $M,
+        $f_manopt,
+        $g_manopt!,
+        $x0;
+        stepsize=$(stepsize),
+        evaluation=$(InplaceEvaluation()),
+        memory_size=$mem_len,
+        stopping_criterion=$(manopt_sc),
+    )
+    manopt_state = quasi_Newton(
+        M,
+        f_manopt,
+        g_manopt!,
+        x0;
+        stepsize=stepsize,
+        evaluation=InplaceEvaluation(),
+        return_state=true,
+        memory_size=mem_len,
+        stopping_criterion=manopt_sc,
+    )
+    iters = get_count(manopt_state, :Iterations)
+    final_val = f_manopt(M, manopt_state.p)
+    return median(bench_manopt.times) / 1000, iters, final_val
+end
+
+struct OptimQN <: AbstractOptimConfig end
+
+function benchmark_time_state(
+    ::OptimQN, manifold_name, N, f, g!, x0, stepsize, mem_len::Int, gtol::Real
+)
+    options_optim = Optim.Options(; g_tol=gtol)
+    method_optim = LBFGS(;
+        m=mem_len, linesearch=stepsize, manifold=manifold_maker(manifold_name, N, :Optim)
+    )
+
+    bench_optim = @benchmark optimize($f, $g!, $x0, $method_optim, $options_optim)
+
+    optim_state = optimize(f, g!, x0, method_optim, options_optim)
+    iters = optim_state.iterations
+    final_val = optim_state.minimum
+    return median(bench_optim.times) / 1000, iters, final_val
+end
+
 function generate_cmp(
     problem_for_N; mem_len::Int=2, manifold_names=[:Euclidean, :Sphere], gtol::Real=1e-5
 )
@@ -156,52 +216,33 @@ function generate_cmp(
         for N in N_vals
             f, g!, f_manopt, g_manopt! = problem_for_N(N)
             println("Benchmarking for N=$N, f=$(typeof(f))")
-            M = manifold_maker(manifold_name, N, :Manopt)
-            method_optim = LBFGS(;
-                m=mem_len,
-                linesearch=ls_hz,
-                manifold=manifold_maker(manifold_name, N, :Optim),
-            )
 
             x0 = zeros(N)
             x0[1] = 1
-            manopt_sc = StopWhenGradientInfNormLess(gtol) | StopAfterIteration(1000)
-            bench_manopt = @benchmark quasi_Newton(
-                $M,
-                $f_manopt,
-                $g_manopt!,
-                $x0;
-                stepsize=$(Manopt.LineSearchesStepsize(ls_hz)),
-                evaluation=$(InplaceEvaluation()),
-                memory_size=$mem_len,
-                stopping_criterion=$(manopt_sc),
-            )
-
-            manopt_state = quasi_Newton(
-                M,
+            manopt_time, manopt_iters, manopt_obj = benchmark_time_state(
+                ManoptQN(),
+                manifold_name,
+                N,
                 f_manopt,
                 g_manopt!,
-                x0;
-                stepsize=Manopt.LineSearchesStepsize(ls_hz),
-                evaluation=InplaceEvaluation(),
-                return_state=true,
-                memory_size=mem_len,
-                stopping_criterion=manopt_sc,
+                x0,
+                Manopt.LineSearchesStepsize(ls_hz),
+                mem_len,
+                gtol,
             )
-            manopt_iters = get_count(manopt_state, :Iterations)
-            push!(times_manopt, median(bench_manopt.times) / 1000)
-            println("Manopt.jl time: $(median(bench_manopt.times) / 1000) ms")
+
+            push!(times_manopt, manopt_time)
+            println("Manopt.jl time: $(manopt_time) ms")
             println("Manopt.jl iterations: $(manopt_iters)")
-            println("Manopt.jl objective: $(f(manopt_state.p))")
+            println("Manopt.jl objective: $(manopt_obj)")
 
-            options_optim = Optim.Options(; g_tol=gtol)
-            bench_optim = @benchmark optimize($f, $g!, $x0, $method_optim, $options_optim)
-
-            optim_state = optimize(f, g!, x0, method_optim, options_optim)
-            println("Optim.jl  time: $(median(bench_optim.times) / 1000) ms")
-            push!(times_optim, median(bench_optim.times) / 1000)
-            println("Optim.jl  iterations: $(optim_state.iterations)")
-            println("Optim.jl  objective: $(optim_state.minimum)")
+            optim_time, optim_iters, optim_obj = benchmark_time_state(
+                OptimQN(), manifold_name, N, f, g!, x0, ls_hz, mem_len, gtol
+            )
+            println("Optim.jl  time: $(optim_time) ms")
+            push!(times_optim, optim_time)
+            println("Optim.jl  iterations: $(optim_iters)")
+            println("Optim.jl  objective: $(optim_obj)")
         end
         plot!(
             plt,
@@ -239,13 +280,13 @@ end
 # generate_cmp(generate_rayleigh_problem, manifold_names=[:Sphere], mem_len=4)
 
 function test_case_manopt()
-    N = 2^16
+    N = 4
     mem_len = 2
-    M = Manifolds.Sphere(N - 1)
+    M = Manifolds.Euclidean(N)
     ls_hz = LineSearches.HagerZhang()
 
     x0 = zeros(N)
-    x0[1] = 1
+    x0[1] = 0
     manopt_sc = StopWhenGradientInfNormLess(1e-6) | StopAfterIteration(1000)
 
     return quasi_Newton(
@@ -269,7 +310,7 @@ function test_case_optim()
     options_optim = Optim.Options(; g_tol=1e-6)
 
     x0 = zeros(N)
-    x0[1] = 1
+    x0[1] = 0
     optim_state = optimize(f_rosenbrock, g_rosenbrock!, x0, method_optim, options_optim)
     return optim_state
 end
