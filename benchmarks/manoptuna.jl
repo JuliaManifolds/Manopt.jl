@@ -25,11 +25,17 @@ function test_study()
     return println("Best params is $(study.best_params) with value $(study.best_value)")
 end
 
-struct TTsuggest_int end
-function (::TTsuggest_int)(name::String, a, b)
-    if name == "mem_len"
-        return 4
-    end
+struct TTsuggest_int
+    suggestions::Dict{String,Int}
+end
+function (s::TTsuggest_int)(name::String, a, b)
+    return s.suggestions[name]
+end
+struct TTsuggest_categorical
+    suggestions::Dict{String,Any}
+end
+function (s::TTsuggest_categorical)(name::String, vals)
+    return s.suggestions[name]
 end
 struct TTreport
     reported_vals::Vector{Float64}
@@ -41,12 +47,19 @@ struct TTshould_prune end
 (::TTshould_prune)() = Py(false)
 struct TracingTrial
     suggest_int::TTsuggest_int
+    suggest_categorical::TTsuggest_categorical
     report::TTreport
     should_prune::TTshould_prune
 end
 
 function lbfgs_compute_pruning_losses()
-    tt = TracingTrial(TTsuggest_int(), TTreport(Float64[]), TTshould_prune())
+    # suggestions here need to be kept updated with what `lbfgs_objective` expects
+    tt = TracingTrial(
+        TTsuggest_int(Dict("mem_len" => 4)),
+        TTsuggest_categorical(Dict("vector_transport_method" => 1)),
+        TTreport(Float64[]),
+        TTshould_prune(),
+    )
     lbfgs_objective(tt)
     return tt.report.reported_vals
 end
@@ -62,14 +75,15 @@ function lbfgs_objective(trial)
     vt = vts[pyconvert(Int, trial.suggest_categorical("vector_transport_method", (1, 2)))]
 
     # TODO: ensure this actually somewhat realistic,
-    # otherwise there is too little pruning (if values here are too low)
-    # or too much pruning (if values here are too high)
+    # otherwise there is too little pruning (if values here are too high)
+    # or too much pruning (if values here are too low)
     # regenerate using
     # prunining_losses = lbfgs_compute_pruning_losses()
     # *but* with zeroed-out prunning_losses
     # padded with zeros for convenience
     prunining_losses = vcat(
-        [56.403, 69.438, 96.36449999999999, 409.749, 2542.482, 6.366860307e6], zeros(100)
+        [15.95, 38.961, 74.9733, 411.8313333, 2561.789333333333, 3.7831363008333333e6],
+        zeros(100),
     )
 
     loss = sum(prunining_losses)
