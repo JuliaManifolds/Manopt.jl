@@ -259,8 +259,11 @@ no plot will be generated.
 * `window` – (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
-The `kwargs...` are also passed down to the `check_vector` call, such that tolerances can
+The `kwargs...` are also passed down to the `check_vector` and the `check_gradient` call, such that tolerances can
 easily be set.
+
+While we do pass on `check_vector` to the inner gradient check as well as the `retraction_method`,
+the gradient check is meant to be a sanity check, so it does not throw an error nor produce a plot itself.
 """
 function check_Hessian(
     M::AbstractManifold,
@@ -303,8 +306,10 @@ function check_Hessian(
             gradient=gradient,
             throw_error=throw_error,
             io=io,
+            check_vector=check_vector,
             atol=atol,
             rtol=rtol,
+            retraction_method=retraction_method,
             kwargs...,
         )
             return false
