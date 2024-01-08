@@ -786,7 +786,7 @@ end
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
     if any(subC -> subC(p, s, i), c.criteria)
-        c.reason = string([get_reason(subC) for subC in c.criteria]...)
+        c.reason = string((get_reason(subC) for subC in c.criteria)...)
         return true
     end
     return false

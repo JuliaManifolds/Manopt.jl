@@ -391,15 +391,19 @@ function adaptive_regularization_with_cubics!(
     γ1::R=0.1,
     γ2::R=2.0,
     θ::R=0.5,
-    sub_kwargs=[],
+    sub_kwargs=(;),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(maxIterLanczos) |
                                               StopWhenFirstOrderProgress(θ),
-    sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=LanczosState(
-        TangentSpace(M, copy(M, p));
-        maxIterLanczos=maxIterLanczos,
-        σ=σ,
-        θ=θ,
-        stopping_criterion=sub_stopping_criterion,
+    sub_state::Union{<:AbstractManoptSolverState,<:AbstractEvaluationType}=decorate_state!(
+        LanczosState(
+            TangentSpace(M, copy(M, p));
+            maxIterLanczos=maxIterLanczos,
+            σ=σ,
+            θ=θ,
+            stopping_criterion=sub_stopping_criterion,
+            sub_kwargs...,
+        );
+        sub_kwargs,
     ),
     sub_objective=nothing,
     sub_problem=nothing,
@@ -414,7 +418,9 @@ function adaptive_regularization_with_cubics!(
 ) where {T,R,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     dmho = decorate_objective!(M, mho; objective_type=objective_type, kwargs...)
     if isnothing(sub_objective)
-        sub_objective = AdaptiveRagularizationWithCubicsModelObjective(dmho, σ)
+        sub_objective = decorate_objective!(
+            M, AdaptiveRagularizationWithCubicsModelObjective(dmho, σ); sub_kwargs...
+        )
     end
     if isnothing(sub_problem)
         sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)

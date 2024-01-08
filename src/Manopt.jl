@@ -15,7 +15,7 @@ import ManifoldsBase: embed!
 using ColorSchemes
 using ColorTypes
 using Colors
-using DataStructures: CircularBuffer, capacity, length, push!, size
+using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
     Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm

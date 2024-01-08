@@ -5,7 +5,7 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.x] - dd/mm/2023
+## [0.4.x] - dd/mm/2024
 
 ### Added
 
@@ -14,10 +14,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
   `StopWhenProxBundleLess` stopping criteria.
 
-## [0.4.45] unreleased
+## [0.4.47] January 6, 2024
+
+### Fixed
+
+* fixed a bug, where the retraction set in `check_Hessian` was not passed on to the optional inner `check_gradient` call, which could lead to unwanted side effects, see [#342](https://github.com/JuliaManifolds/Manopt.jl/issues/342).
+
+## [0.4.46] January 1, 2024
 
 ### Changed
 
+* An error is thrown when a line search from `LineSearches.jl` reports search failure.
+* Changed default stopping criterion in ALM algorithm to mitigate an issue occurring when step size is very small.
+* Default memory length in default ALM subsolver is now capped at manifold dimension.
+* Replaced CI testing on Julia 1.8 with testing on Julia 1.10.
+
+### Fixed
+
+* A bug in `LineSearches.jl` extension leading to slower convergence.
+* Fixed a bug in L-BFGS related to memory storage, which caused significantly slower convergence.
+
+## [0.4.45] December 28, 2023
+
+### Added
+
+* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in [#336](https://github.com/JuliaManifolds/Manopt.jl/discussions/336)
+
+### Changed
+
+* `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
+* `linesearch_backtrack!` is now available
+* Quasi Newton Updates can work inplace of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
 ## [0.4.44] December 12, 2023

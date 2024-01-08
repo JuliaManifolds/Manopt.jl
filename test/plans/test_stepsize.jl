@@ -36,7 +36,15 @@ using Manopt, Manifolds, Test
         )
         @test startswith(s1[2], "Max decrease")
         s2 = Manopt.linesearch_backtrack(
-            M, f, p, grad_f(M, p), 1.0, 1.0, 0.5, ExponentialRetraction(), grad_f(M, p);
+            M,
+            f,
+            p,
+            grad_f(M, p),
+            1.0,
+            1.0,
+            0.5,
+            grad_f(M, p);
+            retraction_method=ExponentialRetraction(),
         )
         @test startswith(s2[2], "The search direction")
         s3 = Manopt.linesearch_backtrack(
