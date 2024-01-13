@@ -41,7 +41,7 @@ The column “generic” refers to a short hand that might be used for readabil
 | `:λ` | [`ProximalDCCost`](@ref), [`ProximalDCGrad`](@ref) | set the proximal parameter within the proximal sub objective elements | |
 | `:p`         | generic | a certain point         | |
 | `:X`         | generic | a certain tangent vector | |
-| `:Swarm`     | [`ParticleSwarmState`](@ref) | the full swarm | |
+| `:Population`     | [`ParticleSwarmState`](@ref) | the full swarm | |
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius | `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective | |
 | `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref) and [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function | |

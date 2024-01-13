@@ -134,10 +134,10 @@ function set_iterate!(pss::ParticleSwarmState, p)
     pss.p = p
     return pss
 end
-function set_manopt_parameter!(pss::ParticleSwarmState, ::Val{:Swarm}, swarm)
+function set_manopt_parameter!(pss::ParticleSwarmState, ::Val{:Population}, swarm)
     return pss.swarm = swarm
 end
-function get_manopt_parameter(pss::ParticleSwarmState, ::Val{:Swarm})
+function get_manopt_parameter(pss::ParticleSwarmState, ::Val{:Population})
     return pss.swarm
 end
 #
@@ -371,8 +371,8 @@ end
 # but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
 #
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmState, i)
-    if has_storage(c.storage, :Swarm)
-        swarm_old = get_storage(c.storage, :Swarm)
+    if has_storage(c.storage, :Population)
+        swarm_old = get_storage(c.storage, :Population)
         n = length(s.swarm)
         d = distance(
             PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n),

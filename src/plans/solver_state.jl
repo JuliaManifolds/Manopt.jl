@@ -562,7 +562,7 @@ function update_storage!(
             a.values[key] = deepcopy(get_iterate(s))
         elseif key === :Gradient
             a.values[key] = deepcopy(get_gradient(s))
-        elseif key === :Swarm
+        elseif key === :Population
             swarm = get_manopt_parameter(s, key)
             if !isnothing(swarm)
                 a.values[key] = deepcopy.(swarm)
