@@ -134,15 +134,10 @@ function set_iterate!(pss::ParticleSwarmState, p)
     pss.p = p
     return pss
 end
-function set_manopt_parameter!(
-    pss::ParticleSwarmState, ::Val{:Swarm}, swarm
-)
+function set_manopt_parameter!(pss::ParticleSwarmState, ::Val{:Swarm}, swarm)
     return pss.swarm = swarm
 end
-function get_manopt_parameter(
-    pss::ParticleSwarmState,
-    ::Val{:Swarm},
-)
+function get_manopt_parameter(pss::ParticleSwarmState, ::Val{:Swarm})
     return pss.swarm
 end
 #
@@ -344,7 +339,13 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
     M = get_manifold(mp)
     # Allocate two tangent vectors
     for i in 1:length(s.swarm)
-        inverse_retract!(M, s.cognitive_vector, s.swarm[i], s.positional_best[i], s.inverse_retraction_method)
+        inverse_retract!(
+            M,
+            s.cognitive_vector,
+            s.swarm[i],
+            s.positional_best[i],
+            s.inverse_retraction_method,
+        )
         inverse_retract!(M, s.social_vector, s.swarm[i], s.p, s.inverse_retraction_method)
         # add v = inertia * v + cw*cog_infl + sw*soc_infl
         # where the last two are randomly shortened a bit
@@ -374,7 +375,9 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmStat
         swarm_old = get_storage(c.storage, :Swarm)
         n = length(s.swarm)
         d = distance(
-            PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n), s.swarm, swarm_old
+            PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n),
+            s.swarm,
+            swarm_old,
         )
         if d < c.threshold && i > 0
             c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"

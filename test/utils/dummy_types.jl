@@ -4,7 +4,7 @@ s = @isdefined _dummy_types_includeed
 if !s
     _dummy_types_includeed = true
     struct DummyDecoratedObjective{E,O<:AbstractManifoldObjective} <:
-        Manopt.AbstractDecoratedManifoldObjective{E,O}
+           Manopt.AbstractDecoratedManifoldObjective{E,O}
         objective::O
     end
     function DummyDecoratedObjective(
