@@ -29,7 +29,7 @@ The column “generic” refers to a short hand that might be used for readabil
 | Symbol       | Used in | Description                                                | generic |
 | :----------- | :------: | ;-------------------------------------------------------- | :------ |
 | `:active` | [`DebugWhenActive`](@ref) | activity of the debug action stored within | |
-| `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at           | `:p` |
+| `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at           | often `:p` |
 | `:Cost` | generic |the cost function (within an objective, as pass down) | |
 | `:Debug` | [`DebugSolverState`](@ref) | the stored `debugDictionary` | |
 | `:Gradient` | generic | the gradient function (within an objective, as pass down) | |
@@ -39,9 +39,12 @@ The column “generic” refers to a short hand that might be used for readabil
 | `:SubProblem` | generic | the sub problem (within a state, as pass down) | |
 | `:SubState` | generic | the sub state (within a state, as pass down) | |
 | `:λ` | [`ProximalDCCost`](@ref), [`ProximalDCGrad`](@ref) | set the proximal parameter within the proximal sub objective elements | |
-| `:p`         | generic | a certain point         | |
-| `:X`         | generic | a certain tangent vector | |
-| `:Population`     | [`ParticleSwarmState`](@ref) | the full swarm | |
+| `:Population`     | [`ParticleSwarmState`](@ref) | a certain population of points, e.g. [`particle_swarm`](@ref)s swarm | |
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius | `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective | |
 | `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref) and [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function | |
+
+Since the iterate is often stored in the states fields `s.p` one _could_ access the iterate
+often also with `:p` and similarly the gradient with `:X`.
+This is discouraged for both readability as well as to star more generic, and it is recommended
+to use `:Iterate` and `:Gradient` instead in generic settings.
