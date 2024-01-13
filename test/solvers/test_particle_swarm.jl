@@ -56,6 +56,8 @@ using Random
             # check that the new velocities are tangent vectors of the original particle locations
             @test is_vector(M, p, v, true; atol=2e-15)
         end
+        set_iterate!(o, p_start[1])
+        @test get_iterate(o) == p_start[1]
     end
     @testset "Spherical Particle Swarm" begin
         Random.seed!(42)
