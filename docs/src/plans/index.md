@@ -32,7 +32,7 @@ The column “generic” refers to a short hand that might be used for readabil
 | `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at           | `:p` |
 | `:Cost` | generic |the cost function (within an objective, as pass down) | |
 | `:Debug` | [`DebugSolverState`](@ref) | the stored `debugDictionary` | |
-| `:Gradient` | generic |the gradient function (within an objective, as pass down) | |
+| `:Gradient` | generic | the gradient function (within an objective, as pass down) | |
 | `:Iterate` | generic | the (current) iterate, similar to [`set_iterate!`](@ref), within a state | |
 | `:Manifold` | generic |the manifold (within a problem, as pass down) | |
 | `:Objective` | generic | the objective (within a problem, as pass down) | |
@@ -41,6 +41,7 @@ The column “generic” refers to a short hand that might be used for readabil
 | `:λ` | [`ProximalDCCost`](@ref), [`ProximalDCGrad`](@ref) | set the proximal parameter within the proximal sub objective elements | |
 | `:p`         | generic | a certain point         | |
 | `:X`         | generic | a certain tangent vector | |
+| `:Swarm`     | [`ParticleSwarmState`](@ref) | the full swarm | |
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius | `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective | |
 | `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref) and [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function | |

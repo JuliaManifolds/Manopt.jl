@@ -206,7 +206,7 @@ end
 function StopWhenChangeLess(
     M::AbstractManifold,
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
+    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate, :Swarm}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
 ) where {IRT<:AbstractInverseRetractionMethod}
     return StopWhenChangeLess{IRT,typeof(storage)}(
@@ -215,12 +215,12 @@ function StopWhenChangeLess(
 end
 function StopWhenChangeLess(
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction([:Iterate]),
+    storage::StoreStateAction=StoreStateAction([:Iterate, :Swarm]),
     manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
     if !(manifold isa DefaultManifold)
-        @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+        @warn "The `manifold` keyword is deprecated, use the first positional argument `M` instead."
     end
     return StopWhenChangeLess{IRT,typeof(storage)}(
         ε, "", storage, inverse_retraction_method, 0
