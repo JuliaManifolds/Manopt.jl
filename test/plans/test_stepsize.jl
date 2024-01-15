@@ -138,5 +138,20 @@ using Manopt, Manifolds, Test
         gds.p = 1e10 .* one.(gds.p)
         grad_f(M, gds.X, gds.p)
         @test_throws ErrorException s(mp, gds, 1)
+
+        function test_ϕdϕ_1(α)
+            return (Inf, Inf)
+        end
+        @test_throws ErrorException s(test_ϕdϕ_1, 1.0, 1.0, 1.0)
+        function test_ϕdϕ_2(α)
+            if α < 1e-80
+                return (1.0, 1.0)
+            else
+                return (Inf, Inf)
+            end
+        end
+        @test s(test_ϕdϕ_2, 1.0, 2.0, 0.0)[1] == 0.0
+        # the test below tests failure to get to a finite value
+        @test s(test_ϕdϕ_2, 1.0, 2.0, -1.0)[1] == 0.0
     end
 end

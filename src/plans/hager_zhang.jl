@@ -81,10 +81,6 @@ function (cs::HagerZhangLinesearch)(
 
     # perform actual linesearch
 
-    function ϕ(α)
-        retract!(M, cs.candidate_point, p, η, α, cs.retraction_method)
-        return f(M, cs.candidate_point)
-    end
     function ϕdϕ(α)
         # TODO: optimize?
         retract!(M, cs.candidate_point, p, η, α, cs.retraction_method)
@@ -97,11 +93,11 @@ function (cs::HagerZhangLinesearch)(
         return (phi, dphi)
     end
 
-    α, fp = cs(ϕ, ϕdϕ, α0, fp, dphi_0)
+    α, fp = cs(ϕdϕ, α0, fp, dphi_0)
     return α
 end
 
-function (ls::HagerZhangLinesearch)(ϕ, ϕdϕ, c::T, phi_0::Real, dphi_0::Real) where {T}
+function (ls::HagerZhangLinesearch)(ϕdϕ, c::T, phi_0::Real, dphi_0::Real) where {T}
     alphamax = ls.alphamax
     linesearchmax = ls.linesearchmax
 
@@ -131,7 +127,7 @@ function (ls::HagerZhangLinesearch)(ϕ, ϕdϕ, c::T, phi_0::Real, dphi_0::Real) 
     while !(isfinite(phi_c) && isfinite(dphi_c)) && iterfinite < iterfinitemax
         ls.mayterminate = false
         iterfinite += 1
-        c *= psi3
+        c *= ls.psi3
         phi_c, dphi_c = ϕdϕ(c)
     end
     if !(isfinite(phi_c) && isfinite(dphi_c))
