@@ -10,7 +10,7 @@
 #       on the parameters
 
 mutable struct HagerZhangLinesearch{
-    T,TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P
+    T,TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,TX
 } <: Linesearch
     delta::T # c_1 Wolfe sufficient decrease condition
     sigma::T # c_2 Wolfe curvature condition (Recommend 0.1 for GradientDescent)
@@ -24,11 +24,15 @@ mutable struct HagerZhangLinesearch{
     vector_transport_method::VTM
     mayterminate::Bool
     candidate_point::P
+    temp_X::TX
+    temp_Y::TX
 end
 
 function HagerZhangLinesearch(
     M::AbstractManifold=DefaultManifold();
     candidate_point::P=allocate_result(M, rand),
+    temp_X::TX=allocate_result(M, rand, candidate_point),
+    temp_Y::TX=allocate_result(M, rand, candidate_point),
     retraction_method::TRM=default_retraction_method(M),
     vector_transport_method::VTM=default_vector_transport_method(M),
     delta::T=0.1, # c_1 Wolfe sufficient decrease condition
@@ -39,8 +43,8 @@ function HagerZhangLinesearch(
     gamma::T=0.66,
     linesearchmax::Int=50,
     psi3::T=0.1,
-) where {P,TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,T}
-    return HagerZhangLinesearch{T,TRM,VTM,P}(
+) where {P,TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,T,TX}
+    return HagerZhangLinesearch{T,TRM,VTM,P,TX}(
         delta,
         sigma,
         alphamax,
@@ -53,6 +57,8 @@ function HagerZhangLinesearch(
         vector_transport_method,
         false,
         candidate_point,
+        temp_X,
+        temp_Y,
     )
 end
 
@@ -67,9 +73,7 @@ function (cs::HagerZhangLinesearch)(
     M = get_manifold(mp)
     p = get_iterate(s)
     X = get_gradient(s)
-    X_tmp = copy(M, p, X)
-    Y_tmp = copy(M, p, X)
-    f = Manopt.get_cost_function(get_objective(mp))
+    f = get_cost_function(get_objective(mp))
     dphi_0 = real(inner(M, p, X, η))
 
     # guess initial alpha
@@ -81,19 +85,15 @@ function (cs::HagerZhangLinesearch)(
         retract!(M, cs.candidate_point, p, η, α, cs.retraction_method)
         return f(M, cs.candidate_point)
     end
-    function dϕ(α)
-        retract!(M, cs.candidate_point, p, η, α, cs.retraction_method)
-        get_gradient!(mp, X_tmp, cs.candidate_point)
-        vector_transport_to!(M, Y_tmp, p, η, cs.candidate_point, cs.vector_transport_method)
-        return real(inner(M, cs.candidate_point, X_tmp, Y_tmp))
-    end
     function ϕdϕ(α)
         # TODO: optimize?
         retract!(M, cs.candidate_point, p, η, α, cs.retraction_method)
-        get_gradient!(mp, X_tmp, cs.candidate_point)
-        vector_transport_to!(M, Y_tmp, p, η, cs.candidate_point, cs.vector_transport_method)
+        get_gradient!(mp, cs.temp_X, cs.candidate_point)
+        vector_transport_to!(
+            M, cs.temp_Y, p, η, cs.candidate_point, cs.vector_transport_method
+        )
         phi = f(M, cs.candidate_point)
-        dphi = real(inner(M, cs.candidate_point, X_tmp, Y_tmp))
+        dphi = real(inner(M, cs.candidate_point, cs.temp_X, cs.temp_Y))
         return (phi, dphi)
     end
 
@@ -107,12 +107,10 @@ function (ls::HagerZhangLinesearch)(ϕ, ϕdϕ, c::T, phi_0::Real, dphi_0::Real) 
 
     zeroT = convert(T, 0)
     if !(isfinite(phi_0) && isfinite(dphi_0))
-        throw(
-            LineSearchException("Value and slope at step length = 0 must be finite.", T(0))
-        )
+        throw(ErrorException("Value and slope at step length = 0 must be finite."))
     end
     if dphi_0 >= eps(T) * abs(phi_0)
-        throw(LineSearchException("Search direction is not a direction of descent.", T(0)))
+        throw(ErrorException("Search direction is not a direction of descent."))
     elseif dphi_0 >= 0
         return zeroT, phi_0
     end
@@ -238,7 +236,7 @@ function (ls::HagerZhangLinesearch)(ϕ, ϕdϕ, c::T, phi_0::Real, dphi_0::Real) 
         A = alphas[iA]
         B = alphas[iB]
         @assert B > A
-        if B - A < gamma * (b - a)
+        if B - A < ls.gamma * (b - a)
             if nextfloat(values[ia]) >= values[ib] && nextfloat(values[iA]) >= values[iB]
                 # It's so flat, secant didn't do anything useful, time to quit
                 ls.mayterminate = false # reset in case another initial guess is used next
@@ -262,9 +260,8 @@ function (ls::HagerZhangLinesearch)(ϕ, ϕdϕ, c::T, phi_0::Real, dphi_0::Real) 
     end
 
     throw(
-        LineSearchException(
-            "Linesearch failed to converge, reached maximum iterations $(linesearchmax).",
-            alphas[ia],
+        ErrorException(
+            "Linesearch failed to converge, reached maximum iterations $(linesearchmax)."
         ),
     )
 end

@@ -132,5 +132,11 @@ using Manopt, Manifolds, Test
         initialize_solver!(mp, gds)
         s = HagerZhangLinesearch(M)
         @test s(mp, gds, 1) ≈ 0.0007566791242981903
+        gds.p = [1.0, 1.0, 1.0, 1.0]
+        grad_f(M, gds.X, gds.p)
+        @test_throws ErrorException s(mp, gds, 1)
+        gds.p = 1e10 .* one.(gds.p)
+        grad_f(M, gds.X, gds.p)
+        @test_throws ErrorException s(mp, gds, 1)
     end
 end
