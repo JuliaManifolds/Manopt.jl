@@ -105,4 +105,32 @@ using Manopt, Manifolds, Test
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
+
+    @testset "Hager-Zhang" begin
+        M = Euclidean(4)
+
+        function f(::AbstractManifold, p)
+            result = 0.0
+            for i in 1:2:length(p)
+                result += (1.0 - p[i])^2 + 100.0 * (p[i + 1] - p[i]^2)^2
+            end
+            return result
+        end
+
+        function grad_f(::AbstractManifold, storage, p)
+            for i in 1:2:length(p)
+                storage[i] = -2.0 * (1.0 - p[i]) - 400.0 * (p[i + 1] - p[i]^2) * p[i]
+                storage[i + 1] = 200.0 * (p[i + 1] - p[i]^2)
+            end
+            return storage
+        end
+
+        p = [1.0, 0.0, 0.0, 0.0]
+        mgo = ManifoldGradientObjective(f, grad_f; evaluation=InplaceEvaluation())
+        mp = DefaultManoptProblem(M, mgo)
+        gds = GradientDescentState(M, p)
+        initialize_solver!(mp, gds)
+        s = HagerZhangLinesearch(M)
+        @test s(mp, gds, 1) ≈ 0.0007566791242981903
+    end
 end
