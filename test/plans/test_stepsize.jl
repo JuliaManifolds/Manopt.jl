@@ -179,9 +179,21 @@ using Manopt, Manifolds, Test
             1.0000002959512773 => (0.05307818374176109, 0.08967706826239678),
             1.0000000433865004 => (-0.34693123718302615, -0.034497535027746384),
         )
-        function test_ϕdϕ_3(α)
-            return seq_A[α]
+        function cf(dct)
+            return function cf_inner(α)
+                min_dist = Inf
+                min_val = (Inf, Inf)
+                for k in keys(dct)
+                    cdist = abs(k - α)
+                    if cdist < min_dist
+                        min_dist = cdist
+                        min_val = dct[k]
+                    end
+                end
+                return min_val
+            end
         end
+        test_ϕdϕ_3 = cf(seq_A)
         @test s(test_ϕdϕ_3, 1.0, test_ϕdϕ_3(1.0)...)[1] ≈ 1.0
 
         # for i in 1:1000
