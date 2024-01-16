@@ -345,6 +345,11 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
+    if real(inner(M, qns.p, qns.η, qns.X)) > 0
+        # reset direction if not a descent one
+        copyto!(M, qns.η, qns.X)
+        qns.η .*= -1
+    end
     α = qns.stepsize(mp, qns, iter, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))
     retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)

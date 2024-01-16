@@ -9,6 +9,7 @@ using ProfileView
 using BenchmarkTools
 using Plots
 using ManoptExamples
+using ImprovedHagerZhangLinesearch
 
 """
     StopWhenGradientInfNormLess <: StoppingCriterion
@@ -221,7 +222,7 @@ function generate_cmp(
         for N in N_vals
             f, g!, f_manopt, g_manopt! = problem_for_N(N)
             println("Benchmarking for N=$N, f=$(typeof(f))")
-
+            M = manifold_maker(manifold_name, N, :Manopt)
             x0 = zeros(N)
             x0[1] = 1
             manopt_time, manopt_iters, manopt_obj = benchmark_time_state(
@@ -231,9 +232,10 @@ function generate_cmp(
                 f_manopt,
                 g_manopt!,
                 x0,
-                Manopt.LineSearchesStepsize(ls_hz),
+                HagerZhangLinesearch(M),
                 mem_len,
-                gtol,
+                gtol;
+                vector_transport_method=ParallelTransport(),
             )
 
             push!(times_manopt, manopt_time)
@@ -285,13 +287,13 @@ end
 # generate_cmp(generate_rayleigh_problem, manifold_names=[:Sphere], mem_len=4)
 
 function test_case_manopt()
-    N = 4
-    mem_len = 2
-    M = Manifolds.Euclidean(N)
+    N = 128
+    mem_len = 1
+    M = Manifolds.Sphere(N - 1)
     ls_hz = LineSearches.HagerZhang()
 
     x0 = zeros(N)
-    x0[1] = 0
+    x0[1] = 1
     manopt_sc = StopWhenGradientInfNormLess(1e-6) | StopAfterIteration(1000)
 
     return quasi_Newton(
@@ -299,8 +301,9 @@ function test_case_manopt()
         f_rosenbrock_manopt,
         g_rosenbrock_manopt!,
         x0;
-        stepsize=Manopt.LineSearchesStepsize(ls_hz),
+        stepsize=HagerZhangLinesearch(M),
         evaluation=InplaceEvaluation(),
+        vector_transport_method=ProjectionTransport(),
         return_state=true,
         memory_size=mem_len,
         stopping_criterion=manopt_sc,
