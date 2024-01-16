@@ -31,7 +31,7 @@ using Random
         j = argmin([f(M, y) for y in p1])
         g0 = deepcopy(p1[j])
         @test f(M, g) <= f(M, g0) # global did not get worse
-        for (p, q) in zip(o.p, p1)
+        for (p, q) in zip(o.positional_best, p1)
             @test f(M, p) <= f(M, q) # nonincreased
             # the cost of g is not greater than the cost of any p[i]
             @test f(M, g) <= f(M, p)
@@ -46,16 +46,18 @@ using Random
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
         o = ParticleSwarmState(M, zero.(p_start), X_start)
         # test set_iterate
-        set_iterate!(o, p_start)
-        @test sum(norm.(get_iterate(o) .- p_start)) == 0
+        Manopt.set_manopt_parameter!(o, :Population, p_start)
+        @test sum(norm.(Manopt.get_manopt_parameter(o, :Population) .- p_start)) == 0
         initialize_solver!(p, o)
         step_solver!(p, o, 1)
-        for (p, v) in zip(o.x, o.velocity)
+        for (p, v) in zip(o.swarm, o.velocity)
             # check that the new particle locations are on the manifold
             @test is_point(M, p, true)
             # check that the new velocities are tangent vectors of the original particle locations
             @test is_vector(M, p, v, true; atol=2e-15)
         end
+        set_iterate!(o, p_start[1])
+        @test get_iterate(o) == p_start[1]
     end
     @testset "Spherical Particle Swarm" begin
         Random.seed!(42)

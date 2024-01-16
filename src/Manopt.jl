@@ -334,7 +334,6 @@ export get_state,
     forward_operator,
     forward_operator!,
     get_objective
-export set_manopt_parameter!
 export get_hessian, get_hessian!
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
