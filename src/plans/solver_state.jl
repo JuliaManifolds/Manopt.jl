@@ -190,6 +190,8 @@ end
     get_iterate(O::AbstractManoptSolverState)
 
 return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)` `s`.
+This should usually refer to a single point on the manifold the solver is working on
+
 By default also undecorates the state beforehand.
 """
 get_iterate(s::AbstractManoptSolverState) = _get_iterate(s, dispatch_state_decorator(s))
@@ -201,16 +203,6 @@ function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
     )
 end
 _get_iterate(s::AbstractManoptSolverState, ::Val{true}) = get_iterate(s.state)
-
-"""
-    get_manopt_parameter(ams::AbstractManoptSolverState, element::Symbol, args...)
-
-Obtain a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams`.
-This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
-"""
-function get_manopt_parameter(ams::AbstractManoptSolverState, e::Symbol, args...)
-    return get_manopt_parameter(ams, Val(e), args...)
-end
 
 _set_iterate!(s::AbstractManoptSolverState, M, p, ::Val{true}) = set_iterate!(s.state, M, p)
 
@@ -570,6 +562,11 @@ function update_storage!(
             a.values[key] = deepcopy(get_iterate(s))
         elseif key === :Gradient
             a.values[key] = deepcopy(get_gradient(s))
+        elseif key === :Population
+            swarm = get_manopt_parameter(s, key)
+            if !isnothing(swarm)
+                a.values[key] = deepcopy.(swarm)
+            end
         else
             a.values[key] = deepcopy(getproperty(s, key))
         end
