@@ -501,30 +501,48 @@ end
 
 A stopping criterion based on the current gradient norm.
 
+# Fields
+
+* `norm`  – a function `(M, p, X) -> R` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `threshold` – the threshold to indicate to stop when the distance is below this value
+
+# Internal fields
+
+* `reason`    – store a string reason when the stop was indicated
+* `at_iteration` – store the iteration at which the stop indication happened
+
+
 # Constructor
 
-    StopWhenGradientNormLess(ε::Float64)
+    StopWhenGradientNormLess(ε; norm=(M,p,X) -> norm(M,p,X))
 
 Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
-indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
+indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
+where the norm to use can be specified in the `norm=` keyword.
 """
-mutable struct StopWhenGradientNormLess <: StoppingCriterion
+mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
+    norm::F
     threshold::Float64
     reason::String
     at_iteration::Int
-    StopWhenGradientNormLess(ε::Float64) = new(ε, "", 0)
+    function StopWhenGradientNormLess(
+        ε::TF; norm::F=(M, p, X) -> norm(M, p, X)
+    ) where {F,TF}
+        return new{F,TF}(norm, ε, "", 0)
+    end
 end
-function (c::StopWhenGradientNormLess)(
+
+function (sc::StopWhenGradientNormLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     M = get_manifold(mp)
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        sc.reason = ""
+        sc.at_iteration = 0
     end
-    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
-        c.at_iteration = i
+    if (i > 0) && (sc.norm(M, get_iterate(s), get_gradient(s)) < sc.threshold)
+        sc.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(sc.norm(M,get_iterate(s),get_gradient(s)))) is less than $(sc.threshold).\n"
+        sc.at_iteration = i
         return true
     end
     return false
