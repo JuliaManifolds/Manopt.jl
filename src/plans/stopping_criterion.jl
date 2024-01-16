@@ -317,6 +317,88 @@ function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
 end
 
 @doc raw"""
+    StopWhenEntryChangeLess
+
+Evaluate whether a certain fields change is less than a certain threshold
+
+## Fields
+
+* `field`     – a symbol adressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref)
+  to track
+* `distance`  – a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
+* `storage`   – a [`StoreStateAction`](@ref) to store the previous value of the `field`
+* `threshold` – the threshold to indicate to stop when the distance is below this value
+
+# Internal fields
+
+* `reason`    – store a string reason when the stop was indicated
+* `at_iteration` – store the iteration at which the stop indication happened
+
+stores a threshold when to stop looking at the norm of the change of the
+optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
+For the storage a [`StoreStateAction`](@ref) is used
+
+# Constructor
+
+    StopWhenEntryChangeLess(
+        field::Symbol
+        distance,
+        threshold;
+        storage::StoreStateAction=StoreStateAction([field]),
+    )
+
+"""
+mutable struct StopWhenEntryChangeLess{F,TI,TF,TSSA<:StoreStateAction} <: StoppingCriterion
+    at_iteration::Int
+    distance::F
+    field::Symbol
+    reason::String
+    storage::TSSA
+    threshold::TF
+end
+function StopWhenEntryChangeLess(
+    field::Symbol, distance::F, threshold::TF; storage::TSSA=StoreStateAction([field])
+) where {F,TF,TSSA<:StoreStateAction}
+    return StopWhenEntryChangeLess{F,TF,TSSA}(0, distance, field, "", storage, threshold)
+end
+
+function (sc::StopWhenEntryChangeLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i
+)
+    if i == 0 # reset on init
+        sc.reason = ""
+        sc.at_iteration = 0
+    end
+    if has_storage(sc.storage, sc.field)
+        old_field_value = get_storage(sc.storage, sc.field)
+        ε = sc.distance(mp, s, old_field_value, getproperty(st, d.field))
+        if (i > 0) && (ε < sc.threshold)
+            sc.reason = "The algorithm performed a step with a change ($ε) in $(sc.field) less than $(sc.threshold).\n"
+            sc.at_iteration = i
+            sc.storage(mp, s, i)
+            return true
+        end
+    end
+    sc.storage(mp, s, i)
+    return false
+end
+function status_summary(c::StopWhenEntryChangeLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δ:$(field)| < $(c.threshold): $s"
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenEntryChangeLess, :Threshold, v)
+
+Update the minimal cost below which the algorithm shall stop
+"""
+function update_stopping_criterion!(c::StopWhenEntryChangeLess, ::Val{:Threshold}, v)
+    c.threshold = v
+    return c
+end
+
+@doc raw"""
     StopWhenGradientChangeLess <: StoppingCriterion
 
 A stopping criterion based on the change of the gradient
