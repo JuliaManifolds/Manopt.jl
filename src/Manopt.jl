@@ -351,7 +351,7 @@ export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
-export WolfePowellLinesearch, WolfePowellBinaryLinesearch, HagerZhangLinesearch
+export WolfePowellLinesearch, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
