@@ -347,6 +347,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     qns.direction_update(qns.η, mp, qns)
     if real(inner(M, qns.p, qns.η, qns.X)) > 0
         # reset direction if not a descent one
+        @warn "Computed direction is not a descent direction; resetting to negative gradient"
         copyto!(M, qns.η, qns.X)
         qns.η .*= -1
     end

@@ -22,7 +22,7 @@ using Manopt, Manifolds, Test
     # no stepsize yet so repr and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
     s4 = WolfePowellLinesearch()
-    @test startswith(repr(s4), "WolfePowellLinesearch(DefaultMan]ifold(), ")
+    @test startswith(repr(s4), "WolfePowellLinesearch(DefaultManifold(), ")
     # no stepsize yet so repr and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""
