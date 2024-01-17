@@ -397,6 +397,9 @@ function update_stopping_criterion!(c::StopWhenEntryChangeLess, ::Val{:Threshold
     c.threshold = v
     return c
 end
+function show(io::IO, c::StopWhenEntryChangeLess)
+    return print(io, "StopWhenEntryChangeLess\n    $(status_summary(c))")
+end
 
 @doc raw"""
     StopWhenGradientChangeLess <: StoppingCriterion
