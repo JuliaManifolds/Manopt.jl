@@ -506,7 +506,7 @@ A stopping criterion based on the current gradient norm.
 
 # Fields
 
-* `norm`  – a function `(M, p, X) -> R` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `norm`  – a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
 * `threshold` – the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
@@ -529,7 +529,7 @@ mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
     reason::String
     at_iteration::Int
     function StopWhenGradientNormLess(
-        ε::TF; norm::F=(M, p, X) -> norm(M, p, X)
+        ε::TF; norm::F=norm
     ) where {F,TF}
         return new{F,TF}(norm, ε, "", 0)
     end
