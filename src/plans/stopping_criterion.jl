@@ -348,7 +348,7 @@ For the storage a [`StoreStateAction`](@ref) is used
     )
 
 """
-mutable struct StopWhenEntryChangeLess{F,TI,TF,TSSA<:StoreStateAction} <: StoppingCriterion
+mutable struct StopWhenEntryChangeLess{F,TF,TSSA<:StoreStateAction} <: StoppingCriterion
     at_iteration::Int
     distance::F
     field::Symbol
@@ -371,7 +371,7 @@ function (sc::StopWhenEntryChangeLess)(
     end
     if has_storage(sc.storage, sc.field)
         old_field_value = get_storage(sc.storage, sc.field)
-        ε = sc.distance(mp, s, old_field_value, getproperty(st, d.field))
+        ε = sc.distance(mp, s, old_field_value, getproperty(s, sc.field))
         if (i > 0) && (ε < sc.threshold)
             sc.reason = "The algorithm performed a step with a change ($ε) in $(sc.field) less than $(sc.threshold).\n"
             sc.at_iteration = i
@@ -382,10 +382,10 @@ function (sc::StopWhenEntryChangeLess)(
     sc.storage(mp, s, i)
     return false
 end
-function status_summary(c::StopWhenEntryChangeLess)
-    has_stopped = length(c.reason) > 0
+function status_summary(sc::StopWhenEntryChangeLess)
+    has_stopped = length(sc.reason) > 0
     s = has_stopped ? "reached" : "not reached"
-    return "|Δ:$(field)| < $(c.threshold): $s"
+    return "|Δ:$(sc.field)| < $(sc.threshold): $s"
 end
 
 """

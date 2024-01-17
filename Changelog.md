@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * A `StopWhenEntryChangeLess` to be able to stop on arbitrary small changes of specific fields
 * generalises `StopWhenGradientNormLess` to accept arbitrary `norm=` functions
+* refactor the default in `particle_swarm` to no longer “misuse” the iteration change check,
+  but actually the new one one the `:swarm` entry
 
 ## [0.4.48] January 16, 2024
 

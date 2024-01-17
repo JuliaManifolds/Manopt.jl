@@ -297,7 +297,15 @@ function particle_swarm!(
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenChangeLess(1e-4),
+                                          StopWhenEntryChangeLess(
+        :swarm,
+        (p, st, old_swarm, swarm) -> distance(
+            PowerManifold(get_manifold(p), NestedPowerRepresentation(), length(swarm)),
+            old_swarm,
+            swarm,
+        ),
+        1e-4,
+    ),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(swarm)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M, eltype(swarm)
@@ -365,27 +373,4 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
             end
         end
     end
-end
-#
-# Change not only refers to different iterates (best visited) but to whole `swarm`
-# but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
-#
-function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmState, i)
-    if has_storage(c.storage, :Population)
-        swarm_old = get_storage(c.storage, :Population)
-        n = length(s.swarm)
-        d = distance(
-            PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n),
-            s.swarm,
-            swarm_old,
-        )
-        if d < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"
-            c.at_iteration = i
-            c.storage(mp, s, i)
-            return true
-        end
-    end
-    c.storage(mp, s, i)
-    return false
 end
