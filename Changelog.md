@@ -5,11 +5,19 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.48] unreleased
+## [0.4.49] unreleased
 
 ### Added
 
 * A new benchmark comparing performance against Optim.jl.
+
+## [0.4.48]
+
+### Fixed
+
+* fixes an imprecision in the interface of `get_iterate` that sometimes led to the swarm of `particle_swarm` being returned as the iterate.
+* refactor `particle_swarm` in naming and access functions to avoid this also in the future.
+  To access the whole swarm, one now should use `get_manopt_parameter(pss, :Population)`
 
 ## [0.4.47] January 6, 2024
 
