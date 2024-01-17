@@ -528,9 +528,7 @@ mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
     threshold::Float64
     reason::String
     at_iteration::Int
-    function StopWhenGradientNormLess(
-        ε::TF; norm::F=norm
-    ) where {F,TF}
+    function StopWhenGradientNormLess(ε::TF; norm::F=norm) where {F,TF}
         return new{F,TF}(norm, ε, "", 0)
     end
 end
