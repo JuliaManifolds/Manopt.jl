@@ -506,7 +506,7 @@ A stopping criterion based on the current gradient norm.
 
 # Fields
 
-* `norm`  – a function `(M, p, X) -> R` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `norm`  – a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
 * `threshold` – the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
@@ -528,9 +528,7 @@ mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
     threshold::Float64
     reason::String
     at_iteration::Int
-    function StopWhenGradientNormLess(
-        ε::TF; norm::F=(M, p, X) -> norm(M, p, X)
-    ) where {F,TF}
+    function StopWhenGradientNormLess(ε::TF; norm::F=norm) where {F,TF}
         return new{F,TF}(norm, ε, "", 0)
     end
 end
@@ -543,10 +541,13 @@ function (sc::StopWhenGradientNormLess)(
         sc.reason = ""
         sc.at_iteration = 0
     end
-    if (i > 0) && (sc.norm(M, get_iterate(s), get_gradient(s)) < sc.threshold)
-        sc.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(sc.norm(M,get_iterate(s),get_gradient(s)))) is less than $(sc.threshold).\n"
-        sc.at_iteration = i
-        return true
+    if (i > 0)
+        grad_norm = sc.norm(M, get_iterate(s), get_gradient(s))
+        if grad_norm < sc.threshold
+            sc.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(grad_norm)) is less than $(sc.threshold).\n"
+            sc.at_iteration = i
+            return true
+        end
     end
     return false
 end
