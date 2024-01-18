@@ -541,7 +541,7 @@ function (sc::StopWhenGradientNormLess)(
         sc.reason = ""
         sc.at_iteration = 0
     end
-    if (i > 0) 
+    if (i > 0)
         grad_norm = sc.norm(M, get_iterate(s), get_gradient(s))
         if grad_norm < sc.threshold
             sc.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(grad_norm)) is less than $(sc.threshold).\n"
