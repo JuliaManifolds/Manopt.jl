@@ -11,51 +11,7 @@ using Plots
 using ManoptExamples
 using ImprovedHagerZhangLinesearch
 
-"""
-    StopWhenGradientInfNormLess <: StoppingCriterion
-
-A stopping criterion based on the current gradient infinity norm in a basis arbitrarily
-chosen for each manifold.
-
-# Constructor
-
-    StopWhenGradientInfNormLess(ε::Float64)
-
-Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
-indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
-"""
-mutable struct StopWhenGradientInfNormLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    at_iteration::Int
-    StopWhenGradientInfNormLess(ε::Float64) = new(ε, "", 0)
-end
-function (c::StopWhenGradientInfNormLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
-)
-    M = get_manifold(mp)
-    if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
-    end
-    if (norm(get_gradient(s), Inf) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
-        c.at_iteration = i
-        return true
-    end
-    return false
-end
-function Manopt.status_summary(c::StopWhenGradientInfNormLess)
-    has_stopped = length(c.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "|grad f|ₒₒ < $(c.threshold): $s"
-end
-Manopt.indicates_convergence(c::StopWhenGradientInfNormLess) = true
-function Base.show(io::IO, c::StopWhenGradientInfNormLess)
-    return print(
-        io, "StopWhenGradientInfNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
-end
+norm_inf(M::AbstractManifold, p, X) = norm(X, Inf)
 
 function f_rosenbrock(x)
     result = 0.0
@@ -153,7 +109,7 @@ function benchmark_time_state(
     gtol::Real;
     kwargs...,
 )
-    manopt_sc = StopWhenGradientInfNormLess(gtol) | StopAfterIteration(1000)
+    manopt_sc = StopWhenGradientNormLess(gtol; norm=norm_inf) | StopAfterIteration(1000)
     M = manifold_maker(manifold_name, N, :Manopt)
     mem_len = min(mem_len, manifold_dimension(M))
     bench_manopt = @benchmark quasi_Newton(
@@ -294,7 +250,7 @@ function test_case_manopt()
 
     x0 = zeros(N)
     x0[1] = 1
-    manopt_sc = StopWhenGradientInfNormLess(1e-6) | StopAfterIteration(1000)
+    manopt_sc = StopWhenGradientNormLess(1e-6; norm=norm_inf) | StopAfterIteration(1000)
 
     return quasi_Newton(
         M,
