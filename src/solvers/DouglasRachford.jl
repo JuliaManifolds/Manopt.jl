@@ -6,29 +6,35 @@ Store all options required for the DouglasRachford algorithm,
 # Fields
 * `p` - the current iterate (result) For the parallel Douglas-Rachford, this is
   not a value from the `PowerManifold` manifold but the mean.
-* `s` – the last result of the double reflection at the proxes relaxed by `α`.
+* `s` – the last result of the double reflection at the proxes relaxed by `α` eventually T^ns afterwars.
+* `s_tmp` – a temporary storage used within the double reflection
 * `λ` – function to provide the value for the proximal parameter during the calls
 * `α` – relaxation of the step from old to new iterate, i.e.
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
   of the double reflection involved in the DR algorithm
+* `θ` – function to provide interia.
 * `inverse_retraction_method` – an inverse retraction method
+* `n` – `n`-acceleration, apply the double reflection (T) `n` times after relaxation
 * `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
 * `reflection_evaluation` – whether `R` works inplace or allocating
 * `retraction_method` – a retraction method
 * `stop` – a [`StoppingCriterion`](@ref)
 * `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
-
+* `X` – (`zero_vector(M, p)`) a temporary storage for a tangent vector
 # Constructor
 
     DouglasRachfordState(M, p; kwargs...)
 
 Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
 
-* `λ` – (`(iter)->1.0`) function to provide the value for the proximal parameter
-  during the calls
+* `λ` – (`i->1.0`) function to provide the value for the proximal parameter
+  during the itearions
 * `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
   of the double reflection involved in the DR algorithm
+* `θ` - (`Nothing`) a function (`i -> 0.0`) to provide an iteration. `Nothing`
+  is equivalent to always returning `0.0`, but further deactivates even computing the two intermetiate steps
+* `n` – (`0`) use the `T^n` acceleration, where `n=0` deactivates this
 * `R` – ([`reflect`](@ref) or `reflect!`) method employed in the iteration to perform the reflection of `x` at
   the prox `p`, which function is used depends on `reflection_evaluation`.
 * reflection_evaluation – ([`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works inplace or allocating (default)
@@ -38,8 +44,10 @@ Generate the options for a Manifold `M` and an initial point `p`, where the foll
 """
 mutable struct DouglasRachfordState{
     P,
+    T,
     Tλ,
     Tα,
+    Tθ,
     TR,
     S,
     E<:AbstractEvaluationType,
@@ -52,18 +60,24 @@ mutable struct DouglasRachfordState{
     s_tmp::P
     λ::Tλ
     α::Tα
+    θ::Tθ
     R::TR
+    n::Int
     reflection_evaluation::E
     retraction_method::TM
     inverse_retraction_method::ITM
     stop::S
     parallel::Bool
+    X::T
     function DouglasRachfordState(
         M::AbstractManifold,
         p::P;
         λ::Fλ=i -> 1.0,
         α::Fα=i -> 0.9,
+        θ::Fθ=Nothing(),
         R::FR=Manopt.reflect,
+        n::Int=0,
+        X::T=zero_vector(M, p),
         reflection_evaluation::E=AllocatingEvaluation(),
         stopping_criterion::S=StopAfterIteration(300),
         parallel=false,
@@ -71,27 +85,32 @@ mutable struct DouglasRachfordState{
         inverse_retraction_method::ITM=default_inverse_retraction_method(M, typeof(p)),
     ) where {
         P,
+        T,
         Fλ,
         Fα,
+        Fθ,
         FR,
         S<:StoppingCriterion,
         E<:AbstractEvaluationType,
         TM<:AbstractRetractionMethod,
         ITM<:AbstractInverseRetractionMethod,
     }
-        return new{P,Fλ,Fα,FR,S,E,TM,ITM}(
+        return new{P,T,Fλ,Fα,Fθ,FR,S,E,TM,ITM}(
             p,
             copy(M, p),
             copy(M, p),
             copy(M, p),
             λ,
             α,
+            θ,
             R,
+            n,
             reflection_evaluation,
             retraction_method,
             inverse_retraction_method,
             stopping_criterion,
             parallel,
+            X,
         )
     end
 end
@@ -280,8 +299,10 @@ function DouglasRachford!(
     M::AbstractManifold,
     mpo::O,
     p;
+    X=zero_vector(M, p),
     λ::Tλ=(iter) -> 1.0,
     α::Tα=(iter) -> 0.9,
+    θ::Tθ=Nothing(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M, typeof(p)
@@ -306,6 +327,7 @@ function DouglasRachford!(
             inverse_retraction_method=inverse_retraction_method,
         )
     end,
+    n::Int=0,
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenChangeLess(1e-5),
@@ -313,6 +335,7 @@ function DouglasRachford!(
 ) where {
     Tλ,
     Tα,
+    Tθ,
     TR,
     O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective},
     E<:AbstractEvaluationType,
@@ -324,12 +347,15 @@ function DouglasRachford!(
         p;
         λ=λ,
         α=α,
+        θ=θ,
         R=R,
+        n=n,
         reflection_evaluation=reflection_evaluation,
         retraction_method=retraction_method,
         inverse_retraction_method=inverse_retraction_method,
         stopping_criterion=stopping_criterion,
         parallel=parallel > 0,
+        X=X,
     )
     ddrs = decorate_state!(drs; kwargs...)
     solve!(dmp, ddrs)
