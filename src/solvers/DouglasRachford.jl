@@ -423,18 +423,17 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
         copyto!(M, drs.q_old, drs.q) #save before we overwrite iterate
         retract!(M, drs.q, drs.q, drs.X, drs.retraction_method)
     end
-    copyto!(M, drs.q_tmp, drs.q) # save before we double reflect (to relax later)
     # Compute Tq: 1) in p = prox(q) (the shadow sequence of p that converges to a min)
-    get_proximal_map!(amp, drs.p, drs.λ(i), drs.q, 1)
+    get_proximal_map!(amp, drs.p_base, drs.λ(i), drs.q, 1)
     # reflect in p, store in q
-    _reflect!(M, drs.q, drs.p, drs.q, drs.R, drs.reflection_evaluation)
+    _reflect!(M, drs.q_tmp, drs.p_base, drs.q, drs.R, drs.reflection_evaluation)
     # p_base = prox(q) (since prox of the first is the shadow sequence)
-    get_proximal_map!(amp, drs.p_base, drs.λ(i), drs.q, 2)
+    get_proximal_map!(amp, drs.p, drs.λ(i), drs.q_tmp, 2)
     # reflect at p_base, store again in q
-    _reflect!(M, drs.q, drs.p, drs.q, drs.R, drs.reflection_evaluation)
+    _reflect!(M, drs.q_tmp, drs.p, drs.q_tmp, drs.R, drs.reflection_evaluation)
     # relaxation on q, p
-    inverse_retract!(M, drs.X, drs.q_tmp, drs.q, drs.inverse_retraction_method)
-    retract!(M, drs.q, drs.q, drs.X, drs.α(i), drs.retraction_method)
+    inverse_retract!(M, drs.X, drs.q, drs.q_tmp, drs.inverse_retraction_method)
+    retract!(M, drs.q, drs.q_tmp, drs.X, drs.α(i), drs.retraction_method)
     # q -> T^n q; now always using p_base
     if drs.n > 0 # q -> T^n q
         for _ in 1:(drs.n)
