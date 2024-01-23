@@ -55,9 +55,9 @@ mutable struct DouglasRachfordState{
     ITM<:AbstractInverseRetractionMethod,
 } <: AbstractManoptSolverState
     p::P
-    p_tmp::P
-    s::P
-    s_tmp::P
+    p_old::P
+    q::P
+    q_base::P
     λ::Tλ
     α::Tα
     θ::Tθ
@@ -317,6 +317,7 @@ function DouglasRachford!(
             q;
             retraction_method=retraction_method,
             inverse_retraction_method=inverse_retraction_method,
+            X=X,
         )
     else
         (M, p, q) -> Manopt.reflect(
@@ -325,6 +326,7 @@ function DouglasRachford!(
             q;
             retraction_method=retraction_method,
             inverse_retraction_method=inverse_retraction_method,
+            X=X,
         )
     end,
     n::Int=0,
@@ -412,19 +414,39 @@ end
 function initialize_solver!(::AbstractManoptProblem, ::DouglasRachfordState) end
 function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
     M = get_manifold(amp)
-    get_proximal_map!(amp, drs.p_tmp, drs.λ(i), drs.s, 1)
-    #dispatch on allocation type for the reflection, see below.
-    _reflect!(M, drs.s_tmp, drs.p_tmp, drs.s, drs.R, drs.reflection_evaluation)
-    get_proximal_map!(amp, drs.p, drs.λ(i), drs.s_tmp, 2)
-    _reflect!(M, drs.s_tmp, drs.p, drs.s_tmp, drs.R, drs.reflection_evaluation)
-    # relaxation
-    drs.s = retract(
-        M,
-        drs.s,
-        inverse_retract(M, drs.s, drs.s_tmp, drs.inverse_retraction_method),
-        drs.α(i),
-        drs.retraction_method,
-    )
+    if !isnothing(drs.θ)
+        # inertia on p  before computing s
+        inverse_retract!(M, drs.X, drs.p, drs.p_old, drs.inverse_retraction_method)
+        drs.X .*= -drs.θ(i)
+        copyto!(M, drs.p_old, drs.p) #save before we overwrite iterate
+        retract!(M, drs.p, drs.p, drs.X, drs.retraction_method)
+        # store old s
+    end
+    # Compute Tp in q_base = prox(p)
+    get_proximal_map!(amp, drs.q_base, drs.λ(i), drs.p, 1)
+    # reflect in q_base, store in q
+    _reflect!(M, drs.q, drs.q_base, drs.p, drs.R, drs.reflection_evaluation)
+    # q_base = prox(q)
+    get_proximal_map!(amp, drs.q_base, drs.λ(i), drs.q, 2)
+    # reflect at q_base, store again in q
+    _reflect!(M, drs.q, drs.q_base, drs.q, drs.R, drs.reflection_evaluation)
+    # relaxation on p, q
+    inverse_retract!(M, drs.X, drs.p, drs.q, drs.inverse_retraction_method)
+    retract!(M, drs.p, drs.p, drs.X, drs.α(i), drs.retraction_method)
+    # p -> T^n p; but luckily we do no longer need q=Tp, so we use that again
+    if drs.n > 0 # s -> T^ns
+        for _ in 1:(drs.n)
+            # q_base = prox(p)
+            get_proximal_map!(amp, drs.q_base, drs.λ(i), drs.p, 1)
+            # reflect at q_base, store in p
+            _reflect!(M, drs.p, drs.q_base, drs.p, drs.R, drs.reflection_evaluation)
+            # q_base = prox(p)
+            get_proximal_map!(amp, drs.q_base, drs.λ(i), drs.p, 2)
+            # reflect at q_base, store in p
+            _reflect!(M, drs.p, drs.q_base, drs.p, drs.R, drs.reflection_evaluation)
+        end
+    end
+    # store last s in s_tmp
     return drs
 end
 get_solver_result(drs::DouglasRachfordState) = drs.parallel ? drs.p[1] : drs.p

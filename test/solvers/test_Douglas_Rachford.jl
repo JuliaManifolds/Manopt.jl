@@ -1,5 +1,5 @@
 using Manifolds, Manopt, Test
-using ManifoldDiff: prox_distance
+using ManifoldDiff: prox_distance, prox_distance!
 
 @testset "DouglasRachford" begin
     # Though this seems a strange way, it is a way to compute the mid point
