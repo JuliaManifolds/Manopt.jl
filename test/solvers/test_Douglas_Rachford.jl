@@ -10,10 +10,13 @@ using ManifoldDiff: prox_distance, prox_distance!
     p = [0.0, 0.0, 1.0]
     p_star = geodesic(M, d1, d2, distance(M, d1, d2) / 2)
     f(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2
+    println(f(M, p_star))
     prox1a = (M, η, p) -> prox_distance(M, η, d1, p)
     prox2a = (M, η, p) -> prox_distance(M, η, d2, p)
     @test_throws ErrorException DouglasRachford(M, f, Array{Function,1}([prox1a]), p) # we need more than one prox
-    q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
+    q1a = DouglasRachford(
+        M, f, [prox1a, prox2a], p; debug=[:Iteration, :Iterate, :Cost, "\n"]
+    )
     @test isapprox(M, q1a, p_star; atol=1e-14)
     q1i = DouglasRachford(
         M, f, [prox1a, prox2a], p; reflection_evaluation=InplaceEvaluation()

@@ -4,43 +4,35 @@
 Store all options required for the DouglasRachford algorithm,
 
 # Fields
-* `p` - the current iterate (result) For the parallel Douglas-Rachford, this is
-  not a value from the `PowerManifold` manifold but the mean.
-* `s` – the last result of the double reflection at the proxes relaxed by `α` eventually T^ns afterwars.
-* `s_tmp` – a temporary storage used within the double reflection
-* `λ` – function to provide the value for the proximal parameter during the calls
-* `α` – relaxation of the step from old to new iterate, i.e.
-  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
-  of the double reflection involved in the DR algorithm
-* `θ` – function to provide interia.
+* `p`                         - the current iterate (result) For the (parallel) Douglas-Rachford.
+  This is the “shadow sequence”, the proximal map of the first prox.
+  For the parallel DR, this is a single point, not a point on the power manifold.
+* `q`                         – (internal) the last result of the double reflection at the proxes relaxed.
+  This is the variable converging to the fix point.
+  Inertia and acceleration apply to this iterate.
+* `q_old`, `q_tmp`, `p_base`  – (internal) a temporary storage used within the double reflection or inertia.
+* `λ`                         – (`i-> 1.0`) function to provide the value for the proximal ``λ_i`` parameter during the calls
+* `α`                         – (`i-> 0.9`) relaxation parameter ``α_i`` of the step from old to new iterate,
+  ``q^{(k+1)} = g(α(k); q^{(k)}, s^{(k)})``, where ``s^{(k)}`` is the result of the double
+* `θ`                         – (`Nothing`) function (`i->0.0`) to provide interia ``θ_i``.
+  `Nothing` deactivates this and is equivalent to always returning ``0``.
 * `inverse_retraction_method` – an inverse retraction method
-* `n` – `n`-acceleration, apply the double reflection (T) `n` times after relaxation
-* `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
-* `reflection_evaluation` – whether `R` works inplace or allocating
-* `retraction_method` – a retraction method
-* `stop` – a [`StoppingCriterion`](@ref)
-* `parallel` – indicate whether we are running a parallel Douglas-Rachford or not.
-* `X` – (`zero_vector(M, p)`) a temporary storage for a tangent vector
+* `n`                         – ``n``-acceleration, apply the double reflection (T) `n` times after relaxation
+* `R`                         – ([`reflect`](@ref) or `reflect!`) method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `reflection_evaluation`     – ([`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works inplace or allocating (default)
+whether `R` works inplace or allocating
+* `retraction_method`         – a retraction method
+* `stop`                      – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `parallel`                  – (`false`) indicate whether we are running a parallel Douglas-Rachford or not.
+* `X`                         – (`zero_vector(M, p)`) a temporary storage for a tangent vector
+
 # Constructor
 
     DouglasRachfordState(M, p; kwargs...)
 
-Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
+Generate the options for a Manifold `M` and an initial point `p`,
+where all fields with defaults above can be passed as keyword arguments.
 
-* `λ` – (`i->1.0`) function to provide the value for the proximal parameter
-  during the itearions
-* `α` – (`(iter)->0.9`) relaxation of the step from old to new iterate, i.e.
-  ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result
-  of the double reflection involved in the DR algorithm
-* `θ` - (`Nothing`) a function (`i -> 0.0`) to provide an iteration. `Nothing`
-  is equivalent to always returning `0.0`, but further deactivates even computing the two intermetiate steps
-* `n` – (`0`) use the `T^n` acceleration, where `n=0` deactivates this
-* `R` – ([`reflect`](@ref) or `reflect!`) method employed in the iteration to perform the reflection of `x` at
-  the prox `p`, which function is used depends on `reflection_evaluation`.
-* reflection_evaluation – ([`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works inplace or allocating (default)
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
-* `parallel` – (`false`) indicate whether we are running a parallel Douglas-Rachford
-  or not.
 """
 mutable struct DouglasRachfordState{
     P,
@@ -175,31 +167,21 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 
 # Optional values
 
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
-  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
-* `λ` – (`(iter) -> 1.0`) function to provide the value for the proximal parameter
-  during the calls
-* `α` – (`(iter) -> 0.9`) relaxation of the step from old to new iterate, i.e.
-  ``t_{k+1} = g(α_k; t_k, s_k)``, where ``s_k`` is the result
-  of the double reflection involved in the DR algorithm
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within
-  - the reflection (ignored, if you set `R` directly)
-  - the relaxation step
-* `R` – method employed in the iteration to perform the reflection of `x` at the prox `p`.
-  This uses by default [`reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
-  the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
-* `reflection_evaluation` – ([`AllocatingEvaluation`](@ref) whether `R` works inplace or allocating
-* `retraction_method` - (`default_retraction_metiod(M, typeof(p))`) the retraction to use in
-  - the reflection (ignored, if you set `R` directly)
-  - the relaxation step
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-5)`)
-  a [`StoppingCriterion`](@ref).
-* `parallel` – (`false`) clarify that we are doing a parallel DR, i.e. on a
-  `PowerManifold` manifold with two proxes. This can be used to trigger
-  parallel Douglas—Rachford if you enter with two proxes. Keep in mind, that a
-  parallel Douglas—Rachford implicitly works on a `PowerManifold` manifold and
-  its first argument is the result then (assuming all are equal after the second
-  prox.
+* `λ`                         – (`i-> 1.0`) function to provide the value for the proximal ``λ_i`` parameter during the calls
+* `α`                         – (`i-> 0.9`) relaxation parameter ``α_i`` of the step from old to new iterate,
+  ``q^{(k+1)} = g(α(k); q^{(k)}, s^{(k)})``, where ``s^{(k)}`` is the result of the double
+* `θ`                         – (`Nothing`) function (`i->0.0`) to provide interia ``θ_i``.
+  `Nothing` deactivates this and is equivalent to always returning ``0``.
+* `inverse_retraction_method` – an inverse retraction method
+* `n`                         – ``n``-acceleration, apply the double reflection (T) `n` times after relaxation
+* `R`                         – ([`reflect`](@ref) or `reflect!`) method employed in the iteration to perform the reflection of `x` at the prox `p`.
+* `reflection_evaluation`     – ([`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works inplace or allocating (default)
+whether `R` works inplace or allocating
+* `retraction_method`         – a retraction method
+* `stop`                      – ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
+* `parallel`                  – (`false`) indicate whether we are running a parallel Douglas-Rachford or not.
+* `X`                         – (`zero_vector(M, p)`) a temporary storage for a tangent vector
+
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
@@ -433,8 +415,8 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
     _reflect!(M, drs.q_tmp, drs.p, drs.q_tmp, drs.R, drs.reflection_evaluation)
     # relaxation on q, p
     inverse_retract!(M, drs.X, drs.q, drs.q_tmp, drs.inverse_retraction_method)
-    retract!(M, drs.q, drs.q_tmp, drs.X, drs.α(i), drs.retraction_method)
-    # q -> T^n q; now always using p_base
+    retract!(M, drs.q, drs.q, drs.X, drs.α(i), drs.retraction_method)
+    # q -> T^n q; now always using p_base to prox/reflect at since we keep p
     if drs.n > 0 # q -> T^n q
         for _ in 1:(drs.n)
             # p_base = prox(q)

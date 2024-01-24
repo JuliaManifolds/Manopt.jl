@@ -25,16 +25,41 @@ Then the (P)DRA algorithm for initial data ``x_0 ∈ \mathcal H`` as
 
 ## Initialization
 
-Initialize ``t_0 = x_0`` and ``k=0``
+Initialize ``q_0 = p_0`` and ``k=0``
 
 ## Iteration
 
 Repeat until a convergence criterion is reached
 
-1. Compute ``s_k = \operatorname{refl}_{λ f}\operatorname{refl}_{λ g}(t_k)``
+1. Compute ``s_k = \operatorname{refl}_{λ f}\operatorname{refl}_{λ g}(q_k)``
 2. Within that operation, store ``p_{k+1} = \operatorname{prox}_{λ g}(t_k)`` which is the prox the inner reflection reflects at.
-3. Compute ``t_{k+1} = g(\alpha_k; t_k, s_k)``, where ``g`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
+3. Compute ``q_{k+1} = g(\alpha_k; q_k, s)``, where ``g`` is a curve approximating the shortest geodesic, provided by a retraction and its inverse
 4. Set ``k = k+1``
+
+until a stopping criterion is met.
+
+## Acceleration and Inertia
+
+Before computing the first step, one can apply _inertia_: Given some ``θ_k \in (0,1)``
+we can perform a step before, namely
+
+```math
+t = \operatorname{retr}_{q_k}
+  \bigl( -θ_k\operatorname{retr}^{-1}_{q_k}(q_{k-1}) \bigr),
+```
+
+that is adding inertia from the last two results computed in step 3
+and use `t_k` as the argument of the double-reflection in step 1.
+
+Instead of just computing step 4, one can also add an acceleration.
+Let `T` denote the double-reflection from the first step.
+Then, given a number ``n`` called _acceleration_ step 3 is replaced with
+
+```math
+q_{k+1} = T^n\bigl( g(\alpha_k; q_k, s) \bigr)
+```
+
+These both methods can also be combined by specifying inertia and acceleration
 
 ## Result
 
