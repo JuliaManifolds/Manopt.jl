@@ -564,9 +564,9 @@ function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficient})(
 
     gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
     ν = cgs.X - gradienttr
-    β = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, X_old, X_old)
+    β = real(inner(M, cgs.p, cgs.X, ν)) / real(inner(M, p_old, X_old, X_old))
     update_storage!(u.storage, amp, cgs)
-    return max(0, β)
+    return max(zero(β), β)
 end
 function show(io::IO, u::PolakRibiereCoefficient)
     return print(io, "PolakRibiereCoefficient($(u.transport_method))")
@@ -668,7 +668,7 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     num = inner(M, cgs.p, cgs.X, Xoldpk)
     # update storage only after that in case they share
     update_storage!(u.storage, amp, cgs)
-    return (num / denom) > u.coefficient.threshold ? zero(β) : β
+    return real(num / denom) > u.coefficient.threshold ? zero(β) : β
 end
 function show(io::IO, u::ConjugateGradientBealeRestart)
     return print(
