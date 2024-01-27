@@ -661,7 +661,7 @@ function update_hessian!(
     sk_normsq = norm(M, p, st.sk)^2
 
     # if the decision rule is fulfilled, the new sk and yk are added
-    if sk_normsq != 0 && (inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
+    if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
     else
         # the stored vectors are just transported to the new tangent space, sk and yk are not added
