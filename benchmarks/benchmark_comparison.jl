@@ -20,7 +20,7 @@ function f_rosenbrock(x)
     end
     return result
 end
-function f_rosenbrock_manopt(::AbstractManifold, x)
+function f_rosenbrock(::AbstractManifold, x)
     return f_rosenbrock(x)
 end
 
@@ -36,7 +36,7 @@ end
 
 optimize(f_rosenbrock, g_rosenbrock!, [0.0, 0.0], LBFGS())
 
-function g_rosenbrock_manopt!(M::AbstractManifold, storage, x)
+function g_rosenbrock!(M::AbstractManifold, storage, x)
     g_rosenbrock!(storage, x)
     if isnan(x[1])
         error("nan")
@@ -46,32 +46,30 @@ function g_rosenbrock_manopt!(M::AbstractManifold, storage, x)
 end
 
 M = Euclidean(2)
-Manopt.NelderMead(M, f_rosenbrock_manopt)
+Manopt.NelderMead(M, f_rosenbrock)
 
 qn_opts = quasi_Newton(
     M,
-    f_rosenbrock_manopt,
-    g_rosenbrock_manopt!,
+    f_rosenbrock,
+    g_rosenbrock!,
     [0.0, 0.0];
     evaluation=InplaceEvaluation(),
     return_state=true,
 )
 
-function test_f(f_manopt, g_manopt!, x0, N::Int)
+function test_f(f, g!, x0, N::Int)
     M = Euclidean(N)
-    return quasi_Newton(
-        M, f_manopt, g_manopt!, x0; evaluation=InplaceEvaluation(), return_state=true
-    )
+    return quasi_Newton(M, f, g!, x0; evaluation=InplaceEvaluation(), return_state=true)
 end
 
 function prof()
     N = 32
     x0 = zeros(N)
-    test_f(f_rosenbrock_manopt, g_rosenbrock_manopt!, x0, N)
+    test_f(f_rosenbrock, g_rosenbrock!, x0, N)
 
     Profile.clear()
     @profile for i in 1:100000
-        test_f(f_rosenbrock_manopt, g_rosenbrock_manopt!, x0, N)
+        test_f(f_rosenbrock, g_rosenbrock!, x0, N)
     end
     return ProfileView.view()
 end
@@ -101,8 +99,8 @@ function benchmark_time_state(
     ::ManoptQN,
     manifold_name::Symbol,
     N,
-    f_manopt,
-    g_manopt!,
+    f,
+    g!,
     x0,
     stepsize,
     mem_len::Int,
@@ -114,8 +112,8 @@ function benchmark_time_state(
     mem_len = min(mem_len, manifold_dimension(M))
     bench_manopt = @benchmark quasi_Newton(
         $M,
-        $f_manopt,
-        $g_manopt!,
+        $f,
+        $g!,
         $x0;
         stepsize=$(stepsize),
         evaluation=$(InplaceEvaluation()),
@@ -125,8 +123,8 @@ function benchmark_time_state(
     )
     manopt_state = quasi_Newton(
         M,
-        f_manopt,
-        g_manopt!,
+        f,
+        g!,
         x0;
         stepsize=stepsize,
         evaluation=InplaceEvaluation(),
@@ -136,7 +134,7 @@ function benchmark_time_state(
         kwargs...,
     )
     iters = get_count(manopt_state, :Iterations)
-    final_val = f_manopt(M, manopt_state.p)
+    final_val = f(M, manopt_state.p)
     return median(bench_manopt.times) / 1000, iters, final_val
 end
 
@@ -160,14 +158,17 @@ function benchmark_time_state(
 end
 
 function generate_cmp(
-    problem_for_N; mem_len::Int=2, manifold_names=[:Euclidean, :Sphere], gtol::Real=1e-5
+    problem_for_N;
+    mem_len::Int=2,
+    manifold_names=[:Euclidean, :Sphere],
+    gtol::Real=1e-5,
+    N_vals=[2^n for n in 1:3:16],
 )
     plt = plot()
     xlabel!(plt, "dimension")
     ylabel!(plt, "time [ms]")
     title!(plt, "Optimization times")
 
-    N_vals = [2^n for n in 1:3:16]
     ls_hz = LineSearches.HagerZhang()
 
     for manifold_name in manifold_names
@@ -176,7 +177,7 @@ function generate_cmp(
 
         println("Benchmarking for gtol=$gtol on $manifold_name")
         for N in N_vals
-            f, g!, f_manopt, g_manopt! = problem_for_N(N)
+            f, g! = problem_for_N(N)
             println("Benchmarking for N=$N, f=$(typeof(f))")
             M = manifold_maker(manifold_name, N, :Manopt)
             x0 = zeros(N)
@@ -185,8 +186,8 @@ function generate_cmp(
                 ManoptQN(),
                 manifold_name,
                 N,
-                f_manopt,
-                g_manopt!,
+                f,
+                g!,
                 x0,
                 HagerZhangLinesearch(M),
                 mem_len,
@@ -229,23 +230,25 @@ function generate_cmp(
     return plt
 end
 
-# generate_cmp(N -> (f_rosenbrock, g_rosenbrock!, f_rosenbrock_manopt, g_rosenbrock_manopt!), mem_len=4)
+# generate_cmp(N -> (f_rosenbrock, g_rosenbrock!), mem_len=4)
 
 function generate_rayleigh_problem(N::Int)
-    A = Symmetric(randn(N, N))
+    A = Symmetric(randn(N, N) / N)
     f_manopt = ManoptExamples.RayleighQuotientCost(A)
     g_manopt! = ManoptExamples.RayleighQuotientGrad!!(A)
     M = Manifolds.Sphere(N - 1)
-    f(x) = f_manopt(M, x)
-    g!(storage, x) = g_manopt!(M, storage, x)
-    return (f, g!, f_manopt, g_manopt!)
+    f_ret(x) = f_manopt(M, x)
+    f_ret(M::AbstractManifold, x) = f_manopt(M, x)
+    g_ret!(storage, x) = g_manopt!(M, storage, x)
+    g_ret!(M::AbstractManifold, storage, x) = g_manopt!(M, storage, x)
+    return (f_ret, g_ret!)
 end
-# generate_cmp(generate_rayleigh_problem, manifold_names=[:Sphere], mem_len=4)
+# generate_cmp(generate_rayleigh_problem, manifold_names=[:Sphere], mem_len=4, N_vals=[10, 100, 1000])
 
 function test_case_manopt()
-    N = 128
-    mem_len = 1
-    M = Manifolds.Sphere(N - 1)
+    N = 4000
+    mem_len = 4
+    M = Manifolds.Sphere(N - 1; parameter=:field)
     ls_hz = LineSearches.HagerZhang()
 
     x0 = zeros(N)
@@ -254,9 +257,10 @@ function test_case_manopt()
 
     return quasi_Newton(
         M,
-        f_rosenbrock_manopt,
-        g_rosenbrock_manopt!,
+        f_rosenbrock,
+        g_rosenbrock!,
         x0;
+        #stepsize=Manopt.LineSearchesStepsize(ls_hz),
         stepsize=HagerZhangLinesearch(M),
         evaluation=InplaceEvaluation(),
         vector_transport_method=ProjectionTransport(),
