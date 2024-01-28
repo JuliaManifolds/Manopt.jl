@@ -405,8 +405,7 @@ end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if (i >= 0) && (!d.check(getfield(st, d.field)))
         format = Printf.Format(d.msg)
-        l = format.numarguments
-        msg = l == 0 ? d.msg : Printf.format(format, getfield(st, d.field))
+        msg = !('%' ∈ d.msg) ? d.msg : Printf.format(format, getfield(st, d.field))
         d.type === :warn && (@warn "$(msg)")
         d.type === :info && (@info "$(msg)")
         d.type === :error && error(msg)
