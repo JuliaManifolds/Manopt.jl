@@ -50,37 +50,43 @@ so they are persistent within your activated Environment.
 
 # Currenlty used settings
 
-| Symbol | Meaning                                                   | default |
-| ------ | --------------------------------------------------------- | ------- |
-| :Mode  |
+`:Mode`
+the mode can be set to `"Tutorial"` to get several hints especially in scenarios, where
+the optimisation on manifolds is different from the usual “experience” in
+(classicall, Euclidean) optimization.
+Any other value has the same effect as not setting it.
 """
 function get_manopt_parameter(
-    e::Symbol,
-    args...;
-    default=get_manopt_parameter(Val(e),Val(:default))
+    e::Symbol, args...; default=get_manopt_parameter(Val(e), Val(:default))
 )
     return @load_preference("$(e)", default)
 end
 # Handle empty defaults
-get_manopt_parameter(e::Symbol, v::Val{:default}) = get_manopt_parameter(Val(e), v)
+get_manopt_parameter(e::Symbol, v::Val{:default}) = nothing
 get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = ""
 
 """
-    set_manopt_parameter!(element::Symbol, args...)
+    set_manopt_parameter!(element::Symbol, value::Union{String,Bool})
 
 Set global [`Manopt`](@ref) parameters adressed by a symbol `element`.
 We first dispatch on the value of `element`.
 
 The parameters are stored to the global settings using [`Preferences.jl`](@ref).
+
+Passing a `value` of `""` deletes an entry from the preferences.
+Whenever the `LocalPreferences.toml` is modified, this is also `@info`rmed about.
 """
 function set_manopt_parameter!(e::Symbol, value::Union{String,Bool})
-    @set_preferences!("$(e)" => value)
-    @info("Setting the `Manopt.jl` parameter $(e) to $value.")
+    if length(value) == 0
+        @delete_preferences!("$(e)")
+        v = get_manopt_parameter(e, Val(:default))
+        default = isnothing(v) ? "" : (length(v) == 0 ? "" : " ($(get_manopt_parameter))")
+        @info("Resetting the `Manopt.jl` parameter $(e) to default$(default).")
+    else
+        @set_preferences!("$(e)" => value)
+        @info("Setting the `Manopt.jl` parameter $(e) to $value.")
+    end
 end
-
-
-
-
 
 include("objective.jl")
 include("problem.jl")
