@@ -448,6 +448,7 @@ export StopAfter,
     StopWhenPopulationConcentrated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
+    StopWhenSubgradientNormLess,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion

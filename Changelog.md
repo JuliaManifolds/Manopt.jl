@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
 
+## [0.4.51] January 30, 2024
+
+### Added
+
+* A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
+
 ## [0.4.50] January 26, 2024
 
 ### Fixed
