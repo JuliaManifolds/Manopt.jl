@@ -245,16 +245,16 @@ no plot is generated.
 * `atol`, `rtol`      (same defaults as `isapprox`) tolerances that are passed down to all checks
 * `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)
 * `N`                 (`101`) number of points to verify within the `log_range` default range ``[10^{-8},10^{0}]``
-* `exactness_tol`     (`1e-12`) if all errors are below this tolerance, the check is considered to be exact
-* `io`                (`nothing`) provide an `IO` to print the check result to
+* `exactness_tol`     (`1e-12`) if all errors are below this tolerance, the verification is considered to be exact
+* `io`                (`nothing`) provide an `IO` to print the result to
 * `gradient`          (`grad_f(M, p)`) instead of the gradient function you can also provide the gradient at `p` directly
 * `Hessian`           (`Hess_f(M, p, X)`) instead of the Hessian function you can provide the result of ``\operatorname{Hess} f(p)[X]`` directly.
   Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry and/or when using `:CriticalPoint` mode.
 * `limits`            (`(1e-8,1)`) specify the limits in the `log_range`
 * `log_range`         (`range(limits[1], limits[2]; length=N)`) specify the range of points (in log scale) to sample the Hessian line
-* `N`                 (`101`) number of points to check within the `log_range` default range ``[10^{-8},10^{0}]``
-* `plot`              (`false`) whether to plot the resulting check (if `Plots.jl` is loaded). The plot is in log-log-scale. This is returned and can then also be saved.
-* `retraction_method` (`default_retraction_method(M, typeof(p))`) retraction method to use for the check
+* `N`                 (`101`) number of points to use within the `log_range` default range ``[10^{-8},10^{0}]``
+* `plot`              (`false`) whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
+* `retraction_method` (`default_retraction_method(M, typeof(p))`) retraction method to use for
 * `slope_tol`         (`0.1`) tolerance for the slope (global) of the approximation
 * `throw_error`       (`false`) throw an error message if the Hessian is wrong
 * `window`            (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
@@ -380,7 +380,8 @@ Verify whether the Hessian function `Hess_f` fulfills linearity,
 
 which is checked using `isapprox` and the keyword arguments are passed to this function.
 
-# Optional Arguments
+# Optional arguments
+
 * `throw_error` (`false`) throw an error message if the Hessian is wrong
 
 """
@@ -419,10 +420,10 @@ Verify whether the Hessian function `Hess_f` fulfills symmetry, which means that
 
 which is checked using `isapprox` and the `kwargs...` are passed to this function.
 
-# Optional Arguments
+# Optional arguments
 
-* `atol`, `rtol` - with the same defaults as the usual `isapprox`
-* `throw_error` - (`false`) throw an error message if the Hessian is wrong
+* `atol`, `rtol`   with the same defaults as the usual `isapprox`
+* `throw_error`    (`false`) throw an error message if the Hessian is wrong
 """
 function is_Hessian_symmetric(
     M,
@@ -486,12 +487,12 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
             a = mean(y) - b * mean(x)
             # look for the largest interval where b is within slope tolerance
             r = (maximum(x) - minimum(x))
-            if (r > r_best) && abs(b - slope) < slope_tol #longer interval within slope_tol.
+            if (r > r_best) && abs(b - slope) < slope_tol #longer interval found.
                 r_best = r
                 a_best = a
                 b_best = b
                 i_best = j
-                j_best = j + w - 1 #last index (see x and y above)
+                j_best = j + w - 1 #last index (see x and y from before)
             end
             # not best interval - maybe it is still the (first) best slope?
             if r_best == 0 && abs(b - slope) < abs(b_best - slope)
@@ -499,7 +500,7 @@ function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
                 a_best = a
                 b_best = b
                 i_best = j
-                j_best = j + w - 1 #last index (see x and y above)
+                j_best = j + w - 1 #last index (see x and y from before)
             end
         end
     end
