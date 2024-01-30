@@ -122,6 +122,7 @@ using ManifoldsBase:
     ℂ,
     ℝ
 using Markdown
+using Preferences: @load_preference, @set_preferences!, @has_preference
 using Printf
 using Random: shuffle!, rand, randperm
 using Requires

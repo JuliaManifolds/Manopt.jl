@@ -25,6 +25,8 @@ end
 """
     get_manopt_parameter(f, element::Symbol, args...)
 
+Access arbitrary parameters from `f` adressedby a symbol `element`.
+
 For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
 get some element from `f` potentially further qulalified by `args...`.
 
@@ -34,6 +36,51 @@ function get_manopt_parameter(f, e::Symbol, args...)
     return get_manopt_parameter(f, Val(e), args...)
 end
 get_manopt_parameter(f, args...) = nothing
+
+"""
+    get_manopt_parameter(element::Symbol; default=nothing)
+
+Access global [`Manopt`](@ref) parametersadressed by a symbol `element`.
+We first dispatch on the value of `element`.
+
+if the value is not set, `default` is returned
+
+The parameters are queried from the global settings using [`Preferences.jl`](@ref),
+so they are persistent within your activated Environment.
+
+# Currenlty used settings
+
+| Symbol | Meaning                                                   | default |
+| ------ | --------------------------------------------------------- | ------- |
+| :Mode  |
+"""
+function get_manopt_parameter(
+    e::Symbol,
+    args...;
+    default=get_manopt_parameter(Val(e),Val(:default))
+)
+    return @load_preference("$(e)", default)
+end
+# Handle empty defaults
+get_manopt_parameter(e::Symbol, v::Val{:default}) = get_manopt_parameter(Val(e), v)
+get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = ""
+
+"""
+    set_manopt_parameter!(element::Symbol, args...)
+
+Set global [`Manopt`](@ref) parameters adressed by a symbol `element`.
+We first dispatch on the value of `element`.
+
+The parameters are stored to the global settings using [`Preferences.jl`](@ref).
+"""
+function set_manopt_parameter!(e::Symbol, value::Union{String,Bool})
+    @set_preferences!("$(e)" => value)
+    @info("Setting the `Manopt.jl` parameter $(e) to $value.")
+end
+
+
+
+
 
 include("objective.jl")
 include("problem.jl")
