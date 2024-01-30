@@ -5,6 +5,7 @@ Agarwal
 API
 Armijo
 Bergmann
+boolean
 Boumal
 Bullins
 Cartis
@@ -17,6 +18,7 @@ cubic
 Frank
 Frobenius
 functor
+functors
 geodesically
 Geomstats
 Geoopt
