@@ -74,6 +74,9 @@ end
     c = StopWhenGradientNormLess(1e-6)
     sc = "StopWhenGradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c))"
     @test repr(c) == sc
+    c2 = StopWhenSubgradientNormLess(1e-6)
+    sc2 = "StopWhenSubgradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c2))"
+    @test repr(c2) == sc2
     d = StopWhenAll(a, b, c)
     @test typeof(d) === typeof(a & b & c)
     @test typeof(d) === typeof(a & (b & c))
