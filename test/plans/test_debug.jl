@@ -238,7 +238,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
-        @test repr(w3) == "DebugWarnIfFieldNotFinite(:X)"
+        @test repr(w3) == "DebugWarnIfFieldNotFinite(:X, :Once)"
         @test_logs (:warn,) (
             :warn,
             "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",

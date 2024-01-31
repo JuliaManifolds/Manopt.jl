@@ -45,7 +45,7 @@ We first dispatch on the value of `element`.
 
 if the value is not set, `default` is returned
 
-The parameters are queried from the global settings using [`Preferences.jl`](@ref),
+The parameters are queried from the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl),
 so they are persistent within your activated Environment.
 
 # Currenlty used settings
@@ -71,7 +71,7 @@ get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = ""
 Set global [`Manopt`](@ref) parameters adressed by a symbol `element`.
 We first dispatch on the value of `element`.
 
-The parameters are stored to the global settings using [`Preferences.jl`](@ref).
+The parameters are stored to the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl).
 
 Passing a `value` of `""` deletes an entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also `@info`rmed about.
