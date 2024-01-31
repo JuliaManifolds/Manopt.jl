@@ -370,7 +370,11 @@ end
 @doc raw"""
     DebugIfEntry <: DebugAction
 
-Issue a warning, info or error if a certain field does _not_ pass a check
+Issue a warning, info or error if a certain field does _not_ pass a check.
+
+The `message` is printed in this case. If it contains a `@printf` argument identifier,
+that one will be filled with the value of the `field`.
+That way you can print the vaule in this case as well.
 
 # Fields
 
@@ -400,10 +404,12 @@ mutable struct DebugIfEntry{F} <: DebugAction
 end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if (i >= 0) && (!d.check(getfield(st, d.field)))
-        d.type === :warn && (@warn "$(d.msg)")
-        d.type === :info && (@info "$(d.msg)")
-        d.type === :error && error(d.msg)
-        d.type === :print && print(d.io, d.msg)
+        format = Printf.Format(d.msg)
+        msg = !('%' ∈ d.msg) ? d.msg : Printf.format(format, getfield(st, d.field))
+        d.type === :warn && (@warn "$(msg)")
+        d.type === :info && (@info "$(msg)")
+        d.type === :error && error(msg)
+        d.type === :print && print(d.io, msg)
     end
     return nothing
 end

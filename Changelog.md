@@ -14,7 +14,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
   `StopWhenProxBundleLess` stopping criteria.
 
-## [0.4.48]
+## [unreleased]
+
+### Added
+
+* Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
+
+## [0.4.51] January 30, 2024
+
+### Added
+
+* A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
+
+## [0.4.50] January 26, 2024
+
+### Fixed
+
+* Fix Quasi Newton on complex manifolds.
+
+## [0.4.49] January 18, 2024
+
+### Added
+
+* A `StopWhenEntryChangeLess` to be able to stop on arbitrary small changes of specific fields
+* generalises `StopWhenGradientNormLess` to accept arbitrary `norm=` functions
+* refactor the default in `particle_swarm` to no longer “misuse” the iteration change check,
+  but actually the new one one the `:swarm` entry
+
+## [0.4.48] January 16, 2024
 
 ### Fixed
 
