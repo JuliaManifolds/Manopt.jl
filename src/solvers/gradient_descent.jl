@@ -105,7 +105,8 @@ function show(io::IO, gds::GradientDescentState)
     ## Stepsize
     $(gds.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(gds.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

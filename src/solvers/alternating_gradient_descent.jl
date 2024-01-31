@@ -90,7 +90,8 @@ function show(io::IO, agds::AlternatingGradientDescentState)
     ## Stepsize
     $(agds.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(agds.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

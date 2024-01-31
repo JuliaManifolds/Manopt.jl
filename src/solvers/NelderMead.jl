@@ -156,7 +156,8 @@ function show(io::IO, nms::NelderMeadState)
     * inverse retraction method: $(nms.inverse_retraction_method)
     * retraction method:         $(nms.retraction_method)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(nms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

@@ -4,6 +4,7 @@ Adagrad
 Agarwal
 API
 Armijo
+Batchelor
 Bergmann
 boolean
 Boumal
@@ -34,10 +35,12 @@ Lagrangian
 Lanczos
 Laus
 LineSearches.jl
+Liu
 Manifolds.jl
 ManifoldsBase.jl
 [Mm]anopt(:?.org|.jl)?
 Marquardt
+Moakher
 Munkvold
 [Mm]ead
 [Nn]elder

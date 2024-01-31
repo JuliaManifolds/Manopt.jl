@@ -115,7 +115,8 @@ function show(io::IO, qns::QuasiNewtonState)
     ## Stepsize
     $(qns.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(qns.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

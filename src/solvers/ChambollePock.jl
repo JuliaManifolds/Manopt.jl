@@ -153,7 +153,8 @@ function show(io::IO, cps::ChambollePockState)
     * inverse_retraction_method_dual: $(cps.inverse_retraction_method_dual)
     * vector_transport_method_dual:   $(cps.vector_transport_method_dual)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(cps.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

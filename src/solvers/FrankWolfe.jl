@@ -114,7 +114,8 @@ function show(io::IO, fws::FrankWolfeState)
     ## Stepsize
     $(fws.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(fws.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

@@ -93,7 +93,8 @@ function show(io::IO, tcgs::TruncatedConjugateGradientState)
     * randomize: $(tcgs.randomize)
     * trust region radius: $(tcgs.trust_region_radius)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(tcgs.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

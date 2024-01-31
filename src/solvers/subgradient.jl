@@ -63,7 +63,8 @@ function show(io::IO, sgms::SubGradientMethodState)
     ## Stepsize
     $(sgms.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(sgms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

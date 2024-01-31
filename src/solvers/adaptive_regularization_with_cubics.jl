@@ -155,7 +155,8 @@ function show(io::IO, arcs::AdaptiveRegularizationState)
     * sub solver state     :
         | $(sub)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(arcs.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

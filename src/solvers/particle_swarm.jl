@@ -115,7 +115,8 @@ function show(io::IO, pss::ParticleSwarmState)
     * retraction method:         $(pss.retraction_method)
     * vector transport method:   $(pss.vector_transport_method)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(pss.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

@@ -21,7 +21,8 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
     ## Stepsize
     $(cgds.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(cgds.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

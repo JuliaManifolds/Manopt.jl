@@ -105,7 +105,8 @@ function show(io::IO, epms::ExactPenaltyMethodState)
     * u: $(epms.u) (ϵ_min: $(epms.u_min), θ_u: $(epms.θ_u))
     * ρ: $(epms.ρ) (θ_ρ: $(epms.θ_ρ))
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(epms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

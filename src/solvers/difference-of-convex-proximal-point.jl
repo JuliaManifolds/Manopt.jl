@@ -115,7 +115,8 @@ function show(io::IO, dcps::DifferenceOfConvexProximalState)
     ## Stepsize
     $(dcps.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(dcps.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

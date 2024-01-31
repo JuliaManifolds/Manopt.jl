@@ -325,7 +325,8 @@ function show(io::IO, rws::RandomWalkState)
     * retraction method: $(rws.retraction_method)
     * σ                : $(rws.σ)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(rws.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

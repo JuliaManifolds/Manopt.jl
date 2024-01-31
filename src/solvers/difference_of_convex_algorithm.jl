@@ -104,7 +104,8 @@ function show(io::IO, dcs::DifferenceOfConvexState)
     * sub solver state:
         | $(sub)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(dcs.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

@@ -86,7 +86,8 @@ function show(io::IO, sgds::StochasticGradientDescentState)
     ## Stepsize
     $(sgds.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(sgds.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

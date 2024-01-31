@@ -104,7 +104,8 @@ function show(io::IO, drs::DouglasRachfordState)
     $Iter
     using an $(refl_e) reflection.
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(drs.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

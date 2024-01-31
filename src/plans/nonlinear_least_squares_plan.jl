@@ -266,7 +266,8 @@ function show(io::IO, lms::LevenbergMarquardtState)
     * expect zero residual: $(lms.expect_zero_residual)
     * retraction method: $(lms.retraction_method)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(lms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

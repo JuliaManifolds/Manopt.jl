@@ -252,7 +252,8 @@ function show(io::IO, trs::TrustRegionsState)
     * sub solver state     :
         | $(sub)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(trs.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

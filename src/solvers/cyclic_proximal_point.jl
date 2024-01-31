@@ -9,7 +9,8 @@ function show(io::IO, cpps::CyclicProximalPointState)
     ## Parameters
     * evaluation order of the proximal maps: :$(cpps.order_type)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(cpps.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

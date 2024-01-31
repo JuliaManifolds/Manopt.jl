@@ -174,7 +174,8 @@ function show(io::IO, pdsns::PrimalDualSemismoothNewtonState)
     * inverse_retraction_method: $(pdsns.inverse_retraction_method)
     * vector_transport_method:   $(pdsns.vector_transport_method)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(pdsns.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
