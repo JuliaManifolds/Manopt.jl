@@ -64,6 +64,7 @@ mutable struct AugmentedLagrangianMethodState{
     θ_ϵ::R
     penalty::R
     stop::TStopping
+    last_stepsize::R
     function AugmentedLagrangianMethodState(
         M::AbstractManifold,
         co::ConstrainedManifoldObjective,
@@ -82,9 +83,13 @@ mutable struct AugmentedLagrangianMethodState{
         θ_ρ::R=0.3,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        stopping_criterion::SC=StopAfterIteration(300) | (
-            StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
-        ),
+        stopping_criterion::SC=StopAfterIteration(300) |
+                               (
+                                   StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
+                                   StopWhenChangeLess(1e-10)
+                               ) |
+                               StopWhenChangeLess(1e-10),
+        kwargs...,
     ) where {
         P,
         Pr<:AbstractManoptProblem,
@@ -110,6 +115,7 @@ mutable struct AugmentedLagrangianMethodState{
         alms.θ_ϵ = θ_ϵ
         alms.penalty = Inf
         alms.stop = stopping_criterion
+        alms.last_stepsize = Inf
         return alms
     end
 end
@@ -254,7 +260,7 @@ function augmented_Lagrangian_method(
     f::TF,
     grad_f::TGF,
     p=rand(M);
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     h=nothing,
     grad_g=nothing,
@@ -278,7 +284,7 @@ function augmented_Lagrangian_method(
     f::TF,
     grad_f::TGF,
     p::Number;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     grad_g=nothing,
     grad_h=nothing,
@@ -300,7 +306,7 @@ function augmented_Lagrangian_method(
 end
 
 @doc raw"""
-    augmented_Lagrangian_method!(M, f, grad_f p=rand(M); kwargs...)
+    augmented_Lagrangian_method!(M, f, grad_f, p=rand(M); kwargs...)
 
 perform the augmented Lagrangian method (ALM) in-place of `p`.
 
@@ -311,7 +317,7 @@ function augmented_Lagrangian_method!(
     f::TF,
     grad_f::TGF,
     p;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     h=nothing,
     grad_g=nothing,
@@ -328,11 +334,11 @@ function augmented_Lagrangian_method!(
     M::AbstractManifold,
     cmo::O,
     p;
-    evaluation=AllocatingEvaluation(),
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ϵ::Real=1e-3,
     ϵ_min::Real=1e-6,
-    ϵ_exponent=1 / 100,
-    θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
+    ϵ_exponent::Real=1 / 100,
+    θ_ϵ::Real=(ϵ_min / ϵ)^(ϵ_exponent),
     μ::Vector=ones(length(get_inequality_constraints(M, cmo, p))),
     μ_max::Real=20.0,
     λ::Vector=ones(length(get_equality_constraints(M, cmo, p))),
@@ -344,20 +350,21 @@ function augmented_Lagrangian_method!(
     objective_type=:Riemannian,
     sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
-    sub_kwargs=[],
-    sub_stopping_criterion=StopAfterIteration(300) |
-                           StopWhenGradientNormLess(ϵ) |
-                           StopWhenStepsizeLess(1e-8),
+    sub_kwargs=(;),
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
+                                              StopWhenGradientNormLess(ϵ) |
+                                              StopWhenStepsizeLess(1e-8),
     sub_state::AbstractManoptSolverState=decorate_state!(
         QuasiNewtonState(
             M,
             copy(p);
             initial_vector=zero_vector(M, p),
             direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
-                M, copy(M, p), InverseBFGS(), 30
+                M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30)
             ),
             stopping_criterion=sub_stopping_criterion,
             stepsize=default_stepsize(M, QuasiNewtonState),
+            sub_kwargs...,
         );
         sub_kwargs...,
     ),
@@ -371,9 +378,12 @@ function augmented_Lagrangian_method!(
             sub_kwargs...,
         ),
     ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
-    ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
+                                          (
+                                              StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
+                                              StopWhenChangeLess(1e-10)
+                                          ) |
+                                          StopWhenStepsizeLess(1e-10),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     alms = AugmentedLagrangianMethodState(
@@ -422,7 +432,9 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
 
     update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)
 
-    copyto!(M, alms.p, get_solver_result(solve!(alms.sub_problem, alms.sub_state)))
+    new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
+    alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))
+    copyto!(M, alms.p, new_p)
 
     # update multipliers
     cost_ineq = get_inequality_constraints(mp, alms.p)
@@ -452,3 +464,7 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     return alms
 end
 get_solver_result(alms::AugmentedLagrangianMethodState) = alms.p
+
+function get_last_stepsize(p::AbstractManoptProblem, s::AugmentedLagrangianMethodState, i)
+    return s.last_stepsize
+end

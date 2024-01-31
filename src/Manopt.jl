@@ -15,7 +15,7 @@ import ManifoldsBase: embed!
 using ColorSchemes
 using ColorTypes
 using Colors
-using DataStructures: CircularBuffer, capacity, length, push!, size
+using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
     Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm
@@ -320,7 +320,6 @@ export get_state,
     forward_operator,
     forward_operator!,
     get_objective
-export set_manopt_parameter!
 export get_hessian, get_hessian!
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
@@ -441,6 +440,7 @@ export StopAfter,
     StopWhenChangeLess,
     StopWhenCostLess,
     StopWhenCurvatureIsNegative,
+    StopWhenEntryChangeLess,
     StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
@@ -448,6 +448,7 @@ export StopAfter,
     StopWhenPopulationConcentrated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
+    StopWhenSubgradientNormLess,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion

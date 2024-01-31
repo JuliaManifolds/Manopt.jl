@@ -129,15 +129,16 @@ function (a::ArmijoLinesearch)(
     M = get_manifold(amp)
     X = zero_vector(M, agds.p)
     get_gradient!(amp, X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    (a.last_stepsize, a.message) = linesearch_backtrack(
+    (a.last_stepsize, a.message) = linesearch_backtrack!(
         M,
+        a.candidate_point,
         (M, p) -> get_cost(amp, p),
         agds.p,
         X,
         a.last_stepsize,
         a.sufficient_decrease,
-        a.contraction_factor,
-        a.retraction_method,
+        a.contraction_factor;
+        retraction_method=a.retraction_method,
     )
     return a.last_stepsize
 end

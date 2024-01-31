@@ -50,13 +50,13 @@ end
 @testset "Test StopAfter" begin
     p = TestStopProblem()
     o = TestStopState()
-    s = StopAfter(Second(1))
+    s = StopAfter(Millisecond(30))
     @test !Manopt.indicates_convergence(s)
     @test Manopt.status_summary(s) == "stopped after $(s.threshold):\tnot reached"
-    @test repr(s) == "StopAfter(Second(1))\n    $(Manopt.status_summary(s))"
+    @test repr(s) == "StopAfter(Millisecond(30))\n    $(Manopt.status_summary(s))"
     s(p, o, 0) # Start
     @test s(p, o, 1) == false
-    sleep(1.02)
+    sleep(0.05)
     @test s(p, o, 2) == true
     @test_throws ErrorException StopAfter(Second(-1))
     @test_throws ErrorException update_stopping_criterion!(s, :MaxTime, Second(-1))
@@ -74,6 +74,9 @@ end
     c = StopWhenGradientNormLess(1e-6)
     sc = "StopWhenGradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c))"
     @test repr(c) == sc
+    c2 = StopWhenSubgradientNormLess(1e-6)
+    sc2 = "StopWhenSubgradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c2))"
+    @test repr(c2) == sc2
     d = StopWhenAll(a, b, c)
     @test typeof(d) === typeof(a & b & c)
     @test typeof(d) === typeof(a & (b & c))
@@ -169,4 +172,11 @@ end
     @test gds.stop.maxIter == 200
     update_stopping_criterion!(s1, :MinStepsize, 1e-1)
     @test s1.threshold == 1e-1
+end
+
+@testset "Test further setters" begin
+    swecl = StopWhenEntryChangeLess(:dummy, (p, s, v, w) -> norm(w - v), 1e-5)
+    @test startswith(repr(swecl), "StopWhenEntryChangeLess\n")
+    update_stopping_criterion!(swecl, :Threshold, 1e-1)
+    @test swecl.threshold == 1e-1
 end

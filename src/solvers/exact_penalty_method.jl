@@ -302,7 +302,7 @@ function exact_penalty_method!(
     smoothing=LogarithmicSumOfExponentials(),
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
-    sub_kwargs=[],
+    sub_kwargs=(;),
     sub_problem::AbstractManoptProblem=DefaultManoptProblem(
         M,
         decorate_objective!(
@@ -325,6 +325,7 @@ function exact_penalty_method!(
             ),
             stopping_criterion=sub_stopping_criterion,
             stepsize=default_stepsize(M, QuasiNewtonState),
+            sub_kwargs...,
         );
         sub_kwargs...,
     ),

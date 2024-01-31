@@ -278,37 +278,42 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 * `Hess_f` – (optional), the hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
 * `p`      – (`rand(M)`) an initial value ``x  ∈  \mathcal M``
 
-# Optional
-* `evaluation`              – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
-   allocation (default) or [`InplaceEvaluation`](@ref) in place
-* `max_trust_region_radius` – the maximum trust-region radius
-* `preconditioner`          – a preconditioner (a symmetric, positive definite operator
-  that should approximate the inverse of the Hessian)
-* `randomize`               – set to true if the trust-region solve is to be initiated with a
-  random tangent vector and no preconditioner will be used.
-* `project!`                – (`copyto!`) specify a projection operation for tangent vectors
-  within the subsolver for numerical stability.
-  this means we require a function `(M, Y, p, X) -> ...` working in place of `Y`.
-* `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use
-* `stopping_criterion`      – ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`) a functor inheriting
-  from [`StoppingCriterion`](@ref) indicating when to stop.
-* `trust_region_radius`     – the initial trust-region radius
+# Keyword Arguments
+
 * `acceptance_rate`         – Accept/reject threshold: if ρ (the performance ratio for the
   iterate) is at least the acceptance rate ρ', the candidate is accepted.
   This value should  be between ``0`` and ``\frac{1}{4}``
   (formerly this was called `ρ_prime, which will be removed on the next breaking change)
-* `ρ_regularization`        – (`1e3`) regularize the performance evaluation ``ρ``
-  to avoid numerical inaccuracies.
-* `θ`                       – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
-    [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping crierion therein
-* `κ`                       – (`0.1`) the linear convergence target rate of the tCG method
-    [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping crierion therein
-* `reduction_threshold`     – (`0.1`) trust-region reduction threshold: if ρ is below this threshold,
-  the trust region radius is reduced by `reduction_factor`.
-* `reduction_factor`        – (`0.25`) trust-region reduction factor
 * `augmentation_threshold`  – (`0.75`) trust-region augmentation threshold: if ρ is above this threshold,
   we have a solution on the trust region boundary and negative curvature, we extend (augment) the radius
 * `augmentation_factor`     – (`2.0`) trust-region augmentation factor
+* `evaluation`              – ([`AllocatingEvaluation`](@ref)) specify whether the gradient and hessian work by
+   allocation (default) or [`InplaceEvaluation`](@ref) in place
+* `κ`                       – (`0.1`) the linear convergence target rate of the tCG method
+    [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping crierion therein
+* `max_trust_region_radius` – the maximum trust-region radius
+* `preconditioner`          – a preconditioner (a symmetric, positive definite operator
+  that should approximate the inverse of the Hessian)
+* `project!`                – (`copyto!`) specify a projection operation for tangent vectors
+  within the subsolver for numerical stability.
+  this means we require a function `(M, Y, p, X) -> ...` working in place of `Y`.
+* `randomize`               – set to true if the trust-region solve is to be initiated with a
+  random tangent vector and no preconditioner will be used.
+* `ρ_regularization`        – (`1e3`) regularize the performance evaluation ``ρ``
+  to avoid numerical inaccuracies.
+* `reduction_factor`        – (`0.25`) trust-region reduction factor
+* `reduction_threshold`     – (`0.1`) trust-region reduction threshold: if ρ is below this threshold,
+  the trust region radius is reduced by `reduction_factor`.
+* `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use
+* `stopping_criterion`      – ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`) a functor inheriting
+  from [`StoppingCriterion`](@ref) indicating when to stop.
+* `sub_kwargs`              – keyword arguments passed to the sub state and used to decorate the sub options, e.g. with debug.
+* `sub_stopping_criterion`  – a stopping criterion for the sub solver, uses the same standard as TCG.
+* `sub_problem`             – ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
+* `sub_state`               – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `θ`                       – (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
+    [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping crierion therein
+* `trust_region_radius`     – the initial trust-region radius
 
 For the case that no hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
@@ -494,16 +499,29 @@ function trust_regions!(
     reduction_factor::R=0.25,
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
-    sub_objective=TrustRegionModelObjective(mho),
+    sub_kwargs=(;),
+    sub_objective=decorate_objective!(M, TrustRegionModelObjective(mho), sub_kwargs...),
     sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),
-    sub_state::Union{AbstractHessianSolverState,AbstractEvaluationType}=TruncatedConjugateGradientState(
-        TangentSpace(M, copy(M, p)),
-        zero_vector(M, p);
-        θ=θ,
-        κ=κ,
-        trust_region_radius,
-        randomize=randomize,
-        (project!)=project!,
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
+                                              StopWhenResidualIsReducedByFactorOrPower(;
+                                                  κ=κ, θ=θ
+                                              ) |
+                                              StopWhenTrustRegionIsExceeded() |
+                                              StopWhenCurvatureIsNegative() |
+                                              StopWhenModelIncreased(),
+    sub_state::AbstractManoptSolverState=decorate_state!(
+        TruncatedConjugateGradientState(
+            TangentSpace(M, copy(M, p)),
+            zero_vector(M, p);
+            θ=θ,
+            κ=κ,
+            trust_region_radius,
+            randomize=randomize,
+            (project!)=project!,
+            sub_kwargs...,
+            stopping_criterion=sub_stopping_criterion,
+        );
+        sub_kwargs...,
     ),
     kwargs..., #collect rest
 ) where {Proj,O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective},R}

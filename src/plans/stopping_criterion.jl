@@ -173,6 +173,57 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
 end
 
 """
+    StopWhenSubgradientNormLess <: StoppingCriterion
+
+A stopping criterion based on the current subgradient norm.
+
+# Constructor
+
+    StopWhenSubgradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
+indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
+"""
+mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    StopWhenSubgradientNormLess(ε::Float64) = new(ε, "")
+end
+function (c::StopWhenSubgradientNormLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
+    (i == 0) && (c.reason = "") # reset on init
+    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenSubgradientNormLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|subgrad f| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenSubgradientNormLess) = true
+function show(io::IO, c::StopWhenSubgradientNormLess)
+    return print(
+        io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
+    )
+end
+"""
+    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
+
+Update the minimal subgradient norm when an algorithm shall stop
+"""
+function update_stopping_criterion!(
+    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
+)
+    c.threshold = v
+    return c
+end
+
+"""
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
@@ -205,7 +256,7 @@ end
 function StopWhenChangeLess(
     M::AbstractManifold,
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
+    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate,:Population}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
 ) where {IRT<:AbstractInverseRetractionMethod}
     return StopWhenChangeLess{IRT,typeof(storage)}(
@@ -214,12 +265,12 @@ function StopWhenChangeLess(
 end
 function StopWhenChangeLess(
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction([:Iterate]),
+    storage::StoreStateAction=StoreStateAction([:Iterate, :Population]),
     manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
     if !(manifold isa DefaultManifold)
-        @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
+        @warn "The `manifold` keyword is deprecated, use the first positional argument `M` instead."
     end
     return StopWhenChangeLess{IRT,typeof(storage)}(
         ε, "", storage, inverse_retraction_method, 0
@@ -313,6 +364,91 @@ Update the minimal cost below which the algorithm shall stop
 function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
     return c
+end
+
+@doc raw"""
+    StopWhenEntryChangeLess
+
+Evaluate whether a certain fields change is less than a certain threshold
+
+## Fields
+
+* `field`     – a symbol adressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref)
+  to track
+* `distance`  – a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
+* `storage`   – a [`StoreStateAction`](@ref) to store the previous value of the `field`
+* `threshold` – the threshold to indicate to stop when the distance is below this value
+
+# Internal fields
+
+* `reason`    – store a string reason when the stop was indicated
+* `at_iteration` – store the iteration at which the stop indication happened
+
+stores a threshold when to stop looking at the norm of the change of the
+optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
+For the storage a [`StoreStateAction`](@ref) is used
+
+# Constructor
+
+    StopWhenEntryChangeLess(
+        field::Symbol
+        distance,
+        threshold;
+        storage::StoreStateAction=StoreStateAction([field]),
+    )
+
+"""
+mutable struct StopWhenEntryChangeLess{F,TF,TSSA<:StoreStateAction} <: StoppingCriterion
+    at_iteration::Int
+    distance::F
+    field::Symbol
+    reason::String
+    storage::TSSA
+    threshold::TF
+end
+function StopWhenEntryChangeLess(
+    field::Symbol, distance::F, threshold::TF; storage::TSSA=StoreStateAction([field])
+) where {F,TF,TSSA<:StoreStateAction}
+    return StopWhenEntryChangeLess{F,TF,TSSA}(0, distance, field, "", storage, threshold)
+end
+
+function (sc::StopWhenEntryChangeLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i
+)
+    if i == 0 # reset on init
+        sc.reason = ""
+        sc.at_iteration = 0
+    end
+    if has_storage(sc.storage, sc.field)
+        old_field_value = get_storage(sc.storage, sc.field)
+        ε = sc.distance(mp, s, old_field_value, getproperty(s, sc.field))
+        if (i > 0) && (ε < sc.threshold)
+            sc.reason = "The algorithm performed a step with a change ($ε) in $(sc.field) less than $(sc.threshold).\n"
+            sc.at_iteration = i
+            sc.storage(mp, s, i)
+            return true
+        end
+    end
+    sc.storage(mp, s, i)
+    return false
+end
+function status_summary(sc::StopWhenEntryChangeLess)
+    has_stopped = length(sc.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δ:$(sc.field)| < $(sc.threshold): $s"
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenEntryChangeLess, :Threshold, v)
+
+Update the minimal cost below which the algorithm shall stop
+"""
+function update_stopping_criterion!(c::StopWhenEntryChangeLess, ::Val{:Threshold}, v)
+    c.threshold = v
+    return c
+end
+function show(io::IO, c::StopWhenEntryChangeLess)
+    return print(io, "StopWhenEntryChangeLess\n    $(status_summary(c))")
 end
 
 @doc raw"""
@@ -418,31 +554,50 @@ end
 
 A stopping criterion based on the current gradient norm.
 
+# Fields
+
+* `norm`  – a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `threshold` – the threshold to indicate to stop when the distance is below this value
+
+# Internal fields
+
+* `reason`    – store a string reason when the stop was indicated
+* `at_iteration` – store the iteration at which the stop indication happened
+
+
 # Constructor
 
-    StopWhenGradientNormLess(ε::Float64)
+    StopWhenGradientNormLess(ε; norm=(M,p,X) -> norm(M,p,X))
 
 Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
-indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`.
+indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
+where the norm to use can be specified in the `norm=` keyword.
 """
-mutable struct StopWhenGradientNormLess <: StoppingCriterion
+mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
+    norm::F
     threshold::Float64
     reason::String
     at_iteration::Int
-    StopWhenGradientNormLess(ε::Float64) = new(ε, "", 0)
+    function StopWhenGradientNormLess(ε::TF; norm::F=norm) where {F,TF}
+        return new{F,TF}(norm, ε, "", 0)
+    end
 end
-function (c::StopWhenGradientNormLess)(
+
+function (sc::StopWhenGradientNormLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     M = get_manifold(mp)
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        sc.reason = ""
+        sc.at_iteration = 0
     end
-    if (norm(M, get_iterate(s), get_gradient(s)) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(norm(M,get_iterate(s),get_gradient(s)))) is less than $(c.threshold).\n"
-        c.at_iteration = i
-        return true
+    if (i > 0)
+        grad_norm = sc.norm(M, get_iterate(s), get_gradient(s))
+        if grad_norm < sc.threshold
+            sc.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(grad_norm)) is less than $(sc.threshold).\n"
+            sc.at_iteration = i
+            return true
+        end
     end
     return false
 end
@@ -668,7 +823,7 @@ end
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
     if any(subC -> subC(p, s, i), c.criteria)
-        c.reason = string([get_reason(subC) for subC in c.criteria]...)
+        c.reason = string((get_reason(subC) for subC in c.criteria)...)
         return true
     end
     return false

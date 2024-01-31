@@ -5,6 +5,74 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+
+### Added
+
+* Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
+
+## [0.4.51] January 30, 2024
+
+### Added
+
+* A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
+
+## [0.4.50] January 26, 2024
+
+### Fixed
+
+* Fix Quasi Newton on complex manifolds.
+
+## [0.4.49] January 18, 2024
+
+### Added
+
+* A `StopWhenEntryChangeLess` to be able to stop on arbitrary small changes of specific fields
+* generalises `StopWhenGradientNormLess` to accept arbitrary `norm=` functions
+* refactor the default in `particle_swarm` to no longer “misuse” the iteration change check,
+  but actually the new one one the `:swarm` entry
+
+## [0.4.48] January 16, 2024
+
+### Fixed
+
+* fixes an imprecision in the interface of `get_iterate` that sometimes led to the swarm of `particle_swarm` being returned as the iterate.
+* refactor `particle_swarm` in naming and access functions to avoid this also in the future.
+  To access the whole swarm, one now should use `get_manopt_parameter(pss, :Population)`
+
+## [0.4.47] January 6, 2024
+
+### Fixed
+
+* fixed a bug, where the retraction set in `check_Hessian` was not passed on to the optional inner `check_gradient` call, which could lead to unwanted side effects, see [#342](https://github.com/JuliaManifolds/Manopt.jl/issues/342).
+
+## [0.4.46] January 1, 2024
+
+### Changed
+
+* An error is thrown when a line search from `LineSearches.jl` reports search failure.
+* Changed default stopping criterion in ALM algorithm to mitigate an issue occurring when step size is very small.
+* Default memory length in default ALM subsolver is now capped at manifold dimension.
+* Replaced CI testing on Julia 1.8 with testing on Julia 1.10.
+
+### Fixed
+
+* A bug in `LineSearches.jl` extension leading to slower convergence.
+* Fixed a bug in L-BFGS related to memory storage, which caused significantly slower convergence.
+
+## [0.4.45] December 28, 2023
+
+### Added
+
+* Introduce `sub_kwargs` and `sub_stopping_criterion` for `trust_regions` as noticed in [#336](https://github.com/JuliaManifolds/Manopt.jl/discussions/336)
+
+### Changed
+
+* `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
+* `linesearch_backtrack!` is now available
+* Quasi Newton Updates can work inplace of a direction vector as well.
+* Faster `safe_indices` in L-BFGS.
+
 ## [0.4.44] December 12, 2023
 
 Formally one could consider this version breaking, since a few functions

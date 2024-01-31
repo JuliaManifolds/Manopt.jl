@@ -8,25 +8,30 @@ Describes a particle swarm optimizing algorithm, with
 
 # Fields
 
-* `x` – a set of points (of type `AbstractVector{P}`) on a manifold as initial particle positions
-* `velocity` – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
-* `inertia` – (`0.65`) the inertia of the particles
-* `social_weight` – (`1.4`) a social weight factor
-* `cognitive_weight` – (`1.4`) a cognitive weight factor
-* `p_temp` – temporary storage for a point to avoid allocations during a step of the algorithm
-* `social_vec` - temporary storage for a tangent vector related to `social_weight`
-* `cognitive_vector` -  temporary storage for a tangent vector related to `cognitive_weight`
-* `stopping_criterion` – (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
+* `cognitive_weight`          – (`1.4`) a cognitive weight factor
+* `inertia`                   – (`0.65`) the inertia of the particles
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(swarm))`) an inverse retraction to use.
+* `retraction_method`         – (`default_retraction_method(M, eltype(swarm))`) the retraction to use
+* `social_weight`             – (`1.4`) a social weight factor
+* `stopping_criterion`        – (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `retraction_method` – (`default_retraction_method(M, eltype(x))`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(x))`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M, eltype(x))`) a vector transport to use
+* `vector_transport_method`   - (`default_vector_transport_method(M, eltype(swarm))`) a vector transport to use
+* `velocity`                  – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
+
+# Internal and temporary fields
+
+* `cognitive_vector` -  temporary storage for a tangent vector related to `cognitive_weight`
+* `positional_best`  – storing the best position ``p_i`` every single swarm participant visited
+* `q`                – temporary storage for a point to avoid allocations during a step of the algorithm
+* `social_vec`       - temporary storage for a tangent vector related to `social_weight`
+* `swarm`            – a set of points (of type `AbstractVector{P}`) on a manifold ``\{s_i\}_{i=1}^N``
+* `p`                - storage for the best point ``p`` visited by all particles.
 
 # Constructor
 
-    ParticleSwarmState(M, x0, velocity; kawrgs...)
+    ParticleSwarmState(M, initial_swarm, velocity; kawrgs...)
 
-construct a particle swarm Option for the manifold `M` starting at initial population `x0` with velocities `x0`,
+construct a particle swarm solver state for the manifold `M` starting at initial population `x0` with velocities `x0`,
 where the manifold is used within the defaults of the other fields mentioned above,
 which are keyword arguments here.
 
@@ -45,14 +50,14 @@ mutable struct ParticleSwarmState{
     TInvRetraction<:AbstractInverseRetractionMethod,
     TVTM<:AbstractVectorTransportMethod,
 } <: AbstractManoptSolverState
-    x::TX
-    p::TX
-    g::P
+    swarm::TX
+    positional_best::TX
+    p::P
     velocity::TVelocity
     inertia::TParams
     social_weight::TParams
     cognitive_weight::TParams
-    p_temp::P
+    q::P
     social_vector::T
     cognitive_vector::T
     stop::TStopping
@@ -62,15 +67,15 @@ mutable struct ParticleSwarmState{
 
     function ParticleSwarmState(
         M::AbstractManifold,
-        x::VP,
+        swarm::VP,
         velocity::VT;
         inertia=0.65,
         social_weight=1.4,
         cognitive_weight=1.4,
         stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(1e-4),
-        retraction_method::RTM=default_retraction_method(M, eltype(x)),
-        inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(x)),
-        vector_transport_method::VTM=default_vector_transport_method(M, eltype(x)),
+        retraction_method::RTM=default_retraction_method(M, eltype(swarm)),
+        inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(swarm)),
+        vector_transport_method::VTM=default_vector_transport_method(M, eltype(swarm)),
     ) where {
         P,
         T,
@@ -84,11 +89,12 @@ mutable struct ParticleSwarmState{
         s = new{
             P,T,VP,VT,typeof(inertia + social_weight + cognitive_weight),SCT,RTM,IRM,VTM
         }()
-        s.x = x
-        s.p = copy.(Ref(M), x)
-        s.p_temp = copy(M, first(x))
-        s.social_vector = zero_vector(M, s.p_temp)
-        s.cognitive_vector = zero_vector(M, s.p_temp)
+        s.swarm = swarm
+        s.positional_best = copy.(Ref(M), swarm)
+        s.q = copy(M, first(swarm))
+        s.p = copy(M, first(swarm))
+        s.social_vector = zero_vector(M, s.q)
+        s.cognitive_vector = zero_vector(M, s.q)
         s.velocity = velocity
         s.inertia = inertia
         s.social_weight = social_weight
@@ -124,10 +130,16 @@ end
 #
 # Accessors
 #
-get_iterate(O::ParticleSwarmState) = O.x
-function set_iterate!(O::ParticleSwarmState, p)
-    O.x = p
-    return O
+get_iterate(pss::ParticleSwarmState) = pss.p
+function set_iterate!(pss::ParticleSwarmState, p)
+    pss.p = p
+    return pss
+end
+function set_manopt_parameter!(pss::ParticleSwarmState, ::Val{:Population}, swarm)
+    return pss.swarm = swarm
+end
+function get_manopt_parameter(pss::ParticleSwarmState, ::Val{:Population})
+    return pss.swarm
 end
 #
 # Constructors
@@ -142,18 +154,21 @@ perform the particle swarm optimization algorithm (PSO), starting with an initia
 If no `swarm` is provided, `swarm_size` many random points are used. Note that since this method does not
 work in-place – these points are duplicated internally.
 
-The aim of PSO is to find the particle position ``g`` on the `Manifold M` that solves
-```math
-\min_{x ∈\mathcal{M}} F(x).
-```
-To this end, a swarm of particles is moved around the `Manifold M` in the following manner.
-For every particle ``k`` we compute the new particle velocities ``v_k^{(i)}`` in every step ``i`` of the algorithm by
+The aim of PSO is to find the particle position ``p`` on the `Manifold M` that solves approximately
 
 ```math
-v_k^{(i)} = ω \, \operatorname{T}_{x_k^{(i)}\gets x_k^{(i-1)}}v_k^{(i-1)} + c \,  r_1  \operatorname{retr}_{x_k^{(i)}}^{-1}(p_k^{(i)}) + s \,  r_2 \operatorname{retr}_{x_k^{(i)}}^{-1}(g),
+\min_{p ∈\mathcal{M}} F(p).
 ```
 
-where ``x_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia,
+To this end, a swarm ``S = \{s_1,\ldots_s_n\}`` of particles is moved around the manifold `M` in the following manner.
+For every particle ``s_k^{(i)}`` we compute the new particle velocities ``X_k^{(i)}`` in every step ``i`` of the algorithm by
+
+```math
+begin{aligned*}
+  X_k^{(i)} &= ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
+```
+
+where ``s_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia,
 ``c`` and ``s`` are a cognitive and a social weight, respectively,
 ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step,
 ``\operatorname{retr}^{-1}`` denotes an inverse retraction on the `Manifold` `M`, and
@@ -162,26 +177,27 @@ where ``x_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia
 Then the position of the particle is updated as
 
 ```math
-x_k^{(i+1)} = \operatorname{retr}_{x_k^{(i)}}(v_k^{(i)}),
+s_k^{(i+1)} = \operatorname{retr}_{s_k^{(i)}}(X_k^{(i)}),
 ```
 
-where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`. At the end of each step for every particle, we set
+where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`.
+Then we update the single every particles best entries ``p_k^{(i)}`` as
 
 ```math
 p_k^{(i+1)} = \begin{cases}
-x_k^{(i+1)},  & \text{if } F(x_k^{(i+1)})<F(p_{k}^{(i)}),\\
+s_k^{(i+1)},  & \text{if } F(s_k^{(i+1)})<F(p_{k}^{(i)}),\\
 p_{k}^{(i)}, & \text{else,}
 \end{cases}
-
 ```
-and
+
+and the global best position
+
 ```math
-g_k^{(i+1)} =\begin{cases}
+g^{(i+1)} = \begin{cases}
 p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g_{k}^{(i)}),\\
 g_{k}^{(i)}, & \text{else,}
 \end{cases}
 ```
-i.e. ``p_k^{(i)}`` is the best known position for the particle ``k`` and ``g^{(i)}`` is the global best known position ever visited up to step ``i``.
 
 # Input
 
@@ -195,13 +211,13 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 
 * `cognitive_weight`          – (`1.4`) a cognitive weight factor
 * `inertia`                   – (`0.65`) the inertia of the particles
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(x))`) an `inverse_retraction(M,x,y)` to use.
-* `swarm_size`                - (`100`) number of random initial positions of x0
-* `retraction_method`         – (`default_retraction_method(M, eltype(x))`) a `retraction(M,x,ξ)` to use.
+* `inverse_retraction_method` - (`default_inverse_retraction_method(M, eltype(swarm))`) an inverse retraction to use.
+* `swarm_size`                - (`100`) swarm size, if it should be generated randomly
+* `retraction_method`         – (`default_retraction_method(M, eltype(swarm))`) a retraction to use.
 * `social_weight`             – (`1.4`) a social weight factor
 * `stopping_criterion`        – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `vector_transport_mthod`    - (`default_vector_transport_method(M, eltype(x))`) a vector transport method to use.
+* `vector_transport_mthod`    - (`default_vector_transport_method(M, eltype(swarm))`) a vector transport method to use.
 * `velocity`                  – a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
@@ -222,7 +238,7 @@ function particle_swarm(
 )
     !isnothing(n) && (@warn "The keyword `n` is deprecated, use `swarm_size` instead")
     !isnothing(x0) &&
-        (@warn "The keyword `x0` is deprecated, use `particle_swarm(M, x, x0)` instead")
+        (@warn "The keyword `x0` is deprecated, use `particle_swarm(M, f, x0)` instead")
     return particle_swarm(
         M, f, isnothing(x0) ? [rand(M) for _ in 1:swarm_size] : x0; kwargs...
     )
@@ -282,7 +298,15 @@ function particle_swarm!(
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenChangeLess(1e-4),
+                                          StopWhenEntryChangeLess(
+        :swarm,
+        (p, st, old_swarm, swarm) -> distance(
+            PowerManifold(get_manifold(p), NestedPowerRepresentation(), length(swarm)),
+            old_swarm,
+            swarm,
+        ),
+        1e-4,
+    ),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(swarm)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M, eltype(swarm)
@@ -316,54 +340,38 @@ end
 #
 function initialize_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState)
     M = get_manifold(mp)
-    j = argmin([get_cost(mp, p) for p in s.x])
-    s.g = copy(M, s.x[j])
+    j = argmin([get_cost(mp, p) for p in s.swarm])
+    copyto!(M, s.p, s.swarm[j])
     return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
     M = get_manifold(mp)
     # Allocate two tangent vectors
-    for i in 1:length(s.x)
-        inverse_retract!(M, s.cognitive_vector, s.x[i], s.p[i], s.inverse_retraction_method)
-        inverse_retract!(M, s.social_vector, s.x[i], s.g, s.inverse_retraction_method)
+    for i in 1:length(s.swarm)
+        inverse_retract!(
+            M,
+            s.cognitive_vector,
+            s.swarm[i],
+            s.positional_best[i],
+            s.inverse_retraction_method,
+        )
+        inverse_retract!(M, s.social_vector, s.swarm[i], s.p, s.inverse_retraction_method)
         # add v = inertia * v + cw*cog_infl + sw*soc_infl
         # where the last two are randomly shortened a bit
         s.velocity[i] .=
             s.inertia .* s.velocity[i] .+
             s.cognitive_weight .* rand(1) .* s.cognitive_vector .+
             s.social_weight .* rand(1) .* s.social_vector
-        copyto!(M, s.p_temp, s.x[i])
-        retract!(M, s.x[i], s.x[i], s.velocity[i], s.retraction_method)
+        copyto!(M, s.q, s.swarm[i])
+        retract!(M, s.swarm[i], s.swarm[i], s.velocity[i], s.retraction_method)
         vector_transport_to!(
-            M, s.velocity[i], s.p_temp, s.velocity[i], s.x[i], s.vector_transport_method
+            M, s.velocity[i], s.q, s.velocity[i], s.swarm[i], s.vector_transport_method
         )
-        if get_cost(mp, s.x[i]) < get_cost(mp, s.p[i])
-            copyto!(M, s.p[i], s.x[i])
-            if get_cost(mp, s.p[i]) < get_cost(mp, s.g)
-                copyto!(M, s.g, s.p[i])
+        if get_cost(mp, s.swarm[i]) < get_cost(mp, s.positional_best[i])
+            copyto!(M, s.positional_best[i], s.swarm[i])
+            if get_cost(mp, s.positional_best[i]) < get_cost(mp, s.p)
+                copyto!(M, s.p, s.positional_best[i])
             end
         end
     end
-end
-get_solver_result(s::ParticleSwarmState) = s.g
-#
-# Change not only refers to different iterates (x=the whole population)
-# but also lives in the power manifold on M, so we have to adapt StopWhenChangeless
-#
-function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::ParticleSwarmState, i)
-    if has_storage(c.storage, PointStorageKey(:Iterate))
-        x_old = get_storage(c.storage, PointStorageKey(:Iterate))
-        n = length(s.x)
-        d = distance(
-            PowerManifold(get_manifold(mp), NestedPowerRepresentation(), n), s.x, x_old
-        )
-        if d < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($d in the population) less than $(c.threshold).\n"
-            c.at_iteration = i
-            c.storage(mp, s, i)
-            return true
-        end
-    end
-    c.storage(mp, s, i)
-    return false
 end
