@@ -321,7 +321,7 @@ space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport
 # Provided functors
 
 * `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction inplace of `η`
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 
@@ -438,7 +438,7 @@ When updating there are two cases: if there is still free memory, i.e. ``k < m``
 # Provided functors
 
 * `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction inplace of `η`
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 
@@ -606,7 +606,7 @@ the corresponding step size is chosen.
 # Provided functors
 
 * `(mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction
-* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction inplace of `η`
+* `(η, mp::AbstractManoptproblem, st::QuasiNewtonState) -> η` to compute the update direction in-place of `η`
 
 # Fields
 

@@ -660,7 +660,7 @@ function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, 
         M,
         q,
         get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do
-            get_proximal_map!(M, q, co.objective, λ, p, i) #compute inplace of q
+            get_proximal_map!(M, q, co.objective, λ, p, i) #compute in-place of q
             copy(M, q) #store copy of q
         end,
     )

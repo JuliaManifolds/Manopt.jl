@@ -285,7 +285,7 @@ Compute the difference of convex algorithm to minimize
 
 where you have to provide the proximal map of `g` and the gradient of `h`.
 
-The computation is done inplace of `p`.
+The computation is done in-place of `p`.
 
 For all further details, especially the keyword arguments, see [`difference_of_convex_proximal_point`](@ref).
 """

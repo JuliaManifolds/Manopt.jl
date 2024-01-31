@@ -208,7 +208,7 @@ end
         @test get_gradient(M, lco, p) == grad_f(M, p)
         X = get_gradient(M, lco, p) # restore X
         Y = similar(X)
-        #Update Y inplace but without evaluating the gradient but taking it from the cache
+        #Update Y in-place but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
         @test Y == X
         @test get_count(lco, :Gradient) == b + 1
@@ -236,7 +236,7 @@ end
         X = get_gradient(M, lco2a, p)
         @test X == f_f_grad(M, p)[2]
         Y = similar(X)
-        #Update Y inplace but without evaluating the gradient but taking it from the cache
+        #Update Y in-place but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
         @test Y == X
         # But is Y also fixed in there ? note that a reference to the cache was returned.

@@ -19,7 +19,7 @@ somewhere, you still want e.g. the cached one or the one that still counts calls
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 
 * `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
-* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
+* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working in-place of `X`.
 """
 function get_gradient_function(amgo::AbstractManifoldGradientObjective, recursive=false)
     return amgo.gradient!!
@@ -157,7 +157,7 @@ When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
 
 Note that the order of parameters follows the philosophy of `Manifolds.jl`, namely that
-even for the mutating variant, the manifold is the first parameter and the (inplace) tangent
+even for the mutating variant, the manifold is the first parameter and the (in-place) tangent
 vector `X` comes second.
 """
 get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective, p)

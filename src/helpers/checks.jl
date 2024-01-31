@@ -263,8 +263,8 @@ no plot is generated.
 The `kwargs...` are also passed down to the `check_vector` and the `check_gradient` call, such that tolerances can
 easily be set.
 
-While `check_vector` is also passed to the inner gradient check as well as the `retraction_method`,
-this inner gradient check is meant to be a sanity check, so it does not throw an error nor produce a plot itself.
+While `check_vector` is also passed to the inner call to `check_gradient` as well as the `retraction_method`,
+this inner `check_gradient` is meant to be just for inner verification, so it does not throw an error nor produce a plot itself.
 """
 function check_Hessian(
     M::AbstractManifold,

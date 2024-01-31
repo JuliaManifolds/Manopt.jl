@@ -158,7 +158,7 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 ## Keyword Arguments
 
-* `evaluation`         - ([`AllocatingEvaluation`](@ref)) whether `grad_f` is an inplace or allocating (default) function
+* `evaluation`         - ([`AllocatingEvaluation`](@ref)) whether `grad_f` is an in-place or allocating (default) function
 * `initial_vector`     – (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion` – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a stopping criterion
 * `retraction_method`  – (`default_retraction_method(M, typeof(p))`) a type of retraction

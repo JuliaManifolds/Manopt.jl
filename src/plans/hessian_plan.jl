@@ -124,7 +124,7 @@ return the function to evaluate (just) the hessian ``\operatorname{Hess} f(p)``.
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 
 * `(M, p, X) -> Y` for the [`AllocatingEvaluation`](@ref) case
-* `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `Y`.
+* `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), i.e. working in-place of `Y`.
 """
 get_hessian_function(mho::ManifoldHessianObjective, recursive=false) = mho.hessian!!
 function get_hessian_function(admo::AbstractDecoratedManifoldObjective, recursive=false)

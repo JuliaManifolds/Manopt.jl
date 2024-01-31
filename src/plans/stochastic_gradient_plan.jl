@@ -85,7 +85,7 @@ end
 
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `p` (in place of `X`).
 
-If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
 since the length (or number of elements of the gradient) can not be determined.
 """
 function get_gradients(
@@ -180,7 +180,7 @@ end
 
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
-If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
@@ -240,7 +240,7 @@ function get_gradient!(
     ::Any,
 ) where {TC}
     return error(
-        "An inplace variant for single entries of the stochastic gradient as a single function is not implemented, since the size can not be determined.",
+        "An in-place variant for single entries of the stochastic gradient as a single function is not implemented, since the size can not be determined.",
     )
 end
 function get_gradient!(
@@ -272,7 +272,7 @@ end
 
 Evaluate the complete gradient ``\operatorname{grad} f = \displaystyle\sum_{i=1}^n \operatorname{grad} f_i(p)`` at `p` (in place of `X`).
 
-If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
@@ -300,7 +300,7 @@ function get_gradient!(
     ::Any,
 ) where {TC}
     return error(
-        "An inplace variant for (sum of) the stochastic gradient as a single function is not implemented, since the size can not be determined.",
+        "An in-place variant for (sum of) the stochastic gradient as a single function is not implemented, since the size can not be determined.",
     )
 end
 function get_gradient(

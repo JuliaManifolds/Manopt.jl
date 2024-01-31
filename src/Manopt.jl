@@ -1,5 +1,5 @@
 @doc raw"""
-🏔️ Manopt.jl – Optimization on Manifolds in Julia.
+🏔️ Manopt.jl: optimization on Manifolds in Julia.
 
 * 📚 Documentation: [manoptjl.org](https://manoptjl.org)
 * 📦 Repository: [github.com/JuliaManifolds/Manopt.jl](https://github.com/JuliaManifolds/Manopt.jl)
@@ -167,7 +167,7 @@ include("deprecated.jl")
 Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
 An alias `Manopt.JuMP_Optimizer` is defined for convenience.
 
-The minimization of a function `f(X)` of an an array `X[1:n1,1:n2,...]`
+The minimization of a function `f(X)` of an array `X[1:n1,1:n2,...]`
 over a manifold `M` starting at `X0`, can be modeled as follows:
 ```julia
 using JuMP
@@ -288,7 +288,7 @@ export AbstractGradientSolverState,
 export NelderMeadSimplex
 export AlternatingGradient
 #
-# Accessors and helpers for AbstractManoptSolverState
+# access functions and helpers for `AbstractManoptSolverState`
 export default_stepsize
 export get_cost, get_gradient, get_gradient!
 export get_subgradient, get_subgradient!

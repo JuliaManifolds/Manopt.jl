@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
 * `linesearch_backtrack!` is now available
-* Quasi Newton Updates can work inplace of a direction vector as well.
+* Quasi Newton Updates can work in-place of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
 ## [0.4.44] December 12, 2023
