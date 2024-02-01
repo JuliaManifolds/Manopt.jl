@@ -254,12 +254,22 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
             "The gradient is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
         ) w5(mp, st, 1)
 
+        M2 = Sphere(2)
+        mp2 = DefaultManoptProblem(M2, ManifoldGradientObjective(f, grad_f))
+        w6 = DebugWarnIfGradientNormTooLarge(1.0, :Always)
+        @test repr(w6) == "DebugWarnIfGradientNormTooLarge(1.0, :Always)"
+        st.X .= [4.0, 0.0] # > π in norm
+        @test_logs (
+            :warn,
+            "At iteration #1\nthe gradient norm (4.0) is larger that 1.0 times the injectivity radius 3.141592653589793 at the current iterate.\n",
+        ) w6(mp2, st, 1)
+
         st.p = Inf .* ones(2)
-        w6 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
+        w7 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
         @test_logs (
             :warn,
             "The iterate is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
-        ) w6(mp, st, 1)
+        ) w7(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)

@@ -174,18 +174,6 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
 end
 
 """
-    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
-
-Update the minimal subgradient norm when an algorithm shall stop
-"""
-function update_stopping_criterion!(
-    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
-)
-    c.threshold = v
-    return c
-end
-
-"""
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
@@ -731,6 +719,18 @@ function show(io::IO, c::StopWhenSubgradientNormLess)
         io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
     )
 end
+"""
+    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
+
+Update the minimal subgradient norm when an algorithm shall stop
+"""
+function update_stopping_criterion!(
+    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
+)
+    c.threshold = v
+    return c
+end
+
 #
 # Meta Criteria
 #

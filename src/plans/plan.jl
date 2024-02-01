@@ -62,7 +62,7 @@ function get_manopt_parameter(
     return @load_preference("$(e)", default)
 end
 # Handle empty defaults
-get_manopt_parameter(e::Symbol, v::Val{:default}) = nothing
+get_manopt_parameter(::Symbol, ::Val{:default}) = nothing
 get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = ""
 
 """
@@ -76,15 +76,15 @@ The parameters are stored to the global settings using [`Preferences.jl`](https:
 Passing a `value` of `""` deletes an entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also `@info`rmed about.
 """
-function set_manopt_parameter!(e::Symbol, value::Union{String,Bool})
+function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
     if length(value) == 0
         @delete_preferences!("$(e)")
         v = get_manopt_parameter(e, Val(:default))
         default = isnothing(v) ? "" : (length(v) == 0 ? "" : " ($(get_manopt_parameter))")
-        @info("Resetting the `Manopt.jl` parameter $(e) to default$(default).")
+        @info("Resetting the `Manopt.jl` parameter :$(e) to default$(default).")
     else
         @set_preferences!("$(e)" => value)
-        @info("Setting the `Manopt.jl` parameter $(e) to $value.")
+        @info("Setting the `Manopt.jl` parameter :$(e) to $value.")
     end
 end
 

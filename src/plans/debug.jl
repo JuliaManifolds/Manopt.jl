@@ -974,19 +974,19 @@ Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `I
 mutable struct DebugWarnIfGradientNormTooLarge{T} <: DebugAction
     status::Symbol
     factor::T
-    function DebugWarnIfGradientNormTooLarge(warn::Symbol=:Once, factor::T=1.0) where {T}
+    function DebugWarnIfGradientNormTooLarge(factor::T=1.0, warn::Symbol=:Once) where {T}
         return new{T}(warn, factor)
     end
 end
 function (d::DebugWarnIfGradientNormTooLarge)(
-    ::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
+    mp::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
     if d.status !== :No
         M = get_manifold(mp)
         p = get_iterate(st)
         X = get_gradient(st)
         Xn = norm(M, p, X)
-        p_inj = d.factor * injectivty_radius(M, p)
+        p_inj = d.factor * injectivity_radius(M, p)
         if Xn > p_inj
             @warn """At iteration #$i
             the gradient norm ($Xn) is larger that $(d.factor) times the injectivity radius $(p_inj) at the current iterate.
@@ -1000,7 +1000,7 @@ function (d::DebugWarnIfGradientNormTooLarge)(
     return nothing
 end
 function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
-    return print(io, "DebugWarnIfGradientNormTooLarge($(d.status), $(d.factor))")
+    return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor), :$(d.status))")
 end
 
 @doc raw"""
