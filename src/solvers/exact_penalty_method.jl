@@ -6,24 +6,22 @@ Describes the exact penalty method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p` – a set point on a manifold as starting point
-* `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
-* `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
-* `ϵ` – (`1e–3`) the accuracy tolerance
-* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
-* `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ` – (`1.0`) the penalty parameter
-* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(min_stepsize))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `p`                   a set point on a manifold as starting point
+* `sub_problem`         an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state`           an [`AbstractManoptSolverState`](@ref) for the subsolver
+* `ϵ`                   (`1e–3`) the accuracy tolerance
+* `ϵ_min`               (`1e-6`) the lower bound for the accuracy tolerance
+* `u`                   (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `u_min`               (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ`                   (`1.0`) the penalty parameter
+* `θ_ρ`                 (`0.3`) the scaling factor of the penalty parameter
+* `stopping_criterion`  ([`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(min_stepsize))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Constructor
 
     ExactPenaltyMethodState(M::AbstractManifold, p, sub_problem, sub_state; kwargs...)
 
-construct an exact penalty options with the fields and defaults as above, where the
-manifold `M` is used for defaults in the keyword
-arguments.
+construct an exact penalty options with the remaining previously mentioned fields as keywords using their provided defaults.
 
 # See also
 
@@ -116,7 +114,7 @@ end
     exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
     exact_penalty_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
-perform the exact penalty method (EPM) [Liu, Boumal, 2019, Appl. Math. Optim](@cite LiuBoumal:2019)
+perform the exact penalty method (EPM) [LiuBoumal:2019](@cite)
 The aim of the EPM is to find a solution of the constrained optimisation task
 
 ```math
@@ -127,11 +125,12 @@ The aim of the EPM is to find a solution of the constrained optimisation task
 \end{aligned}
 ```
 
-where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^n`` are twice continuously differentiable functions from `M` to ℝ.
+where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^n``
+are twice continuously differentiable functions from `M` to ℝ.
 For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
 
 ```math
-f(x) + ρ (\sum_{i=1}^m \max\left\{0, g_i(x)\right\} + \sum_{j=1}^n \vert h_j(x)\vert),
+f(x) + ρ\biggl( \sum_{i=1}^m \max\bigl\{0, g_i(x)\bigr\} + \sum_{j=1}^n \vert h_j(x)\vert\biggr),
 ```
 
 where ``ρ>0`` is the penalty parameter.
@@ -154,7 +153,7 @@ u^{(k)} = \max \{u_{\min}, \theta_u u^{(k-1)} \},
 
 where ``u_{\min}`` is the lowest value ``u`` is allowed to become and ``θ_u ∈ (0,1)`` is constant scaling factor.
 
-Last, we update the penalty parameter ``ρ`` according to
+Finally, the penalty parameter ``ρ`` is updated as
 
 ```math
 ρ^{(k)} = \begin{cases}
@@ -167,38 +166,38 @@ where ``θ_ρ \in (0,1)`` is a constant scaling factor.
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `grad_f` – the gradient of the cost function
+* `M`      a manifold ``\mathcal M``
+* `f`      a cost function ``f:\mathcal M→ℝ`` to minimize
+* `grad_f` the gradient of the cost function
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
-* `g` – (`nothing`) the inequality constraints
-* `h` – (`nothing`) the equality constraints
-* `grad_g` – (`nothing`) the gradient of the inequality constraints
-* `grad_h` – (`nothing`) the gradient of the equality constraints
+* `g`      (`nothing`) the inequality constraints
+* `h`      (`nothing`) the equality constraints
+* `grad_g` (`nothing`) the gradient of the inequality constraints
+* `grad_h` (`nothing`) the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
-Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
+Otherwise the problem is not constrained and you should consider using unconstrained solvers like [`quasi_Newton`](@ref).
 
 # Optional
 
-* `smoothing` – ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
-* `ϵ` – (`1e–3`) the accuracy tolerance
-* `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
-* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
-* `u` – (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_exponent` – (`1/100`) exponent of the u update factor;
-* `u_min` – (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ` – (`1.0`) the penalty parameter
-* `min_stepsize` – (`1e-10`) the minimal step size
-* `sub_cost` – ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_grad` – ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
-* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
-* `sub_problem` – ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)` – ` problem for the subsolver
-* `sub_state` – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `smoothing`              ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
+* `ϵ`                      (`1e–3`) the accuracy tolerance
+* `ϵ_exponent`             (`1/100`) exponent of the ϵ update factor;
+* `ϵ_min`                  (`1e-6`) the lower bound for the accuracy tolerance
+* `u`                      (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `u_exponent`             (`1/100`) exponent of the u update factor;
+* `u_min`                  (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ`                      (`1.0`) the penalty parameter
+* `min_stepsize`           (`1e-10`) the minimal step size
+* `sub_cost`               ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_grad`               ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_kwargs`             keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
+* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_problem`            ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`, provide a problem for the subsolver
+* `sub_state`              ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion`     ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
 
