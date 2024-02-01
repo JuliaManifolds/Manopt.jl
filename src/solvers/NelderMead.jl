@@ -61,16 +61,16 @@ The naming of these parameters follows the [Wikipedia article](https://en.wikipe
 of the Euclidean case. The default is given in brackets, the required value range
 after the description
 
-* `population` – an `Array{`point`,1}` of ``n+1`` points ``x_i``, ``i=1,…,n+1``, where ``n`` is the
+* `population`                an `Array{`point`,1}` of ``n+1`` points ``x_i``, ``i=1,…,n+1``, where ``n`` is the
   dimension of the manifold.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
-* `α` – (`1.`) reflection parameter (``α > 0``)
-* `γ` – (`2.`) expansion parameter (``γ > 0``)
-* `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
-* `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `p` – (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `stopping_criterion`        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
+* `α`                         (`1.`) reflection parameter (``α > 0``)
+* `γ`                         (`2.`) expansion parameter (``γ > 0``)
+* `ρ`                         (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ`                         (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
+* `p`                         (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
+* `retraction_method`         (`default_retraction_method(M, typeof(p))`) the retraction to use.
+* `inverse_retraction_method` (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 # Constructors
 
@@ -177,26 +177,26 @@ manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen.
 
 This algorithm is adapted from the Euclidean Nelder-Mead method, see
-[https://en.wikipedia.org/wiki/Nelder–Mead_method](https://en.wikipedia.org/wiki/Nelder–Mead_method)
+[https://en.wikipedia.org/wiki/Nelder-Mead_method](https://en.wikipedia.org/wiki/Nelder-Mead_method)
 and
 [http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf](http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf).
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function to minimize
-* `population` – (n+1 `rand(M)`s) an initial population of ``n+1`` points, where ``n``
+* `M`            a manifold ``\mathcal M``
+* `f`            a cost function to minimize
+* `population`   (``n+1`` `rand(M)`s) an initial population of ``n+1`` points, where ``n``
   is the dimension of the manifold `M`.
 
 # Optional
 
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
-* `α` – (`1.`) reflection parameter (``α > 0``)
-* `γ` – (`2.`) expansion parameter (``γ``)
-* `ρ` – (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
-* `σ` – (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `stopping_criterion`        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
+* `α`                         (`1.`) reflection parameter (``α > 0``)
+* `γ`                         (`2.`) expansion parameter (``γ``)
+* `ρ`                         (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ`                         (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
+* `retraction_method`         (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method` (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
@@ -290,7 +290,7 @@ end
 function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     M = get_manifold(mp)
 
-    ind = sortperm(s.costs) # reordering for cost and p, i.e. minimizer is at ind[1]
+    ind = sortperm(s.costs) # reordering for `s.cost` and `s.p`, that is the minimizer is at `ind[1]`
     permute!(s.costs, ind)
     permute!(s.population.pts, ind)
     m = mean(M, s.population.pts[1:(end - 1)])
@@ -311,7 +311,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     if Costr < s.costs[1] # reflected is better than fist -> expand
         xe = retract(M, m, -s.γ * s.α * ξ, s.retraction_method)
         Coste = get_cost(mp, xe)
-        # successful? use the expanded, otherwise still use xr
+        # successful? use the expanded, otherwise still use `xr`
         s.population.pts[end] = Coste < Costr ? xe : xr
         s.costs[end] = min(Coste, Costr)
         continue_steps = false
