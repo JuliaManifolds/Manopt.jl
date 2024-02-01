@@ -174,45 +174,6 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
 end
 
 """
-    StopWhenSubgradientNormLess <: StoppingCriterion
-
-A stopping criterion based on the current subgradient norm.
-
-# Constructor
-
-    StopWhenSubgradientNormLess(ε::Float64)
-
-Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
-indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
-"""
-mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    StopWhenSubgradientNormLess(ε::Float64) = new(ε, "")
-end
-function (c::StopWhenSubgradientNormLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
-)
-    M = get_manifold(mp)
-    (i == 0) && (c.reason = "") # reset on init
-    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
-        return true
-    end
-    return false
-end
-function status_summary(c::StopWhenSubgradientNormLess)
-    has_stopped = length(c.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "|subgrad f| < $(c.threshold): $s"
-end
-indicates_convergence(c::StopWhenSubgradientNormLess) = true
-function show(io::IO, c::StopWhenSubgradientNormLess)
-    return print(
-        io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
-end
-"""
     update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
 
 Update the minimal subgradient norm when an algorithm shall stop
@@ -685,7 +646,7 @@ A functor for an stopping criterion, where the algorithm if stopped when a varia
 # Fields
 * `value` – stores the variable which has to fall under a threshold for the algorithm to stop
 * `minValue` – stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
-* `reason` – stores a reason of stopping if the stopping criterion has one be
+* `reason` – stores a reason of stopping if the stopping criteri on has one be
   reached, see [`get_reason`](@ref).
 
 # Constructor
@@ -726,6 +687,50 @@ function show(io::IO, c::StopWhenSmallerOrEqual)
     )
 end
 
+"""
+    StopWhenSubgradientNormLess <: StoppingCriterion
+
+A stopping criterion based on the current subgradient norm.
+
+# Constructor
+
+    StopWhenSubgradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
+indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
+"""
+mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
+    at_iteration::Int
+    threshold::Float64
+    reason::String
+    StopWhenSubgradientNormLess(ε::Float64) = new(0, ε, "")
+end
+function (c::StopWhenSubgradientNormLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
+    if (i == 0) # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
+        c.at_iteration = i
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenSubgradientNormLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|∂f| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenSubgradientNormLess) = true
+function show(io::IO, c::StopWhenSubgradientNormLess)
+    return print(
+        io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
+    )
+end
 #
 # Meta Criteria
 #
