@@ -25,10 +25,10 @@ end
 """
     get_manopt_parameter(f, element::Symbol, args...)
 
-Access arbitrary parameters from `f` adressedby a symbol `element`.
+Access arbitrary parameters from `f` addressed by a symbol `element`.
 
 For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
-get some element from `f` potentially further qulalified by `args...`.
+get some element from `f` potentially further qualified by `args...`.
 
 This functions returns `nothing` if `f` does not have the property `element`
 """
@@ -48,7 +48,7 @@ if the value is not set, `default` is returned
 The parameters are queried from the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl),
 so they are persistent within your activated Environment.
 
-# Currenlty used settings
+# Currently used settings
 
 `:Mode`
 the mode can be set to `"Tutorial"` to get several hints especially in scenarios, where
@@ -66,19 +66,19 @@ get_manopt_parameter(::Symbol, ::Val{:default}) = nothing
 get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = ""
 
 """
-    set_manopt_parameter!(element::Symbol, value::Union{String,Bool})
+    set_manopt_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
 
 Set global [`Manopt`](@ref) parameters adressed by a symbol `element`.
 We first dispatch on the value of `element`.
 
 The parameters are stored to the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl).
 
-Passing a `value` of `""` deletes an entry from the preferences.
+Passing a `value` of `""` deletes the corresponding entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also `@info`rmed about.
 """
 function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
     if length(value) == 0
-        @delete_preferences!("$(e)")
+        @delete_preferences!(string(e))
         v = get_manopt_parameter(e, Val(:default))
         default = isnothing(v) ? "" : (length(v) == 0 ? "" : " ($(get_manopt_parameter))")
         @info("Resetting the `Manopt.jl` parameter :$(e) to default$(default).")

@@ -1082,7 +1082,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
-* `:Gradient` creattes a [`DebugGradient`](@ref)
+* `:Gradient` creates a [`DebugGradient`](@ref)
 * `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
