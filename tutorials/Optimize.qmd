@@ -162,6 +162,7 @@ Since a few things on manifolds are a bit different from (classical) Euclidean o
 It can be set using
 
 ```{julia}
+#| warning: true
 set_manopt_parameter!(:Mode, "Tutorial")
 ```
 
@@ -187,6 +188,7 @@ In other words – we have to be careful, that the optimisation stays a “loca
 This is also warned for in `"Tutorial"` mode. Calling
 
 ```{julia}
+#| warning: true
 mX = gradient_descent(M, f2, grad_f2, data[1])
 ```
 
@@ -194,12 +196,14 @@ So just by chance it seems we still got nearly the same point as before, but
 when we for example look when this one stops, that is takes more steps.
 
 ```{julia}
+#| warning: true
 gradient_descent(M, f2, grad_f2, data[1], debug=[:Stop]);
 ```
 
 
 This also illustrates one way to deactivate the hints, namely by overwriting the `debug=` keyword, that in `Tutorial` mode contains addional warnings.the other option is to globally reset the `:Mode` back to
 ```{julia}
+#| warning: true
 set_manopt_parameter!(:Mode, "")
 ```
 
