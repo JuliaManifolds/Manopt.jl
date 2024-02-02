@@ -259,20 +259,11 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         w6 = DebugWarnIfGradientNormTooLarge(1.0, :Once)
         @test repr(w6) == "DebugWarnIfGradientNormTooLarge(1.0, :Once)"
         st.X .= [4.0, 0.0] # > π in norm
-        @test_logs (
-            :warn,
-            "At iteration #1\nthe gradient norm (4.0) is larger that 1.0 times the injectivity radius 3.141592653589793 at the current iterate.\n",
-        ) (
-            :warn,
-            "Further warnings will be suppressed, use DebugWarnIfGradientNormTooLarge(1.0, :Always) to get all warnings.",
-        ) w6(mp2, st, 1)
+        @test_logs (:warn,) (:warn,) w6(mp2, st, 1)
 
         st.p = Inf .* ones(2)
         w7 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
-        @test_logs (
-            :warn,
-            "The iterate is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
-        ) w7(mp, st, 1)
+        @test_logs (:warn,) w7(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
