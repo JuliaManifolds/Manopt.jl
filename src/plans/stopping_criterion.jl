@@ -634,7 +634,7 @@ A functor for an stopping criterion, where the algorithm if stopped when a varia
 # Fields
 * `value` – stores the variable which has to fall under a threshold for the algorithm to stop
 * `minValue` – stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
-* `reason` – stores a reason of stopping if the stopping criteri on has one be
+* `reason` – stores a reason of stopping if the stopping criterion has one be
   reached, see [`get_reason`](@ref).
 
 # Constructor

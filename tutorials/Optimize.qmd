@@ -181,7 +181,7 @@ And we consider the gradient at the starting point in norm
 norm(M, data[1], grad_f2(M, data[1]))
 ```
 
-On the sphere, when we follow a geodesic, we “return” to the start point after length $2π$. If we “lang” short before the starting point due to a gradient of length just shy of $2π$, line search would not make much sense probably.
+On the sphere, when we follow a geodesic, we “return” to the start point after length $2π$. If we “land” short before the starting point due to a gradient of length just shy of $2π$, line search would not make much sense probably.
 
 In other words – we have to be careful, that the optimisation stays a “local” argument we use.
 
