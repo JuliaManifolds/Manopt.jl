@@ -21,18 +21,18 @@ to Asymptote.
 
 # Optional arguments for asymptote
 
-* `arrow_head_size`   (`6.0`) size of the arrowheads of the tangent vectors
+* `arrow_head_size`:   (`6.0`) size of the arrowheads of the tangent vectors
 * `arrow_head_sizes`  overrides the previous value to specify a value per `tVector`` set.
-* `camera_position`   (`(1., 1., 0.)`) position of the camera in the Asymptote scene
-* `line_width`        (`1.0`) size of the lines used to draw the curves.
+* `camera_position`:   (`(1., 1., 0.)`) position of the camera in the Asymptote scene
+* `line_width`:        (`1.0`) size of the lines used to draw the curves.
 * `line_widths`       overrides the previous value to specify a value per curve and `tVector`` set.
-* `dot_size`          (`1.0`) size of the dots used to draw the points.
+* `dot_size`:          (`1.0`) size of the dots used to draw the points.
 * `dot_sizes`         overrides the previous value to specify a value per point set.
-* `size`              (`nothing`) a tuple for the image size, otherwise a relative size `4cm` is used.
-* `sphere_color`      (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere the data is drawn on
-* `sphere_line_color` (`RGBA{Float64}(0.75, 0.75, 0.75, 0.6)`) color of the lines on the sphere
-* `sphere_line_width` (`0.5`) line width of the lines on the sphere
-* `target`            (`(0.,0.,0.)`) position the camera points at
+* `size`:              (`nothing`) a tuple for the image size, otherwise a relative size `4cm` is used.
+* `sphere_color`:      (`RGBA{Float64}(0.85, 0.85, 0.85, 0.6)`) color of the sphere the data is drawn on
+* `sphere_line_color`: (`RGBA{Float64}(0.75, 0.75, 0.75, 0.6)`) color of the lines on the sphere
+* `sphere_line_width`: (`0.5`) line width of the lines on the sphere
+* `target`:            (`(0.,0.,0.)`) position the camera points at
 """
 function asymptote_export_S2_signals(
     filename::String;
@@ -204,12 +204,12 @@ or three-dimensional data with points on the [Sphere](https://juliamanifolds.git
 
 * `data`                    a point representing the 1D,2D, or 3D array of points
 * `elevation_color_scheme`  A `ColorScheme` for elevation
-* `scale_axes`              (`(1/3,1/3,1/3)`) move spheres closer to each other by a factor
+* `scale_axes`:              (`(1/3,1/3,1/3)`) move spheres closer to each other by a factor
   per direction
 
 # Optional arguments for asymptote
 
-* `arrow_head_size`  (`1.8`) size of the arrowheads of the vectors (in mm)
+* `arrow_head_size`:  (`1.8`) size of the arrowheads of the vectors (in mm)
 * `camera_position`  position of the camera scene (default: atop the center of the data in the xy-plane)
 * `target`           position the camera points at (default: center of xy-plane within data).
 """
@@ -278,7 +278,7 @@ definite matrices.
 
 * `data`            a point representing the 1D, 2D, or 3D array of SPD matrices
 * `color_scheme`    a `ColorScheme` for Geometric Anisotropy Index
-* `scale_axes`      (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
+* `scale_axes`:      (`(1/3,1/3,1/3)`) move symmetric positive definite matrices
   closer to each other by a factor per direction compared to the distance
   estimated by the maximal eigenvalue of all involved SPD points
 
@@ -374,10 +374,10 @@ be given as a relative or full path
 
 the default values are given in brackets
 
-* `render`      (`4`) render level of asymptote passed to its `-render` option.
+* `render`:      (`4`) render level of asymptote passed to its `-render` option.
    This can be removed from the command by setting it to `nothing`.
-* `format`      (`"png"`) final rendered format passed to the `-f` option
-* `export_file` (the filename with format as ending) specify the export filename
+* `format`:      (`"png"`) final rendered format passed to the `-f` option
+* `export_file`: (the filename with format as ending) specify the export filename
 """
 function render_asymptote(
     filename;

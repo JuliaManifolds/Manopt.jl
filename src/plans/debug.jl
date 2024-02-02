@@ -290,9 +290,9 @@ print the current cost function value, see [`get_cost`](@ref).
 
 # Parameters
 
-* `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
-* `io` – (`stdout`) default stream to print the debug to.
-* `long` - (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
+* `format`: (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
+* `io`:     (`stdout`) default stream to print the debug to.
+* `long`:   (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
@@ -436,11 +436,11 @@ print a certain entries change during iterates
 
 # Keyword arguments
 
-* `io` (`stdout`) an `IOStream`
-* `prefix` (`"Change of $f"`)
-* `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
-* `initial_value` an initial value for the change of `o.field`.
-* `format` – (`"$prefix %e"`) format to print the change
+* `io`:             (`stdout`) an `IOStream`
+* `prefix`:         (`"Change of $f"`)
+* `storage`:        (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
+* `initial_value`: an initial value for the change of `o.field`.
+* `format`:         (`"$prefix %e"`) format to print the change
 
 """
 mutable struct DebugEntryChange <: DebugAction

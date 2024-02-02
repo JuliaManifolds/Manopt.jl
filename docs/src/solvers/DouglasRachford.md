@@ -56,17 +56,11 @@ leading to the second prox being the Riemannian mean.
 ## State
 
 ```@docs
-DouglasRachfordState
+  DouglasRachfordState
 ```
 
 For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also
 [Cyclic Proximal Point](cyclic_proximal_point.md).
-
-Furthermore, this solver has a short hand notation for the involved [`reflect`](@ref)ion.
-
-```@docs
-reflect
-```
 
 Furthermore, this solver has a short hand notation for the involved [`reflect`](@ref)ion.
 

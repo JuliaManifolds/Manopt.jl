@@ -8,6 +8,7 @@ Batchelor
 Bergmann
 boolean
 Boumal
+Broyden
 Bullins
 Cartis
 [Cc]hambolle

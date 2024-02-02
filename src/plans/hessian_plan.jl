@@ -22,12 +22,10 @@ specify a problem for hessian based algorithms.
 
 # Fields
 
-* `cost` : a function ``f:\mathcal M→ℝ`` to minimize
-* `gradient`     : the gradient ``\operatorname{grad}f:\mathcal M
-  → \mathcal T\mathcal M`` of the cost function ``f``
-* `hessian`      : the hessian ``\operatorname{Hess}f(x)[⋅]: \mathcal T_{x} \mathcal M
-  → \mathcal T_{x} \mathcal M`` of the cost function ``f``
-* `preconditioner` : the symmetric, positive definite preconditioner
+* `cost`:           a function ``f:\mathcal M→ℝ`` to minimize
+* `gradient`:       the gradient ``\operatorname{grad}f:\mathcal M → \mathcal T\mathcal M`` of the cost function ``f``
+* `hessian`:        the hessian ``\operatorname{Hess}f(x)[⋅]: \mathcal T_{x} \mathcal M → \mathcal T_{x} \mathcal M`` of the cost function ``f``
+* `preconditioner`: the symmetric, positive definite preconditioner
     as an approximation of the inverse of the Hessian of ``f``, i.e. as a map with the same
     input variables as the `hessian` to numerically stabilize iterations when the Hessian is
     ill-conditioned

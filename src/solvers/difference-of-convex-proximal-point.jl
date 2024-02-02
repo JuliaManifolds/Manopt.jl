@@ -3,19 +3,25 @@
     DifferenceOfConvexProximalState{Type} <: Options
 A struct to store the current state of the algorithm as well as the form.
 It comes in two forms, depending on the realisation of the `subproblem`.
+
 # Fields
-* `inverse_retraction_method` – (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
-* `retraction_method` – (`default_retraction_method(M)`) a type of retraction
-* `p`, `q`, `r`  – the current iterate, the gradient step and the prox, respectively
+
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M)`) an inverse retraction method to use within Frank Wolfe.
+* `retraction_method`:         (`default_retraction_method(M)`) a type of retraction
+* `p`, `q`, `r`:               the current iterate, the gradient step and the prox, respectively
   their type is set by initializing `p`
-* `stepsize` – ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref) function to run the modified algorithm (experimental)
-* `stop` – ([`StopWhenChangeLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
-* `X`, `Y` – (`zero_vector(M,p)`) the current gradient and descent direction, respectively
+* `stepsize`:                  ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref) function to run the modified algorithm (experimental)
+* `stop`:                      ([`StopWhenChangeLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
+* `X`, `Y`:                    (`zero_vector(M,p)`) the current gradient and descent direction, respectively
   their common type is set by the keyword `X`
+
 # Constructor
+
     DifferenceOfConvexProximalState(M, p; kwargs...)
+
 ## Keyword arguments
-* `X`, `retraction_method`, `inverse_retraction_method`, `stepsize` for the fields above
+
+* `X`, `retraction_method`, `inverse_retraction_method`, `stepsize` for the corresponding fields
 * `stoppping_criterion` for the [`StoppingCriterion`](@ref)
 """
 mutable struct DifferenceOfConvexProximalState{
@@ -128,7 +134,7 @@ end
     difference_of_convex_proximal_point(M, grad_h, p=rand(M); kwargs...)
     difference_of_convex_proximal_point(M, mdcpo, p=rand(M); kwargs...)
 
-Compute the difference of convex proximal point algorithm [Souza, Oliveira, J. Glob. Optim., 2015](@cite SouzaOliveira:2015) to minimize
+Compute the difference of convex proximal point algorithm [SouzaOliveira:2015](@cite) to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M} g(p) - h(p)
@@ -151,29 +157,29 @@ Then repeat for ``k=0,1,\ldots``
 6. set ``p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(s_kX^{(k)})``.
 
 until the `stopping_criterion` is fulfilled.
-See [Almeida, da Cruz Neto, Oliveira, Souza, Comput. Optim. Appl., 2020](@cite AlmeidaNetoOliveiraSouza:2020) for more details on the modified variant,
-where we slightly changed step 4-6, sine here we get the classical proximal point
-method for DC functions for ``s_k = 1`` and we can employ linesearches similar to other solvers.
+See [AlmeidaNetoOliveiraSouza:2020](@cite) for more details on the modified variant,
+where steps 4-6 are slightly changed, since here the classical proximal point method for
+DC functions is obtained for ``s_k = 1`` and one can hence employ usual line search method.
+
 
 # Optional parameters
 
-* `λ`                         – ( `i -> 1/2` ) a function returning the sequence of prox parameters λi
-* `evaluation`                – ([`AllocatingEvaluation`](@ref)) specify whether the gradient
-  works by allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place,
-  i.e. is of the form `gradF!(M, X, x)`.
-* `cost`                      - (`nothing`) provide the cost `f`, e.g. for debug reasonscost to be used within
-  the default `sub_problem`. Use this if you have a more efficient version than using `g` from above.
-* `gradient`                  – (`nothing`) specify ``\operatorname{grad} f``, for debug / analysis
+* `λ`:                          ( `i -> 1/2` ) a function returning the sequence of prox parameters λi
+* `evaluation`:                 ([`AllocatingEvaluation`](@ref)) specify whether the gradient
+  works by allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)`.
+* `cost`:                       (`nothing`) provide the cost `f`, for debug reasons / analysis
+  the default `sub_problem`. Use this if you have a more efficient version than using `g` from before.
+* `gradient`:                   (`nothing`) specify ``\operatorname{grad} f``, for debug / analysis
    or enhancing the `stopping_criterion`
-* `prox_g`                    - (`nothing`) specify a proximal map for the sub problem _or_ both of the following
-* `g`                         – (`nothing`) specify the function `g`.
-* `grad_g`                    – (`nothing`) specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) an inverse retraction method to use (see step 4).
-* `retraction_method`         – (`default_retraction_method(M)`) a retraction to use (see step 2)
-* `stepsize`                  – ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
+* `prox_g`:                     (`nothing`) specify a proximal map for the sub problem _or_ both of the following
+* `g`:                          (`nothing`) specify the function `g`.
+* `grad_g`:                     (`nothing`) specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
+* `inverse_retraction_method`:  (`default_inverse_retraction_method(M)`) an inverse retraction method to use (see step 4).
+* `retraction_method`:          (`default_retraction_method(M)`) a retraction to use (see step 2)
+* `stepsize`:                   ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
   to run the modified algorithm (experimental.) functor.
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
-  a [`StoppingCriterion`](@ref) for the algorithm – includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
+* `stopping_criterion`:         ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
+  a [`StoppingCriterion`](@ref) for the algorithm, also includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
 
 While there are several parameters for a sub solver, the easiest is to provide the function `g` and `grad_g`,
 such that together with the mandatory function `g` a default cost and gradient can be generated and passed to
@@ -185,25 +191,25 @@ difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
 
 # Optional parameters for the sub problem
 
-* `sub_cost`               – ([`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`) cost to be used within
+* `sub_cost`:               ([`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`) cost to be used within
   the default `sub_problem` that is initialized as soon as `g` is provided.
-* `sub_grad`               – ([`ProximalDCGrad`](@ref)`(grad_g, copy(M, p), λ(1); evaluation=evaluation)`
+* `sub_grad`:               ([`ProximalDCGrad`](@ref)`(grad_g, copy(M, p), λ(1); evaluation=evaluation)`
   gradient to be used within the default `sub_problem`, that is initialized as soon as `grad_g` is provided.
   This is generated by default when `grad_g` is provided. You can specify your own by overwriting this keyword.
-* `sub_hess`               – (a finite difference approximation by default) specify
+* `sub_hess`:               (a finite difference approximation by default) specify
   a Hessian of the subproblem, which the default solver, see `sub_state` needs
-* `sub_kwargs`             – (`(;)`) pass keyword arguments to the `sub_state`, in form of
+* `sub_kwargs`:             (`(;)`) pass keyword arguments to the `sub_state`, in form of
   a `Dict(:kwname=>value)`, unless you set the `sub_state` directly.
-* `sub_objective`          – (a gradient or hessian objective based on the last 3 keywords)
+* `sub_objective`:          (a gradient or Hessian objective based on the last 3 keywords)
   provide the objective used within `sub_problem` (if that is not specified by the user)
-* `sub_problem`            – ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
+* `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
   You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state`              – ([`TrustRegionsState`](@ref) – requires the `sub_hessian to be provided,
+* `sub_state`:              ([`TrustRegionsState`](@ref)). requires the `sub_hessian to be provided,
    decorated with `sub_kwargs`) choose the solver by specifying a solver state to solve the `sub_problem`
-* `sub_stopping_criterion` - ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
+* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping criterion used withing the default `sub_state=`
 
-...all others are passed on to decorate the inner [`DifferenceOfConvexProximalState`](@ref).
+all others are passed on to decorate the inner [`DifferenceOfConvexProximalState`](@ref).
 
 # Output
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
@@ -389,7 +395,7 @@ function difference_of_convex_proximal_point!(
 ) where {
     O<:Union{ManifoldDifferenceOfConvexProximalObjective,AbstractDecoratedManifoldObjective}
 }
-    # Check whether either the right defaults were provided or a sub_problen.
+    # Check whether either the right defaults were provided or a `sub_problem`.
     if isnothing(sub_problem)
         error(
             """
@@ -433,7 +439,7 @@ function step_solver!(
     i,
 ) where {P,T}
     M = get_manifold(amp)
-    # each line is one step in the documented solver steps. Note that we can reuse dcps.X
+    # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
     copyto!(M, dcps.r, dcps.sub_problem(M, dcps.λ(i), dcps.q))
@@ -452,7 +458,7 @@ function step_solver!(
     i,
 ) where {P,T}
     M = get_manifold(amp)
-    # each line is one step in the documented solver steps. Note that we can reuse dcps.X
+    # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
     dcps.sub_problem(M, dcps.r, dcps.λ(i), dcps.q)
@@ -476,7 +482,7 @@ function step_solver!(
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     # do a step in that direction
     retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
-    # use this point (q) for the prox
+    # use this point (q) for the proximal map
     set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :p, dcps.q)
     set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(i))
     set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
@@ -495,7 +501,7 @@ function step_solver!(
     return dcps
 end
 #
-# Deprecated old variants with prox_g as a parameter
+# Deprecated old variants with `prox_g` as a parameter
 #
 @deprecate difference_of_convex_proximal_point(
     M::AbstractManifold, prox_g, grad_h, p; kwargs...

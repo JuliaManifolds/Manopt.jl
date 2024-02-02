@@ -5,17 +5,17 @@ Store the fields for an alternating gradient descent algorithm,
 see also [`alternating_gradient_descent`](@ref).
 
 # Fields
-* `direction`          (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
-* `evaluation_order`   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+* `direction`:          (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
+* `evaluation_order`:   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
-* `inner_iterations`   (`5`) how many gradient steps to take in a component before alternating to the next
+* `inner_iterations`:   (`5`) how many gradient steps to take in a component before alternating to the next
 * `order` the current permutation
-* `retraction_method`  (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
-* `stepsize`           ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
-* `p`                  the current iterate
-* `X`                  (`zero_vector(M,p)`) the current gradient tangent vector
-* `k`, ì`              internal counters for the outer and inner iterations, respectively.
+* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
+* `stepsize`:           ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
+* `p`:                  the current iterate
+* `X`:                  (`zero_vector(M,p)`) the current gradient tangent vector
+* `k`, ì`:              internal counters for the outer and inner iterations, respectively.
 
 # Constructors
 
@@ -158,25 +158,25 @@ perform an alternating gradient descent
 
 # Input
 
-* `M`      the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
-* `f`      the objective function (cost) defined on `M`.
-* `grad_f` a gradient, that can be of two cases
+* `M`:      the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
+* `f`:      the objective function (cost) defined on `M`.
+* `grad_f`: a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` or
   * is a vector functions each returning a component part of the whole gradient
-* `p`      an initial value ``p_0 ∈ \mathcal M``
+* `p`:      an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
+* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
    allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place, i.e.
    is of the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order` – (`:Linear`) – whether
+* `evaluation_order`:   (`:Linear`) – whether
   to use a randomly permuted sequence (`:FixedRandom`), a per
   cycle permuted sequence (`:Random`) or the default `:Linear` one.
-* `inner_iterations`– (`5`) how many gradient steps to take in a component before alternating to the next
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
-* `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `inner_iterations`:   (`5`) how many gradient steps to take in a component before alternating to the next
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
+* `stepsize`:           ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
+* `order`:              (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
+* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 
 # Output
 

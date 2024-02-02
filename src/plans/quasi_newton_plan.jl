@@ -325,12 +325,12 @@ space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport
 
 # Fields
 
-* `basis`                   an `AbstractBasis` to use in the tangent spaces
-* `matrix`                  (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`)
+* `basis`:                  an `AbstractBasis` to use in the tangent spaces
+* `matrix`:                 (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`)
   the matrix which represents the approximating operator.
-* `scale`                   (`true) indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
-* `update`                  a [`AbstractQuasiNewtonUpdateRule`](@ref).
-* `vector_transport_method` (`vector_transport_method`)an `AbstractVectorTransportMethod`
+* `scale`:                  (`true) indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
+* `update`:                 a [`AbstractQuasiNewtonUpdateRule`](@ref).
+* `vector_transport_method`: (`vector_transport_method`)an `AbstractVectorTransportMethod`
 
 # Constructor
     QuasiNewtonMatrixDirectionUpdate(

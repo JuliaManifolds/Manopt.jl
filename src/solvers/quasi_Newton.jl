@@ -103,7 +103,7 @@ function QuasiNewtonState(
     )
 end
 function get_message(qns::QuasiNewtonState)
-    # we might have a message from (1) direction update or the (2) the step size
+    # collect messages from (1) direction update or the (2) the step size and combine them
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
     d = (length(msg1) > 0 && length(msg2) > 0) ? "\n" : "" #divider
@@ -162,7 +162,7 @@ in the point `p`.
 The ``k``th iteration consists of
 
 1. Compute the search direction ``η_k = -\mathcal{B}_k [\operatorname{grad}f (p_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (p_k)]``.
-2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{p_k}(α η_k)`` e.g. by using [`WolfePowellLinesearch`](@ref).
+2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{p_k}(α η_k)``, usually by using [`WolfePowellLinesearch`](@ref).
 3. Compute `p_{k+1} = R_{p_k}(α_k η_k)``.
 4. Define ``s_k = T_{p_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(p_{k+1}) - T_{p_k, α_k η_k}(\operatorname{grad}f(p_k))``.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_k``.
@@ -176,30 +176,29 @@ The ``k``th iteration consists of
 
 # Optional
 
-* `basis`                   (`DefaultOrthonormalBasis()`) basis within the tangent space(s)
+* `basis`:                   (`DefaultOrthonormalBasis()`) basis within the tangent spaces
  to represent the Hessian (inverse).
-* `cautious_update`         (`false`) – whether or not to use
+* `cautious_update`:         (`false`) whether or not to use
   a [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-* `cautious_function`       (`(x) -> x*10^(-4)`) – a monotone increasing function that is zero
+* `cautious_function`:       (`(x) -> x*10^(-4)`) a monotone increasing function that is zero
   at 0 and strictly increasing at 0 for the cautious update.
-* `direction_update`        ([`InverseBFGS`](@ref)`()`) the update rule to use.
-* `evaluation`              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
-   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place, i.e.
-   is of the form `gradF!(M, X, x)`.
-* `initial_operator`        (`Matrix{Float64}(I,n,n)`) initial matrix to use die the
+* `direction_update`:        ([`InverseBFGS`](@ref)`()`) the update rule to use.
+* `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
+   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, x)`.
+* `initial_operator`:        (`Matrix{Float64}(I,n,n)`) initial matrix to use die the
   approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
-* `memory_size`             (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
+* `memory_size`:             (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
   value to use a full memory representation
-* `retraction_method`       (`default_retraction_method(M, typeof(p))`) a retraction method to use
-* `scale_initial_operator`  (`true`) scale initial operator with
+* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a retraction method to use
+* `scale_initial_operator`:  (`true`) scale initial operator with
   ``\frac{⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}`` in the computation
-* `stabilize`               (`true`) stabilize the method numerically by projecting computed (Newton-)
+* `stabilize`:               (`true`) stabilize the method numerically by projecting computed (Newton-)
   directions to the tangent space to reduce numerical errors
-* `stepsize`                ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
+* `stepsize`:                ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
   specify a [`Stepsize`](@ref).
-* `stopping_criterion`      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
+* `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
-* `vector_transport_method` (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
+* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
 
 # Output
 
@@ -224,7 +223,7 @@ function quasi_Newton(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    # redefine our initial point
+    # redefine initial point
     q = [p]
     f_(M, p) = f(M, p[])
     grad_f_ = _to_mutating_gradient(grad_f, evaluation)
@@ -280,7 +279,7 @@ function quasi_Newton!(
     stabilize::Bool=true,
     initial_operator::AbstractMatrix=(
         if memory_size >= 0
-            fill(1.0, 0, 0) # don't allocate initial_operator for limited memory operation
+            fill(1.0, 0, 0) # don't allocate `initial_operator` for limited memory operation
         else
             Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))
         end
@@ -385,7 +384,7 @@ end
 @doc raw"""
     update_hessian!(d, amp, st, p_old, iter)
 
-update the hessian within the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `amp`
+update the Hessian within the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `amp`
 as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
 Note that the current (`iter`th) iterate is already stored in `o.x`.
 
@@ -655,11 +654,11 @@ function update_hessian!(
     bound = d.θ(norm(M, p_old, get_gradient(mp, p_old)))
     sk_normsq = norm(M, p, st.sk)^2
 
-    # if the decision rule is fulfilled, the new sk and yk are added
+    # if the decision rule is fulfilled, the new `sk` and `yk` are added
     if sk_normsq != 0 && real(inner(M, p, st.sk, st.yk) / sk_normsq) >= bound
         update_hessian!(d.update, mp, st, p_old, iter)
     else
-        # the stored vectors are just transported to the new tangent space, sk and yk are not added
+        # the stored vectors are just transported to the new tangent space; `sk` and `yk` are not added
         for i in 1:length(d.update.memory_s)
             vector_transport_to!(
                 M,

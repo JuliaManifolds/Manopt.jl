@@ -63,14 +63,14 @@ after the description
 
 * `population`                an `Array{`point`,1}` of ``n+1`` points ``x_i``, ``i=1,…,n+1``, where ``n`` is the
   dimension of the manifold.
-* `stopping_criterion`        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
-* `α`                         (`1.`) reflection parameter (``α > 0``)
-* `γ`                         (`2.`) expansion parameter (``γ > 0``)
-* `ρ`                         (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
-* `σ`                         (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `p`                         (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
-* `retraction_method`         (`default_retraction_method(M, typeof(p))`) the retraction to use.
-* `inverse_retraction_method` (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
+* `α`:                         (`1.`) reflection parameter (``α > 0``)
+* `γ`:                         (`2.`) expansion parameter (``γ > 0``)
+* `ρ`:                         (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ`:                         (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
+* `p`:                         (`copy(population.pts[1])`) - a field to collect the current best value (initialized to _some_ point here)
+* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) the retraction to use.
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 # Constructors
 
@@ -183,20 +183,20 @@ and
 
 # Input
 
-* `M`            a manifold ``\mathcal M``
-* `f`            a cost function to minimize
-* `population`   (``n+1`` `rand(M)`s) an initial population of ``n+1`` points, where ``n``
+* `M`:            a manifold ``\mathcal M``
+* `f`:            a cost function to minimize
+* `population`:   (``n+1`` `rand(M)`s) an initial population of ``n+1`` points, where ``n``
   is the dimension of the manifold `M`.
 
 # Optional
 
-* `stopping_criterion`        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
-* `α`                         (`1.`) reflection parameter (``α > 0``)
-* `γ`                         (`2.`) expansion parameter (``γ``)
-* `ρ`                         (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
-* `σ`                         (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
-* `retraction_method`         (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method` (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
+* `α`:                         (`1.`) reflection parameter (``α > 0``)
+* `γ`:                         (`2.`) expansion parameter (``γ``)
+* `ρ`:                         (`1/2`) contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `σ`:                         (`1/2`) shrink coefficient, ``0 < σ ≤ 1``
+* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 

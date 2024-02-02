@@ -7,12 +7,12 @@ Describes a Gradient based descent algorithm, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p` – (`rand(M)` the current iterate
-* `X` – (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `stepsize` – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
-* `direction` - ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use, defaults to
+* `p`:                  (`rand(M)` the current iterate
+* `X`:                  (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
+* `stepsize`:           ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
+* `direction`:          ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
+* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) the retraction to use, defaults to
   the default set for your manifold.
 
 # Constructor
@@ -20,8 +20,7 @@ a default value is given in brackets if a parameter can be left out in initializ
     GradientDescentState(M, p=rand(M); X=zero_vector(M, p), kwargs...)
 
 Generate gradient descent options, where `X` can be used to set the tangent vector to store
-the gradient in a certain type; it will be initialised accordingly at a later stage.
-All following fields are keyword arguments.
+the gradient in a certain type. All other fields are keyword arguments.
 
 # See also
 
@@ -127,24 +126,24 @@ with different choices of the stepsize ``s_k`` available (see `stepsize` option 
 
 # Input
 
-* `M`      – a manifold ``\mathcal M``
-* `f`      – a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
-* `grad_f` – the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
+* `M`       a manifold ``\mathcal M``
+* `f`       a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
+* `grad_f`  the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X`
-* `p`      – an initial value `p` ``= p_0 ∈ \mathcal M``
+* `p`       an initial value `p` ``= p_0 ∈ \mathcal M``
 
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 # Optional
-* `direction`          – ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
-* `evaluation`         – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
-  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `grad_f!(M, X, p)`.
-* `retraction_method`  – ([`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold})(M, typeof(p))`) a retraction to use
-* `stepsize`           – ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+* `direction`:          ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
+* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
+  or [`InplaceEvaluation`](@ref) in place of the form `grad_f!(M, X, p)`.
+* `retraction_method`:  ([`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold})(M, typeof(p))`) a retraction to use
+* `stepsize`:           ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `X`                  - ([`zero_vector(M,p)`]) provide memory and/or type of the gradient to use`
+* `X`:                  ([`zero_vector(M,p)`]) provide memory and/or type of the gradient to use`
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
 
@@ -180,12 +179,12 @@ function gradient_descent(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    # redefine our initial point
+    # redefine initial point
     q = [p]
     f_(M, p) = f(M, p[])
     grad_f_ = _to_mutating_gradient(grad_f, evaluation)
     rs = gradient_descent(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
+    #return just a number if the return type is the same as the type of q
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 function gradient_descent(
@@ -199,7 +198,7 @@ end
     gradient_descent!(M, f, grad_f, p; kwargs...)
     gradient_descent!(M, gradient_objective, p; kwargs...)
 
-perform a gradient_descent
+perform a Gradient descent in-place of `p`
 
 ```math
 p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr)
@@ -209,10 +208,10 @@ in place of `p` with different choices of ``s_k`` available.
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `grad_f` – the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
-* `p` – an initial value ``p ∈ \mathcal M``
+* `M`      a manifold ``\mathcal M``
+* `f`      a cost function ``F:\mathcal M→ℝ`` to minimize
+* `grad_f` the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
+* `p`      an initial value ``p ∈ \mathcal M``
 
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.

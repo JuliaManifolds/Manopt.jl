@@ -141,10 +141,10 @@ Describes a Gradient based descent algorithm, with
 
 A default value is given in brackets if a parameter can be left out in initialization.
 
-* `x`                     a point (of type `P`) on a manifold as starting point
-* `stop`                  (`StopAfterIteration(200) | StopWhenGradientNormLess(1e-12) | StopWhenStepsizeLess(1e-12)`)
+* `x`:                     a point (of type `P`) on a manifold as starting point
+* `stop`:                  (`StopAfterIteration(200) | StopWhenGradientNormLess(1e-12) | StopWhenStepsizeLess(1e-12)`)
   a [`StoppingCriterion`](@ref)
-* `retraction_method`     (`default_retraction_method(M, typeof(p))`) the retraction to use,
+* `retraction_method`:     (`default_retraction_method(M, typeof(p))`) the retraction to use,
   defaults to the default set for your manifold.
 * `residual_values`       value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp`  value of ``F`` for the current proposal point
@@ -158,7 +158,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 * `damping_term_min`      initial (and also minimal) value of the damping term
 * `β`                     parameter by which the damping term is multiplied when the current
   new point is rejected
-* `expect_zero_residual`  (`false`) if true, the algorithm expects that the value of
+* `expect_zero_residual`:  (`false`) if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
 
 # Constructor
