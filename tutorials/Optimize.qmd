@@ -24,9 +24,8 @@ As an example we take the generalisation of the [(arithemtic) mean](https://en.w
 In the Euclidean case with$d\in\mathbb N$, that is for $n\in \mathbb N$ data points $y_1,\ldots,y_n \in \mathbb R^d$ the mean
 
 ```math
-  \sum_{i=1}^n y_i
+  \frac{1}{n}\sum_{i=1}^n y_i
 ```
-
 
 can not be directly generalised to data $q_1,\ldots,q_n$, since on a manifold we do not have an addition.
 But the mean can also be characterised as
@@ -156,9 +155,58 @@ Then we reach approximately the same point as in the previous run, but in far le
 [f(M, m3)-f(M,m4), distance(M, m3, m4)]
 ```
 
+## Using the “Tutorial” mode
+
+Since a few things on manifolds are a bit different from (classical) Euclidean optimization, `Manopt.jl` has a mode to warn about a few pitfalls.
+
+It can be set using
+
+```{julia}
+set_manopt_parameter!(:Mode, "Tutorial")
+```
+
+to activate these. Continuing from the example before, one might argue, that the
+minimizer of $f$ does not depend on the scaling of the function.
+In theory this is of course also the case on manifolds, but for the optimizations there is a caveat. When we define the Riemannian mean without the scaling
+
+```{julia}
+f2(M, p) = sum(1 / 2 * distance.(Ref(M), Ref(p), data) .^ 2)
+grad_f2(M, p) = sum(grad_distance.(Ref(M), data, Ref(p)));
+```
+
+And we consider the gradient at the starting point in norm
+
+```{julia}
+norm(M, data[1], grad_f2(M, data[1]))
+```
+
+On the sphere, when we follow a geodesic, we “return” to the start point after length $2π$. If we “lang” short before the starting point due to a gradient of length just shy of $2π$, line search would not make much sense probably.
+
+In other words – we have to be careful, that the optimisation stays a “local” argument we use.
+
+This is also warned for in `"Tutorial"` mode. Calling
+
+```{julia}
+mX = gradient_descent(M, f2, grad_f2, data[1])
+```
+
+So just by chance it seems we still got nearly the same point as before, but
+when we for example look when this one stops, that is takes more steps.
+
+```{julia}
+gradient_descent(M, f2, grad_f2, data[1], debug=[:Stop]);
+```
+
+
+This also illustrates one way to deactivate the hints, namely by overwriting the `debug=` keyword, that in `Tutorial` mode contains addional warnings.the other option is to globally reset the `:Mode` back to
+```{julia}
+set_manopt_parameter!(:Mode, "")
+```
+
 ## Example 2: Computing the median of symmetric positive definite matrices.
 
 For the second example let's consider the manifold of [$3 × 3$ symmetric positive definite matrices](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite.html) and again 100 random points
+
 ```{julia}
 N = SymmetricPositiveDefinite(3)
 m = 100

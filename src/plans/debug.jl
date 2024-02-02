@@ -992,7 +992,7 @@ function (d::DebugWarnIfGradientNormTooLarge)(
             the gradient norm ($Xn) is larger that $(d.factor) times the injectivity radius $(p_inj) at the current iterate.
             """
             if d.status === :Once
-                @warn "Further warnings will be suppressed, use DebugWarnIfGradientNormTooLarge(:Always, $(d.factor)) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfGradientNormTooLarge($(d.factor), :Always) to get all warnings."
                 d.status = :No
             end
         end
