@@ -121,7 +121,7 @@ m2 = gradient_descent(M, f, grad_f, data[1];
 See [here](https://manoptjl.org/stable/plans/debug/#Manopt.DebugActionFactory-Tuple{Symbol}) for the list of available symbols.
 
 ```{=commonmark}
-!!! info \"Technical Detail\"
+!!! info "Technical Detail"
     The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
 ```
 
@@ -246,11 +246,12 @@ s = cyclic_proximal_point(N, g, proxes_g, data2[1];
 ```
 
 ```{=commonmark}
-!!! note \"Technical Detail\"
+!!! note "Technical Detail"
     The recording is realised by [`RecordActions`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
-```{=commonmark}
+```
 
 First, the computed median can be accessed as
+
 ```{julia}
 median = get_solver_result(s)
 ```
