@@ -53,7 +53,7 @@ so they are persistent within your activated Environment.
 `:Mode`
 the mode can be set to `"Tutorial"` to get several hints especially in scenarios, where
 the optimisation on manifolds is different from the usual “experience” in
-(classicall, Euclidean) optimization.
+(classical, Euclidean) optimization.
 Any other value has the same effect as not setting it.
 """
 function get_manopt_parameter(
