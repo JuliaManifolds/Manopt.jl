@@ -16,7 +16,7 @@ A constraint optimisation problem is given by
 &\quad h(p) = 0,\\
 \end{align*}
 ```
-where $f\colon \mathcal M → ℝ$ is a cost function, and $g\colon \mathcal M → ℝ^m$ and $h\colon \mathcal M → ℝ^n$ are the inequality and equality constraints, respectively. The $\leq$ and $=$ in (P) are meant element-wise.
+where $f:  \mathcal M → ℝ$ is a cost function, and $g:  \mathcal M → ℝ^m$ and $h:  \mathcal M → ℝ^n$ are the inequality and equality constraints, respectively. The $\leq$ and $=$ in (P) are meant element-wise.
 
 This can be seen as a balance between moving constraints into the geometry of a manifold $\mathcal M$ and keeping some, since they can be handled well in algorithms, see [BergmannHerzog:2019](@cite), [LiuBoumal:2019](@cite)  for details.
 

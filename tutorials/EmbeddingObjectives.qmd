@@ -3,9 +3,9 @@ title: How to define the cost in the embedding
 author: Ronny Bergmann
 ---
 
-Specifying a cost function $f\colon \mathcal M \to \mathbb R$ on a manifold
+Specifying a cost function $f:  \mathcal M \to \mathbb R$ on a manifold
 is usually the model one starts with.
-Specifying its gradient $\operatorname{grad} f\colon\mathcal M \to T\mathcal M$, or more precisely $\operatorname{grad}f(p) \in T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f\colon T_p\mathcal M \to T_p\mathcal M$ are then necessary to perform optimization.
+Specifying its gradient $\operatorname{grad} f: \mathcal M \to T\mathcal M$, or more precisely $\operatorname{grad}f(p) \in T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f:  T_p\mathcal M \to T_p\mathcal M$ are then necessary to perform optimization.
 Since these might be challenging to compute, especially when manifolds and differential geometry are not
 the main area of a user, easier to use methods might be welcome.
 

@@ -4,7 +4,7 @@ title: "Using Automatic Differentiation in Manopt.jl"
 
 Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
 
-This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function $f\colon \mathcal M → ℝ$. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
+This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function $f:  \mathcal M → ℝ$. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
 
 While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/), you can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or  [Zygote.jl](https://fluxml.ai/Zygote.jl/).
 
@@ -34,7 +34,7 @@ Random.seed!(42);
 
 A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let $X_1,\ldots,X_d ∈ T_p\mathcal M$ denote an orthonormal basis of the tangent space $T_p\mathcal M$ at the point $p∈\mathcal M$ on the Riemannian manifold.
 
-We can generalize the notion of a directional derivative to a “direction” $Y∈T_p\mathcal M$. Let $c\colon [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, for example $c(t)= \exp_p(tY)$. We obtain
+We can generalize the notion of a directional derivative to a “direction” $Y∈T_p\mathcal M$. Let $c:  [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, for example $c(t)= \exp_p(tY)$. We obtain
 
 ```math
 	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
@@ -72,7 +72,7 @@ This is the first variant we can use. An advantage is that it is _intrinsic_ in 
 The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A\in ℝ^{(n+1)×(n+1)}$. The optimization problem reads
 
 ```math
-F\colon ℝ^{n+1} \to ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
+F:  ℝ^{n+1} \to ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
 ```
 
 Minimizing this function yields the smallest eigenvalue $\lambda_1$ as a value and the corresponding minimizer $\mathbf x^*$ is a corresponding eigenvector.
@@ -120,9 +120,9 @@ We obtain quite a good approximation of the gradient.
 
 ``## [2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold](@id EmbeddedGradient)``{=commonmark}
 
-Let $\tilde f\colon\mathbb R^m \to \mathbb R$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset \mathbb R^m$and let $f\colon \mathcal M \to \mathbb R$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
+Let $\tilde f: \mathbb R^m \to \mathbb R$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset \mathbb R^m$and let $f:  \mathcal M \to \mathbb R$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
 
-Since we can use the pushforward of the embedding to also embed the tangent space $T_p\mathcal M$, $p\in \mathcal M$, we can similarly obtain the differential $Df(p)\colon T_p\mathcal M \to \mathbb R$ by restricting the differential $D\tilde f(p)$ to the tangent space.
+Since we can use the pushforward of the embedding to also embed the tangent space $T_p\mathcal M$, $p\in \mathcal M$, we can similarly obtain the differential $Df(p):  T_p\mathcal M \to \mathbb R$ by restricting the differential $D\tilde f(p)$ to the tangent space.
 
 If both $T_p\mathcal M$ and $T_p\mathbb R^m$ have the same inner product, or in other words the manifold is isometrically embedded in $\mathbb R^m$ (like for example the sphere $\mathbb S^n\subset\mathbb R^{m+1}$), then this restriction of the differential directly translates to a projection of the gradient, i.e.
 

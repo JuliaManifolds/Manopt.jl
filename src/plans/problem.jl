@@ -11,7 +11,7 @@ Describe a Riemannian optimization problem with all static (not-changing) proper
 The most prominent features that should always be stated here are
 
 * the `AbstractManifold` ``\mathcal M`` (cf. [ManifoldsBase.jl#AbstractManifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold))
-* the cost function ``f\colon \mathcal M → ℝ``
+* the cost function ``f:  \mathcal M → ℝ``
 
 Usually the cost should be within an [`AbstractManifoldObjective`](@ref).
 """

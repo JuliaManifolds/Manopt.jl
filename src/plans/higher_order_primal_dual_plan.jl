@@ -7,7 +7,7 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 * `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
 * `linearized_operator` the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `linearized_adjoint_operator` The adjoint differential ``(DΛ)^* \colon \mathcal N \to T\mathcal M``
+* `linearized_adjoint_operator` The adjoint differential ``(DΛ)^* :  \mathcal N \to T\mathcal M``
 * `prox_F` the proximal map belonging to ``F``
 * `diff_prox_F` the (Clarke Generalized) differential of the proximal maps of ``F``
 * `prox_G_dual` the proximal map belonging to ``g_n^*``

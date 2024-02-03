@@ -172,7 +172,7 @@ end
     NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
     NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective [, population::NelderMeadSimplex])
 
-Solve a Nelder-Mead minimization problem for the cost function ``f\colon \mathcal M`` on the
+Solve a Nelder-Mead minimization problem for the cost function ``f:  \mathcal M`` on the
 manifold `M`. If the initial population `p` is not given, a random set of
 points is chosen.
 

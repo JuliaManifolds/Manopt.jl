@@ -3,17 +3,17 @@
 
 Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
-Given a `cost` function ``\mathcal E\colon\mathcal M \to \overline{ℝ}`` of the form
+Given a `cost` function ``\mathcal E: \mathcal M \to \overline{ℝ}`` of the form
 ```math
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
-where ``F\colon\mathcal M \to \overline{ℝ}``, ``G\colon\mathcal N \to \overline{ℝ}``,
-and ``\Lambda\colon\mathcal M \to \mathcal N``. The remaining input parameters are
+where ``F: \mathcal M \to \overline{ℝ}``, ``G: \mathcal N \to \overline{ℝ}``,
+and ``\Lambda: \mathcal M \to \mathcal N``. The remaining input parameters are
 
 * `p, X`:                          primal and dual start points ``x\in\mathcal M`` and ``ξ ∈ T_n\mathcal N``
 * `m,n`:                           base points on ``\mathcal M`` and ``\mathcal N``, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N``
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  T_{m}\mathcal M \to T_{Λ(m)}\mathcal N``
 * `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^\ast_n``
 * `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^\ast_n``
 

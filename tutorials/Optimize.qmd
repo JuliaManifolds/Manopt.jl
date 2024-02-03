@@ -10,7 +10,7 @@ For more theoretical background, see for example [doCarmo:1992](@cite) for an in
 and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
 
 Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/#ManifoldsBase.Manifold)
-and let $f\colon \mathcal M → ℝ$ be a cost function.
+and let $f:  \mathcal M → ℝ$ be a cost function.
 The aim is to determine or obtain a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
 
 This can also be written as
