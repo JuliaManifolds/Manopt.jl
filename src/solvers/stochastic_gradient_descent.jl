@@ -7,20 +7,20 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-* `p` the current iterate
-* `direction` ([`StochasticGradient`](@ref)) a direction update to use
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `evaluation_order` – (`:Random`) – whether
-  to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`:Linear`) or the default `:Random` one.
-* `order` the current permutation
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `p`:                  the current iterate
+* `direction`:          ([`StochasticGradient`](@ref)) a direction update to use
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
+* `stepsize`:           ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
+* `evaluation_order`:   (`:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
+* `order`:              the current permutation
+* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 
 # Constructor
+
     StochasticGradientDescentState(M, p)
 
-Create a `StochasticGradientDescentState` with start point `x`.
+Create a `StochasticGradientDescentState` with start point `p`.
 all other fields are optional keyword arguments, and the defaults are taken from `M`.
 """
 mutable struct StochasticGradientDescentState{
@@ -95,15 +95,14 @@ end
 """
     StochasticGradient <: AbstractGradientGroupProcessor
 
-The default gradient processor, which just evaluates the (stochastic) gradient or a subset
-thereof.
+The default gradient processor, which just evaluates the (stochastic) gradient or a subset thereof.
 
 # Constructor
 
     StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
 
-Initialize the stochastic Gradient processor with `X`, i.e. both `M` and `p` are just
-help variables, though `M` is mandatory by convention.
+Initialize the stochastic Gradient processor with tangent vector type of `X`,
+where both `M` and `p` are just help variables.
 """
 struct StochasticGradient{T} <: AbstractGradientGroupProcessor
     dir::T
@@ -115,9 +114,9 @@ end
 function (sg::StochasticGradient)(
     apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, iter
 )
-    # for each new epoche choose new order if we are at random order
+    # for each new epoch choose new order if at random order
     ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
-    # i is the gradient to choose, either from the order or completely random
+    # the gradient to choose, either from the order or completely random
     j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
     return sgds.stepsize(apm, sgds, iter), get_gradient!(apm, sg.dir, sgds.p, j)
 end
@@ -134,28 +133,26 @@ perform a stochastic gradient descent
 
 # Input
 
-* `M` a manifold ``\mathcal M``
-* `grad_f` – a gradient function, that either returns a vector of the subgradients
+* `M`:      a manifold ``\mathcal M``
+* `grad_f`: a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
-* `p` – an initial value ``x ∈ \mathcal M``
+* `p`:      an initial value ``x ∈ \mathcal M``
 
 alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
 
 # Optional
-* `cost` – (`missing`) you can provide a cost function for example to track the function value
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
-   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place, i.e.
-   is of the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order` – (`:Random`) – whether
-  to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`:Linear`) or the default `:Random` one.
-* `stopping_criterion` ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
-* `stepsize` ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `order_type` (`:RandomOder`) a type of ordering of gradient evaluations.
-  values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
-* `order` - (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
+* `cost`:               (`missing`) you can provide a cost function for example to track the function value
+* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradients works by
+   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)` (elementwise).
+* `evaluation_order`:   (`:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
+* `stepsize`:           ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
+* `order_type`:         (`:RandomOder`) a type of ordering of gradient evaluations.
+  Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
+* `order`:              (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
+* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a retraction to use.
 
 # Output
 
@@ -217,10 +214,10 @@ perform a stochastic gradient descent in place of `p`.
 
 # Input
 
-* `M` a manifold ``\mathcal M``
-* `grad_f` – a gradient function, that either returns a vector of the subgradients
+* `M`:      a manifold ``\mathcal M``
+* `grad_f`: a gradient function, that either returns a vector of the subgradients
   or is a vector of gradients
-* `p` – an initial value ``p ∈ \mathcal M``
+* `p`:      an initial value ``p ∈ \mathcal M``
 
 Alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.

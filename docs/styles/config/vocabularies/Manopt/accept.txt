@@ -17,6 +17,7 @@ Diepeveen
 Dornig
 Douglas
 cubic
+elementwise
 Ferreira
 Frank
 Frobenius
@@ -75,6 +76,7 @@ Stephansen
 [Ss]ubgradient
 [Ss]ubsolver
 summand
+superlinear
 supertype
 th
 Tom-Christian

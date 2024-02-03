@@ -17,7 +17,7 @@ include("../utils/dummy_types.jl")
         X[2] .= [0.0, -1.0, 0.0]
         return X
     end
-    # # Vectorial
+    # vectorial
     g1(M, p) = p[1] - 1
     grad_g1(M, p) = [1.0, 0.0, 0.0]
     grad_g1!(M, X, p) = (X .= [1.0, 0.0, 0.0])
@@ -195,7 +195,7 @@ include("../utils/dummy_types.jl")
             get_grad_equality_constraints!(M, Xe, ddo, p)
             get_grad_equality_constraints!(M, Ye, obj, p)
             @test Ye == Xe
-            for i in 1:1 #num of equ constr
+            for i in 1:1 #number of equality constr
                 @test get_equality_constraint(M, ddo, p, i) ==
                     get_equality_constraint(M, obj, p, i)
                 X = get_grad_equality_constraint(M, ddo, p, i)

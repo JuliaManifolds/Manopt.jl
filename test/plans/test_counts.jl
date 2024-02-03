@@ -50,7 +50,7 @@ include("../utils/dummy_types.jl")
         # test fallbacks
         @test get_count(c_obj, :None, 1) == -1
         @test get_count(c_obj, :Gradient, 2) == -1 # out of range
-        @test get_count(c_obj, :Gradient, [2, 1]) == -1 #nonfitting dimensions
+        @test get_count(c_obj, :Gradient, [2, 1]) == -1 #non-fitting dimensions
         reset_counters!(c_obj)
         @test get_count(c_obj, :Gradient) == 0
         @test get_count(c_obj, :Cost) == 0

@@ -70,10 +70,17 @@ end
         mcgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=p)
         @test repr(sco1) == "SimpleManifoldCachedObjective{AllocatingEvaluation,$(mgoa)}"
-        @test startswith(repr((sco1, 1.0)), "## Cache\nA `SimpleManifoldCachedObjective`")
+        @test startswith(
+            repr((sco1, 1.0)),
+            """## Cache
+A `SimpleManifoldCachedObjective`""",
+        )
         @test startswith(
             repr((sco1, DummyState())),
-            "DummyState(Float64[])\n\n## Cache\nA `SimpleManifoldCachedObjective`",
+            """DummyState(Float64[])
+
+            ## Cache
+            A `SimpleManifoldCachedObjective`""",
         )
         # evaluated on init -> 1
         @test sco1.objective.gradient!!.i == 1
@@ -188,7 +195,7 @@ end
             repr((lco, DummyState())), "DummyState(Float64[])\n\n## Cache\n  * "
         )
         ro = DummyDecoratedObjective(o)
-        #indecorated works as well
+        #undecorated works as well
         lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
         @test Manopt.get_cost_function(lco2) != Manopt.get_cost_function(o)
         @test Manopt.get_gradient_function(lco2) != Manopt.get_gradient_function(o)

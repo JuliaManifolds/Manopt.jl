@@ -66,13 +66,12 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 
 # Optional
 * `coefficient`:             ([`ConjugateDescentCoefficient`](@ref) `<:` [`DirectionUpdateRule`](@ref))
-  rule to compute the descent direction update coefficient ``β_k``,
-  as a functor, i.e. the resulting function maps `(amp, cgs, i) -> β`, where
-  `amp` is an [`AbstractManoptProblem`](@ref), `cgs` are the
-  [`ConjugateGradientDescentState`](@ref) `o` and `i` is the current iterate.
+  rule to compute the descent direction update coefficient ``β_k``, as a functor, where
+  the resulting function maps are `(amp, cgs, i) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
 * `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
-  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `gradF!(M, X, x)`.
-* `retraction_method` - (`default_retraction_method(M, typeof(p))`) a retraction method to use.
+  or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)`.
+* `retraction_method`: (`default_retraction_method(M, typeof(p))`) a retraction method to use.
 * `stepsize`:                ([`ArmijoLinesearch`](@ref) via [`default_stepsize`](@ref)) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
 * `stopping_criterion`:      (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
@@ -104,7 +103,7 @@ function conjugate_gradient_descent(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    # redefine our initial point
+    # redefine initial point
     q = [p]
     f_(M, p) = f(M, p[])
     grad_f_ = _to_mutating_gradient(grad_f, evaluation)
@@ -130,10 +129,10 @@ p_{k+1} = \operatorname{retr}_{p_k} \bigl( s_k\delta_k \bigr),
 where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`
 
 # Input
-* `M`      a manifold ``\mathcal M``
-* `f`      a cost function ``F:\mathcal M→ℝ`` to minimize
-* `grad_f` the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
-* `p`      an initial value ``p∈\mathcal M``
+* `M`:      a manifold ``\mathcal M``
+* `f`:      a cost function ``F:\mathcal M→ℝ`` to minimize
+* `grad_f`: the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
+* `p`:      an initial value ``p∈\mathcal M``
 
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.

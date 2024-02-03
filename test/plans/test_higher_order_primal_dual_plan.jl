@@ -66,7 +66,7 @@ using ManifoldDiff:
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
                         I = i.I # array of index
-                        J = I .+ e_k_vals[k] #i + e_k is j
+                        J = I .+ e_k_vals[k] #`i + e_k` is `j`
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             ζ[N, I..., k] += if norms[I..., k] <= 1
@@ -95,7 +95,7 @@ using ManifoldDiff:
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
                         I = i.I # array of index
-                        J = I .+ e_k_vals[k] #i + e_k is j
+                        J = I .+ e_k_vals[k] # `i + e_k` is `j`
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             if norms_[I...] <= 1

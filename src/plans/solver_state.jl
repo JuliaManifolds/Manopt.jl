@@ -26,7 +26,7 @@ It assumes that
 * the iterate is stored in the field `p`
 * the gradient at `p` is stored in `X`.
 
-# see also
+# See also
 [`GradientDescentState`](@ref), [`StochasticGradientDescentState`](@ref), [`SubGradientMethodState`](@ref), [`QuasiNewtonState`](@ref).
 """
 abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
