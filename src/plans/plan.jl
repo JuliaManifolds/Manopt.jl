@@ -63,7 +63,7 @@ function get_manopt_parameter(
 end
 # Handle empty defaults
 get_manopt_parameter(::Symbol, ::Val{:default}) = nothing
-get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = ""
+get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = nothing
 
 """
     set_manopt_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
@@ -80,13 +80,20 @@ function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
     if length(value) == 0
         @delete_preferences!(string(e))
         v = get_manopt_parameter(e, Val(:default))
-        default = isnothing(v) ? "" : (length(v) == 0 ? "" : " ($(get_manopt_parameter))")
+        default = isnothing(v) ? "" : ((v isa String) ? " \"$v\"" : " ($v)")
         @info("Resetting the `Manopt.jl` parameter :$(e) to default$(default).")
     else
         @set_preferences!("$(e)" => value)
         @info("Setting the `Manopt.jl` parameter :$(e) to $value.")
     end
 end
+
+"""
+    is_tutorial_mode()
+
+A small internal helper to indicate whether tutorial mode is active
+"""
+is_tutorial_mode() = (get_manopt_parameter(:Mode) == "Tutorial")
 
 include("objective.jl")
 include("problem.jl")

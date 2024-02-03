@@ -240,7 +240,7 @@ function gradient_descent!(
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(1e-8),
-    debug=if (get_manopt_parameter(:Mode) == "Tutorial")
+    debug=if is_tutorial_mode()
         if (stepsize isa ConstantStepsize)
             [DebugWarnIfCostIncreases(), DebugWarnIfGradientNormTooLarge()]
         else

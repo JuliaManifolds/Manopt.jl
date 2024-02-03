@@ -269,11 +269,7 @@ function quasi_Newton!(
     p;
     cautious_update::Bool=false,
     cautious_function::Function=x -> x * 1e-4,
-    debug=if (get_manopt_parameter(:Mode) == "Tutorial")
-        [DebugWarnIfGradientNormTooLarge()]
-    else
-        []
-    end,
+    debug=is_tutorial_mode() ? [DebugWarnIfGradientNormTooLarge()] : [],
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p)

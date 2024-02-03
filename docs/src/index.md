@@ -48,12 +48,12 @@ To refer to a certain version or the source code in general cite for example
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
-    Author = {Ronny Bergmann},
+    Author    = {Ronny Bergmann},
     Copyright = {MIT License},
-    Doi = {10.5281/zenodo.4290905},
+    Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
-    Title = {Manopt.jl},
-    Year = {2022},
+    Title     = {Manopt.jl},
+    Year      = {2024},
 }
 ```
 
