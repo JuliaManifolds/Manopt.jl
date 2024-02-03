@@ -1,7 +1,7 @@
 @doc raw"""
     primal_dual_semismooth_Newton(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
 
-Perform the Primal-Dual Riemannian Semismooth Newton algorithm.
+Perform the Primal-Dual Riemannian semismooth Newton algorithm.
 
 Given a `cost` function ``\mathcal E\colon\mathcal M \to \overline{ℝ}`` of the form
 ```math
@@ -10,29 +10,29 @@ Given a `cost` function ``\mathcal E\colon\mathcal M \to \overline{ℝ}`` of the
 where ``F\colon\mathcal M \to \overline{ℝ}``, ``G\colon\mathcal N \to \overline{ℝ}``,
 and ``\Lambda\colon\mathcal M \to \mathcal N``. The remaining input parameters are
 
-* `p, X` primal and dual start points ``x\in\mathcal M`` and ``ξ ∈ T_n\mathcal N``
-* `m,n` base points on ``\mathcal M`` and ``\mathcal N``, respectively.
-* `linearized_forward_operator` the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator` the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N``
-* `prox_F, prox_G_Dual` the proximal maps of ``F`` and ``G^\ast_n``
-* `diff_prox_F, diff_prox_dual_G` the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^\ast_n``
+* `p, X`:                          primal and dual start points ``x\in\mathcal M`` and ``ξ ∈ T_n\mathcal N``
+* `m,n`:                           base points on ``\mathcal M`` and ``\mathcal N``, respectively.
+* `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m)\colon T_{m}\mathcal M \to T_{Λ(m)}\mathcal N``
+* `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^\ast_n``
+* `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^\ast_n``
 
-For more details on the algorithm, see [Diepeveen, Lellmann, SIAM J. Imag. Sci., 2021](@cite DiepeveenLellmann:2021).
+For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 
-# Optional Parameters
+# Optional parameters
 
-* `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `Λ` (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
-`missing` indicates, that the forward operator is exact.
-* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
-* `reg_param` – (`1e-5`) regularisation parameter for the Newton matrix
-Note that this changes the arguments the `forward_operator` will be called.
-* `stopping_criterion` – (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
-* `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
-* `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
+* `primal_stepsize`:           (`1/sqrt(8)`) proximal parameter of the primal prox
+* `Λ`:                         (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
+  `missing` indicates, that the forward operator is exact.
+* `dual_stepsize`:             (`1/sqrt(8)`) proximal parameter of the dual prox
+* `reg_param`:                 (`1e-5`) regularisation parameter for the Newton matrix
+  Note that this changes the arguments the `forward_operator` is called.
+* `stopping_criterion`:        (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
+* `update_primal_base`:        (`missing`) function to update `m` (identity by default/missing)
+* `update_dual_base`:          (`missing`) function to update `n` (identity by default/missing)
+* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 
 # Output
 
@@ -240,7 +240,7 @@ function construct_primal_dual_residual_vector(
         inverse_retract(M, pdsn.m, pdsn.p, pdsn.inverse_retraction_method),
         pdsn.n,
     )
-    # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
+    # (2) if p.Λ is missing, assume that n = Λ(m) and do not PT
     ξ_update = if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
         ξ_update
     else
@@ -252,7 +252,7 @@ function construct_primal_dual_residual_vector(
             pdsn.vector_transport_method,
         )
     end
-    # (3) to the dual update
+    # (3) the dual update
     ξ_update = get_dual_prox(
         tmp, pdsn.n, pdsn.dual_stepsize, pdsn.X + pdsn.dual_stepsize * ξ_update
     )
@@ -279,7 +279,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
     dims = manifold_dimension(M)
     dualdims = manifold_dimension(N)
 
-    # we assume here that a parallel transport is already in the next operator
+    # assume here that a parallel transport is already in the next operator
     qξ = -pdsn.primal_stepsize * adjoint_linearized_operator(tmp, pdsn.m, pdsn.n, pdsn.X)
     qₚ = shortest_geodesic(M, pdsn.m, pdsn.p, 1 / 2)
     qb = retract(M, pdsn.m, qξ, pdsn.retraction_method)
@@ -296,7 +296,7 @@ function construct_primal_dual_residual_covariant_derivative_matrix(
         inverse_retract(M, pdsn.m, pdsn.p, pdsn.inverse_retraction_method),
         pdsn.n,
     )
-    # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
+    # (2) if p.Λ is missing, assume that n = Λ(m) and do  not PT
     η₁ = if !hasproperty(obj, :Λ!!) || ismissing(obj.Λ!!)
         η₁
     else

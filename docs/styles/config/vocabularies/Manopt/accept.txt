@@ -37,6 +37,7 @@ Levenberg
 Lagrangian
 Lanczos
 Laus
+linearization
 LineSearches.jl
 Liu
 Manifolds.jl
