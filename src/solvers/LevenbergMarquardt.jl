@@ -7,8 +7,8 @@ Solve an optimization problem of the form
 \operatorname{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert f(p) \rVert^2,
 ```
 
-where ``f\colon\mathcal M \to ℝ^d`` is a continuously differentiable function,
-using the Riemannian Levenberg-Marquardt algorithm [Peeters:1993](@cite ).
+where ``f: \mathcal M → ℝ^d`` is a continuously differentiable function,
+using the Riemannian Levenberg-Marquardt algorithm [Peeters:1993](@cite).
 The implementation follows Algorithm 1 [AdachiOkunoTakeda:2022](@cite)
 
 # Input
