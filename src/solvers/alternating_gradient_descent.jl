@@ -166,14 +166,13 @@ perform an alternating gradient descent
 * `p`:      an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
-* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradient(s) works by
-   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place, i.e.
-   is of the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order`:   (`:Linear`) – whether
-  to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`:Random`) or the default `:Linear` one.
+* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradients work by
+  allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of
+  the form `gradF!(M, X, x)` (elementwise).
+* `evaluation_order`:   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
 * `inner_iterations`:   (`5`) how many gradient steps to take in a component before alternating to the next
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`)– a [`StoppingCriterion`](@ref)
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
 * `stepsize`:           ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
 * `order`:              (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
 * `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
@@ -199,11 +198,11 @@ perform a alternating gradient descent in place of `p`.
 
 # Input
 
-* `M` a product manifold ``\mathcal M``
-* `f` – the objective functioN (cost)
-* `grad_f` – a gradient function, that either returns a vector of the subgradients
-  or is a vector of gradients
-* `p` – an initial value ``p_0 ∈ \mathcal M``
+* `M`:      a product manifold ``\mathcal M``
+* `f`:      the objective functioN (cost)
+* `grad_f`: a gradient function, that either returns a vector of the subgradients or is
+  a vector of gradients
+* `p`:      an initial value ``p_0 ∈ \mathcal M``
 
 you can also pass a [`ManifoldAlternatingGradientObjective`](@ref) `ago` containing `f` and `grad_f` instead.
 

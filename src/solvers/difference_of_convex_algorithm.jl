@@ -127,7 +127,7 @@ Then repeat for ``k=0,1,\ldots``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} \in \operatorname*{argmin}_{q\in \mathcal M} g(q) - ⟨X^{(k)}, \log_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ \operatorname*{argmin}_{q ∈ \mathcal M} g(q) - ⟨X^{(k)}, \log_{p^{(k)}}q⟩
 ```
 
 until the `stopping_criterion` is fulfilled.

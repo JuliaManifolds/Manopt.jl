@@ -373,16 +373,15 @@ Evaluate whether a certain fields change is less than a certain threshold
 
 ## Fields
 
-* `field`     – a symbol adressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref)
-  to track
-* `distance`  – a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
-* `storage`   – a [`StoreStateAction`](@ref) to store the previous value of the `field`
-* `threshold` – the threshold to indicate to stop when the distance is below this value
+* `field`:     a symbol adressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref) to track
+* `distance`:  a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
+* `storage`:   a [`StoreStateAction`](@ref) to store the previous value of the `field`
+* `threshold`: the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
 
-* `reason`    – store a string reason when the stop was indicated
-* `at_iteration` – store the iteration at which the stop indication happened
+* `reason`:       store a string reason when the stop was indicated
+* `at_iteration`: store the iteration at which the stop indication happened
 
 stores a threshold when to stop looking at the norm of the change of the
 optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
@@ -556,14 +555,13 @@ A stopping criterion based on the current gradient norm.
 
 # Fields
 
-* `norm`  – a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
-* `threshold` – the threshold to indicate to stop when the distance is below this value
+* `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `threshold`: the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
 
-* `reason`    – store a string reason when the stop was indicated
-* `at_iteration` – store the iteration at which the stop indication happened
-
+* `reason`:       store a string reason when the stop was indicated
+* `at_iteration`: store the iteration at which the stop indication happened
 
 # Constructor
 

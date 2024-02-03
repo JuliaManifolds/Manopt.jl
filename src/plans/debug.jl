@@ -5,7 +5,7 @@ A `DebugAction` is a small functor to print/issue debug output.
 The usual call is given by `(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s`,
 where `i` is the current iterate.
 
-By convention `i=0` is interpreted as "For Initialization only", i.e. only debug
+By convention `i=0` is interpreted as "For Initialization only", only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
 internally but does not trigger any output. Finally `typemin(Int)` is used
 to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
@@ -19,7 +19,7 @@ abstract type DebugAction <: AbstractStateAction end
 @doc raw"""
     DebugSolverState <: AbstractManoptSolverState
 
-The debug options append to any options a debug functionality, i.e. they act as
+The debug options append to any options a debug functionality, they act as
 a decorator pattern. Internally a `Dict`ionary is kept that stores a
 [`DebugAction`](@ref) for several occasions using a `Symbol` as reference.
 The default occasion is `:All` and for example solvers join this field with
@@ -28,9 +28,10 @@ end of the algorithm, respectively
 
 The original options can still be accessed using the [`get_state`](@ref) function.
 
-# Fields (defaults in brackets)
-* `options` – the options that are extended by debug information
-* `debugDictionary` – a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
+# Fields
+
+* `options`:         the options that are extended by debug information
+* `debugDictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
 
 # Constructors
     DebugSolverState(o,dA)
@@ -213,11 +214,11 @@ debug for the amount of change of the iterate (stored in `get_iterate(o)` of the
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default stream to print the debug to.
-* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) the inverse retraction to be
+* `storage`:                   (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
+* `prefix`:                    (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io`:                        (`stdout`) default stream to print the debug to.
+* `format`:                    ( `"$prefix %f"`) format to print the output using an sprintf format.
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M)`) the inverse retraction to be
   used for approximating distance.
 """
 mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
@@ -340,11 +341,12 @@ status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
 @doc raw"""
     DebugEntry <: DebugAction
 
-print a certain fields entry of type {T} during the iterates, where a `format` can be
-specified how to print the entry.
+print a certain fields entry during the iterates, where a `format` can be specified
+how to print the entry.
 
-# Addidtional Fields
-* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+# Addidtional fields
+
+* `field`: Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 # Constructor
 
@@ -378,11 +380,11 @@ That way you can print the vaule in this case as well.
 
 # Fields
 
-* `io`    – an io stream
-* `check` – a function that takes the value of the `field` as input and returns a boolean
-* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `msg`   - is the check fails, this message is displayed
-* `type`  – Symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
+* `io`:    an io stream
+* `check`: a function that takes the value of the `field` as input and returns a boolean
+* `field`: Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `msg`:   if the check fails, this message is displayed
+* `type`:  Symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
             where `:print` prints to `io`.
 
 # Constructor
@@ -422,13 +424,14 @@ end
 
 print a certain entries change during iterates
 
-# Additional Fields
-* `print` – (`print`) function to print the result
-* `prefix` – (`"Change of :Iterate"`) prefix to the print out
-* `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
-* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage` – a [`StoreStateAction`](@ref) to store the previous value of `:f`
+# Additional fields
+
+* `print`:    (`print`) function to print the result
+* `prefix`:   (`"Change of :Iterate"`) prefix to the print out
+* `format`:   (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
+* `field`:    Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `distance`: function (p,o,x1,x2) to compute the change/distance between two values of the entry
+* `storage`:  a [`StoreStateAction`](@ref) to store the previous value of `:f`
 
 # Constructors
 
@@ -492,10 +495,10 @@ debug for the amount of change of the gradient (stored in `get_gradient(o)` of t
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword Parameters
-* `storage` – (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default stream to print the debug to.
-* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+* `storage`: (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
+* `prefix`:  (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io`:      (`stdout`) default stream to print the debug to.
+* `format`:  ( `"$prefix %f"`) format to print the output using an sprintf format.
 """
 mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
     io::IO
@@ -559,8 +562,10 @@ debug for the current iterate (stored in `get_iterate(o)`).
 
 # Parameters
 
-* `io` – (`stdout`) default stream to print the debug to.
-* `long::Bool` whether to print `x:` or `current iterate`
+* `io`:        (`stdout`) default stream to print the debug to.
+* `format`:    (`"$prefix %s"`) format how to print the current iterate
+* `long`:      (`false`) whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix
+* `prefix`     (see `long` for default) set a prefix to be printed before the iterate
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
@@ -592,8 +597,8 @@ status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 
 # Keyword parameters
 
-* `format` - (`"# %-6d"`) format to print the output using an sprintf format.
-* `io` – (`stdout`) default stream to print the debug to.
+* `format`: (`"# %-6d"`) format to print the output using an sprintf format.
+* `io`:     (`stdout`) default stream to print the debug to.
 
 debug for the current iteration (prefixed with `#` by )
 """
@@ -624,10 +629,10 @@ depending on the message type.
     DebugMessages(mode=:Info; io::IO=stdout)
 
 Initialize the messages debug to a certain `mode`. Available modes are
-* `:Error` – issue the messages as an error and hence stop at any issue occurring
-* `:Info` – issue the messages as an `@info`
-* `:Print` – print messages to the steam `io`.
-* `:Warning` – issue the messages as a warning
+* `:Error`:   issue the messages as an error and hence stop at any issue occurring
+* `:Info`:    issue the messages as an `@info`
+* `:Print`:   print messages to the steam `io`.
+* `:Warning`: issue the messages as a warning
 """
 mutable struct DebugMessages <: DebugAction
     io::IO
@@ -684,8 +689,9 @@ For now, the main interaction is with [`DebugEvery`](@ref) which might activate 
 deactivate this debug
 
 # Fields
-* `always_update` – whether or not to call the order debugs with iteration `-1` in in active state
-* `active` – a boolean that can (de-)activated from outside to enable/disable debug
+
+* `active`:        a boolean that can (de-)activated from outside to enable/disable debug
+* `always_update`: whether or not to call the order debugs with iteration `-1` in in active state
 
 # Constructor
 
@@ -730,14 +736,14 @@ for example to measure the runtime of an algorithm overall (adding)
 
 The measured time is rounded using the given `time_accuracy` and printed after [canonicalization](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.canonicalize).
 
-# Keyword Parameters
+# Keyword parameters
 
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default strea to print the debug to.
-* `format` - ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
-* `mode` – (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
-* `start` – (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
-* `time_accuracy` – (`Millisecond(1)`) round the time to this period before printing the canonicalized time
+* `io`:            (`stdout`) default strea to print the debug to.
+* `format`:        ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
+* `mode`:          (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
+* `prefix`:        (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `start`:         (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
+* `time_accuracy`: (`Millisecond(1)`) round the time to this period before printing the canonicalized time
 """
 mutable struct DebugTime <: DebugAction
     io::IO
@@ -1040,7 +1046,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
 * `:ErrorMessages` creates a [`DebugMessages`](@ref)`(:Error)`
-* `:Messages` creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
+* `:Messages` creates a [`DebugMessages`](@ref)`()` (the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """

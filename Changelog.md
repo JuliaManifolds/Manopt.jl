@@ -378,7 +378,7 @@ and their documentation and testing has been extended.
 ### Removed
 
 * support for `ManifoldsBase.jl` 0.13.x, since with the definition of `copy(M,p::Number)`,
-  in 0.14.4, we now use that instead of defining it ourselves.
+  in 0.14.4, that one is used instead of defining it ourselves.
 
 ## [0.4.14] - April 06, 2023
 

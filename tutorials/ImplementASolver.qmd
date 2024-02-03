@@ -45,16 +45,16 @@ is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/Manif
 Given:
 - a manifold $\mathcal M$
 - a starting point $p=p^{(0)}$
-- a cost function $f: \mathcal M \to\mathbb R$.
+- a cost function $f: \mathcal M → ℝ$.
 - a parameter $\sigma > 0$.
-- a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
+- a retraction $\operatorname{retr}_p(X)$ that maps $X ∈ T_p\mathcal M$ to the manifold.
 
 We can run the following steps of the algorithm
 
 1. set $k=0$
 2. set our best point $q = p^{(0)}$
 2. Repeat until a stopping criterion is fulfilled
-    1. Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
+    1. Choose a random tangent vector $X^{(k)} ∈ T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
     2. “Walk” along this direction, that is $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
     3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
 4. Return $q$ as the resulting best point we visited

@@ -76,7 +76,7 @@ We would like to compute a mean and/or median similar to [🏔️ Get Started: O
 For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathcal M}
+  \operatorname*{arg\,min}_{p∈\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 

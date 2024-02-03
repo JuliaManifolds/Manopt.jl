@@ -136,11 +136,11 @@ three solutions to this:
 3. A shared (internal) cache approach also using a functor
 
 For that we switch to another example:
-The Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A\in\mathbb R^{m+1\times m+1}$ and $x\in\mathbb R^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
+The Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{m+1\times m+1}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
 (as many other optimization toolboxes) minimizes, we consider
 
 ```math
-g(p) = -p^{\mathrm{T}}Ap,\qquad p\in\mathbb S^{m}
+g(p) = -p^{\mathrm{T}}Ap,\qquad p∈\mathbb S^{m}
 ```
 
 The Euclidean gradient (that is in $ R^{m+1}$) is actually just $\nabla g(p) = -2Ap$, the Riemannian gradient the projection of $\nabla g(p)$ onto the tangent space $T_p\mathbb S^{m}$.

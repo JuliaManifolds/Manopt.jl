@@ -1,4 +1,4 @@
 ignore:
   - "src/examples/.*"
   - "src/tutorials/.*"
-  - "src/helpers/exports/.*" # until we figure out how to check asy runs - exclude.
+  - "src/helpers/exports/.*" # exclode exports, since there are no CI tests for Asy-exports

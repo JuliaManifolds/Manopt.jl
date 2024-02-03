@@ -5,29 +5,29 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 The following list provides the order for the constructor, where the previous iterates are
 initialized automatically and values with a default may be left out.
 
-* `m` - base point on ``\mathcal M``
-* `n` - base point on ``\mathcal N``
-* `p` - an initial point on ``x^{(0)} ∈\mathcal M`` (and its previous iterate)
-* `X` - an initial tangent vector ``X^{(0)}∈T^*\mathcal N`` (and its previous iterate)
-* `pbar` - the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
-* `Xbar` - the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
-* `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
-* `acceleration` – (`0.`) acceleration factor due to Chambolle & Pock
-* `relaxation` – (`1.`) relaxation in the primal relaxation step (to compute `pbar`)
-* `relax` – (`:primal`) which variable to relax (`:primal` or `:dual`)
-* `stop` - a [`StoppingCriterion`](@ref)
-* `variant` – (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
-* `update_primal_base` (`(p,o,i) -> o.m`) function to update the primal base
-* `update_dual_base` (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse
+* `m`:                              base point on ``\mathcal M``
+* `n`:                              base point on ``\mathcal N``
+* `p`:                              an initial point on ``x^{(0)} ∈\mathcal M`` (and its previous iterate)
+* `X`:                              an initial tangent vector ``X^{(0)}∈T^*\mathcal N`` (and its previous iterate)
+* `pbar`:                           the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
+* `Xbar`:                           the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
+* `primal_stepsize`:                (`1/sqrt(8)`) proximal parameter of the primal prox
+* `dual_stepsize`:                  (`1/sqrt(8)`) proximal parameter of the dual prox
+* `acceleration`:                   (`0.`) acceleration factor due to Chambolle & Pock
+* `relaxation`:                     (`1.`) relaxation in the primal relaxation step (to compute `pbar`)
+* `relax`:                          (`:primal`) which variable to relax (`:primal` or `:dual`)
+* `stop`:                           a [`StoppingCriterion`](@ref)
+* `variant`:                        (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
+* `update_primal_base`:             (`(p,o,i) -> o.m`) function to update the primal base
+* `update_dual_base`:               (`(p,o,i) -> o.n`) function to update the dual base
+* `retraction_method`:              (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method`:      (`default_inverse_retraction_method(M, typeof(p))`) an inverse
   retraction to use on the manifold ``\mathcal M``.
-* `inverse_retraction_method_dual` - (`default_inverse_retraction_method(N, typeof(n))`)
+* `inverse_retraction_method_dual`: (`default_inverse_retraction_method(N, typeof(n))`)
   an inverse retraction to use on manifold ``\mathcal N``.
-* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to
+* `vector_transport_method`:        (`default_vector_transport_method(M, typeof(p))`) a vector transport to
   use on the manifold ``\mathcal M``.
-* `vector_transport_method_dual` - (`default_vector_transport_method(N, typeof(n))`) a
+* `vector_transport_method_dual`:   (`default_vector_transport_method(N, typeof(n))`) a
   vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -42,7 +42,7 @@ If you activate these to be different from the default identity, you have to pro
         kwargs...
     )
 
-where all other fields from above are keyword arguments with their default values given in brackets.
+where all other fields are keyword arguments with their default values given in brackets.
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
@@ -183,41 +183,41 @@ Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
 where ``F:\mathcal M → ℝ``, ``G:\mathcal N → ℝ``,
 and ``Λ:\mathcal M → \mathcal N``. The remaining input parameters are
 
-* `p, X` primal and dual start points ``x∈\mathcal M`` and ``ξ∈T_n\mathcal N``
-* `m,n` base points on ``\mathcal M`` and ``\mathcal N``, respectively.
-* `adjoint_linearized_operator` the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N``
-* `prox_F, prox_G_Dual` the proximal maps of ``F`` and ``G^\ast_n``
+* `p, X`:                         primal and dual start points ``x∈\mathcal M`` and ``ξ∈T_n\mathcal N``
+* `m,n`:                          base points on ``\mathcal M`` and ``\mathcal N``, respectively.
+* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m): T_{m}\mathcal M → T_{Λ(m)}\mathcal N``
+* `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^\ast_n``
 
 note that depending on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
-as well as the forward_operator `Λ` and the `linearized_forward_operator` can be given as
+as well as the forward operator `Λ` and the `linearized_forward_operator` can be given as
 allocating functions `(Manifolds, parameters) -> result`  or as mutating functions
 `(Manifold, result, parameters)` -> result` to spare allocations.
 
 By default, this performs the exact Riemannian Chambolle Pock algorithm, see the optional parameter
 `DΛ` for their linearized variant.
 
-For more details on the algorithm, see [Bergmann et al., Found. Comput. Math., 2021](@cite BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021).
+For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite).
 
-# Optional Parameters
+# Optional parameters
 
-* `acceleration` – (`0.05`)
-* `dual_stepsize` – (`1/sqrt(8)`) proximal parameter of the primal prox
-* `evaluation` ([`AllocatingEvaluation`](@ref)`()) specify whether the proximal maps and operators are
-  allocating functions `(Manifolds, parameters) -> result`  or given as mutating functions
-  `(Manifold, result, parameters)` -> result` to spare allocations.
-* `Λ` (`missing`) the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
-* `linearized_forward_operator` (`missing`) its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
-* `primal_stepsize` – (`1/sqrt(8)`) proximal parameter of the dual prox
-* `relaxation` – (`1.`)
-* `relax` – (`:primal`) whether to relax the primal or dual
-* `variant` - (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
-  Note that this changes the arguments the `forward_operator` will be called.
-* `stopping_criterion` – (`[StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `update_primal_base` – (`missing`) function to update `m` (identity by default/missing)
-* `update_dual_base` – (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
-* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
+* `acceleration`:                (`0.05`)
+* `dual_stepsize`:               (`1/sqrt(8)`) proximal parameter of the primal prox
+* `evaluation`:                  ([`AllocatingEvaluation`](@ref)`()) specify whether the proximal maps
+  and operators are allocating functions `(Manifolds, parameters) -> result`  or
+   given as mutating functions `(Manifold, result, parameters)` -> result`
+* `Λ`:                           (`missing`) the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
+* `linearized_forward_operator`: (`missing`) its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
+* `primal_stepsize`:             (`1/sqrt(8)`) proximal parameter of the dual prox
+* `relaxation`:                  (`1.`) the relaxation parameter ``γ``
+* `relax`:                       (`:primal`) whether to relax the primal or dual
+* `variant`:                     (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
+  Note that this changes the arguments the `forward_operator` is called with.
+* `stopping_criterion`:          (`[StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
+* `update_primal_base`:          (`missing`) function to update `m` (identity by default/missing)
+* `update_dual_base`:            (`missing`) function to update `n` (identity by default/missing)
+* `retraction_method`:           (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `inverse_retraction_method`    (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
+* `vector_transport_method`      (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 
 # Output
 
@@ -441,7 +441,7 @@ function primal_dual_step!(tmp::TwoManifoldProblem, cps::ChambollePockState, ::V
 end
 #
 # Dual step: linearized
-# depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
+# depending on whether its primal relaxed or dual relaxed, start from start=o.x or start=o.xbar
 #
 function dual_update!(
     tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:linearized}
@@ -453,7 +453,7 @@ function dual_update!(
     X_update = linearized_forward_operator(
         tmp, cps.m, inverse_retract(M, cps.m, start, cps.inverse_retraction_method), cps.n
     )
-    # (2) if p.Λ is missing, we assume that n = Λ(m) and do  not PT, otherwise we do
+    # (2) if p.Λ is missing, if n = Λ(m) and do not PT, otherwise do
     (hasproperty(obj, :Λ!!) && !ismissing(obj.Λ!!)) && vector_transport_to!(
         N,
         X_update,
@@ -470,7 +470,7 @@ function dual_update!(
 end
 #
 # Dual step: exact
-# depending on whether its primal relaxed or dual relaxed we start from start=o.x or start=o.xbar here
+# depending on whether its primal relaxed or dual relaxed start from start=o.x or start=o.xbar here
 #
 function dual_update!(
     tmp::TwoManifoldProblem, cps::ChambollePockState, start::P, ::Val{:exact}
@@ -487,7 +487,7 @@ end
 
 @doc raw"""
     update_prox_parameters!(o)
-update the prox parameters as described in Algorithm 2 of Chambolle, Pock, 2010, i.e.
+update the prox parameters as described in Algorithm 2 of [ChambollePock:2010](@cite),
 
 1. ``θ_{n} = \frac{1}{\sqrt{1+2γτ_n}}``
 2. ``τ_{n+1} = θ_nτ_n``

@@ -9,7 +9,7 @@ abstract type ConstraintType end
     FunctionConstraint <: ConstraintType
 
 A type to indicate that constraints are implemented one whole functions,
-for example ``g(p) ∈ \mathbb R^m``.
+for example ``g(p) ∈ ℝ^m``.
 """
 struct FunctionConstraint <: ConstraintType end
 
@@ -17,7 +17,7 @@ struct FunctionConstraint <: ConstraintType end
     VectorConstraint <: ConstraintType
 
 A type to indicate that constraints are implemented a  vector of functions,
-for example ``g_i(p) ∈ \mathbb R, i=1,…,m``.
+for example ``g_i(p) ∈ ℝ, i=1,…,m``.
 """
 struct VectorConstraint <: ConstraintType end
 
@@ -44,7 +44,7 @@ It consists of
 
 There are two ways to specify the constraints ``g`` and ``h``.
 
-1. as one `Function` returning a vector in ``\mathbb R^m`` and ``\mathbb R^n`` respectively.
+1. as one `Function` returning a vector in ``ℝ^m`` and ``ℝ^n`` respectively.
    This might be easier to implement but requires evaluating all constraints even if only one is needed.
 2. as a `AbstractVector{<:Function}` where each function returns a real number.
    This requires each constraint to be implemented as a single function, but it is possible to evaluate also only a single constraint.

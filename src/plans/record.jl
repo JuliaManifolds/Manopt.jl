@@ -528,9 +528,7 @@ end
 RecordIterate(::T) where {T} = RecordIterate{T}()
 function RecordIterate()
     return throw(
-        ErrorException(
-            "The iterate's data type has to be provided, i.e. RecordIterate(x0)."
-        ),
+        ErrorException("The iterate's data type has to be provided, RecordIterate(x0).")
     )
 end
 function (r::RecordIterate{T})(

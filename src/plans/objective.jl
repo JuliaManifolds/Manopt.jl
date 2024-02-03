@@ -26,7 +26,7 @@ abstract type AbstractManifoldObjective{E<:AbstractEvaluationType} end
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
 
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
-    The second parameter should refer to the undecorated objective (i.e. the most inner one).
+    The second parameter should refer to the undecorated objective (the most inner one).
 """
 abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective} <:
               AbstractManifoldObjective{E} end
@@ -35,7 +35,7 @@ abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective}
     AllocatingEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
-allocate memory for their result, i.e. they work out of place.
+allocate memory for their result, they work out of place.
 """
 struct AllocatingEvaluation <: AbstractEvaluationType end
 
@@ -43,7 +43,7 @@ struct AllocatingEvaluation <: AbstractEvaluationType end
     InplaceEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
-do not allocate memory but work on their input, i.e. in place.
+do not allocate memory but work on their input, in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
@@ -78,12 +78,12 @@ end
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)
 
-Indicate internally, whether an [`AbstractManifoldObjective`](@ref) `o` to be of decorating type, i.e.
+Indicate internally, whether an [`AbstractManifoldObjective`](@ref) `o` to be of decorating type,
 it stores (encapsulates) an object in itself, by default in the field `o.objective`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, i.e. by default an state is not decorated.
+The default is `Val{false}`, so by default an state is not decorated.
 """
 dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
 dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)

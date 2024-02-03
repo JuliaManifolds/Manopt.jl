@@ -8,9 +8,10 @@ and especially being the Riesz representer with respect to the metric in the emb
 The types can be used to still dispatch on also the undecorated objective type `O2`.
 
 # Fields
-* `objective` – the objective that is defined in the embedding
-* `p`         - (`nothing`) a point in the embedding.
-* `X`         - (`nothing`) a tangent vector in the embedding
+
+* `objective`: the objective that is defined in the embedding
+* `p`:         (`nothing`) a point in the embedding.
+* `X`:         (`nothing`) a tangent vector in the embedding
 
 When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
 memory allocations. Similarly `X` is used when embedding tangent vectors
@@ -59,7 +60,7 @@ end
 @doc raw"""
     get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
 
-Evaluate the cost function of an objective defined in the embedding, i.e. embed `p`
+Evaluate the cost function of an objective defined in the embedding by first embedding `p`
 before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref Manopt.EmbeddedManifoldObjective).
 """
 function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)

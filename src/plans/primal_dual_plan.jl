@@ -37,12 +37,12 @@ Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergma
 All fields with !! can either be mutating or nonmutating functions, which should be set
 depending on the parameter `T <: AbstractEvaluationType`.
 
-* `cost` ``F + G(Λ(⋅))`` to evaluate interims cost function values
-* `linearized_forward_operator!!` linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!!` The adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
-* `prox_f!!` the proximal map belonging to ``f``
-* `prox_G_dual!!` the proximal map belonging to ``g_n^*``
-* `Λ!!` – (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
+* `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
+* `linearized_forward_operator!!`: linearized operator for the forward operation in the algorithm ``DΛ``
+* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
+* `prox_f!!`:                      the proximal map belonging to ``f``
+* `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
+* `Λ!!`:                           (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
@@ -1013,7 +1013,7 @@ end
     RecordPrimalChange(a)
 
 Create an [`RecordAction`](@ref) that records the primal value change,
-i.e. [`RecordChange`](@ref), since we just record the change of `o.x`.
+[`RecordChange`](@ref), to record the change of `o.x`.
 """
 RecordPrimalChange() = RecordChange()
 
@@ -1021,7 +1021,7 @@ RecordPrimalChange() = RecordChange()
     RecordDualBaseIterate(x)
 
 Create an [`RecordAction`](@ref) that records the dual base point,
-i.e. [`RecordIterate`](@ref), i.e. `o.x`.
+an [`RecordIterate`](@ref) of `o.x`.
 """
 RecordPrimalIterate(p) = RecordIterate(p)
 
@@ -1029,7 +1029,7 @@ RecordPrimalIterate(p) = RecordIterate(p)
     RecordDualIterate(X)
 
 Create an [`RecordAction`](@ref) that records the dual base point,
-i.e. [`RecordEntry`](@ref) of `o.X`, so .
+an [`RecordEntry`](@ref) of `o.X`.
 """
 RecordDualIterate(X) = RecordEntry(X, :X)
 
@@ -1047,7 +1047,7 @@ end
     RecordDualBaseIterate(n)
 
 Create an [`RecordAction`](@ref) that records the dual base point,
-i.e. [`RecordEntry`](@ref) of `o.n`.
+an [`RecordEntry`](@ref) of `o.n`.
 """
 RecordDualBaseIterate(n) = RecordEntry(n, :n)
 
@@ -1055,7 +1055,7 @@ RecordDualBaseIterate(n) = RecordEntry(n, :n)
     RecordDualBaseChange(e)
 
 Create an [`RecordAction`](@ref) that records the dual base point change,
-i.e. [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
+an [`RecordEntryChange`](@ref) of `o.n` with distance to the last value to store a value.
 """
 function RecordDualBaseChange()
     return RecordEntryChange(:n, (p, o, x, y) -> distance(get_manifold(p, 2), x, y))
@@ -1065,14 +1065,14 @@ end
     RecordPrimalBaseIterate(x)
 
 Create an [`RecordAction`](@ref) that records the primal base point,
-i.e. [`RecordEntry`](@ref) of `o.m`.
+an [`RecordEntry`](@ref) of `o.m`.
 """
 RecordPrimalBaseIterate(m) = RecordEntry(m, :m)
 """
     RecordPrimalBaseChange()
 
 Create an [`RecordAction`](@ref) that records the primal base point change,
-i.e. [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
+an [`RecordEntryChange`](@ref) of `o.m` with distance to the last value to store a value.
 """
 function RecordPrimalBaseChange()
     return RecordEntryChange(:m, (p, o, x, y) -> distance(get_manifold(p, 1), x, y))

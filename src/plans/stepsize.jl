@@ -1,7 +1,7 @@
 """
     Stepsize
 
-An abstract type for the functors representing step sizes, i.e. they are callable
+An abstract type for the functors representing step sizes. These are callable
 structures. The naming scheme is `TypeOfStepSize`, e.g. `ConstantStepsize`.
 
 Every Stepsize has to provide a constructor and its function has to have
@@ -45,8 +45,9 @@ end
 A functor that always returns a fixed step size.
 
 # Fields
-* `length` – constant value for the step size
-* `type` - a symbol that indicates whether the stepsize is relatively (:relative),
+
+* `length`: constant value for the step size
+* `type`:   a symbol that indicates whether the stepsize is relatively (:relative),
     with respect to the gradient norm, or absolutely (:absolute) constant.
 
 # Constructors
@@ -97,13 +98,14 @@ show(io::IO, cs::ConstantStepsize) = print(io, "ConstantStepsize($(cs.length), $
 A functor that represents several decreasing step sizes
 
 # Fields
-* `length` – (`1`) the initial step size ``l``.
-* `factor` – (`1`) a value ``f`` to multiply the initial step size with every iteration
-* `subtrahend` – (`0`) a value ``a`` that is subtracted every iteration
-* `exponent` – (`1`) a value ``e`` the current iteration numbers ``e``th exponential
-  is taken of
-* `shift` – (`0`) shift the denominator iterator ``i`` by ``s```.
-* `type` - a symbol that indicates whether the stepsize is relatively (:relative),
+
+* `exponent`:   (`1`) a value ``e`` the current iteration numbers ``e``th exponential is
+  taken of
+* `factor`:     (`1`) a value ``f`` to multiply the initial step size with every iteration
+* `length`:     (`1`) the initial step size ``l``.
+* `subtrahend`: (`0`) a value ``a`` that is subtracted every iteration
+* `shift`:      (`0`) shift the denominator iterator ``i`` by ``s```.
+* `type`:       a symbol that indicates whether the stepsize is relatively (:relative),
     with respect to the gradient norm, or absolutely (:absolute) constant.
 
 In total the complete formulae reads for the ``i``th iterate as
@@ -208,14 +210,14 @@ A functor representing Armijo line search including the last runs state string t
 * `retraction_method`:         (`default_retraction_method(M)`) the retraction to use
 * `contraction_factor`:        (`0.95`) exponent for line search reduction
 * `sufficient_decrease`:       (`0.1`) gain within Armijo's rule
-* `last_stepsize`:             (`initialstepsize`) the last step size we start the search with
+* `last_stepsize`:             (`initialstepsize`) the last step size to start the search with
 * `initial_guess`:             (`(p,s,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`,
   [`AbstractManoptSolverState`](@ref) `s` and a current iterate `i` and a last step size `l`,
   this returns an initial guess. The default uses the last obtained stepsize
 
 as well as for internal use
 
-* `candidate_point`:           (`allocate_result(M, rand)`) to store an interims result
+* `candidate_point`:           (`allocate_result(M, rand)`) to store an interim result
 
 Furthermore the following fields act as safeguards
 
@@ -445,8 +447,9 @@ end
     NonmonotoneLinesearch <: Linesearch
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [Iannazzo, Porcelli, IMA J. Numer. Anal., 2017](@cite IannazzoPorcelli:2017).
-Together with a gradient descent algorithm this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm. We shifted the order of the algorithm steps from the paper
-by Iannazzo and Porcelli so that in each iteration we first find
+Together with a gradient descent algorithm this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm.
+The order is shifted in comparison of the algorithm steps from the paper
+by Iannazzo and Porcelli so that in each iteration this linesearch first finds
 
 ```math
 y_{k} = \operatorname{grad}F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1}))
@@ -459,7 +462,7 @@ s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{
 ```
 
 where ``α_{k-1}`` is the step size computed in the last iteration and ``\operatorname{T}`` is a vector transport.
-We then find the Barzilai–Borwein step size
+Then the Barzilai–Borwein step size is
 
 ```math
 α_k^{\text{BB}} = \begin{cases}
@@ -481,7 +484,7 @@ if the direct strategy is chosen,
 ```
 
 in case of the inverse strategy and an alternation between the two in case of the
-alternating strategy. Then we find the smallest ``h = 0, 1, 2, …`` such that
+alternating strategy. Then find the smallest ``h = 0, 1, 2, …`` such that
 
 ```math
 F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \operatorname{grad}F(x_k)))
@@ -491,14 +494,15 @@ F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \operatorname{grad}F(x_k)))
 
 where ``σ`` is a step length reduction factor ``∈ (0,1)``, ``m`` is the number of iterations
 after which the function value has to be lower than the current one
-and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find the new stepsize by
+and ``γ`` is the sufficient decrease parameter ``∈(0,1)``.
+Then find the new stepsize by
 
 ```math
 α_k = σ^h α_k^{\text{BB}}.
 ```
 
 # Fields
-* `initial_stepsize`          – (`1.0`) the step size we start the search with
+* `initial_stepsize`          – (`1.0`) the step size to start the search with
 * `memory_size`               – (`10`) number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize`           – (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize`           – (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
@@ -511,7 +515,7 @@ and ``γ`` is the sufficient decrease parameter ``∈(0,1)``. We can then find t
 
 as well as for internal use
 
-* `candidate_point`:           (`allocate_result(M, rand)`) to store an interims result
+* `candidate_point`:           (`allocate_result(M, rand)`) to store an interim result
 
 Furthermore the following fields act as safeguards
 
@@ -755,7 +759,7 @@ get_message(a::NonmonotoneLinesearch) = a.message
     WolfePowellLinesearch <: Linesearch
 
 Do a backtracking linesearch to find a step size ``α`` that fulfils the
-Wolfe conditions along a search direction ``η`` starting from ``x``, i.e.
+Wolfe conditions along a search direction ``η`` starting from ``x`` by
 
 ```math
 f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨\operatorname{grad}f(x), η⟩_x
@@ -938,7 +942,8 @@ W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 �
 ```
 
 where ``x_+ = \operatorname{retr}_x(tη)`` is the current trial point, and ``\text{V}`` is a
-vector transport, we perform the following Algorithm similar to Algorithm 7 from [Huang, Thesis, 2014](@cite Huang:2014)
+vector transport.
+Then the following Algorithm is performed similar to Algorithm 7 from [Huang:2014](@cite)
 
 1. set ``α=0``, ``β=∞`` and ``t=1``.
 2. While either ``A(t)`` does not hold or ``W(t)`` does not hold do steps 3-5.
@@ -1052,18 +1057,18 @@ Represent an adaptive gradient method introduced by [Grapiglia,Stella, J. Optim.
 Given a positive threshold ``\hat c \mathbb N``,
 an minimal bound ``b_{\mathrm{min}} > 0``,
 an initial ``b_0 ≥ b_{\mathrm{min}}``, and a
-gradient reduction factor threshold ``\alpha \in [0,1)``.
+gradient reduction factor threshold ``\alpha ∈ [0,1)``.
 
 Set ``c_0=0`` and use ``\omega_0 = \lVert \operatorname{grad} f(p_0) \rvert_{p_0}``.
 
-For the first iterate we use the initial step size ``s_0 = \frac{1}{b_0}``
+For the first iterate use the initial step size ``s_0 = \frac{1}{b_0}``.
 
 Then, given the last gradient ``X_{k-1} = \operatorname{grad} f(x_{k-1})``,
 and a previous ``\omega_{k-1}``, the values ``(b_k, \omega_k, c_k)`` are computed
 using ``X_k = \operatorname{grad} f(p_k)`` and the following cases
 
 If ``\lVert X_k \rVert_{p_k} \leq \alpha\omega_{k-1}``, then let
-``\hat b_{k-1} \in [b_\mathrm{min},b_{k-1}]`` and set
+``\hat b_{k-1} ∈ [b_\mathrm{min},b_{k-1}]`` and set
 
 ```math
 (b_k, \omega_k, c_k) = \begin{cases}
@@ -1139,7 +1144,7 @@ function AdaptiveWNGradient(
     kwargs...,
 ) where {I<:Integer,R<:Real,F<:Function,E<:AbstractEvaluationType}
     if gradient_bound == 0
-        # If the gradient bound defaults to zero, we set it to 1
+        # If the gradient bound defaults to zero, set it to 1
         gradient_bound = 1.0
     end
     return AdaptiveWNGradient{I,R,F}(

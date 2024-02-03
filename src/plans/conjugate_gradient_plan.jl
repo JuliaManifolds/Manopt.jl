@@ -26,15 +26,16 @@ specify options for a conjugate gradient descent algorithm, that solves a
 [`DefaultManoptProblem`].
 
 # Fields
-* `p`                       – the current iterate, a point on a manifold
-* `X`                       – the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
-* `δ`                       – the current descent direction, i.e. also tangent vector
-* `β`                       – the current update coefficient rule, see .
-* `coefficient`             – ([`ConjugateDescentCoefficient`](@ref)`()`) a [`DirectionUpdateRule`](@ref) function to determine the new `β`
-* `stepsize`                – ([`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`) a [`Stepsize`](@ref) function
-* `stop`                    – ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
-* `retraction_method`       – (`default_retraction_method(M, typeof(p))`) a type of retraction
-* `vector_transport_method` – (`default_retraction_method(M, typeof(p))`) a type of retraction
+
+* `p`:                       the current iterate, a point on a manifold
+* `X`:                       the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
+* `δ`:                       the current descent direction, also a tangent vector
+* `β`:                       the current update coefficient rule, see .
+* `coefficient`:             ([`ConjugateDescentCoefficient`](@ref)`()`) a [`DirectionUpdateRule`](@ref) function to determine the new `β`
+* `stepsize`:                ([`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`) a [`Stepsize`](@ref) function
+* `stop`:                    ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
+* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a type of retraction
+* `vector_transport_method`: (`default_retraction_method(M, typeof(p))`) a type of retraction
 
 # Constructor
 
@@ -602,7 +603,7 @@ This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) 
 When obtain from the [`ConjugateGradientDescentState`](@ref)` cgs` the last
 ``p_k,X_k`` and the current ``p_{k+1},X_{k+1}`` iterate and the gradient, respectively.
 
-Then a restart is performed, i.e. ``β_k = 0`` returned if
+Then a restart is performed, hence ``β_k = 0`` returned if
 
 ```math
     \frac{ ⟨X_{k+1}, P_{p_{k+1}\gets p_k}X_k⟩}{\lVert X_k \rVert_{p_k}} > ξ,

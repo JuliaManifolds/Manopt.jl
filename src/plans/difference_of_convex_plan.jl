@@ -3,7 +3,7 @@
 
 Specify an objective for a [`difference_of_convex_algorithm`](@ref).
 
-The objective ``f: \mathcal M \to ℝ`` is given as
+The objective ``f: \mathcal M → ℝ`` is given as
 
 ```math
     f(p) = g(p) - h(p)
@@ -14,12 +14,13 @@ Furthermore we assume that the subdifferential ``∂h`` of ``h`` is given.
 
 # Fields
 
-* `cost` – an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
-* `∂h!!` – a deterministic version of ``∂h: \mathcal M → T\mathcal M``,
-  i.e. calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and if there is more than
-  one, it returns a deterministic choice.
+* `cost`: an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
+* `∂h!!`: a deterministic version of ``∂h: \mathcal M → T\mathcal M``,
+  in the sense that calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and
+  if there is more than one, it returns a deterministic choice.
 
 Note that the subdifferential might be given in two possible signatures
+
 * `∂h(M,p)` which does an [`AllocatingEvaluation`](@ref)
 * `∂h!(M, X, p)` which does an [`InplaceEvaluation`](@ref) in place of `X`.
 """
@@ -95,8 +96,8 @@ end
 @doc raw"""
     LinearizedDCCost
 
-A functor `(M,q) → ℝ` to represent the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref),
-i.e. a cost function of the form
+A functor `(M,q) → ℝ` to represent the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
+This is a cost function of the form
 
 ```math
     F_{p_k,X_k}(p) = g(p) - ⟨X_k, \log_{p_k}p⟩
@@ -110,7 +111,7 @@ that are stored within this functor as well.
 * `pk` a point on a manifold
 * `Xk` a tangent vector at `pk`
 
-Both interims values can be set using
+Both interim values can be set using
 `set_manopt_parameter!(::LinearizedDCCost, ::Val{:p}, p)`
 and `set_manopt_parameter!(::LinearizedDCCost, ::Val{:X}, X)`, respectively.
 
@@ -136,8 +137,8 @@ end
 @doc raw"""
     LinearizedDCGrad
 
-A functor `(M,X,p) → ℝ` to represent the gradient of the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref),
-i.e. for a cost function of the form
+A functor `(M,X,p) → ℝ` to represent the gradient of the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
+This is a gradient function of the form
 
 ```math
     F_{p_k,X_k}(p) = g(p) - ⟨X_k, \log_{p_k}p⟩
@@ -158,7 +159,7 @@ for a point `pk` and a tangent vector `Xk` at `pk` (the outer iterates) that are
 * `pk` a point on a manifold
 * `Xk` a tangent vector at `pk`
 
-Both interims values can be set using
+Both interim values can be set using
 `set_manopt_parameter!(::LinearizedDCGrad, ::Val{:p}, p)`
 and `set_manopt_parameter!(::LinearizedDCGrad, ::Val{:X}, X)`, respectively.
 
@@ -217,15 +218,16 @@ Specify an objective [`difference_of_convex_proximal_point`](@ref) algorithm.
 The problem is of the form
 
 ```math
-    \operatorname*{argmin}_{p\in \mathcal M} g(p) - h(p)
+    \operatorname*{argmin}_{p∈\mathcal M} g(p) - h(p)
 ```
 
 where both ``g`` and ``h`` are convex, lsc. and proper.
+
 # Fields
 
-* `cost` – (`nothing`) implementation of ``f(p) = g(p)-h(p)`` (optional)
-* `gradient` - the gradient of the cost
-* `grad_h!!` – a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
+* `cost`:     (`nothing`) implementation of ``f(p) = g(p)-h(p)`` (optional)
+* `gradient`: the gradient of the cost
+* `grad_h!!`: a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
 
 Note that both the gradients might be given in two possible signatures
 as allocating or Inplace.
@@ -301,8 +303,8 @@ end
 @doc raw"""
     ProximalDCCost
 
-A functor `(M, p) → ℝ` to represent the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref),
-i.e. the cost function of the proximal map of `g`.
+A functor `(M, p) → ℝ` to represent the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref).
+This is the cost function of the proximal map of `g`.
 
 ```math
     F_{p_k}(p) = \frac{1}{2λ}d_{\mathcal M}(p_k,p)^2 + g(p)
@@ -316,7 +318,7 @@ for a point `pk` and a proximal parameter ``λ``.
 * `pk` - a point on a manifold
 * `λ`  - the prox parameter
 
-Both interims values can be set using
+Both interim values can be set using
 `set_manopt_parameter!(::ProximalDCCost, ::Val{:p}, p)`
 and `set_manopt_parameter!(::ProximalDCCost, ::Val{:λ}, λ)`, respectively.
 
@@ -343,14 +345,14 @@ end
 @doc raw"""
     ProximalDCGrad
 
-A functor `(M,X,p) → ℝ` to represent the gradient of the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref),
-i.e. the gradient function of the proximal map cost function of `g`, i.e. of
+A functor `(M,X,p) → ℝ` to represent the gradient of the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref).
+This is the gradient function of the proximal map cost function of `g`. Based on
 
 ```math
     F_{p_k}(p) = \frac{1}{2λ}d_{\mathcal M}(p_k,p)^2 + g(p)
 ```
 
-which reads
+it reads
 
 ```math
     \operatorname{grad} F_{p_k}(p) = \operatorname{grad} g(p) - \frac{1}{λ}\log_p p_k
@@ -364,7 +366,7 @@ for a point `pk` and a proximal parameter `λ`.
 * `pk` - a point on a manifold
 * `λ`  - the prox parameter
 
-Both interims values can be set using
+Both interim values can be set using
 `set_manopt_parameter!(::ProximalDCGrad, ::Val{:p}, p)`
 and `set_manopt_parameter!(::ProximalDCGrad, ::Val{:λ}, λ)`, respectively.
 

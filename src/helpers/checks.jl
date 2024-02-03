@@ -169,7 +169,7 @@ no plot is generated.
 
 # Keyword arguments
 
-* `check_vector`:      (`true`) verify that ``\operatorname{grad} f(p) \in T_p\mathcal M`` using `is_vector`.
+* `check_vector`:      (`true`) verify that ``\operatorname{grad} f(p) ∈ T_p\mathcal M`` using `is_vector`.
 * `exactness_tol`:     (`1e-12`) if all errors are below this tolerance, the gradient is considered to be exact
 * `io`:                (`nothing`) provide an `IO` to print the result to
 * `gradient`:          (`grad_f(M, p)`) instead of the gradient function you can also provide the gradient at `p` directly
@@ -232,10 +232,10 @@ no plot is generated.
 
 # Keyword arguments
 
-* `check_grad`:       (`true`) verify that ``\operatorname{grad} f(p) \in T_p\mathcal M``.
+* `check_grad`:       (`true`) verify that ``\operatorname{grad} f(p) ∈ T_p\mathcal M``.
 * `check_linearity`:  (`true`) verify that the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry`:   (`true`) verify that the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
-* `check_vector`:     (`false`) verify that ``\operatorname{Hess} f(p)[X] \in T_p\mathcal M`` using `is_vector`.
+* `check_vector`:     (`false`) verify that ``\operatorname{Hess} f(p)[X] ∈ T_p\mathcal M`` using `is_vector`.
 * `mode`:             (`:Default`) specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
   if the point `p` is a critical point.

@@ -10,7 +10,7 @@ Optimization Algorithm on Riemannian Manifolds.
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.03866/status.svg)](https://doi.org/10.21105/joss.03866)
 
 For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
-ℳ to the real line, we aim to solve
+ℳ to the real line, this package aims to solve
 
 > Find the minimizer p on ℳ, that is, the (or a) point where f attains its minimum.
 
@@ -61,7 +61,7 @@ If you use `Manopt.jl` in your work, please cite the following
 }
 ```
 
-To refer to a certain version or the source code in general we recommend to cite for example
+To refer to a certain version or the source code in general please cite for example
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,

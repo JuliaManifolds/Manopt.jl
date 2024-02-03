@@ -35,7 +35,7 @@ Z = v0 * v0'
 f(M, p) = -tr(transpose(p) * Z * p) / 2
 grad_f(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
 # Constraints
-g(M, p) = -p # i.e. p ≥ 0
+g(M, p) = -p # now p ≥ 0
 mI = -Matrix{Float64}(I, d, d)
 # Vector of gradients of the constraint components
 grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
@@ -122,7 +122,7 @@ p3 = exact_penalty_method(
 
 The different lengths of the dotted lines come from the fact that ---at least in the beginning--- the subsolver performs a few steps.
 
-For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:Subsolver`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, i.e. [`DebugEvery`](@ref) is active itself.
+For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:Subsolver`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, or inother words [`DebugEvery`](@ref) is active itself.
 Let's
 
 ```{julia}

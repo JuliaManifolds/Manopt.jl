@@ -35,7 +35,7 @@ end
     MOI.dimension(set::VectorizedManifold)
 
 Return the representation side of points on the (vectorized in representation) manifold.
-As the MOI variables are real, this means if the [`representation_size`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.representation_size-Tuple{AbstractManifold}) yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``\\mathbb R^n``).
+As the MOI variables are real, this means if the [`representation_size`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.representation_size-Tuple{AbstractManifold}) yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
 """
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
@@ -156,10 +156,9 @@ MOI.supports_incremental_interface(::Optimizer) = true
 """
     MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
 
-Because `supports_incremental_interface(dest)` is `true` we can simply
-use `MOI.Utilities.default_copy_to`. This copies the variables with
+Because `supports_incremental_interface(dest)` is `true`, this simply
+uses `MOI.Utilities.default_copy_to` and copies the variables with
 `MOI.add_constrained_variables` and the objective sense with `MOI.set`.
-`
 """
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
     return MOI.Utilities.default_copy_to(dest, src)
@@ -451,7 +450,7 @@ character.
 """
 function MOI.get(model::Optimizer, ::MOI.RawStatusString)
     # `strip` removes the `\n` at the end and returns an `AbstractString`
-    # Since MOI wants a `String`, we pass it through `string`
+    # Since MOI wants a `String`, pass it through `string`
     return string(strip(get_reason(model.state)))
 end
 

@@ -25,14 +25,14 @@ You can also ask your question on [discourse.julialang.org](https://discourse.ju
 
 ## How can I file an issue?
 
-If you found a bug or want to propose a feature, we track our issues within the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/issues).
+If you found a bug or want to propose a feature, please open an issue in within the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/issues).
 
 ## How can I contribute?
 
 ### Add a missing method
 
 There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
-If you notice a method missing and can contribute an implementation, please do so, we help with the necessary details.
+If you notice a method missing and can contribute an implementation, please do so, and the maintainers will try help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm

@@ -3,7 +3,7 @@
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: \mathcal M → \mathcal M``, i.e.,
+function ``f: \mathcal M → \mathcal M``, given by
 
 ````math
     \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),
@@ -22,7 +22,7 @@ end
     reflect(M, p, x, kwargs...)
     reflect!(M, q, p, x, kwargs...)
 
-Reflect the point `x` from the manifold `M` at point `p`, i.e.
+Reflect the point `x` from the manifold `M` at point `p`, given by
 
 ````math
     \operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x).

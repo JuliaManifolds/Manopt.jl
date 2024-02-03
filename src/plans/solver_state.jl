@@ -34,12 +34,12 @@ abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 """
     dispatch_state_decorator(s::AbstractManoptSolverState)
 
-Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` to be of decorating type, i.e.
-it stores (encapsulates) a state in itself, by default in the field `s.state`.
+Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` is of decorating type,
+and stores (encapsulates) a state in itself, by default in the field `s.state`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, i.e. by default an state is not decorated.
+The default is `Val{false}`, so by default a state is not decorated.
 """
 dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
@@ -101,8 +101,7 @@ dispatch_state_decorator(::ReturnSolverState) = Val(true)
     get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
 
 determine the result value of a call to a solver.
-By default this returns the same as [`get_solver_result`](@ref),
-i.e. the last iterate or (approximate) minimizer.
+By default this returns the same as [`get_solver_result`](@ref).
 
     get_solver_return(s::ReturnSolverState)
     get_solver_return(o::AbstractManifoldObjective, s::ReturnSolverState)
@@ -313,29 +312,30 @@ internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields f
 [`AbstractManoptSolverState`](@ref)s
 
 This functor possesses the usual interface of functions called during an
-iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref),
-`o` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
+iteration and acts on `(p, s, i)`, where `p` is a [`AbstractManoptProblem`](@ref),
+`s` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
 
 # Fields
-* `values` – a dictionary to store interims values based on certain `Symbols`
-* `keys` – a `Vector` of `Symbols` to refer to fields of `AbstractManoptSolverState`
-* `point_values` – a `NamedTuple` of mutable values of points on a manifold to be stored in
+
+* `values`:        a dictionary to store interim values based on certain `Symbols`
+* `keys`:          a `Vector` of `Symbols` to refer to fields of `AbstractManoptSolverState`
+* `point_values`:  a `NamedTuple` of mutable values of points on a manifold to be stored in
   `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem` passed
   to `update_storage!`.
-* `point_init` – a `NamedTuple` of boolean values indicating whether a point in
+* `point_init`:    a `NamedTuple` of boolean values indicating whether a point in
   `point_values` with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
-* `vector_values` – a `NamedTuple` of mutable values of tangent vectors on a manifold to be
+* `vector_values`: a `NamedTuple` of mutable values of tangent vectors on a manifold to be
   stored in `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem`
   passed to `update_storage!`. It is not specified at which point the vectors are tangent
   but for storage it should not matter.
-* `vector_init` – a `NamedTuple` of boolean values indicating whether a tangent vector in
-  `vector_values` with matching key has been already initialized to a value. When it is
+* `vector_init`:   a `NamedTuple` of boolean values indicating whether a tangent vector in
+  `vector_values`: with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
-* `once` – whether to update the internal values only once per iteration
-* `lastStored` – last iterate, where this `AbstractStateAction` was called (to determine `once`)
+* `once`:          whether to update the internal values only once per iteration
+* `lastStored`:    last iterate, where this `AbstractStateAction` was called (to determine `once`)
 
 To handle the general storage, use `get_storage` and `has_storage` with keys as `Symbol`s.
 For the point storage use `PointStorageKey`. For tangent vector storage use

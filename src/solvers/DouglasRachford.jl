@@ -226,7 +226,7 @@ end
      DouglasRachford!(M, mpo, p)
 
 Compute the Douglas-Rachford algorithm on the manifold ``\mathcal M``, initial
-data ``p \in \mathcal M`` and the (two) proximal maps `proxes_f` in place of `p`.
+data ``p ∈ \mathcal M`` and the (two) proximal maps `proxes_f` in place of `p`.
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``\mathcal M^k`` is introduced as the first

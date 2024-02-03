@@ -135,7 +135,7 @@ where the main step is a constrained optimisation is within the algorithm,
 that is the sub problem (Oracle)
 
 ```math
-    q_k = \operatorname{arg\,min}_{q \in C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩.
+    q_k = \operatorname{arg\,min}_{q ∈ C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩.
 ```
 
 for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``.

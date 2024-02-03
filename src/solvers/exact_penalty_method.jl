@@ -157,12 +157,12 @@ Finally, the penalty parameter ``ρ`` is updated as
 
 ```math
 ρ^{(k)} = \begin{cases}
-ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j \in \mathcal{E},i \in \mathcal{I}} \Bigl\{ \vert h_j(x^{(k)}) \vert, g_i(x^{(k)})\Bigr\} \geq u^{(k-1)} \Bigr) ,\\
+ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j ∈ \mathcal{E},i ∈ \mathcal{I}} \Bigl\{ \vert h_j(x^{(k)}) \vert, g_i(x^{(k)})\Bigr\} \geq u^{(k-1)} \Bigr) ,\\
 ρ^{(k-1)}, & \text{else,}
 \end{cases}
 ```
 
-where ``θ_ρ \in (0,1)`` is a constant scaling factor.
+where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 # Input
 

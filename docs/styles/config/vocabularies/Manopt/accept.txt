@@ -48,6 +48,7 @@ Moakher
 Munkvold
 [Mm]ead
 [Nn]elder
+Nesterov
 Newton
 nonpositive
 [Pp]arametrising
@@ -82,6 +83,7 @@ supertype
 th
 Tom-Christian
 Toint
+tridiagonal
 Vectorial
 Weinmann
 Willem

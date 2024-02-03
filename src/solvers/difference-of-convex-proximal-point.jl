@@ -204,7 +204,7 @@ difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
   provide the objective used within `sub_problem` (if that is not specified by the user)
 * `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
   You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state`:              ([`TrustRegionsState`](@ref)). requires the `sub_hessian to be provided,
+* `sub_state`:              ([`TrustRegionsState`](@ref)). requires the `sub_Hessian to be provided,
    decorated with `sub_kwargs`) choose the solver by specifying a solver state to solve the `sub_problem`
 * `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping criterion used withing the default `sub_state=`

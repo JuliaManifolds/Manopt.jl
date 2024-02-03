@@ -5,10 +5,10 @@ A stochastic gradient objective consists of
 
 * a(n optional) cost function ``f(p) = \displaystyle\sum_{i=1}^n f_i(p)
 * an array of gradients, ``\operatorname{grad}f_i(p), i=1,\ldots,n`` which can be given in two forms
-  * as one single function ``(\mathcal M, p) ↦ (X_1,…,X_n) \in (T_p\mathcal M)^n``
+  * as one single function ``(\mathcal M, p) ↦ (X_1,…,X_n) ∈ (T_p\mathcal M)^n``
   * as a vector of functions ``\bigl( (\mathcal M, p) ↦ X_1, …, (\mathcal M, p) ↦ X_n\bigr)``.
 
-Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions, i.e.
+Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions
 `(M, X, p) -> X`, where `X` is the vector of `X1,...Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
 respectively.
 

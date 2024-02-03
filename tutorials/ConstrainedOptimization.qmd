@@ -11,7 +11,7 @@ A constraint optimisation problem is given by
 ```math
 \tag{P}
 \begin{align*}
-\operatorname*{arg\,min}_{p\in\mathcal M} & f(p)\\
+\operatorname*{arg\,min}_{p∈\mathcal M} & f(p)\\
 \text{such that} &\quad g(p) \leq 0\\
 &\quad h(p) = 0,\\
 \end{align*}
@@ -60,7 +60,7 @@ In order to recover $v_0$ we consider the constrained optimisation problem on th
 
 ```math
 \begin{align*}
-\operatorname*{arg\,min}_{p\in\mathcal S^{d-1}} & -p^{\mathrm{T}}Zp^{\mathrm{T}}\\
+\operatorname*{arg\,min}_{p∈\mathcal S^{d-1}} & -p^{\mathrm{T}}Zp^{\mathrm{T}}\\
 \text{such that} &\quad p \geq 0\\
 \end{align*}
 ```

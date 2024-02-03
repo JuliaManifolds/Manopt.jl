@@ -88,7 +88,7 @@ function AdaptiveRegularizationState(
     ρ_regularization::R=1e3,
     stopping_criterion::SC=StopAfterIteration(100),
     retraction_method::RTM=default_retraction_method(M),
-    σmin::R=1e-10, #Set the below to appropriate default vals.
+    σmin::R=1e-10,
     η1::R=0.1,
     η2::R=0.9,
     γ1::R=0.1,
@@ -192,7 +192,7 @@ Further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2`
 σ_{k+1} =
 \begin{cases}
     \max\{σ_{\min}, γ_1σ_k\} & \text{ if } ρ \geq η_2 &\text{   (the model was very successful)},\\
-    σ_k & \text{ if } ρ \in [η_1, η_2)&\text{   (the model was successful)},\\
+    σ_k & \text{ if } ρ ∈ [η_1, η_2)&\text{   (the model was successful)},\\
     γ_2σ_k & \text{ if } ρ < η_1&\text{   (the model was unsuccessful)}.
 \end{cases}
 ```
@@ -272,8 +272,6 @@ function adaptive_regularization_with_cubics(
     q = [p]
     f_(M, p) = f(M, p[])
     Hess_f_ = Hess_f
-    # For now we can not update the gradient within the ApproxHessian so the filled default
-    # Hessian fails here
     if evaluation isa AllocatingEvaluation
         grad_f_ = (M, p) -> [grad_f(M, p[])]
         Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
@@ -468,7 +466,7 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     set_manopt_parameter!(arcs.sub_problem, :Objective, :σ, arcs.σ)
     set_iterate!(arcs.sub_state, M, copy(M, arcs.p, arcs.X))
     set_manopt_parameter!(arcs.sub_state, :σ, arcs.σ)
-    #Solve the sub_problem – via dispatch depending on type
+    #Solve the `sub_problem` via dispatch depending on type
     solve_arc_subproblem!(M, arcs.S, arcs.sub_problem, arcs.sub_state, arcs.p)
     # Compute ρ
     retract!(M, arcs.q, arcs.p, arcs.S, arcs.retraction_method)
@@ -482,9 +480,9 @@ function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationSt
     #Update iterate
     if arcs.ρ >= arcs.η1
         copyto!(M, arcs.p, arcs.q)
-        get_gradient!(dmp, arcs.X, arcs.p) #only compute gradient when we update the point
+        get_gradient!(dmp, arcs.X, arcs.p) # only compute gradient when updating the point
     end
-    #Update regularization parameter - in the mid interval between η1 and η2 we leave it as is
+    # Update regularization parameter, for the last case between η1 and η2 keep it as is
     if arcs.ρ >= arcs.η2 #very successful, reduce
         arcs.σ = max(arcs.σmin, arcs.γ1 * arcs.σ)
     elseif arcs.ρ < arcs.η1 # unsuccessful

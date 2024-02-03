@@ -10,7 +10,7 @@ A trust region model of the form
 
 # Fields
 
-* `objective` – an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
 
 # Constructors
 

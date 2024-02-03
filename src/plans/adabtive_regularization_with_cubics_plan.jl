@@ -12,8 +12,8 @@ cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
 
 # Fields
 
-* `objective` – an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
-* `σ` – the current (cubic) regularization parameter
+* `objective`: an [`AbstractManifoldHessianObjective`](@ref) proving ``f``, its gradient and Hessian
+* `σ`:         the current (cubic) regularization parameter
 
 # Constructors
 

@@ -8,7 +8,7 @@ This tutorial explains how to use Euclidean tools to derive a gradient for a rea
 
 While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/), you can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or  [Zygote.jl](https://fluxml.ai/Zygote.jl/).
 
-In this tutorial we will take a look at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M \to ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
+In this tutorial we will take a look at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M → ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
 1. Working _intrinsically_, that is staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
 2. Working in an embedding where all tools from functions on Euclidean spaces can be used, like finite differences or automatic differentiation, and then compute the corresponding Riemannian gradient from there.
@@ -37,7 +37,7 @@ A first idea is to generalize (multivariate) finite differences to Riemannian ma
 We can generalize the notion of a directional derivative to a “direction” $Y∈T_p\mathcal M$. Let $c:  [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, for example $c(t)= \exp_p(tY)$. We obtain
 
 ```math
-	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t \to 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
+	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t → 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
 ```
 
 We can approximate $Df(p)[X]$ by a finite difference scheme for an $h>0$ as
@@ -69,18 +69,18 @@ This is the first variant we can use. An advantage is that it is _intrinsic_ in 
 
 ### An Example: The Rayleigh Quotient
 
-The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A\in ℝ^{(n+1)×(n+1)}$. The optimization problem reads
+The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A ∈ ℝ^{(n+1)×(n+1)}$. The optimization problem reads
 
 ```math
-F:  ℝ^{n+1} \to ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
+F:  ℝ^{n+1} → ℝ,\quad F(\mathbf x) = \frac{\mathbf x^\mathrm{T}A\mathbf x}{\mathbf x^\mathrm{T}\mathbf x}
 ```
 
 Minimizing this function yields the smallest eigenvalue $\lambda_1$ as a value and the corresponding minimizer $\mathbf x^*$ is a corresponding eigenvector.
 
-Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere $ 𝕊^n$ of unit vectors in $\mathbb R^{n+1}$, i.e.
+Since the length of an eigenvector is irrelevant, there is an ambiguity in the cost function. It can be better phrased on the sphere $ 𝕊^n$ of unit vectors in $ℝ^{n+1}$,
 
 ```math
-\operatorname*{arg\,min}_{p \in 𝕊^n}\ f(p) = \operatorname*{arg\,min}_{\ p \in 𝕊^n} p^\mathrm{T}Ap
+\operatorname*{arg\,min}_{p ∈ 𝕊^n}\ f(p) = \operatorname*{arg\,min}_{\ p ∈ 𝕊^n} p^\mathrm{T}Ap
 ```
 
 We can compute the Riemannian gradient exactly as
@@ -120,17 +120,17 @@ We obtain quite a good approximation of the gradient.
 
 ``## [2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold](@id EmbeddedGradient)``{=commonmark}
 
-Let $\tilde f: \mathbb R^m \to \mathbb R$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset \mathbb R^m$and let $f:  \mathcal M \to \mathbb R$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
+Let $\tilde f: ℝ^m → ℝ$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset ℝ^m$and let $f:  \mathcal M → ℝ$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
 
-Since we can use the pushforward of the embedding to also embed the tangent space $T_p\mathcal M$, $p\in \mathcal M$, we can similarly obtain the differential $Df(p):  T_p\mathcal M \to \mathbb R$ by restricting the differential $D\tilde f(p)$ to the tangent space.
+Since we can use the pushforward of the embedding to also embed the tangent space $T_p\mathcal M$, $p∈\mathcal M$, we can similarly obtain the differential $Df(p):  T_p\mathcal M → ℝ$ by restricting the differential $D\tilde f(p)$ to the tangent space.
 
-If both $T_p\mathcal M$ and $T_p\mathbb R^m$ have the same inner product, or in other words the manifold is isometrically embedded in $\mathbb R^m$ (like for example the sphere $\mathbb S^n\subset\mathbb R^{m+1}$), then this restriction of the differential directly translates to a projection of the gradient, i.e.
+If both $T_p\mathcal M$ and $T_pℝ^m$ have the same inner product, or in other words the manifold is isometrically embedded in $ℝ^m$ (like for example the sphere $\mathbb S^n\subsetℝ^{m+1}$), then this restriction of the differential directly translates to a projection of the gradient
 
 ```math
 \operatorname{grad}f(p) = \operatorname{Proj}_{T_p\mathcal M}(\operatorname{grad} \tilde f(p))
 ```
 
-More generally we might have to take a change of the metric into account, i.e.
+More generally take a change of the metric into account as
 
 ```math
 \langle  \operatorname{Proj}_{T_p\mathcal M}(\operatorname{grad} \tilde f(p)), X \rangle

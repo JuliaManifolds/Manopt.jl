@@ -122,7 +122,8 @@ end
     conjugate_gradient_descent!(M, F, gradF, x)
     conjugate_gradient_descent!(M, gradient_objective, p; kwargs...)
 
-perform a conjugate gradient based descent in place of `x`, i.e.
+perform a conjugate gradient based descent in place of `x` as
+
 ````math
 p_{k+1} = \operatorname{retr}_{p_k} \bigl( s_k\delta_k \bigr),
 ````
@@ -138,7 +139,7 @@ Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
 for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
- see [`conjugate_gradient_descent`](@ref).
+see [`conjugate_gradient_descent`](@ref).
 """
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(

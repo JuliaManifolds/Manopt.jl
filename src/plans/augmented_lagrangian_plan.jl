@@ -1,7 +1,7 @@
 @doc raw"""
     AugmentedLagrangianCost{CO,R,T}
 
-Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
 
 This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
@@ -53,7 +53,7 @@ end
 @doc raw"""
     AugmentedLagrangianGrad{CO,R,T}
 
-Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
 
 This struct is also a functor in both formats

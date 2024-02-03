@@ -23,23 +23,22 @@ perform a cyclic proximal point algorithm.
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `proxes_f` – an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
-* `p` – an initial value ``p ∈ \mathcal M``
+* `M`:        a manifold ``\mathcal M``
+* `f`:        a cost function ``f:\mathcal M→ℝ`` to minimize
+* `proxes_f`: an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
+* `p`:        an initial value ``p ∈ \mathcal M``
 
 where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
 
 # Optional
 
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
-  or [`InplaceEvaluation`](@ref) in place, i.e. is of the form `prox!(M, y, λ, x)`.
-* `evaluation_order` – (`:Linear`) – whether
-  to use a randomly permuted sequence (`:FixedRandom`), a per
-  cycle permuted sequence (`:Random`) or the default linear one.
-* `λ` – ( `iter -> 1/iter` ) a function returning the (square summable but not
-  summable) sequence of λi
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000) | `[`StopWhenChangeLess`](@ref)`(1e-12)`) a [`StoppingCriterion`](@ref).
+* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
+  or [`InplaceEvaluation`](@ref) in place of form `prox!(M, y, λ, x)`.
+* `evaluation_order`:   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+  a per cycle permuted sequence (`:Random`) or the default linear one.
+* `λ`:                  (`iter -> 1/iter` ) a function returning the (square summable but
+  not summable) sequence of ``λ_i``
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(5000) | `[`StopWhenChangeLess`](@ref)`(1e-12)`) a [`StoppingCriterion`](@ref).
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
 [`decorate_objective!`](@ref), respectively.
@@ -69,7 +68,6 @@ function cyclic_proximal_point(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    # redefine our initial point and encapsulate functions
     q = [p]
     f_(M, p) = f(M, p[])
     if evaluation isa AllocatingEvaluation
@@ -96,10 +94,10 @@ perform a cyclic proximal point algorithm in place of `p`.
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `F` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `proxes` – an Array of proximal maps (`Function`s) `(M, λ, p) -> q` or `(M, q, λ, p)` for the summands of ``F``
-* `p` – an initial value ``p ∈ \mathcal M``
+* `M`:      a manifold ``\mathcal M``
+* `F`:      a cost function ``F:\mathcal M→ℝ`` to minimize
+* `proxes`: an Array of proximal maps (`Function`s) `(M, λ, p) -> q` or `(M, q, λ, p)` for the summands of ``F``
+* `p`:      an initial value ``p ∈ \mathcal M``
 
 where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
 

@@ -239,12 +239,12 @@ which function evaluations to cache.
 
 # Keyword Arguments
 
-* `p`           - (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
-* `value`       - (`get_cost(M, objective, p)`) the type of values for numeric values in the cache, e.g. the cost
-* `X`           - (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
-* `cache`       - (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
-* `cache_size`  - (`10`) number of (least recently used) calls to cache
-* `cache_sizes` – (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
+* `p`:           (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
+* `value`:       (`get_cost(M, objective, p)`) the type of values for numeric values in the cache, e.g. the cost
+* `X`:           (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
+* `cache`:       (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
+* `cache_size`:  (`10`) number of (least recently used) calls to cache
+* `cache_sizes`: (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
 
 
 """
@@ -787,7 +787,7 @@ The following caches are available
   `(:LRU, [:Cost, :Gradient])` to specify what should be cached or
   `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size.
   Here this variant defaults to `(:LRU, [:Cost, :Gradient], 100)`,
-  i.e. to cache up to 100 cost and gradient values.[^1]
+  caching up to 100 cost and gradient values.[^1]
 
 [^1]:
     This cache requires [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl) to be loaded as well.
