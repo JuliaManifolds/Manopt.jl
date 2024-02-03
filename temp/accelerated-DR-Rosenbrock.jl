@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.36
+# v0.19.37
 
 using Markdown
 using InteractiveUtils
@@ -59,13 +59,12 @@ begin
 	function prox_f2!(M, q, λ, p)
 		q .= [
 			(p[1] + 2*λ*b) / (1+2*λ),
-			p[2] - ( 4*λ*(p[1] + 2*λ*b) * (p[1] - b)  + 4 * λ^2 * (p[1]-b)^2 ) / (1+2 * a * λ)^2
+			p[2] - ( 4*λ*(p[1] + 2*λ*b) * (p[1] - b)  + 4 * λ^2 * (p[1]-b)^2 ) / (1+2 * λ)^2
 		]
 		return q
 	end
 	prox_f1(M, λ, p) = prox_f1!(M, copy(M, p), λ, p)
 	prox_f2(M, λ, p) = prox_f2!(M, copy(M, p), λ, p)
-	# The reflections here will work automatically, but I _hate_ phrasings like “can be easilu seen”
 end
 
 # ╔═╡ 319b9c41-d06a-40b5-8a63-849d87df3cb4
