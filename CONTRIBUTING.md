@@ -76,3 +76,5 @@ Concerning documentation
 
 - if possible provide both mathematical formulae and literature references using [DocumenterCitations.jl](https://juliadocs.org/DocumenterCitations.jl/stable/) and BibTeX where possible
 - Always document all input variables and keyword arguments
+
+If you implement an algorithm with a certain application in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.
