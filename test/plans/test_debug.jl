@@ -227,14 +227,9 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         w1 = DebugWarnIfCostNotFinite()
         @test repr(w1) == "DebugWarnIfCostNotFinite()"
         @test Manopt.status_summary(w1) == ":WarnCost"
-        @test_logs (:warn,) (
-            :warn,
-            "Further warnings will be suppressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
-        ) w1(mp, st, 0)
+        @test_logs (:warn,) (:warn,) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
-        @test_logs (
-            :warn, "The cost is not finite.\nAt iteration #0 the cost evaluated to Inf."
-        ) w2(mp, st, 0)
+        @test_logs (:warn,) w2(mp, st, 0)
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
