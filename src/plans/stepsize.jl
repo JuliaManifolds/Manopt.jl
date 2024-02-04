@@ -128,7 +128,7 @@ Alternatively one can also use the following keyword.
         exponent=1.0, shift=0, type=:relative
     )
 
-initializes all fields above, where none of them is mandatory and the length is set to
+initializes all fields, where none of them is mandatory and the length is set to
 half and to ``1`` if the injectivity radius is infinite.
 """
 mutable struct DecreasingStepsize <: Stepsize

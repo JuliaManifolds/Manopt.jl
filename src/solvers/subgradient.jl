@@ -5,7 +5,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-* `retraction_method`: the rectration to use within
+* `retraction_method`: the retraction to use within
 * `stepsize`:          ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stop`:              ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
 * `p`:                 (initial or current) value the algorithm is at
@@ -15,11 +15,10 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Constructor
 
-SubGradientMethodState(M::AbstractManifold, p; kwargs...)
+    SubGradientMethodState(M::AbstractManifold, p; kwargs...)
 
-with keywords for all fields above besides `p_star` which obtains the same type as `p`.
-You can use e.g. `X=` to specify the type of tangent vector to use
-
+with keywords for all fields besides `p_star` which obtains the same type as `p`.
+You can use `X=` to specify the type of tangent vector to use
 """
 mutable struct SubGradientMethodState{
     TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T

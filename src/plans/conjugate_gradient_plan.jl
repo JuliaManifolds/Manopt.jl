@@ -41,7 +41,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
     ConjugateGradientState(M, p)
 
-where the last five fields above can be set by their names as keyword and the
+where the last five fields can be set by their names as keyword and the
 `X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,
 and `δ` is initialized to a copy of this vector.
 

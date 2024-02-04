@@ -343,9 +343,9 @@ space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport
 
 ## Keyword Arguments
 
-* `scale`, `vector_transport_method` for the two fields above
+* `scale`, `vector_transport_method` for the two fields
 
-Generate the Update rule with defaults from a manifold and the names corresponding to the fields above.
+Generate the Update rule with defaults from a manifold and the names corresponding to the fields.
 
 # See also
 

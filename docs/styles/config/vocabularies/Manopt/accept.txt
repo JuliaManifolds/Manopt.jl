@@ -12,6 +12,8 @@ Broyden
 Bullins
 Cartis
 [Cc]hambolle
+canonicalization
+canonicalized
 Constantin
 Diepeveen
 Dornig
