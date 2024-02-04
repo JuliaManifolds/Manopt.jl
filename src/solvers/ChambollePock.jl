@@ -487,7 +487,7 @@ end
 
 @doc raw"""
     update_prox_parameters!(o)
-update the prox parameters as described in Algorithm 2 of [ChambollePock:2010](@cite),
+update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@cite),
 
 1. ``θ_{n} = \frac{1}{\sqrt{1+2γτ_n}}``
 2. ``τ_{n+1} = θ_nτ_n``

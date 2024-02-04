@@ -889,7 +889,8 @@ function (d::DebugWarnIfCostNotFinite)(
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
             @warn """The cost is not finite.
-            At iteration #$i the cost evaluated to $(cost)."""
+            At iteration #$i the cost evaluated to $(cost).
+            """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings."
                 d.status = :No
@@ -992,13 +993,13 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the di
 function DebugFactory(a::Array{<:Any,1})
     # filter out every
     group = Array{DebugAction,1}()
-    for s in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter ints and stop
-        push!(group, DebugActionFactory(s))
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter numbers & stop
+        push!(group, DebugActionFactory(d))
     end
     dictionary = Dict{Symbol,DebugAction}()
     if length(group) > 0
         debug = DebugGroup(group)
-        # filter ints
+        # filter numbers
         e = filter(x -> isa(x, Int), a)
         if length(e) > 0
             debug = DebugEvery(debug, last(e))
@@ -1024,7 +1025,7 @@ create a [`DebugAction`](@ref) where
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 * a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
 """
-DebugActionFactory(s::String) = DebugDivider(s)
+DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
 """
     DebugActionFactory(s::Symbol)
@@ -1051,24 +1052,24 @@ Note that the Shortcut symbols should all start with a capital letter.
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
-function DebugActionFactory(s::Symbol)
-    (s == :Cost) && return DebugCost()
-    (s == :Change) && return DebugChange()
-    (s == :GradientChange) && return DebugGradientChange()
-    (s == :GradientNorm) && return DebugGradientNorm()
-    (s == :Iterate) && return DebugIterate()
-    (s == :Iteration) && return DebugIteration()
-    (s == :Stepsize) && return DebugStepsize()
-    (s == :WarnCost) && return DebugWarnIfCostNotFinite()
-    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
-    (s == :Time) && return DebugTime()
-    (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
+function DebugActionFactory(d::Symbol)
+    (d == :Cost) && return DebugCost()
+    (d == :Change) && return DebugChange()
+    (d == :GradientChange) && return DebugGradientChange()
+    (d == :GradientNorm) && return DebugGradientNorm()
+    (d == :Iterate) && return DebugIterate()
+    (d == :Iteration) && return DebugIteration()
+    (d == :Stepsize) && return DebugStepsize()
+    (d == :WarnCost) && return DebugWarnIfCostNotFinite()
+    (d == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
+    (d == :Time) && return DebugTime()
+    (d == :IterativeTime) && return DebugTime(; mode=:Iterative)
     # Messages
-    (s == :WarningMessages) && return DebugMessages(:Warning)
-    (s == :InfoMessages) && return DebugMessages(:Info)
-    (s == :ErrorMessages) && return DebugMessages(:Error)
-    (s == :Messages) && return DebugMessages()
-    return DebugEntry(s)
+    (d == :WarningMessages) && return DebugMessages(:Warning)
+    (d == :InfoMessages) && return DebugMessages(:Info)
+    (d == :ErrorMessages) && return DebugMessages(:Error)
+    (d == :Messages) && return DebugMessages()
+    return DebugEntry(d)
 end
 """
     DebugActionFactory(t::Tuple{Symbol,String)

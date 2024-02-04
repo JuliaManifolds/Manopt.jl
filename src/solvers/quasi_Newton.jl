@@ -77,6 +77,7 @@ function QuasiNewtonState(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     ),
+    kwargs... # collect but ignore rest to be more tolerant
 ) where {
     P,
     T,
