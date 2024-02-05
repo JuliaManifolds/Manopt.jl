@@ -49,7 +49,7 @@ often also with `:p` and similarly the gradient with `:X`.
 This is discouraged for both readability as well as to star more generic, and it is recommended
 to use `:Iterate` and `:Gradient` instead in generic settings.
 
-YOu can further activate a “Tutorial” mode by `set_manopt_parameter!(:Mode, "Tutorial"). Internally, the following convenience function is available.
+You can further activate a “Tutorial” mode by `set_manopt_parameter!(:Mode, "Tutorial")`. Internally, the following convenience function is available.
 
 ```@docs
 Manopt.is_tutorial_mode

@@ -43,7 +43,7 @@ get_manopt_parameter(f, args...) = nothing
 Access global [`Manopt`](@ref) parametersadressed by a symbol `element`.
 We first dispatch on the value of `element`.
 
-if the value is not set, `default` is returned
+If the value is not set, `default` is returned.
 
 The parameters are queried from the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl),
 so they are persistent within your activated Environment.
