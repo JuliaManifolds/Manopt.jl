@@ -93,7 +93,7 @@ include("../utils/example_tasks.jl")
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
         @test Y != X
-        Y2 = truncated_conjugate_gradient_descent( #approx hess
+        Y2 = truncated_conjugate_gradient_descent( # with approximate Hessian
             M,
             f,
             rgrad,

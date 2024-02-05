@@ -40,8 +40,8 @@ get_manopt_parameter(f, args...) = nothing
 """
     get_manopt_parameter(element::Symbol; default=nothing)
 
-Access global [`Manopt`](@ref) parametersadressed by a symbol `element`.
-We first dispatch on the value of `element`.
+Access global [`Manopt`](@ref) parameters addressed by a symbol `element`.
+This first dispatches on the value of `element`.
 
 If the value is not set, `default` is returned.
 
@@ -68,13 +68,14 @@ get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = nothing
 """
     set_manopt_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
 
-Set global [`Manopt`](@ref) parameters adressed by a symbol `element`.
-We first dispatch on the value of `element`.
+Set global [`Manopt`](@ref) parameters addressed by a symbol `element`.
+W
+This first dispatches on the value of `element`.
 
 The parameters are stored to the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl).
 
 Passing a `value` of `""` deletes the corresponding entry from the preferences.
-Whenever the `LocalPreferences.toml` is modified, this is also `@info`rmed about.
+Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
 """
 function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
     if length(value) == 0

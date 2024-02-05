@@ -1,5 +1,5 @@
 #
-# Define a global problem and ist constructors
+# Define a global problem and its constructors
 #
 # ---
 

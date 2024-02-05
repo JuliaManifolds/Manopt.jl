@@ -1,7 +1,7 @@
 @doc raw"""
     PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
 
-Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [Diepeveen, Lellmann, SIAM J. Imag. Sci., 2021](@cite DiepeveenLellmann:2021)
+Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [DiepeveenLellmann:2021](@cite)
 
 # Fields
 

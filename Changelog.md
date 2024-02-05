@@ -83,7 +83,7 @@ These examples are now available again within [ManoptExamples.jl](https://juliam
 “reappearance” the corresponding costs, gradients, differentials, adjoint differentials, and proximal maps
 have been moved there as well.
 This is not considered breaking, since the functions were only used in the old, removed examples.
-We still document each and every of the moved functions below. They have been partly renamed,
+Each and every moved function is still documented. They have been partly renamed,
 and their documentation and testing has been extended.
 
 ### Changed

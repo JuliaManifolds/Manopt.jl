@@ -22,7 +22,7 @@ default(; show=false, reuse=true)
 
         check_gradient(M, f, grad_f, p, X; plot=true)
 
-        #test windowsize error
+        #test window size error
         @test_throws ErrorException Manopt.find_best_slope_window(zeros(2), zeros(2), 20)
         @test_throws ErrorException Manopt.find_best_slope_window(
             zeros(2), zeros(2), [2, 20]
@@ -44,7 +44,7 @@ default(; show=false, reuse=true)
         Hess_f3(M, p, X) = A * X
         p3 = [1.0, 2.0]
         X3 = [1.0, 0.0]
-        #just run all defaults with true and even the grad_desc
+        #just run all defaults with true and even the gradient descent
         @test check_Hessian(M3, f3, grad_f3, Hess_f3, p3, X3; mode=:CriticalPoint)
         # Euclidean and completely exact
 
@@ -72,7 +72,7 @@ default(; show=false, reuse=true)
         p4 = [1.0, 0.0, 0.0]
         X4 = [0.0, 1.0, 1.0]
 
-        #check for a bit smaller scale due to rounding errors
+        #Verify the `check` for a bit smaller scale due to rounding errors
         @test check_Hessian(M4, f4, grad_f4, Hess_f4, p4, X4; limits=(-5.0, 0.0))
 
         #Hessian not tangent

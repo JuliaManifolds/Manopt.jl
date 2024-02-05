@@ -73,7 +73,7 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
                 evaluation=AllocatingEvaluation(),
                 stopping_criterion=StopAfterIteration(1),
             )
-            #so we can just test that the subproblem is delivering a point.
+            #test that the subproblem is delivering a point.
             @test is_point(M, p3b)
         end
         @testset "Number test" begin

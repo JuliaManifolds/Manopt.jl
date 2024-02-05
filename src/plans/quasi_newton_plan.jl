@@ -14,7 +14,7 @@ get_message(::AbstractQuasiNewtonDirectionUpdate) = ""
     AbstractQuasiNewtonUpdateRule
 
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s,
-that is, e.g. for a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
+that is for a [`QuasiNewtonMatrixDirectionUpdate`](@ref) there are several different updates to the matrix,
 while the default for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the most prominent is [`InverseBFGS`](@ref).
 """
 abstract type AbstractQuasiNewtonUpdateRule end
@@ -24,7 +24,7 @@ abstract type AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian BFGS update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{H}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{H}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -47,7 +47,7 @@ struct BFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian BFGS update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{B}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{B}_k^\mathrm{BFGS}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -76,7 +76,7 @@ struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 
 indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian DFP update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{H}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{H}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -105,7 +105,7 @@ struct DFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian DFP update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{B}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{B}_k^\mathrm{DFP}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -129,7 +129,7 @@ struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian SR1 update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{H}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{H}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -152,12 +152,12 @@ respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert s_k\rVert_{x_{k+1}}\lVert y_k - \widetilde{H}^\mathrm{SR1}_k s_k \rVert_{x_{k+1}}``
-for some ``r>0``. For more details, see Section 6.2 in [Nocedal, Wright, Springer, 2006](@cite NocedalWright:2006).
+for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
     SR1(r::Float64=-1.0)
 
-Generate the `SR1` update, which by default does not include the check (since the default sets ``t<0```)
+Generate the `SR1` update.
 """
 struct SR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
@@ -169,7 +169,7 @@ end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian SR1 update is used in the Riemannian quasi-Newton method.
 
-We denote by ``\widetilde{B}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{B}_k^\mathrm{SR1}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -192,13 +192,12 @@ respectively.
 
 This method can be stabilized by only performing the update if denominator is larger than
 ``r\lVert y_k\rVert_{x_{k+1}}\lVert s_k - \widetilde{H}^\mathrm{SR1}_k y_k \rVert_{x_{k+1}}``
-for some ``r>0``. For more details, see Section 6.2 in [Nocedal, Wright, Springer, 2006](@cite NocedalWright:2006).
+for some ``r>0``. For more details, see Section 6.2 in [NocedalWright:2006](@cite).
 
 # Constructor
     InverseSR1(r::Float64=-1.0)
 
-Generate the `InverseSR1` update, which by default does not include the check,
-since the default sets ``t<0```.
+Generate the `InverseSR1`.
 """
 struct InverseSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
@@ -210,7 +209,7 @@ end
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
 
-We denote by ``\widetilde{H}_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
+Denote by ``\widetilde{H}_k^\mathrm{Br}`` the operator concatenated with a vector transport and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
 ```math
@@ -250,7 +249,7 @@ Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Br
 is used in the Riemannian quasi-Newton method, which is as a convex combination
 of [`InverseBFGS`](@ref) and [`InverseDFP`](@ref).
 
-We denote by ``\widetilde{H}_k^\mathrm{Br}`` the operator concatenated with a vector transport
+Denote by ``\widetilde{H}_k^\mathrm{Br}`` the operator concatenated with a vector transport
 and its inverse before and after to act on ``x_{k+1} = R_{x_k}(α_k η_k)``.
 Then the update formula reads
 
@@ -287,7 +286,7 @@ InverseBroyden(φ::Float64) = InverseBroyden(φ, :constant)
 @doc raw"""
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
-The `QuasiNewtonMatrixDirectionUpdate` representa a quasi-Newton update rule,
+The `QuasiNewtonMatrixDirectionUpdate` represent a quasi-Newton update rule,
 where the operator is stored as a matrix. A distinction is made between the update of the
 approximation of the Hessian, ``H_k \mapsto H_{k+1}``, and the update of the approximation
 of the Hessian inverse, ``B_k \mapsto B_{k+1}``.
@@ -310,8 +309,8 @@ matrix-vector multiplication
 ```
 
 where ``B_k`` is the matrix representing the operator with respect to the basis ``\{b_i\}^{n}_{i=1}``
-and ``\widehat{\operatorname{grad}f(x_k)}`` as above. In the end, the search direction ``η_k``
-is generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}``
+and ``\widehat{\operatorname{grad}f(x_k)}``. In the end, the search direction ``η_k`` is
+generated from the coordinates ``\hat{eta_k}`` and the vectors of the basis ``\{b_i\}^{n}_{i=1}``
 in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
 In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}``
@@ -421,7 +420,7 @@ This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory 
 where the approximating operator is represented by ``m`` stored pairs of tangent
 vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
 For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion
-is used (see [Huang, Gallican, Absil, SIAM J. Optim., 2015](@cite HuangGallivanAbsil:2015)),
+is used (see [HuangGallivanAbsil:2015](@cite)),
 since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``.
 For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``,
 the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k``
@@ -433,7 +432,15 @@ and the positive definite self-adjoint operator
 
 are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update
 is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[⋅]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [⋅]`` is directly applied on ``\operatorname{grad}f(x_k)``.
-When updating there are two cases: if there is still free memory, ``k < m``, the previously stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``; if there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}`` has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}`` are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``. After that we calculate and store ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``. This process ensures that new information about the objective function is always included and the old, probably no longer relevant, information is discarded.
+When updating there are two cases: if there is still free memory, ``k < m``, the previously
+stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be
+transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``.
+If there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}``
+has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}``
+are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
+After that the new values ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``
+are stored at the beginning. This process ensures that new information about the objective
+function is always included and the old, probably no longer relevant, information is discarded.
 
 # Provided functors
 
@@ -533,9 +540,9 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     end
     # backward pass
     for i in m:-1:1
-        # what if we divide by zero here? Setting to zero ignores this in the next step
-        # precompute in case inner is expensive
-        v = inner(M, p, d.memory_s[i], d.memory_y[i]) # 1 sk 2 yk
+        # what if division by zero happened here, setting to zero ignores this in the next step
+        # pre-compute in case inner is expensive
+        v = inner(M, p, d.memory_s[i], d.memory_y[i])
         if iszero(v)
             d.ρ[i] = zero(eltype(d.ρ))
             if length(d.message) > 0
@@ -591,7 +598,7 @@ butut the update  then is only executed if
 
 is satisfied, where ``θ`` is a monotone increasing function satisfying ``θ(0) = 0``
 and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresponding
-update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
+update is skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent
 space ``T_{x_{k+1}} \mathcal{M}``, and for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
@@ -600,7 +607,7 @@ discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}
 into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
 If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
-method follows the method of [Huang, Absil, Gallivan, SIAM J. Optim., 2018](@cite HuangAbsilGallivan:2018),
+method follows the method of [HuangAbsilGallivan:2018](@cite),
 taking into account that the corresponding step size is chosen.
 
 # Provided functors
@@ -618,7 +625,7 @@ taking into account that the corresponding step size is chosen.
     QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = x -> x)
     QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = x -> x)
 
-Generate a cautious update for either a matrix based or a limited memorz based update rule.
+Generate a cautious update for either a matrix based or a limited memory based update rule.
 
 # See also
 

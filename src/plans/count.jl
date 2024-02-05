@@ -9,7 +9,7 @@ to parts of the objective.
 * `counts` a dictionary of symbols mapping to integers keeping the counted values
 * `objective` the wrapped objective
 
-# Supported Symbols
+# Supported symbols
 
 | Symbol                      | Counts calls to (incl. `!` variants)  | Comment                      |
 | :-------------------------- | :------------------------------------- | :--------------------------- |
@@ -94,7 +94,7 @@ function _get_counter_size(
     (s === :InequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
     (s === :GradInequalityConstraint) &&
         (return length(get_inequality_constraints(M, o, p)))
-    # For now this only appears in ProximalMapObjective – so we can access its field
+    # For now this only appears in ProximalMapObjective, access its field
     (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
     (s === :StochasticGradient) && (return length(get_gradients(M, o, p)))
     return 1 #number - default
@@ -206,7 +206,7 @@ function reset_counters!(o::AbstractManifoldObjective, value::Integer=0)
 end
 
 #
-# Overwrite accessors
+# Overwrite access functions
 #
 function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
@@ -370,7 +370,7 @@ function get_grad_inequality_constraint!(
 end
 
 #
-# proxes
+# proximal maps
 function get_proximal_map(M::AbstractManifold, co::ManifoldCountObjective, λ, p)
     _count_if_exists(co, :ProximalMap)
     return get_proximal_map(M, co.objective, λ, p)

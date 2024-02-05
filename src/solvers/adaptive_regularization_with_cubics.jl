@@ -197,7 +197,7 @@ Further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2`
 \end{cases}
 ```
 
-For more details see [Agarwal, Boumal, Bullins, Cartis, Math. Prog., 2020](@cite AgarwalBoumalBullinsCartis:2020).
+For more details see [AgarwalBoumalBullinsCartis:2020](@cite).
 
 # Input
 

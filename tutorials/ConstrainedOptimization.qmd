@@ -1,6 +1,6 @@
 ---
-title: How to do Constrained Optimization
-author: Ronny Bergmann
+title: "How to do constrained optimization"
+author: "Ronny Bergmann"
 ---
 
 This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
@@ -36,7 +36,7 @@ Random.seed!(42);
 
 In this tutorial we want to look at different ways to specify the problem and its implications. We start with specifying an example problems to illustrate the different available forms.
 
-We will consider the problem of a Nonnegative PCA, cf. Section 5.1.2 in [LiuBoumal:2019](@cite)
+We consider the problem of a Nonnegative PCA, cf. Section 5.1.2 in [LiuBoumal:2019](@cite)
 
 let $v_0 ∈ ℝ^d$, $\lVert v_0 \rVert=1$ be given spike signal, that is a signal that is sparse with only $s=\lfloor δd \rfloor$ nonzero entries.
 
@@ -49,9 +49,9 @@ where $\sigma$ is a signal-to-noise ratio and $N$ is a matrix with random entrie
 ```{julia}
 d = 150; # dimension of v0
 σ = 0.1^2; # SNR
-δ = 0.1; s = Int(floor(δ * d)); # Sparsity
-S = sample(1:d, s; replace=false);
-v0 =  [i ∈ S ? 1 / sqrt(s) : 0.0 for i in 1:d];
+δ = 0.1; sp = Int(floor(δ * d)); # Sparsity
+S = sample(1:d, sp; replace=false);
+v0 =  [i ∈ S ? 1 / sqrt(sp) : 0.0 for i in 1:d];
 N = rand(Normal(0, 1 / d), (d, d)); N[diagind(N, 0)] .= rand(Normal(0, 2 / d), d);
 Z = Z = sqrt(σ) * v0 * transpose(v0) + N;
 ```
@@ -168,7 +168,7 @@ We obtain
 	);
 ```
 
-As a technical remark: Note that (by default) the change to [`InplaceEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.InplaceEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
+As a technical remark: note that (by default) the change to [`InplaceEvaluation`](https://manoptjl.org/stable/plans/problem/#Manopt.InplaceEvaluation)s affects both the constrained solver as well as the inner solver of the subproblem in each iteration.
 
 
 ```{julia}

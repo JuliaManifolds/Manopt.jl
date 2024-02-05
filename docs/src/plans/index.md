@@ -39,7 +39,7 @@ The column “generic” refers to a short hand that might be used for readabil
 | `:SubProblem` | generic | the sub problem (within a state, as pass down) | |
 | `:SubState` | generic | the sub state (within a state, as pass down) | |
 | `:λ` | [`ProximalDCCost`](@ref), [`ProximalDCGrad`](@ref) | set the proximal parameter within the proximal sub objective elements | |
-| `:Population`     | [`ParticleSwarmState`](@ref) | a certain population of points, e.g. [`particle_swarm`](@ref)s swarm | |
+| `:Population`     | [`ParticleSwarmState`](@ref) | a certain population of points, for example [`particle_swarm`](@ref)s swarm | |
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius | `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective | |
 | `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref) and [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function | |

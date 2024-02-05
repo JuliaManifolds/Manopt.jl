@@ -54,10 +54,10 @@ where also their reproducible Quarto-Markdown files are stored.
 
 ### Code style
 
-We try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as [Blue Style](https://github.com/invenia/BlueStyle).
-We run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repository in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style. We further run [vale](https://vale.sh) on both Markdown files and code files, affecting documentation and source code comments
+Try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as [Blue Style](https://github.com/invenia/BlueStyle).
+Run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repository in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style. Furthermore [vale](https://vale.sh) is run on both Markdown and code files, affecting documentation and source code comments
 
-We also follow a few internal conventions:
+Please follow a few internal conventions:
 
 - It is preferred that the `AbstractManoptProblem`'s struct contains information about the general structure of the problem.
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.

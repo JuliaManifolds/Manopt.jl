@@ -5,6 +5,7 @@ Agarwal
 API
 Armijo
 Batchelor
+Beale
 Bergmann
 boolean
 Boumal
@@ -15,6 +16,7 @@ Cartis
 canonicalization
 canonicalized
 Constantin
+Dai
 Diepeveen
 Dornig
 Douglas
@@ -30,6 +32,8 @@ Geomstats
 Geoopt
 Grassmann
 Hadamard
+Hager
+Heestens
 Hessian
 Iannazzo
 injectivity
@@ -44,6 +48,7 @@ linearization
 LineSearches.jl
 Liu
 LRUCache.jl
+Lui
 Manifolds.jl
 ManifoldsBase.jl
 [Mm]anopt(:?.org|.jl)?
@@ -61,6 +66,7 @@ Parametrising
 [Pp]ock
 Porcelli
 preconditioner
+preprint
 [Pp]rox(:?imal)
 pullback
 pushforward
@@ -73,6 +79,7 @@ Riemer
 Riemopt
 Riesz
 Rosenbrock
+semicontinuous
 Steihaug
 Stiefel
 semismooth
@@ -90,8 +97,9 @@ th
 Tom-Christian
 Toint
 tridiagonal
-Vectorial
+[Vv]ectorial
 Weinmann
 Willem
 Wolfe
-vectorial
+Yuan
+Zhang

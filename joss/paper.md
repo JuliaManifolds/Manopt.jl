@@ -134,7 +134,7 @@ iterates = get_record(o, :Iteration, :x) # iterates recorded per iteration
 
 The debugging output of this example looks as follows:
 
-```julia-repl
+```
 Initial |  | F(x): 0.20638171781316278
 # 1 | Last Change: 0.22025631624261213 | F(x): 0.18071614247165613
 # 2 | Last Change: 0.014654955252636971 | F(x): 0.1805990319857418

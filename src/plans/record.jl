@@ -12,6 +12,7 @@ initialize internal values, but not trigger any record, the same holds for
 called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
+
 * `recorded_values` an `Array` of the recorded values.
 """
 abstract type RecordAction <: AbstractStateAction end
@@ -20,7 +21,7 @@ abstract type RecordAction <: AbstractStateAction end
     RecordSolverState <: AbstractManoptSolverState
 
 append to any [`AbstractManoptSolverState`](@ref) the decorator with record capability,
-Internally a `Dict`ionary is kept that stores a [`RecordAction`](@ref) for
+Internally a dictionary is kept that stores a [`RecordAction`](@ref) for
 several concurrent modes using a `Symbol` as reference.
 The default mode is `:Iteration`, which is used to store information that is recorded during
 the iterations. RecordActions might be added to `:Start` or `:Stop` to record values at the
@@ -29,11 +30,13 @@ beginning or for the stopping time point, respectively
 The original options can still be accessed using the [`get_state`](@ref) function.
 
 # Fields
+
 * `options`          the options that are extended by debug information
 * `recordDictionary` a `Dict{Symbol,RecordAction}` to keep track of all
   different recorded values
 
 # Constructors
+
     RecordSolverState(o,dR)
 
 construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can be
@@ -362,7 +365,8 @@ getindex(r::RecordEvery, i) = get_record(r, i)
 debug for the amount of change of the iterate (stored in `o.x` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration.
 
-# Additional Fields
+# Additional fields
+
 * `storage` a [`StoreStateAction`](@ref) to store (at least) `o.x` to use this
   as the last value (to compute the change
 * `inverse_retraction_method` - (`default_inverse_retraction_method(manifold, p)`) the
@@ -471,7 +475,7 @@ end
 
 record a certain entries change during iterates
 
-# Additional Fields
+# Additional fields
 
 * `recorded_values` the recorded Iterates
 * `field`           Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
@@ -623,7 +627,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
         end
     end
     record = RecordGroup(group)
-    # filter ints
+    # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
         record = RecordEvery(record, last(e))

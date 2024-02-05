@@ -346,7 +346,7 @@ how to print the entry.
 
 # Additional fields
 
-* `field`: Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `field`: symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 # Constructor
 
@@ -382,9 +382,9 @@ That way you can print the value in this case as well.
 
 * `io`:    an `IO` stream
 * `check`: a function that takes the value of the `field` as input and returns a boolean
-* `field`: Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `field`: symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 * `msg`:   if the `check` fails, this message is displayed
-* `type`:  Symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
+* `type`: symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
             where `:print` prints to `io`.
 
 # Constructor
@@ -945,8 +945,10 @@ function (d::DebugWarnIfFieldNotFinite)(
             s = "The field s.$(d.field)"
         end
         if !all(isfinite.(v))
-            @warn """$s is or contains values that are not finite.
-            At iteration #$i it evaluated to $(v)."""
+            @warn """
+            $s is or contains values that are not finite.
+            At iteration #$i it evaluated to $(v).
+            """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
                 d.status = :No

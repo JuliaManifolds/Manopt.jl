@@ -29,7 +29,7 @@ In Julia you can get started by just typing
 using Pkg; Pkg.add("Manopt");
 ```
 
-and then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
+and then checkout the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
 
 ## Related packages
 
@@ -86,7 +86,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
     JOURNAL   = {ACM Transactions on Mathematical Software},
     MONTH     = {dec},
     NUMBER    = {4},
-    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    TITLE     = {Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds},
     VOLUME    = {49},
     YEAR      = {2023}
 }

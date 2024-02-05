@@ -4,13 +4,15 @@ title: "Using Automatic Differentiation in Manopt.jl"
 
 Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
 
-This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function $f:  \mathcal M → ℝ$. We will consider two methods: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
+This tutorial explains how to use Euclidean tools to derive a gradient for a real-valued function $f:  \mathcal M → ℝ$.
+Two methods are considered: an intrinsic variant and a variant employing the embedding. These gradients can then be used within any gradient based optimization algorithm in [Manopt.jl](https://manoptjl.org).
 
-While by default we use [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/), you can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or  [Zygote.jl](https://fluxml.ai/Zygote.jl/).
+While by default [FiniteDifferences.jl](https://juliadiff.org/FiniteDifferences.jl/latest/)are used,
+one can also use [FiniteDiff.jl](https://github.com/JuliaDiff/FiniteDiff.jl), [ForwardDiff.jl](https://juliadiff.org/ForwardDiff.jl/stable/), [ReverseDiff.jl](https://juliadiff.org/ReverseDiff.jl/), or [Zygote.jl](https://fluxml.ai/Zygote.jl/).
 
-In this tutorial we will take a look at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M → ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
+This tutorial looks at a few possibilities to approximate or derive the gradient of a function $f:\mathcal M → ℝ$ on a Riemannian manifold, without computing it yourself. There are mainly two different philosophies:
 
-1. Working _intrinsically_, that is staying on the manifold and in the tangent spaces. Here, we will consider approximating the gradient by forward differences.
+1. Working _intrinsically_, that is staying on the manifold and in the tangent spaces, considering to approximate the gradient by forward differences.
 2. Working in an embedding where all tools from functions on Euclidean spaces can be used, like finite differences or automatic differentiation, and then compute the corresponding Riemannian gradient from there.
 
 ```{julia}
@@ -22,7 +24,7 @@ cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
-We first load all necessary packages
+First, load all necessary packages
 
 ```{julia}
 using Manopt, Manifolds, Random, LinearAlgebra
@@ -34,13 +36,14 @@ Random.seed!(42);
 
 A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let $X_1,\ldots,X_d ∈ T_p\mathcal M$ denote an orthonormal basis of the tangent space $T_p\mathcal M$ at the point $p∈\mathcal M$ on the Riemannian manifold.
 
-We can generalize the notion of a directional derivative to a “direction” $Y∈T_p\mathcal M$. Let $c:  [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, for example $c(t)= \exp_p(tY)$. We obtain
+The notion of a directional derivative is generalized to a “direction” $Y∈T_p\mathcal M$. Let $c:  [-ε,ε]$, $ε>0$, be a curve with $c(0) = p$, $\dot c(0) = Y$, for example $c(t)= \exp_p(tY)$.
+This yields
 
 ```math
 	Df(p)[Y] = \left. \frac{d}{dt} \right|_{t=0} f(c(t)) = \lim_{t → 0} \frac{1}{t}(f(\exp_p(tY))-f(p))
 ```
 
-We can approximate $Df(p)[X]$ by a finite difference scheme for an $h>0$ as
+The differential $Df(p)[X]$ is approximated by a finite difference scheme for an $h>0$ as
 
 ```math
 DF(p)[Y] ≈ G_h(Y) := \frac{1}{h}(f(\exp_p(hY))-f(p))
@@ -67,7 +70,7 @@ for some suitable step size $h$. This comes at the cost of $d+1$ function evalua
 
 This is the first variant we can use. An advantage is that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
 
-### An Example: The Rayleigh Quotient
+### An Example: the Rayleigh Quotient
 
 The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A ∈ ℝ^{(n+1)×(n+1)}$. The optimization problem reads
 

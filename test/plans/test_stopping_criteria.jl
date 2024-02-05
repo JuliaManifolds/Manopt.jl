@@ -28,7 +28,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test length(s3.reason) > 0
         # repack
         sn = StopWhenAny(StopAfterIteration(10), s3)
-        @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iters
+        @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test startswith(repr(sn), "StopWhenAny with the")
 
         sn2 = StopAfterIteration(10) | s3
@@ -42,16 +42,6 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         sm = StopWhenAll(StopAfterIteration(10), s3)
         s1 = "StopAfterIteration(10)\n    Max Iteration 10:\tnot reached"
 
-        @test repr(StopAfterIteration(10)) == s1
-        @test !sm(p, s, 9)
-        @test sm(p, s, 11)
-        an = sm.reason
-        m = match(r"^((.*)\n)+", an)
-        @test length(m.captures) == 2 # both have to be active
-        update_stopping_criterion!(s3, :MinCost, 1e-2)
-        @test s3.threshold == 1e-2
-        # Dummy without iterations has a reasonable fallback
-        @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
         @test repr(StopAfterIteration(10)) == s1
         @test !sm(p, s, 9)
         @test sm(p, s, 11)
@@ -218,7 +208,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         st.X = ∂f(M, p)
         @test c2(mp, st, 2)
         @test length(get_reason(c2)) > 0
-        c2(mp, st, 0) # check reset
+        c2(mp, st, 0) # verify that reset works
         @test length(get_reason(c2)) == 0
         @test Manopt.indicates_convergence(c2)
         update_stopping_criterion!(c2, :MinSubgradNorm, 1e-8)

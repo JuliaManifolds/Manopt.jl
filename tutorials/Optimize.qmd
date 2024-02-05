@@ -211,7 +211,7 @@ This also illustrates one way to deactivate the hints, namely by overwriting the
 set_manopt_parameter!(:Mode, "")
 ```
 
-## Example 2: Computing the median of symmetric positive definite matrices.
+## Example 2: computing the median of symmetric positive definite matrices.
 
 For the second example let's consider the manifold of [$3 × 3$ symmetric positive definite matrices](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite.html) and again 100 random points
 

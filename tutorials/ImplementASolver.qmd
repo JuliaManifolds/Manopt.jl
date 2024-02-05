@@ -1,16 +1,16 @@
 ---
 title: "How to implementing your own solver"
-author: Ronny Bergmann
+author: "Ronny Bergmann"
 ---
 
 When you have used a few solvers from `Manopt.jl` for example like in the opening
-tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+tutorial [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
 you might come to the idea of implementing a solver yourself.
 
-After a short introduction of the algorithm we will implement,
+After a short introduction of the algorithm we aim to implement,
 this tutorial first discusses the structural details, for example what a solver consists of and “works with”.
-Afterwards, we will show how to implement the algorithm.
-Finally, we will discuss how to make the algorithm both nice for the user as well as
+Afterwards, we show how to implement the algorithm.
+Finally, we discuss how to make the algorithm both nice for the user as well as
 initialized in a way, that it can benefit from features already available in `Manopt.jl`.
 
 ```{=commonmark}
@@ -32,15 +32,15 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 using Manopt, Manifolds, Random
 ```
 
-## Our Guiding Example: A random walk Minimization
+## Our guiding example: a random walk minimization
 
 Since most serious algorithms should be implemented in `Manopt.jl` themselves directly,
-we will implement a solver that randomly walks on the manifold and keeps track of the lowest
+we implement a solver that randomly walks on the manifold and keeps track of the lowest
 point visited.
 As for algorithms in `Manopt.jl` we aim to implement this _generically_ for any manifold that
 is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
 
-**The Random Walk Minimization**
+**The random walk minimization**
 
 Given:
 - a manifold $\mathcal M$
@@ -69,7 +69,7 @@ a problem to work on and the state of a solver, which “identifies” the solve
 A problem in `Manopt.jl` usually consists of a manifold (an [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold)) and an [`AbstractManifoldObjective`](@ref)
 describing the function we have and its features.
 In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that stores cost function
-`f(M,p) = ...`. More generally, it might for example store a gradient function or the Hessian
+`f(M,p) -> R`. More generally, it might for example store a gradient function or the Hessian
 or any other information we have about our task.
 
 This is something independent of the solver itself, since it only identifies the problem we
@@ -129,7 +129,7 @@ Parametrising the state avoid that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
 in `Manopt.jl` and provide an easy way to construct this state now.
 
-States usually have a shortened name as their variable, we will use `rws` for our state here.
+States usually have a shortened name as their variable, we use `rws` for our state here.
 
 ## Implementing your solver
 
@@ -198,13 +198,13 @@ end
 
 Performance wise we could improve the number of allocations by making `X` also a field of
 our `rws` but let's keep it simple here.
-We could also store the cost of `q` in the state, but we will see how to easily also enable
+We could also store the cost of `q` in the state, but we shall see how to easily also enable
 this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
 In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
 Now we can just run the solver already. We take the same example as for the other tutorials
 
-We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We first define our task, the Riemannian Center of Mass from the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
 ```{julia}
 #| output: false
@@ -303,7 +303,7 @@ function random_walk_algorithm!(M::AbstractManifold, f, p=rand(M); kwargs...)
 end
 ```
 
-## Ease of Use II: The State Summary
+## Ease of Use II: the State Summary
 
 For the case that you set `return_state=true` the solver should return a summary of the run. When a `show` method is provided, users can easily read such summary in a terminal.
 It should reflect its main parameters, if they are not too verbose and provide information

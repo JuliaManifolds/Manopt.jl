@@ -151,7 +151,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [Fletcher, 1987](@cite Fletcher:1987) adapted to manifolds:
+and the last update direction ``\delta=\delta_k``,  based on [Fletcher:1987](@cite) adapted to manifolds:
 
 ```math
 β_k =
@@ -194,7 +194,7 @@ show(io::IO, ::ConjugateDescentCoefficient) = print(io, "ConjugateDescentCoeffic
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``, based on [Dai, Yuan, Siam J Optim, 1999](@cite DaiYuan:1999) adapted to manifolds:
+and the last update direction ``\delta=\delta_k``, based on [DaiYuan:1999](@cite) adapted to manifolds:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
@@ -215,7 +215,7 @@ See also [`conjugate_gradient_descent`](@ref)
         t::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
 
-Construct the Dai Yuan coefficient update rule, where the parallel transport is the
+Construct the Dai—Yuan coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
 """
 struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
@@ -262,7 +262,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [Flecther, Reeves, Comput. J, 1964](@cite FletcherReeves:1964) adapted to manifolds:
+and the last update direction ``\delta=\delta_k``,  based on [FletcherReeves:1964](@cite) adapted to manifolds:
 
 ````math
 β_k =
@@ -274,7 +274,7 @@ See also [`conjugate_gradient_descent`](@ref)
 # Constructor
     FletcherReevesCoefficient(a::StoreStateAction=())
 
-Construct the Fletcher Reeves coefficient update rule, a new storage is created by default.
+Construct the Fletcher—Reeves coefficient update rule, a new storage is created by default.
 """
 struct FletcherReevesCoefficient <: DirectionUpdateRule end
 
@@ -305,7 +305,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``, based on [Hager, Zhang, SIAM J Optim, 2005](@cite HagerZhang:2005).
+and the last update direction ``\delta=\delta_k``, based on [HagerZhang:2005](@cite).
 adapted to manifolds: let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
 
@@ -382,7 +382,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [Heestenes, Stiefel, J. Research Nat. Bur. Standards, 1952](@cite HestenesStiefel:1952)
+and the last update direction ``\delta=\delta_k``,  based on [HestenesStiefel:1952](@cite)
 adapted to manifolds as follows:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``.
@@ -449,7 +449,7 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [Lui, Storey, J. Optim. Theoru Appl., 1991](@cite LiuStorey:1991)
+and the last update direction ``\delta=\delta_k``,  based on [LiuStorey:1991](@cite)
 adapted to manifolds:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
@@ -513,8 +513,8 @@ end
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
 ``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [Poliak, Ribiere, ESIAM Math. Modelling Num. Anal., 1969](@cite PolakRibiere:1969)
-and [Polyak, USSR Comp. Math. Math. Phys., 1969](@cite Polyak:1969) adapted to manifolds:
+and the last update direction ``\delta=\delta_k``,  based on [PolakRibiere:1969](@cite)
+and [Polyak:1969](@cite) adapted to manifolds:
 
 Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
@@ -596,7 +596,7 @@ end
     ConjugateGradientBealeRestart <: DirectionUpdateRule
 
 An update rule might require a restart, that is using pure gradient as descent direction,
-if the last two gradients are nearly orthogonal, cf. [Hager, Zhang, Pacific J Optim, 2006](@cite HagerZhang:2006), page 12 (in the pdf, 46 in Journal page numbers).
+if the last two gradients are nearly orthogonal, see [HagerZhang:2006; page 12](@cite) (in the preprint, page 46 in Journal page numbers).
 This method is named after E. Beale from his proceedings paper in 1972 [Beale:1972](@cite).
 This method acts as a _decorator_ to any existing [`DirectionUpdateRule`](@ref) `direction_update`.
 
@@ -610,7 +610,7 @@ Then a restart is performed, hence ``β_k = 0`` returned if
 ```
 where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``,
 and ``ξ`` is the `threshold`.
-The default threshold is chosen as `0.2` as recommended in [Powell, Math. Prog., 1977](@cite Powell:1977)
+The default threshold is chosen as `0.2` as recommended in [Powell:1977](@cite)
 
 # Constructor
 

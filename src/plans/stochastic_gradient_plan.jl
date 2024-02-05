@@ -166,7 +166,7 @@ function get_gradients!(
     end
     return X
 end
-# Passdown from problem
+# Pass down from problem
 function get_gradients(mp::AbstractManoptProblem, p)
     return get_gradients(get_manifold(mp), get_objective(mp), p)
 end
@@ -258,7 +258,7 @@ function get_gradient!(
     return get_gradient!(M, X, get_objective(admo, false), p, k)
 end
 
-# Passdown from problem
+# Pass down from problem
 function get_gradient(mp::AbstractManoptProblem, p, k)
     return get_gradient(get_manifold(mp), get_objective(mp), p, k)
 end
@@ -278,7 +278,7 @@ since the length (or number of elements of the gradient required for allocation)
 function get_gradient(
     M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{T,TC,<:Function}, p
 ) where {T<:AbstractEvaluationType,TC}
-    # even if the function is in-place, we would need to allocate the full vector of tangent vectors
+    # even if the function is in-place, allocation of the full vector of tangent vectors still required
     return sum(get_gradients(M, sgo, p))
 end
 function get_gradient!(

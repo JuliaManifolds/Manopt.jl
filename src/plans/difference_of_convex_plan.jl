@@ -9,8 +9,8 @@ The objective ``f: \mathcal M → ℝ`` is given as
     f(p) = g(p) - h(p)
 ```
 
-where both ``g`` and ``h`` are convex, lsc. and proper.
-Furthermore we assume that the subdifferential ``∂h`` of ``h`` is given.
+where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
+Furthermore the subdifferential ``∂h`` of ``h`` is required.
 
 # Fields
 
@@ -102,7 +102,7 @@ This is a cost function of the form
 ```math
     F_{p_k,X_k}(p) = g(p) - ⟨X_k, \log_{p_k}p⟩
 ```
-for a point `p_k` and a tangent vector `X_k` at `p_k` (e.g. outer iterates)
+for a point `p_k` and a tangent vector `X_k` at `p_k` (for example outer iterates)
 that are stored within this functor as well.
 
 # Fields
@@ -221,7 +221,7 @@ The problem is of the form
     \operatorname*{argmin}_{p∈\mathcal M} g(p) - h(p)
 ```
 
-where both ``g`` and ``h`` are convex, lsc. and proper.
+where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
 
 # Fields
 
@@ -230,7 +230,7 @@ where both ``g`` and ``h`` are convex, lsc. and proper.
 * `grad_h!!`: a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
 
 Note that both the gradients might be given in two possible signatures
-as allocating or Inplace.
+as allocating or in-place.
 
  # Constructor
 

@@ -61,7 +61,7 @@ A special keyword is `:Stop`, which is only added to the final debug hook to pri
 
 Any symbol with a small letter is mapped to fields of the [`AbstractManoptSolverState`](@ref) which is used. This way you can easily print internal data, if you know their names.
 
-Let's look at an example first: If we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twentyfifth iteration.
+Let's look at an example first: if we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twentyfifth iteration.
 
  Then we can write
 

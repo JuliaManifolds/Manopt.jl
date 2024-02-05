@@ -88,7 +88,7 @@ end
 
 Check numerically whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
 
-This implements the method described in [Section 4.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
+This implements the method described in [Boumal:2023; Section 4.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot is generated,
@@ -162,7 +162,7 @@ f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \math
 
 or in other words, that the error between the function ``f`` and its first order Taylor
 behaves in error ``\mathcal O(t^2)``, which indicates that the gradient is correct,
-cf. also [Section 4.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
+cf. also [Boumal:2023; Section 4.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot is generated.
@@ -225,7 +225,7 @@ f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac
 
 or in other words, that the error between the function ``f`` and its second order Taylor
 behaves in error ``\mathcal O(t^3)``, which indicates that the Hessian is correct,
-cf. also [Section 6.8, Boumal, Cambridge Press, 2023](@cite Boumal:2023).
+cf. also [Boumal:2023; Section 6.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot is generated.
@@ -240,7 +240,7 @@ no plot is generated.
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
   if the point `p` is a critical point.
   THen set the mode to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
-  Note: This requires (and evaluates) new tangent vectors `X` and `Y`
+  Note: this requires (and evaluates) new tangent vectors `X` and `Y`
 
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to all checks
 * `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)

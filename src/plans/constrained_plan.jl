@@ -84,7 +84,7 @@ struct ConstrainedManifoldObjective{
     grad_h!!::GH
 end
 #
-# Constructors I: Functions
+# Constructors I: functions
 #
 function ConstrainedManifoldObjective(
     f::TF,
