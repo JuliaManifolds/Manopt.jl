@@ -74,30 +74,15 @@ function prof()
     return ProfileView.view()
 end
 
-function manifold_maker(name::Symbol, N, lib::Symbol)
-    if lib === :Manopt
-        if name === :Euclidean
-            return Euclidean(N)
-        elseif name === :Sphere
-            return Manifolds.Sphere(N - 1)
-        end
-    elseif lib === :Optim
-        if name === :Euclidean
-            return Optim.Flat()
-        elseif name === :Sphere
-            return Optim.Sphere()
-        end
-    else
-        error("Unknown library: $lib")
-    end
-end
+to_optim_manifold(::Manifolds.Sphere) = Optim.Sphere()
+to_optim_manifold(::Euclidean) = Optim.Flat()
 
 abstract type AbstractOptimConfig end
 struct ManoptQN <: AbstractOptimConfig end
 
 function benchmark_time_state(
     ::ManoptQN,
-    manifold_name::Symbol,
+    M::AbstractManifold,
     N,
     f,
     g!,
@@ -108,7 +93,6 @@ function benchmark_time_state(
     kwargs...,
 )
     manopt_sc = StopWhenGradientNormLess(gtol; norm=norm_inf) | StopAfterIteration(1000)
-    M = manifold_maker(manifold_name, N, :Manopt)
     mem_len = min(mem_len, manifold_dimension(M))
     bench_manopt = @benchmark quasi_Newton(
         $M,
@@ -119,6 +103,7 @@ function benchmark_time_state(
         evaluation=$(InplaceEvaluation()),
         memory_size=$mem_len,
         stopping_criterion=$(manopt_sc),
+        debug=[],
         $kwargs...,
     )
     manopt_state = quasi_Newton(
@@ -131,6 +116,7 @@ function benchmark_time_state(
         return_state=true,
         memory_size=mem_len,
         stopping_criterion=manopt_sc,
+        debug=[],
         kwargs...,
     )
     iters = get_count(manopt_state, :Iterations)
@@ -141,13 +127,20 @@ end
 struct OptimQN <: AbstractOptimConfig end
 
 function benchmark_time_state(
-    ::OptimQN, manifold_name, N, f, g!, x0, stepsize, mem_len::Int, gtol::Real; kwargs...
+    ::OptimQN,
+    M::AbstractManifold,
+    N,
+    f,
+    g!,
+    x0,
+    stepsize,
+    mem_len::Int,
+    gtol::Real;
+    kwargs...,
 )
-    mem_len = min(mem_len, manifold_dimension(manifold_maker(manifold_name, N, :Manopt)))
+    mem_len = min(mem_len, manifold_dimension(M))
     options_optim = Optim.Options(; g_tol=gtol)
-    method_optim = LBFGS(;
-        m=mem_len, linesearch=stepsize, manifold=manifold_maker(manifold_name, N, :Optim)
-    )
+    method_optim = LBFGS(; m=mem_len, linesearch=stepsize, manifold=to_optim_manifold(M))
 
     bench_optim = @benchmark optimize($f, $g!, $x0, $method_optim, $options_optim)
 
@@ -160,7 +153,9 @@ end
 function generate_cmp(
     problem_for_N;
     mem_len::Int=2,
-    manifold_names=[:Euclidean, :Sphere],
+    manifold_constructors=[
+        ("Euclidean", N -> Euclidean(N)), ("Sphere", N -> Manifolds.Sphere(N - 1))
+    ],
     gtol::Real=1e-5,
     N_vals=[2^n for n in 1:3:16],
 )
@@ -171,7 +166,7 @@ function generate_cmp(
 
     ls_hz = LineSearches.HagerZhang()
 
-    for manifold_name in manifold_names
+    for (manifold_name, manifold_constructor) in manifold_constructors
         times_manopt = Float64[]
         times_optim = Float64[]
 
@@ -179,12 +174,12 @@ function generate_cmp(
         for N in N_vals
             f, g! = problem_for_N(N)
             println("Benchmarking for N=$N, f=$(typeof(f))")
-            M = manifold_maker(manifold_name, N, :Manopt)
+            M = manifold_constructor(N)
             x0 = zeros(N)
             x0[1] = 1
             manopt_time, manopt_iters, manopt_obj = benchmark_time_state(
                 ManoptQN(),
-                manifold_name,
+                M,
                 N,
                 f,
                 g!,
@@ -201,7 +196,7 @@ function generate_cmp(
             println("Manopt.jl objective: $(manopt_obj)")
 
             optim_time, optim_iters, optim_obj = benchmark_time_state(
-                OptimQN(), manifold_name, N, f, g!, x0, ls_hz, mem_len, gtol
+                OptimQN(), M, N, f, g!, x0, ls_hz, mem_len, gtol
             )
             println("Optim.jl  time: $(optim_time) ms")
             push!(times_optim, optim_time)

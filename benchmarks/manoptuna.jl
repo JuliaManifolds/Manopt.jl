@@ -67,12 +67,12 @@ mutable struct ObjectiveData{TObj,TGrad}
     gtol::Float64
     vts::Vector{AbstractVectorTransportMethod}
     retrs::Vector{AbstractRetractionMethod}
+    manifold_constructors::Vector{Tuple{String,Any}}
     pruning_losses::Vector{Float64}
 end
 
 function (objective::ObjectiveData)(trial)
     mem_len = trial.suggest_int("mem_len", 2, 30)
-    manifold_name = :Sphere
     ls_hz = LineSearches.HagerZhang()
 
     vt = objective.vts[pyconvert(
@@ -86,6 +86,13 @@ function (objective::ObjectiveData)(trial)
         trial.suggest_categorical("retraction_method", Vector(eachindex(objective.retrs))),
     )]
 
+    manifold_name, manifold_constructor = objective.manifold_constructors[pyconvert(
+        Int,
+        trial.suggest_categorical(
+            "manifold", Vector(eachindex(objective.manifold_constructors))
+        ),
+    )]
+
     loss = sum(objective.pruning_losses)
 
     # here iterate over problems we want to optimize for
@@ -95,9 +102,10 @@ function (objective::ObjectiveData)(trial)
     for N in objective.N_range
         x0 = zeros(N)
         x0[1] = 1
+        M = manifold_constructor(N)
         manopt_time, manopt_iters, manopt_obj = benchmark_time_state(
             ManoptQN(),
-            manifold_name,
+            M,
             N,
             objective.obj,
             objective.grad,
@@ -129,17 +137,18 @@ function lbfgs_study()
         1e-5,
         AbstractVectorTransportMethod[ParallelTransport(), ProjectionTransport()],
         [ExponentialRetraction(), ProjectionRetraction()],
-        zero(Ns),
+        Tuple{String,Any}[("Sphere", N -> Manifolds.Sphere(N - 1))],
+        zeros(Float64, eachindex(Ns)),
     )
     pruning_losses = vcat(
         [15.95, 38.961, 74.9733, 411.8313333, 2561.789333333333, 3.7831363008333333e6],
         zeros(100),
     )
-    # pruning_losses = lbfgs_compute_pruning_losses(
-    #     od,
-    #     Dict("mem_len" => 4),
-    #     Dict("vector_transport_method" => 1, "retraction_method" => 1),
-    # )
+    pruning_losses = compute_pruning_losses(
+        od,
+        Dict("mem_len" => 4),
+        Dict("vector_transport_method" => 1, "retraction_method" => 1, "manifold" => 1),
+    )
     od.pruning_losses = pruning_losses
 
     study = optuna.create_study(; study_name="L-BFGS")
@@ -147,7 +156,7 @@ function lbfgs_study()
     return println("Best params is $(study.best_params) with value $(study.best_value)")
 end
 
-function lbfgs_compute_pruning_losses(
+function compute_pruning_losses(
     od::ObjectiveData,
     int_suggestions::Dict{String,Int},
     categorical_suggestions::Dict{String,Int},
