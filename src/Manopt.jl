@@ -122,6 +122,8 @@ using ManifoldsBase:
     ℂ,
     ℝ
 using Markdown
+using Preferences:
+    @load_preference, @set_preferences!, @has_preference, @delete_preferences!
 using Printf
 using Random: shuffle!, rand, randperm
 using Requires
@@ -448,6 +450,7 @@ export StopAfter,
     StopWhenPopulationConcentrated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
+    StopWhenSubgradientNormLess,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion
@@ -469,7 +472,8 @@ export DebugDualResidual, DebugPrimalDualResidual, DebugPrimalResidual
 export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
-export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite, DebugMessages
+export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
+export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
 # Records - and access functions
 export get_record, get_record_state, get_record_action, has_record

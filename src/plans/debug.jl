@@ -370,7 +370,11 @@ end
 @doc raw"""
     DebugIfEntry <: DebugAction
 
-Issue a warning, info or error if a certain field does _not_ pass a check
+Issue a warning, info or error if a certain field does _not_ pass a check.
+
+The `message` is printed in this case. If it contains a `@printf` argument identifier,
+that one will be filled with the value of the `field`.
+That way you can print the vaule in this case as well.
 
 # Fields
 
@@ -400,10 +404,12 @@ mutable struct DebugIfEntry{F} <: DebugAction
 end
 function (d::DebugIfEntry)(::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if (i >= 0) && (!d.check(getfield(st, d.field)))
-        d.type === :warn && (@warn "$(d.msg)")
-        d.type === :info && (@info "$(d.msg)")
-        d.type === :error && error(d.msg)
-        d.type === :print && print(d.io, d.msg)
+        format = Printf.Format(d.msg)
+        msg = !('%' ∈ d.msg) ? d.msg : Printf.format(format, getfield(st, d.field))
+        d.type === :warn && (@warn "$(msg)")
+        d.type === :info && (@info "$(msg)")
+        d.type === :error && error(msg)
+        d.type === :print && print(d.io, msg)
     end
     return nothing
 end
@@ -615,13 +621,15 @@ This debug can be used to `:print` them display them as `:info` or `:warnings` o
 depending on the message type.
 
 # Constructor
+
     DebugMessages(mode=:Info; io::IO=stdout)
 
 Initialize the messages debug to a certain `mode`. Available modes are
-* `:Error` – issue the messages as an error and hence stop at any issue occurring
-* `:Info` – issue the messages as an `@info`
-* `:Print` – print messages to the steam `io`.
-* `:Warning` – issue the messages as a warning
+
+* `:Error`   issue the messages as an error and hence stop at any issue occurring
+* `:Info`    issue the messages as an `@info`
+* `:Print`   print messages to the steam `io`.
+* `:Warning` issue the messages as a warning
 """
 mutable struct DebugMessages <: DebugAction
     io::IO
@@ -940,7 +948,59 @@ function (d::DebugWarnIfFieldNotFinite)(
     return nothing
 end
 function show(io::IO, dw::DebugWarnIfFieldNotFinite)
-    return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field))")
+    return print(io, "DebugWarnIfFieldNotFinite(:$(dw.field), :$(dw.status))")
+end
+
+@doc raw"""
+    DebugWarnIfGradientNormTooLarge{T} <: DebugAction
+
+A debug to warn when an evaluated gradient at the current iterate is larger than
+(a factor times) the maximal (recommended) stepsize at the current iterate.
+
+# Constructor
+    DebugWarnIfGradientNormTooLarge(warn=:Once, factor::T=1.0)
+
+Initialize the warning to warn `:Once`.
+
+This can be set to `:Once` to only warn the first time the cost is Nan.
+It can also be set to `:No` to deactivate the warning, but this makes this Action also useless.
+All other symbols are handled as if they were `:Always:`
+
+# Example
+    DebugWaranIfFieldNotFinite(:Gradient)
+
+Creates a [`DebugAction`] to track whether the gradient does not get `Nan` or `Inf`.
+"""
+mutable struct DebugWarnIfGradientNormTooLarge{T} <: DebugAction
+    status::Symbol
+    factor::T
+    function DebugWarnIfGradientNormTooLarge(factor::T=1.0, warn::Symbol=:Once) where {T}
+        return new{T}(warn, factor)
+    end
+end
+function (d::DebugWarnIfGradientNormTooLarge)(
+    mp::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
+)
+    if d.status !== :No
+        M = get_manifold(mp)
+        p = get_iterate(st)
+        X = get_gradient(st)
+        Xn = norm(M, p, X)
+        p_inj = d.factor * max_stepsize(M, p)
+        if Xn > p_inj
+            @warn """At iteration #$i
+            the gradient norm ($Xn) is larger that $(d.factor) times the injectivity radius $(p_inj) at the current iterate.
+            """
+            if d.status === :Once
+                @warn "Further warnings will be suppressed, use DebugWarnIfGradientNormTooLarge($(d.factor), :Always) to get all warnings."
+                d.status = :No
+            end
+        end
+    end
+    return nothing
+end
+function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
+    return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor), :$(d.status))")
 end
 
 @doc raw"""
@@ -1022,6 +1082,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 
 * `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:Gradient` creates a [`DebugGradient`](@ref)
 * `:GradientChange` creates a [`DebugGradientChange`](@ref)
 * `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
@@ -1041,6 +1102,7 @@ any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the op
 function DebugActionFactory(s::Symbol)
     (s == :Cost) && return DebugCost()
     (s == :Change) && return DebugChange()
+    (s == :Gradient) && return DebugGradient()
     (s == :GradientChange) && return DebugGradientChange()
     (s == :GradientNorm) && return DebugGradientNorm()
     (s == :Iterate) && return DebugIterate()
@@ -1065,9 +1127,11 @@ Currently the following ones are done, where the string in `t[2]` is passed as t
 `format` the corresponding debug.
 Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
-* `:Cost` creates a [`DebugCost`](@ref)
 * `:Change` creates a [`DebugChange`](@ref)
+* `:Cost` creates a [`DebugCost`](@ref)
+* `:Gradient` creates a [`DebugGradient`](@ref)
 * `:GradientChange` creates a [`DebugGradientChange`](@ref)
+* `:GradientNorm` creates a [`DebugGradientNorm`](@ref)
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
@@ -1078,13 +1142,14 @@ any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the op
 """
 function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :Change) && return DebugChange(; format=t[2])
+    (t[1] == :Cost) && return DebugCost(; format=t[2])
+    (t[1] == :Gradient) && return DebugGradient(; format=t[2])
     (t[1] == :GradientChange) && return DebugGradientChange(; format=t[2])
+    (t[1] == :GradientNorm) && return DebugGradientNorm(; format=t[2])
     (t[1] == :Iteration) && return DebugIteration(; format=t[2])
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
-    (t[1] == :GradientNorm) && return DebugGradientNorm(; format=t[2])
-    (t[1] == :Cost) && return DebugCost(; format=t[2])
+    (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
     (t[1] == :Time) && return DebugTime(; format=t[2])
-    (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     return DebugEntry(t[1]; format=t[2])
 end

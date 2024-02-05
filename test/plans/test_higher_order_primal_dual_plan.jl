@@ -1,7 +1,9 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 using ManoptExamples: forward_logs, adjoint_differential_forward_logs
 using ManifoldDiff:
-    differential_shortest_geodesic_startpoint, differential_shortest_geodesic_startpoint!
+    differential_shortest_geodesic_startpoint,
+    differential_shortest_geodesic_startpoint!,
+    prox_distance!
 @testset "Test higher order primal dual plan" begin
     # Perform an really easy test, just compute a mid point
     #
