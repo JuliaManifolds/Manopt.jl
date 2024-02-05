@@ -1,6 +1,6 @@
 ---
 title: "Optimize on your own manifold"
-author: Ronny Bergmann
+author: "Ronny Bergmann"
 ---
 
 ````{=commonmark}

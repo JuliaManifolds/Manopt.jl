@@ -1,6 +1,6 @@
 ---
 title: "How to record data during the iterations"
-author: Ronny Bergmann
+author: "Ronny Bergmann"
 ---
 
 The recording and debugging features make it possible to record nearly any data during the iterations.

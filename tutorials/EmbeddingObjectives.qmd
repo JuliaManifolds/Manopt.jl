@@ -1,6 +1,6 @@
 ---
-title: How to define the cost in the embedding
-author: Ronny Bergmann
+title: "How to define the cost in the embedding"
+author: "Ronny Bergmann"
 ---
 
 Specifying a cost function $f:  \mathcal M → ℝ$ on a manifold
