@@ -586,11 +586,11 @@ as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMe
 butut the update  then is only executed if
 
 ```math
-\frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} \geq \theta(\lVert \operatorname{grad}f(x_k) \rVert_{x_k}),
+\frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} ≥ θ(\lVert \operatorname{grad}f(x_k) \rVert_{x_k}),
 ```
 
-is satisfied, where ``\theta`` is a monotone increasing function satisfying ``\theta(0) = 0``
-and ``\theta`` is strictly increasing at ``0``. If this is not the case, the corresponding
+is satisfied, where ``θ`` is a monotone increasing function satisfying ``θ(0) = 0``
+and ``θ`` is strictly increasing at ``0``. If this is not the case, the corresponding
 update will be skipped, which means that for [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 the matrix ``H_k`` or ``B_k`` is not updated.
 The basis ``\{b_i\}^{n}_{i=1}`` is nevertheless transported into the upcoming tangent
@@ -600,8 +600,8 @@ discarded nor the newest vector pair ``\{ \widetilde{s}_{k}, \widetilde{y}_{k}\}
 into storage, but all stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``
 are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
 If [`InverseBFGS`](@ref) or [`InverseBFGS`](@ref) is chosen as update, then the resulting
-method follows the method of [Huang, Absil, Gallivan, SIAM J. Optim., 2018](@cite HuangAbsilGallivan:2018), taking into account that
-the corresponding step size is chosen.
+method follows the method of [Huang, Absil, Gallivan, SIAM J. Optim., 2018](@cite HuangAbsilGallivan:2018),
+taking into account that the corresponding step size is chosen.
 
 # Provided functors
 

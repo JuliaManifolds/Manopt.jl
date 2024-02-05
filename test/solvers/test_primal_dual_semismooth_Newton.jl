@@ -1,5 +1,5 @@
 using Manopt, Manifolds, ManifoldsBase, Test
-using ManoptExamples: adjoint_differential_forward_logs
+using ManoptExamples: adjoint_differential_forward_logs, differential_forward_logs
 using ManifoldDiff: differential_shortest_geodesic_startpoint
 
 @testset "PD-RSSN" begin

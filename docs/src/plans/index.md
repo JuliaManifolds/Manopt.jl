@@ -48,3 +48,9 @@ Since the iterate is often stored in the states fields `s.p` one _could_ access 
 often also with `:p` and similarly the gradient with `:X`.
 This is discouraged for both readability as well as to star more generic, and it is recommended
 to use `:Iterate` and `:Gradient` instead in generic settings.
+
+You can further activate a “Tutorial” mode by `set_manopt_parameter!(:Mode, "Tutorial")`. Internally, the following convenience function is available.
+
+```@docs
+Manopt.is_tutorial_mode
+```

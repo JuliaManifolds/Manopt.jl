@@ -32,6 +32,7 @@ using Test
         rosenbrock_grad!,
         x0;
         stepsize=ls_hz,
+        debug=[],
         evaluation=InplaceEvaluation(),
         stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
         return_state=true,

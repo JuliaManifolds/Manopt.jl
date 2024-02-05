@@ -269,7 +269,8 @@ function quasi_Newton!(
     mgo::O,
     p;
     cautious_update::Bool=false,
-    cautious_function::Function=x -> x * 10^(-4),
+    cautious_function::Function=x -> x * 1e-4,
+    debug=is_tutorial_mode() ? [DebugWarnIfGradientNormTooLarge()] : [],
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p)
@@ -321,7 +322,7 @@ function quasi_Newton!(
             local_dir_upd; θ=cautious_function
         )
     end
-    dmgo = decorate_objective!(M, mgo; kwargs...)
+    dmgo = decorate_objective!(M, mgo; debug=debug, kwargs...)
     mp = DefaultManoptProblem(M, dmgo)
     qns = QuasiNewtonState(
         M,
@@ -333,14 +334,16 @@ function quasi_Newton!(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )
-    dqns = decorate_state!(qns; kwargs...)
+    dqns = decorate_state!(qns; debug=debug, kwargs...)
     solve!(mp, dqns)
     return get_solver_return(get_objective(mp), dqns)
 end
-function initialize_solver!(p::AbstractManoptProblem, s::QuasiNewtonState)
-    s.X = get_gradient(p, s.p)
-    s.sk = deepcopy(s.X)
-    return s.yk = deepcopy(s.X)
+function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
+    M = get_manifold(amp)
+    get_gradient!(amp, qns.X, qns.p)
+    copyto!(M, qns.sk, qns.p, qns.X)
+    copyto!(M, qns.yk, qns.p, qns.X)
+    return qns
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
