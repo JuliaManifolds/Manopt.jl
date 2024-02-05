@@ -20,7 +20,7 @@ _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 get_objective(tmo::TwoManifoldProblem) = tmo.objective
 
 @doc raw"""
-AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <: AbstractManifoldCostObjective{E,C}
+    AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <: AbstractManifoldCostObjective{E,C}
 
 A common abstract super type for objectives that consider primal-dual problems.
 """
@@ -28,14 +28,14 @@ abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P}
               AbstractManifoldCostObjective{E,C} end
 
 @doc raw"""
-    PrimalDualManifoldObjective{E<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{E}
+    PrimalDualManifoldObjective{T<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{T}
 
-Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [Bergmann et al., Found. Comput. Math., 2021](@cite BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021), [Chambolle, Pock, JMIV, 201](@cite ChambollePock:2011)
+Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite), [ChambollePock:2011](@cite)
 
 # Fields
 
-All fields with !! can either be mutating or nonmutating functions, which should be set
-depending on the parameter `T <: AbstractEvaluationType`.
+All fields with `!!` can either be in-place or allocating functions, which should be set
+depending on the `evaluation=` keyword in the constructor and stored in `T <: AbstractEvaluationType`.
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!!`: linearized operator for the forward operation in the algorithm ``DΛ``
@@ -809,7 +809,7 @@ end
 @doc raw"""
     DebugPrimalDualResidual <: DebugAction
 
-A Debug action to print the primaldual residual.
+A Debug action to print the primal dual residual.
 The constructor accepts a printing function and some (shared) storage, which
 should at least record `:Iterate`, `:X` and `:n`.
 
@@ -1008,7 +1008,7 @@ end
 # Records
 #
 
-# Primals are just the entries
+# For primal changes just use the usual change and record functors
 """
     RecordPrimalChange(a)
 

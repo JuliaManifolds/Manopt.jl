@@ -206,13 +206,12 @@ A functor to approximate the Hessian by a finite difference of gradient evaluati
 
 Given a point `p` and a direction `X` and the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M``
 of a function ``F`` the Hessian is approximated as follows:
-Let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
+let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
 be a step in direction ``X`` of length ``c`` following a retraction
-Then we approximate the Hessian by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
+Then the Hessian is approximated by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
 
 ```math
-\operatorname{Hess}F(p)[X]
- ≈
+\operatorname{Hess}F(p)[X] ≈
 \frac{\lVert X \rVert_p}{c}\Bigl(
   \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)
 \Bigl)
