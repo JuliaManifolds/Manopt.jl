@@ -1,6 +1,6 @@
 ---
-title: How to perform Geodesic Regression
-author: Ronny Bergmann
+title: "How to perform geodesic regression"
+author: "Ronny Bergmann"
 ---
 
 Geodesic regression generalizes [linear regression](https://en.wikipedia.org/wiki/Linear_regression)

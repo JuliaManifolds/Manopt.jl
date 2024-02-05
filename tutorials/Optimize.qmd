@@ -241,7 +241,7 @@ proxes_g = Function[(N, λ, q) -> prox_distance(N, λ / m, di, q, 1) for di in d
 Besides also looking at a some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list [here](https://manoptjl.org/stable/plans/record/#Manopt.RecordFactory-Tuple{AbstractManoptSolverState,%20Vector}), to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
 
 ```{julia}
-ress = cyclic_proximal_point(N, g, proxes_g, data2[1];
+res = cyclic_proximal_point(N, g, proxes_g, data2[1];
   debug=[:Iteration," | ",:Change," | ",(:Cost, "F(x): %1.12f"),"\n", 1000, :Stop,
         ],
         record=[:Iteration, :Change, :Cost, :Iterate],
@@ -271,8 +271,8 @@ But we can also access whole series and see that the cost does not decrease that
 example access the `:Cost` that was recorded every `:Iterate` as well as the (maybe a little boring) `:Iteration`-number in a semi-log-plot.
 
 ```{julia}
-x = get_record(s, :Iteration, :Iteration)
-y = get_record(s, :Iteration, :Cost)
+x = get_record(res, :Iteration, :Iteration)
+y = get_record(res, :Iteration, :Cost)
 using Plots
 plot(x,y,xaxis=:log, label="CPPA Cost")
 ```
