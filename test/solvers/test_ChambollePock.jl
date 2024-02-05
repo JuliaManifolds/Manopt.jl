@@ -1,5 +1,6 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 using ManoptExamples: forward_logs, adjoint_differential_forward_logs
+using ManifoldDiff: prox_distance, prox_distance!
 
 @testset "Chambolle-Pock" begin
     #

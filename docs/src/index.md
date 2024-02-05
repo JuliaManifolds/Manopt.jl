@@ -48,16 +48,34 @@ To refer to a certain version or the source code in general cite for example
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
-    Author = {Ronny Bergmann},
+    Author    = {Ronny Bergmann},
     Copyright = {MIT License},
-    Doi = {10.5281/zenodo.4290905},
+    Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
-    Title = {Manopt.jl},
-    Year = {2022},
+    Title     = {Manopt.jl},
+    Year      = {2024},
 }
 ```
 
 for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
+
+
+If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) please consider to cite
+
+```biblatex
+@article{AxenBaranBergmannRzecki:2023,
+    AUTHOR    = {Axen, Seth D. and Baran, Mateusz and Bergmann, Ronny and Rzecki, Krzysztof},
+    ARTICLENO = {33},
+    DOI       = {10.1145/3618296},
+    JOURNAL   = {ACM Transactions on Mathematical Software},
+    MONTH     = {dec},
+    NUMBER    = {4},
+    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    VOLUME    = {49},
+    YEAR      = {2023}
+}
+```
+
 Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
 
 ## Main features

@@ -5,17 +5,19 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [0.4.52]
 
 ### Added
 
-* Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
+* introduce an environment persistent way of setting global values with the `set_manopt_parameter!` function using [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl).
+* introduce such a value named `:Mode` to enable a `"Tutorial"` mode that shall often provide more warnings and information for people getting started with optimisation on manifolds
 
 ## [0.4.51] January 30, 2024
 
 ### Added
 
 * A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
+* Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
 
 ## [0.4.50] January 26, 2024
 
