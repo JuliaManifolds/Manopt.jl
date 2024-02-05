@@ -955,7 +955,7 @@ end
     DebugWarnIfGradientNormTooLarge{T} <: DebugAction
 
 A debug to warn when an evaluated gradient at the current iterate is larger than
-(a factor times) the injectivity radius at the current iterate.
+(a factor times) the maximal (recommended) stepsize at the current iterate.
 
 # Constructor
     DebugWarnIfGradientNormTooLarge(warn=:Once, factor::T=1.0)
@@ -986,7 +986,7 @@ function (d::DebugWarnIfGradientNormTooLarge)(
         p = get_iterate(st)
         X = get_gradient(st)
         Xn = norm(M, p, X)
-        p_inj = d.factor * injectivity_radius(M, p)
+        p_inj = d.factor * max_stepsize(M, p)
         if Xn > p_inj
             @warn """At iteration #$i
             the gradient norm ($Xn) is larger that $(d.factor) times the injectivity radius $(p_inj) at the current iterate.
