@@ -141,7 +141,7 @@ end
 struct OptimQN <: AbstractOptimConfig end
 
 function benchmark_time_state(
-    ::OptimQN, manifold_name, N, f, g!, x0, stepsize, mem_len::Int, gtol::Real
+    ::OptimQN, manifold_name, N, f, g!, x0, stepsize, mem_len::Int, gtol::Real; kwargs...
 )
     mem_len = min(mem_len, manifold_dimension(manifold_maker(manifold_name, N, :Manopt)))
     options_optim = Optim.Options(; g_tol=gtol)

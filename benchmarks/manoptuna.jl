@@ -52,23 +52,22 @@ struct TracingTrial
     should_prune::TTshould_prune
 end
 
-function lbfgs_compute_pruning_losses()
-    # suggestions here need to be kept updated with what `lbfgs_objective` expects
-    tt = TracingTrial(
-        TTsuggest_int(Dict("mem_len" => 4)),
-        TTsuggest_categorical(Dict("vector_transport_method" => 1)),
-        TTreport(Float64[]),
-        TTshould_prune(),
-    )
-    lbfgs_objective(tt)
-    return tt.report.reported_vals
-end
+"""
+    ObjectiveData
 
-struct ObjectiveData{TObj,TGrad}
+ensure `pruning_losses` is actually somewhat realistic,
+otherwise there is too little pruning (if values here are too high)
+or too much pruning (if values here are too low)
+regenerate using `lbfgs_compute_pruning_losses`
+"""
+mutable struct ObjectiveData{TObj,TGrad}
     obj::TObj
     grad::TGrad
     N_range::Vector{Int}
     gtol::Float64
+    vts::Vector{AbstractVectorTransportMethod}
+    retrs::Vector{AbstractRetractionMethod}
+    pruning_losses::Vector{Float64}
 end
 
 function (objective::ObjectiveData)(trial)
@@ -76,22 +75,18 @@ function (objective::ObjectiveData)(trial)
     manifold_name = :Sphere
     ls_hz = LineSearches.HagerZhang()
 
-    vts = [ParallelTransport(), ProjectionTransport()]
-    vt = vts[pyconvert(Int, trial.suggest_categorical("vector_transport_method", (1, 2)))]
+    vt = objective.vts[pyconvert(
+        Int,
+        trial.suggest_categorical(
+            "vector_transport_method", Vector(eachindex(objective.vts))
+        ),
+    )]
+    retr = objective.retrs[pyconvert(
+        Int,
+        trial.suggest_categorical("retraction_method", Vector(eachindex(objective.retrs))),
+    )]
 
-    # TODO: ensure this actually somewhat realistic,
-    # otherwise there is too little pruning (if values here are too high)
-    # or too much pruning (if values here are too low)
-    # regenerate using
-    # pruning_losses = lbfgs_compute_pruning_losses()
-    # *but* with zeroed-out pruning_losses
-    # padded with zeros for convenience
-    pruning_losses = vcat(
-        [15.95, 38.961, 74.9733, 411.8313333, 2561.789333333333, 3.7831363008333333e6],
-        zeros(100),
-    )
-
-    loss = sum(pruning_losses)
+    loss = sum(objective.pruning_losses)
 
     # here iterate over problems we want to optimize for
     # from smallest to largest; pruning should stop the iteration early
@@ -111,9 +106,10 @@ function (objective::ObjectiveData)(trial)
             pyconvert(Int, mem_len),
             objective.gtol;
             vector_transport_method=vt,
+            retraction_method=retr,
         )
         # TODO: take objective_value into account for loss?
-        loss -= pruning_losses[cur_i + 1]
+        loss -= objective.pruning_losses[cur_i + 1]
         loss += manopt_time
         trial.report(loss, cur_i)
         if pyconvert(Bool, trial.should_prune().__bool__())
@@ -125,8 +121,43 @@ function (objective::ObjectiveData)(trial)
 end
 
 function lbfgs_study()
-    od = ObjectiveData(f_rosenbrock, g_rosenbrock!, [2^n for n in 1:3:16], 1e-5)
+    Ns = [2^n for n in 1:3:16]
+    od = ObjectiveData(
+        f_rosenbrock,
+        g_rosenbrock!,
+        Ns,
+        1e-5,
+        AbstractVectorTransportMethod[ParallelTransport(), ProjectionTransport()],
+        [ExponentialRetraction(), ProjectionRetraction()],
+        zero(Ns),
+    )
+    pruning_losses = vcat(
+        [15.95, 38.961, 74.9733, 411.8313333, 2561.789333333333, 3.7831363008333333e6],
+        zeros(100),
+    )
+    # pruning_losses = lbfgs_compute_pruning_losses(
+    #     od,
+    #     Dict("mem_len" => 4),
+    #     Dict("vector_transport_method" => 1, "retraction_method" => 1),
+    # )
+    od.pruning_losses = pruning_losses
+
     study = optuna.create_study(; study_name="L-BFGS")
     study.optimize(od; n_trials=1000, timeout=500)
     return println("Best params is $(study.best_params) with value $(study.best_value)")
+end
+
+function lbfgs_compute_pruning_losses(
+    od::ObjectiveData,
+    int_suggestions::Dict{String,Int},
+    categorical_suggestions::Dict{String,Int},
+)
+    tt = TracingTrial(
+        TTsuggest_int(int_suggestions),
+        TTsuggest_categorical(categorical_suggestions),
+        TTreport(Float64[]),
+        TTshould_prune(),
+    )
+    od(tt)
+    return tt.report.reported_vals
 end
