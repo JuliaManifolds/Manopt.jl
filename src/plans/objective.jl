@@ -107,7 +107,7 @@ the internal state are extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
 `o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive) to change this behaviour for your objective `o`
-for both the recursive and the nonrecursive case.
+for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
@@ -143,7 +143,7 @@ end
 function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
     return print(io, "$(nameof(typeof(o))){$E}")
 end
-# Default undecorate for show
+# Default: remove decorator for show
 function show(io::IO, co::AbstractDecoratedManifoldObjective)
     return show(io, get_objective(co, false))
 end
@@ -158,7 +158,7 @@ end
 function status_summary(::AbstractManifoldObjective{E}) where {E}
     return ""
 end
-# Default undecorate for summary
+# Default: remove decorator for status summary
 function status_summary(co::AbstractDecoratedManifoldObjective)
     return status_summary(get_objective(co, false))
 end

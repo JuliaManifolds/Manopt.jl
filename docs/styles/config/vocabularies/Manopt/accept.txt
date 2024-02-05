@@ -31,6 +31,7 @@ Geoopt
 Grassmann
 Hadamard
 Hessian
+Iannazzo
 injectivity
 Jax
 JuMP.jl
@@ -42,6 +43,7 @@ Laus
 linearization
 LineSearches.jl
 Liu
+LRUCache.jl
 Manifolds.jl
 ManifoldsBase.jl
 [Mm]anopt(:?.org|.jl)?
@@ -52,10 +54,12 @@ Munkvold
 [Nn]elder
 Nesterov
 Newton
+nonmonotone
 nonpositive
 [Pp]arametrising
 Parametrising
 [Pp]ock
+Porcelli
 preconditioner
 [Pp]rox(:?imal)
 pullback

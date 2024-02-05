@@ -6,7 +6,7 @@ An abstract type for solvers that involve a subsolver.
 abstract type AbstractSubProblemSolverState <: AbstractManoptSolverState end
 
 """
-   AbstractManifoldSubObjective{O<:AbstractManifoldObjective} <: AbstractManifoldObjective
+    AbstractManifoldSubObjective{O<:AbstractManifoldObjective} <: AbstractManifoldObjective
 
 An abstract type for objectives of sub problems within a solver but still store the
 original objective internally to generate generic objectives for sub solvers.
@@ -22,14 +22,14 @@ end
 @doc raw"""
     get_objective(amso::AbstractManifoldSubObjective)
 
-Return the (original) objective stored the sub obective is build on.
+Return the (original) objective stored the sub objective is build on.
 """
 get_objective(amso::AbstractManifoldSubObjective)
 
 @doc raw"""
     get_objective_cost(M, amso::AbstractManifoldSubObjective, p)
 
-Evaluate the cost of the (original) objective stored within the subobjective.
+Evaluate the cost of the (original) objective stored within the sub objective.
 """
 function get_objective_cost(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
@@ -41,7 +41,7 @@ end
     X = get_objective_gradient(M, amso::AbstractManifoldSubObjective, p)
     get_objective_gradient!(M, X, amso::AbstractManifoldSubObjective, p)
 
-Evaluate the gradient of the (original) objective stored within the subobjective `amso`.
+Evaluate the gradient of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_gradient(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
@@ -58,7 +58,7 @@ end
     Y = get_objective_Hessian(M, amso::AbstractManifoldSubObjective, p, X)
     get_objective_Hessian!(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
-Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
+Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_hessian(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
@@ -76,7 +76,7 @@ end
     Y = get_objective_preconditioner(M, amso::AbstractManifoldSubObjective, p, X)
     get_objective_preconditioner(M, Y, amso::AbstractManifoldSubObjective, p, X)
 
-Evaluate the Hessian of the (original) objective stored within the subobjective `amso`.
+Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_preconditioner(
     M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
@@ -116,7 +116,7 @@ By default, this function just does nothing.
 function set_manopt_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
     return set_manopt_parameter!(ams, Val(e), args...)
 end
-# Default: Do nothing
+# Default: do nothing
 function set_manopt_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
     return ams
 end

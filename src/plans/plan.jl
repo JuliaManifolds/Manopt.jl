@@ -2,7 +2,7 @@
     status_summary(e)
 
 Return a string reporting about the current status of `e`,
-where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
+where `e` is a type from Manopt.
 
 This method is similar to `show` but just returns a string.
 It might also be more verbose in explaining, or hide internal information.
@@ -12,7 +12,7 @@ status_summary(e) = "$(e)"
 """
     set_manopt_parameter!(f, element::Symbol , args...)
 
-For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
+For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
 """
 function set_manopt_parameter!(f, e::Symbol, args...)
@@ -25,8 +25,8 @@ end
 """
     get_manopt_parameter(f, element::Symbol, args...)
 
-For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
-get some element from `f` potentially further qulalified by `args...`.
+For any `f` and a `Symbol` `e` dispatch on its value so by default, to
+get some element from `f` potentially further qualified by `args...`.
 
 This functions returns `nothing` if `f` does not have the property `element`
 """

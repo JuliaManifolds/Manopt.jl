@@ -41,8 +41,6 @@ and for the `reflect!` additionally
 
 * `X`:                         (`zero_vector(M,p)`) a temporary memory to compute the inverse retraction in place.
   otherwise this is the memory that would be allocated anyways.
-
-Passing `X` to `reflect` will just have no effect.
 """
 function reflect(
     M::AbstractManifold,

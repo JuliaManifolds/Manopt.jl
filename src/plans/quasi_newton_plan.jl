@@ -341,7 +341,7 @@ space ``T_{x_{k+1}} \mathcal{M}``, preferably with an isometric vector transport
         kwargs...
     )
 
-## Keyword Arguments
+## Keyword arguments
 
 * `scale`, `vector_transport_method` for the two fields
 
