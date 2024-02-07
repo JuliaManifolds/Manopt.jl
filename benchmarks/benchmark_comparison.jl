@@ -184,10 +184,11 @@ function generate_cmp(
                 f,
                 g!,
                 x0,
-                HagerZhangLinesearch(M),
+                HagerZhangLinesearch(M; sigma=0.5),
                 mem_len,
                 gtol;
-                vector_transport_method=ParallelTransport(),
+                retraction_method=ProjectionRetraction(),
+                vector_transport_method=ProjectionTransport(),
             )
 
             push!(times_manopt, manopt_time)

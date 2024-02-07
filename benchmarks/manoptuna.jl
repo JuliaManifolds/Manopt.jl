@@ -107,7 +107,7 @@ function (objective::ObjectiveData)(trial)
         ),
     )]
 
-    local c1_val, c2_val
+    local c1_val, c2_val, hz_sigma
     if manopt_stepsize_name == "Wolfe-Powell"
         c1_val = pyconvert(
             Float64, trial.suggest_float("Wolfe-Powell c1", 1e-5, 1e-2; log=true)
@@ -116,6 +116,8 @@ function (objective::ObjectiveData)(trial)
             1.0 - pyconvert(
                 Float64, trial.suggest_float("Wolfe-Powell 1-c2", 1e-4, 1e-2; log=true)
             )
+    elseif manopt_stepsize_name == "Improved HZ"
+        hz_sigma = pyconvert(Float64, trial.suggest_float("Improved HZ sigma", 0.1, 0.9))
     end
 
     loss = sum(objective.pruning_losses)
@@ -131,6 +133,8 @@ function (objective::ObjectiveData)(trial)
         local ls
         if manopt_stepsize_name == "Wolfe-Powell"
             ls = manopt_stepsize_constructor(M, c1_val, c2_val)
+        elseif manopt_stepsize_name == "Improved HZ"
+            ls = manopt_stepsize_constructor(M, hz_sigma)
         else
             ls = manopt_stepsize_constructor(M)
         end
@@ -173,7 +177,8 @@ function lbfgs_study()
         zeros(Float64, eachindex(Ns)),
         Tuple{String,Any}[
             ("LS-HZ", M -> Manopt.LineSearchesStepsize(ls_hz)),
-            ("Wolfe-Powell", (M, c1, c2) -> Manopt.WolfePowellLinesearch(M, c1, c2)),
+            ("Improved HZ", (M, sigma) -> HagerZhangLinesearch(M; sigma=sigma)),
+            #("Wolfe-Powell", (M, c1, c2) -> Manopt.WolfePowellLinesearch(M, c1, c2)),
         ],
     )
     pruning_losses = vcat(
@@ -183,7 +188,11 @@ function lbfgs_study()
     pruning_losses = compute_pruning_losses(
         od,
         Dict("mem_len" => 4),
-        Dict("Wolfe-Powell c1" => 1e-4, "Wolfe-Powell 1-c2" => 1e-3),
+        Dict(
+            "Wolfe-Powell c1" => 1e-4,
+            "Wolfe-Powell 1-c2" => 1e-3,
+            "Improved HZ sigma" => 0.9,
+        ),
         Dict(
             "vector_transport_method" => 1,
             "retraction_method" => 1,
