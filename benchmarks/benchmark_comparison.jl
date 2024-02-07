@@ -87,7 +87,7 @@ function benchmark_time_state(
     f,
     g!,
     x0,
-    stepsize,
+    stepsize::Manopt.Stepsize,
     mem_len::Int,
     gtol::Real;
     kwargs...,

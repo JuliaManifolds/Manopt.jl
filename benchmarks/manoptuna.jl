@@ -31,6 +31,12 @@ end
 function (s::TTsuggest_int)(name::String, a, b)
     return s.suggestions[name]
 end
+struct TTsuggest_float
+    suggestions::Dict{String,Float64}
+end
+function (s::TTsuggest_float)(name::String, a, b; log::Bool=false)
+    return s.suggestions[name]
+end
 struct TTsuggest_categorical
     suggestions::Dict{String,Any}
 end
@@ -47,6 +53,7 @@ struct TTshould_prune end
 (::TTshould_prune)() = Py(false)
 struct TracingTrial
     suggest_int::TTsuggest_int
+    suggest_float::TTsuggest_float
     suggest_categorical::TTsuggest_categorical
     report::TTreport
     should_prune::TTshould_prune
@@ -69,11 +76,11 @@ mutable struct ObjectiveData{TObj,TGrad}
     retrs::Vector{AbstractRetractionMethod}
     manifold_constructors::Vector{Tuple{String,Any}}
     pruning_losses::Vector{Float64}
+    manopt_stepsize::Vector{Tuple{String,Any}}
 end
 
 function (objective::ObjectiveData)(trial)
     mem_len = trial.suggest_int("mem_len", 2, 30)
-    ls_hz = LineSearches.HagerZhang()
 
     vt = objective.vts[pyconvert(
         Int,
@@ -93,6 +100,24 @@ function (objective::ObjectiveData)(trial)
         ),
     )]
 
+    manopt_stepsize_name, manopt_stepsize_constructor = objective.manopt_stepsize[pyconvert(
+        Int,
+        trial.suggest_categorical(
+            "manopt_stepsize", Vector(eachindex(objective.manopt_stepsize))
+        ),
+    )]
+
+    local c1_val, c2_val
+    if manopt_stepsize_name == "Wolfe-Powell"
+        c1_val = pyconvert(
+            Float64, trial.suggest_float("Wolfe-Powell c1", 1e-5, 1e-2; log=true)
+        )
+        c2_val =
+            1.0 - pyconvert(
+                Float64, trial.suggest_float("Wolfe-Powell 1-c2", 1e-4, 1e-2; log=true)
+            )
+    end
+
     loss = sum(objective.pruning_losses)
 
     # here iterate over problems we want to optimize for
@@ -103,6 +128,12 @@ function (objective::ObjectiveData)(trial)
         x0 = zeros(N)
         x0[1] = 1
         M = manifold_constructor(N)
+        local ls
+        if manopt_stepsize_name == "Wolfe-Powell"
+            ls = manopt_stepsize_constructor(M, c1_val, c2_val)
+        else
+            ls = manopt_stepsize_constructor(M)
+        end
         manopt_time, manopt_iters, manopt_obj = benchmark_time_state(
             ManoptQN(),
             M,
@@ -110,7 +141,7 @@ function (objective::ObjectiveData)(trial)
             objective.obj,
             objective.grad,
             x0,
-            Manopt.LineSearchesStepsize(ls_hz),
+            ls,
             pyconvert(Int, mem_len),
             objective.gtol;
             vector_transport_method=vt,
@@ -130,6 +161,7 @@ end
 
 function lbfgs_study()
     Ns = [2^n for n in 1:3:16]
+    ls_hz = LineSearches.HagerZhang()
     od = ObjectiveData(
         f_rosenbrock,
         g_rosenbrock!,
@@ -139,6 +171,10 @@ function lbfgs_study()
         [ExponentialRetraction(), ProjectionRetraction()],
         Tuple{String,Any}[("Sphere", N -> Manifolds.Sphere(N - 1))],
         zeros(Float64, eachindex(Ns)),
+        Tuple{String,Any}[
+            ("LS-HZ", M -> Manopt.LineSearchesStepsize(ls_hz)),
+            ("Wolfe-Powell", (M, c1, c2) -> Manopt.WolfePowellLinesearch(M, c1, c2)),
+        ],
     )
     pruning_losses = vcat(
         [15.95, 38.961, 74.9733, 411.8313333, 2561.789333333333, 3.7831363008333333e6],
@@ -147,7 +183,13 @@ function lbfgs_study()
     pruning_losses = compute_pruning_losses(
         od,
         Dict("mem_len" => 4),
-        Dict("vector_transport_method" => 1, "retraction_method" => 1, "manifold" => 1),
+        Dict("Wolfe-Powell c1" => 1e-4, "Wolfe-Powell 1-c2" => 1e-3),
+        Dict(
+            "vector_transport_method" => 1,
+            "retraction_method" => 1,
+            "manifold" => 1,
+            "manopt_stepsize" => 1,
+        ),
     )
     od.pruning_losses = pruning_losses
 
@@ -159,10 +201,12 @@ end
 function compute_pruning_losses(
     od::ObjectiveData,
     int_suggestions::Dict{String,Int},
+    float_suggestions::Dict{String,Float64},
     categorical_suggestions::Dict{String,Int},
 )
     tt = TracingTrial(
         TTsuggest_int(int_suggestions),
+        TTsuggest_float(float_suggestions),
         TTsuggest_categorical(categorical_suggestions),
         TTreport(Float64[]),
         TTshould_prune(),
