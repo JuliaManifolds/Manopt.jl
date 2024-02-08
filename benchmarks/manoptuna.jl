@@ -9,22 +9,6 @@ include("benchmark_comparison.jl")
 
 optuna = pyimport("optuna")
 
-function test_objective(trial)
-    x = trial.suggest_float("x", -100, 100)
-    trial.report(abs(x), 1)
-    if pyconvert(Bool, trial.should_prune().__bool__())
-        throw(PyException(optuna.TrialPruned()))
-    end
-    return x^2
-end
-
-function test_study()
-    study = optuna.create_study()
-    # The optimization finishes after evaluating 1000 times or 3 seconds.
-    study.optimize(test_objective; n_trials=1000, timeout=3)
-    return println("Best params is $(study.best_params) with value $(study.best_value)")
-end
-
 struct TTsuggest_int
     suggestions::Dict{String,Int}
 end
@@ -62,10 +46,7 @@ end
 """
     ObjectiveData
 
-ensure `pruning_losses` is actually somewhat realistic,
-otherwise there is too little pruning (if values here are too high)
-or too much pruning (if values here are too low)
-regenerate using `lbfgs_compute_pruning_losses`
+
 """
 mutable struct ObjectiveData{TObj,TGrad}
     obj::TObj
@@ -77,6 +58,7 @@ mutable struct ObjectiveData{TObj,TGrad}
     manifold_constructors::Vector{Tuple{String,Any}}
     pruning_losses::Vector{Float64}
     manopt_stepsize::Vector{Tuple{String,Any}}
+    obj_loss_coeff::Float64
 end
 
 function (objective::ObjectiveData)(trial)
@@ -151,9 +133,10 @@ function (objective::ObjectiveData)(trial)
             vector_transport_method=vt,
             retraction_method=retr,
         )
-        # TODO: take objective_value into account for loss?
+        # TODO: turn this into multi-criteria optimization when Optuna starts supporting
+        # pruning in such problems
         loss -= objective.pruning_losses[cur_i + 1]
-        loss += manopt_time
+        loss += manopt_time + objective.obj_loss_coeff * manopt_obj
         trial.report(loss, cur_i)
         if pyconvert(Bool, trial.should_prune().__bool__())
             throw(PyException(optuna.TrialPruned()))
@@ -163,7 +146,15 @@ function (objective::ObjectiveData)(trial)
     return loss
 end
 
-function lbfgs_study()
+"""
+    lbfgs_study(; pruning_coeff::Float64=0.95)
+
+ensure `pruning_losses` is actually somewhat realistic,
+otherwise there is too little pruning (if values here are too high)
+or too much pruning (if values here are too low)
+regenerate using `lbfgs_compute_pruning_losses`
+"""
+function lbfgs_study(; pruning_coeff::Float64=0.95)
     Ns = [2^n for n in 1:3:16]
     ls_hz = LineSearches.HagerZhang()
     od = ObjectiveData(
@@ -180,12 +171,10 @@ function lbfgs_study()
             ("Improved HZ", (M, sigma) -> HagerZhangLinesearch(M; sigma=sigma)),
             #("Wolfe-Powell", (M, c1, c2) -> Manopt.WolfePowellLinesearch(M, c1, c2)),
         ],
+        10.0,
     )
-    pruning_losses = vcat(
-        [15.95, 38.961, 74.9733, 411.8313333, 2561.789333333333, 3.7831363008333333e6],
-        zeros(100),
-    )
-    pruning_losses = compute_pruning_losses(
+
+    baseline_pruning_losses = compute_pruning_losses(
         od,
         Dict("mem_len" => 4),
         Dict(
@@ -200,11 +189,12 @@ function lbfgs_study()
             "manopt_stepsize" => 1,
         ),
     )
-    od.pruning_losses = pruning_losses
+    od.pruning_losses = pruning_coeff * baseline_pruning_losses
 
     study = optuna.create_study(; study_name="L-BFGS")
     study.optimize(od; n_trials=1000, timeout=500)
-    return println("Best params is $(study.best_params) with value $(study.best_value)")
+    println("Best params is $(study.best_params) with value $(study.best_value)")
+    return study
 end
 
 function compute_pruning_losses(
