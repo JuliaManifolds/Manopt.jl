@@ -426,7 +426,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     j = 1
     step = get_stepsize(mp, bms, j)
     retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
-    while !bms.domain(M, bms.p)
+    while !bms.domain(M, bms.p) || distance(M, bms.p, bms.p_last_serious) < step*norm(M, bms.p_last_serious, bms.g)
         j += 1
         step = get_stepsize(mp, bms, j)
         retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
