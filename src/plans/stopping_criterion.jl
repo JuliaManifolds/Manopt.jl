@@ -206,7 +206,7 @@ end
 function StopWhenChangeLess(
     M::AbstractManifold,
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate,:Population}),
+    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
 ) where {IRT<:AbstractInverseRetractionMethod}
     return StopWhenChangeLess{IRT,typeof(storage)}(
@@ -215,7 +215,7 @@ function StopWhenChangeLess(
 end
 function StopWhenChangeLess(
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction([:Iterate, :Population]),
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
     manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
