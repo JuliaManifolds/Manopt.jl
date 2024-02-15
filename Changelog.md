@@ -5,7 +5,14 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.52]
+## [0.4.53] February 13, 2024
+
+### Fixed
+
+* fixes two storage action defaults, that accidentally still tried to initialize a `:Population` (as modified back to `:Iterate` 0.4.49).
+* fix a few typos in the documentation and add a reference for the subgradient menthod.
+
+## [0.4.52] February 5, 2024
 
 ### Added
 

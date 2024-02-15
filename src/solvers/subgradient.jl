@@ -79,8 +79,8 @@ function default_stepsize(M::AbstractManifold, ::Type{SubGradientMethodState})
 end
 
 @doc raw"""
-    subgradient_method(M, f, ∂f, p; kwargs...)
-    subgradient_method(M; sgo, p; kwargs...)
+    subgradient_method(M, f, ∂f, p=rand(M); kwargs...)
+    subgradient_method(M, sgo, p=rand(M); kwargs...)
 
 perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
 
@@ -89,6 +89,7 @@ where ``\mathrm{retr}`` is a retraction, ``s_k`` is a step size, usually the
 Though the subgradient might be set valued,
 the argument `∂f` should always return _one_ element from the subgradient, but
 not necessarily deterministic.
+For more detils see [FerreiraOliveira:1998](@cite).
 
 # Input
 
@@ -98,7 +99,7 @@ not necessarily deterministic.
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p`:  an initial value ``p_0=p ∈ \mathcal M``
+* `p`:  (`rand(M)`) an initial value ``p_0=p ∈ \mathcal M``
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 
