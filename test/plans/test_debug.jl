@@ -101,7 +101,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test String(take!(io)) == "# 23    "
         @test repr(DebugIteration()) == "DebugIteration(; format=\"# %-6d\")"
         @test Manopt.status_summary(DebugIteration()) == "(:Iteration, \"# %-6d\")"
-        # DebugEntryChange
+        # `DebugEntryChange`
         dec = DebugEntryChange(:p, x -> x)
         @test startswith(repr(dec), "DebugEntryChange(:p")
         # DEbugEntryChange - reset

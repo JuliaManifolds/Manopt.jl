@@ -19,7 +19,7 @@ the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/)
 to clone/fork the repository or open an issue.
 
 
-## Further packages
+# further packages
 
 `Manopt.jl` belongs to the Manopt family:
 
