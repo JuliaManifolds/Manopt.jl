@@ -32,7 +32,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     # guess initial alpha
     α0 = 1.0
 
-    # perform actual linesearch
+    # perform actual line-search
 
     function ϕ(α)
         retract!(M, p_tmp, p, η, α, cs.retraction_method)

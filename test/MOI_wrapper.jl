@@ -56,7 +56,7 @@ function _test_stiefel(solver)
         1 -1
         -1 1
     ]
-    # Use `add_bridges = false` in order to test `copy_to`
+    # Use `add_bridges = false` to test `copy_to`
     model = Model(Manopt.JuMP_Optimizer; add_bridges=false)
     dst = "descent_state_type"
     @test MOI.supports(unsafe_backend(model), MOI.RawOptimizerAttribute(dst))

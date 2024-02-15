@@ -8,19 +8,19 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* `p` – the current iterate, i.e. a point on the manifold
-* `X` – the current subgradient, i.e. a tangent vector to `p`.
-* `sub_problem` – problem for the subsolver
-* `sub_state` – state of the subproblem
-* `stop` – a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `p`           the current iterate, a point on the manifold
+* `X`           the current subgradient, a tangent vector to `p`.
+* `sub_problem` problem for the subsolver
+* `sub_state`   state of the subproblem
+* `stop`        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
-For the sub task, we need a method to solve
+For the sub task, a method to solve
 
 ```math
     \operatorname*{argmin}_{q∈\mathcal M}\ g(p) - ⟨X, \log_p q⟩
 ```
 
-besides a problem and options, one can also provide a function and
+is needed. Besides a problem and options, one can also provide a function and
 an [`AbstractEvaluationType`](@ref), respectively, to indicate
 a closed form solution for the sub task.
 
@@ -31,16 +31,14 @@ a closed form solution for the sub task.
 
 Generate the state either using a solver from Manopt, given by
 an [`AbstractManoptProblem`](@ref) `sub_problem` and an [`AbstractManoptSolverState`](@ref) `sub_state`,
-or a closed form solution `sub_solver` for the sub-problem, where by default its [`AbstractEvaluationType`](@ref) `evaluation` is in-place,
-i.e. the function is of the form `(M, p, X) -> q` or `(M, q, p, X) -> q`,
-such that the current iterate `p` and the subgradient `X` of `h` can be passed to that function and the
-result if `q`.
+or a closed form solution `sub_solver` for the sub-problem the function expected to be of the form `(M, p, X) -> q` or `(M, q, p, X) -> q`,
+where by default its [`AbstractEvaluationType`](@ref) `evaluation` is in-place of `q`.
+Here the elements passed are the current iterate `p` and the subgradient `X` of `h` can be passed to that function.
 
-## Further keyword Arguments
+## further keyword arguments
 
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
-* `stopping_criterion` – [`StopAfterIteration`](@ref)`(200)` a stopping criterion
-
+* `stopping_criterion`         a [`StopAfterIteration`](@ref)`(200)` a stopping criterion
 """
 mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
                AbstractSubProblemSolverState
@@ -105,7 +103,8 @@ function show(io::IO, dcs::DifferenceOfConvexState)
     * sub solver state:
         | $(sub)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(dcs.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
@@ -114,7 +113,7 @@ end
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
     difference_of_convex_algorithm(M, mdco, p; kwargs...)
 
-Compute the difference of convex algorithm [Bergmann, Ferreira, Santos, Souza, preprint, 2023](@cite BergmannFerreiraSantosSouza:2023) to minimize
+Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2023](@cite) to minimize
 
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal M}\  g(p) - h(p)
@@ -128,20 +127,20 @@ Then repeat for ``k=0,1,\ldots``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} \in \operatorname*{argmin}_{q\in \mathcal M} g(q) - ⟨X^{(k)}, \log_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ \operatorname*{argmin}_{q ∈ \mathcal M} g(q) - ⟨X^{(k)}, \log_{p^{(k)}}q⟩
 ```
 
 until the `stopping_criterion` is fulfilled.
 
 # Optional parameters
 
-* `evaluation`          – ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
+* `evaluation`          ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
   allocation (default) form `grad_f(M, p)` or [`InplaceEvaluation`](@ref) form `grad_f!(M, X, x)`
-* `gradient`            – (`nothing`) specify ``\operatorname{grad} f``, for debug / analysis or enhancing `stopping_criterion=`
-* `grad_g`              – (`nothing`) specify the gradient of `g`. If specified, a subsolver is automatically set up.
-* `initial_vector`      - (`zero_vector(M, p)`) initialise the inner tangent vector to store the subgradient result.
-* `stopping_criterion`  – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
-  a [`StoppingCriterion`](@ref) for the algorithm – includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
+* `gradient`            (`nothing`) specify ``\operatorname{grad} f``, for debug / analysis or enhancing `stopping_criterion=`
+* `grad_g`              (`nothing`) specify the gradient of `g`. If specified, a subsolver is automatically set up.
+* `initial_vector`      (`zero_vector(M, p)`) initialise the inner tangent vector to store the subgradient result.
+* `stopping_criterion`  ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
+  a [`StoppingCriterion`](@ref) for the algorithm. This includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
 
 if you specify the [`ManifoldDifferenceOfConvexObjective`](@ref) `mdco`, additionally
 
@@ -158,29 +157,29 @@ difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
 
 # Optional parameters for the sub problem
 
-* `sub_cost`              - ([`LinearizedDCCost`](@ref)`(g, p, initial_vector)`)
+* `sub_cost`              ([`LinearizedDCCost`](@ref)`(g, p, initial_vector)`)
   a cost to be used within the default `sub_problem`
-  Use this if you have a more efficient version than the default that is built using `g` from above.
-* `sub_grad`              - ([`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`
+  Use this if you have a more efficient version than the default that is built using `g` from before.
+* `sub_grad`              ([`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`
   gradient to be used within the default `sub_problem`.
   This is generated by default when `grad_g` is provided. You can specify your own by overwriting this keyword.
-* `sub_hess`              – (a finite difference approximation by default) specify a Hessian
+* `sub_hess`              (a finite difference approximation by default) specify a Hessian
    of the subproblem, which the default solver, see `sub_state` needs
-* `sub_kwargs`            - (`(;)`) pass keyword arguments to the `sub_state`, in form of
+* `sub_kwargs`            (`(;)`) pass keyword arguments to the `sub_state`, in form of
   a `Dict(:kwname=>value)`, unless you set the `sub_state` directly.
-* `sub_objective`         - (a gradient or hessian objective based on the last 3 keywords)
+* `sub_objective`         (a gradient or Hessian objective based on the last 3 keywords)
   provide the objective used within `sub_problem` (if that is not specified by the user)
-* `sub_problem`           - ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
+* `sub_problem`           ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
   You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state`             - ([`TrustRegionsState`](@ref) by default, requires `sub_hessian` to be provided; decorated with `sub_kwargs`).
+* `sub_state`             ([`TrustRegionsState`](@ref) by default, requires `sub_hessian` to be provided; decorated with `sub_kwargs`).
   Choose the solver by specifying a solver state to solve the `sub_problem`
-  if the `sub_problem` if a function (i.e. a closed form solution), this is set to `evaluation`
+  if the `sub_problem` if a function (a closed form solution), this is set to `evaluation`
   and can be changed to the evaluation type of the closed form solution accordingly.
-* `sub_stopping_criterion` - ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
+* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
   a stopping criterion used withing the default `sub_state=`
-* `sub_stepsize`           - ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`
+* `sub_stepsize`           ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`,
 
-...all others are passed on to decorate the inner [`DifferenceOfConvexState`](@ref).
+all others are passed on to decorate the inner [`DifferenceOfConvexState`](@ref).
 
 # Output
 
@@ -402,14 +401,14 @@ function step_solver!(
     solve!(dcs.sub_problem, dcs.sub_state) # call the subsolver
     # copy result from subsolver to current iterate
     copyto!(M, dcs.p, get_solver_result(dcs.sub_state))
-    # small hack: store gradient_f in X at end of iteration for a check
+    # small hack: store `gradient_f` in X at end of iteration for the gradient norm stopping criterion
     if !isnothing(get_gradient_function(get_objective(amp)))
         get_gradient!(amp, dcs.X, dcs.p)
     end
     return dcs
 end
 #
-# Variant II: subtask is a mutating function providing a closed form solution
+# Variant II: sub task is a mutating function providing a closed form solution
 #
 function step_solver!(
     amp::AbstractManoptProblem,
@@ -422,7 +421,7 @@ function step_solver!(
     return dcs
 end
 #
-# Variant II: subtask is an allocating function providing a closed form solution
+# Variant II: sub task is an allocating function providing a closed form solution
 #
 function step_solver!(
     amp::AbstractManoptProblem,
@@ -431,7 +430,7 @@ function step_solver!(
 )
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
-    # run the subsolver inplace of a copy of the current iterate and copy it back to the current iterate
+    # run the subsolver in-place of a copy of the current iterate and copy it back to the current iterate
     copyto!(M, dcs.p, dcs.sub_problem(M, copy(M, dcs.p), dcs.X))
     return dcs
 end

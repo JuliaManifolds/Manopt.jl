@@ -1,13 +1,13 @@
 @doc raw"""
     StoppingCriterion
 
-An abstract type for the functors representing stopping criteria, i.e. they are
+An abstract type for the functors representing stopping criteria, so they are
 callable structures. The naming Scheme follows functions, see for
 example [`StopAfterIteration`](@ref).
 
 Every StoppingCriterion has to provide a constructor and its function has to have
 the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
-and the current number of iterations are the arguments and returns a Bool whether
+and the current number of iterations are the arguments and returns a boolean whether
 to stop or not.
 
 By default each `StoppingCriterion` should provide a fields `reason` to provide
@@ -23,12 +23,12 @@ mean that, when it indicates to stop, the solver has converged to a
 minimizer or critical point.
 
 Note that this is independent of the actual state of the stopping criterion,
-i.e. whether some of them indicate to stop, but a purely type-based, static
-decision
+whether some of them indicate to stop, but a purely type-based, static
+decision.
 
 # Examples
 
-With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` we have
+With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the indicator yields
 
 * `indicates_convergence(s1)` is `false`
 * `indicates_convergence(s2)` is `true`
@@ -59,7 +59,7 @@ abstract type StoppingCriterionSet <: StoppingCriterion end
 
 store a threshold when to stop looking at the complete runtime. It uses
 `time_ns()` to measure the time and you provide a `Period` as a time limit,
-i.e. `Minute(15)`
+for example `Minute(15)`.
 
 # Constructor
 
@@ -119,20 +119,19 @@ end
 @doc raw"""
     StopAfterIteration <: StoppingCriterion
 
-A functor for an easy stopping criterion, i.e. to stop after a maximal number
-of iterations.
+A functor for a stopping criterion to stop after a maximal number of iterations.
 
 # Fields
-* `maxIter` – stores the maximal iteration number where to stop at
-* `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`get_reason`](@ref).
+
+* `maxIter`  stores the maximal iteration number where to stop at
+* `reason`   stores a reason of stopping if the stopping criterion has one be reached,
+  see [`get_reason`](@ref).
 
 # Constructor
 
     StopAfterIteration(maxIter)
 
-initialize the stopafterIteration functor to indicate to stop after `maxIter`
-iterations.
+initialize the functor to indicate to stop after `maxIter` iterations.
 """
 mutable struct StopAfterIteration <: StoppingCriterion
     maxIter::Int
@@ -174,57 +173,6 @@ function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration},
 end
 
 """
-    StopWhenSubgradientNormLess <: StoppingCriterion
-
-A stopping criterion based on the current subgradient norm.
-
-# Constructor
-
-    StopWhenSubgradientNormLess(ε::Float64)
-
-Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
-indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
-"""
-mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
-    StopWhenSubgradientNormLess(ε::Float64) = new(ε, "")
-end
-function (c::StopWhenSubgradientNormLess)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
-)
-    M = get_manifold(mp)
-    (i == 0) && (c.reason = "") # reset on init
-    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
-        return true
-    end
-    return false
-end
-function status_summary(c::StopWhenSubgradientNormLess)
-    has_stopped = length(c.reason) > 0
-    s = has_stopped ? "reached" : "not reached"
-    return "|subgrad f| < $(c.threshold): $s"
-end
-indicates_convergence(c::StopWhenSubgradientNormLess) = true
-function show(io::IO, c::StopWhenSubgradientNormLess)
-    return print(
-        io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
-end
-"""
-    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
-
-Update the minimal subgradient norm when an algorithm shall stop
-"""
-function update_stopping_criterion!(
-    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
-)
-    c.threshold = v
-    return c
-end
-
-"""
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
@@ -257,7 +205,7 @@ end
 function StopWhenChangeLess(
     M::AbstractManifold,
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate,:Population}),
+    storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
 ) where {IRT<:AbstractInverseRetractionMethod}
     return StopWhenChangeLess{IRT,typeof(storage)}(
@@ -266,7 +214,7 @@ function StopWhenChangeLess(
 end
 function StopWhenChangeLess(
     ε::Float64;
-    storage::StoreStateAction=StoreStateAction([:Iterate, :Population]),
+    storage::StoreStateAction=StoreStateAction([:Iterate]),
     manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
 ) where {IRT<:AbstractInverseRetractionMethod}
@@ -374,16 +322,15 @@ Evaluate whether a certain fields change is less than a certain threshold
 
 ## Fields
 
-* `field`     – a symbol adressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref)
-  to track
-* `distance`  – a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
-* `storage`   – a [`StoreStateAction`](@ref) to store the previous value of the `field`
-* `threshold` – the threshold to indicate to stop when the distance is below this value
+* `field`:     a symbol addressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref) to track
+* `distance`:  a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
+* `storage`:   a [`StoreStateAction`](@ref) to store the previous value of the `field`
+* `threshold`: the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
 
-* `reason`    – store a string reason when the stop was indicated
-* `at_iteration` – store the iteration at which the stop indication happened
+* `reason`:       store a string reason when the stop was indicated
+* `at_iteration`: store the iteration at which the stop indication happened
 
 stores a threshold when to stop looking at the norm of the change of the
 optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
@@ -557,14 +504,13 @@ A stopping criterion based on the current gradient norm.
 
 # Fields
 
-* `norm`  – a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
-* `threshold` – the threshold to indicate to stop when the distance is below this value
+* `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `threshold`: the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
 
-* `reason`    – store a string reason when the stop was indicated
-* `at_iteration` – store the iteration at which the stop indication happened
-
+* `reason`:       store a string reason when the stop was indicated
+* `at_iteration`: store the iteration at which the stop indication happened
 
 # Constructor
 
@@ -761,16 +707,17 @@ end
 A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
 
 # Fields
-* `value` – stores the variable which has to fall under a threshold for the algorithm to stop
-* `minValue` – stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
-* `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`get_reason`](@ref).
+
+* `value`    stores the variable which has to fall under a threshold for the algorithm to stop
+* `minValue` stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
+* `reason`   stores a reason of stopping if the stopping criterion has one be reached,
+  see [`get_reason`](@ref).
 
 # Constructor
 
     StopWhenSmallerOrEqual(value, minValue)
 
-initialize the stopifsmallerorequal functor to indicate to stop after `value` is smaller than or equal to `minValue`.
+initialize the functor to indicate to stop after `value` is smaller than or equal to `minValue`.
 """
 mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     value::Symbol
@@ -804,6 +751,62 @@ function show(io::IO, c::StopWhenSmallerOrEqual)
     )
 end
 
+"""
+    StopWhenSubgradientNormLess <: StoppingCriterion
+
+A stopping criterion based on the current subgradient norm.
+
+# Constructor
+
+    StopWhenSubgradientNormLess(ε::Float64)
+
+Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
+indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
+"""
+mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
+    at_iteration::Int
+    threshold::Float64
+    reason::String
+    StopWhenSubgradientNormLess(ε::Float64) = new(0, ε, "")
+end
+function (c::StopWhenSubgradientNormLess)(
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    M = get_manifold(mp)
+    if (i == 0) # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
+        c.at_iteration = i
+        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenSubgradientNormLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "|∂f| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenSubgradientNormLess) = true
+function show(io::IO, c::StopWhenSubgradientNormLess)
+    return print(
+        io, "StopWhenSubgradientNormLess($(c.threshold))\n    $(status_summary(c))"
+    )
+end
+"""
+    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
+
+Update the minimal subgradient norm when an algorithm shall stop
+"""
+function update_stopping_criterion!(
+    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
+)
+    c.threshold = v
+    return c
+end
+
 #
 # Meta Criteria
 #
@@ -816,6 +819,7 @@ when _all_ indicate to stop. The `reason` is given by the concatenation of all
 reasons.
 
 # Constructor
+
     StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
     StopWhenAll(c::StoppingCriterion,...)
 """
@@ -957,8 +961,7 @@ end
     get_active_stopping_criteria(c)
 
 returns all active stopping criteria, if any, that are within a
-[`StoppingCriterion`](@ref) `c`, and indicated a stop, i.e. their reason is
-nonempty.
+[`StoppingCriterion`](@ref) `c`, and indicated a stop, that is their reason is nonempty.
 To be precise for a simple stopping criterion, this returns either an empty
 array if no stop is indicated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)

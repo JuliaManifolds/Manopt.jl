@@ -25,8 +25,8 @@ If you want to delve right into `Manopt.jl` read the
 `Manopt.jl` makes it easy to use an algorithm for your favourite
 manifold as well as a manifold for your favourite algorithm. It already provides
 many manifolds and algorithms, which can easily be enhanced, for example to
-[record](@ref RecordSection) certain data or
-[debug output](@ref DebugSection) throughout iterations.
+[record](@ref sec-record) certain data or
+[debug output](@ref sec-debug) throughout iterations.
 
 If you use `Manopt.jl`in your work, please cite the following
 
@@ -48,24 +48,42 @@ To refer to a certain version or the source code in general cite for example
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
-    Author = {Ronny Bergmann},
+    Author    = {Ronny Bergmann},
     Copyright = {MIT License},
-    Doi = {10.5281/zenodo.4290905},
+    Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
-    Title = {Manopt.jl},
-    Year = {2022},
+    Title     = {Manopt.jl},
+    Year      = {2024},
 }
 ```
 
 for the most recent version or a corresponding version specific DOI, see [the list of all versions](https://zenodo.org/search?page=1&size=20&q=conceptrecid:%224290905%22&sort=-version&all_versions=True).
+
+
+If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/) please consider to cite
+
+```biblatex
+@article{AxenBaranBergmannRzecki:2023,
+    AUTHOR    = {Axen, Seth D. and Baran, Mateusz and Bergmann, Ronny and Rzecki, Krzysztof},
+    ARTICLENO = {33},
+    DOI       = {10.1145/3618296},
+    JOURNAL   = {ACM Transactions on Mathematical Software},
+    MONTH     = {dec},
+    NUMBER    = {4},
+    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    VOLUME    = {49},
+    YEAR      = {2023}
+}
+```
+
 Note that both citations are in [BibLaTeX](https://ctan.org/pkg/biblatex) format.
 
 ## Main features
 
 ### Optimization algorithms (solvers)
 
-For every optimization algorithm, a [solver](@ref SolversSection) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, and stores values that are required between or for the next iteration.
-Together they form a [plan](@ref planSection).
+For every optimization algorithm, a [solver](solvers/index.md) is implemented based on a [`AbstractManoptProblem`](@ref) that describes the problem to solve and its [`AbstractManoptSolverState`](@ref) that set up the solver, and stores values that are required between or for the next iteration.
+Together they form a [plan](plans/index.md).
 
 ## Manifolds
 
@@ -75,7 +93,7 @@ The notation in the documentation aims to follow the same [notation](https://jul
 
 ### Visualization
 
-To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](@ref Exports). Furthermore a system to get [debug](@ref DebugSection) during the iterations of an algorithms as well as [record](@ref RecordSection) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
+To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](helpers/exports.md). Furthermore a system to get [debug](plans/debug.md) during the iterations of an algorithms as well as [record](plans/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
 [`RecordIterate`](@ref). Take a look at the [🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial on how to easily activate this.
 
 ## Literature

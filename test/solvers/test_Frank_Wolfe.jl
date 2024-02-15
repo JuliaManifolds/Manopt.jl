@@ -73,17 +73,15 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
                 evaluation=AllocatingEvaluation(),
                 stopping_criterion=StopAfterIteration(1),
             )
-            #so we can just test that the subproblem is delivering a point.
+            #test that the subproblem is delivering a point.
             @test is_point(M, p3b)
         end
         @testset "Number test" begin
-            # I have no good idea for a test, so this merely
-            # Checks the call, since that it works was already tested
             M = Euclidean()
             fe(M, p) = P
             grad_fe(M, p) = zero_vector(M, p)
             oraclee(M, p, X) = X
-            # and since the gradient is zero and oracle hence returns zero, we stay at zero
+            # and since the gradient is zero and oracle hence returns zero, the result is zero
             @test 0.0 == Frank_Wolfe_method(M, fe, grad_fe, 0.0; sub_problem=oraclee)
         end
     end

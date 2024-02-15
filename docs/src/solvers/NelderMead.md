@@ -1,4 +1,4 @@
-# [Nelder Mead method](@id NelderMeadSolver)
+# [Nelder Mead method](@id sec-nelder-meadSolver)
 
 ```@meta
 CurrentModule = Manopt
@@ -27,7 +27,7 @@ NelderMeadSimplex
 StopWhenPopulationConcentrated
 ```
 
-## [Technical details](@id sec-NelderMead-technical-details)
+## Technical details
 
 The [`NelderMead`](@ref) solver requires the following functions of a manifold to be available
 

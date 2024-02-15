@@ -81,7 +81,7 @@ Random.seed!(29)
         q = NelderMead(M, f)
         @test isapprox(p_star, q; atol=1e-7)
         s = NelderMead(M, f; return_state=true)
-        q2 = get_solver_result(s)[] #here we have to floatify ourselves
+        q2 = get_solver_result(s)[] # here: return back to float
         @test isapprox(M, p_star, q2; atol=1e-7)
         population = NelderMeadSimplex(M)
         q3 = NelderMead(M, f, population)

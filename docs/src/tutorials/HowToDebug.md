@@ -24,7 +24,7 @@ Z = v0 * v0'
 f(M, p) = -tr(transpose(p) * Z * p) / 2
 grad_f(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
 # Constraints
-g(M, p) = -p # i.e. p ≥ 0
+g(M, p) = -p # now p ≥ 0
 mI = -Matrix{Float64}(I, d, d)
 # Vector of gradients of the constraint components
 grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
@@ -49,7 +49,7 @@ A special keyword is `:Stop`, which is only added to the final debug hook to pri
 
 Any symbol with a small letter is mapped to fields of the [`AbstractManoptSolverState`](@ref) which is used. This way you can easily print internal data, if you know their names.
 
-Let’s look at an example first: If we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twentyfifth iteration.
+Let’s look at an example first: if we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twentyfifth iteration.
 
 Then we can write
 
@@ -141,7 +141,7 @@ p3 = exact_penalty_method(
 
 The different lengths of the dotted lines come from the fact that —at least in the beginning— the subsolver performs a few steps.
 
-For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:Subsolver`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, i.e. [`DebugEvery`](@ref) is active itself.
+For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:Subsolver`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, or inother words [`DebugEvery`](@ref) is active itself.
 Let’s
 
 ``` julia
@@ -157,15 +157,15 @@ p4 = exact_penalty_method(
     Initial f(x): -0.497512 | ϵ: 0.00100000
      | Initial f(x): -0.499127
      | # 1     f(x): -0.499147
-    The algorithm reached approximately critical point after 1 iterations; the gradient norm (0.0002121889852717264) is less than 0.001.
+    The algorithm reached approximately critical point after 1 iterations; the gradient norm (0.00021218898527217448) is less than 0.001.
     # 25    f(x): -0.499449 | ϵ: 0.00017783
      | Initial f(x): -0.499993
      | # 1     f(x): -0.499994
-    The algorithm reached approximately critical point after 1 iterations; the gradient norm (1.6025009584516425e-5) is less than 0.001.
+    The algorithm reached approximately critical point after 1 iterations; the gradient norm (1.6025009584517956e-5) is less than 0.001.
     # 50    f(x): -0.499995 | ϵ: 0.00003162
      | Initial f(x): -0.500000
      | # 1     f(x): -0.500000
-    The algorithm reached approximately critical point after 1 iterations; the gradient norm (9.966301158124465e-7) is less than 0.001.
+    The algorithm reached approximately critical point after 1 iterations; the gradient norm (9.966301158134047e-7) is less than 0.001.
     # 75    f(x): -0.500000 | ϵ: 0.00000562
      | Initial f(x): -0.500000
      | # 1     f(x): -0.500000

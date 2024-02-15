@@ -118,7 +118,7 @@ import Manifolds: inner
         @test isapprox(M, p1, p2)
         @test isapprox(M, p2, p3)
         @test isapprox(f(M, p1), 0.0; atol=1e-8)
-        # not provided grad_g or problem nothing
+        # not provided `grad_g` or problem nothing
         @test_throws ErrorException difference_of_convex_algorithm(
             M, f, g, grad_h, p0; sub_problem=nothing
         )
@@ -163,7 +163,7 @@ import Manifolds: inner
         p7 = difference_of_convex_algorithm(M, f, g, grad_h; grad_g=grad_g)
         @test isapprox(f(M, p7), 0.0; atol=1e-8)
 
-        p8 = copy(M, p0) # Same call as p2 inplace
+        p8 = copy(M, p0) # Same call as p2 in-place
         difference_of_convex_algorithm!(M, f, g, grad_h, p8; grad_g=grad_g)
         @test isapprox(M, p8, p2)
 
@@ -180,14 +180,14 @@ import Manifolds: inner
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; g=g, grad_g=grad_g, sub_grad=nothing
         )
-        # we need both g and grad g here
+        # both g and grad g required here
         @test_throws ErrorException difference_of_convex_proximal_point(M, grad_h, p0; g=g)
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; grad_g=grad_g
         )
     end
     @testset "Running the closed form solution solvers" begin
-        # we fake them a bit by providing subsolvers as functions
+        # make them a bit by providing subsolvers as functions
         function dca_sub(M, p, X)
             q = copy(M, p)
             lin_s = LinearizedDCCost(g, copy(M, p), copy(M, p, X))
@@ -211,7 +211,7 @@ import Manifolds: inner
         @test isapprox(M, p11, p12)
         @test f(M, p11) ≈ 0.0 atol = 1e-15
 
-        # we fake them a bit by providing subsolvers as functions
+        # fake them a bit by providing subsolvers as functions
         function prox_g(M, λ, p)
             q = copy(M, p)
             prox = ProximalDCCost(g, copy(M, p), λ)
@@ -220,7 +220,6 @@ import Manifolds: inner
             trust_regions!(M, prox, grad_prox, hess_prox, q)
             return q
         end
-        # @test_logs (:warn,) difference_of_convex_proximal_point(M, prox_g, grad_h, p0;)
         p13 = difference_of_convex_proximal_point(M, grad_h, p0; prox_g=prox_g)
         p13b = copy(M, p0)
         difference_of_convex_proximal_point!(M, grad_h, p13b; prox_g=prox_g)
@@ -233,9 +232,6 @@ import Manifolds: inner
             trust_regions!(M, prox, grad_prox, hess_prox, q)
             return q
         end
-        #@test_logs (:warn,) difference_of_convex_proximal_point(
-        #    M, prox_g!, grad_h!, p0; evaluation=InplaceEvaluation()
-        #)
         p14 = difference_of_convex_proximal_point(
             M, grad_h!, p0; prox_g=prox_g!, evaluation=InplaceEvaluation()
         )
@@ -247,10 +243,9 @@ import Manifolds: inner
         Manifolds.inner(M::PositiveNumbers, p, X, Y) = inner(M, p[], X[], Y[])
         Mp = PositiveNumbers()
         pp = 1.0
-        # We do not have a ONB on PosNum, so we can only do a minimalistic test.
         q = difference_of_convex_algorithm(Mp, f, g, grad_h, pp; grad_g=grad_g)
-        @test pp == q # since we start in a minimizer
+        @test pp == q # started in a minimizer
         q2 = difference_of_convex_proximal_point(Mp, grad_h, pp; g=g, grad_g=grad_g)
-        @test pp == q2 # since we start in a minimizer
+        @test pp == q2 # started in a in a minimizer
     end
 end

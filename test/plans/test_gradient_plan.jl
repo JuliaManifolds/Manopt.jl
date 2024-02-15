@@ -82,7 +82,7 @@ include("../utils/dummy_types.jl")
         @test get_gradient(M, cmcgo, p) == get_gradient(M, mcgo, p)
         get_gradient!(M, Y, cmcgo, p)
         get_gradient!(M, X, mcgo, p)
-        # Now we called both 3 times
+        # Verify that both were called 3 times
         @test get_count(cmcgo, :Gradient) == 3
         @test get_count(cmcgo, :Cost) == 3
     end

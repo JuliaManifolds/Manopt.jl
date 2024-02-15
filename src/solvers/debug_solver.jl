@@ -26,7 +26,7 @@ end
 """
     stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
 
-Extend the check, whether to stop the solver by a hook to run debug,
+Extend the `stop_solver!`, whether to stop the solver by a hook to run debug,
 that were added to the `:Stop` and `:All` entries of the debug lists.
 """
 function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)

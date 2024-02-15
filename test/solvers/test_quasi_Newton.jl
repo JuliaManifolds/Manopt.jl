@@ -37,7 +37,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
-        # Check newton update direction works also allocating
+        # Verify that Newton update direction works also allocating
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p_star = get_solver_result(lrbfgs_s)
         D = zero_vector(M, p_star)
@@ -326,13 +326,15 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         @test isapprox(M, p_1, BFGS_allocating.grad_tmp, [0.0, 8.0, 0.0, 4.0])
     end
 
-    @testset "A small complex example" begin
+    @testset "A small complex example in Tutorial Mode" begin
         M = Euclidean(2; field=ℂ)
         A = [2 im; -im 2]
         fc(::Euclidean, p) = real(p' * A * p)
         grad_fc(::Euclidean, p) = 2 * A * p
         p0 = [2.0, 1 + im]
+        @test_logs (:info,) set_manopt_parameter!(:Mode, "Tutorial")
         p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion=StopAfterIteration(3))
+        @test_logs (:info,) set_manopt_parameter!(:Mode, "")
         @test fc(M, p4) ≤ fc(M, p0)
     end
 

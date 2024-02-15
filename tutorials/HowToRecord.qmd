@@ -1,6 +1,6 @@
 ---
 title: "How to record data during the iterations"
-author: Ronny Bergmann
+author: "Ronny Bergmann"
 ---
 
 The recording and debugging features make it possible to record nearly any data during the iterations.
@@ -14,9 +14,9 @@ Several predefined recordings exist, for example [`RecordCost`](https://manoptjl
 For fields of the `State` the recording can also be done [`RecordEntry`](https://manoptjl.org/stable/plans/record/#Manopt.RecordEvery).
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
-We illustrate these using the gradient descent from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We illustrate these using the gradient descent from the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
-Here we focus on ways to investigate the behaviour during iterations by using Recording techniques.
+Here the focus is put on ways to investigate the behaviour during iterations by using Recording techniques.
 
 ```{julia}
 #| echo: false

@@ -8,14 +8,14 @@ abstract type AbstractEvaluationType end
 @doc raw"""
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
-Describe the collection of the optimization function ``f\colon \mathcal M → \bbR` (or even a vectorial range)
+Describe the collection of the optimization function ``f:  \mathcal M → \bbR` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions
 `(M, p) -> ...`, or `(M, X, p) -> ...` that is
 
 * the first argument of these functions should be the manifold `M` they are defined on
-* the argument `X` is present, if the computation is performed inplace of `X` (see [`InplaceEvaluation`](@ref))
+* the argument `X` is present, if the computation is performed in-place of `X` (see [`InplaceEvaluation`](@ref))
 * the argument `p` is the place the function (``f`` or one of its elements) is evaluated __at__.
 
 the type `T` indicates the global [`AbstractEvaluationType`](@ref).
@@ -26,7 +26,7 @@ abstract type AbstractManifoldObjective{E<:AbstractEvaluationType} end
     AbstractDecoratedManifoldObjective{E<:AbstractEvaluationType,O<:AbstractManifoldObjective}
 
 A common supertype for all decorators of [`AbstractManifoldObjective`](@ref)s to simplify dispatch.
-    The second parameter should refer to the undecorated objective (i.e. the most inner one).
+    The second parameter should refer to the undecorated objective (the most inner one).
 """
 abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective} <:
               AbstractManifoldObjective{E} end
@@ -35,7 +35,7 @@ abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective}
     AllocatingEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
-allocate memory for their result, i.e. they work out of place.
+allocate memory for their result, they work out of place.
 """
 struct AllocatingEvaluation <: AbstractEvaluationType end
 
@@ -43,7 +43,7 @@ struct AllocatingEvaluation <: AbstractEvaluationType end
     InplaceEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
-do not allocate memory but work on their input, i.e. in place.
+do not allocate memory but work on their input, in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
 
@@ -78,12 +78,12 @@ end
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)
 
-Indicate internally, whether an [`AbstractManifoldObjective`](@ref) `o` to be of decorating type, i.e.
+Indicate internally, whether an [`AbstractManifoldObjective`](@ref) `o` to be of decorating type,
 it stores (encapsulates) an object in itself, by default in the field `o.objective`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, i.e. by default an state is not decorated.
+The default is `Val{false}`, so by default an state is not decorated.
 """
 dispatch_objective_decorator(::AbstractManifoldObjective) = Val(false)
 dispatch_objective_decorator(::AbstractDecoratedManifoldObjective) = Val(true)
@@ -107,7 +107,7 @@ the internal state are extracted automatically.
 
 By default the objective that is stored within a decorated objective is assumed to be at
 `o.objective`. Overwrite `_get_objective(o, ::Val{true}, recursive) to change this behaviour for your objective `o`
-for both the recursive and the nonrecursive case.
+for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
@@ -143,7 +143,7 @@ end
 function show(io::IO, o::AbstractManifoldObjective{E}) where {E}
     return print(io, "$(nameof(typeof(o))){$E}")
 end
-# Default undecorate for show
+# Default: remove decorator for show
 function show(io::IO, co::AbstractDecoratedManifoldObjective)
     return show(io, get_objective(co, false))
 end
@@ -158,7 +158,7 @@ end
 function status_summary(::AbstractManifoldObjective{E}) where {E}
     return ""
 end
-# Default undecorate for summary
+# Default: remove decorator for status summary
 function status_summary(co::AbstractDecoratedManifoldObjective)
     return status_summary(get_objective(co, false))
 end

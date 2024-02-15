@@ -7,33 +7,34 @@
 Describes the augmented Lagrangian method, with
 
 # Fields
+
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p` – a point on a manifold as starting point and current iterate
-* `sub_problem` – an [`AbstractManoptProblem`](@ref) problem for the subsolver
-* `sub_state` – an [`AbstractManoptSolverState`](@ref) for the subsolver
-* `ϵ` – (`1e–3`) the accuracy tolerance
-* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
-* `λ` – (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
-* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `μ` – (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
-* `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `ρ` – (`1.0`) the penalty parameter
-* `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `θ_ϵ` – (`(ϵ_min/ϵ)^(ϵ_exponent)`) the scaling factor of the accuracy tolerance
-* `penalty` – evaluation of the current penalty term, initialized to `Inf`.
-* `stopping_criterion` – (`(`[`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `p`:                  a point on a manifold as starting point and current iterate
+* `sub_problem`:        an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
+* `ϵ`:                  (`1e–3`) the accuracy tolerance
+* `ϵ_min`:              (`1e-6`) the lower bound for the accuracy tolerance
+* `λ`:                  (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min`:              (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `μ`:                  (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `ρ`:                  (`1.0`) the penalty parameter
+* `τ`:                  (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `θ_ρ`:                (`0.3`) the scaling factor of the penalty parameter
+* `θ_ϵ`:                ((`(ϵ_min/ϵ)^(ϵ_exponent)`) the scaling factor of the accuracy tolerance
+* `penalty`:            evaluation of the current penalty term, initialized to `Inf`.
+* `stopping_criterion`: (`(`[`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
 # Constructor
 
     AugmentedLagrangianMethodState(M::AbstractManifold, co::ConstrainedManifoldObjective, p; kwargs...)
 
-construct an augmented Lagrangian method options with the fields and defaults as above,
-where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are used for defaults
-in the keyword arguments.
+construct an augmented Lagrangian method options with the fields and defaults as stated before,
+where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` can be helpful for
+manifold- or objective specific defaults.
 
 # See also
 
@@ -144,7 +145,8 @@ function show(io::IO, alms::AugmentedLagrangianMethodState)
     * τ: $(alms.τ)
     * current penalty: $(alms.penalty)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(alms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
@@ -154,7 +156,8 @@ end
     augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
     augmented_Lagrangian_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
 
-perform the augmented Lagrangian method (ALM) [Liu, Boumal, 2019, Appl. Math. Optim](@cite LiuBoumal:2019).
+perform the augmented Lagrangian method (ALM) [LiuBoumal:2019](@cite).
+
 The aim of the ALM is to find the solution of the constrained optimisation task
 
 ```math
@@ -168,74 +171,85 @@ The aim of the ALM is to find the solution of the constrained optimisation task
 where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
 ``\mathcal{L}_{ρ^{(k-1)}}(p, μ^{(k-1)}, λ^{(k-1)})`` is minimized on ``\mathcal{M}``,
-where ``μ^{(k-1)} \in \mathbb R^n`` and ``λ^{(k-1)} \in \mathbb R^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
+where ``μ^{(k-1)} ∈ \mathbb R^n`` and ``λ^{(k-1)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by
+
 ```math
 λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(p^{(k)})) \text{for all} j=1,…,p,
 ```
+
 and
+
 ```math
 μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(p^{(k)})) \text{ for all } i=1,…,m,
 ```
+
 where ``λ_{\min} \leq λ_{\max}`` and ``μ_{\max}`` are the multiplier boundaries.
 
-Next, we update the accuracy tolerance ``ϵ`` by setting
+Next, the accuracy tolerance ``ϵ`` is updated as
+
 ```math
 ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
 ```
+
 where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
 
-Last, we update the penalty parameter ``ρ``. For this, we define
+Last, the penalty parameter ``ρ`` is updated as follows: with
+
 ```math
 σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(p^{(k)})\|, \|\max_{i=1,…,m}\{g_i(p^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
 ```
-Then, we update `ρ` according to
+
+`ρ` is updated as
+
 ```math
 ρ^{(k)} = \begin{cases}
 ρ^{(k-1)}/θ_ρ,  & \text{if } σ^{(k)}\leq θ_ρ σ^{(k-1)} ,\\
 ρ^{(k-1)}, & \text{else,}
 \end{cases}
 ```
-where ``θ_ρ \in (0,1)`` is a constant scaling factor.
+
+where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 # Input
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `grad_f` – the gradient of the cost function
+
+* `M`      a manifold ``\mathcal M``
+* `f`      a cost function ``F:\mathcal M→ℝ`` to minimize
+* `grad_f` the gradient of the cost function
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
-* `g` – (`nothing`) the inequality constraints
-* `h` – (`nothing`) the equality constraints
-* `grad_g` – (`nothing`) the gradient of the inequality constraints
-* `grad_h` – (`nothing`) the gradient of the equality constraints
+* `g`:      (`nothing`) the inequality constraints
+* `h`:      (`nothing`) the equality constraints
+* `grad_g`: (`nothing`) the gradient of the inequality constraints
+* `grad_h`: (`nothing`) the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
-Otherwise the problem is not constrained and you can also call e.g. [`quasi_Newton`](@ref)
+Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
 # Optional
 
-* `ϵ` – (`1e-3`) the accuracy tolerance
-* `ϵ_min` – (`1e-6`) the lower bound for the accuracy tolerance
-* `ϵ_exponent` – (`1/100`) exponent of the ϵ update factor;
+* `ϵ`:                      (`1e-3`) the accuracy tolerance
+* `ϵ_min`:                  (`1e-6`) the lower bound for the accuracy tolerance
+* `ϵ_exponent`:             (`1/100`) exponent of the ϵ update factor;
    also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
-* `θ_ϵ` – (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
-* `μ` – (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
-* `μ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ` – (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
-* `λ_max` – (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_min` – (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `τ` – (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `ρ` – (`1.0`) the penalty parameter
-* `θ_ρ` – (`0.3`) the scaling factor of the penalty parameter
-* `sub_cost` – ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_grad` – ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_kwargs` – keyword arguments to decorate the sub options, e.g. with debug.
-* `sub_stopping_criterion` – ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
-* `sub_problem` – ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
-* `sub_state` – ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `θ_ϵ`:                    (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
+* `μ`:                      (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ_max`:                  (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ`:                      (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max`:                  (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min`:                  (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `τ`:                      (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `ρ`:                      (`1.0`) the penalty parameter
+* `θ_ρ`:                    (`0.3`) the scaling factor of the penalty parameter
+* `sub_cost`:               ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian, especially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_grad`:               ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_kwargs`:             keyword arguments to decorate the sub options, for example the `debug=` keyword.
+* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
+* `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
+* `sub_state`:              ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion`:     ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Output
 

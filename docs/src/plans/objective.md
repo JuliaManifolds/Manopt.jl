@@ -1,4 +1,4 @@
-# [A manifold objective](@id ObjectiveSection)
+# A manifold objective
 
 ```@meta
 CurrentModule = Manopt
@@ -30,13 +30,13 @@ is_objective_decorator
 decorate_objective!
 ```
 
-### [Embedded objectives](@id ManifoldEmbeddedObjective)
+### [Embedded objectives](@id subsection-embedded-objectives)
 
 ```@docs
 EmbeddedManifoldObjective
 ```
 
-### [Cache objective](@id CacheSection)
+### [Cache objective](@id subsection-cache-objective)
 
 Since single function calls, for example to the cost or the gradient, might be expensive,
 a simple cache objective exists as a decorator, that caches one cost value or gradient.
@@ -67,7 +67,7 @@ ManifoldCachedObjective
 init_caches
 ```
 
-### [Count objective](@id ManifoldCountObjective)
+### [Count objective](@id subsection-count-objective)
 
 ```@docs
 ManifoldCountObjective

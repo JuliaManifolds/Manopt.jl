@@ -3,42 +3,41 @@ title: "🏔️ Get started: optimize."
 author: Ronny Bergmann
 ---
 
-In this tutorial, we will both introduce the basics of optimisation on manifolds as well as
+This tutorial both introduces the basics of optimisation on manifolds as well as
 how to use [`Manopt.jl`](https://manoptjl.org) to perform optimisation on manifolds in [Julia](https://julialang.org).
 
 For more theoretical background, see for example [doCarmo:1992](@cite) for an introduction to Riemannian manifolds
 and [AbsilMahonySepulchre:2008](@cite) or [Boumal:2023](@cite) to read more about optimisation thereon.
 
 Let $\mathcal M$ denote a [Riemannian manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/#ManifoldsBase.Manifold)
-and let $f\colon \mathcal M → ℝ$ be a cost function.
-We aim to compute a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
+and let $f:  \mathcal M → ℝ$ be a cost function.
+The aim is to determine or obtain a point $p^*$ where $f$ is _minimal_ or in other words $p^*$ is a _minimizer_ of $f$.
 
-We also write this as
+This can also be written as
 
 ```math
     \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
 ```
 
-and would like to find $p^*$ numerically.
-As an example we take the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
-In the Euclidean case with$d\in\mathbb N$, that is for $n\in \mathbb N$ data points $y_1,\ldots,y_n \in \mathbb R^d$ the mean
+where the aim is to compute the minimizer $p^*$ numerically.
+As an example, consider the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+In the Euclidean case with $d∈\mathbb N$, that is for $n∈\mathbb N$ data points $y_1,\ldots,y_n ∈ ℝ^d$ the mean
 
 ```math
-  \sum_{i=1}^n y_i
+  \frac{1}{n}\sum_{i=1}^n y_i
 ```
 
-
-can not be directly generalised to data $q_1,\ldots,q_n$, since on a manifold we do not have an addition.
-But the mean can also be characterised as
+can not be directly generalised to data $q_1,\ldots,q_n ∈ \mathcal M$, since on a manifold there is no addition available.
+But the mean can also be characterised as the following minimizer
 
 ```math
-  \operatorname*{arg\,min}_{x\in\mathbb R^d} \frac{1}{2n}\sum_{i=1}^n \lVert x - y_i\rVert^2
+  \operatorname*{arg\,min}_{x∈ℝ^d} \frac{1}{2n}\sum_{i=1}^n \lVert x - y_i\rVert^2
 ```
 
-and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds. We obtain the _Riemannian Center of Mass_ [Karcher:1977](@cite)
+and using the Riemannian distance $d_\mathcal M$, this can be written on Riemannian manifolds, which is the so called _Riemannian Center of Mass_ [Karcher:1977](@cite)
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathcal M}
+  \operatorname*{arg\,min}_{p∈\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
@@ -122,7 +121,7 @@ m2 = gradient_descent(M, f, grad_f, data[1];
 See [here](https://manoptjl.org/stable/plans/debug/#Manopt.DebugActionFactory-Tuple{Symbol}) for the list of available symbols.
 
 ```{=commonmark}
-!!! info \"Technical Detail\"
+!!! info "Technical Detail"
     The `debug=` keyword is actually a list of [`DebugActions`](https://manoptjl.org/stable/plans/debug/#Manopt.DebugAction) added to every iteration, allowing you to write your own ones even. Additionally, `:Stop` is an action added to the end of the solver to display the reason why the solver stopped.
 ```
 
@@ -156,9 +155,66 @@ Then we reach approximately the same point as in the previous run, but in far le
 [f(M, m3)-f(M,m4), distance(M, m3, m4)]
 ```
 
-## Example 2: Computing the median of symmetric positive definite matrices.
+## Using the “Tutorial” mode
+
+Since a few things on manifolds are a bit different from (classical) Euclidean optimization, `Manopt.jl` has a mode to warn about a few pitfalls.
+
+It can be set using
+
+```{julia}
+#| warning: true
+set_manopt_parameter!(:Mode, "Tutorial")
+```
+
+to activate these. Continuing from the example before, one might argue, that the
+minimizer of $f$ does not depend on the scaling of the function.
+In theory this is of course also the case on manifolds, but for the optimizations there is a caveat. When we define the Riemannian mean without the scaling
+
+```{julia}
+f2(M, p) = sum(1 / 2 * distance.(Ref(M), Ref(p), data) .^ 2)
+grad_f2(M, p) = sum(grad_distance.(Ref(M), data, Ref(p)));
+```
+
+And we consider the gradient at the starting point in norm
+
+```{julia}
+norm(M, data[1], grad_f2(M, data[1]))
+```
+
+On the sphere, when we follow a geodesic, we “return” to the start point after length $2π$.
+If we “land” short before the starting point due to a gradient of length just shy of $2π$,
+the line search would take the gradient direction (and not the negative gradient direction)
+as a start. The line search is still performed, but in this case returns a much too small,
+maybe even nearly zero step size.
+
+In other words – we have to be careful, that the optimisation stays a “local” argument we use.
+
+This is also warned for in `"Tutorial"` mode. Calling
+
+```{julia}
+#| warning: true
+mX = gradient_descent(M, f2, grad_f2, data[1])
+```
+
+So just by chance it seems we still got nearly the same point as before, but
+when we for example look when this one stops, that is takes more steps.
+
+```{julia}
+#| warning: true
+gradient_descent(M, f2, grad_f2, data[1], debug=[:Stop]);
+```
+
+
+This also illustrates one way to deactivate the hints, namely by overwriting the `debug=` keyword, that in `Tutorial` mode contains addional warnings.the other option is to globally reset the `:Mode` back to
+```{julia}
+#| warning: true
+set_manopt_parameter!(:Mode, "")
+```
+
+## Example 2: computing the median of symmetric positive definite matrices.
 
 For the second example let's consider the manifold of [$3 × 3$ symmetric positive definite matrices](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite.html) and again 100 random points
+
 ```{julia}
 N = SymmetricPositiveDefinite(3)
 m = 100
@@ -185,7 +241,7 @@ proxes_g = Function[(N, λ, q) -> prox_distance(N, λ / m, di, q, 1) for di in d
 Besides also looking at a some debug prints, we can also easily record these values. Similarly to `debug=`, `record=` also accepts Symbols, see list [here](https://manoptjl.org/stable/plans/record/#Manopt.RecordFactory-Tuple{AbstractManoptSolverState,%20Vector}), to indicate things to record. We further set `return_state` to true to obtain not just the (approximate) minimizer.
 
 ```{julia}
-s = cyclic_proximal_point(N, g, proxes_g, data2[1];
+res = cyclic_proximal_point(N, g, proxes_g, data2[1];
   debug=[:Iteration," | ",:Change," | ",(:Cost, "F(x): %1.12f"),"\n", 1000, :Stop,
         ],
         record=[:Iteration, :Change, :Cost, :Iterate],
@@ -194,28 +250,29 @@ s = cyclic_proximal_point(N, g, proxes_g, data2[1];
 ```
 
 ```{=commonmark}
-!!! note \"Technical Detail\"
+!!! note "Technical Detail"
     The recording is realised by [`RecordActions`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) that are (also) executed at every iteration. These can also be individually implemented and added to the `record=` array instead of symbols.
-```{=commonmark}
+```
 
 First, the computed median can be accessed as
+
 ```{julia}
-median = get_solver_result(s)
+median = get_solver_result(res)
 ```
 
 but we can also look at the recorded values. For simplicity (of output), lets just look
 at the recorded values at iteration 42
 
 ```{julia}
-get_record(s)[42]
+get_record(res)[42]
 ```
 
 But we can also access whole series and see that the cost does not decrease that fast; actually, the CPPA might converge relatively slow. For that we can for
 example access the `:Cost` that was recorded every `:Iterate` as well as the (maybe a little boring) `:Iteration`-number in a semi-log-plot.
 
 ```{julia}
-x = get_record(s, :Iteration, :Iteration)
-y = get_record(s, :Iteration, :Cost)
+x = get_record(res, :Iteration, :Iteration)
+y = get_record(res, :Iteration, :Cost)
 using Plots
 plot(x,y,xaxis=:log, label="CPPA Cost")
 ```

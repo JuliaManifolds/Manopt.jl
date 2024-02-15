@@ -1,11 +1,11 @@
 ---
-title: How to define the cost in the embedding
-author: Ronny Bergmann
+title: "How to define the cost in the embedding"
+author: "Ronny Bergmann"
 ---
 
-Specifying a cost function $f\colon \mathcal M \to \mathbb R$ on a manifold
+Specifying a cost function $f:  \mathcal M → ℝ$ on a manifold
 is usually the model one starts with.
-Specifying its gradient $\operatorname{grad} f\colon\mathcal M \to T\mathcal M$, or more precisely $\operatorname{grad}f(p) \in T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f\colon T_p\mathcal M \to T_p\mathcal M$ are then necessary to perform optimization.
+Specifying its gradient $\operatorname{grad} f: \mathcal M → T\mathcal M$, or more precisely $\operatorname{grad}f(p) ∈ T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f:  T_p\mathcal M → T_p\mathcal M$ are then necessary to perform optimization.
 Since these might be challenging to compute, especially when manifolds and differential geometry are not
 the main area of a user, easier to use methods might be welcome.
 
@@ -27,7 +27,7 @@ one can call the solver, depending on which gradient and/or Hessian one provides
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
-# But for this version use here the most recent dev version from the parent folder
+# But for this version use here the most recent development version from the parent folder
 Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
 ```
 
@@ -73,7 +73,7 @@ grad_f(M, p) = A * p - p * (p' * A * p)
 Hess_f(M, p, X) = A * X - p * p' * A * X - X * p' * A * p
 ```
 
-We can check that these are the correct at least numerically by calling
+We can verify that these are the correct at least numerically by calling
 the [`check_gradient`](@ref)
 
 ```{julia}
@@ -121,7 +121,7 @@ function Hess2_f(M, p, X)
 end
 ```
 
-And we can again check these numerically,
+And we can again verify these numerically,
 
 ```{julia}
 check_gradient(M, f, grad2_f; plot=true)
@@ -198,7 +198,7 @@ Canonical=false
 ```
 ````
 
-## Technical Details
+## Technical details
 
 This notebook was rendered with the following environment
 

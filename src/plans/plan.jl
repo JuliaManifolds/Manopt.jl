@@ -2,7 +2,7 @@
     status_summary(e)
 
 Return a string reporting about the current status of `e`,
-where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
+where `e` is a type from Manopt.
 
 This method is similar to `show` but just returns a string.
 It might also be more verbose in explaining, or hide internal information.
@@ -12,7 +12,7 @@ status_summary(e) = "$(e)"
 """
     set_manopt_parameter!(f, element::Symbol , args...)
 
-For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
+For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
 """
 function set_manopt_parameter!(f, e::Symbol, args...)
@@ -25,8 +25,10 @@ end
 """
     get_manopt_parameter(f, element::Symbol, args...)
 
-For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
-get some element from `f` potentially further qulalified by `args...`.
+Access arbitrary parameters from `f` addressed by a symbol `element`.
+
+For any `f` and a `Symbol` `e` dispatch on its value by default, to
+get some element from `f` potentially further qualified by `args...`.
 
 This functions returns `nothing` if `f` does not have the property `element`
 """
@@ -34,6 +36,65 @@ function get_manopt_parameter(f, e::Symbol, args...)
     return get_manopt_parameter(f, Val(e), args...)
 end
 get_manopt_parameter(f, args...) = nothing
+
+"""
+    get_manopt_parameter(element::Symbol; default=nothing)
+
+Access global [`Manopt`](@ref) parameters addressed by a symbol `element`.
+This first dispatches on the value of `element`.
+
+If the value is not set, `default` is returned.
+
+The parameters are queried from the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl),
+so they are persistent within your activated Environment.
+
+# Currently used settings
+
+`:Mode`
+the mode can be set to `"Tutorial"` to get several hints especially in scenarios, where
+the optimisation on manifolds is different from the usual “experience” in
+(classical, Euclidean) optimization.
+Any other value has the same effect as not setting it.
+"""
+function get_manopt_parameter(
+    e::Symbol, args...; default=get_manopt_parameter(Val(e), Val(:default))
+)
+    return @load_preference("$(e)", default)
+end
+# Handle empty defaults
+get_manopt_parameter(::Symbol, ::Val{:default}) = nothing
+get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = nothing
+
+"""
+    set_manopt_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
+
+Set global [`Manopt`](@ref) parameters addressed by a symbol `element`.
+W
+This first dispatches on the value of `element`.
+
+The parameters are stored to the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl).
+
+Passing a `value` of `""` deletes the corresponding entry from the preferences.
+Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
+"""
+function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
+    if length(value) == 0
+        @delete_preferences!(string(e))
+        v = get_manopt_parameter(e, Val(:default))
+        default = isnothing(v) ? "" : ((v isa String) ? " \"$v\"" : " ($v)")
+        @info("Resetting the `Manopt.jl` parameter :$(e) to default$(default).")
+    else
+        @set_preferences!("$(e)" => value)
+        @info("Setting the `Manopt.jl` parameter :$(e) to $value.")
+    end
+end
+
+"""
+    is_tutorial_mode()
+
+A small internal helper to indicate whether tutorial mode is active
+"""
+is_tutorial_mode() = (get_manopt_parameter(:Mode) == "Tutorial")
 
 include("objective.jl")
 include("problem.jl")

@@ -1,6 +1,6 @@
 ---
 title: "Optimize on your own manifold"
-author: Ronny Bergmann
+author: "Ronny Bergmann"
 ---
 
 ````{=commonmark}
@@ -10,7 +10,7 @@ CurrentModule = Manopt
 ````
 
 When you have used a few solvers from [`Manopt.jl`](https://manoptjl.org/) for example like in the opening
-tutorial [🏔️ Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+tutorial [🏔️ Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
 and also familiarized yourself with how to work with manifolds in general at
 [🚀 Get Started with `Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/tutorials/getstarted.html),
 you might come across the point that you want to
@@ -20,7 +20,7 @@ A challenge might be, which functions are necessary, since the overall interface
 is maybe not completely necessary.
 
 This tutorial aims to help you through these steps to implement necessary parts of a manifold
-to get started with the `[solver](@ref SolversSection)`{=commonmark} you have in mind.
+to get started with the [solver](../solvers/index.md) you have in mind.
 
 ## An example problem
 
@@ -72,11 +72,11 @@ struct ScaledSphere <: AbstractManifold{ℝ}
 end
 ```
 
-We would like to compute a mean and/or median similar to [🏔️ Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
+We would like to compute a mean and/or median similar to [🏔️ Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
 For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math
-  \operatorname*{arg\,min}_{p\in\mathcal M}
+  \operatorname*{arg\,min}_{p∈\mathcal M}
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
@@ -104,17 +104,21 @@ pts = [ r/norm(p) .* p for p in pts]
 
 Then, before starting with optimization, we need the distance on the manifold,
 to define the cost function, as well as the logarithmic map to defined the gradient.
-For both, we here use the “lazy” approach of using the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) as a fallback
+For both, we here use the “lazy” approach of using the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) as a fallback.
+Finally, we have to provide information about how points and tangent vectors are stored on the
+manifold by implementing their [`representation_size`](https://juliamanifolds.github.io/Manifolds.jl/v0.1/interface.html#ManifoldsBase.representation_size-Tuple{Manifold}) function, which is often required when allocating memory.
+While we could
 
 ```{julia}
 #| output : false
-import ManifoldsBase: distance, log
+import ManifoldsBase: distance, log, representation_size
 function distance(M::ScaledSphere, p, q)
     return M.radius * distance(Sphere(M.dimension), p ./ M.radius, q ./ M.radius)
 end
 function log(M::ScaledSphere, p, q)
     return M.radius * log(Sphere(M.dimension), p ./ M.radius, q ./ M.radius)
 end
+representation_size(M::ScaledSphere) = (M.dimension+1,)
 ```
 
 ## Define the cost and gradient
@@ -144,7 +148,7 @@ To be precise, we have to implement the [in-place variant](https://juliamanifold
 import ManifoldsBase: retract_project!
 function retract_project!(M::ScaledSphere, q, p, X, t::Number)
     q .= p .+ t .* X
-    q .*= M.radius/norm(q)
+    q .*= M.radius / norm(q)
     return q
 end
 ```
@@ -169,10 +173,10 @@ We will discuss these in the next steps.
 
 ```{julia}
 q1 = gradient_descent(M, f, grad_f, p0;
-    retraction_method = ProjectionRetraction(), #state, that we use the retraction from above
+    retraction_method = ProjectionRetraction(),   # state, that we use the retraction from above
     stepsize = DecreasingStepsize(M; length=1.0), # A simple step size
-    stopping_criterion = StopAfterIteration(10), # A simple stopping crtierion
-    X = zeros(d+1), # how we define a tangent vector
+    stopping_criterion = StopAfterIteration(10),  # A simple stopping crtierion
+    X = zeros(d+1),                               # how we define/represent tangent vectors
 )
 f(M,q1)
 ```

@@ -5,26 +5,41 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.x] - dd/mm/2024
+## [0.4.54] unreleased
 
 ### Added
 
 * `convex_bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
 * `prox_bundle_method` optimization algorithm for non-smooth functions.
-* `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
+* `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and
   `StopWhenProxBundleLess` stopping criteria.
 
-## [unreleased]
+### Fixed
+
+* Doc strings now follow a [vale.sh](https://vale.sh) policy. Though this is not fully working,
+  this PR imporves a lot of the doc strings concerning wording and spelling.
+
+## [0.4.53] February 13, 2024
+
+### Fixed
+
+* fixes two storage action defaults, that accidentally still tried to initialize a `:Population` (as modified back to `:Iterate` 0.4.49).
+* fix a few typos in the documentation and add a reference for the subgradient menthod.
+
+## [0.4.52] February 5, 2024
+>>>>>>> master
 
 ### Added
 
-* Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
+* introduce an environment persistent way of setting global values with the `set_manopt_parameter!` function using [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl).
+* introduce such a value named `:Mode` to enable a `"Tutorial"` mode that shall often provide more warnings and information for people getting started with optimisation on manifolds
 
 ## [0.4.51] January 30, 2024
 
 ### Added
 
 * A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
+* Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
 
 ## [0.4.50] January 26, 2024
 
@@ -79,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
 * `linesearch_backtrack!` is now available
-* Quasi Newton Updates can work inplace of a direction vector as well.
+* Quasi Newton Updates can work in-place of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
 ## [0.4.44] December 12, 2023
@@ -90,7 +105,7 @@ These examples are now available again within [ManoptExamples.jl](https://juliam
 “reappearance” the corresponding costs, gradients, differentials, adjoint differentials, and proximal maps
 have been moved there as well.
 This is not considered breaking, since the functions were only used in the old, removed examples.
-We still document each and every of the moved functions below. They have been partly renamed,
+Each and every moved function is still documented. They have been partly renamed,
 and their documentation and testing has been extended.
 
 ### Changed
@@ -139,7 +154,7 @@ and their documentation and testing has been extended.
 * `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_Total_Variation)
 * `prox_TV2` is available as [`ManopExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
 
-## [0.4.43] – November 19, 2023
+## [0.4.43] - November 19, 2023
 
 ### Added
 
@@ -152,7 +167,7 @@ and their documentation and testing has been extended.
 
 * `convex_bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
 * `prox_bundle_method` optimization algorithm for non-smooth functions.
-* `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and 
+* `StopWhenSubgradientNormLess`, `StopWhenBundleLess`, and
   `StopWhenProxBundleLess` stopping criteria.
 
 ## [Unreleased]
@@ -397,7 +412,7 @@ and their documentation and testing has been extended.
 ### Removed
 
 * support for `ManifoldsBase.jl` 0.13.x, since with the definition of `copy(M,p::Number)`,
-  in 0.14.4, we now use that instead of defining it ourselves.
+  in 0.14.4, that one is used instead of defining it ourselves.
 
 ## [0.4.14] - April 06, 2023
 

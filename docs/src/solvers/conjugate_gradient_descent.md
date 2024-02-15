@@ -1,5 +1,5 @@
 
-# [Conjugate gradient descent](@id CGSolver)
+# Conjugate gradient descent
 
 ```@meta
 CurrentModule = Manopt

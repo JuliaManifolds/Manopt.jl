@@ -36,7 +36,7 @@ if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     Pkg.instantiate()
 end
 
-# (b) Did someone say render? Then we render!
+# (b) Did someone say render?
 if "--quarto" ∈ ARGS
     using CondaPkg
     CondaPkg.withenv() do
@@ -46,7 +46,7 @@ if "--quarto" ∈ ARGS
         Pkg.activate(tutorials_folder)
         Pkg.resolve()
         Pkg.instantiate()
-        Pkg.build("IJulia") # build IJulia to the right version.
+        Pkg.build("IJulia") # build `IJulia` to the right version.
         Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
@@ -106,7 +106,7 @@ tutorials_menu =
         "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
         "Do geodesic regression" => "tutorials/GeodesicRegression.md",
     ]
-# (e) ...finally! make docs
+# (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 makedocs(;
     format=Documenter.HTML(;

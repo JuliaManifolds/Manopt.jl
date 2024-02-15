@@ -121,12 +121,12 @@ using ManifoldDiff: grad_distance
         grad_f(M, p) = 1 / 4 * sum(-log.(Ref(M), Ref(p), pts))
         n2 = gradient_descent(M, f, grad_f, pts[1])
         n2a = gradient_descent(M, f, grad_f)
-        # Since we called gradient_descent n2 is newly allocated
+        # `gradient_descent` allocated n2 newly
         @test !isapprox(M, pts[1], n2)
         @test isapprox(M, north, n2)
         Random.seed!(43)
         n2a = gradient_descent(M, f, grad_f)
-        # Since we called gradient_descent n2 is newly allocated
+        # `gradient_descent` allocated n2 newly
         @test isapprox(M, north, n2a)
         n3 = gradient_descent(
             M,
@@ -146,7 +146,7 @@ using ManifoldDiff: grad_distance
         r = gradient_descent!(M, f, grad_f, n5; return_state=true)
         @test isapprox(M, n5, n2)
         @test startswith(repr(r), "# Solver state for `Manopt.jl`s Gradient Descent")
-        # State and a count objective – putting stats behind print
+        # State and a count objective, putting stats behind print
         n6 = gradient_descent(
             M,
             f,
@@ -158,20 +158,20 @@ using ManifoldDiff: grad_distance
         )
         @test repr(n6) == "$(n6[2])\n\n$(n6[1])"
     end
-    @testset "Warning when cost increases" begin
+    @testset "Tutorial mode" begin
         M = Sphere(2)
         q = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
         f(M, p) = distance(M, p, q) .^ 2
         # choose a wrong gradient such that ConstantStepsize yields an increase
         grad_f(M, p) = -grad_distance(M, q, p)
-        # issues three warnings
+        @test_logs (:info,) set_manopt_parameter!(:Mode, "Tutorial")
         @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(
-            M,
-            f,
-            grad_f,
-            1 / sqrt(2) .* [1.0, -1.0, 0.0];
-            stepsize=ConstantStepsize(1.0),
-            debug=[DebugWarnIfCostIncreases(:Once), :Messages],
+            M, f, grad_f, 1 / sqrt(2) .* [1.0, -1.0, 0.0]; stepsize=ConstantStepsize(1.0)
         )
+        grad_f2(M, p) = 20 * grad_distance(M, q, p)
+        @test_logs (:warn,) (:warn,) gradient_descent(
+            M, f, grad_f2, 1 / sqrt(2) .* [1.0, -1.0, 0.0];
+        )
+        @test_logs (:info,) set_manopt_parameter!(:Mode, "")
     end
 end

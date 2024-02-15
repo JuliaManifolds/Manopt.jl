@@ -1,7 +1,9 @@
 using Manopt, Manifolds, ManifoldsBase, Test
 using ManoptExamples: forward_logs, adjoint_differential_forward_logs
 using ManifoldDiff:
-    differential_shortest_geodesic_startpoint, differential_shortest_geodesic_startpoint!
+    differential_shortest_geodesic_startpoint,
+    differential_shortest_geodesic_startpoint!,
+    prox_distance!
 @testset "Test higher order primal dual plan" begin
     # Perform an really easy test, just compute a mid point
     #
@@ -66,7 +68,7 @@ using ManifoldDiff:
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
                         I = i.I # array of index
-                        J = I .+ e_k_vals[k] #i + e_k is j
+                        J = I .+ e_k_vals[k] #`i + e_k` is `j`
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             ζ[N, I..., k] += if norms[I..., k] <= 1
@@ -86,7 +88,7 @@ using ManifoldDiff:
                             ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # end iterate over all pixel in R
                 return ζ
             elseif p1 == 2
                 norms = norm.(Ref(N.manifold), p, ξ)
@@ -95,7 +97,7 @@ using ManifoldDiff:
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
                         I = i.I # array of index
-                        J = I .+ e_k_vals[k] #i + e_k is j
+                        J = I .+ e_k_vals[k] # `i + e_k` is `j`
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             if norms_[I...] <= 1
@@ -126,7 +128,7 @@ using ManifoldDiff:
                             ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # end iterate over all pixel in R
                 return ζ
             else
                 throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))

@@ -101,7 +101,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test String(take!(io)) == "# 23    "
         @test repr(DebugIteration()) == "DebugIteration(; format=\"# %-6d\")"
         @test Manopt.status_summary(DebugIteration()) == "(:Iteration, \"# %-6d\")"
-        # DebugEntryChange
+        # `DebugEntryChange`
         dec = DebugEntryChange(:p, x -> x)
         @test startswith(repr(dec), "DebugEntryChange(:p")
         # DEbugEntryChange - reset
@@ -227,39 +227,29 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         w1 = DebugWarnIfCostNotFinite()
         @test repr(w1) == "DebugWarnIfCostNotFinite()"
         @test Manopt.status_summary(w1) == ":WarnCost"
-        @test_logs (:warn,) (
-            :warn,
-            "Further warnings will be suppressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings.",
-        ) w1(mp, st, 0)
+        @test_logs (:warn,) (:warn,) w1(mp, st, 0)
         w2 = DebugWarnIfCostNotFinite(:Always)
-        @test_logs (
-            :warn, "The cost is not finite.\nAt iteration #0 the cost evaluated to Inf."
-        ) w2(mp, st, 0)
+        @test_logs (:warn,) w2(mp, st, 0)
 
         st.X = grad_f(M, p)
         w3 = DebugWarnIfFieldNotFinite(:X)
-        @test repr(w3) == "DebugWarnIfFieldNotFinite(:X)"
-        @test_logs (:warn,) (
-            :warn,
-            "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:X, :Always) to get all warnings.",
-        ) w3(mp, st, 0)
+        @test repr(w3) == "DebugWarnIfFieldNotFinite(:X, :Once)"
+        @test_logs (:warn,) (:warn,) w3(mp, st, 0)
         w4 = DebugWarnIfFieldNotFinite(:X, :Always)
-        @test_logs (
-            :warn,
-            "The field s.X is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
-        ) w4(mp, st, 1)
+        @test_logs (:warn,) w4(mp, st, 1)
         w5 = DebugWarnIfFieldNotFinite(:Gradient, :Always)
-        @test_logs (
-            :warn,
-            "The gradient is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
-        ) w5(mp, st, 1)
+        @test_logs (:warn,) w5(mp, st, 1)
+
+        M2 = Sphere(2)
+        mp2 = DefaultManoptProblem(M2, ManifoldGradientObjective(f, grad_f))
+        w6 = DebugWarnIfGradientNormTooLarge(1.0, :Once)
+        @test repr(w6) == "DebugWarnIfGradientNormTooLarge(1.0, :Once)"
+        st.X .= [4.0, 0.0] # > π in norm
+        @test_logs (:warn,) (:warn,) w6(mp2, st, 1)
 
         st.p = Inf .* ones(2)
-        w6 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
-        @test_logs (
-            :warn,
-            "The iterate is or contains values that are not finite.\nAt iteration #1 it evaluated to [Inf, Inf].",
-        ) w6(mp, st, 1)
+        w7 = DebugWarnIfFieldNotFinite(:Iterate, :Always)
+        @test_logs (:warn,) w7(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
@@ -320,7 +310,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
         @test repr(DebugChange()) == ts2
         @test Manopt.status_summary(DebugChange()) == "(:Change, \"Last Change: %f\")"
-        # check that a nondefault manifold works as well - not sure how to test this then
+        # verify that a non-default manifold works as well - not sure how to test this then
         d = DebugChange(Euclidean(2))
 
         @test repr(DebugCost()) == "DebugCost(; format=\"f(x): %f\")"
@@ -385,7 +375,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         dD = DebugDivider(" | "; io=io)
         dA = DebugWhenActive(dD, false)
         @test !dA.active
-        set_manopt_parameter!(dA, :Dummy, true) # passdown
+        set_manopt_parameter!(dA, :Dummy, true) # pass down
         set_manopt_parameter!(dA, :active, true) # activate
         @test dA.active
         @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"

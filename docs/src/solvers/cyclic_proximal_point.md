@@ -1,4 +1,4 @@
-# [Cyclic proximal point](@id CPPSolver)
+# Cyclic proximal point
 
 The Cyclic Proximal Point (CPP) algorithm aims to minimize
 

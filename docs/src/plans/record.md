@@ -1,4 +1,4 @@
-### [Record values](@id RecordSection)
+# [Record values](@id sec-record)
 
 ```@meta
 CurrentModule = Manopt
@@ -10,7 +10,7 @@ On the one hand, the high-level interfaces provide a `record=` keyword, that acc
 For example recording the gradient from the [`GradientDescentState`](@ref) is
 automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
-## [Record solver states](@id RecordSolverState)
+## [Record solver states](@id subsec-record-states)
 
 ```@autodocs
 Modules = [Manopt]
@@ -19,7 +19,7 @@ Order = [:type, :function]
 Private = true
 ```
 
-see [recording values](@ref RecordSection) for details on the decorated solver.
+see [recording values](@ref sec-record) for details on the decorated solver.
 
 Further specific [`RecordAction`](@ref)s can be found when specific types of [`AbstractManoptSolverState`](@ref) define them on their corresponding site.
 

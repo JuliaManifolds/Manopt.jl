@@ -12,7 +12,7 @@ using ManifoldDiff: prox_distance
     f(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2
     prox1a = (M, η, p) -> prox_distance(M, η, d1, p)
     prox2a = (M, η, p) -> prox_distance(M, η, d2, p)
-    @test_throws ErrorException DouglasRachford(M, f, Array{Function,1}([prox1a]), p) # we need more than one prox
+    @test_throws ErrorException DouglasRachford(M, f, Array{Function,1}([prox1a]), p)
     q1a = DouglasRachford(M, f, [prox1a, prox2a], p)
     @test isapprox(M, q1a, p_star; atol=1e-14)
     q1i = DouglasRachford(
@@ -24,7 +24,7 @@ using ManifoldDiff: prox_distance
     q2 = copy(M, p)
     DouglasRachford!(M, f, [prox1i, prox2i], q2; evaluation=InplaceEvaluation())
     @test isapprox(M, q1a, q2)
-    # but we can also compute the riemannian center of mass (locally) on Sn
+    # compute the Riemannian center of mass (locally) on Sn
     # though also this is not that useful, but easy to test that DR works
     F2(M, p) = distance(M, p, d1)^2 + distance(M, p, d2)^2 + distance(M, p, d3)^2
     prox3a = (M, η, p) -> prox_distance(M, η, d3, p)

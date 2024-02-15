@@ -1,4 +1,4 @@
-# [Gradient descent](@id GradientDescentSolver)
+# Gradient descent
 
 ```@meta
 CurrentModule = Manopt

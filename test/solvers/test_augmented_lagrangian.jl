@@ -10,7 +10,7 @@ using LinearAlgebra: I, tr
         Z = v0 * v0'
         f(M, p) = -tr(transpose(p) * Z * p) / 2
         grad_f(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
-        g(M, p) = -p # i.e. p ≥ 0
+        g(M, p) = -p # in other words p ≥ 0
         mI = -Matrix{Float64}(I, d, d)
         grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
         p0 = project(M, ones(d))
@@ -39,7 +39,7 @@ using LinearAlgebra: I, tr
         M = Euclidean()
         f(M, p) = (p + 5)^2
         grad_f(M, p) = 2 * p + 10
-        g(M, p) = -p # i.e. p ≥ 0
+        g(M, p) = -p # in other words p ≥ 0
         grad_g(M, p) = -1
         s = augmented_Lagrangian_method(
             M,

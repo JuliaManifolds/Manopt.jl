@@ -212,6 +212,6 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     h3(dmp, gds, 20)
     @test length(h3.recorded_values) == 1
     @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
-    # since only the type is stored we get
+    # since only the type is stored can test
     @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
 end

@@ -14,10 +14,10 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
     SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
 
 ## Keyword
-* `p` (`rand(M)`) – a point on the manifold to initialize the cache with
-* `X` (`get_gradient(M, obj, p)` or `zero_vector(M,p)`) – a tangent vector to store the gradient in, see also `initialize`
-* `c` (`get_cost(M, obj, p)` or `0.0`) – a value to store the cost function in `initialize`
-* `initialized` (`true`) – whether to initialize the cached `X` and `c` or not.
+* `p`:           (`rand(M)`) a point on the manifold to initialize the cache with
+* `X`:           (`get_gradient(M, obj, p)` or `zero_vector(M,p)`) a tangent vector to store the gradient in, see also `initialize`
+* `c`:           (`get_cost(M, obj, p)` or `0.0`) a value to store the cost function in `initialize`
+* `initialized`: (`true`) whether to initialize the cached `X` and `c` or not.
 """
 mutable struct SimpleManifoldCachedObjective{
     E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E},P,T,C
@@ -49,7 +49,7 @@ function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     if scop_neq_p || !sco.c_valid
         # else evaluate cost, invalidate grad if p changed
         sco.c = get_cost(M, sco.objective, p)
-        # if we switched points, invalidate X
+        # for switched points, invalidate X
         scop_neq_p && (sco.X_valid = false)
         copyto!(M, sco.p, p)
         sco.c_valid = true
@@ -65,7 +65,7 @@ function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
         get_gradient!(M, sco.X, sco.objective, p)
-        # if we switched points, invalidate c
+        # for switched points, invalidate c
         scop_neq_p && (sco.c_valid = false)
         copyto!(M, sco.p, p)
         sco.X_valid = true
@@ -78,7 +78,7 @@ function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjectiv
         get_gradient!(M, sco.X, sco.objective, p)
         scop_neq_p && (sco.c_valid = false)
         copyto!(M, sco.p, p)
-        # if we switched points, invalidate c
+        # for switched points, invalidate c
         sco.X_valid = true
     end
     copyto!(M, X, sco.p, sco.X)
@@ -142,7 +142,7 @@ function get_gradient(
     if scop_neq_p || !sco.X_valid
         sco.c, sco.X = sco.objective.costgrad!!(M, p)
         copyto!(M, sco.p, p)
-        # if we switched points, invalidate c
+        # for switched points, invalidate c
         sco.X_valid = true
         sco.c_valid = true
     end
@@ -157,7 +157,7 @@ function get_gradient(
     if scop_neq_p || !sco.X_valid
         sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
         copyto!(M, sco.p, p)
-        # if we switched points, invalidate c
+        # for switched points, invalidate c
         sco.X_valid = true
         sco.c_valid = true
     end
@@ -199,8 +199,8 @@ function get_gradient!(
 end
 
 #
-# ManifoldCachedObjective constructor which errors by default since we can only define init
-# for LRU Caches
+# ManifoldCachedObjective constructor which errors by default
+# since LRUCache.jl extension is required
 #
 @doc raw"""
     ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <: AbstractDecoratedManifoldObjective{E,P}
@@ -214,7 +214,7 @@ Create a cache for an objective, based on a `NamedTuple` that stores some kind o
 Create a cache for the [`AbstractManifoldObjective`](@ref) where the Symbols in `caches` indicate,
 which function evaluations to cache.
 
-# Supported Symbols
+# Supported symbols
 
 | Symbol                      | Caches calls to (incl. `!` variants)  | Comment
 | :-------------------------- | :------------------------------------- | :------------------------ |
@@ -237,14 +237,14 @@ which function evaluations to cache.
 | `:SubGradient`              | [`get_subgradient`](@ref)              | tangent vectors           |
 | `:SubtrahendGradient`       | [`get_subtrahend_gradient`](@ref)      | tangent vectors           |
 
-# Keyword Arguments
+# Keyword arguments
 
-* `p`           - (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
-* `value`       - (`get_cost(M, objective, p)`) the type of values for numeric values in the cache, e.g. the cost
-* `X`           - (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
-* `cache`       - (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
-* `cache_size`  - (`10`) number of (least recently used) calls to cache
-* `cache_sizes` – (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
+* `p`:           (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
+* `value`:       (`get_cost(M, objective, p)`) the type of values for numeric values in the cache
+* `X`:           (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
+* `cache`:       (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
+* `cache_size`:  (`10`) number of (least recently used) calls to cache
+* `cache_sizes`: (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
 
 
 """
@@ -303,7 +303,7 @@ function init_caches(M::AbstractManifold, caches, T=Nothing; kwargs...)
 end
 
 #
-# Default implementations - (a) check if field exists (b) try to get cache
+# Default implementations: if field exists -> try to get cache
 function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
     !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p)
     return get!(co.cache[:Cost], copy(M, p)) do
@@ -336,7 +336,7 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
             # This evaluates in place of X
             get_gradient!(M, X, co.objective, p)
             copy(M, p, X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -364,9 +364,9 @@ function get_cost(
         return get_cost(M, co.objective, p)
     return get!(co.cache[:Cost], copy(M, p)) do
         c, X = get_cost_and_gradient(M, co.objective, p)
-        #if this is evaluated, we can also set X
+        # if this is evaluated, also set X
         haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, copy(M, p))
-        c #but we also set the new cost here
+        c #but also set the new cost here
     end
 end
 function get_gradient(
@@ -379,9 +379,9 @@ function get_gradient(
         p,
         get!(co.cache[:Gradient], copy(M, p)) do
             c, X = get_cost_and_gradient(M, co.objective, p)
-            #if this is evaluated, we can also set c
+            #if this is evaluated, also set c
             haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
-            X #but we also set the new cost here
+            X #but also set the new cost here
         end,
     )
 end
@@ -399,7 +399,7 @@ function get_gradient!(
         p,
         get!(co.cache[:Gradient], copy(M, p)) do
             c, _ = get_cost_and_gradient!(M, X, get_objective(co.objective), p)
-            #if this is evaluated, we can also set c
+            #if this is evaluated, also set c
             haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
             X
         end,
@@ -481,7 +481,7 @@ function get_grad_equality_constraint!(
             # This evaluates in place of X
             get_grad_equality_constraint!(M, X, co.objective, p, j)
             copy(M, p, X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -510,7 +510,7 @@ function get_grad_equality_constraints!(
             # This evaluates in place of X
             get_grad_equality_constraints!(M, X, co.objective, p)
             copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -541,7 +541,7 @@ function get_grad_inequality_constraint!(
             # This evaluates in place of X
             get_grad_inequality_constraint!(M, X, co.objective, p, j)
             copy(M, p, X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -572,7 +572,7 @@ function get_grad_inequality_constraints!(
             # This evaluates in place of X
             get_grad_inequality_constraints!(M, X, co.objective, p)
             copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -594,7 +594,7 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
     copyto!(
         M,
         Y,
-        p, #for the tricks performed here see get_gradient!
+        p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:Hessian], (copy(M, p), copy(M, p, X))) do
             get_hessian!(M, Y, co.objective, p, X)
             copy(M, p, Y) #store a copy of Y
@@ -615,8 +615,6 @@ function get_hessian_function(
     recursive && (return get_hessian_function(emo.objective, recursive))
     return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
 end
-#
-# Preconditioner
 function get_preconditioner(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     !(haskey(co.cache, :Preconditioner)) && return get_preconditioner(M, co.objective, p, X)
     return copy(
@@ -633,7 +631,7 @@ function get_preconditioner!(M::AbstractManifold, Y, co::ManifoldCachedObjective
     copyto!(
         M,
         Y,
-        p, #for the tricks performed here see get_gradient!
+        p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:Preconditioner], (copy(M, p), copy(M, p, X))) do
             get_preconditioner!(M, Y, co.objective, p, X)
             copy(M, p, Y)
@@ -660,7 +658,7 @@ function get_proximal_map!(M::AbstractManifold, q, co::ManifoldCachedObjective, 
         M,
         q,
         get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do
-            get_proximal_map!(M, q, co.objective, λ, p, i) #compute inplace of q
+            get_proximal_map!(M, q, co.objective, λ, p, i) #compute in-place of q
             copy(M, q) #store copy of q
         end,
     )
@@ -689,7 +687,7 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p, i
             # This evaluates in place of X
             get_gradient!(M, X, co.objective, p, i)
             copy(M, p, X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -714,7 +712,7 @@ function get_gradients!(M::AbstractManifold, X, co::ManifoldCachedObjective, p)
             # This evaluates in place of X
             get_gradients!(M, X, co.objective, p)
             copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
-        end, #and we copy the values back to X
+        end, #and copy the values back to X
     )
     return X
 end
@@ -735,7 +733,7 @@ function get_subgradient!(M::AbstractManifold, X, co::ManifoldCachedObjective, p
     copyto!(
         M,
         X,
-        p, #for the tricks performed here see get_gradient!
+        p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:SubGradient], copy(M, p)) do
             get_subgradient!(M, X, co.objective, p)
             copy(M, p, X)
@@ -763,7 +761,7 @@ function get_subtrahend_gradient!(M::AbstractManifold, X, co::ManifoldCachedObje
     copyto!(
         M,
         X,
-        p, #for the tricks performed here see get_gradient!
+        p, # perform an in-place cache evaluation, see also `get_gradient!`
         get!(co.cache[:SubtrahendGradient], copy(M, p)) do
             get_subtrahend_gradient!(M, X, co.objective, p)
             copy(M, p, X)
@@ -787,7 +785,7 @@ The following caches are available
   `(:LRU, [:Cost, :Gradient])` to specify what should be cached or
   `(:LRU, [:Cost, :Gradient], 100)` to specify the cache size.
   Here this variant defaults to `(:LRU, [:Cost, :Gradient], 100)`,
-  i.e. to cache up to 100 cost and gradient values.[^1]
+  caching up to 100 cost and gradient values.[^1]
 
 [^1]:
     This cache requires [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl) to be loaded as well.
@@ -844,7 +842,10 @@ function show(
 end
 
 function status_summary(smco::SimpleManifoldCachedObjective)
-    s = "## Cache\nA `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively"
+    s = """
+    ## Cache
+    A `SimpleManifoldCachedObjective` to cache one point and one tangent vector for the iterate and gradient, respectively
+    """
     s2 = status_summary(smco.objective)
     length(s2) > 0 && (s2 = "\n$(s2)")
     return "$(s)$(s2)"
