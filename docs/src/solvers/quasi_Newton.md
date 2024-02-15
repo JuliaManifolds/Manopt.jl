@@ -1,4 +1,4 @@
-# [Riemannian quasi-Newton methods](@id quasiNewton)
+# Riemannian quasi-Newton methods
 
 ```@meta
     CurrentModule = Manopt

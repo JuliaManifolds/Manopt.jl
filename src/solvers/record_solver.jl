@@ -25,8 +25,8 @@ end
 """
     stop_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, i)
 
-Extend the check, whether to stop the solver by a hook to run records,
-that were added to the `:Stop` entry.
+Extend the call to the stopping criterion by a hook to run records, that were
+added to the `:Stop` entry.
 """
 function stop_solver!(amp::AbstractManoptProblem, rss::RecordSolverState, i)
     stop = stop_solver!(amp, rss.state, i)

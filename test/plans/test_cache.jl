@@ -70,19 +70,26 @@ end
         mcgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
         sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=p)
         @test repr(sco1) == "SimpleManifoldCachedObjective{AllocatingEvaluation,$(mgoa)}"
-        @test startswith(repr((sco1, 1.0)), "## Cache\nA `SimpleManifoldCachedObjective`")
+        @test startswith(
+            repr((sco1, 1.0)),
+            """## Cache
+A `SimpleManifoldCachedObjective`""",
+        )
         @test startswith(
             repr((sco1, DummyState())),
-            "DummyState(Float64[])\n\n## Cache\nA `SimpleManifoldCachedObjective`",
+            """DummyState(Float64[])
+
+            ## Cache
+            A `SimpleManifoldCachedObjective`""",
         )
-        # We evaluated on init -> 1
+        # evaluated on init -> 1
         @test sco1.objective.gradient!!.i == 1
         @test sco1.objective.cost.i == 1
         @test get_gradient(M, sco1, p) == p
         get_gradient!(M, X, sco1, p)
         @test X == zero_vector(M, p)
         @test get_cost(M, sco1, p) == norm(p)
-        # stil at 1
+        # still at 1
         @test sco1.objective.gradient!!.i == 1
         @test sco1.objective.cost.i == 1
         @test get_gradient(M, sco1, q) == q # triggers an evaluation
@@ -91,7 +98,7 @@ end
         @test get_cost(M, sco1, q) == norm(q)
         @test sco1.objective.cost.i == 2
         @test sco1.objective.gradient!!.i == 2
-        # first grad!
+        # first `grad!`
         get_gradient!(M, X, sco1, r) # triggers an evaluation
         @test get_gradient(M, sco1, r) == X # cached
         @test X == r
@@ -103,7 +110,7 @@ end
             TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
         )
         sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; p=p, initialized=false)
-        # We did not evaluate on init -> 1st eval
+        # not evaluated on init -> this is the first
         @test sco2.objective.gradient!!.i == 0
         @test sco2.objective.cost.i == 0
         @test get_gradient(M, sco2, p) == p
@@ -124,13 +131,13 @@ end
 
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
         sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; p=p, initialized=false)
-        # We do not evaluate on init -> still zero
+        # not evaluated on init -> still zero
         @test sco3.objective.costgrad!!.i == 0
         @test get_gradient(M, sco3, p) == p
         get_gradient!(M, X, sco3, p)
         @test X == p
         @test get_cost(M, sco3, p) == norm(p)
-        # stil at 1
+        # still at 1
         @test sco3.objective.costgrad!!.i == 1
         @test get_gradient(M, sco3, q) == q
         get_gradient!(M, X, sco3, q) # cached
@@ -152,13 +159,13 @@ end
             TestCostGradCount(0); evaluation=InplaceEvaluation()
         )
         sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p=p)
-        # We evaluated on init -> evaluates twice
+        # evaluated on init -> evaluates twice
         @test sco4.objective.costgrad!!.i == 2
         @test get_gradient(M, sco4, p) == p
         get_gradient!(M, X, sco4, p) # cached
         @test X == p
         @test get_cost(M, sco4, p) == norm(p)
-        # stil at 2
+        # still at 2
         @test sco4.objective.costgrad!!.i == 2
         @test get_gradient(M, sco4, q) == q
         get_gradient!(M, X, sco4, q) #cached
@@ -188,27 +195,27 @@ end
             repr((lco, DummyState())), "DummyState(Float64[])\n\n## Cache\n  * "
         )
         ro = DummyDecoratedObjective(o)
-        #indecorated works as well
+        #undecorated works as well
         lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
         @test Manopt.get_cost_function(lco2) != Manopt.get_cost_function(o)
         @test Manopt.get_gradient_function(lco2) != Manopt.get_gradient_function(o)
         p = [1.0, 0.0, 0.0]
-        a = get_count(lco, :Cost) # usually 1 since creating lco calls that once
+        a = get_count(lco, :Cost) # usually 1 since creating `lco` calls that once
         @test get_cost(M, lco, p) == 2.0
         @test get_cost(M, lco, p) == 2.0
-        # but the second was cached so no cost eval
+        # but the second was cached so no cost `eval`
         @test get_count(lco, :Cost) == a + 1
         # Gradient
         b = get_count(lco, :Gradient)
         X = get_gradient(M, lco, p)
         @test X == grad_f(M, p)
-        # make sure this is safe, i.e. modifying X
+        # make sure this is safe, by modifying X
         X .= [1.0, 0.0, 1.0]
         # does not affect the cache
         @test get_gradient(M, lco, p) == grad_f(M, p)
         X = get_gradient(M, lco, p) # restore X
         Y = similar(X)
-        #Update Y inplace but without evaluating the gradient but taking it from the cache
+        #Update Y in-place but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
         @test Y == X
         @test get_count(lco, :Gradient) == b + 1
@@ -227,19 +234,19 @@ end
             M, co2i, (:LRU, [:Cost, :Gradient], [:cache_size => 10])
         )
         #
-        c = get_count(lco2a, :Cost) # usually 1 since creating lco calls that once
+        c = get_count(lco2a, :Cost) # usually 1 since creating `lco`` calls that once
         @test get_cost(M, lco2a, p) == 2.0
         @test get_cost(M, lco2a, p) == 2.0
-        # but the second was cached so no cost eval
+        # but the second was cached so no cost evaluation
         @test get_count(lco2a, :Cost) == c + 1
         d = get_count(lco2a, :Gradient)
         X = get_gradient(M, lco2a, p)
         @test X == f_f_grad(M, p)[2]
         Y = similar(X)
-        #Update Y inplace but without evaluating the gradient but taking it from the cache
+        #Update Y in-place but without evaluating the gradient but taking it from the cache
         get_gradient!(M, Y, lco, p)
         @test Y == X
-        # But is Y also fixed in there ? not that we returned a reference to the cache.
+        # But is Y also fixed in there ? note that a reference to the cache was returned.
         Y .+= 1
         Z = similar(Y)
         get_gradient!(M, Z, lco, p)
@@ -247,12 +254,12 @@ end
         get_gradient!(M, Y, lco, -p) #trigger cache with in-place
         @test Y == -X
         # Similar with
-        # Gradient cached already so no new evals
+        # Gradient cached already so no new evaluations
         @test get_count(lco2a, :Gradient) == d
-        # Trigger caching on costgrad
+        # Trigger caching on `costgrad`
         X = get_gradient(M, lco2a, -p)
         @test X == Y
-        # Trigger caching on costgrad!
+        # Trigger caching on `costgrad!`
         get_gradient!(M, X, lco2i, -p)
         @test X == Y
         # Check default trigger

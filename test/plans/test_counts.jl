@@ -12,7 +12,7 @@ include("../utils/dummy_types.jl")
         grad_f(M, p) = project(M, p, 2 * A * p)
         obj = ManifoldGradientObjective(f, grad_f)
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient])
-        # function accessors are different since the right is still counting.
+        # function access functions are different since the right is still counting.
         @test get_cost_function(obj) != get_cost_function(c_obj)
         @test get_gradient_function(obj) != get_gradient_function(c_obj)
         p = [1.0, 0.0, 0.0]
@@ -38,7 +38,7 @@ include("../utils/dummy_types.jl")
         @test_throws ErrorException get_count(c_obj2, :Cost, :error)
         @test startswith(repr(c_obj), "## Statistics")
         @test startswith(Manopt.status_summary(c_obj), "## Statistics")
-        # also if we get any (nonspecific tuple) - i.e. if the second is a point
+        # also for the `repr` call
         @test startswith(repr((c_obj, p)), "## Statistics")
         # but this also includes the hint, how to access the result
         @test endswith(repr((c_obj, p)), "on this variable.")
@@ -50,7 +50,7 @@ include("../utils/dummy_types.jl")
         # test fallbacks
         @test get_count(c_obj, :None, 1) == -1
         @test get_count(c_obj, :Gradient, 2) == -1 # out of range
-        @test get_count(c_obj, :Gradient, [2, 1]) == -1 #nonfitting dimensions
+        @test get_count(c_obj, :Gradient, [2, 1]) == -1 #non-fitting dimensions
         reset_counters!(c_obj)
         @test get_count(c_obj, :Gradient) == 0
         @test get_count(c_obj, :Cost) == 0

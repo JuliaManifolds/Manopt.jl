@@ -1,7 +1,7 @@
 """
     abstract type SmoothingTechnique
 
-Specify a smoothing technique, e.g. for the [`ExactPenaltyCost`](@ref) and [`ExactPenaltyGrad`](@ref).
+Specify a smoothing technique, see for example [`ExactPenaltyCost`](@ref) and [`ExactPenaltyGrad`](@ref).
 """
 abstract type SmoothingTechnique end
 
@@ -39,13 +39,14 @@ f(p) + ρ\Bigl(
     \sum_{i=0}^m \max\{0,g_i(p)\} + \sum_{j=0}^n \lvert h_j(p)\rvert
 \Bigr),
 ```
-where we use an additional parameter ``u`` and a smoothing technique, e.g.
-[`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
+where an additional parameter ``u`` is used as well as a smoothing technique,
+for example [`LogarithmicSumOfExponentials`](@ref) or [`LinearQuadraticHuber`](@ref)
 to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of the cost ``v``.
 
 ## Fields
 
-* `P`, `ρ`, `u` as mentioned above.
+* `ρ`, `u`: as described in the mathematical formula, .
+* `co`:     the original cost
 
 ## Constructor
 
@@ -102,7 +103,8 @@ This struct is also a functor in both formats
 
 ## Fields
 
-* `P`, `ρ`, `u` as mentioned above.
+* `ρ`, `u` as stated before
+* `co` the nonsmooth objective
 
 ## Constructor
 
@@ -126,8 +128,8 @@ function ExactPenaltyGrad(
 ) where {R}
     return ExactPenaltyGrad{typeof(smoothing),typeof(co),R}(co, ρ, u)
 end
-# Default (e.g. functions constraints) - we have to evaluate all gradients
-# Since for LogExp the prefactor c seems to not be zero, this might be the best way to go here
+# Default (functions constraints): evaluate all gradients
+# Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here
 function (EG::ExactPenaltyGrad)(M::AbstractManifold, p)
     X = zero_vector(M, p)
     return EG(M, X, p)
@@ -137,13 +139,13 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManif
     hp = get_equality_constraints(M, EG.co, p)
     m = length(gp)
     n = length(hp)
-    # start with gradf
+    # start with `gradf`
     get_gradient!(M, X, EG.co, p)
     c = 0
-    # add grad gs
+    # add gradient of the components of g
     (m > 0) && (c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u)))
     (m > 0) && (X .+= sum(get_grad_inequality_constraints(M, EG.co, p) .* c))
-    # add grad hs
+    # add gradient of the components of h
     (n > 0) && (
         c =
             EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
@@ -153,7 +155,7 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManif
     return X
 end
 
-# Default (e.g. functions constraints) - we have to evaluate all gradients
+# Default (functions constraints): evaluate all gradients
 function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
     M::AbstractManifold, X, p::P
 ) where {P}
@@ -173,7 +175,7 @@ function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
     end
     return X
 end
-# Variant 2: Vectors of allocating gradients - we can spare a few gradient evaluations
+# Variant 2: vectors of allocating gradients
 function (
     EG::ExactPenaltyGrad{
         <:LinearQuadraticHuber,
@@ -187,8 +189,7 @@ function (
     get_gradient!(M, X, EG.co, p)
     for i in 1:m
         gpi = get_inequality_constraint(M, EG.co, p, i)
-        if (gpi >= 0) # the cases where we have to evaluate the gradient
-            # we can just add the gradient scaled by ρ
+        if (gpi >= 0) # these are the only necessary allocations.
             (gpi .>= EG.u) && (X .+= gpi .* EG.ρ)
             (0 < gpi < EG.u) && (X .+= gpi .* (gpi / EG.u) * EG.ρ)
         end
@@ -203,7 +204,7 @@ function (
     return X
 end
 
-# Variant 3: Vectors of mutating gradients - we can spare a few gradient evaluations and allocations
+# Variant 3: vectors of mutating gradients
 function (
     EG::ExactPenaltyGrad{
         <:LinearQuadraticHuber,
@@ -218,12 +219,12 @@ function (
     Y = zero_vector(M, p)
     for i in 1:m
         gpi = get_inequality_constraint(M, EG.co, p, i)
-        if (gpi >= 0) # the cases where we have to evaluate the gradient
-            # we only have to evaluate the gradient if gpi > 0
+        if (gpi >= 0) # the cases where to evaluate the gradient
+            # only evaluate the gradient if `gpi > 0`
             get_grad_inequality_constraint!(M, Y, EG.co, p, i)
-            # we can just add the gradient scaled by ρ
+            # just add the gradient scaled by ρ
             (gpi >= EG.u) && (X .+= EG.ρ .* Y)
-            # we have to use a different factor, but can exclude the case g = 0 as well
+            # use a different factor, but exclude the case `g = 0` as well
             (0 < gpi < EG.u) && (X .+= ((gpi / EG.u) * EG.ρ) .* Y)
         end
     end

@@ -1,16 +1,16 @@
 ---
 title: "How to implementing your own solver"
-author: Ronny Bergmann
+author: "Ronny Bergmann"
 ---
 
 When you have used a few solvers from `Manopt.jl` for example like in the opening
-tutorial [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+tutorial [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
 you might come to the idea of implementing a solver yourself.
 
-After a short introduction of the algorithm we will implement,
+After a short introduction of the algorithm we aim to implement,
 this tutorial first discusses the structural details, for example what a solver consists of and “works with”.
-Afterwards, we will show how to implement the algorithm.
-Finally, we will discuss how to make the algorithm both nice for the user as well as
+Afterwards, we show how to implement the algorithm.
+Finally, we discuss how to make the algorithm both nice for the user as well as
 initialized in a way, that it can benefit from features already available in `Manopt.jl`.
 
 ```{=commonmark}
@@ -32,29 +32,29 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 using Manopt, Manifolds, Random
 ```
 
-## Our Guiding Example: A random walk Minimization
+## Our guiding example: a random walk minimization
 
 Since most serious algorithms should be implemented in `Manopt.jl` themselves directly,
-we will implement a solver that randomly walks on the manifold and keeps track of the lowest
+we implement a solver that randomly walks on the manifold and keeps track of the lowest
 point visited.
 As for algorithms in `Manopt.jl` we aim to implement this _generically_ for any manifold that
 is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
 
-**The Random Walk Minimization**
+**The random walk minimization**
 
 Given:
 - a manifold $\mathcal M$
 - a starting point $p=p^{(0)}$
-- a cost function $f: \mathcal M \to\mathbb R$.
+- a cost function $f: \mathcal M → ℝ$.
 - a parameter $\sigma > 0$.
-- a retraction $\operatorname{retr}_p(X)$ that maps $X\in T_p\mathcal M$ to the manifold.
+- a retraction $\operatorname{retr}_p(X)$ that maps $X ∈ T_p\mathcal M$ to the manifold.
 
 We can run the following steps of the algorithm
 
 1. set $k=0$
 2. set our best point $q = p^{(0)}$
 2. Repeat until a stopping criterion is fulfilled
-    1. Choose a random tangent vector $X^{(k)} \in T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
+    1. Choose a random tangent vector $X^{(k)} ∈ T_{p^{(k)}}\mathcal M$ of length $\lVert X^{(k)} \rVert = \sigma$
     2. “Walk” along this direction, that is $p^{(k+1)} = \operatorname{retr}_{p^{(k)}}(X^{(k)})$
     3. If $f(p^{(k+1)}) < f(q)$ set q = p^{(k+1)}$ as our new best visited point
 4. Return $q$ as the resulting best point we visited
@@ -69,7 +69,7 @@ a problem to work on and the state of a solver, which “identifies” the solve
 A problem in `Manopt.jl` usually consists of a manifold (an [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold)) and an [`AbstractManifoldObjective`](@ref)
 describing the function we have and its features.
 In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that stores cost function
-`f(M,p) = ...`. More generally, it might for example store a gradient function or the Hessian
+`f(M,p) -> R`. More generally, it might for example store a gradient function or the Hessian
 or any other information we have about our task.
 
 This is something independent of the solver itself, since it only identifies the problem we
@@ -129,7 +129,7 @@ Parametrising the state avoid that we have abstract typed fields.
 The keyword arguments for the retraction and stopping criterion are the ones usually used
 in `Manopt.jl` and provide an easy way to construct this state now.
 
-States usually have a shortened name as their variable, we will use `rws` for our state here.
+States usually have a shortened name as their variable, we use `rws` for our state here.
 
 ## Implementing your solver
 
@@ -198,13 +198,13 @@ end
 
 Performance wise we could improve the number of allocations by making `X` also a field of
 our `rws` but let's keep it simple here.
-We could also store the cost of `q` in the state, but we will see how to easily also enable
+We could also store the cost of `q` in the state, but we shall see how to easily also enable
 this solver to allow for [caching](https://manoptjl.org/stable/tutorials/CountAndCache/#How-to-Count-and-Cache-Function-Calls).
 In practice, however, it is preferable to cache intermediate values like cost of `q` in the state when it can be easily achieved. This way we do not have to deal with overheads of an external cache.
 
 Now we can just run the solver already. We take the same example as for the other tutorials
 
-We first define our task, the Riemannian Center of Mass from the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We first define our task, the Riemannian Center of Mass from the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
 
 ```{julia}
 #| output: false
@@ -243,8 +243,8 @@ get_solver_result(s2)
 ## Ease of use I: a high level interface
 
 `Manopt.jl` offers a few additional features for solvers in their high level interfaces,
-for example ``[`debug=` for debug](@ref DebugSection)``{=commonmark}, ``[`record=`](@ref RecordSection)``{=commonmark} keywords for debug and recording
-within solver states or ``[`count=` and `cache`](@ref ObjectiveSection)``{=commonmark} keywords for the objective.
+for example [`debug=` for debug](../plans/debug.md), [`record=`](../plans/record.md) keywords for debug and recording
+within solver states or [`count=` and `cache`](../plans/objective.md) keywords for the objective.
 
 We can introduce these here as well with just a few lines of code. There are usually two steps.
 We further need three internal function from `Manopt.jl`
@@ -303,7 +303,7 @@ function random_walk_algorithm!(M::AbstractManifold, f, p=rand(M); kwargs...)
 end
 ```
 
-## Ease of Use II: The State Summary
+## Ease of Use II: the State Summary
 
 For the case that you set `return_state=true` the solver should return a summary of the run. When a `show` method is provided, users can easily read such summary in a terminal.
 It should reflect its main parameters, if they are not too verbose and provide information
@@ -325,7 +325,8 @@ function show(io::IO, rws::RandomWalkState)
     * retraction method: $(rws.retraction_method)
     * σ                : $(rws.σ)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(rws.stop))
     This indicates convergence: $Conv"""
     return print(io, s)

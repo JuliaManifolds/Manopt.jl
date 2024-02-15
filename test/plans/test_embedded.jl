@@ -16,7 +16,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         p = [1.0 0.0; 0.0 1.0; 0.0 0.0; 0.0 0.0; 0.0 0.0]
         X = [0.0 0.0; 0.0 0.0; 1.0 0.0; 0.0 1.0; 0.0 0.0]
 
-        # With interims caches for p and X
+        # With interim caches for p and X
         eo1 = Manopt.decorate_objective!(
             M, o; objective_type=:Euclidean, embedded_p=copy(p), embedded_X=copy(X)
         )
@@ -38,7 +38,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test Y == Hess_f(M, p, X)
             end
         end
-        # Without interims caches for p and X
+        # Without interim caches for p and X
         @test repr(eo4) ==
             "EmbeddedManifoldObjective{Missing,Missing} of an $(repr(eo4.objective))"
 
@@ -72,7 +72,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test Y == grad_f(M, p)
             end
         end
-        # just check that this also works for double decorated ones.
+        # just verify that this also works for double decorated ones.
         o3 = EmbeddedManifoldObjective(ManifoldCountObjective(M, o, [:Cost]), p, X)
     end
     @testset "Function passthrough" begin

@@ -139,7 +139,7 @@ using Manopt, Manifolds, Test
         sgrad_fc(M, y) = [-log(M, y, x) for x in data]
         q1 = stochastic_gradient_descent(Mc, sgrad_fc)
         q2 = stochastic_gradient_descent(Mc, sgrad_fc, pc)
-        #For this case inplace does not exist.
+        #For this case in-place does not exist.
         sgrad_fc2 = [((M, y) -> -log(M, y, x)) for x in data]
         q3 = stochastic_gradient_descent(Mc, sgrad_fc2, pc)
         q4 = stochastic_gradient_descent(Mc, sgrad_fc2, pc; evaluation=InplaceEvaluation())

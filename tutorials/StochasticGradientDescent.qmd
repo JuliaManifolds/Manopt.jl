@@ -111,7 +111,7 @@ MG = MomentumGradient(M, p0; direction=StochasticGradient(M));
 @benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$MG)
 ```
 
-And on the other hand the [`AverageGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.AverageGradient) computes an average of the last `n` gradients, i.e.
+And on the other hand the [`AverageGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.AverageGradient) computes an average of the last `n` gradients. This is done by
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(

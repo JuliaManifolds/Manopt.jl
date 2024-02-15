@@ -6,12 +6,13 @@ The usual call is given by
 `(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s` that performs the record,
 where `i` is the current iteration.
 
-By convention `i<=0` is interpreted as "For Initialization only", i.e. only
+By convention `i<=0` is interpreted as "For Initialization only," so only
 initialize internal values, but not trigger any record, the same holds for
-`i=typemin(Inf)` which is used to indicate `stop`, i.e. that the record is
+`i=typemin(Inf)` which is used to indicate `stop`, that the record is
 called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
+
 * `recorded_values` an `Array` of the recorded values.
 """
 abstract type RecordAction <: AbstractStateAction end
@@ -19,8 +20,8 @@ abstract type RecordAction <: AbstractStateAction end
 @doc raw"""
     RecordSolverState <: AbstractManoptSolverState
 
-append to any [`AbstractManoptSolverState`](@ref) the decorator with record functionality,
-Internally a `Dict`ionary is kept that stores a [`RecordAction`](@ref) for
+append to any [`AbstractManoptSolverState`](@ref) the decorator with record capability,
+Internally a dictionary is kept that stores a [`RecordAction`](@ref) for
 several concurrent modes using a `Symbol` as reference.
 The default mode is `:Iteration`, which is used to store information that is recorded during
 the iterations. RecordActions might be added to `:Start` or `:Stop` to record values at the
@@ -29,11 +30,13 @@ beginning or for the stopping time point, respectively
 The original options can still be accessed using the [`get_state`](@ref) function.
 
 # Fields
-* `options` – the options that are extended by debug information
-* `recordDictionary` – a `Dict{Symbol,RecordAction}` to keep track of all
+
+* `options`          the options that are extended by debug information
+* `recordDictionary` a `Dict{Symbol,RecordAction}` to keep track of all
   different recorded values
 
 # Constructors
+
     RecordSolverState(o,dR)
 
 construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can be
@@ -85,7 +88,7 @@ dispatch_state_decorator(::RecordSolverState) = Val(true)
 @doc """
     has_record(s::AbstractManoptSolverState)
 
-check whether the [`AbstractManoptSolverState`](@ref)` s` are decorated with
+Indicate whether the [`AbstractManoptSolverState`](@ref)` s` are decorated with
 [`RecordSolverState`](@ref)
 """
 has_record(::RecordSolverState) = true
@@ -170,7 +173,7 @@ getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...
 
 either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
 or reset (`i<0`) the internal storage, where `v` has to match the internal
-value type of the corresponding Recordaction.
+value type of the corresponding [`RecordAction`](@ref).
 """
 function record_or_reset!(r::RecordAction, v, i::Int)
     if i > 0
@@ -184,7 +187,7 @@ end
     RecordGroup <: RecordAction
 
 group a set of [`RecordAction`](@ref)s into one action, where the internal [`RecordAction`](@ref)s
-act independently, but the results can be collected in a grouped fashion, i.e. tuples per calls of this group.
+act independently, but the results can be collected in a grouped fashion, a tuple per calls of this group.
 The entries can be later addressed either by index or semantic Symbols
 
 # Constructors
@@ -258,7 +261,7 @@ end
 @doc raw"""
     get_record(r::RecordGroup)
 
-return an array of tuples, where each tuple is a recorded set, e.g. per iteration / record call.
+return an array of tuples, where each tuple is a recorded set per iteration or record call.
 
     get_record(r::RecordGruop, i::Int)
 
@@ -318,7 +321,7 @@ record only every $i$th iteration.
 Otherwise (optionally, but activated by default) just update internal tracking
 values.
 
-This method does not perform any record itself but relies on it's childrens methods
+This method does not perform any record itself but relies on it's children's methods
 """
 mutable struct RecordEvery <: RecordAction
     record::RecordAction
@@ -362,7 +365,8 @@ getindex(r::RecordEvery, i) = get_record(r, i)
 debug for the amount of change of the iterate (stored in `o.x` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration.
 
-# Additional Fields
+# Additional fields
+
 * `storage` a [`StoreStateAction`](@ref) to store (at least) `o.x` to use this
   as the last value (to compute the change
 * `inverse_retraction_method` - (`default_inverse_retraction_method(manifold, p)`) the
@@ -372,7 +376,7 @@ during the last iteration.
 
     RecordChange(M=DefaultManifold();)
 
-with the above fields as keywords. For the `DefaultManifold` only the field storage is used.
+with the preceding fields as keywords. For the `DefaultManifold` only the field storage is used.
 Providing the actual manifold moves the default storage to the efficient point storage.
 """
 mutable struct RecordChange{
@@ -445,8 +449,9 @@ status_summary(rc::RecordChange) = ":Change"
 record a certain fields entry of type {T} during the iterates
 
 # Fields
-* `recorded_values` – the recorded Iterates
-* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+
+* `recorded_values` the recorded Iterates
+* `field`           Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 """
 mutable struct RecordEntry{T} <: RecordAction
@@ -470,11 +475,12 @@ end
 
 record a certain entries change during iterates
 
-# Additional Fields
-* `recorded_values` – the recorded Iterates
-* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage` – a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
+# Additional fields
+
+* `recorded_values` the recorded Iterates
+* `field`           Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `distance`        function (p,o,x1,x2) to compute the change/distance between two values of the entry
+* `storage`         a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
 """
 mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     recorded_values::Vector{Float64}
@@ -513,7 +519,7 @@ record the iterate
 # Constructors
     RecordIterate(x0)
 
-initialize the iterate record array to the type of `x0`, e.g. your initial data.
+initialize the iterate record array to the type of `x0`, which indicates the kind of iterate
 
     RecordIterate(P)
 
@@ -526,9 +532,7 @@ end
 RecordIterate(::T) where {T} = RecordIterate{T}()
 function RecordIterate()
     return throw(
-        ErrorException(
-            "The iterate's data type has to be provided, i.e. RecordIterate(x0)."
-        ),
+        ErrorException("The iterate's data type has to be provided, RecordIterate(x0).")
     )
 end
 function (r::RecordIterate{T})(
@@ -586,7 +590,7 @@ function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState,
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :total
-        # only record at end (if stop_solver returns true)
+        # only record at end (if `stop_solver` returns true)
         return record_or_reset!(r, t, (i > 0 && stop_solver!(p, s, i)) ? i : 0)
     else
         return record_or_reset!(r, t, i)
@@ -623,7 +627,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
         end
     end
     record = RecordGroup(group)
-    # filter ints
+    # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
         record = RecordEvery(record, last(e))
@@ -640,12 +644,12 @@ create a [`RecordAction`](@ref) where
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
   of
-  * `:Change` - to record the change of the iterates in `o.x``
-  * `:Iterate` - to record the iterate
-  * `:Iteration` - to record the current iteration number
-  * `:Cost` - to record the current cost function value
-  * `:Time` - to record the total time taken after every iteration
-  * `:IterativeTime` – to record the times taken for each iteration.
+  * `:Change`        to record the change of the iterates in `o.x``
+  * `:Iterate`       to record the iterate
+  * `:Iteration`     to record the current iteration number
+  * `:Cost`          to record the current cost function value
+  * `:Time`          to record the total time taken after every iteration
+  * `:IterativeTime` to record the times taken for each iteration.
 """
 RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
 RecordActionFactory(::AbstractManoptSolverState, sa::Pair{Symbol,<:RecordAction}) = sa

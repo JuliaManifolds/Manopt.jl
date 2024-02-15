@@ -26,7 +26,7 @@ It assumes that
 * the iterate is stored in the field `p`
 * the gradient at `p` is stored in `X`.
 
-# see also
+# See also
 [`GradientDescentState`](@ref), [`StochasticGradientDescentState`](@ref), [`SubGradientMethodState`](@ref), [`QuasiNewtonState`](@ref).
 """
 abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
@@ -34,20 +34,20 @@ abstract type AbstractGradientSolverState <: AbstractManoptSolverState end
 """
     dispatch_state_decorator(s::AbstractManoptSolverState)
 
-Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` to be of decorating type, i.e.
-it stores (encapsulates) a state in itself, by default in the field `s.state`.
+Indicate internally, whether an [`AbstractManoptSolverState`](@ref) `s` is of decorating type,
+and stores (encapsulates) a state in itself, by default in the field `s.state`.
 
 Decorators indicate this by returning `Val{true}` for further dispatch.
 
-The default is `Val{false}`, i.e. by default an state is not decorated.
+The default is `Val{false}`, so by default a state is not decorated.
 """
 dispatch_state_decorator(::AbstractManoptSolverState) = Val(false)
 
 @doc raw"""
     get_message(du::AbstractManoptSolverState)
 
-get a message (String) from e.g. performing a step computation.
-This should return any message a sub-step might have issued
+get a message (String) from internal functors, in a summary.
+This should return any message a sub-step might have issued as well.
 """
 function get_message(s::AbstractManoptSolverState)
     return _get_message(s, dispatch_state_decorator(s))
@@ -101,8 +101,7 @@ dispatch_state_decorator(::ReturnSolverState) = Val(true)
     get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolverState)
 
 determine the result value of a call to a solver.
-By default this returns the same as [`get_solver_result`](@ref),
-i.e. the last iterate or (approximate) minimizer.
+By default this returns the same as [`get_solver_result`](@ref).
 
     get_solver_return(s::ReturnSolverState)
     get_solver_return(o::AbstractManifoldObjective, s::ReturnSolverState)
@@ -125,7 +124,7 @@ function get_solver_return(o::AbstractManifoldObjective, s::AbstractManoptSolver
     #resolve objective first
     return _get_solver_return(o, s, dispatch_objective_decorator(o))
 end
-#carefully undecorate both and check whether a solver/objective return happens
+# remove decorator
 function _get_solver_return(o::AbstractManifoldObjective, s, ::Val{true})
     return get_solver_return(get_objective(o, false), s)
 end
@@ -144,7 +143,7 @@ the internal state are extracted automatically.
 
 By default the state that is stored within a decorated state is assumed to be at
 `s.state`. Overwrite `_get_state(s, ::Val{true}, recursive) to change this behaviour for your state `s`
-for both the recursive and the nonrecursive case.
+for both the recursive and the direct case.
 
 If `recursive` is set to `false`, only the most outer decorator is taken away instead of all.
 """
@@ -192,7 +191,7 @@ end
 return the (last stored) iterate within [`AbstractManoptSolverState`](@ref)` `s`.
 This should usually refer to a single point on the manifold the solver is working on
 
-By default also undecorates the state beforehand.
+By default this also removes all decorators of the state beforehand.
 """
 get_iterate(s::AbstractManoptSolverState) = _get_iterate(s, dispatch_state_decorator(s))
 function _get_iterate(s::AbstractManoptSolverState, ::Val{false})
@@ -231,7 +230,7 @@ end
 function get_solver_result(::AbstractManifoldObjective, s::AbstractManoptSolverState)
     return get_solver_result(s)
 end
-# if the second one is anything else we assume it is a point/result -> return that
+# if the second one is anything else, assume it is a point/result -> return that
 function get_solver_result(::AbstractManifoldObjective, s)
     return s
 end
@@ -276,7 +275,7 @@ VectorStorageKey(key::Symbol) = VectorStorageKey{key}()
 @doc raw"""
     AbstractStateAction
 
-a common `Type` for `AbstractStateActions` that might be triggered in decoraters,
+a common `Type` for `AbstractStateActions` that might be triggered in decorators,
 for example within the [`DebugSolverState`](@ref) or within the [`RecordSolverState`](@ref).
 """
 abstract type AbstractStateAction end
@@ -313,29 +312,30 @@ internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields f
 [`AbstractManoptSolverState`](@ref)s
 
 This functor possesses the usual interface of functions called during an
-iteration, i.e. acts on `(p,o,i)`, where `p` is a [`AbstractManoptProblem`](@ref),
-`o` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
+iteration and acts on `(p, s, i)`, where `p` is a [`AbstractManoptProblem`](@ref),
+`s` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
 
 # Fields
-* `values` – a dictionary to store interims values based on certain `Symbols`
-* `keys` – a `Vector` of `Symbols` to refer to fields of `AbstractManoptSolverState`
-* `point_values` – a `NamedTuple` of mutable values of points on a manifold to be stored in
+
+* `values`:        a dictionary to store interim values based on certain `Symbols`
+* `keys`:          a `Vector` of `Symbols` to refer to fields of `AbstractManoptSolverState`
+* `point_values`:  a `NamedTuple` of mutable values of points on a manifold to be stored in
   `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem` passed
   to `update_storage!`.
-* `point_init` – a `NamedTuple` of boolean values indicating whether a point in
+* `point_init`:    a `NamedTuple` of boolean values indicating whether a point in
   `point_values` with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
-* `vector_values` – a `NamedTuple` of mutable values of tangent vectors on a manifold to be
+* `vector_values`: a `NamedTuple` of mutable values of tangent vectors on a manifold to be
   stored in `StoreStateAction`. Manifold is later determined by `AbstractManoptProblem`
   passed to `update_storage!`. It is not specified at which point the vectors are tangent
   but for storage it should not matter.
-* `vector_init` – a `NamedTuple` of boolean values indicating whether a tangent vector in
-  `vector_values` with matching key has been already initialized to a value. When it is
+* `vector_init`:   a `NamedTuple` of boolean values indicating whether a tangent vector in
+  `vector_values`: with matching key has been already initialized to a value. When it is
   false, it corresponds to a general value not being stored for the key present in the
   vector `keys`.
-* `once` – whether to update the internal values only once per iteration
-* `lastStored` – last iterate, where this `AbstractStateAction` was called (to determine `once`)
+* `once`:          whether to update the internal values only once per iteration
+* `lastStored`:    last iterate, where this `AbstractStateAction` was called (to determine `once`)
 
 To handle the general storage, use `get_storage` and `has_storage` with keys as `Symbol`s.
 For the point storage use `PointStorageKey`. For tangent vector storage use
@@ -362,7 +362,7 @@ or semantic ones (upper case).
 * `p_init` (`rand(M)`)
 * `X_init` (`zero_vector(M, p_init)`)
 
-are used to initialize the point and vector storages, change these if you use other
+are used to initialize the point and vector storage, change these if you use other
 types (than the default) for your points/vectors on `M`.
 
 * `once` (`true`) whether to update internal storage only once per iteration or on every update call
@@ -620,7 +620,7 @@ end
 """
     get_count(ams::AbstractManoptSolverState, ::Symbol)
 
-Obtain the count for a certain countable size, e.g. the `:Iterations`.
+Obtain the count for a certain countable size, for example the `:Iterations`.
 This function returns 0 if there was nothing to count
 
 Available symbols from within the solver state
@@ -640,7 +640,7 @@ end
 function show(io::IO, t::Tuple{<:AbstractManifoldObjective,<:AbstractManoptSolverState})
     return print(io, "$(t[2])")
 end
-# for decorated ons, default: pass down
+# for decorated ones, default: pass down
 function show(
     io::IO, t::Tuple{<:AbstractDecoratedManifoldObjective,<:AbstractManoptSolverState}
 )

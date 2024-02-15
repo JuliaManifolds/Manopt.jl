@@ -1,11 +1,11 @@
 @doc raw"""
     AugmentedLagrangianCost{CO,R,T}
 
-Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
 
 This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
-based on the internal [`ConstrainedManifoldObjective`](@ref) we can compute
+based on the internal [`ConstrainedManifoldObjective`](@ref) it computes
 
 ```math
 \mathcal L_\rho(p, μ, λ)
@@ -18,7 +18,8 @@ based on the internal [`ConstrainedManifoldObjective`](@ref) we can compute
 
 ## Fields
 
-* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned above
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula
+
 """
 mutable struct AugmentedLagrangianCost{CO,R,T}
     co::CO
@@ -53,7 +54,7 @@ end
 @doc raw"""
     AugmentedLagrangianGrad{CO,R,T}
 
-Stores the parameters ``ρ ∈ \mathbb R``, ``μ ∈ \mathbb R^m``, ``λ ∈ \mathbb R^n``
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
 
 This struct is also a functor in both formats
@@ -87,7 +88,7 @@ function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:λ}, λ)
     return alg
 end
 
-# default, that is especially when the grad_g and grad_h are functions.
+# default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, X, p)
     gp = get_inequality_constraints(M, LG.co, p)
     hp = get_equality_constraints(M, LG.co, p)
@@ -104,7 +105,7 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, X, p)
         (X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p)))
     return X
 end
-# Allocating vector -> we can omit a few of the ineq gradients.
+# Allocating vector -> omit a few of the inequality gradient evaluations.
 function (
     LG::AugmentedLagrangianGrad{
         <:ConstrainedManifoldObjective{AllocatingEvaluation,<:VectorConstraint}
@@ -127,7 +128,7 @@ function (
     end
     return X
 end
-# mutating vector -> we can omit a few of the ineq gradients and allocations.
+# mutating vector -> omit a few of the inequality gradients and allocations.
 function (
     LG::AugmentedLagrangianGrad{
         <:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}

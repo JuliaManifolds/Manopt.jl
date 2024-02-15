@@ -18,24 +18,22 @@ abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,TC,TG,T
 @doc raw"""
     ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
 
-specify a problem for hessian based algorithms.
+specify a problem for Hessian based algorithms.
 
 # Fields
 
-* `cost` : a function ``f:\mathcal M→ℝ`` to minimize
-* `gradient`     : the gradient ``\operatorname{grad}f:\mathcal M
-  → \mathcal T\mathcal M`` of the cost function ``f``
-* `hessian`      : the hessian ``\operatorname{Hess}f(x)[⋅]: \mathcal T_{x} \mathcal M
-  → \mathcal T_{x} \mathcal M`` of the cost function ``f``
-* `preconditioner` : the symmetric, positive definite preconditioner
-    as an approximation of the inverse of the Hessian of ``f``, i.e. as a map with the same
-    input variables as the `hessian` to numerically stabilize iterations when the Hessian is
-    ill-conditioned
+* `cost`:           a function ``f:\mathcal M→ℝ`` to minimize
+* `gradient`:       the gradient ``\operatorname{grad}f:\mathcal M → \mathcal T\mathcal M`` of the cost function ``f``
+* `hessian`:        the Hessian ``\operatorname{Hess}f(x)[⋅]: \mathcal T_{x} \mathcal M → \mathcal T_{x} \mathcal M`` of the cost function ``f``
+* `preconditioner`: the symmetric, positive definite preconditioner
+  as an approximation of the inverse of the Hessian of ``f``, a map with the same
+  input variables as the `hessian` to numerically stabilize iterations when the Hessian is
+  ill-conditioned
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient and can have to forms
 
-* as a function `(M, p) -> X`  and `(M, p, X) -> Y`, resp. i.e. an [`AllocatingEvaluation`](@ref)
-* as a function `(M, X, p) -> X` and (M, Y, p, X), resp., i.e. an [`InplaceEvaluation`](@ref)
+* as a function `(M, p) -> X`  and `(M, p, X) -> Y`, resp., an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> X` and (M, Y, p, X), resp., an [`InplaceEvaluation`](@ref)
 
 # Constructor
     ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner = (M, p, X) -> X;
@@ -74,7 +72,7 @@ end
     get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
 
 evaluate the Hessian of an [`AbstractManoptProblem`](@ref) `amp` at `p`
-applied to a tangent vector `X`, i.e. compute ``\operatorname{Hess}f(q)[X]``,
+applied to a tangent vector `X`, computing ``\operatorname{Hess}f(q)[X]``,
 which can also happen in-place of `Y`.
 """
 function get_hessian(amp::AbstractManoptProblem, p, X)
@@ -120,11 +118,11 @@ end
 @doc raw"""
     get_gradient_function(amgo::AbstractManifoldGradientObjective{E<:AbstractEvaluationType})
 
-return the function to evaluate (just) the hessian ``\operatorname{Hess} f(p)``.
+return the function to evaluate (just) the Hessian ``\operatorname{Hess} f(p)``.
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 
 * `(M, p, X) -> Y` for the [`AllocatingEvaluation`](@ref) case
-* `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `Y`.
+* `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), working in-place of `Y`.
 """
 get_hessian_function(mho::ManifoldHessianObjective, recursive=false) = mho.hessian!!
 function get_hessian_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
@@ -197,7 +195,7 @@ update_hessian_basis!(M, f, p) = f
 @doc raw"""
     AbstractApproxHessian <: Function
 
-An abstract supertypes for approximate hessian functions, declares them also to be functions.
+An abstract supertypes for approximate Hessian functions, declares them also to be functions.
 """
 abstract type AbstractApproxHessian <: Function end
 
@@ -206,30 +204,31 @@ abstract type AbstractApproxHessian <: Function end
 
 A functor to approximate the Hessian by a finite difference of gradient evaluation.
 
-Given a point `p` and a direction `X` and the gradient ``\operatorname{grad}F: \mathcal M \to T\mathcal M``
+Given a point `p` and a direction `X` and the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M``
 of a function ``F`` the Hessian is approximated as follows:
-Let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
+let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
 be a step in direction ``X`` of length ``c`` following a retraction
-Then we approximate the Hessian by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
+Then the Hessian is approximated by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
 
 ```math
-\operatorname{Hess}F(p)[X]
- ≈
-\frac{\lVert X \rVert_p}{c}\Bigl( \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)\Bigl)
+\operatorname{Hess}F(p)[X] ≈
+\frac{\lVert X \rVert_p}{c}\Bigl(
+  \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)
+\Bigl)
 ```
 
  # Fields
 
-* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter)
-* `step_length` a step length for the finite difference
-* `retraction_method` - a retraction to use
-* `vector_transport_method` a vector transport to use
+* `gradient!!`:              the gradient function (either allocating or mutating, see `evaluation` parameter)
+* `step_length`:             a step length for the finite difference
+* `retraction_method`:       a retraction to use
+* `vector_transport_method`: a vector transport to use
 
 ## Internal temporary fields
 
-* `grad_tmp` a temporary storage for the gradient at the current `p`
-* `grad_dir_tmp` a temporary storage for the gradient at the current `p_dir`
-* `p_dir::P` a temporary storage to the forward direction (i.e. ``q`` above)
+* `grad_tmp`:     a temporary storage for the gradient at the current `p`
+* `grad_dir_tmp`: a temporary storage for the gradient at the current `p_dir`
+* `p_dir::P`:     a temporary storage to the forward direction (or the ``q`` in the formula)
 
 # Constructor
 
@@ -237,10 +236,10 @@ Then we approximate the Hessian by the finite difference of the gradients, where
 
 ## Keyword arguments
 
-* `evaluation` ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
-* `steplength` (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
-* `retraction_method` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use in the approximation.
-* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
+* `evaluation`:              ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
+* `steplength`:              (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
+* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use in the approximation.
+* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real} <:
                AbstractApproxHessian

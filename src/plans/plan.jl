@@ -2,7 +2,7 @@
     status_summary(e)
 
 Return a string reporting about the current status of `e`,
-where `e` is a type from Manopt, e.g. an [`AbstractManoptSolverState`](@ref)s.
+where `e` is a type from Manopt.
 
 This method is similar to `show` but just returns a string.
 It might also be more verbose in explaining, or hide internal information.
@@ -12,7 +12,7 @@ status_summary(e) = "$(e)"
 """
     set_manopt_parameter!(f, element::Symbol , args...)
 
-For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
+For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
 """
 function set_manopt_parameter!(f, e::Symbol, args...)
@@ -27,7 +27,7 @@ end
 
 Access arbitrary parameters from `f` addressed by a symbol `element`.
 
-For any `f` and a `Symbol` `e` we dispatch on its value so by default, to
+For any `f` and a `Symbol` `e` dispatch on its value by default, to
 get some element from `f` potentially further qualified by `args...`.
 
 This functions returns `nothing` if `f` does not have the property `element`
@@ -40,8 +40,8 @@ get_manopt_parameter(f, args...) = nothing
 """
     get_manopt_parameter(element::Symbol; default=nothing)
 
-Access global [`Manopt`](@ref) parametersadressed by a symbol `element`.
-We first dispatch on the value of `element`.
+Access global [`Manopt`](@ref) parameters addressed by a symbol `element`.
+This first dispatches on the value of `element`.
 
 If the value is not set, `default` is returned.
 
@@ -68,13 +68,14 @@ get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = nothing
 """
     set_manopt_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
 
-Set global [`Manopt`](@ref) parameters adressed by a symbol `element`.
-We first dispatch on the value of `element`.
+Set global [`Manopt`](@ref) parameters addressed by a symbol `element`.
+W
+This first dispatches on the value of `element`.
 
 The parameters are stored to the global settings using [`Preferences.jl`](https://github.com/JuliaPackaging/Preferences.jl).
 
 Passing a `value` of `""` deletes the corresponding entry from the preferences.
-Whenever the `LocalPreferences.toml` is modified, this is also `@info`rmed about.
+Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
 """
 function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
     if length(value) == 0

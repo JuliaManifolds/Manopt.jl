@@ -1,6 +1,6 @@
-# [Douglas—Rachford algorithm](@id DRSolver)
+# Douglas—Rachford algorithm
 
-The (Parallel) Douglas—Rachford ((P)DR) Algorithm was generalized to Hadamard
+The (Parallel) Douglas—Rachford ((P)DR) algorithm was generalized to Hadamard
 manifolds in [BergmannPerschSteidl:2016](@cite).
 
 The aim is to minimize the sum
@@ -18,7 +18,7 @@ Further, define the reflection operator at the proximal map as
 \operatorname{refl}_{λ f}(p) = \operatorname{retr}_{\operatorname{prox}_{λ f}(p)} \bigl( -\operatorname{retr}^{-1}_{\operatorname{prox}_{λ f}(p)} p \bigr).
 ```
 
-Let ``\alpha_k ∈  [0,1]`` with ``\sum_{k ∈ \mathbb N} \alpha_k(1-\alpha_k) =  \infty``
+Let ``\alpha_k ∈  [0,1]`` with ``\sum_{k ∈ ℕ} \alpha_k(1-\alpha_k) =  \infty``
 and ``λ > 0`` (which might depend on iteration ``k`` as well) be given.
 
 Then the (P)DRA algorithm for initial data ``x_0 ∈ \mathcal H`` as
@@ -56,11 +56,11 @@ leading to the second prox being the Riemannian mean.
 ## State
 
 ```@docs
-DouglasRachfordState
+  DouglasRachfordState
 ```
 
 For specific [`DebugAction`](@ref)s and [`RecordAction`](@ref)s see also
-[Cyclic Proximal Point](@ref CPPSolver).
+[Cyclic Proximal Point](cyclic_proximal_point.md).
 
 Furthermore, this solver has a short hand notation for the involved [`reflect`](@ref)ion.
 

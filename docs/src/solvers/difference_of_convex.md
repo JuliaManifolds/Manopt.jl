@@ -1,17 +1,17 @@
-# [Difference of convex](@id DifferenceOfConvexSolvers)
+# Difference of convex
 
 ```@meta
 CurrentModule = Manopt
 ```
 
-## [Difference of convex algorithm](@id DCASolver)
+## [Difference of convex algorithm](@id solver-difference-of-convex)
 
 ```@docs
 difference_of_convex_algorithm
 difference_of_convex_algorithm!
 ```
 
-## [Difference of convex proximal point](@id DCPPASolver)
+## [Difference of convex proximal point](@id solver-difference-of-convex-proximal-point)
 
 ```@docs
 difference_of_convex_proximal_point

@@ -62,8 +62,8 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
 
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
-                        I = i.I # array of index
-                        J = I .+ e_k_vals[k] #i + e_k is j
+                        I = i.I # array of `index`
+                        J = I .+ e_k_vals[k] # `i + e_k` is `j`
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             Y[N, I..., k] += if norms[I..., k] <= (1 + λ * γ)
@@ -83,7 +83,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
                             Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # `i` in R
                 return Y
             elseif p == 2
                 norms = norm.(Ref(N.manifold), x, Ξ)
@@ -91,8 +91,8 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
 
                 for i in R # iterate over all pixel
                     for k in 1:d # for all direction combinations
-                        I = i.I # array of index
-                        J = I .+ e_k_vals[k] #i + e_k is j
+                        I = i.I # array of `index`
+                        J = I .+ e_k_vals[k] #`i + e_k` is `j`
                         if all(J .<= maxInd)
                             # this is neighbor in range,
                             if norms_[I...] <= (1 + λ * γ)
@@ -123,7 +123,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
                             Y[N, I..., k] = zero_vector(N.manifold, x[N, I..., k])
                         end
                     end # directions
-                end # i in R
+                end # `ì` in R
                 return Y
             else
                 throw(ErrorException("The case p=$p, q=$q is not yet implemented"))
@@ -191,7 +191,7 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
     y2 = o2
     @test x_hat ≈ y2 atol = 2 * 1e-7
     @testset "Objective Decorator passthrough" begin
-        # PDNSSN additionals
+        # PDNSSN additional tests
         pdmsno = PrimalDualManifoldSemismoothNewtonObjective(
             f, prox_f, Dprox_F, prox_g_dual, Dprox_G_dual, DΛ, adjoint_DΛ;
         )

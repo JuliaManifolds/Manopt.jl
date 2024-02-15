@@ -1,4 +1,4 @@
-# [The Riemannian trust-regions solver](@id trust_regions)
+# The Riemannian trust regions solver
 
 Minimize a function
 
@@ -8,7 +8,7 @@ Minimize a function
 
 by using the Riemannian trust-regions solver following [AbsilBakerGallivan:2006](@cite) a model is build by
 lifting the objective at the ``k``th iterate ``p_k`` by locally mapping the
-cost function ``f`` to the tangent space as ``f_k: T_{p_k}\mathcal M → \mathbb R`` as
+cost function ``f`` to the tangent space as ``f_k: T_{p_k}\mathcal M → ℝ`` as
 ``f_k(X) = f(\operatorname{retr}_{p_k}(X))``.
 The trust region subproblem is then defined as
 
@@ -20,7 +20,7 @@ where
 
 ```math
 \begin{align*}
-m_k&: T_{p_K}\mathcal M → \mathbb R,\\
+m_k&: T_{p_K}\mathcal M → ℝ,\\
 m_k(X) &= f(p_k) + ⟨\operatorname{grad} f(p_k), X⟩_{p_k} + \frac{1}{2}\langle \mathcal H_k(X),X⟩_{p_k}\\
 \text{such that}&\ \lVert X \rVert_{p_k} ≤ Δ_k.
 \end{align*}
@@ -65,7 +65,7 @@ The [`trust_regions`](@ref) solver requires the following functions of a manifol
 
 * A [`retract!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)`(M, q, p, X)`; it is recommended to set the [`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}) to a favourite retraction. If this default is set, a `retraction_method=` does not have to be specified.
 * By default the stopping criterion uses the [`norm`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#LinearAlgebra.norm-Tuple{AbstractManifold,%20Any,%20Any}) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
-* if you do not provide an initial `max_trudst_region_radius`, a [`manifold_dimension`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}) is required.
+* if you do not provide an initial `max_trust_region_radius`, a [`manifold_dimension`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}) is required.
 * A [`copyto!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copyto!-Tuple{AbstractManifold,%20Any,%20Any})`(M, q, p)` and [`copy`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copy-Tuple{AbstractManifold,%20Any})`(M,p)` for points.
 * By default the tangent vectors are initialized calling [`zero_vector`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,p)`.
 

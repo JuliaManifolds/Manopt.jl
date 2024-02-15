@@ -37,7 +37,7 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
         )
-        # Check newton update direction works also allocating
+        # Verify that Newton update direction works also allocating
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p_star = get_solver_result(lrbfgs_s)
         D = zero_vector(M, p_star)

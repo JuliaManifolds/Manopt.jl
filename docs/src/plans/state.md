@@ -16,7 +16,7 @@ Manopt.get_count
 ```
 
 Since every subtype of an [`AbstractManoptSolverState`](@ref) directly relate to a solver,
-the concrete states are documented together with the corresponding [solvers](@ref SolversSection).
+the concrete states are documented together with the corresponding [solvers](../solvers/index.md).
 This page documents the general features available for every state.
 
 A first example is to obtain or set, the current iterate.

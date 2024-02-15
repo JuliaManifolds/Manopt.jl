@@ -31,7 +31,7 @@ include("../utils/example_tasks.jl")
         s2 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
         s2.X = grad_1
         s2.δ = δ1
-        # for the first case we get zero
+        # the first case is zero
         @test s2.coefficient(dmp, s2, 1) == 0.0
         s2.X = grad_2
         s2.δ = δ2
@@ -41,7 +41,7 @@ include("../utils/example_tasks.jl")
         s3 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
         s3.X = grad_1
         s3.δ = δ1
-        # for the first case we get zero
+        # the first case is zero
         @test s3.coefficient(dmp, s3, 1) == 0.0
         s3.X = grad_2
         s3.δ = δ2
@@ -51,7 +51,7 @@ include("../utils/example_tasks.jl")
         s4 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
         s4.X = grad_1
         s4.δ = δ1
-        # for the first case we get zero
+        # the first case is zero
         @test s4.coefficient(dmp, s4, 1) == 1.0
         s4.X = grad_2
         s4.δ = δ2
@@ -61,7 +61,7 @@ include("../utils/example_tasks.jl")
         s5 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
         s5.X = grad_1
         s5.δ = δ1
-        # for the first case we get zero
+        # the first case is zero
         @test s5.coefficient(dmp, s5, 1) == 0.0
         s5.X = grad_2
         s5.δ = δ2
@@ -173,7 +173,7 @@ include("../utils/example_tasks.jl")
             i,
             args...;
             kwargs...,
-        ) # for this example we have a closed form solution for the best step size
+        ) # for this example a closed form solution is known for the best step size
             M = get_manifold(amp)
             p = get_iterate(cgds)
             X = -get_gradient(amp, p)

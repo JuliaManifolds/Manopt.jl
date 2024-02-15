@@ -5,10 +5,10 @@ A stochastic gradient objective consists of
 
 * a(n optional) cost function ``f(p) = \displaystyle\sum_{i=1}^n f_i(p)
 * an array of gradients, ``\operatorname{grad}f_i(p), i=1,\ldots,n`` which can be given in two forms
-  * as one single function ``(\mathcal M, p) ↦ (X_1,…,X_n) \in (T_p\mathcal M)^n``
+  * as one single function ``(\mathcal M, p) ↦ (X_1,…,X_n) ∈ (T_p\mathcal M)^n``
   * as a vector of functions ``\bigl( (\mathcal M, p) ↦ X_1, …, (\mathcal M, p) ↦ X_n\bigr)``.
 
-Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions, i.e.
+Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions
 `(M, X, p) -> X`, where `X` is the vector of `X1,...Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
 respectively.
 
@@ -85,7 +85,7 @@ end
 
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `p` (in place of `X`).
 
-If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
 since the length (or number of elements of the gradient) can not be determined.
 """
 function get_gradients(
@@ -166,7 +166,7 @@ function get_gradients!(
     end
     return X
 end
-# Passdown from problem
+# Pass down from problem
 function get_gradients(mp::AbstractManoptProblem, p)
     return get_gradients(get_manifold(mp), get_objective(mp), p)
 end
@@ -180,7 +180,7 @@ end
 
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
-If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
@@ -240,7 +240,7 @@ function get_gradient!(
     ::Any,
 ) where {TC}
     return error(
-        "An inplace variant for single entries of the stochastic gradient as a single function is not implemented, since the size can not be determined.",
+        "An in-place variant for single entries of the stochastic gradient as a single function is not implemented, since the size can not be determined.",
     )
 end
 function get_gradient!(
@@ -258,7 +258,7 @@ function get_gradient!(
     return get_gradient!(M, X, get_objective(admo, false), p, k)
 end
 
-# Passdown from problem
+# Pass down from problem
 function get_gradient(mp::AbstractManoptProblem, p, k)
     return get_gradient(get_manifold(mp), get_objective(mp), p, k)
 end
@@ -272,13 +272,13 @@ end
 
 Evaluate the complete gradient ``\operatorname{grad} f = \displaystyle\sum_{i=1}^n \operatorname{grad} f_i(p)`` at `p` (in place of `X`).
 
-If you use a single function for the stochastic gradient, that works inplace, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
     M::AbstractManifold, sgo::ManifoldStochasticGradientObjective{T,TC,<:Function}, p
 ) where {T<:AbstractEvaluationType,TC}
-    # even if the function is in-place, we would need to allocate the full vector of tangent vectors
+    # even if the function is in-place, allocation of the full vector of tangent vectors still required
     return sum(get_gradients(M, sgo, p))
 end
 function get_gradient!(
@@ -300,7 +300,7 @@ function get_gradient!(
     ::Any,
 ) where {TC}
     return error(
-        "An inplace variant for (sum of) the stochastic gradient as a single function is not implemented, since the size can not be determined.",
+        "An in-place variant for (sum of) the stochastic gradient as a single function is not implemented, since the size can not be determined.",
     )
 end
 function get_gradient(

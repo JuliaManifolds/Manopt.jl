@@ -5,21 +5,20 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-* `retraction_method` – the rectration to use within
-* `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
-* `stop` – ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
-* `p` – (initial or current) value the algorithm is at
-* `p_star` – optimal value (initialized to a copy of `p`.)
-* `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
-   `p` that was last evaluated.
+* `retraction_method`: the retraction to use within
+* `stepsize`:          ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
+* `stop`:              ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
+* `p`:                 (initial or current) value the algorithm is at
+* `p_star`:            optimal value (initialized to a copy of `p`.)
+* `X`:                 (`zero_vector(M, p)`) the current element from the possible
+  subgradients at `p` that was last evaluated.
 
 # Constructor
 
-SubGradientMethodState(M::AbstractManifold, p; kwargs...)
+    SubGradientMethodState(M::AbstractManifold, p; kwargs...)
 
-with keywords for all fields above besides `p_star` which obtains the same type as `p`.
-You can use e.g. `X=` to specify the type of tangent vector to use
-
+with keywords for all fields besides `p_star` which obtains the same type as `p`.
+You can use `X=` to specify the type of tangent vector to use
 """
 mutable struct SubGradientMethodState{
     TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T
@@ -63,7 +62,8 @@ function show(io::IO, sgms::SubGradientMethodState)
     ## Stepsize
     $(sgms.stepsize)
 
-    ## Stopping Criterion
+    ## Stopping criterion
+
     $(status_summary(sgms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
@@ -79,8 +79,8 @@ function default_stepsize(M::AbstractManifold, ::Type{SubGradientMethodState})
 end
 
 @doc raw"""
-    subgradient_method(M, f, ∂f, p; kwargs...)
-    subgradient_method(M, sgo, p; kwargs...)
+    subgradient_method(M, f, ∂f, p=rand(M); kwargs...)
+    subgradient_method(M, sgo, p=rand(M); kwargs...)
 
 perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
 
@@ -93,25 +93,24 @@ For more detils see [FerreiraOliveira:1998](@cite).
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of f
+* `M`:  a manifold ``\mathcal M``
+* `f`:  a cost function ``f:\mathcal M→ℝ`` to minimize
+* `∂f`: the (sub)gradient ``∂ f: \mathcal M→ T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p` – (`rand(M)`) an initial value ``p_0=p ∈ \mathcal M``
+* `p`:  (`rand(M)`) an initial value ``p_0=p ∈ \mathcal M``
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 
-
 # Optional
 
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂f(M, y)` or [`InplaceEvaluation`](@ref) in place, i.e. is
-   of the form `∂f!(M, X, x)`.
-* `stepsize` – ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
-* `retraction` – (`default_retraction_method(M, typeof(p))`) a retraction to use.
-* `stopping_criterion` – ([`StopAfterIteration`](@ref)`(5000)`)
+* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the subgradient
+  works by allocation (default) form `∂f(M, y)` or [`InplaceEvaluation`](@ref) in place
+  of the form `∂f!(M, X, x)`.
+* `retraction`:         (`default_retraction_method(M, typeof(p))`) a retraction to use.
+* `stepsize`:           ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
+* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
@@ -165,13 +164,13 @@ perform a subgradient method ``p_{k+1} = \mathrm{retr}(p_k, s_k∂f(p_k))``,
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of F
+* `M`:  a manifold ``\mathcal M``
+* `f`:  a cost function ``f:\mathcal M→ℝ`` to minimize
+* `∂f`: the (sub)gradient ``∂f: \mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p` – an initial value ``p_0=p ∈ \mathcal M``
+* `p`:  an initial value ``p_0=p ∈ \mathcal M``
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 

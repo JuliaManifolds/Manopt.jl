@@ -8,9 +8,10 @@ and especially being the Riesz representer with respect to the metric in the emb
 The types can be used to still dispatch on also the undecorated objective type `O2`.
 
 # Fields
-* `objective` – the objective that is defined in the embedding
-* `p`         - (`nothing`) a point in the embedding.
-* `X`         - (`nothing`) a tangent vector in the embedding
+
+* `objective`: the objective that is defined in the embedding
+* `p`:         (`nothing`) a point in the embedding.
+* `X`:         (`nothing`) a tangent vector in the embedding
 
 When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
 memory allocations. Similarly `X` is used when embedding tangent vectors
@@ -59,8 +60,8 @@ end
 @doc raw"""
     get_cost(M::AbstractManifold,emo::EmbeddedManifoldObjective, p)
 
-Evaluate the cost function of an objective defined in the embedding, i.e. embed `p`
-before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref Manopt.EmbeddedManifoldObjective).
+Evaluate the cost function of an objective defined in the embedding by first embedding `p`
+before calling the cost function stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_cost(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
@@ -201,7 +202,7 @@ end
     get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
 
 Return the vector ``(g_1(p),...g_m(p),h_1(p),...,h_n(p))`` defined in the embedding, that is embed `p`
-before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
@@ -215,7 +216,7 @@ end
 
 Evaluate all equality constraints ``h(p)`` of ``\bigl(h_1(p), h_2(p),\ldots,h_p(p)\bigr)``
 defined in the embedding, that is embed `p`
-before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_equality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
@@ -225,7 +226,7 @@ end
     get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
 
 evaluate the `j`s equality constraint ``h_j(p)`` defined in the embedding, that is embed `p`
-before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
     q = local_embed!(M, emo, p)
@@ -236,7 +237,7 @@ end
 
 Evaluate all inequality constraints ``g(p)`` of ``\bigl(g_1(p), g_2(p),\ldots,g_m(p)\bigr)``
 defined in the embedding, that is embed `p`
-before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_inequality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
@@ -247,7 +248,7 @@ end
     get_inequality_constraint(M::AbstractManifold, ems::EmbeddedManifoldObjective, p, i)
 
 Evaluate the `i`s inequality constraint ``g_i(p)`` defined in the embedding, that is embed `p`
-before calling the constraint function(s) stored in the [`EmbeddedManifoldObjective`](@ref).
+before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
 """
 function get_inequality_constraint(
     M::AbstractManifold, emo::EmbeddedManifoldObjective, p, i
@@ -299,7 +300,7 @@ end
     X = get_grad_equality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     get_grad_equality_constraints!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
 
-evaluate the gradients of the the equality constraints ``\operatorname{grad} h(p)`` defined in the embedding, that is embed `p`
+evaluate the gradients of theequality constraints ``\operatorname{grad} h(p)`` defined in the embedding, that is embed `p`
 before calling the gradient function stored in the [`EmbeddedManifoldObjective`](@ref).
 
 The returned gradients are then converted to a Riemannian gradient calling
@@ -366,7 +367,7 @@ end
     X = get_grad_inequality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     get_grad_inequality_constraints!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p)
 
-evaluate the gradients of the the inequality constraints ``\operatorname{grad} g(p)`` defined in the embedding, that is embed `p`
+evaluate the gradients of theinequality constraints ``\operatorname{grad} g(p)`` defined in the embedding, that is embed `p`
 before calling the gradient function stored in the [`EmbeddedManifoldObjective`](@ref).
 
 The returned gradients are then converted to a Riemannian gradient calling

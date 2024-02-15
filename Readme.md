@@ -10,7 +10,7 @@ Optimization Algorithm on Riemannian Manifolds.
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.03866/status.svg)](https://doi.org/10.21105/joss.03866)
 
 For a function $f: ℳ → ℝ$  that maps from a [Riemannian manifold](https://en.wikipedia.org/wiki/Riemannian_manifold)
-ℳ to the real line, we aim to solve
+ℳ to the real line, this package aims to solve
 
 > Find the minimizer p on ℳ, that is, the (or a) point where f attains its minimum.
 
@@ -29,7 +29,7 @@ In Julia you can get started by just typing
 using Pkg; Pkg.add("Manopt");
 ```
 
-and then checkout the [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
+and then checkout the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
 
 ## Related packages
 
@@ -61,16 +61,16 @@ If you use `Manopt.jl` in your work, please cite the following
 }
 ```
 
-To refer to a certain version or the source code in general we recommend to cite for example
+To refer to a certain version or the source code in general please cite for example
 
 ```biblatex
 @software{manoptjl-zenodo-mostrecent,
-    Author = {Ronny Bergmann},
+    Author    = {Ronny Bergmann},
     Copyright = {MIT License},
-    Doi = {10.5281/zenodo.4290905},
+    Doi       = {10.5281/zenodo.4290905},
     Publisher = {Zenodo},
-    Title = {Manopt.jl},
-    Year = {2022},
+    Title     = {Manopt.jl},
+    Year      = {2024},
 }
 ```
 
@@ -86,7 +86,7 @@ If you are also using [`Manifolds.jl`](https://juliamanifolds.github.io/Manifold
     JOURNAL   = {ACM Transactions on Mathematical Software},
     MONTH     = {dec},
     NUMBER    = {4},
-    TITLE     = {Manifolds.Jl: An Extensible Julia Framework for Data Analysis on Manifolds},
+    TITLE     = {Manifolds.jl: An Extensible Julia Framework for Data Analysis on Manifolds},
     VOLUME    = {49},
     YEAR      = {2023}
 }

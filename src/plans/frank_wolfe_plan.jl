@@ -24,7 +24,7 @@ end
     FrankWolfeGradient{P,T}
 
 A structure to represent the gradient of the oracle sub problem in the [`Frank_Wolfe_method`](@ref),
-that is for a given point `p` and a tangent vector `X` we have
+that is for a given point `p` and a tangent vector `X` the function reads
 
 ```math
 F(q) = ⟨X, \log_p q⟩

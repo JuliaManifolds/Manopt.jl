@@ -93,7 +93,7 @@ include("../utils/example_tasks.jl")
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
         @test Y != X
-        Y2 = truncated_conjugate_gradient_descent( #approx hess
+        Y2 = truncated_conjugate_gradient_descent( # with approximate Hessian
             M,
             f,
             rgrad,
@@ -164,7 +164,7 @@ include("../utils/example_tasks.jl")
         )
         @test f(M, p2) ≈ f(M, p1)
         X = zero_vector(M, p)
-        Y6 = truncated_conjugate_gradient_descent( # inplace -> other precon default
+        Y6 = truncated_conjugate_gradient_descent( # in-place -> other precondition default
             M,
             f,
             g,
@@ -388,7 +388,7 @@ include("../utils/example_tasks.jl")
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
         q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=project!)
-        @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit inprecise?
+        @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit imprecise?
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X
         q3 = trust_regions(M, f, grad_f, p0)

@@ -14,12 +14,12 @@ return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``
 where either the gradient function using the decorator or without the decorator is used.
 
 By default `recursive` is set to `false`, since usually to just pass the gradient function
-somewhere, you still want e.g. the cached one or the one that still counts calls.
+somewhere, one still wants for example the cached one or the one that still counts calls.
 
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 
 * `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
-* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref), i.e. working inplace of `X`.
+* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
 """
 function get_gradient_function(amgo::AbstractManifoldGradientObjective, recursive=false)
     return amgo.gradient!!
@@ -35,14 +35,14 @@ specify an objective containing a cost and its gradient
 
 # Fields
 
-* `cost`       – a function ``f\colon\mathcal M → ℝ``
-* `gradient!!` – the gradient ``\operatorname{grad}f\colon\mathcal M → \mathcal T\mathcal M``
+* `cost`:       a function ``f: \mathcal M → ℝ``
+* `gradient!!`: the gradient ``\operatorname{grad}f: \mathcal M → \mathcal T\mathcal M``
   of the cost function ``f``.
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
 
-* as a function `(M, p) -> X` that allocates memory for `X`, i.e. an [`AllocatingEvaluation`](@ref)
-* as a function `(M, X, p) -> X` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
+* as a function `(M, p) -> X` that allocates memory for `X`, an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> X` that work in place of `X`, an [`InplaceEvaluation`](@ref)
 
 # Constructors
     ManifoldGradientObjective(cost, gradient; evaluation=AllocatingEvaluation())
@@ -68,13 +68,13 @@ specify an objective containing one function to perform a combined computation o
 
 # Fields
 
-* `costgrad!!` – a function that computes both the cost ``f\colon\mathcal M → ℝ``
-  and its gradient ``\operatorname{grad}f\colon\mathcal M → \mathcal T\mathcal M``
+* `costgrad!!`: a function that computes both the cost ``f: \mathcal M → ℝ``
+  and its gradient ``\operatorname{grad}f: \mathcal M → \mathcal T\mathcal M``
 
 Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
 
-* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, i.e. an [`AllocatingEvaluation`](@ref)
-* as a function `(M, X, p) -> (c, X)` that work in place of `X`, i.e. an [`InplaceEvaluation`](@ref)
+* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> (c, X)` that work in place of `X`, an [`InplaceEvaluation`](@ref)
 
 # Constructors
 
@@ -98,7 +98,7 @@ function get_gradient_function(cgo::ManifoldCostGradientObjective)
 end
 
 #
-# and indernal helper to make the dispatch nicer
+# and internal helper to make the dispatch nicer
 #
 function get_cost_and_gradient(
     M::AbstractManifold, cgo::ManifoldCostGradientObjective{AllocatingEvaluation}, p
@@ -157,7 +157,7 @@ When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
 memory for the result is allocated.
 
 Note that the order of parameters follows the philosophy of `Manifolds.jl`, namely that
-even for the mutating variant, the manifold is the first parameter and the (inplace) tangent
+even for the mutating variant, the manifold is the first parameter and the (in-place) tangent
 vector `X` comes second.
 """
 get_gradient(M::AbstractManifold, mgo::AbstractManifoldGradientObjective, p)
@@ -251,7 +251,7 @@ end
 """
     DirectionUpdateRule
 
-A general functor, that handles direction update rules. It's field(s) is usually
+A general functor, that handles direction update rules. It's fields are usually
 only a [`StoreStateAction`](@ref) by default initialized to the fields required
 for the specific coefficient, but can also be replaced by a (common, global)
 individual one that provides these values.
@@ -261,7 +261,7 @@ abstract type DirectionUpdateRule end
 """
     IdentityUpdateRule <: DirectionUpdateRule
 
-The default gradient direction update is the identity, i.e. it just evaluates the gradient.
+The default gradient direction update is the identity, usually it just evaluates the gradient.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
 
@@ -274,12 +274,12 @@ where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector 
 last direction multiplied by momentum ``m``.
 
 # Fields
-* `p_old` - (`rand(M)`) remember the last iterate for parallel transporting the last direction
-* `momentum` – (`0.2`) factor for momentum
-* `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
-  add the momentum to.
-* `vector_transport_method` – `default_vector_transport_method(M, typeof(p))` vector transport method to use
-* `X_old` – (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
+* `p_old`:                   (`rand(M)`) remember the last iterate for parallel transporting the last direction
+* `momentum`:                (`0.2`) factor for momentum
+* `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions
+  to add the momentum to.
+* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) vector transport method to use
+* `X_old`:                   (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
 
 # Constructors
 
@@ -293,9 +293,7 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
         vector_transport_method=default_vector_transport_method(M, typeof(p)),
     )
 
-Initialize a momentum gradient rule to `s`. Note that the keyword arguments `p` and `X`
-will be overridden often, so their initialisation is meant to set the to certain types of
-points or tangent vectors, if you do not use the default types with respect to `M`.
+Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
 """
 mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
@@ -339,11 +337,10 @@ inner processor) and the last iterate are stored, average is taken after vector 
 them to the current iterates tangent space.
 
 # Fields
-* `gradients` – (fill(`zero_vector(M,x0),n)`) the last `n` gradient/direction updates
-* `last_iterate` – last iterate (needed to transport the gradients)
-* `direction` – internal [`DirectionUpdateRule`](@ref) to determine directions to
-  apply the averaging to
-* `vector_transport_method` - vector transport method to use
+* `gradients`:               the last `n` gradient/direction updates
+* `last_iterate`:            last iterate (needed to transport the gradients)
+* `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
+* `vector_transport_method`: vector transport method to use
 
 # Constructors
     AverageGradient(
@@ -358,11 +355,11 @@ them to the current iterates tangent space.
 
 Add average to a gradient problem, where
 
-* `n` determines the size of averaging
-* `s` is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
-* `gradients` can be prefilled with some history
-* `last_iterate` stores the last iterate
-* `vector_transport_method` determines how to transport all gradients to the current iterates tangent space before averaging
+* `n`:                       determines the size of averaging
+* `s`:                       is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
+* `gradients`:               can be pre-filled with some history
+* `last_iterate`:            stores the last iterate
+* `vector_transport_method`: determines how to transport all gradients to the current iterates tangent space before averaging
 """
 mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
@@ -409,26 +406,26 @@ end
 ## Fields
 * `γ`
 * `μ` the strong convexity coefficient
-* `v` (=``=v_k``, ``v_0=x_0``) an interims point to compute the next gradient evaluation point `y_k`
+* `v` (=``=v_k``, ``v_0=x_0``) an interim point to compute the next gradient evaluation point `y_k`
 * `shrinkage` (`= i -> 0.8`) a function to compute the shrinkage ``β_k`` per iterate.
 
-Let's assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex.
-Given
+Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
+
 * a step size ``h_k<\frac{1}{L}`` (from the [`GradientDescentState`](@ref)
 * a `shrinkage` parameter ``β_k``
 * and a current iterate ``x_k``
-* as well as the interims values ``γ_k`` and ``v_k`` from the previous iterate.
+* as well as the interim values ``γ_k`` and ``v_k`` from the previous iterate.
 
-This compute a Nesterov type update using the following steps, see [Zhang, Sra, Preprint, 2018](@cite ZhangSra:2018)
+This compute a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
 
-1. Compute the positive root, i.e. ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
+1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
 2. Set ``\bar γ_k+1 = (1-α_k)γ_k + α_kμ``
 3. ``y_k = \operatorname{retr}_{x_k}\Bigl(\frac{α_kγ_k}{γ_k + α_kμ}\operatorname{retr}^{-1}_{x_k}v_k \Bigr)``
 4. ``x_{k+1} = \operatorname{retr}_{y_k}(-h_k \operatorname{grad}f(y_k))``
 5. ``v_{k+1} = `\operatorname{retr}_{y_k}\Bigl(\frac{(1-α_k)γ_k}{\barγ_k}\operatorname{retr}_{y_k}^{-1}(v_k) - \frac{α_k}{\bar γ_{k+1}}\operatorname{grad}f(y_k) \Bigr)``
 6. ``γ_{k+1} = \frac{1}{1+β_k}\bar γ_{k+1}``
 
-Then the direction from ``x_k`` to ``x_k+1``, i.e. ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
+Then the direction from ``x_k`` to ``x_k+1`` by ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
 
 # Constructor
     Nesterov(M::AbstractManifold, p::P; γ=0.001, μ=0.9, shrinkage = k -> 0.8;
@@ -523,7 +520,7 @@ display the short (`false`) or long (`true`) default text for the gradient norm.
 
     DebugGradientNorm(prefix[, p=print])
 
-display the a `prefix` in front of the gradientnorm.
+display the a `prefix` in front of the gradient norm.
 """
 mutable struct DebugGradientNorm <: DebugAction
     io::IO

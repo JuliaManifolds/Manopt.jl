@@ -9,7 +9,7 @@ using LinearAlgebra: I, tr
     Z = v0 * v0'
     f(M, p) = -tr(transpose(p) * Z * p) / 2
     grad_f(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
-    g(M, p) = -p # i.e. p ≥ 0
+    g(M, p) = -p # inequality constraint p ≥ 0
     mI = -Matrix{Float64}(I, d, d)
     grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
     p0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
@@ -39,7 +39,7 @@ using LinearAlgebra: I, tr
         Me = Euclidean()
         fe(M, p) = (p + 5)^2
         grad_fe(M, p) = 2 * p + 10
-        ge(M, p) = -p # i.e. p ≥ 0
+        ge(M, p) = -p # inequality constraint p ≥ 0
         grad_ge(M, p) = -1
         s = exact_penalty_method(
             Me,

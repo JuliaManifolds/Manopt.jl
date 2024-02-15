@@ -23,12 +23,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test !s3(p, s, 1)
         @test length(s3.reason) == 0
         s.p = 0.3
+
         @test s3(p, s, 2)
         @test length(s3.reason) > 0
         # repack
         sn = StopWhenAny(StopAfterIteration(10), s3)
-        @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iters
+        @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test startswith(repr(sn), "StopWhenAny with the")
+
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
         @test get_stopping_criteria(sn)[2].threshold ==
@@ -39,6 +41,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test get_active_stopping_criteria(StopAfterIteration(1)) == []
         sm = StopWhenAll(StopAfterIteration(10), s3)
         s1 = "StopAfterIteration(10)\n    Max Iteration 10:\tnot reached"
+
         @test repr(StopAfterIteration(10)) == s1
         @test !sm(p, s, 9)
         @test sm(p, s, 11)
@@ -78,6 +81,9 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         c = StopWhenGradientNormLess(1e-6)
         sc = "StopWhenGradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c))"
         @test repr(c) == sc
+        c2 = StopWhenSubgradientNormLess(1e-6)
+        sc2 = "StopWhenSubgradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c2))"
+        @test repr(c2) == sc2
         d = StopWhenAll(a, b, c)
         @test typeof(d) === typeof(a & b & c)
         @test typeof(d) === typeof(a & (b & c))
@@ -124,8 +130,6 @@ struct DummyStoppingCriterion <: StoppingCriterion end
             @test swgcl(gp, gs, 1) # change 0 -> true
             @test endswith(Manopt.status_summary(swgcl), "reached")
         end
-        update_stopping_criterion!(swgcl1, :MinGradientChange, 1e-9)
-        @test swgcl1.threshold == 1e-9
     end
 
     @testset "TCG stopping criteria" begin
@@ -139,7 +143,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s = StopWhenModelIncreased()
         @test !s(hp, tcgs, 0)
         @test s.reason == ""
-        s.model_value = 0.5 # twweak
+        s.model_value = 0.5 # tweak the model value to trigger a test
         @test s(hp, tcgs, 1)
         @test length(s.reason) > 0
         s2 = StopWhenCurvatureIsNegative()
@@ -182,6 +186,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         update_stopping_criterion!(swecl, :Threshold, 1e-1)
         @test swecl.threshold == 1e-1
     end
+
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
@@ -203,7 +208,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         st.X = ∂f(M, p)
         @test c2(mp, st, 2)
         @test length(get_reason(c2)) > 0
-        c2(mp, st, 0) # check reset
+        c2(mp, st, 0) # verify that reset works
         @test length(get_reason(c2)) == 0
         @test Manopt.indicates_convergence(c2)
         update_stopping_criterion!(c2, :MinSubgradNorm, 1e-8)

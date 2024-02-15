@@ -4,22 +4,22 @@ Manopt.jl inherited its name from [Manopt](https://manopt.org), a Matlab toolbox
 This Julia package was started and is currently maintained by [Ronny Bergmann](https://ronnybergmann.net/about.html).
 
 The following people contributed
-* [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential check functions](helpers/checks.md)
-* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](@ref ParticleSwarmSolver), the [Riemannian Augmented Lagrangian Method](@ref AugmentedLagrangianSolver), the [Exact Penalty Method](@ref ExactPenaltySolver), as well as the [`NonmonotoneLinesearch`](@ref)
-* [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](@ref PDRSSNSolver) solver.
-* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](@ref FrankWolfe) solver
-* Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](@ref ARSSection) solver
-* [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](@ref trust_regions) and [quasi Newton](solvers/quasi_Newton.md) solvers.
+* [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential `check` functions](helpers/checks.md)
+* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref)
+* [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
+* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver
+* Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver
+* [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers.
 * [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs)
 
-...as well as various [contributors](https://github.com/JuliaManifolds/Manopt.jl/graphs/contributors) providing small extensions, finding small bugs and mistakes and fixing them by opening [PR](https://github.com/JuliaManifolds/Manopt.jl/pulls)s.
+as well as various [contributors](https://github.com/JuliaManifolds/Manopt.jl/graphs/contributors) providing small extensions, finding small bugs and mistakes and fixing them by opening [PR](https://github.com/JuliaManifolds/Manopt.jl/pulls)s.
 
 If you want to contribute a manifold or algorithm or have any questions, visit
 the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/)
 to clone/fork the repository or open an issue.
 
 
-## Further Packages & Links
+# further packages
 
 `Manopt.jl` belongs to the Manopt family:
 

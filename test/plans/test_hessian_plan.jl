@@ -30,7 +30,7 @@ include("../utils/dummy_types.jl")
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)
         @test Y == 0.5 * X
-        # precon
+        # precondition
         @test get_preconditioner(mp, p, X) == X
         get_preconditioner!(mp, Y, p, X)
         @test Y == X
@@ -117,7 +117,7 @@ include("../utils/dummy_types.jl")
         P[1:9] .= 1
         PA = P .* A
         f2(M, p) = 0.5 * norm(P .* embed(M, p) - PA)^2
-        # Project converts the Gradient in the Embedding to an UMVTVector
+        # Project converts the Gradient in the Embedding to an fixed rank matrices vector
         grad_f2(M, p) = project(M, p, P .* embed(M, p) - PA)
         grad_f2!(M, X, p) = project!(M, X, p, P .* embed(M, p) - PA)
         Random.seed!(42)

@@ -1,11 +1,11 @@
 @doc raw"""
     DebugAction
 
-A `DebugAction` is a small functor to print/issue debug output.
-The usual call is given by `(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s`,
-where `i` is the current iterate.
+A `DebugAction` is a small functor to print/issue debug output. The usual call is given by
+`(p::AbstractManoptProblem, s::AbstractManoptSolverState, i) -> s`, where `i` is
+the current iterate.
 
-By convention `i=0` is interpreted as "For Initialization only", i.e. only debug
+By convention `i=0` is interpreted as "For Initialization only," only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
 internally but does not trigger any output. Finally `typemin(Int)` is used
 to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
@@ -19,18 +19,19 @@ abstract type DebugAction <: AbstractStateAction end
 @doc raw"""
     DebugSolverState <: AbstractManoptSolverState
 
-The debug options append to any options a debug functionality, i.e. they act as
-a decorator pattern. Internally a `Dict`ionary is kept that stores a
-[`DebugAction`](@ref) for several occasions using a `Symbol` as reference.
+The debug state appends debug to any state, they act as a decorator pattern.
+Internally a dictionary is kept that stores a [`DebugAction`](@ref) for several occasions
+using a `Symbol` as reference.
 The default occasion is `:All` and for example solvers join this field with
 `:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
 end of the algorithm, respectively
 
 The original options can still be accessed using the [`get_state`](@ref) function.
 
-# Fields (defaults in brackets)
-* `options` – the options that are extended by debug information
-* `debugDictionary` – a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
+# Fields
+
+* `options`:         the options that are extended by debug information
+* `debugDictionary`: a `Dict{Symbol,DebugAction}` to keep track of Debug for different actions
 
 # Constructors
     DebugSolverState(o,dA)
@@ -91,10 +92,7 @@ function status_summary(dst::DebugSolverState)
                 s = "$s\n    :$k = $(status_summary(v))"
             end
         end
-        return """
-               $(dst.state)
-
-               ## Debug$s"""
+        return "$(dst.state)\n\n## Debug$s"
     else # for length 1 the group is equivalent to the summary of the single state
         return status_summary(dst.state)
     end
@@ -114,6 +112,7 @@ group a set of [`DebugAction`](@ref)s into one action, where the internal prints
 are removed by default and the resulting strings are concatenated
 
 # Constructor
+
     DebugGroup(g)
 
 construct a group consisting of an Array of [`DebugAction`](@ref)s `g`,
@@ -131,7 +130,8 @@ function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
 end
 function status_summary(dg::DebugGroup)
-    return "[ $( join(["$(status_summary(di))" for di in dg.group], ", ")) ]"
+    str = join(["$(status_summary(di))" for di in dg.group], ", ")
+    return "[ $str ]"
 end
 function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
@@ -154,7 +154,7 @@ end
 evaluate and print debug only every $i$th iteration. Otherwise no print is performed.
 Whether internal variables are updates is determined by `always_update`.
 
-This method does not perform any print itself but relies on it's childrens print.
+This method does not perform any print itself but relies on it's children's print.
 
 # Constructor
 
@@ -212,13 +212,14 @@ end
 debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Keyword Parameters
-* `storage` – (`StoreStateAction( [:Gradient] )`) – (eventually shared) the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default stream to print the debug to.
-* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M)`) the inverse retraction to be
-  used for approximating distance.
+# Keyword parameters
+
+* `storage`:                   (`StoreStateAction( [:Gradient] )` storage of the previous action
+* `prefix`:                    (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io`:                        (`stdout`) default stream to print the debug to.
+* `format`:                    ( `"$prefix %f"`) format to print the output.
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M)`) the inverse retraction
+  to be used for approximating distance.
 """
 mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
     io::IO
@@ -290,9 +291,9 @@ print the current cost function value, see [`get_cost`](@ref).
 
 # Parameters
 
-* `format` - (`"$prefix %f"`) format to print the output using sprintf and a prefix (see `long`).
-* `io` – (`stdout`) default stream to print the debug to.
-* `long` - (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
+* `format`: (`"$prefix %f"`) format to print the output
+* `io`:     (`stdout`) default stream to print the debug to.
+* `long`:   (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
@@ -315,7 +316,7 @@ status_summary(di::DebugCost) = "(:Cost, \"$(escape_string(di.format))\")"
 @doc raw"""
     DebugDivider <: DebugAction
 
-print a small `div`ider (default `" | "`).
+print a small divider (default `" | "`).
 
 # Constructor
     DebugDivider(div,print)
@@ -340,11 +341,12 @@ status_summary(di::DebugDivider) = "\"$(escape_string(di.divider))\""
 @doc raw"""
     DebugEntry <: DebugAction
 
-print a certain fields entry of type {T} during the iterates, where a `format` can be
-specified how to print the entry.
+print a certain fields entry during the iterates, where a `format` can be specified
+how to print the entry.
 
-# Addidtional Fields
-* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+# Additional fields
+
+* `field`: symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
 # Constructor
 
@@ -370,19 +372,19 @@ end
 @doc raw"""
     DebugIfEntry <: DebugAction
 
-Issue a warning, info or error if a certain field does _not_ pass a check.
+Issue a warning, info, or error if a certain field does _not_ pass a the `check`.
 
 The `message` is printed in this case. If it contains a `@printf` argument identifier,
-that one will be filled with the value of the `field`.
-That way you can print the vaule in this case as well.
+that one is filled with the value of the `field`.
+That way you can print the value in this case as well.
 
 # Fields
 
-* `io`    – an io stream
-* `check` – a function that takes the value of the `field` as input and returns a boolean
-* `field` – Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `msg`   - is the check fails, this message is displayed
-* `type`  – Symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
+* `io`:    an `IO` stream
+* `check`: a function that takes the value of the `field` as input and returns a boolean
+* `field`: symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `msg`:   if the `check` fails, this message is displayed
+* `type`: symbol specifying the type of display, possible values `:print`, `: warn`, `:info`, `:error`,
             where `:print` prints to `io`.
 
 # Constructor
@@ -422,13 +424,14 @@ end
 
 print a certain entries change during iterates
 
-# Additional Fields
-* `print` – (`print`) function to print the result
-* `prefix` – (`"Change of :Iterate"`) prefix to the print out
-* `format` – (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
-* `field` – Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance` – function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage` – a [`StoreStateAction`](@ref) to store the previous value of `:f`
+# Additional fields
+
+* `print`:    (`print`) function to print the result
+* `prefix`:   (`"Change of :Iterate"`) prefix to the print out
+* `format`:   (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
+* `field`:    Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `distance`: function (p,o,x1,x2) to compute the change/distance between two values of the entry
+* `storage`:  a [`StoreStateAction`](@ref) to store the previous value of `:f`
 
 # Constructors
 
@@ -436,12 +439,11 @@ print a certain entries change during iterates
 
 # Keyword arguments
 
-* `io` (`stdout`) an `IOStream`
-* `prefix` (`"Change of $f"`)
-* `storage` (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
-* `initial_value` an initial value for the change of `o.field`.
-* `format` – (`"$prefix %e"`) format to print the change
-
+* `io`:             (`stdout`) an `IOStream`
+* `prefix`:         (`"Change of $f"`)
+* `storage`:        (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
+* `initial_value`: an initial value for the change of `o.field`.
+* `format`:         (`"$prefix %e"`) format to print the change
 """
 mutable struct DebugEntryChange <: DebugAction
     distance::Any
@@ -491,11 +493,12 @@ end
 debug for the amount of change of the gradient (stored in `get_gradient(o)` of the [`AbstractManoptSolverState`](@ref) `o`)
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
-# Keyword Parameters
-* `storage` – (`StoreStateAction( (:Gradient,) )`) – (eventually shared) the storage of the previous action
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default stream to print the debug to.
-* `format` - ( `"$prefix %f"`) format to print the output using an sprintf format.
+# Keyword parameters
+
+* `storage`: (`StoreStateAction( (:Gradient,) )`) storage of the action for previous data
+* `prefix`:  (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `io`:      (`stdout`) default stream to print the debug to.
+* `format`:  ( `"$prefix %f"`) format to print the output
 """
 mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
     io::IO
@@ -559,8 +562,10 @@ debug for the current iterate (stored in `get_iterate(o)`).
 
 # Parameters
 
-* `io` – (`stdout`) default stream to print the debug to.
-* `long::Bool` whether to print `x:` or `current iterate`
+* `io`:        (`stdout`) default stream to print the debug to.
+* `format`:    (`"$prefix %s"`) format how to print the current iterate
+* `long`:      (`false`) whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix
+* `prefix`     (see `long` for default) set a prefix to be printed before the iterate
 """
 mutable struct DebugIterate <: DebugAction
     io::IO
@@ -592,8 +597,8 @@ status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 
 # Keyword parameters
 
-* `format` - (`"# %-6d"`) format to print the output using an sprintf format.
-* `io` – (`stdout`) default stream to print the debug to.
+* `format`: (`"# %-6d"`) format to print the output
+* `io`:     (`stdout`) default stream to print the debug to.
 
 debug for the current iteration (prefixed with `#` by )
 """
@@ -615,7 +620,7 @@ status_summary(di::DebugIteration) = "(:Iteration, \"$(escape_string(di.format))
 @doc raw"""
     DebugMessages <: DebugAction
 
-An [`AbstractManoptSolverState`](@ref) or one of its substeps like a
+An [`AbstractManoptSolverState`](@ref) or one of its sub steps like a
 [`Stepsize`](@ref) might generate warnings throughout their computations.
 This debug can be used to `:print` them display them as `:info` or `:warnings` or even `:error`,
 depending on the message type.
@@ -626,10 +631,10 @@ depending on the message type.
 
 Initialize the messages debug to a certain `mode`. Available modes are
 
-* `:Error`   issue the messages as an error and hence stop at any issue occurring
-* `:Info`    issue the messages as an `@info`
-* `:Print`   print messages to the steam `io`.
-* `:Warning` issue the messages as a warning
+* `:Error`:   issue the messages as an error and hence stop at any issue occurring
+* `:Info`:    issue the messages as an `@info`
+* `:Print`:   print messages to the steam `io`.
+* `:Warning`: issue the messages as a warning
 """
 mutable struct DebugMessages <: DebugAction
     io::IO
@@ -680,14 +685,15 @@ evaluate and print debug only if the active boolean is set.
 This can be set from outside and is for example triggered by [`DebugEvery`](@ref)
 on debugs on the subsolver.
 
-This method does not perform any print itself but relies on it's childrens print.
+This method does not perform any print itself but relies on it's children's prints.
 
 For now, the main interaction is with [`DebugEvery`](@ref) which might activate or
 deactivate this debug
 
 # Fields
-* `always_update` – whether or not to call the order debugs with iteration `-1` in in active state
-* `active` – a boolean that can (de-)activated from outside to enable/disable debug
+
+* `active`:        a boolean that can (de-)activated from outside to turn on/off debug
+* `always_update`: whether or not to call the order debugs with iteration `-1` in active state
 
 # Constructor
 
@@ -732,14 +738,14 @@ for example to measure the runtime of an algorithm overall (adding)
 
 The measured time is rounded using the given `time_accuracy` and printed after [canonicalization](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.canonicalize).
 
-# Keyword Parameters
+# Keyword parameters
 
-* `prefix` – (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io` – (`stdout`) default strea to print the debug to.
-* `format` - ( `"$prefix %s"`) format to print the output using an sprintf format, where `%s` is the canonicalized time`.
-* `mode` – (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
-* `start` – (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on firsr call.
-* `time_accuracy` – (`Millisecond(1)`) round the time to this period before printing the canonicalized time
+* `io`:            (`stdout`) default stream to print the debug to.
+* `format`:        ( `"$prefix %s"`) format to print the output, where `%s` is the canonicalized time`.
+* `mode`:          (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
+* `prefix`:        (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
+* `start`:         (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on first call.
+* `time_accuracy`: (`Millisecond(1)`) round the time to this period before printing the canonicalized time
 """
 mutable struct DebugTime <: DebugAction
     io::IO
@@ -822,8 +828,6 @@ to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 mutable struct DebugWarnIfCostIncreases <: DebugAction
-    # store if we need to warn – :Once, :Always, :No, where all others are handled
-    # the same as :Always
     status::Symbol
     old_cost::Float64
     tol::Float64
@@ -836,13 +840,16 @@ function (d::DebugWarnIfCostIncreases)(
     if d.status !== :No
         cost = get_cost(p, get_iterate(st))
         if cost > d.old_cost + d.tol
-            # Default case in Gradient Descent, include a tipp
-            @warn """The cost increased.
-            At iteration #$i the cost increased from $(d.old_cost) to $(cost)."""
+            @warn """
+            The cost increased.
+            At iteration #$i the cost increased from $(d.old_cost) to $(cost).
+            """
             if st isa GradientDescentState && st.stepsize isa ConstantStepsize
-                @warn """You seem to be running a `gradient_descent` with a `ConstantStepsize`.
+                @warn """
+                You seem to be running a `gradient_descent` with a `ConstantStepsize`.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
-                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,st,i))."""
+                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,st,i)).
+                """
             end
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
@@ -884,7 +891,8 @@ function (d::DebugWarnIfCostNotFinite)(
         cost = get_cost(p, get_iterate(st))
         if !isfinite(cost)
             @warn """The cost is not finite.
-            At iteration #$i the cost evaluated to $(cost)."""
+            At iteration #$i the cost evaluated to $(cost).
+            """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfCostNotFinite(:Always) to get all warnings."
                 d.status = :No
@@ -937,8 +945,10 @@ function (d::DebugWarnIfFieldNotFinite)(
             s = "The field s.$(d.field)"
         end
         if !all(isfinite.(v))
-            @warn """$s is or contains values that are not finite.
-            At iteration #$i it evaluated to $(v)."""
+            @warn """
+            $s is or contains values that are not finite.
+            At iteration #$i it evaluated to $(v).
+            """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWaranIfFieldNotFinite(:$(d.field), :Always) to get all warnings."
                 d.status = :No
@@ -1039,13 +1049,13 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the di
 function DebugFactory(a::Array{<:Any,1})
     # filter out every
     group = Array{DebugAction,1}()
-    for s in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter ints and stop
-        push!(group, DebugActionFactory(s))
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter numbers & stop
+        push!(group, DebugActionFactory(d))
     end
     dictionary = Dict{Symbol,DebugAction}()
     if length(group) > 0
         debug = DebugGroup(group)
-        # filter ints
+        # filter numbers
         e = filter(x -> isa(x, Int), a)
         if length(e) > 0
             debug = DebugEvery(debug, last(e))
@@ -1071,7 +1081,7 @@ create a [`DebugAction`](@ref) where
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 * a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
 """
-DebugActionFactory(s::String) = DebugDivider(s)
+DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
 """
     DebugActionFactory(s::Symbol)
@@ -1095,29 +1105,29 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
 * `:ErrorMessages` creates a [`DebugMessages`](@ref)`(:Error)`
-* `:Messages` creates a [`DebugMessages`](@ref)`()` (i.e. the same as `:InfoMessages`)
+* `:Messages` creates a [`DebugMessages`](@ref)`()` (the same as `:InfoMessages`)
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
-function DebugActionFactory(s::Symbol)
-    (s == :Cost) && return DebugCost()
-    (s == :Change) && return DebugChange()
-    (s == :Gradient) && return DebugGradient()
-    (s == :GradientChange) && return DebugGradientChange()
-    (s == :GradientNorm) && return DebugGradientNorm()
-    (s == :Iterate) && return DebugIterate()
-    (s == :Iteration) && return DebugIteration()
-    (s == :Stepsize) && return DebugStepsize()
-    (s == :WarnCost) && return DebugWarnIfCostNotFinite()
-    (s == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
-    (s == :Time) && return DebugTime()
-    (s == :IterativeTime) && return DebugTime(; mode=:Iterative)
+function DebugActionFactory(d::Symbol)
+    (d == :Cost) && return DebugCost()
+    (d == :Change) && return DebugChange()
+    (d == :Gradient) && return DebugGradient()
+    (d == :GradientChange) && return DebugGradientChange()
+    (d == :GradientNorm) && return DebugGradientNorm()
+    (d == :Iterate) && return DebugIterate()
+    (d == :Iteration) && return DebugIteration()
+    (d == :Stepsize) && return DebugStepsize()
+    (d == :WarnCost) && return DebugWarnIfCostNotFinite()
+    (d == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
+    (d == :Time) && return DebugTime()
+    (d == :IterativeTime) && return DebugTime(; mode=:Iterative)
     # Messages
-    (s == :WarningMessages) && return DebugMessages(:Warning)
-    (s == :InfoMessages) && return DebugMessages(:Info)
-    (s == :ErrorMessages) && return DebugMessages(:Error)
-    (s == :Messages) && return DebugMessages()
-    return DebugEntry(s)
+    (d == :WarningMessages) && return DebugMessages(:Warning)
+    (d == :InfoMessages) && return DebugMessages(:Info)
+    (d == :ErrorMessages) && return DebugMessages(:Error)
+    (d == :Messages) && return DebugMessages()
+    return DebugEntry(d)
 end
 """
     DebugActionFactory(t::Tuple{Symbol,String)

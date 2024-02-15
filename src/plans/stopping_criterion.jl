@@ -1,13 +1,13 @@
 @doc raw"""
     StoppingCriterion
 
-An abstract type for the functors representing stopping criteria, i.e. they are
+An abstract type for the functors representing stopping criteria, so they are
 callable structures. The naming Scheme follows functions, see for
 example [`StopAfterIteration`](@ref).
 
 Every StoppingCriterion has to provide a constructor and its function has to have
 the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`AbstractManoptSolverState`](@ref)
-and the current number of iterations are the arguments and returns a Bool whether
+and the current number of iterations are the arguments and returns a boolean whether
 to stop or not.
 
 By default each `StoppingCriterion` should provide a fields `reason` to provide
@@ -23,12 +23,12 @@ mean that, when it indicates to stop, the solver has converged to a
 minimizer or critical point.
 
 Note that this is independent of the actual state of the stopping criterion,
-i.e. whether some of them indicate to stop, but a purely type-based, static
-decision
+whether some of them indicate to stop, but a purely type-based, static
+decision.
 
 # Examples
 
-With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` we have
+With `s1=StopAfterIteration(20)` and `s2=StopWhenGradientNormLess(1e-7)` the indicator yields
 
 * `indicates_convergence(s1)` is `false`
 * `indicates_convergence(s2)` is `true`
@@ -59,7 +59,7 @@ abstract type StoppingCriterionSet <: StoppingCriterion end
 
 store a threshold when to stop looking at the complete runtime. It uses
 `time_ns()` to measure the time and you provide a `Period` as a time limit,
-i.e. `Minute(15)`
+for example `Minute(15)`.
 
 # Constructor
 
@@ -119,20 +119,19 @@ end
 @doc raw"""
     StopAfterIteration <: StoppingCriterion
 
-A functor for an easy stopping criterion, i.e. to stop after a maximal number
-of iterations.
+A functor for a stopping criterion to stop after a maximal number of iterations.
 
 # Fields
-* `maxIter` – stores the maximal iteration number where to stop at
-* `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`get_reason`](@ref).
+
+* `maxIter`  stores the maximal iteration number where to stop at
+* `reason`   stores a reason of stopping if the stopping criterion has one be reached,
+  see [`get_reason`](@ref).
 
 # Constructor
 
     StopAfterIteration(maxIter)
 
-initialize the stopafterIteration functor to indicate to stop after `maxIter`
-iterations.
+initialize the functor to indicate to stop after `maxIter` iterations.
 """
 mutable struct StopAfterIteration <: StoppingCriterion
     maxIter::Int
@@ -323,16 +322,15 @@ Evaluate whether a certain fields change is less than a certain threshold
 
 ## Fields
 
-* `field`     – a symbol adressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref)
-  to track
-* `distance`  – a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
-* `storage`   – a [`StoreStateAction`](@ref) to store the previous value of the `field`
-* `threshold` – the threshold to indicate to stop when the distance is below this value
+* `field`:     a symbol addressing the corresponding field in a certain subtype of [`AbstractManoptSolverState`](@ref) to track
+* `distance`:  a function `(problem, state, v1, v2) -> R` that computes the distance between two possible values of the `field`
+* `storage`:   a [`StoreStateAction`](@ref) to store the previous value of the `field`
+* `threshold`: the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
 
-* `reason`    – store a string reason when the stop was indicated
-* `at_iteration` – store the iteration at which the stop indication happened
+* `reason`:       store a string reason when the stop was indicated
+* `at_iteration`: store the iteration at which the stop indication happened
 
 stores a threshold when to stop looking at the norm of the change of the
 optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
@@ -506,14 +504,13 @@ A stopping criterion based on the current gradient norm.
 
 # Fields
 
-* `norm`  – a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
-* `threshold` – the threshold to indicate to stop when the distance is below this value
+* `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `threshold`: the threshold to indicate to stop when the distance is below this value
 
 # Internal fields
 
-* `reason`    – store a string reason when the stop was indicated
-* `at_iteration` – store the iteration at which the stop indication happened
-
+* `reason`:       store a string reason when the stop was indicated
+* `at_iteration`: store the iteration at which the stop indication happened
 
 # Constructor
 
@@ -632,16 +629,17 @@ end
 A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
 
 # Fields
-* `value` – stores the variable which has to fall under a threshold for the algorithm to stop
-* `minValue` – stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
-* `reason` – stores a reason of stopping if the stopping criterion has one be
-  reached, see [`get_reason`](@ref).
+
+* `value`    stores the variable which has to fall under a threshold for the algorithm to stop
+* `minValue` stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
+* `reason`   stores a reason of stopping if the stopping criterion has one be reached,
+  see [`get_reason`](@ref).
 
 # Constructor
 
     StopWhenSmallerOrEqual(value, minValue)
 
-initialize the stopifsmallerorequal functor to indicate to stop after `value` is smaller than or equal to `minValue`.
+initialize the functor to indicate to stop after `value` is smaller than or equal to `minValue`.
 """
 mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
     value::Symbol
@@ -743,6 +741,7 @@ when _all_ indicate to stop. The `reason` is given by the concatenation of all
 reasons.
 
 # Constructor
+
     StopWhenAll(c::NTuple{N,StoppingCriterion} where N)
     StopWhenAll(c::StoppingCriterion,...)
 """
@@ -884,8 +883,7 @@ end
     get_active_stopping_criteria(c)
 
 returns all active stopping criteria, if any, that are within a
-[`StoppingCriterion`](@ref) `c`, and indicated a stop, i.e. their reason is
-nonempty.
+[`StoppingCriterion`](@ref) `c`, and indicated a stop, that is their reason is nonempty.
 To be precise for a simple stopping criterion, this returns either an empty
 array if no stop is indicated or the stopping criterion as the only element of
 an array. For a [`StoppingCriterionSet`](@ref) all internal (even nested)

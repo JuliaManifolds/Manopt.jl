@@ -1,4 +1,4 @@
-# [Stopping criteria](@id StoppingCriteria)
+# [Stopping criteria](@id sec-stopping-criteria)
 
 Stopping criteria are implemented as a `functor` and inherit from the base type
 

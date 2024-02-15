@@ -1,4 +1,4 @@
-# [Augmented Lagrangian method](@id AugmentedLagrangianSolver)
+# Augmented Lagrangian method
 
 ```@meta
 CurrentModule = Manopt

@@ -25,14 +25,14 @@ You can also ask your question on [discourse.julialang.org](https://discourse.ju
 
 ## How can I file an issue?
 
-If you found a bug or want to propose a feature, we track our issues within the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/issues).
+If you found a bug or want to propose a feature, please open an issue in within the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/issues).
 
 ## How can I contribute?
 
 ### Add a missing method
 
 There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
-If you notice a method missing and can contribute an implementation, please do so, we help with the necessary details.
+If you notice a method missing and can contribute an implementation, please do so, and the maintainers will try help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm
@@ -54,19 +54,27 @@ where also their reproducible Quarto-Markdown files are stored.
 
 ### Code style
 
-We try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as [Blue Style](https://github.com/invenia/BlueStyle).
-We run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repository in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style.
+Try to follow the [documentation guidelines](https://docs.julialang.org/en/v1/manual/documentation/) from the Julia documentation as well as [Blue Style](https://github.com/invenia/BlueStyle).
+Run [`JuliaFormatter.jl`](https://github.com/domluna/JuliaFormatter.jl) on the repository in the way set in the `.JuliaFormatter.toml` file, which enforces a number of conventions consistent with the Blue Style. Furthermore [vale](https://vale.sh) is run on both Markdown and code files, affecting documentation and source code comments
 
-We also follow a few internal conventions:
+Please follow a few internal conventions:
 
 - It is preferred that the `AbstractManoptProblem`'s struct contains information about the general structure of the problem.
 - Any implemented function should be accompanied by its mathematical formulae if a closed form exists.
-- AbstractManoptProblem and option structures are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand.
-- Within the source code of one algorithm, the high level interface should be first, then the initialization, then the step.
-- Otherwise an alphabetical order is preferable.
-- The above implies that the mutating variant of a function follows the non-mutating variant.
+- `AbstractManoptProblem` and helping functions are stored within the `plan/` folder and sorted by properties of the problem and/or solver at hand.
+- the solver state is usually stored with the solver itself
+- Within the source code of one algorithm, following the state, the high level interface should be next, then the initialization, then the step.
+- Otherwise an alphabetical order of functions is preferable.
+- The preceding implies that the mutating variant of a function follows the non-mutating variant.
 - There should be no dangling `=` signs.
 - Always add a newline between things of different types (struct/method/const).
 - Always add a newline between methods for different functions (including mutating/nonmutating variants).
 - Prefer to have no newline between methods for the same function; when reasonable, merge the documentation strings.
 - All `import`/`using`/`include` should be in the main module file.
+
+Concerning documentation
+
+- if possible provide both mathematical formulae and literature references using [DocumenterCitations.jl](https://juliadocs.org/DocumenterCitations.jl/stable/) and BibTeX where possible
+- Always document all input variables and keyword arguments
+
+If you implement an algorithm with a certain application in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.

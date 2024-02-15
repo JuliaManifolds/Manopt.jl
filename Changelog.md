@@ -5,6 +5,13 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.54] unreleased
+
+### Fixed
+
+* Doc strings now follow a [vale.sh](https://vale.sh) policy. Though this is not fully working,
+  this PR imporves a lot of the doc strings concerning wording and spelling.
+
 ## [0.4.53] February 13, 2024
 
 ### Fixed
@@ -79,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `WolfePowellLineSearch`, `ArmijoLineSearch` step sizes now allocate less
 * `linesearch_backtrack!` is now available
-* Quasi Newton Updates can work inplace of a direction vector as well.
+* Quasi Newton Updates can work in-place of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
 ## [0.4.44] December 12, 2023
@@ -90,7 +97,7 @@ These examples are now available again within [ManoptExamples.jl](https://juliam
 “reappearance” the corresponding costs, gradients, differentials, adjoint differentials, and proximal maps
 have been moved there as well.
 This is not considered breaking, since the functions were only used in the old, removed examples.
-We still document each and every of the moved functions below. They have been partly renamed,
+Each and every moved function is still documented. They have been partly renamed,
 and their documentation and testing has been extended.
 
 ### Changed
@@ -139,7 +146,7 @@ and their documentation and testing has been extended.
 * `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_Total_Variation)
 * `prox_TV2` is available as [`ManopExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
 
-## [0.4.43] – November 19, 2023
+## [0.4.43] - November 19, 2023
 
 ### Added
 
@@ -387,7 +394,7 @@ and their documentation and testing has been extended.
 ### Removed
 
 * support for `ManifoldsBase.jl` 0.13.x, since with the definition of `copy(M,p::Number)`,
-  in 0.14.4, we now use that instead of defining it ourselves.
+  in 0.14.4, that one is used instead of defining it ourselves.
 
 ## [0.4.14] - April 06, 2023
 
