@@ -5,6 +5,13 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.54] unreleased
+
+### Fixed
+
+* Doc strings now follow a [vale.sh](https://vale.sh) policy. Though this is not fully working,
+  this PR imporves a lot of the doc strings concerning wording and spelling.
+
 ## [0.4.53] February 13, 2024
 
 ### Fixed
