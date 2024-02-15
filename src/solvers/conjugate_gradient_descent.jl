@@ -59,12 +59,14 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
 ````
 
 # Input
+
 * `M`      a manifold ``\mathcal M``
 * `f`      a cost function ``F:\mathcal M→ℝ`` to minimize implemented as a function `(M,p) -> v`
 * `grad_f` the gradient ``\operatorname{grad}F:\mathcal M → T\mathcal M`` of ``F`` implemented also as `(M,x) -> X`
 * `p`      an initial value ``x∈\mathcal M``
 
 # Optional
+
 * `coefficient`:             ([`ConjugateDescentCoefficient`](@ref) `<:` [`DirectionUpdateRule`](@ref))
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, i) -> β` with `amp` an [`AbstractManoptProblem`](@ref),

@@ -89,7 +89,7 @@ where ``\mathrm{retr}`` is a retraction, ``s_k`` is a step size, usually the
 Though the subgradient might be set valued,
 the argument `∂f` should always return _one_ element from the subgradient, but
 not necessarily deterministic.
-For more detils see [FerreiraOliveira:1998](@cite).
+For more details see [FerreiraOliveira:1998](@cite).
 
 # Input
 
