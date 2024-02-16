@@ -156,7 +156,7 @@ mutable struct ConvexBundleMethodState{
             end
             # (k_min === nothing) && (k_min = minimum(s))
             # (k_max === nothing) && (k_max = maximum(s))
-            ϱ = ζ_2(k_max, diam)#max(ζ_1(k_min, diam):  one(k_min), one(k_max):  ζ_2(k_max, diam))
+            ϱ = ζ_2(k_max, diam) # max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
         end
         return new{
             typeof(m),
