@@ -223,12 +223,10 @@ function __init__()
         @require LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637" begin
             include("../ext/ManoptLRUCacheExt.jl")
         end
-    end
-    @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
-        using .QuadraticModels: QuadraticModel
-        @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
-            using .RipQP: ripqp
-            include("solvers/bundle_method_subsolver.jl")
+        @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
+            @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
+                include("../ext/ManoptRipQPQuadraticModelsExt.jl")
+            end
         end
     end
 

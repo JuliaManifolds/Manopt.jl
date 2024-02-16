@@ -1,9 +1,9 @@
 function sectional_curvature(M, p)
     X = rand(M; vector_at=p)
     Y = rand(M; vector_at=p)
-    Y = Y:  inner(M, p, X, Y) / norm(M, p, X)^2 * X
+    Y = Y:(inner(M, p, X, Y) / norm(M, p, X)^2 * X)
     R = riemann_tensor(M, p, X, Y, Y)
-    return inner(M, p, R, X) / (norm(M, p, X)^2 * norm(M, p, Y)^2:  inner(M, p, X, Y)^2)
+    return inner(M, p, R, X) / ((norm(M, p, X)^2 * norm(M, p, Y)^2):(inner(M, p, X, Y)^2))
 end
 function ζ_1(k_min, diam)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
@@ -239,13 +239,13 @@ Though the subdifferential might be set valued, the argument `∂f` should alway
 return _one_ element from the subdifferential, but not necessarily deterministic.
 
 # Input
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`– the subgradient ``\partial f: \mathcal M→ T\mathcal M`` of f
+* `M`:  a manifold ``\mathcal M``
+* `f`   a cost function ``f:\mathcal M→ℝ`` to minimize
+* `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p` – an initial value ``p_0=p ∈ \mathcal M``
+* `p`:  (`rand(M)`) an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
 * `atol_λ`:                    (`eps()`) tolerance parameter for the convex coefficients in λ.
@@ -275,7 +275,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
 function convex_bundle_method(
-    M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...
+    M::AbstractManifold, f::TF, ∂f::TdF, p=rand(M); kwargs...
 ) where {TF,TdF}
     p_star = copy(M, p)
     return convex_bundle_method!(M, f, ∂f, p_star; kwargs...)
@@ -287,13 +287,13 @@ perform a bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`.
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`- the (sub)gradient ``∂f:\mathcal M→ T\mathcal M`` of F
+* `M`:  a manifold ``\mathcal M``
+* `f`:  a cost function ``f:\mathcal M→ℝ`` to minimize
+* `∂f`: the (sub)gradient ``∂f:\mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p` – an initial value ``p_0=p ∈ \mathcal M``
+* `p`:  an initial value ``p_0=p ∈ \mathcal M``
 
 for more details and all optional parameters, see [`convex_bundle_method`](@ref).
 """
@@ -305,7 +305,7 @@ function convex_bundle_method!(
     atol_λ::R=eps(),
     atol_errors::R=eps(),
     bundle_cap::Int=25,
-    diam::R=π/3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
+    diam::R=π / 3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_min=nothing,
@@ -357,6 +357,7 @@ solver for the subproblem of both the convex and proximal bundle methods.
 
 The subproblem for the convex bundle method is
 ```math
+\bagin{align*}
     \arg\min_{\lambda \in \mathbb R^{|J_k|}}
     \frac{1}{2} ||\sum_{j \in J_k} \lambda_j \mathrm{P}_{p_k←q_j} X_{q_j}||^2 + \sum_{j \in J_k} \lambda_j \, c_j^k
 ```
@@ -398,11 +399,8 @@ The subproblem for the proximal bundle method is
 ```
 where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
 """
-function bundle_method_subsolver(::Any, ::Any)
-    throw(
-        ErrorException("""Both packages "QuadraticModels" and "RipQP" need to be loaded.""")
-    )
-end
+bundle_method_subsolver(M, s) #change to problem state?
+
 function initialize_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState)
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
@@ -420,11 +418,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     bms.λ = bundle_method_subsolver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
-    bms.ξ = -norm(M, bms.p_last_serious, bms.g)^2:  bms.ε
+    bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2):(bms.ε)
     j = 1
     step = get_stepsize(mp, bms, j)
     retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
-    while !bms.domain(M, bms.p) || distance(M, bms.p, bms.p_last_serious) < step*norm(M, bms.p_last_serious, bms.g)
+    while !bms.domain(M, bms.p) ||
+        distance(M, bms.p, bms.p_last_serious) < step * norm(M, bms.p_last_serious, bms.g)
         j += 1
         step = get_stepsize(mp, bms, j)
         retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
@@ -446,12 +445,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         deleteat!(bms.bundle, 1)
     end
     bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious):  get_cost(mp, qj):  bms.ϱ * inner(
+        get_cost(mp, bms.p_last_serious):get_cost(mp, qj):(bms.ϱ * inner(
             M,
             qj,
             Xj,
             inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        )
+        ))
         # +
         # bms.ϱ *
         # norm(

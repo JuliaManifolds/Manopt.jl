@@ -1,3 +1,19 @@
+module ManoptRipQPQuadraticModelsExt
+
+using Manopt
+import Manopt: bundle_method_subsolver
+using ManifoldsBase
+
+if isdefined(Base, :get_extension)
+    using QuadraticModels: QuadraticModel
+    using RipQP: ripqp
+else
+    # imports need to be relative for Requires.jl-based workflows:
+    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
+    using ..QuadraticModels: QuadraticModel
+    using ..RipQP: ripqp
+end
+
 function bundle_method_subsolver(
     M::A, cbms::ConvexBundleMethodState
 ) where {A<:AbstractManifold}
@@ -38,4 +54,5 @@ function bundle_method_subsolver(
         c0=zero(eltype(pbms.lin_errors)),
     )
     return ripqp(qm; display=false).solution
+end
 end
