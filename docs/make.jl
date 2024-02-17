@@ -154,7 +154,6 @@ makedocs(;
             "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
-            "Bundle method subsolver" => "solvers/bundle_method_subsolver.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Convex bundle method" => "solvers/convex_bundle_method.md",

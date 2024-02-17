@@ -232,13 +232,23 @@ end
 @doc raw"""
     convex_bundle_method(M, f, ∂f, p)
 
-perform a convex bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where ``\mathrm{retr}`` is a retraction and
-``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},``
-``p_k`` is the last serious iterate, ``X_{q_j}\in∂f(q_j)``, and the ``λ_j^k`` are solutions to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
+perform a convex bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where ``\mathrm{retr}``
+is a retraction and
+
+```math
+g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
+```
+
+``p_k`` is the last serious iterate, ``X_{q_j} ∈ ∂f(q_j)``, and the ``λ_j^k`` are solutions
+to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
+
 Though the subdifferential might be set valued, the argument `∂f` should always
-return _one_ element from the subdifferential, but not necessarily deterministic.
+return one element from the subdifferential, but not necessarily deterministic.
+
+For more details, see [BergmannJasaHerzzog:2024](@cite).
 
 # Input
+
 * `M`:  a manifold ``\mathcal M``
 * `f`   a cost function ``f:\mathcal M→ℝ`` to minimize
 * `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
@@ -248,6 +258,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `p`:  (`rand(M)`) an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
+
 * `atol_λ`:                    (`eps()`) tolerance parameter for the convex coefficients in λ.
 * `atol_errors`:               (`eps()`) tolerance parameter for the linearization errors.
 * `m`:                         (`1e-3`) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
@@ -255,7 +266,7 @@ return _one_ element from the subdifferential, but not necessarily deterministic
 * `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
 * `k_min`:                     lower bound on the sectional curvature of the manifold.
 * `k_max`:                     upper bound on the sectional curvature of the manifold.
-* `k_size`:                    (100) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
+* `k_size`:                    (`100``) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
     and `k_max` are not provided.
 * `p_estimate`:                (`p`) the point around which to estimate the sectional curvature of the manifold.
 * `α`:                         (`(i) -> one(number_eltype(X)) / i`) a function for evaluating suitable stepsizes when obtaining candidate points at iteration `i`.
@@ -350,56 +361,6 @@ function convex_bundle_method!(
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
-@doc raw"""
-    bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProxBundleMethodState})
-
-solver for the subproblem of both the convex and proximal bundle methods.
-
-The subproblem for the convex bundle method is
-```math
-\bagin{align*}
-    \arg\min_{\lambda \in \mathbb R^{|J_k|}}
-    \frac{1}{2} ||\sum_{j \in J_k} \lambda_j \mathrm{P}_{p_k←q_j} X_{q_j}||^2 + \sum_{j \in J_k} \lambda_j \, c_j^k
-```
-
-```math
-    \text{s. t.}
-    \quad
-    \sum_{j \in J_k} \lambda_j = 1
-    ,
-    \quad
-    \lambda_j
-    \ge
-    0
-    \quad \text{for all }
-    j \in J_k
-    ,
-```
-where ``J_k = \{j \in J_{k-1} \ | \ \lambda_j > 0\} \cup \{k\}``.
-
-The subproblem for the proximal bundle method is
-```math
-    \arg\min_{\lambda \in \mathbb R^{|L_l|}}
-    \quad
-    \frac{1}{2 \mu_l} ||\sum_{j \in L_l} \lambda_j \mathrm{P}_{p_k←q_j} X_{q_j}||^2 + \sum_{j \in L_l} \lambda_j \, c_j^k
-```
-
-```math
-    \text{s. t.}
-    \quad
-    \sum_{j \in L_l} \lambda_j = 1
-    ,
-    \quad
-    \lambda_j
-    \ge
-    0
-    \quad \text{for all }
-    j \in L_l
-    ,
-```
-where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
-"""
-bundle_method_subsolver(M, s) #change to problem state?
 
 function initialize_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState)
     M = get_manifold(mp)

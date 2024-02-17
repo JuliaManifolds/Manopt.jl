@@ -205,6 +205,20 @@ global JuMP_ArrayShape
 
 function __init__()
     #
+    # Error Hints
+    #
+    @static if isdefined(Base.Experimental, :register_error_hint)
+        Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
+            if exc.f === bundle_method_subsolver
+                print(
+                    io,
+                    "\nThe `bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is",
+                )
+                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+            end
+        end
+    end
+    #
     # Requires fallback for Julia < 1.9
     #
     @static if !isdefined(Base, :get_extension)

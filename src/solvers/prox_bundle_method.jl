@@ -1,32 +1,33 @@
 @doc raw"""
     ProxBundleMethodState <: AbstractManoptSolverState
+
 stores option values for a [`prox_bundle_method`](@ref) solver
 
 # Fields
 
-* `approx_errors` - approximation of the linearization errors at the last serious step
-* `bundle` - bundle that collects each iterate with the computed subgradient at the iterate
-* `bundle_size` - (50) the size of the bundle
-* `c` - convex combination of the approximation errors
-* `d`- descent direction
-* `inverse_retraction_method` - the inverse retraction to use within
-* `m` - (0.0125) the parameter to test the decrease of the cost
-* `p` - current candidate point
-* `p_last_serious` - last serious iterate
-* `retraction_method` – the retraction to use within
-* `stop` – a [`StoppingCriterion`](@ref)
-* `transported_subgradients` - subgradients of the bundle that are transported to p_last_serious
-* `vector_transport_method` - the vector transport method to use within
-* `X` - (`zero_vector(M, p)`) the current element from the possible subgradients at
-`p` that was last evaluated.
-* `α₀` - (1.2) initalization value for α, used to update η
-* `α` - curvature-dependent parameter used to update η
-* `ε` - (1e-2) stepsize-like parameter related to the injectivity radius of the manifold
-* `δ` - parameter for updating μ: if δ < 0 then μ = log(i + 1), else μ += δ * μ
-* `η` - curvature-dependent term for updating the approximation errors
-* `λ` - convex coefficients that solve the subproblem
-* `μ` - (0.5) (initial) proximal parameter for the subproblem
-* `ν` - the stopping parameter given by ν = - μ * |d|^2 - c
+* `approx_errors`:            approximation of the linearization errors at the last serious step
+* `bundle`:                   bundle that collects each iterate with the computed subgradient at the iterate
+* `bundle_size`:              (`50`) the size of the bundle
+* `c`:                         convex combination of the approximation errors
+* `d`:                         descent direction
+* `inverse_retraction_method`: the inverse retraction to use within
+* `m`:                         (`0.0125`) the parameter to test the decrease of the cost
+* `p`:                         current candidate point
+* `p_last_serious`:            last serious iterate
+* `retraction_method`:         the retraction to use within
+* `stop`:                      a [`StoppingCriterion`](@ref)
+* `transported_subgradients`:  subgradients of the bundle that are transported to p_last_serious
+* `vector_transport_method`:   the vector transport method to use within
+* `X`:                         (`zero_vector(M, p)`) the current element from the possible subgradients
+  at `p` that was last evaluated.
+* `α₀`:                        (`1.2`) initalization value for `α`, used to update `η`
+* `α`:                         curvature-dependent parameter used to update `η`
+* `ε`:                         (`1e-2`) stepsize-like parameter related to the injectivity radius of the manifold
+* `δ`:                         parameter for updating `μ`: if ``δ < 0`` then ``μ = \log(i + 1)``, else ``μ += δ * μ``
+* `η`:                         curvature-dependent term for updating the approximation errors
+* `λ`:                         convex coefficients that solve the subproblem
+* `μ`:                         (`0.5`) (initial) proximal parameter for the subproblem
+* `ν`:                         the stopping parameter given by ``ν = - μ * |d|^2 - c``
 
 # Constructor
 
@@ -140,18 +141,20 @@ function show(io::IO, pbms::ProxBundleMethodState)
     s = """
     # Solver state for `Manopt.jl`s Proximal Bundle Method
     $Iter
+
     ## Parameters
-    * bundle size: $(pbms.bundle_size)
-    * inverse retraction: $(pbms.inverse_retraction_method)
-    * descent test parameter: $(pbms.m)
-    * retraction: $(pbms.retraction_method)
-    * vector transport: $(pbms.vector_transport_method)
-    * stopping parameter value: $(pbms.ν)
-    * curvature-dependent α: $(pbms.α)
-    * stepsize-like parameter ε: $(pbms.ε)
+
+    * bundle size:                                $(pbms.bundle_size)
+    * inverse retraction:                         $(pbms.inverse_retraction_method)
+    * descent test parameter:                     $(pbms.m)
+    * retraction:                                 $(pbms.retraction_method)
+    * vector transport:                           $(pbms.vector_transport_method)
+    * stopping parameter value:                   $(pbms.ν)
+    * curvature-dependent α:                      $(pbms.α)
+    * stepsize-like parameter ε:                  $(pbms.ε)
     * update parameter for proximal parameter, δ: $(pbms.δ)
-    * curvature-dependent η: $(pbms.η)
-    * proximal parameter μ: $(pbms.μ)
+    * curvature-dependent η:                      $(pbms.η)
+    * proximal parameter μ:                       $(pbms.μ)
 
     ## Stopping Criterion
     $(status_summary(pbms.stop))
@@ -162,35 +165,39 @@ end
 @doc raw"""
     prox_bundle_method(M, f, ∂f, p)
 
-perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``,
+perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where
+```math
+g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
+````
+with ``X_{q_j}\in∂f(q_j)``,
+``\mathrm{retr}`` is a retraction, ``p_k`` is the last serious iterate.
 
-where ``g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
-
-with ``X_{q_j}\in∂f(q_j)``, and
-
-where ``\mathrm{retr}`` is a retraction and ``p_k`` is the last serious iterate.
 Though the subdifferential might be set valued, the argument `∂f` should always
 return _one_ element from the subdifferential, but not necessarily deterministic.
 
+For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
+
 # Input
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``F:\mathcal M→ℝ`` to minimize
-* `∂f`– the (sub)gradient ``\partial f: \mathcal M→ T\mathcal M`` of f
+
+* `M`: a manifold ``\mathcal M``
+* `f`: a cost function ``F:\mathcal M → ℝ`` to minimize
+* `∂f`: the (sub)gradient ``∂ f: \mathcal M → T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p` – an initial value ``p_0=p ∈ \mathcal M``
+* `p`: an initial value ``p ∈ \mathcal M``
 
 # Optional
-* `m` - a real number that controls the decrease of the cost function
+
+* `m`: a real number that controls the decrease of the cost function
 * `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
-* `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
+* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 * `stopping_criterion` – ([`StopWhenProxBundleLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `vector_transport_method` - (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
+* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 ...
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
@@ -375,23 +382,17 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
 end
 get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
 
-"""
+@doc raw"""
     StopWhenProxBundleLess <: StoppingCriterion
 
 Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when either
 
-    * the parameters c and |d|
-
-    are less than given tolerances tolc and told respectively, or
-
-    * the parameter -ν = -max{−c^k_j +  (ξ^k_j,d) }.
-
-    is less than a given tolerance tolν.
+* the parameters ``c`` and ``|d|`` are less than given tolerances tolc and told respectively, or
+* the parameter ``-ν = -\max\{−c^k_j +  (ξ^k_j,d) \}`` is less than a given tolerance tolν.
 
 # Constructors
 
     StopWhenProxBundleLess(tolc=1e-6, told=1e-3)
-
     StopWhenProxBundleLess(tolν=1e-6)
 
 """
@@ -480,7 +481,7 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             @warn """The stopping parameter increased by at least $(d.tol).
             At iteration #$i the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
-            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the 
+            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
             `prox_bundle_method` call.
             """
             if d.status === :Once
@@ -491,7 +492,7 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             @warn """The stopping parameter is negative.
             At iteration #$i the stopping parameter -ν became negative.\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
-            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the 
+            the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
             `prox_bundle_method` call.
             """
         else

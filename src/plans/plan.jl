@@ -105,6 +105,7 @@ include("record.jl")
 
 include("stopping_criterion.jl")
 include("stepsize.jl")
+include("bundle_plan.jl")
 include("cost_plan.jl")
 include("gradient_plan.jl")
 include("hessian_plan.jl")

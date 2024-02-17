@@ -25,3 +25,16 @@ StopWhenBundleLess
 ```@docs
 DebugWarnIfStoppingParameterIncreases
 ```
+
+## Helpers and internal functions
+
+```@docs
+bundle_method_subsolver
+```
+
+## Literature
+
+```@bibliography
+Pages = ["convex_bundle_method.md"]
+Canonical=false
+```

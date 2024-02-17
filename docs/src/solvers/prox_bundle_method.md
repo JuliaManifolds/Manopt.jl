@@ -16,6 +16,14 @@ ProxBundleMethodState
 ```
 
 ## Stopping Criteria
+
 ```@docs
 StopWhenProxBundleLess
+```
+
+## Literature
+
+```@bibliography
+Pages = ["prox_bundle_method.md"]
+Canonical=false
 ```
