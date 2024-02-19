@@ -1,9 +1,9 @@
 function sectional_curvature(M, p)
     X = rand(M; vector_at=p)
     Y = rand(M; vector_at=p)
-    Y = Y:(inner(M, p, X, Y) / norm(M, p, X)^2 * X)
+    Y = Y - (inner(M, p, X, Y) / norm(M, p, X)^2 * X)
     R = riemann_tensor(M, p, X, Y, Y)
-    return inner(M, p, R, X) / ((norm(M, p, X)^2 * norm(M, p, Y)^2):(inner(M, p, X, Y)^2))
+    return inner(M, p, R, X) / ((norm(M, p, X)^2 * norm(M, p, Y)^2) - (inner(M, p, X, Y)^2))
 end
 function ζ_1(k_min, diam)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
@@ -379,7 +379,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     bms.λ = bundle_method_subsolver(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
-    bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2):(bms.ε)
+    bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     j = 1
     step = get_stepsize(mp, bms, j)
     retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
@@ -406,12 +406,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         deleteat!(bms.bundle, 1)
     end
     bms.lin_errors = [
-        get_cost(mp, bms.p_last_serious):get_cost(mp, qj):(bms.ϱ * inner(
-            M,
-            qj,
-            Xj,
-            inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        ))
+        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (
+            bms.ϱ * inner(
+                M,
+                qj,
+                Xj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            )
+        )
         # +
         # bms.ϱ *
         # norm(
