@@ -212,7 +212,7 @@ function __init__()
             if exc.f === bundle_method_subsolver
                 print(
                     io,
-                    "\nThe `bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is",
+                    "\nThe `bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
                 printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
             end

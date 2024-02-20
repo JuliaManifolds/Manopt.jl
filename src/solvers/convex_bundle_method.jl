@@ -46,7 +46,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `stepsize`:                  ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `ε`:                         convex combination of the linearization errors
 * `λ`:                         convex coefficients that solve the subproblem
-* `ξ`:                         the stopping parameter given by ξ = -|g|^2:  ε
+* `ξ`:                         the stopping parameter given by ``ξ = -\lvert g\rvert^2 – ε``
 * `ϱ`:                         curvature-dependent bound
 
 # Constructor
