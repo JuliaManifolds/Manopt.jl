@@ -3,6 +3,8 @@ module ManoptRipQPQuadraticModelsExt
 using Manopt
 import Manopt: bundle_method_subsolver
 using ManifoldsBase
+using LinearAlgebra: tril
+using SparseArrays: sparse
 
 if isdefined(Base, :get_extension)
     using QuadraticModels: QuadraticModel
