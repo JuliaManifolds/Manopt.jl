@@ -17,43 +17,43 @@ else
 end
 
 function bundle_method_subsolver(
-    M::A, cbms::ConvexBundleMethodState
+    M::A, p_last_serious, linearization_errors, transported_subgradients,
 ) where {A<:AbstractManifold}
-    d = length(cbms.lin_errors)
-    H = [
-        inner(M, cbms.p_last_serious, X, Y) for X in cbms.transported_subgradients,
-        Y in cbms.transported_subgradients
+    d = length(linearization_errors)
+    H = [ 
+        inner(M, p_last_serious, X, Y) for X in transported_subgradients,
+        Y in transported_subgradients
     ]
     qm = QuadraticModel(
-        cbms.lin_errors,
+        linearization_errors,
         sparse(tril(H));
         A=reshape(ones(d), 1, d),
-        lcon=[one(eltype(cbms.lin_errors))],
-        ucon=[one(eltype(cbms.lin_errors))],
+        lcon=[one(eltype(linearization_errors))],
+        ucon=[one(eltype(linearization_errors))],
         lvar=zeros(d),
         uvar=[Inf for i in 1:d],
-        c0=zero(eltype(cbms.lin_errors)),
+        c0=zero(eltype(linearization_errors)),
     )
     return ripqp(qm; display=false).solution
 end
 function bundle_method_subsolver(
-    M::A, pbms::ProxBundleMethodState
+    M::A, p_last_serious,  μ, approximation_errors, transported_subgradients,
 ) where {A<:AbstractManifold}
-    d = length(pbms.approx_errors)
+    d = length(approximation_errors)
     H =
-        1 / pbms.μ * [
-            inner(M, pbms.p_last_serious, X, Y) for X in pbms.transported_subgradients,
-            Y in pbms.transported_subgradients
+        1 / μ * [
+            inner(M, p_last_serious, X, Y) for X in transported_subgradients,
+            Y in transported_subgradients
         ]
     qm = QuadraticModel(
-        pbms.approx_errors,
+        approximation_errors,
         sparse(tril(H));
         A=reshape(ones(d), 1, d),
-        lcon=[one(eltype(pbms.lin_errors))],
-        ucon=[one(eltype(pbms.lin_errors))],
+        lcon=[one(eltype(approximation_errors))],
+        ucon=[one(eltype(approximation_errors))],
         lvar=zeros(d),
         uvar=[Inf for i in 1:d],
-        c0=zero(eltype(pbms.lin_errors)),
+        c0=zero(eltype(approximation_errors)),
     )
     return ripqp(qm; display=false).solution
 end

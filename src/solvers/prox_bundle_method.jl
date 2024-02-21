@@ -28,6 +28,7 @@ stores option values for a [`prox_bundle_method`](@ref) solver
 * `λ`:                         convex coefficients that solve the subproblem
 * `μ`:                         (`0.5`) (initial) proximal parameter for the subproblem
 * `ν`:                         the stopping parameter given by ``ν = - μ * |d|^2 - c``
+* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
 
 # Constructor
 
@@ -45,7 +46,8 @@ mutable struct ProxBundleMethodState{
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
     R<:Real,
-} <: AbstractManoptSolverState where {P,T}
+    Pr,
+} <: AbstractManoptSolverState where {P,T,Pr}
     approx_errors::AbstractVector{R}
     bundle::AbstractVector{Tuple{P,T}}
     c::R
@@ -69,6 +71,7 @@ mutable struct ProxBundleMethodState{
     λ::AbstractVector{R}
     μ::R
     ν::R
+    sub_problem::Pr
     function ProxBundleMethodState(
         M::TM,
         p::P;
@@ -83,6 +86,7 @@ mutable struct ProxBundleMethodState{
         ε::R=1e-2,
         δ::R=1.0,
         μ::R=0.5,
+        sub_problem::Pr,
     ) where {
         IR<:AbstractInverseRetractionMethod,
         P,
@@ -92,6 +96,7 @@ mutable struct ProxBundleMethodState{
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
         R<:Real,
+        Pr,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         approx_errors = [zero(R)]
@@ -104,7 +109,7 @@ mutable struct ProxBundleMethodState{
         λ = [zero(R)]
         η = zero(R)
         ν = zero(R)
-        return new{IR,P,T,TR,SC,VT,R}(
+        return new{IR,P,T,TR,SC,VT,R,Pr}(
             approx_errors,
             bundle,
             c,
@@ -128,6 +133,7 @@ mutable struct ProxBundleMethodState{
             λ,
             μ,
             ν,
+            sub_problem,
         )
     end
 end
@@ -245,6 +251,7 @@ function prox_bundle_method!(
     ε=1e-2,
     δ=-1.0,#0.0,
     μ=0.5,#1.0,
+    sub_problem=bundle_method_subsolver,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -263,6 +270,7 @@ function prox_bundle_method!(
         ε=ε,
         δ=δ,
         μ=μ,
+        sub_problem=sub_problem,
     )
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
@@ -301,7 +309,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    pbms.λ = bundle_method_subsolver(M, pbms)
+    pbms.λ = pbms.sub_problem(M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
     nd = norm(M, pbms.p_last_serious, pbms.d)

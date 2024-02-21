@@ -48,6 +48,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `λ`:                         convex coefficients that solve the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -\lvert g\rvert^2 – ε``
 * `ϱ`:                         curvature-dependent bound
+* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`,
 
 # Constructor
 
@@ -77,7 +78,8 @@ mutable struct ConvexBundleMethodState{
     TS<:Stepsize,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int}
+    Pr,
+} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int,Pr}
     atol_λ::R
     atol_errors::R
     bundle::B
@@ -102,6 +104,7 @@ mutable struct ConvexBundleMethodState{
     ξ::R
     λ::A
     ϱ::R
+    sub_problem::Pr
     function ConvexBundleMethodState(
         M::TM,
         p::P;
@@ -122,6 +125,7 @@ mutable struct ConvexBundleMethodState{
         stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
+        sub_problem::Pr,
     ) where {
         D,
         IR<:AbstractInverseRetractionMethod,
@@ -133,6 +137,7 @@ mutable struct ConvexBundleMethodState{
         S<:Stepsize,
         VT<:AbstractVectorTransportMethod,
         R<:Real,
+        Pr,
     }
         bundle = [(copy(M, p), zero_vector(M, p))]
         bundle_size = 1
@@ -154,9 +159,7 @@ mutable struct ConvexBundleMethodState{
                     ) for _ in 1:k_size
                 ]
             end
-            # (k_min === nothing) && (k_min = minimum(s))
-            # (k_max === nothing) && (k_max = maximum(s))
-            ϱ = ζ_2(k_max, diam) # max(ζ_1(k_min, diam) - one(k_min), one(k_max) - ζ_2(k_max, diam))
+            ϱ = ζ_2(k_max, diam)
         end
         return new{
             typeof(m),
@@ -172,6 +175,7 @@ mutable struct ConvexBundleMethodState{
             S,
             SC,
             VT,
+            Pr,
         }(
             atol_λ,
             atol_errors,
@@ -197,6 +201,7 @@ mutable struct ConvexBundleMethodState{
             ξ,
             λ,
             ϱ,
+            sub_problem,
         )
     end
 end
@@ -276,10 +281,9 @@ For more details, see [BergmannJasaHerzzog:2024](@cite).
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction`:                (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
-* `stopping_criterion`:        ([`StopWhenBundleLess`](@ref)`(1e-8)`)
-  a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
+* `stopping_criterion`:        ([`StopWhenBundleLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
 * `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
-
+* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`,
 
 # Output
 
@@ -333,6 +337,7 @@ function convex_bundle_method!(
         StopWhenBundleLess(1e-8), StopAfterIteration(5000)
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
+    sub_problem=bundle_method_subsolver,
     kwargs..., #especially may contain debug
 ) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -357,6 +362,7 @@ function convex_bundle_method!(
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
+        sub_problem=sub_problem,
     )
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
@@ -376,7 +382,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
         (qj, Xj) in bms.bundle
     ]
-    bms.λ = bundle_method_subsolver(M, bms)
+    bms.λ = bms.sub_problem(M, bms.p_last_serious, bms.lin_errors, bms.transported_subgradients)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
@@ -414,12 +420,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
                 inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             )
         )
-        # +
-        # bms.ϱ *
-        # norm(
-        #     M, qj, inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method)
-        # ) *
-        # norm(M, qj, Xj)
         for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [
