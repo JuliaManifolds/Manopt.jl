@@ -517,7 +517,7 @@ are less than given tolerances `tol_errors` and `tol_search_dir` respectively, o
 
 * the parameter ``-ξ = |g|^2 + ε``
 
-is less than a given tolerance `tol_lag_mult``.
+is less than a given tolerance `tol_lag_mult`.
 
 # Constructors
 
