@@ -27,7 +27,7 @@ b2 = convex_bundle_method(
     img2;
     m=0.1,
     diam=100.0,
-    stopping_criterion=StopWhenBundleLess(1e-14),
+    stopping_criterion=StopWhenLagrangeMultiplierLess(1e-14),
     debug=[:Stop],
     # debug=["    ", :Iteration, (:Cost,"F(p): %1.20e"), "\n", :Stop, 10]
 )

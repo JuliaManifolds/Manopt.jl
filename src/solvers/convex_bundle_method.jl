@@ -190,7 +190,7 @@ mutable struct ConvexBundleMethodState{
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenBundleLess(1e-8) | StopAfterIteration(5000),
+        stopping_criterion::SC=StopWhenLagrangeMultiplierLess(1e-8) | StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         sub_problem::Pr,
@@ -349,7 +349,7 @@ For more details, see [BergmannJasaHerzzog:2024](@cite).
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction`:                (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
-* `stopping_criterion`:        ([`StopWhenBundleLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
+* `stopping_criterion`:        ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
 * `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`
 
@@ -397,12 +397,12 @@ function convex_bundle_method!(
     p_estimate=nothing, # TODO: RB -> HJ: this is not even used, why?
     stepsize::Stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :relative),
     ϱ=nothing,
-    debug=[DebugWarnIfStoppingParameterIncreases()],
+    debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopWhenBundleLess(1e-8), StopAfterIteration(5000)
+        StopWhenLagrangeMultiplierLess(1e-8), StopAfterIteration(5000)
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=bundle_method_subsolver,
@@ -500,7 +500,7 @@ end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
 """
-    StopWhenBundleLess <: StoppingCriterion
+    StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
 Two stopping criteria for [`convex_bundle_method`](@ref) to indicate to stop when either
 
@@ -514,25 +514,25 @@ is less than a given tolerance tolξ.
 
 # Constructors
 
-    StopWhenBundleLess(tole=1e-6, tolg=1e-3)
+    StopWhenLagrangeMultiplierLess(tole=1e-6, tolg=1e-3)
 
-    StopWhenBundleLess(tolξ=1e-6)
+    StopWhenLagrangeMultiplierLess(tolξ=1e-6)
 
 """
-mutable struct StopWhenBundleLess{T,R} <: StoppingCriterion
+mutable struct StopWhenLagrangeMultiplierLess{T,R} <: StoppingCriterion
     tole::T
     tolg::T
     tolξ::R
     reason::String
     at_iteration::Int
-    function StopWhenBundleLess(tole::T, tolg::T) where {T}
+    function StopWhenLagrangeMultiplierLess(tole::T, tolg::T) where {T}
         return new{T,Nothing}(tole, tolg, nothing, "", 0)
     end
-    function StopWhenBundleLess(tolξ::R=1e-6) where {R}
+    function StopWhenLagrangeMultiplierLess(tolξ::R=1e-6) where {R}
         return new{Nothing,R}(nothing, nothing, tolξ, "", 0)
     end
 end
-function (b::StopWhenBundleLess{T,Nothing})(
+function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 ) where {T}
     if i == 0 # reset on init
@@ -547,7 +547,7 @@ function (b::StopWhenBundleLess{T,Nothing})(
     end
     return false
 end
-function (b::StopWhenBundleLess{Nothing,R})(
+function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 ) where {R}
     if i == 0 # reset on init
@@ -562,28 +562,28 @@ function (b::StopWhenBundleLess{Nothing,R})(
     end
     return false
 end
-function status_summary(b::StopWhenBundleLess{T,Nothing}) where {T}
+function status_summary(b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
 end
-function status_summary(b::StopWhenBundleLess{Nothing,R}) where {R}
+function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: -ξ ≤ $(b.tolξ):\t$s"
 end
-function show(io::IO, b::StopWhenBundleLess{T,Nothing}) where {T}
-    return print(io, "StopWhenBundleLess($(b.tole), $(b.tolg))\n    $(status_summary(b))")
+function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
+    return print(io, "StopWhenLagrangeMultiplierLess($(b.tole), $(b.tolg))\n    $(status_summary(b))")
 end
-function show(io::IO, b::StopWhenBundleLess{Nothing,R}) where {R}
-    return print(io, "StopWhenBundleLess($(b.tolξ))\n    $(status_summary(b))")
+function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
+    return print(io, "StopWhenLagrangeMultiplierLess($(b.tolξ))\n    $(status_summary(b))")
 end
 
 @doc raw"""
-    DebugWarnIfStoppingParameterIncreases <: DebugAction
+    DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
 
 print a warning if the stopping parameter of the bundle method increases.
 
 # Constructor
-    DebugWarnIfStoppingParameterIncreases(warn=:Once; tol=1e2)
+    DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
 
 Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
 
@@ -592,17 +592,17 @@ to `:Always` to report an increase every time it happens, and it can be set to `
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
-mutable struct DebugWarnIfStoppingParameterIncreases <: DebugAction
+mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
     # store if we need to warn – :Once, :Always, :No, where all others are handled
     # the same as :Always
     status::Symbol
     old_value::Float64
     tol::Float64
-    function DebugWarnIfStoppingParameterIncreases(warn::Symbol=:Once; tol=1e2)
+    function DebugWarnIfLagrangeMultiplierIncreases(warn::Symbol=:Once; tol=1e2)
         return new(warn, Float64(Inf), tol)
     end
 end
-function (d::DebugWarnIfStoppingParameterIncreases)(
+function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     p::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
 )
     (i < 1) && (return nothing)
@@ -616,7 +616,7 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfStoppingParameterIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be supressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
                 d.status = :No
             end
         elseif new_value < zero(number_eltype(st.ξ))
@@ -632,8 +632,8 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
     end
     return nothing
 end
-function show(io::IO, di::DebugWarnIfStoppingParameterIncreases)
-    return print(io, "DebugWarnIfStoppingParameterIncreases(; tol=\"$(di.tol)\")")
+function show(io::IO, di::DebugWarnIfLagrangeMultiplierIncreases)
+    return print(io, "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"$(di.tol)\")")
 end
 function (d::DebugStepsize)(
     mp::P, bms::ConvexBundleMethodState, i::Int

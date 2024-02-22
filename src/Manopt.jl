@@ -469,7 +469,7 @@ export StopAfter,
     StopWhenAll,
     StopWhenAllLanczosVectorsUsed,
     StopWhenAny,
-    StopWhenBundleLess,
+    StopWhenLagrangeMultiplierLess,
     StopWhenChangeLess,
     StopWhenCostLess,
     StopWhenCostNan,
@@ -482,7 +482,7 @@ export StopAfter,
     StopWhenSubgradientNormLess,
     StopWhenModelIncreased,
     StopWhenPopulationConcentrated,
-    StopWhenProxBundleLess,
+    StopWhenLagrangeMultiplierLess,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
@@ -508,7 +508,7 @@ export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
-export DebugWarnIfStoppingParameterIncreases
+export DebugWarnIfLagrangeMultiplierIncreases
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
 # Records - and access functions

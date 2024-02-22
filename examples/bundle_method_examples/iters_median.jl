@@ -19,7 +19,7 @@ function test_dist_function(N)
         m;
         record=[:Iteration, :Cost],
         return_state=true,
-        # stopping_criterion=StopWhenBundleLess(1e-12),
+        # stopping_criterion=StopWhenLagrangeMultiplierLess(1e-12),
         stopping_criterion=StopAfterIteration(100),
         # debug=[:Iteration, :Cost, "\n"],
     )

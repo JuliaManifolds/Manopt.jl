@@ -135,7 +135,7 @@ b = convex_bundle_method(
     m=1e-12,
     diam=diam,
     debug=[:Iteration, (:Cost, "F(p): %1.15e "), :Stop, "\n"],
-    stopping_criterion=StopWhenBundleLess(1e-8) | StopWhenCostLess(14.10241459459748),
+    stopping_criterion=StopWhenLagrangeMultiplierLess(1e-8) | StopWhenCostLess(14.10241459459748),
 )
 
 # ╔═╡ 06cde52a-bfa8-4aa5-a8ea-098424f9c7a3

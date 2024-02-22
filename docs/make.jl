@@ -7,7 +7,7 @@ if "--help" ∈ ARGS
         """
 docs/make.jl
 
-Render the `Manopt.jl` documenation with optinal arguments
+Render the `Manopt.jl` documenation with optional arguments
 
 Arguments
 * `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
@@ -18,7 +18,7 @@ Arguments
 * `--quarto`            – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
-  If they are generated ones they are cached accordingly.
+  If they are generated once they are cached accordingly.
   Then you can spare time in the rendering by not passing this argument.
 """,
     )
@@ -141,6 +141,11 @@ makedocs(;
             Base.get_extension(Manopt, :ManoptPlotsExt)
         else
             Manopt.ManoptPlotsExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
+        else
+            Manopt.ManoptRipQPQuadraticModelsExt
         end,
     ],
     authors="Ronny Bergmann and contributors.",

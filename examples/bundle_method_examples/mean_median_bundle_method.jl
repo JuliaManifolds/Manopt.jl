@@ -40,7 +40,7 @@ end
     gradF2,
     data[1];
     diam=2.5,
-    stopping_criterion=StopWhenBundleLess(tol),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
+    stopping_criterion=StopWhenLagrangeMultiplierLess(tol),#StopWhenAny(StopWhenChangeLess(1e-12), StopAfterIteration(5000)),
     debug=[
         :Iteration,
         (:Cost, "F(p): %1.16f "),

@@ -148,7 +148,7 @@ begin
         subgradF3,
         p0;
         diam=diam,
-        stopping_criterion=StopWhenBundleLess(1e-6) | StopAfterIteration(5000),
+        stopping_criterion=StopWhenLagrangeMultiplierLess(1e-6) | StopAfterIteration(5000),
         debug=["    ", :Iteration, (:Cost, "F(p): %1.9e"), "\n", :Stop, 5],
     )
 end

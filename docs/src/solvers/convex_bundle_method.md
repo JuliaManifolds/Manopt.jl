@@ -17,13 +17,13 @@ ConvexBundleMethodState
 
 ## Stopping Criteria
 ```@docs
-StopWhenBundleLess
+StopWhenLagrangeMultiplierLess
 ```
 
 ## Debug Functions
 
 ```@docs
-DebugWarnIfStoppingParameterIncreases
+DebugWarnIfLagrangeMultiplierIncreases
 ```
 
 ## Helpers and internal functions

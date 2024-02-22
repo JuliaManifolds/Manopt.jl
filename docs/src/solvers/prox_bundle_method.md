@@ -18,7 +18,7 @@ ProxBundleMethodState
 ## Stopping Criteria
 
 ```@docs
-StopWhenProxBundleLess
+StopWhenLagrangeMultiplierLess
 ```
 
 ## Literature

@@ -78,7 +78,7 @@ mutable struct ProxBundleMethodState{
         m::R=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenProxBundleLess(1e-8) | StopAfterIteration(5000),
+        stopping_criterion::SC=StopWhenLagrangeMultiplierLess(1e-8) | StopAfterIteration(5000),
         bundle_size::Integer=50,
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         X::T=zero_vector(M, p),
@@ -201,7 +201,7 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
-* `stopping_criterion` – ([`StopWhenProxBundleLess`](@ref)`(1e-8)`)
+* `stopping_criterion` – ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 ...
@@ -244,7 +244,7 @@ function prox_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     bundle_size=50,
-    stopping_criterion::StoppingCriterion=StopWhenProxBundleLess(1e-8) |
+    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(1e-8) |
                                           StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
@@ -391,7 +391,7 @@ end
 get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
 
 @doc raw"""
-    StopWhenProxBundleLess <: StoppingCriterion
+    StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
 Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when either
 
@@ -400,24 +400,24 @@ Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when 
 
 # Constructors
 
-    StopWhenProxBundleLess(tolc=1e-6, told=1e-3)
-    StopWhenProxBundleLess(tolν=1e-6)
+    StopWhenLagrangeMultiplierLess(tolc=1e-6, told=1e-3)
+    StopWhenLagrangeMultiplierLess(tolν=1e-6)
 
 """
-mutable struct StopWhenProxBundleLess{T,R} <: StoppingCriterion
+mutable struct StopWhenLagrangeMultiplierLess{T,R} <: StoppingCriterion
     tolc::T
     told::T
     tolν::R
     reason::String
     at_iteration::Int
-    function StopWhenProxBundleLess(tolc::T, told::T) where {T}
+    function StopWhenLagrangeMultiplierLess(tolc::T, told::T) where {T}
         return new{T,Nothing}(tolc, told, nothing, "", 0)
     end
-    function StopWhenProxBundleLess(tolν::R=1e-6) where {R}
+    function StopWhenLagrangeMultiplierLess(tolν::R=1e-6) where {R}
         return new{Nothing,R}(nothing, nothing, tolν, "", 0)
     end
 end
-function (b::StopWhenProxBundleLess{T,Nothing})(
+function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
     mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
 ) where {T}
     if i == 0 # reset on init
@@ -432,7 +432,7 @@ function (b::StopWhenProxBundleLess{T,Nothing})(
     end
     return false
 end
-function (b::StopWhenProxBundleLess{Nothing,R})(
+function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
     mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
 ) where {R}
     if i == 0 # reset on init
@@ -447,30 +447,30 @@ function (b::StopWhenProxBundleLess{Nothing,R})(
     end
     return false
 end
-function status_summary(b::StopWhenProxBundleLess{T,Nothing}) where {T}
+function status_summary(b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: c ≤ $(b.tolc), |d| ≤ $(b.told):\t$s"
 end
-function status_summary(b::StopWhenProxBundleLess{Nothing,R}) where {R}
+function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
     s = length(b.reason) > 0 ? "reached" : "not reached"
     return "Stopping parameter: -ν ≤ $(b.tolν):\t$s"
 end
-function show(io::IO, b::StopWhenProxBundleLess{T,Nothing}) where {T}
+function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
     return print(
-        io, "StopWhenProxBundleLess($(b.tolc), $(b.told))\n    $(status_summary(b))"
+        io, "StopWhenLagrangeMultiplierLess($(b.tolc), $(b.told))\n    $(status_summary(b))"
     )
 end
-function show(io::IO, b::StopWhenProxBundleLess{Nothing,R}) where {R}
-    return print(io, "StopWhenProxBundleLess($(b.tolν))\n    $(status_summary(b))")
+function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
+    return print(io, "StopWhenLagrangeMultiplierLess($(b.tolν))\n    $(status_summary(b))")
 end
 
 @doc raw"""
-    DebugWarnIfStoppingParameterIncreases <: DebugAction
+    DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
 
 print a warning if the stopping parameter of the bundle method increases.
 
 # Constructor
-    DebugWarnIfStoppingParameterIncreases(warn=:Once; tol=1e2)
+    DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
 
 Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
 
@@ -479,7 +479,7 @@ to `:Always` to report an increase every time it happens, and it can be set to `
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
-function (d::DebugWarnIfStoppingParameterIncreases)(
+function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     p::AbstractManoptProblem, st::ProxBundleMethodState, i::Int
 )
     (i < 1) && (return nothing)
@@ -493,7 +493,7 @@ function (d::DebugWarnIfStoppingParameterIncreases)(
             `prox_bundle_method` call.
             """
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfStoppingParameterIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be supressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
                 d.status = :No
             end
         elseif new_value < zero(number_eltype(st.ν))
