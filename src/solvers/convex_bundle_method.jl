@@ -1,18 +1,86 @@
+@doc raw"""
+    sectional_curvature(M, p, X, Y)
+
+compute the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
+on two tangent vectors at ``p``.
+The formula reads
+```math
+
+    \kappa_p(X, Y) = \frac{⟨R(X, Y, Y), X⟩_p}{\lVert X \rVert^2_p \lVert Y \rVert^2_p - ⟨X, Y⟩^2_p}
+
+```
+where ``R(X, Y, Y)`` is the [`riemann_tensor`](@ref).
+
+# Input
+
+* `M`:   a manifold ``\mathcal M`` 
+* `p`:   a point ``p \in \mathcal M``
+* `X`:   a tangent vector ``X \in T_p \mathcal M``
+* `Y`:   a tangent vector ``Y \in T_p \mathcal M``
+
+"""
+function sectional_curvature(M, p, X, Y)
+    R = riemann_tensor(M, p, X, Y, Y)
+    return inner(M, p, R, X) / ((norm(M, p, X)^2 * norm(M, p, Y)^2) - (inner(M, p, X, Y)^2))
+end
+
+@doc raw"""
+    sectional_curvature(M, p)
+compute the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
+on two random tangent vectors at ``p`` that are orthogonal to eachother.
+
+# See also
+[`sectional_curvature`](@ref)
+"""
 function sectional_curvature(M, p)
     X = rand(M; vector_at=p)
     Y = rand(M; vector_at=p)
     Y = Y - (inner(M, p, X, Y) / norm(M, p, X)^2 * X)
-    R = riemann_tensor(M, p, X, Y, Y)
-    return inner(M, p, R, X) / ((norm(M, p, X)^2 * norm(M, p, Y)^2) - (inner(M, p, X, Y)^2))
+    return sectional_curvature(M, p, X, Y)
 end
-function ζ_1(k_min, diam)
-    (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
-    (k_min ≥ zero(k_min)) && return one(k_min)
-end
+
+# Comment ζ_1 out, as it is not needed for computations
+# ! Think about potentially adding a check like isfinite(ζ_1(k_min, diam))
+# function ζ_1(k_min, diam)
+#     (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
+#     (k_min ≥ zero(k_min)) && return one(k_min)
+# end
+
+@doc raw"""
+    ζ_2(\Omega, \delta)
+compute a curvature-dependent bound.
+The formula reads
+```math
+    \zeta_{2, \Omega}(\delta)
+    \coloneqq
+    \begin{cases}
+        1
+        &
+        \text{if }
+        \Omega \le 0
+        ,
+        \\
+        \sqrt{\Omega} \, \delta \cot(\sqrt{\Omega} \, \delta)
+        \quad
+        &
+        \text{if }
+        \Omega > 0
+        ,
+    \end{cases}
+```
+where ``\Omega \ge \kappa_p`` for all ``p \in \mathcal U`` is an upper bound to the sectional curvature in
+a bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``\delta``.
+"""
 function ζ_2(k_max, diam)
     (k_max ≤ zero(k_max)) && return one(k_max)
     (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
 end
+
+@doc raw"""
+    close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
+sample a random point close to ``p \in \mathcal M`` within a tolerance `tol`
+and a [retraction](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/).
+"""
 function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
     X = rand(M; vector_at=p)
     X .= tol * rand() * X / norm(M, p, X)
@@ -283,7 +351,7 @@ For more details, see [BergmannJasaHerzzog:2024](@cite).
 * `retraction`:                (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 * `stopping_criterion`:        ([`StopWhenBundleLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
 * `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
-* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`,
+* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`
 
 # Output
 

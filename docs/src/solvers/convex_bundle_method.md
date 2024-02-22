@@ -30,6 +30,9 @@ DebugWarnIfStoppingParameterIncreases
 
 ```@docs
 bundle_method_subsolver
+sectional_curvature
+ζ_2
+close_point
 ```
 
 ## Literature
