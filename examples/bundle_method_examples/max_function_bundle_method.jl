@@ -77,7 +77,8 @@ function check_maxfunc(M, tol=1e-8)
             p0;
             δ=0.0,
             μ=1.0,
-            stopping_criterion=StopWhenLagrangeMultiplierLess(tol) | StopAfterIteration(5000),
+            stopping_criterion=StopWhenLagrangeMultiplierLess(tol) |
+                               StopAfterIteration(5000),
             debug=[
                 :Iteration,
                 :Stop,

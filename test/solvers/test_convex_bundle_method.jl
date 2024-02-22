@@ -11,14 +11,14 @@ import Manopt: bundle_method_subsolver
         M,
         p0;
         diam=diam,
-        domain=(M, q) -> distance(M, q, p0) < diam/2 ? true : false,
+        domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
         k_max=Ω,
         stopping_criterion=StopAfterIteration(200),
         sub_problem=bundle_method_subsolver,
     )
     @test get_iterate(cbms) == p0
     cbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
-    f(M, q) = distance(M, q, p) 
+    f(M, q) = distance(M, q, p)
     @testset "Allocating Subgradient" begin
         function ∂f(M, q)
             if distance(M, p, q) == 0
@@ -42,9 +42,9 @@ import Manopt: bundle_method_subsolver
             M,
             f,
             ∂f,
-            p0; 
+            p0;
             diam=diam,
-            domain=(M, q) -> distance(M, q, p0) < diam/2 ? true : false,
+            domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
             sub_problem=bundle_method_subsolver,
@@ -66,7 +66,7 @@ import Manopt: bundle_method_subsolver
                 return X
             end
             log!(M, X, q, p)
-            X .*= -1/ max(10 * eps(Float64), d)
+            X .*= -1 / max(10 * eps(Float64), d)
             return X
         end
         bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation=InplaceEvaluation())
@@ -88,7 +88,7 @@ import Manopt: bundle_method_subsolver
             ∂f!,
             copy(p0);
             diam=diam,
-            domain=(M, q) -> distance(M, q, p0) < diam/2 ? true : false,
+            domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
             sub_problem=bundle_method_subsolver,

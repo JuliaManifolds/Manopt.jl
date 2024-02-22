@@ -17,10 +17,10 @@ else
 end
 
 function bundle_method_subsolver(
-    M::A, p_last_serious, linearization_errors, transported_subgradients,
+    M::A, p_last_serious, linearization_errors, transported_subgradients
 ) where {A<:AbstractManifold}
     d = length(linearization_errors)
-    H = [ 
+    H = [
         inner(M, p_last_serious, X, Y) for X in transported_subgradients,
         Y in transported_subgradients
     ]
@@ -37,7 +37,7 @@ function bundle_method_subsolver(
     return ripqp(qm; display=false).solution
 end
 function bundle_method_subsolver(
-    M::A, p_last_serious,  μ, approximation_errors, transported_subgradients,
+    M::A, p_last_serious, μ, approximation_errors, transported_subgradients
 ) where {A<:AbstractManifold}
     d = length(approximation_errors)
     H =

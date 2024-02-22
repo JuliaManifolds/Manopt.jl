@@ -190,7 +190,8 @@ mutable struct ConvexBundleMethodState{
         ϱ=nothing,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenLagrangeMultiplierLess(1e-8) | StopAfterIteration(5000),
+        stopping_criterion::SC=StopWhenLagrangeMultiplierLess(1e-8) |
+                               StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         sub_problem::Pr,
@@ -455,7 +456,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
         (qj, Xj) in bms.bundle
     ]
-    bms.λ = bms.sub_problem(M, bms.p_last_serious, bms.lin_errors, bms.transported_subgradients)
+    bms.λ = bms.sub_problem(
+        M, bms.p_last_serious, bms.lin_errors, bms.transported_subgradients
+    )
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.lin_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
@@ -492,8 +495,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
                 Xj,
                 inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
             )
-        )
-        for (qj, Xj) in bms.bundle
+        ) for (qj, Xj) in bms.bundle
     ]
     bms.lin_errors = [
         zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for
@@ -545,7 +547,8 @@ function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if (bms.ε ≤ b.tol_errors && norm(M, bms.p_last_serious, bms.g) ≤ b.tol_search_dir) && i > 0
+    if (bms.ε ≤ b.tol_errors && norm(M, bms.p_last_serious, bms.g) ≤ b.tol_search_dir) &&
+        i > 0
         b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tol_errors) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tol_search_dir).\n"
         b.at_iteration = i
         return true
@@ -576,10 +579,15 @@ function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
     return "Stopping parameter: -ξ ≤ $(b.tol_lag_mult):\t$s"
 end
 function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    return print(io, "StopWhenLagrangeMultiplierLess($(b.tol_errors), $(b.tol_search_dir))\n    $(status_summary(b))")
+    return print(
+        io,
+        "StopWhenLagrangeMultiplierLess($(b.tol_errors), $(b.tol_search_dir))\n    $(status_summary(b))",
+    )
 end
 function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    return print(io, "StopWhenLagrangeMultiplierLess($(b.tol_lag_mult))\n    $(status_summary(b))")
+    return print(
+        io, "StopWhenLagrangeMultiplierLess($(b.tol_lag_mult))\n    $(status_summary(b))"
+    )
 end
 
 @doc raw"""

@@ -78,7 +78,8 @@ mutable struct ProxBundleMethodState{
         m::R=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
-        stopping_criterion::SC=StopWhenLagrangeMultiplierLess(1e-8) | StopAfterIteration(5000),
+        stopping_criterion::SC=StopWhenLagrangeMultiplierLess(1e-8) |
+                               StopAfterIteration(5000),
         bundle_size::Integer=50,
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         X::T=zero_vector(M, p),
@@ -309,7 +310,9 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    pbms.λ = pbms.sub_problem(M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients)
+    pbms.λ = pbms.sub_problem(
+        M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
+    )
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
     nd = norm(M, pbms.p_last_serious, pbms.d)
@@ -398,7 +401,8 @@ function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if (pbms.c ≤ b.tol_errors && norm(M, pbms.p_last_serious, pbms.d) ≤ b.tol_search_dir) && i > 0
+    if (pbms.c ≤ b.tol_errors && norm(M, pbms.p_last_serious, pbms.d) ≤ b.tol_search_dir) &&
+        i > 0
         b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) is less than $(b.tol_errors) and |d| = $(norm(M, pbms.p_last_serious, pbms.d)) is less than $(b.tol_search_dir).\n"
         b.at_iteration = i
         return true
