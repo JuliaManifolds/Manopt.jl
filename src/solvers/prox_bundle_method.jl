@@ -390,33 +390,6 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
 end
 get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
 
-@doc raw"""
-    StopWhenLagrangeMultiplierLess <: StoppingCriterion
-
-Two stopping criteria for [`prox_bundle_method`](@ref) to indicate to stop when either
-
-* the parameters ``c`` and ``|d|`` are less than given tolerances tol_errors and tol_search_dir respectively, or
-* the parameter ``-ν = -\max\{−c^k_j +  (ξ^k_j,d) \}`` is less than a given tolerance tol_lag_mult.
-
-# Constructors
-
-    StopWhenLagrangeMultiplierLess(tol_errors=1e-6, tol_search_dir=1e-3)
-    StopWhenLagrangeMultiplierLess(tol_lag_mult=1e-6)
-
-"""
-# mutable struct StopWhenLagrangeMultiplierLess{T,R} <: StoppingCriterion
-#     tol_errors::T
-#     tol_search_dir::T
-#     tol_lag_mult::R
-#     reason::String
-#     at_iteration::Int
-#     function StopWhenLagrangeMultiplierLess(tol_errors::T, tol_search_dir::T) where {T}
-#         return new{T,Nothing}(tol_errors, tol_search_dir, nothing, "", 0)
-#     end
-#     function StopWhenLagrangeMultiplierLess(tol_lag_mult::R=1e-6) where {R}
-#         return new{Nothing,R}(nothing, nothing, tol_lag_mult, "", 0)
-#     end
-# end
 function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
     mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
 ) where {T}
@@ -446,22 +419,6 @@ function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
         return true
     end
     return false
-end
-function status_summary(b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: c ≤ $(b.tol_errors), |d| ≤ $(b.tol_search_dir):\t$s"
-end
-function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: -ν ≤ $(b.tol_lag_mult):\t$s"
-end
-function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    return print(
-        io, "StopWhenLagrangeMultiplierLess($(b.tol_errors), $(b.tol_search_dir))\n    $(status_summary(b))"
-    )
-end
-function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    return print(io, "StopWhenLagrangeMultiplierLess($(b.tol_lag_mult))\n    $(status_summary(b))")
 end
 
 @doc raw"""

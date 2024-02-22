@@ -176,12 +176,12 @@ mutable struct ConvexBundleMethodState{
     function ConvexBundleMethodState(
         M::TM,
         p::P;
-        atol_λ::R=eps(R),
-        atol_errors::R=eps(R),
+        atol_λ::R=eps(),
+        atol_errors::R=eps(),
         bundle_cap::Integer=25,
         m::R=1e-2,
         diam::R=50.0,
-        domain::D=(M, p) -> isfinite(f(M, p)),
+        domain::D,#(M, p) -> isfinite(f(M, p)),
         k_min=nothing,
         k_max=nothing,
         k_size::Int=100,
@@ -226,6 +226,7 @@ mutable struct ConvexBundleMethodState{
                         ),
                     ) for _ in 1:k_size
                 ]
+                k_max = maximum(s)
             end
             ϱ = ζ_2(k_max, diam)
         end
@@ -274,6 +275,10 @@ mutable struct ConvexBundleMethodState{
     end
 end
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
+function set_iterate!(bms::ConvexBundleMethodState, M, p)
+    copyto!(M, bms.p_last_serious, p)
+    return bms
+end
 get_subgradient(bms::ConvexBundleMethodState) = bms.g
 
 function show(io::IO, cbms::ConvexBundleMethodState)
