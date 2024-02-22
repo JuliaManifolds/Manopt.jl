@@ -174,8 +174,8 @@ end
 
 perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where
 ```math
-g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j}``,
-````
+g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
+```
 with ``X_{q_j}\in∂f(q_j)``,
 ``\mathrm{retr}`` is a retraction, ``p_k`` is the last serious iterate.
 

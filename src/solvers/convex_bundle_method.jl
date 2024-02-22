@@ -324,7 +324,7 @@ to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
 Though the subdifferential might be set valued, the argument `∂f` should always
 return one element from the subdifferential, but not necessarily deterministic.
 
-For more details, see [BergmannJasaHerzzog:2024](@cite).
+For more details, see [BergmannHerzogJasa:2024](@cite).
 
 # Input
 
