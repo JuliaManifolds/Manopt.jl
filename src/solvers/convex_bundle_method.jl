@@ -506,30 +506,30 @@ Two stopping criteria for [`convex_bundle_method`](@ref) to indicate to stop whe
 
 * the parameters ε and |g|
 
-are less than given tolerances tole and tolg respectively, or
+are less than given tolerances tol_errors and tol_search_dir respectively, or
 
 * the parameter -ξ = |g|^2 + ε
 
-is less than a given tolerance tolξ.
+is less than a given tolerance tol_lag_mult.
 
 # Constructors
 
-    StopWhenLagrangeMultiplierLess(tole=1e-6, tolg=1e-3)
+    StopWhenLagrangeMultiplierLess(tol_errors=1e-6, tol_search_dir=1e-3)
 
-    StopWhenLagrangeMultiplierLess(tolξ=1e-6)
+    StopWhenLagrangeMultiplierLess(tol_lag_mult=1e-6)
 
 """
 mutable struct StopWhenLagrangeMultiplierLess{T,R} <: StoppingCriterion
-    tole::T
-    tolg::T
-    tolξ::R
+    tol_errors::T
+    tol_search_dir::T
+    tol_lag_mult::R
     reason::String
     at_iteration::Int
-    function StopWhenLagrangeMultiplierLess(tole::T, tolg::T) where {T}
-        return new{T,Nothing}(tole, tolg, nothing, "", 0)
+    function StopWhenLagrangeMultiplierLess(tol_errors::T, tol_search_dir::T) where {T}
+        return new{T,Nothing}(tol_errors, tol_search_dir, nothing, "", 0)
     end
-    function StopWhenLagrangeMultiplierLess(tolξ::R=1e-6) where {R}
-        return new{Nothing,R}(nothing, nothing, tolξ, "", 0)
+    function StopWhenLagrangeMultiplierLess(tol_lag_mult::R=1e-6) where {R}
+        return new{Nothing,R}(nothing, nothing, tol_lag_mult, "", 0)
     end
 end
 function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
@@ -540,8 +540,8 @@ function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if (bms.ε ≤ b.tole && norm(M, bms.p_last_serious, bms.g) ≤ b.tolg) && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tole) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tolg).\n"
+    if (bms.ε ≤ b.tol_errors && norm(M, bms.p_last_serious, bms.g) ≤ b.tol_search_dir) && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tol_errors) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tol_search_dir).\n"
         b.at_iteration = i
         return true
     end
@@ -555,8 +555,8 @@ function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
         b.at_iteration = 0
     end
     M = get_manifold(mp)
-    if -bms.ξ ≤ b.tolξ && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tolξ).\n"
+    if -bms.ξ ≤ b.tol_lag_mult && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tol_lag_mult).\n"
         b.at_iteration = i
         return true
     end
@@ -564,17 +564,17 @@ function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
 end
 function status_summary(b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
     s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: ε ≤ $(b.tole), |g| ≤ $(b.tolg):\t$s"
+    return "Stopping parameter: ε ≤ $(b.tol_errors), |g| ≤ $(b.tol_search_dir):\t$s"
 end
 function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
     s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: -ξ ≤ $(b.tolξ):\t$s"
+    return "Stopping parameter: -ξ ≤ $(b.tol_lag_mult):\t$s"
 end
 function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    return print(io, "StopWhenLagrangeMultiplierLess($(b.tole), $(b.tolg))\n    $(status_summary(b))")
+    return print(io, "StopWhenLagrangeMultiplierLess($(b.tol_errors), $(b.tol_search_dir))\n    $(status_summary(b))")
 end
 function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    return print(io, "StopWhenLagrangeMultiplierLess($(b.tolξ))\n    $(status_summary(b))")
+    return print(io, "StopWhenLagrangeMultiplierLess($(b.tol_lag_mult))\n    $(status_summary(b))")
 end
 
 @doc raw"""
