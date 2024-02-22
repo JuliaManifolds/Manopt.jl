@@ -9,7 +9,7 @@ The formula reads
     \kappa_p(X, Y) = \frac{⟨R(X, Y, Y), X⟩_p}{\lVert X \rVert^2_p \lVert Y \rVert^2_p - ⟨X, Y⟩^2_p}
 
 ```
-where ``R(X, Y, Y)`` is the [`riemann_tensor`](@ref).
+where ``R(X, Y, Y)`` is the [`riemann_tensor`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/connection.html#ManifoldsBase.riemann_tensor-Tuple{AbstractManifold,%20Any,%20AbstractBasis}) on ``\mathcal M``.
 
 # Input
 
@@ -513,11 +513,11 @@ Two stopping criteria for [`convex_bundle_method`](@ref) to indicate to stop whe
 
 * the parameters ε and |g|
 
-are less than given tolerances tol_errors and tol_search_dir respectively, or
+are less than given tolerances `tol_errors` and `tol_search_dir` respectively, or
 
-* the parameter -ξ = |g|^2 + ε
+* the parameter ``-ξ = |g|^2 + ε``
 
-is less than a given tolerance tol_lag_mult.
+is less than a given tolerance `tol_lag_mult``.
 
 # Constructors
 

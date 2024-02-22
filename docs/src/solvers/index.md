@@ -18,7 +18,7 @@ The following algorithms are currently available
 [Augmented Lagrangian Method](augmented_Lagrangian_method.md) | [`augmented_Lagrangian_method`](@ref), [`AugmentedLagrangianMethodState`](@ref) | ``f``, ``\operatorname{grad} f``, ``g``, ``\operatorname{grad} g_i``, ``h``, ``\operatorname{grad} h_j`` |
 [Chambolle-Pock](ChambollePock.md) | [`ChambollePock`](@ref), [`ChambollePockState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}``, ``\operatorname{prox}_{τ G^*}``, ``Λ`` |
 [Conjugate Gradient Descent](conjugate_gradient_descent.md) | [`conjugate_gradient_descent`](@ref), [`ConjugateGradientDescentState`](@ref) | ``f``, ``\operatorname{grad} f``
-[Convex Bundle Method](covex_bundle_method.md) | [`convex_bundle_method`](@ref), [`ConvexBundleMethodState`](@ref) | ``f``, ``\partial f``
+[Convex Bundle Method](convex_bundle_method.md) | [`convex_bundle_method`](@ref), [`ConvexBundleMethodState`](@ref) | ``f``, ``\partial f``
 [Cyclic Proximal Point](cyclic_proximal_point.md) | [`cyclic_proximal_point`](@ref), [`CyclicProximalPointState`](@ref) | ``f=\sum f_i``, ``\operatorname{prox}_{\lambda f_i}`` |
 [Difference of Convex Algorithm](@ref solver-difference-of-convex) | [`difference_of_convex_algorithm`](@ref), [`DifferenceOfConvexState`](@ref) | ``f=g-h``, ``∂h``, and for example ``g``, ``\operatorname{grad} g`` |
 [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref), [`DifferenceOfConvexProximalState`](@ref) | ``f=g-h``, ``∂h``, and for example ``g``, ``\operatorname{grad} g`` |
@@ -30,7 +30,7 @@ The following algorithms are currently available
 [Nelder-Mead](NelderMead.md) | [`NelderMead`](@ref), [`NelderMeadState`](@ref) | ``f``
 [Particle Swarm](particle_swarm.md) | [`particle_swarm`](@ref), [`ParticleSwarmState`](@ref) | ``f`` |
 [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) | [`primal_dual_semismooth_Newton`](@ref),  [`PrimalDualSemismoothNewtonState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}`` & diff., ``\operatorname{prox}_{τ G^*}`` & diff., ``Λ``
-[Proximal Bundle Method](covex_bundle_method.md) | [`prox_bundle_method`](@ref), [`ProxBundleMethodState`](@ref) | ``f``, ``\partial f``
+[Proximal Bundle Method](prox_bundle_method.md) | [`prox_bundle_method`](@ref), [`ProxBundleMethodState`](@ref) | ``f``, ``\partial f``
 [Quasi-Newton Method](quasi_Newton.md) | [`quasi_Newton`](@ref), [`QuasiNewtonState`](@ref) | ``f``, ``\operatorname{grad} f`` |
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref), [`TruncatedConjugateGradientState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
 [Subgradient Method](subgradient.md) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |

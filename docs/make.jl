@@ -67,6 +67,7 @@ end
 using Documenter
 using DocumenterCitations
 using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
+using RipQP, QuadraticModels
 
 # (d) add contributing.md to docs
 generated_path = joinpath(@__DIR__, "src")

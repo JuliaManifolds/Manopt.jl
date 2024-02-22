@@ -15,12 +15,6 @@ prox_bundle_method!
 ProxBundleMethodState
 ```
 
-## Stopping Criteria
-
-```@docs
-StopWhenLagrangeMultiplierLess
-```
-
 ## Literature
 
 ```@bibliography
