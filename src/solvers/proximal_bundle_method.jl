@@ -1,7 +1,7 @@
 @doc raw"""
     ProxBundleMethodState <: AbstractManoptSolverState
 
-stores option values for a [`prox_bundle_method`](@ref) solver
+stores option values for a [`proximal_bundle_method`](@ref) solver
 
 # Fields
 
@@ -170,14 +170,15 @@ function show(io::IO, pbms::ProxBundleMethodState)
 end
 
 @doc raw"""
-    prox_bundle_method(M, f, ∂f, p)
+    proximal_bundle_method(M, f, ∂f, p)
 
 perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where
 ```math
 g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
 with ``X_{q_j}\in∂f(q_j)``,
-``\mathrm{retr}`` is a retraction, ``p_k`` is the last serious iterate.
+``\mathrm{retr}`` is a retraction, ``p_k`` is the last serious iterate, and the ``λ_j^k`` are solutions
+to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
 
 Though the subdifferential might be set valued, the argument `∂f` should always
 return _one_ element from the subdifferential, but not necessarily deterministic.
@@ -212,14 +213,14 @@ and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
-function prox_bundle_method(
+function proximal_bundle_method(
     M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...
 ) where {TF,TdF}
     p_star = copy(M, p)
-    return prox_bundle_method!(M, f, ∂f, p_star; kwargs...)
+    return proximal_bundle_method!(M, f, ∂f, p_star; kwargs...)
 end
 @doc raw"""
-    prox_bundle_method!(M, f, ∂f, p)
+    proximal_bundle_method!(M, f, ∂f, p)
 
 perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`
 
@@ -233,9 +234,9 @@ perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place
   a mutating function `(M, X, p) -> X`, see `evaluation`.
 * `p` – an initial value ``p_0=p ∈ \mathcal M``
 
-for more details and all optional parameters, see [`prox_bundle_method`](@ref).
+for more details and all optional parameters, see [`proximal_bundle_method`](@ref).
 """
-function prox_bundle_method!(
+function proximal_bundle_method!(
     M::AbstractManifold,
     f::TF,
     ∂f!!::TdF,
@@ -451,7 +452,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             At iteration #$i the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
             the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
-            `prox_bundle_method` call.
+            `proximal_bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be supressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
@@ -462,7 +463,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             At iteration #$i the stopping parameter -ν became negative.\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
             the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
-            `prox_bundle_method` call.
+            `proximal_bundle_method` call.
             """
         else
             d.old_value = min(d.old_value, new_value)

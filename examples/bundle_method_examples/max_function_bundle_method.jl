@@ -70,7 +70,7 @@ function check_maxfunc(M, tol=1e-8)
     # prox_min = p0
     println("Prox bundle")
     try
-        @time global prox_min = prox_bundle_method(
+        @time global prox_min = proximal_bundle_method(
             M,
             F3,
             subgradF3,
@@ -93,7 +93,7 @@ function check_maxfunc(M, tol=1e-8)
             ],
         )
     catch y
-        println("The prox_bundle_method got stuck at the subsolver level.")
+        println("The proximal_bundle_method got stuck at the subsolver level.")
     end
     println("Distance between p0 and bundle_min: $(distance(M, bundle_min, p0))")
     println(
@@ -127,8 +127,8 @@ function check_maxfunc(M, tol=1e-8)
 end
 
 check_maxfunc(SymmetricPositiveDefinite(3))
-# check_maxfunc(SymmetricPositiveDefinite(7)) # prox_bundle_method yields a lower minimum (by 1e-11), but takes 50 more iterations
-# check_maxfunc(Hyperbolic(2)) # convex_bundle_method is by far better, whereas for bigger dimensions the prox_bundle_method errors at the subsolver level: AssertionError: all(pt0.x .> fd.lvar) && all(pt0.x .< fd.uvar)
+# check_maxfunc(SymmetricPositiveDefinite(7)) # proximal_bundle_method yields a lower minimum (by 1e-11), but takes 50 more iterations
+# check_maxfunc(Hyperbolic(2)) # convex_bundle_method is by far better, whereas for bigger dimensions the proximal_bundle_method errors at the subsolver level: AssertionError: all(pt0.x .> fd.lvar) && all(pt0.x .< fd.uvar)
 
-# check_maxfunc(SymmetricPositiveDefinite(60)) # convex_bundle_method is much faster: I'm still waiting for the prox_bundle_method to stop
+# check_maxfunc(SymmetricPositiveDefinite(60)) # convex_bundle_method is much faster: I'm still waiting for the proximal_bundle_method to stop
 # check_maxfunc(Hyperbolic(37))

@@ -47,7 +47,7 @@ end
 # end
 
 @doc raw"""
-    ζ_2(\Omega, \delta)
+    ζ_2(Ω, δ)
 compute a curvature-dependent bound.
 The formula reads
 ```math
@@ -506,16 +506,16 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
-"""
+@doc raw"""
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
-Two stopping criteria for [`convex_bundle_method`](@ref) to indicate to stop when either
+Two stopping criteria for [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref) to indicate to stop when either
 
-* the parameters ε and |g|
+* the parameters ε and ``\lvert g \rvert``
 
 are less than given tolerances `tol_errors` and `tol_search_dir` respectively, or
 
-* the parameter ``-ξ = |g|^2 + ε``
+* the parameter ``-ξ = \lvert g \rvert^2 + ε``
 
 is less than a given tolerance `tol_lag_mult`.
 
