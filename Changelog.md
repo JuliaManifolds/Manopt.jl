@@ -159,16 +159,6 @@ and their documentation and testing has been extended.
 * vale.sh as a CI to keep track of a consistent documenttion
 
 ## [0.4.42] - November 6, 2023
-## [0.4.x] - dd/mm/2023
-
-### Added
-
-* `convex_bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
-* `proximal_bundle_method` optimization algorithm for non-smooth functions.
-* `StopWhenSubgradientNormLess`, `StopWhenLagrangeMultiplierLess`, and
-  `StopWhenLagrangeMultiplierLess` stopping criteria.
-
-## [Unreleased]
 
 ### Added
 
