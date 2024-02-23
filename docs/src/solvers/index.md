@@ -30,7 +30,7 @@ The following algorithms are currently available
 [Nelder-Mead](NelderMead.md) | [`NelderMead`](@ref), [`NelderMeadState`](@ref) | ``f``
 [Particle Swarm](particle_swarm.md) | [`particle_swarm`](@ref), [`ParticleSwarmState`](@ref) | ``f`` |
 [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) | [`primal_dual_semismooth_Newton`](@ref),  [`PrimalDualSemismoothNewtonState`](@ref) (using [`TwoManifoldProblem`](@ref)) | ``f=F+G(Λ\cdot)``, ``\operatorname{prox}_{σ F}`` & diff., ``\operatorname{prox}_{τ G^*}`` & diff., ``Λ``
-[Proximal Bundle Method](proximal_bundle_method.md) | [`proximal_bundle_method`](@ref), [`ProxBundleMethodState`](@ref) | ``f``, ``\partial f``
+[Proximal Bundle Method](proximal_bundle_method.md) | [`proximal_bundle_method`](@ref), [`ProximalBundleMethodState`](@ref) | ``f``, ``\partial f``
 [Quasi-Newton Method](quasi_Newton.md) | [`quasi_Newton`](@ref), [`QuasiNewtonState`](@ref) | ``f``, ``\operatorname{grad} f`` |
 [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref), [`TruncatedConjugateGradientState`](@ref) | ``f``, ``\operatorname{grad} f``, ``\operatorname{Hess} f`` |
 [Subgradient Method](subgradient.md) | [`subgradient_method`](@ref), [`SubGradientMethodState`](@ref) | ``f``, ``∂ f`` |

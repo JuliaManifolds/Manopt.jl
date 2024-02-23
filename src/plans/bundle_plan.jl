@@ -4,7 +4,7 @@
 
 function bundle_method_subsolver end
 @doc raw"""
-    bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProxBundleMethodState})
+    bundle_method_subsolver(M, bms<:Union{ConvexBundleMethodState, ProximalBundleMethodState})
 
 solver for the subproblem of both the convex and proximal bundle methods.
 

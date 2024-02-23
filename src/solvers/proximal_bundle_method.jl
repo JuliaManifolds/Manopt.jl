@@ -1,5 +1,5 @@
 @doc raw"""
-    ProxBundleMethodState <: AbstractManoptSolverState
+    ProximalBundleMethodState <: AbstractManoptSolverState
 
 stores option values for a [`proximal_bundle_method`](@ref) solver
 
@@ -32,13 +32,13 @@ stores option values for a [`proximal_bundle_method`](@ref) solver
 
 # Constructor
 
-ProxBundleMethodState(M::AbstractManifold, p; kwargs...)
+ProximalBundleMethodState(M::AbstractManifold, p; kwargs...)
 
 with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
 You can use e.g. `X=` to specify the type of tangent vector to use
 
 """
-mutable struct ProxBundleMethodState{
+mutable struct ProximalBundleMethodState{
     IR<:AbstractInverseRetractionMethod,
     P,
     T,
@@ -72,7 +72,7 @@ mutable struct ProxBundleMethodState{
     μ::R
     ν::R
     sub_problem::Pr
-    function ProxBundleMethodState(
+    function ProximalBundleMethodState(
         M::TM,
         p::P;
         m::R=0.0125,
@@ -138,10 +138,10 @@ mutable struct ProxBundleMethodState{
         )
     end
 end
-get_iterate(pbms::ProxBundleMethodState) = pbms.p_last_serious
-get_subgradient(pbms::ProxBundleMethodState) = pbms.d
+get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious
+get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
 
-function show(io::IO, pbms::ProxBundleMethodState)
+function show(io::IO, pbms::ProximalBundleMethodState)
     i = get_count(pbms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(pbms.stop) ? "Yes" : "No"
@@ -259,7 +259,7 @@ function proximal_bundle_method!(
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
-    pbms = ProxBundleMethodState(
+    pbms = ProximalBundleMethodState(
         M,
         p;
         m=m,
@@ -277,14 +277,14 @@ function proximal_bundle_method!(
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
 end
-function initialize_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState)
+function initialize_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState)
     M = get_manifold(mp)
     copyto!(M, pbms.p_last_serious, pbms.p)
     get_subgradient!(mp, pbms.X, pbms.p)
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     return pbms
 end
-function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
+function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i)
     M = get_manifold(mp)
     pbms.transported_subgradients = [
         if qj ≈ pbms.p_last_serious
@@ -392,10 +392,10 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i)
     end
     return pbms
 end
-get_solver_result(pbms::ProxBundleMethodState) = pbms.p_last_serious
+get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 
 function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
-    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
+    mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
 ) where {T}
     if i == 0 # reset on init
         b.reason = ""
@@ -411,7 +411,7 @@ function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
     return false
 end
 function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
-    mp::AbstractManoptProblem, pbms::ProxBundleMethodState, i::Int
+    mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
 ) where {R}
     if i == 0 # reset on init
         b.reason = ""
@@ -442,7 +442,7 @@ to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
-    p::AbstractManoptProblem, st::ProxBundleMethodState, i::Int
+    p::AbstractManoptProblem, st::ProximalBundleMethodState, i::Int
 )
     (i < 1) && (return nothing)
     if d.status !== :No

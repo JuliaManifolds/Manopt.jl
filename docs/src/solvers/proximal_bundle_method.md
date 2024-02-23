@@ -12,7 +12,7 @@ proximal_bundle_method!
 ## State
 
 ```@docs
-ProxBundleMethodState
+ProximalBundleMethodState
 ```
 
 ## Literature
