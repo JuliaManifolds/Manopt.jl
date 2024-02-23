@@ -79,4 +79,4 @@ RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache"]
+test = ["Test", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache", "RipQP", "QuadraticModels"]

@@ -7,6 +7,7 @@ The following people contributed
 * [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential `check` functions](helpers/checks.md)
 * [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref)
 * [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
+* [Hajg Jasa](https://www.ntnu.edu/employees/hajg.jasa) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md).
 * Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver
 * Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers.

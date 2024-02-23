@@ -9,7 +9,7 @@ The formula reads
     \kappa_p(X, Y) = \frac{⟨R(X, Y, Y), X⟩_p}{\lVert X \rVert^2_p \lVert Y \rVert^2_p - ⟨X, Y⟩^2_p}
 
 ```
-where ``R(X, Y, Y)`` is the [`riemann_tensor`](@ref).
+where ``R(X, Y, Y)`` is the [`riemann_tensor`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/connection.html#ManifoldsBase.riemann_tensor-Tuple{AbstractManifold,%20Any,%20AbstractBasis}) on ``\mathcal M``.
 
 # Input
 
@@ -47,7 +47,7 @@ end
 # end
 
 @doc raw"""
-    ζ_2(\Omega, \delta)
+    ζ_2(Ω, δ)
 compute a curvature-dependent bound.
 The formula reads
 ```math
@@ -324,7 +324,7 @@ to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
 Though the subdifferential might be set valued, the argument `∂f` should always
 return one element from the subdifferential, but not necessarily deterministic.
 
-For more details, see [BergmannJasaHerzzog:2024](@cite).
+For more details, see [BergmannHerzogJasa:2024](@cite).
 
 # Input
 
@@ -506,18 +506,18 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
-"""
+@doc raw"""
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
-Two stopping criteria for [`convex_bundle_method`](@ref) to indicate to stop when either
+Two stopping criteria for [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref) to indicate to stop when either
 
-* the parameters ε and |g|
+* the parameters ε and ``\lvert g \rvert``
 
-are less than given tolerances tol_errors and tol_search_dir respectively, or
+are less than given tolerances `tol_errors` and `tol_search_dir` respectively, or
 
-* the parameter -ξ = |g|^2 + ε
+* the parameter ``-ξ = \lvert g \rvert^2 + ε``
 
-is less than a given tolerance tol_lag_mult.
+is less than a given tolerance `tol_lag_mult`.
 
 # Constructors
 

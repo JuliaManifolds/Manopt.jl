@@ -5,8 +5,8 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-prox_bundle_method
-prox_bundle_method!
+proximal_bundle_method
+proximal_bundle_method!
 ```
 
 ## State
@@ -15,15 +15,9 @@ prox_bundle_method!
 ProxBundleMethodState
 ```
 
-## Stopping Criteria
-
-```@docs
-StopWhenLagrangeMultiplierLess
-```
-
 ## Literature
 
 ```@bibliography
-Pages = ["prox_bundle_method.md"]
+Pages = ["proximal_bundle_method.md"]
 Canonical=false
 ```
