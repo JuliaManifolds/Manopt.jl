@@ -26,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * fix a few typos in the documentation and add a reference for the subgradient menthod.
 
 ## [0.4.52] February 5, 2024
->>>>>>> master
 
 ### Added
 
