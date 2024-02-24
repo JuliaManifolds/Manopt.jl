@@ -20,7 +20,18 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         @test startswith(
             repr(pbm_s), "# Solver state for `Manopt.jl`s Proximal Bundle Method\n"
         )
-        p = get_solver_result(pbm_s)
-        @test distance(M, p, median(M, data)) < 2 * 1e-3 #with default params this is not very precise
+        q = get_solver_result(pbm_s)
+        # with default parameters for both median and proximal bundle, this is not very precise
+        m = median(M, data)
+        @test distance(M, q, m) < 2 * 1e-3
+        # twst the other stopping criterion mode
+        q2 = proximal_bundle_method(
+            M,
+            f,
+            ∂f,
+            p0;
+            stopping_criterion=StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both),
+        )
+        @test distance(M, q2, m) < 2 * 1e-3
     end
 end

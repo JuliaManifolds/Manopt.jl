@@ -186,7 +186,6 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         update_stopping_criterion!(swecl, :Threshold, 1e-1)
         @test swecl.threshold == 1e-1
     end
-
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
@@ -213,5 +212,25 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test Manopt.indicates_convergence(c2)
         update_stopping_criterion!(c2, :MinSubgradNorm, 1e-8)
         @test c2.threshold == 1e-8
+    end
+    @testset "StopWhenCostNaN & StopWhenIterateNaN" begin
+        sc1 = StopWhenCostNaN()
+        f(M, p) = NaN
+        M = Euclidean(2)
+        p = [1.0, 2.0]
+        @test startswith(repr(sc1), "StopWhenCostNaN()\n")
+        mco = ManifoldCostObjective(f)
+        mp = DefaultManoptProblem(M, mco)
+        s = NelderMeadState(M)
+        @test sc1(mp, s, 1) #always returns true since `f` is always NaN
+        @test !sc1(mp, s, 0) # test reset
+        @test length(sc1.reason) == sc1.at_iteration # verify reset
+
+        s.p .= NaN
+        sc2 = StopWhenIterateNaN()
+        @test startswith(repr(sc2), "StopWhenIterateNaN()\n")
+        @test sc2(mp, s, 1) #always returns true since p was now set to NaN
+        @test !sc2(mp, s, 0) # test reset
+        @test length(sc2.reason) == sc2.at_iteration # verify reset
     end
 end

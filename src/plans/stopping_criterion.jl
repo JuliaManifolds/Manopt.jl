@@ -624,22 +624,22 @@ function update_stopping_criterion!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}
 end
 
 """
-    StopWhenCostNan <: StoppingCriterion
+    StopWhenCostNaN <: StoppingCriterion
 
 stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
 
 # Constructor
 
-    StopWhenCostNan()
+    StopWhenCostNaN()
 
 initialize the stopping criterion to NaN.
 """
-mutable struct StopWhenCostNan <: StoppingCriterion
+mutable struct StopWhenCostNaN <: StoppingCriterion
     reason::String
     at_iteration::Int
-    StopWhenCostNan() = new("", 0)
+    StopWhenCostNaN() = new("", 0)
 end
-function (c::StopWhenCostNan)(
+function (c::StopWhenCostNaN)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
@@ -653,32 +653,32 @@ function (c::StopWhenCostNan)(
     end
     return false
 end
-function status_summary(c::StopWhenCostNan)
+function status_summary(c::StopWhenCostNaN)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
     return "f(x) is NaN:\t$s"
 end
-function show(io::IO, c::StopWhenCostNan)
-    return print(io, "StopWhenCostNan()\n    $(status_summary(c))")
+function show(io::IO, c::StopWhenCostNaN)
+    return print(io, "StopWhenCostNaN()\n    $(status_summary(c))")
 end
 
 """
-    StopWhenIterNan <: StoppingCriterion
+    StopWhenIterateNaN <: StoppingCriterion
 
 stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
 
 # Constructor
 
-    StopWhenIterNan()
+    StopWhenIterateNaN()
 
 initialize the stopping criterion to NaN.
 """
-mutable struct StopWhenIterNan <: StoppingCriterion
+mutable struct StopWhenIterateNaN <: StoppingCriterion
     reason::String
     at_iteration::Int
-    StopWhenIterNan() = new("", 0)
+    StopWhenIterateNaN() = new("", 0)
 end
-function (c::StopWhenIterNan)(
+function (c::StopWhenIterateNaN)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
@@ -692,13 +692,13 @@ function (c::StopWhenIterNan)(
     end
     return false
 end
-function status_summary(c::StopWhenIterNan)
+function status_summary(c::StopWhenIterateNaN)
     has_stopped = length(c.reason) > 0
     s = has_stopped ? "reached" : "not reached"
     return "f(x) is NaN:\t$s"
 end
-function show(io::IO, c::StopWhenIterNan)
-    return print(io, "StopWhenIterNan()\n    $(status_summary(c))")
+function show(io::IO, c::StopWhenIterateNaN)
+    return print(io, "StopWhenIterateNaN()\n    $(status_summary(c))")
 end
 
 @doc raw"""

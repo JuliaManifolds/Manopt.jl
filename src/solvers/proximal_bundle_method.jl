@@ -408,10 +408,7 @@ function (sc::StopWhenLagrangeMultiplierLess)(
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
-    if (sc.mode == :both) &&
-        (pbms.c ≤ sc.tolerance[1]) &&
-        nd(nd ≤ sc.tolerance[2]) &&
-        (i > 0)
+    if (sc.mode == :both) && (pbms.c ≤ sc.tolerance[1]) && (nd ≤ sc.tolerance[2]) && (i > 0)
         sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) ≤ $(sc.tolerance[1]) and |d| = $(nd) ≤ $(sc.tolerance[2]).\n"
         sc.at_iteration = i
         return true

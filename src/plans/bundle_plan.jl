@@ -92,7 +92,7 @@ end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
     return print(
         io,
-        "StopWhenLagrangeMultiplierLess($(sc.tolerance); mode=$(sc.mode))\n    $(status_summary(sc))",
+        "StopWhenLagrangeMultiplierLess($(sc.tolerance); mode=:$(sc.mode))\n    $(status_summary(sc))",
     )
 end
 

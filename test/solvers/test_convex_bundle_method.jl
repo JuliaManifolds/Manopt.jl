@@ -18,6 +18,16 @@ using Manopt: bundle_method_subsolver
     )
     @test get_iterate(cbms) == p0
     cbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
+    @testset "Special Stopping Criteria" begin
+        sc1 = StopWhenLagrangeMultiplierLess(1e-8)
+        @test startswith(
+            repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
+        )
+        sc2 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both)
+        @test startswith(
+            repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
+        )
+    end
     @testset "Allocating Subgradient" begin
         f(M, q) = distance(M, q, p)
         function ∂f(M, q)
@@ -117,7 +127,17 @@ using Manopt: bundle_method_subsolver
         @test startswith(
             repr(cbm_s), "# Solver state for `Manopt.jl`s Convex Bundle Method\n"
         )
-        p = get_solver_result(cbm_s)
-        @test distance(M, p, median(M, data)) < 2 * 1e-3 #with default params this is not very precise
+        q = get_solver_result(cbm_s)
+        m = median(M, data)
+        @test distance(M, q, m) < 2 * 1e-3 #with default params this is not very precise
+        # tst the other stopping criterion mode
+        q2 = convex_bundle_method(
+            M,
+            f,
+            ∂f,
+            p0;
+            stopping_criterion=StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both),
+        )
+        @test distance(M, q2, m) < 2 * 1e-3
     end
 end

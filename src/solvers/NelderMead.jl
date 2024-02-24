@@ -74,7 +74,7 @@ after the description
 
 # Constructors
 
-    NelderMead(M[, population::NelderMeadSimplex]; kwargs...)
+    NelderMeadState(M[, population::NelderMeadSimplex]; kwargs...)
 
 Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
