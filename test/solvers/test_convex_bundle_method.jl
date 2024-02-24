@@ -1,7 +1,7 @@
-using Manopt, ManifoldsBase, Manifolds, Test, QuadraticModels, RipQP
-import Manopt: bundle_method_subsolver
+using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
+using Manopt: bundle_method_subsolver
 
-@testset "Subgradient Plan for Convex Bundle Method" begin
+@testset "The Convex Bundle Method" begin
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
@@ -18,8 +18,8 @@ import Manopt: bundle_method_subsolver
     )
     @test get_iterate(cbms) == p0
     cbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
-    f(M, q) = distance(M, q, p)
     @testset "Allocating Subgradient" begin
+        f(M, q) = distance(M, q, p)
         function ∂f(M, q)
             if distance(M, p, q) == 0
                 return zero_vector(M, q)
@@ -57,8 +57,8 @@ import Manopt: bundle_method_subsolver
         set_iterate!(bms2, M, p)
         @test get_iterate(bms2) == p
     end
-
     @testset "Mutating Subgradient" begin
+        f(M, q) = distance(M, q, p)
         function ∂f!(M, X, q)
             d = distance(M, p, q)
             if d == 0
@@ -98,5 +98,26 @@ import Manopt: bundle_method_subsolver
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
+    end
+    @testset "A simple median rum" begin
+        M = Sphere(2)
+        p1 = [1.0, 0.0, 0.0]
+        p2 = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
+        p3 = 1 / sqrt(2) .* [1.0, 0.0, 1.0]
+        data = [p1, p2, p3]
+        f(M, p) = sum(1 / length(data) * distance.(Ref(M), Ref(p), data))
+        function ∂f(M, p)
+            return sum(
+                1 / length(data) *
+                ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(p), 1; atol=1e-8),
+            )
+        end
+        p0 = p1
+        cbm_s = convex_bundle_method(M, f, ∂f, p0; return_state=true)
+        @test startswith(
+            repr(cbm_s), "# Solver state for `Manopt.jl`s Convex Bundle Method\n"
+        )
+        p = get_solver_result(cbm_s)
+        @test distance(M, p, median(M, data)) < 2 * 1e-3 #with default params this is not very precise
     end
 end

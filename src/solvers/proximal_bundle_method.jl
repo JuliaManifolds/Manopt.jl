@@ -394,9 +394,9 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
 end
 get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 
-function (sc::StopWhenLagrangeMultiplierLess{T,Nothing})(
+function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
-) where {T}
+)
     if i == 0 # reset on init
         sc.reason = ""
         sc.at_iteration = 0

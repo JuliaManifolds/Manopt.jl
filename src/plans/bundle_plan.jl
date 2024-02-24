@@ -74,11 +74,11 @@ mutable struct StopWhenLagrangeMultiplierLess{T<:Real,A<:AbstractVector{<:T}} <:
     reason::String
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(tol::T; mode::Symbol=:estimate) where {T<:Real}
-        return new{T,Array{T}}([tol], mode, "", 0)
+        return new{T,Vector{T}}([tol], mode, "", 0)
     end
     function StopWhenLagrangeMultiplierLess(
         tols::A; mode::Symbol=:estimate
-    ) where {T<:Real,A<:AbstractArray{<:T}}
+    ) where {T<:Real,A<:AbstractVector{<:T}}
         return new{T,A}(tols, mode, "", 0)
     end
 end
@@ -86,8 +86,7 @@ function status_summary(sc::StopWhenLagrangeMultiplierLess)
     s = length(sc.reason) > 0 ? "reached" : "not reached"
     msg = ""
     (sc.mode === :both) && (msg = " ε ≤ $(sc.tolerance[1]) and |g| ≤ $(sc.tolerance[2])")
-    (sc.mode === :estimate) &&
-        (msg = "  -ξ ≤ $(sc.tolerance[1]) and |g| ≤ $(sc.tolerance[2])")
+    (sc.mode === :estimate) && (msg = "  -ξ ≤ $(sc.tolerance[1])")
     return "Stopping parameter: $(msg) :\t$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)

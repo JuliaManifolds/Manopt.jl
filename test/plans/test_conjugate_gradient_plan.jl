@@ -16,12 +16,20 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         p0 = [1.0, 0.0]
         pr = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         cgs2 = ConjugateGradientDescentState(
-            M, p0, StopAfterIteration(2), ConstantStepsize(1.0), dur2
+            M,
+            p0;
+            stopping_criterion=StopAfterIteration(2),
+            stepsize=ConstantStepsize(1.0),
+            coefficient=dur2,
         )
         cgs2.X = [0.0, 0.2]
         @test cgs2.coefficient(pr, cgs2, 1) != 0
         cgs3 = ConjugateGradientDescentState(
-            M, p0, StopAfterIteration(2), ConstantStepsize(1.0), dur3
+            M,
+            p0;
+            stopping_criterion=StopAfterIteration(2),
+            stepsize=ConstantStepsize(1.0),
+            coefficient=dur3,
         )
         cgs3.X = [0.0, 0.2]
         @test cgs3.coefficient(pr, cgs3, 1) == 0
