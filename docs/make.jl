@@ -20,6 +20,9 @@ Arguments
   the documentation (see `--exclude-tutorials`) for the alternative.
   If they are generated once they are cached accordingly.
   Then you can spare time in the rendering by not passing this argument.
+  If quarto is not run, some tutorials are generated as empty files, since they
+  are referenced from within the documentation. These are currently
+  `Optimize.md` and `ImplementOwnManifold.md`.
 """,
     )
     exit(0)
@@ -50,6 +53,9 @@ if "--quarto" ∈ ARGS
         Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
+else # fallback to at least create empty files for Optimize and Implement
+    touch("tutorials/Optimize.md")
+    touch("tutorials/ImplementOwnManifold.md")
 end
 
 tutorials_in_menu = true

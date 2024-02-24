@@ -125,7 +125,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 
 # Constructor
 
-ConvexBundleMethodState(M::AbstractManifold, p; kwargs...)
+    ConvexBundleMethodState(M::AbstractManifold, p; kwargs...)
 
 with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
     You can use e.g. `X=` to specify the type of tangent vector to use
@@ -514,33 +514,23 @@ get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
 
 #
 # Lagrange stopping crtierion
-function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
+function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
-) where {R}
+)
     if i == 0 # reset on init
-        b.reason = ""
-        b.at_iteration = 0
+        sc.reason = ""
+        sc.at_iteration = 0
     end
     M = get_manifold(mp)
-    if -bms.ξ ≤ b.tol_lag_mult && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tol_lag_mult).\n"
-        b.at_iteration = i
+    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerance[1]) && (i > 0)
+        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) ≤ $(sc.tolerance[1]).\n"
+        sc.at_iteration = i
         return true
     end
-    return false
-end
-function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
-    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
-) where {T}
-    if i == 0 # reset on init
-        b.reason = ""
-        b.at_iteration = 0
-    end
-    M = get_manifold(mp)
-    if (bms.ε ≤ b.tol_errors && norm(M, bms.p_last_serious, bms.g) ≤ b.tol_search_dir) &&
-        i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) is less than $(b.tol_errors) and |g| = $(norm(M, bms.p_last_serious, bms.g)) is less than $(b.tol_search_dir).\n"
-        b.at_iteration = i
+    ng = norm(M, bms.p_last_serious, bms.g)
+    if (sc.mode == :both) && (bms.ε ≤ sc.tolerance[1]) && (ng ≤ b.tolerance[2]) && (i > 0)
+        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) ≤ $(sc.tolerance[1]) and |g| = $(ng) ≤ $(sc.tolerance[2]).\n"
+        sc.at_iteration = i
         return true
     end
     return false

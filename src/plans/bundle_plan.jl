@@ -45,54 +45,55 @@ bundle_method_subsolver(M, s) #change to problem state?
 @doc raw"""
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
-Two stopping criteria for [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref) to indicate to stop when either
+Stopping Criteria for Lagrange multipliers.
 
-* the parameters ε and ``\lvert g \rvert``
+Currenlty these are meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
+where based on the Lagrange multipliers an approximate (sub)gradient ``g`` and an error estimate ``ε``
+is computed.
 
-are less than given tolerances `tol_errors` and `tol_search_dir` respectively, or
+In `mode=:both` we require that both
+``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s
 
-* the parameter ``-ξ = \lvert g \rvert^2 + ε``
-
-is less than a given tolerance `tol_lag_mult`.
+In the `mode=:estimate` we reauire that ``-ξ = \lvert g \rvert^2 + ε``
+is less than a given `tolerance`.
 
 # Constructors
 
-    StopWhenLagrangeMultiplierLess(tol_errors=1e-6, tol_search_dir=1e-3)
+    StopWhenLagrangeMultiplierLess(tolerance=1e-6; mode::Symbol=:estimate)
 
-    StopWhenLagrangeMultiplierLess(tol_lag_mult=1e-6)
-
+Create the stopping criterion for one of the `mode`s mentioned.
+Note that tolerance can be a single number for the `:estimate` case,
+but a vector of two values is required for the `:both` mode.
+Here the first entry specifies the tolerance for ``ε``,
+the second the tolerance for ``\lvert g \rvert``, respectively.
 """
-mutable struct StopWhenLagrangeMultiplierLess{T,R} <: StoppingCriterion
-    tol_errors::T
-    tol_search_dir::T
-    tol_lag_mult::R
+mutable struct StopWhenLagrangeMultiplierLess{T<:Real,A<:AbstractVector{<:T}} <:
+               StoppingCriterion
+    tolerance::A
+    mode::Symbol
     reason::String
     at_iteration::Int
-    function StopWhenLagrangeMultiplierLess(tol_errors::T, tol_search_dir::T) where {T}
-        return new{T,Nothing}(tol_errors, tol_search_dir, nothing, "", 0)
+    function StopWhenLagrangeMultiplierLess(tol::T; mode::Symbol=:estimate) where {T<:Real}
+        return new{T,Array{T}}([tol], mode, "", 0)
     end
-    function StopWhenLagrangeMultiplierLess(tol_lag_mult::R=1e-6) where {R}
-        return new{Nothing,R}(nothing, nothing, tol_lag_mult, "", 0)
+    function StopWhenLagrangeMultiplierLess(
+        tols::A; mode::Symbol=:estimate
+    ) where {T<:Real,A<:AbstractArray{<:T}}
+        return new{T,A}(tols, mode, "", 0)
     end
 end
-
-function status_summary(b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: ε ≤ $(b.tol_errors), |g| ≤ $(b.tol_search_dir):\t$s"
+function status_summary(sc::StopWhenLagrangeMultiplierLess)
+    s = length(sc.reason) > 0 ? "reached" : "not reached"
+    msg = ""
+    (sc.mode === :both) && (msg = " ε ≤ $(sc.tolerance[1]) and |g| ≤ $(sc.tolerance[2])")
+    (sc.mode === :estimate) &&
+        (msg = "  -ξ ≤ $(sc.tolerance[1]) and |g| ≤ $(sc.tolerance[2])")
+    return "Stopping parameter: $(msg) :\t$(s)"
 end
-function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: -ξ ≤ $(b.tol_lag_mult):\t$s"
-end
-function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
+function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
     return print(
         io,
-        "StopWhenLagrangeMultiplierLess($(b.tol_errors), $(b.tol_search_dir))\n    $(status_summary(b))",
-    )
-end
-function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    return print(
-        io, "StopWhenLagrangeMultiplierLess($(b.tol_lag_mult))\n    $(status_summary(b))"
+        "StopWhenLagrangeMultiplierLess($(sc.tolerance); mode=$(sc.mode))\n    $(status_summary(sc))",
     )
 end
 
@@ -102,6 +103,7 @@ end
 print a warning if the stopping parameter of the bundle method increases.
 
 # Constructor
+
     DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
 
 Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.

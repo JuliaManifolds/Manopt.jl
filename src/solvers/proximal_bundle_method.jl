@@ -394,33 +394,26 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
 end
 get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 
-function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
+function (sc::StopWhenLagrangeMultiplierLess{T,Nothing})(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
 ) where {T}
     if i == 0 # reset on init
-        b.reason = ""
-        b.at_iteration = 0
+        sc.reason = ""
+        sc.at_iteration = 0
     end
     M = get_manifold(mp)
-    if (pbms.c ≤ b.tol_errors && norm(M, pbms.p_last_serious, pbms.d) ≤ b.tol_search_dir) &&
-        i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) is less than $(b.tol_errors) and |d| = $(norm(M, pbms.p_last_serious, pbms.d)) is less than $(b.tol_search_dir).\n"
-        b.at_iteration = i
+    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerance[1]) && (i > 0)
+        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) ≤ $(sc.tolerance[1]).\n"
+        sc.at_iteration = i
         return true
     end
-    return false
-end
-function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
-    mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
-) where {R}
-    if i == 0 # reset on init
-        b.reason = ""
-        b.at_iteration = 0
-    end
-    M = get_manifold(mp)
-    if -pbms.ν ≤ b.tol_lag_mult && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) is less than $(b.tol_lag_mult).\n"
-        b.at_iteration = i
+    nd = norm(M, pbms.p_last_serious, pbms.d)
+    if (sc.mode == :both) &&
+        (pbms.c ≤ sc.tolerance[1]) &&
+        nd(nd ≤ sc.tolerance[2]) &&
+        (i > 0)
+        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) ≤ $(sc.tolerance[1]) and |d| = $(nd) ≤ $(sc.tolerance[2]).\n"
+        sc.at_iteration = i
         return true
     end
     return false
