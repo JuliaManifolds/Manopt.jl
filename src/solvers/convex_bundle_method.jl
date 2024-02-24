@@ -13,7 +13,7 @@ where ``R(X, Y, Y)`` is the [`riemann_tensor`](https://juliamanifolds.github.io/
 
 # Input
 
-* `M`:   a manifold ``\mathcal M`` 
+* `M`:   a manifold ``\mathcal M``
 * `p`:   a point ``p \in \mathcal M``
 * `X`:   a tangent vector ``X \in T_p \mathcal M``
 * `Y`:   a tangent vector ``Y \in T_p \mathcal M``
@@ -26,6 +26,7 @@ end
 
 @doc raw"""
     sectional_curvature(M, p)
+
 compute the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
 on two random tangent vectors at ``p`` that are orthogonal to eachother.
 
@@ -48,8 +49,10 @@ end
 
 @doc raw"""
     ζ_2(Ω, δ)
+
 compute a curvature-dependent bound.
 The formula reads
+
 ```math
     \zeta_{2, \Omega}(\delta)
     \coloneqq
@@ -68,8 +71,9 @@ The formula reads
         ,
     \end{cases}
 ```
-where ``\Omega \ge \kappa_p`` for all ``p \in \mathcal U`` is an upper bound to the sectional curvature in
-a bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``\delta``.
+
+where ``Ω ≥ κ_p`` for all ``p ∈ \mathcal U`` is an upper bound to the sectional curvature in
+a bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
 """
 function ζ_2(k_max, diam)
     (k_max ≤ zero(k_max)) && return one(k_max)
@@ -78,7 +82,8 @@ end
 
 @doc raw"""
     close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
-sample a random point close to ``p \in \mathcal M`` within a tolerance `tol`
+
+sample a random point close to ``p ∈ \mathcal M`` within a tolerance `tol`
 and a [retraction](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/).
 """
 function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
@@ -400,7 +405,7 @@ function convex_bundle_method!(
     k_min=nothing,
     k_max=nothing,
     k_size::Int=100,
-    p_estimate=nothing, # TODO: RB -> HJ: this is not even used, why?
+    p_estimate=nothing,
     stepsize::Stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :relative),
     ϱ=nothing,
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
@@ -506,38 +511,23 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
-@doc raw"""
-    StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
-Two stopping criteria for [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref) to indicate to stop when either
-
-* the parameters ε and ``\lvert g \rvert``
-
-are less than given tolerances `tol_errors` and `tol_search_dir` respectively, or
-
-* the parameter ``-ξ = \lvert g \rvert^2 + ε``
-
-is less than a given tolerance `tol_lag_mult`.
-
-# Constructors
-
-    StopWhenLagrangeMultiplierLess(tol_errors=1e-6, tol_search_dir=1e-3)
-
-    StopWhenLagrangeMultiplierLess(tol_lag_mult=1e-6)
-
-"""
-mutable struct StopWhenLagrangeMultiplierLess{T,R} <: StoppingCriterion
-    tol_errors::T
-    tol_search_dir::T
-    tol_lag_mult::R
-    reason::String
-    at_iteration::Int
-    function StopWhenLagrangeMultiplierLess(tol_errors::T, tol_search_dir::T) where {T}
-        return new{T,Nothing}(tol_errors, tol_search_dir, nothing, "", 0)
+#
+# Lagrange stopping crtierion
+function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
+    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
+) where {R}
+    if i == 0 # reset on init
+        b.reason = ""
+        b.at_iteration = 0
     end
-    function StopWhenLagrangeMultiplierLess(tol_lag_mult::R=1e-6) where {R}
-        return new{Nothing,R}(nothing, nothing, tol_lag_mult, "", 0)
+    M = get_manifold(mp)
+    if -bms.ξ ≤ b.tol_lag_mult && i > 0
+        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tol_lag_mult).\n"
+        b.at_iteration = i
+        return true
     end
+    return false
 end
 function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
@@ -555,68 +545,9 @@ function (b::StopWhenLagrangeMultiplierLess{T,Nothing})(
     end
     return false
 end
-function (b::StopWhenLagrangeMultiplierLess{Nothing,R})(
-    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
-) where {R}
-    if i == 0 # reset on init
-        b.reason = ""
-        b.at_iteration = 0
-    end
-    M = get_manifold(mp)
-    if -bms.ξ ≤ b.tol_lag_mult && i > 0
-        b.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) is less than $(b.tol_lag_mult).\n"
-        b.at_iteration = i
-        return true
-    end
-    return false
-end
-function status_summary(b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: ε ≤ $(b.tol_errors), |g| ≤ $(b.tol_search_dir):\t$s"
-end
-function status_summary(b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    s = length(b.reason) > 0 ? "reached" : "not reached"
-    return "Stopping parameter: -ξ ≤ $(b.tol_lag_mult):\t$s"
-end
-function show(io::IO, b::StopWhenLagrangeMultiplierLess{T,Nothing}) where {T}
-    return print(
-        io,
-        "StopWhenLagrangeMultiplierLess($(b.tol_errors), $(b.tol_search_dir))\n    $(status_summary(b))",
-    )
-end
-function show(io::IO, b::StopWhenLagrangeMultiplierLess{Nothing,R}) where {R}
-    return print(
-        io, "StopWhenLagrangeMultiplierLess($(b.tol_lag_mult))\n    $(status_summary(b))"
-    )
-end
 
-@doc raw"""
-    DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
-
-print a warning if the stopping parameter of the bundle method increases.
-
-# Constructor
-    DebugWarnIfLagrangeMultiplierIncreases(warn=:Once; tol=1e2)
-
-Initialize the warning to warning level (`:Once`) and introduce a tolerance for the test of `1e2`.
-
-The `warn` level can be set to `:Once` to only warn the first time the cost increases,
-to `:Always` to report an increase every time it happens, and it can be set to `:No`
-to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
-All other symbols are handled as if they were `:Always:`
-"""
-mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
-    # store if we need to warn – :Once, :Always, :No, where all others are handled
-    # the same as :Always
-    status::Symbol
-    old_value::Float64
-    tol::Float64
-    function DebugWarnIfLagrangeMultiplierIncreases(warn::Symbol=:Once; tol=1e2)
-        return new(warn, Float64(Inf), tol)
-    end
-end
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
-    p::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
+    ::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
 )
     (i < 1) && (return nothing)
     if d.status !== :No
@@ -645,11 +576,9 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     end
     return nothing
 end
-function show(io::IO, di::DebugWarnIfLagrangeMultiplierIncreases)
-    return print(io, "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"$(di.tol)\")")
-end
+
 function (d::DebugStepsize)(
-    mp::P, bms::ConvexBundleMethodState, i::Int
+    ::P, bms::ConvexBundleMethodState, i::Int
 ) where {P<:AbstractManoptProblem}
     (i < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(bms))
