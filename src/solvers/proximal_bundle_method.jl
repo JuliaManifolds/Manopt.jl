@@ -432,7 +432,7 @@ to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
-    p::AbstractManoptProblem, st::ProximalBundleMethodState, i::Int
+    ::AbstractManoptProblem, st::ProximalBundleMethodState, i::Int
 )
     (i < 1) && (return nothing)
     if d.status !== :No

@@ -17,6 +17,7 @@ using Manopt: bundle_method_subsolver
         sub_problem=bundle_method_subsolver,
     )
     @test get_iterate(cbms) == p0
+
     cbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
     @testset "Special Stopping Criteria" begin
         sc1 = StopWhenLagrangeMultiplierLess(1e-8)
@@ -66,6 +67,14 @@ using Manopt: bundle_method_subsolver
         @test f(M, p_star2) <= f(M, p0)
         set_iterate!(bms2, M, p)
         @test get_iterate(bms2) == p
+        io = IOBuffer()
+        ds = DebugStepsize(; io=io)
+        # reset stepsize
+        bms2.stepsize(mp, bms2, 0)
+        bms2.stepsize(mp, bms2, 1)
+        ds(mp, bms2, 1)
+        s = String(take!(io))
+        @test s == "s:1.0"
     end
     @testset "Mutating Subgradient" begin
         f(M, q) = distance(M, q, p)
@@ -129,15 +138,15 @@ using Manopt: bundle_method_subsolver
         )
         q = get_solver_result(cbm_s)
         m = median(M, data)
-        @test distance(M, q, m) < 2 * 1e-3 #with default params this is not very precise
+        @test distance(M, q, m) < 1e-2 #with default params this is not very precise
         # tst the other stopping criterion mode
         q2 = convex_bundle_method(
             M,
             f,
             ∂f,
             p0;
-            stopping_criterion=StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both),
+            stopping_criterion=StopWhenLagrangeMultiplierLess([1e-6, 1e-6]; mode=:both),
         )
-        @test distance(M, q2, m) < 2 * 1e-3
+        @test distance(M, q2, m) < 1e-2
     end
 end

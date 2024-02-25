@@ -24,6 +24,9 @@ using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
         # with default parameters for both median and proximal bundle, this is not very precise
         m = median(M, data)
         @test distance(M, q, m) < 2 * 1e-3
+        # test accessors
+        @test get_iterate(pbm_s) == q
+        @test norm(M, q, get_subgradient(pbm_s)) < 1e-4
         # twst the other stopping criterion mode
         q2 = proximal_bundle_method(
             M,

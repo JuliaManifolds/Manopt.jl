@@ -99,7 +99,7 @@ end
 @doc raw"""
     DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
 
-print a warning if the stopping parameter of the bundle method increases.
+print a warning if the Lagrange parameter based value ``-ξ`` of the bundle method increases.
 
 # Constructor
 
@@ -113,8 +113,6 @@ to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
-    # store if we need to warn – :Once, :Always, :No, where all others are handled
-    # the same as :Always
     status::Symbol
     old_value::Float64
     tol::Float64
