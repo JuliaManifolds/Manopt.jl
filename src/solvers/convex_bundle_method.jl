@@ -40,12 +40,40 @@ function sectional_curvature(M, p)
     return sectional_curvature(M, p, X, Y)
 end
 
-# Comment ζ_1 out, as it is not needed for computations
+
+@doc raw"""
+    ζ_1(ω, δ)
+
+compute a curvature-dependent bound.
+The formula reads
+
+```math
+    \zeta_{1, \omega}(\delta)
+    \coloneqq
+    \begin{cases}
+        1
+        &
+        \text{if }
+        \omega \ge 0
+        ,
+        \\
+        \sqrt{-\omega} \, \delta \cot(\sqrt{-\omega} \, \delta)
+        \quad
+        &
+        \text{if }
+        \omega < 0
+        ,
+    \end{cases}
+```
+
+where ``ω ≤ κ_p`` for all ``p ∈ \mathcal U`` is a lower bound to the sectional curvature in
+a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
+"""
 # ! Think about potentially adding a check like isfinite(ζ_1(k_min, diam))
-# function ζ_1(k_min, diam)
-#     (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
-#     (k_min ≥ zero(k_min)) && return one(k_min)
-# end
+function ζ_1(k_min, diam)
+    (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
+    (k_min ≥ zero(k_min)) && return one(k_min)
+end
 
 @doc raw"""
     ζ_2(Ω, δ)
@@ -73,7 +101,7 @@ The formula reads
 ```
 
 where ``Ω ≥ κ_p`` for all ``p ∈ \mathcal U`` is an upper bound to the sectional curvature in
-a bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
 """
 function ζ_2(k_max, diam)
     (k_max ≤ zero(k_max)) && return one(k_max)
@@ -405,7 +433,7 @@ function convex_bundle_method!(
     k_min=nothing,
     k_max=nothing,
     k_size::Int=100,
-    p_estimate=nothing,
+    p_estimate=p,
     stepsize::Stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :relative),
     ϱ=nothing,
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
@@ -434,7 +462,7 @@ function convex_bundle_method!(
         k_min=k_min,
         k_max=k_max,
         k_size=k_size,
-        p_estimate=p,
+        p_estimate=p_estimate,
         stepsize=stepsize,
         ϱ=ϱ,
         inverse_retraction_method=inverse_retraction_method,
@@ -543,8 +571,8 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     if d.status !== :No
         new_value = -st.ξ
         if new_value ≥ d.old_value * d.tol
-            @warn """The stopping parameter increased by at least $(d.tol).
-            At iteration #$i the stopping parameter -ξ increased from $(d.old_value) to $(new_value).\n
+            @warn """The Lagrange multiplier increased by at least $(d.tol).
+            At iteration #$i the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
             Consider decreasing either the diameter by changing the `diam` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
@@ -554,8 +582,8 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
                 d.status = :No
             end
         elseif new_value < zero(number_eltype(st.ξ))
-            @warn """The stopping parameter is negative.
-            At iteration #$i the stopping parameter -ξ became negative.\n
+            @warn """The Lagrange multiplier is positive.
+            At iteration #$i the negative of the Lagrange multiplier, -ξ, became negative.\n
             Consider increasing either the diameter by changing the `diam` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
