@@ -70,7 +70,7 @@ a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` wi
 """
 function ζ_1(k_min, diam)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
-    (k_min ≥ zero(k_min)) && return one(k_min)
+    return one(k_min)
 end
 # ! Think about potentially adding a check like isfinite(ζ_1(k_min, diam))
 
