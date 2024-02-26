@@ -80,7 +80,6 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
         @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"0.0\")"
         cbms.ξ = 101.0
         @test_logs (:warn,) dw1(mp, cbms, 1)
-
         dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=1e1)
         dw2.old_value = -101.0
         @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"10.0\")"

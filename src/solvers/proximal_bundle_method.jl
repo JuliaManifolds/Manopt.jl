@@ -139,6 +139,10 @@ mutable struct ProximalBundleMethodState{
     end
 end
 get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious
+function set_iterate!(pbms::ProximalBundleMethodState, M, p)
+    copyto!(M, pbms.p_last_serious, p)
+    return pbms
+end
 get_subgradient(pbms::ProximalBundleMethodState) = pbms.d
 
 function show(io::IO, pbms::ProximalBundleMethodState)

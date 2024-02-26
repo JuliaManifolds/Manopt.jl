@@ -1,7 +1,114 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
+import Manopt: bundle_method_subsolver
 
 @testset "The Proximal Bundle Method" begin
-    @testset "Basic Constructor tests" begin end
+    M = Hyperbolic(4)
+    p = [0.0, 0.0, 0.0, 0.0, 1.0]
+    p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
+    pbms = ProximalBundleMethodState(
+        M,
+        p0;
+        stopping_criterion=StopAfterIteration(200),
+        sub_problem=bundle_method_subsolver,
+    )
+    @test get_iterate(pbms) == p0
+
+    pbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
+    @testset "Special Stopping Criteria" begin
+        sc1 = StopWhenLagrangeMultiplierLess(1e-8)
+        @test startswith(
+            repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
+        )
+        sc2 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both)
+        @test startswith(
+            repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
+        )
+    end
+    @testset "Allocating Subgradient" begin
+        f(M, q) = distance(M, q, p)
+        function ∂f(M, q)
+            if distance(M, p, q) == 0
+                return zero_vector(M, q)
+            end
+            return -log(M, q, p) / max(10 * eps(Float64), distance(M, p, q))
+        end
+        mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
+        X = zero_vector(M, p)
+        Y = get_subgradient(mp, p)
+        get_subgradient!(mp, X, p)
+        @test isapprox(M, p, X, Y)
+        oR = solve!(mp, pbms)
+        xHat = get_solver_result(oR)
+        # Check Fallbacks of Problem
+        @test get_cost(mp, p) == 0.0
+        @test norm(M, p, get_subgradient(mp, p)) == 0
+        @test_throws MethodError get_gradient(mp, pbms.p)
+        @test_throws MethodError get_proximal_map(mp, 1.0, pbms.p, 1)
+        pbms2 = proximal_bundle_method(
+            M,
+            f,
+            ∂f,
+            p0;
+            stopping_criterion=StopAfterIteration(200),
+            sub_problem=bundle_method_subsolver,
+            return_state=true,
+            debug=[],
+        )
+        p_star2 = get_solver_result(pbms2)
+        @test get_subgradient(pbms2) == -∂f(M, p_star2)
+        @test f(M, p_star2) <= f(M, p0)
+        set_iterate!(pbms2, M, p)
+        @test get_iterate(pbms2) == p
+        # Test warnings
+        dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)
+        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"0.0\")"
+        pbms.ν = 101.0
+        @test_logs (:warn,) dw1(mp, pbms, 1)
+        dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=1e1)
+        dw2.old_value = -101.0
+        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"10.0\")"
+        pbms.ν = -1.0
+        @test_logs (:warn,) (:warn,) dw2(mp, pbms, 1)
+    end
+    @testset "Mutating Subgradient" begin
+        f(M, q) = distance(M, q, p)
+        function ∂f!(M, X, q)
+            d = distance(M, p, q)
+            if d == 0
+                zero_vector!(M, X, q)
+                return X
+            end
+            log!(M, X, q, p)
+            X .*= -1 / max(10 * eps(Float64), d)
+            return X
+        end
+        bmom = ManifoldSubgradientObjective(f, ∂f!; evaluation=InplaceEvaluation())
+        mp = DefaultManoptProblem(M, bmom)
+        X = zero_vector(M, p)
+        Y = get_subgradient(mp, p)
+        get_subgradient!(mp, X, p)
+        @test isapprox(M, p, X, Y)
+        sr = solve!(mp, pbms)
+        xHat = get_solver_result(sr)
+        # Check Fallbacks of Problem
+        @test get_cost(mp, p) == 0.0
+        @test norm(M, p, get_subgradient(mp, p)) == 0
+        @test_throws MethodError get_gradient(mp, pbms.p)
+        @test_throws MethodError get_proximal_map(mp, 1.0, pbms.p, 1)
+        s2 = proximal_bundle_method(
+            M,
+            f,
+            ∂f!,
+            copy(p0);
+            stopping_criterion=StopAfterIteration(200),
+            sub_problem=bundle_method_subsolver,
+            evaluation=InplaceEvaluation(),
+            return_state=true,
+            debug=[],
+        )
+        p_star2 = get_solver_result(s2)
+        @test f(M, p_star2) <= f(M, p0)
+    end
     @testset "A simple median run" begin
         M = Sphere(2)
         p1 = [1.0, 0.0, 0.0]
