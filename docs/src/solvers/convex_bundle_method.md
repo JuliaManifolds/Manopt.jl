@@ -31,6 +31,7 @@ DebugWarnIfLagrangeMultiplierIncreases
 ```@docs
 bundle_method_subsolver
 sectional_curvature
+ζ_1
 ζ_2
 close_point
 ```

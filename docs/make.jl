@@ -54,8 +54,8 @@ if "--quarto" ∈ ARGS
         run(`quarto render $(tutorials_folder)`)
     end
 else # fallback to at least create empty files for Optimize and Implement
-    touch("tutorials/Optimize.md")
-    touch("tutorials/ImplementOwnManifold.md")
+    touch("src/tutorials/Optimize.md")
+    touch("src/tutorials/ImplementOwnManifold.md")
 end
 
 tutorials_in_menu = true

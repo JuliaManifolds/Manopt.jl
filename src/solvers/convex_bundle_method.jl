@@ -47,20 +47,20 @@ compute a curvature-dependent bound.
 The formula reads
 
 ```math
-    \zeta_{1, \omega}(\delta)
+    \zeta_{1, ω}(δ)
     \coloneqq
     \begin{cases}
         1
         &
         \text{if }
-        \omega \ge 0
+        ω \ge 0
         ,
         \\
-        \sqrt{-\omega} \, \delta \cot(\sqrt{-\omega} \, \delta)
+        \sqrt{-ω} \, δ \cot(\sqrt{-ω} \, δ)
         \quad
         &
         \text{if }
-        \omega < 0
+        ω < 0
         ,
     \end{cases}
 ```
@@ -81,20 +81,20 @@ compute a curvature-dependent bound.
 The formula reads
 
 ```math
-    \zeta_{2, \Omega}(\delta)
+    \zeta_{2, Ω}(δ)
     \coloneqq
     \begin{cases}
         1
         &
         \text{if }
-        \Omega \le 0
+        Ω \le 0
         ,
         \\
-        \sqrt{\Omega} \, \delta \cot(\sqrt{\Omega} \, \delta)
+        \sqrt{Ω} \, δ \cot(\sqrt{Ω} \, δ)
         \quad
         &
         \text{if }
-        \Omega > 0
+        Ω > 0
         ,
     \end{cases}
 ```
