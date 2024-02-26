@@ -40,7 +40,7 @@ The subproblem for the proximal bundle method is
 ```
 where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
 """
-bundle_method_subsolver(M, s) #change to problem state?
+bundle_method_subsolver(M, bundle)
 
 @doc raw"""
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
@@ -52,10 +52,13 @@ where based on the Lagrange multipliers an approximate (sub)gradient ``g`` and a
 is computed.
 
 In `mode=:both` we require that both
-``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s
+``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
+and that 
+``c`` and ``\lvert d \rvert`` are smaller than their `tolerance`s for the [`proximal_bundle_method`](@ref).
 
-In the `mode=:estimate` we require that ``-ξ = \lvert g \rvert^2 + ε``
-is less than a given `tolerance`.
+In the `mode=:estimate` we require that, for the [`convex_bundle_method`](@ref)
+``-ξ = \lvert g \rvert^2 + ε`` is less than a given `tolerance`.
+For the [`proximal_bundle_method`](@ref), the equation reads ``-ν = μ \lvert d \rvert^2 + c``.
 
 # Constructors
 
@@ -64,8 +67,8 @@ is less than a given `tolerance`.
 Create the stopping criterion for one of the `mode`s mentioned.
 Note that tolerance can be a single number for the `:estimate` case,
 but a vector of two values is required for the `:both` mode.
-Here the first entry specifies the tolerance for ``ε``,
-the second the tolerance for ``\lvert g \rvert``, respectively.
+Here the first entry specifies the tolerance for ``ε`` (``c``),
+the second the tolerance for ``\lvert g \rvert`` (``\lvert d \rvert``), respectively.
 """
 mutable struct StopWhenLagrangeMultiplierLess{T<:Real,A<:AbstractVector{<:T}} <:
                StoppingCriterion

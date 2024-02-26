@@ -1,13 +1,13 @@
 @doc raw"""
     ProximalBundleMethodState <: AbstractManoptSolverState
 
-stores option values for a [`proximal_bundle_method`](@ref) solver
+stores option values for a [`proximal_bundle_method`](@ref) solver.
 
 # Fields
 
 * `approx_errors`:            approximation of the linearization errors at the last serious step
 * `bundle`:                   bundle that collects each iterate with the computed subgradient at the iterate
-* `bundle_size`:              (`50`) the size of the bundle
+* `bundle_size`:              (`50`) the maximal size of the bundle
 * `c`:                         convex combination of the approximation errors
 * `d`:                         descent direction
 * `inverse_retraction_method`: the inverse retraction to use within
@@ -23,11 +23,11 @@ stores option values for a [`proximal_bundle_method`](@ref) solver
 * `α₀`:                        (`1.2`) initalization value for `α`, used to update `η`
 * `α`:                         curvature-dependent parameter used to update `η`
 * `ε`:                         (`1e-2`) stepsize-like parameter related to the injectivity radius of the manifold
-* `δ`:                         parameter for updating `μ`: if ``δ < 0`` then ``μ = \log(i + 1)``, else ``μ += δ * μ``
+* `δ`:                         parameter for updating `μ`: if ``δ < 0`` then ``μ = \log(i + 1)``, else ``μ += δ μ``
 * `η`:                         curvature-dependent term for updating the approximation errors
 * `λ`:                         convex coefficients that solve the subproblem
 * `μ`:                         (`0.5`) (initial) proximal parameter for the subproblem
-* `ν`:                         the stopping parameter given by ``ν = - μ * |d|^2 - c``
+* `ν`:                         the stopping parameter given by ``ν = - μ |d|^2 - c``
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
 
 # Constructor
@@ -176,13 +176,14 @@ end
 @doc raw"""
     proximal_bundle_method(M, f, ∂f, p)
 
-perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where
+perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -d_k)``, where
 ```math
-g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
+d_k = \frac{1}{\mu_l} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
-with ``X_{q_j}\in∂f(q_j)``,
-``\mathrm{retr}`` is a retraction, ``p_k`` is the last serious iterate, and the ``λ_j^k`` are solutions
-to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
+where ``X_{q_j}\in∂f(q_j)``, ``\mathrm{retr}`` is a retraction,
+``p_k`` is the last serious iterate, ``\mu_l`` is a proximal parameter, and the
+``λ_j^k`` are solutionsto the quadratic subproblem provided by the 
+[`bundle_method_subsolver`](@ref).
 
 Though the subdifferential might be set valued, the argument `∂f` should always
 return _one_ element from the subdifferential, but not necessarily deterministic.
@@ -226,7 +227,7 @@ end
 @doc raw"""
     proximal_bundle_method!(M, f, ∂f, p)
 
-perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)`` in place of `p`
+perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -d_k)`` in place of `p`
 
 # Input
 
