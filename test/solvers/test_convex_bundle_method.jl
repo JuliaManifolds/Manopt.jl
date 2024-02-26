@@ -75,6 +75,17 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
         ds(mp, bms2, 1)
         s = String(take!(io))
         @test s == "s:1.0"
+        # Test warnings
+        dw1 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=0.0)
+        @test repr(dw1) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"0.0\")"
+        cbms.ξ = 101.0
+        @test_logs (:warn,) dw1(mp, cbms, 1)
+
+        dw2 = DebugWarnIfLagrangeMultiplierIncreases(:Once; tol=1e1)
+        dw2.old_value = -101.0
+        @test repr(dw2) == "DebugWarnIfLagrangeMultiplierIncreases(; tol=\"10.0\")"
+        cbms.ξ = -1.0
+        @test_logs (:warn,) (:warn,) dw2(mp, cbms, 1)
     end
     @testset "Mutating Subgradient" begin
         f(M, q) = distance(M, q, p)
@@ -122,7 +133,7 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
         κ = 1.0
-        R = π/2
+        R = π / 2
         @test sectional_curvature(M, p) ≈ κ
         @test ζ_1(κ, R) ≈ 1.0
         @test -10eps() ≤ ζ_2(κ, R) ≤ 10eps()
@@ -131,24 +142,11 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
             M,
             p;
             diam=R,
-            domain=(M, q) -> distance(M, q, p) < R/2 ? true : false,
+            domain=(M, q) -> distance(M, q, p) < R / 2 ? true : false,
             stopping_criterion=StopAfterIteration(10),
             sub_problem=bundle_method_subsolver,
         )
         @test -10eps() ≤ cbms3.ϱ ≤ 10eps()
-
-        # q0 = close_point(M, p, R/2)
-        # data = [close_point(M, q0, R/2) for _ in 1:10]
-        # F(M, q) = sum(1 / length(data) * distance.(Ref(M), Ref(q), data))
-        # function ∂F(M, q)
-        #     return sum(
-        #         1 / length(data) *
-        #         ManifoldDiff.subgrad_distance.(Ref(M), data, Ref(q), 1),
-        #     )
-        # end
-        # cbms3.X = [0.0, 0.0, 1.0]
-        # mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(F, ∂F))
-        # oR = solve!(mp, cbms3)
     end
     @testset "A simple median rum" begin
         M = Sphere(2)

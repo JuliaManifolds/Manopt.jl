@@ -40,7 +40,6 @@ function sectional_curvature(M, p)
     return sectional_curvature(M, p, X, Y)
 end
 
-
 @doc raw"""
     ζ_1(ω, δ)
 
@@ -69,11 +68,11 @@ The formula reads
 where ``ω ≤ κ_p`` for all ``p ∈ \mathcal U`` is a lower bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
 """
-# ! Think about potentially adding a check like isfinite(ζ_1(k_min, diam))
 function ζ_1(k_min, diam)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
     (k_min ≥ zero(k_min)) && return one(k_min)
 end
+# ! Think about potentially adding a check like isfinite(ζ_1(k_min, diam))
 
 @doc raw"""
     ζ_2(Ω, δ)

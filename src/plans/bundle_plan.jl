@@ -54,7 +54,7 @@ is computed.
 In `mode=:both` we require that both
 ``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s
 
-In the `mode=:estimate` we reauire that ``-ξ = \lvert g \rvert^2 + ε``
+In the `mode=:estimate` we require that ``-ξ = \lvert g \rvert^2 + ε``
 is less than a given `tolerance`.
 
 # Constructors
