@@ -487,7 +487,9 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
             bms.vector_transport_method,
         )
     end
-    convex_bundle_method_subsolver!(M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients)
+    convex_bundle_method_subsolver!(
+        M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
+    )
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
