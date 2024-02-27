@@ -125,7 +125,7 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `λ`:                         convex coefficients that solve the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -\lvert g\rvert^2 – ε``
 * `ϱ`:                         curvature-dependent bound
-* `sub_problem`:               a function that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
+* `sub_problem`:               ([`convex_bundle_method_subsolver`]) a function that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
 * `sub_state`:                 an [`AbstractEvaluationType`](@ref) indicating whether `sub_problem` works inplace of `λ` or allocates a solution
 
 # Constructor
@@ -149,7 +149,7 @@ mutable struct ConvexBundleMethodState{
     St,
     R,
     A<:AbstractVector{<:R},
-    B<:AbstractVector{Tuple{<:P,<:T}}, # Update to cyclic buffer
+    B<:AbstractVector{Tuple{<:P,<:T}},
     C<:AbstractVector{T},
     D,
     I,
@@ -205,7 +205,7 @@ mutable struct ConvexBundleMethodState{
                                StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        sub_problem::Pr=bundle_method_subsolver,
+        sub_problem::Pr=convex_bundle_method_subsolver,
         sub_state::St=AllocatingEvaluation(),
     ) where {
         D,
@@ -221,7 +221,7 @@ mutable struct ConvexBundleMethodState{
         VT<:AbstractVectorTransportMethod,
         R<:Real,
     }
-        bundle = CircularBuffer{Tuple{P,T}}(bundle_cap)
+        bundle = Vector{Tuple{P,T}}()
         g = zero_vector(M, p)
         last_stepsize = one(R)
         linearization_errors = Vector{R}()
@@ -424,7 +424,7 @@ function convex_bundle_method!(
         StopWhenLagrangeMultiplierLess(1e-8), StopAfterIteration(5000)
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
-    sub_problem=bundle_method_subsolver,
+    sub_problem=convex_bundle_method_subsolver,
     sub_state=evaluation,
     kwargs..., #especially may contain debug
 ) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
@@ -457,16 +457,21 @@ function convex_bundle_method!(
     return get_solver_return(solve!(mp, bms))
 end
 
-function initialize_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState{P,T,Pr,St,R}) where {P,T,Pr,St,R}
+function initialize_solver!(
+    mp::AbstractManoptProblem, bms::ConvexBundleMethodState{P,T,Pr,St,R}
+) where {P,T,Pr,St,R}
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
     copyto!(M, bms.g, bms.p_last_serious, bms.X)
     empty!(bms.bundle)
-    push!(bms.budle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
-    bms.λ = [zero(R)]
-    bms.linearization_errors = [zero(R)]
-    bms.transported_subgradients = [copy(M, bms.p, bms.X)]
+    push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+    empty!(bms.λ)
+    push!(bms.λ, zero(R))
+    empty!(bms.linearization_errors)
+    push!(bms.linearization_errors, zero(R))
+    empty!(bms.transported_subgradients)
+    push!(bms.transported_subgradients, zero(M, bms.p))
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
@@ -503,34 +508,37 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
         deleteat!(bms.bundle, v)
-        # Update subgradient and lambda memory
+        # Update sizes of subgradient and lambda linearization errors as well
+        deleteat!(bms.λ, v)
+        deleteat!(bms.linearization_errors, v)
+        deleteat!(bms.transported_subgradients, v)
     end
     l = length(bms.bundle)
     if l == bms.bundle_cap
-        # Shift instead?
+        #
         deleteat!(bms.bundle, 1)
         push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     else
         # push to bundle and update subgradients, λ and linearization_errors (+1 in length)
         push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
         push!(bms.linearization_errors, 0.0)
-        push!(bms.sub_gradients, zero_vector(M, bms.p))
         push!(bms.λ, 0.0)
+        push!(bms.transported_subgradients, zero_vector(M, bms.p))
     end
-    bms.linearization_errors .= [
-        get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (
-            bms.ϱ * inner(
-                M,
-                qj,
-                Xj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+    for (j, (qj, Xj)) in enumerate(bms.bundle)
+        v =
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (
+                bms.ϱ * inner(
+                    M,
+                    qj,
+                    Xj,
+                    inverse_retract(
+                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
+                    ),
+                )
             )
-        ) for (qj, Xj) in bms.bundle
-    ]
-    bms.linearization_errors .= [
-        zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for
-        x in bms.linearization_errors
-    ]
+        bms.linearization_errors[j] = (0 ≥ v ≥ -bms.atol_errors) ? 0 : v
+    end
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious

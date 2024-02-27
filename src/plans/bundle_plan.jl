@@ -25,7 +25,9 @@ The subproblem for the convex bundle method is
 where ``J_k = \{j ∈ J_{k-1} \ | \ λ_j > 0\} \cup \{k\}``.
 See [BergmannHerzogJasa:2024](@cite).
 """
-convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
+convex_bundle_method_subsolver(
+    M, p_last_serious, linearization_errors, transported_subgradients
+)
 
 function proximal_bundle_method_subsolver end
 @doc raw"""
@@ -49,7 +51,9 @@ The subproblem for the proximal bundle method is
 where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
 See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 """
-proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
+proximal_bundle_method_subsolver(
+    M, p_last_serious, μ, approximation_errors, transported_subgradients
+)
 
 @doc raw"""
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
