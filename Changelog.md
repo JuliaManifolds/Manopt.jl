@@ -5,11 +5,11 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.54] February 23, 2024
+## [0.4.54] February 28, 2024
 
 ### Added
 
-* `convex_bundle_method` optimization algorithm for non-smooth geodesically convex functions on Hadamard manifolds.
+* `convex_bundle_method` optimization algorithm for non-smooth geodesically convex functions
 * `proximal_bundle_method` optimization algorithm for non-smooth functions.
 * `StopWhenSubgradientNormLess`, `StopWhenLagrangeMultiplierLess`, and stopping criteria.
 
