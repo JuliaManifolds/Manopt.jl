@@ -47,32 +47,21 @@ compute a curvature-dependent bound.
 The formula reads
 
 ```math
-    \zeta_{1, ω}(δ)
-    \coloneqq
-    \begin{cases}
-        1
-        &
-        \text{if }
-        ω \ge 0
-        ,
-        \\
-        \sqrt{-ω} \, δ \cot(\sqrt{-ω} \, δ)
-        \quad
-        &
-        \text{if }
-        ω < 0
-        ,
-    \end{cases}
+\zeta_{1, ω}(δ)
+\coloneqq
+\begin{cases}
+    1 & \text{if } ω ≥ 0, \\
+    \sqrt{-ω} \, δ \cot(\sqrt{-ω} \, δ) & \text{if } ω < 0,
+\end{cases}
 ```
 
 where ``ω ≤ κ_p`` for all ``p ∈ \mathcal U`` is a lower bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
 """
-function ζ_1(k_min, diam)
-    (k_min < zero(k_min)) && return sqrt(-k_min) * diam * coth(sqrt(-k_min) * diam)
+function ζ_1(k_min, diameter)
+    (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
     return one(k_min)
 end
-# ! Think about potentially adding a check like isfinite(ζ_1(k_min, diam))
 
 @doc raw"""
     ζ_2(Ω, δ)
@@ -81,30 +70,19 @@ compute a curvature-dependent bound.
 The formula reads
 
 ```math
-    \zeta_{2, Ω}(δ)
-    \coloneqq
-    \begin{cases}
-        1
-        &
-        \text{if }
-        Ω \le 0
-        ,
-        \\
-        \sqrt{Ω} \, δ \cot(\sqrt{Ω} \, δ)
-        \quad
-        &
-        \text{if }
-        Ω > 0
-        ,
-    \end{cases}
+\zeta_{2, Ω}(δ) \coloneqq
+\begin{cases}
+    1 & \text{if } Ω ≤ 0,\\
+    \sqrt{Ω} \, δ \cot(\sqrt{Ω} \, δ) & \text{if } Ω > 0,
+\end{cases}
 ```
 
 where ``Ω ≥ κ_p`` for all ``p ∈ \mathcal U`` is an upper bound to the sectional curvature in
 a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
 """
-function ζ_2(k_max, diam)
-    (k_max ≤ zero(k_max)) && return one(k_max)
-    (k_max > zero(k_max)) && return sqrt(k_max) * diam * cot(sqrt(k_max) * diam)
+function ζ_2(k_max, diameter)
+    (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
+    return one(k_max)
 end
 
 @doc raw"""
@@ -129,12 +107,11 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `atol_errors`:               (`eps()`) tolerance parameter for the linearization errors
 * `bundle`:                    bundle that collects each iterate with the computed subgradient at the iterate
 * `bundle_cap`:                (`25`) the maximal number of elements the bundle is allowed to remember
-* `bundle_size`:               the current number of bundle elements
-* `diam`:                      (`50.0`) estimate for the diameter of the level set of the objective function at the starting point
+* `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point
 * `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false
 * `g`:                         descent direction
 * `inverse_retraction_method`: the inverse retraction to use within
-* `lin_errors`:                linearization errors at the last serious step
+* `linearization_errors`:      linearization errors at the last serious step
 * `m`:                         (`1e-3`) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `p`:                         current candidate point
 * `p_last_serious`:            last serious iterate
@@ -148,13 +125,14 @@ stores option values for a [`convex_bundle_method`](@ref) solver.
 * `λ`:                         convex coefficients that solve the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -\lvert g\rvert^2 – ε``
 * `ϱ`:                         curvature-dependent bound
-* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`,
+* `sub_problem`:               a function that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
+* `sub_state`:                 an [`AbstractEvaluationType`](@ref) indicating whether `sub_problem` works inplace of `λ` or allocates a solution
 
 # Constructor
 
     ConvexBundleMethodState(M::AbstractManifold, p; kwargs...)
 
-with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
+with keywords for all fields with defaults besides `p_last_serious` which obtains the same type as `p`.
     You can use e.g. `X=` to specify the type of tangent vector to use
 
 ## Keyword arguments
@@ -165,11 +143,13 @@ with keywords for all fields above besides `p_last_serious` which obtains the sa
 * `p_estimate`: (`p`) the point around which to estimate the sectional curvature of the manifold
 """
 mutable struct ConvexBundleMethodState{
-    R,
     P,
     T,
+    Pr,
+    St,
+    R,
     A<:AbstractVector{<:R},
-    B<:AbstractVector{Tuple{<:P,<:T}},
+    B<:AbstractVector{Tuple{<:P,<:T}}, # Update to cyclic buffer
     C<:AbstractVector{T},
     D,
     I,
@@ -178,19 +158,17 @@ mutable struct ConvexBundleMethodState{
     TS<:Stepsize,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-    Pr,
-} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int,Pr}
+} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int,Pr,St}
     atol_λ::R
     atol_errors::R
     bundle::B
     bundle_cap::I
-    bundle_size::I
-    diam::R
+    diameter::R
     domain::D
     g::T
     inverse_retraction_method::IR
     last_stepsize::R
-    lin_errors::A
+    linearization_errors::A
     m::R
     p::P
     p_last_serious::P
@@ -205,6 +183,7 @@ mutable struct ConvexBundleMethodState{
     λ::A
     ϱ::R
     sub_problem::Pr
+    sub_state::St
     function ConvexBundleMethodState(
         M::TM,
         p::P;
@@ -212,7 +191,7 @@ mutable struct ConvexBundleMethodState{
         atol_errors::R=eps(),
         bundle_cap::Integer=25,
         m::R=1e-2,
-        diam::R=50.0,
+        diameter::R=50.0,
         domain::D,#(M, p) -> isfinite(f(M, p)),
         k_min=nothing,
         k_max=nothing,
@@ -226,28 +205,29 @@ mutable struct ConvexBundleMethodState{
                                StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        sub_problem::Pr,
+        sub_problem::Pr=bundle_method_subsolver,
+        sub_state::St=AllocatingEvaluation(),
     ) where {
         D,
         IR<:AbstractInverseRetractionMethod,
         P,
         T,
+        Pr,
+        St,
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
         S<:Stepsize,
         VT<:AbstractVectorTransportMethod,
         R<:Real,
-        Pr,
     }
-        bundle = [(copy(M, p), zero_vector(M, p))]
-        bundle_size = 1
+        bundle = CircularBuffer{Tuple{P,T}}(bundle_cap)
         g = zero_vector(M, p)
         last_stepsize = one(R)
-        lin_errors = zeros(bundle_cap)
-        transported_subgradients = [zero_vector(M, p)]
+        linearization_errors = Vector{R}()
+        transported_subgradients = Vector{T}()
         ε = zero(R)
-        λ = [zero(R)]
+        λ = Vector{R}()
         ξ = zero(R)
         if ϱ === nothing
             if (k_max === nothing)
@@ -255,19 +235,21 @@ mutable struct ConvexBundleMethodState{
                     sectional_curvature(
                         M,
                         close_point(
-                            M, p_estimate, diam / 2; retraction_method=retraction_method
+                            M, p_estimate, diameter / 2; retraction_method=retraction_method
                         ),
                     ) for _ in 1:k_size
                 ]
                 k_max = maximum(s)
             end
-            ϱ = ζ_2(k_max, diam)
+            ϱ = ζ_2(k_max, diameter)
         end
         return new{
-            typeof(m),
             P,
             T,
-            typeof(lin_errors),
+            Pr,
+            St,
+            typeof(m),
+            typeof(linearization_errors),
             typeof(bundle),
             typeof(transported_subgradients),
             typeof(domain),
@@ -277,19 +259,17 @@ mutable struct ConvexBundleMethodState{
             S,
             SC,
             VT,
-            Pr,
         }(
             atol_λ,
             atol_errors,
             bundle,
             bundle_cap,
-            bundle_size,
-            diam,
+            diameter,
             domain,
             g,
             inverse_retraction_method,
             last_stepsize,
-            lin_errors,
+            linearization_errors,
             m,
             p,
             copy(M, p),
@@ -304,6 +284,7 @@ mutable struct ConvexBundleMethodState{
             λ,
             ϱ,
             sub_problem,
+            sub_state,
         )
     end
 end
@@ -325,13 +306,13 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     * tolerance parameter for the convex coefficients:  $(cbms.atol_λ)
     * tolerance parameter for the linearization errors: $(cbms.atol_errors)
     * bundle cap size:                                  $(cbms.bundle_cap)
-    * current bundle size:                              $(cbms.bundle_size)
+    * current bundle size:                              $(length(cbms.bundle))
     * curvature-dependent bound:                        $(cbms.ϱ)
     * descent test parameter:                           $(cbms.m)
-    * diameter:                                         $(cbms.diam)
+    * diameter:                                         $(cbms.diameter)
     * inverse retraction:                               $(cbms.inverse_retraction_method)
     * retraction:                                       $(cbms.retraction_method)
-    * stopping parameter value:                         $(cbms.ξ)
+    * Lagrange parameter value:                         $(cbms.ξ)
     * vector transport:                                 $(cbms.vector_transport_method)
 
     ## Stopping Criterion
@@ -373,7 +354,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `atol_λ`:                    (`eps()`) tolerance parameter for the convex coefficients in λ.
 * `atol_errors`:               (`eps()`) tolerance parameter for the linearization errors.
 * `m`:                         (`1e-3`) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
-* `diam`:                      (`50.0`) estimate for the diameter of the level set of the objective function at the starting point.
+* `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point.
 * `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
 * `k_min`:                     lower bound on the sectional curvature of the manifold.
 * `k_max`:                     upper bound on the sectional curvature of the manifold.
@@ -389,7 +370,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `retraction`:                (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 * `stopping_criterion`:        ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
 * `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
-* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `lin_errors`, and the transported subgradients `transported_subgradients`
+* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`
 
 # Output
 
@@ -426,7 +407,7 @@ function convex_bundle_method!(
     atol_λ::R=eps(),
     atol_errors::R=eps(),
     bundle_cap::Int=25,
-    diam::R=π / 3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
+    diameter::R=π / 3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_min=nothing,
@@ -444,6 +425,7 @@ function convex_bundle_method!(
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=bundle_method_subsolver,
+    sub_state=evaluation,
     kwargs..., #especially may contain debug
 ) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -455,7 +437,7 @@ function convex_bundle_method!(
         atol_λ=atol_λ,
         atol_errors=atol_errors,
         bundle_cap=bundle_cap,
-        diam=diam,
+        diameter=diameter,
         domain=domain,
         m=m,
         k_min=k_min,
@@ -469,30 +451,40 @@ function convex_bundle_method!(
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
         sub_problem=sub_problem,
+        sub_state=sub_state,
     )
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
 end
 
-function initialize_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState)
+function initialize_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState{P,T,Pr,St,R}) where {P,T,Pr,St,R}
     M = get_manifold(mp)
     copyto!(M, bms.p_last_serious, bms.p)
     get_subgradient!(mp, bms.X, bms.p)
     copyto!(M, bms.g, bms.p_last_serious, bms.X)
-    bms.bundle = [(copy(M, bms.p), copy(M, bms.p, bms.X))]
+    empty!(bms.bundle)
+    push!(bms.budle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+    bms.λ = [zero(R)]
+    bms.linearization_errors = [zero(R)]
+    bms.transported_subgradients = [copy(M, bms.p, bms.X)]
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
     M = get_manifold(mp)
-    bms.transported_subgradients = [
-        vector_transport_to(M, qj, Xj, bms.p_last_serious, bms.vector_transport_method) for
-        (qj, Xj) in bms.bundle
-    ]
-    bms.λ = bms.sub_problem(
-        M, bms.p_last_serious, bms.lin_errors, bms.transported_subgradients
-    )
+    # Refactor to inplace
+    for (j, (qj, Xj)) in enumerate(bms.bundle)
+        vector_transport_to!(
+            M,
+            bms.transported_subgradients[j],
+            qj,
+            Xj,
+            bms.p_last_serious,
+            bms.vector_transport_method,
+        )
+    end
+    _convex_buundle_subsolver!(M, bms)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
-    bms.ε = sum(bms.λ .* bms.lin_errors)
+    bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     j = 1
     step = get_stepsize(mp, bms, j)
@@ -510,16 +502,22 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     end
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
-        y = copy(M, bms.bundle[1][1])
         deleteat!(bms.bundle, v)
+        # Update subgradient and lambda memory
     end
     l = length(bms.bundle)
-    push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
     if l == bms.bundle_cap
-        y = copy(M, bms.bundle[1][1])
+        # Shift instead?
         deleteat!(bms.bundle, 1)
+        push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+    else
+        # push to bundle and update subgradients, λ and linearization_errors (+1 in length)
+        push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+        push!(bms.linearization_errors, 0.0)
+        push!(bms.sub_gradients, zero_vector(M, bms.p))
+        push!(bms.λ, 0.0)
     end
-    bms.lin_errors = [
+    bms.linearization_errors .= [
         get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (
             bms.ϱ * inner(
                 M,
@@ -529,15 +527,37 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
             )
         ) for (qj, Xj) in bms.bundle
     ]
-    bms.lin_errors = [
+    bms.linearization_errors .= [
         zero(bms.atol_errors) ≥ x ≥ -bms.atol_errors ? zero(bms.atol_errors) : x for
-        x in bms.lin_errors
+        x in bms.linearization_errors
     ]
-    bms.bundle_size = length(bms.bundle)
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
 get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
+
+#
+#
+# Dispatching on different types of subsolvers
+# (a) closed form allocating
+function _convex_buundle_subsolver!(
+    M, bms::ConvexBundleMethodState{P,T,F,AllocatingEvaluation}
+) where {P,T,F}
+    bms.λ = bms.sub_problem(
+        M, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
+    )
+    return bms
+end
+# (b) closed form in-place
+function _convex_buundle_subsolver!(
+    M, bms::ConvexBundleMethodState{P,T,F,InplaceEvaluation}
+) where {P,T,F}
+    bms.sub_problem(
+        M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
+    )
+    return bms
+end
+# (c) if necessary one could implement the case where we have problem and state and call solve!
 
 #
 # Lagrange stopping crtierion
@@ -572,7 +592,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
         if new_value ≥ d.old_value * d.tol
             @warn """The Lagrange multiplier increased by at least $(d.tol).
             At iteration #$i the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
-            Consider decreasing either the diameter by changing the `diam` keyword argument, or one
+            Consider decreasing either the `diameter` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """
@@ -583,7 +603,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
         elseif new_value < zero(number_eltype(st.ξ))
             @warn """The Lagrange multiplier is positive.
             At iteration #$i the negative of the Lagrange multiplier, -ξ, became negative.\n
-            Consider increasing either the diameter by changing the `diam` keyword argument, or changing
+            Consider increasing either the `diameter` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """

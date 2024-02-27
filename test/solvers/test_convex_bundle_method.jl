@@ -10,7 +10,7 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
     cbms = ConvexBundleMethodState(
         M,
         p0;
-        diam=diam,
+        diameter=diam,
         domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
         k_max=Ω,
         stopping_criterion=StopAfterIteration(200),
