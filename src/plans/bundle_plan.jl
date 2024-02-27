@@ -5,9 +5,14 @@
 function convex_bundle_method_subsolver end
 function convex_bundle_method_subsolver! end
 @doc raw"""
-    convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
+    λ = convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
+    convex_bundle_method_subsolver!(M, λ, p_last_serious, linearization_errors, transported_subgradients)
 
-solver for the subproblem of the convex bundle method.
+solver for the subproblem of the convex bundle method
+at the last serious iterate ``p_k`` given the current linearization errors ``c_j^k``,
+and transported subgradients ``\mathrm{P}_{p_k←q_j} X_{q_j}``.
+
+The computation can also be done in-place of `λ`.
 
 The subproblem for the convex bundle method is
 ```math
@@ -23,8 +28,13 @@ The subproblem for the convex bundle method is
     j ∈ J_k,
 \end{align*}
 ```
+
 where ``J_k = \{j ∈ J_{k-1} \ | \ λ_j > 0\} \cup \{k\}``.
-See [BergmannHerzogJasa:2024](@cite).
+See [BergmannHerzogJasa:2024](@cite) for mre details
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
 """
 convex_bundle_method_subsolver(
     M, p_last_serious, linearization_errors, transported_subgradients
@@ -33,7 +43,8 @@ convex_bundle_method_subsolver(
 function proximal_bundle_method_subsolver end
 function proximal_bundle_method_subsolver! end
 @doc raw"""
-    convex_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
+    λ = proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
+    proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
 
 solver for the subproblem of the proximal bundle method.
 
@@ -52,6 +63,10 @@ The subproblem for the proximal bundle method is
 ```
 where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
 See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
+
+!!! tip
+    A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
+    is available if these two packages are loaded.
 """
 proximal_bundle_method_subsolver(
     M, p_last_serious, μ, approximation_errors, transported_subgradients
