@@ -323,7 +323,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    _proximal_buundle_subsolver!(M, pbms)
+    _proximal_bundle_subsolver!(M, pbms)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
     nd = norm(M, pbms.p_last_serious, pbms.d)
@@ -408,7 +408,7 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 #
 # Dispatching on different types of subsolvers
 # (a) closed form allocating
-function _proximal_buundle_subsolver!(
+function _proximal_bundle_subsolver!(
     M, pbms::ProximalBundleMethodState{P,T,F,AllocatingEvaluation}
 ) where {P,T,F}
     pbms.λ = pbms.sub_problem(
@@ -417,7 +417,7 @@ function _proximal_buundle_subsolver!(
     return pbms
 end
 # (b) closed form in-place
-function _proximal_buundle_subsolver!(
+function _proximal_bundle_subsolver!(
     M, pbms::ProximalBundleMethodState{P,T,F,InplaceEvaluation}
 ) where {P,T,F}
     pbms.sub_problem(
