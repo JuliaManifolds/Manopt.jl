@@ -471,7 +471,7 @@ function initialize_solver!(
     empty!(bms.linearization_errors)
     push!(bms.linearization_errors, zero(R))
     empty!(bms.transported_subgradients)
-    push!(bms.transported_subgradients, zero(M, bms.p))
+    push!(bms.transported_subgradients, zero_vector(M, bms.p))
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
@@ -487,7 +487,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
             bms.vector_transport_method,
         )
     end
-    _convex_buundle_subsolver!(M, bms)
+    convex_bundle_method_subsolver!(M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients)
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
@@ -517,7 +517,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     if l == bms.bundle_cap
         #
         deleteat!(bms.bundle, 1)
+        deleteat!(bms.λ, 1)
+        deleteat!(bms.linearization_errors, 1)
         push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
+        push!(bms.linearization_errors, 0.0)
+        push!(bms.λ, 0.0)
     else
         # push to bundle and update subgradients, λ and linearization_errors (+1 in length)
         push!(bms.bundle, (copy(M, bms.p), copy(M, bms.p, bms.X)))
