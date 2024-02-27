@@ -209,10 +209,17 @@ function __init__()
     #
     @static if isdefined(Base.Experimental, :register_error_hint)
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-            if exc.f === bundle_method_subsolver
+            if exc.f === convex_bundle_method_subsolver
                 print(
                     io,
-                    "\nThe `bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
+                    "\nThe `convex_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
+                )
+                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+            end
+            if exc.f === proximal_bundle_method_subsolver
+                print(
+                    io,
+                    "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
                 printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
             end

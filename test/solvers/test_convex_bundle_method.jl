@@ -14,7 +14,6 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
         domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
         k_max=Ω,
         stopping_criterion=StopAfterIteration(200),
-        sub_problem=bundle_method_subsolver,
     )
     @test get_iterate(cbms) == p0
 
@@ -58,7 +57,6 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
             domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
-            sub_problem=bundle_method_subsolver,
             return_state=true,
             debug=[],
         )
@@ -120,7 +118,6 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
             domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
-            sub_problem=bundle_method_subsolver,
             evaluation=InplaceEvaluation(),
             return_state=true,
             debug=[],
@@ -143,7 +140,6 @@ using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_po
             diam=R,
             domain=(M, q) -> distance(M, q, p) < R / 2 ? true : false,
             stopping_criterion=StopAfterIteration(10),
-            sub_problem=bundle_method_subsolver,
         )
         @test -10eps() ≤ cbms3.ϱ ≤ 10eps()
     end

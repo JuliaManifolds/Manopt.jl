@@ -182,7 +182,7 @@ d_k = \frac{1}{\mu_l} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
 where ``X_{q_j}\in∂f(q_j)``, ``\mathrm{retr}`` is a retraction,
 ``p_k`` is the last serious iterate, ``\mu_l`` is a proximal parameter, and the
-``λ_j^k`` are solutionsto the quadratic subproblem provided by the 
+``λ_j^k`` are solutionsto the quadratic subproblem provided by the
 [`bundle_method_subsolver`](@ref).
 
 Though the subdifferential might be set valued, the argument `∂f` should always
@@ -258,7 +258,7 @@ function proximal_bundle_method!(
     ε=1e-2,
     δ=-1.0,#0.0,
     μ=0.5,#1.0,
-    sub_problem=bundle_method_subsolver,
+    sub_problem=proximal_bundle_method_subsolver,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)

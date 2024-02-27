@@ -5,12 +5,7 @@ import Manopt: bundle_method_subsolver
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
-    pbms = ProximalBundleMethodState(
-        M,
-        p0;
-        stopping_criterion=StopAfterIteration(200),
-        sub_problem=bundle_method_subsolver,
-    )
+    pbms = ProximalBundleMethodState(M, p0; stopping_criterion=StopAfterIteration(200))
     @test get_iterate(pbms) == p0
 
     pbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]
@@ -50,7 +45,6 @@ import Manopt: bundle_method_subsolver
             ∂f,
             p0;
             stopping_criterion=StopAfterIteration(200),
-            sub_problem=bundle_method_subsolver,
             return_state=true,
             debug=[],
         )
@@ -101,7 +95,6 @@ import Manopt: bundle_method_subsolver
             ∂f!,
             copy(p0);
             stopping_criterion=StopAfterIteration(200),
-            sub_problem=bundle_method_subsolver,
             evaluation=InplaceEvaluation(),
             return_state=true,
             debug=[],
