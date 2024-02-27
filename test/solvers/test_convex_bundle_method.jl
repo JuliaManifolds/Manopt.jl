@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
-using Manopt: bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_point
+using Manopt: convex_bundle_method_subsolver, sectional_curvature, ζ_1, ζ_2, close_point
 
 @testset "The Convex Bundle Method" begin
     M = Hyperbolic(4)

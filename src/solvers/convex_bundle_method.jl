@@ -332,7 +332,7 @@ g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
 
 ``p_k`` is the last serious iterate, ``X_{q_j} ∈ ∂f(q_j)``, and the ``λ_j^k`` are solutions
-to the quadratic subproblem provided by the [`bundle_method_subsolver`](@ref).
+to the quadratic subproblem provided by the [`convex_bundle_method_subsolver`](@ref).
 
 Though the subdifferential might be set valued, the argument `∂f` should always
 return one element from the subdifferential, but not necessarily deterministic.
