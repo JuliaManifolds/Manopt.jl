@@ -136,5 +136,23 @@ import Manopt: proximal_bundle_method_subsolver
             stopping_criterion=StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both),
         )
         @test distance(M, q2, m) < 2 * 1e-3
+        # Test bundle_size and inplace
+        p_size = copy(p0)
+        function ∂f!(M, X, p)
+            X = sum(
+                1 / length(data) *
+                ManifoldDiff.subgrad_distance!.(Ref(M), Ref(X), data, Ref(p), 1; atol=1e-8),
+            )
+            return X
+        end
+        proximal_bundle_method!(
+            M,
+            f,
+            ∂f!,
+            p_size;
+            bundle_size=2,
+            evaluation=InplaceEvaluation(),
+            stopping_criterion=StopAfterIteration(200),
+        )
     end
 end
