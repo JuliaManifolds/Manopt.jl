@@ -6,15 +6,16 @@ using Manopt:  sectional_curvature, ζ_1, ζ_2, close_point
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
-    diam = floatmax()
+    diameter = floatmax()
     Ω = 0.0
     cbms = ConvexBundleMethodState(
         M,
         p0;
-        diameter=diam,
-        domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
+        diameter=diameter,
+        domain=(M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
         k_max=Ω,
         stopping_criterion=StopAfterIteration(200),
+        sub_problem=convex_bundle_method_subsolver,
     )
     @test get_iterate(cbms) == p0
 
@@ -54,8 +55,8 @@ using Manopt:  sectional_curvature, ζ_1, ζ_2, close_point
             f,
             ∂f,
             p0;
-            diam=diam,
-            domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
+            diameter=diameter,
+            domain=(M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
             return_state=true,
@@ -115,8 +116,8 @@ using Manopt:  sectional_curvature, ζ_1, ζ_2, close_point
             f,
             ∂f!,
             copy(p0);
-            diam=diam,
-            domain=(M, q) -> distance(M, q, p0) < diam / 2 ? true : false,
+            diameter=diameter,
+            domain=(M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
             evaluation=InplaceEvaluation(),
@@ -139,7 +140,7 @@ using Manopt:  sectional_curvature, ζ_1, ζ_2, close_point
         cbms3 = ConvexBundleMethodState(
             M,
             p;
-            diam=R,
+            diameter=R,
             domain=(M, q) -> distance(M, q, p) < R / 2 ? true : false,
             stopping_criterion=StopAfterIteration(10),
         )
