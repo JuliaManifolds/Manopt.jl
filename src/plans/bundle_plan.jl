@@ -3,6 +3,7 @@
 #
 
 function convex_bundle_method_subsolver end
+function convex_bundle_method_subsolver! end
 @doc raw"""
     convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
 
@@ -30,6 +31,7 @@ convex_bundle_method_subsolver(
 )
 
 function proximal_bundle_method_subsolver end
+function proximal_bundle_method_subsolver! end
 @doc raw"""
     convex_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
 
@@ -66,7 +68,7 @@ is computed.
 
 In `mode=:both` we require that both
 ``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
-and that 
+and that
 ``c`` and ``\lvert d \rvert`` are smaller than their `tolerance`s for the [`proximal_bundle_method`](@ref).
 
 In the `mode=:estimate` we require that, for the [`convex_bundle_method`](@ref)

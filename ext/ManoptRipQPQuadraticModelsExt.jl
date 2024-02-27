@@ -1,7 +1,11 @@
 module ManoptRipQPQuadraticModelsExt
 
 using Manopt
-import Manopt: bundle_method_subsolver
+import Manopt:
+    convex_bundle_method_subsolver,
+    convex_bundle_method_subsolver!,
+    proximal_bundle_method_subsolver,
+    proximal_bundle_method_subsolver!
 using ManifoldsBase
 using LinearAlgebra: tril
 using SparseArrays: sparse
@@ -16,17 +20,17 @@ else
     using ..RipQP: ripqp
 end
 
-function bundle_method_subsolver(
+function convex_bundle_method_subsolver(
     M::A, p_last_serious, linearization_errors, transported_subgradients
 ) where {A<:AbstractManifold}
     d = length(linearization_errors)
     λ = zeros(d)
-    bundle_method_subsolver!(
+    convex_bundle_method_subsolver!(
         M, λ, p_last_serious, linearization_errors, transported_subgradients
     )
     return λ
 end
-function bundle_method_subsolver!(
+function convex_bundle_method_subsolver!(
     M::A, λ, p_last_serious, linearization_errors, transported_subgradients
 ) where {A<:AbstractManifold}
     d = length(linearization_errors)
@@ -47,17 +51,18 @@ function bundle_method_subsolver!(
     λ .= ripqp(qm; display=false).solution
     return λ
 end
-function bundle_method_subsolver(
+
+function proximal_bundle_method_subsolver(
     M::A, p_last_serious, μ, approximation_errors, transported_subgradients
 ) where {A<:AbstractManifold}
     d = length(approximation_errors)
     λ = zeros(d)
-    bundle_method_subsolver!(
+    proximal_bundle_method_subsolver!(
         M, λ, p_last_serious, μ, approximation_errors, transported_subgradients
     )
     return λ
 end
-function bundle_method_subsolver!(
+function proximal_bundle_method_subsolver!(
     M::A, λ, p_last_serious, μ, approximation_errors, transported_subgradients
 ) where {A<:AbstractManifold}
     d = length(approximation_errors)
