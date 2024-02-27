@@ -29,7 +29,7 @@ DebugWarnIfLagrangeMultiplierIncreases
 ## Helpers and internal functions
 
 ```@docs
-bundle_method_subsolver
+convex_bundle_method_subsolver
 sectional_curvature
 ζ_1
 ζ_2
