@@ -264,7 +264,7 @@ function proximal_bundle_method!(
     δ=-1.0,#0.0,
     μ=0.5,#1.0,
     sub_problem=proximal_bundle_method_subsolver,
-    sub_state=AllocatingEvaluation(),
+    sub_state=evaluation,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -423,7 +423,7 @@ function _proximal_bundle_subsolver!(
     M, pbms::ProximalBundleMethodState{P,T,F,InplaceEvaluation}
 ) where {P,T,F}
     pbms.sub_problem(
-        M;
+        M,
         pbms.λ,
         pbms.p_last_serious,
         pbms.μ,

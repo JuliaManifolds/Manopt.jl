@@ -1,5 +1,5 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
-import Manopt: proximal_bundle_method_subsolver
+import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolver!
 
 @testset "The Proximal Bundle Method" begin
     M = Hyperbolic(4)
@@ -96,6 +96,7 @@ import Manopt: proximal_bundle_method_subsolver
             copy(p0);
             stopping_criterion=StopAfterIteration(200),
             evaluation=InplaceEvaluation(),
+            sub_state=AllocatingEvaluation(), #keep the default allocating subsolver here
             return_state=true,
             debug=[],
         )
@@ -153,6 +154,7 @@ import Manopt: proximal_bundle_method_subsolver
             bundle_size=2,
             evaluation=InplaceEvaluation(),
             stopping_criterion=StopAfterIteration(200),
+            sub_problem=proximal_bundle_method_subsolver!,
         )
     end
 end
