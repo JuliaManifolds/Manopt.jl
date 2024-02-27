@@ -471,7 +471,7 @@ function initialize_solver!(
     empty!(bms.linearization_errors)
     push!(bms.linearization_errors, zero(R))
     empty!(bms.transported_subgradients)
-    push!(bms.transported_subgradients, zero(M, bms.p))
+    push!(bms.transported_subgradients, zero_vector(M, bms.p))
     return bms
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)

@@ -39,14 +39,15 @@ You can use e.g. `X=` to specify the type of tangent vector to use
 
 """
 mutable struct ProximalBundleMethodState{
-    IR<:AbstractInverseRetractionMethod,
     P,
     T,
+    Pr,
+    St,
+    IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
     R<:Real,
-    Pr,
 } <: AbstractManoptSolverState where {P,T,Pr}
     approx_errors::AbstractVector{R}
     bundle::AbstractVector{Tuple{P,T}}
@@ -72,6 +73,7 @@ mutable struct ProximalBundleMethodState{
     μ::R
     ν::R
     sub_problem::Pr
+    sub_state::St
     function ProximalBundleMethodState(
         M::TM,
         p::P;
@@ -87,17 +89,19 @@ mutable struct ProximalBundleMethodState{
         ε::R=1e-2,
         δ::R=1.0,
         μ::R=0.5,
-        sub_problem::Pr,
+        sub_problem::Pr=proximal_bundle_method_subsolver,
+        sub_state::St=AllocatingEvaluation(),
     ) where {
-        IR<:AbstractInverseRetractionMethod,
         P,
         T,
+        Pr,
+        St,
+        R<:Real,
+        IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
-        R<:Real,
-        Pr,
     }
         # Initialize indes set, bundle points, linearization errors, and stopping parameter
         approx_errors = [zero(R)]
@@ -110,7 +114,7 @@ mutable struct ProximalBundleMethodState{
         λ = [zero(R)]
         η = zero(R)
         ν = zero(R)
-        return new{IR,P,T,TR,SC,VT,R,Pr}(
+        return new{P,T,Pr,St,IR,TR,SC,VT,R}(
             approx_errors,
             bundle,
             c,
@@ -135,6 +139,7 @@ mutable struct ProximalBundleMethodState{
             μ,
             ν,
             sub_problem,
+            sub_state,
         )
     end
 end
@@ -259,6 +264,7 @@ function proximal_bundle_method!(
     δ=-1.0,#0.0,
     μ=0.5,#1.0,
     sub_problem=proximal_bundle_method_subsolver,
+    sub_state=AllocatingEvaluation(),
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -278,6 +284,7 @@ function proximal_bundle_method!(
         δ=δ,
         μ=μ,
         sub_problem=sub_problem,
+        sub_state=sub_state,
     )
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
@@ -316,9 +323,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     else
         pbms.η = pbms.α₀ + max(pbms.α₀, pbms.α)
     end
-    pbms.λ = pbms.sub_problem(
-        M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
-    )
+    _proximal_buundle_subsolver!(M, pbms)
     pbms.c = sum(pbms.λ .* pbms.approx_errors)
     pbms.d .= -1 / pbms.μ .* sum(pbms.λ .* pbms.transported_subgradients)
     nd = norm(M, pbms.p_last_serious, pbms.d)
@@ -398,6 +403,33 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     return pbms
 end
 get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
+
+#
+#
+# Dispatching on different types of subsolvers
+# (a) closed form allocating
+function _proximal_buundle_subsolver!(
+    M, pbms::ProximalBundleMethodState{P,T,F,AllocatingEvaluation}
+) where {P,T,F}
+    pbms.λ = pbms.sub_problem(
+        M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
+    )
+    return pbms
+end
+# (b) closed form in-place
+function _proximal_buundle_subsolver!(
+    M, pbms::ProximalBundleMethodState{P,T,F,InplaceEvaluation}
+) where {P,T,F}
+    pbms.sub_problem(
+        M;
+        pbms.λ,
+        pbms.p_last_serious,
+        pbms.μ,
+        pbms.approx_errors,
+        pbms.transported_subgradients,
+    )
+    return pbms
+end
 
 function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
