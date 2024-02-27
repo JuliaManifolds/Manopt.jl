@@ -15,6 +15,12 @@ proximal_bundle_method!
 ProximalBundleMethodState
 ```
 
+## Helpers and internal functions
+
+```@docs
+proximal_bundle_method_subsolver
+```
+
 ## Literature
 
 ```@bibliography
