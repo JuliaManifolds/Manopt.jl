@@ -106,6 +106,8 @@ using ManifoldsBase:
     project,
     project!,
     rand!,
+    riemann_tensor,
+    riemann_tensor!,
     representation_size,
     requires_caching,
     retract,
@@ -137,6 +139,7 @@ include("solvers/solver.jl")
 include("solvers/adaptive_regularization_with_cubics.jl")
 include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
+include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
@@ -151,6 +154,7 @@ include("solvers/gradient_descent.jl")
 include("solvers/LevenbergMarquardt.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
+include("solvers/proximal_bundle_method.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
@@ -201,6 +205,27 @@ global JuMP_ArrayShape
 
 function __init__()
     #
+    # Error Hints
+    #
+    @static if isdefined(Base.Experimental, :register_error_hint)
+        Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
+            if exc.f === convex_bundle_method_subsolver
+                print(
+                    io,
+                    "\nThe `convex_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
+                )
+                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+            end
+            if exc.f === proximal_bundle_method_subsolver
+                print(
+                    io,
+                    "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
+                )
+                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+            end
+        end
+    end
+    #
     # Requires fallback for Julia < 1.9
     #
     @static if !isdefined(Base, :get_extension)
@@ -219,7 +244,13 @@ function __init__()
         @require LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637" begin
             include("../ext/ManoptLRUCacheExt.jl")
         end
+        @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
+            @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
+                include("../ext/ManoptRipQPQuadraticModelsExt.jl")
+            end
+        end
     end
+
     return nothing
 end
 #
@@ -266,6 +297,7 @@ export AbstractGradientSolverState,
     AdaptiveRegularizationState,
     AlternatingGradientDescentState,
     AugmentedLagrangianMethodState,
+    ConvexBundleMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
     CyclicProximalPointState,
@@ -280,6 +312,7 @@ export AbstractGradientSolverState,
     NelderMeadState,
     ParticleSwarmState,
     PrimalDualSemismoothNewtonState,
+    ProximalBundleMethodState,
     RecordSolverState,
     StochasticGradientDescentState,
     SubGradientMethodState,
@@ -378,6 +411,8 @@ export adaptive_regularization_with_cubics,
     alternating_gradient_descent!,
     augmented_Lagrangian_method,
     augmented_Lagrangian_method!,
+    convex_bundle_method,
+    convex_bundle_method!,
     ChambollePock,
     ChambollePock!,
     conjugate_gradient_descent,
@@ -403,6 +438,8 @@ export adaptive_regularization_with_cubics,
     particle_swarm,
     particle_swarm!,
     primal_dual_semismooth_Newton,
+    proximal_bundle_method,
+    proximal_bundle_method!,
     quasi_Newton,
     quasi_Newton!,
     stochastic_gradient_descent,
@@ -441,11 +478,14 @@ export StopAfter,
     StopWhenAny,
     StopWhenChangeLess,
     StopWhenCostLess,
+    StopWhenCostNaN,
     StopWhenCurvatureIsNegative,
     StopWhenEntryChangeLess,
     StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
+    StopWhenIterateNaN,
+    StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
     StopWhenPopulationConcentrated,
     StopWhenSmallerOrEqual,
@@ -473,6 +513,7 @@ export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
+export DebugWarnIfLagrangeMultiplierIncreases
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
 # Records - and access functions

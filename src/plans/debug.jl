@@ -1101,6 +1101,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
+* `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
 * `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
@@ -1118,6 +1119,7 @@ function DebugActionFactory(d::Symbol)
     (d == :Iterate) && return DebugIterate()
     (d == :Iteration) && return DebugIteration()
     (d == :Stepsize) && return DebugStepsize()
+    (d == :WarnBundle) && return DebugWarnIfLagrangeMultiplierIncreases()
     (d == :WarnCost) && return DebugWarnIfCostNotFinite()
     (d == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
     (d == :Time) && return DebugTime()

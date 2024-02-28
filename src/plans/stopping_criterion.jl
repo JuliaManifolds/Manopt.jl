@@ -623,6 +623,84 @@ function update_stopping_criterion!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}
     return c
 end
 
+"""
+    StopWhenCostNaN <: StoppingCriterion
+
+stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+
+# Constructor
+
+    StopWhenCostNaN()
+
+initialize the stopping criterion to NaN.
+"""
+mutable struct StopWhenCostNaN <: StoppingCriterion
+    reason::String
+    at_iteration::Int
+    StopWhenCostNaN() = new("", 0)
+end
+function (c::StopWhenCostNaN)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if i > 0 && isnan(get_cost(p, get_iterate(s)))
+        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))).\n"
+        c.at_iteration = 0
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenCostNaN)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "f(x) is NaN:\t$s"
+end
+function show(io::IO, c::StopWhenCostNaN)
+    return print(io, "StopWhenCostNaN()\n    $(status_summary(c))")
+end
+
+"""
+    StopWhenIterateNaN <: StoppingCriterion
+
+stop looking at the cost function of the optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cost(p,get_iterate(o))`.
+
+# Constructor
+
+    StopWhenIterateNaN()
+
+initialize the stopping criterion to NaN.
+"""
+mutable struct StopWhenIterateNaN <: StoppingCriterion
+    reason::String
+    at_iteration::Int
+    StopWhenIterateNaN() = new("", 0)
+end
+function (c::StopWhenIterateNaN)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+    end
+    if i > 0 && any(isnan.(get_iterate(s)))
+        c.reason = "The algorithm reached a $(get_iterate(s)) iterate.\n"
+        c.at_iteration = 0
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenIterateNaN)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "f(x) is NaN:\t$s"
+end
+function show(io::IO, c::StopWhenIterateNaN)
+    return print(io, "StopWhenIterateNaN()\n    $(status_summary(c))")
+end
+
 @doc raw"""
     StopWhenSmallerOrEqual <: StoppingCriterion
 

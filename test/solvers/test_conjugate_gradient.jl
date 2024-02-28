@@ -22,13 +22,31 @@ include("../utils/example_tasks.jl")
         diff = grad_2 - grad_1
 
         dU = SteepestDirectionUpdateRule()
-        s1 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
+        s1 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+            initial_gradient=zero_vector(M, x0),
+        )
         @test s1.coefficient(dmp, s1, 1) == 0
         @test default_stepsize(M, typeof(s1)) isa ArmijoLinesearch
         @test Manopt.get_message(s1) == ""
 
         dU = ConjugateDescentCoefficient()
-        s2 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm, zero_vector(M, x0))
+        s2 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+            initial_gradient=zero_vector(M, x0),
+        )
         s2.X = grad_1
         s2.δ = δ1
         # the first case is zero
@@ -38,7 +56,15 @@ include("../utils/example_tasks.jl")
         @test s2.coefficient(dmp, s2, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
 
         dU = DaiYuanCoefficient()
-        s3 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+        s3 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+        )
         s3.X = grad_1
         s3.δ = δ1
         # the first case is zero
@@ -48,7 +74,15 @@ include("../utils/example_tasks.jl")
         @test s3.coefficient(dmp, s3, 2) == dot(grad_2, grad_2) / dot(δ2, grad_2 - grad_1)
 
         dU = FletcherReevesCoefficient()
-        s4 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+        s4 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+        )
         s4.X = grad_1
         s4.δ = δ1
         # the first case is zero
@@ -58,7 +92,15 @@ include("../utils/example_tasks.jl")
         @test s4.coefficient(dmp, s4, 2) == dot(grad_2, grad_2) / dot(grad_1, grad_1)
 
         dU = HagerZhangCoefficient()
-        s5 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+        s5 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+        )
         s5.X = grad_1
         s5.δ = δ1
         # the first case is zero
@@ -71,7 +113,15 @@ include("../utils/example_tasks.jl")
             dot(diff, grad_2) / denom - 2 * ndiffsq * dot(δ1, grad_2) / denom^2
 
         dU = HestenesStiefelCoefficient()
-        s6 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+        s6 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+        )
         s6.X = grad_1
         s6.δ = δ1
         @test s6.coefficient(dmp, s6, 1) == 0.0
@@ -80,7 +130,15 @@ include("../utils/example_tasks.jl")
         @test s6.coefficient(dmp, s6, 2) == dot(diff, grad_2) / dot(δ1, diff)
 
         dU = LiuStoreyCoefficient()
-        s7 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+        s7 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+        )
         s7.X = grad_1
         s7.δ = δ1
         @test s7.coefficient(dmp, s7, 1) == 0.0
@@ -89,7 +147,15 @@ include("../utils/example_tasks.jl")
         @test s7.coefficient(dmp, s7, 2) == -dot(grad_2, diff) / dot(δ1, grad_1)
 
         dU = PolakRibiereCoefficient()
-        s8 = ConjugateGradientDescentState(M, x0, sC, s, dU, retr, vtm)
+        s8 = ConjugateGradientDescentState(
+            M,
+            x0;
+            stopping_criterion=sC,
+            stepsize=s,
+            coefficient=dU,
+            retraction_method=retr,
+            vector_transport_method=vtm,
+        )
         s8.X = grad_1
         s8.δ = δ1
         @test s8.coefficient(dmp, s8, 1) == 0.0

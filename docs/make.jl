@@ -7,7 +7,7 @@ if "--help" ∈ ARGS
         """
 docs/make.jl
 
-Render the `Manopt.jl` documenation with optinal arguments
+Render the `Manopt.jl` documenation with optional arguments
 
 Arguments
 * `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
@@ -18,8 +18,11 @@ Arguments
 * `--quarto`            – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
   this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
   the documentation (see `--exclude-tutorials`) for the alternative.
-  If they are generated ones they are cached accordingly.
+  If they are generated once they are cached accordingly.
   Then you can spare time in the rendering by not passing this argument.
+  If quarto is not run, some tutorials are generated as empty files, since they
+  are referenced from within the documentation. These are currently
+  `Optimize.md` and `ImplementOwnManifold.md`.
 """,
     )
     exit(0)
@@ -50,6 +53,9 @@ if "--quarto" ∈ ARGS
         Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
+else # fallback to at least create empty files for Optimize and Implement
+    touch(joinpath(@__DIR__, "src/tutorials/Optimize.md"))
+    touch(joinpath(@__DIR__, "src/tutorials/ImplementOwnManifold.md"))
 end
 
 tutorials_in_menu = true
@@ -67,6 +73,7 @@ end
 using Documenter
 using DocumenterCitations
 using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
+using RipQP, QuadraticModels
 
 # (d) add contributing.md to docs
 generated_path = joinpath(@__DIR__, "src")
@@ -142,6 +149,11 @@ makedocs(;
         else
             Manopt.ManoptPlotsExt
         end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
+        else
+            Manopt.ManoptRipQPQuadraticModelsExt
+        end,
     ],
     authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",
@@ -156,6 +168,7 @@ makedocs(;
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
+            "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
             "Douglas—Rachford" => "solvers/DouglasRachford.md",
@@ -166,6 +179,7 @@ makedocs(;
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",
+            "Proximal bundle method" => "solvers/proximal_bundle_method.md",
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",

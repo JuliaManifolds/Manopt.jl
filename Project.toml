@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.4.53"
+version = "0.4.54"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
@@ -10,6 +10,7 @@ Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearOperators = "5c8ed15e-5a4c-59e4-a42b-c7e8811fb125"
 ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 ManifoldsBase = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
@@ -28,13 +29,16 @@ LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
+RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 
 [extensions]
-ManoptJuMPExt = ["JuMP"]
+ManoptJuMPExt = "JuMP"
 ManoptLRUCacheExt = "LRUCache"
 ManoptLineSearchesExt = "LineSearches"
-ManoptManifoldsExt = ["Manifolds"]
+ManoptManifoldsExt = "Manifolds"
 ManoptPlotsExt = "Plots"
+ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 
 [compat]
 ColorSchemes = "3.5.0"
@@ -45,6 +49,7 @@ Dates = "1.6"
 JuMP = "1.15"
 LRUCache = "1.4"
 LinearAlgebra = "1.6"
+LinearOperators = "~2.6"
 ManifoldDiff = "0.3.8"
 Manifolds = "0.9.11"
 ManifoldsBase = "0.15"
@@ -53,8 +58,10 @@ Markdown = "1.6"
 PolynomialRoots = "1"
 Preferences = "1.4"
 Printf = "1.6"
+QuadraticModels = "0.9"
 Random = "1.6"
 Requires = "0.5, 1"
+RipQP = "0.6"
 SparseArrays = "1.6"
 Statistics = "1.6"
 Test = "1.6"
@@ -69,7 +76,9 @@ ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 ManoptExamples = "5b8d5e80-5788-45cb-83d6-5e8f1484217d"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
+RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache"]
+test = ["Test", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache", "RipQP", "QuadraticModels"]

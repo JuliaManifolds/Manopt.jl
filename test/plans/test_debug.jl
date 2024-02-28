@@ -255,6 +255,8 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])
         @test isa(df2[:All].group[1], DebugWarnIfFieldNotFinite)
+        df3 = DebugFactory([:WarnBundle])
+        @test isa(df3[:All].group[1], DebugWarnIfLagrangeMultiplierIncreases)
     end
     @testset "Debug Time" begin
         io = IOBuffer()
