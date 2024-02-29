@@ -169,8 +169,10 @@ function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
 end
 
 @doc raw"""
-    NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
-    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective [, population::NelderMeadSimplex])
+    NelderMead(M::AbstractManifold, f)
+    NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex)
+    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective)
+    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective, population::NelderMeadSimplex)
 
 Solve a Nelder-Mead minimization problem for the cost function ``f:  \mathcal M`` on the
 manifold `M`. If the initial population `p` is not given, a random set of

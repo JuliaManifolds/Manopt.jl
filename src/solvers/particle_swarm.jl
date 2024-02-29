@@ -158,19 +158,18 @@ The aim of PSO is to find the particle position ``p`` on the `Manifold M` that s
 \min_{p ∈\mathcal{M}} F(p).
 ```
 
-To this end, a swarm ``S = \{s_1,\ldots_s_n\}`` of particles is moved around the manifold `M` in the following manner.
+To this end, a swarm ``S = \{s_1, \ldots, s_n\}`` of particles is moved around the manifold `M` in the following manner.
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-begin{aligned*}
-  X_k^{(i)} &= ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
+  X_k^{(i)} = ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
 ```
 
-where ``s_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia,
-``c`` and ``s`` are a cognitive and a social weight, respectively,
-``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step,
-``\operatorname{retr}^{-1}`` denotes an inverse retraction on the `Manifold` `M`, and
-``\operatorname{T}`` is a vector transport.
+where
+* ``s_k^{(i)}`` is the current particle position,
+* ``ω`` denotes the inertia,
+* ``c`` and ``s`` are a cognitive and a social weight, respectively,
+* ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
 
 Then the position of the particle is updated as
 
