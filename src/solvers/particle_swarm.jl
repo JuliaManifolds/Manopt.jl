@@ -170,6 +170,7 @@ where
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
+* ``T`` denotes the vector transport and ``\operatorname{retr}^{-1}`` the inverse retraction used
 
 Then the position of the particle is updated as
 
