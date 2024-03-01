@@ -5,11 +5,11 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.55] unreleased
+## [0.4.55] unreleased
 
 ### Fixed
 
-* unified documentation, especially function signatures further¨
+* unified documentation, especially function signatures further.
 * fixed a few typos related to math formulae in the doc strings.
 
 ## [0.4.54] February 28, 2024
