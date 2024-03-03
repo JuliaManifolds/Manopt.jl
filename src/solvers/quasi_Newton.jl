@@ -60,6 +60,7 @@ mutable struct QuasiNewtonState{
     stop::SC
     X_old::T
     vector_transport_method::VT
+    nondescent_direction_behavior::Symbol
 end
 function QuasiNewtonState(
     M::AbstractManifold,
@@ -77,6 +78,7 @@ function QuasiNewtonState(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     ),
+    nondescent_direction_behavior::Symbol=:step_towards_negative_gradient,
     kwargs..., # collect but ignore rest to be more tolerant
 ) where {
     P,
@@ -101,6 +103,7 @@ function QuasiNewtonState(
         stopping_criterion,
         copy(M, p, initial_vector),
         vector_transport_method,
+        nondescent_direction_behavior,
     )
 end
 function get_message(qns::QuasiNewtonState)
@@ -200,6 +203,7 @@ The ``k``th iteration consists of
 * `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
+* `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled. Can be either `:ignore` (in which case it is not checked if the selected direction is a descent one) or `:step_towards_negative_gradient` (in which case the direction is replaced with negative gradient).
 
 # Output
 
@@ -349,6 +353,13 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
+    if qns.nondescent_direction_behavior === :step_towards_negative_gradient &&
+        real(inner(M, qns.p, qns.η, qns.X)) > 0
+        # reset direction if not a descent one
+        @warn "Computed direction is not a descent direction; resetting to negative gradient"
+        copyto!(M, qns.η, qns.X)
+        qns.η .*= -1
+    end
     α = qns.stepsize(mp, qns, iter, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))
     retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
