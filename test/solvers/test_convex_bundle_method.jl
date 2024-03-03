@@ -146,7 +146,7 @@ using Manopt: sectional_curvature, ζ_1, ζ_2, close_point
         )
         @test -10eps() ≤ cbms3.ϱ ≤ 10eps()
     end
-    @testset "A simple median rum" begin
+    @testset "A simple median run" begin
         M = Sphere(2)
         p1 = [1.0, 0.0, 0.0]
         p2 = 1 / sqrt(2) .* [1.0, 1.0, 0.0]
