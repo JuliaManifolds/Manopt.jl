@@ -383,6 +383,15 @@ end
             :warn,
             "Computed direction is not a descent direction; resetting to negative gradient",
         ) match_mode = :any solve!(mp, qns)
+
+        qns = QuasiNewtonState(
+            M,
+            p;
+            direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
+            nondescent_direction_behavior=:step_towards_negative_gradient_nowarn,
+        )
+
+        @test_nowarn solve!(mp, qns)
     end
 
     @testset "A Circle example" begin

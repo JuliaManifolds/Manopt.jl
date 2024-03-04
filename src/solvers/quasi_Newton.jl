@@ -203,7 +203,10 @@ The ``k``th iteration consists of
 * `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
-* `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled. Can be either `:ignore` (in which case it is not checked if the selected direction is a descent one) or `:step_towards_negative_gradient` (in which case the direction is replaced with negative gradient).
+* `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled.
+  Can be either `:ignore` (in which case it is not checked if the selected direction is a descent one),
+  `:step_towards_negative_gradient` (in which case the direction is replaced with negative gradient and a warning is emitted)
+  or `:step_towards_negative_gradient_nowarn` (in which case the direction is replaced with negative gradient without a warning).
 
 # Output
 
@@ -353,10 +356,13 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
-    if qns.nondescent_direction_behavior === :step_towards_negative_gradient &&
-        real(inner(M, qns.p, qns.η, qns.X)) > 0
+    if (
+        qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
+        qns.nondescent_direction_behavior === :step_towards_negative_gradient_nowarn
+    ) && real(inner(M, qns.p, qns.η, qns.X)) > 0
         # reset direction if not a descent one
-        @warn "Computed direction is not a descent direction; resetting to negative gradient"
+        qns.nondescent_direction_behavior === :step_towards_negative_gradient &&
+            @warn "Computed direction is not a descent direction; resetting to negative gradient"
         copyto!(M, qns.η, qns.X)
         qns.η .*= -1
     end
