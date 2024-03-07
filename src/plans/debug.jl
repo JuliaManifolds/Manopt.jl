@@ -627,7 +627,7 @@ depending on the message type.
 
 # Constructor
 
-    DebugMessages(mode=:Info; io::IO=stdout)
+    DebugMessages(mode=:Info, warn=:Once; io::IO=stdout)
 
 Initialize the messages debug to a certain `mode`. Available modes are
 
@@ -635,28 +635,43 @@ Initialize the messages debug to a certain `mode`. Available modes are
 * `:Info`:    issue the messages as an `@info`
 * `:Print`:   print messages to the steam `io`.
 * `:Warning`: issue the messages as a warning
+
+The `warn` level can be set to `:Once` to only display only the first message,
+to `:Always` to report every message, one can set it to `:No`,
+to deactivate this, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always:`
 """
 mutable struct DebugMessages <: DebugAction
     io::IO
     mode::Symbol
-    DebugMessages(mode::Symbol=:Info; io::IO=stdout) = new(io, mode)
+    status::Symbol
+    function DebugMessages(mode::Symbol=:Info, warn::Symbol=:Once; io::IO=stdout)
+        return new(io, mode, warn)
+    end
 end
 function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int)
-    msg = get_message(st)
-    (i < 0 || length(msg) == 0) && (return nothing)
-    (d.mode == :Warning) && (@warn msg; return nothing)
-    (d.mode == :Error) && (@error msg; return nothing)
-    (d.mode == :Print) && (print(d.io, msg); return nothing)
-    #(d.mode == :Info) &&
-    (@info msg) # Default
+    if d.status !== :No
+        msg = get_message(st)
+        (i < 0 || length(msg) == 0) && (return nothing)
+        (d.mode == :Warning) && (@warn msg; return nothing)
+        (d.mode == :Error) && (@error msg; return nothing)
+        (d.mode == :Print) && (print(d.io, msg); return nothing)
+        #(d.mode == :Info) &&
+        (@info msg) # Default
+        if d.status === :Once
+            @warn "Further warnings will be suppressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
+            d.status = :No
+        end
+    end
     return nothing
 end
-show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode))")
+show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode), :$(d.status))")
 function status_summary(d::DebugMessages)
-    (d.mode == :Warning) && return ":WarningMessages"
-    (d.mode == :Error) && return ":ErrorMessages"
-    # (d.mode == :Info) && return ":InfoMessages" #default
-    return ":Messages"
+    (d.mode == :Warning) && return "(:WarningMessages, :$(d.status)"
+    (d.mode == :Error) && return "(:ErrorMessages, :$(d.status))"
+    # default
+    # (d.mode == :Info) && return "(:InfoMessages, $(d.status)"
+    return "(:Messages, :$(d.status))"
 end
 
 @doc raw"""
@@ -968,7 +983,7 @@ A debug to warn when an evaluated gradient at the current iterate is larger than
 (a factor times) the maximal (recommended) stepsize at the current iterate.
 
 # Constructor
-    DebugWarnIfGradientNormTooLarge(warn=:Once, factor::T=1.0)
+    DebugWarnIfGradientNormTooLarge(factor::T=1.0, warn=:Once)
 
 Initialize the warning to warn `:Once`.
 
@@ -1163,5 +1178,8 @@ function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
     (t[1] == :Time) && return DebugTime(; format=t[2])
+    ((t[1] == :Messages) || (t[1] == :InfoMessages)) && return DebugMessages(:Info, t[2])
+    (t[1] == :WarningMessages) && return DebugMessages(:Warning, t[2])
+    (t[1] == :ErrorMessages) && return DebugMessages(:error, t[2])
     return DebugEntry(t[1]; format=t[2])
 end

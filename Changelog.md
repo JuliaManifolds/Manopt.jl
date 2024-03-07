@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Option `:step_towards_negative_gradient_nowarn` for `nondescent_direction_behavior` in quasi-Newton solvers that doesn't emit warnings.
+* The option `:step_towards_negative_gradient` for `nondescent_direction_behavior` in quasi-Newton solvers does no longer emit a warning by default. This has been moved to a `message`, that can be accessed/displayed with `DebugMessages`
+* `DebugMessages` now has a second positional argument, specifying whether all messages, or just the first (`:Once`) should be displayed.
 
 ## [0.4.55] March 3, 2024
 

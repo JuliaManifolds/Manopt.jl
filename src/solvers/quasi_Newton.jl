@@ -61,6 +61,7 @@ mutable struct QuasiNewtonState{
     X_old::T
     vector_transport_method::VT
     nondescent_direction_behavior::Symbol
+    nondescent_direction_message::String
 end
 function QuasiNewtonState(
     M::AbstractManifold,
@@ -104,14 +105,21 @@ function QuasiNewtonState(
         copy(M, p, initial_vector),
         vector_transport_method,
         nondescent_direction_behavior,
+        "",
     )
 end
 function get_message(qns::QuasiNewtonState)
-    # collect messages from (1) direction update or the (2) the step size and combine them
+    # collect messages from
+    # (1) direction update or the
+    # (2) the step size and combine them
+    # (3) the nondescent behaviour check message
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
-    d = (length(msg1) > 0 && length(msg2) > 0) ? "\n" : "" #divider
-    return "$(msg1)$(d)$(msg2)"
+    msg3 = qns.nondescent_direction_message
+    d = "$(msg1)"
+    d = "$(length(d) > 0 ? "\n" : "")$(msg2)"
+    d = "$(length(d) > 0 ? "\n" : "")$(msg3)"
+    return d
 end
 function show(io::IO, qns::QuasiNewtonState)
     i = get_count(qns, :Iterations)
@@ -204,9 +212,11 @@ The ``k``th iteration consists of
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
 * `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled.
-  Can be either `:ignore` (in which case it is not checked if the selected direction is a descent one),
-  `:step_towards_negative_gradient` (in which case the direction is replaced with negative gradient and a warning is emitted)
-  or `:step_towards_negative_gradient_nowarn` (in which case the direction is replaced with negative gradient without a warning).
+  This can be
+  * ``:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
+  * `:ignore` – the check is not performed, so any computed direction is accepted. No message is stored.
+  * any other value performs the check, keeps the direction but stores a message.
+  A stored message can be displayed using [`DebugMessage`](@ref).
 
 # Output
 
@@ -356,15 +366,19 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
-    if (
-        qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
-        qns.nondescent_direction_behavior === :step_towards_negative_gradient_nowarn
-    ) && real(inner(M, qns.p, qns.η, qns.X)) > 0
-        # reset direction if not a descent one
-        qns.nondescent_direction_behavior === :step_towards_negative_gradient &&
-            @warn "Computed direction is not a descent direction; resetting to negative gradient"
-        copyto!(M, qns.η, qns.X)
-        qns.η .*= -1
+    if !(qns.nondescent_direction_behavior === :ignore)
+        # Reset last warning
+        qns.nondescent_direction_message = ""
+        v = real(inner(M, qns.p, qns.η, qns.X))
+        if v > 0
+            msg = "Computed direction is not a descent direction. The inner product evaluated to $(v)."
+            if qns.nondescent_direction_behavior === :step_towards_negative_gradient
+                copyto!(M, qns.η, qns.X)
+                qns.η .*= -1
+                msg = "$(msg) Resetting to negative gradient."
+            end
+            qns.nondescent_direction_message = msg
+        end
     end
     α = qns.stepsize(mp, qns, iter, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))

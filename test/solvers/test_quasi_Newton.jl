@@ -379,10 +379,11 @@ end
         qns = QuasiNewtonState(
             M, p; direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport())
         )
-        @test_logs (
-            :warn,
-            "Computed direction is not a descent direction; resetting to negative gradient",
-        ) match_mode = :any solve!(mp, qns)
+        # TODO Needs a replacement when we have agreed on a new form
+        #        @test_logs (
+        #            :warn,
+        #            "Computed direction is not a descent direction; resetting to negative gradient",
+        #        ) match_mode = :any solve!(mp, qns)
 
         qns = QuasiNewtonState(
             M,
