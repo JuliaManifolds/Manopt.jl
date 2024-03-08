@@ -389,7 +389,7 @@ end
             M,
             p;
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
-            nondescent_direction_behavior=:step_towards_negative_gradient_nowarn,
+            nondescent_direction_behavior=:step_towards_negative_gradient,
         )
 
         @test_nowarn solve!(mp, qns)
