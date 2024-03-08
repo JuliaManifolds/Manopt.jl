@@ -6,19 +6,22 @@ used with any update rule for the direction.
 
 # Fields
 
-* `p`                 the current iterate, a point on a manifold
-* `X`                 the current gradient
-* `sk`                the current step
-* `yk`                the current gradient difference
-* `direction_update`  an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
-* `retraction_method` an `AbstractRetractionMethod`
-* `stop`              a [`StoppingCriterion`](@ref)
+* `p`                             the current iterate, a point on a manifold
+* `X`                             the current gradient
+* `sk`                            the current step
+* `yk`                            the current gradient difference
+* `direction_update`              an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
+* `nondescent_direction_behavior` a `Symbol` to specify how to handle direction that are not descent ones.
+* `retraction_method`             an `AbstractRetractionMethod`
+* `stepsize`                      a [`Stepsize`](@ref)
+* `stop`                          a [`StoppingCriterion`](@ref)
 
 as well as for internal use
 
-* `p_old`             the last iterate
-* `η`                 the current update direction
-* `X_old`             the last gradient
+* `p_old`                      the last iterate
+* `η`                          the current update direction
+* `X_old`                      the last gradient
+* `nondescent_direction_value` the value from the last inner product check for descent directions
 
 # Constructor
 
@@ -47,6 +50,7 @@ mutable struct QuasiNewtonState{
     S<:Stepsize,
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
+    R,
 } <: AbstractGradientSolverState
     p::P
     p_old::P
@@ -61,7 +65,7 @@ mutable struct QuasiNewtonState{
     X_old::T
     vector_transport_method::VT
     nondescent_direction_behavior::Symbol
-    nondescent_direction_message::String
+    nondescent_direction_value::R
 end
 function QuasiNewtonState(
     M::AbstractManifold,
@@ -91,7 +95,7 @@ function QuasiNewtonState(
     VTM<:AbstractVectorTransportMethod,
 }
     sk_init = zero_vector(M, p)
-    return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize),RM,VTM}(
+    return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize),RM,VTM,Float64}(
         p,
         copy(M, p),
         copy(M, p, initial_vector),
@@ -105,7 +109,7 @@ function QuasiNewtonState(
         copy(M, p, initial_vector),
         vector_transport_method,
         nondescent_direction_behavior,
-        "",
+        1.0,
     )
 end
 function get_message(qns::QuasiNewtonState)
@@ -115,7 +119,13 @@ function get_message(qns::QuasiNewtonState)
     # (3) the nondescent behaviour check message
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
-    msg3 = qns.nondescent_direction_message
+    msg3 = ""
+    if qns.nondescent_direction_value > 0
+        msg3 = "Computed direction is not a descent direction. The inner product evaluated to $(qns.nondescent_direction_value)."
+        if qns.nondescent_direction_behavior === :step_towards_negative_gradient
+            msg3 = "$(msg3) Resetting to negative gradient."
+        end
+    end
     d = "$(msg1)"
     d = "$(length(d) > 0 ? "\n" : "")$(msg2)"
     d = "$(length(d) > 0 ? "\n" : "")$(msg3)"
@@ -216,7 +226,7 @@ The ``k``th iteration consists of
   * ``:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
   * `:ignore` – the check is not performed, so any computed direction is accepted. No message is stored.
   * any other value performs the check, keeps the direction but stores a message.
-  A stored message can be displayed using [`DebugMessage`](@ref).
+  A stored message can be displayed using [`DebugMessages`](@ref).
 
 # Output
 
@@ -367,17 +377,12 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
     if !(qns.nondescent_direction_behavior === :ignore)
-        # Reset last warning
-        qns.nondescent_direction_message = ""
-        v = real(inner(M, qns.p, qns.η, qns.X))
-        if v > 0
-            msg = "Computed direction is not a descent direction. The inner product evaluated to $(v)."
+        qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
+        if qns.nondescent_direction_value > 0
             if qns.nondescent_direction_behavior === :step_towards_negative_gradient
                 copyto!(M, qns.η, qns.X)
                 qns.η .*= -1
-                msg = "$(msg) Resetting to negative gradient."
             end
-            qns.nondescent_direction_message = msg
         end
     end
     α = qns.stepsize(mp, qns, iter, qns.η)
