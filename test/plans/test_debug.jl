@@ -337,9 +337,9 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
     @testset "Debug Messages" begin
         s = TestMessageState()
         mp = DefaultManoptProblem(Euclidean(2), ManifoldCostObjective(x -> x))
-        d = DebugMessages(:Info)
-        @test repr(d) == "DebugMessages(:Info)"
-        @test Manopt.status_summary(d) == ":Messages"
+        d = DebugMessages(:Info, :Always)
+        @test repr(d) == "DebugMessages(:Info, :Always)"
+        @test Manopt.status_summary(d) == "(:Messages, :Always)"
         @test_logs (:info, "DebugTest") d(mp, s, 0)
     end
     @testset "DebugIfEntry" begin

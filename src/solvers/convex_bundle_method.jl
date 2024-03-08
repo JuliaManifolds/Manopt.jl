@@ -342,7 +342,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 # Input
 
 * `M`:  a manifold ``\mathcal M``
-* `f`   a cost function ``f:\mathcal M→ℝ`` to minimize
+* `f`:   a cost function ``f:\mathcal M→ℝ`` to minimize
 * `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
@@ -367,7 +367,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
-* `retraction`:                (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
 * `stopping_criterion`:        ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
 * `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`

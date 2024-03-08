@@ -377,12 +377,27 @@ end
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(
-            M, p; direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport())
+            M,
+            copy(M, p);
+            direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
         )
+        dqns = DebugSolverState(qns, DebugMessages(:Warning, :Once))
         @test_logs (
             :warn,
-            "Computed direction is not a descent direction; resetting to negative gradient",
-        ) match_mode = :any solve!(mp, qns)
+            "Computed direction is not a descent direction. The inner product evaluated to 1.0. Resetting to negative gradient.",
+        ) (
+            :warn,
+            "Further warnings will be suppressed, use DebugMessages(:Warning, :Always) to get all warnings.",
+        ) solve!(mp, dqns)
+
+        qns = QuasiNewtonState(
+            M,
+            p;
+            direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
+            nondescent_direction_behavior=:step_towards_negative_gradient,
+        )
+
+        @test_nowarn solve!(mp, qns)
     end
 
     @testset "A Circle example" begin

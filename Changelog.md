@@ -5,6 +5,13 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.56] March 4, 2024
+
+### Added
+
+* The option `:step_towards_negative_gradient` for `nondescent_direction_behavior` in quasi-Newton solvers does no longer emit a warning by default. This has been moved to a `message`, that can be accessed/displayed with `DebugMessages`
+* `DebugMessages` now has a second positional argument, specifying whether all messages, or just the first (`:Once`) should be displayed.
+
 ## [0.4.55] March 3, 2024
 
 ### Added
