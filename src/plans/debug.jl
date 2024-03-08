@@ -653,13 +653,12 @@ function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverSta
     if d.status !== :No
         msg = get_message(st)
         (i < 0 || length(msg) == 0) && (return nothing)
-        (d.mode == :Warning) && (@warn msg; return nothing)
-        (d.mode == :Error) && (@error msg; return nothing)
-        (d.mode == :Print) && (print(d.io, msg); return nothing)
-        #(d.mode == :Info) &&
-        (@info msg) # Default
+        (d.mode == :Warning) && (@warn msg)
+        (d.mode == :Error) && (@error msg)
+        (d.mode == :Print) && (print(d.io, msg))
+        (d.mode == :Info) && (@info msg)
         if d.status === :Once
-            @warn "Further warnings will be suppressed, use DebugWarnIfCostIncreases(:Always) to get all warnings."
+            @warn "Further warnings will be suppressed, use DebugMessages(:$(d.mode), :Always) to get all warnings."
             d.status = :No
         end
     end
@@ -667,7 +666,7 @@ function (d::DebugMessages)(::AbstractManoptProblem, st::AbstractManoptSolverSta
 end
 show(io::IO, d::DebugMessages) = print(io, "DebugMessages(:$(d.mode), :$(d.status))")
 function status_summary(d::DebugMessages)
-    (d.mode == :Warning) && return "(:WarningMessages, :$(d.status)"
+    (d.mode == :Warning) && return "(:WarningMessages, :$(d.status))"
     (d.mode == :Error) && return "(:ErrorMessages, :$(d.status))"
     # default
     # (d.mode == :Info) && return "(:InfoMessages, $(d.status)"
