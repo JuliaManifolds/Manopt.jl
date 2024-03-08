@@ -342,7 +342,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 # Input
 
 * `M`:  a manifold ``\mathcal M``
-* `f`   a cost function ``f:\mathcal M→ℝ`` to minimize
+* `f`:   a cost function ``f:\mathcal M→ℝ`` to minimize
 * `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
