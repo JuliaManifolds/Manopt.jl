@@ -112,6 +112,7 @@ using ManifoldsBase:
     requires_caching,
     retract,
     retract!,
+    sectional_curvature,
     set_component!,
     shortest_geodesic,
     shortest_geodesic!,

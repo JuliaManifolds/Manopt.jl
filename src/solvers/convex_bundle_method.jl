@@ -1,39 +1,14 @@
-@doc raw"""
-    sectional_curvature(M, p, X, Y)
-
-compute the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
-on two tangent vectors at ``p``.
-The formula reads
-```math
-
-    \kappa_p(X, Y) = \frac{⟨R(X, Y, Y), X⟩_p}{\lVert X \rVert^2_p \lVert Y \rVert^2_p - ⟨X, Y⟩^2_p}
-
-```
-where ``R(X, Y, Y)`` is the [`riemann_tensor`](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/connection.html#ManifoldsBase.riemann_tensor-Tuple{AbstractManifold,%20Any,%20AbstractBasis}) on ``\mathcal M``.
-
-# Input
-
-* `M`:   a manifold ``\mathcal M``
-* `p`:   a point ``p \in \mathcal M``
-* `X`:   a tangent vector ``X \in T_p \mathcal M``
-* `Y`:   a tangent vector ``Y \in T_p \mathcal M``
-
-"""
-function sectional_curvature(M, p, X, Y)
-    R = riemann_tensor(M, p, X, Y, Y)
-    return inner(M, p, R, X) / ((norm(M, p, X)^2 * norm(M, p, Y)^2) - (inner(M, p, X, Y)^2))
-end
 
 @doc raw"""
-    sectional_curvature(M, p)
+    estimate_sectional_curvature(M::AbstractManifold, p)
 
-compute the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
+Estimate the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
 on two random tangent vectors at ``p`` that are orthogonal to eachother.
 
 # See also
 [`sectional_curvature`](@ref)
 """
-function sectional_curvature(M, p)
+function estimate_sectional_curvature(M::AbstractManifold, p)
     X = rand(M; vector_at=p)
     Y = rand(M; vector_at=p)
     Y = Y - (inner(M, p, X, Y) / norm(M, p, X)^2 * X)
@@ -137,7 +112,6 @@ with keywords for all fields with defaults besides `p_last_serious` which obtain
 
 ## Keyword arguments
 
-* `k_min`:      lower bound on the sectional curvature of the manifold
 * `k_max`:      upper bound on the sectional curvature of the manifold
 * `k_size`:     (`100`) sample size for the estimation of the bounds on the sectional curvature of the manifold
 * `p_estimate`: (`p`) the point around which to estimate the sectional curvature of the manifold
@@ -193,7 +167,6 @@ mutable struct ConvexBundleMethodState{
         m::R=1e-2,
         diameter::R=50.0,
         domain::D,#(M, p) -> isfinite(f(M, p)),
-        k_min=nothing,
         k_max=nothing,
         k_size::Int=100,
         p_estimate=p,
@@ -232,7 +205,7 @@ mutable struct ConvexBundleMethodState{
         if ϱ === nothing
             if (k_max === nothing)
                 s = [
-                    sectional_curvature(
+                    estimate_sectional_curvature(
                         M,
                         close_point(
                             M, p_estimate, diameter / 2; retraction_method=retraction_method
@@ -356,10 +329,8 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `m`:                         (`1e-3`) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point.
 * `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
-* `k_min`:                     lower bound on the sectional curvature of the manifold.
 * `k_max`:                     upper bound on the sectional curvature of the manifold.
-* `k_size`:                    (`100``) sample size for the estimation of the bounds on the sectional curvature of the manifold if `k_min`
-    and `k_max` are not provided.
+* `k_size`:                    (`100``) sample size for the estimation of the bounds on the sectional curvature of the manifold if  `k_max` is not provided.
 * `p_estimate`:                (`p`) the point around which to estimate the sectional curvature of the manifold.
 * `α`:                         (`(i) -> one(number_eltype(X)) / i`) a function for evaluating suitable stepsizes when obtaining candidate points at iteration `i`.
 * `ϱ`:                         curvature-dependent bound.
@@ -410,7 +381,6 @@ function convex_bundle_method!(
     diameter::R=π / 3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
-    k_min=nothing,
     k_max=nothing,
     k_size::Int=100,
     p_estimate=p,
@@ -440,7 +410,6 @@ function convex_bundle_method!(
         diameter=diameter,
         domain=domain,
         m=m,
-        k_min=k_min,
         k_max=k_max,
         k_size=k_size,
         p_estimate=p_estimate,
@@ -605,7 +574,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             @warn """The Lagrange multiplier increased by at least $(d.tol).
             At iteration #$i the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
             Consider decreasing either the `diameter` keyword argument, or one
-            of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
+            of the parameters involved in the estimation of the sectional curvature, such as
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """
             if d.status === :Once
@@ -616,7 +585,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             @warn """The Lagrange multiplier is positive.
             At iteration #$i the negative of the Lagrange multiplier, -ξ, became negative.\n
             Consider increasing either the `diameter` keyword argument, or changing
-            one of the parameters involved in the estimation of the sectional curvature, such as `k_min`,
+            one of the parameters involved in the estimation of the sectional curvature, such as
             `k_max`, or `ϱ` in the `convex_bundle_method` call.
             """
         else
