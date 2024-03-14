@@ -1,102 +1,120 @@
-# @doc raw
-# """
-# InteriorPointNewtonState <: AbstractManoptSolverState
-
-# # Fields
-
-# * `p`:                  position on M
-# * `λ`:                  Lagrange multiplier corresponding to equality constraints
-# * `μ`:                  Lagrange multiplier corresponding to inequality constrains 
-# * `s`:                  slack variable
-# * `stopping_criterion`: stopping criterion
-
-# # Constructor
-
-# InteriorPointNewtonState( M::AbstractManifold, 
-#                           co::ConstrainedManifoldObjective, 
-#                           p = rand(M),
-#                           λ = ones(m),
-#                           μ = ones(n),
-#                           stopping_criterion = StopAfterIteration(300); 
-#                           kwargs...
-#                         )
-# """
-
-mutable struct InteriorPointNewtonState{
-    P,
-    T,
-    R<:Real,
-    TStop<:StoppingCriterion,
-    TStepsize<:Stepsize,
-    TDirection<:DirectionUpdateRule,
-    TRTM<:AbstractRetractionMethod,
-} <: AbstractManoptSolverState
-    p::P
+mutable struct LagrangianCost{CO,T}
+    co::CO
     λ::T
     μ::T
-    s::T
-    γ::R
-    σ::R
-    ρ::R
-    stop::TStop
-    stepsize::TStepsize
-    direction::TDirection
-    retraction_method::TRTM
-    function InteriorPointNewtonState{P,T}(
-        M::AbstractManifold,
-        p::P,
-        λ::T,
-        μ::T,
-        s::T,
-        γ::Real                                     = 0.5*rand() + 1,
-        σ::Real                                     = rand(),
-        ρ::Real                                     = 0.0,
-        stop::StoppingCriterion                     = StopAfterIteration(100),
-        step::Stepsize                              = default_stepsize(M, InteriorPointNewtonState),
-        direction::DirectionUpdateRule              = IdentityUpdateRule(),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-    ) where {P,T}
-        state = new{P, T, Real, typeof(stop), typeof(step), typeof(direction), typeof(retraction_method)}()
-        state.p = p
-        state.λ = λ
-        state.μ = μ
-        state.s = s
-        state.γ = γ
-        state.σ = σ
-        state.ρ = ρ
-        state.stop = stop
-        state.stepsize = step
-        state.direction = direction
-        state.retraction_method = retraction_method
-        return state
-    end
 end
 
-function InteriorPointNewtonState(
-    M::AbstractManifold,
-    co::ConstrainedManifoldObjective,
-    p::P                                        = rand(M);
-    λ::T                                        = ones( length( get_equality_constraints(M, co, p) ) ),
-    μ::T                                        = ones( length( get_inequality_constraints(M, co, p) ) ),
-    s::T                                        = ones( length( get_inequality_constraints(M, co, p) ) ),
-    γ::Real                                     = 0.5*rand() + 1,
-    σ::Real                                     = rand(),
-    ρ::Real                                     = 0.0,
-    stopping_criterion::StoppingCriterion       = StopAfterIteration(100),
-    retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize                          = default_stepsize(M, InteriorPointNewtonState; retraction_method = retraction_method),
-    direction::DirectionUpdateRule              = IdentityUpdateRule(),
-) where {P,T}
-    return InteriorPointNewtonState{P,T}(
-        M, p, λ, μ, s, γ, σ, ρ, stopping_criterion, stepsize, direction, retraction_method
+function set_manopt_parameter!(lc::LagrangianCost, ::Val{:λ}, λ)
+    lc.λ = λ
+    return lc
+end
+
+function set_manopt_parameter!(lc::LagrangianCost, ::Val{:μ}, μ)
+    lc.μ = μ
+    return lc
+end
+
+function (L::LagrangianCost)(M::AbstractManifold, p)
+    gp = get_equality_constraints(M, L.co, p)
+    hp = get_inequality_constraints(M, L.co, p)
+    c = get_cost(M, L.co, p)
+    return c + (L.λ)'gp + (L.μ)'hp
+end
+
+
+mutable struct LagrangianGrad{CO,T}
+    co::CO
+    λ::T
+    μ::T
+end
+
+function (LG::LagrangianGrad)(M::AbstractManifold, p)
+    X = zero_vector(M, p)
+    return LG(M, X, p)
+end
+
+function set_manopt_parameter!(lg::LagrangianGrad, ::Val{:λ}, λ)
+    lg.λ = λ
+    return lg
+end
+
+function set_manopt_parameter!(lg::LagrangianGrad, ::Val{:μ}, μ)
+    lg.μ = μ
+    return lg
+end
+
+####
+####
+####
+####
+# ASK ABOUT THIS below
+# does get_grad_equality_constraints give jacobian og constraint function??
+
+# default, that is especially when the `grad_g` and `grad_h` are functions.
+function (LG::LagrangianGrad)(M::AbstractManifold, X, p)
+    gp = get_equality_constraints(M, LG.co, p)
+    hp = get_inequality_constraints(M, LG.co, p)
+    m = length(gp)
+    n = length(hp)
+    get_gradient!(M, X, LG.co, p)
+    (m > 0) && (
+        X .+= sum(
+            ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(M, LG.co, p)) .*
+            ((gp .+ LG.μ ./ LG.ρ) .> 0),
+        )
     )
+    (n > 0) &&
+        (X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p)))
+    return X
 end
-
-function default_stepsize(
-    M::AbstractManifold,
-    ::Type{InteriorPointNewtonState};
-    retraction_method = default_retraction_method(M),
+# Allocating vector -> omit a few of the inequality gradient evaluations.
+function (
+    LG::AugmentedLagrangianGrad{
+        <:ConstrainedManifoldObjective{AllocatingEvaluation,<:VectorConstraint}
+    }
+)(
+    M::AbstractManifold, X, p
 )
-    # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
+    m = length(LG.co.g)
+    n = length(LG.co.h)
+    get_gradient!(M, X, LG.co, p)
+    for i in 1:m
+        gpi = get_inequality_constraint(M, LG.co, p, i)
+        if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
+            X .+= (gpi * LG.ρ + LG.μ[i]) .* get_grad_inequality_constraint(M, LG.co, p, i)
+        end
+    end
+    for j in 1:n
+        hpj = get_equality_constraint(M, LG.co, p, j)
+        X .+= (hpj * LG.ρ + LG.λ[j]) .* get_grad_equality_constraint(M, LG.co, p, j)
+    end
+    return X
+end
+# mutating vector -> omit a few of the inequality gradients and allocations.
+function (
+    LG::AugmentedLagrangianGrad{
+        <:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}
+    }
+)(
+    M::AbstractManifold, X, p
+)
+    m = length(LG.co.g)
+    n = length(LG.co.h)
+    get_gradient!(M, X, LG.co, p)
+    Y = zero_vector(M, p)
+    for i in 1:m
+        gpi = get_inequality_constraint(M, LG.co, p, i)
+        if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
+            # evaluate in place
+            get_grad_inequality_constraint!(M, Y, LG.co, p, i)
+            X .+= (gpi * LG.ρ + LG.μ[i]) .* Y
+        end
+    end
+    for j in 1:n
+        # evaluate in place
+        hpj = get_equality_constraint(M, LG.co, p, j)
+        get_grad_equality_constraint!(M, Y, LG.co, p, j)
+        X .+= (hpj * LG.ρ + LG.λ[j]) * Y
+    end
+    return X
 end
