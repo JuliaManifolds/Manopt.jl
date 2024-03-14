@@ -26,5 +26,5 @@ TwoManifoldProblem
 ```
 
 From the two ingredients here, you can find more information about
-* the [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html) in [ManifoldsBase.jl](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/)
+* the [`ManifoldsBase.AbstractManifold`](@extref) in [ManifoldsBase.jl](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/)
 * the [`AbstractManifoldObjective`](@ref) on the [page about the objective](objective.md).
