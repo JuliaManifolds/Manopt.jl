@@ -211,7 +211,7 @@ f(M, q2)
 ### Making life easier: default retraction and zero vector
 
 To initialize tangent vector memory, the function [`zero_vector`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,p)` is called. Similarly,
-the most-used retraction is returned by [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)
+the most-used retraction is returned by ``[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)``{=commonmark}
 
 We can use both here, to make subsequent calls to the solver less verbose.
 We define
