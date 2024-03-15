@@ -7,7 +7,7 @@ on two random tangent vectors at ``p`` that are orthogonal to each other.
 
 # See also
 
-[`ManifoldsBase.sectional_curvature`](@extref)
+[`ManifoldsBase.sectional_curvature`](@extref `ManifoldsBase.sectional_curvature-Tuple{AbstractManifold, Any, Any, Any}`)
 """
 function estimate_sectional_curvature(M::AbstractManifold, p)
     X = rand(M; vector_at=p)
