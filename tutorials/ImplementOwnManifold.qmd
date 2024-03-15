@@ -16,7 +16,7 @@ and also familiarized yourself with how to work with manifolds in general at
 you might come across the point that you want to
 [implementing a manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/tutorials/implement-a-manifold/)
 yourself and use it within [`Manopt.jl`](https://manoptjl.org/).
-A challenge might be, which functions are necessary, since the overall interface of [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/)
+A challenge might be, which functions are necessary, since the overall interface of ``[ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)``{=commonmark}
 is maybe not completely necessary.
 
 This tutorial aims to help you through these steps to implement necessary parts of a manifold
@@ -41,6 +41,14 @@ Pkg.develop(path="../") # a trick to work on the local dev version
 using LinearAlgebra, Manifolds, ManifoldsBase, Random
 using Manopt
 Random.seed!(42)
+```
+
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+# to keep the output and usage simple let's dactivate tutorial mode here
+Manopt.set_manopt_parameter!(:Mode, "None")
 ```
 
 We also define the same manifold as in
@@ -210,7 +218,7 @@ f(M, q2)
 
 ### Making life easier: default retraction and zero vector
 
-To initialize tangent vector memory, the function [`zero_vector`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,p)` is called. Similarly,
+To initialize tangent vector memory, the function [`zero_vector`])@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)` is called. Similarly,
 the most-used retraction is returned by ``[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)``{=commonmark}
 
 We can use both here, to make subsequent calls to the solver less verbose.

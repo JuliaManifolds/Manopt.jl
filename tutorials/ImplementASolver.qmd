@@ -38,7 +38,7 @@ Since most serious algorithms should be implemented in `Manopt.jl` themselves di
 we implement a solver that randomly walks on the manifold and keeps track of the lowest
 point visited.
 As for algorithms in `Manopt.jl` we aim to implement this _generically_ for any manifold that
-is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
+is implemented using ``[ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)``{=commonmark}.
 
 **The random walk minimization**
 
