@@ -89,7 +89,7 @@ end
     close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
 
 sample a random point close to ``p ∈ \mathcal M`` within a tolerance `tol`
-and a [retraction](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/).
+and a [retraction](@extref ManifoldsBase :doc:`retractions`).
 """
 function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
     X = rand(M; vector_at=p)
