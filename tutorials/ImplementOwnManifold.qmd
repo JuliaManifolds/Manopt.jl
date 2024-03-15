@@ -193,7 +193,7 @@ We at least see, that the function value decreased.
 
 ### Norm and maximal step size.
 
-To use more advanced stopping criteria and step sizes we first need an[`inner`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.inner-Tuple%7BAbstractManifold,%20Any,%20Any,%20Any%7D)`(M, p, X)`.
+To use more advanced stopping criteria and step sizes we first need an[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)`(M, p, X)`.
 We also need a [`max_stepsize`](@ref)`(M)`, to avoid having too large steps
 on positively curved manifolds like our scaled sphere in this example
 
@@ -218,7 +218,7 @@ f(M, q2)
 
 ### Making life easier: default retraction and zero vector
 
-To initialize tangent vector memory, the function [`zero_vector`])@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)` is called. Similarly,
+To initialize tangent vector memory, the function [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)` is called. Similarly,
 the most-used retraction is returned by ``[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)``{=commonmark}
 
 We can use both here, to make subsequent calls to the solver less verbose.
