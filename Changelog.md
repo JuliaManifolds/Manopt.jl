@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* `ManifoldsBase.jl` now is running on Documenter 1.3, `Manopt.jl` documentation now uses [DocumenterInterLinks]() to refer to sections and functions from `ManifoldsBasel.jl`
+* `ManifoldsBase.jl` now is running on Documenter 1.3, `Manopt.jl` documentation now uses [DocumenterInterLinks](https://github.com/JuliaDocs/DocumenterInterLinks.jl) to refer to sections and functions from `ManifoldsBase.jl`
 
 ## [0.4.56] March 4, 2024
 
