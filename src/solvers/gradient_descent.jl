@@ -139,7 +139,7 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 * `direction`:          ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
 * `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
   or [`InplaceEvaluation`](@ref) in place of the form `grad_f!(M, X, p)`.
-* `retraction_method`:  ([`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold})(M, typeof(p))`) a retraction to use
+* `retraction_method`:  ([`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`) a retraction to use
 * `stepsize`:           ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.

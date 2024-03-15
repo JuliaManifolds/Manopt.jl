@@ -35,7 +35,8 @@ end
     MOI.dimension(set::VectorizedManifold)
 
 Return the representation side of points on the (vectorized in representation) manifold.
-As the MOI variables are real, this means if the [`representation_size`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.representation_size-Tuple{AbstractManifold}) yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
+As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
+yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
 """
 function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
