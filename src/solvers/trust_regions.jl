@@ -495,7 +495,7 @@ function trust_regions!(
     augmentation_threshold::R=0.75,
     augmentation_factor::R=2.0,
     sub_kwargs=(;),
-    sub_objective=decorate_objective!(M, TrustRegionModelObjective(mho), sub_kwargs...),
+    sub_objective=decorate_objective!(M, TrustRegionModelObjective(mho); sub_kwargs...),
     sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopWhenResidualIsReducedByFactorOrPower(;
@@ -513,8 +513,8 @@ function trust_regions!(
             trust_region_radius,
             randomize=randomize,
             (project!)=project!,
-            sub_kwargs...,
             stopping_criterion=sub_stopping_criterion,
+            sub_kwargs...,
         );
         sub_kwargs...,
     ),
@@ -638,7 +638,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor
     elseif ρ > trs.augmentation_threshold &&
-        get_manopt_parameter(trs.sub_state, :TrustRegionExceeded)
+        get_manopt_parameter(get_state(trs.sub_state), :TrustRegionExceeded)
         # (b) performed great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius
