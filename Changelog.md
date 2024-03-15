@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `ManifoldsBase.jl` now is running on Documenter 1.3, `Manopt.jl` documentation now uses [DocumenterInterLinks](https://github.com/JuliaDocs/DocumenterInterLinks.jl) to refer to sections and functions from `ManifoldsBase.jl`
 
+### Fixed
+
+* fixes a type that when passing `sub_kwargs` to `trust_regions` caused an error in the decoration of the sub objective.
+
 ## [0.4.56] March 4, 2024
 
 ### Added
