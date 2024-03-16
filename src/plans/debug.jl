@@ -53,12 +53,12 @@ mutable struct DebugSolverState{S<:AbstractManoptSolverState} <: AbstractManoptS
     end
 end
 function DebugSolverState(st::S, dD::D) where {S<:AbstractManoptSolverState,D<:DebugAction}
-    return DebugSolverState{S}(st, Dict(:All => dD))
+    return DebugSolverState{S}(st, Dict(:Iteration => dD))
 end
 function DebugSolverState(
     st::S, dD::Array{<:DebugAction,1}
 ) where {S<:AbstractManoptSolverState}
-    return DebugSolverState{S}(st, Dict(:All => DebugGroup(dD)))
+    return DebugSolverState{S}(st, Dict(:Iteration => DebugGroup(dD)))
 end
 function DebugSolverState(
     st::S, dD::Dict{Symbol,<:DebugAction}
@@ -82,6 +82,15 @@ function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     end
     return dss
 end
+# all other pass through
+function set_manopt_parameter!(dss::DebugSolverState, e::Symbol, args...)
+    return set_manopt_parameter!(dss.state, e, args...)
+end
+# all other pass through
+function get_manopt_parameter(dss::DebugSolverState, e::Symbol, args...)
+    return get_manopt_parameter(dss.state, e, args...)
+end
+
 function status_summary(dst::DebugSolverState)
     if length(dst.debugDictionary) > 0
         s = ""
@@ -120,9 +129,8 @@ that are evaluated `en bloque`; the method does not perform any print itself,
 but relies on the internal prints. It still concatenates the result and returns
 the complete string
 """
-mutable struct DebugGroup <: DebugAction
-    group::Array{DebugAction,1}
-    DebugGroup(g::Array{<:DebugAction,1}) = new(g)
+mutable struct DebugGroup{D<:DebugAction} <: DebugAction
+    group::Vector{D}
 end
 function (d::DebugGroup)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     for di in d.group
@@ -823,6 +831,9 @@ function stop!(d::DebugTime)
     return d
 end
 
+#
+# Debugs that warn about something
+#
 @doc raw"""
     DebugWarnIfCostIncreases <: DebugAction
 
@@ -1027,63 +1038,134 @@ function show(io::IO, d::DebugWarnIfGradientNormTooLarge)
     return print(io, "DebugWarnIfGradientNormTooLarge($(d.factor), :$(d.status))")
 end
 
+#
+# Convenience constructors using Symbols
+#
 @doc raw"""
-    DebugFactory(a)
+    DebugFactory(a::Vector)
 
-given an array of `Symbol`s, `String`s [`DebugAction`](@ref)s and `Ints`
+Generate a dictionary of [`DebugAction`](@ref)s.
 
-* The symbol `:Stop` creates an entry of to display the stopping criterion at the end
-  (`:Stop => DebugStoppingCriterion()`), for further symbols see [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
-* The symbol `:Subsolver` wraps all `dictionary` entries with [`DebugWhenActive`](@ref) that can be set from outside.
-* Tuples of a symbol and a string can be used to also specify a format, see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
-* any string creates a [`DebugDivider`](@ref)
-* any [`DebugAction`](@ref) is directly included
-* an Integer `k`introduces that debug is only printed every `k`th iteration
+First all `Symbol`s `String`, [`DebugActions`](@ref) and numbers are collected,
+excluding `:Stop` and `:Subsolver`.
+This collected vector is added to the `:Iteration => [...]` pair.
+`:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
+If necessary, these pairs are created
+
+For each `Pair` of a `Symbol` and a `Vector`, the [`DebugGroupFactory`](@ref)
+is called for the `Vector` and the result is added to the debug dictonaries entry
+with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
+when the `:Subsolver` symbol is present
 
 # Return value
 
-This function returns a dictionary with an entry `:All` containing one general [`DebugAction`](@ref),
-possibly a [`DebugGroup`](@ref) of entries.
-It might contain an entry `:Start`, `:Step`, `:Stop` with an action (each) to specify what to do
-at the start, after a step or at the end of an Algorithm, respectively. On all three occasions the `:All` action is executed.
-Note that only the `:Stop` entry is actually filled when specifying the `:Stop` symbol.
+A dictionary for the different enrty points where debug can happen, each containing
+a [`DebugAction`](@ref) to call.
 
-# Example
+Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
+one are called with an `i=0` for reset.
 
-The array
+# Examples
+
+1. Providing a simple vector of symbols, numbers and strings like
 
 ```
 [:Iterate, " | ", :Cost, :Stop, 10]
 ```
 
-Adds a group to `:All` of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref) with `" | "` to display, [`DebugCost`](@ref))
+Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
 as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
-It also adds the [`DebugStoppingCriterion`](@ref) to the `:Stop` entry of the dictionary.
+It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of the dictionary.
+
+2. The same can also be written a bit more precise as
+
+```
+DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
+```
+
+3. We can even make the stoping criterion concrete and pass Actions directly,
+  for example explicitly Making the stop more concrete, we get
+
+```
+DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
+```
+
 """
-function DebugFactory(a::Array{<:Any,1})
-    # filter out every
-    group = Array{DebugAction,1}()
-    for d in filter(x -> !isa(x, Int) && (x ∉ [:Stop, :Subsolver]), a) # filter numbers & stop
-        push!(group, DebugActionFactory(d))
+function DebugFactory(a::Vector{<:Any})
+    # filter out :Iteration defaults
+    # filter numbers & stop & pairs
+    end_step_vec = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]), a)
+    # Filter pairs
+    b = filter(x -> isa(x, Pair), a)
+    # Push this to the :Iteration if that exists or add that pair
+    t1 = filter(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
+    if length(t1) > 0
+        pushfirst!(first(t1).second, end_step_vec...)
+    else # regenerate since we have to maybe change type of b
+        b = [b..., :Iteration => end_step_vec]
+    end
+    # Push `:StoppingCriterion` to `:StopAlgorithm` if that exists or add such a pair
+    if (:Stop in a)
+        t2 = filter(x -> isa(x, Pair) && (x.first == :Stop), b)
+        if length(t2) > 0
+            push!(first(t2).second, DebugActionFactory(:Stop))
+        else # regenerate since we have to maybe change type of b
+            b = [b..., :Stop => [DebugActionFactory(:Stop)]]
+        end
     end
     dictionary = Dict{Symbol,DebugAction}()
-    if length(group) > 0
-        debug = DebugGroup(group)
-        # filter numbers
-        e = filter(x -> isa(x, Int), a)
-        if length(e) > 0
-            debug = DebugEvery(debug, last(e))
-        end
-        dictionary[:All] = debug
-    end
-    (:Stop in a) && (dictionary[:Stop] = DebugStoppingCriterion())
-    if (:Subsolver in a)
-        for k in keys(dictionary)
-            dictionary[k] = DebugWhenActive(dictionary[k])
-        end
+    # Run through all (updated) pairs
+    for d in b
+        dbg = DebugGroupFactory(d.second)
+        (:Subsolver in a) && (dbg = DebugWhenActive(dbg))
+        dictionary[d.first] = dbg
     end
     return dictionary
 end
+
+@doc raw"""
+   DebugGroupFactory(a::Vector)
+
+  Generate a [`DebugGroup`] of [`DebugAction`](@ref)s.
+
+
+The following rules are used
+
+1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
+2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=``,
+  see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
+3. Any `String` is passed to `DebugActionFactory(d::String)`](@ref)`
+4. Any [`DebugAction`](@ref) is included as is.
+
+If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
+
+If any integers are present, the last of these is used to wrap the group in a
+[`DebugEvery`](@ref)`(k)`.
+
+If `:SubSolver` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
+making it deactivatable by its parent solver.
+"""
+function DebugGroupFactory(a::Vector)
+    group = DebugAction[]
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:Subsolver]), a) # filter Ints, &Sub
+        push!(group, DebugActionFactory(d))
+    end
+    l = length(group)
+    (l == 0) && return DebugDivider("")
+    if l == 1
+        debug = first(group)
+    else
+        debug = DebugGroup(group)
+    end
+    # filter numbers, find last
+    e = filter(x -> isa(x, Int), a)
+    if length(e) > 0
+        debug = DebugEvery(debug, last(e))
+    end
+    (:Subsolver in a) && (debug = (DebugWhenActive(debug)))
+    return debug
+end
+
 @doc raw"""
     DebugActionFactory(s)
 
@@ -1097,6 +1179,7 @@ create a [`DebugAction`](@ref) where
 """
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
+
 """
     DebugActionFactory(s::Symbol)
 
@@ -1113,6 +1196,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:Stop` creates a [`StoppingCriterion`](@ref)`()`
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
 * `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)
@@ -1133,6 +1217,7 @@ function DebugActionFactory(d::Symbol)
     (d == :Iterate) && return DebugIterate()
     (d == :Iteration) && return DebugIteration()
     (d == :Stepsize) && return DebugStepsize()
+    (d == :Stop) && return DebugStoppingCriterion()
     (d == :WarnBundle) && return DebugWarnIfLagrangeMultiplierIncreases()
     (d == :WarnCost) && return DebugWarnIfCostNotFinite()
     (d == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)
@@ -1143,6 +1228,7 @@ function DebugActionFactory(d::Symbol)
     (d == :InfoMessages) && return DebugMessages(:Info)
     (d == :ErrorMessages) && return DebugMessages(:Error)
     (d == :Messages) && return DebugMessages()
+    # all other symbols try to display the entry of said symbol
     return DebugEntry(d)
 end
 """

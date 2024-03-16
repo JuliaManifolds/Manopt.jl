@@ -5,6 +5,23 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.58] (unreleased)
+
+### Added
+
+* more advanced methods to add debug to the beginning of an algorithm, a step, or the end of
+  the algorithm with `DebugAction` entries at `:Start`, `:BeforeIteration`, `:Iteration`, and
+  `:Stop`, respectively.
+* Introduce a Pair-based format to add elements to these hooks, while all others ar
+  now added to :Iteration (no longer to `:All`)
+* (planned) add an easy possibility to also record the initial stage and not only after the first iteration.
+
+### Changed
+
+* Changed the symbol for the `:Step` dictionary to be `:Iteration`, to unify this with the symbols used in recording,
+  and removed the `:All` symbol. On the fine granular scale, all but `:Start` debugs are now reset on init.
+  Since these are merely internal entries in the debug dictionary, this is considered non-breaking.
+
 ## [0.4.57] March 15, 2024
 
 ### Changed

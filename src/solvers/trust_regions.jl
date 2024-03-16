@@ -638,7 +638,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor
     elseif ρ > trs.augmentation_threshold &&
-        get_manopt_parameter(get_state(trs.sub_state), :TrustRegionExceeded)
+        get_manopt_parameter(trs.sub_state, :TrustRegionExceeded)
         # (b) performed great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius

@@ -96,6 +96,14 @@ has_record(s::AbstractManoptSolverState) = _has_record(s, dispatch_state_decorat
 _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
+# pass through
+function set_manopt_parameter!(rss::RecordSolverState, e::Symbol, args...)
+    return set_manopt_parameter!(rss.state, e, args...)
+end
+function get_manopt_parameter(rss::RecordSolverState, e::Symbol, args...)
+    return get_manopt_parameter(rss.state, e, args...)
+end
+
 @doc """
     get_record_state(s::AbstractManoptSolverState)
 

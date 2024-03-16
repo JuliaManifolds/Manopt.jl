@@ -1,4 +1,5 @@
 using Manopt, Test, ManifoldsBase, Dates, Manifolds
+using Manopt: DebugActionFactory, DebugFactory, DebugGroupFactory
 
 struct TestPolarManifold <: AbstractManifold{ℝ} end
 
@@ -28,11 +29,10 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         a1 = DebugDivider("|"; io=io)
         @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
         # constructors
-        @test DebugSolverState(st, a1).debugDictionary[:All] == a1
-        @test DebugSolverState(st, [a1]).debugDictionary[:All].group[1] == a1
+        @test DebugSolverState(st, a1).debugDictionary[:Iteration] == a1
+        @test DebugSolverState(st, [a1]).debugDictionary[:Iteration].group[1] == a1
         @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
-        @test DebugSolverState(st, ["|"]).debugDictionary[:All].group[1].divider ==
-            a1.divider
+        @test DebugSolverState(st, ["|"]).debugDictionary[:Iteration].divider == a1.divider
         @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
         @test repr(DebugSolverState(st, Dict{Symbol,DebugAction}())) == repr(st)
         # single AbstractStateActions
@@ -145,11 +145,9 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         # Factory
         df = DebugFactory([:Stop, "|"])
         @test isa(df[:Stop], DebugStoppingCriterion)
-        @test isa(df[:All], DebugGroup)
-        @test isa(df[:All].group[1], DebugDivider)
-        @test length(df[:All].group) == 1
+        @test isa(df[:Iteration], DebugDivider)
         df = DebugFactory([:Stop, "|", 20])
-        @test isa(df[:All], DebugEvery)
+        @test isa(df[:Iteration], DebugEvery)
         s = [
             :Change,
             :GradientChange,
@@ -163,7 +161,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         ]
         @test all(
             isa.(
-                DebugFactory(s)[:All].group,
+                DebugFactory(s)[:Iteration].group,
                 [
                     DebugChange,
                     DebugGradientChange,
@@ -180,7 +178,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test DebugActionFactory((:IterativeTime)).mode == :Iterative
         @test all(
             isa.(
-                DebugFactory([(t, "A") for t in s])[:All].group,
+                DebugFactory([(t, "A") for t in s])[:Iteration].group,
                 [
                     DebugChange,
                     DebugGradientChange,
@@ -195,7 +193,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
             ),
         )
         @test DebugActionFactory(a3) == a3
-        @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
+        @test DebugFactory([(:Iterate, "A")])[:Iteration].format == "A"
         @test DebugActionFactory((:Iterate, "A")).format == "A"
         # Status for multiple dictionaries
         dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
@@ -252,11 +250,11 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test_logs (:warn,) w7(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
-        @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
+        @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])
-        @test isa(df2[:All].group[1], DebugWarnIfFieldNotFinite)
+        @test isa(df2[:Iteration], DebugWarnIfFieldNotFinite)
         df3 = DebugFactory([:WarnBundle])
-        @test isa(df3[:All].group[1], DebugWarnIfLagrangeMultiplierIncreases)
+        @test isa(df3[:Iteration], DebugWarnIfLagrangeMultiplierIncreases)
     end
     @testset "Debug Time" begin
         io = IOBuffer()
@@ -397,8 +395,8 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         dG(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         # test its usage in the factory independent of position
-        @test DebugFactory([" | ", :Subsolver])[:All] isa DebugWhenActive
-        @test DebugFactory([:Subsolver, " | "])[:All] isa DebugWhenActive
+        @test DebugFactory([" | ", :Subsolver])[:Iteration] isa DebugWhenActive
+        @test DebugFactory([:Subsolver, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
         set_manopt_parameter!(dst, :Debug, :active, true)
