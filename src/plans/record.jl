@@ -43,7 +43,7 @@ construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can b
 
 * a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`
 * an `Array` of [`RecordAction`](@ref)s, then it is stored as a
-  `recordDictionary`(@ref) within the dictionary at `:All`.
+  `recordDictionary`(@ref).
 * a `Dict{Symbol,RecordAction}`.
 """
 mutable struct RecordSolverState{S<:AbstractManoptSolverState,TRD<:NamedTuple} <:

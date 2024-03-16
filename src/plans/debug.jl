@@ -22,9 +22,6 @@ abstract type DebugAction <: AbstractStateAction end
 The debug state appends debug to any state, they act as a decorator pattern.
 Internally a dictionary is kept that stores a [`DebugAction`](@ref) for several occasions
 using a `Symbol` as reference.
-The default occasion is `:All` and for example solvers join this field with
-`:Start`, `:Step` and `:Stop` at the beginning, every iteration or the
-end of the algorithm, respectively
 
 The original options can still be accessed using the [`get_state`](@ref) function.
 
@@ -37,9 +34,8 @@ The original options can still be accessed using the [`get_state`](@ref) functio
     DebugSolverState(o,dA)
 
 construct debug decorated options, where `dD` can be
-* a [`DebugAction`](@ref), then it is stored within the dictionary at `:All`
-* an `Array` of [`DebugAction`](@ref)s, then it is stored as a
-  `debugDictionary` within `:All`.
+* a [`DebugAction`](@ref), then it is stored within the dictionary at `:Iteration`
+* an `Array` of [`DebugAction`](@ref)s.
 * a `Dict{Symbol,DebugAction}`.
 * an Array of Symbols, String and an Int for the [`DebugFactory`](@ref)
 """
@@ -94,12 +90,8 @@ end
 function status_summary(dst::DebugSolverState)
     if length(dst.debugDictionary) > 0
         s = ""
-        if length(dst.debugDictionary) == 1 && first(keys(dst.debugDictionary)) === :All
-            s = "\n    $(status_summary(dst.debugDictionary[:All]))"
-        else
-            for (k, v) in dst.debugDictionary
-                s = "$s\n    :$k = $(status_summary(v))"
-            end
+        for (k, v) in dst.debugDictionary
+            s = "$s\n    :$k = $(status_summary(v))"
         end
         return "$(dst.state)\n\n## Debug$s"
     else # for length 1 the group is equivalent to the summary of the single state
