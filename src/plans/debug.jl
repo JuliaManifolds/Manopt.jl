@@ -1102,7 +1102,7 @@ function DebugFactory(a::Vector{<:Any})
     if length(t1) > 0
         pushfirst!(first(t1).second, end_step_vec...)
     else # regenerate since we have to maybe change type of b
-        b = [b..., :Iteration => end_step_vec]
+        (length(end_step_vec) > 0) && (b = [b..., :Iteration => end_step_vec])
     end
     # Push `:StoppingCriterion` to `:StopAlgorithm` if that exists or add such a pair
     if (:Stop in a)
@@ -1165,6 +1165,7 @@ function DebugGroupFactory(a::Vector)
     (:Subsolver in a) && (debug = (DebugWhenActive(debug)))
     return debug
 end
+DebugGroupFactory(a) = DebugGroupFactory([a])
 
 @doc raw"""
     DebugActionFactory(s)
