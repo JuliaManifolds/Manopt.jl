@@ -304,7 +304,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test Manopt.status_summary(d3) == ts
 
         d4 = DebugEvery(d1, 4)
-        @test repr(d4) == "DebugEvery($(d1), 4, true)"
+        @test repr(d4) == "DebugEvery($(d1), 4, true; activation_offset=1)"
         @test Manopt.status_summary(d4) === "[$(d1), 4]"
 
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"

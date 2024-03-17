@@ -198,7 +198,7 @@ end
 function show(io::IO, de::DebugEvery)
     return print(
         io,
-        "DebugEvery($(de.debug), $(de.every), $(de.always_update);  activation_offset=$(de.activation_offset))",
+        "DebugEvery($(de.debug), $(de.every), $(de.always_update); activation_offset=$(de.activation_offset))",
     )
 end
 function status_summary(de::DebugEvery)
