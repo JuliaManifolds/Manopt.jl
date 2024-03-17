@@ -1187,7 +1187,7 @@ function DebugGroupFactory(a::Vector; activation_offset=1)
     (:Subsolver in a) && (debug = (DebugWhenActive(debug)))
     return debug
 end
-DebugGroupFactory(a) = DebugGroupFactory([a])
+DebugGroupFactory(a; kwargs...) = DebugGroupFactory([a]; kwargs...)
 
 @doc raw"""
     DebugActionFactory(s)
