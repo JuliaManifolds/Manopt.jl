@@ -67,7 +67,7 @@ using Random
         s = particle_swarm(M, f, swarm)
         @test s ≈ 0.0
     end
-    @testset "Specific Stoping criteria" begin
+    @testset "Specific Stopping criteria" begin
         sc = StopWhenSwarmVelocityLess(1.0)
         @test startswith(repr(sc), "StopWhenSwarmVelocityLess")
     end
