@@ -8,10 +8,10 @@ triggered (with iteration number `0`) to trigger possible resets
 function initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
     initialize_solver!(amp, dss.state)
     # Call Start
-    get(dss.debugDictionary, :Start, DebugDivider(""))(amp, get_state(dss), 1)
-    # Reset others
-    for (key, action) in dss.debugDictionary
-        !(key === :Start) && action(amp, get_state(dss), 0)
+    get(dss.debugDictionary, :Start, DebugDivider(""))(amp, get_state(dss), 0)
+    # Reset others in the order as they appear later.
+    for key in [:BeforeIteration, :Iteration, :Stop]
+        get(dss.debugDictionary, key, DebugDivider(""))(amp, get_state(dss), 0)
     end
     return dss
 end

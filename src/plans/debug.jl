@@ -79,12 +79,12 @@ function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     return dss
 end
 # all other pass through
-function set_manopt_parameter!(dss::DebugSolverState, e::Symbol, args...)
-    return set_manopt_parameter!(dss.state, e, args...)
+function set_manopt_parameter!(dss::DebugSolverState, v::Val{T}, args...) where {T}
+    return set_manopt_parameter!(dss.state, v, args...)
 end
 # all other pass through
-function get_manopt_parameter(dss::DebugSolverState, e::Symbol, args...)
-    return get_manopt_parameter(dss.state, e, args...)
+function get_manopt_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
+    return get_manopt_parameter(dss.state, v, args...)
 end
 
 function status_summary(dst::DebugSolverState)
@@ -176,9 +176,9 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     elseif d.always_update
         d.debug(p, st, -1)
     end
-    # set activity for the next iterate in subsolvers
+    # set activity for this iterate in subsolvers
     set_manopt_parameter!(
-        st, :SubState, :Debug, :active, !(i < 1) && (rem(i + 1, d.every) == 0)
+        st, :SubState, :Debug, :active, !(i < 1) && (rem(i, d.every) == 0)
     )
     return nothing
 end
@@ -678,19 +678,35 @@ end
 
 print the Reason provided by the stopping criterion. Usually this should be
 empty, unless the algorithm stops.
+
+# Fields
+
+* `prefix`: (`""`) format to print the output
+* `io`:     (`stdout`) default stream to print the debug to.
+
+# Constructor
+
+DebugStoppingCriterion(prefix = ""; io::IO=stdout)
+
 """
 mutable struct DebugStoppingCriterion <: DebugAction
     io::IO
-    DebugStoppingCriterion(; io::IO=stdout) = new(io)
+    prefix::String
+    DebugStoppingCriterion(prefix=""; io::IO=stdout) = new(io, prefix)
 end
 function (d::DebugStoppingCriterion)(
     ::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
-    print(d.io, (i >= 0 || i == typemin(Int)) ? get_reason(st) : "")
+    print(d.io, (i > 0 || i == typemax(Int)) ? "$(d.prefix)$(get_reason(st))" : "")
     return nothing
 end
-show(io::IO, ::DebugStoppingCriterion) = print(io, "DebugStoppingCriterion()")
-status_summary(::DebugStoppingCriterion) = ":Stop"
+function show(io::IO, c::DebugStoppingCriterion)
+    s = length(c.prefix) > 0 ? "\"$(c.prefix)\"" : ""
+    return print(io, "DebugStoppingCriterion($s)")
+end
+function status_summary(c::DebugStoppingCriterion)
+    return length(c.prefix) == 0 ? ":Stop" : "(:Sttop, \"$(c.prefix)\")"
+end
 
 @doc raw"""
     DebugWhenActive <: DebugAction
@@ -1038,7 +1054,7 @@ end
 
 Generate a dictionary of [`DebugAction`](@ref)s.
 
-First all `Symbol`s `String`, [`DebugActions`](@ref) and numbers are collected,
+First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
 excluding `:Stop` and `:Subsolver`.
 This collected vector is added to the `:Iteration => [...]` pair.
 `:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
@@ -1118,10 +1134,7 @@ end
 @doc raw"""
    DebugGroupFactory(a::Vector)
 
-  Generate a [`DebugGroup`] of [`DebugAction`](@ref)s.
-
-
-The following rules are used
+Generate a [`DebugGroup`] of [`DebugAction`](@ref)s. The following rules are used
 
 1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=``,
@@ -1240,6 +1253,7 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 * `:Iterate` creates a [`DebugIterate`](@ref)
 * `:Iteration` creates a [`DebugIteration`](@ref)
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
+* `:Stop` creates a [`DebugStoppingCriterion`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 
@@ -1255,6 +1269,7 @@ function DebugActionFactory(t::Tuple{Symbol,String})
     (t[1] == :Iterate) && return DebugIterate(; format=t[2])
     (t[1] == :IterativeTime) && return DebugTime(; mode=:Iterative, format=t[2])
     (t[1] == :Stepsize) && return DebugStepsize(; format=t[2])
+    (t[1] == :Stop) && return DebugStoppingCriterion(t[2])
     (t[1] == :Time) && return DebugTime(; format=t[2])
     ((t[1] == :Messages) || (t[1] == :InfoMessages)) && return DebugMessages(:Info, t[2])
     (t[1] == :WarningMessages) && return DebugMessages(:Warning, t[2])
