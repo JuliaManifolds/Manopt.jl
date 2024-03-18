@@ -16,6 +16,7 @@ ConvexBundleMethodState
 ```
 
 ## Stopping Criteria
+
 ```@docs
 StopWhenLagrangeMultiplierLess
 ```
