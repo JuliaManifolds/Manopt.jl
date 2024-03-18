@@ -232,6 +232,10 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         # appended in the end
         @test df3[:Stop].group[1] isa DebugIteration
         @test df3[:Stop].group[2] isa DebugStoppingCriterion
+        # Group with every
+        dgf1 = Manopt.DebugGroupFactory([" ", :Cost, 20])
+        @test dgf1 isa DebugEvery
+        @test dgf1.debug isa DebugGroup
     end
     @testset "Debug and parameter passthrough" begin
         s = TestDebugParameterState(0)
