@@ -156,9 +156,15 @@ Whether internal variables are updates is determined by `always_update`.
 
 This method does not perform any print itself but relies on it's children's print.
 
+It also sets the subsolvers active parameter, see |`DebugWhenActive`}(#ref).
+Here, the `activattion_offset` can be used to specify whether it refers to _this_ iteration,
+the `i`th, when this call is _before_ the iteration, then the offset should be 0,
+for the _next_ iteration, that is if this is called _after_ an iteration, it has to be set to 1.
+Since usual debug is happening after the iteration, 1 is the default.
+
 # Constructor
 
-    DebugEvery(d::DebugAction, every=1, always_update=true)
+    DebugEvery(d::DebugAction, every=1, always_update=true, activation_offset=1)
 
 Initialise the DebugEvery.
 """
@@ -166,8 +172,11 @@ mutable struct DebugEvery <: DebugAction
     debug::DebugAction
     every::Int
     always_update::Bool
-    function DebugEvery(d::DebugAction, every::Int=1, always_update::Bool=true)
-        return new(d, every, always_update)
+    activation_offset::Int
+    function DebugEvery(
+        d::DebugAction, every::Int=1, always_update::Bool=true; activation_offset=1
+    )
+        return new(d, every, always_update, activation_offset)
     end
 end
 function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
@@ -178,12 +187,19 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     end
     # set activity for this iterate in subsolvers
     set_manopt_parameter!(
-        st, :SubState, :Debug, :active, !(i < 1) && (rem(i, d.every) == 0)
+        st,
+        :SubState,
+        :Debug,
+        :active,
+        !(i < 1) && (rem(i + d.activation_offset, d.every) == 0),
     )
     return nothing
 end
 function show(io::IO, de::DebugEvery)
-    return print(io, "DebugEvery($(de.debug), $(de.every), $(de.always_update))")
+    return print(
+        io,
+        "DebugEvery($(de.debug), $(de.every), $(de.always_update); activation_offset=$(de.activation_offset))",
+    )
 end
 function status_summary(de::DebugEvery)
     s = ""
@@ -1127,7 +1143,8 @@ function DebugFactory(a::Vector{<:Any})
     ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
     for d in b
-        dbg = DebugGroupFactory(d.second)
+        offset = d.first === :BeforeIteration ? 0 : 1
+        dbg = DebugGroupFactory(d.second; activation_offset=offset)
         (:Subsolver in a) && (dbg = DebugWhenActive(dbg))
         # Add DebugEvery to all but Start and Stop
         (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = DebugEvery(dbg, ae))
@@ -1155,7 +1172,7 @@ If any integers are present, the last of these is used to wrap the group in a
 If `:SubSolver` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
 making it deactivatable by its parent solver.
 """
-function DebugGroupFactory(a::Vector)
+function DebugGroupFactory(a::Vector; activation_offset=1)
     group = DebugAction[]
     for d in filter(x -> !isa(x, Int) && (x ∉ [:Subsolver]), a) # filter Ints, &Sub
         push!(group, DebugActionFactory(d))
@@ -1170,12 +1187,12 @@ function DebugGroupFactory(a::Vector)
     # filter numbers, find last
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
-        debug = DebugEvery(debug, last(e))
+        debug = DebugEvery(debug, last(e); activation_offset=activation_offset)
     end
     (:Subsolver in a) && (debug = (DebugWhenActive(debug)))
     return debug
 end
-DebugGroupFactory(a) = DebugGroupFactory([a])
+DebugGroupFactory(a; kwargs...) = DebugGroupFactory([a]; kwargs...)
 
 @doc raw"""
     DebugActionFactory(s)
