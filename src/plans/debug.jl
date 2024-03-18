@@ -1118,7 +1118,9 @@ DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]
 function DebugFactory(a::Vector{<:Any})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
-    end_step_vec = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x,Int), a)
+    end_step_vec = filter(
+        x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x, Int), a
+    )
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
     # Push this to the :Iteration if that exists or add that pair
