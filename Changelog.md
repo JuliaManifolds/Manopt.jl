@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * introduce a `StopWhenSwarmVelocityLess` stopping criterion for `particle_swarm` replacing
   the current default of the swarm change, since this is a bit more effective to compute
 
+### Fixed
+
+* fixed the outdated documentation of `TruncatedConjugateGradientState`, that now correcly
+  state that `p` is no longer stored, but the algorithm runs on `TpM`.
+* implemented the missing `get_iterate` for `TruncatedConjugateGradientState`.
+
 ## [0.4.57] - March 15, 2024
 
 ### Changed
