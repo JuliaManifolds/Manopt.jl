@@ -443,15 +443,8 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
-    j = 1
-    step = get_stepsize(mp, bms, j)
+    step = get_stepsize(mp, bms, i)
     retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
-    while !bms.domain(M, bms.p) ||
-        distance(M, bms.p, bms.p_last_serious) < step * norm(M, bms.p_last_serious, bms.g)
-        j += 1
-        step = get_stepsize(mp, bms, j)
-        retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
-    end
     bms.last_stepsize = step
     get_subgradient!(mp, bms.X, bms.p)
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
