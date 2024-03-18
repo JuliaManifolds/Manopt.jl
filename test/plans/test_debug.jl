@@ -12,6 +12,14 @@ struct TestDebugAction <: DebugAction end
 struct TestMessageState <: AbstractManoptSolverState end
 Manopt.get_message(::TestMessageState) = "DebugTest"
 
+mutable struct TestDebugParameterState <: AbstractManoptSolverState
+    value::Int
+end
+function Manopt.set_manopt_parameter!(d::TestDebugParameterState, ::Val{:value}, v)
+    (d.value = v; return d)
+end
+Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
+
 @testset "Debug State" begin
     # helper to get debug as string
     @testset "Basic Debug Output" begin
@@ -141,7 +149,23 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
             "The algorithm reached its maximal number of iterations (20).\n"
         @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
         @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
-
+        # Status for multiple dictionaries
+        dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
+        @test contains(Manopt.status_summary(dss), ":Stop")
+        @test Manopt.get_message(dss) == ""
+        # DebugEvery summary
+        de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
+        @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
+        # DebugGradientChange
+        dgc = DebugGradientChange()
+        dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
+        @test repr(dgc) == dgc_s
+        @test Manopt.status_summary(dgc) == "(:GradientChange, \"Last Change: %f\")"
+        # Faster storage
+        dgc2 = DebugGradientChange(Euclidean(2))
+        @test repr(dgc2) == dgc_s
+    end
+    @testset "Debug Factory" begin
         # Factory
         df = DebugFactory([:Stop, "|"])
         @test isa(df[:Stop], DebugStoppingCriterion)
@@ -192,26 +216,29 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
                 ],
             ),
         )
-        @test DebugActionFactory(a3) == a3
+        a1 = DebugDivider("|")
+        @test DebugActionFactory(a1) == a1
+        @test DebugGroupFactory(a1) == a1 #when trying to build a one-element group, this is still just a1
         @test DebugFactory([(:Iterate, "A")])[:Iteration].format == "A"
         @test DebugActionFactory((:Iterate, "A")).format == "A"
-        # Status for multiple dictionaries
-        dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
-        @test contains(Manopt.status_summary(dss), ":Stop")
-        @test Manopt.get_message(dss) == ""
-        # DebugEvery summary
-        de = DebugEvery(DebugGroup([DebugDivider("|"), DebugIteration()]), 10)
-        @test Manopt.status_summary(de) == "[\"|\", (:Iteration, \"# %-6d\"), 10]"
-        # DebugGradientChange
-        dgc = DebugGradientChange()
-        dgc_s = "DebugGradientChange(; format=\"Last Change: %f\", vector_transport_method=ParallelTransport())"
-        @test repr(dgc) == dgc_s
-        @test Manopt.status_summary(dgc) == "(:GradientChange, \"Last Change: %f\")"
-        # Faster storage
-        dgc2 = DebugGradientChange(Euclidean(2))
-        @test repr(dgc2) == dgc_s
+        # Merge iteration and simple entries to Iteration
+        df2 = DebugFactory([:Iteration, :Iteration => [:Cost]])
+        @test length(df2[:Iteration].group) == 2
+        # appended in the end
+        @test df2[:Iteration].group[1] isa DebugCost
+        @test df2[:Iteration].group[2] isa DebugIteration
+        df3 = DebugFactory([:Stop, :Stop => [:Iteration]])
+        @test length(df3[:Stop].group) == 2
+        # appended in the end
+        @test df3[:Stop].group[1] isa DebugIteration
+        @test df3[:Stop].group[2] isa DebugStoppingCriterion
     end
-
+    @testset "Debug and parameter passthrough" begin
+        s = TestDebugParameterState(0)
+        d = DebugSolverState(s, DebugDivider(" | "))
+        Manopt.set_manopt_parameter!(d, :value, 1)
+        @test Manopt.get_manopt_parameter(d, :value) == 1
+    end
     @testset "Debug Warnings" begin
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]

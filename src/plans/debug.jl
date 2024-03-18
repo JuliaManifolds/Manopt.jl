@@ -1118,23 +1118,25 @@ DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]
 function DebugFactory(a::Vector{<:Any})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
-    end_step_vec = filter(
+    iter_entries = filter(
         x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x, Int), a
     )
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
     # Push this to the :Iteration if that exists or add that pair
-    t1 = filter(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
-    if length(t1) > 0
-        pushfirst!(first(t1).second, end_step_vec...)
-    else # regenerate since we have to maybe change type of b
-        (length(end_step_vec) > 0) && (b = [b..., :Iteration => end_step_vec])
+    i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
+    if !isnothing(i)
+        iter = popat!(b, i) #
+        b = [b..., :Iteration => [iter.second..., iter_entries...]]
+    else
+        (length(iter_entries) > 0) && (b = [b..., :Iteration => iter_entries])
     end
-    # Push `:StoppingCriterion` to `:StopAlgorithm` if that exists or add such a pair
+    # Push a StoppingCriterion to `:Stop` if that exists or add such a pair
     if (:Stop in a)
-        t2 = filter(x -> isa(x, Pair) && (x.first == :Stop), b)
-        if length(t2) > 0
-            push!(first(t2).second, DebugActionFactory(:Stop))
+        i = findlast(x -> (isa(x, Pair)) && (x.first == :Stop), b)
+        if !isnothing(i)
+            stop = popat!(b, i) #
+            b = [b..., :Stop => [stop.second..., DebugActionFactory(:Stop)]]
         else # regenerate since we have to maybe change type of b
             b = [b..., :Stop => [DebugActionFactory(:Stop)]]
         end
