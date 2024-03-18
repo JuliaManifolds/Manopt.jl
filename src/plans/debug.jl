@@ -1101,8 +1101,8 @@ DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]
 """
 function DebugFactory(a::Vector{<:Any})
     # filter out :Iteration defaults
-    # filter numbers & stop & pairs
-    end_step_vec = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]), a)
+    # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
+    end_step_vec = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x,Int), a)
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
     # Push this to the :Iteration if that exists or add that pair
@@ -1122,10 +1122,15 @@ function DebugFactory(a::Vector{<:Any})
         end
     end
     dictionary = Dict{Symbol,DebugAction}()
+    # Look for a global numner -> DebugEvery
+    e = filter(x -> isa(x, Int), a)
+    ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
     for d in b
         dbg = DebugGroupFactory(d.second)
         (:Subsolver in a) && (dbg = DebugWhenActive(dbg))
+        # Add DebugEvery to all but Start and Stop
+        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = DebugEvery(dbg, ae))
         dictionary[d.first] = dbg
     end
     return dictionary

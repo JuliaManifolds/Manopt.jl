@@ -89,9 +89,10 @@ being more precise for the other entries, we could also write
 p1 = exact_penalty_method(
     M, f, grad_f, p0; g=g, grad_g=grad_g,
     debug = [
-        :BeforeIteration => [:Iteration, 25],
-        :Iteration => [:Cost, " | ", :ϵ, 25, "\n"],
+        :BeforeIteration => [:Iteration],
+        :Iteration => [:Cost, " | ", :ϵ, "\n"],
         :Stop => DebugStoppingCriterion(),
+        25,
     ],
 );
 ```
@@ -105,6 +106,7 @@ p1 = exact_penalty_method(
     The algorithm performed a step with a change (6.5347623783315016e-9) less than 1.0e-6.
 
 This also illustrates, that instead of `Symbol`s we can also always pass down a [`DebugAction`](@ref) directly, for example when there is a reason to create or configure the action more individually thatn the default from the symbol.
+Note that the number (`25`) yields that all but `:Start` and `:Stop` are only displayed every 25th iteration.
 
 ## Subsolver debug
 
@@ -155,9 +157,9 @@ p4 = exact_penalty_method(
     g=g,
     grad_g=grad_g,
     debug=[
-        :BeforeIteration => [:Iteration, "\n", 25],
-        :Iteration => [DebugCost(), (:ϵ, " | ϵ: %.8f"), 25, "\n"],
-        :Stop,
+        :BeforeIteration => [:Iteration, "\n"],
+        :Iteration => [DebugCost(), (:ϵ, " | ϵ: %.8f"), "\n"],
+        :Stop, 25
     ],
     sub_kwargs=[
         :debug => [" | ", :Iteration, :Cost, "\n", :Subsolver, :Stop => [(:Stop, " | ")]]
