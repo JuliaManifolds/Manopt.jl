@@ -6,7 +6,6 @@ describe the Steihaug-Toint truncated conjugate-gradient method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p`:                   (`rand(M)` a point, whose tangent space is used to solve the trust-region subproblem
 * `Y`:                   (`zero_vector(M,p)`) Current iterate, whose type is also used for the other, internal, tangent vector fields
 * `stop`:                a [`StoppingCriterion`](@ref).
 * `X`:                   the gradient ``\operatorname{grad}f(p)```
@@ -28,7 +27,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    TruncatedConjugateGradientState(M, p=rand(M), Y=zero_vector(M,p); kwargs...)
+    TruncatedConjugateGradientState(TpM::TangentSpace, Y=rand(TpM); kwargs...)
 
 # See also
 
@@ -103,6 +102,7 @@ end
 function set_manopt_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
     return tcgs.Y = Y
 end
+get_iterate(tcgs::TruncatedConjugateGradientState) = tcgs.Y
 function set_manopt_parameter!(
     tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r
 )
