@@ -92,7 +92,10 @@ end
 """
     is_tutorial_mode()
 
-A small internal helper to indicate whether tutorial mode is active
+A small internal helper to indicate whether tutorial mode is active.
+
+You can set the mode by calling `set_manopt_parameter!(:Mode, "Tutorial")` or deactivate it
+by `set_manopt_parameter!(:Mode, "")`.
 """
 is_tutorial_mode() = (get_manopt_parameter(:Mode) == "Tutorial")
 

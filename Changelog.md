@@ -5,6 +5,45 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.58]
+
+### Changed
+
+* introduce a `StopWhenSwarmVelocityLess` stopping criterion for `particle_swarm` replacing
+  the current default of the swarm change, since this is a bit more effective to compute
+
+## [0.4.57] March 15, 2024
+
+### Changed
+
+* `convex_bundle_method` uses the `sectional_curvature` from `ManifoldsBase.jl`.
+* `convex_bundle_method` no longer has the unused `k_min` keyword argument.
+* `ManifoldsBase.jl` now is running on Documenter 1.3, `Manopt.jl` documentation now uses [DocumenterInterLinks](https://github.com/JuliaDocs/DocumenterInterLinks.jl) to refer to sections and functions from `ManifoldsBase.jl`
+
+### Fixed
+
+* fixes a type that when passing `sub_kwargs` to `trust_regions` caused an error in the decoration of the sub objective.
+
+## [0.4.56] March 4, 2024
+
+### Added
+
+* The option `:step_towards_negative_gradient` for `nondescent_direction_behavior` in quasi-Newton solvers does no longer emit a warning by default. This has been moved to a `message`, that can be accessed/displayed with `DebugMessages`
+* `DebugMessages` now has a second positional argument, specifying whether all messages, or just the first (`:Once`) should be displayed.
+
+## [0.4.55] March 3, 2024
+
+### Added
+
+* Option `nondescent_direction_behavior` for quasi-Newton solvers.
+  By default it checks for non-descent direction which may not be handled well by
+  some stepsize selection algorithms.
+
+### Fixed
+
+* unified documentation, especially function signatures further.
+* fixed a few typos related to math formulae in the doc strings.
+
 ## [0.4.54] February 28, 2024
 
 ### Added

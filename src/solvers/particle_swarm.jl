@@ -140,6 +140,7 @@ end
 function get_manopt_parameter(pss::ParticleSwarmState, ::Val{:Population})
     return pss.swarm
 end
+
 #
 # Constructors
 #
@@ -158,19 +159,19 @@ The aim of PSO is to find the particle position ``p`` on the `Manifold M` that s
 \min_{p ∈\mathcal{M}} F(p).
 ```
 
-To this end, a swarm ``S = \{s_1,\ldots_s_n\}`` of particles is moved around the manifold `M` in the following manner.
+To this end, a swarm ``S = \{s_1, \ldots, s_n\}`` of particles is moved around the manifold `M` in the following manner.
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
 
 ```math
-begin{aligned*}
-  X_k^{(i)} &= ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
+  X_k^{(i)} = ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
 ```
 
-where ``s_k^{(i)}`` is the current particle position, ``ω`` denotes the inertia,
-``c`` and ``s`` are a cognitive and a social weight, respectively,
-``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step,
-``\operatorname{retr}^{-1}`` denotes an inverse retraction on the `Manifold` `M`, and
-``\operatorname{T}`` is a vector transport.
+where
+* ``s_k^{(i)}`` is the current particle position,
+* ``ω`` denotes the inertia,
+* ``c`` and ``s`` are a cognitive and a social weight, respectively,
+* ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
+* ``T`` denotes the vector transport and ``\operatorname{retr}^{-1}`` the inverse retraction used
 
 Then the position of the particle is updated as
 
@@ -296,15 +297,7 @@ function particle_swarm!(
     social_weight::Real=1.4,
     cognitive_weight::Real=1.4,
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenEntryChangeLess(
-        :swarm,
-        (p, st, old_swarm, swarm) -> distance(
-            PowerManifold(get_manifold(p), NestedPowerRepresentation(), length(swarm)),
-            old_swarm,
-            swarm,
-        ),
-        1e-4,
-    ),
+                                          StopWhenSwarmVelocityLess(1e-4),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(swarm)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M, eltype(swarm)
@@ -344,7 +337,6 @@ function initialize_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState)
 end
 function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
     M = get_manifold(mp)
-    # Allocate two tangent vectors
     for i in 1:length(s.swarm)
         inverse_retract!(
             M,
@@ -370,4 +362,61 @@ function step_solver!(mp::AbstractManoptProblem, s::ParticleSwarmState, ::Any)
             end
         end
     end
+end
+
+#
+# Stopping Criteria
+#
+@doc raw"""
+    StopWhenSwarmVelocityLess <: StoppingCriterion
+
+Stoping criterion for [`particle_swarm`](@ref), when the velocity of the swarm
+is less than a threshold.
+
+# Fields
+* `threshold`:      the threshold
+* `at_iteration`:   store the iteration the stopping criterion was (last) fulfilled
+* `reason`:         store the reaason why the stopping criterion was filfilled, see [`get_reason`](@ref)
+* `velocity_norms`: interims vector to store the norms of the velocities before coputing its norm
+
+# Constructor
+
+    StopWhenSwarmVelocityLess(tolerance::Float64)
+
+initialize the stopping criterion to a certain `tolerance`.
+"""
+mutable struct StopWhenSwarmVelocityLess <: StoppingCriterion
+    threshold::Float64
+    reason::String
+    at_iteration::Int
+    velocity_norms::Vector{Float64}
+    StopWhenSwarmVelocityLess(tolerance::Float64) = new(tolerance, "", 0, Float64[])
+end
+# It just indicates loss of velocity, not that we converged to a minimizer
+indicates_convergence(c::StopWhenSwarmVelocityLess) = false
+function (c::StopWhenSwarmVelocityLess)(
+    mp::AbstractManoptProblem, pss::ParticleSwarmState, i::Int
+)
+    if i == 0 # reset on init
+        c.reason = ""
+        c.at_iteration = 0
+        c.velocity_norms = zeros(Float64, length(pss.swarm)) # init to correct length
+        return false
+    end
+    M = get_manifold(mp)
+    c.velocity_norms .= [norm(M, p, X) for (p, X) in zip(pss.swarm, pss.velocity)]
+    if i > 0 && norm(c.velocity_norms) < c.threshold
+        c.reason = "At iteration $(i) the algorithm reached a velocity of the swarm ($(norm(c.velocity_norms))) less than the threshold ($(c.threshold)).\n"
+        c.at_iteration = i
+        return true
+    end
+    return false
+end
+function status_summary(c::StopWhenSwarmVelocityLess)
+    has_stopped = length(c.reason) > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "swarm velocity norm < $(c.threshold):\t$s"
+end
+function show(io::IO, c::StopWhenSwarmVelocityLess)
+    return print(io, "StopWhenSwarmVelocityLess($(c.threshold))\n    $(status_summary(c))")
 end

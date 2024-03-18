@@ -1,6 +1,18 @@
 using Manopt, Manifolds, Test
 using LinearAlgebra: I, eigvecs, tr, Diagonal
 
+struct QuasiNewtonGradientDirectionUpdate{VT<:AbstractVectorTransportMethod} <:
+       AbstractQuasiNewtonDirectionUpdate
+    vector_transport_method::VT
+end
+function (d::QuasiNewtonGradientDirectionUpdate)(mp, st)
+    return get_gradient(st)
+end
+function (d::QuasiNewtonGradientDirectionUpdate)(r, mp, st)
+    r .= get_gradient(st)
+    return r
+end
+
 @testset "Riemannian quasi-Newton Methods" begin
     @testset "Show & Status" begin
         M = Euclidean(4)
@@ -355,6 +367,37 @@ using LinearAlgebra: I, eigvecs, tr, Diagonal
         # Update (1) says at i=1 inner products are zero (2) all are zero -> gradient proposal
         @test contains(qns.direction_update.message, "i=1,2")
         @test contains(qns.direction_update.message, "gradient")
+    end
+
+    @testset "Broken direction update" begin
+        M = Euclidean(2)
+        p = [0.0, 1.0]
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = 2 * sum(p)
+        gmp = ManifoldGradientObjective(f, grad_f)
+        mp = DefaultManoptProblem(M, gmp)
+        qns = QuasiNewtonState(
+            M,
+            copy(M, p);
+            direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
+        )
+        dqns = DebugSolverState(qns, DebugMessages(:Warning, :Once))
+        @test_logs (
+            :warn,
+            "Computed direction is not a descent direction. The inner product evaluated to 1.0. Resetting to negative gradient.",
+        ) (
+            :warn,
+            "Further warnings will be suppressed, use DebugMessages(:Warning, :Always) to get all warnings.",
+        ) solve!(mp, dqns)
+
+        qns = QuasiNewtonState(
+            M,
+            p;
+            direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
+            nondescent_direction_behavior=:step_towards_negative_gradient,
+        )
+
+        @test_nowarn solve!(mp, qns)
     end
 
     @testset "A Circle example" begin

@@ -18,8 +18,12 @@ based on the internal [`ConstrainedManifoldObjective`](@ref) it computes
 
 ## Fields
 
-* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where ``R`` should be the
+number type used and ``T`` the vector type.
 
+# Constructor
+
+    AugmentedLagrangianCost(co, ρ, μ, λ)
 """
 mutable struct AugmentedLagrangianCost{CO,R,T}
     co::CO
@@ -63,6 +67,16 @@ This struct is also a functor in both formats
 
 based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
 ``\operatorname{grad} \mathcal L_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
+
+## Fields
+
+* `co::CO`, `ρ::R`, `μ::T`, `λ::T` as mentioned in the formula, where ``R`` should be the
+number type used and ``T`` the vector type.
+
+# Constructor
+
+    AugmentedLagrangianGrad(co, ρ, μ, λ)
+
 """
 mutable struct AugmentedLagrangianGrad{CO,R,T}
     co::CO

@@ -71,7 +71,7 @@ end
 
 # (c) load necessary packages for the docs
 using Documenter
-using DocumenterCitations
+using DocumenterCitations, DocumenterInterLinks
 using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
 using RipQP, QuadraticModels
 
@@ -115,6 +115,9 @@ tutorials_menu =
     ]
 # (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
+links = InterLinks(
+    "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/")
+)
 makedocs(;
     format=Documenter.HTML(;
         prettyurls=(get(ENV, "CI", nothing) == "true") || ("--prettyurls" ∈ ARGS),
@@ -203,7 +206,7 @@ makedocs(;
         "Changelog" => "changelog.md",
         "References" => "references.md",
     ],
-    plugins=[bib],
+    plugins=[bib, links],
 )
 deploydocs(; repo="github.com/JuliaManifolds/Manopt.jl", push_preview=true)
 #back to main env

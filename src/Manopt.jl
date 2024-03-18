@@ -112,6 +112,7 @@ using ManifoldsBase:
     requires_caching,
     retract,
     retract!,
+    sectional_curvature,
     set_component!,
     shortest_geodesic,
     shortest_geodesic!,
@@ -491,6 +492,7 @@ export StopAfter,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
+    StopWhenSwarmVelocityLess,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion

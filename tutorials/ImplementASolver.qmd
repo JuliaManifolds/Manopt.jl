@@ -38,7 +38,7 @@ Since most serious algorithms should be implemented in `Manopt.jl` themselves di
 we implement a solver that randomly walks on the manifold and keeps track of the lowest
 point visited.
 As for algorithms in `Manopt.jl` we aim to implement this _generically_ for any manifold that
-is implemented using [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/).
+is implemented using ``[ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)``{=commonmark}.
 
 **The random walk minimization**
 
@@ -66,7 +66,7 @@ a problem to work on and the state of a solver, which “identifies” the solve
 
 ### The “task”: an `AbstractManoptProblem`
 
-A problem in `Manopt.jl` usually consists of a manifold (an [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#The-AbstractManifold)) and an [`AbstractManifoldObjective`](@ref)
+A problem in `Manopt.jl` usually consists of a manifold (an ``[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark}) and an [`AbstractManifoldObjective`](@ref)
 describing the function we have and its features.
 In our case the objective is (just) a [`ManifoldCostObjective`](@ref) that stores cost function
 `f(M,p) -> R`. More generally, it might for example store a gradient function or the Hessian
@@ -89,7 +89,7 @@ In our case we want to store five things
 - the current iterate `p`$=p^{(k)}$
 - the best visited point $q$
 - the variable $\sigma > 0$
-- the retraction $\operatorname{retr}$ to use (cf. [retractions and inverse retractions](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions.html))
+- the retraction $\operatorname{retr}$ to use (cf. ``[retractions and inverse retractions](@extref ManifoldsBase :doc:`retractions`)``{=commonmark})
 - a criterion, when to stop: a [`StoppingCriterion`](@ref)
 
 We can defined this as

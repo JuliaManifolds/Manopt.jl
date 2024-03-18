@@ -48,10 +48,10 @@ TrustRegionModelObjective
 
 The [`trust_regions`](@ref) solver requires the following functions of a manifold to be available
 
-* if you do not provide a `trust_region_radius=`, then [`injectivity_radius`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}) on the manifold `M` is required.
-* the [`norm`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#LinearAlgebra.norm-Tuple{AbstractManifold,%20Any,%20Any}) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
-* A [`zero_vector!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,X,p)`.
-* A [`copyto!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copyto!-Tuple{AbstractManifold,%20Any,%20Any})`(M, q, p)` and [`copy`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#Base.copy-Tuple{AbstractManifold,%20Any})`(M,p)` for points.
+* if you do not provide a `trust_region_radius=`, then [`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`) on the manifold `M` is required.
+* the [`norm`](@extref `LinearAlgebra.norm-Tuple{AbstractManifold, Any, Any}`) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
+* A [`zero_vector!`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,X,p)`.
+* A [`copyto!](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 
 ## Literature
 

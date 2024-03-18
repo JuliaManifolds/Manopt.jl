@@ -183,10 +183,22 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     end
 
     @testset "Test further setters" begin
-        swecl = StopWhenEntryChangeLess(:dummy, (p, s, v, w) -> norm(w - v), 1e-5)
+        mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        dmp = DefaultManoptProblem(Euclidean(), mgo)
+        gds = GradientDescentState(
+            Euclidean(),
+            1.0;
+            stopping_criterion=StopAfterIteration(100),
+            stepsize=ConstantStepsize(Euclidean()),
+        )
+        swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1e-5)
         @test startswith(repr(swecl), "StopWhenEntryChangeLess\n")
-        update_stopping_criterion!(swecl, :Threshold, 1e-1)
-        @test swecl.threshold == 1e-1
+        update_stopping_criterion!(swecl, :Threshold, 1e-4)
+        @test swecl.threshold == 1e-4
+        @test !swecl(dmp, gds, 1) #First call stores
+        @test swecl(dmp, gds, 2) #Second triggers (no change)
+        swecl(dmp, gds, 0) # reset
+        @test length(swecl.reason) == 0
     end
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
@@ -215,6 +227,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         update_stopping_criterion!(c2, :MinSubgradNorm, 1e-8)
         @test c2.threshold == 1e-8
     end
+
     @testset "StopWhenCostNaN & StopWhenIterateNaN" begin
         sc1 = StopWhenCostNaN()
         f(M, p) = NaN

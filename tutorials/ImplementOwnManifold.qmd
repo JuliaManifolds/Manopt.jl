@@ -14,9 +14,9 @@ tutorial [🏔️ Get started: optimize!](https://manoptjl.org/stable/tutorials/
 and also familiarized yourself with how to work with manifolds in general at
 [🚀 Get Started with `Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/tutorials/getstarted.html),
 you might come across the point that you want to
-[implementing a manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/tutorials/implement-a-manifold/)
+``[implementing a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
 yourself and use it within [`Manopt.jl`](https://manoptjl.org/).
-A challenge might be, which functions are necessary, since the overall interface of [`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/)
+A challenge might be, which functions are necessary, since the overall interface of ``[ManifoldsBase.jl](@extref ManifoldsBase :doc:`index`)``{=commonmark}
 is maybe not completely necessary.
 
 This tutorial aims to help you through these steps to implement necessary parts of a manifold
@@ -43,8 +43,16 @@ using Manopt
 Random.seed!(42)
 ```
 
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+# to keep the output and usage simple let's dactivate tutorial mode here
+Manopt.set_manopt_parameter!(:Mode, "None")
+```
+
 We also define the same manifold as in
-the [implementing a manifold](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/tutorials/implement-a-manifold/)
+the ``[implementing a manifold](@extref :doc:`tutorials/implement-a-manifold`)``{=commonmark}
 tutorial.
 
 ```{julia}
@@ -106,7 +114,7 @@ Then, before starting with optimization, we need the distance on the manifold,
 to define the cost function, as well as the logarithmic map to defined the gradient.
 For both, we here use the “lazy” approach of using the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/sphere.html) as a fallback.
 Finally, we have to provide information about how points and tangent vectors are stored on the
-manifold by implementing their [`representation_size`](https://juliamanifolds.github.io/Manifolds.jl/v0.1/interface.html#ManifoldsBase.representation_size-Tuple{Manifold}) function, which is often required when allocating memory.
+manifold by implementing their ``[`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)``{=commonmark} function, which is often required when allocating memory.
 While we could
 
 ```{julia}
@@ -139,10 +147,10 @@ They list all details, but we can start even step by step here if we are a bit c
 
 ### A retraction
 
-We first implement a [retract](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/)ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
+We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
 Since we take an easy one that just projects onto
-the sphere, we use the [`ProjectionRetraction`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.ProjectionRetraction) type.
-To be precise, we have to implement the [in-place variant](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/design/#inplace-and-noninplace) [`retract_project!`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.retract_project!-Tuple{AbstractManifold,%20Vararg{Any,%204}})
+the sphere, we use the ``[`ProjectionRetraction`](@extref ManifoldsBase.ProjectionRetraction)``{=commonmark} type.
+To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.inverse_retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
 
 ```{julia}
 import ManifoldsBase: retract_project!
@@ -185,7 +193,7 @@ We at least see, that the function value decreased.
 
 ### Norm and maximal step size.
 
-To use more advanced stopping criteria and step sizes we first need an[`inner`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.inner-Tuple%7BAbstractManifold,%20Any,%20Any,%20Any%7D)`(M, p, X)`.
+To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X)`.
 We also need a [`max_stepsize`](@ref)`(M)`, to avoid having too large steps
 on positively curved manifolds like our scaled sphere in this example
 
@@ -210,8 +218,8 @@ f(M, q2)
 
 ### Making life easier: default retraction and zero vector
 
-To initialize tangent vector memory, the function [`zero_vector`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/functions/#ManifoldsBase.zero_vector-Tuple{AbstractManifold,%20Any})`(M,p)` is called. Similarly,
-the most-used retraction is returned by [`default_retraction_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/retractions/#ManifoldsBase.default_retraction_method-Tuple{AbstractManifold})
+To initialize tangent vector memory, the function ``[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)``{=commonmark}`(M,p)` is called. Similarly,
+the most-used retraction is returned by ``[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)``{=commonmark}
 
 We can use both here, to make subsequent calls to the solver less verbose.
 We define

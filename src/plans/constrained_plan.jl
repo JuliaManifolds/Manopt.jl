@@ -33,6 +33,15 @@ Describes the constrained objective
 \end{aligned}
 ```
 
+# Fields
+
+* `cost` the cost ``f```
+* `gradient!!` the gradient of the cost ``f```
+* `g` the inequality constraints
+* `grad_g!!` the gradient of the inequality constraints
+* `h` the equality constraints
+* `grad_h!!` the gradient of the equality constraints
+
 It consists of
 
 * an cost function ``f(p)``
