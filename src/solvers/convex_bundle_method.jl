@@ -114,8 +114,6 @@ with keywords for all fields with defaults besides `p_last_serious` which obtain
 
 ## Keyword arguments
 
-* `k_max`:      upper bound on the sectional curvature of the manifold
-* `k_size`:     (`100`) sample size for the estimation of the bounds on the sectional curvature of the manifold
 * `p_estimate`: (`p`) the point around which to estimate the sectional curvature of the manifold
 """
 mutable struct ConvexBundleMethodState{
@@ -170,7 +168,6 @@ mutable struct ConvexBundleMethodState{
         m::R=1e-2,
         diameter::R=50.0,
         domain::D,#(M, p) -> isfinite(f(M, p)),
-        k_max=nothing,
         k_max=0,
         k_size::Int=100,
         p_estimate=p,
@@ -205,20 +202,6 @@ mutable struct ConvexBundleMethodState{
         ε = zero(R)
         λ = Vector{R}()
         ξ = zero(R)
-        if ϱ === nothing
-            if (k_max === nothing)
-                s = [
-                    estimate_sectional_curvature(
-                        M,
-                        close_point(
-                            M, p_estimate, diameter / 2; retraction_method=retraction_method
-                        ),
-                    ) for _ in 1:k_size
-                ]
-                k_max = maximum(s)
-            end
-            ϱ = ζ_2(k_max, diameter)
-        end
         qs = [close_point(M, p, diameter / 2) for _ in 1:100]
         return new{
             P,
@@ -335,7 +318,6 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point.
 * `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
 * `k_max`:                     upper bound on the sectional curvature of the manifold.
-* `k_size`:                    (`100``) sample size for the estimation of the bounds on the sectional curvature of the manifold if  `k_max` is not provided.
 * `p_estimate`:                (`p`) the point around which to estimate the sectional curvature of the manifold.
 * `α`:                         (`(i) -> one(number_eltype(X)) / i`) a function for evaluating suitable stepsizes when obtaining candidate points at iteration `i`.
 * `evaluation`:                ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
@@ -385,7 +367,6 @@ function convex_bundle_method!(
     diameter::R=π / 3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
-    k_max=nothing,
     k_max=0,
     k_size::Int=100,
     p_estimate=p,
@@ -415,7 +396,6 @@ function convex_bundle_method!(
         domain=domain,
         m=m,
         k_max=k_max,
-        k_size=k_size,
         p_estimate=p_estimate,
         stepsize=stepsize,
         inverse_retraction_method=inverse_retraction_method,
