@@ -15,6 +15,12 @@ CurrentModule = Manopt
 ParticleSwarmState
 ```
 
+## Stopping Criteria
+
+```@docs
+StopWhenSwarmVelocityLess
+```
+
 ## [Technical details](@id sec-arc-technical-details)
 
 The [`particle_swarm`](@ref) solver requires the following functions of a manifold to be available
