@@ -7,8 +7,7 @@ The usual call is given by
 where `i` is the current iteration.
 
 By convention `i<=0` is interpreted as "For Initialization only," so only
-initialize internal values, but not trigger any record, the same holds for
-`i=typemin(Inf)` which is used to indicate `stop`, that the record is
+initialize internal values, but not trigger any record, that the record is
 called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)

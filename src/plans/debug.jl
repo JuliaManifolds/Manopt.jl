@@ -7,8 +7,7 @@ the current iterate.
 
 By convention `i=0` is interpreted as "For Initialization only," only debug
 info that prints initialization reacts, `i<0` triggers updates of variables
-internally but does not trigger any output. Finally `typemin(Int)` is used
-to indicate a call from [`stop_solver!`](@ref) that returns true afterwards.
+internally but does not trigger any output.
 
 # Fields (assumed by subtypes to exist)
 * `print` method to perform the actual print. Can for example be set to a file export,
@@ -713,7 +712,7 @@ end
 function (d::DebugStoppingCriterion)(
     ::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
 )
-    print(d.io, (i > 0 || i == typemax(Int)) ? "$(d.prefix)$(get_reason(st))" : "")
+    print(d.io, (i > 0) ? "$(d.prefix)$(get_reason(st))" : "")
     return nothing
 end
 function show(io::IO, c::DebugStoppingCriterion)

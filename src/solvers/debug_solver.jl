@@ -37,7 +37,7 @@ that were added to the `:Stop` entry of the debug lists.
 function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)
     stop = stop_solver!(amp, dss.state, i)
     if stop
-        get(dss.debugDictionary, :Stop, DebugDivider(""))(amp, get_state(dss), typemax(Int))
+        get(dss.debugDictionary, :Stop, DebugDivider(""))(amp, get_state(dss), i)
     end
     return stop
 end
