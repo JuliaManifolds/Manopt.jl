@@ -9,7 +9,7 @@ optional arguments provide necessary details on the decorators.
 
 * `debug`:         (`Array{Union{Symbol,DebugAction,String,Int},1}()`) a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
-  integer. These are passed as a [`DebugGroup`](@ref) within `:All` to the
+  integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
   [`DebugSolverState`](@ref) decorator dictionary. Only exception is `:Stop` that is passed to `:Stop`.
 * `record`:        (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.
@@ -27,16 +27,16 @@ function decorate_state!(
     s::S;
     debug::Union{
         Missing, # none
-        DebugAction, # single one for :All
-        Array{DebugAction,1}, # a group that's put into :All
+        DebugAction, # single one -> to :Iteration
+        Array{DebugAction,1}, # a group -> to :Iteration
         Dict{Symbol,DebugAction}, # the most elaborate, a dictionary
         Array{<:Any,1}, # short hand for Factory.
     }=missing,
     record::Union{
         Missing, # none
         Symbol, # single action shortcut by symbol
-        RecordAction, # single action
-        Array{RecordAction,1}, # a group to be set in :All
+        RecordAction, # single action -> to :Iteration
+        Array{RecordAction,1}, # a group -> to :Iteration
         Dict{Symbol,RecordAction}, # a dictionary for precise settings
         Array{<:Any,1}, # a formatted string with symbols or AbstractStateActions
     }=missing,

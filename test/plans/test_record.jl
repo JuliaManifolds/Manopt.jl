@@ -1,5 +1,13 @@
 using Manifolds, Manopt, Test, ManifoldsBase, Dates
 
+mutable struct TestRecordParameterState <: AbstractManoptSolverState
+    value::Int
+end
+function Manopt.set_manopt_parameter!(d::TestRecordParameterState, ::Val{:value}, v)
+    (d.value = v; return d)
+end
+Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
+
 @testset "Record State" begin
     # helper to get debug as string
     io = IOBuffer()
@@ -214,4 +222,10 @@ using Manifolds, Manopt, Test, ManifoldsBase, Dates
     @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
     # since only the type is stored can test
     @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
+    @testset "Record and parameter passthrough" begin
+        s = TestRecordParameterState(0)
+        r = RecordSolverState(s, RecordIteration())
+        Manopt.set_manopt_parameter!(r, :value, 1)
+        @test Manopt.get_manopt_parameter(r, :value) == 1
+    end
 end
