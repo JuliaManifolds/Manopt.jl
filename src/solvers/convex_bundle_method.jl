@@ -283,6 +283,31 @@ function show(io::IO, cbms::ConvexBundleMethodState)
 end
 
 @doc raw"""
+    DomainBackTrackingStepsize <: Stepsize
+
+Implement a backtrack as long as we are ``q = \operatorname{retr}_p(X)``
+yields a point closer to ``p`` than ``\lVert X \rVert_p`` or
+``q`` is not on the domain.
+For the domain this step size requires a `ConvexBundleMethodState`
+"""
+mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
+    β::Float64
+end
+function (dbt::DomainBackTrackingStepsize)(
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Any, args...; kwargs...
+)
+    M = get_manifold(amp)
+    t = 1.0
+    q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    l = norm(M, cbms.p_last_serious, cbms.g)
+    while !cbms.domain(M, q) || distance(M, cbms.p_last_serious, q) < t * l
+        t *= dbt.β
+        retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    end
+    return t
+end
+
+@doc raw"""
     convex_bundle_method(M, f, ∂f, p)
 
 perform a convex bundle method ``p_{j+1} = \mathrm{retr}(p_k, -g_k)``, where ``\mathrm{retr}``
@@ -370,7 +395,7 @@ function convex_bundle_method!(
     k_max=0,
     k_size::Int=100,
     p_estimate=p,
-    stepsize::Stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :relative),
+    stepsize::Stepsize=DomainBackTrackingStepsize(0.5),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
