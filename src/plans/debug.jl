@@ -720,7 +720,7 @@ function show(io::IO, c::DebugStoppingCriterion)
     return print(io, "DebugStoppingCriterion($s)")
 end
 function status_summary(c::DebugStoppingCriterion)
-    return length(c.prefix) == 0 ? ":Stop" : "(:Sttop, \"$(c.prefix)\")"
+    return length(c.prefix) == 0 ? ":Stop" : "(:Stop, \"$(c.prefix)\")"
 end
 
 @doc raw"""
