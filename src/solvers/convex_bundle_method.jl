@@ -158,7 +158,7 @@ mutable struct ConvexBundleMethodState{
     λ::A
     sub_problem::Pr
     sub_state::St
-    qs::AbstractVector{P}
+    # qs::AbstractVector{P}
     function ConvexBundleMethodState(
         M::TM,
         p::P;
@@ -202,7 +202,7 @@ mutable struct ConvexBundleMethodState{
         ε = zero(R)
         λ = Vector{R}()
         ξ = zero(R)
-        qs = [close_point(M, p, diameter / 2) for _ in 1:100]
+        # qs = [close_point(M, p, diameter / 2) for _ in 1:100]
         return new{
             P,
             T,
@@ -245,7 +245,7 @@ mutable struct ConvexBundleMethodState{
             λ,
             sub_problem,
             sub_state,
-            qs,
+            # qs,
         )
     end
 end
@@ -294,13 +294,13 @@ mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
     β::Float64
 end
 function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Any, args...; kwargs...
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Any, args...; tol=0.0, kwargs...
 )
     M = get_manifold(amp)
     t = 1.0
     q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     l = norm(M, cbms.p_last_serious, cbms.g)
-    while !cbms.domain(M, q) || distance(M, cbms.p_last_serious, q) < t * l
+    while !cbms.domain(M, q) || (cbms.k_max > 0 && distance(M, cbms.p_last_serious, q) + tol < t * l)
         t *= dbt.β
         retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     end

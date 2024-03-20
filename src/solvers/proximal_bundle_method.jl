@@ -295,7 +295,7 @@ function initialize_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMetho
     get_subgradient!(mp, pbms.X, pbms.p)
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     empty!(pbms.λ)
-    push!(pbms.λ, zero(eltype(pbms.p)))
+    push!(pbms.λ, zero(number_eltype(pbms.p)))
     return pbms
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i)
