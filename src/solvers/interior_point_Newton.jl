@@ -102,13 +102,14 @@ function default_stepsize(
 end
 
 function is_feasible(
-    mp::AbstractManoptProblem,
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective,
     p
 )
     # evaluate constraint functions at p
-    gp = get_equality_constraints(mp, p)
-    hp = get_inequality_constraints(mp, p)
+    gp = get_equality_constraints(M, co, p)
+    hp = get_inequality_constraints(M, co, p)
 
     # check feasibility
-    return (gp == 0) and (hp <= 0)
+    return all(gp .== 0) && all(hp .<= 0)
 end
