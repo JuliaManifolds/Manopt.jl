@@ -100,3 +100,15 @@ function default_stepsize(
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
+
+function is_feasible(
+    mp::AbstractManoptProblem,
+    p
+)
+    # evaluate constraint functions at p
+    gp = get_equality_constraints(mp, p)
+    hp = get_inequality_constraints(mp, p)
+
+    # check feasibility
+    return (gp == 0) and (hp <= 0)
+end

@@ -1,75 +1,98 @@
+@doc raw"""
+    LagrangianCost{CO,R,T}
+
+Stores the parameters ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
+of the Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
+
+This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
+based on the internal [`ConstrainedManifoldObjective`](@ref) it computes
+
+```math
+\mathcal L_\rho(p, μ, λ)
+= f(p) + \sum_{i=1}^m λ_i g_i(p) + \sum_{j=1}^n μ_j h_j(p)
+= f(p) + λ^{\intercal} g(p) + μ^{\intercal} h(p)
+```
+
+## Fields
+
+* `co::CO`, `μ::T`, `λ::T` as mentioned in the formula, where ``T`` should be the
+vector type used.
+
+# Constructor
+
+    LagrangianCost(co, μ, λ)
+"""
 mutable struct LagrangianCost{CO,T}
     co::CO
-    λ::T
     μ::T
+    λ::T
 end
-
-function set_manopt_parameter!(lc::LagrangianCost, ::Val{:λ}, λ)
-    lc.λ = λ
-    return lc
-end
-
 function set_manopt_parameter!(lc::LagrangianCost, ::Val{:μ}, μ)
     lc.μ = μ
     return lc
 end
-
+function set_manopt_parameter!(lc::LagrangianCost, ::Val{:λ}, λ)
+    lc.λ = λ
+    return lc
+end
 function (L::LagrangianCost)(M::AbstractManifold, p)
+    c = get_cost(M, L.co, p)
     gp = get_equality_constraints(M, L.co, p)
     hp = get_inequality_constraints(M, L.co, p)
-    c = get_cost(M, L.co, p)
     return c + (L.λ)'gp + (L.μ)'hp
 end
 
+@doc raw"""
+    LagrangianGrad{CO,R,T}
 
+Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
+of the Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
+
+This struct is also a functor in both formats
+* `(M, p) -> X` to compute the gradient in allocating fashion.
+* `(M, X, p)` to compute the gradient in in-place fashion.
+
+based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
+``\operatorname{grad} \mathcal L_{ρ}(p, μ, λ)``, see also [`LagrangianCost`](@ref).
+
+## Fields
+
+* `co::CO`, `μ::T`, `λ::T` as mentioned in the formula, where ``T`` should be the
+vector type used.
+
+# Constructor
+
+    LagrangianGrad(co, μ, λ)
+
+"""
 mutable struct LagrangianGrad{CO,T}
     co::CO
-    λ::T
     μ::T
+    λ::T
 end
-
 function (LG::LagrangianGrad)(M::AbstractManifold, p)
     X = zero_vector(M, p)
     return LG(M, X, p)
 end
-
+function set_manopt_parameter!(lg::LagrangianGrad, ::Val{:μ}, μ)
+    lg.μ = μ
+    return lg
+end
 function set_manopt_parameter!(lg::LagrangianGrad, ::Val{:λ}, λ)
     lg.λ = λ
     return lg
 end
 
-function set_manopt_parameter!(lg::LagrangianGrad, ::Val{:μ}, μ)
-    lg.μ = μ
-    return lg
-end
-
-####
-####
-####
-####
-# ASK ABOUT THIS below
-# does get_grad_equality_constraints give jacobian og constraint function??
-
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::LagrangianGrad)(M::AbstractManifold, X, p)
-    gp = get_equality_constraints(M, LG.co, p)
-    hp = get_inequality_constraints(M, LG.co, p)
-    m = length(gp)
-    n = length(hp)
-    get_gradient!(M, X, LG.co, p)
-    (m > 0) && (
-        X .+= sum(
-            ((gp .* LG.ρ .+ LG.μ) .* get_grad_inequality_constraints(M, LG.co, p)) .*
-            ((gp .+ LG.μ ./ LG.ρ) .> 0),
-        )
-    )
-    (n > 0) &&
-        (X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p)))
-    return X
+    grad_fp = get_gradient(M, X, LC.co, p)
+    grad_gp = get_grad_equality_constraints(M, LG.co, p) 
+    grad_hp = get_grad_equality_constraints(M, LG.co, p) 
+    return grad_fp + (LG.λ)'grad_gp + (LG.μ)'grad_hp
 end
 # Allocating vector -> omit a few of the inequality gradient evaluations.
 function (
-    LG::AugmentedLagrangianGrad{
+    LG::LagrangianGrad{
         <:ConstrainedManifoldObjective{AllocatingEvaluation,<:VectorConstraint}
     }
 )(
@@ -92,7 +115,7 @@ function (
 end
 # mutating vector -> omit a few of the inequality gradients and allocations.
 function (
-    LG::AugmentedLagrangianGrad{
+    LG::LagrangianGrad{
         <:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}
     }
 )(
@@ -118,3 +141,4 @@ function (
     end
     return X
 end
+
