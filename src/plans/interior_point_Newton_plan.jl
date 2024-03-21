@@ -85,10 +85,11 @@ end
 
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::LagrangianGrad)(M::AbstractManifold, X, p)
-    grad_fp = get_gradient(M, X, LC.co, p)
-    grad_gp = get_grad_equality_constraints(M, LG.co, p) 
-    grad_hp = get_grad_equality_constraints(M, LG.co, p) 
-    return grad_fp + (LG.λ)'grad_gp + (LG.μ)'grad_hp
+    get_gradient!(M, X, LC.co, p)
+    grad_gp = get_grad_equality_constraints(M, LG.co, p)
+    grad_hp = get_grad_equality_constraints(M, LG.co, p)
+    X .+= (LG.λ)'grad_gp + (LG.μ)'grad_hp
+    return X
 end
 # Allocating vector -> omit a few of the inequality gradient evaluations.
 function (
@@ -141,4 +142,3 @@ function (
     end
     return X
 end
-
