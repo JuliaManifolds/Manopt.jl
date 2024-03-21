@@ -5,14 +5,32 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.58]
+## [0.4.58] - March 18, 2024
+
+### Added
+
+* more advanced methods to add debug to the beginning of an algorithm, a step, or the end of
+  the algorithm with `DebugAction` entries at `:Start`, `:BeforeIteration`, `:Iteration`, and
+  `:Stop`, respectively.
+* Introduce a Pair-based format to add elements to these hooks, while all others ar
+  now added to :Iteration (no longer to `:All`)
+* (planned) add an easy possibility to also record the initial stage and not only after the first iteration.
 
 ### Changed
 
+* Changed the symbol for the `:Step` dictionary to be `:Iteration`, to unify this with the symbols used in recording,
+  and removed the `:All` symbol. On the fine granular scale, all but `:Start` debugs are now reset on init.
+  Since these are merely internal entries in the debug dictionary, this is considered non-breaking.
 * introduce a `StopWhenSwarmVelocityLess` stopping criterion for `particle_swarm` replacing
   the current default of the swarm change, since this is a bit more effective to compute
 
-## [0.4.57] March 15, 2024
+### Fixed
+
+* fixed the outdated documentation of `TruncatedConjugateGradientState`, that now correcly
+  state that `p` is no longer stored, but the algorithm runs on `TpM`.
+* implemented the missing `get_iterate` for `TruncatedConjugateGradientState`.
+
+## [0.4.57] - March 15, 2024
 
 ### Changed
 
@@ -24,14 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * fixes a type that when passing `sub_kwargs` to `trust_regions` caused an error in the decoration of the sub objective.
 
-## [0.4.56] March 4, 2024
+## [0.4.56] - March 4, 2024
 
 ### Added
 
 * The option `:step_towards_negative_gradient` for `nondescent_direction_behavior` in quasi-Newton solvers does no longer emit a warning by default. This has been moved to a `message`, that can be accessed/displayed with `DebugMessages`
 * `DebugMessages` now has a second positional argument, specifying whether all messages, or just the first (`:Once`) should be displayed.
 
-## [0.4.55] March 3, 2024
+## [0.4.55] - March 3, 2024
 
 ### Added
 
@@ -44,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * unified documentation, especially function signatures further.
 * fixed a few typos related to math formulae in the doc strings.
 
-## [0.4.54] February 28, 2024
+## [0.4.54] - February 28, 2024
 
 ### Added
 
@@ -57,34 +75,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Doc strings now follow a [vale.sh](https://vale.sh) policy. Though this is not fully working,
   this PR improves a lot of the doc strings concerning wording and spelling.
 
-## [0.4.53] February 13, 2024
+## [0.4.53] - February 13, 2024
 
 ### Fixed
 
 * fixes two storage action defaults, that accidentally still tried to initialize a `:Population` (as modified back to `:Iterate` 0.4.49).
 * fix a few typos in the documentation and add a reference for the subgradient menthod.
 
-## [0.4.52] February 5, 2024
+## [0.4.52] - February 5, 2024
 
 ### Added
 
 * introduce an environment persistent way of setting global values with the `set_manopt_parameter!` function using [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl).
 * introduce such a value named `:Mode` to enable a `"Tutorial"` mode that shall often provide more warnings and information for people getting started with optimisation on manifolds
 
-## [0.4.51] January 30, 2024
+## [0.4.51] - January 30, 2024
 
 ### Added
 
 * A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
 * Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
 
-## [0.4.50] January 26, 2024
+## [0.4.50] - January 26, 2024
 
 ### Fixed
 
 * Fix Quasi Newton on complex manifolds.
 
-## [0.4.49] January 18, 2024
+## [0.4.49] - January 18, 2024
 
 ### Added
 
@@ -93,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * refactor the default in `particle_swarm` to no longer “misuse” the iteration change check,
   but actually the new one one the `:swarm` entry
 
-## [0.4.48] January 16, 2024
+## [0.4.48] - January 16, 2024
 
 ### Fixed
 
@@ -101,13 +119,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * refactor `particle_swarm` in naming and access functions to avoid this also in the future.
   To access the whole swarm, one now should use `get_manopt_parameter(pss, :Population)`
 
-## [0.4.47] January 6, 2024
+## [0.4.47] - January 6, 2024
 
 ### Fixed
 
 * fixed a bug, where the retraction set in `check_Hessian` was not passed on to the optional inner `check_gradient` call, which could lead to unwanted side effects, see [#342](https://github.com/JuliaManifolds/Manopt.jl/issues/342).
 
-## [0.4.46] January 1, 2024
+## [0.4.46] - January 1, 2024
 
 ### Changed
 
@@ -121,7 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * A bug in `LineSearches.jl` extension leading to slower convergence.
 * Fixed a bug in L-BFGS related to memory storage, which caused significantly slower convergence.
 
-## [0.4.45] December 28, 2023
+## [0.4.45] - December 28, 2023
 
 ### Added
 
@@ -134,7 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Quasi Newton Updates can work in-place of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
-## [0.4.44] December 12, 2023
+## [0.4.44] - December 12, 2023
 
 Formally one could consider this version breaking, since a few functions
 have been moved, that in earlier versions (0.3.x) have been used in example scripts.

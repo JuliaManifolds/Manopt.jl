@@ -48,6 +48,7 @@ end
             p;
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
+            debug=[],
         )
         # Verify that Newton update direction works also allocating
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
@@ -94,6 +95,7 @@ end
             cautious_update=true,
             stopping_criterion=StopWhenGradientNormLess(10^(-6)),
             return_state=true,
+            debug=[],
         )
         # Test direction passthrough
         x_clrbfgs = get_solver_result(clrbfgs_s)
@@ -130,6 +132,7 @@ end
                     memory_size=-1,
                     stopping_criterion=StopWhenGradientNormLess(10^(-12)),
                     return_state=true,
+                    debug=[],
                 )
                 x_direction = get_solver_result(x_state)
                 D = zero_vector(M, x_direction)

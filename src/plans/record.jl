@@ -7,8 +7,7 @@ The usual call is given by
 where `i` is the current iteration.
 
 By convention `i<=0` is interpreted as "For Initialization only," so only
-initialize internal values, but not trigger any record, the same holds for
-`i=typemin(Inf)` which is used to indicate `stop`, that the record is
+initialize internal values, but not trigger any record, that the record is
 called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 # Fields (assumed by subtypes to exist)
@@ -43,7 +42,7 @@ construct record decorated [`AbstractManoptSolverState`](@ref), where `dR` can b
 
 * a [`RecordAction`](@ref), then it is stored within the dictionary at `:Iteration`
 * an `Array` of [`RecordAction`](@ref)s, then it is stored as a
-  `recordDictionary`(@ref) within the dictionary at `:All`.
+  `recordDictionary`(@ref).
 * a `Dict{Symbol,RecordAction}`.
 """
 mutable struct RecordSolverState{S<:AbstractManoptSolverState,TRD<:NamedTuple} <:
@@ -95,6 +94,14 @@ has_record(::RecordSolverState) = true
 has_record(s::AbstractManoptSolverState) = _has_record(s, dispatch_state_decorator(s))
 _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
+
+# pass through
+function set_manopt_parameter!(rss::RecordSolverState, e::Symbol, args...)
+    return set_manopt_parameter!(rss.state, e, args...)
+end
+function get_manopt_parameter(rss::RecordSolverState, e::Symbol, args...)
+    return get_manopt_parameter(rss.state, e, args...)
+end
 
 @doc """
     get_record_state(s::AbstractManoptSolverState)
