@@ -28,7 +28,6 @@ mutable struct InteriorPointNewtonState{
     R<:Real,
     TStop<:StoppingCriterion,
     TStepsize<:Stepsize,
-    TDirection<:DirectionUpdateRule,
     TRTM<:AbstractRetractionMethod,
 } <: AbstractManoptSolverState
     p::P
@@ -40,7 +39,6 @@ mutable struct InteriorPointNewtonState{
     ρ::R
     stop::TStop
     stepsize::TStepsize
-    direction::TDirection
     retraction_method::TRTM
     function InteriorPointNewtonState{P,T}(
         M::AbstractManifold,
@@ -53,7 +51,6 @@ mutable struct InteriorPointNewtonState{
         ρ::Real                                     = 0.0,
         stop::StoppingCriterion                     = StopAfterIteration(100),
         step::Stepsize                              = default_stepsize(M, InteriorPointNewtonState),
-        direction::DirectionUpdateRule              = IdentityUpdateRule(),
         retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     ) where {P,T}
         state = new{P, T, Real, typeof(stop), typeof(step), typeof(direction), typeof(retraction_method)}()
@@ -66,7 +63,6 @@ mutable struct InteriorPointNewtonState{
         state.ρ = ρ
         state.stop = stop
         state.stepsize = step
-        state.direction = direction
         state.retraction_method = retraction_method
         return state
     end
@@ -85,7 +81,6 @@ function InteriorPointNewtonState(
     stopping_criterion::StoppingCriterion       = StopAfterIteration(100),
     retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
     stepsize::Stepsize                          = default_stepsize(M, InteriorPointNewtonState; retraction_method = retraction_method),
-    direction::DirectionUpdateRule              = IdentityUpdateRule(),
 ) where {P,T}
     return InteriorPointNewtonState{P,T}(
         M, p, λ, μ, s, γ, σ, ρ, stopping_criterion, stepsize, direction, retraction_method
@@ -112,4 +107,41 @@ function is_feasible(
 
     # check feasibility
     return all(gp .== 0) && all(hp .<= 0)
+end
+
+function KKTVectorField(
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective,
+    p,
+    λ,
+    μ,
+    s
+)
+    gradL = LagrangianGrad(co, λ, μ)
+    gp = get_equality_constraints(M, p)
+    hp = get_inequality_constraints(M, p)
+    diagM = Diagonal(μ)
+    diagS = Diagonal(s)
+    e = ones(length(hp))
+    return [gradL, gp, hp+s, diagM*diagS*e]
+end
+
+function subsolver(
+    M::AbstractManifold, 
+    co::ConstrainedManifoldObjective,
+    ipns::InteriorPointNewtonState,
+    X
+)
+    F = KKTVectorField(M, co, ipns.p, ipns.λ, ipns.μ, ipns.s)
+    # compute covariant derivative of kkt
+    # solve for X: ∇F[X] = -F + σ_k ρ_k ̂e
+    # return X
+
+    # The matrix representation of the covariant derivative
+    # of the KKT vector field is given by
+    #      
+    #       | ∇^2 L   J_g^T   J_h^T   0 |
+    #  ∇F = |  J_g      0       0     0 |
+    #       |  J_h      0       0     I |
+    #       |   0       0       S     M |
 end

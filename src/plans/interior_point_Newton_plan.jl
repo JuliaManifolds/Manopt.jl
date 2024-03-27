@@ -102,43 +102,16 @@ function (
     n = length(LG.co.h)
     get_gradient!(M, X, LG.co, p)
     for i in 1:m
-        gpi = get_inequality_constraint(M, LG.co, p, i)
-        if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
-            X .+= (gpi * LG.ρ + LG.μ[i]) .* get_grad_inequality_constraint(M, LG.co, p, i)
-        end
+        X .+= LG.λ[i] .* get_grad_equality_constraint(M, LG.co, p, i)
     end
     for j in 1:n
-        hpj = get_equality_constraint(M, LG.co, p, j)
-        X .+= (hpj * LG.ρ + LG.λ[j]) .* get_grad_equality_constraint(M, LG.co, p, j)
+        hpj = get_inequality_constraint(M, LG.co, p, i)
+        if hpj < 0 # only evaluate gradient if necessary
+            X .+= LG.μ[j] .* get_grad_inequality_constraint(M, LG.co, p, j)
+        end
     end
     return X
 end
-# mutating vector -> omit a few of the inequality gradients and allocations.
-function (
-    LG::LagrangianGrad{
-        <:ConstrainedManifoldObjective{InplaceEvaluation,<:VectorConstraint}
-    }
-)(
-    M::AbstractManifold, X, p
-)
-    m = length(LG.co.g)
-    n = length(LG.co.h)
-    get_gradient!(M, X, LG.co, p)
-    Y = zero_vector(M, p)
-    for i in 1:m
-        gpi = get_inequality_constraint(M, LG.co, p, i)
-        if (gpi + LG.μ[i] / LG.ρ) > 0 # only evaluate gradient if necessary
-            # evaluate in place
-            get_grad_inequality_constraint!(M, Y, LG.co, p, i)
-            X .+= (gpi * LG.ρ + LG.μ[i]) .* Y
-        end
-    end
-    for j in 1:n
-        # evaluate in place
-        hpj = get_equality_constraint(M, LG.co, p, j)
-        get_grad_equality_constraint!(M, Y, LG.co, p, j)
-        X .+= (hpj * LG.ρ + LG.λ[j]) * Y
-    end
-    return X
-end
+
+
 
