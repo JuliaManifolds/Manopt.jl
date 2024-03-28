@@ -18,7 +18,7 @@ using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
-    Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm
+    Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm, mul!
 using ManifoldDiff:
     adjoint_differential_log_argument,
     adjoint_differential_log_argument!,
@@ -102,6 +102,7 @@ using ManifoldsBase:
     mid_point!,
     norm,
     number_eltype,
+    number_of_coordinates,
     power_dimensions,
     project,
     project!,
@@ -128,7 +129,7 @@ using Markdown
 using Preferences:
     @load_preference, @set_preferences!, @has_preference, @delete_preferences!
 using Printf
-using Random: shuffle!, rand, randperm
+using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
 using Statistics: cor, cov, mean, std
@@ -142,6 +143,7 @@ include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
+include("solvers/cma_es.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
@@ -416,6 +418,7 @@ export adaptive_regularization_with_cubics,
     convex_bundle_method!,
     ChambollePock,
     ChambollePock!,
+    cma_es,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
     cyclic_proximal_point,
