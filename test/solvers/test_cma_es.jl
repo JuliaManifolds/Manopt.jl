@@ -21,7 +21,8 @@ end
     @testset "Euclidean CMA-ES" begin
         M = Euclidean(2)
 
-        p1 = cma_es(M, griewank, [10.0, 10.0]; σ=10.0)
+        p1 = cma_es(M, griewank, [10.0, 10.0]; σ=10.0, rng=MersenneTwister(123))
+        @test griewank(M, p1) < 0.1
 
         o = cma_es(M, griewank, [10.0, 10.0]; return_state=true)
         @test startswith(
@@ -31,7 +32,9 @@ end
         g = get_solver_result(o)
     end
     @testset "Spherical CMA-ES" begin
-        Random.seed!(42)
         M = Sphere(2)
+
+        p1 = cma_es(M, griewank, [0.0, 1.0, 0.0]; σ=10.0, rng=MersenneTwister(123))
+        @test griewank(M, p1) < 0.17
     end
 end

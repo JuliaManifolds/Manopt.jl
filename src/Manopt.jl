@@ -93,6 +93,7 @@ using ManifoldsBase:
     inner,
     inverse_retract,
     inverse_retract!,
+    is_flat,
     is_point,
     is_vector,
     log,

@@ -32,8 +32,8 @@ mutable struct CMAESState{
     covm::Matrix{TParams} # coordinates of the covariance matrix
     p_m::P # point around which we search for new candidates
     σ::TParams # step size
-    p_σ::Vector{TParams}
-    p_c::Vector{TParams}
+    p_σ::Vector{TParams} # coordinates of a vector in T_{p_m} M
+    p_c::Vector{TParams} # coordinates of a vector in T_{p_m} M
     e_mv_norm::TParams # expected value of norm of the n-variable standard normal distribution
     recombination_weights::Vector{TParams}
     retraction_method::TRetraction
@@ -49,8 +49,19 @@ function show(io::IO, s::CMAESState)
     # Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy
     $Iter
     ## Parameters
+    * μ:                         $(s.μ)
+    * λ:                         $(s.λ)
+    * μ_eff:                     $(s.μ_eff)
+    * c_1:                       $(s.c_1)
+    * c_c:                       $(s.c_c)
+    * c_μ:                       $(s.c_μ)
+    * c_σ:                       $(s.c_σ)
+    * c_m:                       $(s.c_m)
+    * d_σ:                       $(s.d_σ)
+    * recombination_weights:     $(s.recombination_weights)
     * retraction method:         $(s.retraction_method)
     * vector transport method:   $(s.vector_transport_method)
+    * basis:                     $(s.basis)
 
     ## Stopping criterion
 
@@ -127,10 +138,17 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
         end
         mul!(s.covm, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
-    # move covariance matrix to new mean point
+    # move covariance matrix, p_c and p_σ to new mean point
     s.covm .= spd_matrix_transport_to(
         M, s.p_m, s.covm, new_m, s.basis, s.vector_transport_method
     )
+    get_vector!(M, Y_m, s.p_m, s.p_σ, s.basis)
+    vector_transport_to!(M, Y_m, s.p_m, Y_m, new_m, s.vector_transport_method)
+    get_coordinates!(M, s.p_σ, new_m, Y_m, s.basis)
+
+    get_vector!(M, Y_m, s.p_m, s.p_c, s.basis)
+    vector_transport_to!(M, Y_m, s.p_m, Y_m, new_m, s.vector_transport_method)
+    get_coordinates!(M, s.p_c, new_m, Y_m, s.basis)
 
     # update mean point
     copyto!(M, s.p_m, new_m)
@@ -156,7 +174,9 @@ setting.
 
 * `M`       a manifold ``\mathcal M``
 * `f`       a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
-* `p`       an initial point `p`
+* `p_m`     an initial point `p`
+* `σ`       initial standard deviation
+* `λ`       population size (can be increased for a more thorough search)
 
 # Output
 
@@ -168,6 +188,7 @@ function cma_es(
     mco::O,
     p_m=rand(M);
     σ::Real=1.0,
+    λ::Int=4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
     stopping_criterion::StoppingCriterion=StopAfterIteration(500),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p_m)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
@@ -180,7 +201,6 @@ function cma_es(
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     n_coords = number_of_coordinates(M, basis)
-    λ = 4 + Int(floor(3 * log(n_coords))) # Eq. (48)
     wp = [log((λ + 1) / 2) - log(i) for i in 1:λ] # Eq. (49)
     μ = Int(floor(λ / 2)) # Table 1 caption
     μ_eff = (sum(wp[1:μ])^2) / (sum(x -> x^2, wp[1:μ]))  # Table 1 caption
