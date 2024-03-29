@@ -1,4 +1,3 @@
-using Revise
 using Manopt, ManifoldsBase, Manifolds, Test
 using Random
 
@@ -34,7 +33,7 @@ end
     @testset "Spherical CMA-ES" begin
         M = Sphere(2)
 
-        p1 = cma_es(M, griewank, [0.0, 1.0, 0.0]; σ=10.0, rng=MersenneTwister(123))
+        p1 = cma_es(M, griewank, [0.0, 1.0, 0.0]; σ=1.0, rng=MersenneTwister(123))
         @test griewank(M, p1) < 0.17
     end
 end

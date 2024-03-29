@@ -30,6 +30,7 @@ mutable struct CMAESState{
     population::Vector{P} # population of the current generation
     ys_c::Vector{Vector{TParams}}
     covm::Matrix{TParams} # coordinates of the covariance matrix
+    covm_cond::TParams # condition number of covm, updated after eigendecomposition
     p_m::P # point around which we search for new candidates
     σ::TParams # step size
     p_σ::Vector{TParams} # coordinates of a vector in T_{p_m} M
@@ -78,6 +79,7 @@ function initialize_solver!(mp::AbstractManoptProblem, s::CMAESState)
     M = get_manifold(mp)
     n_coords = number_of_coordinates(M, s.basis)
     s.covm = Matrix{number_eltype(s.p)}(I, n_coords, n_coords)
+    s.covm_cond = 1
 
     return s
 end
@@ -88,6 +90,8 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     # sampling and evaluation of new solutions
 
     D2, B = eigen(Symmetric(s.covm))
+    min_eigval, max_eigval = extrema(abs.(D2))
+    s.covm_cond = max_eigval / min_eigval
     D = sqrt.(D2)
     cov_invsqrt = B * Diagonal(inv.(D)) * B'
     Y_m = zero_vector(M, s.p_m)
@@ -189,7 +193,7 @@ function cma_es(
     p_m=rand(M);
     σ::Real=1.0,
     λ::Int=4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
-    stopping_criterion::StoppingCriterion=StopAfterIteration(500),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(500) | CMAESConditionCov(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p_m)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p_m)
@@ -249,6 +253,7 @@ function cma_es(
         population,
         [similar(Vector{Float64}, n_coords) for _ in 1:λ],
         Matrix{number_eltype(p_m)}(I, n_coords, n_coords),
+        one(c_1),
         p_m,
         σ,
         zeros(typeof(c_1), n_coords),
@@ -296,4 +301,44 @@ function spd_matrix_transport_to(
     coords = [get_coordinates(M, p, vectors[i], basis) for i in 1:n]
     Qt = reduce(hcat, coords)
     return Qt * Diagonal(D) * Qt'
+end
+
+"""
+    CMAESConditionCov <: StoppingCriterion
+
+Stop CMA-ES if condition number of covariance matrix exceeds `threshold`.
+"""
+mutable struct CMAESConditionCov{T<:Real} <: StoppingCriterion
+    threshold::T
+    last_cond::T
+    at_iteration::Int
+end
+function CMAESConditionCov(threshold::Real=1e14)
+    return CMAESConditionCov{typeof(threshold)}(threshold, 1, 0)
+end
+# It just indicates loss of velocity, not that we converged to a minimizer
+indicates_convergence(c::CMAESConditionCov) = false
+is_active_stopping_criterion(c::CMAESConditionCov) = c.at_iteration > 0
+function (c::CMAESConditionCov)(::AbstractManoptProblem, s::CMAESState, i::Int)
+    if i == 0 # reset on init
+        c.at_iteration = 0
+        return false
+    end
+    c.last_cond = s.covm_cond
+    if i > 0 && c.last_cond > c.threshold
+        c.at_iteration = i
+        return true
+    end
+    return false
+end
+function status_summary(c::CMAESConditionCov)
+    has_stopped = c.at_iteration > 0
+    s = has_stopped ? "reached" : "not reached"
+    return "cond(s.covm) > $(c.threshold):\t$s"
+end
+function get_reason(c::CMAESConditionCov)
+    return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
+end
+function show(io::IO, c::CMAESConditionCov)
+    return print(io, "CMAESConditionCov($(c.threshold))\n    $(status_summary(c))")
 end

@@ -957,6 +957,8 @@ function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
     return StopWhenAny(s1.criteria..., s2)
 end
 
+is_active_stopping_criterion(c::StoppingCriterion) = !isempty(c.reason)
+
 @doc raw"""
     get_active_stopping_criteria(c)
 
@@ -974,7 +976,7 @@ end
 # for non-array containing stopping criteria, the recursion ends in either
 # returning nothing or an 1-element array containing itself
 function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
-    if c.reason != ""
+    if is_active_stopping_criterion(c)
         return [c] # recursion top
     else
         return []
