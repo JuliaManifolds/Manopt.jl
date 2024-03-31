@@ -16,6 +16,10 @@ function griewank(::AbstractManifold, p)
     return 1 + sumsq / 4000 - prodcos
 end
 
+function divergent_example(::AbstractManifold, p)
+    return -norm(p)
+end
+
 @testset "CMA-ES" begin
     @testset "Euclidean CMA-ES" begin
         M = Euclidean(2)
@@ -28,7 +32,16 @@ end
             repr(o),
             "# Solver state for `Manopt.jl`s Covariance Matrix Adaptation Evolutionary Strategy",
         )
-        g = get_solver_result(o)
+
+        o_d = cma_es(
+            M,
+            divergent_example,
+            [10.0, 10.0];
+            σ=10.0,
+            rng=MersenneTwister(123),
+            return_state=true,
+        )
+        @test only(get_active_stopping_criteria(o_d.stop)) isa Manopt.TolXUpCondition
     end
     @testset "Spherical CMA-ES" begin
         M = Sphere(2)

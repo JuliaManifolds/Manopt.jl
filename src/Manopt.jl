@@ -133,7 +133,7 @@ using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
-using Statistics: cor, cov, mean, std
+using Statistics: cor, cov, mean, median, std
 
 include("plans/plan.jl")
 # solvers general framework

@@ -31,10 +31,14 @@ mutable struct CMAESState{
     ys_c::Vector{Vector{TParams}}
     covm::Matrix{TParams} # coordinates of the covariance matrix
     covm_cond::TParams # condition number of covm, updated after eigendecomposition
+    best_fitness_current_gen::TParams
+    median_fitness_current_gen::TParams
+    worst_fitness_current_gen::TParams
     p_m::P # point around which we search for new candidates
     σ::TParams # step size
     p_σ::Vector{TParams} # coordinates of a vector in T_{p_m} M
     p_c::Vector{TParams} # coordinates of a vector in T_{p_m} M
+    deviations::Vector{TParams} # standard deviations of coordinate RNG
     e_mv_norm::TParams # expected value of norm of the n-variable standard normal distribution
     recombination_weights::Vector{TParams}
     retraction_method::TRetraction
@@ -64,6 +68,18 @@ function show(io::IO, s::CMAESState)
     * vector transport method:   $(s.vector_transport_method)
     * basis:                     $(s.basis)
 
+    ## Current values
+    * covm:                       $(s.covm)
+    * covm_cond:                  $(s.covm_cond)
+    * best_fitness_current_gen:   $(s.best_fitness_current_gen)
+    * median_fitness_current_gen: $(s.median_fitness_current_gen)
+    * worst_fitness_current_gen:  $(s.worst_fitness_current_gen)
+    * σ:                          $(s.σ)
+    * p_σ:                        $(s.p_σ)
+    * p_c:                        $(s.p_c)
+    * p_m:                        $(s.p_m)
+    * deviations:                 $(s.deviations)
+
     ## Stopping criterion
 
     $(status_summary(s.stop))
@@ -92,15 +108,17 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     D2, B = eigen(Symmetric(s.covm))
     min_eigval, max_eigval = extrema(abs.(D2))
     s.covm_cond = max_eigval / min_eigval
-    D = sqrt.(D2)
-    cov_invsqrt = B * Diagonal(inv.(D)) * B'
+    s.deviations .= sqrt.(D2)
+    cov_invsqrt = B * Diagonal(inv.(s.deviations)) * B'
     Y_m = zero_vector(M, s.p_m)
     for i in 1:(s.λ)
-        mul!(s.ys_c[i], B, D .* randn(s.rng, n_coords)) # Eqs. (38) and (39)
+        mul!(s.ys_c[i], B, s.deviations .* randn(s.rng, n_coords)) # Eqs. (38) and (39)
         get_vector!(M, Y_m, s.p_m, s.ys_c[i], s.basis) # Eqs. (38) and (39)
         retract!(M, s.population[i], s.p_m, Y_m, s.σ, s.retraction_method) # Eq. (40)
     end
     fitness_vals = map(p -> get_cost(mp, p), s.population)
+    s.best_fitness_current_gen, s.worst_fitness_current_gen = extrema(fitness_vals)
+    s.median_fitness_current_gen = median(fitness_vals)
     for (i, fitness) in enumerate(fitness_vals)
         if fitness < s.p_obj
             s.p_obj = fitness
@@ -164,6 +182,19 @@ function cma_es(M::AbstractManifold, f, p_m=rand(M); kwargs...)
     return cma_es(M, mco, p_m; kwargs...)
 end
 
+function default_cma_es_stopping_criterion(M::AbstractManifold, λ::Int)
+    return StopAfterIteration(50000) |
+           CMAESConditionCov() |
+           EqualFunValuesCondition{Float64}(
+               Int(10 + ceil(30 * manifold_dimension(M) / λ))
+           ) |
+           StagnationCondition(
+               Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
+           ) |
+           TolXCondition(1e-12) |
+           TolXUpCondition(1e4)
+end
+
 @doc raw"""
     cma_es(M, f, p_m=rand(M); σ::Real=1.0, kwargs...)
 
@@ -193,7 +224,7 @@ function cma_es(
     p_m=rand(M);
     σ::Real=1.0,
     λ::Int=4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
-    stopping_criterion::StoppingCriterion=StopAfterIteration(500) | CMAESConditionCov(),
+    stopping_criterion::StoppingCriterion=default_cma_es_stopping_criterion(M, λ),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p_m)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p_m)
@@ -254,10 +285,14 @@ function cma_es(
         [similar(Vector{Float64}, n_coords) for _ in 1:λ],
         Matrix{number_eltype(p_m)}(I, n_coords, n_coords),
         one(c_1),
+        Inf,
+        Inf,
+        Inf,
         p_m,
         σ,
         zeros(typeof(c_1), n_coords),
         zeros(typeof(c_1), n_coords),
+        ones(typeof(c_1), n_coords),
         e_mv_norm,
         recombination_weights,
         retraction_method,
@@ -316,7 +351,7 @@ end
 function CMAESConditionCov(threshold::Real=1e14)
     return CMAESConditionCov{typeof(threshold)}(threshold, 1, 0)
 end
-# It just indicates loss of velocity, not that we converged to a minimizer
+
 indicates_convergence(c::CMAESConditionCov) = false
 is_active_stopping_criterion(c::CMAESConditionCov) = c.at_iteration > 0
 function (c::CMAESConditionCov)(::AbstractManoptProblem, s::CMAESState, i::Int)
@@ -341,4 +376,217 @@ function get_reason(c::CMAESConditionCov)
 end
 function show(io::IO, c::CMAESConditionCov)
     return print(io, "CMAESConditionCov($(c.threshold))\n    $(status_summary(c))")
+end
+
+"""
+    EqualFunValuesCondition <: StoppingCriterion
+
+Stop if the range of the best objective function values of the last `iteration_range`
+generations is zero.
+
+See also `TolFunCondition`.
+"""
+mutable struct EqualFunValuesCondition{TParam<:Real} <: StoppingCriterion
+    iteration_range::Int
+    best_objective_at_last_change::TParam
+    iterations_since_change::Int
+end
+
+function EqualFunValuesCondition{TParam}(iteration_range::Int) where {TParam}
+    return EqualFunValuesCondition{TParam}(iteration_range, Inf, 0)
+end
+
+# It just indicates stagnation, not that we converged to a minimizer
+indicates_convergence(c::EqualFunValuesCondition) = true
+function is_active_stopping_criterion(c::EqualFunValuesCondition)
+    return c.iterations_since_change >= c.iteration_range
+end
+function (c::EqualFunValuesCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+    if i == 0 # reset on init
+        c.best_objective_at_last_change = Inf
+        return false
+    end
+    if c.iterations_since_change >= c.iteration_range
+        return true
+    else
+        if c.best_objective_at_last_change != s.best_fitness_current_gen
+            c.best_objective_at_last_change = s.best_fitness_current_gen
+            c.iterations_since_change = 0
+        else
+            c.iterations_since_change += 1
+        end
+    end
+    return false
+end
+function status_summary(c::EqualFunValuesCondition)
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    return "c.iterations_since_change > $(c.iteration_range):\t$s"
+end
+function get_reason(c::EqualFunValuesCondition)
+    return "For the last $(c.iterations_since_change) generation the best objective value in each generation was equal to $(c.best_objective_at_last_change).\n"
+end
+function show(io::IO, c::EqualFunValuesCondition)
+    return print(
+        io, "EqualFunValuesCondition($(c.iteration_range))\n    $(status_summary(c))"
+    )
+end
+
+"""
+    StagnationCondition{TParam<:Real} <: StoppingCriterion
+
+The best and median fitness in each iteraion is tracked over the last 20% but
+at least `min_size` and no more than `max_size` iterations. Solver is stopped if
+in both histories the median of the most recent `fraction` of values is not better
+than the median of the oldest `fraction`.
+"""
+mutable struct StagnationCondition{TParam<:Real} <: StoppingCriterion
+    min_size::Int
+    max_size::Int
+    fraction::TParam
+    best_history::CircularBuffer{TParam}
+    median_history::CircularBuffer{TParam}
+end
+
+function StagnationCondition(
+    min_size::Int, max_size::Int, fraction::TParam
+) where {TParam<:Real}
+    return StagnationCondition{TParam}(
+        min_size,
+        max_size,
+        fraction,
+        CircularBuffer{TParam}(max_size),
+        CircularBuffer{TParam}(max_size),
+    )
+end
+
+# It just indicates stagnation, not that we converged to a minimizer
+indicates_convergence(c::StagnationCondition) = true
+function is_active_stopping_criterion(c::StagnationCondition)
+    N = length(c.best_history)
+    if N < c.min_size
+        return false
+    end
+    thr_low = Int(ceil(N * c.fraction))
+    thr_high = Int(floor(N * (1 - c.fraction)))
+    best_stagnant =
+        median(c.best_history[1:thr_low]) <= median(c.best_history[thr_high:end])
+    median_stagnant =
+        median(c.median_history[1:thr_low]) <= median(c.median_history[thr_high:end])
+    return best_stagnant && median_stagnant
+end
+function (c::StagnationCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+    if i == 0 # reset on init
+        empty!(c.best_history)
+        empty!(c.median_history)
+        return false
+    end
+    if is_active_stopping_criterion(c)
+        return true
+    else
+        push!(c.best_history, s.best_fitness_current_gen)
+        push!(c.median_history, s.median_fitness_current_gen)
+    end
+    return false
+end
+function status_summary(c::StagnationCondition)
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    N = length(c.best_history)
+    thr_low = Int(ceil(N * c.fraction))
+    thr_high = Int(floor(N * (1 - c.fraction)))
+    median_best_old = median(c.best_history[1:thr_low])
+    median_best_new = median(c.best_history[thr_high:end])
+    median_median_old = median(c.median_history[1:thr_low])
+    median_median_new = median(c.median_history[thr_high:end])
+    return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):\t$s"
+end
+function get_reason(::StagnationCondition)
+    return "Both median and best objective history became stagnant.\n"
+end
+function show(io::IO, c::StagnationCondition)
+    return print(
+        io,
+        "StagnationCondition($(c.min_size), $(c.max_size), $(c.fraction))\n    $(status_summary(c))",
+    )
+end
+
+"""
+    TolXCondition{TParam<:Real} <: StoppingCriterion
+
+Stop if the standard deviation in all coordinates is smaller than `tol` and
+norm of `σ * p_c` is smaller than `tol`.
+"""
+mutable struct TolXCondition{TParam<:Real} <: StoppingCriterion
+    tol::TParam
+    is_active::Bool
+end
+TolXCondition(tol::Real) = TolXCondition{typeof(tol)}(tol, false)
+
+# It just indicates stagnation, not that we converged to a minimizer
+indicates_convergence(c::TolXCondition) = true
+function is_active_stopping_criterion(c::TolXCondition)
+    return c.is_active
+end
+function (c::TolXCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+    if i == 0 # reset on init
+        c.is_active = false
+        return false
+    end
+    norm_inf_dev = norm(s.deviations, Inf)
+    norm_inf_p_c = norm(s.p_c, Inf)
+    c.is_active = norm_inf_dev < c.tol && s.σ * norm_inf_p_c < c.tol
+    return c.is_active
+end
+function status_summary(c::TolXCondition)
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :\t$s"
+end
+function get_reason(c::TolXCondition)
+    return "Standard deviation in all coordinates is smaller than $(c.tol) and `σ * p_c` has Inf norm lower than $(c.tol).\n"
+end
+function show(io::IO, c::TolXCondition)
+    return print(io, "TolXCondition($(c.tol))\n    $(status_summary(c))")
+end
+
+"""
+    TolXUpCondition{TParam<:Real} <: StoppingCriterion
+
+Stop if `σ` times maximum deviation increased by more than `tol`. This usually indicates a
+far too small `σ`, or divergent behavior.
+"""
+mutable struct TolXUpCondition{TParam<:Real} <: StoppingCriterion
+    tol::TParam
+    last_σ_times_maxstddev::TParam
+    is_active::Bool
+end
+TolXUpCondition(tol::Real) = TolXUpCondition{typeof(tol)}(tol, 1.0, false)
+
+indicates_convergence(c::TolXUpCondition) = false
+function is_active_stopping_criterion(c::TolXUpCondition)
+    return c.is_active
+end
+function (c::TolXUpCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+    if i == 0 # reset on init
+        c.is_active = false
+        return false
+    end
+    cur_σ_times_maxstddev = s.σ * maximum(s.deviations)
+    if cur_σ_times_maxstddev / c.last_σ_times_maxstddev > c.tol
+        c.is_active = true
+        return true
+    end
+    return false
+end
+function status_summary(c::TolXUpCondition)
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :\t$s"
+end
+function get_reason(c::TolXUpCondition)
+    return "σ times maximum standard deviation exceeded $(c.tol). This indicates either much too small σ or divergent behavior.\n"
+end
+function show(io::IO, c::TolXUpCondition)
+    return print(io, "TolXUpCondition($(c.tol))\n    $(status_summary(c))")
 end
