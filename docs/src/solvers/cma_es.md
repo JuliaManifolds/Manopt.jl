@@ -1,4 +1,4 @@
-# Particle swarm optimization
+# Covariance matrix adaptation evolutionary strategy
 
 ```@meta
 CurrentModule = Manopt
@@ -19,11 +19,14 @@ CMAESState
 
 ```@docs
 CMAESConditionCov
+StagnationCondition
+TolXCondition
+TolXUpCondition
 ```
 
 ## Literature
 
 ```@bibliography
-Pages = ["particle_swarm.md"]
+Pages = ["cma_es.md"]
 Canonical=false
 ```

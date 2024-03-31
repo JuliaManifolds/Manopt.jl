@@ -182,18 +182,18 @@ function cma_es(M::AbstractManifold, f, p_m=rand(M); kwargs...)
     return cma_es(M, mco, p_m; kwargs...)
 end
 
-function default_cma_es_stopping_criterion(M::AbstractManifold, λ::Int)
+function default_cma_es_stopping_criterion(
+    M::AbstractManifold, λ::Int; tol_fun::TParam=1e-12, tol_x::TParam=1e-12
+) where {TParam<:Real}
     return StopAfterIteration(50000) |
            CMAESConditionCov() |
-           EqualFunValuesCondition{Float64}(
-               Int(10 + ceil(30 * manifold_dimension(M) / λ))
-           ) |
+           EqualFunValuesCondition{TParam}(Int(10 + ceil(30 * manifold_dimension(M) / λ))) |
            StagnationCondition(
                Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
            ) |
            TolXUpCondition(1e4) |
-           TolFunCondition(1e-12, Int(10 + ceil(30 * manifold_dimension(M) / λ))) |
-           TolXCondition(1e-12)
+           TolFunCondition(tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))) |
+           TolXCondition(tol_x)
 end
 
 @doc raw"""
@@ -208,11 +208,19 @@ setting.
 
 # Input
 
-* `M`       a manifold ``\mathcal M``
-* `f`       a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
-* `p_m`     an initial point `p`
-* `σ`       initial standard deviation
-* `λ`       population size (can be increased for a more thorough search)
+* `M`:      a manifold ``\mathcal M``
+* `f`:      a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
+
+# Optional
+
+* `p_m`:    (`rand(M)`) an initial point `p`
+* `σ`       (`1.0`) initial standard deviation
+* `λ`       (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
+  increased for a more thorough search)
+* `tol_fun` (`1e-12`) tolerance for the `TolFunCondition`, similar to absolute difference
+  between function values at subsequent points
+* `tol_x`   (`1e-12`) tolerance for the `TolXCondition`, similar to absolute difference
+  between subsequent point but actually computed from distribution parameters.
 
 # Output
 
@@ -225,7 +233,11 @@ function cma_es(
     p_m=rand(M);
     σ::Real=1.0,
     λ::Int=4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
-    stopping_criterion::StoppingCriterion=default_cma_es_stopping_criterion(M, λ),
+    tol_fun::Real=1e-12,
+    tol_x::Real=1e-12,
+    stopping_criterion::StoppingCriterion=default_cma_es_stopping_criterion(
+        M, λ; tol_fun=tol_fun, tol_x=tol_x
+    ),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p_m)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p_m)

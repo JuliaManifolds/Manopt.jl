@@ -20,6 +20,10 @@ function divergent_example(::AbstractManifold, p)
     return -norm(p)
 end
 
+function poorly_conditioned_example(::AbstractManifold, p)
+    return p' * [1e12 0; 0 -1e-6] * p
+end
+
 @testset "CMA-ES" begin
     @testset "Euclidean CMA-ES" begin
         M = Euclidean(2)
@@ -42,6 +46,19 @@ end
             return_state=true,
         )
         @test only(get_active_stopping_criteria(o_d.stop)) isa Manopt.TolXUpCondition
+
+        o_d = cma_es(
+            M,
+            poorly_conditioned_example,
+            [10.0, 10.0];
+            σ=10.0,
+            rng=MersenneTwister(123),
+            return_state=true,
+        )
+        condcov_sc = only(get_active_stopping_criteria(o_d.stop))
+        @test condcov_sc isa Manopt.CMAESConditionCov
+        @test !Manopt.indicates_convergence(condcov_sc)
+        @test startswith(repr(condcov_sc), "CMAESConditionCov(")
     end
     @testset "Spherical CMA-ES" begin
         M = Sphere(2)
