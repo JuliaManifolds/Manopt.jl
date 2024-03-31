@@ -191,8 +191,9 @@ function default_cma_es_stopping_criterion(M::AbstractManifold, λ::Int)
            StagnationCondition(
                Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
            ) |
-           TolXCondition(1e-12) |
-           TolXUpCondition(1e4)
+           TolXUpCondition(1e4) |
+           TolFunCondition(1e-12, Int(10 + ceil(30 * manifold_dimension(M) / λ))) |
+           TolXCondition(1e-12)
 end
 
 @doc raw"""
@@ -589,4 +590,56 @@ function get_reason(c::TolXUpCondition)
 end
 function show(io::IO, c::TolXUpCondition)
     return print(io, "TolXUpCondition($(c.tol))\n    $(status_summary(c))")
+end
+
+"""
+    TolFunCondition{TParam<:Real} <: StoppingCriterion
+
+Stop if the range of the best objective function value in the last `max_size` generations
+and all function values in the current generation is below `tol`.
+
+# Constructor
+
+    TolFunCondition(tol::Real, max_size::Int)
+"""
+mutable struct TolFunCondition{TParam<:Real} <: StoppingCriterion
+    tol::TParam
+    best_value_history::CircularBuffer{TParam}
+    is_active::Bool
+end
+function TolFunCondition(tol::TParam, max_size::Int) where {TParam<:Real}
+    return TolFunCondition{TParam}(tol, CircularBuffer{TParam}(max_size), false)
+end
+
+# It just indicates stagnation, not that we converged to a minimizer
+indicates_convergence(c::TolFunCondition) = true
+function is_active_stopping_criterion(c::TolFunCondition)
+    return c.is_active
+end
+function (c::TolFunCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+    if i == 0 # reset on init
+        c.is_active = false
+        return false
+    end
+    push!(c.best_value_history, s.best_fitness_current_gen)
+    if isfull(c.best_value_history)
+        min_hist, max_hist = extrema(c.best_value_history)
+        if max_hist - min_hist < c.tol &&
+            s.best_fitness_current_gen - s.worst_fitness_current_gen < c.tol
+            c.is_active = true
+            return true
+        end
+    end
+    return false
+end
+function status_summary(c::TolFunCondition)
+    has_stopped = is_active_stopping_criterion(c)
+    s = has_stopped ? "reached" : "not reached"
+    return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :\t$s"
+end
+function get_reason(c::TolFunCondition)
+    return "Range of best objective function values in the last $(length(c.best_value_history)) gnerations and all values in the current generation is below $(c.tol)\n"
+end
+function show(io::IO, c::TolFunCondition)
+    return print(io, "TolFunCondition($(c.tol))\n    $(status_summary(c))")
 end
