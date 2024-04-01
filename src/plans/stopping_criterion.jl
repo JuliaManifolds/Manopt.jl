@@ -901,9 +901,20 @@ mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, "")
 end
+
+@inline _fast_any(f, tup::Tuple{}) = true
+@inline _fast_any(f, tup::Tuple{T}) where {T} = f(tup[1])
+@inline function _fast_any(f, tup::Tuple)
+    if f(tup[1])
+        return true
+    else
+        return _fast_any(f, tup[2:end])
+    end
+end
+
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
-    if any(subC -> subC(p, s, i), c.criteria)
+    if _fast_any(subC -> subC(p, s, i), c.criteria)
         c.reason = string((get_reason(subC) for subC in c.criteria)...)
         return true
     end

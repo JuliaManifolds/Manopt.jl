@@ -30,6 +30,7 @@ mutable struct CMAESState{
     population::Vector{P} # population of the current generation
     ys_c::Vector{Vector{TParams}}
     covm::Matrix{TParams} # coordinates of the covariance matrix
+    covm_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}} # eigendecomposition of covm
     covm_cond::TParams # condition number of covm, updated after eigendecomposition
     best_fitness_current_gen::TParams
     median_fitness_current_gen::TParams
@@ -39,6 +40,7 @@ mutable struct CMAESState{
     p_σ::Vector{TParams} # coordinates of a vector in T_{p_m} M
     p_c::Vector{TParams} # coordinates of a vector in T_{p_m} M
     deviations::Vector{TParams} # standard deviations of coordinate RNG
+    buffer::Vector{TParams} # buffer for random number generation and wmean_y_c of length n_coords
     e_mv_norm::TParams # expected value of norm of the n-variable standard normal distribution
     recombination_weights::Vector{TParams}
     retraction_method::TRetraction
@@ -96,7 +98,7 @@ function initialize_solver!(mp::AbstractManoptProblem, s::CMAESState)
     n_coords = number_of_coordinates(M, s.basis)
     s.covm = Matrix{number_eltype(s.p)}(I, n_coords, n_coords)
     s.covm_cond = 1
-
+    s.covm_eigen = eigen(Symmetric(s.covm))
     return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
@@ -105,14 +107,17 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 
     # sampling and evaluation of new solutions
 
-    D2, B = eigen(Symmetric(s.covm))
+    #D2, B = eigen(Symmetric(s.covm))
+    D2, B = s.covm_eigen # we assume eigendecomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
     s.covm_cond = max_eigval / min_eigval
     s.deviations .= sqrt.(D2)
     cov_invsqrt = B * Diagonal(inv.(s.deviations)) * B'
     Y_m = zero_vector(M, s.p_m)
     for i in 1:(s.λ)
-        mul!(s.ys_c[i], B, s.deviations .* randn(s.rng, n_coords)) # Eqs. (38) and (39)
+        randn!(s.rng, s.buffer) # Eqs. (38) and (39)
+        s.buffer .*= s.deviations # Eqs. (38) and (39)
+        mul!(s.ys_c[i], B, s.buffer) # Eqs. (38) and (39)
         get_vector!(M, Y_m, s.p_m, s.ys_c[i], s.basis) # Eqs. (38) and (39)
         retract!(M, s.population[i], s.p_m, Y_m, s.σ, s.retraction_method) # Eq. (40)
     end
@@ -130,13 +135,16 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     ys_c_sorted = map(x -> x[1], sort(collect(zip(s.ys_c, fitness_vals)); by=f -> f[2]))
 
     # selection and recombination
-    wmean_y_c = sum(s.recombination_weights[1:(s.μ)] .* ys_c_sorted[1:(s.μ)]) # Eq. (41)
+    fill!(s.buffer, 0) # from now on until the end of this method buffer is ⟨y⟩_w from Eq. (41)
+    for i in 1:(s.μ) # Eq. (41)
+        s.buffer .+= s.recombination_weights[i] .* ys_c_sorted[i]
+    end
     new_m = retract(
-        M, s.p_m, get_vector(M, s.p_m, wmean_y_c, s.basis), s.c_m * s.σ, s.retraction_method
+        M, s.p_m, get_vector(M, s.p_m, s.buffer, s.basis), s.c_m * s.σ, s.retraction_method
     ) # Eq. (42)
 
     # step-size control
-    cinv_y = (cov_invsqrt * wmean_y_c)
+    cinv_y = (cov_invsqrt * s.buffer)
     s.p_σ .= (1 - s.c_σ) * s.p_σ + sqrt(s.c_σ * (2 - s.c_σ) * s.μ_eff) * cinv_y # Eq. (43)
     s.σ *= exp(s.c_σ / s.d_σ * ((norm(s.p_σ) / s.e_mv_norm) - 1)) # Eq. (44)
 
@@ -144,7 +152,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     s.p_c .*= 1 - s.c_c # Eq. (45), part 1
     if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (iteration + 1))) <
         (1.4 + 2 / (n_coords + 1)) * s.e_mv_norm # h_σ criterion
-        s.p_c .+= sqrt(s.c_c * (2 - s.c_c) * s.μ_eff) .* wmean_y_c # Eq. (45), part 2
+        s.p_c .+= sqrt(s.c_c * (2 - s.c_c) * s.μ_eff) .* s.buffer # Eq. (45), part 2
         δh_σ = zero(s.c_c) # Appendix A
     else
         δh_σ = s.c_c * (2 - s.c_c) # Appendix A
@@ -161,9 +169,14 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
         mul!(s.covm, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
     # move covariance matrix, p_c and p_σ to new mean point
-    s.covm .= spd_matrix_transport_to(
-        M, s.p_m, s.covm, new_m, s.basis, s.vector_transport_method
+    s.covm_eigen = eigen(Symmetric(s.covm))
+    eigenvector_transport!(
+        M, s.covm_eigen, s.p_m, new_m, s.basis, s.vector_transport_method
     )
+    mul!(
+        s.covm, s.covm_eigen.vectors, Diagonal(s.covm_eigen.values) * s.covm_eigen.vectors'
+    )
+
     get_vector!(M, Y_m, s.p_m, s.p_σ, s.basis)
     vector_transport_to!(M, Y_m, s.p_m, Y_m, new_m, s.vector_transport_method)
     get_coordinates!(M, s.p_σ, new_m, Y_m, s.basis)
@@ -286,6 +299,7 @@ function cma_es(
     population = [allocate(M, p_m) for _ in 1:λ]
     # approximation of expected value of norm of standard n_coords-variate normal distribution
     e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
+    covm = Matrix{number_eltype(p_m)}(I, n_coords, n_coords)
     state = CMAESState(
         allocate(M, p_m),
         Inf,
@@ -301,7 +315,8 @@ function cma_es(
         stopping_criterion,
         population,
         [similar(Vector{Float64}, n_coords) for _ in 1:λ],
-        Matrix{number_eltype(p_m)}(I, n_coords, n_coords),
+        covm,
+        eigen(covm),
         one(c_1),
         Inf,
         Inf,
@@ -311,6 +326,7 @@ function cma_es(
         zeros(typeof(c_1), n_coords),
         zeros(typeof(c_1), n_coords),
         ones(typeof(c_1), n_coords),
+        zeros(typeof(c_1), n_coords),
         e_mv_norm,
         recombination_weights,
         retraction_method,
@@ -325,35 +341,41 @@ function cma_es(
 end
 
 @doc raw"""
-    spd_matrix_transport_to(M::AbstractManifold, p, spd_coords, q, basis::AbstractBasis, vtm::AbstractVectorTransportMethod)
+    eigenvector_transport!(
+        M::AbstractManifold,
+        matrix_eigen::Eigen,
+        p,
+        q,
+        basis::AbstractBasis,
+        vtm::AbstractVectorTransportMethod,
+    )
 
-Transport the SPD matrix with `spd_coords` when expanded in `basis` from point `p` to
-point `q` on `M`.
+Transport the matrix with `matrix_eig` eigendecomposition when expanded in `basis` from
+point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
-`(p, spd_coords)` belongs to the fiber bundle of ``B = \mathcal M × SPD(n)``, where `n`
+`(p, matrix_eig)` belongs to the fiber bundle of ``B = \mathcal M × SPD(n)``, where `n`
 is the (real) dimension of `M`. The function corresponds to the Ehresmann connection
-defined by vector transport `vtm` of eigenvectors of `spd_coords`.
+defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """
-function spd_matrix_transport_to(
+function eigenvector_transport!(
     M::AbstractManifold,
+    matrix_eigen::Eigen,
     p,
-    spd_coords,
     q,
     basis::AbstractBasis,
     vtm::AbstractVectorTransportMethod,
 )
     if is_flat(M)
-        return spd_coords
+        return matrix_eigen
     end
-    D, Q = eigen(Symmetric(spd_coords))
-    n = length(D)
-    vectors = [get_vector(M, p, Q[:, i], basis) for i in 1:n]
+    n = length(matrix_eigen.values)
+    X = zero_vector(M, p)
     for i in 1:n
-        vector_transport_to!(M, vectors[i], p, vectors[i], q, vtm)
+        get_vector!(M, X, p, view(matrix_eigen.vectors, :, i), basis)
+        vector_transport_to!(M, X, p, X, q, vtm)
+        get_coordinates!(M, view(matrix_eigen.vectors, :, i), q, X, basis)
     end
-    coords = [get_coordinates(M, p, vectors[i], basis) for i in 1:n]
-    Qt = reduce(hcat, coords)
-    return Qt * Diagonal(D) * Qt'
+    return matrix_eigen
 end
 
 """

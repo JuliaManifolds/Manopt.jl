@@ -18,7 +18,20 @@ using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
-    cond, Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm, mul!
+    cond,
+    Diagonal,
+    I,
+    Eigen,
+    eigen,
+    eigen!,
+    eigvals,
+    tril,
+    Symmetric,
+    dot,
+    cholesky,
+    eigmin,
+    opnorm,
+    mul!
 using ManifoldDiff:
     adjoint_differential_log_argument,
     adjoint_differential_log_argument!,
