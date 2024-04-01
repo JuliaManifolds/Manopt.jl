@@ -24,6 +24,8 @@ function poorly_conditioned_example(::AbstractManifold, p)
     return p' * [1e12 0; 0 -1e-6] * p
 end
 
+flat_example(::AbstractManifold, p) = 0.0
+
 @testset "CMA-ES" begin
     @testset "Euclidean CMA-ES" begin
         M = Euclidean(2)
@@ -45,7 +47,10 @@ end
             rng=MersenneTwister(123),
             return_state=true,
         )
-        @test only(get_active_stopping_criteria(o_d.stop)) isa StopWhenPopulationDiverges
+        div_sc = only(get_active_stopping_criteria(o_d.stop))
+        @test div_sc isa StopWhenPopulationDiverges
+        @test !Manopt.indicates_convergence(div_sc)
+        @test startswith(repr(div_sc), "StopWhenPopulationDiverges(")
 
         o_d = cma_es(
             M,
@@ -59,6 +64,66 @@ end
         @test condcov_sc isa Manopt.CMAESConditionCov
         @test !Manopt.indicates_convergence(condcov_sc)
         @test startswith(repr(condcov_sc), "CMAESConditionCov(")
+
+        o_flat = cma_es(
+            M,
+            flat_example,
+            [10.0, 10.0];
+            σ=10.0,
+            stopping_criterion=StopAfterIteration(500) |
+                               StopWhenBestCostInGenerationConstant{Float64}(5),
+            rng=MersenneTwister(123),
+            return_state=true,
+        )
+        flat_sc = only(get_active_stopping_criteria(o_flat.stop))
+        @test flat_sc isa StopWhenBestCostInGenerationConstant
+        @test Manopt.indicates_convergence(flat_sc)
+        @test startswith(repr(flat_sc), "StopWhenBestCostInGenerationConstant(")
+
+        o_flat = cma_es(
+            M,
+            flat_example,
+            [10.0, 10.0];
+            σ=10.0,
+            stopping_criterion=StopAfterIteration(500) |
+                               StopWhenEvolutionStagnates(5, 100, 0.3),
+            rng=MersenneTwister(123),
+            return_state=true,
+        )
+        flat_sc = only(get_active_stopping_criteria(o_flat.stop))
+        @test flat_sc isa StopWhenEvolutionStagnates
+        @test Manopt.indicates_convergence(flat_sc)
+        @test startswith(repr(flat_sc), "StopWhenEvolutionStagnates(")
+
+        o_flat = cma_es(
+            M,
+            flat_example,
+            [10.0, 10.0];
+            σ=10.0,
+            stopping_criterion=StopAfterIteration(500) |
+                               StopWhenPopulationStuckConcentrated(1e-5),
+            rng=MersenneTwister(123),
+            return_state=true,
+        )
+        flat_sc = only(get_active_stopping_criteria(o_flat.stop))
+        @test flat_sc isa StopWhenPopulationStuckConcentrated
+        @test Manopt.indicates_convergence(flat_sc)
+        @test startswith(repr(flat_sc), "StopWhenPopulationStuckConcentrated(")
+
+        o_flat = cma_es(
+            M,
+            flat_example,
+            [10.0, 10.0];
+            σ=10.0,
+            stopping_criterion=StopAfterIteration(500) |
+                               StopWhenPopulationCostConcentrated(1e-5, 5),
+            rng=MersenneTwister(123),
+            return_state=true,
+        )
+        flat_sc = only(get_active_stopping_criteria(o_flat.stop))
+        @test flat_sc isa StopWhenPopulationCostConcentrated
+        @test Manopt.indicates_convergence(flat_sc)
+        @test startswith(repr(flat_sc), "StopWhenPopulationCostConcentrated(")
     end
     @testset "Spherical CMA-ES" begin
         M = Sphere(2)
