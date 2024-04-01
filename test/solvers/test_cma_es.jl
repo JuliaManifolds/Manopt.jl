@@ -45,7 +45,7 @@ end
             rng=MersenneTwister(123),
             return_state=true,
         )
-        @test only(get_active_stopping_criteria(o_d.stop)) isa Manopt.TolXUpCondition
+        @test only(get_active_stopping_criteria(o_d.stop)) isa StopWhenPopulationDiverges
 
         o_d = cma_es(
             M,

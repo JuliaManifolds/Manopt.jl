@@ -19,9 +19,11 @@ CMAESState
 
 ```@docs
 CMAESConditionCov
-StagnationCondition
-TolXCondition
-TolXUpCondition
+StopWhenBestCostInGenerationConstant
+StopWhenEvolutionStagnates
+StopWhenPopulationCostConcentrated
+StopWhenPopulationDiverges
+StopWhenPopulationStuckConcentrated
 ```
 
 ## Literature

@@ -187,13 +187,17 @@ function default_cma_es_stopping_criterion(
 ) where {TParam<:Real}
     return StopAfterIteration(50000) |
            CMAESConditionCov() |
-           EqualFunValuesCondition{TParam}(Int(10 + ceil(30 * manifold_dimension(M) / λ))) |
-           StagnationCondition(
+           StopWhenBestCostInGenerationConstant{TParam}(
+               Int(10 + ceil(30 * manifold_dimension(M) / λ))
+           ) |
+           StopWhenEvolutionStagnates(
                Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
            ) |
-           TolXUpCondition(1e4) |
-           TolFunCondition(tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))) |
-           TolXCondition(tol_x)
+           StopWhenPopulationDiverges(1e4) |
+           StopWhenPopulationCostConcentrated(
+               tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))
+           ) |
+           StopWhenPopulationStuckConcentrated(tol_x)
 end
 
 @doc raw"""
@@ -217,10 +221,11 @@ setting.
 * `σ`       (`1.0`) initial standard deviation
 * `λ`       (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough search)
-* `tol_fun` (`1e-12`) tolerance for the `TolFunCondition`, similar to absolute difference
-  between function values at subsequent points
-* `tol_x`   (`1e-12`) tolerance for the `TolXCondition`, similar to absolute difference
-  between subsequent point but actually computed from distribution parameters.
+* `tol_fun` (`1e-12`) tolerance for the `StopWhenPopulationCostConcentrated`, similar to
+  absolute difference between function values at subsequent points
+* `tol_x`   (`1e-12`) tolerance for the `StopWhenPopulationStuckConcentrated`, similar to
+  absolute difference between subsequent point but actually computed from distribution
+  parameters.
 
 # Output
 
@@ -392,29 +397,32 @@ function show(io::IO, c::CMAESConditionCov)
 end
 
 """
-    EqualFunValuesCondition <: StoppingCriterion
+    StopWhenBestCostInGenerationConstant <: StoppingCriterion
 
 Stop if the range of the best objective function values of the last `iteration_range`
-generations is zero.
+generations is zero. This corresponds to `EqualFUnValues` condition from
+[Hansen:2023](@cite).
 
-See also `TolFunCondition`.
+See also `StopWhenPopulationCostConcentrated`.
 """
-mutable struct EqualFunValuesCondition{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenBestCostInGenerationConstant{TParam<:Real} <: StoppingCriterion
     iteration_range::Int
     best_objective_at_last_change::TParam
     iterations_since_change::Int
 end
 
-function EqualFunValuesCondition{TParam}(iteration_range::Int) where {TParam}
-    return EqualFunValuesCondition{TParam}(iteration_range, Inf, 0)
+function StopWhenBestCostInGenerationConstant{TParam}(iteration_range::Int) where {TParam}
+    return StopWhenBestCostInGenerationConstant{TParam}(iteration_range, Inf, 0)
 end
 
 # It just indicates stagnation, not that we converged to a minimizer
-indicates_convergence(c::EqualFunValuesCondition) = true
-function is_active_stopping_criterion(c::EqualFunValuesCondition)
+indicates_convergence(c::StopWhenBestCostInGenerationConstant) = true
+function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
     return c.iterations_since_change >= c.iteration_range
 end
-function (c::EqualFunValuesCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+function (c::StopWhenBestCostInGenerationConstant)(
+    ::AbstractManoptProblem, s::CMAESState, i::Int
+)
     if i == 0 # reset on init
         c.best_objective_at_last_change = Inf
         return false
@@ -431,29 +439,30 @@ function (c::EqualFunValuesCondition)(::AbstractManoptProblem, s::CMAESState, i:
     end
     return false
 end
-function status_summary(c::EqualFunValuesCondition)
+function status_summary(c::StopWhenBestCostInGenerationConstant)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "c.iterations_since_change > $(c.iteration_range):\t$s"
 end
-function get_reason(c::EqualFunValuesCondition)
+function get_reason(c::StopWhenBestCostInGenerationConstant)
     return "For the last $(c.iterations_since_change) generation the best objective value in each generation was equal to $(c.best_objective_at_last_change).\n"
 end
-function show(io::IO, c::EqualFunValuesCondition)
+function show(io::IO, c::StopWhenBestCostInGenerationConstant)
     return print(
-        io, "EqualFunValuesCondition($(c.iteration_range))\n    $(status_summary(c))"
+        io,
+        "StopWhenBestCostInGenerationConstant($(c.iteration_range))\n    $(status_summary(c))",
     )
 end
 
 """
-    StagnationCondition{TParam<:Real} <: StoppingCriterion
+    StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
 
 The best and median fitness in each iteraion is tracked over the last 20% but
 at least `min_size` and no more than `max_size` iterations. Solver is stopped if
 in both histories the median of the most recent `fraction` of values is not better
 than the median of the oldest `fraction`.
 """
-mutable struct StagnationCondition{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
     min_size::Int
     max_size::Int
     fraction::TParam
@@ -461,10 +470,10 @@ mutable struct StagnationCondition{TParam<:Real} <: StoppingCriterion
     median_history::CircularBuffer{TParam}
 end
 
-function StagnationCondition(
+function StopWhenEvolutionStagnates(
     min_size::Int, max_size::Int, fraction::TParam
 ) where {TParam<:Real}
-    return StagnationCondition{TParam}(
+    return StopWhenEvolutionStagnates{TParam}(
         min_size,
         max_size,
         fraction,
@@ -474,8 +483,8 @@ function StagnationCondition(
 end
 
 # It just indicates stagnation, not that we converged to a minimizer
-indicates_convergence(c::StagnationCondition) = true
-function is_active_stopping_criterion(c::StagnationCondition)
+indicates_convergence(c::StopWhenEvolutionStagnates) = true
+function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
     N = length(c.best_history)
     if N < c.min_size
         return false
@@ -488,7 +497,7 @@ function is_active_stopping_criterion(c::StagnationCondition)
         median(c.median_history[1:thr_low]) <= median(c.median_history[thr_high:end])
     return best_stagnant && median_stagnant
 end
-function (c::StagnationCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, i::Int)
     if i == 0 # reset on init
         empty!(c.best_history)
         empty!(c.median_history)
@@ -502,7 +511,7 @@ function (c::StagnationCondition)(::AbstractManoptProblem, s::CMAESState, i::Int
     end
     return false
 end
-function status_summary(c::StagnationCondition)
+function status_summary(c::StopWhenEvolutionStagnates)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
@@ -514,34 +523,39 @@ function status_summary(c::StagnationCondition)
     median_median_new = median(c.median_history[thr_high:end])
     return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):\t$s"
 end
-function get_reason(::StagnationCondition)
+function get_reason(::StopWhenEvolutionStagnates)
     return "Both median and best objective history became stagnant.\n"
 end
-function show(io::IO, c::StagnationCondition)
+function show(io::IO, c::StopWhenEvolutionStagnates)
     return print(
         io,
-        "StagnationCondition($(c.min_size), $(c.max_size), $(c.fraction))\n    $(status_summary(c))",
+        "StopWhenEvolutionStagnates($(c.min_size), $(c.max_size), $(c.fraction))\n    $(status_summary(c))",
     )
 end
 
 """
-    TolXCondition{TParam<:Real} <: StoppingCriterion
+    StopWhenPopulationStuckConcentrated{TParam<:Real} <: StoppingCriterion
 
 Stop if the standard deviation in all coordinates is smaller than `tol` and
-norm of `σ * p_c` is smaller than `tol`.
+norm of `σ * p_c` is smaller than `tol`. This corresponds to `TolX` condition from
+[Hansen:2023](@cite).
 """
-mutable struct TolXCondition{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationStuckConcentrated{TParam<:Real} <: StoppingCriterion
     tol::TParam
     is_active::Bool
 end
-TolXCondition(tol::Real) = TolXCondition{typeof(tol)}(tol, false)
+function StopWhenPopulationStuckConcentrated(tol::Real)
+    return StopWhenPopulationStuckConcentrated{typeof(tol)}(tol, false)
+end
 
 # It just indicates stagnation, not that we converged to a minimizer
-indicates_convergence(c::TolXCondition) = true
-function is_active_stopping_criterion(c::TolXCondition)
+indicates_convergence(c::StopWhenPopulationStuckConcentrated) = true
+function is_active_stopping_criterion(c::StopWhenPopulationStuckConcentrated)
     return c.is_active
 end
-function (c::TolXCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+function (c::StopWhenPopulationStuckConcentrated)(
+    ::AbstractManoptProblem, s::CMAESState, i::Int
+)
     if i == 0 # reset on init
         c.is_active = false
         return false
@@ -551,36 +565,41 @@ function (c::TolXCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
     c.is_active = norm_inf_dev < c.tol && s.σ * norm_inf_p_c < c.tol
     return c.is_active
 end
-function status_summary(c::TolXCondition)
+function status_summary(c::StopWhenPopulationStuckConcentrated)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :\t$s"
 end
-function get_reason(c::TolXCondition)
+function get_reason(c::StopWhenPopulationStuckConcentrated)
     return "Standard deviation in all coordinates is smaller than $(c.tol) and `σ * p_c` has Inf norm lower than $(c.tol).\n"
 end
-function show(io::IO, c::TolXCondition)
-    return print(io, "TolXCondition($(c.tol))\n    $(status_summary(c))")
+function show(io::IO, c::StopWhenPopulationStuckConcentrated)
+    return print(
+        io, "StopWhenPopulationStuckConcentrated($(c.tol))\n    $(status_summary(c))"
+    )
 end
 
 """
-    TolXUpCondition{TParam<:Real} <: StoppingCriterion
+    StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion
 
 Stop if `σ` times maximum deviation increased by more than `tol`. This usually indicates a
-far too small `σ`, or divergent behavior.
+far too small `σ`, or divergent behavior. This corresponds to `TolXUp` condition from
+[Hansen:2023](@cite).
 """
-mutable struct TolXUpCondition{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion
     tol::TParam
     last_σ_times_maxstddev::TParam
     is_active::Bool
 end
-TolXUpCondition(tol::Real) = TolXUpCondition{typeof(tol)}(tol, 1.0, false)
+function StopWhenPopulationDiverges(tol::Real)
+    return StopWhenPopulationDiverges{typeof(tol)}(tol, 1.0, false)
+end
 
-indicates_convergence(c::TolXUpCondition) = false
-function is_active_stopping_criterion(c::TolXUpCondition)
+indicates_convergence(c::StopWhenPopulationDiverges) = false
+function is_active_stopping_criterion(c::StopWhenPopulationDiverges)
     return c.is_active
 end
-function (c::TolXUpCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, i::Int)
     if i == 0 # reset on init
         c.is_active = false
         return false
@@ -592,43 +611,48 @@ function (c::TolXUpCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
     end
     return false
 end
-function status_summary(c::TolXUpCondition)
+function status_summary(c::StopWhenPopulationDiverges)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :\t$s"
 end
-function get_reason(c::TolXUpCondition)
+function get_reason(c::StopWhenPopulationDiverges)
     return "σ times maximum standard deviation exceeded $(c.tol). This indicates either much too small σ or divergent behavior.\n"
 end
-function show(io::IO, c::TolXUpCondition)
-    return print(io, "TolXUpCondition($(c.tol))\n    $(status_summary(c))")
+function show(io::IO, c::StopWhenPopulationDiverges)
+    return print(io, "StopWhenPopulationDiverges($(c.tol))\n    $(status_summary(c))")
 end
 
 """
-    TolFunCondition{TParam<:Real} <: StoppingCriterion
+    StopWhenPopulationCostConcentrated{TParam<:Real} <: StoppingCriterion
 
 Stop if the range of the best objective function value in the last `max_size` generations
-and all function values in the current generation is below `tol`.
+and all function values in the current generation is below `tol`. This corresponds to
+`TolFun` condition from [Hansen:2023](@cite).
 
 # Constructor
 
-    TolFunCondition(tol::Real, max_size::Int)
+    StopWhenPopulationCostConcentrated(tol::Real, max_size::Int)
 """
-mutable struct TolFunCondition{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationCostConcentrated{TParam<:Real} <: StoppingCriterion
     tol::TParam
     best_value_history::CircularBuffer{TParam}
     is_active::Bool
 end
-function TolFunCondition(tol::TParam, max_size::Int) where {TParam<:Real}
-    return TolFunCondition{TParam}(tol, CircularBuffer{TParam}(max_size), false)
+function StopWhenPopulationCostConcentrated(tol::TParam, max_size::Int) where {TParam<:Real}
+    return StopWhenPopulationCostConcentrated{TParam}(
+        tol, CircularBuffer{TParam}(max_size), false
+    )
 end
 
 # It just indicates stagnation, not that we converged to a minimizer
-indicates_convergence(c::TolFunCondition) = true
-function is_active_stopping_criterion(c::TolFunCondition)
+indicates_convergence(c::StopWhenPopulationCostConcentrated) = true
+function is_active_stopping_criterion(c::StopWhenPopulationCostConcentrated)
     return c.is_active
 end
-function (c::TolFunCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
+function (c::StopWhenPopulationCostConcentrated)(
+    ::AbstractManoptProblem, s::CMAESState, i::Int
+)
     if i == 0 # reset on init
         c.is_active = false
         return false
@@ -644,14 +668,16 @@ function (c::TolFunCondition)(::AbstractManoptProblem, s::CMAESState, i::Int)
     end
     return false
 end
-function status_summary(c::TolFunCondition)
+function status_summary(c::StopWhenPopulationCostConcentrated)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :\t$s"
 end
-function get_reason(c::TolFunCondition)
+function get_reason(c::StopWhenPopulationCostConcentrated)
     return "Range of best objective function values in the last $(length(c.best_value_history)) gnerations and all values in the current generation is below $(c.tol)\n"
 end
-function show(io::IO, c::TolFunCondition)
-    return print(io, "TolFunCondition($(c.tol))\n    $(status_summary(c))")
+function show(io::IO, c::StopWhenPopulationCostConcentrated)
+    return print(
+        io, "StopWhenPopulationCostConcentrated($(c.tol))\n    $(status_summary(c))"
+    )
 end
