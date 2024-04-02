@@ -61,9 +61,9 @@ flat_example(::AbstractManifold, p) = 0.0
             return_state=true,
         )
         condcov_sc = only(get_active_stopping_criteria(o_d.stop))
-        @test condcov_sc isa Manopt.CMAESConditionCov
+        @test condcov_sc isa StopWhenCovarianceIllConditioned
         @test !Manopt.indicates_convergence(condcov_sc)
-        @test startswith(repr(condcov_sc), "CMAESConditionCov(")
+        @test startswith(repr(condcov_sc), "StopWhenCovarianceIllConditioned(")
 
         o_flat = cma_es(
             M,
@@ -101,14 +101,14 @@ flat_example(::AbstractManifold, p) = 0.0
             [10.0, 10.0];
             σ=10.0,
             stopping_criterion=StopAfterIteration(500) |
-                               StopWhenPopulationStuckConcentrated(1e-5),
+                               StopWhenPopulationStronglyConcentrated(1e-5),
             rng=MersenneTwister(123),
             return_state=true,
         )
         flat_sc = only(get_active_stopping_criteria(o_flat.stop))
-        @test flat_sc isa StopWhenPopulationStuckConcentrated
+        @test flat_sc isa StopWhenPopulationStronglyConcentrated
         @test Manopt.indicates_convergence(flat_sc)
-        @test startswith(repr(flat_sc), "StopWhenPopulationStuckConcentrated(")
+        @test startswith(repr(flat_sc), "StopWhenPopulationStronglyConcentrated(")
 
         o_flat = cma_es(
             M,

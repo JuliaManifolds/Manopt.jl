@@ -199,7 +199,7 @@ function default_cma_es_stopping_criterion(
     M::AbstractManifold, λ::Int; tol_fun::TParam=1e-12, tol_x::TParam=1e-12
 ) where {TParam<:Real}
     return StopAfterIteration(50000) |
-           CMAESConditionCov() |
+           StopWhenCovarianceIllConditioned() |
            StopWhenBestCostInGenerationConstant{TParam}(
                Int(10 + ceil(30 * manifold_dimension(M) / λ))
            ) |
@@ -210,7 +210,7 @@ function default_cma_es_stopping_criterion(
            StopWhenPopulationCostConcentrated(
                tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))
            ) |
-           StopWhenPopulationStuckConcentrated(tol_x)
+           StopWhenPopulationStronglyConcentrated(tol_x)
 end
 
 @doc raw"""
@@ -236,7 +236,7 @@ setting.
   increased for a more thorough search)
 * `tol_fun` (`1e-12`) tolerance for the `StopWhenPopulationCostConcentrated`, similar to
   absolute difference between function values at subsequent points
-* `tol_x`   (`1e-12`) tolerance for the `StopWhenPopulationStuckConcentrated`, similar to
+* `tol_x`   (`1e-12`) tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
 
@@ -379,22 +379,25 @@ function eigenvector_transport!(
 end
 
 """
-    CMAESConditionCov <: StoppingCriterion
+    StopWhenCovarianceIllConditioned <: StoppingCriterion
 
-Stop CMA-ES if condition number of covariance matrix exceeds `threshold`.
+Stop CMA-ES if condition number of covariance matrix exceeds `threshold`. This corresponds
+to `ConditionCov` condition from [Hansen:2023](@cite).
 """
-mutable struct CMAESConditionCov{T<:Real} <: StoppingCriterion
+mutable struct StopWhenCovarianceIllConditioned{T<:Real} <: StoppingCriterion
     threshold::T
     last_cond::T
     at_iteration::Int
 end
-function CMAESConditionCov(threshold::Real=1e14)
-    return CMAESConditionCov{typeof(threshold)}(threshold, 1, 0)
+function StopWhenCovarianceIllConditioned(threshold::Real=1e14)
+    return StopWhenCovarianceIllConditioned{typeof(threshold)}(threshold, 1, 0)
 end
 
-indicates_convergence(c::CMAESConditionCov) = false
-is_active_stopping_criterion(c::CMAESConditionCov) = c.at_iteration > 0
-function (c::CMAESConditionCov)(::AbstractManoptProblem, s::CMAESState, i::Int)
+indicates_convergence(c::StopWhenCovarianceIllConditioned) = false
+is_active_stopping_criterion(c::StopWhenCovarianceIllConditioned) = c.at_iteration > 0
+function (c::StopWhenCovarianceIllConditioned)(
+    ::AbstractManoptProblem, s::CMAESState, i::Int
+)
     if i == 0 # reset on init
         c.at_iteration = 0
         return false
@@ -406,16 +409,18 @@ function (c::CMAESConditionCov)(::AbstractManoptProblem, s::CMAESState, i::Int)
     end
     return false
 end
-function status_summary(c::CMAESConditionCov)
+function status_summary(c::StopWhenCovarianceIllConditioned)
     has_stopped = c.at_iteration > 0
     s = has_stopped ? "reached" : "not reached"
     return "cond(s.covm) > $(c.threshold):\t$s"
 end
-function get_reason(c::CMAESConditionCov)
+function get_reason(c::StopWhenCovarianceIllConditioned)
     return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
 end
-function show(io::IO, c::CMAESConditionCov)
-    return print(io, "CMAESConditionCov($(c.threshold))\n    $(status_summary(c))")
+function show(io::IO, c::StopWhenCovarianceIllConditioned)
+    return print(
+        io, "StopWhenCovarianceIllConditioned($(c.threshold))\n    $(status_summary(c))"
+    )
 end
 
 """
@@ -556,26 +561,26 @@ function show(io::IO, c::StopWhenEvolutionStagnates)
 end
 
 """
-    StopWhenPopulationStuckConcentrated{TParam<:Real} <: StoppingCriterion
+    StopWhenPopulationStronglyConcentrated{TParam<:Real} <: StoppingCriterion
 
 Stop if the standard deviation in all coordinates is smaller than `tol` and
 norm of `σ * p_c` is smaller than `tol`. This corresponds to `TolX` condition from
 [Hansen:2023](@cite).
 """
-mutable struct StopWhenPopulationStuckConcentrated{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationStronglyConcentrated{TParam<:Real} <: StoppingCriterion
     tol::TParam
     is_active::Bool
 end
-function StopWhenPopulationStuckConcentrated(tol::Real)
-    return StopWhenPopulationStuckConcentrated{typeof(tol)}(tol, false)
+function StopWhenPopulationStronglyConcentrated(tol::Real)
+    return StopWhenPopulationStronglyConcentrated{typeof(tol)}(tol, false)
 end
 
 # It just indicates stagnation, not that we converged to a minimizer
-indicates_convergence(c::StopWhenPopulationStuckConcentrated) = true
-function is_active_stopping_criterion(c::StopWhenPopulationStuckConcentrated)
+indicates_convergence(c::StopWhenPopulationStronglyConcentrated) = true
+function is_active_stopping_criterion(c::StopWhenPopulationStronglyConcentrated)
     return c.is_active
 end
-function (c::StopWhenPopulationStuckConcentrated)(
+function (c::StopWhenPopulationStronglyConcentrated)(
     ::AbstractManoptProblem, s::CMAESState, i::Int
 )
     if i == 0 # reset on init
@@ -587,17 +592,17 @@ function (c::StopWhenPopulationStuckConcentrated)(
     c.is_active = norm_inf_dev < c.tol && s.σ * norm_inf_p_c < c.tol
     return c.is_active
 end
-function status_summary(c::StopWhenPopulationStuckConcentrated)
+function status_summary(c::StopWhenPopulationStronglyConcentrated)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :\t$s"
 end
-function get_reason(c::StopWhenPopulationStuckConcentrated)
+function get_reason(c::StopWhenPopulationStronglyConcentrated)
     return "Standard deviation in all coordinates is smaller than $(c.tol) and `σ * p_c` has Inf norm lower than $(c.tol).\n"
 end
-function show(io::IO, c::StopWhenPopulationStuckConcentrated)
+function show(io::IO, c::StopWhenPopulationStronglyConcentrated)
     return print(
-        io, "StopWhenPopulationStuckConcentrated($(c.tol))\n    $(status_summary(c))"
+        io, "StopWhenPopulationStronglyConcentrated($(c.tol))\n    $(status_summary(c))"
     )
 end
 

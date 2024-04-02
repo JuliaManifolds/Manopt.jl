@@ -22,12 +22,12 @@ CMAESState
 ## Stopping Criteria
 
 ```@docs
-CMAESConditionCov
 StopWhenBestCostInGenerationConstant
+StopWhenCovarianceIllConditioned
 StopWhenEvolutionStagnates
 StopWhenPopulationCostConcentrated
 StopWhenPopulationDiverges
-StopWhenPopulationStuckConcentrated
+StopWhenPopulationStronglyConcentrated
 ```
 
 ## Literature

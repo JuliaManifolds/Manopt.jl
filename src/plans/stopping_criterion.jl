@@ -902,6 +902,8 @@ mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, "")
 end
 
+# _fast_any(f, tup::Tuple) is functionally equivalent to any(f, tup) but on Julia 1.10
+# this implementation is faster on heterogeneous tuples
 @inline _fast_any(f, tup::Tuple{}) = true
 @inline _fast_any(f, tup::Tuple{T}) where {T} = f(tup[1])
 @inline function _fast_any(f, tup::Tuple)
