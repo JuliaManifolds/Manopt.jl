@@ -29,9 +29,9 @@ mutable struct CMAESState{
     stop::TStopping
     population::Vector{P} # population of the current generation
     ys_c::Vector{Vector{TParams}}
-    covm::Matrix{TParams} # coordinates of the covariance matrix
-    covm_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}} # eigendecomposition of covm
-    covm_cond::TParams # condition number of covm, updated after eigendecomposition
+    covariance_matrix::Matrix{TParams} # coordinates of the covariance matrix
+    covariance_matrix_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}} # eigendecomposition of covariance_matrix
+    covariance_matrix_cond::TParams # condition number of covariance_matrix, updated after eigendecomposition
     best_fitness_current_gen::TParams
     median_fitness_current_gen::TParams
     worst_fitness_current_gen::TParams
@@ -48,6 +48,74 @@ mutable struct CMAESState{
     basis::TB
     rng::TRng
 end
+
+function CMAESState(
+    M::AbstractManifold,
+    p_m::P,
+    μ::Int,
+    λ::Int,
+    μ_eff::TParams,
+    c_1::TParams,
+    c_c::TParams,
+    c_μ::TParams,
+    c_σ::TParams,
+    c_m::TParams,
+    d_σ::TParams,
+    stop::TStopping,
+    covariance_matrix::Matrix{TParams},
+    σ::TParams,
+    e_mv_norm::TParams,
+    recombination_weights::Vector{TParams},
+    retraction_method::TRetraction,
+    vector_transport_method::TVTM,
+    basis::TB,
+    rng::TRng,
+) where {
+    P,
+    TParams<:Real,
+    TStopping<:StoppingCriterion,
+    TRetraction<:AbstractRetractionMethod,
+    TVTM<:AbstractVectorTransportMethod,
+    TB<:AbstractBasis,
+    TRng<:AbstractRNG,
+}
+    n_coords = size(covariance_matrix, 1)
+    return CMAESState{P,TParams,TStopping,TRetraction,TVTM,TB,TRng}(
+        allocate(M, p_m),
+        Inf,
+        μ,
+        λ,
+        μ_eff,
+        c_1,
+        c_c,
+        c_μ,
+        c_σ,
+        c_m,
+        d_σ,
+        stop,
+        [allocate(M, p_m) for _ in 1:λ],
+        [similar(Vector{Float64}, n_coords) for _ in 1:λ],
+        covariance_matrix,
+        eigen(covariance_matrix),
+        1.0,
+        Inf,
+        Inf,
+        Inf,
+        p_m,
+        σ,
+        zeros(TParams, n_coords),
+        zeros(TParams, n_coords),
+        ones(TParams, n_coords),
+        zeros(TParams, n_coords),
+        e_mv_norm,
+        recombination_weights,
+        retraction_method,
+        vector_transport_method,
+        basis,
+        rng,
+    )
+end
+
 function show(io::IO, s::CMAESState)
     i = get_count(s, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -71,8 +139,8 @@ function show(io::IO, s::CMAESState)
     * basis:                     $(s.basis)
 
     ## Current values
-    * covm:                       $(s.covm)
-    * covm_cond:                  $(s.covm_cond)
+    * covariance_matrix:          $(s.covariance_matrix)
+    * covariance_matrix_cond:     $(s.covariance_matrix_cond)
     * best_fitness_current_gen:   $(s.best_fitness_current_gen)
     * median_fitness_current_gen: $(s.median_fitness_current_gen)
     * worst_fitness_current_gen:  $(s.worst_fitness_current_gen)
@@ -96,9 +164,9 @@ get_iterate(pss::CMAESState) = pss.p
 function initialize_solver!(mp::AbstractManoptProblem, s::CMAESState)
     M = get_manifold(mp)
     n_coords = number_of_coordinates(M, s.basis)
-    s.covm = Matrix{number_eltype(s.p)}(I, n_coords, n_coords)
-    s.covm_cond = 1
-    s.covm_eigen = eigen(Symmetric(s.covm))
+    s.covariance_matrix = Matrix{number_eltype(s.p)}(I, n_coords, n_coords)
+    s.covariance_matrix_cond = 1
+    s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
     return s
 end
 function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
@@ -107,10 +175,10 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 
     # sampling and evaluation of new solutions
 
-    #D2, B = eigen(Symmetric(s.covm))
-    D2, B = s.covm_eigen # we assume eigendecomposition has already been completed
+    #D2, B = eigen(Symmetric(s.covariance_matrix))
+    D2, B = s.covariance_matrix_eigen # we assume eigendecomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
-    s.covm_cond = max_eigval / min_eigval
+    s.covariance_matrix_cond = max_eigval / min_eigval
     s.deviations .= sqrt.(D2)
     cov_invsqrt = B * Diagonal(inv.(s.deviations)) * B'
     Y_m = zero_vector(M, s.p_m)
@@ -157,8 +225,10 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     else
         δh_σ = s.c_c * (2 - s.c_c) # Appendix A
     end
-    s.covm .*= (1 + s.c_1 * δh_σ - s.c_1 - s.c_μ * sum(s.recombination_weights)) # Eq. (47), part 1  
-    mul!(s.covm, s.p_c, s.p_c', s.c_1, true) # Eq. (47), rank 1 update
+    s.covariance_matrix .*= (
+        1 + s.c_1 * δh_σ - s.c_1 - s.c_μ * sum(s.recombination_weights)
+    ) # Eq. (47), part 1  
+    mul!(s.covariance_matrix, s.p_c, s.p_c', s.c_1, true) # Eq. (47), rank 1 update
     for i in 1:(s.λ)
         w_i = s.recombination_weights[i]
         wᵒi = w_i # Eq. (46)
@@ -166,15 +236,17 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
             mul!(cinv_y, cov_invsqrt, s.ys_c[i])
             wᵒi *= n_coords / norm(cinv_y)^2
         end
-        mul!(s.covm, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
+        mul!(s.covariance_matrix, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
     # move covariance matrix, p_c and p_σ to new mean point
-    s.covm_eigen = eigen(Symmetric(s.covm))
+    s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
     eigenvector_transport!(
-        M, s.covm_eigen, s.p_m, new_m, s.basis, s.vector_transport_method
+        M, s.covariance_matrix_eigen, s.p_m, new_m, s.basis, s.vector_transport_method
     )
     mul!(
-        s.covm, s.covm_eigen.vectors, Diagonal(s.covm_eigen.values) * s.covm_eigen.vectors'
+        s.covariance_matrix,
+        s.covariance_matrix_eigen.vectors,
+        Diagonal(s.covariance_matrix_eigen.values) * s.covariance_matrix_eigen.vectors',
     )
 
     get_vector!(M, Y_m, s.p_m, s.p_σ, s.basis)
@@ -296,13 +368,12 @@ function cma_es(
     c_σ = (μ_eff + 2) / (n_coords + μ_eff + 5) # Eq. (55)
     d_σ = 1 + 2 * max(0, sqrt((μ_eff - 1) / (n_coords + 1)) - 1) + c_σ # Eq. (55)
     c_c = (4 + μ_eff / n_coords) / (n_coords + 4 + 2 * μ_eff / n_coords) # Eq. (56)
-    population = [allocate(M, p_m) for _ in 1:λ]
     # approximation of expected value of norm of standard n_coords-variate normal distribution
     e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
-    covm = Matrix{number_eltype(p_m)}(I, n_coords, n_coords)
+    covariance_matrix = Matrix{number_eltype(p_m)}(I, n_coords, n_coords)
     state = CMAESState(
-        allocate(M, p_m),
-        Inf,
+        M,
+        p_m,
         μ,
         λ,
         μ_eff,
@@ -313,20 +384,8 @@ function cma_es(
         c_m,
         d_σ,
         stopping_criterion,
-        population,
-        [similar(Vector{Float64}, n_coords) for _ in 1:λ],
-        covm,
-        eigen(covm),
-        one(c_1),
-        Inf,
-        Inf,
-        Inf,
-        p_m,
+        covariance_matrix,
         σ,
-        zeros(typeof(c_1), n_coords),
-        zeros(typeof(c_1), n_coords),
-        ones(typeof(c_1), n_coords),
-        zeros(typeof(c_1), n_coords),
         e_mv_norm,
         recombination_weights,
         retraction_method,
@@ -402,7 +461,7 @@ function (c::StopWhenCovarianceIllConditioned)(
         c.at_iteration = 0
         return false
     end
-    c.last_cond = s.covm_cond
+    c.last_cond = s.covariance_matrix_cond
     if i > 0 && c.last_cond > c.threshold
         c.at_iteration = i
         return true
@@ -412,7 +471,7 @@ end
 function status_summary(c::StopWhenCovarianceIllConditioned)
     has_stopped = c.at_iteration > 0
     s = has_stopped ? "reached" : "not reached"
-    return "cond(s.covm) > $(c.threshold):\t$s"
+    return "cond(s.covariance_matrix) > $(c.threshold):\t$s"
 end
 function get_reason(c::StopWhenCovarianceIllConditioned)
     return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
