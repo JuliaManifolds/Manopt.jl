@@ -4,7 +4,7 @@
 CurrentModule = Manopt
 ```
 
-The CMA-ES algorithm has been implemented based on [Hansen:2023](@cite) paper with basic Riemannian adaptations, related to transport of covariance matrix and its update vectors. Other attempts at adapting CMA-ES to Riemannian optimzation include [ColuttoFruhaufFuchsScherzer:2010](@cite).
+The CMA-ES algorithm has been implemented based on [Hansen:2023](@cite) with basic Riemannian adaptations, related to transport of covariance matrix and its update vectors. Other attempts at adapting CMA-ES to Riemannian optimzation include [ColuttoFruhaufFuchsScherzer:2010](@cite).
 The algorithm is suitable for global optimization.
 
 Covariance matrix transport between consecutive mean points is handled by `eigenvector_transport!` function which is based on the idea of transport of matrix eigenvectors.
