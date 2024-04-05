@@ -19,7 +19,7 @@ State of covariance matrix adaptation evolution strategy.
 * `c_σ`                         decay rate for the cumulation path for the step-size control
 * `c_m`                         learning rate for the mean
 * `d_σ`                         damping parameter for step-size update
-* `stop`                        stopping criteria
+* `stop`                        stopping criteria, [`StoppingCriterion`](@ref)
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
@@ -36,14 +36,14 @@ State of covariance matrix adaptation evolution strategy.
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
-* `retraction_method`
-* `vector_transport_method`
-* `basis`
-* `rng`
+* `retraction_method`           an `AbstractRetractionMethod`
+* `vector_transport_method`     a vector transport to use
+* `basis`                       a real coefficient basis for covariance matrix
+* `rng`                         RNG for generating new points
 
 # Constructor
 
-    function CMAESState(
+    CMAESState(
         M::AbstractManifold,
         p_m::P,
         μ::Int,
@@ -58,11 +58,11 @@ State of covariance matrix adaptation evolution strategy.
         stop::TStopping,
         covariance_matrix::Matrix{TParams},
         σ::TParams,
-        recombination_weights::Vector{TParams},
-        retraction_method::TRetraction,
-        vector_transport_method::TVTM,
-        basis::TB,
-        rng::TRng,
+        recombination_weights::Vector{TParams};
+        retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
+        vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
+        basis::TB=DefaultOrthonormalBasis(),
+        rng::TRng=default_rng(),
     ) where {
         P,
         TParams<:Real,
