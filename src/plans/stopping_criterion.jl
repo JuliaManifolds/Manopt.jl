@@ -898,7 +898,7 @@ concatenation of all reasons (assuming that all non-indicating return `""`).
 mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     criteria::TCriteria
     reason::String
-    StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
+    StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, "")
 end
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
