@@ -135,11 +135,11 @@ function CMAESState(
     stop::TStopping,
     covariance_matrix::Matrix{TParams},
     σ::TParams,
-    recombination_weights::Vector{TParams},
-    retraction_method::TRetraction,
-    vector_transport_method::TVTM,
-    basis::TB,
-    rng::TRng,
+    recombination_weights::Vector{TParams};
+    retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
+    vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
+    basis::TB=DefaultOrthonormalBasis(),
+    rng::TRng=default_rng(),
 ) where {
     P,
     TParams<:Real,
@@ -152,6 +152,11 @@ function CMAESState(
     n_coords = number_of_coordinates(M, basis)
     # approximation of expected value of norm of standard n_coords-variate normal distribution
     e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
+
+    @assert μ_eff >= 1
+    @assert μ_eff <= μ
+    @assert sum(recombination_weights[1:μ]) ≈ 1
+
     return CMAESState{P,TParams,TStopping,TRetraction,TVTM,TB,TRng}(
         allocate(M, p_m),
         Inf,
@@ -425,8 +430,6 @@ function cma_es!(
     wp = [log((λ + 1) / 2) - log(i) for i in 1:λ] # Eq. (49)
     μ = Int(floor(λ / 2)) # Table 1 caption
     μ_eff = (sum(wp[1:μ])^2) / (sum(x -> x^2, wp[1:μ]))  # Table 1 caption
-    @assert μ_eff >= 1
-    @assert μ_eff <= μ
     μ_eff⁻ = (sum(wp[(μ + 1):end])^2) / (sum(x -> x^2, wp[(μ + 1):end]))
 
     αμ_eff⁻ = 1 + (2 * μ_eff⁻) / (μ_eff + 2) # Eq. (51)
@@ -447,7 +450,6 @@ function cma_es!(
     ] # Eq. (53)
     c_m = 1.0 # Note below Eq. (9)
 
-    @assert sum(recombination_weights[1:μ]) ≈ 1
     c_σ = (μ_eff + 2) / (n_coords + μ_eff + 5) # Eq. (55)
     d_σ = 1 + 2 * max(0, sqrt((μ_eff - 1) / (n_coords + 1)) - 1) + c_σ # Eq. (55)
     c_c = (4 + μ_eff / n_coords) / (n_coords + 4 + 2 * μ_eff / n_coords) # Eq. (56)
@@ -467,11 +469,11 @@ function cma_es!(
         stopping_criterion,
         covariance_matrix,
         σ,
-        recombination_weights,
-        retraction_method,
-        vector_transport_method,
-        basis,
-        rng,
+        recombination_weights;
+        retraction_method=retraction_method,
+        vector_transport_method=vector_transport_method,
+        basis=basis,
+        rng=rng,
     )
 
     d_state = decorate_state!(state; kwargs...)
