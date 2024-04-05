@@ -23,8 +23,8 @@ State of covariance matrix adaptation evolution strategy.
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
-* `covariance_matrix_eigen`     eigendecomposition of covariance_matrix
-* `covariance_matrix_cond`      condition number of covariance_matrix, updated after eigendecomposition
+* `covariance_matrix_eigen`     eigendecomposition of `covariance_matrix`
+* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigendecomposition
 * `best_fitness_current_gen`    best fitness value of individuals in the current generation
 * `median_fitness_current_gen`  median fitness value of individuals in the current generation
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
