@@ -5,6 +5,77 @@
     CMAESState{P,T} <: AbstractManoptSolverState
 
 State of covariance matrix adaptation evolution strategy.
+
+# Fields
+
+* `p`                           the best point found so far
+* `p_obj`                       objective value at `p`
+* `μ`                           parent number
+* `λ`                           population size
+* `μ_eff`                       variance effective selection mass for the mean
+* `c_1`                         learning rate for the rank-one update
+* `c_c`                         decay rate for cumulation path for the rank-one update
+* `c_μ`                         learning rate for the rank-μ update
+* `c_σ`                         decay rate for the cumulation path for the step-size control
+* `c_m`                         learning rate for the mean
+* `d_σ`                         damping parameter for step-size update
+* `stop`                        stopping criteria
+* `population`                  population of the current generation
+* `ys_c`                        coordinates of random vectors for the current generation
+* `covariance_matrix`           coordinates of the covariance matrix
+* `covariance_matrix_eigen`     eigendecomposition of covariance_matrix
+* `covariance_matrix_cond`      condition number of covariance_matrix, updated after eigendecomposition
+* `best_fitness_current_gen`    best fitness value of individuals in the current generation
+* `median_fitness_current_gen`  median fitness value of individuals in the current generation
+* `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
+* `p_m`                         point around which we search for new candidates
+* `σ`                           step size
+* `p_σ`                         coordinates of a vector in ``T_{p_m} \mathcal M``
+* `p_c`                         coordinates of a vector in ``T_{p_m} \mathcal M``
+* `deviations`                  standard deviations of coordinate RNG
+* `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
+* `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
+* `recombination_weights`       recombination weights used for updating covariance matrix
+* `retraction_method`
+* `vector_transport_method`
+* `basis`
+* `rng`
+
+# Constructor
+
+    function CMAESState(
+        M::AbstractManifold,
+        p_m::P,
+        μ::Int,
+        λ::Int,
+        μ_eff::TParams,
+        c_1::TParams,
+        c_c::TParams,
+        c_μ::TParams,
+        c_σ::TParams,
+        c_m::TParams,
+        d_σ::TParams,
+        stop::TStopping,
+        covariance_matrix::Matrix{TParams},
+        σ::TParams,
+        recombination_weights::Vector{TParams},
+        retraction_method::TRetraction,
+        vector_transport_method::TVTM,
+        basis::TB,
+        rng::TRng,
+    ) where {
+        P,
+        TParams<:Real,
+        TStopping<:StoppingCriterion,
+        TRetraction<:AbstractRetractionMethod,
+        TVTM<:AbstractVectorTransportMethod,
+        TB<:AbstractBasis,
+        TRng<:AbstractRNG,
+    }
+
+# See also
+
+[`cma_es`](@ref)
 """
 mutable struct CMAESState{
     P,
@@ -15,33 +86,33 @@ mutable struct CMAESState{
     TB<:AbstractBasis,
     TRng<:AbstractRNG,
 } <: AbstractManoptSolverState
-    p::P # best point found so far
+    p::P
     p_obj::TParams
-    μ::Int # parent number
-    λ::Int # population size
-    μ_eff::TParams # variance effective selection mass for the mean
-    c_1::TParams # learning rate for the rank-one update
-    c_c::TParams # decay rate for cumulation path for the rank-one update
-    c_μ::TParams # learning rate for the rank-μ update
-    c_σ::TParams # decay rate for the comulation path for the step-size control
-    c_m::TParams # learning rate for the mean
-    d_σ::TParams # damping parameter for step-size update
+    μ::Int
+    λ::Int
+    μ_eff::TParams
+    c_1::TParams
+    c_c::TParams
+    c_μ::TParams
+    c_σ::TParams
+    c_m::TParams
+    d_σ::TParams
     stop::TStopping
-    population::Vector{P} # population of the current generation
+    population::Vector{P}
     ys_c::Vector{Vector{TParams}}
-    covariance_matrix::Matrix{TParams} # coordinates of the covariance matrix
-    covariance_matrix_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}} # eigendecomposition of covariance_matrix
-    covariance_matrix_cond::TParams # condition number of covariance_matrix, updated after eigendecomposition
+    covariance_matrix::Matrix{TParams}
+    covariance_matrix_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}}
+    covariance_matrix_cond::TParams
     best_fitness_current_gen::TParams
     median_fitness_current_gen::TParams
     worst_fitness_current_gen::TParams
-    p_m::P # point around which we search for new candidates
-    σ::TParams # step size
-    p_σ::Vector{TParams} # coordinates of a vector in T_{p_m} M
-    p_c::Vector{TParams} # coordinates of a vector in T_{p_m} M
-    deviations::Vector{TParams} # standard deviations of coordinate RNG
-    buffer::Vector{TParams} # buffer for random number generation and wmean_y_c of length n_coords
-    e_mv_norm::TParams # expected value of norm of the n-variable standard normal distribution
+    p_m::P
+    σ::TParams
+    p_σ::Vector{TParams}
+    p_c::Vector{TParams}
+    deviations::Vector{TParams}
+    buffer::Vector{TParams}
+    e_mv_norm::TParams
     recombination_weights::Vector{TParams}
     retraction_method::TRetraction
     vector_transport_method::TVTM
@@ -64,7 +135,6 @@ function CMAESState(
     stop::TStopping,
     covariance_matrix::Matrix{TParams},
     σ::TParams,
-    e_mv_norm::TParams,
     recombination_weights::Vector{TParams},
     retraction_method::TRetraction,
     vector_transport_method::TVTM,
@@ -79,7 +149,9 @@ function CMAESState(
     TB<:AbstractBasis,
     TRng<:AbstractRNG,
 }
-    n_coords = size(covariance_matrix, 1)
+    n_coords = number_of_coordinates(M, basis)
+    # approximation of expected value of norm of standard n_coords-variate normal distribution
+    e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
     return CMAESState{P,TParams,TStopping,TRetraction,TVTM,TB,TRng}(
         allocate(M, p_m),
         Inf,
@@ -139,16 +211,12 @@ function show(io::IO, s::CMAESState)
     * basis:                     $(s.basis)
 
     ## Current values
-    * covariance_matrix:          $(s.covariance_matrix)
+    * p_obj:                      $(s.p_obj)
     * covariance_matrix_cond:     $(s.covariance_matrix_cond)
     * best_fitness_current_gen:   $(s.best_fitness_current_gen)
     * median_fitness_current_gen: $(s.median_fitness_current_gen)
     * worst_fitness_current_gen:  $(s.worst_fitness_current_gen)
     * σ:                          $(s.σ)
-    * p_σ:                        $(s.p_σ)
-    * p_c:                        $(s.p_c)
-    * p_m:                        $(s.p_m)
-    * deviations:                 $(s.deviations)
 
     ## Stopping criterion
 
@@ -262,9 +330,56 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     return s
 end
 
-function cma_es(M::AbstractManifold, f, p_m=rand(M); kwargs...)
+@doc raw"""
+    cma_es(M, f, p_m=rand(M); σ::Real=1.0, kwargs...)
+
+Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
+randomized optimization. It is suitable for complicated non-convex functions. It can be
+reasonably expected to find global minimum within 3σ distance from `p_m`.
+
+Implementation is based on [Hansen:2023](@cite) with basic adaptations to the Riemannian
+setting.
+
+# Input
+
+* `M`:      a manifold ``\mathcal M``
+* `f`:      a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
+
+# Optional
+
+* `p_m`:                (`rand(M)`) an initial point `p`
+* `σ`:                  (`1.0`) initial standard deviation
+* `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
+  increased for a more thorough global search but decreasing is not recommended)
+* `tol_fun`:            (`1e-12`) tolerance for the `StopWhenPopulationCostConcentrated`, similar to
+  absolute difference between function values at subsequent points
+* `tol_x`:              (`1e-12`) tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
+  absolute difference between subsequent point but actually computed from distribution
+  parameters.
+* `stopping_criterion`: (`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`)
+* `retraction_method`:  (`default_retraction_method(M, typeof(p_m))`)
+* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p_m))`)
+* `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
+* `rng`:                (`default_rng()`) random number generator for generating new points
+  on `M`
+
+# Output
+
+the obtained (approximate) minimizer ``p^*``.
+To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
+"""
+function cma_es(M::AbstractManifold, f; kwargs...)
     mco = ManifoldCostObjective(f)
-    return cma_es(M, mco, p_m; kwargs...)
+    return cma_es!(M, mco, rand(M); kwargs...)
+end
+function cma_es(M::AbstractManifold, f, p_m; kwargs...)
+    mco = ManifoldCostObjective(f)
+    return cma_es!(M, mco, copy(M, p_m); kwargs...)
+end
+
+function cma_es!(M::AbstractManifold, f, p_m; kwargs...)
+    mco = ManifoldCostObjective(f)
+    return cma_es!(M, mco, p_m; kwargs...)
 end
 
 function default_cma_es_stopping_criterion(
@@ -285,42 +400,10 @@ function default_cma_es_stopping_criterion(
            StopWhenPopulationStronglyConcentrated(tol_x)
 end
 
-@doc raw"""
-    cma_es(M, f, p_m=rand(M); σ::Real=1.0, kwargs...)
-
-Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
-randomized optimization. It is suitable for complicated non-convex functions. It can be
-reasonably expected to find global minimum within 3σ distance from `p_m`.
-
-Implementation is based on [Hansen:2023](@cite) with basic adaptations to the Riemannian
-setting.
-
-# Input
-
-* `M`:      a manifold ``\mathcal M``
-* `f`:      a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
-
-# Optional
-
-* `p_m`:    (`rand(M)`) an initial point `p`
-* `σ`       (`1.0`) initial standard deviation
-* `λ`       (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
-  increased for a more thorough global search but decreasing is not recommended)
-* `tol_fun` (`1e-12`) tolerance for the `StopWhenPopulationCostConcentrated`, similar to
-  absolute difference between function values at subsequent points
-* `tol_x`   (`1e-12`) tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
-  absolute difference between subsequent point but actually computed from distribution
-  parameters.
-
-# Output
-
-the obtained (approximate) minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
-"""
-function cma_es(
+function cma_es!(
     M::AbstractManifold,
     mco::O,
-    p_m=rand(M);
+    p_m;
     σ::Real=1.0,
     λ::Int=4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
     tol_fun::Real=1e-12,
@@ -368,8 +451,6 @@ function cma_es(
     c_σ = (μ_eff + 2) / (n_coords + μ_eff + 5) # Eq. (55)
     d_σ = 1 + 2 * max(0, sqrt((μ_eff - 1) / (n_coords + 1)) - 1) + c_σ # Eq. (55)
     c_c = (4 + μ_eff / n_coords) / (n_coords + 4 + 2 * μ_eff / n_coords) # Eq. (56)
-    # approximation of expected value of norm of standard n_coords-variate normal distribution
-    e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
     covariance_matrix = Matrix{number_eltype(p_m)}(I, n_coords, n_coords)
     state = CMAESState(
         M,
@@ -386,7 +467,6 @@ function cma_es(
         stopping_criterion,
         covariance_matrix,
         σ,
-        e_mv_norm,
         recombination_weights,
         retraction_method,
         vector_transport_method,
