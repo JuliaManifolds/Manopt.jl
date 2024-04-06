@@ -30,6 +30,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         sn = StopWhenAny(StopAfterIteration(10), s3)
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test startswith(repr(sn), "StopWhenAny with the")
+        @test Manopt._fast_any(x -> false, ())
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
