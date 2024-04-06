@@ -5,6 +5,12 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.59] - unreleased
+
+### Added
+
+* A Riemannian variant of the CMA-ES (Covariance Matrix Adaptation Evolutionary Strategy) algorithm, `cma_es`.
+
 ## [0.4.58] - March 18, 2024
 
 ### Added

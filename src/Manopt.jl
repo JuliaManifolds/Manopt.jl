@@ -18,7 +18,20 @@ using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
-    Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm
+    cond,
+    Diagonal,
+    I,
+    Eigen,
+    eigen,
+    eigen!,
+    eigvals,
+    tril,
+    Symmetric,
+    dot,
+    cholesky,
+    eigmin,
+    opnorm,
+    mul!
 using ManifoldDiff:
     adjoint_differential_log_argument,
     adjoint_differential_log_argument!,
@@ -93,6 +106,7 @@ using ManifoldsBase:
     inner,
     inverse_retract,
     inverse_retract!,
+    is_flat,
     is_point,
     is_vector,
     log,
@@ -102,6 +116,7 @@ using ManifoldsBase:
     mid_point!,
     norm,
     number_eltype,
+    number_of_coordinates,
     power_dimensions,
     project,
     project!,
@@ -128,10 +143,10 @@ using Markdown
 using Preferences:
     @load_preference, @set_preferences!, @has_preference, @delete_preferences!
 using Printf
-using Random: shuffle!, rand, randperm
+using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
-using Statistics: cor, cov, mean, std
+using Statistics: cor, cov, mean, median, std
 
 include("plans/plan.jl")
 # solvers general framework
@@ -142,6 +157,7 @@ include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
+include("solvers/cma_es.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
@@ -416,6 +432,8 @@ export adaptive_regularization_with_cubics,
     convex_bundle_method!,
     ChambollePock,
     ChambollePock!,
+    cma_es,
+    cma_es!,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
     cyclic_proximal_point,
@@ -477,18 +495,24 @@ export StopAfter,
     StopWhenAll,
     StopWhenAllLanczosVectorsUsed,
     StopWhenAny,
+    StopWhenBestCostInGenerationConstant,
     StopWhenChangeLess,
     StopWhenCostLess,
     StopWhenCostNaN,
+    StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
     StopWhenEntryChangeLess,
+    StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
+    StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
+    StopWhenPopulationDiverges,
+    StopWhenPopulationStronglyConcentrated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
