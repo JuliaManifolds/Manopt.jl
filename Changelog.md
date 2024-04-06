@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * A Riemannian variant of the CMA-ES (Covariance Matrix Adaptation Evolutionary Strategy) algorithm, `cma_es`.
 
+### Fixed
+
+* The constructor dispatch for `StopWhenAny` with `Vector` had incorrect element type assertion which was fixed.
+
 ## [0.4.58] - March 18, 2024
 
 ### Added
