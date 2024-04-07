@@ -190,6 +190,60 @@ function record_or_reset!(r::RecordAction, v, i::Int)
     end
 end
 
+#
+# Meta Record States
+#
+
+@doc raw"""
+    RecordEvery <: RecordAction
+
+record only every $i$th iteration.
+Otherwise (optionally, but activated by default) just update internal tracking
+values.
+
+This method does not perform any record itself but relies on it's children's methods
+"""
+mutable struct RecordEvery <: RecordAction
+    record::RecordAction
+    every::Int
+    always_update::Bool
+    function RecordEvery(r::RecordAction, every::Int=1, always_update::Bool=true)
+        return new(r, every, always_update)
+    end
+end
+function (re::RecordEvery)(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+)
+    if i <= 0
+        re.record(amp, ams, i)
+    elseif (rem(i, re.every) == 0)
+        re.record(amp, ams, i)
+    elseif re.always_update
+        re.record(amp, ams, 0)
+    end
+    # Set activity to activate or decativate subsolvers
+    # note that since recording is happening at the end
+    # sets activity for the _next_ iteration
+    return set_manopt_parameter!(
+        ams, :SubState, :Record, :active, !(i < 1) && (rem(i + 1, re.every) == 0)
+    )
+end
+function show(io::IO, re::RecordEvery)
+    return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
+end
+function status_summary(re::RecordEvery)
+    s = ""
+    if re.record isa RecordGroup
+        s = status_summary(re.record)[3:(end - 2)]
+    else
+        s = "$(re.record)"
+    end
+    return "[$s, $(re.every)]"
+end
+get_record(r::RecordEvery) = get_record(r.record)
+get_record(r::RecordEvery, i) = get_record(r.record, i)
+getindex(r::RecordEvery, i) = get_record(r, i)
+
 """
     RecordGroup <: RecordAction
 
@@ -307,6 +361,96 @@ getindex(r::RecordGroup, s::NTuple{N,Symbol}) where {N} = get_record(r, s)
 getindex(r::RecordGroup, i) = get_record(r, i)
 
 @doc raw"""
+    RecordSubsolver <: RecordAction
+
+Record the current subsolvers recording, by calling [`get_record`](@ref)
+on the substate with
+
+# Fields
+* `records`: an array to store the recorded values
+* `symbols`: arguments for [`get_record`](@ref). Defaults to just one symbol `:Iteration`, but could be set to also record the `:Stop` action.
+
+# Constructor
+
+    RecordSubsolverRecords(; record=[:Iteration,], record_type=eltype([]))
+"""
+mutable struct RecordSubsolverRecords{R} <: RecordAction
+    recorded_values::Vector{R}
+    record::Vector{Symbol}
+end
+function RecordSubsolverRecords(;
+    record::Vector{Symbol}=[:Iteration], record_type=eltype([])
+)
+    return RecordSubsolverRecords{record_type}(record_type[], record)
+end
+function (rsr::RecordSubsolverRecords)(
+    ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+)
+    return record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
+end
+function show(io::IO, rsr::RecordSubsolverRecords{R}) where {R}
+    return print(io, "RecordSubsolverRecords(; record=$(rsr.record), record_type=$R)")
+end
+status_summary(::RecordSubsolverRecords) = ":SubsolverRecord"
+
+@doc raw"""
+    RecordWhenActive <: RecordAction
+
+record action that only records if the `active` boolean is set to true.
+This can be set from outside and is for example triggered by |`RecordEvery`](@ref)
+on recordings of the subsolver.
+While this is for subsolvers maybe not completely necessary, recording vlaues that
+are never accessible, is not that useful.
+
+# Fields
+
+* `active`:        a boolean that can (de-)activated from outside to turn on/off debug
+* `always_update`: whether or not to call the inner debugs with iteration `-1` even inactive state
+
+# Constructor
+
+    RecordWhenActive(r::RecordAction, active=true, always_update=true)
+"""
+mutable struct RecordWhenActive{R<:RecordAction} <: RecordAction
+    record::R
+    active::Bool
+    always_update::Bool
+    function RecordWhenActive(
+        r::R, active::Bool=true, always_update::Bool=true
+    ) where {R<:RecordAction}
+        return RecordWhenActive{R}(r, active, always_update)
+    end
+end
+
+function (rwa::RecordWhenActive)(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+)
+    if rwa.active
+        rwa.record(amp, ams, i)
+    elseif (rwa.always_update)
+        rwa.record(amp, ams, 0)
+    end
+end
+function show(io::IO, rwa::RecordWhenActive)
+    return print(io, "RecordWhenActive($(rwa.debug), $(rwa.active), $(rwa.always_update))")
+end
+function status_summary(rwa::RecordWhenActive)
+    return repr(rwa)
+end
+function set_manopt_parameter!(rwa::RecordWhenActive, v::Val, args...)
+    set_manopt_parameter!(rwa.record, v, args...)
+    return rwa
+end
+function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:active}, v)
+    println("Works. TODO: Remove this once record works nicely")
+    return rwa.active = v
+end
+
+#
+# Specific Record types
+#
+
+@doc raw"""
     RecordCost <: RecordAction
 
 Record the current cost function value, see [`get_cost`](@ref).
@@ -321,51 +465,6 @@ end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
 status_summary(di::RecordCost) = ":Cost"
 
-@doc raw"""
-    RecordEvery <: RecordAction
-
-record only every $i$th iteration.
-Otherwise (optionally, but activated by default) just update internal tracking
-values.
-
-This method does not perform any record itself but relies on it's children's methods
-"""
-mutable struct RecordEvery <: RecordAction
-    record::RecordAction
-    every::Int
-    always_update::Bool
-    function RecordEvery(r::RecordAction, every::Int=1, always_update::Bool=true)
-        return new(r, every, always_update)
-    end
-end
-function (d::RecordEvery)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    if i <= 0
-        d.record(p, s, i)
-    elseif (rem(i, d.every) == 0)
-        d.record(p, s, i)
-    elseif d.always_update
-        d.record(p, s, 0)
-    end
-end
-function show(io::IO, re::RecordEvery)
-    return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
-end
-function status_summary(re::RecordEvery)
-    s = ""
-    if re.record isa RecordGroup
-        s = status_summary(re.record)[3:(end - 2)]
-    else
-        s = "$(re.record)"
-    end
-    return "[$s, $(re.every)]"
-end
-get_record(r::RecordEvery) = get_record(r.record)
-get_record(r::RecordEvery, i) = get_record(r.record, i)
-getindex(r::RecordEvery, i) = get_record(r, i)
-
-#
-# Special single ones
-#
 @doc raw"""
     RecordChange <: RecordAction
 
@@ -568,6 +667,24 @@ show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
 status_summary(::RecordIteration) = ":Iteration"
 
 @doc raw"""
+    RecordStopingReason <: RecordAction
+
+Record reason the solver stopped, see [`get_reason`](@ref).
+"""
+mutable struct RecordStoppingReason <: RecordAction
+    recorded_values::Vector{String}
+    RecordStopingReason() = new(String[])
+end
+function (rsr::RecordStoppingReason)(
+    ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+)
+    s = get_reason(get_stopping_criterion(ams))
+    return (length(s) > 0) && record_or_reset!(rsr, s, i)
+end
+show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
+status_summary(di::RecordStoppingReason) = ":Stop"
+
+@doc raw"""
     RecordTime <: RecordAction
 
 record the time elapsed during the current iteration.
@@ -608,29 +725,100 @@ function show(io::IO, ri::RecordTime)
 end
 status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":Time")
 
+#
+# Factory
+#
+
 @doc raw"""
     RecordFactory(s::AbstractManoptSolverState, a)
 
-given an array of `Symbol`s and [`RecordAction`](@ref)s and `Ints`
+Generate a dictionary of [`RecordAction`](@ref)s.
 
-* The symbol `:Cost` creates a [`RecordCost`](@ref)
-* The symbol `:iteration` creates a [`RecordIteration`](@ref)
-* The symbol `:Change` creates a [`RecordChange`](@ref)
-* any other symbol creates a [`RecordEntry`](@ref) of the corresponding field in [`AbstractManoptSolverState`](@ref)
-* any [`RecordAction`](@ref) is directly included
-* an semantic pair `:symbol => RecordAction` is directly included
-* an Integer `k` introduces that record is only performed every `k`th iteration
+First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
+excluding `:Stop` and `:Subsolver`.
+This collected vector is added to the `:Iteration => [...]` pair.
+`:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
+If any of these two pairs does not exist, it is pairs are created when adding the corresponding symbols
+
+For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
+is called for the `Vector` and the result is added to the debug dictonaries entry
+with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
+when the `:Subsolver` symbol is present
+
+# Return value
+
+A dictionary for the different enrty points where debug can happen, each containing
+a [`DebugAction`](@ref) to call.
+
+Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
+one are called with an `i=0` for reset.
 """
 function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
+    # filter out :Iteration defaults
+    # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
+    iter_entries = filter(
+        x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x, Int), a
+    )
+    # Filter pairs
+    b = filter(x -> isa(x, Pair), a)
+    # Push this to the :Iteration if that exists or add that pair
+    i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
+    if !isnothing(i)
+        iter = popat!(b, i) #
+        b = [b..., :Iteration => [iter.second..., iter_entries...]]
+    else
+        (length(iter_entries) > 0) && (b = [b..., :Iteration => iter_entries])
+    end
+    # Push a StoppingCriterion to `:Stop` if that exists or add such a pair
+    if (:Stop in a)
+        i = findlast(x -> (isa(x, Pair)) && (x.first == :Stop), b)
+        if !isnothing(i)
+            stop = popat!(b, i) #
+            b = [b..., :Stop => [stop.second..., RecordActionFactory(:Stop)]]
+        else # regenerate since we have to maybe change type of b
+            b = [b..., :Stop => [RecordActionFactory(:Stop)]]
+        end
+    end
+    dictionary = Dict{Symbol,RecordAction}()
+    # Look for a global numner -> RecordEvery
+    e = filter(x -> isa(x, Int), a)
+    ae = length(e) > 0 ? last(e) : 0
+    # Run through all (updated) pairs
+    for d in b
+        dbg = RecordGroupFactory(s, d.second)
+        (:Subsolver in a) && (dbg = RecordWhenActive(dbg))
+        # Add DebugEvery to all but Start and Stop
+        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = RecordEvery(dbg, ae))
+        dictionary[d.first] = dbg
+    end
+    return dictionary
+end
+
+@doc raw"""
+    RecordGroupFactory(s::AbstractManoptSolverState, a)
+
+Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are used
+
+1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref DebugActionFactory(::Symbol))
+2. Any [`RecordAction`](@ref) is included as is.
+
+If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
+
+If any integers are present, the last of these is used to wrap the group in a
+[`DebugEvery`](@ref)`(k)`.
+
+If `:SubSolver` is present, the resulting Action is wrappedn in [`RecordWhenActive`](@ref), making it deactivatable by its parent solver.
+"""
+function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
-    for element in filter(x -> !isa(x, Int), a) # all non-integers/stopping-criteria
-        if element isa Symbol # factory for this symbol, store in a pair
-            push!(group, element => RecordActionFactory(s, element))
-        elseif element isa Pair{<:Symbol,<:RecordAction} #already a generated action
-            push!(group, element)
+    for e in filter(x -> !isa(x, Int) && (x ∉ [:Subsolver]), a) # all non-integers/stopping-criteria
+        if e isa Symbol # factory for this symbol, store in a pair
+            (e !== :WhenAcive) && push!(group, e => RecordActionFactory(s, e))
+        elseif e isa Pair{<:Symbol,<:RecordAction} #already a generated action
+            push!(group, e)
         else # process the others as elements for an action factory
-            push!(group, RecordActionFactory(s, element))
+            push!(group, RecordActionFactory(s, e))
         end
     end
     record = RecordGroup(group)
@@ -639,9 +827,12 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     if length(e) > 0
         record = RecordEvery(record, last(e))
     end
-    return (; Iteration=record)
+    (:Subsolver in a) && (record = (RecordWhenActive(record)))
+    return record
 end
-RecordFactory(s::AbstractManoptSolverState, symbol::Symbol) = RecordActionFactory(s, symbol)
+function RecordGroupFactory(s::AbstractManoptSolverState, symbol::Symbol)
+    return RecordActionFactory(s, symbol)
+end
 
 @doc raw"""
     RecordActionFactory(s)
@@ -661,18 +852,13 @@ create a [`RecordAction`](@ref) where
 RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
 RecordActionFactory(::AbstractManoptSolverState, sa::Pair{Symbol,<:RecordAction}) = sa
 function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
-    if (symbol == :Change)
-        return RecordChange()
-    elseif (symbol == :Iteration)
-        return RecordIteration()
-    elseif (symbol == :Iterate)
-        return RecordIterate(get_iterate(s))
-    elseif (symbol == :Cost)
-        return RecordCost()
-    elseif (symbol == :Time)
-        return RecordTime(; mode=:cumulative)
-    elseif (symbol == :IterativeTime)
-        return RecordTime(; mode=:iterative)
-    end
+    (symbol == :Change) && return RecordChange()
+    (symbol == :Cost) && return RecordCost()
+    (symbol == :Iterate) && return RecordIterate(get_iterate(s))
+    (symbol == :Iteration) && return RecordIteration()
+    (symbol == :IterativeTime) && return RecordTime(; mode=:iterative)
+    (symbol == :Stop) && return RecordStoppingReason()
+    (symbol == :SubsolverRecord) && return RecordSubsolverRecords()
+    (symbol == :Time) && return RecordTime(; mode=:cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end

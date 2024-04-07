@@ -164,8 +164,6 @@ Since usual debug is happening after the iteration, 1 is the default.
 # Constructor
 
     DebugEvery(d::DebugAction, every=1, always_update=true, activation_offset=1)
-
-Initialise the DebugEvery.
 """
 mutable struct DebugEvery <: DebugAction
     debug::DebugAction
@@ -476,7 +474,7 @@ mutable struct DebugEntryChange <: DebugAction
         initial_value::Any=NaN,
     )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
-            update_storage!(storage, Dict(f => initial_value))
+            update_xstorage!(storage, Dict(f => initial_value))
         end
         return new(d, f, format, io, storage)
     end
@@ -738,27 +736,27 @@ deactivate this debug
 # Fields
 
 * `active`:        a boolean that can (de-)activated from outside to turn on/off debug
-* `always_update`: whether or not to call the order debugs with iteration `-1` in active state
+* `always_update`: whether or not to call the order debugs with iteration `<=0` inactive state
 
 # Constructor
 
     DebugWhenActive(d::DebugAction, active=true, always_update=true)
-
-Initialise the DebugSubsolver.
 """
-mutable struct DebugWhenActive <: DebugAction
-    debug::DebugAction
+mutable struct DebugWhenActive{D<:DebugAction} <: DebugAction
+    debug::D
     active::Bool
     always_update::Bool
-    function DebugWhenActive(d::DebugAction, active::Bool=true, always_update::Bool=true)
-        return new(d, active, always_update)
+    function DebugWhenActive(
+        d::D, active::Bool=true, always_update::Bool=true
+    ) where {D<:Manopt.DebugAction}
+        return DebugWhenActive{D}(d, active, always_update)
     end
 end
 function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if dwa.active
         dwa.debug(p, st, i)
-    elseif dwa.always_update
-        dwa.debug(p, st, -1)
+    elseif (dwa.always_update) && (i <= 0)
+        dwa.debug(p, st, i)
     end
 end
 function show(io::IO, dwa::DebugWhenActive)
