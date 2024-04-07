@@ -53,6 +53,9 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s3.threshold == 1e-2
         # Dummy without iterations has a reasonable fallback
         @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
+
+        sn = StopWhenAny([StopAfterIteration(10)])
+        @test sn isa StoppingCriterion
     end
 
     @testset "Test StopAfter" begin
