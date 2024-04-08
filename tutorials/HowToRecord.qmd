@@ -177,7 +177,7 @@ get_record(res, :Iteration, (:Iteration, :Cost))
 ## Recording from a Subsolver
 
 One can also record from a subsolver. For that we need a problem that actually requires a subsolver. We take the constraint example from the
-[How to print debug](HotToDEbug.md) tutorial.
+[How to print debug](HowToDebug.md) tutorial.
 Maybe read that part for more details on the problem
 
 
