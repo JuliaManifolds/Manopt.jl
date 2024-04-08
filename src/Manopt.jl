@@ -552,6 +552,7 @@ export RecordEntry, RecordEntryChange, RecordTime
 export RecordGradient, RecordGradientNorm, RecordStepsize
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
+export RecordStoppingReason, RecordWhenActive, RecordSubsolver
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
 #

@@ -8,6 +8,7 @@ This tutorial illustrates how to:
 
 * record one value during the iterations;
 * record multiple values during the iterations and access them afterwards;
+* record within a subsolver
 * define an own `RecordAction` to perform individual recordings.
 
 Several predefined recordings exist, for example [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
@@ -171,6 +172,105 @@ and the other values during the iterations are
 
 ```{julia}
 get_record(res, :Iteration, (:Iteration, :Cost))
+```
+
+## Recording from a Subsolver
+
+One can also record from a subsolver. For that we need a problem that actually requires a subsolver. We take the constraint example from the
+[How to print debug](HotToDEbug.md) tutorial.
+Maybe read that part for more details on the problem
+
+
+```{julia}
+#| output: false
+d = 4
+M = Sphere(d - 1)
+v0 = project(M, [ones(2)..., zeros(d - 2)...])
+Z = v0 * v0'
+#Cost and gradient
+f(M, p) = -tr(transpose(p) * Z * p) / 2
+grad_f(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
+# Constraints
+g(M, p) = -p # now p ≥ 0
+mI = -Matrix{Float64}(I, d, d)
+# Vector of gradients of the constraint components
+grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
+p0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
+```
+
+We directly start with recording the subsolvers Iteration.
+We can specify what to record in the subsolver using the `sub_kwargs`
+keyword argument with a `Symbol => value` pair. Here we specify to record the iteration and the cost in every subsolvers step.
+
+Furthermore, we have to “collect” this recording after every sub solver run.
+This is done with the `:Subsolver` keyword in the main `record=` keyword.
+
+
+```{julia}
+#| output: false
+s1 = exact_penalty_method(
+    M,
+    f,
+    grad_f,
+    p0;
+    g = g,
+    grad_g = grad_g,
+    record = [:Iteration, :Cost, :Subsolver],
+    sub_kwargs = [:record => [:Iteration, :Cost]],
+    return_state=true,
+);
+```
+
+Then the first entry of the record containts the iterate, the (main solvers) cost, and the third entry is the recording of the subsolver.
+
+```{julia}
+get_record(s1)[1]
+```
+
+When adding a number to not record on every iteration, the `:Subsolver` keyword of course still also only “copies over” the subsolver recordings when active. But one could avoid allocations on the other runs. This is done, by specifying the sub solver as `:WhenActive`
+
+```{julia}
+#| output: false
+s2 = exact_penalty_method(
+    M,
+    f,
+    grad_f,
+    p0;
+    g = g,
+    grad_g = grad_g,
+    record = [:Iteration, :Cost, :Subsolver, 25],
+    sub_kwargs = [:record => [:Iteration, :Cost, :WhenActive]],
+    return_state=true,
+);
+```
+
+Then
+
+```{julia}
+get_record(s2)
+```
+
+Finally, instead of recording iterations, we can also specify to record the stopping criterion and final cost by adding that to `:Stop` of the sub solvers record. Then we can specify – as so often in a tuple, that the `:Subsolver` should record `:Stop` (by devault it takes over `:Iteration`)
+
+```{julia}
+#| output: false
+s3 = exact_penalty_method(
+    M,
+    f,
+    grad_f,
+    p0;
+    g = g,
+    grad_g = grad_g,
+    record = [:Iteration, :Cost, (:Subsolver, :Stop), 25],
+    sub_kwargs = [:record => [:Stop => [:Stop, :Cost]]],
+    return_state=true,
+);
+```
+
+Then the following displays also the reasons why each of the recorded subsolvers stopped – and the corresponding cost
+
+```{julia}
+get_record(s3)
 ```
 
 ## Writing an own [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s

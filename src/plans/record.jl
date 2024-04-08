@@ -65,7 +65,7 @@ function RecordSolverState(s::S, format::Vector{<:Any}) where {S<:AbstractManopt
     return RecordSolverState{S}(s; RecordFactory(get_state(s), format)...)
 end
 function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverState}
-    return RecordSolverState{S}(s; Iteration=RecordFactory(get_state(s), symbol))
+    return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
 function status_summary(rst::RecordSolverState)
     if length(rst.recordDictionary) > 0
@@ -198,7 +198,7 @@ function record_or_reset!(r::RecordAction, v, i::Int)
     if i > 0
         push!(r.recorded_values, deepcopy(v))
     elseif i < 0 # reset if negative
-        r.recorded_values = similar(r.recorded_values) # Reset to empty
+        r.recorded_values = empty(r.recorded_values) # Reset to empty
     end
 end
 
@@ -236,9 +236,10 @@ function (re::RecordEvery)(
     # Set activity to activate or decativate subsolvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
-    return set_manopt_parameter!(
+    set_manopt_parameter!(
         ams, :SubState, :Record, :active, !(i < 1) && (rem(i + 1, re.every) == 0)
     )
+    return nothing
 end
 function show(io::IO, re::RecordEvery)
     return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
@@ -390,15 +391,15 @@ mutable struct RecordSubsolver{R} <: RecordAction
     recorded_values::Vector{R}
     record::Vector{Symbol}
 end
-function RecordSubsolver(; record::Vector{Symbol}=[:Iteration], record_type=eltype([]))
-    return RecordSubsolver{record_type}(record_type[], record)
+function RecordSubsolver(;
+    record::Union{Symbol,Vector{Symbol}}=[:Iteration], record_type=eltype([])
+)
+    r = record isa Symbol ? [record] : record
+    return RecordSubsolver{record_type}(record_type[], r)
 end
 function (rsr::RecordSubsolver)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
 )
-    (i > 0) && println(
-        "Recording sub with $(rsr.record) yields $(get_record(get_sub_state(ams), rsr.record...))",
-    )
     record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
     return nothing
 end
@@ -681,13 +682,13 @@ show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
 status_summary(::RecordIteration) = ":Iteration"
 
 @doc raw"""
-    RecordStopingReason <: RecordAction
+    RecordStoppingReason <: RecordAction
 
 Record reason the solver stopped, see [`get_reason`](@ref).
 """
 mutable struct RecordStoppingReason <: RecordAction
     recorded_values::Vector{String}
-    RecordStopingReason() = new(String[])
+    RecordStoppingReason() = new(String[])
 end
 function (rsr::RecordStoppingReason)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
@@ -807,7 +808,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     end
     return dictionary
 end
-
+RecordFactory(s::AbstractManoptSolverState, a) = RecordFactory(s, [a])
 @doc raw"""
     RecordGroupFactory(s::AbstractManoptSolverState, a)
 
@@ -838,16 +839,18 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     (:WhenActive in a) && (record = (RecordWhenActive(record)))
     return record
 end
-function RecordGroupFactory(s::AbstractManoptSolverState, symbol::Symbol)
+function RecordGroupFactory(
+    s::AbstractManoptSolverState, symbol::Union{Symbol,<:RecordAction}
+)
     return RecordActionFactory(s, symbol)
 end
 
 @doc raw"""
-    RecordActionFactory(s)
+    RecordActionFactory(s::AbstractManoptSolverState, a)
 
 create a [`RecordAction`](@ref) where
 
-* a [`RecordAction`](@ref) is passed through
+* a [`RecordAction`](@ref) `a` is passed through
 * a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
   of
   * `:Change`        to record the change of the iterates in `o.x``
@@ -869,4 +872,8 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Subsolver) && return RecordSubsolver()
     (symbol == :Time) && return RecordTime(; mode=:cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
+end
+function RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol,Symbol})
+    (t[1] == :Subsolver) && return RecordSubsolver(; record=t[2])
+    return RecordEntry(getfield(s, t[1]), t[1])
 end
