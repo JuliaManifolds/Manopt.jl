@@ -1175,7 +1175,7 @@ making it deactivatable by its parent solver.
 """
 function DebugGroupFactory(a::Vector; activation_offset=1)
     group = DebugAction[]
-    for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Sub
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
         push!(group, DebugActionFactory(d))
     end
     l = length(group)

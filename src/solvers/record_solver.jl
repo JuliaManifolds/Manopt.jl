@@ -7,6 +7,9 @@ that were added to the `:Start` entry.
 function initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
     initialize_solver!(amp, rss.state)
     get(rss.recordDictionary, :Start, RecordGroup())(amp, get_state(rss), 0)
+    # Reset Iteation and Stop
+    get(rss.recordDictionary, :Iteration, RecordGroup())(amp, get_state(rss), 0)
+    get(rss.recordDictionary, :Stop, RecordGroup())(amp, get_state(rss), 0)
     return rss
 end
 

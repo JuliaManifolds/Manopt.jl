@@ -95,12 +95,24 @@ has_record(s::AbstractManoptSolverState) = _has_record(s, dispatch_state_decorat
 _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
-# pass through
-function set_manopt_parameter!(rss::RecordSolverState, e::Symbol, args...)
-    return set_manopt_parameter!(rss.state, e, args...)
+"""
+    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
+
+Set certain values specified by `args...` into the elements of the `debugDictionary`
+"""
+function set_manopt_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
+    for d in values(rss.recordDictionary)
+        set_manopt_parameter!(d, args...)
+    end
+    return rss
 end
-function get_manopt_parameter(rss::RecordSolverState, e::Symbol, args...)
-    return get_manopt_parameter(rss.state, e, args...)
+# all other pass through
+function set_manopt_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return set_manopt_parameter!(rss.state, v, args...)
+end
+# all other pass through
+function get_manopt_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return get_manopt_parameter(rss.state, v, args...)
 end
 
 @doc """
@@ -186,7 +198,7 @@ function record_or_reset!(r::RecordAction, v, i::Int)
     if i > 0
         push!(r.recorded_values, deepcopy(v))
     elseif i < 0 # reset if negative
-        r.recorded_values = Array{typeof(v),1}()
+        r.recorded_values = similar(r.recorded_values) # Reset to empty
     end
 end
 
@@ -384,7 +396,11 @@ end
 function (rsr::RecordSubsolver)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
 )
-    return record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
+    (i > 0) && println(
+        "Recording sub with $(rsr.record) yields $(get_record(get_sub_state(ams), rsr.record...))",
+    )
+    record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
+    return nothing
 end
 function show(io::IO, rsr::RecordSubsolver{R}) where {R}
     return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
@@ -430,7 +446,7 @@ function (rwa::RecordWhenActive)(
     end
 end
 function show(io::IO, rwa::RecordWhenActive)
-    return print(io, "RecordWhenActive($(rwa.debug), $(rwa.active), $(rwa.always_update))")
+    return print(io, "RecordWhenActive($(rwa.record), $(rwa.active), $(rwa.always_update))")
 end
 function status_summary(rwa::RecordWhenActive)
     return repr(rwa)
@@ -440,7 +456,6 @@ function set_manopt_parameter!(rwa::RecordWhenActive, v::Val, args...)
     return rwa
 end
 function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:active}, v)
-    println("Works. TODO: Remove this once record works nicely")
     return rwa.active = v
 end
 get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
@@ -811,16 +826,10 @@ If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenAct
 function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
-    for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # all non-integers/stopping-criteria
-        if e isa Symbol # factory for this symbol, store in a pair
-            (e !== :WhenAcive) && push!(group, e => RecordActionFactory(s, e))
-        elseif e isa Pair{<:Symbol,<:RecordAction} #already a generated action
-            push!(group, e)
-        else # process the others as elements for an action factory
-            push!(group, RecordActionFactory(s, e))
-        end
+    for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
+        push!(group, RecordActionFactory(s, e))
     end
-    record = RecordGroup(group)
+    record = length(group) > 1 ? RecordGroup(group) : first(group)
     # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
