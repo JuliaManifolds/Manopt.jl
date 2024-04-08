@@ -280,7 +280,7 @@ A RecordGroup to record the current iteration and the cost. The cost can then be
 
 A RecordGroup to record the current iteration and the cost, which can then be accessed using `get_record(:Cost)` or `r[:Cost]`.
 
-    r = RecordGroup([RecordIteration(), :Cost => RecordCost()])
+    r = RecordGroup([RecordIteration(), (:Cost, RecordCost())])
 
 A RecordGroup identical to the previous constructor, just a little easier to use.
 """
@@ -303,7 +303,7 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-        records::Vector{<:Union{<:RecordAction,Pair{Symbol,<:RecordAction}}}
+        records::Vector{<:Union{<:RecordAction,Tuple{Symbol,<:RecordAction}}}
     )
         g = Array{RecordAction,1}()
         si = Dict{Symbol,Int}()
@@ -311,8 +311,8 @@ mutable struct RecordGroup <: RecordAction
             if records[i] isa RecordAction
                 push!(g, records[i])
             else
-                push!(g, records[i].second)
-                push!(si, records[i].first => i)
+                push!(g, records[i][2])
+                push!(si, records[i][1] => i)
             end
         end
         return RecordGroup(g, si)
@@ -826,17 +826,19 @@ If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenAct
 """
 function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
-    group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
+    group = Array{Union{<:RecordAction,Tuple{Symbol,<:RecordAction}},1}()
     for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
         if e isa Symbol # factory for this symbol, store in a pair (for better access later)
-             push!(group, e => RecordActionFactory(s, e))
-         elseif e isa Pair{<:Symbol,<:RecordAction} #already a generated action
-             push!(group, e)
-         else # process the others as elements for an action factory
-             push!(group, RecordActionFactory(s, e))
-         end
+            push!(group, (e, RecordActionFactory(s, e)))
+        elseif e isa Tuple{<:Symbol,<:RecordAction} #already a generated action
+            push!(group, e)
+        else # process the others as elements for an action factory
+            push!(group, RecordActionFactory(s, e))
+        end
     end
-    record = length(group) > 1 ? RecordGroup(group) : first(group)
+    (length(group) > 1) && (record = RecordGroup(group))
+    (length(group) == 1) &&
+        (record = first(group) isa RecordAction ? first(group) : first(group)[2])
     # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
@@ -867,7 +869,7 @@ create a [`RecordAction`](@ref) where
   * `:IterativeTime` to record the times taken for each iteration.
 """
 RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
-RecordActionFactory(::AbstractManoptSolverState, sa::Pair{Symbol,<:RecordAction}) = sa
+RecordActionFactory(::AbstractManoptSolverState, sa::Tuple{Symbol,<:RecordAction}) = sa
 function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Change) && return RecordChange()
     (symbol == :Cost) && return RecordCost()
