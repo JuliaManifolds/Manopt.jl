@@ -184,8 +184,8 @@ Maybe read that part for more details on the problem
 ```{julia}
 #| output: false
 d = 4
-M = Sphere(d - 1)
-v0 = project(M, [ones(2)..., zeros(d - 2)...])
+M2 = Sphere(d - 1)
+v0 = project(M2, [ones(2)..., zeros(d - 2)...])
 Z = v0 * v0'
 #Cost and gradient
 f2(M, p) = -tr(transpose(p) * Z * p) / 2
@@ -195,7 +195,7 @@ g(M, p) = -p # now p ≥ 0
 mI = -Matrix{Float64}(I, d, d)
 # Vector of gradients of the constraint components
 grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
-p0 = project(M, [ones(2)..., zeros(d - 3)..., 0.1])
+p0 = project(M2, [ones(2)..., zeros(d - 3)..., 0.1])
 ```
 
 We directly start with recording the subsolvers Iteration.
@@ -209,7 +209,7 @@ This is done with the `:Subsolver` keyword in the main `record=` keyword.
 ```{julia}
 #| output: false
 s1 = exact_penalty_method(
-    M,
+    M2,
     f2,
     grad_f2,
     p0;
@@ -232,7 +232,7 @@ When adding a number to not record on every iteration, the `:Subsolver` keyword 
 ```{julia}
 #| output: false
 s2 = exact_penalty_method(
-    M,
+    M2,
     f2,
     grad_f2,
     p0;
@@ -255,7 +255,7 @@ Finally, instead of recording iterations, we can also specify to record the stop
 ```{julia}
 #| output: false
 s3 = exact_penalty_method(
-    M,
+    M2,
     f2,
     grad_f2,
     p0;
