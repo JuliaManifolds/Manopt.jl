@@ -1068,7 +1068,7 @@ end
 Generate a dictionary of [`DebugAction`](@ref)s.
 
 First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
-excluding `:Stop` and `:Subsolver`.
+excluding `:Stop` and `:WhenActive`.
 This collected vector is added to the `:Iteration => [...]` pair.
 `:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
 If necessary, these pairs are created
@@ -1076,7 +1076,7 @@ If necessary, these pairs are created
 For each `Pair` of a `Symbol` and a `Vector`, the [`DebugGroupFactory`](@ref)
 is called for the `Vector` and the result is added to the debug dictonaries entry
 with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
-when the `:Subsolver` symbol is present
+when the `:WhenActive` symbol is present
 
 # Return value
 
@@ -1116,7 +1116,7 @@ function DebugFactory(a::Vector{<:Any})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
     iter_entries = filter(
-        x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x, Int), a
+        x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
     )
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
@@ -1146,7 +1146,7 @@ function DebugFactory(a::Vector{<:Any})
     for d in b
         offset = d.first === :BeforeIteration ? 0 : 1
         dbg = DebugGroupFactory(d.second; activation_offset=offset)
-        (:Subsolver in a) && (dbg = DebugWhenActive(dbg))
+        (:WhenActive in a) && (dbg = DebugWhenActive(dbg))
         # Add DebugEvery to all but Start and Stop
         (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = DebugEvery(dbg, ae))
         dictionary[d.first] = dbg
@@ -1170,12 +1170,12 @@ If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of
 If any integers are present, the last of these is used to wrap the group in a
 [`DebugEvery`](@ref)`(k)`.
 
-If `:SubSolver` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
+If `:WhenActive` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
 making it deactivatable by its parent solver.
 """
 function DebugGroupFactory(a::Vector; activation_offset=1)
     group = DebugAction[]
-    for d in filter(x -> !isa(x, Int) && (x ∉ [:Subsolver]), a) # filter Ints, &Sub
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Sub
         push!(group, DebugActionFactory(d))
     end
     l = length(group)
@@ -1190,7 +1190,7 @@ function DebugGroupFactory(a::Vector; activation_offset=1)
     if length(e) > 0
         debug = DebugEvery(debug, last(e); activation_offset=activation_offset)
     end
-    (:Subsolver in a) && (debug = (DebugWhenActive(debug)))
+    (:WhenActive in a) && (debug = (DebugWhenActive(debug)))
     return debug
 end
 DebugGroupFactory(a; kwargs...) = DebugGroupFactory([a]; kwargs...)

@@ -735,7 +735,7 @@ status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":
 Generate a dictionary of [`RecordAction`](@ref)s.
 
 First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
-excluding `:Stop` and `:Subsolver`.
+excluding `:Stop` and `:WhenActive`.
 This collected vector is added to the `:Iteration => [...]` pair.
 `:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
 If any of these two pairs does not exist, it is pairs are created when adding the corresponding symbols
@@ -743,7 +743,7 @@ If any of these two pairs does not exist, it is pairs are created when adding th
 For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
 is called for the `Vector` and the result is added to the debug dictonaries entry
 with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
-when the `:Subsolver` symbol is present
+when the `:WhenActive` symbol is present
 
 # Return value
 
@@ -757,7 +757,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
     iter_entries = filter(
-        x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x, Int), a
+        x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
     )
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
@@ -786,7 +786,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # Run through all (updated) pairs
     for d in b
         dbg = RecordGroupFactory(s, d.second)
-        (:Subsolver in a) && (dbg = RecordWhenActive(dbg))
+        (:WhenActive in a) && (dbg = RecordWhenActive(dbg))
         # Add DebugEvery to all but Start and Stop
         (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = RecordEvery(dbg, ae))
         dictionary[d.first] = dbg
@@ -807,12 +807,12 @@ If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of
 If any integers are present, the last of these is used to wrap the group in a
 [`DebugEvery`](@ref)`(k)`.
 
-If `:SubSolver` is present, the resulting Action is wrappedn in [`RecordWhenActive`](@ref), making it deactivatable by its parent solver.
+If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenActive`](@ref), making it deactivatable by its parent solver.
 """
 function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
-    for e in filter(x -> !isa(x, Int) && (x ∉ [:Subsolver]), a) # all non-integers/stopping-criteria
+    for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # all non-integers/stopping-criteria
         if e isa Symbol # factory for this symbol, store in a pair
             (e !== :WhenAcive) && push!(group, e => RecordActionFactory(s, e))
         elseif e isa Pair{<:Symbol,<:RecordAction} #already a generated action
@@ -827,7 +827,7 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     if length(e) > 0
         record = RecordEvery(record, last(e))
     end
-    (:Subsolver in a) && (record = (RecordWhenActive(record)))
+    (:WhenActive in a) && (record = (RecordWhenActive(record)))
     return record
 end
 function RecordGroupFactory(s::AbstractManoptSolverState, symbol::Symbol)
@@ -858,7 +858,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Iteration) && return RecordIteration()
     (symbol == :IterativeTime) && return RecordTime(; mode=:iterative)
     (symbol == :Stop) && return RecordStoppingReason()
-    (symbol == :SubsolverRecord) && return RecordSubsolverRecords()
+    (symbol == :WhenActiveRecord) && return RecordSubsolverRecords()
     (symbol == :Time) && return RecordTime(; mode=:cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end

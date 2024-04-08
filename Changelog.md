@@ -5,7 +5,20 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.59] - May 7, 2024
+## [0.4.60] – unreleased (April, 3024)
+
+### Added
+
+* `RecordWhenActive` to allow records to be deactivated during runtime, symbol `:WhenActive`
+* `RecordSubsolver` to record the result of a subsolver recording in the main solver, symbol `:Subsolver`
+* `RecordStoppingCriterion` to record the reason a solver stopped
+* made the `RecordFactory` more flexible and quite similar to `DebugFactory`, such that it is now also easy to specify recordings at the end of solver runs. This can especially be used to record final states of sub solvers.
+
+### Fixed
+
+* The name `:Subsolver` to generate `DebugWhenActive` was misleading, it is now called `:WhenActive` – referring to “print debug only when set active, e.g. by the parent (main) solver”.
+
+## [0.4.59] - April 7, 2024
 
 ### Added
 
