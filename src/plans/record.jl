@@ -6,9 +6,13 @@ The usual call is given by
 `(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s` that performs the record,
 where `i` is the current iteration.
 
-By convention `i<=0` is interpreted as "For Initialization only," so only
+By convention `i=0` is interpreted as "For Initialization only," so only
 initialize internal values, but not trigger any record, that the record is
 called from within [`stop_solver!`](@ref) which returns true afterwards.
+
+Any negative value is interpreted as a “reset”, and should hence delete all stored recordings,
+for example when reusing a `RecordAction`. The start of a solver calls the `:Iteration` and `:Stop`.
+dictionary entries with `-1`
 
 # Fields (assumed by subtypes to exist)
 
@@ -198,7 +202,7 @@ function record_or_reset!(r::RecordAction, v, i::Int)
     if i > 0
         push!(r.recorded_values, deepcopy(v))
     elseif i < 0 # reset if negative
-        r.recorded_values = similar(r.recorded_values) # Reset to empty
+        r.recorded_values = empty(r.recorded_values) # Reset to empty
     end
 end
 
