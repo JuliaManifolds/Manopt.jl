@@ -372,26 +372,24 @@ on the substate with
 
 # Constructor
 
-    RecordSubsolverRecords(; record=[:Iteration,], record_type=eltype([]))
+    RecordSubsolver(; record=[:Iteration,], record_type=eltype([]))
 """
-mutable struct RecordSubsolverRecords{R} <: RecordAction
+mutable struct RecordSubsolver{R} <: RecordAction
     recorded_values::Vector{R}
     record::Vector{Symbol}
 end
-function RecordSubsolverRecords(;
-    record::Vector{Symbol}=[:Iteration], record_type=eltype([])
-)
-    return RecordSubsolverRecords{record_type}(record_type[], record)
+function RecordSubsolver(; record::Vector{Symbol}=[:Iteration], record_type=eltype([]))
+    return RecordSubsolver{record_type}(record_type[], record)
 end
-function (rsr::RecordSubsolverRecords)(
+function (rsr::RecordSubsolver)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
 )
     return record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
 end
-function show(io::IO, rsr::RecordSubsolverRecords{R}) where {R}
-    return print(io, "RecordSubsolverRecords(; record=$(rsr.record), record_type=$R)")
+function show(io::IO, rsr::RecordSubsolver{R}) where {R}
+    return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
 end
-status_summary(::RecordSubsolverRecords) = ":SubsolverRecord"
+status_summary(::RecordSubsolver) = ":SubsolverRecord"
 
 @doc raw"""
     RecordWhenActive <: RecordAction
@@ -418,7 +416,7 @@ mutable struct RecordWhenActive{R<:RecordAction} <: RecordAction
     function RecordWhenActive(
         r::R, active::Bool=true, always_update::Bool=true
     ) where {R<:RecordAction}
-        return RecordWhenActive{R}(r, active, always_update)
+        return new{R}(r, active, always_update)
     end
 end
 
@@ -445,6 +443,7 @@ function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:active}, v)
     println("Works. TODO: Remove this once record works nicely")
     return rwa.active = v
 end
+get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
 
 #
 # Specific Record types
@@ -858,7 +857,7 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Iteration) && return RecordIteration()
     (symbol == :IterativeTime) && return RecordTime(; mode=:iterative)
     (symbol == :Stop) && return RecordStoppingReason()
-    (symbol == :WhenActiveRecord) && return RecordSubsolverRecords()
+    (symbol == :Subsolver) && return RecordSubsolver()
     (symbol == :Time) && return RecordTime(; mode=:cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
 end
