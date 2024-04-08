@@ -828,7 +828,13 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
     for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
-        push!(group, RecordActionFactory(s, e))
+        if e isa Symbol # factory for this symbol, store in a pair (for better access later)
+             push!(group, e => RecordActionFactory(s, e))
+         elseif e isa Pair{<:Symbol,<:RecordAction} #already a generated action
+             push!(group, e)
+         else # process the others as elements for an action factory
+             push!(group, RecordActionFactory(s, e))
+         end
     end
     record = length(group) > 1 ? RecordGroup(group) : first(group)
     # filter integer numbers
