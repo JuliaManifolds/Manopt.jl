@@ -394,8 +394,11 @@ mutable struct RecordSubsolver{R} <: RecordAction
     recorded_values::Vector{R}
     record::Vector{Symbol}
 end
-function RecordSubsolver(; record::Vector{Symbol}=[:Iteration], record_type=eltype([]))
-    return RecordSubsolver{record_type}(record_type[], record)
+function RecordSubsolver(;
+    record::Union{Symbol,Vector{Symbol}}=:Iteration, record_type=eltype([])
+)
+    r = record isa Symbol ? [record] : record
+    return RecordSubsolver{record_type}(record_type[], r)
 end
 function (rsr::RecordSubsolver)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
@@ -409,7 +412,7 @@ end
 function show(io::IO, rsr::RecordSubsolver{R}) where {R}
     return print(io, "RecordSubsolver(; record=$(rsr.record), record_type=$R)")
 end
-status_summary(::RecordSubsolver) = ":SubsolverRecord"
+status_summary(::RecordSubsolver) = ":Subsolver"
 
 @doc raw"""
     RecordWhenActive <: RecordAction
@@ -685,14 +688,14 @@ show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
 status_summary(::RecordIteration) = ":Iteration"
 
 @doc raw"""
-    RecordStopingReason <: RecordAction
+    RecordStoppingReason <: RecordAction
 
 Record reason the solver stopped, see [`get_reason`](@ref).
 """
 mutable struct RecordStoppingReason <: RecordAction
     recorded_values::Vector{String}
-    RecordStopingReason() = new(String[])
 end
+RecordStoppingReason() = RecordStoppingReason(String[])
 function (rsr::RecordStoppingReason)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
 )
@@ -852,14 +855,16 @@ end
 create a [`RecordAction`](@ref) where
 
 * a [`RecordAction`](@ref) is passed through
-* a [`Symbol`] creates [`RecordEntry`](@ref) of that symbol, with the exceptions
-  of
+* a [`Symbol`] creates
   * `:Change`        to record the change of the iterates in `o.x``
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
   * `:Cost`          to record the current cost function value
   * `:Time`          to record the total time taken after every iteration
   * `:IterativeTime` to record the times taken for each iteration.
+
+and every other symbol is passed to [`RecordEntry`](@ref), which results in recording the
+field of the state with the symbol indicating the field of the solver to record.
 """
 RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
 RecordActionFactory(::AbstractManoptSolverState, sa::Pair{Symbol,<:RecordAction}) = sa
@@ -873,4 +878,18 @@ function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Subsolver) && return RecordSubsolver()
     (symbol == :Time) && return RecordTime(; mode=:cumulative)
     return RecordEntry(getfield(s, symbol), symbol)
+end
+@doc raw"""
+    RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol, T}) where {T}
+
+create a [`RecordAction`](@ref) where
+
+* (`:Subsolver`, s) creates a [`RecordSubsolver`](@ref) with `record=` set to the second tuple entry
+
+For other symbol the second entry is ignored and the symbol is used to generate a [`RecordEntry`](@ref)
+recording the field with the name `symbol` of `s`.
+"""
+function RecordActionFactory(s::AbstractManoptSolverState, t::Tuple{Symbol,T}) where {T}
+    (t[1] == :Subsolver) && return RecordSubsolver(; record=t[2])
+    return RecordEntry(getfield(s, t[1]), t[1])
 end

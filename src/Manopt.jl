@@ -550,6 +550,7 @@ export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
 export RecordEntry, RecordEntryChange, RecordTime
 export RecordGradient, RecordGradientNorm, RecordStepsize
+export RecordSubsolver, RecordWhenActive, RecordStoppingReason
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
