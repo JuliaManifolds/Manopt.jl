@@ -418,6 +418,7 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         set_manopt_parameter!(dE, :active, false) # deactivate
+        dE(mp, st, -1) # rset still working
         dE(mp, st, 2)
         @test endswith(String(take!(io)), "")
         @test !dA.active

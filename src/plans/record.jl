@@ -105,7 +105,6 @@ _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 Set certain values specified by `args...` into the elements of the `recordDictionary`
 """
 function set_manopt_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
-    println("Fn")
     for d in values(rss.recordDictionary)
         set_manopt_parameter!(d, args...)
     end
@@ -758,7 +757,7 @@ status_summary(ri::RecordTime) = (ri.mode === :iterative ? ":IterativeTime" : ":
 
 Generate a dictionary of [`RecordAction`](@ref)s.
 
-First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
+First all `Symbol`s `String`, [`RecordAction`](@ref)s and numbers are collected,
 excluding `:Stop` and `:WhenActive`.
 This collected vector is added to the `:Iteration => [...]` pair.
 `:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
@@ -772,7 +771,7 @@ when the `:WhenActive` symbol is present
 # Return value
 
 A dictionary for the different enrty points where debug can happen, each containing
-a [`DebugAction`](@ref) to call.
+a [`RecordAction`](@ref) to call.
 
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
 one are called with an `i=0` for reset.
@@ -814,7 +813,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     for d in b
         dbg = RecordGroupFactory(s, d.second)
         (:WhenActive in a) && (dbg = RecordWhenActive(dbg))
-        # Add DebugEvery to all but Start and Stop
+        # Add RecordEvery to all but Start and Stop
         (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = RecordEvery(dbg, ae))
         dictionary[d.first] = dbg
     end
@@ -826,15 +825,15 @@ RecordFactory(s::AbstractManoptSolverState, a) = RecordFactory(s, [a])
 
 Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are used
 
-1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref DebugActionFactory(::Symbol))
+1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))
 2. Any [`RecordAction`](@ref) is included as is.
 Any Pair of a Recordaction and a symbol, that is in order `RecordCost() => :A` is handled,
 that the corresponding record action can later be accessed as `g[:A]`, where `g`is the record group generated here.
 
-If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
+If this results in more than one [`RecordAction`](@ref) a [`RecordGroup`](@ref) of these is build.
 
 If any integers are present, the last of these is used to wrap the group in a
-[`DebugEvery`](@ref)`(k)`.
+[`RecordEvery`](@ref)`(k)`.
 
 If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenActive`](@ref), making it deactivatable by its parent solver.
 """
