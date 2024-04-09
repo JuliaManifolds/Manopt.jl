@@ -69,7 +69,7 @@ function RecordSolverState(s::S, format::Vector{<:Any}) where {S<:AbstractManopt
     return RecordSolverState{S}(s; RecordFactory(get_state(s), format)...)
 end
 function RecordSolverState(s::S, symbol::Symbol) where {S<:AbstractManoptSolverState}
-    return RecordSolverState{S}(s; Iteration=RecordFactory(get_state(s), symbol))
+    return RecordSolverState{S}(s; RecordFactory(get_state(s), symbol)...)
 end
 function status_summary(rst::RecordSolverState)
     if length(rst.recordDictionary) > 0
@@ -240,9 +240,10 @@ function (re::RecordEvery)(
     # Set activity to activate or decativate subsolvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
-    return set_manopt_parameter!(
+    set_manopt_parameter!(
         ams, :SubState, :Record, :active, !(i < 1) && (rem(i + 1, re.every) == 0)
     )
+    return nothing
 end
 function show(io::IO, re::RecordEvery)
     return print(io, "RecordEvery($(re.record), $(re.every), $(re.always_update))")
@@ -283,7 +284,7 @@ A RecordGroup to record the current iteration and the cost. The cost can then be
 
 A RecordGroup to record the current iteration and the cost, which can then be accessed using `get_record(:Cost)` or `r[:Cost]`.
 
-    r = RecordGroup([RecordIteration(), :Cost => RecordCost()])
+    r = RecordGroup([RecordIteration(), RecordCost() => :Cost])
 
 A RecordGroup identical to the previous constructor, just a little easier to use.
 """
@@ -306,7 +307,7 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-        records::Vector{<:Union{<:RecordAction,Pair{Symbol,<:RecordAction}}}
+        records::Vector{<:Union{<:RecordAction,Pair{<:RecordAction, Symbol}}}
     )
         g = Array{RecordAction,1}()
         si = Dict{Symbol,Int}()
@@ -314,8 +315,8 @@ mutable struct RecordGroup <: RecordAction
             if records[i] isa RecordAction
                 push!(g, records[i])
             else
-                push!(g, records[i].second)
-                push!(si, records[i].first => i)
+                push!(g, records[i].first)
+                push!(si, records[i].second => i)
             end
         end
         return RecordGroup(g, si)
@@ -403,9 +404,6 @@ end
 function (rsr::RecordSubsolver)(
     ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
 )
-    (i > 0) && println(
-        "Recording sub with $(rsr.record) yields $(get_record(get_sub_state(ams), rsr.record...))",
-    )
     record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
     return nothing
 end
@@ -814,7 +812,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     end
     return dictionary
 end
-
+RecordFactory(s::AbstractManoptSolverState, a) = RecordFactory(s, [a])
 @doc raw"""
     RecordGroupFactory(s::AbstractManoptSolverState, a)
 
@@ -822,6 +820,8 @@ Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are u
 
 1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref DebugActionFactory(::Symbol))
 2. Any [`RecordAction`](@ref) is included as is.
+Any Pair of a Recordaction and a symbol, that is in order `RecordCost() => :A` is handled,
+that the corresponding record action can later be accessed as `g[:A]`, where `g`is the record group generated here.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
 
@@ -832,11 +832,19 @@ If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenAct
 """
 function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
-    group = Array{Union{<:RecordAction,Pair{Symbol,<:RecordAction}},1}()
+    group = Array{Union{<:RecordAction,Tuple{Symbol,<:RecordAction}},1}()
     for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
-        push!(group, RecordActionFactory(s, e))
+        if e isa Symbol # factory for this symbol, store in a pair (for better access later)
+            push!(group, (e, RecordActionFactory(s, e)))
+        elseif e isa Pair{<:RecordAction, <:Symbol} #already a generated action => symbol to store at
+            push!(group, e)
+        else # process the others as elements for an action factory
+            push!(group, RecordActionFactory(s, e))
+        end
     end
-    record = length(group) > 1 ? RecordGroup(group) : first(group)
+    (length(group) > 1) && (record = RecordGroup(group))
+    (length(group) == 1) &&
+        (record = first(group) isa RecordAction ? first(group) : first(group).first)
     # filter integer numbers
     e = filter(x -> isa(x, Int), a)
     if length(e) > 0
@@ -845,12 +853,14 @@ function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     (:WhenActive in a) && (record = (RecordWhenActive(record)))
     return record
 end
-function RecordGroupFactory(s::AbstractManoptSolverState, symbol::Symbol)
+function RecordGroupFactory(
+    s::AbstractManoptSolverState, symbol::Union{Symbol,<:RecordAction}
+)
     return RecordActionFactory(s, symbol)
 end
 
 @doc raw"""
-    RecordActionFactory(s)
+    RecordActionFactory(s::AbstractManoptSolverState, a)
 
 create a [`RecordAction`](@ref) where
 
@@ -867,7 +877,7 @@ and every other symbol is passed to [`RecordEntry`](@ref), which results in reco
 field of the state with the symbol indicating the field of the solver to record.
 """
 RecordActionFactory(::AbstractManoptSolverState, a::RecordAction) = a
-RecordActionFactory(::AbstractManoptSolverState, sa::Pair{Symbol,<:RecordAction}) = sa
+RecordActionFactory(::AbstractManoptSolverState, sa::Pair{<:RecordAction,Symbol}) = sa
 function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Change) && return RecordChange()
     (symbol == :Cost) && return RecordCost()

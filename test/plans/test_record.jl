@@ -34,24 +34,20 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test get_last_stepsize(dmp, rs, 1) == 1.0
     #
     @test rs.recordDictionary[:Iteration] == a
-    @test RecordSolverState(gds, [a]).recordDictionary[:Iteration].group[1] == a
+    @test RecordSolverState(gds, [a]).recordDictionary[:Iteration] == a
     @test RecordSolverState(gds, a).recordDictionary[:Iteration] == a
     @test RecordSolverState(gds, Dict(:A => a)).recordDictionary[:A] == a
     @test isa(
         RecordSolverState(gds, :Iteration).recordDictionary[:Iteration], RecordIteration
     )
     @test isa(
-        RecordSolverState(gds, [:Iteration]).recordDictionary[:Iteration], RecordGroup
+        RecordSolverState(gds, [:Iteration]).recordDictionary[:Iteration], RecordIteration
     )
     @test isa(
-        RecordSolverState(gds, [:Iteration]).recordDictionary[:Iteration].group[1],
+        RecordSolverState(gds, [:It => RecordIteration()]).recordDictionary[:It],
         RecordIteration,
     )
-    @test isa(
-        RecordSolverState(gds, [:It => RecordIteration()]).recordDictionary[:Iteration].group[1],
-        RecordIteration,
-    )
-    @test isa(RecordFactory(gds, :Iteration), RecordIteration)
+    @test isa(RecordFactory(gds, :Iteration)[:Iteration], RecordIteration)
     sa = :It3 => RecordIteration()
     @test RecordActionFactory(gds, sa) === sa
     @test !has_record(gds)
@@ -100,11 +96,15 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     c = RecordEvery(a, 10, true)
     @test repr(c) == "RecordEvery(RecordIteration(), 10, true)"
     @test Manopt.status_summary(c) == "[RecordIteration(), 10]"
-    @test c(dmp, gds, 0) === nothing
-    @test c(dmp, gds, 1) === nothing
-    @test c(dmp, gds, 10) == [10]
-    @test c(dmp, gds, 20) == [10, 20]
-    @test c(dmp, gds, -1) == []
+    c(dmp, gds, 0)
+    @test length(get_record(c)) === 0
+    c(dmp, gds, 1)
+    @test length(get_record(c)) === 0
+    c(dmp, gds, 10)
+    @test get_record(c) == [10]
+    c(dmp, gds, 20)
+    @test get_record(c) == [10, 20]
+    c(dmp, gds, -1)
     @test get_record(c) == []
     c2 = RecordEvery(
         RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2)), 10
@@ -179,7 +179,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test isa(rf[:Iteration], RecordGroup)
     @test isa(rf[:Iteration].group[1], RecordCost)
     @test isa(rf[:Iteration].group[2], RecordEntry)
-    @test isa(RecordFactory(gds, [2])[:Iteration], RecordEvery)
+    @test isa(RecordFactory(gds, [:Iteration, 2])[:Iteration], RecordEvery)
     @test rf[:Iteration].group[2].field == :X
     @test length(rf[:Iteration].group) == 2
     s = [:Cost, :Iteration, :Change, :Iterate, :Time, :IterativeTime]

@@ -474,7 +474,7 @@ mutable struct DebugEntryChange <: DebugAction
         initial_value::Any=NaN,
     )
         if !isa(initial_value, Number) || !isnan(initial_value) #set initial value
-            update_xstorage!(storage, Dict(f => initial_value))
+            update_storage!(storage, Dict(f => initial_value))
         end
         return new(d, f, format, io, storage)
     end
