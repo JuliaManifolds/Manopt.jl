@@ -276,17 +276,19 @@ construct a group consisting of an Array of [`RecordAction`](@ref)s `g`,
     RecordGroup(g, symbols)
 
 # Examples
-    r = RecordGroup([RecordIteration(), RecordCost()])
+    g1 = RecordGroup([RecordIteration(), RecordCost()])
 
 A RecordGroup to record the current iteration and the cost. The cost can then be accessed using `get_record(r,2)` or `r[2]`.
 
-    r = RecordGroup([RecordIteration(), RecordCost()], Dict(:Cost => 2))
+    g2 = RecordGroup([RecordIteration(), RecordCost()], Dict(:Cost => 2))
 
 A RecordGroup to record the current iteration and the cost, which can then be accessed using `get_record(:Cost)` or `r[:Cost]`.
 
-    r = RecordGroup([RecordIteration(), RecordCost() => :Cost])
+    g3 = RecordGroup([RecordIteration(), RecordCost() => :Cost])
 
 A RecordGroup identical to the previous constructor, just a little easier to use.
+To access all recordings of the second entry of this last `g3` you can do either `g4[2]` or `g[:Cost]`,
+the first one can only be accessed by `g4[1]`, since no symbol was given here.
 """
 mutable struct RecordGroup <: RecordAction
     group::Array{RecordAction,1}
@@ -307,16 +309,18 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-        records::Vector{<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}}}
+        records::Vector,# assumed: {<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}, rest ignored
     )
         g = Array{RecordAction,1}()
         si = Dict{Symbol,Int}()
         for i in 1:length(records)
             if records[i] isa RecordAction
                 push!(g, records[i])
-            else
+            elseif records[i] isa Pair{<:RecordAction,Symbol}
                 push!(g, records[i].first)
                 push!(si, records[i].second => i)
+            else
+                error("Unrecognised element of recording $(repr(records[i])) at entry $i.")
             end
         end
         return RecordGroup(g, si)
@@ -424,7 +428,7 @@ are never accessible, is not that useful.
 # Fields
 
 * `active`:        a boolean that can (de-)activated from outside to turn on/off debug
-* `always_update`: whether or not to call the inner debugs with iteration `-1` even inactive state
+* `always_update`: whether or not to call the inner debugs with nonpositive iterates (init/reset)
 
 # Constructor
 
@@ -446,8 +450,8 @@ function (rwa::RecordWhenActive)(
 )
     if rwa.active
         rwa.record(amp, ams, i)
-    elseif (rwa.always_update)
-        rwa.record(amp, ams, 0)
+    elseif (rwa.always_update) && (i <= 0)
+        rwa.record(amp, ams, i)
     end
 end
 function show(io::IO, rwa::RecordWhenActive)

@@ -748,7 +748,7 @@ mutable struct DebugWhenActive{D<:DebugAction} <: DebugAction
     always_update::Bool
     function DebugWhenActive(
         d::D, active::Bool=true, always_update::Bool=true
-    ) where {D<:Manopt.DebugAction}
+    ) where {D<:DebugAction}
         return new{D}(d, active, always_update)
     end
 end

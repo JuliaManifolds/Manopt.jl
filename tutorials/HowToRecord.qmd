@@ -143,6 +143,7 @@ rI = RecordEvery(
 ```
 
 where the notation as a pair with the symbol can be read as “Is accessible by”.
+The `record=` keyword with the symbol `:Iteration` is actually the same as we specified here for the first group entry.
 For recording the final iteration number
 
 ```{julia}
@@ -151,7 +152,8 @@ sI = RecordIteration()
 
 We now combine both into the [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState) decorator. It acts completely the same as any [`AbstractManoptSolverState`](https://manoptjl.org/stable/plans/state/#Manopt.AbstractManoptSolverState) but records something in every iteration additionally. This is stored in a dictionary of [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s, where `:Iteration` is the action (here the only every sixth iteration group) and the `sI` which is executed at stop.
 
-Note that the keyword `record=` in the high level interface `gradient_descent` only would fill the `:Iteration` symbol of said dictionary.
+Note that the keyword `record=` in the high level interface `gradient_descent` only would fill the `:Iteration` symbol of said dictionary, but we could also pass pairs like in the following,
+that is in the form `Symbol => RecordAction` into that keyword to obtain the same as in
 
 ```{julia}
 r = RecordSolverState(s, Dict(:Iteration => rI, :Stop => sI))

@@ -1,5 +1,5 @@
 using Manifolds, Manopt, Test, ManifoldsBase, Dates
-
+using Manopt: RecordFactory, RecordGroupFactory, RecordActionFactory
 mutable struct TestRecordParameterState <: AbstractManoptSolverState
     value::Int
 end
@@ -75,6 +75,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test a(dmp, gds, -1) == []
     # RecordGroup
     @test length(RecordGroup().group) == 0
+    @test_throws ErrorException RecordGroup([:a]) #no valid action
     @test_throws ErrorException RecordGroup(RecordAction[], Dict(:a => 1))
     @test_throws ErrorException RecordGroup(RecordAction[], Dict(:a => 0))
     b = RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2))
@@ -92,136 +93,185 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test get_record(b, (:It1, :It2)) == [(1, 1), (2, 2)]
     @test b[(:It1, :It2)] == [(1, 1), (2, 2)]
     @test RecordSolverState(gds, b)[:Iteration, 1] == [1, 2]
-    #RecordEvery
-    c = RecordEvery(a, 10, true)
-    @test repr(c) == "RecordEvery(RecordIteration(), 10, true)"
-    @test Manopt.status_summary(c) == "[RecordIteration(), 10]"
-    c(dmp, gds, 0)
-    @test length(get_record(c)) === 0
-    c(dmp, gds, 1)
-    @test length(get_record(c)) === 0
-    c(dmp, gds, 10)
-    @test get_record(c) == [10]
-    c(dmp, gds, 20)
-    @test get_record(c) == [10, 20]
-    c(dmp, gds, -1)
-    @test get_record(c) == []
-    c2 = RecordEvery(
-        RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2)), 10
-    )
-    @test repr(c2) == "RecordEvery($(repr(c2.record)), 10, true)"
-    @test Manopt.status_summary(c2) == "[:Iteration, :Iteration, 10]"
-    c2(dmp, gds, 5)
-    c2(dmp, gds, 10)
-    c2(dmp, gds, 20)
-    @test c2[1] == [10, 20]
-    @test c2[:It1] == [10, 20]
-    # RecordChange
-    d = RecordChange()
-    sd = "RecordChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
-    @test repr(d) == sd
-    @test Manopt.status_summary(d) == ":Change"
-    d(dmp, gds, 1)
-    @test d.recorded_values == [0.0] # no p0 -> assume p is the first iterate
-    set_iterate!(gds, M, p + [1.0, 0.0])
-    d(dmp, gds, 2)
-    @test d.recorded_values == [0.0, 1.0] # no p0 -> assume p is the first iterate
-    e = RecordChange([4.0, 2.0])
-    e(dmp, gds, 1)
-    @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
+    @testset "RecordEvery" begin
+        c = RecordEvery(a, 10, true)
+        @test repr(c) == "RecordEvery(RecordIteration(), 10, true)"
+        @test Manopt.status_summary(c) == "[RecordIteration(), 10]"
+        c(dmp, gds, 0)
+        @test length(get_record(c)) === 0
+        c(dmp, gds, 1)
+        @test length(get_record(c)) === 0
+        c(dmp, gds, 10)
+        @test get_record(c) == [10]
+        c(dmp, gds, 20)
+        @test get_record(c) == [10, 20]
+        c(dmp, gds, -1)
+        @test get_record(c) == []
+        c2 = RecordEvery(
+            RecordGroup([RecordIteration(), RecordIteration()], Dict(:It1 => 1, :It2 => 2)),
+            10,
+        )
+        @test repr(c2) == "RecordEvery($(repr(c2.record)), 10, true)"
+        @test Manopt.status_summary(c2) == "[:Iteration, :Iteration, 10]"
+        c2(dmp, gds, 5)
+        c2(dmp, gds, 10)
+        c2(dmp, gds, 20)
+        @test c2[1] == [10, 20]
+        @test c2[:It1] == [10, 20]
+    end
+    @testset "RecordChange" begin
+        d = RecordChange()
+        sd = "RecordChange(; inverse_retraction_method=LogarithmicInverseRetraction())"
+        @test repr(d) == sd
+        @test Manopt.status_summary(d) == ":Change"
+        d(dmp, gds, 1)
+        @test d.recorded_values == [0.0] # no p0 -> assume p is the first iterate
+        set_iterate!(gds, M, p + [1.0, 0.0])
+        d(dmp, gds, 2)
+        @test d.recorded_values == [0.0, 1.0] # no p0 -> assume p is the first iterate
+        e = RecordChange([4.0, 2.0])
+        e(dmp, gds, 1)
+        @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
 
-    dinvretr = RecordChange(; inverse_retraction_method=PolarInverseRetraction())
-    dmani = RecordChange(SymplecticMatrices(2))
-    @test dinvretr.inverse_retraction_method === PolarInverseRetraction()
-    @test dmani.inverse_retraction_method === CayleyInverseRetraction()
-    @test d.inverse_retraction_method === LogarithmicInverseRetraction()
-    # RecordEntry
-    set_iterate!(gds, M, p)
-    f = RecordEntry(p, :p)
-    @test repr(f) == "RecordEntry(:p)"
-    f(dmp, gds, 1)
-    @test f.recorded_values == [p]
-    f2 = RecordEntry(typeof(p), :p)
-    f2(dmp, gds, 1)
-    @test f2.recorded_values == [p]
-    # RecordEntryChange
-    set_iterate!(gds, M, p)
-    e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
-    @test startswith(repr(e), "RecordEntryChange(:p")
-    @test update_storage!(e.storage, dmp, gds) == [:p]
-    e2 = RecordEntryChange(dmp, :p, (p, o, x, y) -> distance(get_manifold(p), x, y))
-    @test e.field == e2.field
-    e(dmp, gds, 1)
-    @test e.recorded_values == [0.0]
-    set_iterate!(gds, M, [3.0, 2.0])
-    e(dmp, gds, 2)
-    @test e.recorded_values == [0.0, 1.0]
-    # RecordIterate
-    set_iterate!(gds, M, p)
-    f = RecordIterate(p)
-    @test Manopt.status_summary(f) == ":Iterate"
-    @test repr(f) == "RecordIterate(Vector{Float64})"
-    @test_throws ErrorException RecordIterate()
-    f(dmp, gds, 1)
-    @test f.recorded_values == [p]
-    # RecordCost
-    g = RecordCost()
-    @test repr(g) == "RecordCost()"
-    @test Manopt.status_summary(g) == ":Cost"
-    g(dmp, gds, 1)
-    @test g.recorded_values == [0.0]
-    gds.p = [3.0, 2.0]
-    g(dmp, gds, 2)
-    @test g.recorded_values == [0.0, 1.0]
-    #RecordFactory
-    gds.X = [0.0, 0.0]
-    rf = RecordFactory(gds, [:Cost, :X])
-    @test isa(rf[:Iteration], RecordGroup)
-    @test isa(rf[:Iteration].group[1], RecordCost)
-    @test isa(rf[:Iteration].group[2], RecordEntry)
-    @test isa(RecordFactory(gds, [:Iteration, 2])[:Iteration], RecordEvery)
-    @test rf[:Iteration].group[2].field == :X
-    @test length(rf[:Iteration].group) == 2
-    s = [:Cost, :Iteration, :Change, :Iterate, :Time, :IterativeTime]
-    @test all(
-        isa.(
-            RecordFactory(gds, s)[:Iteration].group,
-            [
-                RecordCost,
-                RecordIteration,
-                RecordChange,
-                RecordIterate,
-                RecordTime,
-                RecordTime,
-            ],
-        ),
-    )
-    @test RecordActionFactory(gds, g) == g
-
-    h1 = RecordTime(; mode=:cumulative)
-    @test repr(h1) == "RecordTime(; mode=:cumulative)"
-    @test Manopt.status_summary(h1) == ":Time"
-    t = h1.start
-    @test t isa Nanosecond
-    h1(dmp, gds, 1)
-    @test h1.start == t
-    h2 = RecordTime(; mode=:iterative)
-    t = h2.start
-    @test t isa Nanosecond
-    sleep(0.002)
-    h2(dmp, gds, 1)
-    @test h2.start != t
-    h3 = RecordTime(; mode=:total)
-    h3(dmp, gds, 1)
-    h3(dmp, gds, 10)
-    h3(dmp, gds, 19)
-    @test length(h3.recorded_values) == 0
-    # stop after 20 so 21 hits
-    h3(dmp, gds, 20)
-    @test length(h3.recorded_values) == 1
-    @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
-    # since only the type is stored can test
-    @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
+        dinvretr = RecordChange(; inverse_retraction_method=PolarInverseRetraction())
+        dmani = RecordChange(SymplecticMatrices(2))
+        @test dinvretr.inverse_retraction_method === PolarInverseRetraction()
+        @test dmani.inverse_retraction_method === CayleyInverseRetraction()
+        @test d.inverse_retraction_method === LogarithmicInverseRetraction()
+    end
+    @testset "RecordEnrty" begin
+        set_iterate!(gds, M, p)
+        f = RecordEntry(p, :p)
+        @test repr(f) == "RecordEntry(:p)"
+        f(dmp, gds, 1)
+        @test f.recorded_values == [p]
+        f2 = RecordEntry(typeof(p), :p)
+        f2(dmp, gds, 1)
+        @test f2.recorded_values == [p]
+    end
+    @testset "RecordEntryChange" begin
+        set_iterate!(gds, M, p)
+        e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
+        @test startswith(repr(e), "RecordEntryChange(:p")
+        @test update_storage!(e.storage, dmp, gds) == [:p]
+        e2 = RecordEntryChange(dmp, :p, (p, o, x, y) -> distance(get_manifold(p), x, y))
+        @test e.field == e2.field
+        e(dmp, gds, 1)
+        @test e.recorded_values == [0.0]
+        set_iterate!(gds, M, [3.0, 2.0])
+        e(dmp, gds, 2)
+        @test e.recorded_values == [0.0, 1.0]
+    end
+    @testset "RecordIterate" begin
+        set_iterate!(gds, M, p)
+        f = RecordIterate(p)
+        @test Manopt.status_summary(f) == ":Iterate"
+        @test repr(f) == "RecordIterate(Vector{Float64})"
+        @test_throws ErrorException RecordIterate()
+        f(dmp, gds, 1)
+        @test f.recorded_values == [p]
+    end
+    @testset "RecordCost" begin
+        g = RecordCost()
+        @test repr(g) == "RecordCost()"
+        @test Manopt.status_summary(g) == ":Cost"
+        g(dmp, gds, 1)
+        @test g.recorded_values == [0.0]
+        gds.p = [3.0, 2.0]
+        g(dmp, gds, 2)
+        @test g.recorded_values == [0.0, 1.0]
+    end
+    @testset "RecordStopingReason" begin
+        g = RecordStoppingReason()
+        @test repr(g) == "RecordStoppingReason()"
+        @test Manopt.status_summary(g) == ":Stop"
+        @test length(get_record(g)) == 0
+        stop_solver!(dmp, gds, 21) # trigger stop
+        g(dmp, gds, 21) # record
+        @test length(get_record(g)) == 1
+        gds.stop(dmp, gds, 0) # reset
+    end
+    @testset "RecordWhenActive" begin
+        i = RecordIteration()
+        rwa = RecordWhenActive(i)
+        rwa(dmp, gds, 1)
+        @test length(get_record(rwa)) == 1
+        rwa(dmp, gds, -1) # Reset
+        @test length(get_record(rwa)) == 0
+        rwa(dmp, gds, 1)
+        set_manopt_parameter!(rwa, :active, false)
+        @test !rwa.active
+        # check always update
+        rwa(dmp, gds, 2)
+        @test length(get_record(rwa)) == 1 # updated, but not cleared
+    end
+    @testset "RecordFactory" begin
+        gds.X = [0.0, 0.0]
+        rf = RecordFactory(gds, [:Cost, :X])
+        @test isa(rf[:Iteration], RecordGroup)
+        @test isa(rf[:Iteration].group[1], RecordCost)
+        @test isa(rf[:Iteration].group[2], RecordEntry)
+        @test isa(RecordFactory(gds, [:Iteration, 2])[:Iteration], RecordEvery)
+        @test rf[:Iteration].group[2].field == :X
+        @test length(rf[:Iteration].group) == 2
+        s = [:Cost, :Iteration, :Change, :Iterate, :Time, :IterativeTime]
+        @test all(
+            isa.(
+                RecordFactory(gds, s)[:Iteration].group,
+                [
+                    RecordCost,
+                    RecordIteration,
+                    RecordChange,
+                    RecordIterate,
+                    RecordTime,
+                    RecordTime,
+                ],
+            ),
+        )
+        @test RecordActionFactory(gds, g) == g
+        rss = RecordActionFactory(gds, :Subsolver)
+        @test rss isa RecordSubsolver
+        @test rss2.record == [:Iteration]# Default
+        rss2 = RecordActionFactory(gds, (:Subsolver, :Stop))
+        @test rss2 isa RecordSubsolver
+        @test rss2.record == [:Stop]
+    end
+    @testset "Manopt.RecordGroupFactory" begin
+        @test RecordGroupFactory(gds, [:Iteration, :Cost, :WhenActive]) isa RecordWhenActive
+        @test RecordGroupFactory(gds, [:Iteration, :Cost, :WhenActive, 5]) isa
+            RecordWhenActive
+        @test RecordGroupFactory(gds, [:Iteration, :Cost, 5]) isa RecordEvery
+        rg = RecordGroupFactory(gds, [:Cost, RecordCost() => :Cost2])
+        @test (:Cost in keys(rg.indexSymbols)) && (:Cost2 in keys(rg.indexSymbols))
+        @test (1 in values(rg.indexSymbols)) && (2 in values(rg.indexSymbols))
+    end
+    # Record Time
+    @testset "RecordTime" begin
+        h1 = RecordTime(; mode=:cumulative)
+        @test repr(h1) == "RecordTime(; mode=:cumulative)"
+        @test Manopt.status_summary(h1) == ":Time"
+        t = h1.start
+        @test t isa Nanosecond
+        h1(dmp, gds, 1)
+        @test h1.start == t
+        h2 = RecordTime(; mode=:iterative)
+        t = h2.start
+        @test t isa Nanosecond
+        sleep(0.002)
+        h2(dmp, gds, 1)
+        @test h2.start != t
+        h3 = RecordTime(; mode=:total)
+        h3(dmp, gds, 1)
+        h3(dmp, gds, 10)
+        h3(dmp, gds, 19)
+        @test length(h3.recorded_values) == 0
+        # stop after 20 so 21 hits
+        h3(dmp, gds, 20)
+        @test length(h3.recorded_values) == 1
+        @test repr(RecordGradientNorm()) == "RecordGradientNorm()"
+        # since only the type is stored can test
+        @test repr(RecordGradient(zeros(3))) == "RecordGradient{Vector{Float64}}()"
+    end
     @testset "Record and parameter passthrough" begin
         s = TestRecordParameterState(0)
         r = RecordSolverState(s, RecordIteration())

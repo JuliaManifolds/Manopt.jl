@@ -14,9 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `RecordStoppingReason` to record the reason a solver stopped
 * made the `RecordFactory` more flexible and quite similar to `DebugFactory`, such that it is now also easy to specify recordings at the end of solver runs. This can especially be used to record final states of sub solvers.
 
+### Changed
+* being a bit more strict with internal tools and made the factories for record non-exported, so this is the same as for debug.
+
 ### Fixed
 
 * The name `:Subsolver` to generate `DebugWhenActive` was misleading, it is now called `:WhenActive` – referring to “print debug only when set active, e.g. by the parent (main) solver”.
+* the old version of specifying `Symbol => RecordAction` for later access was ambigous, since
+it could also mean to store the action in the dictionary under that symbol. Hence the order for access
+was switched to `RecordAction => Sumbol` to resolve that ambiguity.
 
 ## [0.4.59] - April 7, 2024
 
