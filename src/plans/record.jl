@@ -3,20 +3,23 @@
 
 A `RecordAction` is a small functor to record values.
 The usual call is given by
-`(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s` that performs the record,
-where `i` is the current iteration.
+
+    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s
+
+that performs the record for the current problem and solver cmbination, and where `i` is
+the current iteration.
 
 By convention `i=0` is interpreted as "For Initialization only," so only
 initialize internal values, but not trigger any record, that the record is
 called from within [`stop_solver!`](@ref) which returns true afterwards.
 
 Any negative value is interpreted as a “reset”, and should hence delete all stored recordings,
-for example when reusing a `RecordAction`. The start of a solver calls the `:Iteration` and `:Stop`.
-dictionary entries with `-1`
+for example when reusing a `RecordAction`.
+The start of a solver calls the `:Iteration` and `:Stop` dictionary entries with `-1`,
+to reset those recordings.
 
-# Fields (assumed by subtypes to exist)
-
-* `recorded_values` an `Array` of the recorded values.
+By default any `RecordAction` is assumed to record its values in a field `recorded_values`,
+an `Vector` of recorded values. See [`get_record`](@ref get_record(r::RecordAction))`(ra)`.
 """
 abstract type RecordAction <: AbstractStateAction end
 
@@ -174,8 +177,8 @@ end
 
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
 """
-get_record(r::RecordAction, i) = r.recorded_values
 get_record(r::RecordAction) = r.recorded_values
+get_record(r::RecordAction, i) = r.recorded_values
 
 """
     get_index(rs::RecordSolverState, s::Symbol)
@@ -477,6 +480,14 @@ get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
     RecordCost <: RecordAction
 
 Record the current cost function value, see [`get_cost`](@ref).
+
+# Fields
+
+* `recorded_values` : to store the recorded values
+
+# Constructor
+
+    RecordCost()
 """
 mutable struct RecordCost <: RecordAction
     recorded_values::Array{Float64,1}
@@ -491,19 +502,23 @@ status_summary(di::RecordCost) = ":Cost"
 @doc raw"""
     RecordChange <: RecordAction
 
-debug for the amount of change of the iterate (stored in `o.x` of the [`AbstractManoptSolverState`](@ref))
+debug for the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration.
 
-# Additional fields
+# Fields
 
-* `storage` a [`StoreStateAction`](@ref) to store (at least) `o.x` to use this
-  as the last value (to compute the change
-* `inverse_retraction_method` - (`default_inverse_retraction_method(manifold, p)`) the
-  inverse retraction to be used for approximating distance.
+* `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
+  iterate to use this as the last value (to compute the change) serving as a potential cache
+  shared with other components of the solver.
+* `inverse_retraction_method` : the inverse retraction to be used for approximating distance.
+* `recorded_values`           : to store the recorded values
 
 # Constructor
 
-    RecordChange(M=DefaultManifold();)
+    RecordChange(M=DefaultManifold();
+        inverse_retraction_method = default_inverse_retraction_method(M),
+        storage                   = StoreStateAction(M; store_points=Tuple{:Iterate})
+    )
 
 with the preceding fields as keywords. For the `DefaultManifold` only the field storage is used.
 Providing the actual manifold moves the default storage to the efficient point storage.
@@ -579,9 +594,20 @@ record a certain fields entry of type {T} during the iterates
 
 # Fields
 
-* `recorded_values` the recorded Iterates
-* `field`           Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `recorded_values` : the recorded Iterates
+* `field`           : Symbol the entry can be accessed with within [`AbstractManoptSolverState`](@ref)
 
+# Constructor
+    RecordEntry(::T, f::Symbol)
+    RecordEntry(T::DataType, f::Symbol)
+
+Initialize the record action to record the state field `f`, and initialize the
+`recorded_values` to be a vector of element type `T`.
+
+# Examples
+
+* `RecordEntry(rand(M), :q)` to record the points from `M` stored in some states `s.q`
+* `RecordEntry(SVDMPoint, :p)` to record the field `s.p` which takes values of type [`SVDMPoint`](@extref `Manifolds.SVDMPoint`).
 """
 mutable struct RecordEntry{T} <: RecordAction
     recorded_values::Array{T,1}
@@ -606,10 +632,14 @@ record a certain entries change during iterates
 
 # Additional fields
 
-* `recorded_values` the recorded Iterates
-* `field`           Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
-* `distance`        function (p,o,x1,x2) to compute the change/distance between two values of the entry
-* `storage`         a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
+* `recorded_values` : the recorded Iterates
+* `field`           : Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
+* `distance`        : function (p,o,x1,x2) to compute the change/distance between two values of the entry
+* `storage`         : a [`StoreStateAction`](@ref) to store (at least) `getproperty(o, d.field)`
+
+# Constructor
+
+    RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
 """
 mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     recorded_values::Vector{Float64}

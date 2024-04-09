@@ -7,19 +7,33 @@ CurrentModule = Manopt
 To record values during the iterations of a solver run, there are in general two possibilities.
 On the one hand, the high-level interfaces provide a `record=` keyword, that accepts several different inputs. For more details see [How to record](../tutorials/HowToRecord.md).
 
-For example recording the gradient from the [`GradientDescentState`](@ref) is
-automatically available, as explained in the [`gradient_descent`](@ref) solver.
-
-## [Record solver states](@id subsec-record-states)
+## [Record Actions & the solver state decorator](@id subsec-record-states)
 
 ```@autodocs
 Modules = [Manopt]
 Pages = ["plans/record.jl"]
-Order = [:type, :function]
-Private = true
+Order = [:type]
 ```
 
-see [recording values](@ref sec-record) for details on the decorated solver.
+## Access functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/record.jl"]
+Order = [:function]
+Public = true
+Private = false
+```
+
+## Internal factory functions
+
+```@autodocs
+Modules = [Manopt]
+Pages = ["plans/record.jl"]
+Order = [:function]
+Public = false
+Private = true
+```
 
 Further specific [`RecordAction`](@ref)s can be found when specific types of [`AbstractManoptSolverState`](@ref) define them on their corresponding site.
 
