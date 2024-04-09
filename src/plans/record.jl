@@ -100,11 +100,12 @@ _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 """
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
+    set_manopt_parameter!(ams::REcordSolverState, ::Val{:Record}, args...)
 
-Set certain values specified by `args...` into the elements of the `debugDictionary`
+Set certain values specified by `args...` into the elements of the `recordDictionary`
 """
 function set_manopt_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
+    println("Fn")
     for d in values(rss.recordDictionary)
         set_manopt_parameter!(d, args...)
     end
@@ -765,7 +766,7 @@ If any of these two pairs does not exist, it is pairs are created when adding th
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
 is called for the `Vector` and the result is added to the debug dictonaries entry
-with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
+with said symbold. This is wrapped into the [`RecordWhenActive`](@ref),
 when the `:WhenActive` symbol is present
 
 # Return value
@@ -790,6 +791,7 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
         iter = popat!(b, i) #
+        println(iter, "<-")
         b = [b..., :Iteration => [iter.second..., iter_entries...]]
     else
         (length(iter_entries) > 0) && (b = [b..., :Iteration => iter_entries])
@@ -799,9 +801,9 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
         i = findlast(x -> (isa(x, Pair)) && (x.first == :Stop), b)
         if !isnothing(i)
             stop = popat!(b, i) #
-            b = [b..., :Stop => [stop.second..., RecordActionFactory(:Stop)]]
+            b = [b..., :Stop => [stop.second..., RecordActionFactory(s, :Stop)]]
         else # regenerate since we have to maybe change type of b
-            b = [b..., :Stop => [RecordActionFactory(:Stop)]]
+            b = [b..., :Stop => [RecordActionFactory(s, :Stop)]]
         end
     end
     dictionary = Dict{Symbol,RecordAction}()

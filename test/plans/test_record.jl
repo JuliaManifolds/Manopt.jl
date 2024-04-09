@@ -24,6 +24,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test Manopt.status_summary(a) == ":Iteration"
     # constructors
     rs = RecordSolverState(gds, a)
+    Manopt.set_manopt_parameter!(rs, :Record, RecordCost())
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
     @test get_state(gds) == gds
     @test get_state(rs) == gds
@@ -191,15 +192,26 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         @test length(get_record(g)) == 1
         gds.stop(dmp, gds, 0) # reset
     end
+    @testset "RecordSubsolver" begin
+        rss = RecordSubsolver()
+        @test repr(rss) == "RecordSubsolver(; record=[:Iteration], record_type=Any)"
+        @test Manopt.status_summary(rss) == ":Subsolver"
+        epms = ExactPenaltyMethodState(M, rand(M), dmp, rs)
+        rss(dmp, epms, 1)
+    end
     @testset "RecordWhenActive" begin
         i = RecordIteration()
         rwa = RecordWhenActive(i)
+        @test repr(rwa) == "RecordWhenActive(RecordIteration(), true, true)"
+        @test Manopt.status_summary(rwa) == repr(rwa)
         rwa(dmp, gds, 1)
         @test length(get_record(rwa)) == 1
         rwa(dmp, gds, -1) # Reset
         @test length(get_record(rwa)) == 0
         rwa(dmp, gds, 1)
         set_manopt_parameter!(rwa, :active, false)
+        # passthrough to inner
+        set_manopt_parameter!(rwa, :test, 1)
         @test !rwa.active
         # check inactive
         rwa(dmp, gds, 2)
@@ -208,7 +220,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rwa(dmp, gds, -1)
         @test length(get_record(rwa)) == 0 # updated, but not cleared
     end
-    @testset "RecordFactory" begin
+    @testset "Manopt.RecordFactory" begin
         gds.X = [0.0, 0.0]
         rf = RecordFactory(gds, [:Cost, :X])
         @test isa(rf[:Iteration], RecordGroup)
@@ -231,8 +243,17 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
                 ],
             ),
         )
+        rf2 = RecordFactory(gds, [:Iteration => [:Cost], :Iteration])
+        # Check they are combined in iteration
+        @test rf2[:Iteration] isa RecordGroup
+        @test length(rf2[:Iteration].group) == 2
+        rf3 = RecordFactory(gds, [:Stop => [:Cost], :Stop])
+        # Check they are combined in iteration
+        @test rf3[:Stop] isa RecordGroup
+        @test length(rf3[:Stop].group) == 2
+        @test length(RecordFactory(gds, [:Cost, :Stop])) == 2
     end
-    @testset "RecordActionactory" begin
+    @testset "Manopt.RecordActionFactory" begin
         g = RecordCost()
         @test RecordActionFactory(gds, g) == g
         rss = RecordActionFactory(gds, :Subsolver)
@@ -241,6 +262,8 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rss2 = RecordActionFactory(gds, (:Subsolver, :Stop))
         @test rss2 isa RecordSubsolver
         @test rss2.record == [:Stop]
+        rss3 = RecordActionFactory(gds, (:X, :F)) # last gets ignored
+        @test rss3 isa RecordEntry
     end
     @testset "Manopt.RecordGroupFactory" begin
         @test RecordGroupFactory(gds, [:Iteration, :Cost, :WhenActive]) isa RecordWhenActive
@@ -250,6 +273,9 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rg = RecordGroupFactory(gds, [:Cost, RecordCost() => :Cost2])
         @test (:Cost in keys(rg.indexSymbols)) && (:Cost2 in keys(rg.indexSymbols))
         @test (1 in values(rg.indexSymbols)) && (2 in values(rg.indexSymbols))
+    end
+    @testset "RecordGroup" begin
+        @test length(RecordGroup([RecordCost(), RecordIteration() => :It]).group) == 2
     end
     @testset "RecordTime" begin
         h1 = RecordTime(; mode=:cumulative)

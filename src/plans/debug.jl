@@ -755,7 +755,7 @@ end
 function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if dwa.active
         dwa.debug(p, st, i)
-    elseif (dwa.always_update) && (i <= 0)
+    elseif (i <= 0) && (dwa.always_update)
         dwa.debug(p, st, i)
     end
 end
