@@ -251,7 +251,6 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         @test (:Cost in keys(rg.indexSymbols)) && (:Cost2 in keys(rg.indexSymbols))
         @test (1 in values(rg.indexSymbols)) && (2 in values(rg.indexSymbols))
     end
-    # Record Time
     @testset "RecordTime" begin
         h1 = RecordTime(; mode=:cumulative)
         @test repr(h1) == "RecordTime(; mode=:cumulative)"
