@@ -307,7 +307,7 @@ mutable struct RecordGroup <: RecordAction
         return new(g, symbols)
     end
     function RecordGroup(
-        records::Vector{<:Union{<:RecordAction,Pair{<:RecordAction, Symbol}}}
+        records::Vector{<:Union{<:RecordAction,Pair{<:RecordAction,Symbol}}}
     )
         g = Array{RecordAction,1}()
         si = Dict{Symbol,Int}()
@@ -776,10 +776,12 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
     iter_entries = filter(
-        x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
+        x ->
+            !isa(x, Pair{Symbol,T} where {T}) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int),
+        a,
     )
     # Filter pairs
-    b = filter(x -> isa(x, Pair), a)
+    b = filter(x -> isa(x, Pair{Symbol,T} where {T}), a)
     # Push this to the :Iteration if that exists or add that pair
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
@@ -832,11 +834,11 @@ If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenAct
 """
 function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
-    group = Array{Union{<:RecordAction,Tuple{Symbol,<:RecordAction}},1}()
+    group = Array{Union{<:RecordAction,Pair{<:RecordAction,Symbol}},1}()
     for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
         if e isa Symbol # factory for this symbol, store in a pair (for better access later)
-            push!(group, (e, RecordActionFactory(s, e)))
-        elseif e isa Pair{<:RecordAction, <:Symbol} #already a generated action => symbol to store at
+            push!(group, RecordActionFactory(s, e) => e)
+        elseif e isa Pair{<:RecordAction,Symbol} #already a generated action => symbol to store at
             push!(group, e)
         else # process the others as elements for an action factory
             push!(group, RecordActionFactory(s, e))

@@ -48,7 +48,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         RecordIteration,
     )
     @test isa(RecordFactory(gds, :Iteration)[:Iteration], RecordIteration)
-    sa = :It3 => RecordIteration()
+    sa = RecordIteration() => :It3
     @test RecordActionFactory(gds, sa) === sa
     @test !has_record(gds)
     @test_throws ErrorException get_record(gds)

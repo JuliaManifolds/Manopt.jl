@@ -134,15 +134,16 @@ We now first build a  [`RecordGroup`](https://manoptjl.org/stable/plans/record/#
 ```{julia}
 rI = RecordEvery(
     RecordGroup([
-        (:Iteration, RecordIteration()),
-        (:Cost, RecordCost()),
-        (:Gradient, RecordEntry(similar(data[1]), :X)),
+        RecordIteration() => :Iteration,
+        RecordCost() => :Cost,
+        RecordEntry(similar(data[1]), :X) => :Gradient,
     ]),
     6,
 )
 ```
 
-and for recording the final iteration number
+where the notation as a pair with the symbol can be read as “Is accessible by”.
+For recording the final iteration number
 
 ```{julia}
 sI = RecordIteration()
@@ -173,6 +174,9 @@ and the other values during the iterations are
 ```{julia}
 get_record(res, :Iteration, (:Iteration, :Cost))
 ```
+
+where the last tuple contains the names from the pairs when we generated the record group.
+So similarly we can use `:Gradient` as specified before to access the recorded gradient.
 
 ## Recording from a Subsolver
 
@@ -325,7 +329,7 @@ R3 = gradient_descent(
     data[1];
     record=[:Iteration => [
         :Iteration,
-        (:Count, RecordCount()),
+        RecordCount() => :Count,
         :Cost],
     ],
     stepsize = ConstantStepsize(1.0),
@@ -335,7 +339,7 @@ R3 = gradient_descent(
 )
 ```
 
-For `:Cost` we already learned how to access them, the `:Count =>` introduces the following action to obtain the `:Count`. We can again access the whole sets of records
+For `:Cost` we already learned how to access them, the ` => :Count` introduces preceeding action to obtain the `:Count` symbol as its access. We can again access the whole sets of records
 
 ```{julia}
 get_record(R3)
