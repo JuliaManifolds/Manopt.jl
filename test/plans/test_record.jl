@@ -201,9 +201,12 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rwa(dmp, gds, 1)
         set_manopt_parameter!(rwa, :active, false)
         @test !rwa.active
-        # check always update
+        # check inactive
         rwa(dmp, gds, 2)
         @test length(get_record(rwa)) == 1 # updated, but not cleared
+        # check always update
+        rwa(dmp, gds, -1)
+        @test length(get_record(rwa)) == 0 # updated, but not cleared
     end
     @testset "RecordFactory" begin
         gds.X = [0.0, 0.0]
@@ -228,10 +231,13 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
                 ],
             ),
         )
+    end
+    @testset "RecordActionactory" begin
+        g = RecordCost()
         @test RecordActionFactory(gds, g) == g
         rss = RecordActionFactory(gds, :Subsolver)
         @test rss isa RecordSubsolver
-        @test rss2.record == [:Iteration]# Default
+        @test rss.record == [:Iteration]# Default
         rss2 = RecordActionFactory(gds, (:Subsolver, :Stop))
         @test rss2 isa RecordSubsolver
         @test rss2.record == [:Stop]
