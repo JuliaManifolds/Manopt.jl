@@ -418,6 +418,7 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         set_manopt_parameter!(dE, :active, false) # deactivate
+        dE(mp, st, -1) # rset still working
         dE(mp, st, 2)
         @test endswith(String(take!(io)), "")
         @test !dA.active
@@ -426,8 +427,8 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dG(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         # test its usage in the factory independent of position
-        @test DebugFactory([" | ", :Subsolver])[:Iteration] isa DebugWhenActive
-        @test DebugFactory([:Subsolver, " | "])[:Iteration] isa DebugWhenActive
+        @test DebugFactory([" | ", :WhenActive])[:Iteration] isa DebugWhenActive
+        @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
         set_manopt_parameter!(dst, :Debug, :active, true)

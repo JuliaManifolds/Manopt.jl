@@ -29,7 +29,7 @@ In Julia you can get started by just typing
 using Pkg; Pkg.add("Manopt");
 ```
 
-and then checkout the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!/) tutorial.
+and then checkout the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize/) tutorial.
 
 ## Related packages
 

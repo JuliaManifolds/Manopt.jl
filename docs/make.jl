@@ -116,7 +116,8 @@ tutorials_menu =
 # (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 links = InterLinks(
-    "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/")
+    "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/"),
+    "Manifolds" => ("https://juliamanifolds.github.io/Manifolds.jl/stable/"),
 )
 makedocs(;
     format=Documenter.HTML(;
