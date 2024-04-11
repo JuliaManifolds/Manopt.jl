@@ -8,6 +8,7 @@ using Manifolds, Manopt, ManifoldsBase, Test
     @test startswith(
         repr(s), "# Solver state for `Manopt.jl`s Truncated Conjugate Gradient Descent\n"
     )
+    @test get_iterate(s) == η
     srr = StopWhenResidualIsReducedByFactorOrPower()
     ssr1 = Manopt.status_summary(srr)
     @test ssr1 == "Residual reduced by factor 0.1 or power 1.0:\tnot reached"

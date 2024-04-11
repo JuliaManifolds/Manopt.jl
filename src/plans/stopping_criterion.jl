@@ -898,12 +898,25 @@ concatenation of all reasons (assuming that all non-indicating return `""`).
 mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     criteria::TCriteria
     reason::String
-    StopWhenAny(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
+    StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, "")
 end
+
+# _fast_any(f, tup::Tuple) is functionally equivalent to any(f, tup) but on Julia 1.10
+# this implementation is faster on heterogeneous tuples
+@inline _fast_any(f, tup::Tuple{}) = true
+@inline _fast_any(f, tup::Tuple{T}) where {T} = f(tup[1])
+@inline function _fast_any(f, tup::Tuple)
+    if f(tup[1])
+        return true
+    else
+        return _fast_any(f, tup[2:end])
+    end
+end
+
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.reason = "") # reset on init
-    if any(subC -> subC(p, s, i), c.criteria)
+    if _fast_any(subC -> subC(p, s, i), c.criteria)
         c.reason = string((get_reason(subC) for subC in c.criteria)...)
         return true
     end
@@ -957,6 +970,8 @@ function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
     return StopWhenAny(s1.criteria..., s2)
 end
 
+is_active_stopping_criterion(c::StoppingCriterion) = !isempty(c.reason)
+
 @doc raw"""
     get_active_stopping_criteria(c)
 
@@ -974,7 +989,7 @@ end
 # for non-array containing stopping criteria, the recursion ends in either
 # returning nothing or an 1-element array containing itself
 function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
-    if c.reason != ""
+    if is_active_stopping_criterion(c)
         return [c] # recursion top
     else
         return []

@@ -1,4 +1,5 @@
 using Manopt, Test, ManifoldsBase, Dates, Manifolds
+using Manopt: DebugActionFactory, DebugFactory, DebugGroupFactory
 
 struct TestPolarManifold <: AbstractManifold{ℝ} end
 
@@ -10,6 +11,14 @@ struct TestDebugAction <: DebugAction end
 
 struct TestMessageState <: AbstractManoptSolverState end
 Manopt.get_message(::TestMessageState) = "DebugTest"
+
+mutable struct TestDebugParameterState <: AbstractManoptSolverState
+    value::Int
+end
+function Manopt.set_manopt_parameter!(d::TestDebugParameterState, ::Val{:value}, v)
+    (d.value = v; return d)
+end
+Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
 @testset "Debug State" begin
     # helper to get debug as string
@@ -28,11 +37,10 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         a1 = DebugDivider("|"; io=io)
         @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
         # constructors
-        @test DebugSolverState(st, a1).debugDictionary[:All] == a1
-        @test DebugSolverState(st, [a1]).debugDictionary[:All].group[1] == a1
+        @test DebugSolverState(st, a1).debugDictionary[:Iteration] == a1
+        @test DebugSolverState(st, [a1]).debugDictionary[:Iteration].group[1] == a1
         @test DebugSolverState(st, Dict(:A => a1)).debugDictionary[:A] == a1
-        @test DebugSolverState(st, ["|"]).debugDictionary[:All].group[1].divider ==
-            a1.divider
+        @test DebugSolverState(st, ["|"]).debugDictionary[:Iteration].divider == a1.divider
         @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
         @test repr(DebugSolverState(st, Dict{Symbol,DebugAction}())) == repr(st)
         # single AbstractStateActions
@@ -141,62 +149,6 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
             "The algorithm reached its maximal number of iterations (20).\n"
         @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
         @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
-
-        # Factory
-        df = DebugFactory([:Stop, "|"])
-        @test isa(df[:Stop], DebugStoppingCriterion)
-        @test isa(df[:All], DebugGroup)
-        @test isa(df[:All].group[1], DebugDivider)
-        @test length(df[:All].group) == 1
-        df = DebugFactory([:Stop, "|", 20])
-        @test isa(df[:All], DebugEvery)
-        s = [
-            :Change,
-            :GradientChange,
-            :Iteration,
-            :Iterate,
-            :Cost,
-            :Stepsize,
-            :p,
-            :Time,
-            :IterativeTime,
-        ]
-        @test all(
-            isa.(
-                DebugFactory(s)[:All].group,
-                [
-                    DebugChange,
-                    DebugGradientChange,
-                    DebugIteration,
-                    DebugIterate,
-                    DebugCost,
-                    DebugStepsize,
-                    DebugEntry,
-                    DebugTime,
-                    DebugTime,
-                ],
-            ),
-        )
-        @test DebugActionFactory((:IterativeTime)).mode == :Iterative
-        @test all(
-            isa.(
-                DebugFactory([(t, "A") for t in s])[:All].group,
-                [
-                    DebugChange,
-                    DebugGradientChange,
-                    DebugIteration,
-                    DebugIterate,
-                    DebugCost,
-                    DebugStepsize,
-                    DebugEntry,
-                    DebugTime,
-                    DebugTime,
-                ],
-            ),
-        )
-        @test DebugActionFactory(a3) == a3
-        @test DebugFactory([(:Iterate, "A")])[:All].group[1].format == "A"
-        @test DebugActionFactory((:Iterate, "A")).format == "A"
         # Status for multiple dictionaries
         dss = DebugSolverState(st, DebugFactory([:Stop, 20, "|"]))
         @test contains(Manopt.status_summary(dss), ":Stop")
@@ -213,7 +165,84 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         dgc2 = DebugGradientChange(Euclidean(2))
         @test repr(dgc2) == dgc_s
     end
-
+    @testset "Debug Factory" begin
+        # Factory
+        df = DebugFactory([:Stop, "|"])
+        @test isa(df[:Stop], DebugStoppingCriterion)
+        @test isa(df[:Iteration], DebugDivider)
+        df = DebugFactory([:Stop, "|", 20])
+        @test isa(df[:Iteration], DebugEvery)
+        s = [
+            :Change,
+            :GradientChange,
+            :Iteration,
+            :Iterate,
+            :Cost,
+            :Stepsize,
+            :p,
+            :Time,
+            :IterativeTime,
+        ]
+        @test all(
+            isa.(
+                DebugFactory(s)[:Iteration].group,
+                [
+                    DebugChange,
+                    DebugGradientChange,
+                    DebugIteration,
+                    DebugIterate,
+                    DebugCost,
+                    DebugStepsize,
+                    DebugEntry,
+                    DebugTime,
+                    DebugTime,
+                ],
+            ),
+        )
+        @test DebugActionFactory((:IterativeTime)).mode == :Iterative
+        @test all(
+            isa.(
+                DebugFactory([(t, "A") for t in s])[:Iteration].group,
+                [
+                    DebugChange,
+                    DebugGradientChange,
+                    DebugIteration,
+                    DebugIterate,
+                    DebugCost,
+                    DebugStepsize,
+                    DebugEntry,
+                    DebugTime,
+                    DebugTime,
+                ],
+            ),
+        )
+        a1 = DebugDivider("|")
+        @test DebugActionFactory(a1) == a1
+        @test DebugGroupFactory(a1) == a1 #when trying to build a one-element group, this is still just a1
+        @test DebugFactory([(:Iterate, "A")])[:Iteration].format == "A"
+        @test DebugActionFactory((:Iterate, "A")).format == "A"
+        # Merge iteration and simple entries to Iteration
+        df2 = DebugFactory([:Iteration, :Iteration => [:Cost]])
+        @test length(df2[:Iteration].group) == 2
+        # appended in the end
+        @test df2[:Iteration].group[1] isa DebugCost
+        @test df2[:Iteration].group[2] isa DebugIteration
+        df3 = DebugFactory([:Stop, :Stop => [:Iteration]])
+        @test length(df3[:Stop].group) == 2
+        # appended in the end
+        @test df3[:Stop].group[1] isa DebugIteration
+        @test df3[:Stop].group[2] isa DebugStoppingCriterion
+        # Group with every
+        dgf1 = Manopt.DebugGroupFactory([" ", :Cost, 20])
+        @test dgf1 isa DebugEvery
+        @test dgf1.debug isa DebugGroup
+    end
+    @testset "Debug and parameter passthrough" begin
+        s = TestDebugParameterState(0)
+        d = DebugSolverState(s, DebugDivider(" | "))
+        Manopt.set_manopt_parameter!(d, :value, 1)
+        @test Manopt.get_manopt_parameter(d, :value) == 1
+    end
     @testset "Debug Warnings" begin
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
@@ -252,11 +281,11 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test_logs (:warn,) w7(mp, st, 1)
 
         df1 = DebugFactory([:WarnCost])
-        @test isa(df1[:All].group[1], DebugWarnIfCostNotFinite)
+        @test isa(df1[:Iteration], DebugWarnIfCostNotFinite)
         df2 = DebugFactory([:WarnGradient])
-        @test isa(df2[:All].group[1], DebugWarnIfFieldNotFinite)
+        @test isa(df2[:Iteration], DebugWarnIfFieldNotFinite)
         df3 = DebugFactory([:WarnBundle])
-        @test isa(df3[:All].group[1], DebugWarnIfLagrangeMultiplierIncreases)
+        @test isa(df3[:Iteration], DebugWarnIfLagrangeMultiplierIncreases)
     end
     @testset "Debug Time" begin
         io = IOBuffer()
@@ -306,7 +335,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         @test Manopt.status_summary(d3) == ts
 
         d4 = DebugEvery(d1, 4)
-        @test repr(d4) == "DebugEvery($(d1), 4, true)"
+        @test repr(d4) == "DebugEvery($(d1), 4, true; activation_offset=1)"
         @test Manopt.status_summary(d4) === "[$(d1), 4]"
 
         ts2 = "DebugChange(; format=\"Last Change: %f\", inverse_retraction=LogarithmicInverseRetraction())"
@@ -389,6 +418,7 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         set_manopt_parameter!(dE, :active, false) # deactivate
+        dE(mp, st, -1) # rset still working
         dE(mp, st, 2)
         @test endswith(String(take!(io)), "")
         @test !dA.active
@@ -397,8 +427,8 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
         dG(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         # test its usage in the factory independent of position
-        @test DebugFactory([" | ", :Subsolver])[:All] isa DebugWhenActive
-        @test DebugFactory([:Subsolver, " | "])[:All] isa DebugWhenActive
+        @test DebugFactory([" | ", :WhenActive])[:Iteration] isa DebugWhenActive
+        @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
         set_manopt_parameter!(dst, :Debug, :active, true)

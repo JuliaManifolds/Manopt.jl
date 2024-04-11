@@ -97,7 +97,7 @@ This result is reasonably close. But we can improve it by using a `DirectionUpda
 
 On the one hand [`MomentumGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.MomentumGradient), which requires both the manifold and the initial value,  in order to keep track of the iterate and parallel transport the last direction to the current iterate.
 The necessary `vector_transport_method` keyword is set to a suitable default on every manifold,
-see [`default_vector_transport_method`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/vector_transports.html#ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}). We get
+see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)``{=commonmark}. We get
 """
 
 ```{julia}

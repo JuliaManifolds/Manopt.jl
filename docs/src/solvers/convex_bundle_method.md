@@ -16,6 +16,7 @@ ConvexBundleMethodState
 ```
 
 ## Stopping Criteria
+
 ```@docs
 StopWhenLagrangeMultiplierLess
 ```
@@ -30,7 +31,7 @@ DebugWarnIfLagrangeMultiplierIncreases
 
 ```@docs
 convex_bundle_method_subsolver
-sectional_curvature
+estimate_sectional_curvature
 ζ_1
 ζ_2
 close_point

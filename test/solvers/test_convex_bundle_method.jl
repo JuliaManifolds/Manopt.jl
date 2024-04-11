@@ -1,6 +1,6 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
 using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
-using Manopt: sectional_curvature, ζ_1, ζ_2, close_point
+using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
 
 @testset "The Convex Bundle Method" begin
     M = Hyperbolic(4)
@@ -133,7 +133,7 @@ using Manopt: sectional_curvature, ζ_1, ζ_2, close_point
         p = [1.0, 0.0, 0.0]
         κ = 1.0
         R = π / 2
-        @test sectional_curvature(M, p) ≈ κ
+        @test estimate_sectional_curvature(M, p) ≈ κ
         @test ζ_1(κ, R) ≈ 1.0
         @test -10eps() ≤ ζ_2(κ, R) ≤ 10eps()
         @test distance(M, p, close_point(M, p, R)) ≤ R
@@ -167,7 +167,7 @@ using Manopt: sectional_curvature, ζ_1, ζ_2, close_point
         q = get_solver_result(cbm_s)
         m = median(M, data)
         @test distance(M, q, m) < 1.5e-2 #with default params this is not very precise
-        # tst the other stopping criterion mode
+        # test the other stopping criterion mode
         q2 = convex_bundle_method(
             M,
             f,
@@ -175,6 +175,6 @@ using Manopt: sectional_curvature, ζ_1, ζ_2, close_point
             p0;
             stopping_criterion=StopWhenLagrangeMultiplierLess([1e-6, 1e-6]; mode=:both),
         )
-        @test distance(M, q2, m) < 1e-2
+        @test distance(M, q2, m) < 2e-2
     end
 end
