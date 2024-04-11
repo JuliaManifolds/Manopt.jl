@@ -1,32 +1,30 @@
-# @doc raw
-# """
-# InteriorPointNewtonState <: AbstractManoptSolverState
+@doc raw"""
+InteriorPointNewtonState <: AbstractManoptSolverState
 
-# # Fields
+# Fields
 
-# * `p`:                  point on M
-# * `μ`:                  Lagrange multiplier corresponding to inequality constrains 
-# * `λ`:                  Lagrange multiplier corresponding to equality constraints
-# * `s`:                  slack variable
-# * `γ`:
-# * `σ`:
-# * `ρ`:
-# * `stopping_criterion`: stopping criterion
-# * `step_size`
-# * `retraction_method`:  retraction method
+* `p`:                  point on M
+* `μ`:                  Lagrange multiplier corresponding to inequality constrains
+* `λ`:                  Lagrange multiplier corresponding to equality constraints
+* `s`:                  slack variable
+* `γ`:
+* `σ`:
+* `ρ`:
+* `stopping_criterion`: stopping criterion
+* `step_size`
+* `retraction_method`:  retraction method
 
-# # Constructor
+# Constructor
 
-# InteriorPointNewtonState( M::AbstractManifold, 
-#                           co::ConstrainedManifoldObjective, 
-#                           p = rand(M),
-#                           μ = ones(m),
-#                           λ = ones(n),
-#                           stopping_criterion = StopAfterIteration(300); 
-#                           kwargs...
-#                         )
-# """
-
+InteriorPointNewtonState( M::AbstractManifold,
+                          co::ConstrainedManifoldObjective,
+                          p = rand(M),
+                          μ = ones(m),
+                          λ = ones(n),
+                          stopping_criterion = StopAfterIteration(300);
+                          kwargs...
+                        )
+"""
 mutable struct InteriorPointNewtonState{
     P,
     T,
@@ -149,7 +147,7 @@ end
 
 
 # function subsolver(
-#     M::AbstractManifold, 
+#     M::AbstractManifold,
 #     co::ConstrainedManifoldObjective,
 #     ipns::InteriorPointNewtonState,
 # )
@@ -160,7 +158,7 @@ end
 
 #     # The matrix representation of the covariant derivative
 #     # of the KKT vector field is given by
-#     #      
+#     #
 #     #       | ∇^2 L   J_g^T   J_h^T   0 |
 #     #  ∇F = |  J_g      0       0     0 |
 #     #       |  J_h      0       0     I |
@@ -182,11 +180,10 @@ end
 # Proto-RIPM(q_00, R, ̂γ, β_0)
 # 1 k ← 0
 # 2 while stopping criterion not satisfied
-# 3   Solve for ∆qk : 
+# 3   Solve for ∆qk :
 #         ∇F(q_k)[∆q_k] = −F(q_k) + β_k ̂e
 # 4   Choose γ_k ∈ [̂γ, 1]
 # 5 α_k ← min { 1, γ_k min_i { -μ_k^i / Δμ_k^i : μ_k^i < 0 }, γ_k min_i { -s_k^i / Δs_k^i : s_k^i < 0 }}
 # 6 q_{k+1} ← ̄R_{q_k}(α_k Δq_k)
 # 7 Choose β_{k+1} ∈ (0, β_k)
 # 8 k ← k + 1
-
