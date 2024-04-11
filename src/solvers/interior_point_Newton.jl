@@ -26,12 +26,7 @@ InteriorPointNewtonState( M::AbstractManifold,
                         )
 """
 mutable struct InteriorPointNewtonState{
-    P,
-    T,
-    R<:Real,
-    TStop<:StoppingCriterion,
-    TStepsize<:Stepsize,
-    TRTM<:AbstractRetractionMethod,
+    P,T,R<:Real,TStop<:StoppingCriterion,TStepsize<:Stepsize,TRTM<:AbstractRetractionMethod
 } <: AbstractManoptSolverState
     p::P
     μ::T
@@ -49,14 +44,16 @@ mutable struct InteriorPointNewtonState{
         μ::T,
         λ::T,
         s::T,
-        γ::Real                                     = 0.5*rand() + 1,
-        σ::Real                                     = rand(),
-        ρ::Real                                     = 0.0,
-        stopping_criterion::StoppingCriterion       = StopAfterIteration(100),
-        step_size::Stepsize                         = default_stepsize(M, InteriorPointNewtonState),
-        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        γ::Real=0.5 * rand() + 1,
+        σ::Real=rand(),
+        ρ::Real=0.0,
+        stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+        step_size::Stepsize=default_stepsize(M, InteriorPointNewtonState),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     ) where {P,T}
-        state = new{P, T, Real, typeof(stopping_criterion), typeof(step_size), typeof(retraction_method)}()
+        state = new{
+            P,T,Real,typeof(stopping_criterion),typeof(step_size),typeof(retraction_method)
+        }()
         state.p = p
         state.μ = μ
         state.λ = λ
@@ -74,16 +71,18 @@ end
 function InteriorPointNewtonState(
     M::AbstractManifold,
     co::ConstrainedManifoldObjective,
-    p::P                                        = rand(M);
-    μ::T                                        = ones( length( get_inequality_constraints(M, co, p) ) ),
-    λ::T                                        = ones( length( get_equality_constraints(M, co, p) ) ),
-    s::T                                        = ones( length( get_inequality_constraints(M, co, p) ) ),
-    γ::Real                                     = 0.5*rand() + 1,
-    σ::Real                                     = rand(),
-    ρ::Real                                     = 0.0,
-    stopping_criterion::StoppingCriterion       = StopAfterIteration(100),
-    retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
-    step_size::Stepsize                         = default_stepsize(M, InteriorPointNewtonState; retraction_method = retraction_method),
+    p::P=rand(M);
+    μ::T=ones(length(get_inequality_constraints(M, co, p))),
+    λ::T=ones(length(get_equality_constraints(M, co, p))),
+    s::T=ones(length(get_inequality_constraints(M, co, p))),
+    γ::Real=0.5 * rand() + 1,
+    σ::Real=rand(),
+    ρ::Real=0.0,
+    stopping_criterion::StoppingCriterion=StopAfterIteration(100),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    step_size::Stepsize=default_stepsize(
+        M, InteriorPointNewtonState; retraction_method=retraction_method
+    ),
 ) where {P,T}
     return InteriorPointNewtonState{P,T}(
         M, p, μ, λ, s, γ, σ, ρ, stopping_criterion, step_size, retraction_method
@@ -93,17 +92,13 @@ end
 function default_stepsize(
     M::AbstractManifold,
     ::Type{InteriorPointNewtonState};
-    retraction_method = default_retraction_method(M),
+    retraction_method=default_retraction_method(M),
 )
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
 end
 
-function is_feasible(
-    M::AbstractManifold,
-    co::ConstrainedManifoldObjective,
-    p
-)
+function is_feasible(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
     # evaluate constraint functions at p
     gp = get_inequality_constraints(M, co, p)
     hp = get_equality_constraints(M, co, p)
@@ -145,7 +140,6 @@ end
 #     I     = ones()
 #     e = ones(length(hp))
 
-
 # function subsolver(
 #     M::AbstractManifold,
 #     co::ConstrainedManifoldObjective,
@@ -175,7 +169,6 @@ end
 #     ipns
 
 #     return ipns
-
 
 # Proto-RIPM(q_00, R, ̂γ, β_0)
 # 1 k ← 0

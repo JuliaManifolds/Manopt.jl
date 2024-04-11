@@ -93,7 +93,7 @@ end
 
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (lg::LagrangianGrad)(M::AbstractManifold, X, p)
-    grad_gp = get_grad_inequality_constraints(M, lg.co, p) 
+    grad_gp = get_grad_inequality_constraints(M, lg.co, p)
     grad_hp = get_grad_equality_constraints(M, lg.co, p)
     m = length(grad_gp)
     n = length(grad_hp)
@@ -124,9 +124,6 @@ function (
     return X
 end
 
-
-
-
 # mutable struct LagrangianHess{CO,T}
 #     co::CO
 #     μ::T
@@ -151,7 +148,7 @@ end
 # # default, that is especially when the `grad_g` and `grad_h` are functions.
 # function (lh::LagrangianHess)(M::AbstractManifold, Y, p, X)
 #     H = get_hessian_function(lh.co)
-#     hess_gp = get_grad_inequality_constraints(M, lg.co, p) 
+#     hess_gp = get_grad_inequality_constraints(M, lg.co, p)
 #     hess_hp = get_grad_equality_constraints(M, lg.co, p)
 #     m = length(grad_gp)
 #     n = length(grad_hp)
