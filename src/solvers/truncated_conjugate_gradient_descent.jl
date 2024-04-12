@@ -534,10 +534,9 @@ end
 function truncated_conjugate_gradient_descent(
     M::AbstractManifold, mho::O, p, X; kwargs...
 ) where {
-    E,
     O<:Union{
         AbstractManifoldSubObjective,
-        AbstractDecoratedManifoldObjective{E,<:AbstractManifoldSubObjective},
+        AbstractDecoratedManifoldObjective{E,<:AbstractManifoldSubObjective} where E,
     },
 }
     q = copy(M, p)

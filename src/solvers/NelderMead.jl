@@ -226,7 +226,7 @@ function NelderMead(
 end
 function NelderMead(
     M::AbstractManifold, f::F, population::NelderMeadSimplex{P,V}; kwargs...
-) where {P<:Number,V<:AbstractVector{P}, F<:Function}
+) where {P<:Number,V<:AbstractVector{P},F<:Function}
     f_ = (M, p) -> f(M, p[])
     population_ = NelderMeadSimplex([[p] for p in population.pts])
     rs = NelderMead(M, f_, population_; kwargs...)

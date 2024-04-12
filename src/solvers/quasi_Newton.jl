@@ -456,7 +456,9 @@ function update_hessian!(
 end
 
 # BFGS update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, mp::AbstractManoptProblem, st, p_old, iter)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{BFGS}, mp::AbstractManoptProblem, st, p_old, iter
+)
     M = get_manifold(mp)
     p = get_iterate(st)
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
@@ -520,7 +522,11 @@ end
 
 # Inverse SR-1 update
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1}, mp::AbstractManoptProblem, st::AbstractManoptSolverState, p_old, ::Int
+    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    ::Int,
 )
     M = get_manifold(mp)
     p = get_iterate(st)

@@ -406,7 +406,11 @@ function update_hessian!(
 end
 
 function update_hessian!(
-    M::AbstractManifold, f::ApproxHessianSymmetricRankOne{InplaceEvaluation}, p, p_proposal, X
+    M::AbstractManifold,
+    f::ApproxHessianSymmetricRankOne{InplaceEvaluation},
+    p,
+    p_proposal,
+    X,
 )
     grad_proposal = zero_vector(M, p_proposal)
     f.gradient!!(M, grad_proposal, p_proposal)
@@ -519,7 +523,9 @@ function (f::ApproxHessianBFGS{InplaceEvaluation})(M, Y, p, X)
     return Y
 end
 
-function update_hessian!(M::AbstractManifold, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_proposal, X)
+function update_hessian!(
+    M::AbstractManifold, f::ApproxHessianBFGS{AllocatingEvaluation}, p, p_proposal, X
+)
     yk_c = get_coordinates(
         M,
         p,

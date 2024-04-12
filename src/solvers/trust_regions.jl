@@ -143,9 +143,9 @@ end
 function TrustRegionsState(
     M, sub_problem::Pr, sub_state::St; kwargs...
 ) where {
-    Pr<:Union{AbstractManoptProblem,T} where T,
-    St<:Union{AbstractManoptSolverState, AbstractEvaluationType},
-    }
+    Pr<:Union{AbstractManoptProblem,T} where {T},
+    St<:Union{AbstractManoptSolverState,AbstractEvaluationType},
+}
     return TrustRegionsState(M, rand(M), sub_problem, sub_state; kwargs...)
 end
 # point, but no state for a function -> add evaluation as state

@@ -8,7 +8,9 @@ import Manopt:
     alternating_gradient_descent!,
     get_gradient,
     get_gradient!,
-    set_manopt_parameter!
+    set_manopt_parameter!,
+    reflect,
+    reflect!
 using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu, I, Diagonal
 import ManifoldsBase: copy, mid_point, mid_point!
 
