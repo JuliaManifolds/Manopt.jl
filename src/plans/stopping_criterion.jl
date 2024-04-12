@@ -884,7 +884,7 @@ function Base.:&(s1::StopWhenAll, s2::T) where {T<:StoppingCriterion}
     return StopWhenAll(s1.criteria..., s2)
 end
 function Base.:&(s1::StopWhenAll, s2::StopWhenAll)
-    return StopWhenAll(s1.criteria..., s2.criteria)
+    return StopWhenAll(s1.criteria..., s2.criteria...)
 end
 
 @doc raw"""
@@ -971,6 +971,9 @@ function Base.:|(s1::S, s2::StopWhenAny) where {S<:StoppingCriterion}
 end
 function Base.:|(s1::StopWhenAny, s2::T) where {T<:StoppingCriterion}
     return StopWhenAny(s1.criteria..., s2)
+end
+function Base.:|(s1::StopWhenAny, s2::StopWhenAny)
+    return StopWhenAny(s1.criteria..., s2.criteria...)
 end
 
 is_active_stopping_criterion(c::StoppingCriterion) = !isempty(c.reason)

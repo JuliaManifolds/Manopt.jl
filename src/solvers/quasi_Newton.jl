@@ -434,7 +434,11 @@ within `d`.
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseBFGS}, mp, st, p_old, iter
+    d::QuasiNewtonMatrixDirectionUpdate{InverseBFGS},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    iter,
 )
     M = get_manifold(mp)
     p = get_iterate(st)
@@ -452,7 +456,7 @@ function update_hessian!(
 end
 
 # BFGS update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, mp, st, p_old, iter)
+function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{BFGS}, mp::AbstractManoptProblem, st, p_old, iter)
     M = get_manifold(mp)
     p = get_iterate(st)
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
@@ -470,7 +474,11 @@ end
 
 # Inverse DFP update
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseDFP}, mp, st, p_old, iter
+    d::QuasiNewtonMatrixDirectionUpdate{InverseDFP},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    iter,
 )
     M = get_manifold(mp)
     p = get_iterate(st)
@@ -488,7 +496,13 @@ function update_hessian!(
 end
 
 # DFP update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{DFP}, mp, st, p_old, iter)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{DFP},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    iter,
+)
     M = get_manifold(mp)
     p = get_iterate(st)
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
@@ -506,7 +520,7 @@ end
 
 # Inverse SR-1 update
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1}, mp, st, p_old, ::Int
+    d::QuasiNewtonMatrixDirectionUpdate{InverseSR1}, mp::AbstractManoptProblem, st::AbstractManoptSolverState, p_old, ::Int
 )
     M = get_manifold(mp)
     p = get_iterate(st)
@@ -523,7 +537,13 @@ function update_hessian!(
 end
 
 # SR-1 update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{SR1}, mp, st, p_old, ::Int)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{SR1},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    ::Int,
+)
     M = get_manifold(mp)
     p = get_iterate(st)
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
@@ -540,7 +560,11 @@ end
 
 # Inverse Broyden update
 function update_hessian!(
-    d::QuasiNewtonMatrixDirectionUpdate{InverseBroyden}, mp, st, p_old, ::Int
+    d::QuasiNewtonMatrixDirectionUpdate{InverseBroyden},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    ::Int,
 )
     M = get_manifold(mp)
     p = get_iterate(st)
@@ -563,7 +587,13 @@ function update_hessian!(
 end
 
 # Broyden update
-function update_hessian!(d::QuasiNewtonMatrixDirectionUpdate{Broyden}, mp, st, p_old, ::Int)
+function update_hessian!(
+    d::QuasiNewtonMatrixDirectionUpdate{Broyden},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    ::Int,
+)
     M = get_manifold(mp)
     p = get_iterate(st)
     update_basis!(d.basis, M, p_old, p, d.vector_transport_method)
@@ -628,7 +658,11 @@ end
 
 # Cautious update
 function update_hessian!(
-    d::QuasiNewtonCautiousDirectionUpdate{U}, mp, st, p_old, iter
+    d::QuasiNewtonCautiousDirectionUpdate{U},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    iter,
 ) where {U<:AbstractQuasiNewtonDirectionUpdate}
     M = get_manifold(mp)
     p = get_iterate(st)
@@ -644,7 +678,11 @@ end
 
 # Limited-memory update
 function update_hessian!(
-    d::QuasiNewtonLimitedMemoryDirectionUpdate{U}, mp, st, p_old, ::Int
+    d::QuasiNewtonLimitedMemoryDirectionUpdate{U},
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
+    p_old,
+    ::Int,
 ) where {U<:InverseBFGS}
     (capacity(d.memory_s) == 0) && return d
     # only transport the first if it does not get overwritten at the end
@@ -683,8 +721,8 @@ end
 # all Cautious Limited Memory
 function update_hessian!(
     d::QuasiNewtonCautiousDirectionUpdate{<:QuasiNewtonLimitedMemoryDirectionUpdate},
-    mp,
-    st,
+    mp::AbstractManoptProblem,
+    st::AbstractManoptSolverState,
     p_old,
     iter,
 )

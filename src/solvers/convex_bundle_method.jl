@@ -517,7 +517,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
-get_last_stepsize(bms::ConvexBundleMethodState) = bms.last_stepsize
+get_last_stepsize(::AbstractManoptProblem, bms::ConvexBundleMethodState) = bms.last_stepsize
 
 #
 #
@@ -598,9 +598,9 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
 end
 
 function (d::DebugStepsize)(
-    ::P, bms::ConvexBundleMethodState, i::Int
+    dmp::P, bms::ConvexBundleMethodState, i::Int
 ) where {P<:AbstractManoptProblem}
     (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(bms))
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, bms))
     return nothing
 end
