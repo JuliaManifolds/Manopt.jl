@@ -415,21 +415,21 @@ end
 @noinline function StoreStateAction(
     M::AbstractManifold;
     store_fields::Vector{Symbol}=Symbol[],
-    store_points::Union{Type{TPS},Vector{Symbol}}=Tuple{},
-    store_vectors::Union{Type{TTS},Vector{Symbol}}=Tuple{},
+    store_points::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
+    store_vectors::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
     p_init=rand(M),
     X_init=zero_vector(M, p_init),
     once=true,
-) where {TPS<:Tuple,TTS<:Tuple}
+)
     if store_points isa Vector{Symbol}
         TPS_tuple = tuple(store_points...)
     else
-        TPS_tuple = Tuple(TPS.parameters)
+        TPS_tuple = Tuple(store_points.parameters)
     end
     if store_vectors isa Vector{Symbol}
         TTS_tuple = tuple(store_vectors...)
     else
-        TTS_tuple = Tuple(TTS.parameters)
+        TTS_tuple = Tuple(store_vectors.parameters)
     end
     point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
     vector_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
