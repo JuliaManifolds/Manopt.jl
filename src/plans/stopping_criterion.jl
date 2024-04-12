@@ -883,6 +883,9 @@ end
 function Base.:&(s1::StopWhenAll, s2::T) where {T<:StoppingCriterion}
     return StopWhenAll(s1.criteria..., s2)
 end
+function Base.:&(s1::StopWhenAll, s2::StopWhenAll)
+    return StopWhenAll(s1.criteria..., s2.criteria)
+end
 
 @doc raw"""
     StopWhenAny <: StoppingCriterion

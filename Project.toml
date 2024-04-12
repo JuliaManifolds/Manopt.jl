@@ -66,6 +66,7 @@ Test = "1.6"
 julia = "1.6"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
@@ -79,4 +80,4 @@ RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache", "RipQP", "QuadraticModels"]
+test = ["Test", "Aqua", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache", "RipQP", "QuadraticModels"]

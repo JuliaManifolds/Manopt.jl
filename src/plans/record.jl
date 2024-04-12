@@ -649,10 +649,6 @@ mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
         return new{typeof(a)}(Float64[], f, d, a)
     end
-    function RecordEntryChange(v, f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
-        update_storage!(a, Dict(f => v))
-        return new{typeof(a)}(Float64[], f, d, a)
-    end
 end
 function (r::RecordEntryChange)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
