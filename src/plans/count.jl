@@ -430,7 +430,7 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p, i)
 end
 
 function objective_count_factory(
-    M::AbstractManifold, o::AbstractManifoldCostObjective, counts::Vector{<:Symbol}
+    M::AbstractManifold, o::AbstractManifoldObjective, counts::Vector{<:Symbol}
 )
     return ManifoldCountObjective(M, o, counts)
 end

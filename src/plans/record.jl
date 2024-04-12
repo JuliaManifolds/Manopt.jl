@@ -820,7 +820,6 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
         iter = popat!(b, i) #
-        println(iter, "<-")
         b = [b..., :Iteration => [iter.second..., iter_entries...]]
     else
         (length(iter_entries) > 0) && (b = [b..., :Iteration => iter_entries])
