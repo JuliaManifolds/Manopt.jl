@@ -421,20 +421,15 @@ end
     X_init=zero_vector(M, p_init),
     once=true,
 )
-    if store_points isa Vector{Symbol}
-        TPS_tuple = tuple(store_points...)
-    else
-        TPS_tuple = Tuple(store_points.parameters)
-    end
-    if store_vectors isa Vector{Symbol}
-        TTS_tuple = tuple(store_vectors...)
-    else
-        TTS_tuple = Tuple(store_vectors.parameters)
-    end
+    TPS_tuple = _store_to_tuple(store_points)
+    TTS_tuple = _store_to_tuple(store_vectors)
     point_values = NamedTuple{TPS_tuple}(map(_ -> p_init, TPS_tuple))
     vector_values = NamedTuple{TTS_tuple}(map(_ -> X_init, TTS_tuple))
     return StoreStateAction(store_fields, point_values, vector_values, once; M=M)
 end
+
+_store_to_tuple(store::Type{<:Tuple}) = Tuple(store.parameters)
+_store_to_tuple(store::Vector{Symbol}) = tuple(store...)
 
 @generated function extract_type_from_namedtuple(::Type{nt}, ::Val{key}) where {nt,key}
     for i in 1:length(nt.parameters[1])
