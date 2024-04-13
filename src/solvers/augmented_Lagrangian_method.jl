@@ -465,8 +465,6 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
 end
 get_solver_result(alms::AugmentedLagrangianMethodState) = alms.p
 
-function get_last_stepsize(
-    ::AbstractManoptProblem, s::AugmentedLagrangianMethodState, args...
-)
+function get_last_stepsize(::AbstractManoptProblem, s::AugmentedLagrangianMethodState, i)
     return s.last_stepsize
 end

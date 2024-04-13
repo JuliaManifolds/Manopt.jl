@@ -303,8 +303,6 @@ function step_solver!(
     return lms
 end
 
-function _get_last_stepsize(
-    ::AbstractManoptProblem, lms::LevenbergMarquardtState, ::Val{false}, vars...
-)
+function get_last_stepsize(::AbstractManoptProblem, lms::LevenbergMarquardtState, ::Any...)
     return lms.last_stepsize
 end

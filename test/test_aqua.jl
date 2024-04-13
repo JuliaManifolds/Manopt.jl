@@ -12,7 +12,6 @@ using Aqua, Manopt, Test
                 Manopt.particle_swarm, # should be fixed
                 Manopt.stochastic_gradient_descent, # should be fixed
                 Manopt.truncated_conjugate_gradient_descent!, # will be fixed by removing deprecated methods
-                Manopt.get_last_stepsize, #Maybe redesign?
             ],
             broken=false,
         ),

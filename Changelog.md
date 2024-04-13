@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Tests now also use `Aqua.jl` to spot problems in the code, e.g. ambiguities.
 
+### Fixed
+
+* `get_last_stepsize` was defined in quite different ways that caused ambiguities. That is now internally a bit restructured and should work nicer.
+  Internally this means that the interims dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
+
 ## [0.4.60] – April 10, 2024
 
 ### Added
