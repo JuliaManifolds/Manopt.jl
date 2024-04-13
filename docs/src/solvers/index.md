@@ -7,7 +7,7 @@ CurrentModule = Manopt
 
 Optimisation problems can be classified with respect to several criteria.
 In the following we provide a grouping of the algorithms with respect to the “information”
-available for your optimisation problem
+available about your optimisation problem
 
 ```math
 \operatorname*{arg\,min}_{p∈\mathbb M} f(p)
