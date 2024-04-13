@@ -27,6 +27,12 @@ For derivative free
 
 ### Subgradient
 
+The following methods require the Riemannian subgradient ``∂f`` to be available.
+While the subgradient might be set-valued, the function should provide one of the subgradients.
+
+* The [Subgradient Method](subgradient.md) takes the negative subgradient as a step direction and can be combined with a step size.
+* The [Convex Bundle Method](convex_bundle_method.md) uses a former collection of subgradients at the previous iterates and iterate candidates to solve a local approximation to `f` in every iteration.
+
 ## Second Order
 
 ## Splitting based
@@ -34,10 +40,8 @@ For derivative free
 For splitting methods, the algorithms are based on splitting the cost into different parts, usually in a sum of two or more summands.
 
 * The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth aso the gradient exists, and (locally) convex.
-  [`alternating_gradient_descent`](@ref)`(M::ProductManifold, f, grad_f)`
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
   where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
-  [`ChambollePock`](@ref)`(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, Λ)`
 
 ## Constrained
 
@@ -62,7 +66,6 @@ The following algorithms are currently available
 
 * [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md), [`adaptive_regularization_with_cubics`](@ref)
 * [Conjugate Gradient Descent](conjugate_gradient_descent.md) | [`conjugate_gradient_descent`](@ref)
-* [Convex Bundle Method](convex_bundle_method.md) | [`convex_bundle_method`](@ref)
 * [Cyclic Proximal Point](cyclic_proximal_point.md) | [`cyclic_proximal_point`](@ref)
 * [Difference of Convex Algorithm](@ref solver-difference-of-convex) | [`difference_of_convex_algorithm`](@ref)
 * [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref)
@@ -77,7 +80,6 @@ The following algorithms are currently available
 * [Proximal Bundle Method](proximal_bundle_method.md) | [`proximal_bundle_method`](@ref)
 * [Quasi-Newton Method](quasi_Newton.md) | [`quasi_Newton`](@ref)
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref)
-* [Subgradient Method](subgradient.md) | [`subgradient_method`](@ref)
 * [Stochastic Gradient Descent](stochastic_gradient_descent.md) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref)
 * [The Riemannian Trust-Regions Solver](trust_regions.md) | [`trust_regions`](@ref)
 
