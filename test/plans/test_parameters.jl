@@ -7,6 +7,7 @@ using Manifolds, Manopt, Test, ManifoldsBase
         :TestValue, "Å"
     )
     @test Manopt.get_manopt_parameter(:TestValue) == "Å"
+    @test Manopt.get_manopt_parameter(:TestValue, :Dummy) == "Å" # Dispach ignores second symbol
     @test_logs (:info, "Resetting the `Manopt.jl` parameter :TestValue to default.") Manopt.set_manopt_parameter!(
         :TestValue, ""
     ) # reset
