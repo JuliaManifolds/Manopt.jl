@@ -19,11 +19,19 @@ locally or even globally.
 
 ## Derivative Free
 
-For derivative free
+For derivative free only function evaluations of ``f`` are used.
+
+* [Nelder-Mead](NelderMead.md) a simplex based variant, that is using ``d+1`` points, where ``d`` is the dimension of the manifold.
+* [Particle Swarm](particle_swarm.md) use the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
 
 ## First Order
 
 ### Gradient
+
+* [Gradient Descent](gradient_descent.md) use the gradient from ``f`` to determine a descent direction. Here, the direction can also be changed to be Averaged, Momentum-based, based on Nesterovs rule.
+* [Conjugate Gradient Descent](conjugate_gradient_descent.md) uses information from the previous descent direction to improve the current (gradient-based) one including several such update rules.
+* [Quasi-Newton Method](quasi_Newton.md) use gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
+* [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) a solver for a constrained problem defined on a tangent space.
 
 ### Subgradient
 
@@ -35,6 +43,9 @@ While the subgradient might be set-valued, the function should provide one of th
 
 ## Second Order
 
+* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) locally builds a cubic model to determine a next descent direction
+* The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine a next descent direction
+
 ## Splitting based
 
 For splitting methods, the algorithms are based on splitting the cost into different parts, usually in a sum of two or more summands.
@@ -42,6 +53,7 @@ For splitting methods, the algorithms are based on splitting the cost into diffe
 * The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth aso the gradient exists, and (locally) convex.
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
   where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
+* The [Cyclic Proximal Point](cyclic_proximal_point.md) uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
 
 ## Constrained
 
@@ -64,24 +76,15 @@ For these you can use
 
 The following algorithms are currently available
 
-* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md), [`adaptive_regularization_with_cubics`](@ref)
-* [Conjugate Gradient Descent](conjugate_gradient_descent.md) | [`conjugate_gradient_descent`](@ref)
-* [Cyclic Proximal Point](cyclic_proximal_point.md) | [`cyclic_proximal_point`](@ref)
 * [Difference of Convex Algorithm](@ref solver-difference-of-convex) | [`difference_of_convex_algorithm`](@ref)
 * [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref)
 * [Douglas—Rachford](DouglasRachford.md) | [`DouglasRachford`](@ref)
 * [Exact Penalty Method](exact_penalty_method.md) | [`exact_penalty_method`](@ref)
 * [Frank-Wolfe algorithm](FrankWolfe.md) | [`Frank_Wolfe_method`](@ref)
-* [Gradient Descent](gradient_descent.md) | [`gradient_descent`](@ref)
 * [Levenberg-Marquardt](LevenbergMarquardt.md) | [`LevenbergMarquardt`](@ref)
-* [Nelder-Mead](NelderMead.md) | [`NelderMead`](@ref)
-* [Particle Swarm](particle_swarm.md) | [`particle_swarm`](@ref)
 * [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) | [`primal_dual_semismooth_Newton`](@ref)
 * [Proximal Bundle Method](proximal_bundle_method.md) | [`proximal_bundle_method`](@ref)
-* [Quasi-Newton Method](quasi_Newton.md) | [`quasi_Newton`](@ref)
-* [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref)
 * [Stochastic Gradient Descent](stochastic_gradient_descent.md) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref)
-* [The Riemannian Trust-Regions Solver](trust_regions.md) | [`trust_regions`](@ref)
 
 # Alphabetical list List of algorithms
 
