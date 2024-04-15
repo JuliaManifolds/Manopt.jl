@@ -34,7 +34,7 @@ For derivative free only function evaluations of ``f`` are used.
 * [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the square norm of ``f: \mathcal M→ℝ^d`` provided the gradients of the component functions, or in other words the Jacobian of ``f``.
 * The [Quasi-Newton Method](quasi_Newton.md) uses gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) a solver for a constrained problem defined on a tangent space.
-* [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into several components ``f_i`` whose gradients are provided here. By randomly selecting these, steps towards (compnent-wise) descent directions are performed.
+* [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into a sum of several components ``f_i`` whose gradients are provided. Steps are performed according to gradients of randomly selected components.
 
 ### Subgradient
 
@@ -47,8 +47,8 @@ While the subgradient might be set-valued, the function should provide one of th
 
 ## Second Order
 
-* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) locally builds a cubic model to determine a next descent direction
-* The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine a next descent direction
+* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) locally builds a cubic model to determine the next descent direction.
+* The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine the next descent direction.
 
 ## Splitting based
 
@@ -70,7 +70,7 @@ Constrained problems of the form
 ```math
 \begin{align*}
 \operatorname*{arg\,min}_{p∈\mathbb M}& f(p)\\
-\text{such that} & g(p) \leq 0\\&h(p) = 0
+\text{such that } & g(p) \leq 0\\&h(p) = 0
 \end{align*}
 ```
 
