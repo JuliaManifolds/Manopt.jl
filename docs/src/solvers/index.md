@@ -28,10 +28,12 @@ For derivative free only function evaluations of ``f`` are used.
 
 ### Gradient
 
-* [Gradient Descent](gradient_descent.md) use the gradient from ``f`` to determine a descent direction. Here, the direction can also be changed to be Averaged, Momentum-based, based on Nesterovs rule.
+* [Gradient Descent](gradient_descent.md) uses the gradient from ``f`` to determine a descent direction. Here, the direction can also be changed to be Averaged, Momentum-based, based on Nesterovs rule.
 * [Conjugate Gradient Descent](conjugate_gradient_descent.md) uses information from the previous descent direction to improve the current (gradient-based) one including several such update rules.
-* [Quasi-Newton Method](quasi_Newton.md) use gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
+* [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the square norm of ``f: \mathcal M→ℝ^d`` provided the gradients of the component functions, or in other words the Jacobian of ``f``.
+* The [Quasi-Newton Method](quasi_Newton.md) uses gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) a solver for a constrained problem defined on a tangent space.
+* [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into several components ``f_i`` whose gradients are provided here. By randomly selecting these, steps towards (compnent-wise) descent directions are performed.
 
 ### Subgradient
 
@@ -39,7 +41,8 @@ The following methods require the Riemannian subgradient ``∂f`` to be availabl
 While the subgradient might be set-valued, the function should provide one of the subgradients.
 
 * The [Subgradient Method](subgradient.md) takes the negative subgradient as a step direction and can be combined with a step size.
-* The [Convex Bundle Method](convex_bundle_method.md) uses a former collection of subgradients at the previous iterates and iterate candidates to solve a local approximation to `f` in every iteration.
+* The [Convex Bundle Method](convex_bundle_method.md) (CBM) uses a former collection of sub gradients at the previous iterates and iterate candidates to solve a local approximation to `f` in every iteration by solving a quadratic problem in the tangent space.
+* The [Proximal Bundle Method](proximal_bundle_method.md) works similar to CBM, but solves a proximal map-based problem in every iteration.
 
 ## Second Order
 
@@ -54,6 +57,10 @@ For splitting methods, the algorithms are based on splitting the cost into diffe
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
   where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
 * The [Cyclic Proximal Point](cyclic_proximal_point.md) uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
+* [Difference of Convex Algorithm](@ref solver-difference-of-convex) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; for each of these we require the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
+* [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref)
+* [Douglas—Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(x) + G(x)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
+* [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) extends Chambolle-Pock and requires the differentials of the proximal maps additionally.
 
 ## Constrained
 
@@ -68,23 +75,9 @@ Constrained problems of the form
 
 For these you can use
 
-* The [Augmented Lagrangian Method](augmented_Lagrangian_method.md) | [`augmented_Lagrangian_method`](@ref)`(M, f, grad_f, p0)`, where both `g` and `grad_g` as well as `h` and `grad_h` are keyword arguments, and one of these pairs is mandatory.
-
-
-
-# Temp – still to sort solvers
-
-The following algorithms are currently available
-
-* [Difference of Convex Algorithm](@ref solver-difference-of-convex) | [`difference_of_convex_algorithm`](@ref)
-* [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref)
-* [Douglas—Rachford](DouglasRachford.md) | [`DouglasRachford`](@ref)
-* [Exact Penalty Method](exact_penalty_method.md) | [`exact_penalty_method`](@ref)
-* [Frank-Wolfe algorithm](FrankWolfe.md) | [`Frank_Wolfe_method`](@ref)
-* [Levenberg-Marquardt](LevenbergMarquardt.md) | [`LevenbergMarquardt`](@ref)
-* [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) | [`primal_dual_semismooth_Newton`](@ref)
-* [Proximal Bundle Method](proximal_bundle_method.md) | [`proximal_bundle_method`](@ref)
-* [Stochastic Gradient Descent](stochastic_gradient_descent.md) | [`stochastic_gradient_descent`](@ref), [`StochasticGradientDescentState`](@ref)
+* The [Augmented Lagrangian Method](augmented_Lagrangian_method.md) (ALM), where both `g` and `grad_g` as well as `h` and `grad_h` are keyword arguments, and one of these pairs is mandatory.
+* The [Exact Penalty Method](exact_penalty_method.md) (EPM) with the same interface as ALM.
+* [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩`` is required, where ``p_k`` is a fixed point on the manifold (changed in every iteration).
 
 # Alphabetical list List of algorithms
 

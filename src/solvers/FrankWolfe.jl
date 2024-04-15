@@ -19,7 +19,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 The sub task requires a method to solve
 
 ```math
-    \operatorname*{argmin}_{q∈\mathcal M} ⟨X, \log_p q⟩,\qquad \text{ where }X=\operatorname{grad} f(p)
+   \operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩.
 ```
 
 # Constructor
@@ -135,7 +135,7 @@ where the main step is a constrained optimisation is within the algorithm,
 that is the sub problem (Oracle)
 
 ```math
-    q_k = \operatorname{arg\,min}_{q ∈ C} ⟨\operatorname{grad} F(p_k), \log_{p_k}q⟩.
+    q_k = \operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩.
 ```
 
 for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``.
