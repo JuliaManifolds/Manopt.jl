@@ -23,6 +23,7 @@ For derivative free only function evaluations of ``f`` are used.
 
 * [Nelder-Mead](NelderMead.md) a simplex based variant, that is using ``d+1`` points, where ``d`` is the dimension of the manifold.
 * [Particle Swarm](particle_swarm.md) use the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
+* [CMA-ES](cma_es.md) uses a stochastic evolutionary strategy to perform minimization robust to local minima of the objective.
 
 ## First Order
 
