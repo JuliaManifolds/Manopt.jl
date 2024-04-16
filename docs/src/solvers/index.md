@@ -13,16 +13,15 @@ available about your optimisation problem
 \operatorname*{arg\,min}_{p∈\mathbb M} f(p)
 ```
 
-Within the groups we provide short notes on advantages of the individual solvers,
-for example whether ``f`` should be convex, or nonconvex – or whether the method works
-locally or even globally.
+Within the groups we provide short notes on advantages of the individual solvers, pointing our properties the cost ``f`` should have.
+We use 🏅 to indicate state-of-the-art solvers, that usually perform best in their corresponding group and 🫏 for a maybe not so fast, maybe not so state-of-the-art method, that nevertheless gets the job done most reliably.
 
 ## Derivative Free
 
 For derivative free only function evaluations of ``f`` are used.
 
 * [Nelder-Mead](NelderMead.md) a simplex based variant, that is using ``d+1`` points, where ``d`` is the dimension of the manifold.
-* [Particle Swarm](particle_swarm.md) use the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
+* [Particle Swarm](particle_swarm.md) 🫏 use the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
 * [CMA-ES](cma_es.md) uses a stochastic evolutionary strategy to perform minimization robust to local minima of the objective.
 
 ## First Order
@@ -31,7 +30,7 @@ For derivative free only function evaluations of ``f`` are used.
 
 * [Gradient Descent](gradient_descent.md) uses the gradient from ``f`` to determine a descent direction. Here, the direction can also be changed to be Averaged, Momentum-based, based on Nesterovs rule.
 * [Conjugate Gradient Descent](conjugate_gradient_descent.md) uses information from the previous descent direction to improve the current (gradient-based) one including several such update rules.
-* The [Quasi-Newton Method](quasi_Newton.md) uses gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
+* The [Quasi-Newton Method](quasi_Newton.md) 🏅 uses gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) a solver for a constrained problem defined on a tangent space.
 
 ### Subgradient
@@ -45,7 +44,7 @@ While the subgradient might be set-valued, the function should provide one of th
 
 ## Second Order
 
-* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) locally builds a cubic model to determine the next descent direction.
+* [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) 🏅 locally builds a cubic model to determine the next descent direction.
 * The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine the next descent direction.
 
 ## Splitting based
@@ -54,6 +53,7 @@ For splitting methods, the algorithms are based on splitting the cost into diffe
 This is usually very well tailored for non-smooth objectives.
 
 ### Smooth
+
 The following methods require that the splitting, for example into several summands, is smooth in the sense that for every summand of the cost, the gradient should still exist everywhere
 
 * [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the square norm of ``f: \mathcal M→ℝ^d`` provided the gradients of the component functions, or in other words the Jacobian of ``f``.
@@ -61,11 +61,12 @@ The following methods require that the splitting, for example into several summa
 * The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth aso the gradient exists, and (locally) convex.
 
 ### Nonsmooth
+
 If the gradient does not exist everywhere, that is if the splitting yields summands that are nonsmooth, usually methods based on proximal maps are used.
 
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
   where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
-* The [Cyclic Proximal Point](cyclic_proximal_point.md) uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
+* The [Cyclic Proximal Point](cyclic_proximal_point.md) 🫏 uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
 * [Difference of Convex Algorithm](@ref solver-difference-of-convex) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; for each of these we require the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
 * [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref)
 * [Douglas—Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(x) + G(x)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
@@ -85,7 +86,7 @@ Constrained problems of the form
 For these you can use
 
 * The [Augmented Lagrangian Method](augmented_Lagrangian_method.md) (ALM), where both `g` and `grad_g` as well as `h` and `grad_h` are keyword arguments, and one of these pairs is mandatory.
-* The [Exact Penalty Method](exact_penalty_method.md) (EPM) with the same interface as ALM.
+* The [Exact Penalty Method](exact_penalty_method.md) (EPM) uses a penalty term instead of augmentation, but has the same interface as ALM.
 * [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩`` is required, where ``p_k`` is a fixed point on the manifold (changed in every iteration).
 
 # Alphabetical list List of algorithms
