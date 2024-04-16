@@ -50,9 +50,10 @@ While the subgradient might be set-valued, the function should provide one of th
 * [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) locally builds a cubic model to determine the next descent direction.
 * The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine the next descent direction.
 
-## Splitting based
+## Nonsmooth, splitting based
 
 For splitting methods, the algorithms are based on splitting the cost into different parts, usually in a sum of two or more summands.
+This is usually very well tailored for non-smooth objectives.
 
 * The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth aso the gradient exists, and (locally) convex.
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
