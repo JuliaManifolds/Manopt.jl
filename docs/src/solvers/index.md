@@ -31,10 +31,8 @@ For derivative free only function evaluations of ``f`` are used.
 
 * [Gradient Descent](gradient_descent.md) uses the gradient from ``f`` to determine a descent direction. Here, the direction can also be changed to be Averaged, Momentum-based, based on Nesterovs rule.
 * [Conjugate Gradient Descent](conjugate_gradient_descent.md) uses information from the previous descent direction to improve the current (gradient-based) one including several such update rules.
-* [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the square norm of ``f: \mathcal M→ℝ^d`` provided the gradients of the component functions, or in other words the Jacobian of ``f``.
 * The [Quasi-Newton Method](quasi_Newton.md) uses gradient evaluations to approximate the Hessian, which is then used in a Newton-like scheme, where both a limited memory and a full Hessian approximation are available with several different update rules.
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) a solver for a constrained problem defined on a tangent space.
-* [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into a sum of several components ``f_i`` whose gradients are provided. Steps are performed according to gradients of randomly selected components.
 
 ### Subgradient
 
@@ -50,12 +48,21 @@ While the subgradient might be set-valued, the function should provide one of th
 * [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) locally builds a cubic model to determine the next descent direction.
 * The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine the next descent direction.
 
-## Nonsmooth, splitting based
+## Splitting based
 
 For splitting methods, the algorithms are based on splitting the cost into different parts, usually in a sum of two or more summands.
 This is usually very well tailored for non-smooth objectives.
 
+### Smooth
+The following methods require that the splitting, for example into several summands, is smooth in the sense that for every summand of the cost, the gradient should still exist everywhere
+
+* [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the square norm of ``f: \mathcal M→ℝ^d`` provided the gradients of the component functions, or in other words the Jacobian of ``f``.
+* [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into a sum of several components ``f_i`` whose gradients are provided. Steps are performed according to gradients of randomly selected components.
 * The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth aso the gradient exists, and (locally) convex.
+
+### Nonsmooth
+If the gradient does not exist everywhere, that is if the splitting yields summands that are nonsmooth, usually methods based on proximal maps are used.
+
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
   where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
 * The [Cyclic Proximal Point](cyclic_proximal_point.md) uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
