@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Tests now also use `Aqua.jl` to spot problems in the code, e.g. ambiguities.
+* introduce a feature-based list of solvers and reduce the details in the alphabetical list
 
 ### Fixed
 
