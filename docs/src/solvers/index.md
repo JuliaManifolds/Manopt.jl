@@ -99,8 +99,7 @@ For these you can use
 | [Conjugate Gradient Descent](conjugate_gradient_descent.md) | [`conjugate_gradient_descent`](@ref) | [`ConjugateGradientDescentState`](@ref) |
 | [Convex Bundle Method](convex_bundle_method.md) | [`convex_bundle_method`](@ref) |  [`ConvexBundleMethodState`](@ref) |
 | [Cyclic Proximal Point](cyclic_proximal_point.md) | [`cyclic_proximal_point`](@ref) |  [`CyclicProximalPointState`](@ref) |
-| [Difference of Convex Algorithm](@ref solver-difference-of-convex) |
-[`difference_of_convex_algorithm`](@ref) | [`DifferenceOfConvexState`](@ref) |
+| [Difference of Convex Algorithm](@ref solver-difference-of-convex) | [`difference_of_convex_algorithm`](@ref) | [`DifferenceOfConvexState`](@ref) |
 | [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref) | [`DifferenceOfConvexProximalState`](@ref) |
 | [Douglas—Rachford](DouglasRachford.md) | [`DouglasRachford`](@ref) | [`DouglasRachfordState`](@ref) |
 | [Exact Penalty Method](exact_penalty_method.md) | [`exact_penalty_method`](@ref) |  [`ExactPenaltyMethodState`](@ref) |
