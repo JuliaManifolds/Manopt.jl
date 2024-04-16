@@ -1214,7 +1214,7 @@ end
 return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
 [`AbstractManoptProblem`](@ref) `amp`.
 This method also works for decorated options and the [`Stepsize`](@ref) function within
-the options, by default stored in `o.stepsize`.
+the options, by default stored in `ams.stepsize`.
 """
 function get_stepsize(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
@@ -1262,6 +1262,18 @@ function _get_initial_stepsize(
     return get_initial_stepsize(ams.stepsize)
 end
 
+@doc raw"""
+    get_last_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
+
+return the last computed stepsize stored within [`AbstractManoptSolverState`](@ref) `ams`
+when solving the [`AbstractManoptProblem`](@ref) `amp`.
+
+This method takes into account that `ams` might be decorated,
+then calls [`get_last_stepsize`](@ref get_last_stepsize(::Stepsize, ::Any...)),
+where the stepsize is assumed to be in `ams.stepsize`.
+In case this returns `NaN`, a concrete call to the stored stepsize is performed.
+For this, usually, the first of the `vars...` should be the current iterate.
+"""
 function get_last_stepsize(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
 )
@@ -1275,33 +1287,24 @@ end
 function _get_last_stepsize(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
 )
-    return get_last_stepsize(amp, ams, ams.stepsize, vars...)
+    s = get_last_stepsize(ams.stepsize) # if it stores the stepsize itself -> return
+    !isnan(s) && return s
+    # if not -> call step.
+    return ams.stepsize(amp, ams, vars...)
 end
-#
-# dispatch on stepsize
-function get_last_stepsize(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, step::Stepsize, vars...
-)
-    return step(amp, ams, vars...)
-end
-function get_last_stepsize(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, step::ArmijoLinesearch, ::Any...
-)
+@doc raw"""
+    get_last_stepsize(::Stepsize, vars...)
+
+return the last computed stepsize from within the stepsize.
+If no last step size is stored, this returns `NaN`.
+"""
+get_last_stepsize(::Stepsize, ::Any...) = NaN
+function get_last_stepsize(step::ArmijoLinesearch, ::Any...)
     return step.last_stepsize
 end
-function get_last_stepsize(
-    ::AbstractManoptProblem,
-    ::AbstractManoptSolverState,
-    step::WolfePowellLinesearch,
-    ::Any...,
-)
+function get_last_stepsize(step::WolfePowellLinesearch, ::Any...)
     return step.last_stepsize
 end
-function get_last_stepsize(
-    ::AbstractManoptProblem,
-    ::AbstractManoptSolverState,
-    step::WolfePowellBinaryLinesearch,
-    ::Any...,
-)
+function get_last_stepsize(step::WolfePowellBinaryLinesearch, ::Any...)
     return step.last_stepsize
 end

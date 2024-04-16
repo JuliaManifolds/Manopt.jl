@@ -642,8 +642,11 @@ end
 function QuasiNewtonCautiousDirectionUpdate(
     update::U; θ::Function=x -> x
 ) where {
-    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}}
-} where {T<:AbstractQuasiNewtonUpdateRule}
+    U<:Union{
+        QuasiNewtonMatrixDirectionUpdate,
+        QuasiNewtonLimitedMemoryDirectionUpdate{T} where T<:AbstractQuasiNewtonUpdateRule,
+    },
+}
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)

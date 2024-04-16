@@ -155,8 +155,6 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         e = RecordEntryChange(:p, (p, o, x, y) -> distance(get_manifold(p), x, y))
         @test startswith(repr(e), "RecordEntryChange(:p")
         @test update_storage!(e.storage, dmp, gds) == [:p]
-        e2 = RecordEntryChange(dmp, :p, (p, o, x, y) -> distance(get_manifold(p), x, y))
-        @test e.field == e2.field
         e(dmp, gds, 1)
         @test e.recorded_values == [0.0]
         set_iterate!(gds, M, [3.0, 2.0])

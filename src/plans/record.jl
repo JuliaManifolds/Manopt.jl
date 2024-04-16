@@ -649,10 +649,6 @@ mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     function RecordEntryChange(f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
         return new{typeof(a)}(Float64[], f, d, a)
     end
-    function RecordEntryChange(v, f::Symbol, d, a::StoreStateAction=StoreStateAction([f]))
-        update_storage!(a, Dict(f => v))
-        return new{typeof(a)}(Float64[], f, d, a)
-    end
 end
 function (r::RecordEntryChange)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
@@ -820,7 +816,6 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
         iter = popat!(b, i) #
-        println(iter, "<-")
         b = [b..., :Iteration => [iter.second..., iter_entries...]]
     else
         (length(iter_entries) > 0) && (b = [b..., :Iteration => iter_entries])
