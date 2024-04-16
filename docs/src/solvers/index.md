@@ -67,8 +67,8 @@ If the gradient does not exist everywhere, that is if the splitting yields summa
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
   where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
 * The [Cyclic Proximal Point](cyclic_proximal_point.md) 🫏 uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
-* [Difference of Convex Algorithm](@ref solver-difference-of-convex) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; for each of these we require the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
-* [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) | [`difference_of_convex_proximal_point`](@ref)
+* [Difference of Convex Algorithm](@ref solver-difference-of-convex) (DCA) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; for each of these we require the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
+* [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; provided the proximal map of ``g`` and the subgradient of ``h``, the next iterate is computed. Compared to DCA, the correpsonding sub problem is here written in a form that yields the proximal map.
 * [Douglas—Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(x) + G(x)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
 * [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) extends Chambolle-Pock and requires the differentials of the proximal maps additionally.
 
