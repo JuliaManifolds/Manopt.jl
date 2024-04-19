@@ -1,3 +1,7 @@
+#
+# We do not need this here, since
+# ho is included in co
+# dims are not needed because we can always find them out if needed (we can check together)
 mutable struct ConstrainedProblem
     M::AbstractManifold
 
@@ -6,7 +10,7 @@ mutable struct ConstrainedProblem
     ho::ManifoldHessianObjective
     dims::Tuple{Int,Int}
 end
-
+# From here these exist for the DefaultPronblem
 function get_manifold(Pr::ConstrainedProblem)
     return Pr.M
 end
@@ -56,7 +60,6 @@ end
 function evaluate_equality_function_differential(Pr::ConstrainedProblem, p)
     return get_grad_equality_constraints(Pr.M, Pr.co, p)
 end
-
 function get_dims(Pr::ConstrainedProblem)
     return Pr.dims
 end
@@ -64,11 +67,13 @@ end
 function set_dims!(Pr::ConstrainedProblem, m, n)
     Pr.dims = (m, n)
 end
+# until here
 
-mutable struct InteriorPointState
+mutable struct InteriorPointState <:AbstractManoptSolverState
 
     # point on product manifold
-    q::ArrayPartition
+    #q::ArrayPartition
+    # Change to p, μ, λ, s
 
     # product of ρ and σ will be the barrier parameter b
     ρ::Real
@@ -77,9 +82,14 @@ mutable struct InteriorPointState
     stop::StoppingCriterion
     retr::AbstractRetractionMethod
     step::Stepsize
+    # Just an inner constructor is ok
 
+    # For the subsolver: add two fields probem, state, where
+    # Problem can be an AbstractManoptProblem _or_ a function
+    # state can be an AbstractManoptSolverState _or_ specify whether the function works in-place or not
 end
 
+# Maybe omit these.
 function get_variables(state::InteriorPointState)
     return state.q.x
 end
@@ -88,14 +98,15 @@ function get_auxillary_variables(state::InteriorPointState)
     return state.ρ, state.σ
 end
 
+# Do this one on the DefaultProblem & IPState
 function calculate_σ(Pr::ConstrainedProblem, q)
 
     p, μ, λ, s = q
 
     g_p = evaluate_inequality_function(Pr, p)
     h_p = evaluate_equality_function(Pr, p)
-    dg_p = evaluate_inequality_function_differential(Pr, p) 
-    dh_p = evaluate_equality_function_differential(Pr, p) 
+    dg_p = evaluate_inequality_function_differential(Pr, p)
+    dh_p = evaluate_equality_function_differential(Pr, p)
 
     F_p = evaluate_cost_gradient(Pr, p)
     F_μ = Float64[]
@@ -112,15 +123,17 @@ function calculate_σ(Pr::ConstrainedProblem, q)
         F_p += dh_p'λ
         F_λ  = h_p
     end
-    
+
     F_q = [F_p; F_μ; F_λ; F_s]
 
     return min(0.5, sqrt(norm(F_q)))
 end
-    
-function InteriorPointState(Pr::ConstrainedProblem)
 
-    m, n = get_dims(Pr) 
+function InteriorPointState(Pr::ConstrainedProblem;
+    stopping_criterion=StopAfterIteration(100),
+    )
+
+    m, n = get_dims(Pr)
 
     # initial point, temporarily fixed to ensure feasibility
     p_1, p_2 = 2*rand(2).-1
@@ -128,7 +141,7 @@ function InteriorPointState(Pr::ConstrainedProblem)
     p = [p_1, p_2, p_3]
     p /= norm(p)
 
-    μ = rand(m) 
+    μ = rand(m)
     λ = rand(n) * (n > 0)
     s = rand(m)
 
@@ -140,24 +153,23 @@ function InteriorPointState(Pr::ConstrainedProblem)
     # product manifold
     N = get_product_manifold(Pr)
 
-    stop = StopAfterIteration(100)
     retr = default_retraction_method(N)
     step = ArmijoLinesearch(N; retraction_method=retr, initial_stepsize=0.01)
 
-    return InteriorPointState(q, ρ, σ, stop, retr, step)
+    return InteriorPointState(q, ρ, σ, stopping_criterion, retr, step)
 end
 
-function RHS(   Pr::ConstrainedProblem, 
+function RHS(   Pr::ConstrainedProblem,
              state::InteriorPointState)
 
     p, μ, λ, s = get_variables(state)
 
     ρ, σ = get_auxillary_variables(state)
-    
+
     g_p = evaluate_inequality_function(Pr, p)
-    dg_p = evaluate_inequality_function_differential(Pr, p) 
-    dh_p = evaluate_equality_function_differential(Pr, p) 
-  
+    dg_p = evaluate_inequality_function_differential(Pr, p)
+    dh_p = evaluate_equality_function_differential(Pr, p)
+
     X_1 = evaluate_cost_gradient(Pr, p)
     X_2 = Float64[]
 
@@ -167,7 +179,7 @@ function RHS(   Pr::ConstrainedProblem,
     if m > 0
         X_1 += dg_p' * ((g_p + s).*μ .+ (ρ*σ) - μ) ./ s
     end
-    
+
 
     if n > 0
         X_2 += dh_p'λ
@@ -176,13 +188,13 @@ function RHS(   Pr::ConstrainedProblem,
     return ArrayPartition(X_1, X_2)
 end
 
-function LHS(   Pr::ConstrainedProblem, 
+function LHS(   Pr::ConstrainedProblem,
              state::InteriorPointState,
                X_p)
 
-    p, μ, λ, s = get_variables(state) 
-          
-    dg_p = evaluate_inequality_function_differential(Pr, p) 
+    p, μ, λ, s = get_variables(state)
+
+    dg_p = evaluate_inequality_function_differential(Pr, p)
     dh_p = evaluate_equality_function_differential(Pr, p)
 
     Y_1 = evaluate_cost_Hessian(Pr, p, X_p)
@@ -197,10 +209,10 @@ function LHS(   Pr::ConstrainedProblem,
     if n > 0
         Y_2  = dh_p*X_p
     end
-    
+
     return ArrayPartition(Y_1, Y_2)
 end
-    
+
 function is_feasible(Pr::ConstrainedProblem, p)
     # evaluate constraint functions at p
     g_p = evaluate_inequality_function(Pr, p)
@@ -210,11 +222,11 @@ function is_feasible(Pr::ConstrainedProblem, p)
     return is_point(Pr.M, p) && all(g_p .<= 0) && all(h_p .== 0)
 end
 
-function step_solver(   Pr::ConstrainedProblem,
-                     state::InteriorPointState)
+function step_solver!(   Pr::ConstrainedProblem,
+                     state::InteriorPointState, i)
 
     p, μ, λ, s = get_variables(state)
-    ρ, σ = get_auxillary_variables(state) 
+    ρ, σ = get_auxillary_variables(state)
 
     N_sub = get_subsolver_manifold(Pr)
     q_sub = ArrayPartition(p, λ)
@@ -224,25 +236,29 @@ function step_solver(   Pr::ConstrainedProblem,
 
     X_init = rand(N_sub, vector_at = q_sub)
     X_p, X_λ = subsolver(N_sub, q_sub, lhs, X_init, -rhs).x
-    
+
     g_p = evaluate_inequality_function(Pr, p)
     dg_p = evaluate_inequality_function_differential(Pr, p)
-    
+
     X_μ = ((dg_p*X_p + g_p).*μ .+ (ρ*σ) - μ)./s
     X_s = ((ρ*σ) .- μ.*s - s.*X_μ) ./ μ
 
     N = get_product_manifold(Pr)
     X = ArrayPartition(X_p, X_μ, X_λ, X_s)
 
-    # update iterate 
-    state.q = retract(N, state.q, X, state.retr)
+    # update iterate
+    α = get_stepsize(Pr, state, i)
+    retract!(N, state.q, state.q, X, state.retr)
     state.ρ = μ's / m
     state.σ = calculate_σ(Pr, state.q.x)
 
     return state
 end
 
-# obnjugate residudal method, 
+# obnjugate residudal method, inpace
+#  subsolver!(M, x, p, A, x0 b)
+
+# obnjugate residudal method,
 function subsolver(M, p, A, x_0, b)
 
     # iteration count
@@ -254,21 +270,21 @@ function subsolver(M, p, A, x_0, b)
     q_0 = r_0
     Ar_0 = A(r_0)
     Aq_0 = A(q_0)
-    
+
     r = r_0
     q = q_0
     Ar = Ar_0
     Aq = Aq_0
-    
+
     x = x_0
 
-    metric = (X, Y) -> inner(M, p, X, Y) 
-    
+    metric = (X, Y) -> inner(M, p, X, Y)
+
     while metric(r,r) > 1e-5
 
         α = metric(r, Ar) / metric(Aq, Aq)
         x += α*q
-        
+
         r_next = r - α*Aq
         Ar_next = A(r_next)
         β = metric(r_next, Ar_next) / metric(r, Ar)
@@ -291,10 +307,7 @@ function interior_point_Newton(Pr::ConstrainedProblem)
     state = InteriorPointState(Pr)
     print("Point 0: ", state.q.x[1], '\n')
     for i in range(1, 20)
-        state = step_solver(Pr, state)
+        step_solver!(Pr, state, i)
         print("Point ", i, ": ", state.q.x[1], '\n')
     end
 end
-
-
-

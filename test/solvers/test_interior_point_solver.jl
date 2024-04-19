@@ -7,7 +7,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
 #     @test a ≈ 0.5 atol = 1e-9
 # end
 # =======
-include("../../src/solvers/interior_point_Newton.jl")
+# include("../../src/solvers/interior_point_Newton.jl")
 # include("../../src/plans/interior_point_Newton_plan.jl")
 
 
