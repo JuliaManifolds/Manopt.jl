@@ -1,268 +1,175 @@
-#
-# We do not need this here, since
-# ho is included in co
-# dims are not needed because we can always find them out if needed (we can check together)
-mutable struct ConstrainedProblem
-    M::AbstractManifold
-
-    # TO DO: combine constrained and Hessian objective into one
-    co::ConstrainedManifoldObjective
-    ho::ManifoldHessianObjective
-    dims::Tuple{Int,Int}
-end
-# From here these exist for the DefaultPronblem
-function get_manifold(Pr::ConstrainedProblem)
-    return Pr.M
-end
-
-function get_product_manifold(Pr::ConstrainedProblem)
-    M, (m, n) = Pr.M, Pr.dims
-    return M × ℝ^m × ℝ^n × ℝ^m
-end
-
-function get_subsolver_manifold(Pr::ConstrainedProblem)
-    M, n = Pr.M, Pr.dims[2]
-    return M × ℝ^n
-end
-
-function evaluate_cost_function(Pr::ConstrainedProblem, p)
-    return get_cost(Pr.M, Pr.co, p)
-end
-
-function evaluate_cost_gradient(Pr::ConstrainedProblem, p)
-    return get_gradient(Pr.M, Pr.co, p)
-end
-
-function set_cost_gradient!(Pr::ConstrainedProblem, p, X)
-    get_gradient!(Pr.M, Pr.co, p, X)
-end
-
-function evaluate_cost_Hessian(Pr::ConstrainedProblem, p, X)
-    return get_hessian(Pr.M, Pr.ho, p, X)
-end
-
-function set_cost_Hessian!(Pr::ConstrainedProblem, p, X, Y)
-    get_hessian!(Pr.M, Pr.ho, p, X, Y)
-end
-
-function evaluate_inequality_function(Pr::ConstrainedProblem, p)
-    return get_inequality_constraints(Pr.M, Pr.co, p)
-end
-
-function evaluate_equality_function(Pr::ConstrainedProblem, p)
-    return get_equality_constraints(Pr.M, Pr.co, p)
-end
-
-function evaluate_inequality_function_differential(Pr::ConstrainedProblem, p)
-    return get_grad_inequality_constraints(Pr.M, Pr.co, p)
-end
-
-function evaluate_equality_function_differential(Pr::ConstrainedProblem, p)
-    return get_grad_equality_constraints(Pr.M, Pr.co, p)
-end
-function get_dims(Pr::ConstrainedProblem)
-    return Pr.dims
-end
-
-function set_dims!(Pr::ConstrainedProblem, m, n)
-    Pr.dims = (m, n)
-end
-# until here
-
-mutable struct InteriorPointState <:AbstractManoptSolverState
-
-    # point on product manifold
-    #q::ArrayPartition
-    # Change to p, μ, λ, s
-
-    # product of ρ and σ will be the barrier parameter b
-    ρ::Real
-    σ::Real
-
-    stop::StoppingCriterion
-    retr::AbstractRetractionMethod
-    step::Stepsize
-    # Just an inner constructor is ok
-
-    # For the subsolver: add two fields probem, state, where
-    # Problem can be an AbstractManoptProblem _or_ a function
-    # state can be an AbstractManoptSolverState _or_ specify whether the function works in-place or not
-end
-
-# Maybe omit these.
-function get_variables(state::InteriorPointState)
-    return state.q.x
-end
-
-function get_auxillary_variables(state::InteriorPointState)
-    return state.ρ, state.σ
-end
-
-# Do this one on the DefaultProblem & IPState
-function calculate_σ(Pr::ConstrainedProblem, q)
-
-    p, μ, λ, s = q
-
-    g_p = evaluate_inequality_function(Pr, p)
-    h_p = evaluate_equality_function(Pr, p)
-    dg_p = evaluate_inequality_function_differential(Pr, p)
-    dh_p = evaluate_equality_function_differential(Pr, p)
-
-    F_p = evaluate_cost_gradient(Pr, p)
-    F_μ = Float64[]
-    F_λ = Float64[]
-    F_s = Float64[]
-
-    if m > 0
-        F_p += dg_p'μ
-        F_μ  = g_p + s
-        F_s  = μ.*s
+mutable struct InteriorPointState{
+    P,
+    T,
+    R,
+    # Pr<:AbstractManoptProblem,
+    # St<:AbstractManoptSolverState,
+    TStop<:StoppingCriterion,
+    TStepsize<:Stepsize,
+    TRTM<:AbstractRetractionMethod
+} <: AbstractManoptSolverState
+    p::P
+    X::T
+    μ::T
+    λ::T
+    s::T
+    ρ::R
+    σ::R
+    # sub_problem::Pr
+    # sub_state::St
+    stop::TStop
+    retraction_method::TRTM
+    stepsize::TStepsize    
+    function InteriorPointState(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        p::P;
+        X::T = get_gradient(M, cmo, p),
+        # sub_problem::Pr,
+        # sub_state::St, 
+        μ::T = rand(length(get_inequality_constraints(M, cmo, p))),
+        λ::T = zeros(length(get_equality_constraints(M, cmo, p))),
+        s::T = rand(length(get_inequality_constraints(M, cmo, p))),
+        ρ::R = μ's/length(get_inequality_constraints(M, cmo, p)),
+        σ::R = calculate_σ(M, cmo, p, μ, λ, s),
+        stop::StoppingCriterion = StopAfterIteration(200) | StopWhenChangeLess(1e-5),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M),
+        stepsize::Stepsize = ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0),
+        kwargs...,
+    ) where{P,T,R}
+        ips = new{P,T,R,typeof(stop),typeof(stepsize),typeof(retraction_method)}()
+        ips.p = p
+        ips.X = X
+        ips.μ = μ
+        ips.λ = λ
+        ips.s = s
+        ips.ρ = ρ
+        ips.σ = σ
+        ips.stop = stop
+        ips.stepsize = stepsize
+        ips.retraction_method = retraction_method
+        return ips
     end
-
-    if n > 0
-        F_p += dh_p'λ
-        F_λ  = h_p
-    end
-
-    F_q = [F_p; F_μ; F_λ; F_s]
-
-    return min(0.5, sqrt(norm(F_q)))
 end
 
-function InteriorPointState(Pr::ConstrainedProblem;
-    stopping_criterion=StopAfterIteration(100),
-    )
-
-    m, n = get_dims(Pr)
-
-    # initial point, temporarily fixed to ensure feasibility
-    p_1, p_2 = 2*rand(2).-1
-    p_3 = rand()
-    p = [p_1, p_2, p_3]
-    p /= norm(p)
-
-    μ = rand(m)
-    λ = rand(n) * (n > 0)
-    s = rand(m)
-
-    q = ArrayPartition(p, μ, λ, s)
-
-    ρ = μ's / m
-    σ = calculate_σ(Pr, [p, μ, λ, s])
-
-    # product manifold
-    N = get_product_manifold(Pr)
-
-    retr = default_retraction_method(N)
-    step = ArmijoLinesearch(N; retraction_method=retr, initial_stepsize=0.01)
-
-    return InteriorPointState(q, ρ, σ, stopping_criterion, retr, step)
+get_iterate(ips::InteriorPointState) = ips.p
+function set_iterate!(ips::InteriorPointState, ::AbstractManifold, p)
+    ips.p = p
+    return ips
 end
 
-function RHS(   Pr::ConstrainedProblem,
-             state::InteriorPointState)
-
-    p, μ, λ, s = get_variables(state)
-
-    ρ, σ = get_auxillary_variables(state)
-
-    g_p = evaluate_inequality_function(Pr, p)
-    dg_p = evaluate_inequality_function_differential(Pr, p)
-    dh_p = evaluate_equality_function_differential(Pr, p)
-
-    X_1 = evaluate_cost_gradient(Pr, p)
-    X_2 = Float64[]
-
-
-    m, n = get_dims(Pr)
-
-    if m > 0
-        X_1 += dg_p' * ((g_p + s).*μ .+ (ρ*σ) - μ) ./ s
-    end
-
-
-    if n > 0
-        X_2 += dh_p'λ
-    end
-
-    return ArrayPartition(X_1, X_2)
+get_gradient(ips::InteriorPointState) = ips.X
+function set_gradient!(ips::InteriorPointState, M, p, X)
+    copyto!(M, ips.X, p, X)
+    return ips
 end
 
-function LHS(   Pr::ConstrainedProblem,
-             state::InteriorPointState,
-               X_p)
+function get_message(ips::InteriorPointState)
+    return get_message(ips.stepsize)
+end
+function show(io::IO, ips::InteriorPointState)
+    i = get_count(ips, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Interior Point Newton Method
+    $Iter
+    ## Parameters
+    * retraction method: $(ips.retraction_method)
 
-    p, μ, λ, s = get_variables(state)
+    ## Stepsize
+    $(ips.stepsize)
 
-    dg_p = evaluate_inequality_function_differential(Pr, p)
-    dh_p = evaluate_equality_function_differential(Pr, p)
+    ## Stopping criterion
 
-    Y_1 = evaluate_cost_Hessian(Pr, p, X_p)
-    Y_2 = Float64[]
-
-    m, n = get_dims(Pr)
-
-    if m > 0
-        Y_1 += (dg_p' * dg_p * X_p) .* μ ./ s # plus sum_i μ_i Hess g_i(p)
-    end
-
-    if n > 0
-        Y_2  = dh_p*X_p
-    end
-
-    return ArrayPartition(Y_1, Y_2)
+    $(status_summary(ips.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
 end
 
-function is_feasible(Pr::ConstrainedProblem, p)
+# Do this one on the DefaultProblem & IPState ??? better with current inputs?
+function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
+
+    g_p = get_inequality_constraints(M, cmo, p)
+    h_p = get_equality_constraints(M, cmo, p)
+    dg_p = get_grad_inequality_constraints(M, cmo, p)
+    dh_p = get_grad_equality_constraints(M, cmo, p)
+
+    
+    F_p = get_gradient(M, cmo, p)
+    d = inner(M, p, F_p, F_p)
+
+    m = length(g_p)
+    n = length(h_p)
+
+    (m > 0) && (d += inner(M, p, dg_p'μ, dg_p'μ) + norm(g_p+s)^2 + norm(μ.*s)^2)
+    (n > 0) && (d += inner(M, p, dh_p'μ, dg_p'λ) + norm(h_p)^2) 
+
+    return min(0.5, d^(1/4))
+end
+
+function RHS(amp::AbstractManoptProblem, ips::InteriorPointState)
+
+    g_p = get_inequality_constraints(amp, ips.p)
+    dg_p = get_grad_inequality_constraints(amp, ips.p)
+    dh_p = get_grad_equality_constraints(amp, ips.p)
+
+    X_1 = get_gradient(amp, ips.p)
+
+    m = length(ips.μ)
+    n = length(ips.λ)
+
+    (m > 0) && (X_1 += dg_p' * ((g_p + ips.s).*(ips.μ) .+ (ips.ρ)*(ips.σ) .- ips.μ) ./ ips.s)
+    (n > 0) && (X_2 = dh_p'*(ips.λ))
+
+    if n == 0
+        return X_1
+    else
+        return ArrayPartition(X_1, X_2)
+    end
+end
+
+function LHS(amp::AbstractManoptProblem, ips::InteriorPointState, X)
+
+    dg_p = get_grad_inequality_constraints(amp, ips.p)
+    dh_p = get_grad_equality_constraints(amp, ips.p)
+
+    Y_1 = get_hessian(amp, ips.p, X)
+
+    m = length(ips.μ)
+    n = length(ips.λ)
+
+    (m > 0) && (Y_1 += (dg_p'*dg_p*X).*(ips.μ)./(ips.s)) # plus Hess g(p)
+    (n > 0) && (Y_2 = dh_p*X)
+
+    if n == 0
+        return Y_1
+    else
+        return ArrayPartition(Y_1, Y_2)
+    end
+end
+
+function is_feasible(M, cmo, p)
+
     # evaluate constraint functions at p
-    g_p = evaluate_inequality_function(Pr, p)
-    h_p = evaluate_equality_function(Pr, p)
+    g_p = get_inequality_constraints(M, cmo, p)
+    h_p = get_equality_constraints(M, cmo, p)
 
     # check feasibility
-    return is_point(Pr.M, p) && all(g_p .<= 0) && all(h_p .== 0)
-end
-
-function step_solver!(   Pr::ConstrainedProblem,
-                     state::InteriorPointState, i)
-
-    p, μ, λ, s = get_variables(state)
-    ρ, σ = get_auxillary_variables(state)
-
-    N_sub = get_subsolver_manifold(Pr)
-    q_sub = ArrayPartition(p, λ)
-
-    rhs = RHS(Pr, state)
-    lhs = X -> LHS(Pr, state, X)
-
-    X_init = rand(N_sub, vector_at = q_sub)
-    X_p, X_λ = subsolver(N_sub, q_sub, lhs, X_init, -rhs).x
-
-    g_p = evaluate_inequality_function(Pr, p)
-    dg_p = evaluate_inequality_function_differential(Pr, p)
-
-    X_μ = ((dg_p*X_p + g_p).*μ .+ (ρ*σ) - μ)./s
-    X_s = ((ρ*σ) .- μ.*s - s.*X_μ) ./ μ
-
-    N = get_product_manifold(Pr)
-    X = ArrayPartition(X_p, X_μ, X_λ, X_s)
-
-    # update iterate
-    α = get_stepsize(Pr, state, i)
-    retract!(N, state.q, state.q, X, state.retr)
-    state.ρ = μ's / m
-    state.σ = calculate_σ(Pr, state.q.x)
-
-    return state
+    return is_point(M, p) && all(g_p .<= 0) && all(h_p .== 0)
 end
 
 # obnjugate residudal method, inpace
 #  subsolver!(M, x, p, A, x0 b)
 
 # obnjugate residudal method,
-function subsolver(M, p, A, x_0, b)
+function subsolver(M::AbstractManifold, p, A, b)
 
     # iteration count
     k = 0
+
+    # random initial vector
+    x_0 = rand(M, vector_at = p)
 
     #initial residual
     r_0 = b - A(x_0)
@@ -280,12 +187,17 @@ function subsolver(M, p, A, x_0, b)
 
     metric = (X, Y) -> inner(M, p, X, Y)
 
-    while metric(r,r) > 1e-5
+    print("k = 0: ", metric(r, r), '\n')
+
+    while metric(r, r) > 1e-5
 
         α = metric(r, Ar) / metric(Aq, Aq)
         x += α*q
 
+        k += 1
+        
         r_next = r - α*Aq
+        print("k = ", k, ": ", metric(r_next, r_next), '\n')
         Ar_next = A(r_next)
         β = metric(r_next, Ar_next) / metric(r, Ar)
         q_next = r_next + β*q
@@ -295,19 +207,59 @@ function subsolver(M, p, A, x_0, b)
         q  = q_next
         Ar = Ar_next
         Aq = Aq_next
-
-        k += 1
     end
     return x
 end
 
-function interior_point_Newton(Pr::ConstrainedProblem)
+function interior_point_Newton!(
+    M::AbstractManifold, cmo::O, p; kwargs...,
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+    !is_feasible(M, cmo, p) && throw(
+        ErrorException(
+            "Starting point p must be feasible."
+        )
+    )
+    dcmo = decorate_objective!(M, cmo; kwargs...)
+    dmp = DefaultManoptProblem(M, dcmo)
+    ips = InteriorPointState(M, cmo, p; kwargs...)
+    dips = decorate_state!(ips)
+    solve!(dmp, dips)
+    return get_solver_return(get_objective(dmp), ips)
+end
 
-    # initial state
-    state = InteriorPointState(Pr)
-    print("Point 0: ", state.q.x[1], '\n')
-    for i in range(1, 20)
-        step_solver!(Pr, state, i)
-        print("Point ", i, ": ", state.q.x[1], '\n')
+function initialize_solver!(::AbstractManoptProblem, ips::InteriorPointState)
+    return ips
+end
+
+function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
+
+    g_p = get_inequality_constraints(amp, ips.p)
+    dg_p = get_grad_inequality_constraints(amp, ips.p)
+
+    m = length(ips.μ)
+    n = length(ips.λ)
+
+    rhs = RHS(amp, ips)
+    lhs = X -> LHS(amp, ips, X)
+
+    if n > 0
+        X_p, X_λ = subsolver(get_manifold(amp) × ℝ^m, ArrayPartition(ips.p, ips.λ), lhs, -rhs).x
+    else
+        X_p = subsolver(get_manifold(amp), ips.p, lhs, -rhs)
     end
+
+    X_μ = ((dg_p*X_p + g_p).*(ips.μ) .+ (ips.ρ)*(ips.σ) - ips.μ)./(ips.s)
+    X_s = ((ips.ρ)*(ips.σ) .- (ips.μ).*(ips.s) - (ips.s).*X_μ) ./ (ips.μ)
+
+    # update iterate
+    
+    α = get_stepsize(amp, ips, i)
+    retract!(get_manifold(amp), ips.p, ips.p, X_p, ips.retraction_method)
+    (m > 0) && (ips.μ += X_μ)
+    (m > 0) && (ips.s += X_s)
+    (n > 0) && (ips.λ += X_λ)
+    ips.ρ = ips.μ'ips.s / m
+    ips.σ = calculate_σ(get_manifold(amp), get_objective(amp), ips.p, ips.μ, ips.λ, ips.s)
+
+    return ips
 end
