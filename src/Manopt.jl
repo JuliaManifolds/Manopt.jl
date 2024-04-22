@@ -159,6 +159,7 @@ include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/cma_es.jl")
 include("solvers/conjugate_gradient_descent.jl")
+include("solvers/conjugate_residual.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference-of-convex-proximal-point.jl")
@@ -284,6 +285,7 @@ export AbstractDecoratedManifoldObjective,
     AbstractManifoldGradientObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
+    AbstractManifoldSubObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
     EmbeddedManifoldObjective,
@@ -318,6 +320,7 @@ export AbstractGradientSolverState,
     ConvexBundleMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
+    ConjugateResidualState,
     CyclicProximalPointState,
     DifferenceOfConvexState,
     DifferenceOfConvexProximalState,
@@ -397,6 +400,7 @@ export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, Exact
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
+export ConjugateResidualObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -438,6 +442,7 @@ export adaptive_regularization_with_cubics,
     cma_es!,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
+    conjugate_residual!,
     cyclic_proximal_point,
     cyclic_proximal_point!,
     difference_of_convex_algorithm,
@@ -452,6 +457,7 @@ export adaptive_regularization_with_cubics,
     Frank_Wolfe_method!,
     gradient_descent,
     gradient_descent!,
+    interior_point_Newton,
     interior_point_Newton!,
     LevenbergMarquardt,
     LevenbergMarquardt!,

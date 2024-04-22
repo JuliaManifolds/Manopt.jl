@@ -1,7 +1,6 @@
 using Manifolds, Manopt, LinearAlgebra, Random
-Random.seed!(42);
 
-A = [2 0 0; 0 2 0; 0 0 1]
+A = [2 -1 -1; -1 2 -1; -1 -1 2]
 
 function f(M, p)
     return 0.5*p'*A*p
@@ -25,13 +24,17 @@ end
 
 M = Sphere(2)
 
-p1 = 2*rand()-1
-p2 = sqrt(1-p1^2)*rand()
-p3 = sqrt(1-p1^2-p2^2)
+p_x = rand()
+p_y = sqrt(1-p_x^2)*rand()
+p_z = sqrt(1-p_x^2-p_y^2)
 
-p = [p1, p2, p3]
+p_0 = [p_x, p_y, p_z]
 
-mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-cmo = ConstrainedManifoldObjective(mho, g, grad_g)
+record = [:Iterate]
 
-interior_point_Newton!(M, cmo, p)
+res = interior_point_Newton(
+    M, f, grad_f, Hess_f, p_0; g=g, grad_g=grad_g, record=record, return_state=true
+    )
+
+rec = get_record(res)
+
