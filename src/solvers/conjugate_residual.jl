@@ -15,7 +15,7 @@ mutable struct ConjugateResidualState{
         TpM::TangentSpace,
         mho::ManifoldHessianObjective,
         x::T;
-        r::T = -get_gradient(TpM, mho, x), 
+        r::T = -get_gradient(TpM, mho, x),
         d::T = r,
         Ar::T = get_hessian(TpM, mho, x, r),
         Ad::T = Ar,
@@ -73,10 +73,10 @@ function show(io::IO, crs::ConjugateResidualState)
 
     ## Stopping criterion
     $(status_summary(crs.stop))
-    
+
     ## Stepsize
     $(crs.α)
-    
+
     This indicates convergence: $Conv
     """
 
@@ -102,6 +102,16 @@ function initialize_solver!(::AbstractManoptProblem, crs::ConjugateResidualState
 end
 
 function step_solver!(amp::AbstractManoptProblem, crs::ConjugateResidualState, i)
+
+    # I would propose to use something like
+    # TpM = get_manifold(amp)
+    # p = TpM.point
+    # and juts the inner call below in the 2 cases
+    #
+    # this (a) just calls get_manifold once (and not 4 times)
+    # and avoids a function definition in every step
+    #
+    # Besides that this whole file looks very good in style already!
 
     metric = (X, Y) -> inner(
         get_manifold(amp), get_manifold(amp).point, X, Y
@@ -131,4 +141,3 @@ function step_solver!(amp::AbstractManoptProblem, crs::ConjugateResidualState, i
 end
 
 get_solver_result(crs::ConjugateResidualState) = crs.x
-
