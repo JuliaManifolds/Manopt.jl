@@ -1,4 +1,6 @@
-using Manifolds, Manopt, LinearAlgebra, Random
+using Manifolds, Manopt, LinearAlgebra, Random, Plots
+
+include("..\\..\\src\\solvers\\interior_point_Newton.jl")
 
 A = [2 -1 -1; -1 2 -1; -1 -1 2]
 
@@ -33,8 +35,14 @@ p_0 = [p_x, p_y, p_z]
 record = [:Iterate]
 
 res = interior_point_Newton(
-    M, f, grad_f, Hess_f, p_0; g=g, grad_g=grad_g, stop=StopAfterIteration(1), record=record, return_state=true
+    M, f, grad_f, Hess_f, p_0; g=g, grad_g=grad_g, stop=StopAfterIteration(50), record=record, return_state=true
     )
 
 rec = get_record(res)
+
+plotlyjs()
+xs = [re[1] for re in rec]
+ys = [re[2] for re in rec]
+zs = [re[3] for re in rec]
+plot(scatter(xs, ys, zs))
 

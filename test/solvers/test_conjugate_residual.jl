@@ -14,7 +14,7 @@ A = (I-p*p') * [2 1 0; 1 2 1; 0 1 2]
 b = rand(TpM)
 
 mho = ManifoldHessianObjective(
-        (TpM, x)    -> metric(X, A*x) - metric(b, x),
+        (TpM, x)    -> 1/2 * metric(X, A*x) - metric(b, x),
         (TpM, x)    -> A*x - b,
         (TpM, x, y) -> A*y
 )
@@ -25,7 +25,10 @@ res = conjugate_residual(
     TpM, mho, rand(TpM); stop=StopWhenGradientNormLess(1e-5)|StopAfterIteration(100), record=record, return_state=true
     )
 
-# rec = get_record(res)
+x = rand(TpM)
+
+
+
 
 
 

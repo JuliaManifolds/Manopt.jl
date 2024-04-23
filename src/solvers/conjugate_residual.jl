@@ -19,7 +19,7 @@ mutable struct ConjugateResidualState{
         d::T = r,
         Ar::T = get_hessian(TpM, mho, x, r),
         Ad::T = Ar,
-        α::R = inner(TpM, TpM.point, r, Ar) / inner(TpM, TpM.point, Ad, Ad),
+        α::R = 0.0,
         β::R = 0.0,
         stop::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
         kwargs...,
@@ -114,16 +114,6 @@ end
 
 function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i)
 
-    # I would propose to use something like
-    # TpM = get_manifold(amp)
-    # p = TpM.point
-    # and juts the inner call below in the 2 cases
-    #
-    # this (a) just calls get_manifold once (and not 4 times)
-    # and avoids a function definition in every step
-    #
-    # Besides that this whole file looks very good in style already!
-
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = TpM.point
@@ -136,8 +126,11 @@ function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::Conjugate
     Ar = crs.Ar
     Ad = crs.Ad
 
+    crs.α = inner(M, p, r, Ar) / inner(M, p, Ad, Ad)
+
     # update iterate and residual
     crs.x += crs.α * d
+    print(is_vector(M, p, crs.x), '\n')
     crs.r -= crs.α * Ad
 
     # this is the only evaluation of A
