@@ -97,11 +97,11 @@ function conjugate_residual!(
     return get_solver_return(get_objective(dmp), crs)
 end
 
-function initialize_solver!(::AbstractManoptProblem, crs::ConjugateResidualState)
+function initialize_solver!(::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState)
     return crs
 end
 
-function step_solver!(amp::AbstractManoptProblem, crs::ConjugateResidualState, i)
+function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i)
 
     # I would propose to use something like
     # TpM = get_manifold(amp)
@@ -113,9 +113,9 @@ function step_solver!(amp::AbstractManoptProblem, crs::ConjugateResidualState, i
     #
     # Besides that this whole file looks very good in style already!
 
-    metric = (X, Y) -> inner(
-        get_manifold(amp), get_manifold(amp).point, X, Y
-    )
+    TpM = get_manifold(amp)
+    M = base_manifold(TpM)
+    p = TpM.point
 
     A = x -> get_hessian(amp, crs.x, x)
 
@@ -133,7 +133,7 @@ function step_solver!(amp::AbstractManoptProblem, crs::ConjugateResidualState, i
     crs.Ar = A(crs.r)
 
     # update d and Ad
-    crs.β = metric(crs.r, crs.Ar) / metric(r, Ar)
+    crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, r, Ar)
     crs.d = crs.r + crs.β * d
     crs.Ad = crs.Ar + crs.β * Ad
 
