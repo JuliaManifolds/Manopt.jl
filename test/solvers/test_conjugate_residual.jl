@@ -2,25 +2,32 @@ using Manifolds, Manopt, LinearAlgebra, Random
 
 M = Sphere(2)
 p = rand(M)
-X = rand(M, vector_at = p)
 
 TpM = TangentSpace(M, p)
 
-B = [2 1 0; 1 2 1; 0 1 2]
 
-function A(x)
-    return B*x
-end
-
-b = [1, 1, 1]
 
 metric = (x, y) -> inner(M, p, x, y)
 
+A = (I-p*p') * [2 1 0; 1 2 1; 0 1 2] 
+
+b = rand(TpM)
+
 mho = ManifoldHessianObjective(
-        (TpM, x)    -> metric(X, A(x)) - metric(b, x),
-        (TpM, x)    -> A(x) - b,
-        (TpM, x, y) -> A(y)
+        (TpM, x)    -> metric(X, A*x) - metric(b, x),
+        (TpM, x)    -> A*x - b,
+        (TpM, x, y) -> A*y
 )
+
+record = [:Iterate]
+
+res = conjugate_residual(
+    TpM, mho, rand(TpM); stop=StopWhenGradientNormLess(1e-5)|StopAfterIteration(100), record=record, return_state=true
+    )
+
+# rec = get_record(res)
+
+
 
 
 

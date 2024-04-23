@@ -33,7 +33,7 @@ p_0 = [p_x, p_y, p_z]
 record = [:Iterate]
 
 res = interior_point_Newton(
-    M, f, grad_f, Hess_f, p_0; g=g, grad_g=grad_g, record=record, return_state=true
+    M, f, grad_f, Hess_f, p_0; g=g, grad_g=grad_g, stop=StopAfterIteration(1), record=record, return_state=true
     )
 
 rec = get_record(res)

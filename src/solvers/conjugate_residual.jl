@@ -83,13 +83,24 @@ function show(io::IO, crs::ConjugateResidualState)
     return print(io, s)
 end
 
+function conjugate_residual(
+    TpM::TangentSpace,
+    mho::ManifoldHessianObjective,
+    x;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...
+)
+    y = copy(TpM, x)
+    return conjugate_residual!(TpM, mho, y; evaluation=evaluation, kwargs...)
+end
+
 function conjugate_residual!(
     TpM::TangentSpace,
     mho::ManifoldHessianObjective,
     x;
     kwargs...
 )
-    crs = ConjugateResidualState(TpM, mho, x)
+    crs = ConjugateResidualState(TpM, mho, x; kwargs...)
     dmho = decorate_objective!(TpM, mho; kwargs...)
     dmp = DefaultManoptProblem(TpM, dmho)
     crs = decorate_state!(crs; kwargs...)
