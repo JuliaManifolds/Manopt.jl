@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `get_last_stepsize` was defined in quite different ways that caused ambiguities. That is now internally a bit restructured and should work nicer.
   Internally this means that the interims dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
+* we accidentally exported `set_manopt_parameter!`, this is now fixed.
+
+### Changed
+
+* `get_manopt_parameter` and `set_manopt_parameter!` have been revised and better documented,
+  they now use more semantic symbols (with capital letters) instead of direct field access
+  (lower letter symbols). Since these are not exported, this is considered an internal, hence non-breaking change.
+  * semantic symbols are now all nouns in upper case letters
+  * `:active` is changed to `:Activity`
+
 
 ## [0.4.60] – April 10, 2024
 

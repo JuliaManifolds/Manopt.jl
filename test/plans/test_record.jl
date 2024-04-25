@@ -207,7 +207,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rwa(dmp, gds, -1) # Reset
         @test length(get_record(rwa)) == 0
         rwa(dmp, gds, 1)
-        set_manopt_parameter!(rwa, :active, false)
+        set_manopt_parameter!(rwa, :Activity, false)
         # passthrough to inner
         set_manopt_parameter!(rwa, :test, 1)
         @test !rwa.active

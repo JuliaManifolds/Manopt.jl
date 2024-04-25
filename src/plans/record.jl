@@ -103,7 +103,7 @@ _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 """
-    set_manopt_parameter!(ams::REcordSolverState, ::Val{:Record}, args...)
+    set_manopt_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
 
 Set certain values specified by `args...` into the elements of the `recordDictionary`
 """
@@ -244,7 +244,7 @@ function (re::RecordEvery)(
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
     set_manopt_parameter!(
-        ams, :SubState, :Record, :active, !(i < 1) && (rem(i + 1, re.every) == 0)
+        ams, :SubState, :Record, :Activity, !(i < 1) && (rem(i + 1, re.every) == 0)
     )
     return nothing
 end
@@ -467,7 +467,7 @@ function set_manopt_parameter!(rwa::RecordWhenActive, v::Val, args...)
     set_manopt_parameter!(rwa.record, v, args...)
     return rwa
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:active}, v)
+function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
     return rwa.active = v
 end
 get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
