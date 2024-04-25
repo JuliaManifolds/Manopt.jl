@@ -6,7 +6,7 @@ mutable struct InteriorPointState{
     TStop<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
     TStepsize<:Stepsize
-} <: AbstractManoptSolverState
+} <: AbstractGradientSolverState
     p::P
     X::T # not sure if needed?
     μ::T
@@ -91,10 +91,10 @@ function show(io::IO, ips::InteriorPointState)
     $(status_summary(ips.stop))
 
     * retraction method: $(ips.retraction_method)
-    
+
     ## Stepsize
     $(ips.stepsize)
-    
+
     This indicates convergence: $Conv
     """
 
@@ -213,7 +213,7 @@ function interior_point_Newton!(
     solve!(dmp, ips)
 
     return get_solver_return(get_objective(dmp), ips)
-    
+
 end
 
 # inititializer, might add more here
@@ -246,6 +246,10 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
 
     # tangent space
     TpM = TangentSpace(M, p)
+    # Instead
+    # set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, p)
+    # set_iterate!(ips.sub_state, TpM, rand(TpM))
+    # new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
 
     # get left- and right-hand side of Newton eq
     A, B = get_Newtons(amp, ips)
@@ -343,7 +347,7 @@ function get_Newtons(amp::AbstractManoptProblem, ips::InteriorPointState)
 
     # if m > 0
     #     A_ = A
-    #     A = X -> A_(X) + Jg'*Diagonal(μ./s)*Jg*X 
+    #     A = X -> A_(X) + Jg'*Diagonal(μ./s)*Jg*X
     #     b -= Jg'*(μ + (μ.*g .+ b)./s)
     # end
 
@@ -356,6 +360,23 @@ function get_Newtons(amp::AbstractManoptProblem, ips::InteriorPointState)
     return A, b
 
 end
+
+# similarly
+# struct ReducedLagrangianCost{H,V,R}
+# struct ReducedLagrangianGrad{H,V,R}
+struct ReducedLagrangianHessian{H,V,R}
+    mho::H
+    μ::V
+    λ::V
+    s::V
+    barrier::R
+end
+# This replaces A
+# function (L::ReducedLagrangianHessian)(TpM::AbstractManifold, p, X)
+#    Y = zero_vector(base_manifold(TpM), p)
+#    (m > 0) && (Y .+= lk    hwefjkqhwbef)
+# end
+
 
 function is_feasible(M, cmo, p)
 
