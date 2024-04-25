@@ -25,7 +25,7 @@ mutable struct InteriorPointState{
         μ::T=rand(length(get_inequality_constraints(M, cmo, p))),
         λ::T=zeros(length(get_equality_constraints(M, cmo, p))),
         s::T=rand(length(get_inequality_constraints(M, cmo, p))),
-        ρ::R=μ's / (length(get_inequality_constraints(M, cmo, p))),
+        ρ::R=μ's / length(get_inequality_constraints(M, cmo, p)),
         σ::R=rand(),
         stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
@@ -33,6 +33,7 @@ mutable struct InteriorPointState{
             M; retraction_method=retraction_method, initial_stepsize=1.0
         ),
     ) where {P,T,R}
+
         ips = new{P,T,R,typeof(stop),typeof(retraction_method),typeof(stepsize)}()
         ips.p = p
         ips.X = X
@@ -45,6 +46,7 @@ mutable struct InteriorPointState{
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
         return ips
+
     end
 end
 
@@ -69,6 +71,7 @@ end
 
 # pretty print state info
 function show(io::IO, ips::InteriorPointState)
+
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
@@ -96,6 +99,7 @@ function show(io::IO, ips::InteriorPointState)
     """
 
     return print(io, s)
+
 end
 
 # not-in-place,
@@ -195,11 +199,13 @@ function interior_point_Newton!(
     ),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+
     !is_feasible(M, cmo, p) && throw(ErrorException("Starting point p must be feasible."))
 
     ips = InteriorPointState(
         M, cmo, p; stop=stop, retraction_method=retraction_method, stepsize=stepsize
     )
+
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
     ips = decorate_state!(ips; kwargs...)
@@ -207,6 +213,7 @@ function interior_point_Newton!(
     solve!(dmp, ips)
 
     return get_solver_return(get_objective(dmp), ips)
+    
 end
 
 # inititializer, might add more here
@@ -291,6 +298,7 @@ get_solver_result(ips::InteriorPointState) = ips.p
 # calculates σ for a given state, ref Lai & Yoshise first paragraph Section 8.1
 # might add more calculation methods for σ
 function calculate_σ(amp::AbstractManoptProblem, ips::InteriorPointState)
+
     M = get_manifold(amp)
 
     p, μ, λ, s = ips.p, ips.μ, ips.λ, ips.s
@@ -309,11 +317,13 @@ function calculate_σ(amp::AbstractManoptProblem, ips::InteriorPointState)
     (n > 0) && (d += inner(M, p, dh'μ, dh'λ) + norm(h)^2)
 
     return min(0.5, d^(1/4))
+
 end
 
 # returns left- and right-hand sides of Newton equation
 # to be used as input for subsolver
 function get_Newtons(amp::AbstractManoptProblem, ips::InteriorPointState)
+
     p, μ, λ, s = ips.p, ips.μ, ips.λ, ips.s
     b = ips.ρ .* ips.σ
 
@@ -344,6 +354,7 @@ function get_Newtons(amp::AbstractManoptProblem, ips::InteriorPointState)
     # end
 
     return A, b
+
 end
 
 function is_feasible(M, cmo, p)
@@ -354,4 +365,5 @@ function is_feasible(M, cmo, p)
 
     # check feasibility
     return is_point(M, p) && all(g .<= 0) && all(h .== 0)
+
 end
