@@ -84,10 +84,12 @@ get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
 """
     set_manopt_parameter!(ams::AbstractManoptProblem, element::Symbol, field::Symbol , value)
 
-Set a certain field/element from the [`AbstractManoptProblem`](@ref) `ams` to `value.
-This function should dispatch on `Val(element)`.
+Set a certain field/element from the [`AbstractManoptProblem`](@ref) `ams` to `value`.
+This function usually dispatches on `Val(element)`.
+Instead of a single field, also a chain of elements can be provided, allowing to access
+encapsulated parts of the problem.
 
-By default this passes on to the inner objective, see [`set_manopt_parameter!`](@ref)
+Main values for `element` are `:Manifold` and `:Objective`.
 """
 set_manopt_parameter!(amp::AbstractManoptProblem, e::Symbol, args...)
 

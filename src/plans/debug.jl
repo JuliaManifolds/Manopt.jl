@@ -187,7 +187,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         st,
         :SubState,
         :Debug,
-        :active,
+        :Activity,
         !(i < 1) && (rem(i + d.activation_offset, d.every) == 0),
     )
     return nothing
@@ -769,7 +769,7 @@ function set_manopt_parameter!(dwa::DebugWhenActive, v::Val, args...)
     set_manopt_parameter!(dwa.debug, v, args...)
     return dwa
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:active}, v)
+function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
     return dwa.active = v
 end
 
