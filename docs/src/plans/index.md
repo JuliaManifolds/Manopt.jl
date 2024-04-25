@@ -37,7 +37,7 @@ The following symbols are used.
 | `:SubState` | generic | the sub state (within a state, as pass down) |
 | `:λ` | [`ProximalDCCost`](@ref), [`ProximalDCGrad`](@ref) | set the proximal parameter within the proximal sub objective elements |
 | `:Population`     | [`ParticleSwarmState`](@ref) | a certain population of points, for example [`particle_swarm`](@ref)s swarm |
-| `:Record` | access the [`RecordState`](@ref) and the `recoedDictionary`. |
+| `:Record` | access the [`RecordSolverState`](@ref) and the `recoedDictionary`. |
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius, equivalent to `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective |
 | `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref) and [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function |
