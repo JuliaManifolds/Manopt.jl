@@ -130,7 +130,6 @@ function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::Conjugate
 
     # update iterate and residual
     crs.x += crs.α * d
-    print(is_vector(M, p, crs.x), '\n')
     crs.r -= crs.α * Ad
 
     # this is the only evaluation of A

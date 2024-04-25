@@ -5,11 +5,9 @@ p = rand(M)
 
 TpM = TangentSpace(M, p)
 
-
-
 metric = (x, y) -> inner(M, p, x, y)
 
-A = (I-p*p') * [2 1 0; 1 2 1; 0 1 2] 
+A = (I-p*p') * [5 -1 -1; -1 5 -1; -1 -1 5] 
 
 b = rand(TpM)
 
@@ -25,7 +23,7 @@ res = conjugate_residual(
     TpM, mho, rand(TpM); stop=StopWhenGradientNormLess(1e-5)|StopAfterIteration(100), record=record, return_state=true
     )
 
-x = rand(TpM)
+rec = get_record(res)
 
 
 
