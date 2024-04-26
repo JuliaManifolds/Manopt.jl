@@ -5,12 +5,13 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.61] unreleased
+## [0.4.61] 2024-04-27
 
 ### Added
 
 * Tests now also use `Aqua.jl` to spot problems in the code, e.g. ambiguities.
 * introduce a feature-based list of solvers and reduce the details in the alphabetical list
+* adds a `PolyakStepsize`
 
 ### Fixed
 

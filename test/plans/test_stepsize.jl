@@ -105,4 +105,18 @@ using Manopt, Manifolds, Test
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
+    @testset "Polyak Stepsize" begin
+        M = Euclidean(2)
+        f(M, p) = sum(p .^ 2)
+        grad_f(M, p) = sum(2 .* p)
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        p = [2.0, 2.0]
+        X = grad_f(M, p)
+        dmp = DefaultProblem(M, ManifoldGradientObjective(f.grad_f))
+        sgs = SubGradientMethodState(M, p)
+        ps = PolyakStepsize()
+        @test repr(ps) ==
+            "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = 0.0"
+        @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / norm(M, p, X)
+    end
 end

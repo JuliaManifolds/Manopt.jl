@@ -757,7 +757,6 @@ function show(io::IO, a::NonmonotoneLinesearch)
 end
 get_message(a::NonmonotoneLinesearch) = a.message
 
-
 @doc raw"""
     PolyakStepsize <: Linesearch
 
@@ -789,11 +788,8 @@ mutable struct PolyakStepsize{F,R} <: Linesearch
     γ::F
     best_cost_value::R
 end
-function PolyakStepsize(;
-    γ::F= (i) -> 1/i,
-    initial_cost_estimate::R = 0.0,
-) where {F,R}
-    PolyakStepsize{F,R}(γ,initial_cost_estimate)
+function PolyakStepsize(; γ::F=(i) -> 1 / i, initial_cost_estimate::R=0.0) where {F,R}
+    return PolyakStepsize{F,R}(γ, initial_cost_estimate)
 end
 function (ps::PolyakStepsize)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int, args...; kwargs...
@@ -803,14 +799,15 @@ function (ps::PolyakStepsize)(
     p = get_iterate(ams)
     X = get_gradient(amp, p)
     # Evaluate the cost
-    c =  get_cost(M, get_objective(amp), p)
+    c = get_cost(M, get_objective(amp), p)
     (c < ps.best_cost_value) && (ps.best_cost_value = c)
     α = (c - ps.best_cost_value + ps.γ(i)) / norm(M, p, X)
     return α
 end
 function show(io::IO, ps::PolyakStepsize)
     return print(
-        io, "PolyakStepsize(;γ=$(ps.γ),initial_cost_estimate=$(ps.best_cost_value))"
+        io,
+        "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = $(ps.best_cost_value)",
     )
 end
 
