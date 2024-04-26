@@ -112,7 +112,6 @@ using Manopt, Manifolds, Test
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
-        dmp = DefaultProblem(M, ManifoldGradientObjective(f.grad_f))
         sgs = SubGradientMethodState(M, p)
         ps = PolyakStepsize()
         @test repr(ps) ==
