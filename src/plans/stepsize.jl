@@ -764,7 +764,7 @@ get_message(a::NonmonotoneLinesearch) = a.message
 Compute a step size
 
 ````math
-α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_k}{\lVert{ ∂f(p^{(i)})} \rVert^2},
+α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_i}{\lVert{ ∂f(p^{(i)})} \rVert^2},
 ````
 
 where ``f_{\text{best}}`` is the best cost value seen until the current iteration,
