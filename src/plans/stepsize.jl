@@ -764,7 +764,7 @@ get_message(a::NonmonotoneLinesearch) = a.message
 Compute a step size
 
 ````math
-α_i = \frac{f(p^{(k)}) - f_{\text{best}}+γ_k}{\lVert{ ∂f(p^{(k)})} \rVert^2},
+α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_k}{\lVert{ ∂f(p^{(i)})} \rVert^2},
 ````
 
 where ``f_{\text{best}}`` is the (up to now) best cost function seen until now,
@@ -788,7 +788,7 @@ both to the Riemannian case and to approximate the minimum cost value.
 
 initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``
 """
-mutable struct PolyakStepsize{F,R} <: Linesearch
+mutable struct PolyakStepsize{F,R} <: Stepsize
     γ::F
     best_cost_value::R
 end
