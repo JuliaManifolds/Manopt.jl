@@ -764,7 +764,7 @@ get_message(a::NonmonotoneLinesearch) = a.message
 Compute a step size
 
 ````math
-α_i = \frac{f(p^{(k)} - f_{\text{best}}+\gamma_k}{\lVert \operatorname{grad} f(p^{(k)})} \rVert},
+α_i = \frac{f(p^{(k)}) - f_{\text{best}}+\gamma_k}{\lVert{ \operatorname{grad} f(p^{(k)})} \rVert^2},
 ````
 
 where ``f_{\text{best}}`` is the (up to now) best cost function seen until now,
