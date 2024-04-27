@@ -767,8 +767,8 @@ Compute a step size
 α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_k}{\lVert{ ∂f(p^{(i)})} \rVert^2},
 ````
 
-where ``f_{\text{best}}`` is the (up to now) best cost function seen until now,
-and ``γ_i`` is a sequence of numbers that is square summable, but not summable.
+where ``f_{\text{best}}`` is the best cost value seen until the current iteration,
+and ``γ_i`` is a sequence of numbers that is square summable, but not summable (the sum must diverge to infinity).
 Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(k)}``.
 
 The step size is an adaption from the Dynamic step size discussed in Section 3.2 of [Bertsekas:2015](@cite),
