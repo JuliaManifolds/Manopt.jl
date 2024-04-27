@@ -23,8 +23,8 @@ Manopt.status_summary
 
 The following symbols are used.
 
-| Symbol       | Used in | Description                                                |
-| :----------- | :------: | ;-------------------------------------------------------- |
+| Symbol       | Used in  | Description                                                |
+| :----------- | :------ | :--------------------------------------------------------- |
 | `:Activity` | [`DebugWhenActive`](@ref) | activity of the debug action stored within |
 | `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at |
 | `:Cost` | generic |the cost function (within an objective, as pass down) |
@@ -36,12 +36,12 @@ The following symbols are used.
 | `:SubProblem` | generic | the sub problem (within a state, as pass down) |
 | `:SubState` | generic | the sub state (within a state, as pass down) |
 | `:λ` | [`ProximalDCCost`](@ref), [`ProximalDCGrad`](@ref) | set the proximal parameter within the proximal sub objective elements |
-| `:Population`     | [`ParticleSwarmState`](@ref) | a certain population of points, for example [`particle_swarm`](@ref)s swarm |
-| `:Record` | access the [`RecordSolverState`](@ref) and the `recoedDictionary`. |
+| `:Population` | [`ParticleSwarmState`](@ref) | a certain population of points, for example [`particle_swarm`](@ref)s swarm |
+| `:Record` | [`RecordSolverState`](@ref) |
 | `:TrustRegionRadius` | [`TrustRegionsState`](@ref) | the trust region radius, equivalent to `:σ` |
 | `:ρ`, `:u` | [`ExactPenaltyCost`](@ref), [`ExactPenaltyGrad`](@ref) | Parameters within the exact penalty objective |
-| `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref) and [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function |
-| `:p`, `: X` | [`LinearizedDCCost`](@ref), [`LinearizedDCGrad`](@ref) | Parameters withing the linearized functional used for the sub problem of the [difference of convex algorithm](@ref solver-difference-of-convex) |
+| `:ρ`, `:μ`, `:λ` | [`AugmentedLagrangianCost`](@ref), [`AugmentedLagrangianGrad`](@ref) | Parameters of the Lagrangian function |
+| `:p`, `:X` | [`LinearizedDCCost`](@ref), [`LinearizedDCGrad`](@ref) | Parameters withing the linearized functional used for the sub problem of the [difference of convex algorithm](@ref solver-difference-of-convex) |
 
 Any other lower case name or letter as well as single upper case letters access fields of the corresponding first argument.
 for example `:p` could be used to access the field `s.p` of a state.

@@ -503,6 +503,7 @@ Then find the new stepsize by
 ```
 
 # Fields
+
 * `initial_stepsize`:        (`1.0`) the step size to start the search with
 * `memory_size`:             (`10`) number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize`:         (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
@@ -755,6 +756,64 @@ function show(io::IO, a::NonmonotoneLinesearch)
     )
 end
 get_message(a::NonmonotoneLinesearch) = a.message
+
+@doc raw"""
+    PolyakStepsize <: Stepsize
+
+
+Compute a step size
+
+````math
+α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_i}{\lVert{ ∂f(p^{(i)})} \rVert^2},
+````
+
+where ``f_{\text{best}}`` is the best cost value seen until the current iteration,
+and ``γ_i`` is a sequence of numbers that is square summable, but not summable (the sum must diverge to infinity).
+Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(i)}``.
+
+The step size is an adaption from the Dynamic step size discussed in Section 3.2 of [Bertsekas:2015](@cite),
+both to the Riemannian case and to approximate the minimum cost value.
+
+# Fields
+
+* `γ`               : a function `i -> ...` representing the sequence.
+* `best_cost_value` : storing the value `f_{\text{best}}`
+
+# Constructor
+
+    PolyakStepsize(;
+        γ = i -> 1/i,
+        initial_cost_estimate=0.0
+    )
+
+initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``
+"""
+mutable struct PolyakStepsize{F,R} <: Stepsize
+    γ::F
+    best_cost_value::R
+end
+function PolyakStepsize(; γ::F=(i) -> 1 / i, initial_cost_estimate::R=0.0) where {F,R}
+    return PolyakStepsize{F,R}(γ, initial_cost_estimate)
+end
+function (ps::PolyakStepsize)(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int, args...; kwargs...
+)
+    # We get these by reference, so that should not allocate in general
+    M = get_manifold(amp)
+    p = get_iterate(ams)
+    X = get_subgradient(amp, p)
+    # Evaluate the cost
+    c = get_cost(M, get_objective(amp), p)
+    (c < ps.best_cost_value) && (ps.best_cost_value = c)
+    α = (c - ps.best_cost_value + ps.γ(i)) / (norm(M, p, X)^2)
+    return α
+end
+function show(io::IO, ps::PolyakStepsize)
+    return print(
+        io,
+        "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = $(ps.best_cost_value)",
+    )
+end
 
 @doc raw"""
     WolfePowellLinesearch <: Linesearch
