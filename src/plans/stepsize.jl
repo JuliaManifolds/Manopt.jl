@@ -769,7 +769,7 @@ Compute a step size
 
 where ``f_{\text{best}}`` is the best cost value seen until the current iteration,
 and ``γ_i`` is a sequence of numbers that is square summable, but not summable (the sum must diverge to infinity).
-Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(k)}``.
+Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(i)}``.
 
 The step size is an adaption from the Dynamic step size discussed in Section 3.2 of [Bertsekas:2015](@cite),
 both to the Riemannian case and to approximate the minimum cost value.
