@@ -758,7 +758,7 @@ end
 get_message(a::NonmonotoneLinesearch) = a.message
 
 @doc raw"""
-    PolyakStepsize <: Linesearch
+    PolyakStepsize <: Stepsize
 
 
 Compute a step size
