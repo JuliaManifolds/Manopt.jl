@@ -116,6 +116,6 @@ using Manopt, Manifolds, Test
         ps = PolyakStepsize()
         @test repr(ps) ==
             "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = 0.0"
-        @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / norm(M, p, X)
+        @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
 end

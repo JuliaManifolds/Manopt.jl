@@ -22,41 +22,49 @@ include("../utils/dummy_types.jl")
     @test get_stepsize(mp, gst, 1) == 1.0
     @test get_last_stepsize(mp, gst, 1) == 1.0
     # Check Fallbacks of Problem
+    @testset "Subgradient is Gradient" begin
+        @test get_subgradient(M, mgo, p) == get_gradient(M, mgo, p)
+        X = zero_vector(M, p)
+        Y = similar(X)
+        @test get_subgradient!(M, Y, mgo, p) == get_gradient!(M, X, mgo, p)
+        @test X == Y
+    end
     @test get_cost(mp, gst.p) == 0.0
     @test get_gradient(mp, gst.p) == zero_vector(M, p)
     @test_throws MethodError get_proximal_map(mp, 1.0, gst.p, 1)
-    @test_throws MethodError get_subgradient(mp, gst.p)
-    # Additional Specific Debugs
-    a1 = DebugGradient(; long=false, io=io)
-    a1(mp, gst, 1)
-    @test String(take!(io)) == "grad f(p):[1.0, 0.0]"
-    a1a = DebugGradient(; prefix="s:", io=io)
-    a1a(mp, gst, 1)
-    @test String(take!(io)) == "s:[1.0, 0.0]"
-    a2 = DebugGradientNorm(; long=false, io=io)
-    a2(mp, gst, 1)
-    @test String(take!(io)) == "|grad f(p)|:1.0"
-    a2a = DebugGradientNorm(; prefix="s:", io=io)
-    a2a(mp, gst, 1)
-    @test String(take!(io)) == "s:1.0"
-    a3 = DebugStepsize(; long=false, io=io)
-    a3(mp, gst, 1)
-    @test String(take!(io)) == "s:1.0"
-    a3a = DebugStepsize(; prefix="S:", io=io)
-    a3a(mp, gst, 1)
-    @test String(take!(io)) == "S:1.0"
-    # Additional Specific Records
-    b1 = RecordGradient(gst.X)
-    b1(mp, gst, 1)
-    @test b1.recorded_values == [gst.X]
-    b2 = RecordGradientNorm()
-    b2(mp, gst, 1)
-    @test b2.recorded_values == [1.0]
-    b3 = RecordStepsize()
-    b3(mp, gst, 1)
-    b3(mp, gst, 2)
-    b3(mp, gst, 3)
-    @test b3.recorded_values == [1.0, 1.0, 1.0]
+    @testset "Debug Gradient" begin
+        a1 = DebugGradient(; long=false, io=io)
+        a1(mp, gst, 1)
+        @test String(take!(io)) == "grad f(p):[1.0, 0.0]"
+        a1a = DebugGradient(; prefix="s:", io=io)
+        a1a(mp, gst, 1)
+        @test String(take!(io)) == "s:[1.0, 0.0]"
+        a2 = DebugGradientNorm(; long=false, io=io)
+        a2(mp, gst, 1)
+        @test String(take!(io)) == "|grad f(p)|:1.0"
+        a2a = DebugGradientNorm(; prefix="s:", io=io)
+        a2a(mp, gst, 1)
+        @test String(take!(io)) == "s:1.0"
+        a3 = DebugStepsize(; long=false, io=io)
+        a3(mp, gst, 1)
+        @test String(take!(io)) == "s:1.0"
+        a3a = DebugStepsize(; prefix="S:", io=io)
+        a3a(mp, gst, 1)
+        @test String(take!(io)) == "S:1.0"
+    end
+    @testset "Record Gradient" begin
+        b1 = RecordGradient(gst.X)
+        b1(mp, gst, 1)
+        @test b1.recorded_values == [gst.X]
+        b2 = RecordGradientNorm()
+        b2(mp, gst, 1)
+        @test b2.recorded_values == [1.0]
+        b3 = RecordStepsize()
+        b3(mp, gst, 1)
+        b3(mp, gst, 2)
+        b3(mp, gst, 3)
+        @test b3.recorded_values == [1.0, 1.0, 1.0]
+    end
     @testset "CostGradObjective" begin
         costgrad(M, p) = (f(M, p), grad_f(M, p))
         mcgo = ManifoldCostGradientObjective(costgrad)

@@ -764,11 +764,15 @@ get_message(a::NonmonotoneLinesearch) = a.message
 Compute a step size
 
 ````math
-α_i = \frac{f(p^{(k)}) - f_{\text{best}}+\gamma_k}{\lVert{ \operatorname{grad} f(p^{(k)})} \rVert^2},
+α_i = \frac{f(p^{(k)}) - f_{\text{best}}+γ_k}{\lVert{ ∂f(p^{(k)})} \rVert^2},
 ````
 
 where ``f_{\text{best}}`` is the (up to now) best cost function seen until now,
-and ``\gamma_i`` is a sequence of numbers that is square summable, but not summable.
+and ``γ_i`` is a sequence of numbers that is square summable, but not summable.
+Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(k)}``.
+
+The step size is an adaption from the Dynamic step size discussed in Section 3.2 of [Bertsekas:2015](@cite),
+both to the Riemannian case and to approximate the minimum cost value.
 
 # Fields
 
@@ -797,11 +801,11 @@ function (ps::PolyakStepsize)(
     # We get these by reference, so that should not allocate in general
     M = get_manifold(amp)
     p = get_iterate(ams)
-    X = get_gradient(amp, p)
+    X = get_subgradient(amp, p)
     # Evaluate the cost
     c = get_cost(M, get_objective(amp), p)
     (c < ps.best_cost_value) && (ps.best_cost_value = c)
-    α = (c - ps.best_cost_value + ps.γ(i)) / norm(M, p, X)
+    α = (c - ps.best_cost_value + ps.γ(i)) / (norm(M, p, X)^2)
     return α
 end
 function show(io::IO, ps::PolyakStepsize)
