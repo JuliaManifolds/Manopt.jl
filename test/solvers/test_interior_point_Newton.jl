@@ -11,8 +11,8 @@ grad_g(M, p) = -(I - p*p')
 
 M = Manifolds.Sphere(2)
 
-x =                       rand()
-y = sqrt(1 - x^2      ) * rand()
+x = rand()
+y = sqrt(1 - x^2) * rand()
 z = sqrt(1 - x^2 - y^2)
 
 p_0 = [x, y, z]
@@ -22,10 +22,10 @@ record = [:Iterate]
 res = interior_point_Newton(
     M, f, grad_f, Hess_f, p_0;
     g = g, grad_g = grad_g,
-    stop               = StopAfterIteration(100) | StopWhenChangeLess(1e-6),
+    stop               = StopAfterIteration(150) | StopWhenChangeLess(1e-6),
     stepsize           = ArmijoLinesearch(
         M; retraction_method = default_retraction_method(M), initial_stepsize = 1),
-    debug = [:Iteration, " | ",:Cost, " | ", :Stepsize, " | ", :Change, "\n", :Stop],
+    debug = [:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, "\n", :Stop],
     record             = record,
     return_state       = true
     )
@@ -40,7 +40,7 @@ rec .+= 0.005*rec
 
 using GLMakie, Makie, GeometryTypes
 
-n = 50
+n = 100
 
 π1(x) = x[1]
 π2(x) = x[2]
@@ -86,8 +86,7 @@ surface!(
     scene,
     x1,x2,x3;
     color=f_.(pts),
-    colormap=(:temperaturemap,0.5),
-    #shading=MultiLightShading,
+    colormap=(:temperaturemap,0.3),
     ambient=Vec3f(0.65, 0.65, 0.65),
     backlight=1.0f0,
     colorrange = range_f)
@@ -102,11 +101,16 @@ surface!(
     backlight=1.0f0,
     colorrange = range_f)
 
-scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
+# scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
 
-Makie.arrows!(
-    scene, vec(x1), vec(x2), vec(x3), vec(v1), vec(v2), vec(v3);
-    arrowsize = vec(norm.(grads))/100, arrowcolor = vec(norm.(grads)), linecolor = vec(norm.(grads)), linewidth = vec(norm.(grads))/160, lengthscale = 0.04, colormap=:reds
-)
+# Makie.arrows!(
+#     scene, vec(x1), vec(x2), vec(x3), vec(v1), vec(v2), vec(v3);
+#     arrowsize = vec(norm.(grads))/100, arrowcolor = vec(norm.(grads)), linecolor = vec(norm.(grads)), linewidth = vec(norm.(grads))/160, lengthscale = 0.04, colormap=:reds
+# )
 
 rec
+
+# GLMakie.rotate!(scene, Vec3f(0, 0, 1), 0.5)
+GLMakie.rotate!(scene, Vec3f(1, -1, -1), π/6)
+scene
+# save("plainsphere.png", scene)

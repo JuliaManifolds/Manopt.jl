@@ -14,7 +14,7 @@ mutable struct ConjugateResidualState{
     function ConjugateResidualState(
         TpM::TangentSpace,
         mho::ManifoldHessianObjective,
-        x::T;
+        x::T = rand(TpM);
         r::T = -get_gradient(TpM, mho, x),
         d::T = r,
         Ar::T = get_hessian(TpM, mho, x, r),
@@ -38,7 +38,7 @@ mutable struct ConjugateResidualState{
 end
 
 get_iterate(crs::ConjugateResidualState) = crs.x
-function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, p)
+function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, x)
     crs.x = x
     return crs
 end
@@ -85,22 +85,39 @@ end
 
 function conjugate_residual(
     TpM::TangentSpace,
-    mho::ManifoldHessianObjective,
-    x;
+    A, b, x0;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...
-)
-    y = copy(TpM, x)
-    return conjugate_residual!(TpM, mho, y; evaluation=evaluation, kwargs...)
+    kwargs...)
+
+    M = base_manifold(TpM)
+    p = TpM.point
+    mho = ManifoldHessianObjective(
+        (TpM, x) -> 0.5 * inner(M, p, x, A*x) - inner(M, p, b, x),
+        (TpM, x) -> A*x - b,
+        (TpM, x, y) -> A*y)
+
+    return conjugate_residual(TpM, mho, x0; evaluation=evaluation, kwargs...)
 end
+
+function conjugate_residual(
+    TpM::TangentSpace,
+    mho::ManifoldHessianObjective,
+    x0;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...)
+
+    y0 = copy(TpM, x0)
+    return conjugate_residual!(TpM, mho, y0; evaluation=evaluation, kwargs...)
+end
+
 
 function conjugate_residual!(
     TpM::TangentSpace,
     mho::ManifoldHessianObjective,
-    x;
+    x0;
     kwargs...
 )
-    crs = ConjugateResidualState(TpM, mho, x; kwargs...)
+    crs = ConjugateResidualState(TpM, mho, x0; kwargs...)
     dmho = decorate_objective!(TpM, mho; kwargs...)
     dmp = DefaultManoptProblem(TpM, dmho)
     crs = decorate_state!(crs; kwargs...)
