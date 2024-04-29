@@ -196,6 +196,7 @@ function interior_point_Newton!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stepsize::Stepsize=ArmijoLinesearch(
         M; retraction_method=retraction_method, initial_stepsize=1.0),
+    TpM = TangentSpace(M, p),
     sub_kwargs=(;),
     sub_cost = ConjugateResidualCost(
         ReducedLagrangianHess(cmo, μ, λ, s),
@@ -206,24 +207,23 @@ function interior_point_Newton!(
     sub_Hess = ConjugateResidualHess(
         ReducedLagrangianHess(cmo, μ, λ, s)),
     sub_objective = decorate_objective!(
-        TangentSpace(M, p),
+        TpM,
         ManifoldHessianObjective(
-            sub_cost, sub_grad, sub_Hess; 
+            sub_cost, sub_grad, sub_Hess;
             sub_kwargs...);
         evaluation=evaluation),
-    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(200) | 
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-5),
     sub_state::AbstractManoptSolverState=decorate_state!(
         ConjugateResidualState(
-            TangentSpace(M, p),
+            TpM,
             sub_objective;
             stop = sub_stopping_criterion,
             sub_kwargs...,
         );
         sub_kwargs...,
     ),
-    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
-        TangentSpace(M, p), sub_objective),
+    sub_problem::AbstractManoptProblem=DefaultManoptProblem(TpM, sub_objective),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
 
@@ -231,11 +231,11 @@ function interior_point_Newton!(
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
     ips = InteriorPointState(
-        M, cmo, p, 
+        M, cmo, p,
         sub_problem, sub_state;
         X=X, μ=μ, λ=λ, s=s,
-        stop=stop, 
-        retraction_method=retraction_method, 
+        stop=stop,
+        retraction_method=retraction_method,
         stepsize=stepsize,
         kwargs...)
     ips = decorate_state!(ips; kwargs...)
@@ -260,6 +260,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
 
     m, n = length(ips.μ), length(ips.λ)
 
+    # (RB:) This can not work currently, because in the constructor (line 226, the `sub_problem`)
+    # (RB:) You set the sub problems manifold to just be TpM
+    # (RB:) Can we maybe trick this to be a ℝ^0 for the case of no inequality constraints?
     # if n > 0
     #     set_manopt_parameter!(
     #         ips.sub_problem, :Manifold, :Basepoint, ArrayPartition(ips.p, ips.λ))
@@ -270,6 +273,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     #     set_iterate!(ips.sub_state, TpM, rand(TpM))
     # end
 
+    # (RB:) I think these are wrong you set the correctly in the lines below – do not replace the function but update the parameters therein.
     # set_manopt_parameter!(
     #     ips.sub_problem, :Objective, :A,
     #     ReducedLagrangianHess(cmo, ips.μ, ips.λ, ips.s))
@@ -277,34 +281,37 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     #     ips.sub_problem, :Objective, :b,
     #     -ReducedLagrangianGrad(cmo, ips.μ, ips.λ, ips.s, ips.ρ*ips.σ)(M, ips.p))
 
+    # This is also a bit more complicated than you think since the Manifold might be a product
     # set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, ips.p)
-    # set_iterate!(ips.sub_state, TpM, rand(TpM))
+    # Sure we want to start at a random point? I would prefer a deterministic start if possible.
+    set_iterate!(ips.sub_state, TpM, rand(TpM))
 
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :A, :μ, ips.μ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :A, :λ, ips.λ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :A, :s, ips.s)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :A, :μ, ips.μ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :A, :λ, ips.λ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :A, :s, ips.s)
 
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :b, :μ, ips.μ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :b, :λ, ips.λ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :b, :s, ips.s)
-    # set_manopt_parameter!(
-    #     ips.sub_problem, :Objective, :Cost, :b, :barrier_param, ips.ρ*ips.σ)
-    
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :A, :μ, ips.μ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :A, :λ, ips.λ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :A, :s, ips.s)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :b, :μ, ips.μ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :b, :λ, ips.λ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Cost, :b, :s, ips.s)
+    set_manopt_parameter!(
+        ips.sub_problem, :Objective, :Cost, :b, :barrier_param, ips.ρ*ips.σ)
 
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :b, :μ, ips.μ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :b, :λ, ips.λ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :b, :s, ips.s)
-    # set_manopt_parameter!(
-    #     ips.sub_problem, :Objective, :Cost, :b, :barrier_param, ips.ρ*ips.σ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :A, :μ, ips.μ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :A, :λ, ips.λ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :A, :s, ips.s)
+    # (RB:) Why twice?
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :b, :μ, ips.μ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :b, :λ, ips.λ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Gradient, :b, :s, ips.s)
+    # (RB:) Why again? See 295
+    set_manopt_parameter!(
+        ips.sub_problem, :Objective, :Cost, :b, :barrier_param, ips.ρ*ips.σ)
 
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Hessian, :A, :μ, ips.μ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Hessian, :A, :λ, ips.λ)
-    # set_manopt_parameter!(ips.sub_problem, :Objective, :Hessian, :A, :s, ips.s)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Hessian, :A, :μ, ips.μ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Hessian, :A, :λ, ips.λ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :Hessian, :A, :s, ips.s)
 
-    # X = get_solver_result(solve!(ips.sub_problem, ips.sub_state)) 
+    # X = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
 
     lhs = X -> ReducedLagrangianHess(cmo, ips.μ, ips.λ, ips.s)(M, ips.p, X)
     rhs = -ReducedLagrangianGrad(cmo, ips.μ, ips.λ, ips.s, ips.ρ*ips.σ)(M, ips.p)
@@ -318,8 +325,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     )
 
     X = conjugate_residual(TpM, mho, rand(TpM))
-        
+
     # get either one or two tangent vectors depending on if equality constrains are present
+    # hm this also seems a bit “hacked” – see above maybe an ℝ^0 would be a doable solution?
     (n > 0) ? (Xp, Xλ = X) : (Xp = X)
 
     α = get_stepsize(amp, ips, i)
