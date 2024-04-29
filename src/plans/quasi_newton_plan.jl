@@ -10,6 +10,13 @@ abstract type AbstractQuasiNewtonDirectionUpdate end
 
 get_message(::AbstractQuasiNewtonDirectionUpdate) = ""
 
+"""
+    initialize_update!(s::AbstractQuasiNewtonDirectionUpdate)
+
+Initialize direction update. By default no change is made.
+"""
+initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
+
 @doc raw"""
     AbstractQuasiNewtonUpdateRule
 
@@ -395,24 +402,32 @@ function (d::QuasiNewtonMatrixDirectionUpdate)(mp, st)
     r = zero_vector(get_manifold(mp), get_iterate(st))
     return d(r, mp, st)
 end
-function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    r, mp, st
+function (d::QuasiNewtonMatrixDirectionUpdate)(r, mp, st)
+    return apply_to_vector!(r, d, mp, st, get_gradient(st))
+end
+function apply_to_vector!(
+    r, d::QuasiNewtonMatrixDirectionUpdate{T}, mp, st, X
 ) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
-    X = get_gradient(st)
     get_vector!(M, r, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
     return r
 end
-function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    r, mp, st
+function apply_to_vector!(
+    r, d::QuasiNewtonMatrixDirectionUpdate{T}, mp, st, X
 ) where {T<:Union{BFGS,DFP,SR1,Broyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
-    X = get_gradient(st)
     get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
     return r
 end
+
+function initialize_update!(s::QuasiNewtonMatrixDirectionUpdate)
+    s.matrix .= I
+    initialize_update!(s.update)
+    return s
+end
+
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
@@ -529,10 +544,15 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(mp, st)
     return d(r, mp, st)
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
+    return apply_to_vector!(r, d, mp, st, get_gradient(mp))
+end
+function apply_to_vector!(
+    r, d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS}, mp, st, X
+)
     isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
-    copyto!(M, r, p, get_gradient(st))
+    copyto!(M, r, p, X)
     m = length(d.memory_s)
     if m == 0
         r .*= -1
@@ -584,13 +604,24 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     return r
 end
 
+"""
+    initialize_update!(s::QuasiNewtonLimitedMemoryDirectionUpdate)
+
+Initialize the limited memory direction update by emptying the memory buffers.
+"""
+function initialize_update!(s::QuasiNewtonLimitedMemoryDirectionUpdate)
+    empty!(s.memory_s)
+    empty!(s.memory_y)
+    return s
+end
+
 @doc raw"""
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,
 which are based on the idea of a so-called cautious update. The search direction is calculated
 as given in [`QuasiNewtonMatrixDirectionUpdate`](@ref) or [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref),
-butut the update  then is only executed if
+but the update then is only executed if
 
 ```math
 \frac{g_{x_{k+1}}(y_k,s_k)}{\lVert s_k \rVert^{2}_{x_{k+1}}} ≥ θ(\lVert \operatorname{grad}f(x_k) \rVert_{x_k}),
@@ -634,19 +665,14 @@ Generate a cautious update for either a matrix based or a limited memory based u
 """
 mutable struct QuasiNewtonCautiousDirectionUpdate{U} <:
                AbstractQuasiNewtonDirectionUpdate where {
-    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}}
-} where {T<:AbstractQuasiNewtonUpdateRule}
+    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate}
+}
     update::U
     θ::Function
 end
 function QuasiNewtonCautiousDirectionUpdate(
     update::U; θ::Function=x -> x
-) where {
-    U<:Union{
-        QuasiNewtonMatrixDirectionUpdate,
-        QuasiNewtonLimitedMemoryDirectionUpdate{T} where T<:AbstractQuasiNewtonUpdateRule,
-    },
-}
+) where {U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate}}
     return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
 end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)
@@ -658,4 +684,12 @@ function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
 end
 function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
     return get_update_vector_transport(u.update)
+end
+function apply_to_vector!(r, d::QuasiNewtonCautiousDirectionUpdate, mp, st, X)
+    return apply_to_vector!(r, d.update, mp, st, X)
+end
+
+function initialize_update!(s::QuasiNewtonCautiousDirectionUpdate)
+    initialize_update!(s.update)
+    return s
 end

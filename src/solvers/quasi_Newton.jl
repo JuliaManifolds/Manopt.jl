@@ -370,6 +370,7 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     get_gradient!(amp, qns.X, qns.p)
     copyto!(M, qns.sk, qns.p, qns.X)
     copyto!(M, qns.yk, qns.p, qns.X)
+    initialize_update!(qns.direction_update)
     return qns
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)

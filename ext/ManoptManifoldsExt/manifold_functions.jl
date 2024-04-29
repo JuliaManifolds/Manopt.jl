@@ -128,3 +128,13 @@ function reflect!(
     X .*= -1
     return retract!(M, q, p, X, retraction_method)
 end
+
+function Manopt.project_active!(M::Hyperrectangle, Y, p, X; eps::Real=eps(number_eltype(X)))
+    fill!(Y, 0)
+    for i in eachindex(M.lb)
+        if (p[i] == M.lb[i] && X[i] <= 0) || (p[i] == M.ub[i] && X[i] >= 0)
+            Y[i] = X[i]
+        end
+    end
+    return Y
+end
