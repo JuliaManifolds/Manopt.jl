@@ -58,7 +58,8 @@ function show(io::IO, crs::ConjugateResidualState)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
-
+    # (RB:) I would prefer if we do not print points/tangent vectors here,
+    # since they might be of dimension 100+ and very crowded. numbers are fine though
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
     $Iter
@@ -135,9 +136,11 @@ function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::Conjugate
     M = base_manifold(TpM)
     p = TpM.point
 
+    # (RB:) You call  this once, so maybe putting a hessian call there would be actually enough?
     A = x -> get_hessian(amp, crs.x, x)
 
-    # store current values
+    # store current values (RB:) These are just references, nothing is copied here.
+    # ...so we could also just write crs. upfront in the following formulae
     r = crs.r
     d = crs.d
     Ar = crs.Ar

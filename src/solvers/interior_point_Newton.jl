@@ -327,7 +327,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     X = conjugate_residual(TpM, mho, rand(TpM))
 
     # get either one or two tangent vectors depending on if equality constrains are present
-    # hm this also seems a bit “hacked” – see above maybe an ℝ^0 would be a doable solution?
+    # (RB:) hm this also seems a bit “hacked” – see above maybe an ℝ^0 would be a doable solution?
+    # (RB:) I have looked at the subsolve,r and I do not understand how that ever gets to
+    # (RB:) A case where it works on a product manifold where the first case here would happen/appear
     (n > 0) ? (Xp, Xλ = X) : (Xp = X)
 
     α = get_stepsize(amp, ips, i)
