@@ -163,7 +163,7 @@ It can be set using
 
 ```{julia}
 #| warning: true
-set_manopt_parameter!(:Mode, "Tutorial")
+Manopt.set_manopt_parameter!(:Mode, "Tutorial")
 ```
 
 to activate these. Continuing from the example before, one might argue, that the
@@ -208,7 +208,7 @@ gradient_descent(M, f2, grad_f2, data[1], debug=[:Stop]);
 This also illustrates one way to deactivate the hints, namely by overwriting the `debug=` keyword, that in `Tutorial` mode contains addional warnings.the other option is to globally reset the `:Mode` back to
 ```{julia}
 #| warning: true
-set_manopt_parameter!(:Mode, "")
+Manopt.set_manopt_parameter!(:Mode, "")
 ```
 
 ## Example 2: computing the median of symmetric positive definite matrices.

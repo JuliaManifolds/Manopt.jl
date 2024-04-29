@@ -365,7 +365,6 @@ export get_state,
     get_differential_dual_prox!,
     set_gradient!,
     set_iterate!,
-    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -483,9 +482,8 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export ArmijoLinesearch,
-    ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
-export AdaptiveWNGradient
+export AdaptiveWNGradient, ConstantStepsize, DecreasingStepsize, PolyakStepsize
+export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria

@@ -5,17 +5,29 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.61] unreleased
+## [0.4.61] April 27, 2024
 
 ### Added
 
 * Tests now also use `Aqua.jl` to spot problems in the code, e.g. ambiguities.
 * introduce a feature-based list of solvers and reduce the details in the alphabetical list
+* adds a `PolyakStepsize`
+* added a `get_subgradient` for `AbstractManifoldGradientObjectives` since their gradient is a special case of a subgradient.
 
 ### Fixed
 
 * `get_last_stepsize` was defined in quite different ways that caused ambiguities. That is now internally a bit restructured and should work nicer.
   Internally this means that the interims dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
+* we accidentally exported `set_manopt_parameter!`, this is now fixed.
+
+### Changed
+
+* `get_manopt_parameter` and `set_manopt_parameter!` have been revised and better documented,
+  they now use more semantic symbols (with capital letters) instead of direct field access
+  (lower letter symbols). Since these are not exported, this is considered an internal, hence non-breaking change.
+  * semantic symbols are now all nouns in upper case letters
+  * `:active` is changed to `:Activity`
+
 
 ## [0.4.60] – April 10, 2024
 
