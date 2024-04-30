@@ -1230,7 +1230,7 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
 * `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
-* `:WarningMessages`creates a [`DebugMessages`](@ref)`(:Warning)`
+* `:WarningMessages` creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages`creates a [`DebugMessages`](@ref)`(:Info)`
 * `:ErrorMessages` creates a [`DebugMessages`](@ref)`(:Error)`
 * `:Messages` creates a [`DebugMessages`](@ref)`()` (the same as `:InfoMessages`)

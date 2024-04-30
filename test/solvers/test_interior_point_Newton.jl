@@ -2,12 +2,12 @@ using Manifolds, Manopt, LinearAlgebra, Random
 
 A = [5 -1 -1; -1 5 -1; -1 -1 5]
 
-f(M, p)         =  0.5*p'*A*p
-grad_f(M, p)    = (I - p*p')*A*p
-Hess_f(M, p, X) = (I - p*p')*A*X - f(M, p)*X
+f(M, p) = 0.5 * p' * A * p
+grad_f(M, p) = (I - p * p') * A * p
+Hess_f(M, p, X) = (I - p * p') * A * X - f(M, p) * X
 
-g(M, p)      = -p
-grad_g(M, p) = -(I - p*p')
+g(M, p) = -p
+grad_g(M, p) = -(I - p * p')
 
 M = Manifolds.Sphere(2)
 
@@ -20,21 +20,27 @@ p_0 = [x, y, z]
 record = [:Iterate]
 
 res = interior_point_Newton(
-    M, f, grad_f, Hess_f, p_0;
-    g = g, grad_g = grad_g,
-    stop               = StopAfterIteration(150) | StopWhenChangeLess(1e-6),
-    stepsize           = ArmijoLinesearch(
-        M; retraction_method = default_retraction_method(M), initial_stepsize = 1),
-    debug = [:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, "\n", :Stop],
-    record             = record,
-    return_state       = true
-    )
+    M,
+    f,
+    grad_f,
+    Hess_f,
+    p_0;
+    g=g,
+    grad_g=grad_g,
+    stop=StopAfterIteration(150) | StopWhenChangeLess(1e-6),
+    stepsize=ArmijoLinesearch(
+        M; retraction_method=default_retraction_method(M), initial_stepsize=1
+    ),
+    debug=[:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, " ", :GradientNorm, "\n", :Stop],
+    record=record,
+    return_state=true,
+)
 
 rec = get_record(res)
 
 prepend!(rec, [p_0])
 
-rec .+= 0.005*rec
+rec .+= 0.005 * rec
 
 #-------------------------------------------------------------------------------------------------#
 
@@ -46,14 +52,12 @@ n = 100
 π2(x) = x[2]
 π3(x) = x[3]
 
-h(x) = [cos(x[1])sin(x[2]),
-        sin(x[1])sin(x[2]),
-        cos(x[2])]
+h(x) = [cos(x[1])sin(x[2]), sin(x[1])sin(x[2]), cos(x[2])]
 
-U = [[θ, ϕ] for θ in LinRange(0, 2π, n), ϕ in LinRange(0, π,   n)]
-V = [[θ, ϕ] for θ in LinRange(0, π/2,n), ϕ in LinRange(0, π/2, n)]
+U = [[θ, ϕ] for θ in LinRange(0, 2π, n), ϕ in LinRange(0, π, n)]
+V = [[θ, ϕ] for θ in LinRange(0, π / 2, n), ϕ in LinRange(0, π / 2, n)]
 
-pts  = h.(U)
+pts = h.(U)
 pts_ = h.(V)
 
 f_ = p -> f(M, p)
@@ -69,7 +73,7 @@ x1_ = π1.(pts_)
 x2_ = π2.(pts_)
 x3_ = π3.(pts_)
 
-grads = grad_f.(Ref(M),pts)
+grads = grad_f.(Ref(M), pts)
 normgrads = grads ./ norm.(grads)
 
 v1 = π1.(normgrads)
@@ -84,22 +88,28 @@ range_f = (minimum(f_.(pts)), maximum(f_.(pts)))
 
 surface!(
     scene,
-    x1,x2,x3;
+    x1,
+    x2,
+    x3;
     color=f_.(pts),
-    colormap=(:temperaturemap,0.3),
+    colormap=(:temperaturemap, 0.3),
     ambient=Vec3f(0.65, 0.65, 0.65),
     backlight=1.0f0,
-    colorrange = range_f)
+    colorrange=range_f,
+)
 
 surface!(
     scene,
-    x1_,x2_,x3_;
+    x1_,
+    x2_,
+    x3_;
     color=f_.(pts_),
     colormap=:temperaturemap,
     #shading=MultiLightShading,
     ambient=Vec3f(0.65, 0.65, 0.65),
     backlight=1.0f0,
-    colorrange = range_f)
+    colorrange=range_f,
+)
 
 # scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
 
@@ -111,6 +121,6 @@ surface!(
 rec
 
 # GLMakie.rotate!(scene, Vec3f(0, 0, 1), 0.5)
-GLMakie.rotate!(scene, Vec3f(1, -1, -1), π/6)
+GLMakie.rotate!(scene, Vec3f(1, -1, -1), π / 6)
 scene
 # save("plainsphere.png", scene)

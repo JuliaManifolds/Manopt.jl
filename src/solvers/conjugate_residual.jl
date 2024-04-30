@@ -1,8 +1,5 @@
-mutable struct ConjugateResidualState{
-    T,
-    R,
-    TStop<:StoppingCriterion
-} <: AbstractManoptSolverState
+mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
+               AbstractManoptSolverState
     x::T
     r::T
     d::T
@@ -14,16 +11,16 @@ mutable struct ConjugateResidualState{
     function ConjugateResidualState(
         TpM::TangentSpace,
         mho::ManifoldHessianObjective,
-        x::T = rand(TpM);
-        r::T = -get_gradient(TpM, mho, x),
-        d::T = r,
-        Ar::T = get_hessian(TpM, mho, x, r),
-        Ad::T = Ar,
-        α::R = 0.0,
-        β::R = 0.0,
-        stop::StoppingCriterion = StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
+        x::T=rand(TpM);
+        r::T=-get_gradient(TpM, mho, x),
+        d::T=r,
+        Ar::T=get_hessian(TpM, mho, x, r),
+        Ad::T=Ar,
+        α::R=0.0,
+        β::R=0.0,
+        stop::StoppingCriterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
         kwargs...,
-    ) where{T,R}
+    ) where {T,R}
         crs = new{T,R,typeof(stop)}()
         crs.x = x
         crs.r = r
@@ -54,48 +51,39 @@ function get_message(crs::ConjugateResidualState)
 end
 
 function show(io::IO, crs::ConjugateResidualState)
-
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
-    # (RB:) I would prefer if we do not print points/tangent vectors here,
-    # since they might be of dimension 100+ and very crowded. numbers are fine though
     s = """
     # Solver state for `Manopt.jl`s Conjugate Residual Method
     $Iter
     ## Parameters
-    * x: $(crs.x)
-    * r: $(crs.r)
-    * d: $(crs.d)
-    * Ar: $(crs.Ar)
-    * Ad: $(crs.Ad)
     * α: $(crs.α)
     * β: $(crs.β)
 
     ## Stopping criterion
     $(status_summary(crs.stop))
 
-    ## Stepsize
-    $(crs.α)
-
     This indicates convergence: $Conv
     """
-
     return print(io, s)
 end
 
 function conjugate_residual(
     TpM::TangentSpace,
-    A, b, x0;
+    A,
+    b,
+    x0;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...)
-
+    kwargs...,
+)
     M = base_manifold(TpM)
     p = TpM.point
     mho = ManifoldHessianObjective(
-        (TpM, x) -> 0.5 * inner(M, p, x, A*x) - inner(M, p, b, x),
-        (TpM, x) -> A*x - b,
-        (TpM, x, y) -> A*y)
+        (TpM, x) -> 0.5 * inner(M, p, x, A * x) - inner(M, p, b, x),
+        (TpM, x) -> A * x - b,
+        (TpM, x, y) -> A * y,
+    )
 
     return conjugate_residual(TpM, mho, x0; evaluation=evaluation, kwargs...)
 end
@@ -105,18 +93,14 @@ function conjugate_residual(
     mho::ManifoldHessianObjective,
     x0;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...)
-
+    kwargs...,
+)
     y0 = copy(TpM, x0)
     return conjugate_residual!(TpM, mho, y0; evaluation=evaluation, kwargs...)
 end
 
-
 function conjugate_residual!(
-    TpM::TangentSpace,
-    mho::ManifoldHessianObjective,
-    x0;
-    kwargs...
+    TpM::TangentSpace, mho::ManifoldHessianObjective, x0; kwargs...
 )
     crs = ConjugateResidualState(TpM, mho, x0; kwargs...)
     dmho = decorate_objective!(TpM, mho; kwargs...)
@@ -126,18 +110,19 @@ function conjugate_residual!(
     return get_solver_return(get_objective(dmp), crs)
 end
 
-function initialize_solver!(::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState)
+function initialize_solver!(
+    ::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
+)
+    # (RB:) Reset / update A, r, D, Ar, Ad α β
     return crs
 end
 
-function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i)
-
+function step_solver!(
+    amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i
+)
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = TpM.point
-
-    # (RB:) You call  this once, so maybe putting a hessian call there would be actually enough?
-    A = x -> get_hessian(amp, crs.x, x)
 
     # store current values (RB:) These are just references, nothing is copied here.
     # ...so we could also just write crs. upfront in the following formulae
@@ -153,7 +138,7 @@ function step_solver!(amp::AbstractManoptProblem{<:TangentSpace}, crs::Conjugate
     crs.r -= crs.α * Ad
 
     # this is the only evaluation of A
-    crs.Ar = A(crs.r)
+    crs.Ar = get_hessian(amp, crs.x, crs.r)
 
     # update d and Ad
     crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, r, Ar)
