@@ -1,4 +1,15 @@
 # Maybe rename?
+# (RB:) We could maybe even “rework” this to jiust have an HessianObjective inside?
+# This would require the ReducedLagrangianCost to exist, but make quite a few things, especially
+# passing on parameters easier:
+#
+# Updating the CRCost's λ (without all the deep pass down explxlity mentioned)
+# ( that is `set_manopt_parameter(crc::ConjugateResidulaCost, ::Val{:λ}, λ)` is what you define)
+# would mean this struct passes the lamda to its innter cost, grad and Hessian.
+# That way this can even be agnostic how the inner grad and Hess are organized.
+# and it would just store am mho (manifold hessian objective)
+#
+# I think that would be a good way to encapsulate this
 mutable struct ConjugateResidualCost{TA,Tb}
     A::TA
     b::Tb
