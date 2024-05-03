@@ -10,7 +10,7 @@ module Manopt
 
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: embed!
+import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 
 using ColorSchemes
 using ColorTypes
@@ -146,7 +146,7 @@ using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
-using Statistics: cor, cov, mean, median, std
+using Statistics
 
 include("plans/plan.jl")
 # solvers general framework
