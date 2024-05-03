@@ -83,7 +83,7 @@ check_gradient(M, f, grad_f; plot=true)
 and the [`check_Hessian`](@ref), which requires a bit more tolerance in its linearity check
 
 ```{julia}
-check_Hessian(M, f, grad_f, Hess_f; plot=true, throw_error=true, atol=1e-15)
+check_Hessian(M, f, grad_f, Hess_f; plot=true, error=:error, atol=1e-15)
 ```
 
 While they look reasonable here and were already derived, for the general case this derivation
@@ -130,7 +130,7 @@ check_gradient(M, f, grad2_f; plot=true)
 and
 
 ```{julia}
-check_Hessian(M, f, grad2_f, Hess2_f; plot=true, throw_error=true, atol=1e-14)
+check_Hessian(M, f, grad2_f, Hess2_f; plot=true, error=:error, atol=1e-14)
 ```
 
 which yields the same result, but we see that the Euclidean conversion might be a bit less stable.

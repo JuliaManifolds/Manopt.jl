@@ -5,6 +5,12 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.62] May 3, 2024
+
+### Changed
+
+* bumped dependency of ManifoldsBase.jl to 0.15.9 and imported their numerical check functions. This changes the `throw_error` keyword used internally to a `error=` with a symbol.
+
 ## [0.4.61] April 27, 2024
 
 ### Added

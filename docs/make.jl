@@ -149,11 +149,6 @@ makedocs(;
             Manopt.ManoptManifoldsExt
         end,
         if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptPlotsExt)
-        else
-            Manopt.ManoptPlotsExt
-        end,
-        if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
         else
             Manopt.ManoptRipQPQuadraticModelsExt
