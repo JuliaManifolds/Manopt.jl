@@ -1,28 +1,46 @@
 @doc raw"""
-    ConstraintType
+    AbstractConstraintType
 
 An abstract type to represent different forms of representing constraints
+as well as their gradients.
 """
-abstract type ConstraintType end
+abstract type AbstractConstraintType end
 
 @doc raw"""
-    FunctionConstraint <: ConstraintType
+    FunctionConstraint{CT <: AbstractConstraintType}  <: AbstractConstraintType
 
 A type to indicate that constraints are implemented one whole functions,
 for example ``g(p) ∈ ℝ^m``.
+
+For the gradient there are two possible variants available:
+
+* [`VectorConstraint`](@ref): ``\operatorname{grad} g\colon \mathcal M \to (T_p\mathcal M)^m``,
+  the gradient returns a vector of gradients, one for each component function of ``g``.
+* `PowerManifoldTangentConstaint`: ``\operatorname{grad} g\colon \mathcal M \to T_P\mathcal M^m``,
+  where ``P = (p,…,p) \in\mathcal M^m``, that is
+  the gradient returns a tangent vector on the power manifold.
 """
-struct FunctionConstraint <: ConstraintType end
+struct FunctionConstraint{CT<:AbstractConstraintType} <: AbstractConstraintType end
+
+FunctionConstraint() = FunctionConstraint(VectorConstraint())
+FunctionConstraint(::CT) where {CT<:AbstractConstraintType} = FunctionConstraint{CT}()
 
 @doc raw"""
-    VectorConstraint <: ConstraintType
+    PowerManifoldTangentConstaint <: AbstractConstraintType
 
-A type to indicate that constraints are implemented a  vector of functions,
-for example ``g_i(p) ∈ ℝ, i=1,…,m``.
+Indicate that (some part of) constraints are given on a [`PowerManifold`](@extref)
 """
-struct VectorConstraint <: ConstraintType end
+struct PowerManifoldTangentConstaint <: AbstractConstraintType end
 
 @doc raw"""
-    ConstrainedManifoldObjective{T<:AbstractEvaluationType, C <: ConstraintType Manifold} <: AbstractManifoldObjective{T}
+    VectorConstraint <: AbstractConstraintType
+
+A type to indicate that (some part of) constraints are given as a vector of functions.
+"""
+struct VectorConstraint <: AbstractConstraintType end
+
+@doc raw"""
+    ConstrainedManifoldObjective{T<:AbstractEvaluationType, C <: ConstraintType} <: AbstractManifoldObjective{T}
 
 Describes the constrained objective
 ```math
@@ -35,240 +53,101 @@ Describes the constrained objective
 
 # Fields
 
-* `cost` the cost ``f```
-* `gradient!!` the gradient of the cost ``f```
-* `g` the inequality constraints
-* `grad_g!!` the gradient of the inequality constraints
-* `h` the equality constraints
-* `grad_h!!` the gradient of the equality constraints
-
-It consists of
-
-* an cost function ``f(p)``
-* the gradient of ``f``, ``\operatorname{grad}f(p)``
-* inequality constraints ``g(p)``, either a function `g` returning a vector or a vector `[g1, g2, ..., gm]` of functions.
-* equality constraints ``h(p)``, either a function `h` returning a vector or a vector `[h1, h2, ..., hn]` of functions.
-* gradients of the inequality constraints ``\operatorname{grad}g(p) ∈ (T_p\mathcal M)^m``, either a function or a vector of functions.
-* gradients of the equality constraints ``\operatorname{grad}h(p) ∈ (T_p\mathcal M)^n``, either a function or a vector of functions.
-
-There are two ways to specify the constraints ``g`` and ``h``.
-
-1. as one `Function` returning a vector in ``ℝ^m`` and ``ℝ^n`` respectively.
-   This might be easier to implement but requires evaluating all constraints even if only one is needed.
-2. as a `AbstractVector{<:Function}` where each function returns a real number.
-   This requires each constraint to be implemented as a single function, but it is possible to evaluate also only a single constraint.
-
-The gradients ``\operatorname{grad}g``, ``\operatorname{grad}h`` have to follow the
-same form. Additionally they can be implemented as in-place functions or as allocating ones.
-The gradient ``\operatorname{grad}F`` has to be the same kind.
-This difference is indicated by the `evaluation` keyword.
+* `objective`: an [`AbstractManifoldObjective`](@ref) representing the unconstrained
+  objective, that is contatining cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
+* `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
+``h: \mathcal M → \mathbb R^n`` also possibly containing its gradient and/or Hessian
+* `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
+``h: \mathcal M → \mathbb R^n`` also possibly containing its gradient and/or Hessian
 
 # Constructors
-
-    ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h;
-        evaluation=AllocatingEvaluation()
+    ConstrainedManifoldObjective(M::AbstractManifold, f, grad_f;
+        g=nothing,
+        grad_g=nothing,
+        h=nothing,
+        grad_h=nothing;
+        evaluation=AllocatingEvaluation(),
     )
 
-Where `f, g, h` describe the cost, inequality and equality constraints, respectively, as
-described previously and `grad_f, grad_g, grad_h` are the corresponding gradient functions in
-one of the 4 formats. If the objective does not have inequality constraints, you can set `G` and `gradG` no `nothing`.
-If the problem does not have equality constraints, you can set `H` and `gradH` no `nothing` or leave them out.
+    ConstrainedManifoldObjective(M::AbstractManifold, mho::AbstractManifoldObjective;
+        equality_constraints::Union{Nothing, AbstractManifoldObjective} = nothing,
+        inequality_constraints::Union{Nothing, AbstractManifoldObjective} = nothing
+    ) where {IMO <: Union{Nothing, AbstractManifoldObjective} EMO <: Union{Nothing, AbstractManifoldObjective}}
 
-    ConstrainedManifoldObjective(M::AbstractManifold, F, gradF;
-        G=nothing, gradG=nothing, H=nothing, gradH=nothing;
-        evaluation=AllocatingEvaluation()
-    )
-
-A keyword argument variant of the preceding constructor, where you can leave out either
-`G` and `gradG` or `H` and `gradH` but not both pairs.
+TODO: Describe constructors
 """
 struct ConstrainedManifoldObjective{
-    T<:AbstractEvaluationType,CT<:ConstraintType,TCost,GF,TG,GG,TH,GH
-} <: AbstractManifoldGradientObjective{T,TCost,GF}
-    cost::TCost
-    gradient!!::GF
-    g::TG
-    grad_g!!::GG
-    h::TH
-    grad_h!!::GH
+    T<:AbstractEvaluationType,
+    CT<:AbstractConstraintType,
+    MO<:AbstractManifoldObjective,
+    IMO<:Union{Nothing,AbstractManifoldObjective},
+    EMO<:Union{Nothing,AbstractManifoldObjective},
+} <: AbstractManifoldObjective{T}
+    objective::MO
+    inequality_constrinats::IMO
+    equality_constraints::EMO
 end
-#
-# Constructors I: functions
-#
+# Generic f, grad_f -> pass on to new constructor
 function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF,
-    g::Function,
-    grad_g::Function,
-    h::Function,
-    grad_h::Function;
+    f,
+    grad_f,
+    g,
+    grad_g,
+    h,
+    grad_h;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
-    return ConstrainedManifoldObjective{
-        typeof(evaluation),
-        FunctionConstraint,
-        TF,
-        TGF,
-        typeof(g),
-        typeof(grad_g),
-        typeof(h),
-        typeof(grad_h),
-    }(
-        f, grad_f, g, grad_g, h, grad_h
+    constraint::AbstractConstraintType=if all(
+        isnothing(c) || isa(c, AbstractVector) for c in [g, grad_g, h, grad_h]
     )
-end
-# Function without inequality constraints
-function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF,
-    ::Nothing,
-    ::Nothing,
-    h::Function,
-    grad_h::Function;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
-    local_g = (M, p) -> []
-    local_grad_g = evaluation === AllocatingEvaluation() ? (M, p) -> [] : (M, X, p) -> []
-    return ConstrainedManifoldObjective{
-        typeof(evaluation),
-        FunctionConstraint,
-        TF,
-        TGF,
-        typeof(local_g),
-        typeof(local_grad_g),
-        typeof(h),
-        typeof(grad_h),
-    }(
-        f, grad_f, local_g, local_grad_g, h, grad_h
-    )
-end
-# No equality constraints
-function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF,
-    g::Function,
-    grad_g::Function,
-    ::Nothing=nothing,
-    ::Nothing=nothing;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
-    local_h = (M, p) -> []
-    local_grad_h = evaluation === AllocatingEvaluation() ? (M, p) -> [] : (M, X, p) -> []
-    return ConstrainedManifoldObjective{
-        typeof(evaluation),
-        FunctionConstraint,
-        TF,
-        TGF,
-        typeof(g),
-        typeof(grad_g),
-        typeof(local_h),
-        typeof(local_grad_h),
-    }(
-        f, grad_f, g, grad_g, local_h, local_grad_h
-    )
-end
-#
-# Vectors
-#
-function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF,
-    g::AbstractVector{<:Function},
-    grad_g::AbstractVector{<:Function},
-    h::AbstractVector{<:Function},
-    grad_h::AbstractVector{<:Function};
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
-    return ConstrainedManifoldObjective{
-        typeof(evaluation),
-        VectorConstraint,
-        TF,
-        TGF,
-        typeof(g),
-        typeof(grad_g),
-        typeof(h),
-        typeof(grad_h),
-    }(
-        f, grad_f, g, grad_g, h, grad_h
-    )
-end
-# equality not provided
-function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF,
-    ::Nothing,
-    ::Nothing,
-    h::AbstractVector{<:Function},
-    grad_h::AbstractVector{<:Function};
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
-    local_g = Vector{Function}()
-    local_grad_g = Vector{Function}()
-    return ConstrainedManifoldObjective{
-        typeof(evaluation),
-        VectorConstraint,
-        TF,
-        TGF,
-        typeof(local_g),
-        typeof(local_grad_g),
-        typeof(h),
-        typeof(grad_h),
-    }(
-        f, grad_f, local_g, local_grad_g, h, grad_h
-    )
-end
-# No equality constraints provided
-function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF,
-    g::AbstractVector{<:Function},
-    grad_g::AbstractVector{<:Function},
-    ::Nothing,
-    ::Nothing;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
-    local_h = Vector{Function}()
-    local_grad_h = Vector{Function}()
-    return ConstrainedManifoldObjective{
-        typeof(evaluation),
-        VectorConstraint,
-        TF,
-        TGF,
-        typeof(g),
-        typeof(grad_g),
-        typeof(local_h),
-        typeof(local_grad_h),
-    }(
-        f, grad_f, g, grad_g, local_h, local_grad_h
-    )
-end
-#
-# Neither equality nor inequality yields an error
-#
-function ConstrainedManifoldObjective(
-    ::TF, ::TGF, ::Nothing, ::Nothing, ::Nothing, ::Nothing; kwargs...
-) where {TF,TGF}
-    return error(
-        """
-  Neither inequality constraints `g`, `grad_g` nor equality constraints `h`, `grad_h` provided.
-  If you have an unconstraint problem, maybe consider using a `ManifoldGradientObjective` instead.
-  """,
-    )
-end
-function ConstrainedManifoldObjective(
-    f::TF,
-    grad_f::TGF;
-    g=nothing,
-    grad_g=nothing,
-    h=nothing,
-    grad_h=nothing,
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-) where {TF,TGF}
+        VectorConstraint()
+    else
+        FunctionConstraint()
+    end,
+    kwargs...,
+)
+    objective = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    if isnothing(g) || isnothing(grad_g)
+        eq = nothing
+    else
+        eq = ManifoldGradientObjective(g, grad_g; evaluation=evaluation)
+    end
+    if isnothing(h) || isnothing(grad_h)
+        ineq = nothing
+    else
+        ineq = ManifoldGradientObjective(h, grad_h; evaluation=evaluation)
+    end
     return ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+        objective;
+        equality_constraints=eq,
+        inequality_constraints=ineq,
+        constraint=constraint,
+        kwargs...,
     )
 end
-
+function ConstrainedManifoldObjective(
+    objective::MO;
+    equality_constraints::EMO=nothing,
+    inequality_constraints::IMO=nothing;
+    constraint_type::ACT=VectorConstraint()kwargs...,
+) where {
+    ACT<:AbstractConstraintType,
+    E<:AbstractEvaluationType,
+    MO<:AbstractManifoldObjective{E},
+    IMO<:AbstractManifoldObjective{E},
+    EMO<:AbstractManifoldObjective{E},
+}
+    if isnothing(equality_constraints) && isnothing(inequality_constraints)
+        @warn """
+        Neither the inequality and the equality constraints are provided.
+        Consider calling `get_objective()` on this constraint objective
+        and only work on the unconstraint objective instead.
+        """
+    end
+    return ConstrainedManifoldObjective{E,ACT,MO,IMO,EMO}(
+        objective, equality_constraints, inequality_constraints
+    )
+end
+get_objective(co::ConstrainedManifoldObjective) = co.objective
 function get_constraints(mp::AbstractManoptProblem, p)
     return get_constraints(get_manifold(mp), get_objective(mp), p)
 end
@@ -283,6 +162,13 @@ function get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, 
 end
 function get_constraints(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
     return get_constraints(M, get_objective(admo, false), p)
+end
+
+function get_cost(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
+    return get_cost(M, co.objective, p)
+end
+function get_cost_function(co::ConstrainedManifoldObjective, recursive=false)
+    return get_cost_function(co.objective, recursive)
 end
 
 function get_equality_constraints(mp::AbstractManoptProblem, p)
@@ -337,6 +223,16 @@ function get_equality_constraint(
     M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, j
 )
     return get_equality_constraint(M, get_objective(admo, false), p, j)
+end
+
+function get_gradient(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
+    return get_gradient(M, co.objective, p)
+end
+function get_gradient!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p)
+    return get_gradient!(M, X, co.objective, p)
+end
+function get_gradient_function(co::ConstrainedManifoldObjective, recursive=false)
+    return get_gradient_function(co.objective, recursive)
 end
 
 function get_inequality_constraints(mp::AbstractManoptProblem, p)
@@ -849,6 +745,16 @@ function get_grad_inequality_constraints!(
     M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
 )
     return get_grad_inequality_constraints!(M, X, get_objective(admo, false), p)
+end
+
+function get_hessian(M::AbstractManifold, co::ConstrainedManifoldObjective, p, X)
+    return get_hessian(M, co.objective, p, X)
+end
+function get_hessian!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X)
+    return get_hessian!(M, Y, co.objective, p, X)
+end
+function get_hessian_function(co::ConstrainedManifoldObjective, recursive=false)
+    return get_hessian_function(co.objective, recursive)
 end
 
 function Base.show(
