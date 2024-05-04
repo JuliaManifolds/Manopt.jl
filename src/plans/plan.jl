@@ -123,6 +123,7 @@ include("gradient_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")
+include("vectorial_plan.jl")
 
 include("subsolver_plan.jl")
 include("constrained_plan.jl")

@@ -205,16 +205,32 @@ Besides the [`AbstractEvaluationType`](@ref) there is one further property to
 distinguish among constraint functions, especially the gradients of the constraints.
 
 ```@docs
-ConstraintType
+AbstractConstraintType
 FunctionConstraint
 VectorConstraint
 ```
 
-The [`ConstraintType`](@ref) is a parameter of the corresponding Objective.
+The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
 
 ```@docs
 ConstrainedManifoldObjective
 ```
+
+### Constrained objective
+
+Besides the [`AbstractEvaluationType`](@ref) there is one further property to
+distinguish among constraint functions, especially the gradients of the constraints.
+
+```@docs
+Manopt.AbstractVectorialType
+Manopt.CoefficientVectorialType
+Manopt.ComponentVectorialType
+Manopt.FunctionVectorialType
+Manopt.PowerManifoldVectorialType
+Manopt.VectorialGradientObjective
+```
+
+The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
 
 #### Access functions
 

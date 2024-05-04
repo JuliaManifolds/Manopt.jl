@@ -26,13 +26,6 @@ FunctionConstraint() = FunctionConstraint(VectorConstraint())
 FunctionConstraint(::CT) where {CT<:AbstractConstraintType} = FunctionConstraint{CT}()
 
 @doc raw"""
-    PowerManifoldTangentConstaint <: AbstractConstraintType
-
-Indicate that (some part of) constraints are given on a [`PowerManifold`](@extref)
-"""
-struct PowerManifoldTangentConstaint <: AbstractConstraintType end
-
-@doc raw"""
     VectorConstraint <: AbstractConstraintType
 
 A type to indicate that (some part of) constraints are given as a vector of functions.
@@ -127,8 +120,9 @@ end
 function ConstrainedManifoldObjective(
     objective::MO;
     equality_constraints::EMO=nothing,
-    inequality_constraints::IMO=nothing;
-    constraint_type::ACT=VectorConstraint()kwargs...,
+    inequality_constraints::IMO=nothing,
+    constraint_type::ACT=VectorConstraint(),
+    kwargs...,
 ) where {
     ACT<:AbstractConstraintType,
     E<:AbstractEvaluationType,
