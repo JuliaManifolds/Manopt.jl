@@ -289,13 +289,13 @@ function proximal_bundle_method!(
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
 end
-function initialize_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState)
+function initialize_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState{P,T,Pr,St,IR,TR,TSC,VT,R}) where {P,T,Pr,St,IR,TR,TSC,VT,R}
     M = get_manifold(mp)
     copyto!(M, pbms.p_last_serious, pbms.p)
     get_subgradient!(mp, pbms.X, pbms.p)
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     empty!(pbms.λ)
-    push!(pbms.λ, zero(number_eltype(pbms.p)))
+    push!(pbms.λ, zero(R))
     return pbms
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i)
