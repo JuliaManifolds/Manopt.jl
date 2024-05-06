@@ -9,11 +9,14 @@ abstract type AbstractVectorialType end
 @doc raw"""
     CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
 
+# Fields
+
+* `basis` an [`AbstractBasis`](@extref) to indicate the default representation.
+
 """
 struct CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
     basis::B
 end
-
 @doc raw"""
     ComponentVectorialType <: AbstractVectorialType
 
@@ -27,10 +30,17 @@ struct ComponentVectorialType <: AbstractVectorialType end
 struct FunctionVectorialType <: AbstractVectorialType end
 
 @doc raw"""
-    PowerManifoldVectorialType <: AbstractVectorialType
+    PowerManifoldVectorialType{<:AbstractPowerRepresentation} <: AbstractVectorialType
 
+Represent that the gradients rare represented as an element of a tangent space from a
+power manifold with a certain [`AbstractPowerRepresentation`](@extref).
+
+# Constructor
+
+    PowerManifoldVectorialType(representation::AbstractPowerRepresentation)
 """
-struct PowerManifoldVectorialType <: AbstractVectorialType end
+struct PowerManifoldVectorialType{<:AbstractPowerRepresentation} <: AbstractVectorialType end
+PowerManifoldVectorialType(::TPR) = PowerManifoldVectorialType{TPR}()
 
 @doc raw"""
     VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}
@@ -141,6 +151,36 @@ function VectorGradientFunction(
     )
 end
 
+@doc raw"""
+    get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
+
+Evaluate the ``i``th component of the cost.
+Note that for some types, this might still mean, that the whole vector os costs ahs to be evaluated.
+"""
+get_cost(M::AbstractManifold, vfg::VectorGradientFunction, p, i)
+function get_cost(
+    M::AbstractManifold,
+    vfg::VectorGradientFunction{<:AllocatingEvaluation,<:FunctionVectorialType},
+    p,
+    i,
+)
+    return vfg.costs!!(M, p)[i]
+end
+function get_cost(
+    M, vfg::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType}, p
+)
+    return vfg.costs!![i](M, p)
+end
+function get_cost(
+    M::AbstractManifold,
+    vfg::VectorGradientFunction{<:InplaceEvaluation,<:FunctionVectorialType},
+    p,
+)
+    x = zeros(vfg.vector_dimension)
+    get_costs(M, x, vgf, p)
+    return x[i]
+end
+
 function get_costs end
 
 @doc raw"""
@@ -198,31 +238,49 @@ end
 # make sense at all, the components would return integers so probably not
 
 @doc raw"""
-    get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
+    get_costs_function(vgf::VectorGradientFunction, recursive=false)
 
-Evaluate the ``i``th component of the cost.
-Note that for some types, this might still mean, that the whole vector os costs ahs to be evaluated.
+return the internally stored costs function.
+Note the additional _s_ compared to the usual [`get_cost_function`](@ref).
 """
-get_cost(M::AbstractManifold, vfg::VectorGradientFunction, p, i)
-function get_cost(
-    M::AbstractManifold,
-    vfg::VectorGradientFunction{<:AllocatingEvaluation,<:FunctionVectorialType},
-    p,
-    i,
-)
-    return vfg.costs!!(M, p)[i]
+function get_costs_function(vgf::VectorGradientFunction, recursive=false)
+    return vgf.costs!!
 end
-function get_cost(
-    M, vfg::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType}, p
-)
-    return vfg.costs!![i](M, p)
-end
-function get_cost(
-    M::AbstractManifold,
-    vfg::VectorGradientFunction{<:InplaceEvaluation,<:FunctionVectorialType},
-    p,
-)
-    x = zeros(vfg.vector_dimension)
-    get_costs(M, x, vgf, p)
-    return x[i]
+
+function get_gradients end
+
+@doc raw"""
+    get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
+
+Evaluate and return the gradients of the components of ``f``, by interpreting its
+components as objectives and returning their gradients as an element on .
+"""
+get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
+
+#TODO Check all cases and compose vectors in case of coefficient representation
+
+@doc raw"""
+    get_gradient(M::AbstractManifold, vfg::VectorGradientFunction, p, i)
+
+Evaluate and return the `ì``th gradient of the component of ``f``, that is of the
+``i``th component function.
+"""
+get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
+
+#TODO Check all cases and compose vectors in case of coefficient representation
+
+function get_jacobian end
+
+@doc raw"""
+    get_jacobian(M::AbstractManifold, vfg::VectorGradientFunction, p, B)
+
+Evaluate and return the Jacobian with respect to a basis of the tangent space.
+"""
+get_jacobian(M::AbstractManifold, vfg::VectorGradientFunction, p, B)
+
+#TODO Check all cases and decompose vectors in basis B to get Jacobian
+# For jacobian representation check to maybe do a change of basis if the indernal basis does not agree with B? Or error?
+
+function get_jacobian_function(vgf::VectorGradientFunction, recursive=false)
+    return vgf.jacobian!!
 end
