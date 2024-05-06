@@ -14,7 +14,7 @@ for example ``g(p) ∈ ℝ^m``.
 
 For the gradient there are two possible variants available:
 
-* [`VectorConstraint`](@ref): ``\operatorname{grad} g\colon \mathcal M \to (T_p\mathcal M)^m``,
+* [`PowerManifoldVectorialType`](@ref): ``\operatorname{grad} g\colon \mathcal M \to (T_p\mathcal M)^m``,
   the gradient returns a vector of gradients, one for each component function of ``g``.
 * `PowerManifoldTangentConstaint`: ``\operatorname{grad} g\colon \mathcal M \to T_P\mathcal M^m``,
   where ``P = (p,…,p) \in\mathcal M^m``, that is
@@ -22,7 +22,7 @@ For the gradient there are two possible variants available:
 """
 struct FunctionConstraint{CT<:AbstractConstraintType} <: AbstractConstraintType end
 
-FunctionConstraint() = FunctionConstraint(VectorConstraint())
+FunctionConstraint() = FunctionConstraint(PowerManifoldVectorialType())
 FunctionConstraint(::CT) where {CT<:AbstractConstraintType} = FunctionConstraint{CT}()
 
 @doc raw"""
@@ -31,7 +31,6 @@ FunctionConstraint(::CT) where {CT<:AbstractConstraintType} = FunctionConstraint
 A type to indicate that (some part of) constraints are given as a vector of functions.
 """
 struct VectorConstraint <: AbstractConstraintType end
-
 @doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C <: ConstraintType} <: AbstractManifoldObjective{T}
 
@@ -92,7 +91,7 @@ function ConstrainedManifoldObjective(
     constraint::AbstractConstraintType=if all(
         isnothing(c) || isa(c, AbstractVector) for c in [g, grad_g, h, grad_h]
     )
-        VectorConstraint()
+        ComponentVectorialType()
     else
         FunctionConstraint()
     end,
@@ -121,7 +120,7 @@ function ConstrainedManifoldObjective(
     objective::MO;
     equality_constraints::EMO=nothing,
     inequality_constraints::IMO=nothing,
-    constraint_type::ACT=VectorConstraint(),
+    constraint_type::ACT=PowerManifoldVectorialType(),
     kwargs...,
 ) where {
     ACT<:AbstractConstraintType,

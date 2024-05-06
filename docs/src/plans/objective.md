@@ -216,22 +216,6 @@ The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objecti
 ConstrainedManifoldObjective
 ```
 
-### Constrained objective
-
-Besides the [`AbstractEvaluationType`](@ref) there is one further property to
-distinguish among constraint functions, especially the gradients of the constraints.
-
-```@docs
-Manopt.AbstractVectorialType
-Manopt.CoefficientVectorialType
-Manopt.ComponentVectorialType
-Manopt.FunctionVectorialType
-Manopt.PowerManifoldVectorialType
-Manopt.VectorialGradientObjective
-```
-
-The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
-
 #### Access functions
 
 ```@docs
@@ -248,6 +232,29 @@ get_grad_inequality_constraint
 get_grad_inequality_constraint!
 get_grad_inequality_constraints
 get_grad_inequality_constraints!
+```
+
+### A Vectorial Function
+
+```@docs
+Manopt.VectorGradientFunction
+```
+
+
+```@docs
+Manopt.AbstractVectorialType
+Manopt.CoefficientVectorialType
+Manopt.ComponentVectorialType
+Manopt.FunctionVectorialType
+Manopt.PowerManifoldVectorialType
+```
+
+The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
+
+#### Access functions
+
+```@docs
+Manopt.get_costs
 ```
 
 ### Subproblem objective
