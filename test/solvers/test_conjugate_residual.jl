@@ -1,29 +1,33 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
-M = Sphere(2)
-p = rand(M)
 
+
+M = Manifolds.Sphere(2)
+p = [0.0, 0.0, 1.0]
 TpM = TangentSpace(M, p)
 
-metric = (x, y) -> inner(M, p, x, y)
+A = (M, p, X) -> [2.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 2.0]*X
+b = [2.0, -1.0, 0.0]
 
-A = (I - p * p') * [5 -1 -1; -1 5 -1; -1 -1 5]
+f(M, p) = 1
+grad_f(M, p) = zeros(3)
+Hess_f(M, p, X) = zeros(3)
 
-b = rand(TpM)
+g(M, p) = p
+grad_g(M, p) = I
 
-mho = ManifoldHessianObjective(
-    (TpM, x) -> 1 / 2 * metric(X, A * x) - metric(b, x),
-    (TpM, x) -> A * x - b,
-    (TpM, x, y) -> A * y,
-)
+cmo = ConstrainedManifoldObjective(
+    ManifoldHessianObjective(f, grad_f, Hess_f), g, grad_g)
+
+o = Manopt.SymmetricLinearSystemObjective(cmo, A, b)
 
 record = [:Iterate]
 
 res = conjugate_residual(
     TpM,
-    mho,
-    rand(TpM);
-    stop=StopWhenGradientNormLess(1e-5) | StopAfterIteration(100),
+    o,
+    [0.0,1.0,0.0];
+    stop=StopWhenGradientNormLess(1e-5) | StopAfterIteration(5),
     record=record,
     return_state=true,
 )

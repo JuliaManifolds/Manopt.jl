@@ -10,15 +10,15 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
     stop::TStop
     function ConjugateResidualState(
         TpM::TangentSpace,
-        mho::ManifoldHessianObjective,
-        x::T=rand(TpM);
-        r::T=-get_gradient(TpM, mho, x),
+        amso::AbstractManifoldSubObjective;
+        x::T=rand(TpM),
+        r::T=-get_gradient(TpM, amso, x),
         d::T=r,
-        Ar::T=get_hessian(TpM, mho, x, r),
+        Ar::T=get_hessian(TpM, amso, x, r),
         Ad::T=Ar,
         α::R=0.0,
         β::R=0.0,
-        stop::StoppingCriterion=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
+        stop::StoppingCriterion=StopAfterIteration(5) | StopWhenGradientNormLess(1e-8),
         kwargs...,
     ) where {T,R}
         crs = new{T,R,typeof(stop)}()
@@ -71,49 +71,36 @@ end
 
 function conjugate_residual(
     TpM::TangentSpace,
-    A,
-    b,
-    x0;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    M = base_manifold(TpM)
-    p = TpM.point
-    mho = ManifoldHessianObjective(
-        (TpM, x) -> 0.5 * inner(M, p, x, A * x) - inner(M, p, b, x),
-        (TpM, x) -> A * x - b,
-        (TpM, x, y) -> A * y,
-    )
-
-    return conjugate_residual(TpM, mho, x0; evaluation=evaluation, kwargs...)
-end
-
-function conjugate_residual(
-    TpM::TangentSpace,
-    mho::ManifoldHessianObjective,
+    amso::AbstractManifoldSubObjective,
     x0;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
     y0 = copy(TpM, x0)
-    return conjugate_residual!(TpM, mho, y0; evaluation=evaluation, kwargs...)
+    return conjugate_residual!(TpM, amso, y0; evaluation=evaluation, kwargs...)
 end
 
 function conjugate_residual!(
-    TpM::TangentSpace, mho::ManifoldHessianObjective, x0; kwargs...
+    TpM::TangentSpace, amso::AbstractManifoldSubObjective, x0; kwargs...
 )
-    crs = ConjugateResidualState(TpM, mho, x0; kwargs...)
-    dmho = decorate_objective!(TpM, mho; kwargs...)
-    dmp = DefaultManoptProblem(TpM, dmho)
+    crs = ConjugateResidualState(TpM, amso, kwargs...)
+    damso = decorate_objective!(TpM, amso; kwargs...)
+    dmp = DefaultManoptProblem(TpM, damso)
     crs = decorate_state!(crs; kwargs...)
     solve!(dmp, crs)
     return get_solver_return(get_objective(dmp), crs)
 end
 
 function initialize_solver!(
-    ::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
+    amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
 )
-    # (RB:) Reset / update A, r, D, Ar, Ad α β
+    crs.x = rand(get_manifold(amp))
+    crs.r = -get_gradient(amp, crs.x)
+    crs.d = crs.r
+    crs.Ar = get_hessian(amp, crs.x, crs.r)
+    crs.Ad = crs.Ar
+    crs.α = 0.0
+    crs.β = 0.0
     return crs
 end
 
@@ -123,7 +110,6 @@ function step_solver!(
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = TpM.point
-
     # store current values (RB:) These are just references, nothing is copied here.
     # ...so we could also just write crs. upfront in the following formulae
     r = crs.r
@@ -132,19 +118,12 @@ function step_solver!(
     Ad = crs.Ad
 
     crs.α = inner(M, p, r, Ar) / inner(M, p, Ad, Ad)
-
-    # update iterate and residual
     crs.x += crs.α * d
     crs.r -= crs.α * Ad
-
-    # this is the only evaluation of A
     crs.Ar = get_hessian(amp, crs.x, crs.r)
-
-    # update d and Ad
     crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, r, Ar)
     crs.d = crs.r + crs.β * d
     crs.Ad = crs.Ar + crs.β * Ad
-
     return crs
 end
 
