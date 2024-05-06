@@ -10,7 +10,7 @@ module Manopt
 
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: embed!
+import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 
 using ColorSchemes
 using ColorTypes
@@ -18,7 +18,20 @@ using Colors
 using DataStructures: CircularBuffer, capacity, length, push!, size, isfull
 using Dates: Millisecond, Nanosecond, Period, canonicalize, value
 using LinearAlgebra:
-    Diagonal, I, eigen, eigvals, tril, Symmetric, dot, cholesky, eigmin, opnorm
+    cond,
+    Diagonal,
+    I,
+    Eigen,
+    eigen,
+    eigen!,
+    eigvals,
+    tril,
+    Symmetric,
+    dot,
+    cholesky,
+    eigmin,
+    opnorm,
+    mul!
 using ManifoldDiff:
     adjoint_differential_log_argument,
     adjoint_differential_log_argument!,
@@ -93,6 +106,7 @@ using ManifoldsBase:
     inner,
     inverse_retract,
     inverse_retract!,
+    is_flat,
     is_point,
     is_vector,
     log,
@@ -102,6 +116,7 @@ using ManifoldsBase:
     mid_point!,
     norm,
     number_eltype,
+    number_of_coordinates,
     power_dimensions,
     project,
     project!,
@@ -128,10 +143,10 @@ using Markdown
 using Preferences:
     @load_preference, @set_preferences!, @has_preference, @delete_preferences!
 using Printf
-using Random: shuffle!, rand, randperm
+using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
-using Statistics: cor, cov, mean, std
+using Statistics
 
 include("plans/plan.jl")
 # solvers general framework
@@ -142,6 +157,7 @@ include("solvers/alternating_gradient_descent.jl")
 include("solvers/augmented_Lagrangian_method.jl")
 include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
+include("solvers/cma_es.jl")
 include("solvers/conjugate_gradient_descent.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
@@ -235,9 +251,6 @@ function __init__()
         end
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
-        end
-        @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
-            include("../ext/ManoptPlotsExt/ManoptPlotsExt.jl")
         end
         @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
             include("../ext/ManoptLineSearchesExt.jl")
@@ -348,7 +361,6 @@ export get_state,
     get_differential_dual_prox!,
     set_gradient!,
     set_iterate!,
-    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -416,6 +428,8 @@ export adaptive_regularization_with_cubics,
     convex_bundle_method!,
     ChambollePock,
     ChambollePock!,
+    cma_es,
+    cma_es!,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
     cyclic_proximal_point,
@@ -464,9 +478,8 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export ArmijoLinesearch,
-    ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
-export AdaptiveWNGradient
+export AdaptiveWNGradient, ConstantStepsize, DecreasingStepsize, PolyakStepsize
+export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria
@@ -477,18 +490,24 @@ export StopAfter,
     StopWhenAll,
     StopWhenAllLanczosVectorsUsed,
     StopWhenAny,
+    StopWhenBestCostInGenerationConstant,
     StopWhenChangeLess,
     StopWhenCostLess,
     StopWhenCostNaN,
+    StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
     StopWhenEntryChangeLess,
+    StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
+    StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
+    StopWhenPopulationDiverges,
+    StopWhenPopulationStronglyConcentrated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
@@ -519,15 +538,16 @@ export DebugWarnIfLagrangeMultiplierIncreases
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
 # Records - and access functions
-export get_record, get_record_state, get_record_action, has_record
+export get_record, get_record_state, get_record_action, has_record, getindex
 export RecordAction
-export RecordActionFactory, RecordFactory
 export RecordGroup, RecordEvery
 export RecordChange, RecordCost, RecordIterate, RecordIteration
 export RecordEntry, RecordEntryChange, RecordTime
 export RecordGradient, RecordGradientNorm, RecordStepsize
+export RecordSubsolver, RecordWhenActive, RecordStoppingReason
 export RecordPrimalBaseChange,
     RecordPrimalBaseIterate, RecordPrimalChange, RecordPrimalIterate
+export RecordStoppingReason, RecordWhenActive, RecordSubsolver
 export RecordDualBaseChange, RecordDualBaseIterate, RecordDualChange, RecordDualIterate
 export RecordProximalParameter
 #

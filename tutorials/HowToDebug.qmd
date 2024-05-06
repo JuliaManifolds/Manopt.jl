@@ -125,7 +125,7 @@ p3 = exact_penalty_method(
 
 The different lengths of the dotted lines come from the fact that ---at least in the beginning--- the subsolver performs a few steps and each subsolvers step prints a dot.
 
-For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:Subsolver`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, or inother words [`DebugEvery`](@ref) is active itself.
+For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:WhenActive`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, or inother words [`DebugEvery`](@ref) is active itself.
 Furthermore, we want to print the iteration number _before_ printing the subsolvers steps, so we put this into a `Pair`, but we can leave the remaining ones as single
 entries.
 Finally we also prefix `:Stop` with `" | "` and print the iteration number at the time we stop. We get
@@ -150,7 +150,7 @@ p4 = exact_penalty_method(
             :Iteration,
             :Cost,
             "\n",
-            :Subsolver,
+            :WhenActive,
             :Stop => [(:Stop, " | "), " | stopped after iteration ", :Iteration, "\n"],
         ],
     ],

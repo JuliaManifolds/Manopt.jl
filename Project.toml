@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.4.58"
+version = "0.4.62"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
@@ -14,14 +14,12 @@ LinearOperators = "5c8ed15e-5a4c-59e4-a42b-c7e8811fb125"
 ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 ManifoldsBase = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
-PolynomialRoots = "3a141323-8675-5d76-9d11-e1df1406c778"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [weakdeps]
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -37,25 +35,26 @@ ManoptJuMPExt = "JuMP"
 ManoptLRUCacheExt = "LRUCache"
 ManoptLineSearchesExt = "LineSearches"
 ManoptManifoldsExt = "Manifolds"
-ManoptPlotsExt = "Plots"
 ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 
 [compat]
+Aqua = "0.8"
 ColorSchemes = "3.5.0"
 ColorTypes = "0.9.1, 0.10, 0.11"
 Colors = "0.11.2, 0.12"
 DataStructures = "0.17, 0.18"
 Dates = "1.6"
+ForwardDiff = "0.10"
 JuMP = "1.15"
 LRUCache = "1.4"
 LinearAlgebra = "1.6"
-LinearOperators = "~2.6"
+LineSearches = "7.2.0"
 ManifoldDiff = "0.3.8"
 Manifolds = "0.9.11"
-ManifoldsBase = "0.15.8"
+ManifoldsBase = "0.15.9"
 ManoptExamples = "0.1.4"
 Markdown = "1.6"
-PolynomialRoots = "1"
+Plots = "1.30"
 Preferences = "1.4"
 Printf = "1.6"
 QuadraticModels = "0.9"
@@ -68,6 +67,7 @@ Test = "1.6"
 julia = "1.6"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
@@ -81,4 +81,4 @@ RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache", "RipQP", "QuadraticModels"]
+test = ["Test", "Aqua", "ForwardDiff", "JuMP", "Manifolds", "ManoptExamples", "ManifoldDiff", "Plots", "LineSearches", "LRUCache", "RipQP", "QuadraticModels"]

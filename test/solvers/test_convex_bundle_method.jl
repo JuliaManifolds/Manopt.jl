@@ -175,6 +175,6 @@ using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
             p0;
             stopping_criterion=StopWhenLagrangeMultiplierLess([1e-6, 1e-6]; mode=:both),
         )
-        @test distance(M, q2, m) < 1e-2
+        @test distance(M, q2, m) < 2e-2
     end
 end

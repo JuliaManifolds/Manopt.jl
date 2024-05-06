@@ -116,7 +116,8 @@ tutorials_menu =
 # (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 links = InterLinks(
-    "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/")
+    "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/"),
+    "Manifolds" => ("https://juliamanifolds.github.io/Manifolds.jl/stable/"),
 )
 makedocs(;
     format=Documenter.HTML(;
@@ -148,11 +149,6 @@ makedocs(;
             Manopt.ManoptManifoldsExt
         end,
         if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptPlotsExt)
-        else
-            Manopt.ManoptPlotsExt
-        end,
-        if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
         else
             Manopt.ManoptRipQPQuadraticModelsExt
@@ -165,11 +161,12 @@ makedocs(;
         "About" => "about.md",
         (tutorials_in_menu ? [tutorials_menu] : [])...,
         "Solvers" => [
-            "Introduction" => "solvers/index.md",
+            "List of Solvers" => "solvers/index.md",
             "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",
             "Chambolle-Pock" => "solvers/ChambollePock.md",
+            "CMA-ES" => "solvers/cma_es.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
             "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",

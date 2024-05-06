@@ -5,6 +5,66 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.62] May 3, 2024
+
+### Changed
+
+* bumped dependency of ManifoldsBase.jl to 0.15.9 and imported their numerical check functions. This changes the `throw_error` keyword used internally to a `error=` with a symbol.
+
+## [0.4.61] April 27, 2024
+
+### Added
+
+* Tests now also use `Aqua.jl` to spot problems in the code, e.g. ambiguities.
+* introduce a feature-based list of solvers and reduce the details in the alphabetical list
+* adds a `PolyakStepsize`
+* added a `get_subgradient` for `AbstractManifoldGradientObjectives` since their gradient is a special case of a subgradient.
+
+### Fixed
+
+* `get_last_stepsize` was defined in quite different ways that caused ambiguities. That is now internally a bit restructured and should work nicer.
+  Internally this means that the interims dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
+* we accidentally exported `set_manopt_parameter!`, this is now fixed.
+
+### Changed
+
+* `get_manopt_parameter` and `set_manopt_parameter!` have been revised and better documented,
+  they now use more semantic symbols (with capital letters) instead of direct field access
+  (lower letter symbols). Since these are not exported, this is considered an internal, hence non-breaking change.
+  * semantic symbols are now all nouns in upper case letters
+  * `:active` is changed to `:Activity`
+
+
+## [0.4.60] – April 10, 2024
+
+### Added
+
+* `RecordWhenActive` to allow records to be deactivated during runtime, symbol `:WhenActive`
+* `RecordSubsolver` to record the result of a subsolver recording in the main solver, symbol `:Subsolver`
+* `RecordStoppingReason` to record the reason a solver stopped
+* made the `RecordFactory` more flexible and quite similar to `DebugFactory`, such that it is now also easy to specify recordings at the end of solver runs. This can especially be used to record final states of sub solvers.
+
+### Changed
+
+* being a bit more strict with internal tools and made the factories for record non-exported, so this is the same as for debug.
+
+### Fixed
+
+* The name `:Subsolver` to generate `DebugWhenActive` was misleading, it is now called `:WhenActive` – referring to “print debug only when set active, e.g. by the parent (main) solver”.
+* the old version of specifying `Symbol => RecordAction` for later access was ambiguous, since
+it could also mean to store the action in the dictionary under that symbol. Hence the order for access
+was switched to `RecordAction => Symbol` to resolve that ambiguity.
+
+## [0.4.59] - April 7, 2024
+
+### Added
+
+* A Riemannian variant of the CMA-ES (Covariance Matrix Adaptation Evolutionary Strategy) algorithm, `cma_es`.
+
+### Fixed
+
+* The constructor dispatch for `StopWhenAny` with `Vector` had incorrect element type assertion which was fixed.
+
 ## [0.4.58] - March 18, 2024
 
 ### Added

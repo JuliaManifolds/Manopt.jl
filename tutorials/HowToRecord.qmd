@@ -8,6 +8,7 @@ This tutorial illustrates how to:
 
 * record one value during the iterations;
 * record multiple values during the iterations and access them afterwards;
+* record within a subsolver
 * define an own `RecordAction` to perform individual recordings.
 
 Several predefined recordings exist, for example [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
@@ -30,7 +31,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 Let's first load the necessary packages.
 
 ```{julia}
-using Manopt, Manifolds, Random, ManifoldDiff
+using Manopt, Manifolds, Random, ManifoldDiff, LinearAlgebra
 using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
@@ -133,15 +134,17 @@ We now first build a  [`RecordGroup`](https://manoptjl.org/stable/plans/record/#
 ```{julia}
 rI = RecordEvery(
     RecordGroup([
-        :Iteration => RecordIteration(),
-        :Cost => RecordCost(),
-        :Gradient => RecordEntry(similar(data[1]), :X),
+        RecordIteration() => :Iteration,
+        RecordCost() => :Cost,
+        RecordEntry(similar(data[1]), :X) => :Gradient,
     ]),
     6,
 )
 ```
 
-and for recording the final iteration number
+where the notation as a pair with the symbol can be read as “Is accessible by”.
+The `record=` keyword with the symbol `:Iteration` is actually the same as we specified here for the first group entry.
+For recording the final iteration number
 
 ```{julia}
 sI = RecordIteration()
@@ -149,7 +152,8 @@ sI = RecordIteration()
 
 We now combine both into the [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState) decorator. It acts completely the same as any [`AbstractManoptSolverState`](https://manoptjl.org/stable/plans/state/#Manopt.AbstractManoptSolverState) but records something in every iteration additionally. This is stored in a dictionary of [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s, where `:Iteration` is the action (here the only every sixth iteration group) and the `sI` which is executed at stop.
 
-Note that the keyword `record=` in the high level interface `gradient_descent` only would fill the `:Iteration` symbol of said dictionary.
+Note that the keyword `record=` in the high level interface `gradient_descent` only would fill the `:Iteration` symbol of said dictionary, but we could also pass pairs like in the following,
+that is in the form `Symbol => RecordAction` into that keyword to obtain the same as in
 
 ```{julia}
 r = RecordSolverState(s, Dict(:Iteration => rI, :Stop => sI))
@@ -171,6 +175,108 @@ and the other values during the iterations are
 
 ```{julia}
 get_record(res, :Iteration, (:Iteration, :Cost))
+```
+
+where the last tuple contains the names from the pairs when we generated the record group.
+So similarly we can use `:Gradient` as specified before to access the recorded gradient.
+
+## Recording from a Subsolver
+
+One can also record from a subsolver. For that we need a problem that actually requires a subsolver. We take the constraint example from the
+[How to print debug](HowToDebug.md) tutorial.
+Maybe read that part for more details on the problem
+
+
+```{julia}
+#| output: false
+d = 4
+M2 = Sphere(d - 1)
+v0 = project(M2, [ones(2)..., zeros(d - 2)...])
+Z = v0 * v0'
+#Cost and gradient
+f2(M, p) = -tr(transpose(p) * Z * p) / 2
+grad_f2(M, p) = project(M, p, -transpose.(Z) * p / 2 - Z * p / 2)
+# Constraints
+g(M, p) = -p # now p ≥ 0
+mI = -Matrix{Float64}(I, d, d)
+# Vector of gradients of the constraint components
+grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
+p0 = project(M2, [ones(2)..., zeros(d - 3)..., 0.1])
+```
+
+We directly start with recording the subsolvers Iteration.
+We can specify what to record in the subsolver using the `sub_kwargs`
+keyword argument with a `Symbol => value` pair. Here we specify to record the iteration and the cost in every subsolvers step.
+
+Furthermore, we have to “collect” this recording after every sub solver run.
+This is done with the `:Subsolver` keyword in the main `record=` keyword.
+
+
+```{julia}
+#| output: false
+s1 = exact_penalty_method(
+    M2,
+    f2,
+    grad_f2,
+    p0;
+    g = g,
+    grad_g = grad_g,
+    record = [:Iteration, :Cost, :Subsolver],
+    sub_kwargs = [:record => [:Iteration, :Cost]],
+    return_state=true,
+);
+```
+
+Then the first entry of the record containts the iterate, the (main solvers) cost, and the third entry is the recording of the subsolver.
+
+```{julia}
+get_record(s1)[1]
+```
+
+When adding a number to not record on every iteration, the `:Subsolver` keyword of course still also only “copies over” the subsolver recordings when active. But one could avoid allocations on the other runs. This is done, by specifying the sub solver as `:WhenActive`
+
+```{julia}
+#| output: false
+s2 = exact_penalty_method(
+    M2,
+    f2,
+    grad_f2,
+    p0;
+    g = g,
+    grad_g = grad_g,
+    record = [:Iteration, :Cost, :Subsolver, 25],
+    sub_kwargs = [:record => [:Iteration, :Cost, :WhenActive]],
+    return_state=true,
+);
+```
+
+Then
+
+```{julia}
+get_record(s2)
+```
+
+Finally, instead of recording iterations, we can also specify to record the stopping criterion and final cost by adding that to `:Stop` of the sub solvers record. Then we can specify – as so often in a tuple, that the `:Subsolver` should record `:Stop` (by devault it takes over `:Iteration`)
+
+```{julia}
+#| output: false
+s3 = exact_penalty_method(
+    M2,
+    f2,
+    grad_f2,
+    p0;
+    g = g,
+    grad_g = grad_g,
+    record = [:Iteration, :Cost, (:Subsolver, :Stop), 25],
+    sub_kwargs = [:record => [:Stop => [:Stop, :Cost]]],
+    return_state=true,
+);
+```
+
+Then the following displays also the reasons why each of the recorded subsolvers stopped – and the corresponding cost
+
+```{julia}
+get_record(s3)
 ```
 
 ## Writing an own [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction)s
@@ -211,7 +317,7 @@ Now we can initialize the new cost and call the gradient descent.
 Note that this illustrates also the last use case since you can pass symbol-action pairs into the `record=`array.
 
 ```{julia}
-f2 = MyCost(data)
+f3 = MyCost(data)
 ```
 
 Now for the plain gradient descent, we have to modify the step (to a constant stepsize) and remove the default check whether the cost increases (setting `debug` to `[]`).
@@ -220,10 +326,14 @@ We also only look at the first 20 iterations to keep this example small in recor
 ```{julia}
 R3 = gradient_descent(
     M,
-    f2,
+    f3,
     grad_f,
     data[1];
-    record=[:Iteration, :Count => RecordCount(), :Cost],
+    record=[:Iteration => [
+        :Iteration,
+        RecordCount() => :Count,
+        :Cost],
+    ],
     stepsize = ConstantStepsize(1.0),
     stopping_criterion=StopAfterIteration(20),
     debug=[],
@@ -231,7 +341,7 @@ R3 = gradient_descent(
 )
 ```
 
-For `:Cost` we already learned how to access them, the `:Count =>` introduces the following action to obtain the `:Count`. We can again access the whole sets of records
+For `:Cost` we already learned how to access them, the ` => :Count` introduces preceeding action to obtain the `:Count` symbol as its access. We can again access the whole sets of records
 
 ```{julia}
 get_record(R3)
@@ -249,7 +359,7 @@ and we see that the cost function is called once per iteration.
 If we use this counting cost and run the default gradient descent with Armijo line search, we can infer how many Armijo line search backtracks are preformed:
 
 ```{julia}
-f3 = MyCost(data)
+f4 = MyCost(data)
 ```
 
 To not get too many entries let's just look at the first 20 iterations again
@@ -257,10 +367,10 @@ To not get too many entries let's just look at the first 20 iterations again
 ```{julia}
 R4 = gradient_descent(
     M,
-    f3,
+    f4,
     grad_f,
     data[1];
-    record=[:Count => RecordCount()],
+    record=[RecordCount(),],
     return_state=true,
 )
 ```

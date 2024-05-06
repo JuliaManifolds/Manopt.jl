@@ -203,6 +203,24 @@ function get_gradient!(M::AbstractManifold, X, mcgo::ManifoldCostGradientObjecti
     return X
 end
 
+"""
+    X = get_subgradient(M::AbstractManifold, sgo::AbstractManifoldGradientObjective, p)
+    get_subgradient!(M::AbstractManifold, X, sgo::AbstractManifoldGradientObjective, p)
+
+Evaluate the subgradient, which for the case of a objective having a gradient, means evaluating the
+gradient itself.
+
+While in general, the result might not be deterministic, for this case it is.
+"""
+function get_subgradient(M::AbstractManifold, agmo::AbstractManifoldGradientObjective, p)
+    return get_gradient(M, agmo, p)
+end
+function get_subgradient!(
+    M::AbstractManifold, X, agmo::AbstractManifoldGradientObjective, p
+)
+    return get_gradient!(M, X, agmo, p)
+end
+
 function _to_mutating_gradient(grad_f, evaluation::AllocatingEvaluation)
     return grad_f_(M, p) = [grad_f(M, p[])]
 end

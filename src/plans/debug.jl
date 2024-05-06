@@ -164,8 +164,6 @@ Since usual debug is happening after the iteration, 1 is the default.
 # Constructor
 
     DebugEvery(d::DebugAction, every=1, always_update=true, activation_offset=1)
-
-Initialise the DebugEvery.
 """
 mutable struct DebugEvery <: DebugAction
     debug::DebugAction
@@ -189,7 +187,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         st,
         :SubState,
         :Debug,
-        :active,
+        :Activity,
         !(i < 1) && (rem(i + d.activation_offset, d.every) == 0),
     )
     return nothing
@@ -738,27 +736,27 @@ deactivate this debug
 # Fields
 
 * `active`:        a boolean that can (de-)activated from outside to turn on/off debug
-* `always_update`: whether or not to call the order debugs with iteration `-1` in active state
+* `always_update`: whether or not to call the order debugs with iteration `<=0` inactive state
 
 # Constructor
 
     DebugWhenActive(d::DebugAction, active=true, always_update=true)
-
-Initialise the DebugSubsolver.
 """
-mutable struct DebugWhenActive <: DebugAction
-    debug::DebugAction
+mutable struct DebugWhenActive{D<:DebugAction} <: DebugAction
+    debug::D
     active::Bool
     always_update::Bool
-    function DebugWhenActive(d::DebugAction, active::Bool=true, always_update::Bool=true)
-        return new(d, active, always_update)
+    function DebugWhenActive(
+        d::D, active::Bool=true, always_update::Bool=true
+    ) where {D<:DebugAction}
+        return new{D}(d, active, always_update)
     end
 end
 function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
     if dwa.active
         dwa.debug(p, st, i)
-    elseif dwa.always_update
-        dwa.debug(p, st, -1)
+    elseif (i <= 0) && (dwa.always_update)
+        dwa.debug(p, st, i)
     end
 end
 function show(io::IO, dwa::DebugWhenActive)
@@ -771,7 +769,7 @@ function set_manopt_parameter!(dwa::DebugWhenActive, v::Val, args...)
     set_manopt_parameter!(dwa.debug, v, args...)
     return dwa
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:active}, v)
+function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
     return dwa.active = v
 end
 
@@ -1070,7 +1068,7 @@ end
 Generate a dictionary of [`DebugAction`](@ref)s.
 
 First all `Symbol`s `String`, [`DebugAction`](@ref)s and numbers are collected,
-excluding `:Stop` and `:Subsolver`.
+excluding `:Stop` and `:WhenActive`.
 This collected vector is added to the `:Iteration => [...]` pair.
 `:Stop` is added as `:StoppingCriterion` to the `:Stop => [...]` pair.
 If necessary, these pairs are created
@@ -1078,7 +1076,7 @@ If necessary, these pairs are created
 For each `Pair` of a `Symbol` and a `Vector`, the [`DebugGroupFactory`](@ref)
 is called for the `Vector` and the result is added to the debug dictonaries entry
 with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
-when the `:Subsolver` symbol is present
+when the `:WhenActive` symbol is present
 
 # Return value
 
@@ -1118,7 +1116,7 @@ function DebugFactory(a::Vector{<:Any})
     # filter out :Iteration defaults
     # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
     iter_entries = filter(
-        x -> !isa(x, Pair) && (x ∉ [:Stop, :Subsolver]) && !isa(x, Int), a
+        x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
     )
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
@@ -1148,7 +1146,7 @@ function DebugFactory(a::Vector{<:Any})
     for d in b
         offset = d.first === :BeforeIteration ? 0 : 1
         dbg = DebugGroupFactory(d.second; activation_offset=offset)
-        (:Subsolver in a) && (dbg = DebugWhenActive(dbg))
+        (:WhenActive in a) && (dbg = DebugWhenActive(dbg))
         # Add DebugEvery to all but Start and Stop
         (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = DebugEvery(dbg, ae))
         dictionary[d.first] = dbg
@@ -1172,12 +1170,12 @@ If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of
 If any integers are present, the last of these is used to wrap the group in a
 [`DebugEvery`](@ref)`(k)`.
 
-If `:SubSolver` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
+If `:WhenActive` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
 making it deactivatable by its parent solver.
 """
 function DebugGroupFactory(a::Vector; activation_offset=1)
     group = DebugAction[]
-    for d in filter(x -> !isa(x, Int) && (x ∉ [:Subsolver]), a) # filter Ints, &Sub
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
         push!(group, DebugActionFactory(d))
     end
     l = length(group)
@@ -1192,7 +1190,7 @@ function DebugGroupFactory(a::Vector; activation_offset=1)
     if length(e) > 0
         debug = DebugEvery(debug, last(e); activation_offset=activation_offset)
     end
-    (:Subsolver in a) && (debug = (DebugWhenActive(debug)))
+    (:WhenActive in a) && (debug = (DebugWhenActive(debug)))
     return debug
 end
 DebugGroupFactory(a; kwargs...) = DebugGroupFactory([a]; kwargs...)

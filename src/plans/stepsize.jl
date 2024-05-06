@@ -503,6 +503,7 @@ Then find the new stepsize by
 ```
 
 # Fields
+
 * `initial_stepsize`:        (`1.0`) the step size to start the search with
 * `memory_size`:             (`10`) number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize`:         (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
@@ -755,6 +756,64 @@ function show(io::IO, a::NonmonotoneLinesearch)
     )
 end
 get_message(a::NonmonotoneLinesearch) = a.message
+
+@doc raw"""
+    PolyakStepsize <: Stepsize
+
+
+Compute a step size
+
+````math
+α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_i}{\lVert{ ∂f(p^{(i)})} \rVert^2},
+````
+
+where ``f_{\text{best}}`` is the best cost value seen until the current iteration,
+and ``γ_i`` is a sequence of numbers that is square summable, but not summable (the sum must diverge to infinity).
+Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(i)}``.
+
+The step size is an adaption from the Dynamic step size discussed in Section 3.2 of [Bertsekas:2015](@cite),
+both to the Riemannian case and to approximate the minimum cost value.
+
+# Fields
+
+* `γ`               : a function `i -> ...` representing the sequence.
+* `best_cost_value` : storing the value `f_{\text{best}}`
+
+# Constructor
+
+    PolyakStepsize(;
+        γ = i -> 1/i,
+        initial_cost_estimate=0.0
+    )
+
+initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``
+"""
+mutable struct PolyakStepsize{F,R} <: Stepsize
+    γ::F
+    best_cost_value::R
+end
+function PolyakStepsize(; γ::F=(i) -> 1 / i, initial_cost_estimate::R=0.0) where {F,R}
+    return PolyakStepsize{F,R}(γ, initial_cost_estimate)
+end
+function (ps::PolyakStepsize)(
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int, args...; kwargs...
+)
+    # We get these by reference, so that should not allocate in general
+    M = get_manifold(amp)
+    p = get_iterate(ams)
+    X = get_subgradient(amp, p)
+    # Evaluate the cost
+    c = get_cost(M, get_objective(amp), p)
+    (c < ps.best_cost_value) && (ps.best_cost_value = c)
+    α = (c - ps.best_cost_value + ps.γ(i)) / (norm(M, p, X)^2)
+    return α
+end
+function show(io::IO, ps::PolyakStepsize)
+    return print(
+        io,
+        "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = $(ps.best_cost_value)",
+    )
+end
 
 @doc raw"""
     WolfePowellLinesearch <: Linesearch
@@ -1214,7 +1273,7 @@ end
 return the stepsize stored within [`AbstractManoptSolverState`](@ref) `ams` when solving the
 [`AbstractManoptProblem`](@ref) `amp`.
 This method also works for decorated options and the [`Stepsize`](@ref) function within
-the options, by default stored in `o.stepsize`.
+the options, by default stored in `ams.stepsize`.
 """
 function get_stepsize(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...; kwargs...
@@ -1262,6 +1321,18 @@ function _get_initial_stepsize(
     return get_initial_stepsize(ams.stepsize)
 end
 
+@doc raw"""
+    get_last_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
+
+return the last computed stepsize stored within [`AbstractManoptSolverState`](@ref) `ams`
+when solving the [`AbstractManoptProblem`](@ref) `amp`.
+
+This method takes into account that `ams` might be decorated,
+then calls [`get_last_stepsize`](@ref get_last_stepsize(::Stepsize, ::Any...)),
+where the stepsize is assumed to be in `ams.stepsize`.
+In case this returns `NaN`, a concrete call to the stored stepsize is performed.
+For this, usually, the first of the `vars...` should be the current iterate.
+"""
 function get_last_stepsize(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...
 )
@@ -1275,33 +1346,24 @@ end
 function _get_last_stepsize(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Val{false}, vars...
 )
-    return get_last_stepsize(amp, ams, ams.stepsize, vars...)
+    s = get_last_stepsize(ams.stepsize) # if it stores the stepsize itself -> return
+    !isnan(s) && return s
+    # if not -> call step.
+    return ams.stepsize(amp, ams, vars...)
 end
-#
-# dispatch on stepsize
-function get_last_stepsize(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, step::Stepsize, vars...
-)
-    return step(amp, ams, vars...)
-end
-function get_last_stepsize(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, step::ArmijoLinesearch, ::Any...
-)
+@doc raw"""
+    get_last_stepsize(::Stepsize, vars...)
+
+return the last computed stepsize from within the stepsize.
+If no last step size is stored, this returns `NaN`.
+"""
+get_last_stepsize(::Stepsize, ::Any...) = NaN
+function get_last_stepsize(step::ArmijoLinesearch, ::Any...)
     return step.last_stepsize
 end
-function get_last_stepsize(
-    ::AbstractManoptProblem,
-    ::AbstractManoptSolverState,
-    step::WolfePowellLinesearch,
-    ::Any...,
-)
+function get_last_stepsize(step::WolfePowellLinesearch, ::Any...)
     return step.last_stepsize
 end
-function get_last_stepsize(
-    ::AbstractManoptProblem,
-    ::AbstractManoptSolverState,
-    step::WolfePowellBinaryLinesearch,
-    ::Any...,
-)
+function get_last_stepsize(step::WolfePowellBinaryLinesearch, ::Any...)
     return step.last_stepsize
 end

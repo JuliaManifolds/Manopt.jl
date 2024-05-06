@@ -216,7 +216,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 * `social_weight`:             (`1.4`) a social weight factor
 * `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `vector_transport_mthod`:    (`default_vector_transport_method(M, eltype(swarm))`) a vector transport method to use.
+* `vector_transport_method`:   (`default_vector_transport_method(M, eltype(swarm))`) a vector transport method to use.
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
@@ -269,8 +269,8 @@ function particle_swarm(
 end
 
 @doc raw"""
-    patricle_swarm!(M, f, swarm; kwargs...)
-    patricle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
+    particle_swarm!(M, f, swarm; kwargs...)
+    particle_swarm!(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
 
 perform the particle swarm optimization algorithm (PSO), starting with the initial `swarm` which is then modified in place.
 

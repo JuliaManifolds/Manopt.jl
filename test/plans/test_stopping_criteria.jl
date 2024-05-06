@@ -30,6 +30,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         sn = StopWhenAny(StopAfterIteration(10), s3)
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test startswith(repr(sn), "StopWhenAny with the")
+        @test Manopt._fast_any(x -> false, ())
 
         sn2 = StopAfterIteration(10) | s3
         @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
@@ -52,6 +53,9 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s3.threshold == 1e-2
         # Dummy without iterations has a reasonable fallback
         @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
+
+        sn = StopWhenAny([StopAfterIteration(10)])
+        @test sn isa StoppingCriterion
     end
 
     @testset "Test StopAfter" begin
@@ -90,12 +94,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test typeof(d) === typeof((a & b) & c)
         update_stopping_criterion!(d, :MinIterateChange, 1e-8)
         @test d.criteria[2].threshold == 1e-8
+        @test length((d & d).criteria) == 6
         e = a | b | c
         @test typeof(e) === typeof(a | b | c)
         @test typeof(e) === typeof(a | (b | c))
         @test typeof(e) === typeof((a | b) | c)
         update_stopping_criterion!(e, :MinGradNorm, 1e-9)
-        @test d.criteria[3].threshold == 1e-9
+        @test e.criteria[3].threshold == 1e-9
+        @test length((e | e).criteria) == 6
     end
 
     @testset "Stopping Criterion print&summary" begin
