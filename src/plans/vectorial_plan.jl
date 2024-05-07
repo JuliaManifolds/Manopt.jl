@@ -39,13 +39,15 @@ power manifold with a certain [`AbstractPowerRepresentation`](@extref).
 
     PowerManifoldVectorialType(representation::AbstractPowerRepresentation)
 """
-struct PowerManifoldVectorialType{<:AbstractPowerRepresentation} <: AbstractVectorialType end
+struct PowerManifoldVectorialType{TPR<:AbstractPowerRepresentation} <: AbstractVectorialType
+    power_representation::TPR
+end
 PowerManifoldVectorialType(::TPR) = PowerManifoldVectorialType{TPR}()
 
 @doc raw"""
     VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}
 
-Represent a function ``f:\mathcal M → \mathbb R^n`` including its gradient.
+Represent a function ``f:\mathcal M → \mathbb R^n`` including its gradient with respect to each component.
 
 # Representations of ``f``
 
@@ -110,7 +112,7 @@ For the [`FunctionVectorialType`](@ref) ``f`` there are two different variants p
 * `costs!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
 * `jacobian!!:     the jacobian of ``f``
-* `jacobian_type`: indicating / stpring data for the type of ``J_f``
+* `jacobian_type`: indicating / storing data for the type of ``J_f``
 * `parameters`:    the nunmber `n` from above, that is the size of the vector ``f`` returns.
 
 # Constructor
