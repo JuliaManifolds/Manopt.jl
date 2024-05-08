@@ -223,7 +223,7 @@ end
 function get_costs!(
     M, x, vfg::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType}, p
 )
-    for (xi, fi) in zip(x, bgf.costs)
+    for (xi, fi) in zip(x, vfg.costs)
         xi = fi(M, p)
     end
     return x
@@ -253,13 +253,115 @@ function get_gradients end
 
 @doc raw"""
     get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
+    get_gradients(Mn::AbstractPowerManifold, vfg::VectorGradientFunction, p)
 
 Evaluate and return the gradients of the components of ``f``, by interpreting its
 components as objectives and returning their gradients as an element on .
 """
 get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
 
-#TODO Check all cases and compose vectors in case of coefficient representation
+function get_gradients(
+    M::AbstractManifold,
+    vfg::VectorGradientFunction{<:AllocatingEvaluation,FT,<:PowerManifoldVectorialType},
+    p,
+) where {FT}
+    return vfg.jacobian!!(M, p) # Returns an element on the power manifold anyways
+end
+
+function get_gradients(
+    M::AbstractManifold,
+    vfg::VectorGradientFunction{<:AllocatingEvaluation,FT,<:CoefficientVectorialType},
+    p,
+) where {FT}
+    B = vfg.jacobian_type.basis
+    J = vfg.jacobian!!(M, p)
+    # each column is a coefficient vector for a tangent vector
+    return [get_vector(M, p, (J[:, i]), B) for i in size(J, 2)]
+end
+
+function get_gradients(
+    M::AbstractManifold,
+    vfg::VectorGradientFunction{<:InplaceEvaluation,FT,<:PowerManifoldVectorialType},
+    p,
+) where {FT}
+    Mn = PowerManifold(M, vfg.jacobian_type, vfg.vector_dimension)
+    # Generate a P=(p,...,p)
+    P = rand(M)
+    for i in 1:(vfg.vector_dimension)
+        p[Mn, i] = p
+    end
+    X = zero_vector(Mn, P) # ...since we have to allocate this. TODO Maybe we can improve this?
+    vfg.jacobian!!(M, X, p)
+    return vfg.jacobian!!(M, p)
+end
+
+function get_gradients(
+    M::AbstractManifold,
+    vfg::VectorGradientFunction{<:InplaceEvaluation,FT,<:CoefficientVectorialType},
+    p,
+) where {FT}
+    B = vfg.jacobian_type.basis
+    J = hcat([get_vector(M, p, zero_vector(M, p), B) for _ in 1:(vfg.vector_dimension)]...)
+    vfg.jacobian!!(M, J, p)
+    return [get_vector(M, p, (J[:, i]), B) for i in size(J, 2)]
+end
+
+function get_gradients!(
+    M::AbstractManifold,
+    X,
+    vfg::VectorGradientFunction{<:AllocatingEvaluation,FT,<:PowerManifoldVectorialType},
+    p,
+) where {FT}
+    Y = vfg.jacobian!!(M, p)
+    for i in vfg.vector_dimension
+        copyto!(M, X[i], p, Y[i])
+    end
+    return X
+end
+
+function get_gradients!(
+    M::AbstractManifold,
+    X,
+    vfg::VectorGradientFunction{<:AllocatingEvaluation,FT,<:CoefficientVectorialType},
+    p,
+) where {FT}
+    B = vfg.jacobian_type.basis
+    J = vfg.jacobian!!(M, p)
+    # each column is a coefficient vector for a tangent vector
+    for i in size(J, 2)
+        get_vector!(M, X[i], p, (J[:, i]), B)
+    end
+    return X
+end
+
+function get_gradients!(
+    M::AbstractManifold,
+    X,
+    vfg::VectorGradientFunction{<:InplaceEvaluation,FT,<:PowerManifoldVectorialType},
+    p,
+) where {FT}
+    Mn = PowerManifold(M, vfg.jacobian_type, vfg.vector_dimension)
+    # Generate a P=(p,...,p)
+    P = rand(M)
+    for i in 1:(vfg.vector_dimension)
+        p[Mn, i] = p
+    end
+    X = zero_vector(Mn, P)
+    vfg.jacobian!!(M, X, p)
+    return X
+end
+
+function get_gradients!(
+    M::AbstractManifold,
+    X,
+    vfg::VectorGradientFunction{<:InplaceEvaluation,FT,<:CoefficientVectorialType},
+    p,
+) where {FT}
+    B = vfg.jacobian_type.basis
+    J = hcat([get_vector(M, p, zero_vector(M, p), B) for _ in 1:(vfg.vector_dimension)]...)
+    vfg.jacobian!!(M, J, p)
+    return [get_vector(M, p, (J[:, i]), B) for i in size(J, 2)]
+end
 
 @doc raw"""
     get_gradient(M::AbstractManifold, vfg::VectorGradientFunction, p, i)
@@ -267,7 +369,7 @@ get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
 Evaluate and return the `ì``th gradient of the component of ``f``, that is of the
 ``i``th component function.
 """
-get_gradients(M::AbstractManifold, vfg::VectorGradientFunction, p)
+get_gradient(M::AbstractManifold, vfg::VectorGradientFunction, p, i)
 
 #TODO Check all cases and compose vectors in case of coefficient representation
 
