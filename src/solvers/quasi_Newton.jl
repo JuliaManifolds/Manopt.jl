@@ -83,7 +83,7 @@ function QuasiNewtonState(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     ),
-    nondescent_direction_behavior::Symbol=:step_towards_negative_gradient,
+    nondescent_direction_behavior::Symbol=:reinitialize_direction_update,
     kwargs..., # collect but ignore rest to be more tolerant
 ) where {
     P,
@@ -206,8 +206,8 @@ The ``k``th iteration consists of
   at 0 and strictly increasing at 0 for the cautious update.
 * `direction_update`:        ([`InverseBFGS`](@ref)`()`) the update rule to use.
 * `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
-   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, x)`.
-* `initial_operator`:        (`Matrix{Float64}(I,n,n)`) initial matrix to use die the
+   allocation (default) form `gradF(M, p)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, p)`.
+* `initial_operator`:        (`Matrix{Float64}(I, n, n)`) initial matrix to use die the
   approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
 * `memory_size`:             (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
   value to use a full memory representation
@@ -221,7 +221,7 @@ The ``k``th iteration consists of
 * `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
-* `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled.
+* `nondescent_direction_behavior`: (`:reinitialize_direction_update`) specify how non-descent direction is handled.
   This can be
   * `:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
   * `:ignore` – the check is not performed, so any computed direction is accepted. No message is stored.

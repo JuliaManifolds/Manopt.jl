@@ -22,6 +22,11 @@ function Manopt.initialize_update!(d::QuasiNewtonGradientDirectionUpdate)
     return d
 end
 
+struct QuasiNewtonTestDirectionUpdate{VT<:AbstractVectorTransportMethod} <:
+       AbstractQuasiNewtonDirectionUpdate
+    vector_transport_method::VT
+end
+
 @testset "Riemannian quasi-Newton Methods" begin
     @testset "Show & Status" begin
         M = Euclidean(4)
@@ -150,6 +155,8 @@ end
                 @test norm(x_direction - x_solution) ≈ 0 atol = 10.0^(-14)
             end
         end
+        tdu = QuasiNewtonTestDirectionUpdate(ParallelTransport())
+        @test Manopt.initialize_update!(tdu) === tdu
     end
 
     @testset "Rayleigh Quotient Minimization" begin
@@ -392,6 +399,7 @@ end
             M,
             copy(M, p);
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
+            nondescent_direction_behavior=:step_towards_negative_gradient,
         )
         dqns = DebugSolverState(qns, DebugMessages(:Warning, :Once))
         @test_logs (
@@ -404,7 +412,7 @@ end
 
         qns = QuasiNewtonState(
             M,
-            p;
+            copy(M, p);
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:step_towards_negative_gradient,
         )
@@ -414,7 +422,7 @@ end
 
         qns = QuasiNewtonState(
             M,
-            p;
+            copy(M, p);
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:reinitialize_direction_update,
         )
