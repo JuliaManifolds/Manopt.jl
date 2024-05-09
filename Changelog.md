@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `:reinitialize_direction_update` option for quasi-Newton behavior when the direction is not a descent one.
 
+### Fixed
+
+* ALM and EPM no longer keep a part of the quasi-Newton subsolver state between runs.
+
 ## [0.4.62] May 3, 2024
 
 ### Changed
