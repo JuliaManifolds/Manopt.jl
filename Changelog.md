@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * ALM and EPM no longer keep a part of the quasi-Newton subsolver state between runs.
 
+### Changed
+
+* Quasi-Newton solvers: `:reinitialize_direction_update` is the new default behavior in case of detection of non-descent direction instead of `:step_towards_negative_gradient`. `:step_towards_negative_gradient` is still available when explicitly set using the `nondescent_direction_behavior` keyword argument.
+
 ## [0.4.62] May 3, 2024
 
 ### Changed
