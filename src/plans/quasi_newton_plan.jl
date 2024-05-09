@@ -604,6 +604,8 @@ Initialize the limited memory direction update by emptying the memory buffers.
 function initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
     empty!(d.memory_s)
     empty!(d.memory_y)
+    fill!(d.ρ, 0)
+    fill!(d.ξ, 0)
     return d
 end
 
