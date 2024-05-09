@@ -223,8 +223,9 @@ The ``k``th iteration consists of
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
 * `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled.
   This can be
-  * ``:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
+  * `:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
   * `:ignore` – the check is not performed, so any computed direction is accepted. No message is stored.
+  * `:reinitialize_direction_update` – discards operator state stored in direction update rules.
   * any other value performs the check, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
 
@@ -370,6 +371,7 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     get_gradient!(amp, qns.X, qns.p)
     copyto!(M, qns.sk, qns.p, qns.X)
     copyto!(M, qns.yk, qns.p, qns.X)
+    initialize_update!(qns.direction_update)
     return qns
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
@@ -379,9 +381,13 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
         if qns.nondescent_direction_value > 0
-            if qns.nondescent_direction_behavior === :step_towards_negative_gradient
+            if qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
+                qns.nondescent_direction_behavior === :reinitialize_direction_update
                 copyto!(M, qns.η, qns.X)
                 qns.η .*= -1
+            end
+            if qns.nondescent_direction_behavior === :reinitialize_direction_update
+                initialize_update!(qns.direction_update)
             end
         end
     end

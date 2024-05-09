@@ -1,16 +1,25 @@
 using Manopt, Manifolds, Test
 using LinearAlgebra: I, eigvecs, tr, Diagonal
 
-struct QuasiNewtonGradientDirectionUpdate{VT<:AbstractVectorTransportMethod} <:
-       AbstractQuasiNewtonDirectionUpdate
+mutable struct QuasiNewtonGradientDirectionUpdate{VT<:AbstractVectorTransportMethod} <:
+               AbstractQuasiNewtonDirectionUpdate
     vector_transport_method::VT
+    num_times_init::Int
 end
+function QuasiNewtonGradientDirectionUpdate(vtm::AbstractVectorTransportMethod)
+    return QuasiNewtonGradientDirectionUpdate{typeof(vtm)}(vtm, 0)
+end
+
 function (d::QuasiNewtonGradientDirectionUpdate)(mp, st)
     return get_gradient(st)
 end
 function (d::QuasiNewtonGradientDirectionUpdate)(r, mp, st)
     r .= get_gradient(st)
     return r
+end
+function Manopt.initialize_update!(d::QuasiNewtonGradientDirectionUpdate)
+    d.num_times_init += 1
+    return d
 end
 
 @testset "Riemannian quasi-Newton Methods" begin
@@ -347,9 +356,9 @@ end
         fc(::Euclidean, p) = real(p' * A * p)
         grad_fc(::Euclidean, p) = 2 * A * p
         p0 = [2.0, 1 + im]
-        @test_logs (:info,) set_manopt_parameter!(:Mode, "Tutorial")
+        @test_logs (:info,) Manopt.set_manopt_parameter!(:Mode, "Tutorial")
         p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion=StopAfterIteration(3))
-        @test_logs (:info,) set_manopt_parameter!(:Mode, "")
+        @test_logs (:info,) Manopt.set_manopt_parameter!(:Mode, "")
         @test fc(M, p4) ≤ fc(M, p0)
     end
 
@@ -401,6 +410,17 @@ end
         )
 
         @test_nowarn solve!(mp, qns)
+        @test qns.direction_update.num_times_init == 1
+
+        qns = QuasiNewtonState(
+            M,
+            p;
+            direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
+            nondescent_direction_behavior=:reinitialize_direction_update,
+        )
+
+        @test_nowarn solve!(mp, qns)
+        @test qns.direction_update.num_times_init == 1001
     end
 
     @testset "A Circle example" begin

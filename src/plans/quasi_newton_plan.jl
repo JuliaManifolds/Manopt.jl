@@ -10,6 +10,13 @@ abstract type AbstractQuasiNewtonDirectionUpdate end
 
 get_message(::AbstractQuasiNewtonDirectionUpdate) = ""
 
+"""
+    initialize_update!(s::AbstractQuasiNewtonDirectionUpdate)
+
+Initialize direction update. By default no change is made.
+"""
+initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
+
 @doc raw"""
     AbstractQuasiNewtonUpdateRule
 
@@ -413,6 +420,11 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     get_vector!(M, r, p, -d.matrix \ get_coordinates(M, p, X, d.basis), d.basis)
     return r
 end
+function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
+    copyto!(d.matrix, I)
+    return d
+end
+
 @doc raw"""
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
@@ -584,6 +596,17 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
     return r
 end
 
+"""
+    initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
+
+Initialize the limited memory direction update by emptying the memory buffers.
+"""
+function initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
+    empty!(d.memory_s)
+    empty!(d.memory_y)
+    return d
+end
+
 @doc raw"""
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
@@ -622,8 +645,8 @@ taking into account that the corresponding step size is chosen.
 
 # Constructor
 
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = x -> x)
-    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = x -> x)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonMatrixDirectionUpdate; θ = identity)
+    QuasiNewtonCautiousDirectionUpdate(U::QuasiNewtonLimitedMemoryDirectionUpdate; θ = identity)
 
 Generate a cautious update for either a matrix based or a limited memory based update rule.
 
@@ -632,22 +655,17 @@ Generate a cautious update for either a matrix based or a limited memory based u
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 """
-mutable struct QuasiNewtonCautiousDirectionUpdate{U} <:
+mutable struct QuasiNewtonCautiousDirectionUpdate{U,Tθ} <:
                AbstractQuasiNewtonDirectionUpdate where {
-    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate{T}}
-} where {T<:AbstractQuasiNewtonUpdateRule}
+    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate}
+}
     update::U
-    θ::Function
+    θ::Tθ
 end
 function QuasiNewtonCautiousDirectionUpdate(
-    update::U; θ::Function=x -> x
-) where {
-    U<:Union{
-        QuasiNewtonMatrixDirectionUpdate,
-        QuasiNewtonLimitedMemoryDirectionUpdate{T} where T<:AbstractQuasiNewtonUpdateRule,
-    },
-}
-    return QuasiNewtonCautiousDirectionUpdate{U}(update, θ)
+    update::U; θ::Function=identity
+) where {U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate}}
+    return QuasiNewtonCautiousDirectionUpdate{U,typeof(θ)}(update, θ)
 end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp, st) = d.update(mp, st)
 (d::QuasiNewtonCautiousDirectionUpdate)(r, mp, st) = d.update(r, mp, st)
@@ -658,4 +676,8 @@ function get_update_vector_transport(u::AbstractQuasiNewtonDirectionUpdate)
 end
 function get_update_vector_transport(u::QuasiNewtonCautiousDirectionUpdate)
     return get_update_vector_transport(u.update)
+end
+function initialize_update!(d::QuasiNewtonCautiousDirectionUpdate)
+    initialize_update!(d.update)
+    return d
 end
