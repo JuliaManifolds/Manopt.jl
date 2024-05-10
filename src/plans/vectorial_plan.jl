@@ -42,7 +42,6 @@ power manifold with a certain [`AbstractPowerRepresentation`](@extref).
 struct PowerManifoldVectorialType{TPR<:AbstractPowerRepresentation} <: AbstractVectorialType
     power_representation::TPR
 end
-PowerManifoldVectorialType(::TPR) = PowerManifoldVectorialType{TPR}()
 
 @doc raw"""
     VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}

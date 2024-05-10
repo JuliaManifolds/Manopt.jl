@@ -59,6 +59,7 @@ using ManifoldsBase:
     AbstractInverseRetractionMethod,
     AbstractManifold,
     AbstractPowerManifold,
+    AbstractPowerRepresentation,
     AbstractRetractionMethod,
     AbstractVectorTransportMethod,
     CachedBasis,

@@ -20,10 +20,13 @@ For the gradient there are two possible variants available:
   where ``P = (p,…,p) \in\mathcal M^m``, that is
   the gradient returns a tangent vector on the power manifold.
 """
-struct FunctionConstraint{CT<:AbstractConstraintType} <: AbstractConstraintType end
+struct FunctionConstraint{CT<:AbstractVectorialType} <: AbstractConstraintType
+    constraint_type::CT
+end
 
-FunctionConstraint() = FunctionConstraint(PowerManifoldVectorialType())
-FunctionConstraint(::CT) where {CT<:AbstractConstraintType} = FunctionConstraint{CT}()
+function FunctionConstraint(power_representation::AbstractPowerRepresentation=NestedPowerRepresentation())
+    return FunctionConstraint(PowerManifoldVectorialType(power_representation))
+end
 
 @doc raw"""
     VectorConstraint <: AbstractConstraintType
@@ -31,6 +34,7 @@ FunctionConstraint(::CT) where {CT<:AbstractConstraintType} = FunctionConstraint
 A type to indicate that (some part of) constraints are given as a vector of functions.
 """
 struct VectorConstraint <: AbstractConstraintType end
+
 @doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C <: ConstraintType} <: AbstractManifoldObjective{T}
 
@@ -120,7 +124,7 @@ function ConstrainedManifoldObjective(
     objective::MO;
     equality_constraints::EMO=nothing,
     inequality_constraints::IMO=nothing,
-    constraint_type::ACT=PowerManifoldVectorialType(),
+    constraint_type::ACT=PowerManifoldVectorialType(NestedPowerRepresentation()),
     kwargs...,
 ) where {
     ACT<:AbstractConstraintType,
@@ -133,11 +137,11 @@ function ConstrainedManifoldObjective(
         @warn """
         Neither the inequality and the equality constraints are provided.
         Consider calling `get_objective()` on this constraint objective
-        and only work on the unconstraint objective instead.
+        and only work on the unconstrained objective instead.
         """
     end
     return ConstrainedManifoldObjective{E,ACT,MO,IMO,EMO}(
-        objective, equality_constraints, inequality_constraints
+        objective, equality_constraints, inequality_constraints; constraint=constraint_type
     )
 end
 get_objective(co::ConstrainedManifoldObjective) = co.objective
