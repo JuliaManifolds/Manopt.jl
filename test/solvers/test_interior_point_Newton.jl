@@ -1,6 +1,8 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
+Random.seed!(42)
 A = Symmetric(rand(3,3))
+# A = [2.0 -1.0 0.0; -1.0 2-0 -1.0; 0.0 -1.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p
 grad_f(M, p) = (I - p * p') * A * p
@@ -14,7 +16,8 @@ x = rand()
 y = sqrt(1 - x^2) * rand()
 z = sqrt(1 - x^2 - y^2)
 
-p_0 = [x, y, z]
+# p_0 = [x, y, z]
+p_0 = (1.0/(sqrt(3.0))).*[1.0, 1.0, 1.0]
 
 record = [:Iterate]
 
@@ -26,7 +29,7 @@ res = interior_point_Newton(
     p_0;
     g=g,
     grad_g=grad_g,
-    stop=StopAfterIteration(2) | StopWhenChangeLess(1e-6),
+    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-6),
     stepsize=ArmijoLinesearch(
         M, retraction_method=default_retraction_method(M), initial_stepsize=1.0
     ),
@@ -114,11 +117,11 @@ scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
 
 # Makie.arrows!(
 #     scene, vec(x1), vec(x2), vec(x3), vec(v1), vec(v2), vec(v3);
-#     arrowsize   = vec(norm.(grads))/80, 
-#     arrowcolor  = vec(norm.(grads)), 
-#     linecolor   = vec(norm.(grads)), 
-#     linewidth   = vec(norm.(grads))/200, 
-#     lengthscale = 0.08, 
+#     arrowsize   = vec(norm.(grads))/80,
+#     arrowcolor  = vec(norm.(grads)),
+#     linecolor   = vec(norm.(grads)),
+#     linewidth   = vec(norm.(grads))/200,
+#     lengthscale = 0.08,
 #     colormap    = :reds
 # )
 
