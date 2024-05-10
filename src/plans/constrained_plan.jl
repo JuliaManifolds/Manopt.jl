@@ -24,7 +24,9 @@ struct FunctionConstraint{CT<:AbstractVectorialType} <: AbstractConstraintType
     constraint_type::CT
 end
 
-function FunctionConstraint(power_representation::AbstractPowerRepresentation=NestedPowerRepresentation())
+function FunctionConstraint(
+    power_representation::AbstractPowerRepresentation=NestedPowerRepresentation()
+)
     return FunctionConstraint(PowerManifoldVectorialType(power_representation))
 end
 
