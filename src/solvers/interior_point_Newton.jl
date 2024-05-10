@@ -245,7 +245,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     Xμ = (ips.μ .* (Jg * Xp .+ g)) ./ ips.s
     Xs = (ips.ρ*ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
 
-    α = get_stepsize(amp, ips, i)
+    α = ips.stepsize(amp, ips, i, Xp)
 
     # update params
     retract!(M, ips.p, ips.p, α*Xp, ips.retraction_method)

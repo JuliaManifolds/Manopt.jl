@@ -1,8 +1,8 @@
 mutable struct NegativeReducedLagrangianGrad{T,R}
     cmo::ConstrainedManifoldObjective
     μ::T
-    λ::T 
-    s::T 
+    λ::T
+    s::T
     barrier_param::R
 end
 
@@ -42,8 +42,8 @@ end
 mutable struct ReducedLagrangianHess{T}
     cmo::ConstrainedManifoldObjective
     μ::T
-    λ::T 
-    s::T 
+    λ::T
+    s::T
 end
 
 function set_manopt_parameter!(rlh::ReducedLagrangianHess, ::Val{:μ}, μ)
@@ -51,8 +51,8 @@ function set_manopt_parameter!(rlh::ReducedLagrangianHess, ::Val{:μ}, μ)
     return rlh
 end
 
-function set_manopt_parameter!(rlh::ReducedLagrangianHess, ::Val{:μ}, λ)
-    rlh.μ = λ
+function set_manopt_parameter!(rlh::ReducedLagrangianHess, ::Val{:λ}, λ)
+    rlh.λ = λ
     return rlh
 end
 

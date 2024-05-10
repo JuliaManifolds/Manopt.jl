@@ -27,13 +27,21 @@ end
 #     return SymmetricLinearSystemObjective{<:AbstractEvaluationType,TA,Tb}(A, b)
 # end
 
+function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol_value::Val, value)
+    set_manopt_parameter!(slso.A, symbol_value, value)
+    set_manopt_parameter!(slso.b, symbol_value, value)
+    return slso
+end
+
+#=
 # set arbitrary parameter of A and b if such a parameter exists
-# too hacky?
+# too hacky? Yes
 function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, elem::Symbol, param)
     (elem in fieldnames(typeof(slso.A))) && setproperty!(slso.A, elem, param)
     (elem in fieldnames(typeof(slso.b))) && setproperty!(slso.b, elem, param)
     return slso
 end
+=#
 
 # evaluate the quadratic cost: Q(X) = 1/2 ⟨X, A(X)⟩ - ⟨b, X⟩ associated to the system Ax = b
 function get_cost(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
