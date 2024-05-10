@@ -5,13 +5,28 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.63] unreleased
+## [0.4.64] unreleased
 
 ### Changed
 
 * Remodel `ConstrainedManifoldObjective` to store an `AbstractManifoldObjective`
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
   therein – and implementing access to this Hessian
+
+## [0.4.63] unreleased
+
+### Added
+
+* `:reinitialize_direction_update` option for quasi-Newton behavior when the direction is not a descent one. It is now the new default for `QuasiNewtonState`.
+* Quasi-Newton direction update rules are now initialized upon start of the solver with the new internal function `initialize_update!`.
+
+### Fixed
+
+* ALM and EPM no longer keep a part of the quasi-Newton subsolver state between runs.
+
+### Changed
+
+* Quasi-Newton solvers: `:reinitialize_direction_update` is the new default behavior in case of detection of non-descent direction instead of `:step_towards_negative_gradient`. `:step_towards_negative_gradient` is still available when explicitly set using the `nondescent_direction_behavior` keyword argument.
 
 ## [0.4.62] May 3, 2024
 
