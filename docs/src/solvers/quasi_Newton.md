@@ -86,6 +86,7 @@ AbstractQuasiNewtonDirectionUpdate
 QuasiNewtonMatrixDirectionUpdate
 QuasiNewtonLimitedMemoryDirectionUpdate
 QuasiNewtonCautiousDirectionUpdate
+Manopt.initialize_update!
 ```
 
 ## Hessian update rules
