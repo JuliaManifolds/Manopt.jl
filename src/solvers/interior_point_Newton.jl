@@ -186,17 +186,17 @@ function interior_point_Newton!(
         sub_kwargs...,),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-5),
-    sub_state::AbstractManoptSolverState=decorate_state!(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         ConjugateResidualState(
             TangentSpace(M, p),
             sub_objective;
             stop = sub_stopping_criterion,
             sub_kwargs...,);
         sub_kwargs...,),
-    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
+    sub_problem::Union{F, AbstractManoptProblem}=DefaultManoptProblem(
         TangentSpace(M, p), sub_objective),
     kwargs...,
-) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},F}
     !is_feasible(M, cmo, p) && throw(ErrorException("Starting point p must be feasible."))
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
