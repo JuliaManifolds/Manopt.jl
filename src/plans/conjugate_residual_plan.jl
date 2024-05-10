@@ -1,26 +1,31 @@
 struct SymmetricLinearSystemObjective{
     E<:AbstractEvaluationType,
     TA,
-    Tb
-} <: AbstractManifoldSubObjective{E,CO}
+    Tb,
+} <: AbstractManifoldObjective{E}
     A::TA
     b::Tb
 end
 
-# getter for the cost associated to system AX = b
-function get_cost_function(slso::SymmetricLinearSystemObjective)
-    return (TpM, X) -> get_cost(TpM, slso, X)
-end
-
-# constructor
 function SymmetricLinearSystemObjective(
     A::TA,
-    b::Tb,
-) where {
-    E,TA,Tb,
-}
-    return SymmetricLinearSystemObjective{E,TA,Tb}(A, b)
+    b::Tb
+) where {TA,Tb}
+    return SymmetricLinearSystemObjective{AllocatingEvaluation,TA,Tb}(A,b)
 end
+
+# # getter for the cost associated to system AX = b
+# function get_cost_function(slso::SymmetricLinearSystemObjective)
+#     return (TpM, X) -> get_cost(TpM, slso, X)
+# end
+
+# constructor
+# function SymmetricLinearSystemObjective(
+#     A::TA,
+#     b::Tb,
+# ) where {TA,Tb}
+#     return SymmetricLinearSystemObjective{<:AbstractEvaluationType,TA,Tb}(A, b)
+# end
 
 # set arbitrary parameter of A and b if such a parameter exists
 # too hacky?

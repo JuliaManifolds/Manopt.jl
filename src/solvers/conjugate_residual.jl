@@ -10,11 +10,11 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
     stop::TStop
     function ConjugateResidualState(
         TpM::TangentSpace,
-        amso::AbstractManifoldSubObjective;
+        slso::SymmetricLinearSystemObjective;
         x::T=rand(TpM),
-        r::T=-get_gradient(TpM, amso, x),
+        r::T=-get_gradient(TpM, slso, x),
         d::T=r,
-        Ar::T=get_hessian(TpM, amso, x, r),
+        Ar::T=get_hessian(TpM, slso, x, r),
         Ad::T=Ar,
         α::R=0.0,
         β::R=0.0,
@@ -71,21 +71,21 @@ end
 
 function conjugate_residual(
     TpM::TangentSpace,
-    amso::AbstractManifoldSubObjective,
+    slso::SymmetricLinearSystemObjective,
     x0;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
     y0 = copy(TpM, x0)
-    return conjugate_residual!(TpM, amso, y0; evaluation=evaluation, kwargs...)
+    return conjugate_residual!(TpM, slso, y0; evaluation=evaluation, kwargs...)
 end
 
 function conjugate_residual!(
-    TpM::TangentSpace, amso::AbstractManifoldSubObjective, x0; kwargs...
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, x0; kwargs...
 )
-    crs = ConjugateResidualState(TpM, amso, kwargs...)
-    damso = decorate_objective!(TpM, amso; kwargs...)
-    dmp = DefaultManoptProblem(TpM, damso)
+    crs = ConjugateResidualState(TpM, slso; kwargs...)
+    dslso = decorate_objective!(TpM, slso; kwargs...)
+    dmp = DefaultManoptProblem(TpM, dslso)
     crs = decorate_state!(crs; kwargs...)
     solve!(dmp, crs)
     return get_solver_return(get_objective(dmp), crs)

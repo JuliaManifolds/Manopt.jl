@@ -178,9 +178,8 @@ function interior_point_Newton!(
         M; retraction_method=retraction_method, initial_stepsize=1.0),
     sub_kwargs=(;),
     sub_objective = decorate_objective!(
-        TangentSpace(M, p),
+        TangentSpace(M, p) × ℝ^length(λ),
         SymmetricLinearSystemObjective(
-            cmo,
             ReducedLagrangianHess(cmo, μ, λ, s),
             NegativeReducedLagrangianGrad(cmo, μ, λ, s, ρ*σ),
         ),
@@ -236,7 +235,6 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     # make deterministic instead of random?
     set_iterate!(ips.sub_state, TpM, rand(TpM))
 
-    # setting paramters below should work, but doesn't
     set_manopt_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
