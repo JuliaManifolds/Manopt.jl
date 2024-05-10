@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * `:reinitialize_direction_update` option for quasi-Newton behavior when the direction is not a descent one. It is now the new default for `QuasiNewtonState`.
+* Quasi-Newton direction update rules are now initialized upon start of the solver with the new internal function `initialize_update!`.
 
 ### Fixed
 
