@@ -538,8 +538,9 @@ export render_asymptote
 #
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange,
-    DebugGradientChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
+export DebugChange,DebugGradientChange
+export DebugIterate, DebugIteration, DebugDivider, DebugTime
+export DebugFeasibility
 export DebugCost, DebugStoppingCriterion
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate

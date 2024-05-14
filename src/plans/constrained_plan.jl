@@ -948,9 +948,9 @@ function (d::DebugFeasibility)(
         (f === :FeasibleEq) && (s *= n_eq == 0 ? "=" : "≠")
         (f === :FeasibleIneq) && (s *= n_ineq == 0 ? "≤" : ">")
         (f === :NumEq) && (s *= "$(n_eq)")
-        (f === :NumEqLz) && (s *= n_eq == 0 ? "" : "$(n_eq)")
+        (f === :NumEqNz) && (s *= n_eq == 0 ? "" : "$(n_eq)")
         (f === :NumIneq) && (s *= "$(n_ineq)")
-        (f === :NumIneqLz) && (s *= n_ineq == 0 ? "" : "$(n_ineq)")
+        (f === :NumIneqNz) && (s *= n_ineq == 0 ? "" : "$(n_ineq)")
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz);init=0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineq_pos;init=0.0))")
     end
