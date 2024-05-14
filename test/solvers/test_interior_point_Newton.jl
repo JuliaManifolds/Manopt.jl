@@ -1,7 +1,7 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
 Random.seed!(42)
-A = Symmetric(rand(3,3))
+A = Symmetric(rand(3, 3))
 # A = [2.0 -1.0 0.0; -1.0 2-0 -1.0; 0.0 -1.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p
@@ -17,7 +17,7 @@ y = sqrt(1 - x^2) * rand()
 z = sqrt(1 - x^2 - y^2)
 
 # p_0 = [x, y, z]
-p_0 = (1.0/(sqrt(3.0))).*[1.0, 1.0, 1.0]
+p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
 
 record = [:Iterate]
 
@@ -31,9 +31,21 @@ res = interior_point_Newton(
     grad_g=grad_g,
     stop=StopAfterIteration(200) | StopWhenChangeLess(1e-6),
     stepsize=ArmijoLinesearch(
-        M, retraction_method=default_retraction_method(M), initial_stepsize=1.0
+        M; retraction_method=default_retraction_method(M), initial_stepsize=1.0
     ),
-    debug=[:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, " ", :GradientNorm, "\n", :Stop],
+    debug=[
+        :Iteration,
+        " | ",
+        :Cost,
+        " | ",
+        :Stepsize,
+        " | ",
+        :Change,
+        " ",
+        :GradientNorm,
+        "\n",
+        :Stop,
+    ],
     record=record,
     return_state=true,
 )

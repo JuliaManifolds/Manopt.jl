@@ -36,10 +36,20 @@ mutable struct InteriorPointState{
         stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         stepsize::Stepsize=ArmijoLinesearch(
-            M; retraction_method=retraction_method, initial_stepsize=1.0),
+            M; retraction_method=retraction_method, initial_stepsize=1.0
+        ),
         kwargs...,
     ) where {P,Pr,St,T,R}
-        ips = new{P,typeof(sub_problem),typeof(sub_state),T,R,typeof(stop),typeof(retraction_method),typeof(stepsize)}()
+        ips = new{
+            P,
+            typeof(sub_problem),
+            typeof(sub_state),
+            T,
+            R,
+            typeof(stop),
+            typeof(retraction_method),
+            typeof(stepsize),
+        }()
         ips.p = p
         ips.sub_problem = sub_problem
         ips.sub_state = sub_state
@@ -97,10 +107,17 @@ end
 # takes M, f, grad_f, Hess_f and possibly constraint functions and their graidents
 function interior_point_Newton(
     M::AbstractManifold,
-    f, grad_f, Hess_f, p;
+    f,
+    grad_f,
+    Hess_f,
+    p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    g=nothing, h=nothing, grad_g=nothing, grad_h=nothing,
-    kwargs...,)
+    g=nothing,
+    h=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    kwargs...,
+)
     q = copy(M, p)
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
     cmo = ConstrainedManifoldObjective(mho, g, grad_g, h, grad_h; evaluation=evaluation)
@@ -111,12 +128,17 @@ end
 # case where dim(M) = 1 and in particular p is a number
 function interior_point_Newton(
     M::AbstractManifold,
-    f, grad_f, Hess_f,
+    f,
+    grad_f,
+    Hess_f,
     p::Number;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    g=nothing, grad_g=nothing, grad_h=nothing, h=nothing,
-    kwargs...,)
-
+    g=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    h=nothing,
+    kwargs...,
+)
     q = [p]
     f_(M, p) = f(M, p[])
 
@@ -148,11 +170,18 @@ end
 # in-place
 # takes M, f, grad_f, Hess_f and possibly constreint functions and their graidents
 function interior_point_Newton!(
-    M::AbstractManifold, f, grad_f, Hess_f, p;
+    M::AbstractManifold,
+    f,
+    grad_f,
+    Hess_f,
+    p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    g=nothing, h=nothing, grad_g=nothing, grad_h=nothing,
-    kwargs...,)
-
+    g=nothing,
+    h=nothing,
+    grad_g=nothing,
+    grad_h=nothing,
+    kwargs...,
+)
     mho = ManifoldHessianObjective(f, grad_f, Hess_f)
     cmo = ConstrainedManifoldObjective(mho, g, grad_g, h, grad_h; evaluation=evaluation)
     dcmo = decorate_objective!(M, cmo; kwargs...)
@@ -166,48 +195,57 @@ function interior_point_Newton!(
     cmo::O,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    X = get_gradient(M, cmo, p),
-    μ = ones(length(get_inequality_constraints(M, cmo, p))),
-    λ = zeros(length(get_equality_constraints(M, cmo, p))),
-    s = μ,
-    ρ = μ's / length(get_inequality_constraints(M, cmo, p)),
-    σ = calculate_σ(M, cmo, p, μ, λ, s),
+    X=get_gradient(M, cmo, p),
+    μ=ones(length(get_inequality_constraints(M, cmo, p))),
+    λ=zeros(length(get_equality_constraints(M, cmo, p))),
+    s=μ,
+    ρ=μ's / length(get_inequality_constraints(M, cmo, p)),
+    σ=calculate_σ(M, cmo, p, μ, λ, s),
     stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     stepsize::Stepsize=ArmijoLinesearch(
-        M; retraction_method=retraction_method, initial_stepsize=1.0),
+        M; retraction_method=retraction_method, initial_stepsize=1.0
+    ),
     sub_kwargs=(;),
-    sub_objective = decorate_objective!(
+    sub_objective=decorate_objective!(
         TangentSpace(M, p) × ℝ^length(λ),
         SymmetricLinearSystemObjective(
             ReducedLagrangianHess(cmo, μ, λ, s),
-            NegativeReducedLagrangianGrad(cmo, μ, λ, s, ρ*σ),
+            NegativeReducedLagrangianGrad(cmo, μ, λ, s, ρ * σ),
         ),
-        sub_kwargs...,),
+        sub_kwargs...,
+    ),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-5),
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         ConjugateResidualState(
-            TangentSpace(M, p),
-            sub_objective;
-            stop = sub_stopping_criterion,
-            sub_kwargs...,);
-        sub_kwargs...,),
-    sub_problem::Union{F, AbstractManoptProblem}=DefaultManoptProblem(
-        TangentSpace(M, p), sub_objective),
+            TangentSpace(M, p), sub_objective; stop=sub_stopping_criterion, sub_kwargs...
+        );
+        sub_kwargs...,
+    ),
+    sub_problem::Union{F,AbstractManoptProblem}=DefaultManoptProblem(
+        TangentSpace(M, p), sub_objective
+    ),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},F}
     !is_feasible(M, cmo, p) && throw(ErrorException("Starting point p must be feasible."))
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
     ips = InteriorPointState(
-        M, cmo, p,
-        sub_problem, sub_state;
-        X=X, μ=μ, λ=λ, s=s,
+        M,
+        cmo,
+        p,
+        sub_problem,
+        sub_state;
+        X=X,
+        μ=μ,
+        λ=λ,
+        s=s,
         stop=stop,
         retraction_method=retraction_method,
         stepsize=stepsize,
-        kwargs...)
+        kwargs...,
+    )
     ips = decorate_state!(ips; kwargs...)
     solve!(dmp, ips)
     return get_solver_return(get_objective(dmp), ips)
@@ -238,20 +276,20 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     set_manopt_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :barrier_param, ips.ρ*ips.σ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :barrier_param, ips.ρ * ips.σ)
 
     Xp, Xλ = get_solver_result(solve!(ips.sub_problem, ips.sub_state)), zeros(n)
 
     Xμ = (ips.μ .* (Jg * Xp .+ g)) ./ ips.s
-    Xs = (ips.ρ*ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
+    Xs = (ips.ρ * ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
 
     α = ips.stepsize(amp, ips, i, Xp)
 
     # update params
-    retract!(M, ips.p, ips.p, α*Xp, ips.retraction_method)
-    ips.μ += α*Xμ
-    ips.λ += α*Xλ
-    ips.s += α*Xs
+    retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
+    ips.μ += α * Xμ
+    ips.λ += α * Xλ
+    ips.s += α * Xs
     ips.ρ = ips.μ'ips.s / m
     ips.σ = calculate_σ(M, cmo, ips.p, ips.μ, ips.λ, ips.s)
 
