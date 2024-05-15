@@ -119,6 +119,7 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, X, p)
         (X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p)))
     return X
 end
+#= TODO Reowrk to new substructre
 # Allocating vector -> omit a few of the inequality gradient evaluations.
 function (
     LG::AugmentedLagrangianGrad{
@@ -170,3 +171,4 @@ function (
     end
     return X
 end
+=#

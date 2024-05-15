@@ -1,43 +1,4 @@
 @doc raw"""
-    AbstractConstraintType
-
-An abstract type to represent different forms of representing constraints
-as well as their gradients.
-"""
-abstract type AbstractConstraintType end
-
-@doc raw"""
-    FunctionConstraint{CT <: AbstractConstraintType}  <: AbstractConstraintType
-
-A type to indicate that constraints are implemented one whole functions,
-for example ``g(p) ∈ ℝ^m``.
-
-For the gradient there are two possible variants available:
-
-* [`PowerManifoldVectorialType`](@ref): ``\operatorname{grad} g\colon \mathcal M \to (T_p\mathcal M)^m``,
-  the gradient returns a vector of gradients, one for each component function of ``g``.
-* `PowerManifoldTangentConstaint`: ``\operatorname{grad} g\colon \mathcal M \to T_P\mathcal M^m``,
-  where ``P = (p,…,p) \in\mathcal M^m``, that is
-  the gradient returns a tangent vector on the power manifold.
-"""
-struct FunctionConstraint{CT<:AbstractVectorialType} <: AbstractConstraintType
-    constraint_type::CT
-end
-
-function FunctionConstraint(
-    power_representation::AbstractPowerRepresentation=NestedPowerRepresentation()
-)
-    return FunctionConstraint(PowerManifoldVectorialType(power_representation))
-end
-
-@doc raw"""
-    VectorConstraint <: AbstractConstraintType
-
-A type to indicate that (some part of) constraints are given as a vector of functions.
-"""
-struct VectorConstraint <: AbstractConstraintType end
-
-@doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C <: ConstraintType} <: AbstractManifoldObjective{T}
 
 Describes the constrained objective
@@ -76,7 +37,6 @@ TODO: Describe constructors
 """
 struct ConstrainedManifoldObjective{
     T<:AbstractEvaluationType,
-    CT<:AbstractConstraintType,
     MO<:AbstractManifoldObjective,
     IMO<:Union{Nothing,AbstractManifoldObjective},
     EMO<:Union{Nothing,AbstractManifoldObjective},
@@ -94,12 +54,12 @@ function ConstrainedManifoldObjective(
     h,
     grad_h;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    constraint::AbstractConstraintType=if all(
+    constraint::AbstractVectorialType=if all(
         isnothing(c) || isa(c, AbstractVector) for c in [g, grad_g, h, grad_h]
     )
         ComponentVectorialType()
     else
-        FunctionConstraint()
+        FunctionVectorialType()
     end,
     kwargs...,
 )
@@ -126,10 +86,8 @@ function ConstrainedManifoldObjective(
     objective::MO;
     equality_constraints::EMO=nothing,
     inequality_constraints::IMO=nothing,
-    constraint_type::ACT=PowerManifoldVectorialType(NestedPowerRepresentation()),
     kwargs...,
 ) where {
-    ACT<:AbstractConstraintType,
     E<:AbstractEvaluationType,
     MO<:AbstractManifoldObjective{E},
     IMO<:AbstractManifoldObjective{E},
@@ -146,6 +104,54 @@ function ConstrainedManifoldObjective(
         objective, equality_constraints, inequality_constraints; constraint=constraint_type
     )
 end
+
+@doc raw"""
+ConstrainedProblem{
+    TM <: AbstractManifold,
+    O <: AbstractManifoldObjective
+    GR <: AbstractManifold
+    HR <: AbstractManifold
+} <: AbstractManoptProblem{TM}
+
+A constrained problem might feature different ranges for the
+(vectors of) gradients of the equality and inequality constraints.
+
+The ranges are required in a few places to allocate memory and access elements
+correctly, they work as follows:
+
+Assume the objective is
+```math
+\begin{aligned}
+ \operatorname*{arg\,min}_{p ∈\mathcal{M}} & f(p)\\
+ \text{subject to } &g_i(p)\leq0 \quad \text{ for all } i=1,…,m,\\
+ \quad &h_j(p)=0 \quad \text{ for all } j=1,…,n.
+\end{aligned}
+```
+
+then the gradients can (classically) be considered as vectors of the
+components gradients, for example
+``\bigl(\operatorname{grad} g_1(p), \operatorname{grad} g_2(p), …, \operatorname{grad} g_m(p) \bigr)``.
+
+In another interpretation, this can be considered a point on the tangent space
+at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref) ``\mathcal M^m``.
+The case where this is a [`NestedPowerRepresentation`](@extref) this agrees with the
+interpretation above, but on power manifolds, more efficient representations exist.
+
+To then access the elements, the range has to be specified. That is what this
+problem is for.
+"""
+struct ConstrainedProblem{
+    TM<:AbstractManifold,
+    O<:AbstractManifoldObjective,
+    GR<:AbstractManifold,
+    HR<:AbstractManifold,
+} <: AbstractManoptProblem{TM}
+    manifold::TM
+    grad_equality_range::GR
+    grad_ineqality_range::HR
+    objective::O
+end
+
 get_objective(co::ConstrainedManifoldObjective) = co.objective
 function get_constraints(mp::AbstractManoptProblem, p)
     return get_constraints(get_manifold(mp), get_objective(mp), p)
@@ -180,14 +186,15 @@ evaluate all equality constraints ``h(p)`` of ``\bigl(h_1(p), h_2(p),\ldots,h_p(
 of the [`ConstrainedManifoldObjective`](@ref) ``P`` at ``p``.
 """
 get_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
+#= TODO: Pass down to vectorials
 function get_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{T,FunctionConstraint}, p
+    M::AbstractManifold, co::ConstrainedManifoldObjective{T}, p
 ) where {T<:AbstractEvaluationType}
     return co.h(M, p)
 end
 function get_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective{T,VectorConstraint}, p
-) where {T<:AbstractEvaluationType}
+    M::AbstractManifold, co::ConstrainedManifoldObjective, p
+) where
     return [hj(M, p) for hj in co.h]
 end
 function get_equality_constraints(
@@ -199,6 +206,7 @@ end
 function get_equality_constraint(mp::AbstractManoptProblem, p, j)
     return get_equality_constraint(get_manifold(mp), get_objective(mp), p, j)
 end
+=#
 @doc raw"""
     get_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j)
 
@@ -208,6 +216,7 @@ evaluate the `j`th equality constraint ``(h(p))_j`` or ``h_j(p)``.
     For the [`FunctionConstraint`](@ref) representation this still evaluates all constraints.
 """
 get_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j)
+#=
 function get_equality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective{T,FunctionConstraint}, p, j
 ) where {T<:AbstractEvaluationType}
@@ -237,6 +246,7 @@ end
 function get_inequality_constraints(mp::AbstractManoptProblem, p)
     return get_inequality_constraints(get_manifold(mp), get_objective(mp), p)
 end
+=#
 @doc raw"""
     get_inequality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
 
@@ -244,7 +254,7 @@ Evaluate all inequality constraints ``g(p)`` or ``\bigl(g_1(p), g_2(p),\ldots,g_
 of the [`ConstrainedManifoldObjective`](@ref) ``P`` at ``p``.
 """
 get_inequality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
-
+#=
 function get_inequality_constraints(
     M::AbstractManifold, co::ConstrainedManifoldObjective{T,FunctionConstraint}, p
 ) where {T<:AbstractEvaluationType}
@@ -265,6 +275,7 @@ end
 function get_inequality_constraint(mp::AbstractManoptProblem, p, i)
     return get_inequality_constraint(get_manifold(mp), get_objective(mp), p, i)
 end
+=#
 @doc raw"""
     get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i)
 
@@ -274,6 +285,8 @@ evaluate one equality constraint ``(g(p))_i`` or ``g_i(p)``.
     For the [`FunctionConstraint`](@ref) representation this still evaluates all constraints.
 """
 get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i)
+
+#=
 function get_inequality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective{T,FunctionConstraint}, p, i
 ) where {T<:AbstractEvaluationType}
@@ -293,6 +306,7 @@ end
 function get_grad_equality_constraint(mp::AbstractManoptProblem, p, j)
     return get_grad_equality_constraint(get_manifold(mp), get_objective(mp), p, j)
 end
+=#
 @doc raw"""
     get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j)
 
@@ -304,6 +318,7 @@ evaluate the gradient of the `j` th equality constraint ``(\operatorname{grad} h
     since this is the only way to determine the number of constraints. It also allocates a full tangent vector.
 """
 get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j)
+#=
 function get_grad_equality_constraint(
     M::AbstractManifold,
     co::ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint},
@@ -349,6 +364,7 @@ end
 function get_grad_equality_constraint!(mp::AbstractManoptProblem, X, p, j)
     return get_grad_equality_constraint!(get_manifold(mp), X, get_objective(mp), p, j)
 end
+=#
 @doc raw"""
     get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j)
 
@@ -362,6 +378,7 @@ Evaluate the gradient of the `j`th equality constraint ``(\operatorname{grad} h(
 get_grad_equality_constraint!(
     M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j
 )
+#=
 function get_grad_equality_constraint!(
     M::AbstractManifold,
     X,
@@ -413,6 +430,7 @@ end
 function get_grad_equality_constraints(mp::AbstractManoptProblem, p)
     return get_grad_equality_constraints(get_manifold(mp), get_objective(mp), p)
 end
+=#
 @doc raw"""
     get_grad_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
 
@@ -425,6 +443,7 @@ of the [`ConstrainedManifoldObjective`](@ref) `P` at `p`.
     since this is the only way to determine the number of constraints.
 """
 get_grad_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
+#=
 function get_grad_equality_constraints(
     M::AbstractManifold,
     co::ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint},
@@ -466,6 +485,7 @@ end
 function get_grad_equality_constraints!(mp::AbstractManoptProblem, X, p)
     return get_grad_equality_constraints!(get_manifold(mp), X, get_objective(mp), p)
 end
+
 @doc raw"""
     get_grad_equality_constraints!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p)
 
@@ -761,3 +781,4 @@ function Base.show(
 ) where {E<:AbstractEvaluationType,V}
     return print(io, "ConstrainedManifoldObjective{$E,$V}.")
 end
+=#

@@ -176,6 +176,7 @@ function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
     return X
 end
 # Variant 2: vectors of allocating gradients
+#= TODO: Rework to easier access with substructures
 function (
     EG::ExactPenaltyGrad{
         <:LinearQuadraticHuber,
@@ -237,3 +238,4 @@ function (
     end
     return X
 end
+=#
