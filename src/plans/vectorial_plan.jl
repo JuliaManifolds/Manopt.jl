@@ -482,6 +482,9 @@ function get_gradient!(
     return copyto!(M, X, p, x[range, i])
 end
 
+#
+#
+# Maybe something for a bit later when we know that the approach above works just fine.
 function get_jacobian end
 
 @doc raw"""
