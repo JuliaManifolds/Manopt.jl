@@ -211,10 +211,10 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         # passthrough to inner
         set_manopt_parameter!(rwa, :test, 1)
         @test !rwa.active
-        # check inactive
+        # test inactive
         rwa(dmp, gds, 2)
         @test length(get_record(rwa)) == 1 # updated, but not cleared
-        # check always update
+        # test always update
         rwa(dmp, gds, -1)
         @test length(get_record(rwa)) == 0 # updated, but not cleared
     end

@@ -1,4 +1,4 @@
-# [Convex Bundle Method](@id ConvexBundleMethodSolver)
+# Convex Bundle Method
 
 ```@meta
 CurrentModule = Manopt
@@ -15,13 +15,13 @@ convex_bundle_method!
 ConvexBundleMethodState
 ```
 
-## Stopping Criteria
+## Stopping criteria
 
 ```@docs
 StopWhenLagrangeMultiplierLess
 ```
 
-## Debug Functions
+## Debug functions
 
 ```@docs
 DebugWarnIfLagrangeMultiplierIncreases

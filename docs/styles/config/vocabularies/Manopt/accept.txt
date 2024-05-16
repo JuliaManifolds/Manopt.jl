@@ -31,6 +31,7 @@ geodesically
 Geomstats
 Geoopt
 Grassmann
+Griewank
 Hadamard
 Hager
 Heestens

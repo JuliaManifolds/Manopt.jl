@@ -234,7 +234,7 @@ get_grad_inequality_constraints
 get_grad_inequality_constraints!
 ```
 
-### A Vectorial Function
+### A vectorial cost function
 
 ```@docs
 Manopt.VectorGradientFunction

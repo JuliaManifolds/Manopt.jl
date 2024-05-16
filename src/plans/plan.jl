@@ -56,14 +56,14 @@ the optimisation on manifolds is different from the usual “experience” in
 (classical, Euclidean) optimization.
 Any other value has the same effect as not setting it.
 """
-function get_manopt_parameter( # ignore args.
+function get_manopt_parameter(
     e::Symbol,
     args...;
     default=get_manopt_parameter(Val(e), Val(:default)),
 )
     return @load_preference("$(e)", default)
 end
-function get_manopt_parameter( # reduce ambiguity, ignore s and args
+function get_manopt_parameter(
     e::Symbol,
     s::Symbol,
     args...;
