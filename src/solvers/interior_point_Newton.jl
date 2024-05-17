@@ -262,9 +262,12 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     cmo = get_objective(amp)
 
     m, n = length(ips.μ), length(ips.λ)
-    TpM = TangentSpace(M, ips.p)
-    # TqN = TangentSpace(M × ℝ^n, ArrayPartition(ips.p, ips.λ))
-
+    TpM = TangentSpace(M, ips.p) # <. instead of this:
+    # get_manopt_parameter(ips.sub_problem, :Manifold) -> TqN (N = M × R^n × R^n × R^m or reduced)
+    # base_manifold(TpM) ->  N = base_manifold(TpM)
+    # Or say q = get_manopt_parameter(ips.sub_problem, :Manifold, :Basepoint)
+    # q[N,1]
+    # instead of the set below
     g = get_inequality_constraints(amp, ips.p)
     Jg = get_grad_inequality_constraints(amp, ips.p)
 

@@ -28,7 +28,13 @@ function set_manopt_parameter!(
     return nrlg
 end
 
-function (nrlg::NegativeReducedLagrangianGrad)(M::AbstractManifold, p)
+function (nrlg::NegativeReducedLagrangianGrad)(
+    M::AbstractManifold, X, p,
+    )
+    #
+    # N = M × ℝ^n
+    # X[N,1]
+    # X[N,2]
     m, n = length(nrlg.μ), length(nrlg.λ)
     g = get_inequality_constraints(M, nrlg.cmo, p)
     Jg = get_grad_inequality_constraints(M, nrlg.cmo, p)

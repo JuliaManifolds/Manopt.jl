@@ -335,8 +335,8 @@ end
 get_message(a::ArmijoLinesearch) = a.message
 
 @doc raw"""
-    (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p))
-    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
+    (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract, η = -X, f0 = f(p))
+    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract, η = -X, f0 = f(p))
 
 perform a line search
 
