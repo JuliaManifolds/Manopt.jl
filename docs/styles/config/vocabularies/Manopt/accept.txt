@@ -22,6 +22,7 @@ Dornig
 Douglas
 cubic
 elementwise
+Fenchel
 Ferreira
 Frank
 Frobenius

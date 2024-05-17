@@ -6,17 +6,17 @@ CurrentModule = Manopt
 ```
 
 Optimisation problems can be classified with respect to several criteria.
-In the following we provide a grouping of the algorithms with respect to the “information”
-available about your optimisation problem
+The following list of the algorithms is a grouped with respect to the “information”
+available about a optimisation problem
 
 ```math
 \operatorname*{arg\,min}_{p∈\mathbb M} f(p)
 ```
 
-Within the groups we provide short notes on advantages of the individual solvers, pointing our properties the cost ``f`` should have.
-We use 🏅 to indicate state-of-the-art solvers, that usually perform best in their corresponding group and 🫏 for a maybe not so fast, maybe not so state-of-the-art method, that nevertheless gets the job done most reliably.
+Within each group short notes on advantages of the individual solvers, and required properties the cost ``f`` should have, are provided.
+In that list a 🏅 is used to indicate state-of-the-art solvers, that usually perform best in their corresponding group and 🫏 for a maybe not so fast, maybe not so state-of-the-art method, that nevertheless gets the job done most reliably.
 
-## Derivative Free
+## Derivative free
 
 For derivative free only function evaluations of ``f`` are used.
 
@@ -24,7 +24,7 @@ For derivative free only function evaluations of ``f`` are used.
 * [Particle Swarm](particle_swarm.md) 🫏 use the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
 * [CMA-ES](cma_es.md) uses a stochastic evolutionary strategy to perform minimization robust to local minima of the objective.
 
-## First Order
+## First order
 
 ### Gradient
 
@@ -42,7 +42,7 @@ While the subgradient might be set-valued, the function should provide one of th
 * The [Convex Bundle Method](convex_bundle_method.md) (CBM) uses a former collection of sub gradients at the previous iterates and iterate candidates to solve a local approximation to `f` in every iteration by solving a quadratic problem in the tangent space.
 * The [Proximal Bundle Method](proximal_bundle_method.md) works similar to CBM, but solves a proximal map-based problem in every iteration.
 
-## Second Order
+## Second order
 
 * [Adaptive Regularisation with Cubics](adaptive-regularization-with-cubics.md) 🏅 locally builds a cubic model to determine the next descent direction.
 * The [Riemannian Trust-Regions Solver](trust_regions.md) builds a quadratic model within a trust region to determine the next descent direction.
@@ -58,17 +58,18 @@ The following methods require that the splitting, for example into several summa
 
 * [Levenberg-Marquardt](LevenbergMarquardt.md) minimizes the square norm of ``f: \mathcal M→ℝ^d`` provided the gradients of the component functions, or in other words the Jacobian of ``f``.
 * [Stochastic Gradient Descent](stochastic_gradient_descent.md) is based on a splitting of ``f`` into a sum of several components ``f_i`` whose gradients are provided. Steps are performed according to gradients of randomly selected components.
-* The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth aso the gradient exists, and (locally) convex.
+* The [Alternating Gradient Descent](@ref solver-alternating-gradient-descent) alternates gradient descent steps on the components of the product manifold. All these components should be smooth as it is required, that the gradient exists, and is (locally) convex.
 
 ### Nonsmooth
 
 If the gradient does not exist everywhere, that is if the splitting yields summands that are nonsmooth, usually methods based on proximal maps are used.
 
 * The [Chambolle-Pock](ChambollePock.md) algorithm uses a splitting ``f(p) = F(p) + G(Λ(p))``,
-  where ``G`` is defined on a manifold ``\mathcal N`` and we need the proximal map of its Fenchel dual. Both these functions can be non-smooth.
+  where ``G`` is defined on a manifold ``\mathcal N`` and the proximal map of its Fenchel dual is required.
+  Both these functions can be non-smooth.
 * The [Cyclic Proximal Point](cyclic_proximal_point.md) 🫏 uses proximal maps of the functions from splitting ``f`` into summands ``f_i``
-* [Difference of Convex Algorithm](@ref solver-difference-of-convex) (DCA) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; for each of these we require the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
-* [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) uses a splitting of the (nonconvex) function ``f = g - h`` into a difference of two functions; provided the proximal map of ``g`` and the subgradient of ``h``, the next iterate is computed. Compared to DCA, the correpsonding sub problem is here written in a form that yields the proximal map.
+* [Difference of Convex Algorithm](@ref solver-difference-of-convex) (DCA) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; for each of these it is required to have access to the gradient of ``g`` and the subgradient of ``h`` to state a sub problem in every iteration to be solved.
+* [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; provided the proximal map of ``g`` and the subgradient of ``h``, the next iterate is computed. Compared to DCA, the corresponding sub problem is here written in a form that yields the proximal map.
 * [Douglas—Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(x) + G(x)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
 * [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) extends Chambolle-Pock and requires the differentials of the proximal maps additionally.
 

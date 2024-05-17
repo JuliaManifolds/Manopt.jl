@@ -143,8 +143,8 @@ problem is for.
 struct ConstrainedProblem{
     TM<:AbstractManifold,
     O<:AbstractManifoldObjective,
-    GR<:AbstractManifold,
-    HR<:AbstractManifold,
+    GR<:Union{AbstractPowerRepresentation,Nothing},
+    HR<:Union{AbstractPowerRepresentation,Nothing},
 } <: AbstractManoptProblem{TM}
     manifold::TM
     grad_equality_range::GR
@@ -152,21 +152,26 @@ struct ConstrainedProblem{
     objective::O
 end
 
+function ConstrainedProblem(
+    M::TM,
+    objective::O;
+    range=nothing,
+    gradient_equality_range::GR=range,
+    gradient_inequality_range::HR=range,
+) where {
+    TM<:AbstractManifold,
+    O,
+    GR<:Union{AbstractPowerRepresentation,Nothing},
+    HR<:Union{AbstractPowerRepresentation,Nothing},
+}
+    return ConstrainedManifoldObjective{TM,o,GR,HR}(
+        M, gradient_equality_range, gradient_inequality_range, objective
+    )
+end
+
 get_objective(co::ConstrainedManifoldObjective) = co.objective
 function get_constraints(mp::AbstractManoptProblem, p)
     return get_constraints(get_manifold(mp), get_objective(mp), p)
-end
-"""
-    get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
-
-Return the vector ``(g_1(p),...g_m(p),h_1(p),...,h_n(p))`` from the [`ConstrainedManifoldObjective`](@ref) `P`
-containing the values of all constraints at `p`.
-"""
-function get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
-    return [get_inequality_constraints(M, co, p), get_equality_constraints(M, co, p)]
-end
-function get_constraints(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
-    return get_constraints(M, get_objective(admo, false), p)
 end
 
 function get_cost(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
@@ -176,16 +181,6 @@ function get_cost_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_cost_function(co.objective, recursive)
 end
 
-function get_equality_constraints(mp::AbstractManoptProblem, p)
-    return get_equality_constraints(get_manifold(mp), get_objective(mp), p)
-end
-@doc raw"""
-    get_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
-
-evaluate all equality constraints ``h(p)`` of ``\bigl(h_1(p), h_2(p),\ldots,h_p(p)\bigr)``
-of the [`ConstrainedManifoldObjective`](@ref) ``P`` at ``p``.
-"""
-get_equality_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
 #= TODO: Pass down to vectorials
 function get_equality_constraints(
     M::AbstractManifold, co::ConstrainedManifoldObjective{T}, p

@@ -1,4 +1,4 @@
-# Proximal Bundle Method
+# Proximal bundle method
 
 ```@meta
 CurrentModule = Manopt

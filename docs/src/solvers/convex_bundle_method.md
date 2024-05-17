@@ -1,4 +1,4 @@
-# Convex Bundle Method
+# Convex bundle method
 
 ```@meta
 CurrentModule = Manopt
