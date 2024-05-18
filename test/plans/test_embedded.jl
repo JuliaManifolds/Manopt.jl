@@ -51,11 +51,11 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         for eco in [eco1, eco2, eco3, eco4]
             @testset "$(split(repr(eco), " ")[1])" begin
                 @test get_constraints(M, eco, p) == [[f(E, p)], [f(E, p)]]
-                @test get_equality_constraints(M, eco, p) == [f(E, p)]
+                @test get_equality_constraint(M, eco, p, :) == [f(E, p)]
                 @test get_equality_constraint(M, eco, p, 1) == f(E, p)
-                @test get_inequality_constraints(M, eco, p) == [f(E, p)]
+                @test get_inequality_constraint(M, eco, p, :) == [f(E, p)]
                 @test get_inequality_constraint(M, eco, p, 1) == f(E, p)
-                @test get_grad_equality_constraints(M, eco, p) == [grad_f(M, p)]
+                @test get_grad_equality_constraint(M, eco, p, :) == [grad_f(M, p)]
                 Z = [zero_vector(M, p)]
                 get_grad_equality_constraints!(M, Z, eco, p)
                 @test Z == [grad_f(M, p)]

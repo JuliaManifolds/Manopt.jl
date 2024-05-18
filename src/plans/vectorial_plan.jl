@@ -111,7 +111,7 @@ struct VectorGradientFunction{
     F,
     J,
     I<:Integer,
-} # <: AbstractManifoldObjective{E} # maybe not?
+} <: Function
     costs!!::F
     cost_type::FT
     jacobian!!::J
@@ -129,7 +129,7 @@ function VectorGradientFunction(
 ) where {
     I,F,J,E<:AbstractEvaluationType,FT<:AbstractVectorialType,JT<:AbstractVectorialType
 }
-    return VectorGradientFunction{E,F,FT,J,JT,I}(
+    return VectorGradientFunction{E,FT,JT,F,J,I}(
         f, function_type, Jf, jacobian_type, range_dimension
     )
 end
@@ -161,7 +161,7 @@ function get_cost(
     return vgf.costs!!(M, p)[i]
 end
 function get_cost(
-    M,
+    M::AbstractManifold,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType},
     p,
     i::Integer,
@@ -308,11 +308,28 @@ function get_gradient!(
     vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
-    for (j, f) in zip(j, vgf.jacobian!![i])
+    for (j, f) in zip(i, vgf.jacobian!![i])
+        copyto!(M, X[pM, j], p, f(M, p))
+    end
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
+    p,
+    i::Colon,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT}
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    println(pM)
+    for (j, f) in enumerate(vgf.jacobian!!)
+        print(j, " - ", f, " | ", X)
         copyto!(M, X[pM, j], p, f(M, p))
     end
     return X
