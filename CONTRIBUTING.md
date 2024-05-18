@@ -32,7 +32,7 @@ If you found a bug or want to propose a feature, please open an issue in within 
 ### Add a missing method
 
 There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
-If you notice a method missing and can contribute an implementation, please do so, and the maintainers will try help with the necessary details.
+If you notice a method missing and can contribute an implementation, please do so, and the maintainers try help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm

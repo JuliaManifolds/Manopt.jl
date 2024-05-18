@@ -13,7 +13,7 @@ Describes the constrained objective
 # Fields
 
 * `objective`: an [`AbstractManifoldObjective`](@ref) representing the unconstrained
-  objective, that is contatining cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
+  objective, that is containing cost ``f``, the gradient of the cost ``f`` and maybe the Hessian.
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
 ``h: \mathcal M → \mathbb R^n`` also possibly containing its gradient and/or Hessian
 * `equality_constraints`: an [`AbstractManifoldObjective`](@ref) representing the equality constraints
@@ -45,7 +45,7 @@ struct ConstrainedManifoldObjective{
     inequality_constrinats::IMO
     equality_constraints::EMO
 end
-# Generic f, grad_f -> pass on to new constructor
+# Generic `f`, `grad_f` -> pass on to new constructor
 function ConstrainedManifoldObjective(
     f,
     grad_f,
@@ -106,12 +106,12 @@ function ConstrainedManifoldObjective(
 end
 
 @doc raw"""
-ConstrainedProblem{
-    TM <: AbstractManifold,
-    O <: AbstractManifoldObjective
-    GR <: AbstractManifold
-    HR <: AbstractManifold
-} <: AbstractManoptProblem{TM}
+    ConstrainedProblem{
+        TM <: AbstractManifold,
+        O <: AbstractManifoldObjective
+        GR <: AbstractManifold
+        HR <: AbstractManifold
+    } <: AbstractManoptProblem{TM}
 
 A constrained problem might feature different ranges for the
 (vectors of) gradients of the equality and inequality constraints.
@@ -135,7 +135,7 @@ components gradients, for example
 In another interpretation, this can be considered a point on the tangent space
 at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref) ``\mathcal M^m``.
 The case where this is a [`NestedPowerRepresentation`](@extref) this agrees with the
-interpretation above, but on power manifolds, more efficient representations exist.
+interpretation from before, but on power manifolds, more efficient representations exist.
 
 To then access the elements, the range has to be specified. That is what this
 problem is for.
@@ -181,7 +181,7 @@ function get_cost_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_cost_function(co.objective, recursive)
 end
 
-#= TODO: Pass down to vectorials
+#= TODO: pass down to vectorials
 function get_equality_constraints(
     M::AbstractManifold, co::ConstrainedManifoldObjective{T}, p
 ) where {T<:AbstractEvaluationType}

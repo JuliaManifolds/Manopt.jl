@@ -1110,17 +1110,14 @@ DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
 ```
 DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
 ```
-
 """
 function DebugFactory(a::Vector{<:Any})
-    # filter out :Iteration defaults
-    # filter numbers & stop & pairs (pairs handles separately, numbers at the end)
     iter_entries = filter(
         x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
     )
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
-    # Push this to the :Iteration if that exists or add that pair
+    # Push this to the `:Iteration` if that exists or add that pair
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
         iter = popat!(b, i) #

@@ -17,11 +17,14 @@ canonicalization
 canonicalized
 Constantin
 Dai
+deactivatable
 Diepeveen
 Dornig
 Douglas
 cubic
+eigen
 elementwise
+Ehresmann
 Fenchel
 Ferreira
 Frank
@@ -35,10 +38,12 @@ Grassmann
 Griewank
 Hadamard
 Hager
+Hajg
 Heestens
 Hessian
 Iannazzo
 injectivity
+Jasa
 Jax
 JuMP.jl
 kwargs
@@ -66,6 +71,7 @@ nonpositive
 [Pp]arametrising
 Parametrising
 [Pp]ock
+Polyak
 Porcelli
 preconditioner
 preprint

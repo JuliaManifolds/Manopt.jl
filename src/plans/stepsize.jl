@@ -798,7 +798,6 @@ end
 function (ps::PolyakStepsize)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int, args...; kwargs...
 )
-    # We get these by reference, so that should not allocate in general
     M = get_manifold(amp)
     p = get_iterate(ams)
     X = get_subgradient(amp, p)
