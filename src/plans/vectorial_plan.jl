@@ -252,14 +252,22 @@ end
     get_gradient!(M::AbstractManifold, X, vgf::VectorGradientFunction, p, i)
     get_gradient!(M::AbstractManifold, X, vgf::VectorGradientFunction, p, i, range)
 
-Evaluate the gradients of the vector function.
-The `range` is used to specify how the gradients are represented. The default is a
-[`NestedPowerRepresentation`](@reg)
-    Here
-Evaluate and return the `ì``th gradient of the component of ``f``, that is of the
-``i``th component function. If the range is not given, it is assumed to be a nested power manifold
+Evaluate the gradients of the vector function `vgf` on the manifold `M` at `p` and
+the values given in `range`, specifying the representation of the gradients.
+
+Since `i` is assumed to be a linear index, you can provide
+* a single integer
+* a `UnitRange` to specify a range to be returned like `1:3`
+* a `BitVector` specifying a selection
+* a `AbstractVector{<:Integer}` to specify indices
+* `:` to return the vector of all gradients
 """
 get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
+
+_vgf_index_to_length(b::BitVector, n) = sum(b)
+_vgf_index_to_length(::Colon, n) = n
+_vgf_index_to_length(i::AbstractArray{<:Integer}) = length(i)
+_vgf_index_to_length(r::UnitRange{<:Integer}) = lengh(r)
 
 # Generic case, we allocate (a) a single tangent vector
 function get_gradient(
@@ -272,11 +280,26 @@ function get_gradient(
     X = zero_vector(M, p)
     return get_gradient!(M, X, vgf, p, i, range)
 end
+# (b) UnitRange and AbstractVector allow to use length for BitVector its sum
+function get_gradient(
+    M::AbstractManifold,
+    vgf::VectorGradientFunction,
+    p,
+    i, # as long as the length can be found it should work, see _vgf_index_to_length
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+)
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    P = fill(p, pM)
+    X = zero_vector(pM, P)
+    return get_gradient!(M, X, vgf, p, i, range)
+end
+# (c) Special cases where we can skip allocations and/or the power manifold
 function get_gradient(
     M::AbstractManifold,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
     p,
-    i,
+    i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT}
     return vgf.jacobian!![i](M, p)
@@ -286,13 +309,30 @@ function get_gradient(
     X,
     vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
     p,
-    i,
+    i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT}
     X = zero_vector(M, p)
     return vgf.jacobian!![i](M, X, p)
 end
 
+#
+#
+# Part I: Allocation
+# I (a) Internally a Jacobian
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:CoefficientVectorialType},
+    p,
+    i::Integer,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT}
+    pM = PowerManifold(M, range, vgf.range_dimension...)
+    JF = vgf.jacobian!!(M, p)
+    get_vector!(M, X[pM, i], p, JF[i, :]) #convert rows to gradients
+    return X
+end
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -301,10 +341,24 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    P = PowerManifold(M, range, vgf.range_dimension...)
-    JF = vgf.jacobian!!(M, p)
-    get_vector!(M, X[P, i], p, JF[i..., :]) #convert rows to gradients
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    JF = vgf.jacobian!!(M, p)[i, :] #yields a n x d matrix where n is the number of indices
+    for j in 1:n
+        get_vector!(M, X[pM, j], p, JF[j, :])
+    end
     return X
+end
+# I (b) a vector of functions
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
+    p,
+    i::Integer,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
+) where {FT}
+    return copyto!(M, X, p, vgf.jacobian!![i](M, p))
 end
 function get_gradient!(
     M::AbstractManifold,
@@ -314,8 +368,14 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT}
-    return copyto!(M, X, p, vgf.jacobian!![i](M, p))
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    for (j, f) in zip(j, vgf.jacobian!![i])
+        copyto!(M, X[pM, j], p, f(M, p))
+    end
+    return X
 end
+# I (c) A single gradient function
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -324,17 +384,21 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    P = PowerManifold(M, range, vgf.range_dimension...)
-    copyto!(range, X, vgf.jacobian!!(M, p)[P, i])
+    mP = PowerManifold(M, range, vgf.range_dimension...)
+    copyto!(range, X, vgf.jacobian!!(M, p)[mP, i])
     return X
 end
+#
+#
+# Part II: In-place evaluations
+# II (a) Jacobian
 function get_gradient!(
     M::AbstractManifold,
     X,
     vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:CoefficientVectorialType},
     p,
-    i,
-    range=PowerManifold(M, NestedPowerRepresentation(), vgf.range_dimension...),
+    i::Integer,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
     # We could also allocate a nxd matrix, but this might be nicer type wise
     pM = PowerManifold(M, range, vgf.range_dimension...)
@@ -350,12 +414,68 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
+    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:CoefficientVectorialType},
     p,
     i,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT}
+    # We could also allocate a nxd matrix, but this might be nicer type wise
+    pM = PowerManifold(M, range, vgf.range_dimension...)
+    JF = reshape(
+        get_coefficients(pM, fill(p, pM), X, vgf.jacobian_type.basis),
+        power_dimensions(pM)...,
+        :,
+    )
+    vgf.jacobian!!(M, JF, p)
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    JFi = vgf.jacobian!!(M, p)[i, :] #yields a n x d matrix where n is the number of indices
+    for j in 1:n
+        get_vector!(M, X[pM, j], p, JFi[j, :])
+    end
+    return X
+end
+#II (b) a vector of functions
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
+    p,
+    i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT}
     return vgf.jacobian!![i](M, X, p)
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
+    p,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT}
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    for (j, f) in zip(j, vgf.jacobian!![i])
+        f(M, X[pM, j], p)
+    end
+    return X
+end
+# II(c) a sungle function
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
+    p,
+    i::Integer,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT}
+    pM = PowerManifold(M, range, vgf.range_dimension...)
+    P = fill(p, pM)
+    x = zero_vector(pM, P)
+    vgf.jacobian!!(M, x, p)
+    copyto!(M, X, p, x[mP, i])
+    return X
 end
 function get_gradient!(
     M::AbstractManifold,
@@ -366,126 +486,21 @@ function get_gradient!(
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
     #Singel access for function is a bit expensive
-    pM = PowerManifold(M, range, vgf.range_dimension...)
-    P = fill(p, pM)
-    x = zero_vector(pM, P)
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM_out = PowerManifold(M, range, n)
+    pM_temp = PowerManifold(M, range, vgf.range_dimension...)
+    P = fill(p, pM_temp)
+    x = zero_vector(pM_temp, P)
     vgf.jacobian!!(M, x, p)
-    return copyto!(M, X, p, x[mP, i])
+    # Luckily all documented access functions work directly on x[pM_temp,...]
+    copyto!(pM_out, X, P[pM_temp, i], x[pM_temp, i])
+    return X
 end
-
 #
 #
-# get_gradient with colon -> get all
+# TODO: Jacobian Evaluations
+# TODO: Maybe generate Jacobian from Gradients?
 
-function get_gradient(
-    M::AbstractManifold,
-    vgf::VectorGradientFunction,
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-)
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    P = fill(p, mP)
-    X = zero_vector(mP, P)
-    return get_gradients!(M, X, vgf, p, range)
-end
-function get_gradient(
-    M::AbstractManifold,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT}
-    return vgf.jacobian!!(M, p) # Returns an element on the power manifold anyways
-end
-
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:CoefficientVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
-    JF = vgf.jacobian!!(M, p)
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    for i in get_iterator(mP)
-        get_vector!(M, X[mP, i], p, JF[i..., :]) #convert rows to gradients
-    end
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    for i in get_iterator(mP)
-        X[mP, i] = vgf.jacobian!!(M, p)
-    end
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    copyto!(mP, X, vgf.jacobian!!(M, p))
-    return X
-end
-
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:CoefficientVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    # We could also allocate a nxd matrix, but this might be nicer type wise
-    JF = reshape(
-        get_coefficients(range, fill(range, p), X, vgf.jacobian_type.basis),
-        power_dimensions(range)...,
-        :,
-    )
-    vgf.jacobian!!(M, JF, p)
-    for i in get_iterator(range)
-        get_vector!(M, X[range, i], p, JF[i..., :]) #convert rows to gradients
-    end
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    for i in ManifoldsBase.get_iterator(mP)
-        vgf.jacobian!![i](M, X[range, i], p)
-    end
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
-    p,
-    ::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT}
-    return vgf.jacobian!!(M, X, p)
-end
 #
 #
 # Maybe something for a bit later when we know that the approach above works just fine.
