@@ -327,9 +327,7 @@ function get_gradient!(
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
-    println(pM)
     for (j, f) in enumerate(vgf.jacobian!!)
-        print(j, " - ", f, " | ", X)
         copyto!(M, X[pM, j], p, f(M, p))
     end
     return X
