@@ -135,114 +135,56 @@ function VectorGradientFunction(
 end
 
 @doc raw"""
-    get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
+    get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
 
-Evaluate the ``i``th component of the cost.
-Note that for some types, this might still mean, that the whole vector os costs ahs to be evaluated.
+Evaluate the ``i``th component or components of the [`VectorGradientFunction`](@ref)
+cost at `p`. The `range` can be used to speficy a potential range.
+This is currently ignored, but kept for consistency with the gradient acces functions.
+
+Since `i` is assumed to be a linear index, you can provide
+
+* a single integer
+* a `UnitRange` to specify a range to be returned like `1:3`
+* a `BitVector` specifying a selection
+* a `AbstractVector{<:Integer}` to specify indices
+* `:` to return the vector of all gradients
+
 """
-get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
+get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
 function get_cost(
     M::AbstractManifold,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,<:FunctionVectorialType},
     p,
     i,
+    range=nothing,
 )
     return vgf.costs!!(M, p)[i]
 end
 function get_cost(
-    M, vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType}, p
+    M,
+    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType},
+    p,
+    i::Integer,
+    range=nothing,
 )
     return vgf.costs!![i](M, p)
 end
 function get_cost(
     M::AbstractManifold,
-    vgf::VectorGradientFunction{<:InplaceEvaluation,<:FunctionVectorialType},
-    p,
-)
-    x = zeros(vgf.range_dimension)
-    get_costs(M, x, vgf, p)
-    return x[i]
-end
-
-function get_costs end
-
-@doc raw"""
-    get_costs(M, vgf::VectorGradientFunction, p, range=nothing)
-    get_costs!(M, x, vgf::VectorGradientFunction, p, range=nothing)
-
-Evaluate the function ``f: \mathcal M → \mathbb R^n`` stored in the [`VectorGradientFunction`](@ref) `vgf` at `p`.
-This can also be done in place of `x`.
-
-The last optional argument `range` is provided for consistency with the other access
-functions of the [`VectorGradientFunction`](@ref). For now the only assumed
-range is a vector.
-"""
-get_costs(M::AbstractManifold, vgf::VectorGradientFunction, p, range=nothing)
-
-function get_costs(
-    M::AbstractManifold,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:FunctionVectorialType},
-    p,
-    range=nothing,
-)
-    return vgf.costs!!(M, p)
-end
-function get_costs(
-    M,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType},
     p,
+    i,
     range=nothing,
 )
-    return [fi(M, p) for fi in vgf.costs!!]
+    return [f(M, p) for f in vgf.costs!![i]]
 end
-function get_costs(
-    M::AbstractManifold, vgf::VectorGradientFunction{<:InplaceEvaluation}, p, range=nothing
-)
-    x = zeros(vgf.range_dimension)
-    return get_costs!(M, x, vgf, p, range)
-end
-
-function get_costs!(
-    M::AbstractManifold,
-    x,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:FunctionVectorialType},
-    p,
-    range=nothing,
-)
-    x .= vgf.costs!!(M, p)
-    return x
-end
-function get_costs!(
-    M,
-    x,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType},
-    p,
-    range=nothing,
-)
-    for (xi, fi) in zip(x, vgf.costs)
-        xi = fi(M, p)
-    end
-    return x
-end
-function get_costs!(
-    M::AbstractManifold,
-    x,
-    vgf::VectorGradientFunction{<:InplaceEvaluation,<:FunctionVectorialType},
-    p,
-    range=nothing,
-)
-    return vgf.costs(M, x, p)
-end
-# does vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType}
-# make sense at all, the components would return floats (immutables) so probably not
 
 @doc raw"""
-    get_costs_function(vgf::VectorGradientFunction, recursive=false)
+    get_cost_function(vgf::VectorGradientFunction, recursive=false)
 
-return the internally stored costs function.
-Note the additional _s_ compared to the usual [`get_cost_function`](@ref).
+return the internally stored cost function.
 """
-function get_costs_function(vgf::VectorGradientFunction, recursive=false)
+function get_cost_function(vgf::VectorGradientFunction, recursive=false)
     return vgf.costs!!
 end
 

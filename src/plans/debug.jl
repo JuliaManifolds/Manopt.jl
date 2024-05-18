@@ -1136,7 +1136,7 @@ function DebugFactory(a::Vector{<:Any})
         end
     end
     dictionary = Dict{Symbol,DebugAction}()
-    # Look for a global numner -> DebugEvery
+    # Look for a global number -> DebugEvery
     e = filter(x -> isa(x, Int), a)
     ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
