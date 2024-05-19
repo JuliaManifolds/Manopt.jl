@@ -216,7 +216,7 @@ function get_gradient(
     M::AbstractManifold,
     vgf::VectorGradientFunction,
     p,
-    i::Int,
+    i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 )
     X = zero_vector(M, p)

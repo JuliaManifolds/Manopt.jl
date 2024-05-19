@@ -57,13 +57,13 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test get_inequality_constraint(M, eco, p, 1) == f(E, p)
                 @test get_grad_equality_constraint(M, eco, p, :) == [grad_f(M, p)]
                 Z = [zero_vector(M, p)]
-                get_grad_equality_constraints!(M, Z, eco, p)
+                get_grad_equality_constraint!(M, Z, eco, p, :)
                 @test Z == [grad_f(M, p)]
                 @test get_grad_equality_constraint(M, eco, p, 1) == grad_f(M, p)
                 Y = zero_vector(M, p)
                 get_grad_equality_constraint!(M, Y, eco, p, 1)
                 @test Y == grad_f(M, p)
-                @test get_grad_inequality_constraints(M, eco, p) == [grad_f(M, p)]
+                @test get_grad_inequality_constraint(M, eco, p, :) == [grad_f(M, p)]
                 Z = [zero_vector(M, p)]
                 get_grad_inequality_constraints!(M, Z, eco, p)
                 @test Z == [grad_f(M, p)]

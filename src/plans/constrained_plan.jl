@@ -217,9 +217,17 @@ Base.@deprecate get_equality_constraints(amp::AbstractManoptProblem, p) get_equa
     amp, p, :,
 )
 
+Base.@deprecate get_equality_constraints!(amp::AbstractManoptProblem, X, p) get_equality_constraint!(
+    amp, X, p, :,
+)
+
 Base.@deprecate get_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective, p
+    M::AbstractManifold, co::AbstractManifoldObjective, p
 ) get_equality_constraint(M, co, p, :)
+
+Base.@deprecate get_equality_constraints!(
+    M::AbstractManifold, X, co::AbstractManifoldObjective, p
+) get_equality_constraint!(M, X, co, p, :)
 
 @doc raw"""
     get_equality_constraint(problem, p, j)
@@ -250,7 +258,7 @@ Base.@deprecate get_inequality_constraints(amp::AbstractManoptProblem, p) get_in
     amp, p, :,
 )
 Base.@deprecate get_inequality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective, p
+    M::AbstractManifold, co::AbstractManifoldObjective, p
 ) get_inequality_constraint(M, co, p, :)
 
 @doc raw"""
@@ -385,13 +393,13 @@ Base.@deprecate get_grad_inequality_constraints(mp::AbstractManoptProblem, p) ge
     mp, p, :,
 )
 Base.@deprecate get_grad_inequality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective, p
+    M::AbstractManifold, co::AbstractManifoldObjective, p
 ) get_grad_inequality_constraint(M, co, p, :)
 Base.@deprecate get_grad_inequality_constraints!(mp::AbstractManoptProblem, X, p) get_grad_inequality_constraint!(
     mp, X, p, :,
 )
 Base.@deprecate get_grad_inequality_constraints!(
-    M::AbstractManifold, X, co::ConstrainedManifoldObjective, p
+    M::AbstractManifold, X, co::AbstractManifoldObjective, p
 ) get_grad_inequality_constraint!(M, X, co, p, :)
 
 function get_hessian(M::AbstractManifold, co::ConstrainedManifoldObjective, p, X)
