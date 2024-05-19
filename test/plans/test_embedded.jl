@@ -65,7 +65,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 @test Y == grad_f(M, p)
                 @test get_grad_inequality_constraint(M, eco, p, :) == [grad_f(M, p)]
                 Z = [zero_vector(M, p)]
-                get_grad_inequality_constraints!(M, Z, eco, p)
+                get_grad_inequality_constraint!(M, Z, eco, p, :)
                 @test Z == [grad_f(M, p)]
                 @test get_grad_inequality_constraint(M, eco, p, 1) == grad_f(M, p)
                 get_grad_inequality_constraint!(M, Y, eco, p, 1)
