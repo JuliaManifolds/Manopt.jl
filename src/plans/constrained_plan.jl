@@ -63,7 +63,7 @@ function _number_of_constraints(
     function_type::Union{AbstractVectorialType,Nothing}=nothing,
     jacobian_type::Union{AbstractVectorialType,Nothing}=nothing,
     M::Union{AbstractManifold,Nothing}=nothing,
-    p=nothing,
+    p=isnothing(M) ? nothing : rand(M),
 )
     if !isnothing(g)
         if isa(function_type, ComponentVectorialType) || isa(g, AbstractVector)
