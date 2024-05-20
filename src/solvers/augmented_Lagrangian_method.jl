@@ -286,6 +286,8 @@ function augmented_Lagrangian_method(
         evaluation=evaluation,
         inequality_constrains=inequality_constrains,
         equality_constrains=equality_constrains,
+        M=M,
+        p=p,
     )
     return augmented_Lagrangian_method!(
         M,
@@ -323,7 +325,7 @@ function augmented_Lagrangian_method(
     h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
     grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
     cmo = ConstrainedManifoldObjective(
-        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
+        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation, M=M, p=p
     )
     rs = augmented_Lagrangian_method(M, cmo, q; evaluation=evaluation, kwargs...)
     return (typeof(q) == typeof(rs)) ? rs[] : rs
@@ -366,6 +368,8 @@ function augmented_Lagrangian_method!(
         evaluation=evaluation,
         equality_constrains=equality_constrains,
         inequality_constrains=inequality_constrains,
+        M=M,
+        p=p,
     )
     dcmo = decorate_objective!(M, cmo; kwargs...)
     return augmented_Lagrangian_method!(

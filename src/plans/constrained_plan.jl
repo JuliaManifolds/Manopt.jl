@@ -46,6 +46,16 @@ function _vector_function_type_hint(f)
     (!isnothing(f) && isa(f, AbstractVector)) && return ComponentVectorialType()
     return FunctionVectorialType()
 end
+
+function _val_to_ncons(val)
+    sv = size(val)
+    if sv === ()
+        return 1
+    else
+        return sv[end]
+    end
+end
+
 # Try to estimate the number of constraints
 function _number_of_constraints(
     g,
@@ -69,8 +79,8 @@ function _number_of_constraints(
     if !isnothing(M) && !isnothing(p)
         # For functions on vector representations, the last size is equal to length
         # on array power manifolds, this also yields the number of elements
-        (!isnothing(g)) && (return size(g(M, p))[end])
-        (!isnothing(grad_g)) && (size(grad_g(M, p))[end])
+        (!isnothing(g)) && (return _val_to_ncons(g(M, p)))
+        (!isnothing(grad_g)) && (return _val_to_ncons(grad_g(M, p)))
     end
     return -1
 end
@@ -89,6 +99,8 @@ function ConstrainedManifoldObjective(
     inequality_gradient_type=_vector_function_type_hint(grad_g),
     equality_constraints=-1,
     inequality_constraints=-1,
+    M::Union{AbstractManifold,Nothing}=nothing,
+    p=isnothing(M) ? nothing : rand(M),
     kwargs...,
 )
     objective = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
@@ -98,7 +110,12 @@ function ConstrainedManifoldObjective(
         if equality_constraints < 0
             # try to guess
             equality_constraints = _number_of_constraints(
-                h, grad_h; function_type=equality_type, jacobian_type=equality_gradient_type
+                h,
+                grad_h;
+                function_type=equality_type,
+                jacobian_type=equality_gradient_type,
+                M=M,
+                p=p,
             )
             # if it is still < 0, this can not be used
             (equality_constraints < 0) && error(
@@ -124,6 +141,8 @@ function ConstrainedManifoldObjective(
                 grad_g;
                 function_type=inequality_type,
                 jacobian_type=inequality_gradient_type,
+                M=M,
+                p=p,
             )
             # if it is still < 0, this can not be used
             (inequality_constraints < 0) && error(
@@ -269,11 +288,17 @@ evaluate the equality constraint of a [`ConstrainedManifoldObjective`](@ref) `ob
 """
 function get_equality_constraint end
 
-get_equality_constraint(mp::AbstractManoptProblem, p, j) = get_equality_constraint(mp, p, j)
+function get_equality_constraint(mp::AbstractManoptProblem, p, j)
+    return get_equality_constraint(get_manifold(mp), get_objective(mp), p, j)
+end
 function get_equality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective, p, j
 )
-    return get_cost(M, co.equality_constraints, p, j)
+    if isnothing(co.equality_constraints)
+        return number_eltype(p)[]
+    else
+        return co.equality_constraints(M, p)[j]
+    end
 end
 
 function get_gradient(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
@@ -300,7 +325,7 @@ Base.@deprecate get_inequality_constraints(
 function get_inequality_constraint end
 
 function get_inequality_constraint(mp::AbstractManoptProblem, p, j)
-    return get_equality_constraint(mp, p, j)
+    return get_inequality_constraint(get_manifold(mp), get_objective(mp), p, j)
 end
 function get_inequality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective, p, j

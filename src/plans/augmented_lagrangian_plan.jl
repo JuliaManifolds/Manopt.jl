@@ -116,8 +116,12 @@ function (LG::AugmentedLagrangianGrad)(
     get_gradient!(M, X, LG.co, p)
     if m > 0
         indices = (gp .+ LG.μ ./ LG.ρ) .> 0
-        weights = (gp .* LG.ρ .+ LG.μ)[indices]
-        X .+= sum(weights .* get_grad_inequality_constraint(M, LG.co, p, indices, range))
+        if sum(indices) > 0
+            weights = (gp .* LG.ρ .+ LG.μ)[indices]
+            X .+= sum(
+                weights .* get_grad_inequality_constraint(M, LG.co, p, indices, range)
+            )
+        end
     end
     if n > 0
         X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p, range))

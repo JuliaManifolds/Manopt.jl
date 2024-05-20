@@ -237,6 +237,8 @@ function exact_penalty_method(
         evaluation=evaluation,
         equality_constrains=equality_constrains,
         inequality_constrains=inequality_constrains,
+        M=M,
+        p=p,
     )
     return exact_penalty_method(
         M,
@@ -268,7 +270,7 @@ function exact_penalty_method(
     h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
     grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
     cmo = ConstrainedManifoldObjective(
-        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
+        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation, M=M, p=p
     )
     rs = exact_penalty_method(M, cmo, q; evaluation=evaluation, kwargs...)
     return (typeof(q) == typeof(rs)) ? rs[] : rs
@@ -319,6 +321,8 @@ function exact_penalty_method!(
         evaluation=evaluation,
         equality_constrains=equality_constrains,
         inequality_constrains=inequality_constrains,
+        M=M,
+        p=p,
     )
     return exact_penalty_method!(
         M,

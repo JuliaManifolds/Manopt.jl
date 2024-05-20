@@ -158,7 +158,12 @@ function get_cost(
     i,
     range=nothing,
 )
-    return vgf.costs!!(M, p)[i]
+    c = vgf.costs!!(M, p)
+    if isa(c, Number)
+        return c
+    else
+        return c[i]
+    end
 end
 function get_cost(
     M::AbstractManifold,
@@ -341,8 +346,9 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    mP = PowerManifold(M, range, vgf.range_dimension...)
-    copyto!(range, X, vgf.jacobian!!(M, p)[mP, i])
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    mP = PowerManifold(M, range, n)
+    copyto!(mP, X, vgf.jacobian!!(M, p)[mP, i])
     return X
 end
 #
