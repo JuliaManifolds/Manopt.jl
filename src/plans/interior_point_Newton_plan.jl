@@ -28,9 +28,7 @@ function set_manopt_parameter!(
     return nrlg
 end
 
-function (nrlg::NegativeReducedLagrangianGrad)(
-    M::AbstractManifold, X, p,
-    )
+function (nrlg::NegativeReducedLagrangianGrad)(M::AbstractManifold, X, p)
     #
     # N = M × ℝ^n
     # X[N,1]
