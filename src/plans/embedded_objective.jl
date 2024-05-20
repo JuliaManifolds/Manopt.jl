@@ -207,20 +207,9 @@ before calling the constraint functions stored in the [`EmbeddedManifoldObjectiv
 function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
     return [
-        get_inequality_constraints(M, emo.objective, q),
-        get_equality_constraints(M, emo.objective, q),
+        get_inequality_constraint(M, emo.objective, q, :),
+        get_equality_constraint(M, emo.objective, q, :),
     ]
-end
-@doc raw"""
-    get_equality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-
-Evaluate all equality constraints ``h(p)`` of ``\bigl(h_1(p), h_2(p),\ldots,h_p(p)\bigr)``
-defined in the embedding, that is embed `p`
-before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
-"""
-function get_equality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-    q = local_embed!(M, emo, p)
-    return get_equality_constraints(M, emo.objective, q)
 end
 @doc raw"""
     get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
@@ -232,18 +221,6 @@ function get_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjec
     q = local_embed!(M, emo, p)
     return get_equality_constraint(M, emo.objective, q, j)
 end
-@doc raw"""
-    get_inequality_constraints(M::AbstractManifold, ems::EmbeddedManifoldObjective, p)
-
-Evaluate all inequality constraints ``g(p)`` of ``\bigl(g_1(p), g_2(p),\ldots,g_m(p)\bigr)``
-defined in the embedding, that is embed `p`
-before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
-"""
-function get_inequality_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
-    q = local_embed!(M, emo, p)
-    return get_inequality_constraints(M, emo.objective, q)
-end
-
 @doc raw"""
     get_inequality_constraint(M::AbstractManifold, ems::EmbeddedManifoldObjective, p, i)
 

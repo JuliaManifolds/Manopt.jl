@@ -36,15 +36,43 @@ Describes the constrained objective
 TODO: Describe constructors
 """
 struct ConstrainedManifoldObjective{
-    T<:AbstractEvaluationType,MO<:AbstractManifoldObjective,IMO,EMO
+    T<:AbstractEvaluationType,MO<:AbstractManifoldObjective,EMO,IMO
 } <: AbstractManifoldObjective{T}
     objective::MO
-    inequality_constraints::IMO
     equality_constraints::EMO
+    inequality_constraints::IMO
 end
 function _vector_function_type_hint(f)
     (!isnothing(f) && isa(f, AbstractVector)) && return ComponentVectorialType()
     return FunctionVectorialType()
+end
+# Try to estimate the number of constraints
+function _number_of_constraints(
+    g,
+    grad_g;
+    function_type::Union{AbstractVectorialType,Nothing}=nothing,
+    jacobian_type::Union{AbstractVectorialType,Nothing}=nothing,
+    M::Union{AbstractManifold,Nothing}=nothing,
+    p=nothing,
+)
+    if !isnothing(g)
+        if isa(function_type, ComponentVectorialType) || isa(g, AbstractVector)
+            return length(g)
+        end
+    end
+    if !isnothing(grad_g)
+        if isa(jacobian_type, ComponentVectorialType) || isa(grad_g, AbstractVector)
+            return length(grad_g)
+        end
+    end
+    # These are more expensive, since they evaluate and hence allocate
+    if !isnothing(M) && !isnothing(p)
+        # For functions on vector representations, the last size is equal to length
+        # on array power manifolds, this also yields the number of elements
+        (!isnothing(g)) && (return size(g(M, p))[end])
+        (!isnothing(grad_g)) && (size(grad_g(M, p))[end])
+    end
+    return -1
 end
 
 function ConstrainedManifoldObjective(
@@ -64,43 +92,47 @@ function ConstrainedManifoldObjective(
     kwargs...,
 )
     objective = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    if isnothing(g) || isnothing(grad_g)
+    if isnothing(h) || isnothing(grad_h)
         eq = nothing
     else
         if equality_constraints < 0
-            isa(equality_type, ComponentVectorialType) && (equality_constraints = length(h))
-            isa(equality_gradient_type, ComponentVectorialType) &&
-                (equality_constraints = length(grad_h))
+            # try to guess
+            equality_constraints = _number_of_constraints(
+                h, grad_h; function_type=equality_type, jacobian_type=equality_gradient_type
+            )
             # if it is still < 0, this can not be used
             (equality_constraints < 0) && error(
                 "Please specify a positive number of `equality_constraints` (provided $(equality_constraints))",
             )
         end
         eq = VectorGradientFunction(
-            g,
-            grad_g,
+            h,
+            grad_h,
             equality_constraints;
             evaluation=evaluation,
             function_type=equality_type,
             jacobian_type=equality_gradient_type,
         )
     end
-    if isnothing(h) || isnothing(grad_h)
+    if isnothing(g) || isnothing(grad_g)
         ineq = nothing
     else
         if inequality_constraints < 0
-            isa(inequality_type, ComponentVectorialType) &&
-                (inequality_constraints = length(g))
-            isa(inequality_gradient_type, ComponentVectorialType) &&
-                (inequality_constraints = length(grad_g))
+            # try to guess
+            inequality_constraints = _number_of_constraints(
+                g,
+                grad_g;
+                function_type=inequality_type,
+                jacobian_type=inequality_gradient_type,
+            )
             # if it is still < 0, this can not be used
             (inequality_constraints < 0) && error(
                 "Please specify a positive number of `inequality_constraints` (provided $(inequality_constraints))",
             )
         end
         ineq = VectorGradientFunction(
-            h,
-            grad_h,
+            g,
+            grad_g,
             inequality_constraints;
             evaluation=evaluation,
             function_type=inequality_type,
@@ -124,7 +156,7 @@ function ConstrainedManifoldObjective(
         and only work on the unconstrained objective instead.
         """
     end
-    return ConstrainedManifoldObjective{E,MO,IMO,EMO}(
+    return ConstrainedManifoldObjective{E,MO,EMO,IMO}(
         objective, equality_constraints, inequality_constraints
     )
 end
@@ -167,12 +199,12 @@ problem is for.
 struct ConstrainedManoptProblem{
     TM<:AbstractManifold,
     O<:AbstractManifoldObjective,
-    GR<:Union{AbstractPowerRepresentation,Nothing},
     HR<:Union{AbstractPowerRepresentation,Nothing},
+    GR<:Union{AbstractPowerRepresentation,Nothing},
 } <: AbstractManoptProblem{TM}
     manifold::TM
-    grad_equality_range::GR
-    grad_ineqality_range::HR
+    grad_equality_range::HR
+    grad_ineqality_range::GR
     objective::O
 end
 
@@ -180,15 +212,15 @@ function ConstrainedManoptProblem(
     M::TM,
     objective::O;
     range=NestedPowerRepresentation(),
-    gradient_equality_range::GR=range,
-    gradient_inequality_range::HR=range,
+    gradient_equality_range::HR=range,
+    gradient_inequality_range::GR=range,
 ) where {
     TM<:AbstractManifold,
     O,
     GR<:Union{AbstractPowerRepresentation,Nothing},
     HR<:Union{AbstractPowerRepresentation,Nothing},
 }
-    return ConstrainedManifoldObjective{TM,o,GR,HR}(
+    return ConstrainedManifoldObjective{TM,o,HR,GR}(
         M, gradient_equality_range, gradient_inequality_range, objective
     )
 end

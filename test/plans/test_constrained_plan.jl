@@ -34,12 +34,29 @@ include("../utils/dummy_types.jl")
     end
     grad_h1(M, p) = [0.0, 0.0, 2.0]
     grad_h1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
-    cofa = ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h)
+    cofa = ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; inequality_constraints=2, equality_constraints=1
+    )
     cofm = ConstrainedManifoldObjective(
-        f, grad_f!, g, grad_g!, h, grad_h!; evaluation=InplaceEvaluation()
+        f,
+        grad_f!,
+        g,
+        grad_g!,
+        h,
+        grad_h!;
+        evaluation=InplaceEvaluation(),
+        inequality_constraints=2,
+        equality_constraints=1,
     )
     cova = ConstrainedManifoldObjective(
-        f, grad_f, [g1, g2], [grad_g1, grad_g2], [h1], [grad_h1]
+        f,
+        grad_f,
+        [g1, g2],
+        [grad_g1, grad_g2],
+        [h1],
+        [grad_h1];
+        inequality_constraints=2,
+        equality_constraints=1,
     )
     covm = ConstrainedManifoldObjective(
         f,
@@ -49,6 +66,8 @@ include("../utils/dummy_types.jl")
         [h1],
         [grad_h1!];
         evaluation=InplaceEvaluation(),
+        inequality_constraints=2,
+        equality_constraints=1,
     )
     @test repr(cofa) ===
         "ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint}."

@@ -265,13 +265,37 @@ function augmented_Lagrangian_method(
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
+    inequality_constrains=-1,
+    equality_constrains=-1,
     kwargs...,
 ) where {TF,TGF}
     q = copy(M, p)
+    if inequality_constrains == -1
+        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    end
+    if equality_constrains == -1
+        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    end
     cmo = ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+        f,
+        grad_f,
+        g,
+        grad_g,
+        h,
+        grad_h;
+        evaluation=evaluation,
+        inequality_constrains=inequality_constrains,
+        equality_constrains=equality_constrains,
     )
-    return augmented_Lagrangian_method!(M, cmo, q; evaluation=evaluation, kwargs...)
+    return augmented_Lagrangian_method!(
+        M,
+        cmo,
+        q;
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
+        kwargs...,
+    )
 end
 function augmented_Lagrangian_method(
     M::AbstractManifold, cmo::O, p=rand(M); kwargs...
@@ -322,13 +346,37 @@ function augmented_Lagrangian_method!(
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
+    inequality_constrains=-1,
+    equality_constrains=-1,
     kwargs...,
 ) where {TF,TGF}
+    if inequality_constrains == -1
+        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    end
+    if equality_constrains == -1
+        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    end
     cmo = ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+        f,
+        grad_f,
+        g,
+        grad_g,
+        h,
+        grad_h;
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
     )
     dcmo = decorate_objective!(M, cmo; kwargs...)
-    return augmented_Lagrangian_method!(M, dcmo, p; evaluation=evaluation, kwargs...)
+    return augmented_Lagrangian_method!(
+        M,
+        dcmo,
+        p;
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
+        kwargs...,
+    )
 end
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
