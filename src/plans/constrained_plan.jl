@@ -179,6 +179,11 @@ function ConstrainedManifoldObjective(
         objective, equality_constraints, inequality_constraints
     )
 end
+function ConstrainedManifoldObjective(
+    f, grad_f; g=nothing, grad_g=nothing, h=nothing, grad_h=nothing, kwargs...
+)
+    return ConstrainedManifoldObjective(f, grad_f, g, grad_g, h, grad_h; kwargs...)
+end
 
 @doc raw"""
     ConstrainedProblem{
