@@ -359,7 +359,7 @@ function get_gradient!(
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
     mP = PowerManifold(M, range, vgf.range_dimension)
-    copyto!(mP, X, vgf.jacobian!!(M, p)[mP, i])
+    copyto!(M, X, p, vgf.jacobian!!(M, p)[mP, i])
     return X
 end
 #

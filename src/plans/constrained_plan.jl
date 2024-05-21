@@ -169,11 +169,14 @@ function ConstrainedManifoldObjective(
     kwargs...,
 ) where {E<:AbstractEvaluationType,MO<:AbstractManifoldObjective{E},IMO,EMO}
     if isnothing(equality_constraints) && isnothing(inequality_constraints)
-        @warn """
+        throw(ErrorException("""
         Neither the inequality and the equality constraints are provided.
-        Consider calling `get_objective()` on this constraint objective
-        and only work on the unconstrained objective instead.
-        """
+        You can not generate a `ConstrainedManifoldObjective` without actual
+        constraints.
+
+        If you do not have any constraints, you could also take the `objective`
+        (probably `f` and `grad_f`) and work with an unconstrained solver.
+        """))
     end
     return ConstrainedManifoldObjective{E,MO,EMO,IMO}(
         objective, equality_constraints, inequality_constraints
@@ -260,6 +263,13 @@ function get_constraints(mp::AbstractManoptProblem, p)
         get_inequality_constraint(get_manifold(mp), get_objective(mp), p, :),
         get_equality_constraint(get_manifold(mp), get_objective(mp), p, :),
     ]
+end
+function get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
+    Base.depwarn(
+        "get_constraints will be removed in a future release, use `get_equality_constraint($M, $co, $p, :)` and `get_equality_constraint($M, $co, $p, :)`, respectively",
+        get_constraints,
+    )
+    return [get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :)]
 end
 
 function get_cost(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
@@ -369,6 +379,12 @@ function get_grad_equality_constraint(
     j,
     range=NestedPowerRepresentation(),
 )
+    if isnothing(co.equality_constraints)
+        pM = PowerManifold(M, range, 0)
+        q = rand(pM) # an empty vector or matrix
+        X = rand(pM; vector_at=q) # an empry vector or matrix of correct type
+        return X
+    end
     return get_gradient(M, co.equality_constraints, p, j, range)
 end
 
@@ -388,6 +404,7 @@ function get_grad_equality_constraint!(
     j,
     range=NestedPowerRepresentation(),
 )
+    isnothing(co.equality_constraints) && (return X)
     return get_gradient!(M, X, co.equality_constraints, p, j, range)
 end
 
@@ -432,6 +449,12 @@ function get_grad_inequality_constraint(
     j,
     range=NestedPowerRepresentation(),
 )
+    if isnothing(co.inequality_constraints)
+        pM = PowerManifold(M, range, 0)
+        q = rand(pM) # an empty vector or matrix
+        X = rand(pM; vector_at=q) # an empry vector or matrix of correct type
+        return X
+    end
     return get_gradient(M, co.inequality_constraints, p, j, range)
 end
 
@@ -451,6 +474,7 @@ function get_grad_inequality_constraint!(
     j,
     range=NestedPowerRepresentation(),
 )
+    isnothing(co.equality_constraints) && (return X)
     return get_gradient!(M, X, co.inequality_constraints, p, j, range)
 end
 
