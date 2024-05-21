@@ -89,7 +89,7 @@ include("../utils/dummy_types.jl")
         @test_throws ErrorException ConstrainedManifoldObjective(
             f, grad_f!; evaluation=InplaceEvaluation()
         )
-        co1f = ConstrainedManifoldObjective(f, grad_f!; g=g, grad_g=grad_g)
+        co1f = ConstrainedManifoldObjective(f, grad_f!; g=g, grad_g=grad_g, M=M)
         @test get_constraints(M, co1f, p) == [c[1], []]
         @test get_grad_equality_constraint(M, co1f, p, :) == []
         @test get_grad_inequality_constraint(M, co1f, p, :) == gg
