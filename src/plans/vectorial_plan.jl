@@ -28,6 +28,15 @@ struct CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
     basis::B
 end
 
+function to_iterable_indices(A, i)
+    idx = to_indices(A, (i,))[1]
+    if idx isa Base.Slice
+        return idx.indices
+    else
+        return idx
+    end
+end
+
 @doc raw"""
     ComponentVectorialType <: AbstractVectorialType
 
@@ -316,8 +325,9 @@ function get_gradient!(
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
-    for (j, f) in zip(i, vgf.jacobian!![i])
-        copyto!(M, X[pM, j], p, f(M, p))
+    rep_size = representation_size(M)
+    for (j, f) in zip(to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
+        copyto!(M, _write(pM, rep_size, X, (j,)), f(M, p))
     end
     return X
 end
@@ -430,8 +440,9 @@ function get_gradient!(
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
-    for (j, f) in zip(i, vgf.jacobian!![i])
-        f(M, X[pM, j], p)
+    rep_size = representation_size(M)
+    for (j, f) in zip(to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
+        f(M, _write(pM, rep_size, X, (j,)), p)
     end
     return X
 end
