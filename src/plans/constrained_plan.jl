@@ -302,7 +302,7 @@ function get_equality_constraint(
     if isnothing(co.equality_constraints)
         return number_eltype(p)[]
     else
-        return co.equality_constraints(M, p)[j]
+        return get_cost(M, co.equality_constraints, p, j)
     end
 end
 
@@ -335,7 +335,11 @@ end
 function get_inequality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective, p, j
 )
-    return get_cost(M, co.inequality_constraints, p, j)
+    if isnothing(co.inequality_constraints)
+        return number_eltype(p)[]
+    else
+        return get_cost(M, co.inequality_constraints, p, j)
+    end
 end
 
 @doc raw"""

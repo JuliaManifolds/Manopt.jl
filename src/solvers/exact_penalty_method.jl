@@ -304,7 +304,7 @@ function exact_penalty_method!(
     inequality_constrains=-1,
     equality_constrains=-1,
     kwargs...,
-) where {TF,TGF}
+)
     if inequality_constrains == -1
         inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
     end

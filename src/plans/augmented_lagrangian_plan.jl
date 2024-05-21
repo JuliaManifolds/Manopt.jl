@@ -109,8 +109,8 @@ end
 function (LG::AugmentedLagrangianGrad)(
     M::AbstractManifold, X, p, range=NestedPowerRepresentation()
 )
-    gp = get_inequality_constraints(M, LG.co, p)
-    hp = get_equality_constraints(M, LG.co, p)
+    gp = get_inequality_constraint(M, LG.co, p, :)
+    hp = get_equality_constraint(M, LG.co, p, :)
     m = length(gp)
     n = length(hp)
     get_gradient!(M, X, LG.co, p)

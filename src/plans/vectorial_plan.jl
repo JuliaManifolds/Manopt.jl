@@ -451,7 +451,7 @@ function get_gradient!(
     #Singel access for function is a bit expensive
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM_out = PowerManifold(M, range, n)
-    pM_temp = PowerManifold(M, range, vgf.range_dimension...)
+    pM_temp = PowerManifold(M, range, vgf.range_dimension)
     P = fill(p, pM_temp)
     x = zero_vector(pM_temp, P)
     vgf.jacobian!!(M, x, p)
@@ -459,6 +459,14 @@ function get_gradient!(
     copyto!(pM_out, X, P[pM_temp, i], x[pM_temp, i])
     return X
 end
+
+@doc raw"""
+    length(vgf::VectorGradientFunction)
+
+Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps into,
+that is the number `n`.
+"""
+length(vgf::VectorGradientFunction) = vgf.range_dimension
 #
 #
 # TODO: Jacobian Evaluations

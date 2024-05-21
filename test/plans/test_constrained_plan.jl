@@ -324,13 +324,13 @@ include("../utils/dummy_types.jl")
         ]
         ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
         cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
-        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # counts
-        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # cached
+        @test get_constraint(M, cofa, p, :) == get_constraint(M, cccofa, p, :) # counts
+        @test get_constraint(M, cofa, p, :) == get_constraint(M, cccofa, p, :) # cached
         @test get_count(cccofa, :Constraints) == 1
 
-        ce = get_equality_constraints(M, cofa, p)
-        @test get_equality_constraints(M, cccofa, p) == ce # counts
-        @test get_equality_constraints(M, cccofa, p) == ce # cached
+        ce = get_equality_constraint(M, cofa, p, :)
+        @test get_equality_constraint(M, cccofa, p, :) == ce # counts
+        @test get_equality_constraint(M, cccofa, p, :) == ce # cached
         @test get_count(cccofa, :EqualityConstraints) == 1
         for i in 1
             ce_i = get_equality_constraint(M, cofa, p, i)
@@ -338,9 +338,9 @@ include("../utils/dummy_types.jl")
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # cached
             @test get_count(cccofa, :EqualityConstraint, i) == 1
         end
-        ci = get_inequality_constraints(M, cofa, p)
-        @test ci == get_inequality_constraints(M, cccofa, p) # counts
-        @test ci == get_inequality_constraints(M, cccofa, p) #cached
+        ci = get_inequality_constraint(M, cofa, p, :)
+        @test ci == get_inequality_constraint(M, cccofa, p, :) # counts
+        @test ci == get_inequality_constraint(M, cccofa, p, :) #cached
         @test get_count(cccofa, :InequalityConstraints) == 1
         for j in 1:2
             ci_j = get_inequality_constraint(M, cofa, p, j)
@@ -349,19 +349,19 @@ include("../utils/dummy_types.jl")
             @test get_count(cccofa, :InequalityConstraint, j) == 1
         end
 
-        Xe = get_grad_equality_constraints(M, cofa, p)
-        @test get_grad_equality_constraints(M, cccofa, p) == Xe # counts
-        @test get_grad_equality_constraints(M, cccofa, p) == Xe # cached
+        Xe = get_grad_equality_constraint(M, cofa, p, :)
+        @test get_grad_equality_constraint(M, cccofa, p, :) == Xe # counts
+        @test get_grad_equality_constraint(M, cccofa, p, :) == Xe # cached
         Ye = copy.(Ref(M), Ref(p), Xe)
-        get_grad_equality_constraints!(M, Ye, cccofa, p) # cached
+        get_grad_equality_constraint!(M, Ye, cccofa, p, :) # cached
         @test Ye == Xe
         @test get_count(ccofa, :GradEqualityConstraints) == 1
-        Xe = get_grad_equality_constraints(M, cofa, -p)
-        get_grad_equality_constraints!(M, Ye, cccofa, -p) # counts
+        Xe = get_grad_equality_constraint(M, cofa, -p, :)
+        get_grad_equality_constraint!(M, Ye, cccofa, -p, :) # counts
         @test Ye == Xe
-        get_grad_equality_constraints!(M, Ye, cccofa, -p) # cached
+        get_grad_equality_constraint!(M, Ye, cccofa, -p, :) # cached
         @test Ye == Xe
-        @test get_grad_equality_constraints(M, cccofa, -p) == Xe # cached
+        @test get_grad_equality_constraint(M, cccofa, -p, :) == Xe # cached
         for i in 1:1
             X = get_grad_equality_constraint(M, cofa, p, i)
             @test get_grad_equality_constraint(M, cccofa, p, i) == X #counts
@@ -379,16 +379,16 @@ include("../utils/dummy_types.jl")
             @test get_count(cccofa, :GradEqualityConstraint, i) == 2
         end
 
-        Xi = get_grad_inequality_constraints(M, cofa, p)
-        @test get_grad_inequality_constraints(M, cccofa, p) == Xi # counts
-        @test get_grad_inequality_constraints(M, cccofa, p) == Xi # cached
+        Xi = get_grad_inequality_constraint(M, cofa, p, :)
+        @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # counts
+        @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # cached
         Yi = copy.(Ref(M), Ref(p), Xi)
-        @test get_grad_inequality_constraints!(M, Yi, cccofa, p) == Xi # cached
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, p, :) == Xi # cached
         @test get_count(cccofa, :GradInequalityConstraints) == 1
-        Xi = get_grad_inequality_constraints(M, cofa, -p)
-        @test get_grad_inequality_constraints!(M, Yi, cccofa, -p) == Xi # counts
-        @test get_grad_inequality_constraints!(M, Yi, cccofa, -p) == Xi # cached
-        @test get_grad_inequality_constraints(M, cccofa, -p) == Xi # cached
+        Xi = get_grad_inequality_constraint(M, cofa, -p, :)
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # counts
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # cached
+        @test get_grad_inequality_constraint(M, cccofa, -p, :) == Xi # cached
         @test get_count(cccofa, :GradInequalityConstraints) == 2
         for j in 1:2
             X = get_grad_inequality_constraint(M, cofa, p, j)
