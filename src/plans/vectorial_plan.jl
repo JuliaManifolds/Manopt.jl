@@ -90,7 +90,7 @@ And advantage here is, that again the single components can be evaluated individ
 
 # Fields
 
-* `costs!!`:          the cost function ``f``, which can take different formats
+* `value!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
 * `jacobian!!:     the jacobian of ``f``
 * `jacobian_type`: indicating / storing data for the type of ``J_f``
@@ -112,7 +112,7 @@ struct VectorGradientFunction{
     J,
     I<:Integer,
 } <: Function
-    costs!!::F
+    value!!::F
     cost_type::FT
     jacobian!!::J
     jacobian_type::JT
@@ -135,13 +135,12 @@ function VectorGradientFunction(
 end
 
 @doc raw"""
-    get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
+    get_value(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
 
-Evaluate the ``i``th component or components of the [`VectorGradientFunction`](@ref)
-cost at `p`. The `range` can be used to speficy a potential range.
-This is currently ignored, but kept for consistency with the gradient acces functions.
+Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at at `p`.
+The `range` can be used to speficy a potential range, but is currently only present for consistency.
 
-Since `i` is assumed to be a linear index, you can provide
+The `i` can be a linear index, you can provide
 
 * a single integer
 * a `UnitRange` to specify a range to be returned like `1:3`
@@ -150,47 +149,47 @@ Since `i` is assumed to be a linear index, you can provide
 * `:` to return the vector of all gradients
 
 """
-get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
-function get_cost(
+get_value(M::AbstractManifold, vgf::VectorGradientFunction, p, i; range=nothing)
+function get_value(
     M::AbstractManifold,
     vgf::VectorGradientFunction{E,<:FunctionVectorialType},
     p,
     i,
     range=nothing,
 ) where {E}
-    c = vgf.costs!!(M, p)
+    c = vgf.value!!(M, p)
     if isa(c, Number)
         return c
     else
         return c[i]
     end
 end
-function get_cost(
+function get_value(
     M::AbstractManifold,
     vgf::VectorGradientFunction{E,<:ComponentVectorialType},
     p,
     i::Integer,
     range=nothing,
 ) where {E}
-    return vgf.costs!![i](M, p)
+    return vgf.value!![i](M, p)
 end
-function get_cost(
+function get_value(
     M::AbstractManifold,
     vgf::VectorGradientFunction{E,<:ComponentVectorialType},
     p,
     i,
     range=nothing,
 ) where {E}
-    return [f(M, p) for f in vgf.costs!![i]]
+    return [f(M, p) for f in vgf.value!![i]]
 end
 
 @doc raw"""
-    get_cost_function(vgf::VectorGradientFunction, recursive=false)
+    get_value_function(vgf::VectorGradientFunction, recursive=false)
 
-return the internally stored cost function.
+return the internally stored function computing [`get_value`](@ref).
 """
-function get_cost_function(vgf::VectorGradientFunction, recursive=false)
-    return vgf.costs!!
+function get_value_function(vgf::VectorGradientFunction, recursive=false)
+    return vgf.value!!
 end
 
 @doc raw"""

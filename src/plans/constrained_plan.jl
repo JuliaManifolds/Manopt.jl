@@ -302,7 +302,7 @@ function get_equality_constraint(
     if isnothing(co.equality_constraints)
         return number_eltype(p)[]
     else
-        return get_cost(M, co.equality_constraints, p, j)
+        return get_value(M, co.equality_constraints, p, j)
     end
 end
 
@@ -338,7 +338,7 @@ function get_inequality_constraint(
     if isnothing(co.inequality_constraints)
         return number_eltype(p)[]
     else
-        return get_cost(M, co.inequality_constraints, p, j)
+        return get_value(M, co.inequality_constraints, p, j)
     end
 end
 
