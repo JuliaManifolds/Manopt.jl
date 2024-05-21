@@ -153,11 +153,11 @@ Since `i` is assumed to be a linear index, you can provide
 get_cost(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
 function get_cost(
     M::AbstractManifold,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:FunctionVectorialType},
+    vgf::VectorGradientFunction{E,<:FunctionVectorialType},
     p,
     i,
     range=nothing,
-)
+) where {E}
     c = vgf.costs!!(M, p)
     if isa(c, Number)
         return c
@@ -167,20 +167,20 @@ function get_cost(
 end
 function get_cost(
     M::AbstractManifold,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType},
+    vgf::VectorGradientFunction{E,<:ComponentVectorialType},
     p,
     i::Integer,
     range=nothing,
-)
+) where {E}
     return vgf.costs!![i](M, p)
 end
 function get_cost(
     M::AbstractManifold,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,<:ComponentVectorialType},
+    vgf::VectorGradientFunction{E,<:ComponentVectorialType},
     p,
     i,
     range=nothing,
-)
+) where {E}
     return [f(M, p) for f in vgf.costs!![i]]
 end
 
@@ -351,6 +351,18 @@ function get_gradient!(
     copyto!(mP, X, vgf.jacobian!!(M, p)[mP, i])
     return X
 end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
+    p,
+    i::Integer,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT}
+    mP = PowerManifold(M, range, vgf.range_dimension)
+    copyto!(mP, X, vgf.jacobian!!(M, p)[mP, i])
+    return X
+end
 #
 #
 # Part II: In-place evaluations
@@ -419,7 +431,7 @@ function get_gradient!(
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
-    for (j, f) in zip(j, vgf.jacobian!![i])
+    for (j, f) in zip(i, vgf.jacobian!![i])
         f(M, X[pM, j], p)
     end
     return X
@@ -437,7 +449,7 @@ function get_gradient!(
     P = fill(p, pM)
     x = zero_vector(pM, P)
     vgf.jacobian!!(M, x, p)
-    copyto!(M, X, p, x[mP, i])
+    copyto!(M, X, p, x[pM, i])
     return X
 end
 function get_gradient!(

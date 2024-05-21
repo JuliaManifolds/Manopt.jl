@@ -307,7 +307,7 @@ end
 # Constraint
 function get_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Constraints)
-    return get_constraint(M, co.objective, p)
+    return get_constraints(M, co.objective, p)
 end
 function get_equality_constraint(
     M::AbstractManifold, co::ManifoldCountObjective, p, c::Colon
@@ -340,7 +340,7 @@ function get_inequality_constraint(
     M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
 )
     _count_if_exists(co, :InequalityConstraints)
-    return get_inequality_constraints(M, co.objective, p)
+    return get_inequality_constraint(M, co.objective, p, i)
 end
 function get_inequality_constraint(
     M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
@@ -390,7 +390,7 @@ function get_grad_inequality_constraint(
     M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
 )
     _count_if_exists(co, :GradInequalityConstraints)
-    return get_grad_inequality_constraints(M, co.objective, p, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i)
 end
 function get_grad_inequality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon

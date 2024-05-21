@@ -44,8 +44,8 @@ function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:λ}, λ)
     return alc
 end
 function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
-    gp = get_inequality_constraints(M, L.co, p)
-    hp = get_equality_constraints(M, L.co, p)
+    gp = get_inequality_constraint(M, L.co, p, :)
+    hp = get_equality_constraint(M, L.co, p, :)
     m = length(gp)
     n = length(hp)
     c = get_cost(M, L.co, p)
@@ -124,7 +124,9 @@ function (LG::AugmentedLagrangianGrad)(
         end
     end
     if n > 0
-        X .+= sum((hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraints(M, LG.co, p, range))
+        X .+= sum(
+            (hp .* LG.ρ .+ LG.λ) .* get_grad_equality_constraint(M, LG.co, p, :, range)
+        )
     end
     return X
 end
