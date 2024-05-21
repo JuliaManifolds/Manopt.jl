@@ -69,13 +69,10 @@ include("../utils/dummy_types.jl")
         inequality_constraints=2,
         equality_constraints=1,
     )
-    @test repr(cofa) ===
-        "ConstrainedManifoldObjective{AllocatingEvaluation,FunctionConstraint}."
-    @test repr(cofm) ===
-        "ConstrainedManifoldObjective{InplaceEvaluation,FunctionConstraint}."
-    @test repr(cova) ===
-        "ConstrainedManifoldObjective{AllocatingEvaluation,VectorConstraint}."
-    @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation,VectorConstraint}."
+    @test repr(cofa) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
+    @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
+    @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
+    @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
 
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]

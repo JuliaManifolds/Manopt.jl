@@ -482,5 +482,5 @@ function Base.show(
     io::IO, ::ConstrainedManifoldObjective{E,V,Eq,IEq}
 ) where {E<:AbstractEvaluationType,V,Eq,IEq}
     #    return print(io, "ConstrainedManifoldObjective{$E,$V,$Eq,$IEq}.")
-    return print(io, "ConstrainedManifoldObjective{$E,$V}.")
+    return print(io, "ConstrainedManifoldObjective{$E}")
 end
