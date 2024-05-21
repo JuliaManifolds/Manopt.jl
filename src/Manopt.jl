@@ -386,7 +386,6 @@ export get_constraints,
     get_grad_equality_constraint!,
     get_grad_equality_constraints,
     get_grad_equality_constraints!
-export AbstractConstraintType, FunctionConstraint, VectorConstraint
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad

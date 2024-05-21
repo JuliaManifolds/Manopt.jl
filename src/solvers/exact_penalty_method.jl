@@ -427,8 +427,8 @@ function step_solver!(
     epms.p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
 
     # get new evaluation of penalty
-    cost_ineq = get_inequality_constraints(amp, epms.p)
-    cost_eq = get_equality_constraints(amp, epms.p)
+    cost_ineq = get_inequality_constraint(amp, epms.p, :)
+    cost_eq = get_equality_constraint(amp, epms.p, :)
     max_violation = max(max(maximum(cost_ineq; init=0), 0), maximum(abs.(cost_eq); init=0))
     # update ρ if necessary
     (max_violation > epms.u) && (epms.ρ = epms.ρ / epms.θ_ρ)
