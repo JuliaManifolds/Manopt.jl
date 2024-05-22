@@ -1,20 +1,16 @@
-struct SymmetricLinearSystemObjective{
-    E<:AbstractEvaluationType,
-    TA,
-    Tb,
-} <: AbstractManifoldObjective{E}
+struct SymmetricLinearSystemObjective{E<:AbstractEvaluationType,TA,Tb} <:
+       AbstractManifoldObjective{E}
     A::TA
     b::Tb
 end
 
-function SymmetricLinearSystemObjective(
-    A::TA,
-    b::Tb
-) where {TA,Tb}
-    return SymmetricLinearSystemObjective{AllocatingEvaluation,TA,Tb}(A,b)
+function SymmetricLinearSystemObjective(A::TA, b::Tb) where {TA,Tb}
+    return SymmetricLinearSystemObjective{AllocatingEvaluation,TA,Tb}(A, b)
 end
 
-function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol_value::Val, value)
+function set_manopt_parameter!(
+    slso::SymmetricLinearSystemObjective, symbol_value::Val, value
+)
     set_manopt_parameter!(slso.A, symbol_value, value)
     set_manopt_parameter!(slso.b, symbol_value, value)
     return slso

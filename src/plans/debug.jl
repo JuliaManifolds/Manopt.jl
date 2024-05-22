@@ -1245,6 +1245,7 @@ function DebugActionFactory(d::Symbol)
     (d == :GradientNorm) && return DebugGradientNorm()
     (d == :Iterate) && return DebugIterate()
     (d == :Iteration) && return DebugIteration()
+    (d == :Feasibility) && return DebugFeasibility()
     (d == :Stepsize) && return DebugStepsize()
     (d == :Stop) && return DebugStoppingCriterion()
     (d == :WarnBundle) && return DebugWarnIfLagrangeMultiplierIncreases()
@@ -1282,9 +1283,10 @@ Note that the Shortcut symbols `t[1]` should all start with a capital letter.
 
 any other symbol creates a `DebugEntry(s)` to print the entry (o.:s) from the options.
 """
-function DebugActionFactory(t::Tuple{Symbol,String})
+function DebugActionFactory(t::Tuple{Symbol,Any})
     (t[1] == :Change) && return DebugChange(; format=t[2])
     (t[1] == :Cost) && return DebugCost(; format=t[2])
+    (t[1] == :Feasibility) && return DebugFeasibility(t[2])
     (t[1] == :Gradient) && return DebugGradient(; format=t[2])
     (t[1] == :GradientChange) && return DebugGradientChange(; format=t[2])
     (t[1] == :GradientNorm) && return DebugGradientNorm(; format=t[2])

@@ -30,8 +30,7 @@ function set_manopt_parameter!(
     return nrlg
 end
 
-function (nrlg::NegativeReducedLagrangianGrad)(N::AbstractManifold, q)
-    TqN = TangentSpace(N, q)
+function (nrlg::NegativeReducedLagrangianGrad)(M::AbstractManifold, p)
     m, n = length(nrlg.μ), length(nrlg.λ)
     g = get_inequality_constraints(N[1], nrlg.cmo, q[N,1])
     Jg = get_grad_inequality_constraints(N[1], nrlg.cmo, q[N,1])
@@ -118,19 +117,4 @@ function is_feasible(M, cmo, p)
     g = get_inequality_constraints(M, cmo, p)
     h = get_equality_constraints(M, cmo, p)
     return is_point(M, p) && all(g .<= 0) && all(h .== 0)
-end
-
-function interior_point_initial_guess(
-    mp::AbstractManoptProblem, ips::AbstractManoptSolverState, ::Int, l::Real
-)
-    N = get_manifold(mp) × ℝ^length(ips.μ) × ℝ^length(ips.λ) × ℝ^length(ips.s)
-    q = rand(N)
-    copyto!(N[1], q[N,1], ips.p)
-    copyto!(N[2], q[N,2], ips.μ)
-    copyto!(N[3], q[N,3], ips.λ)
-    copyto!(N[4], q[N,4], ips.s)
-    Y = GradMeritFunction(N, get_objective(mp), q)
-    grad_norm = norm(N, q, Y)
-    max_step = max_stepsize(N, q)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
