@@ -28,7 +28,13 @@ struct CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
     basis::B
 end
 
-function to_iterable_indices(A, i)
+"""
+    to_iterable_indices(A::AbstractVector, i)
+
+Convert index `i` (integer, colon, vector of indeces, etc.) for array `A` into an iterable
+structure of indices.
+"""
+function to_iterable_indices(A::AbstractVector, i)
     idx = to_indices(A, (i,))[1]
     if idx isa Base.Slice
         return idx.indices
