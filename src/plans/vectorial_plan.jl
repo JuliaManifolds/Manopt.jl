@@ -494,7 +494,7 @@ end
 Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps into,
 that is the number `n`.
 """
-length(vgf::VectorGradientFunction) = vgf.range_dimension
+Base.length(vgf::VectorGradientFunction) = vgf.range_dimension
 #
 #
 # TODO: Jacobian Evaluations
