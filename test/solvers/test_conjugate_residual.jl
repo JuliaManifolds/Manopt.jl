@@ -1,9 +1,8 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
 
-
-M = Manifolds.Sphere(2)
-p = [0.0, 0.0, 1.0]
+M = Manifolds.Sphere(2) × ℝ^2
+p = rand(M)
 TpM = TangentSpace(M, p)
 
 A = (M, p, X) -> [2.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 2.0]*X

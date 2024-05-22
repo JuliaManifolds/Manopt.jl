@@ -14,19 +14,6 @@ function SymmetricLinearSystemObjective(
     return SymmetricLinearSystemObjective{AllocatingEvaluation,TA,Tb}(A,b)
 end
 
-# # getter for the cost associated to system AX = b
-# function get_cost_function(slso::SymmetricLinearSystemObjective)
-#     return (TpM, X) -> get_cost(TpM, slso, X)
-# end
-
-# constructor
-# function SymmetricLinearSystemObjective(
-#     A::TA,
-#     b::Tb,
-# ) where {TA,Tb}
-#     return SymmetricLinearSystemObjective{<:AbstractEvaluationType,TA,Tb}(A, b)
-# end
-
 function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol_value::Val, value)
     set_manopt_parameter!(slso.A, symbol_value, value)
     set_manopt_parameter!(slso.b, symbol_value, value)

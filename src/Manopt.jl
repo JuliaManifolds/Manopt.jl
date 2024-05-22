@@ -409,6 +409,7 @@ export QuasiNewtonCautiousDirectionUpdate,
 export InverseBroyden, Broyden
 export AbstractQuasiNewtonDirectionUpdate, AbstractQuasiNewtonUpdateRule
 export WolfePowellLinesearch, WolfePowellBinaryLinesearch
+export InteriorPointLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory

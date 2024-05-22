@@ -1,8 +1,6 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
-Random.seed!(42)
 A = Symmetric(rand(3,3))
-# A = [2.0 -1.0 0.0; -1.0 2-0 -1.0; 0.0 -1.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p
 grad_f(M, p) = (I - p * p') * A * p
@@ -29,10 +27,7 @@ res = interior_point_Newton(
     p_0;
     g=g,
     grad_g=grad_g,
-    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-6),
-    stepsize=ArmijoLinesearch(
-        M, retraction_method=default_retraction_method(M), initial_stepsize=1.0
-    ),
+    stop=StopAfterIteration(500) | StopWhenChangeLess(1e-6),
     debug=[:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, " ", :GradientNorm, "\n", :Stop],
     record=record,
     return_state=true,
@@ -94,8 +89,7 @@ surface!(
     x2,
     x3;
     color=f_.(pts),
-    colormap=(:temperaturemap, 0.2),
-    ambient=Vec3f(0.65, 0.65, 0.65),
+    colormap=(:temperaturemap, 0.4),
     backlight=1.0f0,
     colorrange=range_f,
 )
@@ -107,8 +101,6 @@ surface!(
     x3_;
     color=f_.(pts_),
     colormap=(:temperaturemap, 1.0),
-    #shading=MultiLightShading,
-    ambient=Vec3f(0.65, 0.65, 0.65),
     backlight=1.0f0,
     colorrange=range_f,
 )
