@@ -201,17 +201,6 @@ linearized_forward_operator
 
 ### Constrained objective
 
-Besides the [`AbstractEvaluationType`](@ref) there is one further property to
-distinguish among constraint functions, especially the gradients of the constraints.
-
-```@docs
-AbstractConstraintType
-FunctionConstraint
-VectorConstraint
-```
-
-The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
-
 ```@docs
 ConstrainedManifoldObjective
 ```
@@ -219,7 +208,7 @@ ConstrainedManifoldObjective
 #### Access functions
 
 ```@docs
-get_constraints
+get_unconstrained_objective
 get_equality_constraint
 get_inequality_constraint
 get_grad_equality_constraint
@@ -240,7 +229,6 @@ Manopt.AbstractVectorialType
 Manopt.CoefficientVectorialType
 Manopt.ComponentVectorialType
 Manopt.FunctionVectorialType
-Manopt.PowerManifoldVectorialType
 ```
 
 The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
@@ -248,7 +236,7 @@ The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objecti
 #### Access functions
 
 ```@docs
-Manopt.get_costs
+Manopt.get_value
 ```
 
 ### Subproblem objective

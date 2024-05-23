@@ -368,24 +368,19 @@ export get_state,
     adjoint_linearized_operator!,
     forward_operator,
     forward_operator!,
-    get_objective
+    get_objective,
+    get_unconstrained_objective
 export get_hessian, get_hessian!
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export get_constraints,
     get_inequality_constraint,
-    get_inequality_constraints,
     get_equality_constraint,
-    get_equality_constraints,
     get_grad_inequality_constraint,
     get_grad_inequality_constraint!,
-    get_grad_inequality_constraints,
-    get_grad_inequality_constraints!,
     get_grad_equality_constraint,
-    get_grad_equality_constraint!,
-    get_grad_equality_constraints,
-    get_grad_equality_constraints!
+    get_grad_equality_constraint!
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad

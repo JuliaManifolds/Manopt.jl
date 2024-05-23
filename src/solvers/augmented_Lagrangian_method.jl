@@ -15,10 +15,10 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
 * `ϵ`:                  (`1e–3`) the accuracy tolerance
 * `ϵ_min`:              (`1e-6`) the lower bound for the accuracy tolerance
-* `λ`:                  (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `λ`:                  (`ones(n)`) the Lagrange multiplier with respect to the equality constraints
 * `λ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`:              (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `μ`:                  (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ`:                  (`ones(m)`) the Lagrange multiplier with respect to the inequality constraints
 * `μ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `ρ`:                  (`1.0`) the penalty parameter
 * `τ`:                  (`0.8`) factor for the improvement of the evaluation of the penalty parameter
