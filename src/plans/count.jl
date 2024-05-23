@@ -13,7 +13,6 @@ to parts of the objective.
 
 | Symbol                      | Counts calls to (incl. `!` variants)   | Comment                      |
 | :-------------------------- | :------------------------------------- | :--------------------------- |
-| `:Constraints`              | [`get_constraint`](@ref)               |                              |
 | `:Cost`                     | [`get_cost`](@ref)                     |                              |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
 | `:EqualityConstraints`      | [`get_equality_constraint`](@ref)      | when evaluating all of them with `:` |
@@ -305,10 +304,6 @@ end
 
 #
 # Constraint
-function get_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :Constraints)
-    return get_constraints(M, co.objective, p)
-end
 function get_equality_constraint(
     M::AbstractManifold, co::ManifoldCountObjective, p, c::Colon
 )

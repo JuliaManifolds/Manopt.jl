@@ -29,12 +29,12 @@ struct CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
 end
 
 """
-    to_iterable_indices(A::AbstractVector, i)
+    _to_iterable_indices(A::AbstractVector, i)
 
 Convert index `i` (integer, colon, vector of indeces, etc.) for array `A` into an iterable
 structure of indices.
 """
-function to_iterable_indices(A::AbstractVector, i)
+function _to_iterable_indices(A::AbstractVector, i)
     idx = to_indices(A, (i,))[1]
     if idx isa Base.Slice
         return idx.indices
@@ -322,7 +322,7 @@ function get_gradient!(
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    for (j, f) in zip(to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
+    for (j, f) in zip(_to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
         copyto!(M, _write(pM, rep_size, X, (j,)), f(M, p))
     end
     return X
@@ -437,7 +437,7 @@ function get_gradient!(
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    for (j, f) in zip(to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
+    for (j, f) in zip(_to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
         f(M, _write(pM, rep_size, X, (j,)), p)
     end
     return X
@@ -477,6 +477,8 @@ function get_gradient!(
     copyto!(pM_out, X, P[pM_temp, i], x[pM_temp, i])
     return X
 end
+
+get_gradient_function(vgf::VectorGradientFunction, recursive=false) = vgf.jacobian!!
 
 @doc raw"""
     length(vgf::VectorGradientFunction)

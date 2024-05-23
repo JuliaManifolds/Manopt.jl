@@ -252,7 +252,13 @@ function ConstrainedManoptProblem(
     )
 end
 
-get_objective(co::ConstrainedManifoldObjective) = co.objective
+@doc raw"""
+    get_unconstrained_objective(co::ConstrainedManifoldObjective)
+
+Returns the internally stored unconstrained [`AbstractManifoldObjective`](@ref)
+within the [`ConstrainedManifoldObjective`](@ref).
+"""
+get_unconstrained_objective(co::ConstrainedManifoldObjective) = co.objective
 
 function get_constraints(mp::AbstractManoptProblem, p)
     Base.depwarn(
@@ -297,7 +303,7 @@ Base.@deprecate get_equality_constraints!(
 
 @doc raw"""
     get_equality_constraint(problem, p, j)
-    get_equality_constraint(manifold, objective, p, j, range=NestedPowerRepresentation())
+    get_equality_constraint(manifold, objective, p, j)
 
 evaluate the equality constraint of a [`ConstrainedManifoldObjective`](@ref) `objective`.
 """
@@ -306,6 +312,13 @@ function get_equality_constraint end
 function get_equality_constraint(mp::AbstractManoptProblem, p, j)
     return get_equality_constraint(get_manifold(mp), get_objective(mp), p, j)
 end
+
+function get_equality_constraint(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, j
+)
+    return get_equality_constraint(M, get_objective(admo, false), p, j)
+end
+
 function get_equality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective, p, j
 )
@@ -343,6 +356,11 @@ function get_inequality_constraint(mp::AbstractManoptProblem, p, j)
     return get_inequality_constraint(get_manifold(mp), get_objective(mp), p, j)
 end
 function get_inequality_constraint(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, j
+)
+    return get_inequality_constraint(M, get_objective(admo, false), p, j)
+end
+function get_inequality_constraint(
     M::AbstractManifold, co::ConstrainedManifoldObjective, p, j
 )
     if isnothing(co.inequality_constraints)
@@ -373,6 +391,11 @@ function get_grad_equality_constraint(cmp::ConstrainedManoptProblem, p, j)
     )
 end
 function get_grad_equality_constraint(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
+)
+    return get_grad_equality_constraint(M, get_objective(admo, false), args...)
+end
+function get_grad_equality_constraint(
     M::AbstractManifold,
     co::ConstrainedManifoldObjective,
     p,
@@ -397,6 +420,12 @@ function get_grad_equality_constraint!(cmp::ConstrainedManoptProblem, X, p, j)
     )
 end
 function get_grad_equality_constraint!(
+    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, args...
+)
+    return get_grad_equality_constraint!(M, X, get_objective(admo, false), args...)
+end
+
+function get_grad_equality_constraint!(
     M::AbstractManifold,
     X,
     co::ConstrainedManifoldObjective,
@@ -413,13 +442,13 @@ Base.@deprecate get_grad_equality_constraints(mp::AbstractManoptProblem, p) get_
     mp, p, :,
 )
 Base.@deprecate get_grad_equality_constraints(
-    M::AbstractManifold, co::ConstrainedManifoldObjective, p
+    M::AbstractManifold, co::AbstractManifoldObjective, p
 ) get_grad_equality_constraint(M, co, p, :)
 Base.@deprecate get_grad_equality_constraints!(mp::AbstractManoptProblem, X, p) get_grad_equality_constraint!(
     mp, X, p, :,
 )
 Base.@deprecate get_grad_equality_constraints!(
-    M::AbstractManifold, X, co::ConstrainedManifoldObjective, p
+    M::AbstractManifold, X, co::AbstractManifoldObjective, p
 ) get_grad_equality_constraint!(M, X, co, p, :)
 
 @doc raw"""
@@ -443,6 +472,12 @@ function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j)
     )
 end
 function get_grad_inequality_constraint(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
+)
+    return get_grad_inequality_constraint(M, get_objective(admo, false), args...)
+end
+
+function get_grad_inequality_constraint(
     M::AbstractManifold,
     co::ConstrainedManifoldObjective,
     p,
@@ -465,6 +500,11 @@ function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j)
     return get_grad_inequality_constraint!(
         get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
     )
+end
+function get_grad_inequality_constraint!(
+    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, args...
+)
+    return get_grad_inequality_constraint!(M, X, get_objective(admo, false), args...)
 end
 function get_grad_inequality_constraint!(
     M::AbstractManifold,

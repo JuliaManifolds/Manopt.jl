@@ -203,9 +203,6 @@ include("../utils/dummy_types.jl")
             Xe = get_grad_equality_constraint(M, ddo, p, :)
             Ye = get_grad_equality_constraint(M, obj, p, :)
             @test Ye == Xe
-            get_grad_equality_constraints!(M, Xe, ddo, p)
-            get_grad_equality_constraints!(M, Ye, obj, p)
-            @test Ye == Xe
             for i in 1:1 #number of equality constr
                 @test get_equality_constraint(M, ddo, p, i) ==
                     get_equality_constraint(M, obj, p, i)
@@ -239,7 +236,6 @@ include("../utils/dummy_types.jl")
             M,
             cofa,
             [
-                :Constraints,
                 :InequalityConstraints,
                 :InequalityConstraint,
                 :EqualityConstraints,
@@ -250,8 +246,6 @@ include("../utils/dummy_types.jl")
                 :GradEqualityConstraint,
             ],
         )
-        @test get_constraints(M, ccofa, p) == get_constraints(M, cofa, p)
-        @test get_count(ccofa, :Constraints) == 1
         @test get_equality_constraint(M, ccofa, p, :) ==
             get_equality_constraint(M, cofa, p, :)
         @test get_count(ccofa, :EqualityConstraints) == 1
@@ -310,12 +304,13 @@ include("../utils/dummy_types.jl")
             :InequalityConstraint,
             :EqualityConstraints,
             :EqualityConstraint,
-            :GradInequalityConstraint,
             :GradEqualityConstraint,
+            :GradEqualityConstraints,
+            :GradInequalityConstraint,
+            :GradInequalityConstraints,
         ]
         ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
         cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
-        @test get_count(cccofa, :Constraints) == 1
 
         ce = get_equality_constraint(M, cofa, p, :)
         @test get_equality_constraint(M, cccofa, p, :) == ce # counts
