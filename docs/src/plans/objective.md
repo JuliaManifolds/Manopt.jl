@@ -205,6 +205,12 @@ linearized_forward_operator
 ConstrainedManifoldObjective
 ```
 
+It might be beneficial to use the adapted problem to specify different ranges for the gradients of the constraints
+
+```@docs
+ConstrainedManoptProblem
+```
+
 #### Access functions
 
 ```@docs
@@ -212,9 +218,7 @@ get_unconstrained_objective
 get_equality_constraint
 get_inequality_constraint
 get_grad_equality_constraint
-get_grad_equality_constraint!
 get_grad_inequality_constraint
-get_grad_inequality_constraint!
 ```
 
 ### A vectorial cost function
@@ -231,12 +235,18 @@ Manopt.ComponentVectorialType
 Manopt.FunctionVectorialType
 ```
 
-The [`AbstractConstraintType`](@ref) is a parameter of the corresponding Objective.
-
 #### Access functions
 
 ```@docs
 Manopt.get_value
+Manopt.get_value_function
+Base.length(::VectorGradientFunction)
+```
+
+#### Internal functions
+
+```@docs
+Manopt._to_iterable_indices
 ```
 
 ### Subproblem objective

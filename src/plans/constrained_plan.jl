@@ -216,7 +216,7 @@ components gradients, for example
 ``\bigl(\operatorname{grad} g_1(p), \operatorname{grad} g_2(p), …, \operatorname{grad} g_m(p) \bigr)``.
 
 In another interpretation, this can be considered a point on the tangent space
-at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref) ``\mathcal M^m``.
+at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``\mathcal M^m``.
 The case where this is a [`NestedPowerRepresentation`](@extref) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 

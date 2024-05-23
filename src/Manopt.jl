@@ -274,7 +274,8 @@ export ℝ, ℂ, &, |
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
-export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
+export AbstractManoptProblem
+export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,

@@ -149,7 +149,7 @@ They list all details, but we can start even step by step here if we are a bit c
 
 We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
 Since we take an easy one that just projects onto
-the sphere, we use the ``[`ProjectionRetraction`](@extref ManifoldsBase.ProjectionRetraction)``{=commonmark} type.
+the sphere, we use the ``[`ProjectionRetraction`](@extref `ManifoldsBase.ProjectionRetraction`)``{=commonmark} type.
 To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.inverse_retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
 
 ```{julia}

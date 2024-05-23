@@ -198,12 +198,7 @@ end
 #
 # Constraints
 #
-"""
-    get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
 
-Return the vector ``(g_1(p),...g_m(p),h_1(p),...,h_n(p))`` defined in the embedding, that is embed `p`
-before calling the constraint functions stored in the [`EmbeddedManifoldObjective`](@ref).
-"""
 function get_constraints(M::AbstractManifold, emo::EmbeddedManifoldObjective, p)
     q = local_embed!(M, emo, p)
     return [

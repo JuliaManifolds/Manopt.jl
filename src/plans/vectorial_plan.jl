@@ -22,7 +22,7 @@ for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_(p) ∈ T_p\mathcal 
 
 # Fields
 
-* `basis` an [`AbstractBasis`](@extref) to indicate the default representation.
+* `basis` an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) to indicate the default representation.
 """
 struct CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
     basis::B

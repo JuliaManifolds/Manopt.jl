@@ -115,7 +115,7 @@ And on the other hand the [`AverageGradient`](https://manoptjl.org/stable/solver
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(
-    M, gradf, p0; direction=AverageGradient(M, p0; n=10, direction=StochasticGradient(M), debug=[])
+    M, gradf, p0; direction=AverageGradient(M, p0; n=10, direction=StochasticGradient(M)), debug=[],
 )
 ```
 ```{julia}
