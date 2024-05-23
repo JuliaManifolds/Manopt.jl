@@ -196,7 +196,6 @@ include("../utils/dummy_types.jl")
     @testset "Objective Decorator passthrough" begin
         for obj in [cofa, cofm, cova, covm]
             ddo = DummyDecoratedObjective(obj)
-            @test get_constraints(M, ddo, p) == get_constraints(M, obj, p)
             @test get_equality_constraint(M, ddo, p, :) ==
                 get_equality_constraint(M, obj, p, :)
             @test get_inequality_constraint(M, ddo, p, :) ==
@@ -311,22 +310,18 @@ include("../utils/dummy_types.jl")
             :InequalityConstraint,
             :EqualityConstraints,
             :EqualityConstraint,
-            :GradInequalityConstraints,
             :GradInequalityConstraint,
-            :GradEqualityConstraints,
             :GradEqualityConstraint,
         ]
         ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
         cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
-        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # counts
-        @test get_constraints(M, cofa, p) == get_constraints(M, cccofa, p) # cached
         @test get_count(cccofa, :Constraints) == 1
 
         ce = get_equality_constraint(M, cofa, p, :)
         @test get_equality_constraint(M, cccofa, p, :) == ce # counts
         @test get_equality_constraint(M, cccofa, p, :) == ce # cached
         @test get_count(cccofa, :EqualityConstraints) == 1
-        for i in 1
+        for i in 1:1
             ce_i = get_equality_constraint(M, cofa, p, i)
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # counts
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # cached

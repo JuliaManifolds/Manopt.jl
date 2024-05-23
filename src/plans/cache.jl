@@ -456,8 +456,24 @@ end
 #
 # Gradients of Constraints
 function get_grad_equality_constraint(
-    M::AbstractManifold, co::ManifoldCachedObjective, p, j
+    M::AbstractManifold, co::ManifoldCachedObjective, p, j::Integer
 )
+    # if we have no equality constraint, act as passthrough
+    !(haskey(co.cache, :GradEqualityConstraint)) &&
+        return get_grad_equality_constraint(M, co.objective, p, j)
+    return copy(
+        M,
+        p,
+        get!(co.cache[:GradEqualityConstraint], (copy(M, p), j)) do
+            get_grad_equality_constraint(M, co.objective, p, j)
+        end,
+    )
+end
+
+function get_grad_equality_constraint(
+    M::AbstractManifold, co::ManifoldCachedObjective, p, j::Integer
+)
+    # if we have no equality constraint, act as passthrough
     !(haskey(co.cache, :GradEqualityConstraint)) &&
         return get_grad_equality_constraint(M, co.objective, p, j)
     return copy(
@@ -481,35 +497,6 @@ function get_grad_equality_constraint!(
             # This evaluates in place of X
             get_grad_equality_constraint!(M, X, co.objective, p, j)
             copy(M, p, X) #this creates a copy to be placed in the cache
-        end, #and copy the values back to X
-    )
-    return X
-end
-
-function get_grad_equality_constraints(M::AbstractManifold, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :GradEqualityConstraints)) &&
-        return get_grad_equality_constraints(M, co.objective, p)
-    return copy.(
-        Ref(M),
-        Ref(p),
-        get!(co.cache[:GradEqualityConstraints], copy(M, p)) do
-            get_grad_equality_constraints(M, co.objective, p)
-        end,
-    )
-end
-function get_grad_equality_constraints!(
-    M::AbstractManifold, X, co::ManifoldCachedObjective, p
-)
-    !(haskey(co.cache, :GradEqualityConstraints)) &&
-        return get_grad_equality_constraints!(M, X, co.objective, p)
-    copyto!.(
-        Ref(M),
-        X,
-        Ref(p),
-        get!(co.cache[:GradEqualityConstraints], copy(M, p)) do
-            # This evaluates in place of X
-            get_grad_equality_constraints!(M, X, co.objective, p)
-            copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )
     return X
@@ -541,37 +528,6 @@ function get_grad_inequality_constraint!(
             # This evaluates in place of X
             get_grad_inequality_constraint!(M, X, co.objective, p, j)
             copy(M, p, X) #this creates a copy to be placed in the cache
-        end, #and copy the values back to X
-    )
-    return X
-end
-
-function get_grad_inequality_constraints(
-    M::AbstractManifold, co::ManifoldCachedObjective, p
-)
-    !(haskey(co.cache, :GradEqualityConstraints)) &&
-        return get_grad_inequality_constraints(M, co.objective, p)
-    return copy.(
-        Ref(M),
-        Ref(p),
-        get!(co.cache[:GradInequalityConstraints], copy(M, p)) do
-            get_grad_inequality_constraints(M, co.objective, p)
-        end,
-    )
-end
-function get_grad_inequality_constraints!(
-    M::AbstractManifold, X, co::ManifoldCachedObjective, p
-)
-    !(haskey(co.cache, :GradInequalityConstraints)) &&
-        return get_grad_inequality_constraints!(M, X, co.objective, p)
-    copyto!.(
-        Ref(M),
-        X,
-        Ref(p),
-        get!(co.cache[:GradInequalityConstraints], copy(M, p)) do
-            # This evaluates in place of X
-            get_grad_inequality_constraints!(M, X, co.objective, p)
-            copy.(Ref(M), Ref(p), X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )
     return X

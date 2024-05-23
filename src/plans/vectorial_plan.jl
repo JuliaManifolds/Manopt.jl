@@ -164,13 +164,9 @@ The `i` can be a linear index, you can provide
 * `:` to return the vector of all gradients
 
 """
-get_value(M::AbstractManifold, vgf::VectorGradientFunction, p, i; range=nothing)
+get_value(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
 function get_value(
-    M::AbstractManifold,
-    vgf::VectorGradientFunction{E,<:FunctionVectorialType},
-    p,
-    i,
-    range=nothing,
+    M::AbstractManifold, vgf::VectorGradientFunction{E,<:FunctionVectorialType}, p, i
 ) where {E}
     c = vgf.value!!(M, p)
     if isa(c, Number)
@@ -184,16 +180,11 @@ function get_value(
     vgf::VectorGradientFunction{E,<:ComponentVectorialType},
     p,
     i::Integer,
-    range=nothing,
 ) where {E}
     return vgf.value!![i](M, p)
 end
 function get_value(
-    M::AbstractManifold,
-    vgf::VectorGradientFunction{E,<:ComponentVectorialType},
-    p,
-    i,
-    range=nothing,
+    M::AbstractManifold, vgf::VectorGradientFunction{E,<:ComponentVectorialType}, p, i
 ) where {E}
     return [f(M, p) for f in vgf.value!![i]]
 end
@@ -206,7 +197,6 @@ return the internally stored function computing [`get_value`](@ref).
 function get_value_function(vgf::VectorGradientFunction, recursive=false)
     return vgf.value!!
 end
-
 @doc raw"""
     get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
     get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range)
@@ -495,26 +485,3 @@ Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps in
 that is the number `n`.
 """
 Base.length(vgf::VectorGradientFunction) = vgf.range_dimension
-#
-#
-# TODO: Jacobian Evaluations
-# TODO: Maybe generate Jacobian from Gradients?
-
-#
-#
-# Maybe something for a bit later when we know that the approach above works just fine.
-function get_jacobian end
-
-@doc raw"""
-    get_jacobian(M::AbstractManifold, vgf::VectorGradientFunction, p, B)
-
-Evaluate and return the Jacobian with respect to a basis of the tangent space.
-"""
-get_jacobian(M::AbstractManifold, vgf::VectorGradientFunction, p, B)
-
-#TODO Check all cases and decompose vectors in basis B to get Jacobian
-# For jacobian representation check to maybe do a change of basis if the indernal basis does not agree with B? Or error?
-
-function get_jacobian_function(vgf::VectorGradientFunction, recursive=false)
-    return vgf.jacobian!!
-end
