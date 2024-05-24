@@ -1,5 +1,115 @@
-include("../solvers/interior_point_Newton.jl")
+# struct for state of interior point algorithm
+mutable struct InteriorPointState{
+    P,
+    Pr<:AbstractManoptProblem,
+    St<:AbstractManoptSolverState,
+    T,
+    R,
+    TStop<:StoppingCriterion,
+    TRTM<:AbstractRetractionMethod,
+    TStepsize<:Stepsize,
+} <: AbstractGradientSolverState
+    p::P
+    sub_problem::Pr
+    sub_state::St
+    X::T # not sure if needed?
+    μ::T
+    λ::T
+    s::T
+    ρ::R
+    σ::R
+    stop::TStop
+    retraction_method::TRTM
+    stepsize::TStepsize
+    function InteriorPointState(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        p::P,
+        sub_problem::Pr,
+        sub_state::St;
+        X::T=get_gradient(M, cmo, p), # not sure if needed?
+        μ::T=ones(length(get_inequality_constraints(M, cmo, p))),
+        λ::T=zeros(length(get_equality_constraints(M, cmo, p))),
+        s::T=ones(length(get_inequality_constraints(M, cmo, p))),
+        ρ::R=μ's / length(get_inequality_constraints(M, cmo, p)),
+        σ::R=calculate_σ(M, cmo, p, μ, λ, s),
+        stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        stepsize::Stepsize=InteriorPointLinesearch(
+            M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s);
+            retraction_method=default_retraction_method(
+                M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
+            ),
+            initial_stepsize=1.0,
+        ),
+        kwargs...,
+    ) where {P,Pr,St,T,R}
+        ips = new{
+            P,
+            typeof(sub_problem),
+            typeof(sub_state),
+            T,
+            R,
+            typeof(stop),
+            typeof(retraction_method),
+            typeof(stepsize),
+        }()
+        ips.p = p
+        ips.sub_problem = sub_problem
+        ips.sub_state = sub_state
+        ips.X = X
+        ips.μ = μ
+        ips.λ = λ
+        ips.s = s
+        ips.ρ = ρ
+        ips.σ = σ
+        ips.stop = stop
+        ips.retraction_method = retraction_method
+        ips.stepsize = stepsize
+        return ips
+    end
+end
 
+# get & set iterate
+get_iterate(ips::InteriorPointState) = ips.p
+function set_iterate!(ips::InteriorPointState, ::AbstractManifold, p)
+    ips.p = p
+    return ips
+end
+# get & set gradient (not sure if needed?)
+get_gradient(ips::InteriorPointState) = ips.X
+function set_gradient!(ips::InteriorPointState, ::AbstractManifold, X)
+    ips.X = X
+    return ips
+end
+# only message on stepsize for now
+function get_message(ips::InteriorPointState)
+    return get_message(ips.stepsize)
+end
+# pretty print state info
+function show(io::IO, ips::InteriorPointState)
+    i = get_count(ips, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Interior Point Newton Method
+    $Iter
+    ## Parameters
+    * ρ: $(ips.ρ)
+    * σ: $(ips.σ)
+    ## Stopping criterion
+    $(status_summary(ips.stop))
+    * retraction method: $(ips.retraction_method)
+    ## Stepsize
+    $(ips.stepsize)
+    This indicates convergence: $Conv
+    """
+    return print(io, s)
+end
+
+#
+#
+# A special linesearch for IP Newton
 function interior_point_initial_guess(
     mp::AbstractManoptProblem, ips::InteriorPointState, ::Int, l::Real
 )
@@ -15,7 +125,7 @@ function interior_point_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
-mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F} <: Linesearch
+mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F,DF,IF} <: Linesearch
     candidate_point::Q
     contraction_factor::Float64
     initial_guess::F
@@ -28,8 +138,12 @@ mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F} <: Lin
     stop_when_stepsize_exceeds::Float64
     stop_increasing_at_step::Int
     stop_decreasing_at_step::Int
+    additional_decrease_condition::DF
+    additional_increase_condition::IF
     function InteriorPointLinesearch(
         N::AbstractManifold=DefaultManifold();
+        additional_decrease_condition::DF=(N, q) -> true,
+        additional_increase_condition::IF=(N, q) -> true,
         candidate_point::Q=allocate_result(N, rand),
         contraction_factor::Real=0.95,
         initial_stepsize::Real=1.0,
@@ -37,11 +151,11 @@ mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F} <: Lin
         retraction_method::TRM=default_retraction_method(N),
         stop_when_stepsize_less::Real=0.0,
         stop_when_stepsize_exceeds::Real=max_stepsize(N),
-        stop_increasing_at_step::Int=100,
+        stop_increasing_at_step::Int=0,
         stop_decreasing_at_step::Int=1000,
         sufficient_decrease=0.1,
-    ) where {TRM,Q}
-        return new{TRM,Q,typeof(initial_guess)}(
+    ) where {TRM,Q,DF,IF}
+        return new{TRM,Q,typeof(initial_guess),DF,IF}(
             candidate_point,
             contraction_factor,
             initial_guess,
@@ -54,6 +168,8 @@ mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F} <: Lin
             stop_when_stepsize_exceeds,
             stop_increasing_at_step,
             stop_decreasing_at_step,
+            additional_decrease_condition,
+            additional_increase_condition,
         )
     end
 end
@@ -87,6 +203,8 @@ function (ipls::InteriorPointLinesearch)(
                                    norm(N, q, η),
         stop_increasing_at_step=ipls.stop_increasing_at_step,
         stop_decreasing_at_step=ipls.stop_decreasing_at_step,
+        additional_decrease_condition=ipls.additional_decrease_condition,
+        additional_increase_condition=ipls.additional_increase_condition,
     )
     return ipls.last_stepsize
 end
@@ -116,6 +234,9 @@ function get_last_stepsize(
     return step.last_stepsize
 end
 
+#
+#
+# Subproblem gradient and hessian
 mutable struct NegativeReducedLagrangianGrad{T,R}
     cmo::ConstrainedManifoldObjective
     μ::T
@@ -196,7 +317,9 @@ function (rlh::ReducedLagrangianHess)(N::AbstractManifold, q, Y)
 end
 
 function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
-    p, μ, λ, s = q.x
+    return MeritFunction(N, cmo, q[N, 1], q[N, 2], q[N, 3], q[N, 4])
+end
+function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
     m, n = length(μ), length(λ)
     g = get_inequality_constraints(N[1], cmo, p)
     h = get_equality_constraints(N[1], cmo, p)
@@ -219,12 +342,6 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     copyto!(N[3], q[N,3], λ)
     copyto!(N[4], q[N,4], s)
     return min(0.5, MeritFunction(N, cmo, q)^(1/4))
-    
-    G = NegativeReducedLagrangianGrad(
-        get_objective(amp), ips.μ, ips.λ, ips.s, ips.ρ*ips.σ
-    )
-    
-    return minG(N, q)
 end
 
 function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
@@ -249,4 +366,21 @@ function is_feasible(M, cmo, p)
     g = get_inequality_constraints(M, cmo, p)
     h = get_equality_constraints(M, cmo, p)
     return is_point(M, p) && all(g .<= 0) && all(h .== 0)
+end
+
+mutable struct ConstraintLineSearchCheckFunction{CO}
+    cmo::CO
+    τ1::Float64
+    τ2::Float64
+    γ::Float64
+end
+# ConstraintLineSearchCheckFunction(N::ProductManifold, q0) = ....
+function (clcf::ConstraintLineSearchCheckFunction)(N,q)
+    #p = q[N,1]
+    μ = q[N,2]
+    #λ = q[N,3]
+    s = q[N,4]
+    (minimum(μ .* s)  - clcf.γ*clcf.τ1/ length(μ) < 0) && return false
+    (sum(μ .* s) - clcf.γ*clcf.τ2 * sqrt(MeritFunction(N, clcf.cmo, q)) < 0) && return false
+    return true
 end

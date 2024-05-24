@@ -1,109 +1,3 @@
-# struct for state of interior point algorithm
-mutable struct InteriorPointState{
-    P,
-    Pr<:AbstractManoptProblem,
-    St<:AbstractManoptSolverState,
-    T,
-    R,
-    TStop<:StoppingCriterion,
-    TRTM<:AbstractRetractionMethod,
-    TStepsize<:Stepsize,
-} <: AbstractGradientSolverState
-    p::P
-    sub_problem::Pr
-    sub_state::St
-    X::T # not sure if needed?
-    μ::T
-    λ::T
-    s::T
-    ρ::R
-    σ::R
-    stop::TStop
-    retraction_method::TRTM
-    stepsize::TStepsize
-    function InteriorPointState(
-        M::AbstractManifold,
-        cmo::ConstrainedManifoldObjective,
-        p::P,
-        sub_problem::Pr,
-        sub_state::St;
-        X::T=get_gradient(M, cmo, p), # not sure if needed?
-        μ::T=ones(length(get_inequality_constraints(M, cmo, p))),
-        λ::T=zeros(length(get_equality_constraints(M, cmo, p))),
-        s::T=ones(length(get_inequality_constraints(M, cmo, p))),
-        ρ::R=μ's / length(get_inequality_constraints(M, cmo, p)),
-        σ::R = calculate_σ(M, cmo, p, μ, λ, s),
-        stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        stepsize::Stepsize=InteriorPointLinesearch(
-            M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s); retraction_method=default_retraction_method(
-                M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
-            ), initial_stepsize=1.0),
-        kwargs...,
-    ) where {P,Pr,St,T,R}
-        ips = new{
-            P,
-            typeof(sub_problem),
-            typeof(sub_state),
-            T,
-            R,
-            typeof(stop),
-            typeof(retraction_method),
-            typeof(stepsize),
-        }()
-        ips.p = p
-        ips.sub_problem = sub_problem
-        ips.sub_state = sub_state
-        ips.X = X
-        ips.μ = μ
-        ips.λ = λ
-        ips.s = s
-        ips.ρ = ρ
-        ips.σ = σ
-        ips.stop = stop
-        ips.retraction_method = retraction_method
-        ips.stepsize = stepsize
-        return ips
-    end
-end
-
-# get & set iterate
-get_iterate(ips::InteriorPointState) = ips.p
-function set_iterate!(ips::InteriorPointState, ::AbstractManifold, p)
-    ips.p = p
-    return ips
-end
-# get & set gradient (not sure if needed?)
-get_gradient(ips::InteriorPointState) = ips.X
-function set_gradient!(ips::InteriorPointState, ::AbstractManifold, X)
-    ips.X = X
-    return ips
-end
-# only message on stepsize for now
-function get_message(ips::InteriorPointState)
-    return get_message(ips.stepsize)
-end
-# pretty print state info
-function show(io::IO, ips::InteriorPointState)
-    i = get_count(ips, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s Interior Point Newton Method
-    $Iter
-    ## Parameters
-    * ρ: $(ips.ρ)
-    * σ: $(ips.σ)
-    ## Stopping criterion
-    $(status_summary(ips.stop))
-    * retraction method: $(ips.retraction_method)
-    ## Stepsize
-    $(ips.stepsize)
-    This indicates convergence: $Conv
-    """
-    return print(io, s)
-end
-
 # not-in-place,
 # takes M, f, grad_f, Hess_f and possibly constraint functions and their graidents
 function interior_point_Newton(
@@ -204,10 +98,18 @@ function interior_point_Newton!(
     σ = calculate_σ(M, cmo, p, μ, λ, s),
     stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    _N = M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s),
     stepsize::Stepsize=InteriorPointLinesearch(
-        M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s); retraction_method=default_retraction_method(
-            M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
-        ), initial_stepsize=1.0),
+        _N;
+        retraction_method=default_retraction_method(_N),
+        #additional_decrease_condition = ConstraintLineSearchCheckFunction(
+        #    cmo,
+        #    length(μ) * minimum(μ .* s) / sum(μ .* s),
+        #    sum(μ .* s) / sqrt(MeritFunction(_N, cmo, p, μ, λ, s)),
+        #    0.5,
+        #),
+        initial_stepsize=1.0
+    ),
     sub_kwargs=(;),
     sub_objective = decorate_objective!(
         TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))) ,
@@ -293,14 +195,14 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
         Xμ = (ips.μ .* (Jg * Xp .+ g)) ./ ips.s
         Xs = (ips.ρ*ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
     end
-    
+
     copyto!(K[1], X[N,1], Xp)
     (m > 0) && (copyto!(K[2], X[K,2], Xμ))
     (n > 0) && (copyto!(K[3], X[K,3], Xλ))
     (m > 0) && (copyto!(K[4], X[K,4], Xs))
 
-    α = ips.stepsize(amp, ips, i, X)*0.1
-    
+    α = ips.stepsize(amp, ips, i, X)#*0.1
+
     # update params
     retract!(M, ips.p, ips.p, α*Xp, ips.retraction_method)
     if m > 0

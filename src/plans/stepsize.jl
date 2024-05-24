@@ -439,6 +439,7 @@ function linesearch_backtrack!(
     i = 0
     # Ensure that both the original condition and the additional one are fulfilled afterwards
     while f_q < f0 + decrease * s * search_dir_inner || !additional_increase_condition(M, q)
+        (stop_increasing_at_step == 0) && break
         i = i + 1
         s = s / contract
         retract!(M, q, p, η, s, retraction_method)
