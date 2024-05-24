@@ -109,22 +109,22 @@ end
 proxes = [ [ (M, λ, p) -> prox_C(M, λ, project(M, Ci, p), p) for Ci in Ck ]..., (M, λ, p) -> project(M, C, p)]
 
 # ╔═╡ bef76406-0aae-41a8-882b-11d72fe00222
-n = length(proxes)
+n_p = length(proxes)
 
 # ╔═╡ 8f69a7b2-c1e9-4f4e-a0d1-4bd0d30fb01e
-prox1 = (N, λ, p) -> [ proxes[i](N.manifold, λ, p[N,i]) for i=1:n ]
+prox1 = (N, λ, p) -> [ proxes[i](N.manifold, λ, p[N,i]) for i=1:n_p ]
 
 # ╔═╡ 96cef965-15fb-46db-bbb8-422e9706c0de
-prox2 = (N, λ, p) -> fill(mean(N.manifold, p, GradientDescentEstimation(); stop_iter=4), 5)
+prox2 = (N, λ, p) -> fill(mean(N.manifold, p, GradientDescentEstimation(); stop_iter=10), length(Ck)+1)
 
 # ╔═╡ fad104f0-31eb-46c5-acd9-be0db3a7593f
-N = PowerManifold(M, NestedPowerRepresentation(), n)
+N = PowerManifold(M, NestedPowerRepresentation(), n_p)
+
+# ╔═╡ b6491d40-a489-45ce-a05c-a16206d7b921
+q0 = [4.0, 4.0]
 
 # ╔═╡ a2d0f610-dfb9-4628-b122-c206d4488dc0
-p0 = fill([10.0, 10.0], n)
-
-# ╔═╡ 7135c6c9-9ce6-45e8-9582-368805cca43c
-rand(M)
+p0 = [copy(M, q0) for _ in 1:n_p]
 
 # ╔═╡ eb5f68d7-2549-4de6-a69b-32a2459a449b
 x_star = [35.0*exp(0.4*cos(5*π/4)), 35.0*exp(0.4*cos(5*π/4))]
@@ -133,13 +133,19 @@ x_star = [35.0*exp(0.4*cos(5*π/4)), 35.0*exp(0.4*cos(5*π/4))]
 λ = 0.55 # prox parameter
 
 # ╔═╡ 528f8342-f002-4c7f-adf2-881e36657cd6
-α = 0.75 # relaxation
+α = 0.69 # relaxation
+
+# ╔═╡ 3fc613d0-be2c-44d7-abc5-f6910f93b008
+n=2
+
+# ╔═╡ d67632e2-6ad9-4ec8-972e-af9d095516af
+θ = 0.1
 
 # ╔═╡ 24ff4538-319d-4578-98fc-0c2fdc1571b3
-sc = StopWhenChangeLess(1e-9) | StopAfterIteration(1500);
+sc = StopWhenChangeLess(1e-11) | StopAfterIteration(1500);
 
 # ╔═╡ 5f7c3331-6589-41ad-a9ef-cb6643d5d736
-@time s1 = DouglasRachford(
+@time s = DouglasRachford(
     N,
     cost,
     [prox1, prox2],
@@ -150,19 +156,30 @@ sc = StopWhenChangeLess(1e-9) | StopAfterIteration(1500);
     record = [:Iteration, :Cost, :Iterate],
     stopping_criterion=sc,
     return_state=true,
+)
+
+# ╔═╡ e11d8c79-4add-4185-8791-074bb608cc02
+t = @benchmark DouglasRachford(
+    $N,
+    $cost,
+    $([prox1, prox2]),
+    $p0;
+    λ=$(i -> λ),
+    α=$(i -> α),
+    stopping_criterion=$sc,
 )
 
 # ╔═╡ 92f12dc0-45c8-4cbf-8444-0415380b7fbc
-distance(M, C.center, project(M, C, get_solver_result(s1)[1])) - C.radius
+distance(M, C.center, project(M, C, get_solver_result(s)[1])) - C.radius
 
 # ╔═╡ cf6fdac2-0fe7-4ae2-b36d-ed93944bfba5
 # acceleration
-@time s3 = DouglasRachford(
+@time s_acc = DouglasRachford(
     N,
     cost,
     [prox1, prox2],
     p0;
-	n=3,
+	n=n,
     λ=i -> λ,
     α=i -> α,
 	debug =  [:Iteration, " | ", :Cost, " ", :Change, "\n", 10, :Stop],
@@ -171,30 +188,86 @@ distance(M, C.center, project(M, C, get_solver_result(s1)[1])) - C.radius
     return_state=true,
 )
 
+# ╔═╡ bfa1c26a-70ba-49b2-8edf-c0cf36c875ee
+t_acc = @benchmark DouglasRachford(
+    $N,
+    $cost,
+    $([prox1, prox2]),
+    $p0;
+	n=$n,
+    λ=$(i -> λ),
+    α=$(i -> α),
+    stopping_criterion=$sc,
+)
+
 # ╔═╡ 6744e6fa-8002-41a4-9e37-4de5d0413693
-# ineratia
-@time s4 = DouglasRachford(
+# inertia
+@time s_inertia = DouglasRachford(
     N,
     cost,
     [prox1, prox2],
     p0;
-	θ=i -> 0.01/i,
+	θ=i -> θ,
     λ=i -> λ,
     α=i -> α,
-	debug =  [:Iteration, " | ", :Cost, " ", :Change, "\n", 100, :Stop],
+	debug =  [:Iteration, " | ", :Cost, " ", :Change, "\n", 10, :Stop],
     record = [:Iteration, :Cost, :Iterate],
     stopping_criterion=sc,
     return_state=true,
 )
 
+# ╔═╡ d7091803-fdd2-4926-a0b7-c827cb8ff03e
+# inertia
+t_inertia = @benchmark DouglasRachford(
+    $N,
+    $cost,
+    $([prox1, prox2]),
+    $p0;
+	θ=$(i -> θ),
+    λ=$(i -> λ),
+    α=$(i -> α),
+    stopping_criterion=$sc,
+)
+
+# ╔═╡ 8cfed9db-9ad5-4cd8-a79c-3467c56d17ba
+# inertia & acc
+@time s_acc_inertia = DouglasRachford(
+    N,
+    cost,
+    [prox1, prox2],
+    p0;
+	θ=i -> θ,
+	n=n,
+    λ=i -> λ,
+    α=i -> α,
+	debug =  [:Iteration, " | ", :Cost, " ", :Change, "\n", 10, :Stop],
+    record = [:Iteration, :Cost, :Iterate],
+    stopping_criterion=sc,
+    return_state=true,
+)
+
+# ╔═╡ 42f8a30c-64f5-4366-8571-91d0be43bbd4
+# inertia
+t_acc_inertia = @benchmark DouglasRachford(
+    $N,
+    $cost,
+    $([prox1, prox2]),
+    $p0;
+	θ=$(i -> θ),
+	n=$n,
+    λ=$(i -> λ),
+    α=$(i -> α),
+    stopping_criterion=$sc,
+)
+
 # ╔═╡ d37c6bf2-20a7-4c04-acb1-80f47212fc2e
-iterates = [ [e[1] for e in get_record(s, :Iteration)] for s in [s1, s3, s4]];
+iterates = [ [e[1] for e in get_record(s, :Iteration)] for s in [s, s_acc, s_inertia, s_acc_inertia]];
 
 # ╔═╡ 1cbee04b-17c2-4774-9d7e-4da9499e338e
-costs = [ [e[2] for e in get_record(s, :Iteration)] for s in [s1, s3, s4]];
+costs = [ [e[2] for e in get_record(s, :Iteration)] for s in [s, s_acc, s_inertia, s_acc_inertia]];
 
 # ╔═╡ 3d5c8235-89d4-40d6-a427-941c777bfa30
-errors = [ [distance(M, e[3][N,1], x_star) for e in get_record(s, :Iteration)] for s in [s1, s3, s4]];
+errors = [ [distance(M, e[3][N,1], x_star) for e in get_record(s, :Iteration)] for s in [s, s_acc, s_inertia, s_acc_inertia]];
 
 # ╔═╡ ca100387-20db-4fbe-8c2a-1c20bc076429
 begin
@@ -205,8 +278,9 @@ begin
 		#xlim = (0,34),
     );
 	plot!(fig, iterates[1], costs[1], color=indigo, label="Douglas-Rachford");
-	plot!(fig, iterates[2], costs[2], color=sand, label=raw"DR with 3-acceleration");
+	plot!(fig, iterates[2], costs[2], color=sand, label="DR with $n-acceleration");
 	plot!(fig, iterates[3], costs[3], color=teal, label=raw"DR with intertia");
+	plot!(fig, iterates[4], costs[4], color=olive, label=raw"DR with both");
 	fig
 end
 
@@ -214,15 +288,21 @@ end
 begin
     fig2 = plot(
 	    xlabel=raw"Iterations $k$", ylabel=raw"Error",
-        xaxis=:log, yaxis=:log,
+        xaxis=:log,
+		yaxis=:log,
 		#ylim = (1e-26,1e6),
 		#xlim = (0,34),
     );
 	plot!(fig2, iterates[1], errors[1], color=indigo, label="Douglas-Rachford");
-	plot!(fig2, iterates[2], errors[2], color=sand, label=raw"DR with 3-acceleration");
+	plot!(fig2, iterates[2], errors[2], color=sand, label="DR with $n-acceleration");
 	plot!(fig2, iterates[3], errors[3], color=teal, label=raw"DR with intertia");
+	plot!(fig2, iterates[4], errors[4], color=olive, label=raw"DR with both");
 	fig2
 end
+
+# ╔═╡ 487c0c98-175c-425c-816b-84f3b75f3915
+# Iterations
+[length(iters) for iters in iterates]
 
 # ╔═╡ Cell order:
 # ╠═0005bf5f-f7d2-4cbd-ad2f-0e3b2b958f2f
@@ -242,18 +322,26 @@ end
 # ╠═8f69a7b2-c1e9-4f4e-a0d1-4bd0d30fb01e
 # ╠═96cef965-15fb-46db-bbb8-422e9706c0de
 # ╠═fad104f0-31eb-46c5-acd9-be0db3a7593f
+# ╠═b6491d40-a489-45ce-a05c-a16206d7b921
 # ╠═a2d0f610-dfb9-4628-b122-c206d4488dc0
-# ╠═7135c6c9-9ce6-45e8-9582-368805cca43c
 # ╠═eb5f68d7-2549-4de6-a69b-32a2459a449b
 # ╠═480ec918-c928-46d9-b207-c093e05e4f4b
 # ╠═528f8342-f002-4c7f-adf2-881e36657cd6
+# ╠═3fc613d0-be2c-44d7-abc5-f6910f93b008
+# ╠═d67632e2-6ad9-4ec8-972e-af9d095516af
 # ╠═24ff4538-319d-4578-98fc-0c2fdc1571b3
 # ╠═5f7c3331-6589-41ad-a9ef-cb6643d5d736
+# ╠═e11d8c79-4add-4185-8791-074bb608cc02
 # ╠═92f12dc0-45c8-4cbf-8444-0415380b7fbc
 # ╠═cf6fdac2-0fe7-4ae2-b36d-ed93944bfba5
+# ╠═bfa1c26a-70ba-49b2-8edf-c0cf36c875ee
 # ╠═6744e6fa-8002-41a4-9e37-4de5d0413693
+# ╠═d7091803-fdd2-4926-a0b7-c827cb8ff03e
+# ╠═8cfed9db-9ad5-4cd8-a79c-3467c56d17ba
+# ╠═42f8a30c-64f5-4366-8571-91d0be43bbd4
 # ╠═d37c6bf2-20a7-4c04-acb1-80f47212fc2e
 # ╠═1cbee04b-17c2-4774-9d7e-4da9499e338e
 # ╠═3d5c8235-89d4-40d6-a427-941c777bfa30
 # ╠═ca100387-20db-4fbe-8c2a-1c20bc076429
 # ╠═22a0f88c-c775-4bbf-9743-48566b6e05fd
+# ╠═487c0c98-175c-425c-816b-84f3b75f3915

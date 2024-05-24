@@ -402,7 +402,7 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
         # inertia on q
         inverse_retract!(M, drs.X, drs.q, drs.q_old, drs.inverse_retraction_method)
         drs.X .*= -drs.θ(i)
-        copyto!(M, drs.q_old, drs.q) #save before we overwrite iterate
+        copyto!(M, drs.q_old, drs.q) #save q_old before we overwrite iterate
         retract!(M, drs.q, drs.q, drs.X, drs.retraction_method)
     end
     # Compute Tq: 1) in p = prox(q) (the shadow sequence of p that converges to a min)
@@ -413,11 +413,12 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
     get_proximal_map!(amp, drs.p, drs.λ(i), drs.q_tmp, 2)
     # reflect at p_base, store again in q
     _reflect!(M, drs.q_tmp, drs.p, drs.q_tmp, drs.R, drs.reflection_evaluation)
-    # relaxation on q, p
+    # now we have Tq in drs.q_tmp
+    # relaxation on q, p=Tq
     inverse_retract!(M, drs.X, drs.q, drs.q_tmp, drs.inverse_retraction_method)
     retract!(M, drs.q, drs.q, drs.X, drs.α(i), drs.retraction_method)
-    # q -> T^n q; now always using p_base to prox/reflect at since we keep p
-    if drs.n > 0 # q -> T^n q
+    # q -> T^n q; now always using p_base to prox/reflect at since we want to keep shaddow sequence
+    if drs.n > 0 # q -> T^n q, n > 1
         for _ in 1:(drs.n)
             # p_base = prox(q)
             get_proximal_map!(amp, drs.p_base, drs.λ(i), drs.q, 1)
