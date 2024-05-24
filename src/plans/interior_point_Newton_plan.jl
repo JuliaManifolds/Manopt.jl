@@ -1,4 +1,108 @@
-include("../solvers/interior_point_Newton.jl")
+# struct for state of interior point algorithm
+mutable struct InteriorPointState{
+    P,
+    Pr<:AbstractManoptProblem,
+    St<:AbstractManoptSolverState,
+    T,
+    R,
+    TStop<:StoppingCriterion,
+    TRTM<:AbstractRetractionMethod,
+    TStepsize<:Stepsize,
+} <: AbstractGradientSolverState
+    p::P
+    sub_problem::Pr
+    sub_state::St
+    X::T # not sure if needed?
+    μ::T
+    λ::T
+    s::T
+    ρ::R
+    σ::R
+    stop::TStop
+    retraction_method::TRTM
+    stepsize::TStepsize
+    function InteriorPointState(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        p::P,
+        sub_problem::Pr,
+        sub_state::St;
+        X::T=get_gradient(M, cmo, p), # not sure if needed?
+        μ::T=ones(length(get_inequality_constraints(M, cmo, p))),
+        λ::T=zeros(length(get_equality_constraints(M, cmo, p))),
+        s::T=ones(length(get_inequality_constraints(M, cmo, p))),
+        ρ::R=μ's / length(get_inequality_constraints(M, cmo, p)),
+        σ::R = calculate_σ(M, cmo, p, μ, λ, s),
+        stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
+        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+        stepsize::Stepsize=InteriorPointLinesearch(
+            M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s); retraction_method=default_retraction_method(
+                M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
+            ), initial_stepsize=1.0),
+        kwargs...,
+    ) where {P,Pr,St,T,R}
+        ips = new{
+            P,
+            typeof(sub_problem),
+            typeof(sub_state),
+            T,
+            R,
+            typeof(stop),
+            typeof(retraction_method),
+            typeof(stepsize),
+        }()
+        ips.p = p
+        ips.sub_problem = sub_problem
+        ips.sub_state = sub_state
+        ips.X = X
+        ips.μ = μ
+        ips.λ = λ
+        ips.s = s
+        ips.ρ = ρ
+        ips.σ = σ
+        ips.stop = stop
+        ips.retraction_method = retraction_method
+        ips.stepsize = stepsize
+        return ips
+    end
+end
+
+# get & set iterate
+get_iterate(ips::InteriorPointState) = ips.p
+function set_iterate!(ips::InteriorPointState, ::AbstractManifold, p)
+    ips.p = p
+    return ips
+end
+# get & set gradient (not sure if needed?)
+get_gradient(ips::InteriorPointState) = ips.X
+function set_gradient!(ips::InteriorPointState, ::AbstractManifold, X)
+    ips.X = X
+    return ips
+end
+# only message on stepsize for now
+function get_message(ips::InteriorPointState)
+    return get_message(ips.stepsize)
+end
+# pretty print state info
+function show(io::IO, ips::InteriorPointState)
+    i = get_count(ips, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Interior Point Newton Method
+    $Iter
+    ## Parameters
+    * ρ: $(ips.ρ)
+    * σ: $(ips.σ)
+    ## Stopping criterion
+    $(status_summary(ips.stop))
+    * retraction method: $(ips.retraction_method)
+    ## Stepsize
+    $(ips.stepsize)
+    This indicates convergence: $Conv
+    """
+    return print(io, s)
+end
 
 mutable struct NegativeReducedLagrangianGrad{T,R}
     cmo::ConstrainedManifoldObjective
@@ -93,6 +197,22 @@ function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q
     (m > 0) && (d += norm(g + s)^2 + norm(μ .* s)^2)
     (n > 0) && (d += norm(h)^2)
     return d
+end
+
+function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
+    N = M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
+    q = allocate_result(N, rand)
+    copyto!(N[1], q[N,1], p)
+    copyto!(N[2], q[N,2], μ)
+    copyto!(N[3], q[N,3], λ)
+    copyto!(N[4], q[N,4], s)
+    return min(0.5, MeritFunction(N, cmo, q)^(1/4))
+    
+    G = NegativeReducedLagrangianGrad(
+        get_objective(amp), ips.μ, ips.λ, ips.s, ips.ρ*ips.σ
+    )
+    
+    return minG(N, q)
 end
 
 function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
