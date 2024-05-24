@@ -46,7 +46,7 @@ using Test
         rosenbrock, rosenbrock_grad!; evaluation=InplaceEvaluation()
     )
     mp = DefaultManoptProblem(M, mgo)
-    @test get_last_stepsize(mp, x_opt, x_opt.stepsize, 1) > 0.0
+    @test get_last_stepsize(mp, x_opt, 1) > 0.0
 
     # this tests catching LineSearchException
     @test_throws LineSearchException ls_hz(mp, x_opt, 1, NaN * zero_vector(M, x0))

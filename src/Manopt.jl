@@ -10,7 +10,7 @@ module Manopt
 
 import Base: &, copy, getindex, identity, setindex!, show, |
 import LinearAlgebra: reflect!
-import ManifoldsBase: embed!
+import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 
 using ColorSchemes
 using ColorTypes
@@ -146,7 +146,7 @@ using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
-using Statistics: cor, cov, mean, median, std
+using Statistics
 
 include("plans/plan.jl")
 # solvers general framework
@@ -253,9 +253,6 @@ function __init__()
         end
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
-        end
-        @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
-            include("../ext/ManoptPlotsExt/ManoptPlotsExt.jl")
         end
         @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
             include("../ext/ManoptLineSearchesExt.jl")
@@ -369,7 +366,6 @@ export get_state,
     get_differential_dual_prox!,
     set_gradient!,
     set_iterate!,
-    set_manopt_parameter!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -493,9 +489,8 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export ArmijoLinesearch,
-    ConstantStepsize, DecreasingStepsize, Linesearch, NonmonotoneLinesearch
-export AdaptiveWNGradient
+export AdaptiveWNGradient, ConstantStepsize, DecreasingStepsize, PolyakStepsize
+export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 #
 # Stopping Criteria

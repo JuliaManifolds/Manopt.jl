@@ -1,88 +1,4 @@
 
-function plot_slope end
-
-"""
-    plot_slope(x, y; slope=2, line_base=0, a=0, b=2.0, i=1,j=length(x))
-
-Plot the result from the verification functions [`check_gradient`](@ref), [`check_differential`](@ref), [`check_Hessian`](@ref)
-on data `x,y` with two comparison lines
-
-1) `line_base` + t`slope`  as the global slope the plot should have
-2) `a` + `b*t` on the interval [`x[i]`, `x[j]`] for some (best fitting) comparison slope
-"""
-plot_slope(x, y)
-
-"""
-    prepare_check_result(log_range, errors, slope)
-
-Given a range of values `log_range`, with computed `errors`,
-verify whether this yields a slope of `slope` in log-scale
-
-Note that if the errors are below the given tolerance and the method is exact,
-no plot is be generated,
-
-# Keyword arguments
-
-* `exactness_tol`: (`1e3*eps(eltype(errors))`) is all errors are below this tolerance, the verification is considered to be exact
-* `io`:            (`nothing`) provide an `IO` to print the result to
-* `name`:          (`"differential"`) name to display in the plot title
-* `plot`:          (`false`) whether to plot the result (if `Plots.jl` is loaded).
-  The plot is in log-log-scale. This is returned and can then also be saved.
-* `slope_tol`:     (`0.1`) tolerance for the slope (global) of the approximation
-* `throw_error`:   (`false`) throw an error message if the gradient or Hessian is wrong
-"""
-function prepare_check_result(
-    log_range,
-    errors,
-    slope;
-    io::Union{IO,Nothing}=nothing,
-    name="estimated slope",
-    slope_tol=1e-1,
-    plot=false,
-    throw_error=false,
-    window=nothing,
-    exactness_tol=1e3 * eps(eltype(errors)),
-)
-    if max(errors...) < exactness_tol
-        (io !== nothing) && print(
-            io,
-            "All errors are below the exactness tolerance $(exactness_tol). Your check can be considered exact, hence there is no use to check for a slope.\n",
-        )
-        return true
-    end
-    x = log_range[errors .> 0]
-    T = exp10.(x)
-    y = log10.(errors[errors .> 0])
-    (a, b) = find_best_slope_window(x, y, length(x))[1:2]
-    if isapprox(b, slope; atol=slope_tol)
-        plot && return plot_slope(
-            T,
-            errors[errors .> 0];
-            slope=slope,
-            line_base=errors[1],
-            a=a,
-            b=b,
-            i=1,
-            j=length(y),
-        )
-        (io !== nothing) && print(
-            io,
-            "Your $name's slope is globally $(@sprintf("%.4f", b)), so within $slope ± $(slope_tol).\n",
-        )
-        return true
-    end
-    # otherwise
-    # find best contiguous window of length w
-    (ab, bb, ib, jb) = find_best_slope_window(x, y, window; slope_tol=slope_tol)
-    msg = "The $(name) fits best on [$(T[ib]),$(T[jb])] with slope  $(@sprintf("%.4f", bb)), but globally your slope $(@sprintf("%.4f", b)) is outside of the tolerance $slope ± $(slope_tol).\n"
-    (io !== nothing) && print(io, msg)
-    plot && return plot_slope(
-        T, errors[errors .> 0]; slope=slope, line_base=errors[1], a=ab, b=bb, i=ib, j=jb
-    )
-    throw_error && throw(ErrorException(msg))
-    return false
-end
-
 @doc raw"""
     check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
@@ -124,7 +40,7 @@ function check_differential(
     plot=false,
     retraction_method=default_retraction_method(M, typeof(p)),
     slope_tol=0.1,
-    throw_error=false,
+    error::Symbol=:none,
     window=nothing,
 )
     Xn = X ./ norm(M, p, X) # normalize tangent direction
@@ -145,7 +61,7 @@ function check_differential(
         name=name,
         plot=plot,
         slope_tol=slope_tol,
-        throw_error=throw_error,
+        error=error,
         window=window,
     )
 end
@@ -181,7 +97,7 @@ no plot is generated.
 * `retraction_method`: (`default_retraction_method(M, typeof(p))`) retraction method to use
 * `slope_tol`:         (`0.1`) tolerance for the slope (global) of the approximation
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to `is_vector` if `check_vector` is set to `true`
-* `throw_error`:       (`false`) throw an error message if the gradient is wrong
+* `error`:             (`:none`) how to handle errors, possible values: `:error`, `:info`, `:warn`
 * `window`:            (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
@@ -196,19 +112,17 @@ function check_gradient(
     p=rand(M),
     X=rand(M; vector_at=p);
     gradient=grad_f(M, p),
-    check_vector=false,
-    throw_error=false,
+    check_vector::Bool=false,
+    error::Symbol=:none,
     atol::Real=0,
     rtol::Real=atol > 0 ? 0 : sqrt(eps(eltype(p))),
     kwargs...,
 )
     check_vector &&
-        (!is_vector(M, p, gradient, throw_error; atol=atol, rtol=rtol) && return false)
+        (!is_vector(M, p, gradient, error === :error; atol=atol, rtol=rtol) && return false)
     # function for the directional derivative - real so it also works on complex manifolds
     df(M, p, Y) = real(inner(M, p, gradient, Y))
-    return check_differential(
-        M, f, df, p, X; name="gradient", throw_error=throw_error, kwargs...
-    )
+    return check_differential(M, f, df, p, X; name="gradient", error=error, kwargs...)
 end
 
 @doc raw"""
@@ -256,7 +170,7 @@ no plot is generated.
 * `plot`:              (`false`) whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
 * `retraction_method`: (`default_retraction_method(M, typeof(p))`) retraction method to use for
 * `slope_tol`:         (`0.1`) tolerance for the slope (global) of the approximation
-* `throw_error`:       (`false`) throw an error message if the Hessian is wrong
+* `error`:             (`:none`) how to handle errors, possible values: `:error`, `:info`, `:warn`
 * `window`:            (`nothing`) specify window sizes within the `log_range` that are used for the slope estimation.
   the default is, to use all window sizes `2:N`.
 
@@ -293,7 +207,7 @@ function check_Hessian(
     retraction_method=default_retraction_method(M, typeof(p)),
     rtol::Real=atol > 0 ? 0 : sqrt(eps(eltype(p))),
     slope_tol=0.1,
-    throw_error=false,
+    error=:none,
     window=nothing,
     kwargs...,
 )
@@ -305,7 +219,7 @@ function check_Hessian(
             p,
             X;
             gradient=gradient,
-            throw_error=throw_error,
+            error=error,
             io=io,
             check_vector=check_vector,
             atol=atol,
@@ -317,17 +231,17 @@ function check_Hessian(
         end
     end
     check_vector &&
-        (!is_vector(M, p, Hessian, throw_error; atol=atol, rtol=rtol) && return false)
+        (!is_vector(M, p, Hessian, error === :error; atol=atol, rtol=rtol) && return false)
     if check_linearity
         if !is_Hessian_linear(
-            M, Hess_f, p, X, Y, a, b; throw_error=throw_error, io=io, atol=atol, rtol=rtol
+            M, Hess_f, p, X, Y, a, b; error=error, io=io, atol=atol, rtol=rtol
         )
             return false
         end
     end
     if check_symmetry
         if !is_Hessian_symmetric(
-            M, Hess_f, p, X, Y; throw_error=throw_error, io=io, atol=atol, rtol=rtol
+            M, Hess_f, p, X, Y; error=error, io=io, atol=atol, rtol=rtol
         )
             return false
         end
@@ -366,7 +280,7 @@ function check_Hessian(
         name="Hessian",
         plot=plot,
         slope_tol=slope_tol,
-        throw_error=throw_error,
+        error=error,
         window=window,
     )
 end
@@ -374,7 +288,7 @@ end
 @doc raw"""
     is_Hessian_linear(M, Hess_f, p,
         X=rand(M; vector_at=p), Y=rand(M; vector_at=p), a=randn(), b=randn();
-        throw_error=false, io=nothing, kwargs...
+        error=:none, io=nothing, kwargs...
     )
 
 Verify whether the Hessian function `Hess_f` fulfills linearity,
@@ -388,7 +302,7 @@ which is checked using `isapprox` and the keyword arguments are passed to this f
 
 # Optional arguments
 
-* `throw_error`: (`false`) throw an error message if the Hessian is wrong
+* `error`: (`:none`) how to handle errors, possible values: `:error`, `:info`, `:warn`
 
 """
 function is_Hessian_linear(
@@ -399,7 +313,7 @@ function is_Hessian_linear(
     Y=rand(M; vector_at=p),
     a=randn(),
     b=randn();
-    throw_error=false,
+    error=:none,
     io=nothing,
     kwargs...,
 )
@@ -409,13 +323,15 @@ function is_Hessian_linear(
     n = norm(M, p, Z1 - Z2)
     m = "Hess f seems to not be linear since Hess_f(p)[aX+bY] differs from aHess f(p)[X] + b*Hess f(p)[Y] by $(n).\n"
     (io !== nothing) && print(io, m)
-    throw_error && throw(ErrorException(m))
+    (error === :info) && @info m
+    (error === :warn) && @warn m
+    (error === :error) && throw(ErrorException(m))
     return false
 end
 
 @doc raw"""
     is_Hessian_symmetric(M, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M; vector_at=p);
-    throw_error=false, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
+    error=:none, io=nothing, atol::Real=0, rtol::Real=atol>0 ? 0 : √eps
 )
 
 Verify whether the Hessian function `Hess_f` fulfills symmetry, which means that
@@ -429,7 +345,7 @@ which is checked using `isapprox` and the `kwargs...` are passed to this functio
 # Optional arguments
 
 * `atol`, `rtol`   with the same defaults as the usual `isapprox`
-* `throw_error`:    (`false`) throw an error message if the Hessian is wrong
+* `error`: (`:none`) how to handle errors, possible values: `:error`, `:info`, `:warn`
 """
 function is_Hessian_symmetric(
     M,
@@ -437,7 +353,7 @@ function is_Hessian_symmetric(
     p=rand(M),
     X=rand(M; vector_at=p),
     Y=rand(M; vector_at=p);
-    throw_error=false,
+    error=:none,
     io=nothing,
     atol::Real=0,
     rtol::Real=atol > 0 ? 0 : sqrt(eps(number_eltype(p))),
@@ -448,67 +364,8 @@ function is_Hessian_symmetric(
     isapprox(a, b; atol=atol, rtol=rtol) && (return true)
     m = "Hess f seems to not be symmetric: ⟨Hess f(p)[X], Y⟩ = $a != $b = ⟨Hess f(p)[Y], X⟩"
     (io !== nothing) && print(io, m)
-    throw_error && throw(ErrorException(m))
+    (error === :info) && @info m
+    (error === :warn) && @warn m
+    (error === :error) && throw(ErrorException(m))
     return false
-end
-
-"""
-    (a,b,i,j) = find_best_slope_window(X,Y,window=nothing; slope=2.0, slope_tol=0.1)
-
-Check data X,Y for the largest contiguous interval (window) with a regression line fitting “best”.
-Among all intervals with a slope within `slope_tol` to `slope` the longest one is taken.
-If no such interval exists, the one with the slope closest to `slope` is taken.
-
-If the window is set to `nothing` (default), all window sizes `2,...,length(X)` are checked.
-You can also specify a window size or an array of window sizes.
-
-For each window size, all its translates in the data is checked.
-For all these (shifted) windows the regression line is computed (with `a,b` in `a + t*b`)
-and the best line is computed.
-
-From the best line the following data is returned
-
-* `a`, `b` specifying the regression line `a + t*b`
-* `i`, `j` determining the window, i.e the regression line stems from data `X[i], ..., X[j]`
-"""
-function find_best_slope_window(X, Y, window=nothing; slope=2.0, slope_tol=0.1)
-    n = length(X)
-    if window !== nothing && (any(window .> n))
-        error(
-            "One of the window sizes ($(window)) is larger than the length of the signal (n=$n).",
-        )
-    end
-    a_best = 0
-    b_best = -Inf
-    i_best = 0
-    j_best = 0
-    r_best = 0 # longest interval
-    for w in (window === nothing ? (2:n) : [window...])
-        for j in 1:(n - w + 1)
-            x = X[j:(j + w - 1)]
-            y = Y[j:(j + w - 1)]
-            # fit a line a + bx
-            c = cor(x, y)
-            b = std(y) / std(x) * c
-            a = mean(y) - b * mean(x)
-            # look for the largest interval where b is within slope tolerance
-            r = (maximum(x) - minimum(x))
-            if (r > r_best) && abs(b - slope) < slope_tol #longer interval found.
-                r_best = r
-                a_best = a
-                b_best = b
-                i_best = j
-                j_best = j + w - 1 #last index (see x and y from before)
-            end
-            # not best interval - maybe it is still the (first) best slope?
-            if r_best == 0 && abs(b - slope) < abs(b_best - slope)
-                # but do not update `r` since this indicates only a best r
-                a_best = a
-                b_best = b
-                i_best = j
-                j_best = j + w - 1 #last index (see x and y from before)
-            end
-        end
-    end
-    return (a_best, b_best, i_best, j_best)
 end

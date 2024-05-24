@@ -149,11 +149,6 @@ makedocs(;
             Manopt.ManoptManifoldsExt
         end,
         if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptPlotsExt)
-        else
-            Manopt.ManoptPlotsExt
-        end,
-        if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
         else
             Manopt.ManoptRipQPQuadraticModelsExt
@@ -166,7 +161,7 @@ makedocs(;
         "About" => "about.md",
         (tutorials_in_menu ? [tutorials_menu] : [])...,
         "Solvers" => [
-            "Introduction" => "solvers/index.md",
+            "List of Solvers" => "solvers/index.md",
             "Adaptive Regularization with Cubics" => "solvers/adaptive-regularization-with-cubics.md",
             "Alternating Gradient Descent" => "solvers/alternating_gradient_descent.md",
             "Augmented Lagrangian Method" => "solvers/augmented_Lagrangian_method.md",

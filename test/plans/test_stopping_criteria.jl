@@ -94,12 +94,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test typeof(d) === typeof((a & b) & c)
         update_stopping_criterion!(d, :MinIterateChange, 1e-8)
         @test d.criteria[2].threshold == 1e-8
+        @test length((d & d).criteria) == 6
         e = a | b | c
         @test typeof(e) === typeof(a | b | c)
         @test typeof(e) === typeof(a | (b | c))
         @test typeof(e) === typeof((a | b) | c)
         update_stopping_criterion!(e, :MinGradNorm, 1e-9)
-        @test d.criteria[3].threshold == 1e-9
+        @test e.criteria[3].threshold == 1e-9
+        @test length((e | e).criteria) == 6
     end
 
     @testset "Stopping Criterion print&summary" begin

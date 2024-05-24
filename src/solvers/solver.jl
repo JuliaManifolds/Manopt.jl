@@ -83,7 +83,7 @@ function decorate_objective!(
     M::AbstractManifold,
     o::O;
     cache::Union{
-        Missing,Symbol,Tuple{Symbol,<:AbstractArray},Tuple{Symbol,<:AbstractArray,P}
+        Missing,Symbol,Tuple{Symbol,<:AbstractArray},Tuple{Symbol,<:AbstractArray,P} where P
     }=missing,
     count::Union{Missing,AbstractVector{<:Symbol}}=missing,
     objective_type::Symbol=:Riemannian,
@@ -92,7 +92,7 @@ function decorate_objective!(
     embedded_X=objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
     return_objective=false,
     kwargs...,
-) where {O<:AbstractManifoldObjective,P}
+) where {O<:AbstractManifoldObjective}
     # Order:
     # 1) wrap embedding,
     # 2) _then_ count
