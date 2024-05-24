@@ -422,21 +422,33 @@ function get_equality_constraint(
     (!haskey(co.cache, :EqualityConstraints)) &&
         return get_equality_constraint(M, co.objective, p, i)
     return copy(# Return a copy of the version in the cache
-        get!(co.cache[:EqualityConstraints], (copy(M, p))) do
+        get!(co.cache[:EqualityConstraints], copy(M, p)) do
             get_equality_constraint(M, co.objective, p, i)
         end,
     )
 end
 function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
     error("TODO eq-constr on $i") #noninteger non Colon - what to do?
-    (!haskey(co.cache, :EqualityConstraint)) &&
-        return get_equality_constraint(M, co.objective, p, i)
-
-    return copy(# Return a copy of the version in the cache
-        get!(co.cache[:EqualityConstraint], (copy(M, p), i)) do
-            get_equality_constraint(M, co.objective, p, i)
-        end,
-    )
+    key = copy(M, p)
+    if haskey(co.cache, :EqualityConstraints) # We store the full constraints
+        if haskey(co.cache[:EqualityConstraints], key)
+            return co.cache[:EqualityConstraints][key][i]
+            # but we could not cache to here, since we do not want to evaluate all constraints
+        end
+    end
+    # We do either not have the large cache or no entry for key
+    if haskey(co.cache, :EqualityConstraint) # We store the index constraints
+        return [copy(
+            get!(co.cache[:EqualityConstraint], (key, j)) do
+                get_inequality_constraint(M, co.objective, p, j)
+            end,
+        )
+        # No clue if this works or ee need the _to_iterable_indices
+        # here. _If_ we do, I have exactly no AbstractArray to pass down,
+        # So no clue what to do.
+                for j in i]
+    end # neither cache: pass down to objective
+    return get_equality_constraint(M, co.objective, p, i)
 end
 function get_inequality_constraint(
     M::AbstractManifold, co::ManifoldCachedObjective, p, i::Integer
