@@ -30,7 +30,7 @@ function set_manopt_parameter!(
     return nrlg
 end
 
-function (nrlg::NegativeReducedLagrangianGrad)(M::AbstractManifold, p)
+function (nrlg::NegativeReducedLagrangianGrad)(N::AbstractManifold, q)
     m, n = length(nrlg.μ), length(nrlg.λ)
     g = get_inequality_constraints(N[1], nrlg.cmo, q[N,1])
     Jg = get_grad_inequality_constraints(N[1], nrlg.cmo, q[N,1])
@@ -39,8 +39,8 @@ function (nrlg::NegativeReducedLagrangianGrad)(M::AbstractManifold, p)
     grad = get_gradient(N[1], nrlg.cmo, q[N,1])
     (m > 0) && (grad += Jg' * (nrlg.μ + (nrlg.μ .* g .+ nrlg.barrier_param) ./ nrlg.s))
     (n > 0) && (grad +=  Jh'*λ)
-    copyto!(TqN[1], X[N,1], grad)
-    (n > 0) && (copyto!(TqN[2], X[N,2], Jh'*λ))
+    copyto!(N[1], X[N,1], grad)
+    (n > 0) && (copyto!(N[2], X[N,2], Jh'*λ))
     return -X
 end
 
@@ -74,8 +74,8 @@ function (rlh::ReducedLagrangianHess)(N::AbstractManifold, q, Y)
     X = zero_vector(N, q)
     hess = get_hessian(N[1], rlh.cmo, q[N,1], Y[N,1])
     (m > 0) && (hess += Jg' * Diagonal(rlh.μ ./ rlh.s) * Jg * Y[N,1]) # plus Hess g and Hess h
-    copyto!(TqN[1], X[N,1], hess)
-    (n > 0) && (copyto!(TqN[2], X[N,2], Jh*Y[N,1]))
+    copyto!(N[1], X[N,1], hess)
+    (n > 0) && (copyto!(N[2], X[N,2], Jh*Y[N,1]))
     return X
 end
 

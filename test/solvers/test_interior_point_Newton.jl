@@ -1,6 +1,6 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
-Random.seed!(42)
+# Random.seed!(42)
 A = Symmetric(rand(3,3))
 # A = [2.0 -1.0 0.0; -1.0 2-0 -1.0; 0.0 -1.0 2.0]
 
@@ -30,9 +30,6 @@ res = interior_point_Newton(
     g=g,
     grad_g=grad_g,
     stop=StopAfterIteration(200) | StopWhenChangeLess(1e-6),
-    stepsize=ArmijoLinesearch(
-        M, retraction_method=default_retraction_method(M), initial_stepsize=1.0
-    ),
     debug=[:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, " ", :GradientNorm, "\n", :Stop],
     record=record,
     return_state=true,
