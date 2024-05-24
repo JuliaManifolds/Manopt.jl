@@ -90,29 +90,29 @@ function interior_point_Newton!(
     cmo::O,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    X = get_gradient(M, cmo, p),
-    μ = ones(length(get_inequality_constraints(M, cmo, p))),
-    λ = zeros(length(get_equality_constraints(M, cmo, p))),
-    s = μ,
-    ρ = μ's / length(get_inequality_constraints(M, cmo, p)),
-    σ = calculate_σ(M, cmo, p, μ, λ, s),
+    X=get_gradient(M, cmo, p),
+    μ=ones(length(get_inequality_constraints(M, cmo, p))),
+    λ=zeros(length(get_equality_constraints(M, cmo, p))),
+    s=μ,
+    ρ=μ's / length(get_inequality_constraints(M, cmo, p)),
+    σ=calculate_σ(M, cmo, p, μ, λ, s),
     stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    _N = M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s),
+    _N=M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s),
     stepsize::Stepsize=InteriorPointLinesearch(
         _N;
         retraction_method=default_retraction_method(_N),
-        #additional_decrease_condition = ConstraintLineSearchCheckFunction(
-        #    cmo,
-        #    length(μ) * minimum(μ .* s) / sum(μ .* s),
-        #    sum(μ .* s) / sqrt(MeritFunction(_N, cmo, p, μ, λ, s)),
-        #    0.5,
-        #),
-        initial_stepsize=1.0
+        additional_decrease_condition=ConstraintLineSearchCheckFunction(
+            cmo,
+            length(μ) * minimum(μ .* s) / sum(μ .* s),
+            sum(μ .* s) / sqrt(MeritFunction(_N, cmo, p, μ, λ, s)),
+            0.5,
+        ),
+        initial_stepsize=1.0,
     ),
     sub_kwargs=(;),
-    sub_objective = decorate_objective!(
-        TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))) ,
+    sub_objective=decorate_objective!(
+        TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))),
         SymmetricLinearSystemObjective(
             ReducedLagrangianHess(cmo, μ, λ, s),
             NegativeReducedLagrangianGrad(cmo, μ, λ, s, ρ * σ),
@@ -123,13 +123,16 @@ function interior_point_Newton!(
                                               StopWhenGradientNormLess(1e-5),
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         ConjugateResidualState(
-            TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))) ,
+            TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))),
             sub_objective;
-            stop = sub_stopping_criterion,
-            sub_kwargs...,);
-        sub_kwargs...,),
-    sub_problem::Union{F, AbstractManoptProblem}=DefaultManoptProblem(
-        TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))) , sub_objective),
+            stop=sub_stopping_criterion,
+            sub_kwargs...,
+        );
+        sub_kwargs...,
+    ),
+    sub_problem::Union{F,AbstractManoptProblem}=DefaultManoptProblem(
+        TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))), sub_objective
+    ),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},F}
     !is_feasible(M, cmo, p) && throw(ErrorException("Starting point p must be feasible."))
@@ -171,8 +174,8 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
 
     N = M × ℝ^n
     q = rand(N)
-    copyto!(N[1], q[N,1], ips.p)
-    copyto!(N[2], q[N,2], ips.λ)
+    copyto!(N[1], q[N, 1], ips.p)
+    copyto!(N[2], q[N, 2], ips.λ)
     TqN = TangentSpace(N, q)
 
     # make deterministic as opposed to random?
@@ -192,26 +195,26 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     Xp, Xλ = get_solver_result(solve!(ips.sub_problem, ips.sub_state)).x
 
     if m > 0
-        Xμ = (ips.μ .* (Jg * Xp .+ g)) ./ ips.s
-        Xs = (ips.ρ*ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
+        Xμ = (ips.μ .* ([inner(M, ips.p, Jg[i], Xp) for i in 1:m])) ./ ips.s
+        Xs = (ips.ρ * ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
     end
 
-    copyto!(K[1], X[N,1], Xp)
-    (m > 0) && (copyto!(K[2], X[K,2], Xμ))
-    (n > 0) && (copyto!(K[3], X[K,3], Xλ))
-    (m > 0) && (copyto!(K[4], X[K,4], Xs))
+    copyto!(K[1], X[N, 1], Xp)
+    (m > 0) && (copyto!(K[2], X[K, 2], Xμ))
+    (n > 0) && (copyto!(K[3], X[K, 3], Xλ))
+    (m > 0) && (copyto!(K[4], X[K, 4], Xs))
 
     α = ips.stepsize(amp, ips, i, X)#*0.1
 
     # update params
-    retract!(M, ips.p, ips.p, α*Xp, ips.retraction_method)
+    retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
     if m > 0
-        ips.μ += α*Xμ
-        ips.s += α*Xs
+        ips.μ += α * Xμ
+        ips.s += α * Xs
         ips.ρ = ips.μ'ips.s / m
         ips.σ = calculate_σ(M, cmo, ips.p, ips.μ, ips.λ, ips.s)
     end
-    (n > 0) && (ips.λ += α*Xλ)
+    (n > 0) && (ips.λ += α * Xλ)
 
     return ips
 end

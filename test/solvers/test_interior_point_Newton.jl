@@ -1,7 +1,7 @@
-using Manifolds, Manopt, LinearAlgebra, Random, Plots
+using Manifolds, Manopt, LinearAlgebra, Random
 
-Random.seed!(42)
-A = -Symmetric(rand(3,3))
+#Random.seed!(42)
+A = -Symmetric(rand(3, 3))
 # A = [2.0 -1.0 0.0; -1.0 2-0 -1.0; 0.0 -1.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p
@@ -9,7 +9,7 @@ grad_f(M, p) = (I - p * p') * A * p
 Hess_f(M, p, X) = (I - p * p') * A * X - f(M, p) * X
 
 g(M, p) = -p
-grad_g(M, p) = -(I - p * p')
+grad_g(M, p) = [(-(I - p * p'))[:, i] for i in 1:3]
 M = Manifolds.Sphere(2)
 
 x = rand()
@@ -30,7 +30,21 @@ res = interior_point_Newton(
     g=g,
     grad_g=grad_g,
     stop=StopAfterIteration(200) | StopWhenChangeLess(1e-9),
-    debug=[:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, " ", :GradientNorm, " ", :Feasibility,"\n", :Stop],
+    debug=[
+        :Iteration,
+        " | ",
+        :Cost,
+        " | ",
+        :Stepsize,
+        " | ",
+        :Change,
+        " ",
+        :GradientNorm,
+        " ",
+        :Feasibility,
+        "\n",
+        :Stop,
+    ],
     record=record,
     return_state=true,
 )
