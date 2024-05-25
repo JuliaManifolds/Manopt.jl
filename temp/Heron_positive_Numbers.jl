@@ -136,6 +136,7 @@ x_star = [35.0*exp(0.4*cos(5*π/4)), 35.0*exp(0.4*cos(5*π/4))]
 α = 0.69 # relaxation
 
 # ╔═╡ 3fc613d0-be2c-44d7-abc5-f6910f93b008
+# Acceleration, called p in the paper
 n=2
 
 # ╔═╡ d67632e2-6ad9-4ec8-972e-af9d095516af
