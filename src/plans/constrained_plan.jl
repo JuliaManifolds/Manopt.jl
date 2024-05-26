@@ -252,7 +252,6 @@ function ConstrainedManoptProblem(
     )
 end
 
-
 @doc raw"""
     equality_constraints_length(co::ConstrainedManifoldObjective)
 
