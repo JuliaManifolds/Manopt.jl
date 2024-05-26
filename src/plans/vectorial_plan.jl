@@ -340,14 +340,6 @@ function get_gradient!(
     X,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
     p,
-) where {FT}
-    return get_gradient!(M, g, vgf, p, :)
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
-    p,
     i::Colon,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
