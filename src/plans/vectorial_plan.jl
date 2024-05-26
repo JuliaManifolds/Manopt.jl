@@ -217,8 +217,8 @@ get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothi
 
 _vgf_index_to_length(b::BitVector, n) = sum(b)
 _vgf_index_to_length(::Colon, n) = n
-_vgf_index_to_length(i::AbstractArray{<:Integer}) = length(i)
-_vgf_index_to_length(r::UnitRange{<:Integer}) = lengh(r)
+_vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
+_vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
 
 # Generic case, we allocate (a) a single tangent vector
 function get_gradient(

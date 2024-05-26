@@ -428,7 +428,7 @@ function get_equality_constraint(
     )
 end
 function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
-    error("TODO eq-constr on $i") #noninteger non Colon - what to do?
+    #error("TODO eq-constr on $i") #noninteger non Colon - what to do?
     key = copy(M, p)
     if haskey(co.cache, :EqualityConstraints) # We store the full constraints
         if haskey(co.cache[:EqualityConstraints], key)
@@ -438,15 +438,15 @@ function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjectiv
     end
     # We do either not have the large cache or no entry for key
     if haskey(co.cache, :EqualityConstraint) # We store the index constraints
-        return [copy(
-            get!(co.cache[:EqualityConstraint], (key, j)) do
-                get_inequality_constraint(M, co.objective, p, j)
-            end,
-        )
-        # No clue if this works or ee need the _to_iterable_indices
-        # here. _If_ we do, I have exactly no AbstractArray to pass down,
-        # So no clue what to do.
-                for j in i]
+        return [
+            copy(
+                get!(co.cache[:EqualityConstraint], (key, j)) do
+                    get_equality_constraint(M, co.objective, p, j)
+                end,
+            )
+            # TODO: Replace 2 below with the number of equality constraints of `co`.
+            for j in _to_iterable_indices(1:2, i)
+        ]
     end # neither cache: pass down to objective
     return get_equality_constraint(M, co.objective, p, i)
 end
@@ -611,7 +611,7 @@ end
 
 #
 #
-# Inequality Constrsint
+# Inequality Constraint
 function get_grad_inequality_constraint(
     M::AbstractManifold,
     co::ManifoldCachedObjective,
@@ -655,13 +655,13 @@ function get_grad_inequality_constraint(
     j,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 )
-    error("TODO grad_ineq-constr on $i") #noninteger non Colon - what to do?
+    #error("TODO grad_ineq-constr on $i") #noninteger non Colon - what to do?
     !(haskey(co.cache, :GradInequalityConstraint)) &&
         return get_grad_inequality_constraint(M, co.objective, p, j)
     return copy(# Return a copy of the version in the cache
         M,
         p,
-        get!(co.cache[:GradInqualityConstraint], (copy(M, p), j)) do
+        get!(co.cache[:GradInequalityConstraint], (copy(M, p), j)) do
             get_grad_inequality_constraint(M, co.objective, p, j)
         end,
     )
@@ -721,7 +721,7 @@ function get_grad_inequality_constraint!(
     j,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 )
-    error("TODO grad_ineq-constr! on $i") #noninteger non Colon - what to do?
+    # error("TODO grad_ineq-constr! on $i") #noninteger non Colon - what to do?
     !(haskey(co.cache, :GradInequalityConstraint)) &&
         return get_grad_inequality_constraint!(M, X, co.objective, p, j)
     copyto!(

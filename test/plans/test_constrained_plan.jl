@@ -229,6 +229,10 @@ include("../utils/dummy_types.jl")
             get_grad_inequality_constraint!(M, Xe, ddo, p, :)
             get_grad_inequality_constraint!(M, Ye, obj, p, :)
             @test Ye == Xe
+
+            get_grad_inequality_constraint!(M, Xe, ddo, p, 1:2)
+            get_grad_inequality_constraint!(M, Ye, obj, p, 1:2)
+            @test Ye == Xe
         end
     end
     @testset "Count Objective" begin
@@ -322,6 +326,15 @@ include("../utils/dummy_types.jl")
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # cached
             @test get_count(cccofa, :EqualityConstraint, i) == 1
         end
+
+        ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
+        cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
+
+        ce = get_equality_constraint(M, cofa, p, 1:1)
+        @test get_equality_constraint(M, cccofa, p, 1:1) == ce # counts
+        @test get_equality_constraint(M, cccofa, p, 1:1) == ce # cached
+        @test get_count(cccofa, :EqualityConstraint) == 1
+
         ci = get_inequality_constraint(M, cofa, p, :)
         @test ci == get_inequality_constraint(M, cccofa, p, :) # counts
         @test ci == get_inequality_constraint(M, cccofa, p, :) #cached
