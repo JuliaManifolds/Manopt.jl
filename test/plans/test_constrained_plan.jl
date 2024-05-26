@@ -319,7 +319,7 @@ include("../utils/dummy_types.jl")
         ce = get_equality_constraint(M, cofa, p, :)
         @test get_equality_constraint(M, cccofa, p, :) == ce # counts
         @test get_equality_constraint(M, cccofa, p, :) == ce # cached
-        @test_broken get_count(cccofa, :EqualityConstraints) == 1
+        @test get_count(cccofa, :EqualityConstraints) == 1
         for i in 1:1
             ce_i = get_equality_constraint(M, cofa, p, i)
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # counts

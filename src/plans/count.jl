@@ -325,16 +325,8 @@ function get_equality_constraint(
     _count_if_exists(co, :EqualityConstraint, i)
     return get_equality_constraint(M, co.objective, p, i)
 end
-function get_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::BitVector
-)
-    for j in i # Count selected ones
-        i && _count_if_exists(co, :EqualityConstraint, j)
-    end
-    return get_equality_constraint(M, co.objective, p, i)
-end
 function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
-    for j in i # Abstract Array of indices or a range: cound all containing
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         _count_if_exists(co, :EqualityConstraint, j)
     end
     return get_equality_constraint(M, co.objective, p, i)
@@ -352,16 +344,8 @@ function get_inequality_constraint(
     _count_if_exists(co, :InequalityConstraint, i)
     return get_inequality_constraint(M, co.objective, p, i)
 end
-function get_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::BitVector
-)
-    for j in i # Count selected ones
-        i && _count_if_exists(co, :InequalityConstraint, j)
-    end
-    return get_inequality_constraint(M, co.objective, p, i)
-end
 function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
-    for j in i # Abstract Array of indices or a range: cound all containing
+    for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
         _count_if_exists(co, :InequalityConstraint, j)
     end
     return get_inequality_constraint(M, co.objective, p, i)
@@ -373,20 +357,36 @@ function get_grad_equality_constraint(
     _count_if_exists(co, :GradEqualityConstraints)
     return get_grad_equality_constraint(M, co.objective, p, i)
 end
+function get_grad_equality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+)
+    _count_if_exists(co, :GradEqualityConstraint, i)
+    return get_grad_equality_constraint(M, co.objective, p, i)
+end
+function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradEqualityConstraint, j)
+    end
+    return get_grad_equality_constraint(M, co.objective, p, i)
+end
 function get_grad_equality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
 )
     _count_if_exists(co, :GradEqualityConstraints)
     return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
-function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+function get_grad_equality_constraint!(
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
+)
     _count_if_exists(co, :GradEqualityConstraint, i)
-    return get_grad_equality_constraint(M, co.objective, p, i)
+    return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
 function get_grad_equality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i
 )
-    _count_if_exists(co, :GradEqualityConstraint, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradEqualityConstraint, j)
+    end
     return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
 
@@ -396,22 +396,39 @@ function get_grad_inequality_constraint(
     _count_if_exists(co, :GradInequalityConstraints)
     return get_grad_inequality_constraint(M, co.objective, p, i)
 end
+function get_grad_inequality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+)
+    _count_if_exists(co, :GradInequalityConstraint, i)
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+function get_grad_inequality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i
+)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradInequalityConstraint, j)
+    end
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+
 function get_grad_inequality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
 )
     _count_if_exists(co, :GradInequalityConstraints)
     return get_grad_inequality_constraint!(M, X, co.objective, p, i)
 end
-function get_grad_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i
+function get_grad_inequality_constraint!(
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
 )
     _count_if_exists(co, :GradInequalityConstraint, i)
-    return get_grad_inequality_constraint(M, co.objective, p, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
 end
 function get_grad_inequality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i
 )
-    _count_if_exists(co, :GradInequalityConstraint, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradInequalityConstraint, j)
+    end
     return get_grad_inequality_constraint!(M, X, co.objective, p, i)
 end
 
