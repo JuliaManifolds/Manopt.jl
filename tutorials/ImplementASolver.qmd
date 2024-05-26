@@ -346,3 +346,18 @@ We saw in this tutorial how to implement a simple cost-based algorithm, to illus
 
 One feature we did not cover is that most algorithms allow for in-place and allocation functions, as soon as they work on more than just the cost, for example use gradients, proximal maps or Hessians.
 This is usually a keyword argument of the objective and hence also part of the high-level interfaces.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```

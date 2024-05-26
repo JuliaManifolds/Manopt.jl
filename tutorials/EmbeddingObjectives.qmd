@@ -200,8 +200,15 @@ Canonical=false
 
 ## Technical details
 
-This notebook was rendered with the following environment
+This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
+#| code-fold: true
+using Pkg
 Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
 ```

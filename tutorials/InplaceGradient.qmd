@@ -26,6 +26,7 @@ We first load all necessary packages.
 
 ```{julia}
 using Manopt, Manifolds, Random, BenchmarkTools
+using ManifoldDiff: grad_distance, grad_distance!
 Random.seed!(42);
 ```
 
@@ -117,4 +118,19 @@ Note that the results `m1` and `m2` are of course the same.
 
 ```{julia}
 distance(M, m1, m2)
+```
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
 ```

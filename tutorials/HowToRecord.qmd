@@ -380,3 +380,18 @@ get_record(R4)
 ```
 
 We can see that the number of cost function calls varies, depending on how many line search backtrack steps were required to obtain a good stepsize.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```

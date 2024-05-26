@@ -248,6 +248,20 @@ But for sure here the constraints here are not fulfilled and we have quite posit
 maximum(g(M, w1))
 ```
 
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```
 
 ## Literature
 

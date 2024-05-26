@@ -551,10 +551,11 @@ function get_grad_equality_constraint(
     if haskey(co.cache, :GradEqualityConstraint) # We store the index constraints
         # allocate a tangent vector
         X = zero_vector(pM, P)
-        for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        # access is subsampled with j, result linear in k
+        for (k,j) in zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
             copyto!(
                 M,
-                X[pM, j],
+                X[pM, k],
                 p,
                 get!(co.cache[:GradEqualityConstraint], (key, j)) do
                     get_grad_equality_constraint(M, co.objective, p, j)
@@ -624,8 +625,9 @@ function get_grad_equality_constraint!(
     pM = PowerManifold(M, range, n)
     if haskey(co.cache, :GradEnequalityConstraints) # We store the full constraints
         if haskey(co.cache[:GradEqualityConstraints], key)
-            for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
-                copyto!(M, X[pM, j], p, co.cache[:GradEqualityConstraints][key][j])
+            # access is subsampled with j, result linear in k
+            for (k,j) in zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
+                copyto!(M, X[pM, k], p, co.cache[:GradEqualityConstraints][key][j])
             end
             return X
             # but we could not cache to here, since we do not want to evaluate all constraints
@@ -634,10 +636,11 @@ function get_grad_equality_constraint!(
     # We do either not have the large cache or no entry for key
     if haskey(co.cache, :GradEqualityConstraint) # We store the index constraints
         # allocate a tangent vector
-        for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        # access is subsampled with j, result linear in k
+        for (k,j) in zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
             copyto!(
                 M,
-                X[pM, j],
+                X[pM, k],
                 p,
                 get!(co.cache[:GradEqualityConstraint], (key, j)) do
                     get_grad_equality_constraint(M, co.objective, p, j)
@@ -709,10 +712,11 @@ function get_grad_inequality_constraint(
     if haskey(co.cache, :GradInequalityConstraint) # We store the index constraints
         # allocate a tangent vector
         X = zero_vector(pM, P)
-        for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
+        # access is subsampled with j, result linear in k
+        for (k,j) in zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
             copyto!(
                 M,
-                X[pM, j],
+                X[pM, k],
                 p,
                 get!(co.cache[:InequalityConstraint], (key, j)) do
                     get_grad_inequality_constraint(M, co.objective, p, j)
@@ -782,8 +786,11 @@ function get_grad_inequality_constraint!(
     pM = PowerManifold(M, range, n)
     if haskey(co.cache, :GradInenequalityConstraints) # We store the full constraints
         if haskey(co.cache[:GradInequalityConstraints], key)
-            for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
-                copyto!(M, X[pM, j], p, co.cache[:GradInequalityConstraints][key][j])
+            # access is subsampled with j, result linear in k
+            for (k, j) in zip(
+                1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+            )
+                copyto!(M, X[pM, k], p, co.cache[:GradInequalityConstraints][key][j])
             end
             return X
             # but we could not cache to here, since we do not want to evaluate all constraints
@@ -791,11 +798,11 @@ function get_grad_inequality_constraint!(
     end
     # We do either not have the large cache or no entry for key
     if haskey(co.cache, :GradInequalityConstraint) # We store the index constraints
-        # allocate a tangent vector
-        for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
+        # access is subsampled with j, result linear in k
+        for (k,j) in zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))
             copyto!(
                 M,
-                X[pM, j],
+                X[pM, k],
                 p,
                 get!(co.cache[:GradInequalityConstraint], (key, j)) do
                     get_grad_inequality_constraint(M, co.objective, p, j)

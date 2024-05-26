@@ -214,6 +214,8 @@ ConstrainedManoptProblem
 #### Access functions
 
 ```@docs
+equality_constraints_length
+inequality_constraints_length
 get_unconstrained_objective
 get_equality_constraint
 get_inequality_constraint

@@ -322,7 +322,9 @@ function get_gradient!(
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    for (j, f) in zip(_to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
+    # In the resulting X the indices we need are linear,
+    # in jacobian[i] we also have the functions f in a linear sense
+    for (j, f) in zip(1:n, vgf.jacobian!![i])
         copyto!(M, _write(pM, rep_size, X, (j,)), f(M, p))
     end
     return X
@@ -437,7 +439,9 @@ function get_gradient!(
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    for (j, f) in zip(_to_iterable_indices(vgf.jacobian!!, i), vgf.jacobian!![i])
+    # In the resulting X the indices we need are linear,
+    # in jacobian[i] we also have the functions f in a linear sense
+    for (j, f) in zip(1:n, vgf.jacobian!![i])
         f(M, _write(pM, rep_size, X, (j,)), p)
     end
     return X

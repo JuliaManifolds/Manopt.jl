@@ -246,6 +246,21 @@ gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :G
 see [How to Print Debug Output](https://manoptjl.org/stable/tutorials/HowToDebug.html)
 for more details.
 
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```
+
 ## Literature
 
 ````{=commonmark}

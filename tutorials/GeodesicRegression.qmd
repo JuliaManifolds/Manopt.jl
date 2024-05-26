@@ -393,7 +393,7 @@ function (a::RegressionGradient2a!)(N, Y, x)
     TM = N[1]
     p = x[N, 1]
     pts = [geodesic(TM.manifold, p[TM, :point], p[TM, :vector], ti) for ti in x[N, 2]]
-    gradients = Manopt.grad_distance.(Ref(TM.manifold), a.data, pts)
+    gradients = grad_distance.(Ref(TM.manifold), a.data, pts)
     Y[TM, :point] .= sum(
         ManifoldDiff.adjoint_differential_exp_basepoint.(
             Ref(TM.manifold),
@@ -510,6 +510,21 @@ Note that the geodesics from the data to the regression geodesic meet at a nearl
 
 **Acknowledgement.** Parts of this tutorial are based on the bachelor thesis of
 [Jeremias Arf](https://orcid.org/0000-0003-3765-0130).
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```
 
 ## Literature
 
