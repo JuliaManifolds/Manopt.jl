@@ -36,7 +36,7 @@ using ManifoldDiff: grad_distance
 Random.seed!(42);
 ```
 
-## The Objective
+## The objective
 
 We generate data and define our cost and gradient:
 
@@ -53,7 +53,7 @@ f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)))
 ```
 
-## Plain Examples
+## First examples
 
 For the high level interfaces of the solvers, like [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html) we have to set `return_state` to `true` to obtain the whole [solver state](https://manoptjl.org/stable/plans/state/) and not only the resulting minimizer.
 
@@ -69,7 +69,7 @@ R = gradient_descent(M, f, grad_f, data[1]; record=:Cost, return_state=true)
 
 From the returned state, we see that the [`GradientDescentState`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.GradientDescentState) are encapsulated (decorated) within a [`RecordSolverState`](https://manoptjl.org/stable/plans/record/#Manopt.RecordSolverState).
 
-For such a state, one can attach different recorders to some operations, currently to `:Start`. `:Stop`, and `:Iteration`, where `:Iteration` is the default when using the `record=` keyword with a [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) as above.
+For such a state, one can attach different recorders to some operations, currently to `:Start`. `:Stop`, and `:Iteration`, where `:Iteration` is the default when using the `record=` keyword with a [`RecordAction`](https://manoptjl.org/stable/plans/record/#Manopt.RecordAction) or a `Symbol` as we just did.
 We can access all values recorded during the iterations by calling `get_record(R, :Iteation)` or since this is the default even shorter
 
 ```{julia}
@@ -227,7 +227,7 @@ s1 = exact_penalty_method(
 );
 ```
 
-Then the first entry of the record containts the iterate, the (main solvers) cost, and the third entry is the recording of the subsolver.
+Then the first entry of the record contains the iterate, the (main solvers) cost, and the third entry is the recording of the subsolver.
 
 ```{julia}
 get_record(s1)[1]
@@ -256,7 +256,7 @@ Then
 get_record(s2)
 ```
 
-Finally, instead of recording iterations, we can also specify to record the stopping criterion and final cost by adding that to `:Stop` of the sub solvers record. Then we can specify – as so often in a tuple, that the `:Subsolver` should record `:Stop` (by devault it takes over `:Iteration`)
+Finally, instead of recording iterations, we can also specify to record the stopping criterion and final cost by adding that to `:Stop` of the sub solvers record. Then we can specify, as usual in a tuple, that the `:Subsolver` should record `:Stop` (by default it takes over `:Iteration`)
 
 ```{julia}
 #| output: false
@@ -273,7 +273,7 @@ s3 = exact_penalty_method(
 );
 ```
 
-Then the following displays also the reasons why each of the recorded subsolvers stopped – and the corresponding cost
+Then the following displays also the reasons why each of the recorded subsolvers stopped and the corresponding cost
 
 ```{julia}
 get_record(s3)
@@ -283,7 +283,6 @@ get_record(s3)
 
 Let's investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration.
 We first define a cost, that counts its own calls.
-"""
 
 ```{julia}
 mutable struct MyCost{T}
@@ -317,6 +316,7 @@ Now we can initialize the new cost and call the gradient descent.
 Note that this illustrates also the last use case since you can pass symbol-action pairs into the `record=`array.
 
 ```{julia}
+#| output: false
 f3 = MyCost(data)
 ```
 
@@ -341,7 +341,7 @@ R3 = gradient_descent(
 )
 ```
 
-For `:Cost` we already learned how to access them, the ` => :Count` introduces preceeding action to obtain the `:Count` symbol as its access. We can again access the whole sets of records
+For `:Cost` we already learned how to access them, the ` => :Count` introduces an action to obtain the `:Count` symbol as its access. We can again access the whole sets of records
 
 ```{julia}
 get_record(R3)

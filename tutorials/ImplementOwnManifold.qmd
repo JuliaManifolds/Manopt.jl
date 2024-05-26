@@ -88,7 +88,7 @@ For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@ci
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
-On the `ScaledSphere` we just defined above.
+On the `ScaledSphere` we just defined.
 We define a few parameters first
 
 ```{julia}
@@ -177,7 +177,7 @@ f(M,p0)
 
 Then we can run our first solver, where we have to overwrite a few
 defaults, which would use functions we do not (yet) have.
-We will discuss these in the next steps.
+Let's discuss these in the next steps.
 
 ```{julia}
 q1 = gradient_descent(M, f, grad_f, p0;
@@ -191,7 +191,7 @@ f(M,q1)
 
 We at least see, that the function value decreased.
 
-### Norm and maximal step size.
+### Norm and maximal step size
 
 To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X)`.
 We also need a [`max_stepsize`](@ref)`(M)`, to avoid having too large steps

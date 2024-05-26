@@ -205,7 +205,7 @@ f(M, v3)
 maximum(g(M, v3))
 ```
 
-The second smoothing technique is often beneficial, when we have a lot of constraints (in the above mentioned vectorial manner), since we can avoid several gradient evaluations for the constraint functions here. This leads to a faster iteration time.
+The second smoothing technique is often beneficial, when we have a lot of constraints (in the previously mentioned vectorial manner), since we can avoid several gradient evaluations for the constraint functions here. This leads to a faster iteration time.
 
 ```{julia}
 @time v4 = exact_penalty_method(
@@ -230,7 +230,7 @@ maximum(g(M, v4))
 
 We can compare this to the _global_ optimum on the sphere, which is the unconstrained optimisation problem, where we can just use Quasi Newton.
 
-Note that this is much faster, since every iteration of the algorithms above does a quasi-Newton call as well.
+Note that this is much faster, since every iteration of the algorithm does a quasi-Newton call as well.
 
 ```{julia}
 @time w1 = quasi_Newton(
