@@ -252,6 +252,20 @@ function ConstrainedManoptProblem(
     )
 end
 
+
+@doc raw"""
+    equality_constraints_length(co::ConstrainedManifoldObjective)
+
+Return the number of equality constraints of an [`ConstrainedManifoldObjective`](@ref).
+This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
+"""
+function equality_constraints_length(co::ConstrainedManifoldObjective)
+    return length(co.equality_constraints)
+end
+function equality_constraints_length(co::AbstractDecoratedManifoldObjective)
+    return equality_constraints_length(get_objective(co, false))
+end
+
 @doc raw"""
     get_unconstrained_objective(co::ConstrainedManifoldObjective)
 
@@ -540,6 +554,19 @@ function get_hessian!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, 
 end
 function get_hessian_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_hessian_function(co.objective, recursive)
+end
+
+@doc raw"""
+    inequality_constraints_length(co::ConstrainedManifoldObjective)
+
+Return the number of equality constraints of an [`ConstrainedManifoldObjective`](@ref).
+This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
+"""
+function inequality_constraints_length(co::ConstrainedManifoldObjective)
+    return length(co.inequality_constraints)
+end
+function inequality_constraints_length(co::AbstractDecoratedManifoldObjective)
+    return inequality_constraints_length(get_objective(co, false))
 end
 
 function Base.show(

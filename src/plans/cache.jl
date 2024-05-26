@@ -416,19 +416,7 @@ function get_equality_constraint(
         end,
     )
 end
-function get_equality_constraint(
-    M::AbstractManifold, co::ManifoldCachedObjective, p, i::Colon
-)
-    (!haskey(co.cache, :EqualityConstraints)) &&
-        return get_equality_constraint(M, co.objective, p, i)
-    return copy(# Return a copy of the version in the cache
-        get!(co.cache[:EqualityConstraints], copy(M, p)) do
-            get_equality_constraint(M, co.objective, p, i)
-        end,
-    )
-end
 function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
-    #error("TODO eq-constr on $i") #noninteger non Colon - what to do?
     key = copy(M, p)
     if haskey(co.cache, :EqualityConstraints) # We store the full constraints
         if haskey(co.cache[:EqualityConstraints], key)
@@ -444,8 +432,7 @@ function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjectiv
                     get_equality_constraint(M, co.objective, p, j)
                 end,
             )
-            # TODO: Replace 2 below with the number of equality constraints of `co`.
-            for j in _to_iterable_indices(1:2, i)
+            for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
         ]
     end # neither cache: pass down to objective
     return get_equality_constraint(M, co.objective, p, i)
