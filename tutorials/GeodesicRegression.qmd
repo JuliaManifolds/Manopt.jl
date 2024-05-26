@@ -24,6 +24,7 @@ mkpath(img_folder)
 ```{julia}
 	using Manopt, ManifoldDiff, Manifolds, Random, Colors
 	using LinearAlgebra: svd
+    using ManifoldDiff: grad_distance
     Random.seed!(42);
 ```
 ```{julia}
@@ -74,7 +75,7 @@ render_asymptote(img_folder * "/regression_data.asy"; render=render_size);
 
 ![The given data](img/regression/regression_data.png)
 
-## Time Labeled Data
+## Time labeled data
 
 If for each data item $d_i$ we are also given a time point $t_i∈ℝ$, which are pairwise different,
 then we can use the least squares error to state the objective function as [Fletcher:2013](@cite)
@@ -180,7 +181,7 @@ pca1 = get_vector(S, m, svd(A).U[:, 1], DefaultOrthonormalBasis())
 x0 = ArrayPartition(m, pca1)
 ```
 
-The optimal “time labels” are then just the projections $t_i = ⟨d_i,X^*⟩$, $i=1,\ldots,n$.
+The optimal “time labels” are then just the projections $t_i$ $= ⟨d_i,X^*⟩$, $i=1,\ldots,n$.
 
 ```{julia}
 t = map(d -> inner(S, m, pca1, log(S, m, d)), data)
@@ -334,7 +335,7 @@ render_asymptote(img_folder * "/regression_result2.asy"; render=render_size);
 
 ![A second result with different time points](img/regression/regression_result2.png)
 
-## Unlabeled Data
+## Unlabeled data
 
 If we are not given time points $t_i$, then the optimization problem extends, informally speaking,
 to also finding the “best fitting” (in the sense of smallest error).
@@ -349,8 +350,7 @@ where $t = (t_1,\ldots,t_n) ∈ ℝ^n$ is now an additional parameter of the obj
 We write $F_1(p, X)$ to refer to the function on the tangent bundle for fixed values of $t$ (as the one in the last part)
 and $F_2(t)$ for the function $F(p, X, t)$ as a function in $t$ with fixed values $(p, X)$.
 
-For the Euclidean case, there is no necessity to optimize with respect to $t$, as we saw
-above for the initialization of the fixed time points.
+For the Euclidean case, there is no necessity to optimize with respect to $t$, as we saw before for the initialization of the fixed time points.
 
 On a Riemannian manifold this can be stated as a problem on the product manifold $\mathcal N = \mathrm{T}\mathcal M \times ℝ^n$, or in code
 

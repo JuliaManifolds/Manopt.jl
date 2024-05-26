@@ -1014,6 +1014,7 @@ A debug to warn when an evaluated gradient at the current iterate is larger than
 (a factor times) the maximal (recommended) stepsize at the current iterate.
 
 # Constructor
+
     DebugWarnIfGradientNormTooLarge(factor::T=1.0, warn=:Once)
 
 Initialize the warning to warn `:Once`.
@@ -1090,9 +1091,7 @@ one are called with an `i=0` for reset.
 
 1. Providing a simple vector of symbols, numbers and strings like
 
-```
-[:Iterate, " | ", :Cost, :Stop, 10]
-```
+    [:Iterate, " | ", :Cost, :Stop, 10]
 
 Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
 as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
@@ -1100,16 +1099,12 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of
 
 2. The same can also be written a bit more precise as
 
-```
-DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
-```
+    DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
 
 3. We can even make the stoping criterion concrete and pass Actions directly,
   for example explicitly Making the stop more concrete, we get
 
-```
-DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
-```
+    DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
 """
 function DebugFactory(a::Vector{<:Any})
     iter_entries = filter(

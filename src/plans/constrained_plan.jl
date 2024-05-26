@@ -33,7 +33,7 @@ Describes the constrained objective
         inequality_constraints::Union{Nothing, AbstractManifoldObjective} = nothing
     ) where {IMO <: Union{Nothing, AbstractManifoldObjective} EMO <: Union{Nothing, AbstractManifoldObjective}}
 
-TODO: Describe constructors
+TODO: describe constructors
 """
 struct ConstrainedManifoldObjective{
     T<:AbstractEvaluationType,MO<:AbstractManifoldObjective,EMO,IMO
@@ -233,7 +233,7 @@ problem is for.
     )
 
 Creates a constrained manopt problem specifying an [`AbstractPowerRepresentation`](@ref)
-for both the `gradient_equality_range` and the `gradient_inequality_range`, respecively.
+for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
 """
 struct ConstrainedManoptProblem{
     TM<:AbstractManifold,
@@ -432,7 +432,7 @@ function get_grad_equality_constraint(
     if isnothing(co.equality_constraints)
         pM = PowerManifold(M, range, 0)
         q = rand(pM) # an empty vector or matrix
-        X = rand(pM; vector_at=q) # an empry vector or matrix of correct type
+        X = rand(pM; vector_at=q) # an empty vector or matrix of correct type
         return X
     end
     return get_gradient(M, co.equality_constraints, p, j, range)
@@ -464,7 +464,7 @@ function get_grad_equality_constraint!(
     return get_gradient!(M, X, co.equality_constraints, p, j, range)
 end
 
-#Depreacte plurals
+# Deprecate plurals
 Base.@deprecate get_grad_equality_constraints(mp::AbstractManoptProblem, p) get_grad_equality_constraint(
     mp, p, :,
 )
@@ -514,7 +514,7 @@ function get_grad_inequality_constraint(
     if isnothing(co.inequality_constraints)
         pM = PowerManifold(M, range, 0)
         q = rand(pM) # an empty vector or matrix
-        X = rand(pM; vector_at=q) # an empry vector or matrix of correct type
+        X = rand(pM; vector_at=q) # an empty vector or matrix of correct type
         return X
     end
     return get_gradient(M, co.inequality_constraints, p, j, range)

@@ -6,6 +6,7 @@ author: "Ronny Bergmann"
 This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
 
 ## Introduction
+
 A constraint optimisation problem is given by
 
 ```math

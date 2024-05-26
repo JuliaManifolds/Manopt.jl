@@ -429,14 +429,13 @@ function get_equality_constraint(
 end
 function get_equality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
     key = copy(M, p)
-    if haskey(co.cache, :EqualityConstraints) # We store the full constraints
+    if haskey(co.cache, :EqualityConstraints) # full constraints are stored
         if haskey(co.cache[:EqualityConstraints], key)
             return co.cache[:EqualityConstraints][key][i]
-            # but we could not cache to here, since we do not want to evaluate all constraints
+            #but caching is not possible here, since that requires evaluating all
         end
     end
-    # We do either not have the large cache or no entry for key
-    if haskey(co.cache, :EqualityConstraint) # We store the index constraints
+    if haskey(co.cache, :EqualityConstraint) # storing the index constraints
         return [
             copy(
                 get!(co.cache[:EqualityConstraint], (key, j)) do
@@ -471,14 +470,13 @@ function get_inequality_constraint(
 end
 function get_inequality_constraint(M::AbstractManifold, co::ManifoldCachedObjective, p, i)
     key = copy(M, p)
-    if haskey(co.cache, :InequalityConstraints) # We store the full constraints
+    if haskey(co.cache, :InequalityConstraints) # full constraints are stored
         if haskey(co.cache[:InequalityConstraints], key)
             return co.cache[:InequalityConstraints][key][i]
-            # but we could not cache to here, since we do not want to evaluate all constraints
+            #but caching is not possible here, since that requires evaluating all
         end
     end
-    # We do either not have the large cache or no entry for key
-    if haskey(co.cache, :InequalityConstraint) # We store the index constraints
+    if haskey(co.cache, :InequalityConstraint) # storing the index constraints
         return [
             copy(
                 get!(co.cache[:InequalityConstraint], (key, j)) do
@@ -542,14 +540,13 @@ function get_grad_equality_constraint(
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
     P = fill(p, pM)
-    if haskey(co.cache, :GradEnequalityConstraints) # We store the full constraints
+    if haskey(co.cache, :GradEnequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradEqualityConstraints], key)
             return co.cache[:GradEqualityConstraints][key][i]
-            # but we could not cache to here, since we do not want to evaluate all constraints
+            #but caching is not possible here, since that requires evaluating all
         end
     end
-    # We do either not have the large cache or no entry for key
-    if haskey(co.cache, :GradEqualityConstraint) # We store the index constraints
+    if haskey(co.cache, :GradEqualityConstraint) # storing the index constraints
         # allocate a tangent vector
         X = zero_vector(pM, P)
         # access is subsampled with j, result linear in k
@@ -626,7 +623,7 @@ function get_grad_equality_constraint!(
     n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    if haskey(co.cache, :GradEnequalityConstraints) # We store the full constraints
+    if haskey(co.cache, :GradEnequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradEqualityConstraints], key)
             # access is subsampled with j, result linear in k
             for (k, j) in zip(
@@ -640,11 +637,10 @@ function get_grad_equality_constraint!(
                 )
             end
             return X
-            # but we could not cache to here, since we do not want to evaluate all constraints
+            #but caching is not possible here, since that requires evaluating all
         end
     end
-    # We do either not have the large cache or no entry for key
-    if haskey(co.cache, :GradEqualityConstraint) # We store the index constraints
+    if haskey(co.cache, :GradEqualityConstraint) # store the index constraints
         # allocate a tangent vector
         # access is subsampled with j, result linear in k
         for (k, j) in
@@ -714,14 +710,13 @@ function get_grad_inequality_constraint(
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
     P = fill(p, pM)
-    if haskey(co.cache, :GradInenequalityConstraints) # We store the full constraints
+    if haskey(co.cache, :GradInenequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradInequalityConstraints], key)
             return co.cache[:GradInequalityConstraints][key][i]
-            # but we could not cache to here, since we do not want to evaluate all constraints
+            #but caching is not possible here, since that requires evaluating all
         end
     end
-    # We do either not have the large cache or no entry for key
-    if haskey(co.cache, :GradInequalityConstraint) # We store the index constraints
+    if haskey(co.cache, :GradInequalityConstraint) # storing the index constraints
         # allocate a tangent vector
         X = zero_vector(pM, P)
         # access is subsampled with j, result linear in k
@@ -798,7 +793,7 @@ function get_grad_inequality_constraint!(
     n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    if haskey(co.cache, :GradInenequalityConstraints) # We store the full constraints
+    if haskey(co.cache, :GradInenequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradInequalityConstraints], key)
             # access is subsampled with j, result linear in k
             for (k, j) in zip(
@@ -812,11 +807,10 @@ function get_grad_inequality_constraint!(
                 )
             end
             return X
-            # but we could not cache to here, since we do not want to evaluate all constraints
+            #but caching is not possible here, since that requires evaluating all
         end
     end
-    # We do either not have the large cache or no entry for key
-    if haskey(co.cache, :GradInequalityConstraint) # We store the index constraints
+    if haskey(co.cache, :GradInequalityConstraint) # storing the index constraints
         # access is subsampled with j, result linear in k
         for (k, j) in
             zip(1:n, _to_iterable_indices(1:equality_constraints_length(co.objective), i))

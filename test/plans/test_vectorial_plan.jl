@@ -17,7 +17,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
     g2(M, p) = -p[2] - 1
     grad_g2(M, p) = [0.0, -1.0, 0.0]
     grad_g2!(M, X, p) = (X .= [0.0, -1.0, 0.0])
-    # check a few case
+    # verify a few case
     vgf_fa = VectorGradientFunction(g, grad_g, 2)
     @test get_value_function(vgf_fa) === g
     @test get_gradient_function(vgf_fa) == grad_g

@@ -43,6 +43,7 @@ Heestens
 Hessian
 Iannazzo
 injectivity
+iterable
 Jasa
 Jax
 JuMP.jl
@@ -97,6 +98,7 @@ Stephansen
 [Ss]tepsize
 [Ss]ubdifferential
 [Ss]ubgradient
+subsampled
 [Ss]ubsolver
 summand
 superlinear

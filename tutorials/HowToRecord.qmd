@@ -165,7 +165,7 @@ We now call the solver
 res = solve!(p, r)
 ```
 
-And we can check the recorded value at `:Stop` to see how many iterations were performed
+And we can look at the recorded value at `:Stop` to see how many iterations were performed
 
 ```{julia}
 get_record(res, :Stop)
@@ -320,7 +320,7 @@ Note that this illustrates also the last use case since you can pass symbol-acti
 f3 = MyCost(data)
 ```
 
-Now for the plain gradient descent, we have to modify the step (to a constant stepsize) and remove the default check whether the cost increases (setting `debug` to `[]`).
+Now for the plain gradient descent, we have to modify the step (to a constant stepsize) and remove the default debug verification whether the cost increases (setting `debug` to `[]`).
 We also only look at the first 20 iterations to keep this example small in recorded values. We call
 
 ```{julia}

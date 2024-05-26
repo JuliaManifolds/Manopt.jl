@@ -65,8 +65,8 @@ This struct is also a functor in both formats
 * `(M, p) -> X` to compute the gradient in allocating fashion.
 * `(M, X, p)` to compute the gradient in in-place fashion.
 
-additionally this gadient does accept a positional last argument to specify the `range`
-for the internal gradient call of the contrained objective.
+additionally this gradient does accept a positional last argument to specify the `range`
+for the internal gradient call of the constrained objective.
 
 based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
 ``\operatorname{grad} \mathcal L_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).

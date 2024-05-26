@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Remodel `ConstrainedManifoldObjective` to store an `AbstractManifoldObjective`
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
-  therein – and implementing access to this Hessian
+  therein and implementing access to this Hessian
 
 ## [0.4.63] unreleased
 

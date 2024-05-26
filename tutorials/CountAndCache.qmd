@@ -4,7 +4,7 @@ author: Ronny Bergmann
 ---
 
 In this tutorial, we want to investigate the caching and counting (statistics) features
-of [Manopt.jl](https://manoptjl.org). We will reuse the optimization tasks from the
+of [Manopt.jl](https://manoptjl.org). We reuse the optimization tasks from the
 introductory tutorial [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
 
 ## Introduction
@@ -32,7 +32,7 @@ Caching of expensive function calls can for example be added using [Memoize.jl](
 The approach in the solvers of [Manopt.jl](https://manoptjl.org) aims to simplify adding
 both these capabilities on the level of calling a solver.
 
-## Technical Background
+## Technical background
 
 The two ingredients for a solver in [Manopt.jl](https://manoptjl.org)
 are the [`AbstractManoptProblem`](@ref) and the [`AbstractManoptSolverState`](@ref), where the
@@ -98,7 +98,7 @@ And we see that statistics are shown in the end.
 
 To now also cache these calls,
 we can use the `cache=` keyword argument.
-Since now both the cache and the count “extend” the functionality of the objective,
+Since now both the cache and the count “extend” the capability of the objective,
 the order is important: on the high-level interface, the `count` is treated first, which
 means that only actual function calls and not cache look-ups are counted.
 With the proper initialisation, you can use any caches here that support the
@@ -124,19 +124,19 @@ result as usual:
 get_solver_result(r)
 ```
 
-## Advanced Caching Examples
+## Advanced caching examples
 
 There are more options other than caching single calls to specific parts of the objective.
 For example you may want to cache intermediate results
-of computing the cost and share that with the gradient computation. We will present
-three solutions to this:
+of computing the cost and share that with the gradient computation.
+We present three solutions to this:
 
 1. An easy approach from within `Manopt.jl`: the [`ManifoldCostGradientObjective`](@ref)
 2. A shared storage approach using a functor
 3. A shared (internal) cache approach also using a functor
 
 For that we switch to another example:
-The Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{m+1\times m+1}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
+the Rayleigh quotient. We aim to maximize the Rayleigh quotient $\displaystyle\frac{x^{\mathrm{T}}Ax}{x^{\mathrm{T}}x}$, for some $A∈ℝ^{m+1\times m+1}$ and $x∈ℝ^{m+1}$ but since we consider this on the sphere and `Manopt.jl`
 (as many other optimization toolboxes) minimizes, we consider
 
 ```math
@@ -181,6 +181,7 @@ where we only compute the matrix-vector product once.
 The small disadvantage might be, that we always compute _both_, the gradient and the cost. Luckily, the cache we used before, takes this into account and caches both results, such that we indeed end up computing `A*p` only once when asking to a cost and a gradient.
 
 Let's compare both methods
+
 ```{julia}
 p0 = [(1/5 .* ones(5))..., zeros(m-4)...];
 @time s1 = gradient_descent(N, g, grad_g!, p0;
@@ -219,10 +220,8 @@ It is beneficial, when the gradient and the cost are very often required togethe
 
 ### A shared storage approach using a functor
 
-An alternative to the previous approach is the usage of a functor that introduces a “shared storage”
-of the result of computing `A*p`. We additionally have to store `p` though,
-since we have to check that we are still evaluating the cost and/or gradient
-at the same point at which the cached `A*p` was computed.
+An alternative to the previous approach is the usage of a functor that introduces a “shared storage” of the result of computing `A*p`.
+We additionally have to store `p` though, since we have to make sure that we are still evaluating the cost and/or gradient at the same point at which the cached `A*p` was computed.
 We again consider the (more efficient) in-place variant.
 This can be done as follows
 
@@ -325,7 +324,7 @@ grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
 )
 ```
 
-and for safety let's check that we are reasonably close
+and for safety let's verify that we are reasonably close
 
 ```{julia}
 p4 = get_solver_result(s4)

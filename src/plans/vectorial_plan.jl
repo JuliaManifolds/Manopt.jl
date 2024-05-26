@@ -9,11 +9,10 @@ abstract type AbstractVectorialType end
 @doc raw"""
     CoefficientVectorialType{B<:AbstractBasis} <: AbstractVectorialType
 
-    A type to indicate that gradient of the constraints is implemented as a
-Jacobian matrix with respect to a certain basis, that is if we have constraints
-``g: \mathcal M → ℝ^m`` and a basis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
-
-We have ``J_g(p) = (c_1^{\mathrm{T)},…,c_m^{\mathrm{T)})^{\mathrm{T)} \in ℝ^{m,d}``, that is,
+A type to indicate that gradient of the constraints is implemented as a
+Jacobian matrix with respect to a certain basis, that is if the constraints are
+given as ``g: \mathcal M → ℝ^m`` with respect to a basis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
+This can be written as ``J_g(p) = (c_1^{\mathrm{T)},…,c_m^{\mathrm{T)})^{\mathrm{T)} \in ℝ^{m,d}``, that is,
 every row ``c_i`` of this matrix is a set of coefficients such that
 `get_coefficients(M, p, c, B)` is the tangent vector ``\oepratorname{grad} g_i(p)``
 
@@ -31,7 +30,7 @@ end
 """
     _to_iterable_indices(A::AbstractVector, i)
 
-Convert index `i` (integer, colon, vector of indeces, etc.) for array `A` into an iterable
+Convert index `i` (integer, colon, vector of indices, etc.) for array `A` into an iterable
 structure of indices.
 """
 function _to_iterable_indices(A::AbstractVector, i)
@@ -62,12 +61,12 @@ struct FunctionVectorialType <: AbstractVectorialType end
 @doc raw"""
     VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}
 
-Represent a function ``f:\mathcal M → ℝ^n`` including it first derivatie,
+Represent a function ``f:\mathcal M → ℝ^n`` including it first derivative,
 either as a vector of gradients of a Jacobian
 
 # Representations of ``f``
 
-There are htree different representations of ``f``, which might be benefictial in one or
+There are three different representations of ``f``, which might be beneficial in one or
 the other situation:
 * the [`FunctionVectorialType`](@ref),
 * the [`ComponentVectorialType`](@ref),
@@ -93,7 +92,7 @@ that if this is expensive even to compute a single component, all of `f` has to 
 
 For the [`ComponentVectorialType`](@ref) of `f`, each of the component functions
 is a (classical) objective and hence has a gradient ``\oepratorname{grad} f_i(p) ∈ T_p\mathcal M``.
-Putting these gradients into a vector the same way as the functions, we obtain a
+Putting these gradients into a vector the same way as the functions, yields a
 [`ComponentVectorialType`](@ref)
 
 ```math
@@ -107,9 +106,9 @@ And advantage here is, that again the single components can be evaluated individ
 
 * `value!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!:     the jacobian of ``f``
+* `jacobian!!:     the Jacobian of ``f``
 * `jacobian_type`: indicating / storing data for the type of ``J_f``
-* `parameters`:    the nunmber `n` from above, that is the size of the vector ``f`` returns.
+* `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
 # Constructor
 
@@ -119,7 +118,7 @@ And advantage here is, that again the single components can be evaluated individ
         jacobian_type::AbstractVectorialType=FunctionVectorialType(),
     )
 
-Create a `VectorGradientFunction` of `f`  and its Jacobain (vector of gradients) `Jf`,
+Create a `VectorGradientFunction` of `f`  and its Jacobian (vector of gradients) `Jf`,
 where `f` maps into the Euclidean space of dimension `range_dimension`.
 Their types are specified by the `function_type`, and `jacobian_type`, respectively.
 The Jacobian can further be given as an allocating variant or an inplace-variant, specified
@@ -158,8 +157,8 @@ end
 @doc raw"""
     get_value(M::AbstractManifold, vgf::VectorGradientFunction, p[, i=:])
 
-Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at at `p`.
-The `range` can be used to speficy a potential range, but is currently only present for consistency.
+Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at `p`.
+The `range` can be used to specify a potential range, but is currently only present for consistency.
 
 The `i` can be a linear index, you can provide
 
@@ -226,7 +225,7 @@ _vgf_index_to_length(::Colon, n) = n
 _vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
 _vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
 
-# Generic case, we allocate (a) a single tangent vector
+# Generic case, allocate (a) a single tangent vector
 function get_gradient(
     M::AbstractManifold,
     vgf::VectorGradientFunction,
@@ -251,7 +250,7 @@ function get_gradient(
     X = zero_vector(pM, P)
     return get_gradient!(M, X, vgf, p, i, range)
 end
-# (c) Special cases where we can skip allocations and/or the power manifold
+# (c) Special cases where allocations can be skipped
 function get_gradient(
     M::AbstractManifold,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
@@ -275,7 +274,7 @@ end
 
 #
 #
-# Part I: Allocation
+# Part I: allocation
 # I (a) Internally a Jacobian
 function get_gradient!(
     M::AbstractManifold,
@@ -306,7 +305,7 @@ function get_gradient!(
     end
     return X
 end
-# I (b) a vector of functions
+# Part I(b) a vector of functions
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -328,8 +327,8 @@ function get_gradient!(
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    # In the resulting X the indices we need are linear,
-    # in jacobian[i] we also have the functions f in a linear sense
+    # In the resulting `X` the indices  are linear,
+    # in `jacobian[i]` the functions f are ordered in a linear sense
     for (j, f) in zip(1:n, vgf.jacobian!![i])
         copyto!(M, _write(pM, rep_size, X, (j,)), f(M, p))
     end
@@ -350,7 +349,7 @@ function get_gradient!(
     end
     return X
 end
-# I (c) A single gradient function
+# Part I(c) A single gradient function
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -378,8 +377,8 @@ function get_gradient!(
 end
 #
 #
-# Part II: In-place evaluations
-# II (a) Jacobian
+# Part II: in-place evaluations
+# (a) Jacobian
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -388,7 +387,7 @@ function get_gradient!(
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    # We could also allocate a nxd matrix, but this might be nicer type wise
+    # a typewise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
     JF = reshape(
         get_coefficients(pM, fill(p, pM), X, vgf.jacobian_type.basis),
@@ -407,7 +406,7 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    # We could also allocate a nxd matrix, but this might be nicer type wise
+    # a typewise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
     JF = reshape(
         get_coefficients(pM, fill(p, pM), X, vgf.jacobian_type.basis),
