@@ -50,7 +50,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
         @test get_gradient(M, vgf, p) == gg
         @test get_gradient(M, vgf, p, :) == gg
         @test get_gradient(M, vgf, p, 1:2) == gg
-        @test get_gradient(M, vgf, p, [1,2]) == gg
+        @test get_gradient(M, vgf, p, [1, 2]) == gg
         @test get_gradient(M, vgf, p, 1) == gg[1]
         @test get_gradient(M, vgf, p, 2) == gg[2]
         Y = [zero_vector(M, p), zero_vector(M, p)]
