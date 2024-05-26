@@ -300,10 +300,13 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
-    ManifoldCachedObjective
+    ManifoldCachedObjective,
+    VectorGradientFunction
 #
-# Evaluation & Problems - old
+# Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
+export AbstractVectorialType
+export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
 #
 # AbstractManoptSolverState
 export AbstractGradientSolverState,
@@ -375,7 +378,9 @@ export get_hessian, get_hessian!
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
-export get_constraints,
+export equality_constraints_length,
+    inequality_constraints_length,
+    get_constraints,
     get_inequality_constraint,
     get_equality_constraint,
     get_grad_inequality_constraint,

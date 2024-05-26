@@ -222,6 +222,18 @@ interpretation from before, but on power manifolds, more efficient representatio
 
 To then access the elements, the range has to be specified. That is what this
 problem is for.
+
+# Constructor
+    ConstrainedManoptProblem(
+        M::AbstractManifold,
+        co::ConstrainedManifoldObjetive;
+        range=NestedPowerRepresentation(),
+        gradient_equality_range=range,
+        gradient_inequality_range=range
+    )
+
+Creates a constrained manopt problem specifying an [`AbstractPowerRepresentation`](@ref)
+for both the `gradient_equality_range` and the `gradient_inequality_range`, respecively.
 """
 struct ConstrainedManoptProblem{
     TM<:AbstractManifold,
@@ -247,10 +259,12 @@ function ConstrainedManoptProblem(
     GR<:Union{AbstractPowerRepresentation,Nothing},
     HR<:Union{AbstractPowerRepresentation,Nothing},
 }
-    return ConstrainedManifoldObjective{TM,o,HR,GR}(
+    return ConstrainedManoptProblem{TM,O,HR,GR}(
         M, gradient_equality_range, gradient_inequality_range, objective
     )
 end
+get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
+get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
 @doc raw"""
     equality_constraints_length(co::ConstrainedManifoldObjective)
@@ -481,7 +495,7 @@ function get_grad_inequality_constraint(amp::AbstractManoptProblem, p, j)
 end
 function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j)
     return get_grad_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_inequality_range
+        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_ineqality_range
     )
 end
 function get_grad_inequality_constraint(
@@ -511,7 +525,7 @@ function get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j)
 end
 function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j)
     return get_grad_inequality_constraint!(
-        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
+        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_ineqality_range
     )
 end
 function get_grad_inequality_constraint!(

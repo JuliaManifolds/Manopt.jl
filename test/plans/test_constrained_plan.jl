@@ -24,6 +24,12 @@ include("../utils/dummy_types.jl")
     g2(M, p) = -p[2] - 1
     grad_g2(M, p) = [0.0, -1.0, 0.0]
     grad_g2!(M, X, p) = (X .= [0.0, -1.0, 0.0])
+    @test Manopt._number_of_constraints(
+        nothing, [grad_g1, grad_g2]; jacobian_type=ComponentVectorialType()
+    ) == 2
+    @test Manopt._number_of_constraints(
+        [g1, g2], nothing; jacobian_type=ComponentVectorialType()
+    ) == 2
     # Equality Constraints
     h(M, p) = [2 * p[3] - 1]
     h1(M, p) = 2 * p[3] - 1
@@ -73,6 +79,18 @@ include("../utils/dummy_types.jl")
     @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
     @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
     @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
+    @test Manopt.get_cost_function(cofa) === f
+    @test Manopt.get_gradient_function(cofa) === grad_f
+    @test equality_constraints_length(cofa) == 1
+    @test inequality_constraints_length(cofa) == 2
+    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldGradientObjective
+    cop = ConstrainedManoptProblem(M, cofa)
+    cop2 = ConstrainedManoptProblem(
+        M,
+        cofa;
+        gradient_equality_range=ArrayPowerRepresentation(),
+        gradient_inequality_range=ArrayPowerRepresentation(),
+    )
 
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]
@@ -80,6 +98,18 @@ include("../utils/dummy_types.jl")
     gh = [[0.0, 0.0, 2.0]]
     gf = 2 * p
 
+    @testset "ConstrainedManoptProblem speecial cases" begin
+        @test get_equality_constraint(cop, p, :) == c[2]
+        @test get_inequality_constraint(cop, p, :) == c[1]
+        @test get_grad_equality_constraint(cop, p, :) == gh
+        @test get_grad_inequality_constraint(cop, p, :) == gg
+        X = zero_vector(M, p)
+        get_grad_equality_constraint!(cop, X, p, 1)
+        @test X == gh[1]
+        get_grad_inequality_constraint!(cop, X, p, 1)
+        @test X == gg[1]
+        # TODO debug cop2 case
+    end
     @testset "Partial Constructors" begin
         # At least one constraint necessary
         @test_throws ErrorException ConstrainedManifoldObjective(f, grad_f)
@@ -89,22 +119,29 @@ include("../utils/dummy_types.jl")
         co1f = ConstrainedManifoldObjective(f, grad_f!; g=g, grad_g=grad_g, M=M)
         @test get_grad_equality_constraint(M, co1f, p, :) == []
         @test get_grad_inequality_constraint(M, co1f, p, :) == gg
+        @test get_equality_constraint(M, co1f, p, :) == []
+        @test get_inequality_constraint(M, co1f, p, :) == c[1]
 
         co1v = ConstrainedManifoldObjective(
             f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2]
         )
         @test get_grad_equality_constraint(M, co1v, p, :) == []
         @test get_grad_inequality_constraint(M, co1v, p, :) == gg
+        @test get_equality_constraint(M, co1v, p, :) == []
+        @test get_inequality_constraint(M, co1v, p, :) == c[1]
 
         co2f = ConstrainedManifoldObjective(f, grad_f!; h=h, grad_h=grad_h, M=M)
         @test get_grad_equality_constraint(M, co2f, p, :) == gh
         @test get_grad_inequality_constraint(M, co2f, p, :) == []
+        @test get_equality_constraint(M, co2f, p, :) == c[2]
+        @test get_inequality_constraint(M, co2f, p, :) == []
 
         co2v = ConstrainedManifoldObjective(f, grad_f!; h=[h1], grad_h=[grad_h1])
         @test get_grad_equality_constraint(M, co2v, p, :) == gh
         @test get_grad_inequality_constraint(M, co2v, p, :) == []
+        @test get_equality_constraint(M, co2v, p, :) == c[2]
+        @test get_inequality_constraint(M, co2v, p, :) == []
     end
-
     for co in [cofa, cofm, cova, covm]
         @testset "$co" begin
             dmp = DefaultManoptProblem(M, co)
