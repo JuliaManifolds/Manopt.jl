@@ -113,11 +113,17 @@ And advantage here is, that again the single components can be evaluated individ
 
 # Constructor
 
-VectorGradientFunction(f, Jf, range_dimension;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    function_type::AbstractVectorialType=FunctionVectorialType(),
-    jacobian_type::AbstractVectorialType=FunctionVectorialType(),
-)
+    VectorGradientFunction(f, Jf, range_dimension;
+        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+        function_type::AbstractVectorialType=FunctionVectorialType(),
+        jacobian_type::AbstractVectorialType=FunctionVectorialType(),
+    )
+
+Create a `VectorGradientFunction` of `f`  and its Jacobain (vector of gradients) `Jf`,
+where `f` maps into the Euclidean space of dimension `range_dimension`.
+Their types are specified by the `function_type`, and `jacobian_type`, respectively.
+The Jacobian can further be given as an allocating variant or an inplace-variant, specified
+by the `evaluation=` keyword.
 """
 struct VectorGradientFunction{
     E<:AbstractEvaluationType,
@@ -150,7 +156,7 @@ function VectorGradientFunction(
 end
 
 @doc raw"""
-    get_value(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range=nothing)
+    get_value(M::AbstractManifold, vgf::VectorGradientFunction, p[, i=:])
 
 Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at at `p`.
 The `range` can be used to speficy a potential range, but is currently only present for consistency.
@@ -161,12 +167,12 @@ The `i` can be a linear index, you can provide
 * a `UnitRange` to specify a range to be returned like `1:3`
 * a `BitVector` specifying a selection
 * a `AbstractVector{<:Integer}` to specify indices
-* `:` to return the vector of all gradients
+* `:` to return the vector of all gradients, which is also the default
 
 """
 get_value(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
 function get_value(
-    M::AbstractManifold, vgf::VectorGradientFunction{E,<:FunctionVectorialType}, p, i
+    M::AbstractManifold, vgf::VectorGradientFunction{E,<:FunctionVectorialType}, p, i=:
 ) where {E}
     c = vgf.value!!(M, p)
     if isa(c, Number)
@@ -184,7 +190,7 @@ function get_value(
     return vgf.value!![i](M, p)
 end
 function get_value(
-    M::AbstractManifold, vgf::VectorGradientFunction{E,<:ComponentVectorialType}, p, i
+    M::AbstractManifold, vgf::VectorGradientFunction{E,<:ComponentVectorialType}, p, i=:
 ) where {E}
     return [f(M, p) for f in vgf.value!![i]]
 end
@@ -236,7 +242,7 @@ function get_gradient(
     M::AbstractManifold,
     vgf::VectorGradientFunction,
     p,
-    i, # as long as the length can be found it should work, see _vgf_index_to_length
+    i=:, # as long as the length can be found it should work, see _vgf_index_to_length
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 )
     n = _vgf_index_to_length(i, vgf.range_dimension)
@@ -289,7 +295,7 @@ function get_gradient!(
     X,
     vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:CoefficientVectorialType},
     p,
-    i,
+    i=:,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
@@ -328,6 +334,14 @@ function get_gradient!(
         copyto!(M, _write(pM, rep_size, X, (j,)), f(M, p))
     end
     return X
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    vgf::VectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
+    p,
+) where {FT}
+    return get_gradient!(M, g, vgf, p, :)
 end
 function get_gradient!(
     M::AbstractManifold,

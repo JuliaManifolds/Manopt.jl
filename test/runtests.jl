@@ -27,6 +27,7 @@ include("utils/example_tasks.jl")
         include("plans/test_stochastic_gradient_plan.jl")
         include("plans/test_stopping_criteria.jl")
         include("plans/test_subgradient_plan.jl")
+        include("plans/test_vectorial_plan.jl")
     end
     @testset "Helper Tests       " begin
         include("helpers/test_checks.jl")

@@ -287,6 +287,8 @@ include("../utils/dummy_types.jl")
                 :GradEqualityConstraint,
             ],
         )
+        @test equality_constraints_length(ccofa) == 1
+        @test inequality_constraints_length(ccofa) == 2
         @test get_equality_constraint(M, ccofa, p, :) ==
             get_equality_constraint(M, cofa, p, :)
         @test get_count(ccofa, :EqualityConstraints) == 1
