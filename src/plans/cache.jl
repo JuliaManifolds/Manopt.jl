@@ -533,14 +533,14 @@ function get_grad_equality_constraint(
     co::ManifoldCachedObjective,
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 )
     key = copy(M, p)
     n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
     P = fill(p, pM)
-    if haskey(co.cache, :GradEnequalityConstraints) # full constraints are stored
+    if haskey(co.cache, :GradEqualityConstraints) # full constraints are stored
         if haskey(co.cache[:GradEqualityConstraints], key)
             return co.cache[:GradEqualityConstraints][key][i]
             #but caching is not possible here, since that requires evaluating all
@@ -617,13 +617,13 @@ function get_grad_equality_constraint!(
     co::ManifoldCachedObjective,
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 )
     key = copy(M, p)
     n = _vgf_index_to_length(i, equality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    if haskey(co.cache, :GradEnequalityConstraints) # full constraints are stored
+    if haskey(co.cache, :GradEqualityConstraints) # full constraints are stored
         if haskey(co.cache[:GradEqualityConstraints], key)
             # access is subsampled with j, result linear in k
             for (k, j) in zip(
@@ -703,14 +703,14 @@ function get_grad_inequality_constraint(
     co::ManifoldCachedObjective,
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 )
     key = copy(M, p)
     n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
     P = fill(p, pM)
-    if haskey(co.cache, :GradInenequalityConstraints) # full constraints are stored
+    if haskey(co.cache, :GradInequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradInequalityConstraints], key)
             return co.cache[:GradInequalityConstraints][key][i]
             #but caching is not possible here, since that requires evaluating all
@@ -726,7 +726,7 @@ function get_grad_inequality_constraint(
                 M,
                 _write(pM, rep_size, X, (k,)),
                 p,
-                get!(co.cache[:InequalityConstraint], (key, j)) do
+                get!(co.cache[:GradInequalityConstraint], (key, j)) do
                     get_grad_inequality_constraint(M, co.objective, p, j)
                 end,
             )
@@ -787,13 +787,13 @@ function get_grad_inequality_constraint!(
     co::ManifoldCachedObjective,
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 )
     key = copy(M, p)
     n = _vgf_index_to_length(i, inequality_constraints_length(co.objective))
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    if haskey(co.cache, :GradInenequalityConstraints) # full constraints are stored
+    if haskey(co.cache, :GradInequalityConstraints) # full constraints are stored
         if haskey(co.cache[:GradInequalityConstraints], key)
             # access is subsampled with j, result linear in k
             for (k, j) in zip(
@@ -1103,6 +1103,9 @@ function status_summary(smco::SimpleManifoldCachedObjective)
 end
 function status_summary(mco::ManifoldCachedObjective)
     s = "## Cache\n"
+    s2 = status_summary(mco.objective)
+    (length(s2) > 0) && (s2 = "\n$(s2)")
+    length(mco.cache) == 0 && return "$(s)    No caches active\n$(s2)"
     longest_key_length = max(length.(["$k" for k in keys(mco.cache)])...)
     cache_strings = [
         "  * :" *
@@ -1110,6 +1113,5 @@ function status_summary(mco::ManifoldCachedObjective)
         " : $(v.currentsize)/$(v.maxsize) entries of type $(valtype(v)) used" for
         (k, v) in zip(keys(mco.cache), values(mco.cache))
     ]
-    s2 = status_summary(mco.objective)
-    return "$(s)$(join(cache_strings,"\n"))\n\n$s2"
+    return "$(s)$(join(cache_strings,"\n"))\n$s2"
 end

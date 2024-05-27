@@ -387,20 +387,31 @@ include("../utils/dummy_types.jl")
         ]
         ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
         cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
+        # to always trigger fallbacks: a cache that does not cache
+        nccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, Vector{Symbol}()))
 
         ce = get_equality_constraint(M, cofa, p, :)
         @test get_equality_constraint(M, cccofa, p, :) == ce # counts
         @test get_equality_constraint(M, cccofa, p, :) == ce # cached
+        @test get_equality_constraint(M, cccofa, p, [1]) == ce # cached, too
+
         @test get_count(cccofa, :EqualityConstraints) == 1
+        @test get_equality_constraint(M, nccofa, p, [1]) == ce # fallback, too
+        @test get_count(cccofa, :EqualityConstraint) == 1
+
+        @test get_equality_constraint(M, cccofa, p, :) == ce # cached
         for i in 1:1
             ce_i = get_equality_constraint(M, cofa, p, i)
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # counts
             @test get_equality_constraint(M, cccofa, p, i) == ce_i # cached
-            @test get_count(cccofa, :EqualityConstraint, i) == 1
+            @test get_count(cccofa, :EqualityConstraint, i) == 2
         end
 
+        # Reset Counter & Cache
         ccofa = Manopt.objective_count_factory(M, cofa, cache_and_count)
         cccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, cache_and_count))
+        # to always trigger fallbacks: a cache that does not cache
+        nccofa = Manopt.objective_cache_factory(M, ccofa, (:LRU, Vector{Symbol}()))
 
         ce = get_equality_constraint(M, cofa, p, 1:1)
         @test get_equality_constraint(M, cccofa, p, 1:1) == ce # counts
@@ -408,32 +419,30 @@ include("../utils/dummy_types.jl")
         @test get_count(cccofa, :EqualityConstraint) == 1
 
         ci = get_inequality_constraint(M, cofa, p, :)
-        @test ci == get_inequality_constraint(M, cccofa, p, :) # counts
-        @test ci == get_inequality_constraint(M, cccofa, p, :) #cached
+        # Fill single entry with range
+        @test get_inequality_constraint(M, cccofa, p, 1:2) == ci # counts single
+        @test get_inequality_constraint(M, cccofa, p, 1:2) == ci # cached single
+        @test get_count(cccofa, :InequalityConstraint, 1) == 1
+        @test get_count(cccofa, :InequalityConstraint, 1) == 1
+
+        @test get_inequality_constraint(M, cccofa, p, :) == ci # counts
+        @test get_inequality_constraint(M, cccofa, p, :) == ci #cached
+        @test get_inequality_constraint(M, cccofa, p, 1:2) == ci # cached, too
         @test get_count(cccofa, :InequalityConstraints) == 1
+        @test get_inequality_constraint(M, nccofa, p, 1:2) == ci # fallback, counts
+        @test get_count(nccofa, :InequalityConstraint, 1) == 2
+        @test get_count(nccofa, :InequalityConstraint, 2) == 2
         for j in 1:2
             ci_j = get_inequality_constraint(M, cofa, p, j)
-            @test get_inequality_constraint(M, cccofa, p, j) == ci_j # count
             @test get_inequality_constraint(M, cccofa, p, j) == ci_j # cached
-            @test get_count(cccofa, :InequalityConstraint, j) == 1
+            @test get_count(cccofa, :InequalityConstraint, j) == 2
         end
 
         Xe = get_grad_equality_constraint(M, cofa, p, :)
-        @test get_grad_equality_constraint(M, cccofa, p, :) == Xe # counts
-        @test get_grad_equality_constraint(M, cccofa, p, :) == Xe # cached
-        Ye = copy.(Ref(M), Ref(p), Xe)
-        get_grad_equality_constraint!(M, Ye, cccofa, p, :) # cached
-        @test Ye == Xe
-        @test get_count(ccofa, :GradEqualityConstraints) == 1
-        Xe = get_grad_equality_constraint(M, cofa, -p, :)
-        get_grad_equality_constraint!(M, Ye, cccofa, -p, :) # counts
-        @test Ye == Xe
-        get_grad_equality_constraint!(M, Ye, cccofa, -p, :) # cached
-        @test Ye == Xe
-        @test get_grad_equality_constraint(M, cccofa, -p, :) == Xe # cached
+        @test get_grad_equality_constraint(M, cccofa, p, 1:1) == Xe # counts single
+        @test get_grad_equality_constraint(M, cccofa, p, 1:1) == Xe # cached single
         for i in 1:1
             X = get_grad_equality_constraint(M, cofa, p, i)
-            @test get_grad_equality_constraint(M, cccofa, p, i) == X #counts
             @test get_grad_equality_constraint(M, cccofa, p, i) == X #cached
             Y = copy(M, p, X)
             get_grad_equality_constraint!(M, Y, cccofa, p, i) == X # cached
@@ -447,30 +456,74 @@ include("../utils/dummy_types.jl")
             @test get_grad_equality_constraint(M, cccofa, -p, i) == X #cached
             @test get_count(cccofa, :GradEqualityConstraint, i) == 2
         end
+        @test get_grad_equality_constraint(M, cccofa, p, :) == Xe # counts
+        @test get_grad_equality_constraint(M, cccofa, p, :) == Xe # cached
+        @test get_grad_equality_constraint(M, cccofa, p, 1:1) == Xe # cached, too
+        @test get_grad_equality_constraint(M, nccofa, p, 1:1) == Xe # fallback, counts
 
-        Xi = get_grad_inequality_constraint(M, cofa, p, :)
-        @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # counts
-        @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # cached
+        Ye = copy.(Ref(M), Ref(p), Xe)
+        get_grad_equality_constraint!(M, Ye, cccofa, p, :) # cached
+        @test Ye == Xe
+        @test get_count(ccofa, :GradEqualityConstraints) == 1
+        # New point to trigger caches again
+        Xe = get_grad_equality_constraint(M, cofa, -p, :)
+        get_grad_equality_constraint!(M, Ye, cccofa, -p, 1:1) # counts, but here single
+        @test Ye == Xe
+        get_grad_equality_constraint!(M, Ye, cccofa, -p, 1:1) # cached from single
+        @test Ye == Xe
+        @test get_count(cccofa, :GradEqualityConstraint, 1) == 3
+        @test Ye == Xe
+        get_grad_equality_constraint!(M, Ye, cccofa, -p, :) # cached
+        @test Ye == Xe
+        @test get_grad_equality_constraint(M, cccofa, -p, :) == Xe # cached
+        @test get_count(cccofa, :GradEqualityConstraint, 1) == 3
+        get_grad_equality_constraint!(M, Ye, nccofa, -p, 1:1) # falback, counts
+        @test Ye == Xe
+        @test get_count(cccofa, :GradEqualityConstraint, 1) == 4
+
+        Xi = get_grad_inequality_constraint(M, cofa, p, :) #
         Yi = copy.(Ref(M), Ref(p), Xi)
-        @test get_grad_inequality_constraint!(M, Yi, cccofa, p, :) == Xi # cached
-        @test get_count(cccofa, :GradInequalityConstraints) == 1
-        Xi = get_grad_inequality_constraint(M, cofa, -p, :)
-        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # counts
-        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # cached
-        @test get_grad_inequality_constraint(M, cccofa, -p, :) == Xi # cached
-        @test get_count(cccofa, :GradInequalityConstraints) == 2
+        @test get_grad_inequality_constraint(M, cccofa, p, 1:2) == Xi # counts single
+        @test get_grad_inequality_constraint(M, cccofa, p, 1:2) == Xi # cached single
+        get_grad_inequality_constraint!(M, Yi, cccofa, p, 1:2) # cached single
+        @test Yi == Xi
+        @test get_grad_inequality_constraint(M, nccofa, p, 1:2) == Xi # fallback, counts
+        @test get_count(cccofa, :GradInequalityConstraint, 1) == 2
+        @test get_count(cccofa, :GradInequalityConstraint, 2) == 2
         for j in 1:2
             X = get_grad_inequality_constraint(M, cofa, p, j)
-            @test get_grad_inequality_constraint(M, cccofa, p, j) == X # counts
-            @test get_grad_inequality_constraint(M, cccofa, p, j) == X # cached
-            Y = copy(M, p, X)
-            @test get_grad_inequality_constraint!(M, Y, cccofa, p, j) == X # cached
-            @test get_count(ccofa, :GradInequalityConstraint, j) == 1
-            X = get_grad_inequality_constraint(M, cofa, -p, j)
-            @test get_grad_inequality_constraint!(M, Y, cccofa, -p, j) == X # counts
-            @test get_grad_inequality_constraint!(M, Y, cccofa, -p, j) == X # cached
             @test get_grad_inequality_constraint(M, cccofa, p, j) == X # cached
             @test get_count(ccofa, :GradInequalityConstraint, j) == 2
+            Y = copy(M, p, X)
+            @test get_grad_inequality_constraint!(M, Y, cccofa, p, j) == X # cached
+            @test get_count(ccofa, :GradInequalityConstraint, j) == 2
+            X = get_grad_inequality_constraint(M, cofa, -p, j)
+            @test get_grad_inequality_constraint!(M, Y, cccofa, -p, j) == X # counts
+            @test get_grad_inequality_constraint(M, cccofa, p, j) == X # cached
+            @test get_count(ccofa, :GradInequalityConstraint, j) == 3
         end
+        @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # counts
+        @test get_grad_inequality_constraint(M, cccofa, p, 1:2) == Xi # cached from full
+        @test get_grad_inequality_constraint(M, cccofa, p, :) == Xi # cached
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, p, :) == Xi # cached
+        @test Yi == Xi
+        @test get_count(cccofa, :GradInequalityConstraints) == 1
+        Xi = get_grad_inequality_constraint(M, cofa, -p, :) #
+        get_grad_inequality_constraint!(M, Yi, cccofa, -p, 1:2) # cached from single
+        @test Yi == Xi
+        @test get_count(ccofa, :GradInequalityConstraint, 1) == 3
+        @test get_count(ccofa, :GradInequalityConstraint, 2) == 3
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # counts for full
+        @test Yi == Xi
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, -p, :) == Xi # cached
+        @test Yi == Xi
+        @test get_grad_inequality_constraint!(M, Yi, cccofa, p, 1:2) == Xi # cached from full
+        @test Yi == Xi
+        @test get_grad_inequality_constraint(M, cccofa, -p, :) == Xi # cached
+        @test get_count(cccofa, :GradInequalityConstraints) == 2
+        @test get_grad_inequality_constraint!(M, Yi, nccofa, -p, 1:2) == Xi # fallback, counts
+        @test Yi == Xi
+        @test get_count(ccofa, :GradInequalityConstraint, 1) == 4
+        @test get_count(ccofa, :GradInequalityConstraint, 2) == 4
     end
 end

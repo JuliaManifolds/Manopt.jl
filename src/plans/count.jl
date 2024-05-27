@@ -499,13 +499,14 @@ function objective_count_factory(
 end
 
 function status_summary(co::ManifoldCountObjective)
-    longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     s = "## Statistics on function calls\n"
+    s2 = status_summary(co.objective)
+    (length(s2) > 0) && (s2 = "\n$(s2)")
+    length(co.counts) == 0 && return "$(s)    No counters active\n$(s2)"
+    longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     count_strings = [
         "  * :$(rpad("$(c[1])",longest_key_length)) : $(c[2])" for c in co.counts
     ]
-    s2 = status_summary(co.objective)
-    (length(s2) > 0) && (s2 = "\n$(s2)")
     return "$(s)$(join(count_strings,"\n"))$s2"
 end
 
