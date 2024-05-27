@@ -111,15 +111,6 @@ function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i::Integer)
         end
     end
 end
-function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i)
-    if haskey(co.counts, s)
-        if (i == 1) && (ndims(co.counts[s]) == 0)
-            return co.counts[s] .+= 1
-        elseif length(i) == ndims(co.counts[s]) && all(i .<= size(co.counts[s]))
-            return co.counts[s][i] .+= 1
-        end
-    end
-end
 
 """
     get_count(co::ManifoldCountObjective, s::Symbol, mode::Symbol=:None)
