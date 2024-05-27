@@ -306,7 +306,7 @@ export AbstractDecoratedManifoldObjective,
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
 export AbstractVectorialType
-export CoefficientVectorialType, ComponentVectorialType, FunctionVectorialType
+export CoordinateVectorialType, ComponentVectorialType, FunctionVectorialType
 #
 # AbstractManoptSolverState
 export AbstractGradientSolverState,

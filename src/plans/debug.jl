@@ -1107,9 +1107,7 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of
     DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
 """
 function DebugFactory(a::Vector{<:Any})
-    entries = filter(
-        x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
-    )
+    entries = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a)
     # Filter pairs
     b = filter(x -> isa(x, Pair), a)
     # Push this to the `:Iteration` if that exists or add that pair

@@ -1,4 +1,4 @@
-using LRUCache, Manopt, ManifoldsBase, Test
+using LRUCache, Manopt, Manifolds, ManifoldsBase, Test
 
 include("../utils/dummy_types.jl")
 
@@ -8,10 +8,12 @@ include("../utils/dummy_types.jl")
     f(::ManifoldsBase.DefaultManifold, p) = norm(p)^2
     grad_f(M, p) = 2 * p
     grad_f!(M, X, p) = (X .= 2 * p)
+    Hess_f(M, p, X) = [2.0, 2.0, 2.0]
     # Inequality constraints
     g(M, p) = [p[1] - 1, -p[2] - 1]
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
+    grad_gA(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]
     function grad_g!(M, X, p)
         X[1] .= [1.0, 0.0, 0.0]
         X[2] .= [0.0, -1.0, 0.0]
@@ -34,6 +36,7 @@ include("../utils/dummy_types.jl")
     h(M, p) = [2 * p[3] - 1]
     h1(M, p) = 2 * p[3] - 1
     grad_h(M, p) = [[0.0, 0.0, 2.0]]
+    grad_hA(M, p) = [[0.0, 0.0, 2.0];;]
     function grad_h!(M, X, p)
         X[1] .= [0.0, 0.0, 2.0]
         return X
@@ -42,6 +45,16 @@ include("../utils/dummy_types.jl")
     grad_h1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
     cofa = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h; inequality_constraints=2, equality_constraints=1
+    )
+    cofaA = ConstrainedManifoldObjective( # Array representation tangent vector
+        f,
+        grad_f,
+        g,
+        grad_gA,
+        h,
+        grad_hA;
+        inequality_constraints=2,
+        equality_constraints=1,
     )
     cofm = ConstrainedManifoldObjective(
         f,
@@ -87,7 +100,7 @@ include("../utils/dummy_types.jl")
     cop = ConstrainedManoptProblem(M, cofa)
     cop2 = ConstrainedManoptProblem(
         M,
-        cofa;
+        cofaA;
         gradient_equality_range=ArrayPowerRepresentation(),
         gradient_inequality_range=ArrayPowerRepresentation(),
     )
@@ -108,7 +121,27 @@ include("../utils/dummy_types.jl")
         @test X == gh[1]
         get_grad_inequality_constraint!(cop, X, p, 1)
         @test X == gg[1]
-        # TODO debug cop2 case
+        @test get_equality_constraint(cop2, p, :) == c[2]
+        @test get_inequality_constraint(cop2, p, :) == c[1]
+        @test get_grad_equality_constraint(cop2, p, :) == cat(gh...; dims=2)
+        @test get_grad_inequality_constraint(cop2, p, :) == cat(gg...; dims=2)
+        get_grad_equality_constraint!(cop2, X, p, 1)
+        @test X == gh[1]
+        get_grad_inequality_constraint!(cop2, X, p, 1)
+        @test X == gg[1]
+    end
+    @testset "ConstrainedObjective with Hessian" begin
+        coh = ConstrainedManifoldObjective(
+            ManifoldHessianObjective(f, grad_f, Hess_f);
+            equality_constraints=VectorGradientFunction(g, grad_g, 2),
+        )
+        Y = [2.0, 2.0, 2.0]
+        X = [1.0, 0.0, 0.0]
+        @test get_hessian(M, coh, p, X) == Y
+        Z = zero_vector(M, p)
+        get_hessian!(M, Z, coh, p, X) == Y
+        @test Z == Y
+        @test Manopt.get_hessian_function(coh) == Hess_f
     end
     @testset "Partial Constructors" begin
         # At least one constraint necessary

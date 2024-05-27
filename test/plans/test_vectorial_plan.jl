@@ -5,6 +5,9 @@ using Manopt: get_value, get_value_function, get_gradient_function
     g(M, p) = [p[1] - 1, -p[2] - 1]
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
+    # since the ONB of M is just the identity in coefficients, JF is gradients'
+    jac_g(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]'
+    jac_g!(M, J, p) = (J .= [1.0 0.0; 0.0 -1.0; 0.0 0.0]')
     function grad_g!(M, X, p)
         X[1] .= [1.0, 0.0, 0.0]
         X[2] .= [0.0, -1.0, 0.0]
@@ -37,12 +40,21 @@ using Manopt: get_value, get_value_function, get_gradient_function
         jacobian_type=ComponentVectorialType(),
         evaluation=InplaceEvaluation(),
     )
-
+    vgf_ja = VectorGradientFunction(
+        g, jac_g, 2; jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis())
+    )
+    vgf_ji = VectorGradientFunction(
+        g,
+        jac_g!,
+        2;
+        jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis()),
+        evaluation=InplaceEvaluation(),
+    )
     p = [1.0, 2.0, 3.0]
     c = [0.0, -3.0]
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
 
-    for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi]
+    for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji]
         @test length(vgf) == 2
         @test get_value(M, vgf, p) == c
         @test get_value(M, vgf, p, :) == c

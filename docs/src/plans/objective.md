@@ -232,7 +232,7 @@ Manopt.VectorGradientFunction
 
 ```@docs
 Manopt.AbstractVectorialType
-Manopt.CoefficientVectorialType
+Manopt.CoordinateVectorialType
 Manopt.ComponentVectorialType
 Manopt.FunctionVectorialType
 ```
