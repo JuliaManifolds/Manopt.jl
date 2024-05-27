@@ -477,7 +477,7 @@ include("../utils/dummy_types.jl")
         @test Ye == Xe
         @test get_grad_equality_constraint(M, cccofa, -p, :) == Xe # cached
         @test get_count(cccofa, :GradEqualityConstraint, 1) == 3
-        get_grad_equality_constraint!(M, Ye, nccofa, -p, 1:1) # falback, counts
+        get_grad_equality_constraint!(M, Ye, nccofa, -p, 1:1) # fallback, counts
         @test Ye == Xe
         @test get_count(cccofa, :GradEqualityConstraint, 1) == 4
 
