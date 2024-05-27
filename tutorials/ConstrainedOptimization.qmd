@@ -87,7 +87,8 @@ since $f$ is a functions defined in the embedding $ℝ^d$ as well, we obtain its
 grad_f(M, p) = project(M, p, -transpose(Z) * p - Z * p);
 ```
 
-For the constraints this is a little more involved, since each function $g_i = g(p)_i = p_i$ has to return its own gradient. These are again in the embedding just $\operatorname{grad} g_i(p) = -e_i$ the $i$ th unit vector. We can project these again onto the tangent space at $p$:
+For the constraints this is a little more involved, since each function $g_i=g(p)_i=p_i$
+has to return its own gradient. These are again in the embedding just $\operatorname{grad} g_i(p) = -e_i$ the $i$ th unit vector. We can project these again onto the tangent space at $p$:
 
 ```{julia}
 grad_g(M, p) = project.(
@@ -101,7 +102,7 @@ We further start in a random point:
 p0 = rand(M);
 ```
 
-Let's check a few things for the initial point
+Let's verify a few things for the initial point
 
 ```{julia}
 f(M, p0)
@@ -126,7 +127,8 @@ Now as a first method we can just call the [Augmented Lagrangian Method](https:/
 );
 ```
 
-Now we have both a lower function value and the point is nearly within the constraints, ... up to numerical inaccuracies
+Now we have both a lower function value and the point is nearly within the constraints,
+namely up to numerical inaccuracies
 
 ```{julia}
 f(M, v1)
@@ -147,7 +149,7 @@ grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p);
 
 2. The constraints are currently always evaluated all together, since the function `grad_g` always returns a vector of gradients.
 We first change the constraints function into a vector of functions.
-We further change the gradient _both_ into a vector of gradient functions $\operatorname{grad} g_i, i=1,\ldots,d$, _as well as_ gradients that are computed in place.
+We further change the gradient _both_ into a vector of gradient functions $\operatorname{grad} g_i,i=1,\ldots,d$, _as well as_ gradients that are computed in place.
 
 
 ```{julia}
@@ -196,7 +198,8 @@ and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_m
 );
 ```
 
-We obtain a similar cost value as for the Augmented Lagrangian Solver above, but here the constraint is actually fulfilled and not just numerically “on the boundary”.
+We obtain a similar cost value as for the Augmented Lagrangian Solver from before,
+but here the constraint is actually fulfilled and not just numerically “on the boundary”.
 
 ```{julia}
 f(M, v3)

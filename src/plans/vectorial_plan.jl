@@ -387,7 +387,7 @@ function get_gradient!(
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    # a typewise safe way to allocate what usually should yield a n-times-d matrix
+    # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
     JF = reshape(
         get_coefficients(pM, fill(p, pM), X, vgf.jacobian_type.basis),
@@ -406,7 +406,7 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    # a typewise safe way to allocate what usually should yield a n-times-d matrix
+    # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
     JF = reshape(
         get_coefficients(pM, fill(p, pM), X, vgf.jacobian_type.basis),
@@ -444,14 +444,14 @@ function get_gradient!(
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
-    # In the resulting X the indices we need are linear,
-    # in jacobian[i] we also have the functions f in a linear sense
+    # In the resulting X the indices are linear,
+    # in jacobian[i] have the functions f are also given n a linear sense
     for (j, f) in zip(1:n, vgf.jacobian!![i])
         f(M, _write(pM, rep_size, X, (j,)), p)
     end
     return X
 end
-# II(c) a sungle function
+# II(c) a single function
 function get_gradient!(
     M::AbstractManifold,
     X,
@@ -475,14 +475,14 @@ function get_gradient!(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
 ) where {FT}
-    #Singel access for function is a bit expensive
+    #Single access for function is a bit expensive
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM_out = PowerManifold(M, range, n)
     pM_temp = PowerManifold(M, range, vgf.range_dimension)
     P = fill(p, pM_temp)
     x = zero_vector(pM_temp, P)
     vgf.jacobian!!(M, x, p)
-    # Luckily all documented access functions work directly on x[pM_temp,...]
+    # Luckily all documented access functions work directly on `x[pM_temp,...]`
     copyto!(pM_out, X, P[pM_temp, i], x[pM_temp, i])
     return X
 end

@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* bumped dependency of ManifoldsBase.jl to 0.15.9 and imported their numerical check functions. This changes the `throw_error` keyword used internally to a `error=` with a symbol.
+* bumped dependency of ManifoldsBase.jl to 0.15.9 and imported their numerical verify functions. This changes the `throw_error` keyword used internally to a `error=` with a symbol.
 
 ## [0.4.61] April 27, 2024
 
@@ -46,8 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * `get_last_stepsize` was defined in quite different ways that caused ambiguities. That is now internally a bit restructured and should work nicer.
-  Internally this means that the interims dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
-* we accidentally exported `set_manopt_parameter!`, this is now fixed.
+  Internally this means that the interim dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
+* the accidentally exported `set_manopt_parameter!` is no longer exported
 
 ### Changed
 
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `:active` is changed to `:Activity`
 
 
-## [0.4.60] – April 10, 2024
+## [0.4.60] April 10, 2024
 
 ### Added
 
@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* The name `:Subsolver` to generate `DebugWhenActive` was misleading, it is now called `:WhenActive` – referring to “print debug only when set active, e.g. by the parent (main) solver”.
+* The name `:Subsolver` to generate `DebugWhenActive` was misleading, it is now called `:WhenActive` referring to “print debug only when set active, that is by the parent (main) solver”.
 * the old version of specifying `Symbol => RecordAction` for later access was ambiguous, since
 it could also mean to store the action in the dictionary under that symbol. Hence the order for access
 was switched to `RecordAction => Symbol` to resolve that ambiguity.
@@ -109,7 +109,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 ### Fixed
 
-* fixed the outdated documentation of `TruncatedConjugateGradientState`, that now correcly
+* fixed the outdated documentation of `TruncatedConjugateGradientState`, that now correctly
   state that `p` is no longer stored, but the algorithm runs on `TpM`.
 * implemented the missing `get_iterate` for `TruncatedConjugateGradientState`.
 
@@ -191,8 +191,8 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 * A `StopWhenEntryChangeLess` to be able to stop on arbitrary small changes of specific fields
 * generalises `StopWhenGradientNormLess` to accept arbitrary `norm=` functions
-* refactor the default in `particle_swarm` to no longer “misuse” the iteration change check,
-  but actually the new one one the `:swarm` entry
+* refactor the default in `particle_swarm` to no longer “misuse” the iteration change,
+  but actually the new one the `:swarm` entry
 
 ## [0.4.48] - January 16, 2024
 
@@ -249,7 +249,7 @@ and their documentation and testing has been extended.
 ### Changed
 
 * Bumped and added dependencies on all 3 Project.toml files, the main one, the docs/, an the tutorials/ one.
-* `artificial_S2_lemniscate` is available as [`ManoptExample.Lemniscate`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.Lemniscate-Tuple{Number}) – and works on arbitrary manifolds now.
+* `artificial_S2_lemniscate` is available as [`ManoptExample.Lemniscate`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.Lemniscate-Tuple{Number}) and works on arbitrary manifolds now.
 * `artificial_S1_signal` is available as [`ManoptExample.artificial_S1_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_signal)
 * `artificial_S1_slope_signal` is available as [`ManoptExamples.artificial_S1_slope_signal`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S1_slope_signal)
 * `artificial_S2_composite_bezier_curve` is available as [`ManoptExamples.artificial_S2_composite_Bezier_curve`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/data/#ManoptExamples.artificial_S2_composite_Bezier_curve-Tuple{})
@@ -262,7 +262,7 @@ and their documentation and testing has been extended.
 * `adjoint_differential_forward_logs` is available as [`ManoptExamples.adjoint_differential_forward_logs`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_forward_logs-Union{Tuple{TPR},%20Tuple{TSize},%20Tuple{TM},%20Tuple{𝔽},%20Tuple{ManifoldsBase.PowerManifold{𝔽,%20TM,%20TSize,%20TPR},%20Any,%20Any}}%20where%20{𝔽,%20TM,%20TSize,%20TPR})
 * `adjoint:differential_bezier_control` is available as [`ManoptExamples.adjoint_differential_Bezier_control_points`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.adjoint_differential_Bezier_control_points-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{%3C:ManoptExamples.BezierSegment},%20AbstractVector,%20AbstractVector})
 * `BezierSegment` is available as [`ManoptExamples.BeziérSegment`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.BezierSegment)
-* `cost_acceleration_bezier` is avilable as [`ManoptExamples.acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat}}}%20where%20P)
+* `cost_acceleration_bezier` is available as [`ManoptExamples.acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat}}}%20where%20P)
 * `cost_L2_acceleration_bezier` is available as [`ManoptExamples.L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector{%3C:AbstractFloat},%20AbstractFloat,%20AbstractVector{P}}}%20where%20P)
 * `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`]()
 * `costL2TV` is available as [`ManoptExamples.L2_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.L2_Total_Variation-NTuple{4,%20Any})
@@ -283,7 +283,7 @@ and their documentation and testing has been extended.
 * `get_bezier_segments` is available as [`ManoptExamples.get_Bezier_segments`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.get_Bezier_segments-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20Vector{P},%20Any},%20Tuple{ManifoldsBase.AbstractManifold,%20Vector{P},%20Any,%20Symbol}}%20where%20P)
 * `grad_acceleration_bezier` is available as [`ManoptExamples.grad_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_acceleration_Bezier-Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector,%20AbstractVector{%3C:Integer},%20AbstractVector})
 * `grad_L2_acceleration_bezier` is available as [`ManoptExamples.grad_L2_acceleration_Bezier`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_L2_acceleration_Bezier-Union{Tuple{P},%20Tuple{ManifoldsBase.AbstractManifold,%20AbstractVector{P},%20AbstractVector{%3C:Integer},%20AbstractVector,%20Any,%20AbstractVector{P}}}%20where%20P)
-* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12``](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
+* `grad_Intrinsic_infimal_convolution_TV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
 * `grad_TV` is available as [`ManoptExamples.grad_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.grad_Total_Variation)
 * `costIntrICTV12` is available as [`ManoptExamples.Intrinsic_infimal_convolution_TV12`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.Intrinsic_infimal_convolution_TV12-Tuple{ManifoldsBase.AbstractManifold,%20Vararg{Any,%205}})
 * `project_collaborative_TV` is available as [`ManoptExamples.project_collaborative_TV`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.project_collaborative_TV)
@@ -296,7 +296,7 @@ and their documentation and testing has been extended.
 
 ### Added
 
-* vale.sh as a CI to keep track of a consistent documenttion
+* vale.sh as a CI to keep track of a consistent documentation
 
 ## [0.4.42] - November 6, 2023
 
@@ -373,7 +373,7 @@ and their documentation and testing has been extended.
 
 * an `ManifoldEuclideanGradientObjective` to allow the cost, gradient, and Hessian and other
   first or second derivative based elements to be Euclidean and converted when needed.
-* a keyword `objective_type=:Euclidean` for all solvers, that specifies that an Objective shall be created of the above type
+* a keyword `objective_type=:Euclidean` for all solvers, that specifies that an Objective shall be created of the new type
 
 ## [0.4.33] - August 24, 2023
 
@@ -504,7 +504,7 @@ and their documentation and testing has been extended.
 
 ### Added
 
-* A function `check_Hessian(M, f, grad_f, Hess_f)` to numerically check the (Riemannian) Hessian of a function `f`
+* A function `check_Hessian(M, f, grad_f, Hess_f)` to numerically verify the (Riemannian) Hessian of a function `f`
 
 ## [0.4.17] - April 28, 2023
 

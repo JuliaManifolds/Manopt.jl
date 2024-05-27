@@ -43,7 +43,7 @@ p[2] = 1.0
 data = [exp(M, p, σ * rand(M; vector_at=p)) for i in 1:n];
 ```
 
-## Classical Definition
+## Classical definition
 
 The variant from the previous tutorial defines a cost $f(x)$ and its gradient $\operatorname{grad}f(p)$
 """
@@ -67,7 +67,7 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-## In-place Computation of the Gradient
+## In-place computation of the gradient
 
 We can reduce the memory allocations by implementing the gradient to be evaluated in-place.
 We do this by using a [functor](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects).
@@ -75,7 +75,7 @@ The motivation is twofold: on one hand, we want to avoid variables from the glob
 for example the manifold `M` or the `data`, being used within the function.
 Considering to do the same for more complicated cost functions might also be worth pursuing.
 
-Here, we store the data (as reference) and one introduce temporary memory in order to avoid
+Here, we store the data (as reference) and one introduce temporary memory to avoid
 reallocation of memory per `grad_distance` computation. We get
 
 ```{julia}

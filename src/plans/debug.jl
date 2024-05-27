@@ -1107,7 +1107,7 @@ It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of
     DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
 """
 function DebugFactory(a::Vector{<:Any})
-    iter_entries = filter(
+    entries = filter(
         x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a
     )
     # Filter pairs
@@ -1115,10 +1115,10 @@ function DebugFactory(a::Vector{<:Any})
     # Push this to the `:Iteration` if that exists or add that pair
     i = findlast(x -> (isa(x, Pair)) && (x.first == :Iteration), b)
     if !isnothing(i)
-        iter = popat!(b, i) #
-        b = [b..., :Iteration => [iter.second..., iter_entries...]]
+        item = popat!(b, i) #
+        b = [b..., :Iteration => [item.second..., entries...]]
     else
-        (length(iter_entries) > 0) && (b = [b..., :Iteration => iter_entries])
+        (length(entries) > 0) && (b = [b..., :Iteration => entries])
     end
     # Push a StoppingCriterion to `:Stop` if that exists or add such a pair
     if (:Stop in a)
@@ -1126,7 +1126,7 @@ function DebugFactory(a::Vector{<:Any})
         if !isnothing(i)
             stop = popat!(b, i) #
             b = [b..., :Stop => [stop.second..., DebugActionFactory(:Stop)]]
-        else # regenerate since we have to maybe change type of b
+        else # regenerate since the type of b might change
             b = [b..., :Stop => [DebugActionFactory(:Stop)]]
         end
     end
@@ -1137,11 +1137,11 @@ function DebugFactory(a::Vector{<:Any})
     # Run through all (updated) pairs
     for d in b
         offset = d.first === :BeforeIteration ? 0 : 1
-        dbg = DebugGroupFactory(d.second; activation_offset=offset)
-        (:WhenActive in a) && (dbg = DebugWhenActive(dbg))
+        debug = DebugGroupFactory(d.second; activation_offset=offset)
+        (:WhenActive in a) && (debug = DebugWhenActive(debug))
         # Add DebugEvery to all but Start and Stop
-        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (dbg = DebugEvery(dbg, ae))
-        dictionary[d.first] = dbg
+        (!(d.first in [:Start, :Stop]) && (ae > 0)) && (debug = DebugEvery(debug, ae))
+        dictionary[d.first] = debug
     end
     return dictionary
 end
@@ -1167,7 +1167,7 @@ making it deactivatable by its parent solver.
 """
 function DebugGroupFactory(a::Vector; activation_offset=1)
     group = DebugAction[]
-    for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
+    for d in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Integers & Active
         push!(group, DebugActionFactory(d))
     end
     l = length(group)

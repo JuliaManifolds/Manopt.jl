@@ -78,7 +78,7 @@ all information that is static and independent of the specific solver at hand.
 
 Usually the problems variable is called `mp`.
 
-### The solver: an `AbstractManoptSolverState`
+### Specifying a solver: an `AbstractManoptSolverState`
 
 Everything that is needed by a solver during the iterations, all its parameters, interim
 values that are needed beyond just one iteration, is stored in a subtype of the
@@ -338,7 +338,7 @@ For example to see the summary, we could now just call
 q = random_walk_algorithm!(M, f; return_state=true)
 ```
 
-## Conclusion & Beyond
+## Conclusion & beyond
 
 We saw in this tutorial how to implement a simple cost-based algorithm, to illustrate how optimization algorithms are covered in `Manopt.jl`.
 
