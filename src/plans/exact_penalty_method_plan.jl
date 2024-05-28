@@ -146,7 +146,6 @@ function (EG::ExactPenaltyGrad{<:LogarithmicSumOfExponentials})(M::AbstractManif
     (m > 0) && (c = EG.ρ .* exp.(gp ./ EG.u) ./ (1 .+ exp.(gp ./ EG.u)))
     (m > 0) && (X .+= sum(get_grad_inequality_constraint(M, EG.co, p, :) .* c))
     # add gradient of the components of h
-    # TODO: this could be reduced and only active gradients be evaluated
     (n > 0) && (
         c =
             EG.ρ .* (exp.(hp ./ EG.u) .- exp.(-hp ./ EG.u)) ./
@@ -171,7 +170,6 @@ function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
         X .+= sum(gradgp .* (gp ./ EG.u .* (0 .<= gp .< EG.u)) .* EG.ρ) # add < u
     end
     if n > 0
-        # TODO: this could be reduced and only active gradients be evaluated
         c = (hp ./ sqrt.(hp .^ 2 .+ EG.u^2)) .* EG.ρ
         X .+= sum(get_grad_equality_constraint(M, EG.co, p, :) .* c)
     end

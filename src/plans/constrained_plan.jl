@@ -29,11 +29,14 @@ Describes the constrained objective
     )
 
     ConstrainedManifoldObjective(M::AbstractManifold, mho::AbstractManifoldObjective;
-        equality_constraints::Union{Nothing, AbstractManifoldObjective} = nothing,
-        inequality_constraints::Union{Nothing, AbstractManifoldObjective} = nothing
-    ) where {IMO <: Union{Nothing, AbstractManifoldObjective} EMO <: Union{Nothing, AbstractManifoldObjective}}
+        equality_constraints = nothing,
+        inequality_constraints = nothing
+    )
 
-TODO: describe constructors
+Generate the constrained objective either with explicit constraints ``g`` and ``h``, and
+their gradients, or in the form where these are already encapsulated in [`VectorGradientFunction`](@ref)s.
+
+Both variants require that at least one of the constraint (and its gradient) is provided.
 """
 struct ConstrainedManifoldObjective{
     T<:AbstractEvaluationType,MO<:AbstractManifoldObjective,EMO,IMO
