@@ -182,22 +182,28 @@ Otherwise the problem is not constrained and you should consider using unconstra
 
 # Optional
 
-* `smoothing`:              ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
-* `ϵ`:                      (`1e–3`) the accuracy tolerance
-* `ϵ_exponent`:             (`1/100`) exponent of the ϵ update factor;
-* `ϵ_min`:                  (`1e-6`) the lower bound for the accuracy tolerance
-* `u`:                      (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_exponent`:             (`1/100`) exponent of the u update factor;
-* `u_min`:                  (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ`:                      (`1.0`) the penalty parameter
-* `min_stepsize`:           (`1e-10`) the minimal step size
-* `sub_cost`:               ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_grad`:               ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_kwargs`:             keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
-* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
-* `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`, provide a problem for the subsolver
-* `sub_state`:              ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion`:     ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `smoothing`:                 ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
+* `ϵ`:                         (`1e–3`) the accuracy tolerance
+* `ϵ_exponent`:                (`1/100`) exponent of the ϵ update factor;
+* `ϵ_min`:                     (`1e-6`) the lower bound for the accuracy tolerance
+* `u`:                         (`1e–1`) the smoothing parameter and threshold for violation of the constraints
+* `u_exponent`:                (`1/100`) exponent of the u update factor;
+* `u_min`:                     (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ`:                         (`1.0`) the penalty parameter
+* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
+* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
+* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
+* `min_stepsize`:              (`1e-10`) the minimal step size
+* `sub_cost`:                  ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_grad`:                  ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
+* `sub_kwargs`:                (`(;)`) keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
+* `sub_stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
+* `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`, provide a problem for the subsolver
+* `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
+For the `range`s of the constraints' gradient, other power manifold tangent space representations,
+mainly the [`ArrayPowerRepresentation`](@ref) (from `Manifolds.jl`) can be used if the gradients can be computed more efficiently in that representation.
 
 # Output
 
@@ -350,6 +356,9 @@ function exact_penalty_method!(
     objective_type=:Riemannian,
     θ_ρ::Real=0.3,
     θ_u=(u_min / u)^(u_exponent),
+    gradient_range=nothing,
+    gradient_equality_range=gradient_range,
+    gradient_inequality_range=gradient_range,
     smoothing=LogarithmicSumOfExponentials(),
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
@@ -400,11 +409,20 @@ function exact_penalty_method!(
         θ_u=θ_u,
         stopping_criterion=stopping_criterion,
     )
-    deco_o = decorate_objective!(M, cmo; objective_type=objective_type, kwargs...)
-    dmp = DefaultManoptProblem(M, deco_o)
+    dcmo = decorate_objective!(M, cmo; objective_type=objective_type, kwargs...)
+    mp = if isnothing(gradient_equality_range) && isnothing(gradient_inequality_range)
+        DefaultManoptProblem(M, dcmo)
+    else
+        ConstrainedManoptProblem(
+            M,
+            dcmo;
+            gradient_equality_range=gradient_equality_range,
+            gradient_inequality_range=gradient_inequality_range,
+        )
+    end
     epms = decorate_state!(emps; kwargs...)
-    solve!(dmp, epms)
-    return get_solver_return(get_objective(dmp), epms)
+    solve!(mp, epms)
+    return get_solver_return(get_objective(mp), epms)
 end
 #
 # Solver functions

@@ -230,26 +230,32 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 
 # Optional
 
-* `ϵ`:                      (`1e-3`) the accuracy tolerance
-* `ϵ_min`:                  (`1e-6`) the lower bound for the accuracy tolerance
-* `ϵ_exponent`:             (`1/100`) exponent of the ϵ update factor;
+* `ϵ`:                         (`1e-3`) the accuracy tolerance
+* `ϵ_min`:                     (`1e-6`) the lower bound for the accuracy tolerance
+* `ϵ_exponent`:                (`1/100`) exponent of the ϵ update factor;
    also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
-* `θ_ϵ`:                    (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
-* `μ`:                      (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
-* `μ_max`:                  (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ`:                      (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
-* `λ_max`:                  (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_min`:                  (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `τ`:                      (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `ρ`:                      (`1.0`) the penalty parameter
-* `θ_ρ`:                    (`0.3`) the scaling factor of the penalty parameter
-* `sub_cost`:               ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_grad`:               ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_kwargs`:             keyword arguments to decorate the sub options, for example the `debug=` keyword.
-* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
-* `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
-* `sub_state`:              ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion`:     ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `θ_ϵ`:                       (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
+* `μ`:                         (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ_max`:                     (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ`:                         (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max`:                     (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min`:                     (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `τ`:                         (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `ρ`:                         (`1.0`) the penalty parameter
+* `θ_ρ`:                       (`0.3`) the scaling factor of the penalty parameter
+* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
+* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
+* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
+* `sub_grad`:                  ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_kwargs`:                (`(;)`) keyword arguments to decorate the sub options, for example the `debug=` keyword.
+* `sub_stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
+* `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
+* `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
+For the `range`s of the constraints' gradient, other power manifold tangent space representations,
+mainly the [`ArrayPowerRepresentation`](@ref) (from `Manifolds.jl`) can be used if the gradients can be computed more efficiently in that representation.
+
 
 # Output
 
@@ -399,6 +405,9 @@ function augmented_Lagrangian_method!(
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
+    gradient_range=nothing,
+    gradient_equality_range=gradient_range,
+    gradient_inequality_range=gradient_range,
     objective_type=:Riemannian,
     sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
@@ -458,7 +467,16 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     dcmo = decorate_objective!(M, cmo; objective_type=objective_type, kwargs...)
-    mp = DefaultManoptProblem(M, dcmo)
+    mp = if isnothing(gradient_equality_range) && isnothing(gradient_inequality_range)
+        DefaultManoptProblem(M, dcmo)
+    else
+        ConstrainedManoptProblem(
+            M,
+            dcmo;
+            gradient_equality_range=gradient_equality_range,
+            gradient_inequality_range=gradient_inequality_range,
+        )
+    end
     alms = decorate_state!(alms; kwargs...)
     solve!(mp, alms)
     return get_solver_return(get_objective(mp), alms)
