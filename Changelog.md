@@ -7,13 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.64] unreleased
 
+### Added
+
+* Remodel the constraints and their gradients into separate `VectorGradientFunctions`
+  to reduce code duplication and encapsulate the inner model of these functions and their gradients
+* Introduce a `ConstrainedManoptProblem` to model different ranges for the gradients in the
+  new `VectorGradientFunction`s beyod the default `NestedPowerRepresentation`
+* introduce a more flexible indexing beyond single indexing, to also include arbitrary ranges
+  when accessing vector functions and their gradients and hence also for constraints and
+  their gradients.
+* deprecate `get_grad_equality_constraints(M, o, p)`, use `get_grad_equality_constraint(M, o, p, :)`
+  from the more flexible indexing instead.
+
 ### Changed
 
 * Remodel `ConstrainedManifoldObjective` to store an `AbstractManifoldObjective`
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
   therein and implementing access to this Hessian
 
-## [0.4.63] unreleased
+## [0.4.63] May 11, 2024
 
 ### Added
 
@@ -78,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 it could also mean to store the action in the dictionary under that symbol. Hence the order for access
 was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
-## [0.4.59] - April 7, 2024
+## [0.4.59] April 7, 2024
 
 ### Added
 
@@ -88,7 +100,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 * The constructor dispatch for `StopWhenAny` with `Vector` had incorrect element type assertion which was fixed.
 
-## [0.4.58] - March 18, 2024
+## [0.4.58] March 18, 2024
 
 ### Added
 
@@ -113,7 +125,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
   state that `p` is no longer stored, but the algorithm runs on `TpM`.
 * implemented the missing `get_iterate` for `TruncatedConjugateGradientState`.
 
-## [0.4.57] - March 15, 2024
+## [0.4.57] March 15, 2024
 
 ### Changed
 
@@ -125,14 +137,14 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 
 * fixes a type that when passing `sub_kwargs` to `trust_regions` caused an error in the decoration of the sub objective.
 
-## [0.4.56] - March 4, 2024
+## [0.4.56] March 4, 2024
 
 ### Added
 
 * The option `:step_towards_negative_gradient` for `nondescent_direction_behavior` in quasi-Newton solvers does no longer emit a warning by default. This has been moved to a `message`, that can be accessed/displayed with `DebugMessages`
 * `DebugMessages` now has a second positional argument, specifying whether all messages, or just the first (`:Once`) should be displayed.
 
-## [0.4.55] - March 3, 2024
+## [0.4.55] March 3, 2024
 
 ### Added
 
@@ -145,7 +157,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * unified documentation, especially function signatures further.
 * fixed a few typos related to math formulae in the doc strings.
 
-## [0.4.54] - February 28, 2024
+## [0.4.54] February 28, 2024
 
 ### Added
 
@@ -158,34 +170,34 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * Doc strings now follow a [vale.sh](https://vale.sh) policy. Though this is not fully working,
   this PR improves a lot of the doc strings concerning wording and spelling.
 
-## [0.4.53] - February 13, 2024
+## [0.4.53] February 13, 2024
 
 ### Fixed
 
 * fixes two storage action defaults, that accidentally still tried to initialize a `:Population` (as modified back to `:Iterate` 0.4.49).
-* fix a few typos in the documentation and add a reference for the subgradient menthod.
+* fix a few typos in the documentation and add a reference for the subgradient method.
 
-## [0.4.52] - February 5, 2024
+## [0.4.52] February 5, 2024
 
 ### Added
 
 * introduce an environment persistent way of setting global values with the `set_manopt_parameter!` function using [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl).
 * introduce such a value named `:Mode` to enable a `"Tutorial"` mode that shall often provide more warnings and information for people getting started with optimisation on manifolds
 
-## [0.4.51] - January 30, 2024
+## [0.4.51] January 30, 2024
 
 ### Added
 
 * A `StopWhenSubgradientNormLess` stopping criterion for subgradient-based optimization.
 * Allow the `message=` of the `DebugIfEntry` debug action to contain a format element to print the field in the message as well.
 
-## [0.4.50] - January 26, 2024
+## [0.4.50] January 26, 2024
 
 ### Fixed
 
 * Fix Quasi Newton on complex manifolds.
 
-## [0.4.49] - January 18, 2024
+## [0.4.49] January 18, 2024
 
 ### Added
 
@@ -194,7 +206,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * refactor the default in `particle_swarm` to no longer “misuse” the iteration change,
   but actually the new one the `:swarm` entry
 
-## [0.4.48] - January 16, 2024
+## [0.4.48] January 16, 2024
 
 ### Fixed
 
@@ -202,13 +214,13 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * refactor `particle_swarm` in naming and access functions to avoid this also in the future.
   To access the whole swarm, one now should use `get_manopt_parameter(pss, :Population)`
 
-## [0.4.47] - January 6, 2024
+## [0.4.47] January 6, 2024
 
 ### Fixed
 
 * fixed a bug, where the retraction set in `check_Hessian` was not passed on to the optional inner `check_gradient` call, which could lead to unwanted side effects, see [#342](https://github.com/JuliaManifolds/Manopt.jl/issues/342).
 
-## [0.4.46] - January 1, 2024
+## [0.4.46] January 1, 2024
 
 ### Changed
 
@@ -222,7 +234,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * A bug in `LineSearches.jl` extension leading to slower convergence.
 * Fixed a bug in L-BFGS related to memory storage, which caused significantly slower convergence.
 
-## [0.4.45] - December 28, 2023
+## [0.4.45] December 28, 2023
 
 ### Added
 
@@ -235,7 +247,7 @@ was switched to `RecordAction => Symbol` to resolve that ambiguity.
 * Quasi Newton Updates can work in-place of a direction vector as well.
 * Faster `safe_indices` in L-BFGS.
 
-## [0.4.44] - December 12, 2023
+## [0.4.44] December 12, 2023
 
 Formally one could consider this version breaking, since a few functions
 have been moved, that in earlier versions (0.3.x) have been used in example scripts.
@@ -292,19 +304,19 @@ and their documentation and testing has been extended.
 * `prox_TV` is available as [`ManoptExamples.prox_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_Total_Variation)
 * `prox_TV2` is available as [`ManopExamples.prox_second_order_Total_Variation`](https://juliamanifolds.github.io/ManoptExamples.jl/stable/objectives/#ManoptExamples.prox_second_order_Total_Variation-Union{Tuple{T},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T}},%20Tuple{ManifoldsBase.AbstractManifold,%20Any,%20Tuple{T,%20T,%20T},%20Int64}}%20where%20T)
 
-## [0.4.43] - November 19, 2023
+## [0.4.43] November 19, 2023
 
 ### Added
 
 * vale.sh as a CI to keep track of a consistent documentation
 
-## [0.4.42] - November 6, 2023
+## [0.4.42] November 6, 2023
 
 ### Added
 
 * add `Manopt.JuMP_Optimizer` implementing JuMP's solver interface
 
-## [0.4.41] - November 2, 2023
+## [0.4.41] November 2, 2023
 
 ### Changed
 
@@ -314,7 +326,7 @@ and their documentation and testing has been extended.
   much tightened to the Lanczos solver as well.
 * Unified documentation notation and bumped dependencies to use DocumenterCitations 1.3
 
-## [0.4.40] - October 24, 2023
+## [0.4.40] October 24, 2023
 
 ### Added
 
@@ -329,14 +341,14 @@ and their documentation and testing has been extended.
 * move the ARC CG subsolver to the main package, since `TangentSpace` is now already
   available from `ManifoldsBase`.
 
-## [0.4.39] - October 9, 2023
+## [0.4.39] October 9, 2023
 
 ### Changes
 
 * also use the pair of a retraction and the inverse retraction (see last update)
   to perform the relaxation within the Douglas-Rachford algorithm.
 
-## [0.4.38] - October 8, 2023
+## [0.4.38] October 8, 2023
 
 ### Changes
 
@@ -346,7 +358,7 @@ and their documentation and testing has been extended.
 
 * Fix a lot of typos in the documentation
 
-## [0.4.37] - September 28, 2023
+## [0.4.37] September 28, 2023
 
 ### Changes
 
@@ -355,19 +367,19 @@ and their documentation and testing has been extended.
 * generalize the internal reflection of Douglas-Rachford, such that is also works with an
   arbitrary pair of a reflection and an inverse reflection.
 
-## [0.4.36] -  September 20, 2023
+## [0.4.36]  September 20, 2023
 
 ### Fixed
 
 * Fixed a bug that caused non-matrix points and vectors to fail when working with approximate
 
-## [0.4.35] -  September 14, 2023
+## [0.4.35]  September 14, 2023
 
 ### Added
 
 * The access to functions of the objective is now unified and encapsulated in proper `get_` functions.
 
-## [0.4.34] -  September 02, 2023
+## [0.4.34]  September 02, 2023
 
 ### Added
 
@@ -375,46 +387,46 @@ and their documentation and testing has been extended.
   first or second derivative based elements to be Euclidean and converted when needed.
 * a keyword `objective_type=:Euclidean` for all solvers, that specifies that an Objective shall be created of the new type
 
-## [0.4.33] - August 24, 2023
+## [0.4.33] August 24, 2023
 
 ### Added
 
 * `ConstantStepsize` and `DecreasingStepsize` now have an additional field `type::Symbol` to assess whether the
   step-size should be relatively (to the gradient norm) or absolutely constant.
 
-## [0.4.32] - August 23, 2023
+## [0.4.32] August 23, 2023
 
 ### Added
 
 * The adaptive regularization with cubics (ARC) solver.
 
-## [0.4.31] - August 14, 2023
+## [0.4.31] August 14, 2023
 
 ### Added
 
 * A `:Subsolver` keyword in the `debug=` keyword argument, that activates the new `DebugWhenActive``
   to de/activate subsolver debug from the main solvers `DebugEvery`.
 
-## [0.4.30] - August 3, 2023
+## [0.4.30] August 3, 2023
 
 ### Changed
 
 * References in the documentation are now rendered using [DocumenterCitations.jl](https://github.com/JuliaDocs/DocumenterCitations.jl)
 * Asymptote export now also accepts a size in pixel instead of its default `4cm` size and `render` can be deactivated setting it to `nothing`.
 
-## [0.4.29] - July 12, 2023
+## [0.4.29] July 12, 2023
 
 ### Fixed
 
 * fixed a bug, where `cyclic_proximal_point` did not work with decorated objectives.
 
-## [0.4.28] - June 24, 2023
+## [0.4.28] June 24, 2023
 
 ### Changed
 
 * `max_stepsize` was specialized for `FixedRankManifold` to follow Matlab Manopt.
 
-## [0.4.27] - June 15, 2023
+## [0.4.27] June 15, 2023
 
 ### Added
 
@@ -426,7 +438,7 @@ and their documentation and testing has been extended.
   `initial_jacobian_f` also as keyword arguments, such that their default initialisations
   can be adapted, if necessary
 
-## [0.4.26] - June 11, 2023
+## [0.4.26] June 11, 2023
 
 ### Added
 
@@ -434,13 +446,13 @@ and their documentation and testing has been extended.
 * add a `get_state` function
 * document `indicates_convergence`.
 
-## [0.4.25] - June 5, 2023
+## [0.4.25] June 5, 2023
 
 ### Fixed
 
 * Fixes an allocation bug in the difference of convex algorithm
 
-## [0.4.24] - June 4, 2023
+## [0.4.24] June 4, 2023
 
 ### Added
 
@@ -450,7 +462,7 @@ and their documentation and testing has been extended.
 
 * bump dependencies since the extension between Manifolds.jl and ManifoldsDiff.jl has been moved to Manifolds.jl
 
-## [0.4.23] - June 4, 2023
+## [0.4.23] June 4, 2023
 
 ### Added
 
@@ -460,13 +472,13 @@ and their documentation and testing has been extended.
 
 * loosen constraints slightly
 
-## [0.4.22] - May 31, 2023
+## [0.4.22] May 31, 2023
 
 ### Added
 
 * A tutorial on how to implement a solver
 
-## [0.4.21] - May 22, 2023
+## [0.4.21] May 22, 2023
 
 ### Added
 
@@ -483,14 +495,14 @@ and their documentation and testing has been extended.
 * Switch all Requires weak dependencies to actual weak dependencies starting in Julia 1.9
 
 
-## [0.4.20] - May 11, 2023
+## [0.4.20] May 11, 2023
 
 ### Changed
 
 * the default tolerances for the numerical `check_` functions were loosened a bit,
   such that `check_vector` can also be changed in its tolerances.
 
-## [0.4.19] - May 7, 2023
+## [0.4.19] May 7, 2023
 
 ### Added
 
@@ -500,13 +512,13 @@ and their documentation and testing has been extended.
 
 * slightly changed the definitions of the solver states for ALM and EPM to be type stable
 
-## [0.4.18] - May 4, 2023
+## [0.4.18] May 4, 2023
 
 ### Added
 
 * A function `check_Hessian(M, f, grad_f, Hess_f)` to numerically verify the (Riemannian) Hessian of a function `f`
 
-## [0.4.17] - April 28, 2023
+## [0.4.17] April 28, 2023
 
 ### Added
 
@@ -521,14 +533,14 @@ and their documentation and testing has been extended.
 
 * Unified the framework to work on manifold where points are represented by numbers for several solvers
 
-## [0.4.16] - April 18, 2023
+## [0.4.16] April 18, 2023
 
 ### Fixed
 
 * the inner products used in `truncated_gradient_descent` now also work thoroughly on complex
   matrix manifolds
 
-## [0.4.15] - April 13, 2023
+## [0.4.15] April 13, 2023
 
 ### Changed
 
@@ -542,7 +554,7 @@ and their documentation and testing has been extended.
 * support for `ManifoldsBase.jl` 0.13.x, since with the definition of `copy(M,p::Number)`,
   in 0.14.4, that one is used instead of defining it ourselves.
 
-## [0.4.14] - April 06, 2023
+## [0.4.14] April 06, 2023
 
 ### Changed
 * `particle_swarm` now uses much more in-place operations
@@ -550,7 +562,7 @@ and their documentation and testing has been extended.
 ### Fixed
 * `particle_swarm` used quite a few `deepcopy(p)` commands still, which were replaced by `copy(M, p)`
 
-## [0.4.13] - April 09, 2023
+## [0.4.13] April 09, 2023
 
 ### Added
 
@@ -558,7 +570,7 @@ and their documentation and testing has been extended.
 * `DebugMessages` to display the new messages in debug
 * safeguards in Armijo line search and L-BFGS against numerical over- and underflow that report in messages
 
-## [0.4.12] - April 4, 2023
+## [0.4.12] April 4, 2023
 
 ### Added
 
@@ -568,19 +580,19 @@ and their documentation and testing has been extended.
   `difference_of_convex_proximal_point(M, prox_g, grad_h, p0)`
 * Introduce a `StopWhenGradientChangeLess` stopping criterion
 
-## [0.4.11] - March 27, 2023
+## [0.4.11] March 27, 2023
 
 ### Changed
 
 * adapt tolerances in tests to the speed/accuracy optimized distance on the sphere in `Manifolds.jl` (part II)
 
-## [0.4.10] - March 26, 2023
+## [0.4.10] March 26, 2023
 
 ### Changed
 
 * adapt tolerances in tests to the speed/accuracy optimized distance on the sphere in `Manifolds.jl`
 
-## [0.4.9] - March 3, 2023
+## [0.4.9] March 3, 2023
 
 ### Added
 
@@ -588,7 +600,7 @@ and their documentation and testing has been extended.
   to be used within Manopt.jl, introduce the [manoptjl.org/stable/extensions/](https://manoptjl.org/stable/extensions/)
   page to explain the details.
 
-## [0.4.8] - February 21, 2023
+## [0.4.8] February 21, 2023
 
 ### Added
 
@@ -601,26 +613,26 @@ and their documentation and testing has been extended.
 * changed the `show` methods of `AbstractManoptSolverState`s to display their `state_summary
 * Move tutorials to be rendered with Quarto into the documentation.
 
-## [0.4.7] - February 14, 2023
+## [0.4.7] February 14, 2023
 
 ### Changed
 
 * Bump `[compat]` entry of ManifoldDiff to also include 0.3
 
-## [0.4.6] - February 3, 2023
+## [0.4.6] February 3, 2023
 
 ### Fixed
 
 * Fixed a few stopping criteria even indicated to stop before the algorithm started.
 
-## [0.4.5] - January 24, 2023
+## [0.4.5] January 24, 2023
 
 ### Changed
 
 * the new default functions that include `p` are used where possible
 * a first step towards faster storage handling
 
-## [0.4.4] - January 20, 2023
+## [0.4.4] January 20, 2023
 
 ### Added
 
@@ -631,14 +643,14 @@ and their documentation and testing has been extended.
 * fix a type in `HestenesStiefelCoefficient`
 
 
-## [0.4.3] - January 17, 2023
+## [0.4.3] January 17, 2023
 
 ### Fixed
 
 * the CG coefficient `β` can now be complex
 * fix a bug in `grad_distance`
 
-## [0.4.2] - January 16, 2023
+## [0.4.2] January 16, 2023
 
 ### Changed
 
@@ -646,14 +658,14 @@ and their documentation and testing has been extended.
   complex manifolds as well
 
 
-## [0.4.1] - January 15, 2023
+## [0.4.1] January 15, 2023
 
 ### Fixed
 
 * a `max_stepsize` per manifold to avoid leaving the injectivity radius,
   which it also defaults to
 
-## [0.4.0] - January 10, 2023
+## [0.4.0] January 10, 2023
 
 ### Added
 
@@ -662,6 +674,7 @@ and their documentation and testing has been extended.
 * `AbstractManifoldObjective` to store the objective within the `AbstractManoptProblem`
 * Introduce a `CostGrad` structure to store a function that computes the cost and gradient
   within one function.
+* started a `changelog.md` to thoroughly keep track of changes
 
 ### Changed
 
