@@ -217,6 +217,8 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     end
     (n > 0) && (ips.λ += α * Xλ)
 
+    get_gradient!(M, ips.X, cmo, ips.p)
+
     return ips
 end
 
