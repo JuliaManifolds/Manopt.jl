@@ -154,9 +154,9 @@ function (nrlg::NegativeReducedLagrangianGrad)(N::AbstractManifold, q)
     X = zero_vector(N, q)
     grad = get_gradient(N[1], nrlg.cmo, q[N,1])
     (m > 0) && (grad += Jg' * (nrlg.μ + (nrlg.μ .* g .+ nrlg.barrier_param) ./ nrlg.s))
-    (n > 0) && (grad +=  Jh'*λ)
+    (n > 0) && (grad += Jh' * nrlg.λ)
     copyto!(N[1], X[N,1], grad)
-    (n > 0) && (copyto!(N[2], X[N,2], Jh'*λ))
+    (n > 0) && (copyto!(N[2], X[N,2], Jh' * nrlg.λ))
     return -X
 end
 
@@ -239,9 +239,9 @@ function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjectiv
     (m > 0) && (grad += dg'μ)
     (n > 0) && (grad += dh'λ)
     copyto!(N[1], X[N,1], get_hessian(N[1], cmo, p, grad))
-    (m > 0) && copyto!(N[2], X[N,2], dg*grad + μ .* s)
+    (m > 0) && copyto!(N[2], X[N,2], dg*grad + s .* μ .* s)
     (n > 0) && copyto!(N[3], X[N,3], dh*grad)
-    (m > 0) && copyto!(N[4], X[N,4], s .* (g+s) + μ .* μ .* s)
+    (m > 0) && copyto!(N[4], X[N,4], g+s + μ .* μ .* s)
     return 2*X
 end
 

@@ -29,7 +29,7 @@ mutable struct InteriorPointState{
         sub_state::St;
         X::T=get_gradient(M, cmo, p), # not sure if needed?
         μ::T=ones(length(get_inequality_constraints(M, cmo, p))),
-        λ::T=zeros(length(get_equality_constraints(M, cmo, p))),
+        λ::T=zeros(length(get_equalcity_constraints(M, cmo, p))),
         s::T=ones(length(get_inequality_constraints(M, cmo, p))),
         ρ::R=μ's / length(get_inequality_constraints(M, cmo, p)),
         σ::R = calculate_σ(M, cmo, p, μ, λ, s),
@@ -217,7 +217,7 @@ function interior_point_Newton!(
         ),
         sub_kwargs...,
     ),
-    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(20) |
                                               StopWhenGradientNormLess(1e-5),
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         ConjugateResidualState(
@@ -286,8 +286,17 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     # product manifold on which to perform linesearch
     K = M × ℝ^m × ℝ^n × ℝ^m
 
+    bb = ips.sub_problem.objective.b
+
+    AA = ips.sub_problem.objective.A
+
+    
     X = allocate_result(K, rand)
+    XX = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
     Xp, Xλ = get_solver_result(solve!(ips.sub_problem, ips.sub_state)).x
+
+    print("res: ", AA(N, q, XX) - bb(N, q), '\n')
+
 
     if m > 0
         Xμ = (ips.μ .* (Jg * Xp .+ g)) ./ ips.s
@@ -299,7 +308,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     (n > 0) && (copyto!(K[3], X[K,3], Xλ))
     (m > 0) && (copyto!(K[4], X[K,4], Xs))
 
-    α = ips.stepsize(amp, ips, i, X)*0.1
+    α = ips.stepsize(amp, ips, i, X)*0.5
     
     # update params
     retract!(M, ips.p, ips.p, α*Xp, ips.retraction_method)
