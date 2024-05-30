@@ -70,6 +70,8 @@ using Plots
 
 check_gradient(K, F, grad_F, q; plot=true)
 
+#  check_gradient(K, F, grad_F, q; error=:info)
+
 #prepend!(rec, [p_0]);
 #rec .+= 0.005 * rec;
 
