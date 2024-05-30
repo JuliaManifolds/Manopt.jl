@@ -119,7 +119,7 @@ function interior_point_Newton!(
         ),
         sub_kwargs...,
     ),
-    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(20) |
                                               StopWhenGradientNormLess(1e-5),
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         ConjugateResidualState(
@@ -190,9 +190,8 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
 
     # product manifold on which to perform linesearch
     K = M × ℝ^m × ℝ^n × ℝ^m
-
     X = allocate_result(K, rand)
-    # Thi for now only works on ArrayPartition
+
     Xp, Xλ = get_solver_result(solve!(ips.sub_problem, ips.sub_state)).x
 
     if m > 0
