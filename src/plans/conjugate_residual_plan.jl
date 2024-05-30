@@ -44,7 +44,10 @@ end
 function get_gradient!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective, X)
     M = base_manifold(TpM)
     p = TpM.point
-    return slso.A(M, Y, p, X) - slso.b(M, p)
+    # This was inconcsistent: slso.A(M, Y, p, X) - slso.b(M, p)
+    slso.A(M, Y, p, X)
+    Y .-= slso.b(M, p)
+    return Y
 end
 
 # evaluate Hessian: ∇²Q(X) = A(X)

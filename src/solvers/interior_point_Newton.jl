@@ -192,6 +192,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     K = M × ℝ^m × ℝ^n × ℝ^m
 
     X = allocate_result(K, rand)
+    # Thi for now only works on ArrayPartition
     Xp, Xλ = get_solver_result(solve!(ips.sub_problem, ips.sub_state)).x
 
     if m > 0
