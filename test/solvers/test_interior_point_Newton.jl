@@ -9,7 +9,7 @@ grad_f(M, p) = (I - p * p') * A * p
 Hess_f(M, p, X) = (I - p * p') * A * X - f(M, p) * X
 
 g(M, p) = -p
-grad_g(M, p) = -(I - p * p')
+grad_g(M, p) = [(-(I - p * p'))[:, i] for i in 1:3]
 M = Manifolds.Sphere(2)
 
 x = rand()
@@ -29,8 +29,22 @@ res = interior_point_Newton(
     p_0;
     g=g,
     grad_g=grad_g,
-    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-6),
-    debug=[:Iteration, " | ", :Cost, " | ", :Stepsize, " | ", :Change, " ", :GradientNorm, "\n", :Stop],
+    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-9),
+    debug=[
+        :Iteration,
+        " | ",
+        :Cost,
+        " | ",
+        :Stepsize,
+        " | ",
+        :Change,
+        " ",
+        :GradientNorm,
+        " ",
+        :Feasibility,
+        "\n",
+        :Stop,
+    ],
     record=record,
     return_state=true,
 )

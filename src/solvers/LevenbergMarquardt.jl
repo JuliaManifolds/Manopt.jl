@@ -4,7 +4,7 @@
 Solve an optimization problem of the form
 
 ```math
-\operatorname{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert f(p) \rVert^2,
+\operatorname*{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert f(p) \rVert^2,
 ```
 
 where ``f: \mathcal M → ℝ^d`` is a continuously differentiable function,
@@ -303,8 +303,6 @@ function step_solver!(
     return lms
 end
 
-function _get_last_stepsize(
-    ::AbstractManoptProblem, lms::LevenbergMarquardtState, ::Val{false}, vars...
-)
+function get_last_stepsize(::AbstractManoptProblem, lms::LevenbergMarquardtState, ::Any...)
     return lms.last_stepsize
 end

@@ -407,7 +407,7 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dA = DebugWhenActive(dD, false)
         @test !dA.active
         set_manopt_parameter!(dA, :Dummy, true) # pass down
-        set_manopt_parameter!(dA, :active, true) # activate
+        set_manopt_parameter!(dA, :Activity, true) # activate
         @test dA.active
         @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"
         @test Manopt.status_summary(dA) == repr(dA)
@@ -417,13 +417,13 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dE = DebugEvery(dA, 2)
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
-        set_manopt_parameter!(dE, :active, false) # deactivate
+        set_manopt_parameter!(dE, :Activity, false) # deactivate
         dE(mp, st, -1) # rset still working
         dE(mp, st, 2)
         @test endswith(String(take!(io)), "")
         @test !dA.active
         dG = DebugGroup([dA])
-        set_manopt_parameter!(dG, :active, true) # activate in group
+        set_manopt_parameter!(dG, :Activity, true) # activate in group
         dG(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         # test its usage in the factory independent of position
@@ -431,7 +431,7 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
-        set_manopt_parameter!(dst, :Debug, :active, true)
+        set_manopt_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
     end
 end

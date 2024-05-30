@@ -13,6 +13,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
   therein – and implementing access to this Hessian
 
+## [0.4.63] May 11, 2024
+
+### Added
+
+* `:reinitialize_direction_update` option for quasi-Newton behavior when the direction is not a descent one. It is now the new default for `QuasiNewtonState`.
+* Quasi-Newton direction update rules are now initialized upon start of the solver with the new internal function `initialize_update!`.
+
+### Fixed
+
+* ALM and EPM no longer keep a part of the quasi-Newton subsolver state between runs.
+
+### Changed
+
+* Quasi-Newton solvers: `:reinitialize_direction_update` is the new default behavior in case of detection of non-descent direction instead of `:step_towards_negative_gradient`. `:step_towards_negative_gradient` is still available when explicitly set using the `nondescent_direction_behavior` keyword argument.
+
+## [0.4.62] May 3, 2024
+
+### Changed
+
+* bumped dependency of ManifoldsBase.jl to 0.15.9 and imported their numerical check functions. This changes the `throw_error` keyword used internally to a `error=` with a symbol.
+
+## [0.4.61] April 27, 2024
+
+### Added
+
+* Tests now also use `Aqua.jl` to spot problems in the code, e.g. ambiguities.
+* introduce a feature-based list of solvers and reduce the details in the alphabetical list
+* adds a `PolyakStepsize`
+* added a `get_subgradient` for `AbstractManifoldGradientObjectives` since their gradient is a special case of a subgradient.
+
+### Fixed
+
+* `get_last_stepsize` was defined in quite different ways that caused ambiguities. That is now internally a bit restructured and should work nicer.
+  Internally this means that the interims dispatch on `get_last_stepsize(problem, state, step, vars...)` was removed. Now the only two left are `get_last_stepsize(p, s, vars...)` and the one directly checking `get_last_stepsize(::Stepsize)` for stored values.
+* we accidentally exported `set_manopt_parameter!`, this is now fixed.
+
+### Changed
+
+* `get_manopt_parameter` and `set_manopt_parameter!` have been revised and better documented,
+  they now use more semantic symbols (with capital letters) instead of direct field access
+  (lower letter symbols). Since these are not exported, this is considered an internal, hence non-breaking change.
+  * semantic symbols are now all nouns in upper case letters
+  * `:active` is changed to `:Activity`
+
+
 ## [0.4.60] – April 10, 2024
 
 ### Added
