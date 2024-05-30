@@ -314,9 +314,6 @@ end
 function MeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, q)
     return MeritFunction(N, get_objective(cmo, true), q[N, 1], q[N, 2], q[N, 3], q[N, 4])
 end
-function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
-    return MeritFunction(N, cmo, q[N, 1], q[N, 2], q[N, 3], q[N, 4])
-end
 function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
     m, n = length(μ), length(λ)
     g = get_inequality_constraints(N[1], cmo, p)
