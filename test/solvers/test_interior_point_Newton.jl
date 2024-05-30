@@ -47,16 +47,35 @@ res = interior_point_Newton(
     ],
     record=record,
     return_state=true,
+    return_objective=true # retruns objective in res[1]
 )
 
-rec = get_record(res)
+rec = get_record(res[2])
 
-prepend!(rec, [p_0])
+# ------------------------- check gradient
+s = get_state(res[2])
+m = 3
+n = 0
+K = M × ℝ^m × ℝ^n × ℝ^m
+cmo = res[1]
+q = rand(K)
+q[K,1] = get_iterate(s)
+q[K, 2] = s.μ
+q[K, 4] = s.s
 
-rec .+= 0.005 * rec
+F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
+grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, q)
+
+using Plots
+
+check_gradient(K, F, grad_F, q; plot=true)
+
+#prepend!(rec, [p_0]);
+#rec .+= 0.005 * rec;
 
 #-------------------------------------------------------------------------------------------------#
 
+#=
 using GLMakie, Makie, GeometryTypes
 
 n = 30
@@ -134,3 +153,4 @@ scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
 # )
 
 scene
+=#

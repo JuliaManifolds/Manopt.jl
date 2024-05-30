@@ -311,6 +311,12 @@ end
 function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
     return MeritFunction(N, cmo, q[N, 1], q[N, 2], q[N, 3], q[N, 4])
 end
+function MeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, q)
+    return MeritFunction(N, get_objective(cmo, true), q[N, 1], q[N, 2], q[N, 3], q[N, 4])
+end
+function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
+    return MeritFunction(N, cmo, q[N, 1], q[N, 2], q[N, 3], q[N, 4])
+end
 function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
     m, n = length(μ), length(λ)
     g = get_inequality_constraints(N[1], cmo, p)
@@ -326,6 +332,9 @@ function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p
     return d
 end
 
+function calculate_σ(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s)
+    return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s)
+end
 function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
     N = M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
     q = allocate_result(N, rand)
@@ -336,6 +345,9 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     return min(0.5, MeritFunction(N, cmo, q)^(1 / 4))
 end
 
+function GradMeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, q)
+    GradMeritFunction(N, get_objective(cmo, true), q)
+end
 function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
     p, μ, λ, s = q[N, 1], q[N, 2], q[N, 3], q[N, 4]
     m, n = length(μ), length(λ)
