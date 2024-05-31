@@ -316,17 +316,17 @@ function MeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObject
 end
 function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
     m, n = length(μ), length(λ)
-    g = get_inequality_constraints(N[1], cmo, p)
-    h = get_equality_constraints(N[1], cmo, p)
-    dg = get_grad_inequality_constraints(N[1], cmo, p)
-    dh = get_grad_equality_constraints(N[1], cmo, p)
-    F = get_gradient(N[1], cmo, p)
-    (m > 0) && (F += sum([dg[i] * μ[i] for i in 1:m]))
-    (n > 0) && (F += sum([dh[j] * λ[j] for j in 1:n]))
-    d = inner(N[1], p, F, F)
-    (m > 0) && (d += norm(g + s)^2 + norm(μ .* s)^2)
-    (n > 0) && (d += norm(h)^2)
-    return d
+    gp = get_inequality_constraints(N[1], cmo, p)
+    hp = get_equality_constraints(N[1], cmo, p)
+    grad_gp = get_grad_inequality_constraints(N[1], cmo, p)
+    grad_hp = get_grad_equality_constraints(N[1], cmo, p)
+    grad_pL = get_gradient(N[1], cmo, p)
+    (m > 0) && (grad_pL += sum([μ[i] * grad_gp[i]  for i in 1:m]))
+    (n > 0) && (grad_pL += sum([λ[j] * grad_hp[j]  for j in 1:n]))
+    ϕq = inner(N[1], p, grad_pL, grad_pL)
+    (m > 0) && (ϕq += norm(gp + s)^2 + norm(μ .* s)^2)
+    (n > 0) && (ϕq += norm(hp)^2)
+    return ϕq
 end
 
 function calculate_σ(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s)
@@ -348,18 +348,25 @@ end
 function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
     p, μ, λ, s = q[N, 1], q[N, 2], q[N, 3], q[N, 4]
     m, n = length(μ), length(λ)
-    g = get_inequality_constraints(N[1], cmo, p)
-    h = get_equality_constraints(N[1], cmo, p)
-    dg = get_grad_inequality_constraints(N[1], cmo, p)
-    dh = get_grad_equality_constraints(N[1], cmo, p)
-    grad = get_gradient(N[1], cmo, p)
-    X = zero_vector(N, q)
-    (m > 0) && (grad += sum([dg[i] * μ[i] for i in 1:m]))
-    (n > 0) && (grad += sum([dh[j] * λ[j] for j in 1:n]))
-    copyto!(N[1], X[N, 1], get_hessian(N[1], cmo, p, grad))
-    (m > 0) && copyto!(N[2], X[N, 2], [inner(N[1], p, dg[i], grad) for i in 1:m] + μ .* s)
-    (n > 0) && copyto!(N[3], X[N, 3], [inner(N[1], p, dh[j], grad) for j in 1:n])
-    (m > 0) && copyto!(N[4], X[N, 4], s .* (g + s) + μ .* μ .* s)
+    gp = get_inequality_constraints(N[1], cmo, p)
+    hp = get_equality_constraints(N[1], cmo, p)
+    grad_gp = get_grad_inequality_constraints(N[1], cmo, p)
+    grad_hp = get_grad_equality_constraints(N[1], cmo, p)
+
+    # gradₚℒ(𝑞)
+    grad_pLq = get_gradient(N[1], cmo, p)
+    (m > 0) && (grad_pLq += sum([μ[i] * grad_gp[i] for i in 1:m]))
+    (n > 0) && (grad_pLq += sum([λ[j] * grad_hp[j] for j in 1:n]))
+
+    X = allocate_result(TangentSpace(N, q), rand)
+
+    copyto!(N[1], X[N, 1], get_hessian(N[1], cmo, p, grad_pLq))
+    (m > 0) && (X[N, 1] += sum([(gp + s)[i] * grad_gp[i] for i in 1:m]))
+    (n > 0) && (X[N, 1] += sum([hp[j] * grad_hp[j] for j in 1:n]))
+    
+    (m > 0) && copyto!(N[2], X[N, 2], [inner(N[1], p, grad_gp[i], grad_pLq) for i in 1:m] + μ .* s .* s)
+    (n > 0) && copyto!(N[3], X[N, 3], [inner(N[1], p, grad_hp[j], grad_pLq) for j in 1:n])
+    (m > 0) && copyto!(N[4], X[N, 4], gp + s + μ .* μ .* s)
     return 2 * X
 end
 
