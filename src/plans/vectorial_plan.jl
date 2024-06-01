@@ -363,7 +363,7 @@ function get_gradient(
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT}
     return vgf.jacobian!![i](M, p)
 end
@@ -372,7 +372,7 @@ function get_gradient(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT}
     X = zero_vector(M, p)
     return vgf.jacobian!![i](M, X, p)
@@ -659,7 +659,7 @@ function get_hessian(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT,JT}
     return vhf.hessians!![i](M, p, X)
 end
@@ -669,7 +669,7 @@ function get_hessian(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT,JT}
     Y = zero_vector(M, p)
     return vhf.hessians!![i](M, Y, p, X)
@@ -688,7 +688,7 @@ function get_hessian!(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT,JT}
     return copyto!(M, Y, p, vhf.hessians!![i](M, p, X))
 end
@@ -770,7 +770,7 @@ function get_hessian!(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT,JT}
     return vhf.hessians!![i](M, Y, p,X)
 end
