@@ -47,7 +47,7 @@ res = interior_point_Newton(
     ],
     record=record,
     return_state=true,
-    return_objective=true # retruns objective in res[1]
+    return_objective=true, # retruns objective in res[1]
 )
 
 rec = get_record(res[2])
@@ -59,7 +59,7 @@ n = 0
 K = M × ℝ^m × ℝ^n × ℝ^m
 cmo = res[1]
 q = rand(K)
-q[K,1] = get_iterate(s)
+q[K, 1] = get_iterate(s)
 q[K, 2] = s.μ
 q[K, 4] = s.s
 

@@ -14,8 +14,9 @@ function interior_point_Newton(
     kwargs...,
 )
     q = copy(M, p)
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-    cmo = ConstrainedManifoldObjective(mho, g, grad_g, h, grad_h; evaluation=evaluation)
+    cmo = ConstrainedManifoldObjective(
+        f, grad_f, g, grad_g, h, grad_h; hess_f=Hess_f, M=M, p=p, evaluation=evaluation
+    )
     return interior_point_Newton!(M, cmo, q; evaluation=evaluation, kwargs...)
 end
 

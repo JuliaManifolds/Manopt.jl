@@ -321,15 +321,17 @@ function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p
     grad_gp = get_grad_inequality_constraints(N[1], cmo, p)
     grad_hp = get_grad_equality_constraints(N[1], cmo, p)
     grad_pL = get_gradient(N[1], cmo, p)
-    (m > 0) && (grad_pL += sum([μ[i] * grad_gp[i]  for i in 1:m]))
-    (n > 0) && (grad_pL += sum([λ[j] * grad_hp[j]  for j in 1:n]))
+    (m > 0) && (grad_pL += sum([μ[i] * grad_gp[i] for i in 1:m]))
+    (n > 0) && (grad_pL += sum([λ[j] * grad_hp[j] for j in 1:n]))
     ϕq = inner(N[1], p, grad_pL, grad_pL)
     (m > 0) && (ϕq += norm(gp + s)^2 + norm(μ .* s)^2)
     (n > 0) && (ϕq += norm(hp)^2)
     return ϕq
 end
 
-function calculate_σ(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s)
+function calculate_σ(
+    N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s
+)
     return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s)
 end
 function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
@@ -343,7 +345,7 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
 end
 
 function GradMeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, q)
-    GradMeritFunction(N, get_objective(cmo, true), q)
+    return GradMeritFunction(N, get_objective(cmo, true), q)
 end
 function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
     p, μ, λ, s = q[N, 1], q[N, 2], q[N, 3], q[N, 4]
@@ -363,8 +365,10 @@ function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjectiv
     copyto!(N[1], X[N, 1], get_hessian(N[1], cmo, p, grad_pLq))
     (m > 0) && (X[N, 1] += sum([(gp + s)[i] * grad_gp[i] for i in 1:m]))
     (n > 0) && (X[N, 1] += sum([hp[j] * grad_hp[j] for j in 1:n]))
-    
-    (m > 0) && copyto!(N[2], X[N, 2], [inner(N[1], p, grad_gp[i], grad_pLq) for i in 1:m] + μ .* s .* s)
+
+    (m > 0) && copyto!(
+        N[2], X[N, 2], [inner(N[1], p, grad_gp[i], grad_pLq) for i in 1:m] + μ .* s .* s
+    )
     (n > 0) && copyto!(N[3], X[N, 3], [inner(N[1], p, grad_hp[j], grad_pLq) for j in 1:n])
     (m > 0) && copyto!(N[4], X[N, 4], gp + s + μ .* μ .* s)
     return 2 * X

@@ -119,7 +119,7 @@ function step_solver!(
     Ad = crs.Ad
 
     crs.α = inner(M, p, r, Ar) / inner(M, p, Ad, Ad)
-    
+
     crs.x += crs.α * d
 
     crs.r -= crs.α * Ad
