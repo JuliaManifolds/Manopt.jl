@@ -19,8 +19,18 @@ using LinearAlgebra: I, tr
         sol2 = copy(M, p0)
         augmented_Lagrangian_method!(M, f, grad_f, sol2; g=g, grad_g=grad_g)
         @test sol2 == sol
+        augmented_Lagrangian_method!(
+            M,
+            f,
+            grad_f,
+            sol2;
+            g=g,
+            grad_g=grad_g,
+            gradient_inequality_range=NestedPowerRepresentation(),
+        )
+        @test sol2 == sol
 
-        co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g)
+        co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, M=M)
         mp = DefaultManoptProblem(M, co)
         # dummy ALM problem
         sp = DefaultManoptProblem(M, ManifoldCostObjective(f))

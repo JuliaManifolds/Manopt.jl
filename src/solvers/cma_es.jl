@@ -23,12 +23,12 @@ State of covariance matrix adaptation evolution strategy.
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
-* `covariance_matrix_eigen`     eigendecomposition of `covariance_matrix`
-* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigendecomposition
+* `covariance_matrix_eigen`     eigen decomposition of `covariance_matrix`
+* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigen decomposition
 * `best_fitness_current_gen`    best fitness value of individuals in the current generation
 * `median_fitness_current_gen`  median fitness value of individuals in the current generation
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
-* `p_m`                         point around which we search for new candidates
+* `p_m`                         point around which the search for new candidates is done
 * `σ`                           step size
 * `p_σ`                         coordinates of a vector in ``T_{p_m} \mathcal M``
 * `p_c`                         coordinates of a vector in ``T_{p_m} \mathcal M``
@@ -248,8 +248,8 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
 
     # sampling and evaluation of new solutions
 
-    #D2, B = eigen(Symmetric(s.covariance_matrix))
-    D2, B = s.covariance_matrix_eigen # we assume eigendecomposition has already been completed
+    # `D2, B = eigen(Symmetric(s.covariance_matrix))``
+    D2, B = s.covariance_matrix_eigen # assuming eigen decomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
     s.covariance_matrix_cond = max_eigval / min_eigval
     s.deviations .= sqrt.(D2)
@@ -300,7 +300,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     end
     s.covariance_matrix .*= (
         1 + s.c_1 * δh_σ - s.c_1 - s.c_μ * sum(s.recombination_weights)
-    ) # Eq. (47), part 1  
+    ) # Eq. (47), part 1
     mul!(s.covariance_matrix, s.p_c, s.p_c', s.c_1, true) # Eq. (47), rank 1 update
     for i in 1:(s.λ)
         w_i = s.recombination_weights[i]
@@ -311,7 +311,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
         end
         mul!(s.covariance_matrix, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
-    # move covariance matrix, p_c and p_σ to new mean point
+    # move covariance matrix, `p_c`, and `p_σ` to new mean point
     s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
     eigenvector_transport!(
         M, s.covariance_matrix_eigen, s.p_m, new_m, s.basis, s.vector_transport_method
@@ -491,7 +491,7 @@ end
         vtm::AbstractVectorTransportMethod,
     )
 
-Transport the matrix with `matrix_eig` eigendecomposition when expanded in `basis` from
+Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
 `(p, matrix_eig)` belongs to the fiber bundle of ``B = \mathcal M × SPD(n)``, where `n`
@@ -583,7 +583,7 @@ function StopWhenBestCostInGenerationConstant{TParam}(iteration_range::Int) wher
     return StopWhenBestCostInGenerationConstant{TParam}(iteration_range, Inf, 0)
 end
 
-# It just indicates stagnation, not that we converged to a minimizer
+# It just indicates stagnation, not that convergence to a minimizer
 indicates_convergence(c::StopWhenBestCostInGenerationConstant) = true
 function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
     return c.iterations_since_change >= c.iteration_range
@@ -625,7 +625,7 @@ end
 """
     StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
 
-The best and median fitness in each iteraion is tracked over the last 20% but
+The best and median fitness in each iteration is tracked over the last 20% but
 at least `min_size` and no more than `max_size` iterations. Solver is stopped if
 in both histories the median of the most recent `fraction` of values is not better
 than the median of the oldest `fraction`.
@@ -650,7 +650,7 @@ function StopWhenEvolutionStagnates(
     )
 end
 
-# It just indicates stagnation, not that we converged to a minimizer
+# It just indicates stagnation, not convergence to a minimizer
 indicates_convergence(c::StopWhenEvolutionStagnates) = true
 function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
     N = length(c.best_history)
@@ -716,7 +716,7 @@ function StopWhenPopulationStronglyConcentrated(tol::Real)
     return StopWhenPopulationStronglyConcentrated{typeof(tol)}(tol, false)
 end
 
-# It just indicates stagnation, not that we converged to a minimizer
+# It just indicates stagnation, not convergence to a minimizer
 indicates_convergence(c::StopWhenPopulationStronglyConcentrated) = true
 function is_active_stopping_criterion(c::StopWhenPopulationStronglyConcentrated)
     return c.is_active
@@ -813,7 +813,7 @@ function StopWhenPopulationCostConcentrated(tol::TParam, max_size::Int) where {T
     )
 end
 
-# It just indicates stagnation, not that we converged to a minimizer
+# It just indicates stagnation, not convergence to a minimizer
 indicates_convergence(c::StopWhenPopulationCostConcentrated) = true
 function is_active_stopping_criterion(c::StopWhenPopulationCostConcentrated)
     return c.is_active

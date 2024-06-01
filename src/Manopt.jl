@@ -8,7 +8,7 @@
 """
 module Manopt
 
-import Base: &, copy, getindex, identity, setindex!, show, |
+import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 
@@ -59,6 +59,7 @@ using ManifoldsBase:
     AbstractInverseRetractionMethod,
     AbstractManifold,
     AbstractPowerManifold,
+    AbstractPowerRepresentation,
     AbstractRetractionMethod,
     AbstractVectorTransportMethod,
     CachedBasis,
@@ -275,7 +276,8 @@ export ℝ, ℂ, &, |
 export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
-export AbstractManoptProblem, DefaultManoptProblem, TwoManifoldProblem
+export AbstractManoptProblem
+export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
@@ -301,10 +303,13 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
-    ManifoldCachedObjective
+    ManifoldCachedObjective,
+    VectorGradientFunction
 #
-# Evaluation & Problems - old
+# Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
+export AbstractVectorialType
+export CoordinateVectorialType, ComponentVectorialType, FunctionVectorialType
 #
 # AbstractManoptSolverState
 export AbstractGradientSolverState,
@@ -372,25 +377,21 @@ export get_state,
     adjoint_linearized_operator!,
     forward_operator,
     forward_operator!,
-    get_objective
+    get_objective,
+    get_unconstrained_objective
 export get_hessian, get_hessian!
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
-export get_constraints,
+export equality_constraints_length,
+    inequality_constraints_length,
+    get_constraints,
     get_inequality_constraint,
-    get_inequality_constraints,
     get_equality_constraint,
-    get_equality_constraints,
     get_grad_inequality_constraint,
     get_grad_inequality_constraint!,
-    get_grad_inequality_constraints,
-    get_grad_inequality_constraints!,
     get_grad_equality_constraint,
-    get_grad_equality_constraint!,
-    get_grad_equality_constraints,
-    get_grad_equality_constraints!
-export ConstraintType, FunctionConstraint, VectorConstraint
+    get_grad_equality_constraint!
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad

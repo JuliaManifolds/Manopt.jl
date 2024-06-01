@@ -30,7 +30,7 @@ The subproblem for the convex bundle method is
 ```
 
 where ``J_k = \{j ∈ J_{k-1} \ | \ λ_j > 0\} \cup \{k\}``.
-See [BergmannHerzogJasa:2024](@cite) for mre details
+See [BergmannHerzogJasa:2024](@cite) for more details
 
 !!! tip
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
@@ -77,16 +77,16 @@ proximal_bundle_method_subsolver(
 
 Stopping Criteria for Lagrange multipliers.
 
-Currenlty these are meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
+Currently these are meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
 where based on the Lagrange multipliers an approximate (sub)gradient ``g`` and an error estimate ``ε``
 is computed.
 
-In `mode=:both` we require that both
+The `mode=:both` requires that both
 ``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
 and that
 ``c`` and ``\lvert d \rvert`` are smaller than their `tolerance`s for the [`proximal_bundle_method`](@ref).
 
-In the `mode=:estimate` we require that, for the [`convex_bundle_method`](@ref)
+The `mode=:estimate` requires that, for the [`convex_bundle_method`](@ref)
 ``-ξ = \lvert g \rvert^2 + ε`` is less than a given `tolerance`.
 For the [`proximal_bundle_method`](@ref), the equation reads ``-ν = μ \lvert d \rvert^2 + c``.
 

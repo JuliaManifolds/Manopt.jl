@@ -833,7 +833,6 @@ end
 function (ps::PolyakStepsize)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int, args...; kwargs...
 )
-    # We get these by reference, so that should not allocate in general
     M = get_manifold(amp)
     p = get_iterate(ams)
     X = get_subgradient(amp, p)
@@ -1362,9 +1361,7 @@ end
 return the last computed stepsize stored within [`AbstractManoptSolverState`](@ref) `ams`
 when solving the [`AbstractManoptProblem`](@ref) `amp`.
 
-This method takes into account that `ams` might be decorated,
-then calls [`get_last_stepsize`](@ref get_last_stepsize(::Stepsize, ::Any...)),
-where the stepsize is assumed to be in `ams.stepsize`.
+This method takes into account that `ams` might be decorated.
 In case this returns `NaN`, a concrete call to the stored stepsize is performed.
 For this, usually, the first of the `vars...` should be the current iterate.
 """

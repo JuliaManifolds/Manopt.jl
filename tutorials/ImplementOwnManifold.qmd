@@ -88,7 +88,7 @@ For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@ci
   \frac{1}{2n} \sum_{i=1}^n d_{\mathcal M}^2(p, q_i)
 ```
 
-On the `ScaledSphere` we just defined above.
+On the `ScaledSphere` we just defined.
 We define a few parameters first
 
 ```{julia}
@@ -149,7 +149,7 @@ They list all details, but we can start even step by step here if we are a bit c
 
 We first implement a ``[retract](@extref ManifoldsBase :doc:`retractions`)``{=commonmark}ion. Informally, given a current point and a direction to “walk into” we need a function that performs that walk.
 Since we take an easy one that just projects onto
-the sphere, we use the ``[`ProjectionRetraction`](@extref ManifoldsBase.ProjectionRetraction)``{=commonmark} type.
+the sphere, we use the ``[`ProjectionRetraction`](@extref `ManifoldsBase.ProjectionRetraction`)``{=commonmark} type.
 To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBase `inplace-and-noninplace`)``{=commonmark} ``[`retract_project!`](@extref `ManifoldsBase.inverse_retract_project!-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}
 
 ```{julia}
@@ -177,7 +177,7 @@ f(M,p0)
 
 Then we can run our first solver, where we have to overwrite a few
 defaults, which would use functions we do not (yet) have.
-We will discuss these in the next steps.
+Let's discuss these in the next steps.
 
 ```{julia}
 q1 = gradient_descent(M, f, grad_f, p0;
@@ -191,7 +191,7 @@ f(M,q1)
 
 We at least see, that the function value decreased.
 
-### Norm and maximal step size.
+### Norm and maximal step size
 
 To use more advanced stopping criteria and step sizes we first need an ``[`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)``{=commonmark}`(M, p, X)`.
 We also need a [`max_stepsize`](@ref)`(M)`, to avoid having too large steps
@@ -245,6 +245,21 @@ gradient_descent(M, f, grad_f, p0; debug = [:Iteration, :Cost, :Stepsize, 25, :G
 
 see [How to Print Debug Output](https://manoptjl.org/stable/tutorials/HowToDebug.html)
 for more details.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```
 
 ## Literature
 

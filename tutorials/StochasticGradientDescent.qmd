@@ -1,15 +1,15 @@
 ---
-title: How to Run Stochastic Gradient Descent
+title: How to run stochastic gradient descent
 author: Ronny Bergmann
 ---
 
 This tutorial illustrates how to use the [`stochastic_gradient_descent`](https://manoptjl.org/stable/solvers/stochastic_gradient_descent.html)
-solver and different [`DirectionUpdateRule`](https://manoptjl.org/stable/solvers/gradient_descent.html#Direction-Update-Rules-1)s in order to introduce
+solver and different [`DirectionUpdateRule`](https://manoptjl.org/stable/solvers/gradient_descent.html#Direction-Update-Rules-1)s to introduce
 the average or momentum variant, see [Stochastic Gradient Descent](https://en.wikipedia.org/wiki/Stochastic_gradient_descent).
 
 Computationally, we look at a very simple but large scale problem,
 the Riemannian Center of Mass or [Fréchet mean](https://en.wikipedia.org/wiki/Fréchet_mean):
-for given points $p_i ∈\mathcal M$, $i=1,…,N$ this optimization problem reads
+for given points ``` ``p_i ∈\mathcal M``, ``i=1,…,N`` ```{=commonmark} this optimization problem reads
 
 ```math
 \operatorname*{arg\,min}_{x∈\mathcal M} \frac{1}{2}\sum_{i=1}^{N}
@@ -95,7 +95,7 @@ p_opt2 = stochastic_gradient_descent(M, gradf, p0)
 
 This result is reasonably close. But we can improve it by using a `DirectionUpdateRule`, namely:
 
-On the one hand [`MomentumGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.MomentumGradient), which requires both the manifold and the initial value,  in order to keep track of the iterate and parallel transport the last direction to the current iterate.
+On the one hand [`MomentumGradient`](https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.MomentumGradient), which requires both the manifold and the initial value, to keep track of the iterate and parallel transport the last direction to the current iterate.
 The necessary `vector_transport_method` keyword is set to a suitable default on every manifold,
 see ``[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)``{=commonmark}. We get
 """
@@ -115,12 +115,12 @@ And on the other hand the [`AverageGradient`](https://manoptjl.org/stable/solver
 
 ```{julia}
 p_opt4 = stochastic_gradient_descent(
-    M, gradf, p0; direction=AverageGradient(M, p0; n=10, direction=StochasticGradient(M))
+    M, gradf, p0; direction=AverageGradient(M, p0; n=10, direction=StochasticGradient(M)), debug=[],
 )
 ```
 ```{julia}
 AG = AverageGradient(M, p0; n=10, direction=StochasticGradient(M));
-@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG)
+@benchmark stochastic_gradient_descent($M, $gradf, $p0; direction=$AG, debug=[])
 ```
 
 Note that the default `StoppingCriterion` is a fixed number of iterations which helps the comparison here.
@@ -135,11 +135,26 @@ fullGradF(M, p) = sum(grad_distance(M, q, p) for q in data)
 p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch(M))
 ```
 
-but it will be a little slower usually
+but in general it is expected to be a bit slow.
 
 ```{julia}
 AL = ArmijoLinesearch(M);
 @benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)
 ```
 
-Note that all 5 runs are very close to each other, here we check the distance to the first
+Note that all 5 runs are very close to each other.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```

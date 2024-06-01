@@ -11,20 +11,19 @@ to parts of the objective.
 
 # Supported symbols
 
-| Symbol                      | Counts calls to (incl. `!` variants)  | Comment                      |
+| Symbol                      | Counts calls to (incl. `!` variants)   | Comment                      |
 | :-------------------------- | :------------------------------------- | :--------------------------- |
-| `:Constraints`              | [`get_constraints`](@ref)              |                              |
 | `:Cost`                     | [`get_cost`](@ref)                     |                              |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
-| `:EqualityConstraints`      | [`get_equality_constraints`](@ref)     | does not count single access |
+| `:EqualityConstraints`      | [`get_equality_constraint`](@ref)      | when evaluating all of them with `:` |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
-| `:GradEqualityConstraints`  | [`get_grad_equality_constraints`](@ref)| does not count single access |
+| `:GradEqualityConstraints`  | [`get_grad_equality_constraint`](@ref) | when evaluating all of them with `:`  |
 | `:GradInequalityConstraint` | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
-| `:GradInequalityConstraints`| [`get_inequality_constraints`](@ref)   | does not count single access |
+| `:GradInequalityConstraints`| [`get_inequality_constraint`](@ref)    | when evaluating all of them with `:`  |
 | `:Gradient`                 | [`get_gradient`](@ref)`(M,p)`          |                              |
 | `:Hessian`                  | [`get_hessian`](@ref)                  |                              |
 | `:InequalityConstraint`     | [`get_inequality_constraint`](@ref)    | requires vector of counters  |
-| `:InequalityConstraints`    | [`get_inequality_constraints`](@ref)   | does not count single access |
+| `:InequalityConstraints`    | [`get_inequality_constraint`](@ref)    | when evaluating all of them with `:`  |
 | `:Preconditioner`           | [`get_preconditioner`](@ref)           |                              |
 | `:ProximalMap`              | [`get_proximal_map`](@ref)             |                              |
 | `:StochasticGradients`      | [`get_gradients`](@ref)                |                              |
@@ -89,11 +88,11 @@ function _get_counter_size(
     M::AbstractManifold, o::O, s::Symbol, p::P=rand(M)
 ) where {P,O<:AbstractManifoldObjective}
     # vectorial counting cases
-    (s === :EqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
-    (s === :GradEqualityConstraint) && (return length(get_equality_constraints(M, o, p)))
-    (s === :InequalityConstraint) && (return length(get_inequality_constraints(M, o, p)))
+    (s === :EqualityConstraint) && (return length(get_equality_constraint(M, o, p, :)))
+    (s === :GradEqualityConstraint) && (return length(get_equality_constraint(M, o, p, :)))
+    (s === :InequalityConstraint) && (return length(get_inequality_constraint(M, o, p, :)))
     (s === :GradInequalityConstraint) &&
-        (return length(get_inequality_constraints(M, o, p)))
+        (return length(get_inequality_constraint(M, o, p, :)))
     # For now this only appears in ProximalMapObjective, access its field
     (s === :ProximalMap) && (return length(get_objective(o).proximal_maps!!))
     (s === :StochasticGradient) && (return length(get_gradients(M, o, p)))
@@ -103,7 +102,7 @@ end
 function _count_if_exists(co::ManifoldCountObjective, s::Symbol)
     return haskey(co.counts, s) && (co.counts[s] += 1)
 end
-function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i)
+function _count_if_exists(co::ManifoldCountObjective, s::Symbol, i::Integer)
     if haskey(co.counts, s)
         if (i == 1) && (ndims(co.counts[s]) == 0)
             return co.counts[s] += 1
@@ -305,67 +304,122 @@ end
 
 #
 # Constraint
-function get_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :Constraints)
-    return get_constraints(M, co.objective, p)
-end
-function get_equality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
+function get_equality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, c::Colon
+)
     _count_if_exists(co, :EqualityConstraints)
-    return get_equality_constraints(M, co.objective, p)
+    return get_equality_constraint(M, co.objective, p, c)
 end
-function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+function get_equality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+)
     _count_if_exists(co, :EqualityConstraint, i)
     return get_equality_constraint(M, co.objective, p, i)
 end
-function get_inequality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :InequalityConstraints)
-    return get_inequality_constraints(M, co.objective, p)
+function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :EqualityConstraint, j)
+    end
+    return get_equality_constraint(M, co.objective, p, i)
 end
-function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+
+function get_inequality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
+)
+    _count_if_exists(co, :InequalityConstraints)
+    return get_inequality_constraint(M, co.objective, p, i)
+end
+function get_inequality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+)
     _count_if_exists(co, :InequalityConstraint, i)
     return get_inequality_constraint(M, co.objective, p, i)
 end
-
-function get_grad_equality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :GradEqualityConstraints)
-    return get_grad_equality_constraints(M, co.objective, p)
+function get_inequality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:inequality_constraints_length(co.objective), i)
+        _count_if_exists(co, :InequalityConstraint, j)
+    end
+    return get_inequality_constraint(M, co.objective, p, i)
 end
-function get_grad_equality_constraints!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p
+
+function get_grad_equality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
 )
     _count_if_exists(co, :GradEqualityConstraints)
-    return get_grad_equality_constraints!(M, X, co.objective, p)
+    return get_grad_equality_constraint(M, co.objective, p, i)
 end
-function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+function get_grad_equality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+)
     _count_if_exists(co, :GradEqualityConstraint, i)
     return get_grad_equality_constraint(M, co.objective, p, i)
 end
+function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradEqualityConstraint, j)
+    end
+    return get_grad_equality_constraint(M, co.objective, p, i)
+end
 function get_grad_equality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+)
+    _count_if_exists(co, :GradEqualityConstraints)
+    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+end
+function get_grad_equality_constraint!(
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
 )
     _count_if_exists(co, :GradEqualityConstraint, i)
     return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
-function get_grad_inequality_constraints(M::AbstractManifold, co::ManifoldCountObjective, p)
-    _count_if_exists(co, :GradInequalityConstraints)
-    return get_grad_inequality_constraints(M, co.objective, p)
+function get_grad_equality_constraint!(
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i
+)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradEqualityConstraint, j)
+    end
+    return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
-function get_grad_inequality_constraints!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p
+
+function get_grad_inequality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Colon
 )
     _count_if_exists(co, :GradInequalityConstraints)
-    return get_grad_inequality_constraints!(M, X, co.objective, p)
+    return get_grad_inequality_constraint(M, co.objective, p, i)
 end
 function get_grad_inequality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i
+    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
 )
     _count_if_exists(co, :GradInequalityConstraint, i)
     return get_grad_inequality_constraint(M, co.objective, p, i)
 end
+function get_grad_inequality_constraint(
+    M::AbstractManifold, co::ManifoldCountObjective, p, i
+)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradInequalityConstraint, j)
+    end
+    return get_grad_inequality_constraint(M, co.objective, p, i)
+end
+
+function get_grad_inequality_constraint!(
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Colon
+)
+    _count_if_exists(co, :GradInequalityConstraints)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+end
+function get_grad_inequality_constraint!(
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
+)
+    _count_if_exists(co, :GradInequalityConstraint, i)
+    return get_grad_inequality_constraint!(M, X, co.objective, p, i)
+end
 function get_grad_inequality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i
 )
-    _count_if_exists(co, :GradInequalityConstraint, i)
+    for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
+        _count_if_exists(co, :GradInequalityConstraint, j)
+    end
     return get_grad_inequality_constraint!(M, X, co.objective, p, i)
 end
 
@@ -436,13 +490,14 @@ function objective_count_factory(
 end
 
 function status_summary(co::ManifoldCountObjective)
-    longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     s = "## Statistics on function calls\n"
+    s2 = status_summary(co.objective)
+    (length(s2) > 0) && (s2 = "\n$(s2)")
+    length(co.counts) == 0 && return "$(s)    No counters active\n$(s2)"
+    longest_key_length = max(length.(["$c" for c in keys(co.counts)])...)
     count_strings = [
         "  * :$(rpad("$(c[1])",longest_key_length)) : $(c[2])" for c in co.counts
     ]
-    s2 = status_summary(co.objective)
-    (length(s2) > 0) && (s2 = "\n$(s2)")
     return "$(s)$(join(count_strings,"\n"))$s2"
 end
 

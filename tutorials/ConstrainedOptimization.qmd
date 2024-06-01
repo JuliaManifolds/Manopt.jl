@@ -6,6 +6,7 @@ author: "Ronny Bergmann"
 This tutorial is a short introduction to using solvers for constraint optimisation in [`Manopt.jl`](https://manoptjl.org).
 
 ## Introduction
+
 A constraint optimisation problem is given by
 
 ```math
@@ -86,7 +87,8 @@ since $f$ is a functions defined in the embedding $ℝ^d$ as well, we obtain its
 grad_f(M, p) = project(M, p, -transpose(Z) * p - Z * p);
 ```
 
-For the constraints this is a little more involved, since each function $g_i = g(p)_i = p_i$ has to return its own gradient. These are again in the embedding just $\operatorname{grad} g_i(p) = -e_i$ the $i$ th unit vector. We can project these again onto the tangent space at $p$:
+For the constraints this is a little more involved, since each function $g_i=g(p)_i=p_i$
+has to return its own gradient. These are again in the embedding just $\operatorname{grad} g_i(p) = -e_i$ the $i$ th unit vector. We can project these again onto the tangent space at $p$:
 
 ```{julia}
 grad_g(M, p) = project.(
@@ -100,7 +102,7 @@ We further start in a random point:
 p0 = rand(M);
 ```
 
-Let's check a few things for the initial point
+Let's verify a few things for the initial point
 
 ```{julia}
 f(M, p0)
@@ -125,7 +127,8 @@ Now as a first method we can just call the [Augmented Lagrangian Method](https:/
 );
 ```
 
-Now we have both a lower function value and the point is nearly within the constraints, ... up to numerical inaccuracies
+Now we have both a lower function value and the point is nearly within the constraints,
+namely up to numerical inaccuracies
 
 ```{julia}
 f(M, v1)
@@ -146,7 +149,7 @@ grad_f!(M, X, p) = project!(M, X, p, -transpose(Z) * p - Z * p);
 
 2. The constraints are currently always evaluated all together, since the function `grad_g` always returns a vector of gradients.
 We first change the constraints function into a vector of functions.
-We further change the gradient _both_ into a vector of gradient functions $\operatorname{grad} g_i, i=1,\ldots,d$, _as well as_ gradients that are computed in place.
+We further change the gradient _both_ into a vector of gradient functions $\operatorname{grad} g_i,i=1,\ldots,d$, _as well as_ gradients that are computed in place.
 
 
 ```{julia}
@@ -195,7 +198,8 @@ and [`LinearQuadraticHuber`](https://manoptjl.org/stable/solvers/exact_penalty_m
 );
 ```
 
-We obtain a similar cost value as for the Augmented Lagrangian Solver above, but here the constraint is actually fulfilled and not just numerically “on the boundary”.
+We obtain a similar cost value as for the Augmented Lagrangian Solver from before,
+but here the constraint is actually fulfilled and not just numerically “on the boundary”.
 
 ```{julia}
 f(M, v3)
@@ -205,7 +209,7 @@ f(M, v3)
 maximum(g(M, v3))
 ```
 
-The second smoothing technique is often beneficial, when we have a lot of constraints (in the above mentioned vectorial manner), since we can avoid several gradient evaluations for the constraint functions here. This leads to a faster iteration time.
+The second smoothing technique is often beneficial, when we have a lot of constraints (in the previously mentioned vectorial manner), since we can avoid several gradient evaluations for the constraint functions here. This leads to a faster iteration time.
 
 ```{julia}
 @time v4 = exact_penalty_method(
@@ -230,7 +234,7 @@ maximum(g(M, v4))
 
 We can compare this to the _global_ optimum on the sphere, which is the unconstrained optimisation problem, where we can just use Quasi Newton.
 
-Note that this is much faster, since every iteration of the algorithms above does a quasi-Newton call as well.
+Note that this is much faster, since every iteration of the algorithm does a quasi-Newton call as well.
 
 ```{julia}
 @time w1 = quasi_Newton(
@@ -248,6 +252,20 @@ But for sure here the constraints here are not fulfilled and we have quite posit
 maximum(g(M, w1))
 ```
 
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```
 
 ## Literature
 
