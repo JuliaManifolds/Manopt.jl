@@ -6,10 +6,12 @@ A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p
 grad_f(M, p) = (I - p * p') * A * p
-Hess_f(M, p, X) = (I - p * p') * A * X - f(M, p) * X
+Hess_f(M, p, X) = A * X  - (p' * A * X)*p - (p' * A * p)*X 
 
 g(M, p) = -p
-grad_g(M, p) = [(-(I - p * p'))[:, i] for i in 1:3]
+grad_g(M, p) = [(p * p' - I)[:, i] for i in 1:3]
+Hess_g(M, p, X) = [(X*p' + p*X')[:, i] for i in 1:3]
+Hess_h(M, p, X) = [zeros(3) for i in 1:3]
 M = Manifolds.Sphere(2)
 
 x = rand()
@@ -29,7 +31,8 @@ res = interior_point_Newton(
     p_0;
     g=g,
     grad_g=grad_g,
-    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-9),
+    Hess_g=Hess_g,
+    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
     debug=[
         :Iteration,
         " | ",
@@ -59,12 +62,12 @@ n = 0
 K = M × ℝ^m × ℝ^n × ℝ^m
 cmo = res[1]
 q = rand(K)
-q[K,1] = get_iterate(s)
+q[K, 1] = get_iterate(s)
 q[K, 2] = s.μ
 q[K, 4] = s.s
 
 F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
-grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, q)
+grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, Hess_g, Hess_h, q)
 
 using Plots
 
