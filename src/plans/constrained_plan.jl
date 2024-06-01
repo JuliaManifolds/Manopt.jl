@@ -95,6 +95,7 @@ function ConstrainedManifoldObjective(
     grad_g,
     h,
     grad_h;
+    hess_f=nothing,
     hess_g=nothing,
     hess_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -110,7 +111,11 @@ function ConstrainedManifoldObjective(
     p=isnothing(M) ? nothing : rand(M),
     kwargs...,
 )
-    objective = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    if isnothing(hess_f)
+        objective = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    else
+        objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation=evaluation)
+    end
     if isnothing(h) || isnothing(grad_h)
         eq = nothing
     else
