@@ -835,7 +835,6 @@ end
 
 get_hessian_function(vgf::VectorGradientFunction, recursive=false) = vgf.hessians!!
 
-
 @doc raw"""
     length(vgf::VectorGradientFunction)
 
