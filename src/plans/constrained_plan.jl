@@ -95,11 +95,15 @@ function ConstrainedManifoldObjective(
     grad_g,
     h,
     grad_h;
+    hess_g=nothing,
+    hess_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     equality_type=_vector_function_type_hint(h),
     equality_gradient_type=_vector_function_type_hint(grad_h),
+    equality_hessian_type=_vector_function_type_hint(hess_h),
     inequality_type=_vector_function_type_hint(g),
     inequality_gradient_type=_vector_function_type_hint(grad_g),
+    inequality_hessian_type=_vector_function_type_hint(hess_g),
     equality_constraints=-1,
     inequality_constraints=-1,
     M::Union{AbstractManifold,Nothing}=nothing,
@@ -125,6 +129,8 @@ function ConstrainedManifoldObjective(
                 "Please specify a positive number of `equality_constraints` (provided $(equality_constraints))",
             )
         end
+
+        if isnothing(hess_h)
         eq = VectorGradientFunction(
             h,
             grad_h,
@@ -133,6 +139,18 @@ function ConstrainedManifoldObjective(
             function_type=equality_type,
             jacobian_type=equality_gradient_type,
         )
+        else
+            eq = VectorHessianFunction(
+                h,
+                grad_h,
+                hess_h,
+                equality_constraints;
+                evaluation=evaluation,
+                function_type=equality_type,
+                jacobian_type=equality_gradient_type,
+                hessian_type=equality_hessian_type
+            )
+        end
     end
     if isnothing(g) || isnothing(grad_g)
         ineq = nothing
