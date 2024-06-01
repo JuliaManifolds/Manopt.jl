@@ -272,10 +272,7 @@ The `i` can be a linear index, you can provide
 """
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
-    M::AbstractManifold,
-    vgf::AbstractVectorFunction{E,<:FunctionVectorialType},
-    p,
-    i=:,
+    M::AbstractManifold, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
 ) where {E}
     c = vgf.value!!(M, p)
     if isa(c, Number)
@@ -293,10 +290,7 @@ function get_value(
     return vgf.value!![i](M, p)
 end
 function get_value(
-    M::AbstractManifold,
-    vgf::AbstractVectorFunction{E,<:ComponentVectorialType},
-    p,
-    i=:,
+    M::AbstractManifold, vgf::AbstractVectorFunction{E,<:ComponentVectorialType}, p, i=:
 ) where {E}
     return [f(M, p) for f in vgf.value!![i]]
 end
@@ -682,9 +676,7 @@ end
 function get_hessian!(
     M::AbstractManifold,
     Y,
-    vhf::VectorHessianFunction{
-        <:AllocatingEvaluation,FT,JT,<:ComponentVectorialType
-    },
+    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
     p,
     X,
     i::Integer,
@@ -695,9 +687,7 @@ end
 function get_hessian!(
     M::AbstractManifold,
     Y,
-    vhf::VectorHessianFunction{
-        <:AllocatingEvaluation,FT,JT,<:ComponentVectorialType
-    },
+    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
     p,
     X,
     i,
@@ -716,9 +706,7 @@ end
 function get_hessian!(
     M::AbstractManifold,
     Y,
-    vgf::VectorHessianFunction{
-        <:AllocatingEvaluation,FT,JT,<:ComponentVectorialType
-    },
+    vgf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
     p,
     X,
     i::Colon,
@@ -772,7 +760,7 @@ function get_hessian!(
     i::Integer,
     ::Union{AbstractPowerRepresentation,Nothing}=nothing,
 ) where {FT,JT}
-    return vhf.hessians!![i](M, Y, p,X)
+    return vhf.hessians!![i](M, Y, p, X)
 end
 function get_hessian!(
     M::AbstractManifold,
@@ -797,9 +785,7 @@ end
 function get_hessian!(
     M::AbstractManifold,
     Y,
-    vhf::VectorHessianFunction{
-        <:InplaceEvaluation,FT,JT,<:FunctionVectorialType
-    },
+    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:FunctionVectorialType},
     p,
     X,
     i::Integer,
@@ -834,7 +820,6 @@ function get_hessian!(
 end
 
 get_hessian_function(vgf::VectorGradientFunction, recursive=false) = vgf.hessians!!
-
 
 @doc raw"""
     length(vgf::VectorGradientFunction)

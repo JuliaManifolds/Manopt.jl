@@ -131,14 +131,14 @@ function ConstrainedManifoldObjective(
         end
 
         if isnothing(hess_h)
-        eq = VectorGradientFunction(
-            h,
-            grad_h,
-            equality_constraints;
-            evaluation=evaluation,
-            function_type=equality_type,
-            jacobian_type=equality_gradient_type,
-        )
+            eq = VectorGradientFunction(
+                h,
+                grad_h,
+                equality_constraints;
+                evaluation=evaluation,
+                function_type=equality_type,
+                jacobian_type=equality_gradient_type,
+            )
         else
             eq = VectorHessianFunction(
                 h,
@@ -603,7 +603,6 @@ function get_hessian_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_hessian_function(co.objective, recursive)
 end
 
-
 @doc raw"""
     get_hess_equality_constraint(amp::AbstractManoptProblem, p, i)
     get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i, range=NestedPowerRepresentation())
@@ -717,7 +716,9 @@ function get_hess_inequality_constraint(
 end
 
 function get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, X, j)
-    return get_hess_inequality_constraint!(get_manifold(amp), Y, get_objective(amp), p, X, j)
+    return get_hess_inequality_constraint!(
+        get_manifold(amp), Y, get_objective(amp), p, X, j
+    )
 end
 function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j)
     return get_hess_inequality_constraint!(
