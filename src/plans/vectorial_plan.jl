@@ -622,12 +622,17 @@ get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range=noth
 # Generic case, allocate (a) a single tangent vector
 function get_hessian(
     M::AbstractManifold,
-    vhf::VectorHessianFunction,
+    vhf::VectorHessianFunction{E,FT,JT,HT},
     p,
     X,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-)
+) where {
+    E<:Manopt.AbstractEvaluationType,
+    FT<:Manopt.AbstractVectorialType,
+    JT<:Manopt.AbstractVectorialType,
+    HT<:Union{ComponentVectorialType,FunctionVectorialType},
+}
     Y = zero_vector(M, p)
     return get_hessian!(M, Y, vhf, p, X, i, range)
 end
