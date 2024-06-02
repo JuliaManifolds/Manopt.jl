@@ -301,7 +301,10 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
     ManifoldCachedObjective,
-    VectorGradientFunction
+    AbstractVectorFunction,
+    AbstractVectorGradientFunction,
+    VectorGradientFunction,
+    VectorHessianFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type

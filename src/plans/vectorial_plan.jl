@@ -218,16 +218,18 @@ struct VectorHessianFunction{
     E<:AbstractEvaluationType,
     FT<:AbstractVectorialType,
     JT<:AbstractVectorialType,
+    HT<:AbstractVectorialType,
     F,
     J,
+    H,
     I<:Integer,
 } <: AbstractVectorGradientFunction{E,FT,JT}
     value!!::F
     cost_type::FT
     jacobian!!::J
     jacobian_type::JT
-    hessians!!::J
-    hessian_type::JT
+    hessians!!::H
+    hessian_type::HT
     range_dimension::I
 end
 
@@ -250,7 +252,7 @@ function VectorHessianFunction(
     JT<:AbstractVectorialType,
     HT<:AbstractVectorialType,
 }
-    return VectorGradientFunction{E,FT,JT,HT,F,J,H,I}(
+    return VectorHessianFunction{E,FT,JT,HT,F,J,H,I}(
         f, function_type, Jf, jacobian_type, Hf, hessian_type, range_dimension
     )
 end
@@ -832,4 +834,4 @@ get_hessian_function(vgf::VectorGradientFunction, recursive=false) = vgf.hessian
 Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps into,
 that is the number `n`.
 """
-Base.length(vgf::VectorGradientFunction) = vgf.range_dimension
+Base.length(vgf::AbstractVectorFunction) = vgf.range_dimension
