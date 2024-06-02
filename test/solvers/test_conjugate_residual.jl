@@ -1,7 +1,7 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
-M = Manifolds.Sphere(2) × ℝ^2
-q = rand(M)
+M = Manifolds.Sphere(2)
+p = rand(M)
 TpM = TangentSpace(M, p)
 
 A = (M, p, X) -> [2.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 2.0] * X
@@ -11,11 +11,13 @@ o = Manopt.SymmetricLinearSystemObjective(A, b)
 
 record = [:Iterate]
 
+X0 = rand(TpM)
+
 res = conjugate_residual(
     TpM,
     o,
-    [0.0, 1.0, 0.0];
-    stop=StopWhenGradientNormLess(1e-5) | StopAfterIteration(5),
+    X0;
+    stop=StopWhenGradientNormLess(1e-5) | StopAfterIteration(20),
     record=record,
     return_state=true,
 )

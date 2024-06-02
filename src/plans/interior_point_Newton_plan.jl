@@ -271,15 +271,16 @@ function (nrlg::NegativeReducedLagrangianGrad)(N::AbstractManifold, q)
     b = nrlg.barrier_param
     m, n = length(μ), length(λ)
     g = get_inequality_constraints(M, cmo, p)
+    h = get_equality_constraints(M, cmo, p)
     grad_g = get_grad_inequality_constraints(M, cmo, p)
     grad_h = get_grad_equality_constraints(M, cmo, p)
     X = zero_vector(N, q)
     grad = get_gradient(M, cmo, p)
-    ν = (μ + (μ .* g .+ b) ./ s)
+    ν = μ + (μ .* g .+ b) ./ s
     (m > 0) && (grad += sum(grad_g[i] * ν[i] for i in 1:m))
     (n > 0) && (grad += sum(grad_h[j] * λ[j] for j in 1:n))
     copyto!(M, X[N, 1], grad)
-    (n > 0) && (copyto!(ℝ^n, X[N, 2], sum(grad_h[j] * λ[j] for j in 1:n)))
+    (n > 0) && (copyto!(ℝ^n, X[N, 2], h))
     return -X
 end
 

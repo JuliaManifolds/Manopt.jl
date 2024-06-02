@@ -197,13 +197,15 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     q = rand(N)
     copyto!(N[1], q[N, 1], ips.p)
     copyto!(N[2], q[N, 2], ips.λ)
+    TpM = TangentSpace(M, ips.p)
     TqN = TangentSpace(N, q)
 
     # make deterministic as opposed to random?
+    
     set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), rand(TqN))
 
     set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
-
+    
     set_manopt_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
@@ -213,7 +215,8 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     K = M × ℝ^m × ℝ^n × ℝ^m
     X = allocate_result(K, rand)
 
-    Xp, Xλ = get_solver_result(solve!(ips.sub_problem, ips.sub_state)).x
+    Y = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
+    Xp, Xλ = Y[N, 1], Y[N, 2]
 
     if m > 0
         Xμ = (ips.μ .* ([inner(M, ips.p, Jg[i], Xp) for i in 1:m])) ./ ips.s

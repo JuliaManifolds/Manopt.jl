@@ -10,7 +10,7 @@ Hess_f(M, p, X) = A * X  - (p' * A * X)*p - (p' * A * p)*X
 
 g(M, p) = -p
 grad_g(M, p) = [(p * p' - I)[:, i] for i in 1:3]
-Hess_g(M, p, X) = [(X*p' + p*X')[:, i] for i in 1:3]
+Hess_g(M, p, X) = [(X*p')[:, i] for i in 1:3]
 Hess_h(M, p, X) = [zeros(3) for i in 1:3]
 M = Manifolds.Sphere(2)
 
@@ -56,22 +56,23 @@ res = interior_point_Newton(
 rec = get_record(res[2])
 
 # ------------------------- check gradient
-s = get_state(res[2])
-m = 3
-n = 0
-K = M × ℝ^m × ℝ^n × ℝ^m
-cmo = res[1]
-q = rand(K)
-q[K, 1] = get_iterate(s)
-q[K, 2] = s.μ
-q[K, 4] = s.s
+# s = get_state(res[2])
+# m = 3
+# n = 0
+# K = M × ℝ^m × ℝ^n × ℝ^m
+# cmo = res[1]
+# q = rand(K)
+# q[K, 1] = get_iterate(s)
+# q[K, 2] = s.μ
+# q[K, 3] = s.λ
+# q[K, 4] = s.s
 
-F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
-grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, Hess_g, Hess_h, q)
+# F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
+# grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, Hess_g, Hess_h, q)
 
-using Plots
+# using Plots
 
-check_gradient(K, F, grad_F, q; plot=true)
+# check_gradient(K, F, grad_F, q; plot=true)
 
 #  check_gradient(K, F, grad_F, q; error=:info)
 
@@ -80,7 +81,7 @@ check_gradient(K, F, grad_F, q; plot=true)
 
 #-------------------------------------------------------------------------------------------------#
 
-#=
+
 using GLMakie, Makie, GeometryTypes
 
 n = 30
@@ -158,4 +159,3 @@ scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
 # )
 
 scene
-=#
