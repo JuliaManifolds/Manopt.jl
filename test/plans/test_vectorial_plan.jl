@@ -5,6 +5,8 @@ using Manopt: get_value, get_value_function, get_gradient_function
     g(M, p) = [p[1] - 1, -p[2] - 1]
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
+    hess_g(M, p, X) = [copy(X), -copy(X)]
+    hess_g!(M, Y, p, X) = (Y .= [copy(X), -copy(X)])
     # since the ONB of M is just the identity in coefficients, JF is gradients'
     jac_g(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]'
     jac_g!(M, J, p) = (J .= [1.0 0.0; 0.0 -1.0; 0.0 0.0]')
@@ -17,9 +19,13 @@ using Manopt: get_value, get_value_function, get_gradient_function
     g1(M, p) = p[1] - 1
     grad_g1(M, p) = [1.0, 0.0, 0.0]
     grad_g1!(M, X, p) = (X .= [1.0, 0.0, 0.0])
+    hess_g1(M, p, X) = copy(X)
+    hess_g1!(M, Y, p, X) = copyto!(Y, X)
     g2(M, p) = -p[2] - 1
     grad_g2(M, p) = [0.0, -1.0, 0.0]
     grad_g2!(M, X, p) = (X .= [0.0, -1.0, 0.0])
+    hess_g2(M, p, X) = copy(-X)
+    hess_g2!(M, Y, p, X) = copyto!(Y, -X)
     # verify a few case
     vgf_fa = VectorGradientFunction(g, grad_g, 2)
     @test get_value_function(vgf_fa) === g
@@ -54,7 +60,31 @@ using Manopt: get_value, get_value_function, get_gradient_function
     c = [0.0, -3.0]
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
 
-    for vgf in [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji]
+    # With Hessian
+    vhf_fa = VectorHessianFunction(g, grad_g, hess_g, 2)
+    vhf_va = VectorHessianFunction(
+        [g1, g2],
+        [grad_g1, grad_g2],
+        [hess_g1, hess_g2],
+        2;
+        function_type=ComponentVectorialType(),
+        jacobian_type=ComponentVectorialType(),
+        hessian_type=ComponentVectorialType(),
+    )
+    vhf_fi = VectorHessianFunction(g, grad_g!, hess_g!, 2; evaluation=InplaceEvaluation())
+    vhf_vi = VectorHessianFunction(
+        [g1, g2],
+        [grad_g1!, grad_g2!],
+        [hess_g1!, hess_g2!],
+        2;
+        function_type=ComponentVectorialType(),
+        jacobian_type=ComponentVectorialType(),
+        hessian_type=ComponentVectorialType(),
+        evaluation=InplaceEvaluation(),
+    )
+
+    for vgf in
+        [vgf_fa, vgf_va, vgf_fi, vgf_vi, vgf_ja, vgf_ji, vhf_fa, vhf_fi, vhf_va, vhf_vi]
         @test length(vgf) == 2
         @test get_value(M, vgf, p) == c
         @test get_value(M, vgf, p, :) == c
@@ -73,5 +103,30 @@ using Manopt: get_value, get_value_function, get_gradient_function
         @test Z == gg[1]
         get_gradient!(M, Z, vgf, p, 2)
         @test Z == gg[2]
+    end
+
+    X = [1.0, 0.5, 0.25]
+    gh = [X, -X]
+    # Hessian
+    for vhf in [
+        vhf_fa,
+        vhf_va,
+        vhf_fi,
+        #vhf_vi,
+    ]
+        @test get_hessian(M, vhf, p, X) == gh
+        @test get_hessian(M, vhf, p, X, :) == gh
+        @test get_hessian(M, vhf, p, X, 1:2) == gh
+        @test get_hessian(M, vhf, p, X, [1, 2]) == gh
+        @test get_hessian(M, vhf, p, X, 1) == gh[1]
+        @test get_hessian(M, vhf, p, X, 2) == gh[2]
+        Y = [zero_vector(M, p), zero_vector(M, p)]
+        get_hessian!(M, Y, vhf, p, X, :)
+        @test Y == gh
+        Z = zero_vector(M, p)
+        get_hessian!(M, Z, vhf, p, X, 1)
+        @test Z == gh[1]
+        get_hessian!(M, Z, vhf, p, X, 2)
+        @test Z == gh[2]
     end
 end

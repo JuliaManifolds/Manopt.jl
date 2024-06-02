@@ -221,12 +221,17 @@ get_equality_constraint
 get_inequality_constraint
 get_grad_equality_constraint
 get_grad_inequality_constraint
+get_hess_equality_constraint
+get_hess_inequality_constraint
 ```
 
 ### A vectorial cost function
 
 ```@docs
+Manopt.AbstractVectorFunction
+Manopt.AbstractVectorGradientFunction
 Manopt.VectorGradientFunction
+Manopt.VectorHessianFunction
 ```
 
 
