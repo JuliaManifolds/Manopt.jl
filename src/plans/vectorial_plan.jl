@@ -708,7 +708,7 @@ function get_hessian!(
     for (j, f) in zip(1:n, vhf.hessians!![i])
         copyto!(M, _write(pM, rep_size, Y, (j,)), f(M, p, X))
     end
-    return X
+    return Y
 end
 function get_hessian!(
     M::AbstractManifold,
@@ -721,10 +721,11 @@ function get_hessian!(
 ) where {FT,JT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
     for (j, f) in enumerate(vgf.hessians!!)
         copyto!(M, _write(pM, rep_size, Y, (j,)), p, f(M, p, X))
     end
-    return X
+    return Y
 end
 # Part I(c) A single gradient function
 function get_hessian!(
@@ -803,7 +804,7 @@ function get_hessian!(
     y = zero_vector(pM, P)
     vhf.hessians!!(M, y, p, X)
     copyto!(M, Y, p, y[pM, i])
-    return X
+    return Y
 end
 function get_hessian!(
     M::AbstractManifold,
@@ -823,7 +824,7 @@ function get_hessian!(
     vhf.hessians!!(M, y, p, X)
     # Luckily all documented access functions work directly on `x[pM_temp,...]`
     copyto!(pM_out, Y, P[pM_temp, i], y[pM_temp, i])
-    return X
+    return Y
 end
 
 get_hessian_function(vgf::VectorGradientFunction, recursive=false) = vgf.hessians!!
