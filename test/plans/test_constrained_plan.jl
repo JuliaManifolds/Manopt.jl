@@ -8,12 +8,15 @@ include("../utils/dummy_types.jl")
     f(::ManifoldsBase.DefaultManifold, p) = norm(p)^2
     grad_f(M, p) = 2 * p
     grad_f!(M, X, p) = (X .= 2 * p)
-    Hess_f(M, p, X) = [2.0, 2.0, 2.0]
+    hess_f(M, p, X) = [2.0, 2.0, 2.0]
+    hess_f!(M, Y, p, X) = (Y .= [2.0, 2.0, 2.0])
     # Inequality constraints
     g(M, p) = [p[1] - 1, -p[2] - 1]
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     grad_gA(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]
+    hess_g(M, p, X) = [copy(X), -copy(X)]
+    hess_g!(M, Y, p, X) = (Y .= [copy(X), -copy(X)])
     function grad_g!(M, X, p)
         X[1] .= [1.0, 0.0, 0.0]
         X[2] .= [0.0, -1.0, 0.0]
@@ -23,9 +26,13 @@ include("../utils/dummy_types.jl")
     g1(M, p) = p[1] - 1
     grad_g1(M, p) = [1.0, 0.0, 0.0]
     grad_g1!(M, X, p) = (X .= [1.0, 0.0, 0.0])
+    hess_g1(M, p, X) = copy(X)
+    hess_g1!(M, Y, p, X) = copyto!(Y, X)
     g2(M, p) = -p[2] - 1
     grad_g2(M, p) = [0.0, -1.0, 0.0]
     grad_g2!(M, X, p) = (X .= [0.0, -1.0, 0.0])
+    hess_g2(M, p, X) = copy(-X)
+    hess_g2!(M, Y, p, X) = copyto!(Y, -X)
     @test Manopt._number_of_constraints(
         nothing, [grad_g1, grad_g2]; jacobian_type=ComponentVectorialType()
     ) == 2
@@ -41,8 +48,12 @@ include("../utils/dummy_types.jl")
         X[1] .= [0.0, 0.0, 2.0]
         return X
     end
+    hess_h(M, p, X) = [[0.0, 0.0, 0.0]]
+    hess_h!(M, Y, p, X) = (Y .= [[0.0, 0.0, 0.0]])
     grad_h1(M, p) = [0.0, 0.0, 2.0]
     grad_h1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
+    hess_h1(M, p, X) = [0.0, 0.0, 0.0]
+    hess_h1!(M, Y, p, X) = (Y .= [0.0, 0.0, 0.0])
     cofa = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h; inequality_constraints=2, equality_constraints=1
     )
@@ -104,12 +115,70 @@ include("../utils/dummy_types.jl")
         gradient_equality_range=ArrayPowerRepresentation(),
         gradient_inequality_range=ArrayPowerRepresentation(),
     )
+    cofha = ConstrainedManifoldObjective(
+        f,
+        grad_f,
+        g,
+        grad_g,
+        h,
+        grad_h;
+        hess_f=hess_f,
+        hess_g=hess_g,
+        hess_h=hess_h,
+        inequality_constraints=2,
+        equality_constraints=1,
+    )
+    cofhm = ConstrainedManifoldObjective(
+        f,
+        grad_f!,
+        g,
+        grad_g!,
+        h,
+        grad_h!;
+        hess_f=hess_f!,
+        hess_g=hess_g!,
+        hess_h=hess_h!,
+        evaluation=InplaceEvaluation(),
+        inequality_constraints=2,
+        equality_constraints=1,
+    )
+    covha = ConstrainedManifoldObjective(
+        f,
+        grad_f,
+        [g1, g2],
+        [grad_g1, grad_g2],
+        [h1],
+        [grad_h1];
+        hess_f=hess_f,
+        hess_g=[hess_g1, hess_g2],
+        hess_h=[hess_h1],
+        inequality_constraints=2,
+        equality_constraints=1,
+    )
+    covhm = ConstrainedManifoldObjective(
+        f,
+        grad_f!,
+        [g1, g2],
+        [grad_g1!, grad_g2!],
+        [h1],
+        [grad_h1!];
+        hess_f=hess_f!,
+        hess_g=[hess_g1!, hess_g2!],
+        hess_h=[hess_h1!],
+        evaluation=InplaceEvaluation(),
+        inequality_constraints=2,
+        equality_constraints=1,
+    )
 
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     gh = [[0.0, 0.0, 2.0]]
     gf = 2 * p
+    X = [1.0, 0.0, 0.0]
+    hf = [2.0, 2.0, 2.0]
+    hg = [X, -X]
+    hh = [[0.0, 0.0, 0.0]]
 
     @testset "ConstrainedManoptProblem speecial cases" begin
         @test get_equality_constraint(cop, p, :) == c[2]
@@ -131,17 +200,50 @@ include("../utils/dummy_types.jl")
         @test X == gg[1]
     end
     @testset "ConstrainedObjective with Hessian" begin
-        coh = ConstrainedManifoldObjective(
-            ManifoldHessianObjective(f, grad_f, Hess_f);
-            equality_constraints=VectorGradientFunction(g, grad_g, 2),
-        )
-        Y = [2.0, 2.0, 2.0]
-        X = [1.0, 0.0, 0.0]
-        @test get_hessian(M, coh, p, X) == Y
-        Z = zero_vector(M, p)
-        get_hessian!(M, Z, coh, p, X) == Y
-        @test Z == Y
-        @test Manopt.get_hessian_function(coh) == Hess_f
+        # Function accessors
+        @test Manopt.get_hessian_function(cofha) == hess_f
+        @test Manopt.get_hessian_function(cofhm) == hess_f!
+        @test Manopt.get_hessian_function(covha) == hess_f
+        @test Manopt.get_hessian_function(covhm) == hess_f!
+        for coh in [cofha, cofhm, covha, covhm]
+            @testset "Hessian access for $coh" begin
+                @test get_hessian(M, coh, p, X) == hf
+                Y = zero_vector(M, p)
+                get_hessian!(M, Y, coh, p, X) == hf
+                @test Y == hf
+                #
+                @test get_hess_equality_constraint(M, coh, p, X) == hh
+                @test get_hess_equality_constraint(M, coh, p, X, :) == hh
+                @test get_hess_equality_constraint(M, coh, p, X, 1:1) == hh
+                @test get_hess_equality_constraint(M, coh, p, X, 1) == hh[1]
+                Ye = [zero_vector(M, p)]
+                get_hess_equality_constraint!(M, Ye, coh, p, X)
+                @test Ye == hh
+                get_hess_equality_constraint!(M, Ye, coh, p, X, :)
+                @test Ye == hh
+                get_hess_equality_constraint!(M, Ye, coh, p, X, 1:1)
+                @test Ye == hh
+                get_hess_equality_constraint!(M, Y, coh, p, X, 1)
+                @test Y == hh[1]
+                #
+                @test get_hess_inequality_constraint(M, coh, p, X) == hg
+                @test get_hess_inequality_constraint(M, coh, p, X, :) == hg
+                @test get_hess_inequality_constraint(M, coh, p, X, 1:2) == hg
+                @test get_hess_inequality_constraint(M, coh, p, X, 1) == hg[1]
+                @test get_hess_inequality_constraint(M, coh, p, X, 2) == hg[2]
+                Yi = [zero_vector(M, p), zero_vector(M, p)]
+                get_hess_inequality_constraint!(M, Yi, coh, p, X)
+                @test Yi == hg
+                get_hess_inequality_constraint!(M, Yi, coh, p, X, :)
+                @test Yi == hg
+                get_hess_inequality_constraint!(M, Yi, coh, p, X, 1:2)
+                @test Yi == hg
+                get_hess_inequality_constraint!(M, Y, coh, p, X, 1)
+                @test Y == hg[1]
+                get_hess_inequality_constraint!(M, Y, coh, p, X, 2)
+                @test Y == hg[2]
+            end
+        end
     end
     @testset "Partial Constructors" begin
         # At least one constraint necessary
@@ -175,40 +277,43 @@ include("../utils/dummy_types.jl")
         @test get_equality_constraint(M, co2v, p, :) == c[2]
         @test get_inequality_constraint(M, co2v, p, :) == []
     end
-    for co in [cofa, cofm, cova, covm]
-        @testset "$co" begin
-            dmp = DefaultManoptProblem(M, co)
-            @test get_equality_constraint(dmp, p, :) == c[2]
-            @test get_equality_constraint(dmp, p, 1) == c[2][1]
-            @test get_inequality_constraint(dmp, p, :) == c[1]
-            @test get_inequality_constraint(dmp, p, 1) == c[1][1]
-            @test get_inequality_constraint(dmp, p, 2) == c[1][2]
+    @testset "Gradient access" begin
+        for co in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
+            @testset "Gradients for $co" begin
+                dmp = DefaultManoptProblem(M, co)
+                @test get_equality_constraint(dmp, p, :) == c[2]
+                @test get_equality_constraint(dmp, p, 1) == c[2][1]
+                @test get_inequality_constraint(dmp, p, :) == c[1]
+                @test get_inequality_constraint(dmp, p, 1) == c[1][1]
+                @test get_inequality_constraint(dmp, p, 2) == c[1][2]
 
-            @test get_grad_equality_constraint(dmp, p, :) == gh
-            Xh = [zeros(3)]
-            @test get_grad_equality_constraint!(dmp, Xh, p, :) == gh
-            @test Xh == gh
-            X = zeros(3)
-            @test get_grad_equality_constraint(dmp, p, 1) == gh[1]
-            @test get_grad_equality_constraint!(dmp, X, p, 1) == gh[1]
-            @test X == gh[1]
+                @test get_grad_equality_constraint(dmp, p, :) == gh
+                Xh = [zeros(3)]
+                @test get_grad_equality_constraint!(dmp, Xh, p, :) == gh
+                @test Xh == gh
+                X = zeros(3)
+                @test get_grad_equality_constraint(dmp, p, 1) == gh[1]
+                @test get_grad_equality_constraint!(dmp, X, p, 1) == gh[1]
+                @test X == gh[1]
 
-            @test get_grad_inequality_constraint(dmp, p, :) == gg
-            Xg = [zeros(3), zeros(3)]
-            @test get_grad_inequality_constraint!(dmp, Xg, p, :) == gg
-            @test Xg == gg
-            @test get_grad_inequality_constraint(dmp, p, 1) == gg[1]
-            @test get_grad_inequality_constraint!(dmp, X, p, 1) == gg[1]
-            @test X == gg[1]
-            @test get_grad_inequality_constraint(dmp, p, 2) == gg[2]
-            @test get_grad_inequality_constraint!(dmp, X, p, 2) == gg[2]
-            @test X == gg[2]
+                @test get_grad_inequality_constraint(dmp, p, :) == gg
+                Xg = [zeros(3), zeros(3)]
+                @test get_grad_inequality_constraint!(dmp, Xg, p, :) == gg
+                @test Xg == gg
+                @test get_grad_inequality_constraint(dmp, p, 1) == gg[1]
+                @test get_grad_inequality_constraint!(dmp, X, p, 1) == gg[1]
+                @test X == gg[1]
+                @test get_grad_inequality_constraint(dmp, p, 2) == gg[2]
+                @test get_grad_inequality_constraint!(dmp, X, p, 2) == gg[2]
+                @test X == gg[2]
 
-            @test get_gradient(dmp, p) == gf
-            @test get_gradient!(dmp, X, p) == gf
-            @test X == gf
+                @test get_gradient(dmp, p) == gf
+                @test get_gradient!(dmp, X, p) == gf
+                @test X == gf
+            end
         end
     end
+
     @testset "Augmented Lagrangian Cost & Grad" begin
         μ = [1.0, 1.0]
         λ = [1.0]

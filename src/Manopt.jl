@@ -389,7 +389,11 @@ export equality_constraints_length,
     get_grad_inequality_constraint,
     get_grad_inequality_constraint!,
     get_grad_equality_constraint,
-    get_grad_equality_constraint!
+    get_grad_equality_constraint!,
+    get_hess_inequality_constraint,
+    get_hess_inequality_constraint!,
+    get_hess_equality_constraint,
+    get_hess_equality_constraint!
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
