@@ -108,13 +108,6 @@ include("../utils/dummy_types.jl")
     @test equality_constraints_length(cofa) == 1
     @test inequality_constraints_length(cofa) == 2
     @test Manopt.get_unconstrained_objective(cofa) isa ManifoldGradientObjective
-    cop = ConstrainedManoptProblem(M, cofa)
-    cop2 = ConstrainedManoptProblem(
-        M,
-        cofaA;
-        gradient_equality_range=ArrayPowerRepresentation(),
-        gradient_inequality_range=ArrayPowerRepresentation(),
-    )
     cofha = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -170,6 +163,15 @@ include("../utils/dummy_types.jl")
         equality_constraints=1,
     )
 
+    mp = DefaultManoptProblem(M, cofha)
+    cop = ConstrainedManoptProblem(M, cofha)
+    cop2 = ConstrainedManoptProblem(
+        M,
+        cofaA;
+        gradient_equality_range=ArrayPowerRepresentation(),
+        gradient_inequality_range=ArrayPowerRepresentation(),
+    )
+
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
@@ -181,23 +183,33 @@ include("../utils/dummy_types.jl")
     hh = [[0.0, 0.0, 0.0]]
 
     @testset "ConstrainedManoptProblem speecial cases" begin
-        @test get_equality_constraint(cop, p, :) == c[2]
-        @test get_inequality_constraint(cop, p, :) == c[1]
-        @test get_grad_equality_constraint(cop, p, :) == gh
-        @test get_grad_inequality_constraint(cop, p, :) == gg
-        X = zero_vector(M, p)
-        get_grad_equality_constraint!(cop, X, p, 1)
-        @test X == gh[1]
-        get_grad_inequality_constraint!(cop, X, p, 1)
-        @test X == gg[1]
+        Y = zero_vector(M, p)
+        for mcp in [mp, cop]
+            @test get_equality_constraint(mcp, p, :) == c[2]
+            @test get_inequality_constraint(mcp, p, :) == c[1]
+            @test get_grad_equality_constraint(mcp, p, :) == gh
+            @test get_grad_inequality_constraint(mcp, p, :) == gg
+            get_grad_equality_constraint!(mcp, Y, p, 1)
+            @test Y == gh[1]
+            get_grad_inequality_constraint!(mcp, Y, p, 1)
+            @test Y == gg[1]
+            #
+            @test get_hess_equality_constraint(mcp, p, X, :) == hh
+            @test get_hess_inequality_constraint(mcp, p, X, :) == hg
+            get_hess_equality_constraint!(mcp, Y, p, X, 1)
+            @test Y == hh[1]
+            get_hess_inequality_constraint!(mcp, Y, p, X, 1)
+            @test Y == hg[1]
+        end
+        #
         @test get_equality_constraint(cop2, p, :) == c[2]
         @test get_inequality_constraint(cop2, p, :) == c[1]
         @test get_grad_equality_constraint(cop2, p, :) == cat(gh...; dims=2)
         @test get_grad_inequality_constraint(cop2, p, :) == cat(gg...; dims=2)
-        get_grad_equality_constraint!(cop2, X, p, 1)
-        @test X == gh[1]
-        get_grad_inequality_constraint!(cop2, X, p, 1)
-        @test X == gg[1]
+        get_grad_equality_constraint!(cop2, Y, p, 1)
+        @test Y == gh[1]
+        get_grad_inequality_constraint!(cop2, Y, p, 1)
+        @test Y == gg[1]
     end
     @testset "ConstrainedObjective with Hessian" begin
         # Function accessors
@@ -369,7 +381,7 @@ include("../utils/dummy_types.jl")
         end
     end
     @testset "Objective Decorator passthrough" begin
-        for obj in [cofa, cofm, cova, covm]
+        for obj in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
             ddo = DummyDecoratedObjective(obj)
             @test get_equality_constraint(M, ddo, p, :) ==
                 get_equality_constraint(M, obj, p, :)
@@ -407,6 +419,37 @@ include("../utils/dummy_types.jl")
 
             get_grad_inequality_constraint!(M, Xe, ddo, p, 1:2)
             get_grad_inequality_constraint!(M, Ye, obj, p, 1:2)
+            @test Ye == Xe
+        end
+        for obj in [cofha, cofhm, covha, covhm]
+            ddo = DummyDecoratedObjective(obj)
+            Xe = get_hess_equality_constraint(M, ddo, p, X, :)
+            Ye = get_hess_equality_constraint(M, obj, p, X, :)
+            @test Ye == Xe
+            for i in 1:1 #number of equality constr
+                X = get_hess_equality_constraint(M, ddo, p, X, i)
+                Y = get_hess_equality_constraint(M, obj, p, X, i)
+                @test X == Y
+                X = get_hess_equality_constraint!(M, X, ddo, p, X, i)
+                Y = get_hess_equality_constraint!(M, Y, obj, p, X, i)
+                @test X == Y
+            end
+            for j in 1:2 # for every equality constraint
+                X = get_hess_inequality_constraint(M, ddo, p, X, j)
+                Y = get_hess_inequality_constraint(M, obj, p, X, j)
+                @test X == Y
+                X = get_hess_inequality_constraint!(M, X, ddo, p, X, j)
+                Y = get_hess_inequality_constraint!(M, Y, obj, p, X, j)
+                @test X == Y
+            end
+            Xe = get_hess_inequality_constraint(M, ddo, p, X, :)
+            Ye = get_hess_inequality_constraint(M, obj, p, X, :)
+            @test Ye == Xe
+            get_hess_inequality_constraint!(M, Xe, ddo, p, X, :)
+            get_hess_inequality_constraint!(M, Ye, obj, p, X, :)
+            @test Ye == Xe
+            get_hess_inequality_constraint!(M, Xe, ddo, p, X, 1:2)
+            get_hess_inequality_constraint!(M, Ye, obj, p, X, 1:2)
             @test Ye == Xe
         end
     end

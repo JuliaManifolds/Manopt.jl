@@ -237,8 +237,10 @@ end
     ConstrainedProblem{
         TM <: AbstractManifold,
         O <: AbstractManifoldObjective
-        GR <: AbstractManifold
-        HR <: AbstractManifold
+        HR<:Union{AbstractPowerRepresentation,Nothing},
+        GR<:Union{AbstractPowerRepresentation,Nothing},
+        HHR<:Union{AbstractPowerRepresentation,Nothing},
+        GHR<:Union{AbstractPowerRepresentation,Nothing},
     } <: AbstractManoptProblem{TM}
 
 A constrained problem might feature different ranges for the
@@ -275,6 +277,8 @@ problem is for.
         range=NestedPowerRepresentation(),
         gradient_equality_range=range,
         gradient_inequality_range=range
+        hessian_equality_range=range,
+        hessian_inequality_range=range
     )
 
 Creates a constrained manopt problem specifying an [`AbstractPowerRepresentation`](@ref)
@@ -285,10 +289,14 @@ struct ConstrainedManoptProblem{
     O<:AbstractManifoldObjective,
     HR<:Union{AbstractPowerRepresentation,Nothing},
     GR<:Union{AbstractPowerRepresentation,Nothing},
+    HHR<:Union{AbstractPowerRepresentation,Nothing},
+    GHR<:Union{AbstractPowerRepresentation,Nothing},
 } <: AbstractManoptProblem{TM}
     manifold::TM
     grad_equality_range::HR
     grad_ineqality_range::GR
+    hess_equality_range::HHR
+    hess_ineqality_range::GHR
     objective::O
 end
 
@@ -298,14 +306,23 @@ function ConstrainedManoptProblem(
     range=NestedPowerRepresentation(),
     gradient_equality_range::HR=range,
     gradient_inequality_range::GR=range,
+    hessian_equality_range::HHR=range,
+    hessian_inequality_range::GHR=range,
 ) where {
     TM<:AbstractManifold,
     O,
     GR<:Union{AbstractPowerRepresentation,Nothing},
     HR<:Union{AbstractPowerRepresentation,Nothing},
+    GHR<:Union{AbstractPowerRepresentation,Nothing},
+    HHR<:Union{AbstractPowerRepresentation,Nothing},
 }
-    return ConstrainedManoptProblem{TM,O,HR,GR}(
-        M, gradient_equality_range, gradient_inequality_range, objective
+    return ConstrainedManoptProblem{TM,O,HR,GR,HHR,GHR}(
+        M,
+        gradient_equality_range,
+        gradient_inequality_range,
+        hessian_equality_range,
+        hessian_inequality_range,
+        objective,
     )
 end
 get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
@@ -641,7 +658,7 @@ function get_hess_equality_constraint(amp::AbstractManoptProblem, p, X, j=:)
 end
 function get_hess_equality_constraint(cmp::ConstrainedManoptProblem, p, X, j=:)
     return get_hess_equality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.grad_equality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_equality_range
     )
 end
 function get_hess_equality_constraint(
@@ -675,7 +692,7 @@ function get_hess_equality_constraint!(
 end
 function get_hess_equality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j=:)
     return get_hess_equality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.grad_equality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_equality_range
     )
 end
 function get_hess_equality_constraint!(
@@ -718,7 +735,7 @@ function get_hess_inequality_constraint(
 end
 function get_hess_inequality_constraint(cmp::ConstrainedManoptProblem, p, X, j=:)
     return get_hess_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.grad_ineqality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_ineqality_range
     )
 end
 function get_hess_inequality_constraint(
@@ -753,7 +770,7 @@ function get_hess_inequality_constraint!(
 end
 function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j=:)
     return get_hess_inequality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.grad_ineqality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_ineqality_range
     )
 end
 function get_hess_inequality_constraint!(
