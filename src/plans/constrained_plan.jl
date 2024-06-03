@@ -28,8 +28,19 @@ Describes the constrained objective
         hess_f=nothing,
         hess_g=nothing,
         hess_h=nothing,
+        equality_constraints=nothing,
+        inequality_constraints=nothing,
         evaluation=AllocatingEvaluation(),
+        M = nothing,
+        p = isnothing(M) ? nothing : rand(M),
     )
+
+Generate the constrained objective based on all involved single functions `f`, `grad_f`, `g`,
+`grad_g`, `h`, `grad_h`, and optionally a hessian for each of these.
+With `equality_constraints` and `inequality_constraints` you have to provide the dimension
+of the ranges of `h` and `g`, respectively.
+You can also provide a manifold `M` and a point `p` to use one evaluation of the constraints
+to automatically try to determine these sizes.
 
     ConstrainedManifoldObjective(M::AbstractManifold, mho::AbstractManifoldObjective;
         equality_constraints = nothing,
@@ -111,8 +122,8 @@ function ConstrainedManifoldObjective(
     inequality_type=_vector_function_type_hint(g),
     inequality_gradient_type=_vector_function_type_hint(grad_g),
     inequality_hessian_type=_vector_function_type_hint(hess_g),
-    equality_constraints=-1,
-    inequality_constraints=-1,
+    equality_constraints::Union{Integer,Nothing}=nothing,
+    inequality_constraints::Union{Integer,Nothing}=nothing,
     M::Union{AbstractManifold,Nothing}=nothing,
     p=isnothing(M) ? nothing : rand(M),
     kwargs...,
@@ -122,12 +133,13 @@ function ConstrainedManifoldObjective(
     else
         objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation=evaluation)
     end
+    num_eq = isnothing(equality_constraints) ? -1 : equality_constraints
     if isnothing(h) || isnothing(grad_h)
         eq = nothing
     else
-        if equality_constraints < 0
+        if isnothing(equality_constraints)
             # try to guess
-            equality_constraints = _number_of_constraints(
+            num_eq = _number_of_constraints(
                 h,
                 grad_h;
                 function_type=equality_type,
@@ -135,17 +147,16 @@ function ConstrainedManifoldObjective(
                 M=M,
                 p=p,
             )
-            # if it is still < 0, this can not be used
-            (equality_constraints < 0) && error(
-                "Please specify a positive number of `equality_constraints` (provided $(equality_constraints))",
-            )
         end
-
+        # if it is still < 0, this can not be used
+        (num_eq < 0) && error(
+            "Please specify a positive number of `equality_constraints` (provided $(equality_constraints))",
+        )
         if isnothing(hess_h)
             eq = VectorGradientFunction(
                 h,
                 grad_h,
-                equality_constraints;
+                num_eq;
                 evaluation=evaluation,
                 function_type=equality_type,
                 jacobian_type=equality_gradient_type,
@@ -155,7 +166,7 @@ function ConstrainedManifoldObjective(
                 h,
                 grad_h,
                 hess_h,
-                equality_constraints;
+                num_eq;
                 evaluation=evaluation,
                 function_type=equality_type,
                 jacobian_type=equality_gradient_type,
@@ -163,12 +174,13 @@ function ConstrainedManifoldObjective(
             )
         end
     end
+    num_ineq = isnothing(inequality_constraints) ? -1 : inequality_constraints
     if isnothing(g) || isnothing(grad_g)
         ineq = nothing
     else
-        if inequality_constraints < 0
+        if isnothing(inequality_constraints)
             # try to guess
-            inequality_constraints = _number_of_constraints(
+            num_ineq = _number_of_constraints(
                 g,
                 grad_g;
                 function_type=inequality_type,
@@ -176,16 +188,16 @@ function ConstrainedManifoldObjective(
                 M=M,
                 p=p,
             )
-            # if it is still < 0, this can not be used
-            (inequality_constraints < 0) && error(
-                "Please specify a positive number of `inequality_constraints` (provided $(inequality_constraints))",
-            )
         end
+        # if it is still < 0, this can not be used
+        (num_ineq < 0) && error(
+            "Please specify a positive number of `inequality_constraints` (provided $(inequality_constraints))",
+        )
         if isnothing(hess_g)
             ineq = VectorGradientFunction(
                 g,
                 grad_g,
-                inequality_constraints;
+                num_ineq;
                 evaluation=evaluation,
                 function_type=inequality_type,
                 jacobian_type=inequality_gradient_type,
@@ -195,7 +207,7 @@ function ConstrainedManifoldObjective(
                 g,
                 grad_g,
                 hess_g,
-                inequality_constraints;
+                num_ineq;
                 evaluation=evaluation,
                 function_type=inequality_type,
                 jacobian_type=inequality_gradient_type,
