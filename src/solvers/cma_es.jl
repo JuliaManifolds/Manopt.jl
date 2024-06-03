@@ -23,8 +23,8 @@ State of covariance matrix adaptation evolution strategy.
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
-* `covariance_matrix_eigen`     eigen decomposition of `covariance_matrix`
-* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigen decomposition
+* `covariance_matrix_eigen`     eigendecomposition of `covariance_matrix`
+* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigendecomposition
 * `best_fitness_current_gen`    best fitness value of individuals in the current generation
 * `median_fitness_current_gen`  median fitness value of individuals in the current generation
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
@@ -249,7 +249,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     # sampling and evaluation of new solutions
 
     # `D2, B = eigen(Symmetric(s.covariance_matrix))``
-    D2, B = s.covariance_matrix_eigen # assuming eigen decomposition has already been completed
+    D2, B = s.covariance_matrix_eigen # assuming eigendecomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
     s.covariance_matrix_cond = max_eigval / min_eigval
     s.deviations .= sqrt.(D2)
@@ -491,7 +491,7 @@ end
         vtm::AbstractVectorTransportMethod,
     )
 
-Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
+Transport the matrix with `matrix_eig` eigendecomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
 `(p, matrix_eig)` belongs to the fiber bundle of ``B = \mathcal M × SPD(n)``, where `n`

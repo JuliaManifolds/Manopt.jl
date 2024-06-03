@@ -23,6 +23,7 @@ Dornig
 Douglas
 cubic
 eigen
+eigendecomposition
 elementwise
 Ehresmann
 Fenchel
