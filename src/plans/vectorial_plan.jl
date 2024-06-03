@@ -624,17 +624,12 @@ get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range=noth
 # Generic case, allocate (a) a single tangent vector
 function get_hessian(
     M::AbstractManifold,
-    vhf::VectorHessianFunction{E,FT,JT,HT},
+    vhf::VectorHessianFunction,
     p,
     X,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {
-    E<:Manopt.AbstractEvaluationType,
-    FT<:Manopt.AbstractVectorialType,
-    JT<:Manopt.AbstractVectorialType,
-    HT<:Union{ComponentVectorialType,FunctionVectorialType},
-}
+)
     Y = zero_vector(M, p)
     return get_hessian!(M, Y, vhf, p, X, i, range)
 end
@@ -652,28 +647,6 @@ function get_hessian(
     P = fill(p, pM)
     Y = zero_vector(pM, P)
     return get_hessian!(M, Y, vhf, p, X, i, range)
-end
-# (c) Special cases where allocations can be skipped
-function get_hessian(
-    M::AbstractManifold,
-    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i::Integer,
-    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT,JT}
-    return vhf.hessians!![i](M, p, X)
-end
-function get_hessian(
-    M::AbstractManifold,
-    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i::Integer,
-    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT,JT}
-    Y = zero_vector(M, p)
-    return vhf.hessians!![i](M, Y, p, X)
 end
 
 #
