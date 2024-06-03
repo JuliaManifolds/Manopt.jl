@@ -36,7 +36,7 @@ Describes the constrained objective
     )
 
 Generate the constrained objective based on all involved single functions `f`, `grad_f`, `g`,
-`grad_g`, `h`, `grad_h`, and optionally a hessian for each of these.
+`grad_g`, `h`, `grad_h`, and optionally a Hessian for each of these.
 With `equality_constraints` and `inequality_constraints` you have to provide the dimension
 of the ranges of `h` and `g`, respectively.
 You can also provide a manifold `M` and a point `p` to use one evaluation of the constraints

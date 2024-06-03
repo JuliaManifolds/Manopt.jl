@@ -63,7 +63,7 @@ struct FunctionVectorialType <: AbstractVectorialType end
 
 Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` with an
 [`AbstractEvaluationType`](@ref) `E` and an [`AbstractVectorialType`](@ref) to specify the
-format ``f`` is imlemented as.
+format ``f`` is implemented as.
 
 # Representations of ``f``
 
@@ -100,7 +100,7 @@ abstract type AbstractVectorFunction{E<:AbstractEvaluationType,FT<:AbstractVecto
 @doc raw"""
     VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}
 
-Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (componentwise)
+Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (component wise)
 gradient.
 The [´AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
 and the [`AbstractVectorialType`](@ref)s `FT` and `JT` the formats in which
@@ -215,7 +215,7 @@ or a single tangent space of the power manifold of lenth `n`.
 
 Create a `VectorGradientFunction` of `f`  and its Jacobian (vector of gradients) `Jf`
 and (vector of) Hessians, where `f` maps into the Euclidean space of dimension `range_dimension`.
-Their types are specified by the `function_type`, and `jacobian_type`, and and `hessian_type`,
+Their types are specified by the `function_type`, and `jacobian_type`, and `hessian_type`,
 respectively. The Jacobian and Hessian can further be given as an allocating variant or an
 inplace-variant, specified by the `evaluation=` keyword.
 """

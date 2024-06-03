@@ -212,7 +212,7 @@ include("../utils/dummy_types.jl")
         @test Y == gg[1]
     end
     @testset "ConstrainedObjective with Hessian" begin
-        # Function accessors
+        # Function access
         @test Manopt.get_hessian_function(cofha) == hess_f
         @test Manopt.get_hessian_function(cofhm) == hess_f!
         @test Manopt.get_hessian_function(covha) == hess_f
