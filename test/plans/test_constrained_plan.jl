@@ -263,31 +263,45 @@ include("../utils/dummy_types.jl")
         @test_throws ErrorException ConstrainedManifoldObjective(
             f, grad_f!; evaluation=InplaceEvaluation()
         )
-        co1f = ConstrainedManifoldObjective(f, grad_f!; g=g, grad_g=grad_g, M=M)
-        @test get_grad_equality_constraint(M, co1f, p, :) == []
-        @test get_grad_inequality_constraint(M, co1f, p, :) == gg
+        co1f = ConstrainedManifoldObjective(
+            f, grad_f!; g=g, grad_g=grad_g, hess_g=hess_g, M=M
+        )
         @test get_equality_constraint(M, co1f, p, :) == []
         @test get_inequality_constraint(M, co1f, p, :) == c[1]
+        @test get_grad_equality_constraint(M, co1f, p, :) == []
+        @test get_grad_inequality_constraint(M, co1f, p, :) == gg
+        @test get_hess_equality_constraint(M, co1f, p, X, :) == []
+        @test get_hess_inequality_constraint(M, co1f, p, X, :) == hg
 
         co1v = ConstrainedManifoldObjective(
-            f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2]
+            f, grad_f!; g=[g1, g2], grad_g=[grad_g1, grad_g2], hess_g=[hess_g1, hess_g2]
         )
-        @test get_grad_equality_constraint(M, co1v, p, :) == []
-        @test get_grad_inequality_constraint(M, co1v, p, :) == gg
         @test get_equality_constraint(M, co1v, p, :) == []
         @test get_inequality_constraint(M, co1v, p, :) == c[1]
+        @test get_grad_equality_constraint(M, co1v, p, :) == []
+        @test get_grad_inequality_constraint(M, co1v, p, :) == gg
+        @test get_hess_equality_constraint(M, co1f, p, X, :) == []
+        @test get_hess_inequality_constraint(M, co1f, p, X, :) == hg
 
-        co2f = ConstrainedManifoldObjective(f, grad_f!; h=h, grad_h=grad_h, M=M)
-        @test get_grad_equality_constraint(M, co2f, p, :) == gh
-        @test get_grad_inequality_constraint(M, co2f, p, :) == []
+        co2f = ConstrainedManifoldObjective(
+            f, grad_f!; h=h, grad_h=grad_h, hess_h=hess_h, M=M
+        )
         @test get_equality_constraint(M, co2f, p, :) == c[2]
         @test get_inequality_constraint(M, co2f, p, :) == []
+        @test get_grad_equality_constraint(M, co2f, p, :) == gh
+        @test get_grad_inequality_constraint(M, co2f, p, :) == []
+        @test get_hess_equality_constraint(M, co2f, p, X, :) == hh
+        @test get_hess_inequality_constraint(M, co2f, p, X, :) == []
 
-        co2v = ConstrainedManifoldObjective(f, grad_f!; h=[h1], grad_h=[grad_h1])
-        @test get_grad_equality_constraint(M, co2v, p, :) == gh
-        @test get_grad_inequality_constraint(M, co2v, p, :) == []
+        co2v = ConstrainedManifoldObjective(
+            f, grad_f!; h=h, grad_h=grad_h, hess_h=hess_h, M=M
+        )
         @test get_equality_constraint(M, co2v, p, :) == c[2]
         @test get_inequality_constraint(M, co2v, p, :) == []
+        @test get_grad_equality_constraint(M, co2v, p, :) == gh
+        @test get_grad_inequality_constraint(M, co2v, p, :) == []
+        @test get_hess_equality_constraint(M, co2v, p, X, :) == hh
+        @test get_hess_inequality_constraint(M, co2v, p, X, :) == []
     end
     @testset "Gradient access" begin
         for co in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
