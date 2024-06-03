@@ -800,10 +800,10 @@ function get_hessian!(
     return Y
 end
 
-get_hessian_function(vgf::VectorGradientFunction, recursive=false) = vgf.hessians!!
+get_hessian_function(vgf::VectorHessianFunction, recursive=false) = vgf.hessians!!
 
 @doc raw"""
-    length(vgf::VectorGradientFunction)
+    length(vgf::AbstractVectorFunction)
 
 Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps into,
 that is the number `n`.
