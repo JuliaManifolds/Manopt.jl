@@ -255,6 +255,10 @@ function (c::StopWhenFirstOrderProgress)(
     dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, i::Int
 )
     if (i == 0)
+        if norm(ls.X) == 0
+            c.reason = "The gradient of the gradient is zero."
+            return true
+        end
         c.reason = ""
         return false
     end
