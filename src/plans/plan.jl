@@ -108,6 +108,7 @@ by `set_manopt_parameter!(:Mode, "")`.
 """
 is_tutorial_mode() = (get_manopt_parameter(:Mode) == "Tutorial")
 
+include("function_plan.jl")
 include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
