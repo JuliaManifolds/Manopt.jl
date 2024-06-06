@@ -257,32 +257,13 @@ function adaptive_regularization_with_cubics(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF,THF}
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f; evaluation=evaluation)
-    return adaptive_regularization_with_cubics(M, mho, p; evaluation=evaluation, kwargs...)
-end
-function adaptive_regularization_with_cubics(
-    M::AbstractManifold,
-    f::TF,
-    grad_f::TDF,
-    Hess_f::THF,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TF,TDF,THF}
-    q = [p]
-    f_(M, p) = f(M, p[])
-    Hess_f_ = Hess_f
-    if evaluation isa AllocatingEvaluation
-        grad_f_ = (M, p) -> [grad_f(M, p[])]
-        Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
-    else
-        grad_f_ = (M, X, p) -> (X .= [grad_f(M, p[])])
-        Hess_f_ = (M, Y, p, X) -> (Y .= [Hess_f(M, p[], X[])])
-    end
-    rs = adaptive_regularization_with_cubics(
-        M, f_, grad_f_, Hess_f_, q; evaluation=evaluation, kwargs...
-    )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
+    mho = ManifoldHessianObjective(f_, grad_f_, Hess_f_; evaluation=evaluation)
+    rs = adaptive_regularization_with_cubics(M, mho, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function adaptive_regularization_with_cubics(M::AbstractManifold, f, grad_f; kwargs...)
     return adaptive_regularization_with_cubics(M, f, grad_f, rand(M); kwargs...)

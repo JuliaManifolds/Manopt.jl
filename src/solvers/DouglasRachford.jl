@@ -189,30 +189,15 @@ function DouglasRachford(
     parallel=0,
     kwargs...,
 ) where {TF}
-    N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel, evaluation
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
+    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
+        M, f_, proxes_f_, p_, parallel, evaluation
     )
     mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation=evaluation)
-    return DouglasRachford(N, mpo, p0; evaluation=evaluation, parallel=parallel_, kwargs...)
-end
-function DouglasRachford(
-    M::AbstractManifold,
-    f::TF,
-    proxes_f::Vector{<:Any},
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TF}
-    q = [p]
-    f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        proxes_f_ = [(M, λ, p) -> [pf(M, λ, p[])] for pf in proxes_f]
-    else
-        proxes_f_ = [(M, q, λ, p) -> (q .= [pf(M, λ, p[])]) for pf in proxes_f]
-    end
-    rs = DouglasRachford(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    rs = DouglasRachford(N, mpo, q; evaluation=evaluation, parallel=parallel_, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function DouglasRachford(
     M::AbstractManifold, mpo::O, p; kwargs...

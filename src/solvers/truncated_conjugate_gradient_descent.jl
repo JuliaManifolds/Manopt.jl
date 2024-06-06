@@ -479,46 +479,21 @@ function truncated_conjugate_gradient_descent(
     end,
     kwargs...,
 ) where {TH<:Function}
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
-    return truncated_conjugate_gradient_descent(
-        M, mho, p, X; evaluation=evaluation, kwargs...
+    p_ = _ensure_mutating_variable(p)
+    X_ = _ensure_mutating_variable(X)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
+    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
+
+    mho = ManifoldHessianObjective(
+        f_, grad_f_, Hess_f_, preconditioner_; evaluation=evaluation
     )
-end
-function truncated_conjugate_gradient_descent(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f::TH, #fill a default below before dispatching on p::Number
-    p::Number,
-    X::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    preconditioner=(M, p, X) -> X,
-    kwargs...,
-) where {TH<:Function}
-    q = [p]
-    Y = [X]
-    f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        grad_f_ = (M, p) -> [grad_f(M, p[])]
-        Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
-        precon_ = (M, p, X) -> [preconditioner(M, p[], X[])]
-    else
-        grad_f_ = (M, X, p) -> (X .= [grad_f(M, p[])])
-        Hess_f_ = (M, Y, p, X) -> (Y .= [Hess_f(M, p[], X[])])
-        precon_ = (M, Y, p, X) -> (Y .= [preconditioner(M, p[], X[])])
-    end
+    Y = copy(M, X_)
     rs = truncated_conjugate_gradient_descent(
-        M,
-        f_,
-        grad_f_,
-        Hess_f_,
-        q,
-        Y;
-        preconditioner=precon_,
-        evaluation=evaluation,
-        kwargs...,
+        M, mho, p_, Y; evaluation=evaluation, kwargs...
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 #
 # Objective 1 -> generate model

@@ -267,42 +267,30 @@ function augmented_Lagrangian_method(
     grad_h=nothing,
     kwargs...,
 ) where {TF,TGF}
-    q = copy(M, p)
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    h_ = _ensure_mutating_cost(h, p)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
+
     cmo = ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
     )
-    return augmented_Lagrangian_method!(M, cmo, q; evaluation=evaluation, kwargs...)
+    rs = augmented_Lagrangian_method(M, cmo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function augmented_Lagrangian_method(
     M::AbstractManifold, cmo::O, p=rand(M); kwargs...
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
-    q = copy(M, p)
-    return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
-end
-function augmented_Lagrangian_method(
-    M::AbstractManifold,
-    f::TF,
-    grad_f::TGF,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    g=nothing,
-    grad_g=nothing,
-    grad_h=nothing,
-    h=nothing,
-    kwargs...,
-) where {TF,TGF}
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
     cmo = ConstrainedManifoldObjective(
         f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
     )
     rs = augmented_Lagrangian_method(M, cmo, q; evaluation=evaluation, kwargs...)
     return (typeof(q) == typeof(rs)) ? rs[] : rs
+
+    return augmented_Lagrangian_method!(M, cmo, q; kwargs...)
 end
 
 @doc raw"""

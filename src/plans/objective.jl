@@ -75,7 +75,7 @@ function ReturnManifoldObjective(
     return ReturnManifoldObjective{E,O2,O1}(o)
 end
 
-function _ensure_mutating_cost(cost, p::Number)
+function _ensure_mutating_cost(cost, q::Number)
     return isnothing(cost) ? cost : (M, p) -> cost(M, p[])
 end
 function _ensure_mutating_cost(cost, p)
@@ -92,17 +92,13 @@ function _ensure_mutating_gradient(grad_f, q::Number, evaluation::InplaceEvaluat
     return isnothing(grad_f) ? grad_f : (M, X, p) -> (X .= [grad_f(M, p[])])
 end
 
-function _ensure_mutating_hessian(hess_f, p, X, evaluation::AbstractEvaluationType)
+function _ensure_mutating_hessian(hess_f, p, evaluation::AbstractEvaluationType)
     return hess_f
 end
-function _ensure_mutating_hessian(
-    hess_f, q::Number, X::Number, evaluation::AllocatingEvaluation
-)
+function _ensure_mutating_hessian(hess_f, q::Number, evaluation::AllocatingEvaluation)
     return isnothing(hess_f) ? hess_f : (M, p, X) -> [hess_f(M, p[], X[])]
 end
-function _ensure_mutating_hessian(
-    hess_f, q::Number, X::Number, evaluation::InplaceEvaluation
-)
+function _ensure_mutating_hessian(hess_f, q::Number, evaluation::InplaceEvaluation)
     return isnothing(hess_f) ? hess_f : (M, Y, p, X) -> (Y .= [hess_f(M, p[], X[])])
 end
 
@@ -118,8 +114,14 @@ end
 
 _ensure_mutating_variable(p) = p
 _ensure_mutating_variable(q::Number) = [q]
-_ensure_nonmutating_output(p::T, q::Vector{T}) where {T} = length(q) == 1 ? q[] : q
-_ensure_nonmutating_output(p, q) = q
+"""
+    _ensure_matching_output(p, q)
+    _ensure_matching_output(e, q, s)
+
+If p is a number and q is a vector, return q[] (a number) otherwise q
+"""
+_ensure_matching_output(::T, q::Vector{T}) where {T} = length(q) == 1 ? q[] : q
+_ensure_matching_output(p, q) = q
 
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)

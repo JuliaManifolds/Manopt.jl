@@ -219,35 +219,18 @@ function exact_penalty_method(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TGF}
-    cmo = ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
-    )
-    return exact_penalty_method(M, cmo, p; evaluation=evaluation, kwargs...)
-end
-function exact_penalty_method(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p::Number;
-    g=nothing,
-    h=nothing,
-    grad_g=nothing,
-    grad_h=nothing,
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    h_ = _ensure_mutating_gradient(h, p)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
     cmo = ConstrainedManifoldObjective(
         f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
     )
-    rs = exact_penalty_method(M, cmo, q; evaluation=evaluation, kwargs...)
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    rs = exact_penalty_method(M, cmo, p; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function exact_penalty_method(
     M::AbstractManifold, cmo::O, p=rand(M); kwargs...
