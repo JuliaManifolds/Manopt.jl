@@ -451,18 +451,18 @@ mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
-Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, [p]; kwargs...)
 function Nesterov(
     M::AbstractManifold,
-    p::P;
+    p;
     γ::T=0.001,
     μ::T=0.9,
     shrinkage::Function=i -> 0.8,
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M, P
     ),
-) where {P,T}
-    return Nesterov{P,T}(γ, μ, copy(M, p), shrinkage, inverse_retraction_method)
+) where {T}
+    p_ = _ensure_mutating_variable(p)
+    return Nesterov{typeof(p_),T}(γ, μ, copy(M, p_), shrinkage, inverse_retraction_method)
 end
 function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, i)
     M = get_manifold(mp)

@@ -168,24 +168,12 @@ function gradient_descent(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    return gradient_descent(M, mgo, p; kwargs...)
-end
-function gradient_descent(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    # redefine initial point
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    rs = gradient_descent(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p)
+    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    rs = gradient_descent(M, mgo, p_; kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function gradient_descent(
     M::AbstractManifold, mgo::O, p; kwargs...

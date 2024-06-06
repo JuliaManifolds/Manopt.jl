@@ -242,25 +242,20 @@ function particle_swarm(
         M, f, isnothing(x0) ? [rand(M) for _ in 1:swarm_size] : x0; kwargs...
     )
 end
-function particle_swarm(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return particle_swarm(M, mco, swarm; kwargs...)
-end
 function particle_swarm(
     M::AbstractManifold,
     f,
-    swarm::AbstractVector{T};
+    swarm::AbstractVector;
     velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
     kwargs...,
-) where {T<:Number}
-    f_(M, p) = f(M, p[])
-    swarm_ = [[s] for s in swarm]
-    velocity_ = [[v] for v in velocity]
-    rs = particle_swarm(M, f_, swarm_; velocity=velocity_, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(swarm_[1]) == typeof(rs)) ? rs[] : rs
+)
+    f_ = _ensure_mutating_cost(f, p)
+    swarm_ = [_ensure_mutating_variable(s) for s in swarm]
+    velocity_ = [_ensure_mutating_variable(v) for v in velocity]
+    mco = ManifoldCostObjective(f)
+    rs = particle_swarm(M, mco, swarm; velocity=velocity_, kwargs...)
+    return _ensure_matching_output(first(swarm), rs)
 end
-
 function particle_swarm(
     M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
 ) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}

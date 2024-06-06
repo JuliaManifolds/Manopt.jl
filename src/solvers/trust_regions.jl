@@ -347,42 +347,22 @@ function trust_regions(
     end,
     kwargs...,
 ) where {TH<:Function}
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
-    return trust_regions(M, mho, p; evaluation=evaluation, kwargs...)
-end
-# Hessian (Function) and point (but a number)
-function trust_regions(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f::TH, #fill a default below before dispatching on p::Number
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    preconditioner=(M, p, X) -> X,
-    kwargs...,
-) where {TH<:Function}
-    q = [p]
-    f_(M, p) = f(M, p[])
-    Hess_f_ = Hess_f
-    if evaluation isa AllocatingEvaluation
-        grad_f_ = (M, p) -> [grad_f(M, p[])]
-        Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
-        precon_ = (M, p, X) -> [preconditioner(M, p[], X[])]
-    else
-        grad_f_ = (M, X, p) -> (X .= [grad_f(M, p[])])
-        Hess_f_ = (M, Y, p, X) -> (Y .= [Hess_f(M, p[], X[])])
-        precon_ = (M, Y, p, X) -> (Y .= [preconditioner(M, p[], X[])])
-    end
-    rs = trust_regions(
-        M, f_, grad_f_, Hess_f_, q; preconditioner=precon_, evaluation=evaluation, kwargs...
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
+    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
+    mho = ManifoldHessianObjective(
+        f_, grad_f_, Hess_f_, preconditioner_; evaluation=evaluation
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    rs = trust_regions(M, mho, p; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 # neither Hessian (Function) nor point
 function trust_regions(M::AbstractManifold, f, grad_f; kwargs...)
     return trust_regions(M, f, grad_f, rand(M); kwargs...)
 end
-# no Hessian (Function), but point (any)
+# no Hessian (Function), point (any)
 function trust_regions(
     M::AbstractManifold,
     f::TF,

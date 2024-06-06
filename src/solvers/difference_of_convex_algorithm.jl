@@ -196,45 +196,23 @@ function difference_of_convex_algorithm(
     ∂h,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    gradient=nothing,
-    kwargs...,
-)
-    mdco = ManifoldDifferenceOfConvexObjective(
-        f, ∂h; gradient=gradient, evaluation=evaluation
-    )
-    return difference_of_convex_algorithm(
-        M, mdco, p; g=g, evaluation=evaluation, gradient=gradient, kwargs...
-    )
-end
-function difference_of_convex_algorithm(
-    M::AbstractManifold,
-    f,
-    g,
-    ∂h,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     grad_g=nothing,
     gradient=nothing,
     kwargs...,
 )
-    q = [p]
-    f_(M, p) = f(M, p[])
-    g_(M, p) = g(M, p[])
-    gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
-    rs = difference_of_convex_algorithm(
-        M,
-        f_,
-        g_,
-        ∂h_,
-        q;
-        gradient=gradient_,
-        grad_g=grad_g_,
-        evaluation=evaluation,
-        kwargs...,
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    g_ = _ensure_mutating_cost(g, p)
+    gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    ∂h_ = _ensure_mutating_gradient(∂h, p, evaluation)
+    mdco = ManifoldDifferenceOfConvexObjective(
+        f_, ∂h_; gradient=gradient_, grad_g=grad_g_, evaluation=evaluation
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    rs = difference_of_convex_algorithm(
+        M, mdco, p_; g=g_, evaluation=evaluation, gradient=gradient_, kwargs...
+    )
+    return _ensure_matching_output(p, rs)
 end
 function difference_of_convex_algorithm(
     M::AbstractManifold, mdco::O, p; kwargs...

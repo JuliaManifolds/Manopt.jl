@@ -131,23 +131,12 @@ function subgradient_method(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation=evaluation)
-    return subgradient_method(M, sgo, p; evaluation=evaluation, kwargs...)
-end
-function subgradient_method(
-    M::AbstractManifold,
-    f,
-    ∂f,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    ∂f_ = _to_mutating_gradient(∂f, evaluation)
-    rs = subgradient_method(M, f_, ∂f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    ∂f_ = _ensure_mutating_gradient(∂f, p)
+    sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation=evaluation)
+    rs = subgradient_method(M, sgo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function subgradient_method(
     M::AbstractManifold, sgo::O, p; kwargs...

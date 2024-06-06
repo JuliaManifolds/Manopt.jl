@@ -234,7 +234,7 @@ function difference_of_convex_proximal_point(
 )
     p_ = _ensure_mutating_variable(p)
     cost_ = _ensure_mutating_cost(cost, p)
-    grad_h_ = _to_mutating_gradient(grad_h, evaluation)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
     g_ = _ensure_mutating_cost(g, p)
     gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
     grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)

@@ -57,27 +57,12 @@ function cyclic_proximal_point(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
-    return cyclic_proximal_point(M, mpo, p; evaluation=evaluation, kwargs...)
-end
-function cyclic_proximal_point(
-    M::AbstractManifold,
-    f,
-    proxes_f::Union{Tuple,AbstractVector},
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        proxes_f_ = [(M, λ, p) -> [pf(M, λ, p[])] for pf in proxes_f]
-    else
-        proxes_f_ = [(M, q, λ, p) -> (q .= [pf(M, λ, p[])]) for pf in proxes_f]
-    end
-    rs = cyclic_proximal_point(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
+    mpo = ManifoldProximalMapObjective(f_, proxes_f_; evaluation=evaluation)
+    rs = cyclic_proximal_point(M, mpo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function cyclic_proximal_point(
     M::AbstractManifold, mpo::O, p; kwargs...

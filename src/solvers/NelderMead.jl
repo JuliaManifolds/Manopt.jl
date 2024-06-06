@@ -31,9 +31,6 @@ end
 function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
 end
-function NelderMeadSimplex(M::AbstractManifold, p::Number, B::AbstractBasis; kwargs...)
-    return NelderMeadSimplex(M, [p], B; kwargs...)
-end
 function NelderMeadSimplex(
     M::AbstractManifold,
     p,
@@ -41,11 +38,12 @@ function NelderMeadSimplex(
     a::Real=0.025,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
 )
+    p_ = _ensure_mutating_variable(p)
     M_dim = manifold_dimension(M)
     vecs = [
-        get_vector(M, p, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
+        get_vector(M, p_, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
     ]
-    pts = map(X -> retract(M, p, X, retraction_method), vecs)
+    pts = map(X -> retract(M, p_, X, retraction_method), vecs)
     return NelderMeadSimplex(pts)
 end
 

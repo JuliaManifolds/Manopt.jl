@@ -94,24 +94,12 @@ end
 function conjugate_gradient_descent(
     M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation=AllocatingEvaluation(), kwargs...
 ) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    return conjugate_gradient_descent(M, mgo, p; evaluation=evaluation, kwargs...)
-end
-function conjugate_gradient_descent(
-    M::AbstractManifold,
-    f::TF,
-    grad_f::TDF,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TF,TDF}
-    # redefine initial point
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    rs = conjugate_gradient_descent(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    rs = conjugate_gradient_descent(M, mgo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function conjugate_gradient_descent(
     M::AbstractManifold, mgo::O, p=rand(M); kwargs...
