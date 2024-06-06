@@ -488,14 +488,3 @@ function step_solver!(
     end
     return dcps
 end
-#
-# Deprecated old variants with `prox_g` as a parameter
-#
-@deprecate difference_of_convex_proximal_point(
-    M::AbstractManifold, prox_g, grad_h, p; kwargs...
-) difference_of_convex_proximal_point(
-    M::AbstractManifold, grad_h, p; prox_g=prox_g, kwargs...
-)
-@deprecate difference_of_convex_proximal_point!(M, grad_h, prox_g, p; kwargs...) difference_of_convex_proximal_point!(
-    M, grad_h, p; prox_g=prox_g, kwargs...
-)
