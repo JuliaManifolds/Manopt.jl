@@ -350,7 +350,7 @@ Return the number of equality constraints of an [`ConstrainedManifoldObjective`]
 This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
 function equality_constraints_length(co::ConstrainedManifoldObjective)
-    return length(co.equality_constraints)
+    return isnothing(co.equality_constraints) ? 0 : length(co.equality_constraints)
 end
 function equality_constraints_length(co::AbstractDecoratedManifoldObjective)
     return equality_constraints_length(get_objective(co, false))
@@ -833,7 +833,7 @@ Return the number of inequality constraints of an [`ConstrainedManifoldObjective
 This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
 function inequality_constraints_length(co::ConstrainedManifoldObjective)
-    return length(co.inequality_constraints)
+    return isnothing(co.inequality_constraints) ? 0 : length(co.inequality_constraints)
 end
 function inequality_constraints_length(co::AbstractDecoratedManifoldObjective)
     return inequality_constraints_length(get_objective(co, false))

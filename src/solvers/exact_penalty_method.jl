@@ -205,7 +205,7 @@ Otherwise the problem is not constrained and you should consider using unconstra
 * `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
-mainly the [`ArrayPowerRepresentation`](@ref) (from `Manifolds.jl`) can be used if the gradients can be computed more efficiently in that representation.
+mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
 
 With `equality_constraints` and `inequality_constraints` you have to provide the dimension
 of the ranges of `h` and `g`, respectively. If not provided, together with `M` and the start point `p0`,
