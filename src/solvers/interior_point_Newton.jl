@@ -125,7 +125,7 @@ function interior_point_Newton!(
             cmo,
             length(μ) * minimum(μ .* s) / sum(μ .* s),
             sum(μ .* s) / sqrt(MeritFunction(_N, cmo, p, μ, λ, s)),
-            0.5,
+            0.1,
         ),
         initial_stepsize=1.0,
     ),
@@ -191,7 +191,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
 
     m, n = length(ips.μ), length(ips.λ)
     g = get_inequality_constraints(amp, ips.p)
-    Jg = get_grad_inequality_constraints(amp, ips.p)
+    grad_g = get_grad_inequality_constraints(amp, ips.p)
 
     N = M × ℝ^n
     q = rand(N)
@@ -219,8 +219,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     Xp, Xλ = Y[N, 1], Y[N, 2]
 
     if m > 0
-        Xμ = (ips.μ .* ([inner(M, ips.p, Jg[i], Xp) for i in 1:m])) ./ ips.s
-        Xs = (ips.ρ * ips.σ) ./ ips.μ - ips.s - ips.s .* Xμ ./ ips.μ
+        b = ips.ρ * ips.σ
+        Xμ = (ips.μ .* ([inner(M, ips.p, grad_g[i], Xp) for i in 1:m] + g) .+ b) ./ ips.s
+        Xs = b ./ ips.μ - ips.s - (ips.s ./ ips.μ) .* Xμ 
     end
 
     copyto!(K[1], X[N, 1], Xp)
