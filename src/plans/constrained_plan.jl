@@ -50,9 +50,9 @@ to automatically try to determine these sizes.
 Generate the constrained objective either with explicit constraints ``g`` and ``h``, and
 their gradients, or in the form where these are already encapsulated in [`VectorGradientFunction`](@ref)s.
 
-Both variants require that at least one of the constraint (and its gradient) is provided.
+Both variants require that at least one of the constraints (and its gradient) is provided.
 If any of the three parts provides a Hessian, the corresponding object, that is a
-[`ManifoldHessianObjective`](@ref) for `f´ or a [`VectorHessianFunction`](@ref) for `g` or `h`,
+[`ManifoldHessianObjective`](@ref) for `f` or a [`VectorHessianFunction`](@ref) for `g` or `h`,
 respectively, is created.
 """
 struct ConstrainedManifoldObjective{
@@ -699,8 +699,7 @@ function get_hess_equality_constraint(
     if isnothing(co.equality_constraints)
         pM = PowerManifold(M, range, 0)
         q = rand(pM) # an empty vector or matrix
-        Y = rand(pM; vector_at=q) # an empty vector or matrix of correct type
-        return Y
+        return zero_vector(pM, q) # an empty vector or matrix of correct type
     end
     return get_hessian(M, co.equality_constraints, p, X, j, range)
 end
