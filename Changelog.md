@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remodel `ConstrainedManifoldObjective` to store an `AbstractManifoldObjective`
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
   therein and implementing access to this Hessian
+* Fixed a bug that Lanczos produced NaNs when started exactly in a minimizer, since we divide by the gradient norm.
 
 ### Deprecated
 
