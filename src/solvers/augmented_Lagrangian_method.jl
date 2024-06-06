@@ -282,8 +282,7 @@ function augmented_Lagrangian_method(
     return _ensure_matching_output(p, rs)
 end
 function augmented_Lagrangian_method(
-    M::AbstractManifold, cmo::O, p=rand(M);
-    kwargs...
+    M::AbstractManifold, cmo::O, p=rand(M); kwargs...
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return augmented_Lagrangian_method!(M, cmo, q; kwargs...)

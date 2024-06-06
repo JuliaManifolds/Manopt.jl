@@ -210,7 +210,14 @@ function difference_of_convex_algorithm(
         f_, ∂h_; gradient=gradient_, evaluation=evaluation
     )
     rs = difference_of_convex_algorithm(
-        M, mdco, p_; g=g_, evaluation=evaluation, gradient=gradient_, grad_g=grad_g_, kwargs...
+        M,
+        mdco,
+        p_;
+        g=g_,
+        evaluation=evaluation,
+        gradient=gradient_,
+        grad_g=grad_g_,
+        kwargs...,
     )
     return _ensure_matching_output(p, rs)
 end
