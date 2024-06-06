@@ -131,7 +131,7 @@ And advantage here is, that again the single components can be evaluated individ
 
 * `value!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!:     the Jacobian of ``f``
+* `jacobian!!`:     the Jacobian of ``f``
 * `jacobian_type`: indicating / storing data for the type of ``J_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
@@ -198,9 +198,9 @@ or a single tangent space of the power manifold of lenth `n`.
 
 * `value!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!:     the Jacobian of ``f``
+* `jacobian!!`:     the Jacobian of ``f``
 * `jacobian_type`: indicating / storing data for the type of ``J_f``
-* `hessians!!:     the Hessians of ``f`` (in a component wise sense)
+* `hessians!!`:     the Hessians of ``f`` (in a component wise sense)
 * `hessian_type`:  indicating / storing data for the type of ``H_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
