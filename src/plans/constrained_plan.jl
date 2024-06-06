@@ -1,5 +1,5 @@
 @doc raw"""
-    ConstrainedManifoldObjective{T<:AbstractEvaluationType, C <: ConstraintType} <: AbstractManifoldObjective{T}
+    ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
 
 Describes the constrained objective
 ```math
@@ -56,7 +56,10 @@ If any of the three parts provides a Hessian, the corresponding object, that is 
 respectively, is created.
 """
 struct ConstrainedManifoldObjective{
-    T<:AbstractEvaluationType,MO<:AbstractManifoldObjective,EMO,IMO
+    T<:AbstractEvaluationType,
+    MO<:AbstractManifoldObjective,
+    EMO<:Union{AbstractVectorGradientFunction,Nothing},
+    IMO<:Union{AbstractVectorGradientFunction,Nothing},
 } <: AbstractManifoldObjective{T}
     objective::MO
     equality_constraints::EMO
