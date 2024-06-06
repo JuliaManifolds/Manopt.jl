@@ -224,50 +224,38 @@ function difference_of_convex_proximal_point(
     M::AbstractManifold,
     grad_h,
     p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     cost=nothing,
-    gradient=nothing,
-    kwargs...,
-)
-    mdcpo = ManifoldDifferenceOfConvexProximalObjective(
-        grad_h; cost=cost, gradient=gradient, evaluation=evaluation
-    )
-    return difference_of_convex_proximal_point(
-        M, mdcpo, p; evaluation=evaluation, kwargs...
-    )
-end
-function difference_of_convex_proximal_point(
-    M::AbstractManifold,
-    grad_h,
-    p::Number;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    cost=nothing,
     gradient=nothing,
     g=nothing,
     grad_g=nothing,
     prox_g=nothing,
     kwargs...,
 )
-    q = [p]
-    cost_ = isnothing(cost) ? nothing : (M, p) -> cost(M, p[])
+    p_ = _ensure_mutating_variable(p)
+    cost_ = _ensure_mutating_cost(cost, p)
     grad_h_ = _to_mutating_gradient(grad_h, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    prox_g_ = isnothing(prox_g) ? nothing : _to_mutating_gradient(prox_g, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    prox_g_ = _ensure_mutating_prox(prox_g, p, evaluation)
 
+    mdcpo = ManifoldDifferenceOfConvexProximalObjective(
+        grad_h_; cost=cost_, gradient=gradient_, evaluation=evaluation
+    )
     rs = difference_of_convex_proximal_point(
         M,
-        grad_h_,
-        q;
+        mdcpo,
+        p_;
         cost=cost_,
         evaluation=evaluation,
         gradient=gradient_,
         g=g_,
         grad_g=grad_g_,
         prox_g=prox_g_,
+        kwargs...,
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 
 function difference_of_convex_proximal_point(

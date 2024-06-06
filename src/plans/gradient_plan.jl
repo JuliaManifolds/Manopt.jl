@@ -221,13 +221,6 @@ function get_subgradient!(
     return get_gradient!(M, X, agmo, p)
 end
 
-function _to_mutating_gradient(grad_f, evaluation::AllocatingEvaluation)
-    return grad_f_(M, p) = [grad_f(M, p[])]
-end
-function _to_mutating_gradient(grad_f, evaluation::InplaceEvaluation)
-    return grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
-end
-
 @doc raw"""
     get_gradient(agst::AbstractGradientSolverState)
 
