@@ -170,7 +170,7 @@ function gradient_descent(
 )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
-    grad_f_ = _ensure_mutating_gradient(grad_f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
     rs = gradient_descent(M, mgo, p_; kwargs...)
     return _ensure_matching_output(p, rs)

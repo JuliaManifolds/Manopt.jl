@@ -133,7 +133,7 @@ function subgradient_method(
 )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
-    ∂f_ = _ensure_mutating_gradient(∂f, p)
+    ∂f_ = _ensure_mutating_gradient(∂f, p, evaluation)
     sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation=evaluation)
     rs = subgradient_method(M, sgo, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)

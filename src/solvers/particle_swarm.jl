@@ -249,11 +249,11 @@ function particle_swarm(
     velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
     kwargs...,
 )
-    f_ = _ensure_mutating_cost(f, p)
+    f_ = _ensure_mutating_cost(f, first(swarm))
     swarm_ = [_ensure_mutating_variable(s) for s in swarm]
     velocity_ = [_ensure_mutating_variable(v) for v in velocity]
-    mco = ManifoldCostObjective(f)
-    rs = particle_swarm(M, mco, swarm; velocity=velocity_, kwargs...)
+    mco = ManifoldCostObjective(f_)
+    rs = particle_swarm(M, mco, swarm_; velocity=velocity_, kwargs...)
     return _ensure_matching_output(first(swarm), rs)
 end
 function particle_swarm(

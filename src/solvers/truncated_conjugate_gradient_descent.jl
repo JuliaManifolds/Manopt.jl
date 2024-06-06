@@ -489,9 +489,8 @@ function truncated_conjugate_gradient_descent(
     mho = ManifoldHessianObjective(
         f_, grad_f_, Hess_f_, preconditioner_; evaluation=evaluation
     )
-    Y = copy(M, X_)
     rs = truncated_conjugate_gradient_descent(
-        M, mho, p_, Y; evaluation=evaluation, kwargs...
+        M, mho, p_, X_; evaluation=evaluation, kwargs...
     )
     return _ensure_matching_output(p, rs)
 end

@@ -224,12 +224,12 @@ function exact_penalty_method(
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
     g_ = _ensure_mutating_cost(g, p)
     grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
-    h_ = _ensure_mutating_gradient(h, p)
+    h_ = _ensure_mutating_cost(h, p)
     grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
     cmo = ConstrainedManifoldObjective(
         f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
     )
-    rs = exact_penalty_method(M, cmo, p; evaluation=evaluation, kwargs...)
+    rs = exact_penalty_method(M, cmo, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function exact_penalty_method(

@@ -355,7 +355,7 @@ function trust_regions(
     mho = ManifoldHessianObjective(
         f_, grad_f_, Hess_f_, preconditioner_; evaluation=evaluation
     )
-    rs = trust_regions(M, mho, p; evaluation=evaluation, kwargs...)
+    rs = trust_regions(M, mho, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
 # neither Hessian (Function) nor point
