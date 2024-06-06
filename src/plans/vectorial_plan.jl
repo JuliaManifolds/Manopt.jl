@@ -98,7 +98,7 @@ abstract type AbstractVectorFunction{E<:AbstractEvaluationType,FT<:AbstractVecto
               Function end
 
 @doc raw"""
-    VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}
+    VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
 
 Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (component wise)
 gradient.
@@ -111,7 +111,7 @@ abstract type AbstractVectorGradientFunction{
 } <: AbstractVectorFunction{E,FT} end
 
 @doc raw"""
-    VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractVectorGradientFunction{E, FT, JT}
+    VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractVectorGradientFunction{E, FT, JT}
 
 Represent a function ``f:\mathcal M → ℝ^n`` including it first derivative,
 either as a vector of gradients of a Jacobian
