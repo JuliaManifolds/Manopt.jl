@@ -93,49 +93,24 @@ include("../utils/example_tasks.jl")
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
         @test Y != X
-        Y2 = truncated_conjugate_gradient_descent( # with approximate Hessian
-            M,
-            f,
-            rgrad,
-            p,
-            X;
-            trust_region_radius=0.5,
-        )
-        @test isapprox(M, p, Y, Y2)
         # random point -> different result
-        Y3 = truncated_conjugate_gradient_descent( #random point and vector
+        Y2 = truncated_conjugate_gradient_descent( #random point and vector
             M,
             f,
             rgrad,
             rhess;
             trust_region_radius=0.5,
         )
+        @test Y2 != X
+        Y3 = truncated_conjugate_gradient_descent(
+            M, f, rgrad, rhess, p, X; trust_region_radius=0.5
+        )
         @test Y3 != X
-        Y4 = truncated_conjugate_gradient_descent( # 2 & 3
-            M,
-            f,
-            rgrad;
-            trust_region_radius=0.5,
+        Y4 = copy(M, p, X)
+        truncated_conjugate_gradient_descent!(
+            M, f, rgrad, rhess, p, Y4; trust_region_radius=0.5
         )
         @test Y4 != X
-        Y5 = truncated_conjugate_gradient_descent( # 2 & 3
-            M,
-            f,
-            rgrad,
-            rhess,
-            p,
-            X;
-            trust_region_radius=0.5,
-        )
-        @test Y5 != X
-        Y6 = copy(M, p, X)
-        truncated_conjugate_gradient_descent!(
-            M, f, rgrad, rhess, p, Y6; trust_region_radius=0.5
-        )
-        @test Y6 != X
-        Y7 = copy(M, p, X)
-        truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y7; trust_region_radius=0.5)
-        @test Y7 != X
     end
     @testset "Mutating" begin
         g = RGrad(M, A)

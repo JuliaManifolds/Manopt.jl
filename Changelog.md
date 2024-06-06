@@ -5,6 +5,12 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [0.5.0] unreleased
+
+## Removed
+
+* the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now as a mandatory argument. To use the old variant, provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
+
 ## [0.4.64] unreleased
 
 * Fix ambiguities that occurred due to point being nonmutating.
