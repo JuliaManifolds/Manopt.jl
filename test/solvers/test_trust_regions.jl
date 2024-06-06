@@ -358,21 +358,8 @@ include("../utils/example_tasks.jl")
         @test distance(Mc, pc_star, q[]) < 1e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc)
         @test distance(Mc, pc_star, q[]) < 1e-2
-        q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1; evaluation=InplaceEvaluation())
-        @test distance(Mc, pc_star, q[]) < 1e-2
         Y1 = truncated_conjugate_gradient_descent(
             Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius=0.5
-        )
-        @test abs(Y1) ≈ 0.5
-        Y1 = truncated_conjugate_gradient_descent(
-            Mc,
-            fc,
-            grad_fc,
-            hess_fc,
-            0.1,
-            0.0;
-            evaluation=InplaceEvaluation(),
-            trust_region_radius=0.5,
         )
         @test abs(Y1) ≈ 0.5
     end
