@@ -16,7 +16,7 @@ This can be written as ``J_g(p) = (c_1^{\mathrm{T)},…,c_m^{\mathrm{T)})^{\math
 every row ``c_i`` of this matrix is a set of coefficients such that
 `get_coefficients(M, p, c, B)` is the tangent vector ``\oepratorname{grad} g_i(p)``
 
-for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_(p) ∈ T_p\mathcal M``,
+for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal M``,
     ``i=1,…,m``.
 
 # Fields
@@ -46,7 +46,7 @@ end
     ComponentVectorialType <: AbstractVectorialType
 
 A type to indicate that constraints are implemented as component functions,
-for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_(p) ∈ T_p\mathcal M``, ``i=1,…,m``.
+for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal M``, ``i=1,…,m``.
 """
 struct ComponentVectorialType <: AbstractVectorialType end
 

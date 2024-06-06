@@ -76,7 +76,7 @@ function _val_to_ncons(val)
     end
 end
 
-# Try to estimate the number of constraints
+# Try to infer the number of constraints
 function _number_of_constraints(
     g,
     grad_g;
@@ -511,8 +511,7 @@ function get_grad_equality_constraint(
     if isnothing(co.equality_constraints)
         pM = PowerManifold(M, range, 0)
         q = rand(pM) # an empty vector or matrix
-        X = rand(pM; vector_at=q) # an empty vector or matrix of correct type
-        return X
+        return zero_vector(pM, q) # an empty vector or matrix of correct type
     end
     return get_gradient(M, co.equality_constraints, p, j, range)
 end
@@ -608,8 +607,7 @@ function get_grad_inequality_constraint(
     if isnothing(co.inequality_constraints)
         pM = PowerManifold(M, range, 0)
         q = rand(pM) # an empty vector or matrix
-        X = rand(pM; vector_at=q) # an empty vector or matrix of correct type
-        return X
+        return zero_vector(pM, q) # an empty vector or matrix of correct type
     end
     return get_gradient(M, co.inequality_constraints, p, j, range)
 end
@@ -785,8 +783,7 @@ function get_hess_inequality_constraint(
     if isnothing(co.inequality_constraints)
         pM = PowerManifold(M, range, 0)
         q = rand(pM) # an empty vector or matrix
-        Y = rand(pM; vector_at=q) # an empty vector or matrix of correct type
-        return Y
+        return zero_vector(pM, q) # an empty vector or matrix of correct type
     end
     return get_hessian(M, co.inequality_constraints, p, X, j, range)
 end
@@ -829,7 +826,7 @@ end
 @doc raw"""
     inequality_constraints_length(co::ConstrainedManifoldObjective)
 
-Return the number of equality constraints of an [`ConstrainedManifoldObjective`](@ref).
+Return the number of inequality constraints of an [`ConstrainedManifoldObjective`](@ref).
 This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
 function inequality_constraints_length(co::ConstrainedManifoldObjective)
