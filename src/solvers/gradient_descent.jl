@@ -111,44 +111,60 @@ function show(io::IO, gds::GradientDescentState)
     return print(io, s)
 end
 
-@doc raw"""
-    gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
-    gradient_descent(M, gradient_objective, p=rand(M); kwargs...)
-
-perform a gradient descent
-
+doc_gd_iterate = raw"""
 ```math
 p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
 \qquad k=0,1,…
 ```
+"""
+doc_gradient_descent = """
+    gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
+    gradient_descent(M, gradient_objective, p=rand(M); kwargs...)
+    gradient_descent!(M, f, grad_f, p; kwargs...)
+    gradient_descent!(M, gradient_objective, p; kwargs...)
+
+perform a gradient descent
+
+$(doc_gd_iterate)
 
 with different choices of the stepsize ``s_k`` available (see `stepsize` option below).
 
 # Input
 
-* `M`       a manifold ``\mathcal M``
-* `f`       a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
-* `grad_f`  the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
-  as a function `(M, p) -> X` or a function `(M, X, p) -> X`
-* `p`       an initial value `p` ``= p_0 ∈ \mathcal M``
+$_arg_M
+$_arg_f
+$_arg_grad_f
+$_arg_p
 
-Alternatively to `f` and `grad_f` you can provide
-the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+$_arg_alt_mgo
 
-# Optional
-* `direction`:          ([`IdentityUpdateRule`](@ref)) perform a processing of the direction, e.g.
-* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `grad_f(M, p)`
-  or [`InplaceEvaluation`](@ref) in place of the form `grad_f!(M, X, p)`.
-* `retraction_method`:  ([`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`) a retraction to use
-* `stepsize`:           ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
-  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `X`:                  ([`zero_vector(M,p)`]) provide memory and/or type of the gradient to use`
+# Keyword arguments
+
+* `direction` specifies to perform a certain processing of the direction,
+  for example [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref)
+
+  🏔️ [`IdentityUpdateRule`](@ref), which yields a classical gradient descent.
+
+$_kw_evaluation
+  🏔️ [`AllocatingEvaluation`](@ref)
+
+$_kw_retraction_method
+  🏔️ [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`
+
+$_kw_stepsize
+  🏔️ [`default_stepsize`](@ref)`(M, GradientDescentState)`)
+
+$_kw_stopping_criterion
+  🏔️ [`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+
+* `X` specify a memory internally to store the gradient
+
+  🏔️ [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
-[`decorate_objective!`](@ref) for objective, respectively.
+$_kw_others
+
 If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
 
 # Output
@@ -156,6 +172,8 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 the obtained (approximate) minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
+
+"$(doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
     return gradient_descent(M, f, grad_f, rand(M); kwargs...)
@@ -194,30 +212,7 @@ function gradient_descent(
     return gradient_descent!(M, mgo, q; kwargs...)
 end
 
-@doc raw"""
-    gradient_descent!(M, f, grad_f, p; kwargs...)
-    gradient_descent!(M, gradient_objective, p; kwargs...)
-
-perform a Gradient descent in-place of `p`
-
-```math
-p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr)
-```
-
-in place of `p` with different choices of ``s_k`` available.
-
-# Input
-
-* `M`      a manifold ``\mathcal M``
-* `f`      a cost function ``F:\mathcal M→ℝ`` to minimize
-* `grad_f` the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
-* `p`      an initial value ``p ∈ \mathcal M``
-
-Alternatively to `f` and `grad_f` you can provide
-the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
-
-For more options, especially [`Stepsize`](@ref)s for ``s_k``, see [`gradient_descent`](@ref)
-"""
+"$(doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
 function gradient_descent!(
     M::AbstractManifold,
