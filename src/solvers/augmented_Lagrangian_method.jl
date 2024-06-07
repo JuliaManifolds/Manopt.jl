@@ -363,14 +363,14 @@ function augmented_Lagrangian_method!(
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
-    inequality_constrains=-1,
-    equality_constrains=-1,
+    inequality_constrains=nothing,
+    equality_constrains=nothing,
     kwargs...,
 ) where {TF,TGF}
-    if inequality_constrains == -1
+    if isnothing(inequality_constrains)
         inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
     end
-    if equality_constrains == -1
+    if isnothing(equality_constrains)
         equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
     end
     cmo = ConstrainedManifoldObjective(
