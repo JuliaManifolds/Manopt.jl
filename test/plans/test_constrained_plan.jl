@@ -194,7 +194,7 @@ include("../utils/dummy_types.jl")
     hg = [X, -X]
     hh = [[0.0, 0.0, 0.0]]
 
-    @testset "ConstrainedManoptProblem speecial cases" begin
+    @testset "ConstrainedManoptProblem special cases" begin
         Y = zero_vector(M, p)
         for mcp in [mp, cop]
             @test get_equality_constraint(mcp, p, :) == c[2]
