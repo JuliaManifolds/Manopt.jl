@@ -37,7 +37,7 @@ to parts of the objective.
 
 Initialise the `ManifoldCountObjective` to wrap `objective` initializing the set of counts
 
-    ManifoldCountObjective(M::AbtractManifold, objective::AbstractManifoldObjective, count::AbstractVecor{Symbol}, init=0)
+    ManifoldCountObjective(M::AbstractManifold, objective::AbstractManifoldObjective, count::AbstractVecor{Symbol}, init=0)
 
 Count function calls on `objective` using the symbols in `count` initialising all entries to `init`.
 """
@@ -280,13 +280,13 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCountObjective, p, X)
 end
 
 function get_hessian_function(
-    sco::ManifoldCountObjective{AllocatingEvaluation}, recursive=false
+    sco::ManifoldCountObjective{AllocatingEvaluation}, recursive::Bool=false
 )
     recursive && return get_hessian_function(sco.objective, recursive)
     return (M, p, X) -> get_hessian(M, sco, p, X)
 end
 function get_hessian_function(
-    sco::ManifoldCountObjective{InplaceEvaluation}, recursive=false
+    sco::ManifoldCountObjective{InplaceEvaluation}, recursive::Bool=false
 )
     recursive && return get_hessian_function(sco.objective, recursive)
     return (M, Y, p, X) -> get_hessian!(M, Y, sco, p, X)

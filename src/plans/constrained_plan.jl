@@ -119,12 +119,12 @@ function ConstrainedManifoldObjective(
     hess_g=nothing,
     hess_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    equality_type=_vector_function_type_hint(h),
-    equality_gradient_type=_vector_function_type_hint(grad_h),
-    equality_hessian_type=_vector_function_type_hint(hess_h),
-    inequality_type=_vector_function_type_hint(g),
-    inequality_gradient_type=_vector_function_type_hint(grad_g),
-    inequality_hessian_type=_vector_function_type_hint(hess_g),
+    equality_type::AbstractVectorialType=_vector_function_type_hint(h),
+    equality_gradient_type::AbstractVectorialType=_vector_function_type_hint(grad_h),
+    equality_hessian_type::AbstractVectorialType=_vector_function_type_hint(hess_h),
+    inequality_type::AbstractVectorialType=_vector_function_type_hint(g),
+    inequality_gradient_type::AbstractVectorialType=_vector_function_type_hint(grad_g),
+    inequality_hessian_type::AbstractVectorialType=_vector_function_type_hint(hess_g),
     equality_constraints::Union{Integer,Nothing}=nothing,
     inequality_constraints::Union{Integer,Nothing}=nothing,
     M::Union{AbstractManifold,Nothing}=nothing,
@@ -288,7 +288,7 @@ problem is for.
 # Constructor
     ConstrainedManoptProblem(
         M::AbstractManifold,
-        co::ConstrainedManifoldObjetive;
+        co::ConstrainedManifoldObjective;
         range=NestedPowerRepresentation(),
         gradient_equality_range=range,
         gradient_inequality_range=range
@@ -296,7 +296,7 @@ problem is for.
         hessian_inequality_range=range
     )
 
-Creates a constrained manopt problem specifying an [`AbstractPowerRepresentation`](@ref)
+Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation`](@ref)
 for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
 """
 struct ConstrainedManoptProblem{
@@ -309,9 +309,9 @@ struct ConstrainedManoptProblem{
 } <: AbstractManoptProblem{TM}
     manifold::TM
     grad_equality_range::HR
-    grad_ineqality_range::GR
+    grad_inequality_range::GR
     hess_equality_range::HHR
-    hess_ineqality_range::GHR
+    hess_inequality_range::GHR
     objective::O
 end
 
@@ -325,7 +325,7 @@ function ConstrainedManoptProblem(
     hessian_inequality_range::GHR=range,
 ) where {
     TM<:AbstractManifold,
-    O,
+    O<:AbstractManifoldObjective,
     GR<:Union{AbstractPowerRepresentation,Nothing},
     HR<:Union{AbstractPowerRepresentation,Nothing},
     GHR<:Union{AbstractPowerRepresentation,Nothing},
@@ -366,7 +366,7 @@ get_unconstrained_objective(co::ConstrainedManifoldObjective) = co.objective
 
 function get_constraints(mp::AbstractManoptProblem, p)
     Base.depwarn(
-        "get_contsraints will be removed in a future release, use `get_equality_constraint($mp, $p, :)` and `get_equality_constraint($mp, $p, :)`, respectively",
+        "get_constraints will be removed in a future release, use `get_equality_constraint($mp, $p, :)` and `get_inequality_constraint($mp, $p, :)`, respectively",
         :get_constraints,
     )
     return [
@@ -376,7 +376,7 @@ function get_constraints(mp::AbstractManoptProblem, p)
 end
 function get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
     Base.depwarn(
-        "get_constraints will be removed in a future release, use `get_equality_constraint($M, $co, $p, :)` and `get_equality_constraint($M, $co, $p, :)`, respectively",
+        "get_constraints will be removed in a future release, use `get_equality_constraint($M, $co, $p, :)` and `get_inequality_constraint($M, $co, $p, :)`, respectively",
         :get_constraints,
     )
     return [get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :)]
@@ -406,10 +406,11 @@ Base.@deprecate get_equality_constraints!(
 ) get_equality_constraint!(M, X, co, p, :)
 
 @doc raw"""
-    get_equality_constraint(problem, p, j=:)
-    get_equality_constraint(manifold, objective, p, j=:)
+    get_equality_constraint(amp::AbstractManoptProblem, p, j=:)
+    get_equality_constraint(M::AbstractManifold, objective, p, j=:)
 
-evaluate the equality constraint of a [`ConstrainedManifoldObjective`](@ref) `objective`.
+Evaluate equality constraints of a [`ConstrainedManifoldObjective`](@ref) `objective`
+at point `p` and indices `j` (by default `:` which corresponds to all indices).
 """
 function get_equality_constraint end
 
@@ -451,8 +452,11 @@ Base.@deprecate get_inequality_constraints(
 ) get_inequality_constraint(M, co, p, :)
 
 @doc raw"""
-    get_inequality_constraint(amp::AbstractManoptProblem, p, i=:)
-    get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i=:, range=NestedPowerRepresentation())
+    get_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
+    get_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
+
+Evaluate inequality constraints of a [`ConstrainedManifoldObjective`](@ref) `objective`
+at point `p` and indices `j` (by default `:` which corresponds to all indices).
 """
 function get_inequality_constraint end
 
@@ -475,12 +479,12 @@ function get_inequality_constraint(
 end
 
 @doc raw"""
-    get_grad_equality_constraint(amp::AbstractManoptProblem, p, i)
-    get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i, range=NestedPowerRepresentation())
-    get_grad_equality_constraint!(amp::AbstractManoptProblem, X, p, i)
-    get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, i, range=NestedPowerRepresentation())
+    get_grad_equality_constraint(amp::AbstractManoptProblem, p, j)
+    get_grad_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
+    get_grad_equality_constraint!(amp::AbstractManoptProblem, X, p, j)
+    get_grad_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
 
-evaluate the gradient or gradients  of the equality constraint ``(\operatorname{grad} h(p))_j`` or ``\operatorname{grad} h_j(x)``,
+Evaluate the gradient or gradients  of the equality constraint ``(\operatorname{grad} h(p))_j`` or ``\operatorname{grad} h_j(p)``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the gradient.
 """
@@ -568,12 +572,12 @@ Base.@deprecate get_grad_equality_constraints!(
 ) get_grad_equality_constraint!(M, X, co, p, :)
 
 @doc raw"""
-    get_grad_inequality_constraint(amp::AbstractManoptProblem, p, i=:)
-    get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i=:, range=NestedPowerRepresentation())
-    get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, i=:)
-    get_grad_inequality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, i=:, range=NestedPowerRepresentation())
+    get_grad_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
+    get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
+    get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
+    get_grad_inequality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
 
-Evaluate the gradient or gradients of the inequality constraint ``(\operatorname{grad} h(p))_j`` or ``\operatorname{grad} h_j(x)``,
+Evaluate the gradient or gradients of the inequality constraint ``(\operatorname{grad} g(p))_j`` or ``\operatorname{grad} g_j(p)``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the gradient.
 """
@@ -591,7 +595,7 @@ function get_grad_inequality_constraint(
 end
 function get_grad_inequality_constraint(cmp::ConstrainedManoptProblem, p, j=:)
     return get_grad_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_ineqality_range
+        get_manifold(cmp), get_objective(cmp), p, j, cmp.grad_inequality_range
     )
 end
 function get_grad_inequality_constraint(
@@ -620,7 +624,7 @@ function get_grad_inequality_constraint!(amp::AbstractManoptProblem, X, p, j)
 end
 function get_grad_inequality_constraint!(cmp::ConstrainedManoptProblem, X, p, j)
     return get_grad_inequality_constraint!(
-        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_ineqality_range
+        get_manifold(cmp), X, get_objective(cmp), p, j, cmp.grad_inequality_range
     )
 end
 function get_grad_inequality_constraint!(
@@ -665,12 +669,12 @@ function get_hessian_function(co::ConstrainedManifoldObjective, recursive=false)
 end
 
 @doc raw"""
-    get_hess_equality_constraint(amp::AbstractManoptProblem, p, i=:)
-    get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i, range=NestedPowerRepresentation())
-    get_hess_equality_constraint!(amp::AbstractManoptProblem, X, p, i=:)
-    get_hess_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, i, range=NestedPowerRepresentation())
+    get_hess_equality_constraint(amp::AbstractManoptProblem, p, j=:)
+    get_hess_equality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
+    get_hess_equality_constraint!(amp::AbstractManoptProblem, X, p, j=:)
+    get_hess_equality_constraint!(M::AbstractManifold, X, co::ConstrainedManifoldObjective, p, j, range=NestedPowerRepresentation())
 
-evaluate the Hessian or Hessians of the equality constraint ``(\operatorname{Hess} h(p))_j`` or ``\operatorname{Hess} h_j(x)``,
+Evaluate the Hessian or Hessians of the equality constraint ``(\operatorname{Hess} h(p))_j`` or ``\operatorname{Hess} h_j(p)``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hessian.
 """
@@ -742,12 +746,12 @@ function get_hess_equality_constraint!(
 end
 
 @doc raw"""
-    get_hess_inequality_constraint(amp::AbstractManoptProblem, p, X, i=:)
-    get_hess_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, i=:, range=NestedPowerRepresentation())
-    get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, i=:)
-    get_hess_inequality_constraint!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, i=:, range=NestedPowerRepresentation())
+    get_hess_inequality_constraint(amp::AbstractManoptProblem, p, X, j=:)
+    get_hess_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
+    get_hess_inequality_constraint!(amp::AbstractManoptProblem, Y, p, j=:)
+    get_hess_inequality_constraint!(M::AbstractManifold, Y, co::ConstrainedManifoldObjective, p, X, j=:, range=NestedPowerRepresentation())
 
-evaluate the Hessian or Hessians of the inequality constraint ``(\operatorname{Hess} g(p)[X])_j`` or ``\operatorname{Hess} g_j(x)[X]``,
+Evaluate the Hessian or Hessians of the inequality constraint ``(\operatorname{Hess} g(p)[X])_j`` or ``\operatorname{Hess} g_j(p)[X]``,
 
 See also the [`ConstrainedManoptProblem`](@ref) to specify the range of the Hessian.
 """
@@ -766,7 +770,7 @@ function get_hess_inequality_constraint(
 end
 function get_hess_inequality_constraint(cmp::ConstrainedManoptProblem, p, X, j=:)
     return get_hess_inequality_constraint(
-        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_ineqality_range
+        get_manifold(cmp), get_objective(cmp), p, X, j, cmp.hess_inequality_range
     )
 end
 function get_hess_inequality_constraint(
@@ -805,7 +809,7 @@ function get_hess_inequality_constraint!(
 end
 function get_hess_inequality_constraint!(cmp::ConstrainedManoptProblem, Y, p, X, j=:)
     return get_hess_inequality_constraint!(
-        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_ineqality_range
+        get_manifold(cmp), Y, get_objective(cmp), p, X, j, cmp.hess_inequality_range
     )
 end
 function get_hess_inequality_constraint!(

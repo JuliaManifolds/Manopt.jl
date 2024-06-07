@@ -105,8 +105,20 @@ include("../utils/dummy_types.jl")
     @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
     @test Manopt.get_cost_function(cofa) === f
     @test Manopt.get_gradient_function(cofa) === grad_f
-    @test equality_constraints_length(cofa) == 1
-    @test inequality_constraints_length(cofa) == 2
+    @testset "lengths" begin
+        @test equality_constraints_length(cofa) == 1
+        @test inequality_constraints_length(cofa) == 2
+        cofE = ConstrainedManifoldObjective(
+            f, grad_f, nothing, nothing, h, grad_h; equality_constraints=1
+        )
+
+        cofI = ConstrainedManifoldObjective(
+            f, grad_f, g, grad_g, nothing, nothing; inequality_constraints=2
+        )
+        @test equality_constraints_length(cofI) == 0
+        @test inequality_constraints_length(cofE) == 0
+    end
+
     @test Manopt.get_unconstrained_objective(cofa) isa ManifoldGradientObjective
     cofha = ConstrainedManifoldObjective(
         f,

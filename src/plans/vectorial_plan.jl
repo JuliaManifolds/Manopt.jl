@@ -102,7 +102,7 @@ abstract type AbstractVectorFunction{E<:AbstractEvaluationType,FT<:AbstractVecto
 
 Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (component wise)
 gradient.
-The [´AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
+The [`AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
 and the [`AbstractVectorialType`](@ref)s `FT` and `JT` the formats in which
 the function and the gradient are provided, see [`AbstractVectorFunction`](@ref) for an explanation.
 """
@@ -146,7 +146,7 @@ And advantage here is, that again the single components can be evaluated individ
 Create a `VectorGradientFunction` of `f`  and its Jacobian (vector of gradients) `Jf`,
 where `f` maps into the Euclidean space of dimension `range_dimension`.
 Their types are specified by the `function_type`, and `jacobian_type`, respectively.
-The Jacobian can further be given as an allocating variant or an inplace-variant, specified
+The Jacobian can further be given as an allocating variant or an in-place variant, specified
 by the `evaluation=` keyword.
 """
 struct VectorGradientFunction{
@@ -628,7 +628,14 @@ Since `i` is assumed to be a linear index, you can provide
 * a `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients
 """
-get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range=nothing)
+get_hessian(
+    M::AbstractManifold,
+    vgf::VectorHessianFunction,
+    p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+)
 
 # Generic case, allocate (a) a single tangent vector
 function get_hessian(
@@ -809,7 +816,7 @@ function get_hessian!(
     return Y
 end
 
-get_hessian_function(vgf::VectorHessianFunction, recursive=false) = vgf.hessians!!
+get_hessian_function(vgf::VectorHessianFunction, recursive::Bool=false) = vgf.hessians!!
 
 @doc raw"""
     length(vgf::AbstractVectorFunction)

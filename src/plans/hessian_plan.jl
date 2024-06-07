@@ -124,8 +124,10 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, p, X) -> Y` for the [`AllocatingEvaluation`](@ref) case
 * `(M, Y, p, X) -> X` for the [`InplaceEvaluation`](@ref), working in-place of `Y`.
 """
-get_hessian_function(mho::ManifoldHessianObjective, recursive=false) = mho.hessian!!
-function get_hessian_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+get_hessian_function(mho::ManifoldHessianObjective, recursive::Bool=false) = mho.hessian!!
+function get_hessian_function(
+    admo::AbstractDecoratedManifoldObjective, recursive::Bool=false
+)
     return get_hessian_function(get_objective(admo, recursive))
 end
 
@@ -195,12 +197,12 @@ update_hessian_basis!(M, f, p) = f
 @doc raw"""
     AbstractApproxHessian <: Function
 
-An abstract supertypes for approximate Hessian functions, declares them also to be functions.
+An abstract supertype for approximate Hessian functions, declares them also to be functions.
 """
 abstract type AbstractApproxHessian <: Function end
 
 @doc raw"""
-    ApproxHessianFiniteDifference{E, P, T, G, RTR,, VTR, R <: Real} <: AbstractApproxHessian
+    ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <: AbstractApproxHessian
 
 A functor to approximate the Hessian by a finite difference of gradient evaluation.
 
