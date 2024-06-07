@@ -60,7 +60,7 @@ A special keyword is `:Stop`, which is only added to the final debug hook to pri
 
 Any symbol with a small letter is mapped to fields of the [`AbstractManoptSolverState`](@ref) which is used. This way you can easily print internal data, if you know their names.
 
-Let's look at an example first: if we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twentififth iteration.
+Let's look at an example first: if we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twenty-fifth iteration.
 
 Then we can write
 
@@ -102,7 +102,7 @@ p1 = exact_penalty_method(
 ```
 
 This also illustrates, that instead of `Symbol`s we can also always pass down a [`DebugAction`](@ref) directly, for example when there is a reason to create or configure the action more individually thatn the default from the symbol.
-Note that the number (`25`) yields that all but `:Start` and `:Stop` are only displayed every twentififth iteration.
+Note that the number (`25`) yields that all but `:Start` and `:Stop` are only displayed every twenty-fifth iteration.
 
 ## Subsolver debug
 

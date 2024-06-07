@@ -80,7 +80,7 @@ the [`check_gradient`](@ref)
 check_gradient(M, f, grad_f; plot=true)
 ```
 
-and the [`check_Hessian`](@ref), which requires a bit more tolerance in its verification linearity
+and the [`check_Hessian`](@ref), which requires a bit more tolerance in its linearity verification
 
 ```{julia}
 check_Hessian(M, f, grad_f, Hess_f; plot=true, error=:error, atol=1e-15)
