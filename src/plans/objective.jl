@@ -75,6 +75,10 @@ function ReturnManifoldObjective(
     return ReturnManifoldObjective{E,O2,O1}(o)
 end
 
+#
+# Internal converters if the variable in the high-level interface is a number.
+#
+
 function _ensure_mutating_cost(cost, q::Number)
     return isnothing(cost) ? cost : (M, p) -> cost(M, p[])
 end
@@ -114,12 +118,6 @@ end
 
 _ensure_mutating_variable(p) = p
 _ensure_mutating_variable(q::Number) = [q]
-"""
-    _ensure_matching_output(p, q)
-    _ensure_matching_output(e, q, s)
-
-If p is a number and q is a vector, return q[] (a number) otherwise q
-"""
 _ensure_matching_output(::T, q::Vector{T}) where {T} = length(q) == 1 ? q[] : q
 _ensure_matching_output(p, q) = q
 
