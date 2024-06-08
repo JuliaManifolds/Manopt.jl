@@ -6,7 +6,7 @@ The usual call is given by
 
     (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s
 
-that performs the record for the current problem and solver cmbination, and where `i` is
+that performs the record for the current problem and solver combination, and where `i` is
 the current iteration.
 
 By convention `i=0` is interpreted as "For Initialization only," so only
@@ -240,7 +240,7 @@ function (re::RecordEvery)(
     elseif re.always_update
         re.record(amp, ams, 0)
     end
-    # Set activity to activate or decativate subsolvers
+    # Set activity to activate or deactivate subsolvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
     set_manopt_parameter!(
@@ -388,7 +388,7 @@ getindex(r::RecordGroup, i) = get_record(r, i)
     RecordSubsolver <: RecordAction
 
 Record the current subsolvers recording, by calling [`get_record`](@ref)
-on the substate with
+on the sub state with
 
 # Fields
 * `records`: an array to store the recorded values
@@ -425,7 +425,7 @@ status_summary(::RecordSubsolver) = ":Subsolver"
 record action that only records if the `active` boolean is set to true.
 This can be set from outside and is for example triggered by |`RecordEvery`](@ref)
 on recordings of the subsolver.
-While this is for subsolvers maybe not completely necessary, recording vlaues that
+While this is for subsolvers maybe not completely necessary, recording values that
 are never accessible, is not that useful.
 
 # Fields
@@ -790,13 +790,13 @@ This collected vector is added to the `:Iteration => [...]` pair.
 If any of these two pairs does not exist, it is pairs are created when adding the corresponding symbols
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
-is called for the `Vector` and the result is added to the debug dictonaries entry
-with said symbold. This is wrapped into the [`RecordWhenActive`](@ref),
+is called for the `Vector` and the result is added to the debug dictionaries entry
+with said symbol. This is wrapped into the [`RecordWhenActive`](@ref),
 when the `:WhenActive` symbol is present
 
 # Return value
 
-A dictionary for the different enrty points where debug can happen, each containing
+A dictionary for the different entry points where debug can happen, each containing
 a [`RecordAction`](@ref) to call.
 
 Note that upon the initialisation all dictionaries but the `:StartAlgorithm`
@@ -826,12 +826,12 @@ function RecordFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
         if !isnothing(i)
             stop = popat!(b, i) #
             b = [b..., :Stop => [stop.second..., RecordActionFactory(s, :Stop)]]
-        else # regenerate since we have to maybe change type of b
+        else # regenerate since the type of b maybe has to be changed
             b = [b..., :Stop => [RecordActionFactory(s, :Stop)]]
         end
     end
     dictionary = Dict{Symbol,RecordAction}()
-    # Look for a global numner -> RecordEvery
+    # Look for a global number -> RecordEvery
     e = filter(x -> isa(x, Int), a)
     ae = length(e) > 0 ? last(e) : 0
     # Run through all (updated) pairs
@@ -852,7 +852,7 @@ Generate a [`RecordGroup`] of [`RecordAction`](@ref)s. The following rules are u
 
 1. Any `Symbol` contained in `a` is passed to [`RecordActionFactory`](@ref RecordActionFactory(s::AbstractManoptSolverState, ::Symbol))
 2. Any [`RecordAction`](@ref) is included as is.
-Any Pair of a Recordaction and a symbol, that is in order `RecordCost() => :A` is handled,
+Any Pair of a `RecordAction` and a symbol, that is in order `RecordCost() => :A` is handled,
 that the corresponding record action can later be accessed as `g[:A]`, where `g`is the record group generated here.
 
 If this results in more than one [`RecordAction`](@ref) a [`RecordGroup`](@ref) of these is build.
@@ -860,12 +860,13 @@ If this results in more than one [`RecordAction`](@ref) a [`RecordGroup`](@ref) 
 If any integers are present, the last of these is used to wrap the group in a
 [`RecordEvery`](@ref)`(k)`.
 
-If `:WhenActive` is present, the resulting Action is wrappedn in [`RecordWhenActive`](@ref), making it deactivatable by its parent solver.
+If `:WhenActive` is present, the resulting Action is wrapped in [`RecordWhenActive`](@ref),
+making it deactivatable by its parent solver.
 """
 function RecordGroupFactory(s::AbstractManoptSolverState, a::Array{<:Any,1})
     # filter out every
     group = Array{Union{<:RecordAction,Pair{<:RecordAction,Symbol}},1}()
-    for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter Ints, &Active
+    for e in filter(x -> !isa(x, Int) && (x ∉ [:WhenActive]), a) # filter `Int` and Active
         if e isa Symbol # factory for this symbol, store in a pair (for better access later)
             push!(group, RecordActionFactory(s, e) => e)
         elseif e isa Pair{<:RecordAction,Symbol} #already a generated action => symbol to store at

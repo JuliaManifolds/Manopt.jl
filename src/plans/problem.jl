@@ -23,10 +23,10 @@ abstract type AbstractManoptProblem{M<:AbstractManifold} end
 Model a default manifold problem, that (just) consists of the domain of optimisation,
 that is an `AbstractManifold` and an [`AbstractManifoldObjective`](@ref)
 """
-struct DefaultManoptProblem{TM<:AbstractManifold,Objective<:AbstractManifoldObjective} <:
+struct DefaultManoptProblem{TM<:AbstractManifold,O<:AbstractManifoldObjective} <:
        AbstractManoptProblem{TM}
     manifold::TM
-    objective::Objective
+    objective::O
 end
 
 """
