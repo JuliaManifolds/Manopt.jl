@@ -16,8 +16,9 @@ _arg_p = raw"* `p`, an initial value `p` ``= p_0 ∈ \mathcal M``"
 
 _arg_M = raw"* `M`, a manifold ``\mathcal M``"
 
+_kw_evaluation_default = raw"`evaluation = ` [`AllocatingEvaluation`](@ref)`()`"
 _kw_evaluation = raw"""
-* `evaluation`, specify whether the functions that return a value on a manifold or a tangent space
+  specify whether the functions that return a value on a manifold or a tangent space
   work by allocating its result([`AllocatingEvaluation`](@ref) or whether it accepts the result
   as its (usual second) input argument (after the manifold), that is we have an [`InplaceEvaluation`](@ref).
   For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`.
@@ -28,14 +29,15 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 [`decorate_objective!`](@ref) for objective, respectively.
 """
 
+_kw_retraction_method_default = raw"`retraction_method = ` [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_retraction_method = raw"""
-* `retraction_method`, a retraction to use internally, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`).
+  a retraction to use internally, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`).
 """
 
 _kw_stepsize = raw"""
-* `stepsize`, a functor inheriting from [`Stepsize`](@ref) to determine a step size
+  a functor inheriting from [`Stepsize`](@ref) to determine a step size
 """
 
 _kw_stopping_criterion = raw"""
-* `stopping_criterion`, a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 """

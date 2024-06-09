@@ -140,28 +140,26 @@ $_arg_alt_mgo
 
 # Keyword arguments
 
-* `direction` specifies to perform a certain processing of the direction,
-  for example [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref)
+* `direction = ` [`IdentityUpdateRule`](@ref)`()`:
+  specify to perform a certain processing of the direction, for example
+  [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref)
 
-  🏔️ [`IdentityUpdateRule`](@ref), which yields a classical gradient descent.
-
+* $_kw_evaluation_default :
 $_kw_evaluation
-  🏔️ [`AllocatingEvaluation`](@ref)
 
+* $_kw_retraction_method_default :
 $_kw_retraction_method
-  🏔️ [`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`
 
+* `stepsize = ` [`default_stepsize`](@ref)`(M, GradientDescentState)`:
 $_kw_stepsize
-  🏔️ [`default_stepsize`](@ref)`(M, GradientDescentState)`)
 
+* `stopping_criterion = ` [`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
 $_kw_stopping_criterion
-  🏔️ [`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`
 
-* `X` specify a memory internally to store the gradient
+* `X = ` [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)` :
+  specify a memory internally to store the gradient
 
-  🏔️ [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
-
-If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation = ` keyword is ignored.
 
 $_kw_others
 
