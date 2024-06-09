@@ -15,7 +15,7 @@ CurrentModule = Manopt
 ParticleSwarmState
 ```
 
-## Stopping Criteria
+## Stopping criteria
 
 ```@docs
 StopWhenSwarmVelocityLess

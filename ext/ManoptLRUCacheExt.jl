@@ -71,9 +71,10 @@ function Manopt.init_caches(
         (c === :GradInequalityConstraint) &&
             push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
         # For the (future) product tangent bundle this might also be just Ts
-        (c === :GradEqualityConstraints) && push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
+        (c === :GradEqualityConstraints) &&
+            push!(lru_caches, LRU{P,Union{T,Vector{T}}}(; maxsize=m))
         (c === :GradInequalityConstraints) &&
-            push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))
+            push!(lru_caches, LRU{P,Union{T,Vector{T}}}(; maxsize=m))
         # (c === :StochasticGradient)
         (c === :StochasticGradient) && push!(lru_caches, LRU{Tuple{P,Int},T}(; maxsize=m))
         (c === :StochasticGradients) && push!(lru_caches, LRU{P,Vector{T}}(; maxsize=m))

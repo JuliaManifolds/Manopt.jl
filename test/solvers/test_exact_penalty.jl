@@ -22,11 +22,23 @@ using LinearAlgebra: I, tr
     exact_penalty_method!(
         M, f, grad_f, sol_lqh2; g=g, grad_g=grad_g, smoothing=LinearQuadraticHuber()
     )
+    sol_lqh3 = copy(M, p0)
+    exact_penalty_method!(
+        M,
+        f,
+        grad_f,
+        sol_lqh3;
+        g=g,
+        grad_g=grad_g,
+        smoothing=LinearQuadraticHuber(),
+        gradient_inequality_range=NestedPowerRepresentation(),
+    )
     a_tol_emp = 8e-2
     @test isapprox(M, v0, sol_lse; atol=a_tol_emp)
     @test isapprox(M, v0, sol_lse2; atol=a_tol_emp)
     @test isapprox(M, v0, sol_lqh; atol=a_tol_emp)
     @test isapprox(M, v0, sol_lqh2; atol=a_tol_emp)
+    @test isapprox(M, v0, sol_lqh3; atol=a_tol_emp)
     # Dummy options
     mco = ManifoldCostObjective(f)
     dmp = DefaultManoptProblem(M, mco)

@@ -201,37 +201,59 @@ linearized_forward_operator
 
 ### Constrained objective
 
-Besides the [`AbstractEvaluationType`](@ref) there is one further property to
-distinguish among constraint functions, especially the gradients of the constraints.
-
-```@docs
-ConstraintType
-FunctionConstraint
-VectorConstraint
-```
-
-The [`ConstraintType`](@ref) is a parameter of the corresponding Objective.
-
 ```@docs
 ConstrainedManifoldObjective
+```
+
+It might be beneficial to use the adapted problem to specify different ranges for the gradients of the constraints
+
+```@docs
+ConstrainedManoptProblem
 ```
 
 #### Access functions
 
 ```@docs
-get_constraints
+equality_constraints_length
+inequality_constraints_length
+get_unconstrained_objective
 get_equality_constraint
-get_equality_constraints
 get_inequality_constraint
-get_inequality_constraints
 get_grad_equality_constraint
-get_grad_equality_constraints
-get_grad_equality_constraints!
-get_grad_equality_constraint!
 get_grad_inequality_constraint
-get_grad_inequality_constraint!
-get_grad_inequality_constraints
-get_grad_inequality_constraints!
+get_hess_equality_constraint
+get_hess_inequality_constraint
+```
+
+### A vectorial cost function
+
+```@docs
+Manopt.AbstractVectorFunction
+Manopt.AbstractVectorGradientFunction
+Manopt.VectorGradientFunction
+Manopt.VectorHessianFunction
+```
+
+
+```@docs
+Manopt.AbstractVectorialType
+Manopt.CoordinateVectorialType
+Manopt.ComponentVectorialType
+Manopt.FunctionVectorialType
+```
+
+#### Access functions
+
+```@docs
+Manopt.get_value
+Manopt.get_value_function
+Base.length(::VectorGradientFunction)
+```
+
+#### Internal functions
+
+```@docs
+Manopt._to_iterable_indices
 ```
 
 ### Subproblem objective

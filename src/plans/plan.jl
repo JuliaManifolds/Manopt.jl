@@ -56,18 +56,13 @@ the optimisation on manifolds is different from the usual “experience” in
 (classical, Euclidean) optimization.
 Any other value has the same effect as not setting it.
 """
-function get_manopt_parameter( # ignore args.
-    e::Symbol,
-    args...;
-    default=get_manopt_parameter(Val(e), Val(:default)),
+function get_manopt_parameter(
+    e::Symbol, args...; default=get_manopt_parameter(Val(e), Val(:default))
 )
     return @load_preference("$(e)", default)
 end
-function get_manopt_parameter( # reduce ambiguity, ignore s and args
-    e::Symbol,
-    s::Symbol,
-    args...;
-    default=get_manopt_parameter(Val(e), Val(:default)),
+function get_manopt_parameter(
+    e::Symbol, s::Symbol, args...; default=get_manopt_parameter(Val(e), Val(:default))
 )
     return @load_preference("$(e)", default)
 end# Handle empty defaults
@@ -124,6 +119,7 @@ include("gradient_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("subgradient_plan.jl")
+include("vectorial_plan.jl")
 
 include("subsolver_plan.jl")
 include("constrained_plan.jl")
