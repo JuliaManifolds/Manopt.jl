@@ -266,7 +266,7 @@ function exact_penalty_method(
     rs = exact_penalty_method(
         M,
         cmo,
-        p;
+        p_;
         evaluation=evaluation,
         equality_constrains=equality_constrains,
         inequality_constrains=inequality_constrains,
