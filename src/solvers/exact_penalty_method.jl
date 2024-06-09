@@ -267,31 +267,6 @@ function exact_penalty_method(
     )
 end
 function exact_penalty_method(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p::Number;
-    g=nothing,
-    h=nothing,
-    grad_g=nothing,
-    grad_h=nothing,
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
-    cmo = ConstrainedManifoldObjective(
-        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation, M=M, p=p
-    )
-    rs = exact_penalty_method(M, cmo, q; evaluation=evaluation, kwargs...)
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
-end
-function exact_penalty_method(
     M::AbstractManifold, cmo::O, p=rand(M); kwargs...
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
