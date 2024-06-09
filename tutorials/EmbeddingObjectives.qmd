@@ -80,7 +80,7 @@ the [`check_gradient`](@ref)
 check_gradient(M, f, grad_f; plot=true)
 ```
 
-and the [`check_Hessian`](@ref), which requires a bit more tolerance in its linearity check
+and the [`check_Hessian`](@ref), which requires a bit more tolerance in its linearity verification
 
 ```{julia}
 check_Hessian(M, f, grad_f, Hess_f; plot=true, error=:error, atol=1e-15)
@@ -200,8 +200,15 @@ Canonical=false
 
 ## Technical details
 
-This notebook was rendered with the following environment
+This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
+#| code-fold: true
+using Pkg
 Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
 ```

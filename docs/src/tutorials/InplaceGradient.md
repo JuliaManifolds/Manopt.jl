@@ -5,7 +5,7 @@ When it comes to time critical operations, a main ingredient in Julia is given b
 mutating functions, that is those that compute in place without additional memory
 allocations. In the following, we illustrate how to do this with `Manopt.jl`.
 
-Let’s start with the same function as in [Get Started: Optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+Let’s start with the same function as in [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
 and compute the mean of some points, only that here we use the sphere $\mathbb S^{30}$
 and $n=800$ points.
 
@@ -15,6 +15,7 @@ We first load all necessary packages.
 
 ``` julia
 using Manopt, Manifolds, Random, BenchmarkTools
+using ManifoldDiff: grad_distance, grad_distance!
 Random.seed!(42);
 ```
 
@@ -57,16 +58,16 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-    BenchmarkTools.Trial: 100 samples with 1 evaluation.
-     Range (min … max):  48.285 ms … 56.649 ms  ┊ GC (min … max): 4.84% … 6.96%
-     Time  (median):     49.552 ms              ┊ GC (median):    5.41%
-     Time  (mean ± σ):   50.151 ms ±  1.731 ms  ┊ GC (mean ± σ):  5.56% ± 0.64%
+    BenchmarkTools.Trial: 106 samples with 1 evaluation.
+     Range (min … max):  46.774 ms …  50.326 ms  ┊ GC (min … max): 2.31% … 2.47%
+     Time  (median):     47.207 ms               ┊ GC (median):    2.45%
+     Time  (mean ± σ):   47.364 ms ± 608.514 μs  ┊ GC (mean ± σ):  2.53% ± 0.25%
 
-       ▂▃ █▃▃▆    ▂
-      ▅████████▅█▇█▄▅▇▁▅█▅▇▄▇▅▁▅▄▄▄▁▄▁▁▁▄▄▁▁▁▁▁▁▄▁▁▁▁▁▁▄▁▄▁▁▁▁▁▁▄ ▄
-      48.3 ms         Histogram: frequency by time        56.6 ms <
+         ▄▇▅▇█▄▇                                                    
+      ▅▇▆████████▇▇▅▅▃▁▆▁▁▁▅▁▁▅▁▃▃▁▁▁▁▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅ ▃
+      46.8 ms         Histogram: frequency by time         50.2 ms <
 
-     Memory estimate: 194.10 MiB, allocs estimate: 655347.
+     Memory estimate: 182.50 MiB, allocs estimate: 615822.
 
 ## In-place Computation of the Gradient
 
@@ -116,15 +117,15 @@ We can again benchmark this
 ```
 
     BenchmarkTools.Trial: 176 samples with 1 evaluation.
-     Range (min … max):  27.419 ms … 34.154 ms  ┊ GC (min … max): 0.00% … 0.00%
-     Time  (median):     28.001 ms              ┊ GC (median):    0.00%
-     Time  (mean ± σ):   28.412 ms ±  1.079 ms  ┊ GC (mean ± σ):  0.73% ± 2.24%
+     Range (min … max):  27.358 ms … 84.206 ms  ┊ GC (min … max): 0.00% … 0.00%
+     Time  (median):     27.768 ms              ┊ GC (median):    0.00%
+     Time  (mean ± σ):   28.504 ms ±  4.338 ms  ┊ GC (mean ± σ):  0.60% ± 1.96%
 
-        ▁▅▇█▅▂▄ ▁
-      ▄▁███████▆█▇█▄▆▃▃▃▃▁▁▃▁▁▃▁▃▃▁▄▁▁▃▃▁▁▄▁▁▃▅▃▃▃▁▃▃▁▁▁▁▁▁▁▁▃▁▁▃ ▃
-      27.4 ms         Histogram: frequency by time        31.9 ms <
+        ▂█▇▂ ▂                                                     
+      ▆▇████▆█▆▆▄▄▃▄▄▃▃▃▁▃▃▃▃▃▃▃▃▃▄▃▃▃▃▃▃▁▃▁▁▃▁▁▁▁▁▁▃▃▁▁▃▃▁▁▁▁▃▃▃ ▃
+      27.4 ms         Histogram: frequency by time        31.4 ms <
 
-     Memory estimate: 3.76 MiB, allocs estimate: 5949.
+     Memory estimate: 3.83 MiB, allocs estimate: 5797.
 
 which is faster by about a factor of 2 compared to the first solver-call.
 Note that the results `m1` and `m2` are of course the same.
@@ -133,4 +134,33 @@ Note that the results `m1` and `m2` are of course the same.
 distance(M, m1, m2)
 ```
 
-    2.0004809792350595e-10
+    2.4669338186126805e-17
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+``` julia
+using Pkg
+Pkg.status()
+```
+
+    Status `~/Repositories/Julia/Manopt.jl/tutorials/Project.toml`
+      [6e4b80f9] BenchmarkTools v1.5.0
+      [5ae59095] Colors v0.12.11
+      [31c24e10] Distributions v0.25.108
+      [26cc04aa] FiniteDifferences v0.12.31
+      [7073ff75] IJulia v1.24.2
+      [8ac3fa9e] LRUCache v1.6.1
+      [af67fdf4] ManifoldDiff v0.3.10
+      [1cead3c2] Manifolds v0.9.18
+      [3362f125] ManifoldsBase v0.15.10
+      [0fc0a36d] Manopt v0.4.63 `..`
+      [91a5bcdd] Plots v1.40.4
+
+``` julia
+using Dates
+now()
+```
+
+    2024-05-26T13:52:05.613

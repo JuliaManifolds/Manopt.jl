@@ -32,7 +32,7 @@ If you found a bug or want to propose a feature, please open an issue in within 
 ### Add a missing method
 
 There is still a lot of methods for within the optimization framework of  `Manopt.jl`, may it be functions, gradients, differentials, proximal maps, step size rules or stopping criteria.
-If you notice a method missing and can contribute an implementation, please do so, and the maintainers will try help with the necessary details.
+If you notice a method missing and can contribute an implementation, please do so, and the maintainers try help with the necessary details.
 Even providing a single new method is a good contribution.
 
 ### Provide a new algorithm
@@ -77,4 +77,4 @@ Concerning documentation
 - if possible provide both mathematical formulae and literature references using [DocumenterCitations.jl](https://juliadocs.org/DocumenterCitations.jl/stable/) and BibTeX where possible
 - Always document all input variables and keyword arguments
 
-If you implement an algorithm with a certain application in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.
+If you implement an algorithm with a certain numerical example in mind, it would be great, if this could be added to the [ManoptExamples.jl](https://github.com/JuliaManifolds/ManoptExamples.jl) package as well.

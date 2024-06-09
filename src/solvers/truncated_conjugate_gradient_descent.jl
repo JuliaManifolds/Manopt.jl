@@ -558,7 +558,6 @@ function initialize_solver!(
     M = base_manifold(TpM)
     p = TpM.point
     trmo = get_objective(mp)
-    # TODO Reworked until here
     (tcgs.randomize) || zero_vector!(M, tcgs.Y, p)
     tcgs.HY = tcgs.randomize ? get_objective_hessian(M, trmo, p, tcgs.Y) : zero_vector(M, p)
     tcgs.X = get_objective_gradient(M, trmo, p) # Initialize gradient

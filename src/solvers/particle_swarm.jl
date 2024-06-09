@@ -365,14 +365,14 @@ end
 @doc raw"""
     StopWhenSwarmVelocityLess <: StoppingCriterion
 
-Stoping criterion for [`particle_swarm`](@ref), when the velocity of the swarm
+Stopping criterion for [`particle_swarm`](@ref), when the velocity of the swarm
 is less than a threshold.
 
 # Fields
 * `threshold`:      the threshold
 * `at_iteration`:   store the iteration the stopping criterion was (last) fulfilled
-* `reason`:         store the reaason why the stopping criterion was filfilled, see [`get_reason`](@ref)
-* `velocity_norms`: interims vector to store the norms of the velocities before coputing its norm
+* `reason`:         store the reason why the stopping criterion was fulfilled, see [`get_reason`](@ref)
+* `velocity_norms`: interim vector to store the norms of the velocities before computing its norm
 
 # Constructor
 
@@ -387,7 +387,7 @@ mutable struct StopWhenSwarmVelocityLess <: StoppingCriterion
     velocity_norms::Vector{Float64}
     StopWhenSwarmVelocityLess(tolerance::Float64) = new(tolerance, "", 0, Float64[])
 end
-# It just indicates loss of velocity, not that we converged to a minimizer
+# It just indicates loss of velocity, not convergence to a minimizer
 indicates_convergence(c::StopWhenSwarmVelocityLess) = false
 function (c::StopWhenSwarmVelocityLess)(
     mp::AbstractManoptProblem, pss::ParticleSwarmState, i::Int

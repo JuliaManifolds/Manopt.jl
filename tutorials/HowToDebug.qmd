@@ -60,7 +60,7 @@ A special keyword is `:Stop`, which is only added to the final debug hook to pri
 
 Any symbol with a small letter is mapped to fields of the [`AbstractManoptSolverState`](@ref) which is used. This way you can easily print internal data, if you know their names.
 
-Let's look at an example first: if we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every 25th iteration.
+Let's look at an example first: if we want to print the current iteration number, the current cost function value as well as the value `ϵ` from the [`ExactPenaltyMethodState`](@ref). To keep the amount of print at a reasonable level, we want to only print the debug every twenty-fifth iteration.
 
 Then we can write
 
@@ -79,15 +79,15 @@ in an algorithm run.
 * `:Start` to print something at the start of the algorith. At this place all other (the following) places are “reset”, by triggering each of them with an iteration number `0`
 * `:BeforeIteration` to print something before an iteration starts
 * `:Iteration` to print something _after_ an iteration. For example the group of prints from
-the last codeblock `[:Iteration, :Cost, " | ", :ϵ, 25,]` is added to this entry.
-* `:Stop` to print something when the algorithm stops. In the example above, the `:Stop` adds the [`DebugStoppingCriterion`](@ref) is added to this place.
+the last code block `[:Iteration, :Cost, " | ", :ϵ, 25,]` is added to this entry.
+* `:Stop` to print something when the algorithm stops. In the example, the `:Stop` adds the [`DebugStoppingCriterion`](@ref) is added to this place.
 
 Specifying something especially for one of these places is done by specifying a `Pair`,
 so for example `:BeforeIteration => :Iteration` would add the display of the iteration number
 to be printed _before_ the iteration is performed.
 
-Changing this in the above run will not change the output.
-being more precise for the other entries, we could also write
+Changing this in the run does not change the output.
+Being more precise for the other entries, we could also write
 
 ```{julia}
 p1 = exact_penalty_method(
@@ -102,7 +102,7 @@ p1 = exact_penalty_method(
 ```
 
 This also illustrates, that instead of `Symbol`s we can also always pass down a [`DebugAction`](@ref) directly, for example when there is a reason to create or configure the action more individually thatn the default from the symbol.
-Note that the number (`25`) yields that all but `:Start` and `:Stop` are only displayed every 25th iteration.
+Note that the number (`25`) yields that all but `:Start` and `:Stop` are only displayed every twenty-fifth iteration.
 
 ## Subsolver debug
 
@@ -110,7 +110,7 @@ Subsolvers have a `sub_kwargs` keyword, such that you can pass keywords to the s
 Keywords in a keyword have to be passed as pairs (`:debug => [...]`).
 
 For most debugs, there further exists a longer form to specify the format to print.
-We want to ise this to specify the format to print `ϵ`.
+We want to use this to specify the format to print `ϵ`.
 This is done by putting the corresponding symbol together with the string to use in formatting into a tuple like `(:ϵ," | ϵ: %.8f")`, where we can already include the divider as well.
 
 A main problem now is, that this debug is issued every sub solver call or initialisation, as the following print of just a `.` per sub solver test/call illustrates
@@ -191,3 +191,18 @@ end
 ```
 
 or you could implement that of course just for your specific problem or state.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```

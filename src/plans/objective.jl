@@ -8,7 +8,7 @@ abstract type AbstractEvaluationType end
 @doc raw"""
     AbstractManifoldObjective{E<:AbstractEvaluationType}
 
-Describe the collection of the optimization function ``f:  \mathcal M → \bbR` (or even a vectorial range)
+Describe the collection of the optimization function ``f: \mathcal M → ℝ`` (or even a vectorial range)
 and its corresponding elements, which might for example be a gradient or (one or more) proximal maps.
 
 All these elements should usually be implemented as functions

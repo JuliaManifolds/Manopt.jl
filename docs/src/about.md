@@ -1,7 +1,7 @@
 # About
 
 Manopt.jl inherited its name from [Manopt](https://manopt.org), a Matlab toolbox for optimization on manifolds.
-This Julia package was started and is currently maintained by [Ronny Bergmann](https://ronnybergmann.net/about.html).
+This Julia package was started and is currently maintained by [Ronny Bergmann](https://ronnybergmann.net/).
 
 The following people contributed
 * [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential `check` functions](helpers/checks.md)
@@ -20,7 +20,7 @@ the [GitHub repository](https://github.com/JuliaManifolds/Manopt.jl/)
 to clone/fork the repository or open an issue.
 
 
-# further packages
+# Further packages
 
 `Manopt.jl` belongs to the Manopt family:
 
@@ -29,7 +29,7 @@ to clone/fork the repository or open an issue.
 
 but there are also more packages providing tools on manifolds:
 
-* [Jax Geometry](https://bitbucket.org/stefansommer/jaxgeometry/src/main/) (Python/Jax) for differential geometry and stochastic dynamics with deep learning
+* [Jax Geometry](https://github.com/ComputationalEvolutionaryMorphometry/jaxgeometry) (Python/Jax) for differential geometry and stochastic dynamics with deep learning
 * [Geomstats](https://geomstats.github.io) (Python with several backends) focusing on statistics and machine learning :octocat: [GitHub repository](https://github.com/geomstats/geomstats)
 * [Geoopt](https://geoopt.readthedocs.io/en/latest/) (Python & PyTorch) Riemannian ADAM & SGD. :octocat: [GitHub repository](https://github.com/geoopt/geoopt)
 * [McTorch](https://github.com/mctorch/mctorch) (Python & PyToch) Riemannian SGD, Adagrad, ASA & CG.

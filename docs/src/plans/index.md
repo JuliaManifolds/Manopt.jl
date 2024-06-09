@@ -45,7 +45,7 @@ The following symbols are used.
 
 Any other lower case name or letter as well as single upper case letters access fields of the corresponding first argument.
 for example `:p` could be used to access the field `s.p` of a state.
-This is often, where the iterate is stored, so the recommended way is to use `:Iterate` from above-
+This is often, where the iterate is stored, so the recommended way is to use `:Iterate` from before.
 
 Since the iterate is often stored in the states fields `s.p` one _could_ access the iterate
 often also with `:p` and similarly the gradient with `:X`.

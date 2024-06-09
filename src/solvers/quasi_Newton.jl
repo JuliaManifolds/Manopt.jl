@@ -21,7 +21,7 @@ as well as for internal use
 * `p_old`                      the last iterate
 * `η`                          the current update direction
 * `X_old`                      the last gradient
-* `nondescent_direction_value` the value from the last inner product check for descent directions
+* `nondescent_direction_value` the value from the last inner product from checking for descent directions
 
 # Constructor
 
@@ -116,7 +116,7 @@ function get_message(qns::QuasiNewtonState)
     # collect messages from
     # (1) direction update or the
     # (2) the step size and combine them
-    # (3) the nondescent behaviour check message
+    # (3) the non-descent behaviour verification message
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
     msg3 = ""
@@ -223,10 +223,10 @@ The ``k``th iteration consists of
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
 * `nondescent_direction_behavior`: (`:reinitialize_direction_update`) specify how non-descent direction is handled.
   This can be
-  * `:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
-  * `:ignore` – the check is not performed, so any computed direction is accepted. No message is stored.
-  * `:reinitialize_direction_update` – discards operator state stored in direction update rules.
-  * any other value performs the check, keeps the direction but stores a message.
+  * `:step_towards_negative_gradient`: the direction is replaced with negative gradient, a message is stored.
+  * `:ignore`: the verification is not performed, so any computed direction is accepted. No message is stored.
+  * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
+  * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
 
 # Output

@@ -15,10 +15,10 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
 * `ϵ`:                  (`1e–3`) the accuracy tolerance
 * `ϵ_min`:              (`1e-6`) the lower bound for the accuracy tolerance
-* `λ`:                  (`ones(len(`[`get_equality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the equality constraints
+* `λ`:                  (`ones(n)`) the Lagrange multiplier with respect to the equality constraints
 * `λ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`:              (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `μ`:                  (`ones(len(`[`get_inequality_constraints`](@ref)`(p,x))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ`:                  (`ones(m)`) the Lagrange multiplier with respect to the inequality constraints
 * `μ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `ρ`:                  (`1.0`) the penalty parameter
 * `τ`:                  (`0.8`) factor for the improvement of the evaluation of the penalty parameter
@@ -76,8 +76,8 @@ mutable struct AugmentedLagrangianMethodState{
         λ_max::R=20.0,
         λ_min::R=-λ_max,
         μ_max::R=20.0,
-        μ::V=ones(length(get_inequality_constraints(M, co, p))),
-        λ::V=ones(length(get_equality_constraints(M, co, p))),
+        μ::V=ones(length(get_inequality_constraint(M, co, p, :))),
+        λ::V=ones(length(get_equality_constraint(M, co, p, :))),
         ρ::R=1.0,
         τ::R=0.8,
         θ_ρ::R=0.3,
@@ -230,26 +230,37 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 
 # Optional
 
-* `ϵ`:                      (`1e-3`) the accuracy tolerance
-* `ϵ_min`:                  (`1e-6`) the lower bound for the accuracy tolerance
-* `ϵ_exponent`:             (`1/100`) exponent of the ϵ update factor;
+* `ϵ`:                         (`1e-3`) the accuracy tolerance
+* `ϵ_min`:                     (`1e-6`) the lower bound for the accuracy tolerance
+* `ϵ_exponent`:                (`1/100`) exponent of the ϵ update factor;
    also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
-* `θ_ϵ`:                    (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
-* `μ`:                      (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
-* `μ_max`:                  (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ`:                      (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
-* `λ_max`:                  (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_min`:                  (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `τ`:                      (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `ρ`:                      (`1.0`) the penalty parameter
-* `θ_ρ`:                    (`0.3`) the scaling factor of the penalty parameter
-* `sub_cost`:               ([`AugmentedLagrangianCost`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_grad`:               ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_kwargs`:             keyword arguments to decorate the sub options, for example the `debug=` keyword.
-* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
-* `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
-* `sub_state`:              ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion`:     ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `θ_ϵ`:                       (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
+* `μ`:                         (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
+* `μ_max`:                     (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ`:                         (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
+* `λ_max`:                     (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min`:                     (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `τ`:                         (`0.8`) factor for the improvement of the evaluation of the penalty parameter
+* `ρ`:                         (`1.0`) the penalty parameter
+* `θ_ρ`:                       (`0.3`) the scaling factor of the penalty parameter
+* `equality_constraints`:      (`nothing`) the number ``n`` of equality constraints.
+* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
+* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
+* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
+* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
+* `sub_grad`:                  ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
+* `sub_kwargs`:                (`(;)`) keyword arguments to decorate the sub options, for example the `debug=` keyword.
+* `sub_stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
+* `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
+* `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+
+For the `range`s of the constraints' gradient, other power manifold tangent space representations,
+mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
+
+With `equality_constraints` and `inequality_constraints` you have to provide the dimension
+of the ranges of `h` and `g`, respectively. If not provided, together with `M` and the start point `p0`,
+a call to either of these is performed to try to infer these.
 
 # Output
 
@@ -265,6 +276,8 @@ function augmented_Lagrangian_method(
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
+    inequality_constrains::Union{Integer,Nothing}=nothing,
+    equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
     p_ = _ensure_mutating_variable(p)
@@ -275,8 +288,29 @@ function augmented_Lagrangian_method(
     h_ = _ensure_mutating_cost(h, p)
     grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
 
+    num_eq = if isnothing(equality_constrains)
+        _number_of_constraints(h_, grad_h_; M=M, p=p_)
+    else
+        inequality_constrains
+    end
+    num_ineq = if isnothing(inequality_constrains)
+        _number_of_constraints(g_, grad_g_; M=M, p=p_)
+    else
+        inequality_constrains
+    end
+
     cmo = ConstrainedManifoldObjective(
-        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation
+        f_,
+        grad_f_,
+        g_,
+        grad_g_,
+        h_,
+        grad_h_;
+        evaluation=evaluation,
+        inequality_constrains=num_ineq,
+        equality_constrains=num_eq,
+        M=M,
+        p=p,
     )
     rs = augmented_Lagrangian_method(M, cmo, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
@@ -305,13 +339,39 @@ function augmented_Lagrangian_method!(
     h=nothing,
     grad_g=nothing,
     grad_h=nothing,
+    inequality_constrains=nothing,
+    equality_constrains=nothing,
     kwargs...,
 ) where {TF,TGF}
+    if isnothing(inequality_constrains)
+        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    end
+    if isnothing(equality_constrains)
+        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    end
     cmo = ConstrainedManifoldObjective(
-        f, grad_f, g, grad_g, h, grad_h; evaluation=evaluation
+        f,
+        grad_f,
+        g,
+        grad_g,
+        h,
+        grad_h;
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
+        M=M,
+        p=p,
     )
     dcmo = decorate_objective!(M, cmo; kwargs...)
-    return augmented_Lagrangian_method!(M, dcmo, p; evaluation=evaluation, kwargs...)
+    return augmented_Lagrangian_method!(
+        M,
+        dcmo,
+        p;
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
+        kwargs...,
+    )
 end
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
@@ -322,14 +382,17 @@ function augmented_Lagrangian_method!(
     ϵ_min::Real=1e-6,
     ϵ_exponent::Real=1 / 100,
     θ_ϵ::Real=(ϵ_min / ϵ)^(ϵ_exponent),
-    μ::Vector=ones(length(get_inequality_constraints(M, cmo, p))),
+    μ::Vector=ones(length(get_inequality_constraint(M, cmo, p, :))),
     μ_max::Real=20.0,
-    λ::Vector=ones(length(get_equality_constraints(M, cmo, p))),
+    λ::Vector=ones(length(get_equality_constraint(M, cmo, p, :))),
     λ_max::Real=20.0,
     λ_min::Real=-λ_max,
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
+    gradient_range=nothing,
+    gradient_equality_range=gradient_range,
+    gradient_inequality_range=gradient_range,
     objective_type=:Riemannian,
     sub_cost=AugmentedLagrangianCost(cmo, ρ, μ, λ),
     sub_grad=AugmentedLagrangianGrad(cmo, ρ, μ, λ),
@@ -389,7 +452,16 @@ function augmented_Lagrangian_method!(
         stopping_criterion=stopping_criterion,
     )
     dcmo = decorate_objective!(M, cmo; objective_type=objective_type, kwargs...)
-    mp = DefaultManoptProblem(M, dcmo)
+    mp = if isnothing(gradient_equality_range) && isnothing(gradient_inequality_range)
+        DefaultManoptProblem(M, dcmo)
+    else
+        ConstrainedManoptProblem(
+            M,
+            dcmo;
+            gradient_equality_range=gradient_equality_range,
+            gradient_inequality_range=gradient_inequality_range,
+        )
+    end
     alms = decorate_state!(alms; kwargs...)
     solve!(mp, alms)
     return get_solver_return(get_objective(mp), alms)
@@ -420,14 +492,14 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     copyto!(M, alms.p, new_p)
 
     # update multipliers
-    cost_ineq = get_inequality_constraints(mp, alms.p)
+    cost_ineq = get_inequality_constraint(mp, alms.p, :)
     n_ineq_constraint = length(cost_ineq)
     alms.μ .=
         min.(
             ones(n_ineq_constraint) .* alms.μ_max,
             max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
         )
-    cost_eq = get_equality_constraints(mp, alms.p)
+    cost_eq = get_equality_constraint(mp, alms.p, :)
     n_eq_constraint = length(cost_eq)
     alms.λ =
         min.(

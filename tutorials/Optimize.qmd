@@ -155,7 +155,7 @@ Then we reach approximately the same point as in the previous run, but in far le
 [f(M, m3)-f(M,m4), distance(M, m3, m4)]
 ```
 
-## Using the “Tutorial” mode
+## Using the tutorial mode
 
 Since a few things on manifolds are a bit different from (classical) Euclidean optimization, `Manopt.jl` has a mode to warn about a few pitfalls.
 
@@ -187,7 +187,7 @@ the line search would take the gradient direction (and not the negative gradient
 as a start. The line search is still performed, but in this case returns a much too small,
 maybe even nearly zero step size.
 
-In other words – we have to be careful, that the optimisation stays a “local” argument we use.
+In other words, we have to be careful that the optimisation stays a “local” argument we use.
 
 This is also warned for in `"Tutorial"` mode. Calling
 
@@ -205,13 +205,15 @@ gradient_descent(M, f2, grad_f2, data[1], debug=[:Stop]);
 ```
 
 
-This also illustrates one way to deactivate the hints, namely by overwriting the `debug=` keyword, that in `Tutorial` mode contains addional warnings.the other option is to globally reset the `:Mode` back to
+This also illustrates one way to deactivate the hints, namely by overwriting the `debug=`
+keyword, that in `Tutorial` mode contains additional warnings.
+The other option is to globally reset the `:Mode` back to
 ```{julia}
 #| warning: true
 Manopt.set_manopt_parameter!(:Mode, "")
 ```
 
-## Example 2: computing the median of symmetric positive definite matrices.
+## Example 2: computing the median of symmetric positive definite matrices
 
 For the second example let's consider the manifold of [$3 × 3$ symmetric positive definite matrices](https://juliamanifolds.github.io/Manifolds.jl/stable/manifolds/symmetricpositivedefinite.html) and again 100 random points
 
@@ -224,7 +226,9 @@ data2 = [exp(N, q, σ * rand(N; vector_at=q)) for i in 1:m];
 ```
 
 Instead of the mean, let's consider a non-smooth optimisation task:
-The median can be generalized to Manifolds as the minimiser of the sum of distances, see [Bacak:2014](@cite). We define
+the median can be generalized to Manifolds as the minimiser of the sum of distances,
+see [Bacak:2014](@cite).
+We define
 
 ```{julia}
 g(N, q) = sum(1 / (2 * m) * distance.(Ref(N), Ref(q), data2))
@@ -275,6 +279,21 @@ x = get_record(res, :Iteration, :Iteration)
 y = get_record(res, :Iteration, :Cost)
 using Plots
 plot(x,y,xaxis=:log, label="CPPA Cost")
+```
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
 ```
 
 ## Literature
