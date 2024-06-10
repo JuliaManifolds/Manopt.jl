@@ -165,7 +165,7 @@ function (c::StopWhenResidualIsReducedByFactorOrPower)(
     if norm(M, p, tcgstate.residual) <=
        tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
         c.at_iteration = i
-       return true
+        return true
     end
     return false
 end
@@ -292,7 +292,7 @@ mutable struct StopWhenCurvatureIsNegative{R} <: StoppingCriterion
     at_iteration::Int
 end
 StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative(0.0)
-StopWhenCurvatureIsNegative(v::R) where {R<:Real}= StopWhenCurvatureIsNegative{R}(v,-1)
+StopWhenCurvatureIsNegative(v::R) where {R<:Real} = StopWhenCurvatureIsNegative{R}(v, -1)
 function (c::StopWhenCurvatureIsNegative)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )

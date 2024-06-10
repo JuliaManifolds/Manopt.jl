@@ -13,7 +13,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
-        @test get_stopping_criteria(s)[1].max_iterations == get_stopping_criteria(s2)[1].max_iterations
+        @test get_stopping_criteria(s)[1].max_iterations ==
+            get_stopping_criteria(s2)[1].max_iterations
 
         s3 = StopWhenCostLess(0.1)
         p = DefaultManoptProblem(
@@ -33,7 +34,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test Manopt._fast_any(x -> false, ())
 
         sn2 = StopAfterIteration(10) | s3
-        @test get_stopping_criteria(sn)[1].max_iterations == get_stopping_criteria(sn2)[1].max_iterations
+        @test get_stopping_criteria(sn)[1].max_iterations ==
+            get_stopping_criteria(sn2)[1].max_iterations
         @test get_stopping_criteria(sn)[2].threshold ==
             get_stopping_criteria(sn2)[2].threshold
         # then s3 is the only active one
@@ -244,8 +246,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         mco = ManifoldCostObjective(f)
         mp = DefaultManoptProblem(M, mco)
         s = NelderMeadState(M)
-        @test sc1(mp, s, 1) #always returns true since `f` is always NaN
-        @test !sc1(mp, s, 0) # test reset
+        @test sc1(mp, s, 1) # always returns true since `f` is always NaN
+        @test sc1(mp, s, 0) # test reset
         @test sc1.at_iteration == 0 # cost is also nan there
 
         s.p .= NaN

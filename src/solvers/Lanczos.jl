@@ -280,7 +280,7 @@ function get_reason(c::StopWhenFirstOrderProgress)
     if c.at_iteration > 0
         return "The algorithm has reduced the model grad norm by a factor $(c.θ)."
     end
-    if c.at_iteration==0 # gradient 0
+    if c.at_iteration == 0 # gradient 0
         return "The gradient of the gradient is zero."
     end
     return ""

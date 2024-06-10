@@ -772,7 +772,7 @@ mutable struct StopWhenSmallerOrEqual{R} <: StoppingCriterion
     value::Symbol
     minValue::R
     at_iteration::Int
-    function StopWhenSmallerOrEqual(value::Symbol, mValue::R) where {R <: Real}
+    function StopWhenSmallerOrEqual(value::Symbol, mValue::R) where {R<:Real}
         return new{R}(value, mValue, -1)
     end
 end
