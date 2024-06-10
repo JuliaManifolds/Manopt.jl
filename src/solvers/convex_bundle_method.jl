@@ -394,7 +394,7 @@ function convex_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopWhenLagrangeMultiplierLess(1e-8), StopAfterIteration(5000)
+        StopWhenLagrangeMultiplierLess(1e-8; names=[:ξ]), StopAfterIteration(5000)
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=convex_bundle_method_subsolver,
@@ -554,13 +554,14 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     end
     M = get_manifold(mp)
     if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerance[1]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) ≤ $(sc.tolerance[1]).\n"
+        sc.values[1] = -bms.ξ
         sc.at_iteration = i
         return true
     end
     ng = norm(M, bms.p_last_serious, bms.g)
     if (sc.mode == :both) && (bms.ε ≤ sc.tolerance[1]) && (ng ≤ sc.tolerance[2]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) ≤ $(sc.tolerance[1]) and |g| = $(ng) ≤ $(sc.tolerance[2]).\n"
+        sc.values[1] = bms.ε
+        sc.values[2] = ng
         sc.at_iteration = i
         return true
     end

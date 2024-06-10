@@ -246,14 +246,13 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s = NelderMeadState(M)
         @test sc1(mp, s, 1) #always returns true since `f` is always NaN
         @test !sc1(mp, s, 0) # test reset
-        @test length(get_reason(sc1)) == sc1.at_iteration # verify reset
+        @test sc1.at_iteration == 0 # cost is also nan there
 
         s.p .= NaN
         sc2 = StopWhenIterateNaN()
         @test startswith(repr(sc2), "StopWhenIterateNaN()\n")
-        @test sc2(mp, s, 1) #always returns true since p was now set to NaN
-        @test !sc2(mp, s, 0) # test reset
-        @test length(get_reason(sc2)) == 0 # verify reset
-        @test sc2.at_iteration < 0
+        @test sc2(mp, s, 1) # always returns true since p was now set to NaN
+        @test sc2(mp, s, 0) # test reset
+        @test sc2.at_iteration == 0 # Cost stil NaN after reset.
     end
 end

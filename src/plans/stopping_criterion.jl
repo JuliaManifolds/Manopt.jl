@@ -688,6 +688,7 @@ function (c::StopWhenCostNaN)(
     if i == 0 # reset on init
         c.at_iteration = -1
     end
+    # but still check
     if isnan(get_cost(p, get_iterate(s)))
         c.at_iteration = i
         return true
@@ -736,7 +737,7 @@ function (c::StopWhenIterateNaN)(
     end
     return false
 end
-function get_reasion(c::StopWhenIterateNaN)
+function get_reason(c::StopWhenIterateNaN)
     if (c.at_iteration >= 0)
         return "The algorithm reached an iterate containing NaNs iterate.\n"
     end
@@ -794,7 +795,7 @@ function get_reason(c::StopWhenSmallerOrEqual)
     return ""
 end
 function status_summary(c::StopWhenSmallerOrEqual)
-    has_stopped = length(c.at_iteration >= 0)
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Field :$(c.value) ≤ $(c.minValue):\t$s"
 end
@@ -820,7 +821,7 @@ mutable struct StopWhenSubgradientNormLess{R} <: StoppingCriterion
     at_iteration::Int
     threshold::R
     value::R
-    StopWhenSubgradientNormLess(ε::Float64) = new{R}(-1, ε, zero(ε))
+    StopWhenSubgradientNormLess(ε::R) where {R<:Real} = new{R}(-1, ε, zero(ε))
 end
 function (c::StopWhenSubgradientNormLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
@@ -993,6 +994,7 @@ function get_reason(c::StopWhenAny)
         return string((get_reason(subC) for subC in c.criteria)...)
     end
     return ""
+end
 function status_summary(c::StopWhenAny)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
@@ -1071,14 +1073,6 @@ function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
 end
 
 @doc raw"""
-    get_reason(o)
-
-return the current reason of why a [`StoppingCriterion`](@ref) has indicated to stop.
-This reason is empty (`""`) if the criterion has never been met.
-"""
-get_reason(s::AbstractManoptSolverState)
-
-@doc raw"""
     get_stopping_criteria(c)
 
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
@@ -1129,3 +1123,12 @@ end
 function update_stopping_criterion!(c::StoppingCriterion, ::Val, v)
     return c
 end
+
+@doc raw"""
+    get_reason(s)
+
+return the current reason stored within the [`StoppingCriterion`](@ref) from
+within the [`AbstractManoptSolverState`](@ref).
+This reason is empty (`""`) if the criterion has never been met.
+"""
+get_reason(s::AbstractManoptSolverState) = get_reason(get_state(s).stop)

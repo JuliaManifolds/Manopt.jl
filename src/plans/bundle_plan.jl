@@ -100,22 +100,38 @@ but a vector of two values is required for the `:both` mode.
 Here the first entry specifies the tolerance for ``ε`` (``c``),
 the second the tolerance for ``\lvert g \rvert`` (``\lvert d \rvert``), respectively.
 """
-mutable struct StopWhenLagrangeMultiplierLess{T<:Real,A<:AbstractVector{<:T}} <:
+mutable struct StopWhenLagrangeMultiplierLess{
+    T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:Symbol}}
+} <:
                StoppingCriterion
-    tolerance::A
+    tolerances::A
+    values::A
+    sumbols::B
     mode::Symbol
     at_iteration::Int
-    function StopWhenLagrangeMultiplierLess(tol::T; mode::Symbol=:estimate) where {T<:Real}
-        return new{T,Vector{T}}([tol], mode, "", -1)
+    function StopWhenLagrangeMultiplierLess(tol::T; mode::Symbol=:estimate, names::B=nothing) where {T<:Real, B<:Union{Nothing, <:AbstractVector{Symbol}}}
+        return new{T,Vector{T},B}([tol], zero([tol]), names, mode, -1)
     end
     function StopWhenLagrangeMultiplierLess(
-        tols::A; mode::Symbol=:estimate
-    ) where {T<:Real,A<:AbstractVector{<:T}}
-        return new{T,A}(tols, mode, "", -1)
+        tols::A; mode::Symbol=:estimate, names::B=nothing
+    ) where {T<:Real,A<:AbstractVector{<:T}, B<:Union{Nothing, <:AbstractVector{Symbol}}}
+        return new{T,A,B}(tols, zero(T), mode, -1)
     end
 end
+function get_reason(sc::StopWhenLagrangeMultiplierLess)
+    if (sc.at_iteration >= 0)
+        if isnothing(sc.sumbols)
+            tol_str = join(["$ai < $bi" for (ai, bi) in zip(sc.values, sc.tolerances)], ", ")
+        else
+            tol_str = join(["$si = $ai < $bi" for (si, ai, bi) in zip(sc.sumbols, sc.values, sc.tolerances)], ", ")
+        end
+        return "After $(c.at_iteration) iterations the algorithm reached an approximate critical point with tolerances $tol_str.\n"
+    end
+    return ""
+end
+
 function status_summary(sc::StopWhenLagrangeMultiplierLess)
-    s = length(sc.at_iteration) >= 0 ? "reached" : "not reached"
+    s = (sc.at_iteration >= 0) ? "reached" : "not reached"
     msg = ""
     (sc.mode === :both) && (msg = " ε ≤ $(sc.tolerance[1]) and |g| ≤ $(sc.tolerance[2])")
     (sc.mode === :estimate) && (msg = "  -ξ ≤ $(sc.tolerance[1])")

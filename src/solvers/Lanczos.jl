@@ -303,13 +303,6 @@ function (c::StopWhenFirstOrderProgress)(
     prog && (c.at_iteration = i)
     return prog
 end
-function get_reason(c::StopWhenFirstOrderProgress)
-    if (c.at_iteration >= 0)
-        return "The algorithm has reduced the model grad norm by a factor $(c.θ)."
-    end
-    return ""
-end
-
 function status_summary(c::StopWhenFirstOrderProgress)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"

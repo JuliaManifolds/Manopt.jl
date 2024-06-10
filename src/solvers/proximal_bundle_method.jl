@@ -256,7 +256,7 @@ function proximal_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     bundle_size=50,
-    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(1e-8) |
+    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(1e-8; names=[:ν,]) |
                                           StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
@@ -437,18 +437,18 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
 )
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     M = get_manifold(mp)
     if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerance[1]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) ≤ $(sc.tolerance[1]).\n"
+        sc.values[1] = -pbms.ν
         sc.at_iteration = i
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
     if (sc.mode == :both) && (pbms.c ≤ sc.tolerance[1]) && (nd ≤ sc.tolerance[2]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) ≤ $(sc.tolerance[1]) and |d| = $(nd) ≤ $(sc.tolerance[2]).\n"
+        sc.values[1] = pbms.c
+        sc.values[2] = nd
         sc.at_iteration = i
         return true
     end
