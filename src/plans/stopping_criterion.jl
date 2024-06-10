@@ -985,6 +985,7 @@ end
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
     (i == 0) && (c.at_iteration = -1) # reset on init
     if _fast_any(subC -> subC(p, s, i), c.criteria)
+        c.at_iteration = i
         return true
     end
     return false
