@@ -965,7 +965,7 @@ concatenation of all reasons (assuming that all non-indicating return `""`).
 """
 mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     criteria::TCriteria
-    at_iteration::Integer
+    at_iteration::Int
     StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
     StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
