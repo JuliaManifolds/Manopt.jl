@@ -12,6 +12,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
+        @test get_reason(s) === ""
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
         @test get_stopping_criteria(s)[1].max_iterations ==
             get_stopping_criteria(s2)[1].max_iterations
@@ -69,8 +70,10 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test repr(s) == "StopAfter(Millisecond(30))\n    $(Manopt.status_summary(s))"
         s(p, o, 0) # Start
         @test s(p, o, 1) == false
+        @test get_reason(s) == ""
         sleep(0.05)
         @test s(p, o, 2) == true
+        @test length(get_reason(s)) > 0
         @test_throws ErrorException StopAfter(Second(-1))
         @test_throws ErrorException update_stopping_criterion!(s, :MaxTime, Second(-1))
         update_stopping_criterion!(s, :MaxTime, Second(2))
