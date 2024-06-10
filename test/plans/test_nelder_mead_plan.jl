@@ -1,6 +1,6 @@
 using Manifolds, Manopt, Test
 
-@testet "Nelder Mead" begin
+@testset "Nelder Mead" begin
     @testset "Nelder Mead State" begin
         M = Euclidean(2)
         o = NelderMeadState(M)
