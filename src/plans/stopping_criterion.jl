@@ -61,6 +61,14 @@ store a threshold when to stop looking at the complete runtime. It uses
 `time_ns()` to measure the time and you provide a `Period` as a time limit,
 for example `Minute(15)`.
 
+# Fields
+
+* `threshold` stores the `Period` after which to stop
+* `start` stores the starting time when the algorithm is started, that is a call with `i=0`.
+* `time` stores the elapsed time
+* `at_iteration` indicates at which iteration (including `i=0`) the stopping criterion
+  was fulfilled and is `-1` while it is not fulfilled.
+
 # Constructor
 
     StopAfter(t)
@@ -69,34 +77,39 @@ initialize the stopping criterion to a `Period t` to stop after.
 """
 mutable struct StopAfter <: StoppingCriterion
     threshold::Period
-    reason::String
     start::Nanosecond
+    time::Nanosecond
     at_iteration::Int
     function StopAfter(t::Period)
         return if value(t) < 0
             error("You must provide a positive time period")
         else
-            new(t, "", Nanosecond(0), 0)
+            new(t, Nanosecond(0), Nanosecond(0), -1)
         end
     end
 end
 function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
     if value(c.start) == 0 || i <= 0 # (re)start timer
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
         c.start = Nanosecond(time_ns())
+        c.time = Nanosecond(0)
     else
-        cTime = Nanosecond(time_ns()) - c.start
+        c.time = Nanosecond(time_ns()) - c.start
         if i > 0 && (cTime > Nanosecond(c.threshold))
-            c.reason = "The algorithm ran for about $(floor(cTime, typeof(c.threshold))) and has hence reached the threshold of $(c.threshold).\n"
             c.at_iteration = i
             return true
         end
     end
     return false
 end
+function get_reason(c::StopAfter)
+    if (c.at_iteration >= 0)
+        return "The algorithm ran for $(floor(c.time, typeof(c.threshold))) (threshold: $(c.threshold)).\n"
+    end
+    return ""
+end
 function status_summary(c::StopAfter)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "stopped after $(c.threshold):\t$s"
 end
@@ -123,9 +136,9 @@ A functor for a stopping criterion to stop after a maximal number of iterations.
 
 # Fields
 
-* `maxIter`  stores the maximal iteration number where to stop at
-* `reason`   stores a reason of stopping if the stopping criterion has one be reached,
-  see [`get_reason`](@ref).
+* `max_iterations`  stores the maximal iteration number where to stop at
+* `at_iteration` indicates at which iteration (including `i=0`) the stopping criterion
+  was fulfilled and is `-1` while it is not fulfilled.
 
 # Constructor
 
@@ -134,32 +147,35 @@ A functor for a stopping criterion to stop after a maximal number of iterations.
 initialize the functor to indicate to stop after `maxIter` iterations.
 """
 mutable struct StopAfterIteration <: StoppingCriterion
-    maxIter::Int
-    reason::String
+    max_iterations::Int
     at_iteration::Int
-    StopAfterIteration(mIter::Int) = new(mIter, "", 0)
+    StopAfterIteration(i::Int) = new(i, -1)
 end
 function (c::StopAfterIteration)(
     ::P, ::S, i::Int
 ) where {P<:AbstractManoptProblem,S<:AbstractManoptSolverState}
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
-    if i >= c.maxIter
+    if i >= c.max_iterations
         c.at_iteration = i
-        c.reason = "The algorithm reached its maximal number of iterations ($(c.maxIter)).\n"
         return true
     end
     return false
 end
+function get_reason(c::StopAfterIteration)
+    if c.at_iteration >= c.max_iterations
+        return "The algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
+    end
+    return ""
+end
 function status_summary(c::StopAfterIteration)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "Max Iteration $(c.maxIter):\t$s"
+    return "Max Iteration $(c.max_iterations):\t$s"
 end
 function show(io::IO, c::StopAfterIteration)
-    return print(io, "StopAfterIteration($(c.maxIter))\n    $(status_summary(c))")
+    return print(io, "StopAfterIteration($(c.max_iterations))\n    $(status_summary(c))")
 end
 
 """
@@ -168,7 +184,7 @@ end
 Update the number of iterations after which the algorithm should stop.
 """
 function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration}, v::Int)
-    c.maxIter = v
+    c.max_iterations = v
     return c
 end
 
@@ -194,48 +210,46 @@ default. You can also provide an inverse_retraction_method for the `distance` or
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
-    IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
+    F,IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
 } <: StoppingCriterion
-    threshold::Float64
-    reason::String
+    threshold::F
+    last_change::F
     storage::TSSA
     inverse_retraction::IRT
     at_iteration::Int
 end
 function StopWhenChangeLess(
     M::AbstractManifold,
-    ε::Float64;
+    ε::F;
     storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
-) where {IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{IRT,typeof(storage)}(
-        ε, "", storage, inverse_retraction_method, 0
+) where {F<:Real,IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{F,IRT,typeof(storage)}(
+        ε, zero(ε), storage, inverse_retraction_method, -1
     )
 end
 function StopWhenChangeLess(
-    ε::Float64;
+    ε::F;
     storage::StoreStateAction=StoreStateAction([:Iterate]),
     manifold::AbstractManifold=DefaultManifold(),
     inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
-) where {IRT<:AbstractInverseRetractionMethod}
+) where {F,IRT<:AbstractInverseRetractionMethod}
     if !(manifold isa DefaultManifold)
         @warn "The `manifold` keyword is deprecated, use the first positional argument `M` instead."
     end
-    return StopWhenChangeLess{IRT,typeof(storage)}(
-        ε, "", storage, inverse_retraction_method, 0
+    return StopWhenChangeLess{F,IRT,typeof(storage)}(
+        ε, zero(ε), storage, inverse_retraction_method, -1
     )
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
-        d = distance(M, get_iterate(s), p_old, c.inverse_retraction)
-        if d < c.threshold && i > 0
-            c.reason = "The algorithm performed a step with a change ($d) less than $(c.threshold).\n"
+        c.last_change = distance(M, get_iterate(s), p_old, c.inverse_retraction)
+        if c.last_change < c.threshold && i > 0
             c.at_iteration = i
             c.storage(mp, s, i)
             return true
@@ -244,8 +258,14 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
     c.storage(mp, s, i)
     return false
 end
+function get_reason(c::StopWhenChangeLess)
+    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm performed a step with a change ($(c.last_change)) less than $(c.threshold).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenChangeLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "|Δp| < $(c.threshold): $s"
 end
@@ -276,25 +296,32 @@ optimization problem from within a [`AbstractManoptProblem`](@ref), i.e `get_cos
 
 initialize the stopping criterion to a threshold `ε`.
 """
-mutable struct StopWhenCostLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
+mutable struct StopWhenCostLess{F} <: StoppingCriterion
+    threshold::F
+    last_cost::F
     at_iteration::Int
-    StopWhenCostLess(ε::Float64) = new(ε, "", 0)
+    function StopWhenCostLess(ε::F) where {F<:Real}
+        return StopWhenCostLess{F}(ε, zero(ε), -1)
+    end
 end
 function (c::StopWhenCostLess)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
-    if i > 0 && get_cost(p, get_iterate(s)) < c.threshold
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))) less than the threshold ($(c.threshold)).\n"
+    c.last_cost = get_cost(p, get_iterate(s))
+    if c.last_cost < c.threshold
         c.at_iteration = i
         return true
     end
     return false
+end
+function get_reason(c::StopWhenCostLess)
+    if (c.last_cost < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm reached a cost function value ($(c.last_cost)) less than the threshold ($(c.threshold)).\n"
+    end
+    return ""
 end
 function status_summary(c::StopWhenCostLess)
     has_stopped = length(c.reason) > 0
@@ -350,28 +377,28 @@ mutable struct StopWhenEntryChangeLess{F,TF,TSSA<:StoreStateAction} <: StoppingC
     at_iteration::Int
     distance::F
     field::Symbol
-    reason::String
     storage::TSSA
     threshold::TF
+    last_change::TF
 end
 function StopWhenEntryChangeLess(
     field::Symbol, distance::F, threshold::TF; storage::TSSA=StoreStateAction([field])
 ) where {F,TF,TSSA<:StoreStateAction}
-    return StopWhenEntryChangeLess{F,TF,TSSA}(0, distance, field, "", storage, threshold)
+    return StopWhenEntryChangeLess{F,TF,TSSA}(
+        -1, distance, field, storage, threshold, zero(threshold)
+    )
 end
 
 function (sc::StopWhenEntryChangeLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i
 )
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     if has_storage(sc.storage, sc.field)
         old_field_value = get_storage(sc.storage, sc.field)
-        ε = sc.distance(mp, s, old_field_value, getproperty(s, sc.field))
-        if (i > 0) && (ε < sc.threshold)
-            sc.reason = "The algorithm performed a step with a change ($ε) in $(sc.field) less than $(sc.threshold).\n"
+        sc.last_change = sc.distance(mp, s, old_field_value, getproperty(s, sc.field))
+        if (i > 0) && (sc.last_change < sc.threshold)
             sc.at_iteration = i
             sc.storage(mp, s, i)
             return true
@@ -380,8 +407,14 @@ function (sc::StopWhenEntryChangeLess)(
     sc.storage(mp, s, i)
     return false
 end
+function get_reason(sc::StopWhenEntryChangeLess)
+    if (sc.last_change < sc.threshold) && (sc.at_iteration >= 0)
+        return "The algorithm performed a step with a change ($ε) in $(sc.field) less than $(sc.threshold).\n"
+    end
+    return ""
+end
 function status_summary(sc::StopWhenEntryChangeLess)
-    has_stopped = length(sc.reason) > 0
+    has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "|Δ:$(sc.field)| < $(sc.threshold): $s"
 end
@@ -422,24 +455,24 @@ indicates to stop when [`get_gradient`](@ref) is in (norm of) its change less th
 `vector_transport_method` denotes the vector transport ``\mathcal T`` used.
 """
 mutable struct StopWhenGradientChangeLess{
-    VTM<:AbstractVectorTransportMethod,TSSA<:StoreStateAction
+    F,VTM<:AbstractVectorTransportMethod,TSSA<:StoreStateAction
 } <: StoppingCriterion
-    threshold::Float64
-    reason::String
+    threshold::F
+    last_change::F
     storage::TSSA
     vector_transport_method::VTM
     at_iteration::Int
 end
 function StopWhenGradientChangeLess(
     M::AbstractManifold,
-    ε::Float64;
+    ε::F;
     storage::StoreStateAction=StoreStateAction(
         M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}
     ),
     vector_transport_method::VTM=default_vector_transport_method(M),
-) where {VTM<:AbstractVectorTransportMethod}
-    return StopWhenGradientChangeLess{VTM,typeof(storage)}(
-        ε, "", storage, vector_transport_method, 0
+) where {F,VTM<:AbstractVectorTransportMethod}
+    return StopWhenGradientChangeLess{F,VTM,typeof(storage)}(
+        ε, zero(ε), storage, vector_transport_method, -1
     )
 end
 function StopWhenGradientChangeLess(
@@ -452,8 +485,7 @@ function (c::StopWhenGradientChangeLess)(
 )
     M = get_manifold(mp)
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     if has_storage(c.storage, PointStorageKey(:Iterate)) &&
         has_storage(c.storage, VectorStorageKey(:Gradient))
@@ -462,9 +494,8 @@ function (c::StopWhenGradientChangeLess)(
         X_old = get_storage(c.storage, VectorStorageKey(:Gradient))
         p = get_iterate(s)
         Xt = vector_transport_to(M, p_old, X_old, p, c.vector_transport_method)
-        d = norm(M, p, Xt - get_gradient(s))
-        if d < c.threshold && i > 0
-            c.reason = "At iteration $i the change of the gradient ($d) was less than $(c.threshold).\n"
+        c.last_change = norm(M, p, Xt - get_gradient(s))
+        if c.last_change < c.threshold && i > 0
             c.at_iteration = i
             c.storage(mp, s, i)
             return true
@@ -473,8 +504,14 @@ function (c::StopWhenGradientChangeLess)(
     c.storage(mp, s, i)
     return false
 end
+function get_reason(c::StopWhenGradientChangeLess)
+    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
+        return "At iteration $(c.at_iteration) the change of the gradient ($(c.last_change)) was less than $(c.threshold).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenGradientChangeLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "|Δgrad f| < $(c.threshold): $s"
 end
@@ -509,8 +546,8 @@ A stopping criterion based on the current gradient norm.
 
 # Internal fields
 
-* `reason`:       store a string reason when the stop was indicated
-* `at_iteration`: store the iteration at which the stop indication happened
+* `last_change` store the last change
+* `at_iteration` store the iteration at which the stop indication happened
 
 # Constructor
 
@@ -522,11 +559,11 @@ where the norm to use can be specified in the `norm=` keyword.
 """
 mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
     norm::F
-    threshold::Float64
-    reason::String
+    threshold::TF
+    last_change::TF
     at_iteration::Int
     function StopWhenGradientNormLess(ε::TF; norm::F=norm) where {F,TF}
-        return new{F,TF}(norm, ε, "", 0)
+        return new{F,TF}(norm, ε, zero(ε), -1)
     end
 end
 
@@ -535,18 +572,22 @@ function (sc::StopWhenGradientNormLess)(
 )
     M = get_manifold(mp)
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     if (i > 0)
-        grad_norm = sc.norm(M, get_iterate(s), get_gradient(s))
-        if grad_norm < sc.threshold
-            sc.reason = "The algorithm reached approximately critical point after $i iterations; the gradient norm ($(grad_norm)) is less than $(sc.threshold).\n"
+        sc.last_change = sc.norm(M, get_iterate(s), get_gradient(s))
+        if sc.last_change < sc.threshold
             sc.at_iteration = i
             return true
         end
     end
     return false
+end
+function get_reason(c::StopWhenGradientNormLess)
+    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient norm ($(c.last_change)) is less than $(c.threshold).\n"
+    end
+    return ""
 end
 function status_summary(c::StopWhenGradientNormLess)
     has_stopped = length(c.reason) > 0
@@ -582,28 +623,32 @@ during the last iteration from within a [`AbstractManoptSolverState`](@ref).
 
 initialize the stopping criterion to a threshold `ε`.
 """
-mutable struct StopWhenStepsizeLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
+mutable struct StopWhenStepsizeLess{F} <: StoppingCriterion
+    threshold::F
+    last_stepsize::F
     at_iteration::Int
-    function StopWhenStepsizeLess(ε::Float64)
-        return new(ε, "", 0)
+    function StopWhenStepsizeLess(ε::F) where {F<:Real}
+        return new{F}(ε, zero(ε), -1)
     end
 end
 function (c::StopWhenStepsizeLess)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
-    step = get_last_stepsize(p, s, i)
-    if step < c.threshold && i > 0
-        c.reason = "The algorithm computed a step size ($step) less than $(c.threshold).\n"
+    c.last_stepsize = get_last_stepsize(p, s, i)
+    if c.last_stepsize < c.threshold && i > 0
         c.at_iteration = i
         return true
     end
     return false
+end
+function get_reason(c::StopWhenStepsizeLess)
+    if (c.last_stepsize < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm computed a step size ($(c.last_stepsize)) less than $(c.threshold).\n"
+    end
+    return ""
 end
 function status_summary(c::StopWhenStepsizeLess)
     has_stopped = length(c.reason) > 0
@@ -635,7 +680,6 @@ stop looking at the cost function of the optimization problem from within a [`Ab
 initialize the stopping criterion to NaN.
 """
 mutable struct StopWhenCostNaN <: StoppingCriterion
-    reason::String
     at_iteration::Int
     StopWhenCostNaN() = new("", 0)
 end
@@ -643,15 +687,19 @@ function (c::StopWhenCostNaN)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
-    if i > 0 && isnan(get_cost(p, get_iterate(s)))
-        c.reason = "The algorithm reached a cost function value ($(get_cost(p,get_iterate(s)))).\n"
-        c.at_iteration = 0
+    if isnan(get_cost(p, get_iterate(s)))
+        c.at_iteration = i
         return true
     end
     return false
+end
+function get_reason(c::StopWhenCostNaN)
+    if c.at_iteration >= 0
+        return "The algorithm reached a cost function value of NaN.\n"
+    end
+    return ""
 end
 function status_summary(c::StopWhenCostNaN)
     has_stopped = length(c.reason) > 0
