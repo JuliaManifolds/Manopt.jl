@@ -260,7 +260,7 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
 end
 function get_reason(c::StopWhenChangeLess)
     if (c.last_change < c.threshold) && (c.at_iteration >= 0)
-        return "The algorithm performed a step with a change ($(c.last_change)) less than $(c.threshold).\n"
+        return "At iteration $(c.at_iteration) the algorithm performed a step with a change ($(c.last_change)) less than $(c.threshold).\n"
     end
     return ""
 end
@@ -408,7 +408,7 @@ function (sc::StopWhenEntryChangeLess)(
 end
 function get_reason(sc::StopWhenEntryChangeLess)
     if (sc.last_change < sc.threshold) && (sc.at_iteration >= 0)
-        return "The algorithm performed a step with a change ($ε) in $(sc.field) less than $(sc.threshold).\n"
+        return "At iteation $(sc.at_iteration) the algorithm performed a step with a change ($(sc.last_change)) in $(sc.field) less than $(sc.threshold).\n"
     end
     return ""
 end
