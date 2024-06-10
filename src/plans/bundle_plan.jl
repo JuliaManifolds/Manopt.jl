@@ -105,7 +105,7 @@ mutable struct StopWhenLagrangeMultiplierLess{
 } <: StoppingCriterion
     tolerances::A
     values::A
-    sumbols::B
+    symbols::B
     mode::Symbol
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(

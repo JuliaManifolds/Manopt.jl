@@ -884,7 +884,7 @@ reasons.
 """
 mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
     criteria::TCriteria
-    at_iteration::Integer
+    at_iteration::Int
     StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
     StopWhenAll(c...) = new{typeof(c)}(c, -1)
 end

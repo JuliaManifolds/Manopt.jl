@@ -249,7 +249,7 @@ m(X_k) \leq m(0)
 """
 mutable struct StopWhenFirstOrderProgress{F} <: StoppingCriterion
     θ::F
-    at_iteration::Integer
+    at_iteration::Int
     StopWhenFirstOrderProgress(θ::F) where {F} = new{F}(θ, -1)
 end
 function (c::StopWhenFirstOrderProgress)(
