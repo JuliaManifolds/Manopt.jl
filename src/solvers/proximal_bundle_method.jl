@@ -440,13 +440,13 @@ function (sc::StopWhenLagrangeMultiplierLess)(
         sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerance[1]) && (i > 0)
+    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerances[1]) && (i > 0)
         sc.values[1] = -pbms.ν
         sc.at_iteration = i
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
-    if (sc.mode == :both) && (pbms.c ≤ sc.tolerance[1]) && (nd ≤ sc.tolerance[2]) && (i > 0)
+    if (sc.mode == :both) && (pbms.c ≤ sc.tolerances[1]) && (nd ≤ sc.tolerances[2]) && (i > 0)
         sc.values[1] = pbms.c
         sc.values[2] = nd
         sc.at_iteration = i

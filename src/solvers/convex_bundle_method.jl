@@ -553,13 +553,13 @@ function (sc::StopWhenLagrangeMultiplierLess)(
         sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerance[1]) && (i > 0)
+    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerances[1]) && (i > 0)
         sc.values[1] = -bms.ξ
         sc.at_iteration = i
         return true
     end
     ng = norm(M, bms.p_last_serious, bms.g)
-    if (sc.mode == :both) && (bms.ε ≤ sc.tolerance[1]) && (ng ≤ sc.tolerance[2]) && (i > 0)
+    if (sc.mode == :both) && (bms.ε ≤ sc.tolerances[1]) && (ng ≤ sc.tolerances[2]) && (i > 0)
         sc.values[1] = bms.ε
         sc.values[2] = ng
         sc.at_iteration = i
@@ -567,7 +567,6 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     end
     return false
 end
-
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     ::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
 )

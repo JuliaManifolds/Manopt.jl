@@ -990,7 +990,7 @@ function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState
     return false
 end
 function get_reason(c::StopWhenAny)
-    if (c.at_iteeration >= 0)
+    if (c.at_iteration >= 0)
         return string((get_reason(subC) for subC in c.criteria)...)
     end
     return ""
