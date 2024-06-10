@@ -244,22 +244,23 @@ m(X_k) \leq m(0)
 # Fields
 
 * `θ`:      the factor ``θ`` in the second condition
-* `reason`: a String indicating the reason if the criterion indicated to stop
+* `at_iteration`: indicates at which iteration (including `i=0`) the stopping criterion
+  was fulfilled and is `-1` while it is not fulfilled.
 """
-mutable struct StopWhenFirstOrderProgress <: StoppingCriterion
-    θ::Float64 #θ
-    reason::String
-    StopWhenFirstOrderProgress(θ::Float64) = new(θ, "")
+mutable struct StopWhenFirstOrderProgress{F} <: StoppingCriterion
+    θ::F
+    at_iteration::Integer
+    StopWhenFirstOrderProgress(θ::F) where {F} = new{F}(θ, -1)
 end
 function (c::StopWhenFirstOrderProgress)(
     dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, i::Int
 )
     if (i == 0)
         if norm(ls.X) == zero(eltype(ls.X))
-            c.reason = "The gradient of the gradient is zero."
+            c.at_iteration = 0
             return true
         end
-        c.reason = ""
+        c.at_iteration = -1
         return false
     end
     #Update Gradient
@@ -272,14 +273,23 @@ function (c::StopWhenFirstOrderProgress)(
     ny = norm(y)
     model_grad_norm = norm(nX .* [1, zeros(i - 1)...] + Ty + ls.σ * ny * [y..., 0])
     prog = (model_grad_norm <= c.θ * ny^2)
-    prog && (c.reason = "The algorithm has reduced the model grad norm by a factor $(c.θ).")
+    (prog) && (c.at_iteration = i)
     return prog
+end
+function get_reason(c::StopWhenFirstOrderProgress)
+    if c.at_iteration > 0
+        return "The algorithm has reduced the model grad norm by a factor $(c.θ)."
+    end
+    if c.at_iteration==0 # gradient 0
+        return "The gradient of the gradient is zero."
+    end
+    return ""
 end
 function (c::StopWhenFirstOrderProgress)(
     dmp::AbstractManoptProblem{<:TangentSpace}, ams::AbstractManoptSolverState, i::Int
 )
     if (i == 0)
-        c.reason = ""
+        c.at_iteration = -1
         return false
     end
     TpM = get_manifold(dmp)
@@ -290,12 +300,18 @@ function (c::StopWhenFirstOrderProgress)(
     # norm of current iterate
     nX = norm(base_manifold(TpM), p, q)
     prog = (nG <= c.θ * nX^2)
-    prog && (c.reason = "The algorithm has reduced the model grad norm by a factor $(c.θ).")
+    prog && (c.at_iteration = i)
     return prog
+end
+function get_reason(c::StopWhenFirstOrderProgress)
+    if (c.at_iteration >= 0)
+        return "The algorithm has reduced the model grad norm by a factor $(c.θ)."
+    end
+    return ""
 end
 
 function status_summary(c::StopWhenFirstOrderProgress)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "First order progress with θ=$(c.θ):\t$s"
 end
@@ -317,7 +333,8 @@ Note that this stopping criterion (for now) is only implemented for the case tha
 # Fields
 
 * `maxLanczosVectors`: maximal number of Lanczos vectors
-* `reason`:            a String indicating the reason if the criterion indicated to stop
+* `at_iteration` indicates at which iteration (including `i=0`) the stopping criterion
+  was fulfilled and is `-1` while it is not fulfilled.
 
 # Constructor
 
@@ -326,23 +343,29 @@ Note that this stopping criterion (for now) is only implemented for the case tha
 """
 mutable struct StopWhenAllLanczosVectorsUsed <: StoppingCriterion
     maxLanczosVectors::Int
-    reason::String
-    StopWhenAllLanczosVectorsUsed(maxLanczosVectors::Int) = new(maxLanczosVectors, "")
+    at_iteration::Int
+    StopWhenAllLanczosVectorsUsed(maxLanczosVectors::Int) = new(maxLanczosVectors, -1)
 end
 function (c::StopWhenAllLanczosVectorsUsed)(
     ::AbstractManoptProblem,
     arcs::AdaptiveRegularizationState{P,T,Pr,<:LanczosState},
     i::Int,
 ) where {P,T,Pr}
-    (i == 0) && (c.reason = "") # reset on init
+    (i == 0) && (c.at_iteration = -1) # reset on init
     if (i > 0) && length(arcs.sub_state.Lanczos_vectors) == c.maxLanczosVectors
-        c.reason = "The algorithm used all ($(c.maxLanczosVectors)) preallocated Lanczos vectors and may have stagnated.\n Consider increasing this value.\n"
+        c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenAllLanczosVectorsUsed)
+    if (c.at_iteration >= 0)
+        return "The algorithm used all ($(c.maxLanczosVectors)) preallocated Lanczos vectors and may have stagnated.\n Consider increasing this value.\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenAllLanczosVectorsUsed)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "All Lanczos vectors ($(c.maxLanczosVectors)) used:\t$s"
 end

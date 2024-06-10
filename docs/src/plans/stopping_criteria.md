@@ -16,7 +16,8 @@ The stopping criteria `s` might have certain internal values/fields it uses to v
 This is done when calling them as a function `s(amp::AbstractManoptProblem, ams::AbstractManoptSolverState)`,
 where the [`AbstractManoptProblem`](@ref) and the [`AbstractManoptSolverState`](@ref) together represent
 the current state of the solver. The functor returns either `false` when the stopping criterion is not fulfilled or `true` otherwise.
-One field all criteria should have is the `s.reason`, a string giving the reason to stop, see [`get_reason`](@ref).
+One field all criteria should have is the `s.at_iteration`, to indicate at which iteration
+the stopping criterion (last) indicated to stop. `0` refers to an indication _before_ starting the algorithm, while any negative number meant the stopping criterion is not (yet) fulfilled. To can access a string giving the reason of stopping see [`get_reason`](@ref).
 
 ## Generic stopping criteria
 

@@ -550,8 +550,7 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 )
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     M = get_manifold(mp)
     if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerance[1]) && (i > 0)

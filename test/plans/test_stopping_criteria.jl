@@ -13,7 +13,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
-        @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
+        @test get_stopping_criteria(s)[1].max_iterations == get_stopping_criteria(s2)[1].max_iterations
 
         s3 = StopWhenCostLess(0.1)
         p = DefaultManoptProblem(
@@ -21,11 +21,11 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         )
         s = GradientDescentState(Euclidean(), 1.0)
         @test !s3(p, s, 1)
-        @test length(s3.reason) == 0
+        @test length(get_reason(s3)) == 0
         s.p = 0.3
 
         @test s3(p, s, 2)
-        @test length(s3.reason) > 0
+        @test length(get_reason(s3)) > 0
         # repack
         sn = StopWhenAny(StopAfterIteration(10), s3)
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
@@ -33,7 +33,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test Manopt._fast_any(x -> false, ())
 
         sn2 = StopAfterIteration(10) | s3
-        @test get_stopping_criteria(sn)[1].maxIter == get_stopping_criteria(sn2)[1].maxIter
+        @test get_stopping_criteria(sn)[1].max_iterations == get_stopping_criteria(sn2)[1].max_iterations
         @test get_stopping_criteria(sn)[2].threshold ==
             get_stopping_criteria(sn2)[2].threshold
         # then s3 is the only active one
@@ -46,7 +46,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test repr(StopAfterIteration(10)) == s1
         @test !sm(p, s, 9)
         @test sm(p, s, 11)
-        an = sm.reason
+        an = get_reason(sm)
         m = match(r"^((.*)\n)+", an)
         @test length(m.captures) == 2 # both have to be active
         update_stopping_criterion!(s3, :MinCost, 1e-2)
@@ -119,11 +119,11 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         gs = GradientDescentState(Euclidean(2))
         Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1e-2])
         g(gp, gs, 0) # reset
-        @test length(g.reason) == 0
+        @test length(get_reason(g)) == 0
         @test !g(gp, gs, 1)
         Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1e-8])
         @test g(gp, gs, 2)
-        @test length(g.reason) > 0
+        @test length(get_reason(g)) > 0
         h = StopWhenSmallerOrEqual(:p, 1e-4)
         @test repr(h) ==
             "StopWhenSmallerOrEqual(:p, $(1e-4))\n    $(Manopt.status_summary(h))"
@@ -150,16 +150,16 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         tcgs.model_value = 1.0
         s = StopWhenModelIncreased()
         @test !s(hp, tcgs, 0)
-        @test s.reason == ""
+        @test get_reason(s) == ""
         s.model_value = 0.5 # tweak the model value to trigger a test
         @test s(hp, tcgs, 1)
-        @test length(s.reason) > 0
+        @test length(get_reason(s)) > 0
         s2 = StopWhenCurvatureIsNegative()
         tcgs.δHδ = -1.0
         @test !s2(hp, tcgs, 0)
-        @test s2.reason == ""
+        @test get_reason(s2) == ""
         @test s2(hp, tcgs, 1)
-        @test length(s2.reason) > 0
+        @test length(get_reason(s2)) > 0
         s3 = StopWhenResidualIsReducedByFactorOrPower()
         update_stopping_criterion!(s3, :ResidualFactor, 0.5)
         @test s3.κ == 0.5
@@ -178,12 +178,12 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         )
         s1 = StopWhenStepsizeLess(0.5)
         @test !s1(dmp, gds, 1)
-        @test s1.reason == ""
+        @test get_reason(s1) == ""
         gds.stepsize = ConstantStepsize(; stepsize=0.25)
         @test s1(dmp, gds, 2)
-        @test length(s1.reason) > 0
+        @test length(get_reason(s1)) > 0
         update_stopping_criterion!(gds, :MaxIteration, 200)
-        @test gds.stop.maxIter == 200
+        @test gds.stop.max_iterations == 200
         update_stopping_criterion!(s1, :MinStepsize, 1e-1)
         @test s1.threshold == 1e-1
     end
@@ -204,7 +204,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test !swecl(dmp, gds, 1) #First call stores
         @test swecl(dmp, gds, 2) #Second triggers (no change)
         swecl(dmp, gds, 0) # reset
-        @test length(swecl.reason) == 0
+        @test length(get_reason(swecl)) == 0
     end
 
     @testset "Subgradient Norm Stopping Criterion" begin
@@ -246,13 +246,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s = NelderMeadState(M)
         @test sc1(mp, s, 1) #always returns true since `f` is always NaN
         @test !sc1(mp, s, 0) # test reset
-        @test length(sc1.reason) == sc1.at_iteration # verify reset
+        @test length(get_reason(sc1)) == sc1.at_iteration # verify reset
 
         s.p .= NaN
         sc2 = StopWhenIterateNaN()
         @test startswith(repr(sc2), "StopWhenIterateNaN()\n")
         @test sc2(mp, s, 1) #always returns true since p was now set to NaN
         @test !sc2(mp, s, 0) # test reset
-        @test length(sc2.reason) == sc2.at_iteration # verify reset
+        @test length(get_reason(sc2)) == 0 # verify reset
+        @test sc2.at_iteration < 0
     end
 end

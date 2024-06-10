@@ -95,7 +95,7 @@ function (c::StopAfter)(::AbstractManoptProblem, ::AbstractManoptSolverState, i:
         c.time = Nanosecond(0)
     else
         c.time = Nanosecond(time_ns()) - c.start
-        if i > 0 && (cTime > Nanosecond(c.threshold))
+        if i > 0 && (c.time > Nanosecond(c.threshold))
             c.at_iteration = i
             return true
         end
@@ -301,7 +301,7 @@ mutable struct StopWhenCostLess{F} <: StoppingCriterion
     last_cost::F
     at_iteration::Int
     function StopWhenCostLess(ε::F) where {F<:Real}
-        return StopWhenCostLess{F}(ε, zero(ε), -1)
+        return new{F}(ε, zero(ε), -1)
     end
 end
 function (c::StopWhenCostLess)(
@@ -324,7 +324,7 @@ function get_reason(c::StopWhenCostLess)
     return ""
 end
 function status_summary(c::StopWhenCostLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "f(x) < $(c.threshold):\t$s"
 end
@@ -356,7 +356,6 @@ Evaluate whether a certain fields change is less than a certain threshold
 
 # Internal fields
 
-* `reason`:       store a string reason when the stop was indicated
 * `at_iteration`: store the iteration at which the stop indication happened
 
 stores a threshold when to stop looking at the norm of the change of the
@@ -590,7 +589,7 @@ function get_reason(c::StopWhenGradientNormLess)
     return ""
 end
 function status_summary(c::StopWhenGradientNormLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "|grad f| < $(c.threshold): $s"
 end
@@ -651,7 +650,7 @@ function get_reason(c::StopWhenStepsizeLess)
     return ""
 end
 function status_summary(c::StopWhenStepsizeLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Stepsize s < $(c.threshold):\t$s"
 end
@@ -681,7 +680,7 @@ initialize the stopping criterion to NaN.
 """
 mutable struct StopWhenCostNaN <: StoppingCriterion
     at_iteration::Int
-    StopWhenCostNaN() = new("", 0)
+    StopWhenCostNaN() = new(-1)
 end
 function (c::StopWhenCostNaN)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
@@ -702,7 +701,7 @@ function get_reason(c::StopWhenCostNaN)
     return ""
 end
 function status_summary(c::StopWhenCostNaN)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "f(x) is NaN:\t$s"
 end
@@ -722,26 +721,29 @@ stop looking at the cost function of the optimization problem from within a [`Ab
 initialize the stopping criterion to NaN.
 """
 mutable struct StopWhenIterateNaN <: StoppingCriterion
-    reason::String
     at_iteration::Int
-    StopWhenIterateNaN() = new("", 0)
+    StopWhenIterateNaN() = new(-1)
 end
 function (c::StopWhenIterateNaN)(
     p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
-    if i > 0 && any(isnan.(get_iterate(s)))
-        c.reason = "The algorithm reached a $(get_iterate(s)) iterate.\n"
+    if (i >= 0) && any(isnan.(get_iterate(s)))
         c.at_iteration = 0
         return true
     end
     return false
 end
+function get_reasion(c::StopWhenIterateNaN)
+    if (c.at_iteration >= 0)
+        return "The algorithm reached an iterate containing NaNs iterate.\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenIterateNaN)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "f(x) is NaN:\t$s"
 end
@@ -758,8 +760,6 @@ A functor for an stopping criterion, where the algorithm if stopped when a varia
 
 * `value`    stores the variable which has to fall under a threshold for the algorithm to stop
 * `minValue` stores the threshold where, if the value is smaller or equal to this threshold, the algorithm stops
-* `reason`   stores a reason of stopping if the stopping criterion has one be reached,
-  see [`get_reason`](@ref).
 
 # Constructor
 
@@ -767,29 +767,34 @@ A functor for an stopping criterion, where the algorithm if stopped when a varia
 
 initialize the functor to indicate to stop after `value` is smaller than or equal to `minValue`.
 """
-mutable struct StopWhenSmallerOrEqual <: StoppingCriterion
+mutable struct StopWhenSmallerOrEqual{R} <: StoppingCriterion
     value::Symbol
-    minValue::Real
-    reason::String
+    minValue::R
     at_iteration::Int
-    StopWhenSmallerOrEqual(value::Symbol, mValue::Real) = new(value, mValue, "", 0)
+    function StopWhenSmallerOrEqual(value::Symbol, mValue::R) where {R <: Real}
+        return new{R}(value, mValue, -1)
+    end
 end
 function (c::StopWhenSmallerOrEqual)(
     ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     if getfield(s, c.value) <= c.minValue
-        c.reason = "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
         c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenSmallerOrEqual)
+    if (c.at_iteration >= 0)
+        return "The value of the variable ($(string(c.value))) is smaller than or equal to its threshold ($(c.minValue)).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenSmallerOrEqual)
-    has_stopped = length(c.reason) > 0
+    has_stopped = length(c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Field :$(c.value) ≤ $(c.minValue):\t$s"
 end
@@ -811,29 +816,34 @@ A stopping criterion based on the current subgradient norm.
 Create a stopping criterion with threshold `ε` for the subgradient, that is, this criterion
 indicates to stop when [`get_subgradient`](@ref) returns a subgradient vector of norm less than `ε`.
 """
-mutable struct StopWhenSubgradientNormLess <: StoppingCriterion
+mutable struct StopWhenSubgradientNormLess{R} <: StoppingCriterion
     at_iteration::Int
-    threshold::Float64
-    reason::String
-    StopWhenSubgradientNormLess(ε::Float64) = new(0, ε, "")
+    threshold::R
+    value::R
+    StopWhenSubgradientNormLess(ε::Float64) = new{R}(-1, ε, zero(ε))
 end
 function (c::StopWhenSubgradientNormLess)(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
 )
     M = get_manifold(mp)
     if (i == 0) # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
-    if (norm(M, get_iterate(s), get_subgradient(s)) < c.threshold) && (i > 0)
+    c.value = norm(M, get_iterate(s), get_subgradient(s))
+    if (c.value < c.threshold) && (i > 0)
         c.at_iteration = i
-        c.reason = "The algorithm reached approximately critical point after $i iterations; the subgradient norm ($(norm(M,get_iterate(s),get_subgradient(s)))) is less than $(c.threshold).\n"
         return true
     end
     return false
 end
+function get_reason(c::StopWhenSubgradientNormLess)
+    if (c.value < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the subgradient norm ($(c.value)) is less than $(c.threshold).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenSubgradientNormLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "|∂f| < $(c.threshold): $s"
 end
@@ -873,20 +883,26 @@ reasons.
 """
 mutable struct StopWhenAll{TCriteria<:Tuple} <: StoppingCriterionSet
     criteria::TCriteria
-    reason::String
-    StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
-    StopWhenAll(c...) = new{typeof(c)}(c, "")
+    at_iteration::Integer
+    StopWhenAll(c::Vector{StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
+    StopWhenAll(c...) = new{typeof(c)}(c, -1)
 end
 function (c::StopWhenAll)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    (i == 0) && (c.reason = "") # reset on init
+    (i == 0) && (c.at_iteration = -1) # reset on init
     if all(subC -> subC(p, s, i), c.criteria)
-        c.reason = string([get_reason(subC) for subC in c.criteria]...)
+        c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenAll)
+    if c.at_iteration >= 0
+        return string([get_reason(subC) for subC in c.criteria]...)
+    end
+    return ""
+end
 function status_summary(c::StopWhenAll)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _all_ of the following are fulfilled:\n"
     for cs in c.criteria
@@ -948,9 +964,9 @@ concatenation of all reasons (assuming that all non-indicating return `""`).
 """
 mutable struct StopWhenAny{TCriteria<:Tuple} <: StoppingCriterionSet
     criteria::TCriteria
-    reason::String
-    StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), "")
-    StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, "")
+    at_iteration::Integer
+    StopWhenAny(c::Vector{<:StoppingCriterion}) = new{typeof(tuple(c...))}(tuple(c...), -1)
+    StopWhenAny(c::StoppingCriterion...) = new{typeof(c)}(c, -1)
 end
 
 # `_fast_any(f, tup::Tuple)`` is functionally equivalent to `any(f, tup)`` but on Julia 1.10
@@ -966,15 +982,19 @@ end
 end
 
 function (c::StopWhenAny)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    (i == 0) && (c.reason = "") # reset on init
+    (i == 0) && (c.at_iteration = -1) # reset on init
     if _fast_any(subC -> subC(p, s, i), c.criteria)
-        c.reason = string((get_reason(subC) for subC in c.criteria)...)
         return true
     end
     return false
 end
+function get_reason(c::StopWhenAny)
+    if (c.at_iteeration >= 0)
+        return string((get_reason(subC) for subC in c.criteria)...)
+    end
+    return ""
 function status_summary(c::StopWhenAny)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _one_ of the following are fulfilled:\n"
     for cs in c.criteria
@@ -1024,7 +1044,7 @@ function Base.:|(s1::StopWhenAny, s2::StopWhenAny)
     return StopWhenAny(s1.criteria..., s2.criteria...)
 end
 
-is_active_stopping_criterion(c::StoppingCriterion) = !isempty(c.reason)
+is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
 
 @doc raw"""
     get_active_stopping_criteria(c)
@@ -1051,21 +1071,12 @@ function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
 end
 
 @doc raw"""
-    get_reason(c)
-
-return the current reason stored within a [`StoppingCriterion`](@ref) `c`.
-This reason is empty if the criterion has never been met.
-"""
-get_reason(c::sC) where {sC<:StoppingCriterion} = c.reason
-
-@doc raw"""
     get_reason(o)
 
-return the current reason stored within the [`StoppingCriterion`](@ref) from
-within the [`AbstractManoptSolverState`](@ref) This reason is empty if the criterion has never
-been met.
+return the current reason of why a [`StoppingCriterion`](@ref) has indicated to stop.
+This reason is empty (`""`) if the criterion has never been met.
 """
-get_reason(s::AbstractManoptSolverState) = get_reason(get_state(s).stop)
+get_reason(s::AbstractManoptSolverState)
 
 @doc raw"""
     get_stopping_criteria(c)

@@ -321,7 +321,6 @@ A functor for testing if the curvature of the model value increased.
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
 mutable struct StopWhenModelIncreased <: StoppingCriterion
-    reason::String
     at_iteration::Int
     model_value::Float64
 end
@@ -330,11 +329,11 @@ function (c::StopWhenModelIncreased)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
         c.model_value = Inf
     end
     if i > 0 && (tcgs.model_value > c.model_value)
+        c.at_iteration = i
         c.reason = "Model value increased from $(c.model_value) to $(tcgs.model_value).\n"
         return true
     end
