@@ -446,7 +446,10 @@ function (sc::StopWhenLagrangeMultiplierLess)(
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
-    if (sc.mode == :both) && (pbms.c ≤ sc.tolerances[1]) && (nd ≤ sc.tolerances[2]) && (i > 0)
+    if (sc.mode == :both) &&
+        (pbms.c ≤ sc.tolerances[1]) &&
+        (nd ≤ sc.tolerances[2]) &&
+        (i > 0)
         sc.values[1] = pbms.c
         sc.values[2] = nd
         sc.at_iteration = i
