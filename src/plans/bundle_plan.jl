@@ -92,7 +92,7 @@ For the [`proximal_bundle_method`](@ref), the equation reads ``-ν = μ \lvert d
 
 # Constructors
 
-    StopWhenLagrangeMultiplierLess(tolerance=1e-6; mode::Symbol=:estimate)
+    StopWhenLagrangeMultiplierLess(tolerance=1e-6; mode::Symbol=:estimate, names=nothing)
 
 Create the stopping criterion for one of the `mode`s mentioned.
 Note that tolerance can be a single number for the `:estimate` case,
@@ -101,27 +101,27 @@ Here the first entry specifies the tolerance for ``ε`` (``c``),
 the second the tolerance for ``\lvert g \rvert`` (``\lvert d \rvert``), respectively.
 """
 mutable struct StopWhenLagrangeMultiplierLess{
-    T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:Symbol}}
+    T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}
 } <: StoppingCriterion
     tolerances::A
     values::A
-    symbols::B
+    names::B
     mode::Symbol
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(
         tol::T; mode::Symbol=:estimate, names::B=nothing
-    ) where {T<:Real,B<:Union{Nothing,<:AbstractVector{Symbol}}}
+    ) where {T<:Real,B<:Union{Nothing,<:AbstractVector{<:String}}}
         return new{T,Vector{T},B}([tol], zero([tol]), names, mode, -1)
     end
     function StopWhenLagrangeMultiplierLess(
         tols::A; mode::Symbol=:estimate, names::B=nothing
-    ) where {T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{Symbol}}}
+    ) where {T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}}
         return new{T,A,B}(tols, zero(tols), names, mode, -1)
     end
 end
 function get_reason(sc::StopWhenLagrangeMultiplierLess)
     if (sc.at_iteration >= 0)
-        if isnothing(sc.symbols)
+        if isnothing(sc.names)
             tol_str = join(
                 ["$ai < $bi" for (ai, bi) in zip(sc.values, sc.tolerances)], ", "
             )
@@ -129,7 +129,7 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
             tol_str = join(
                 [
                     "$si = $ai < $bi" for
-                    (si, ai, bi) in zip(sc.sumbols, sc.values, sc.tolerances)
+                    (si, ai, bi) in zip(sc.names, sc.values, sc.tolerances)
                 ],
                 ", ",
             )
@@ -141,15 +141,18 @@ end
 
 function status_summary(sc::StopWhenLagrangeMultiplierLess)
     s = (sc.at_iteration >= 0) ? "reached" : "not reached"
-    msg = ""
-    (sc.mode === :both) && (msg = " ε ≤ $(sc.tolerances[1]) and |g| ≤ $(sc.tolerances[2])")
-    (sc.mode === :estimate) && (msg = "  -ξ ≤ $(sc.tolerances[1])")
-    return "Stopping parameter: $(msg) :\t$(s)"
+    msg = "Lagrange multipliers"
+    isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
+    if !isnothing(sc.names)
+        msg *= join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
+    end
+    return "$(msg) :\t$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
+    n = isnothing(sc.names) ? "" : ", $(names)"
     return print(
         io,
-        "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode))\n    $(status_summary(sc))",
+        "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)\n    $(status_summary(sc))",
     )
 end
 

@@ -124,7 +124,8 @@ include("../utils/example_tasks.jl")
         @test startswith(
             repr(arcs2.sub_state), "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
         )
-        # fake a trigger
+        @test get_reason(st2) == ""
+        # manually trigger
         st2.at_iteration = 1
         @test length(get_reason(st2)) > 0
 

@@ -26,6 +26,10 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # Trigger manually
         sc2.at_iteration = 2
         @test length(get_reason(sc2)) > 0
+        sc3 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both, names=["a", "b"])
+        # Trigger manually
+        sc3.at_iteration = 2
+        @test length(get_reason(sc3)) > 0
     end
     @testset "Allocating Subgradient" begin
         f(M, q) = distance(M, q, p)
