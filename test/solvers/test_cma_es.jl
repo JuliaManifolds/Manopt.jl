@@ -138,4 +138,7 @@ flat_example(::AbstractManifold, p) = 0.0
         p1 = cma_es(M, griewank, [0.0, 1.0, 0.0]; σ=1.0, rng=MersenneTwister(123))
         @test griewank(M, p1) < 0.17
     end
+    @testset "Special Stopping Criteria" begin
+        sc1 = StopWhenBestCostInGenerationConstant{Vector{Any}}(1)
+    end
 end

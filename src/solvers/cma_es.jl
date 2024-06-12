@@ -540,7 +540,7 @@ function (c::StopWhenCovarianceIllConditioned)(
     ::AbstractManoptProblem, s::CMAESState, i::Int
 )
     if i == 0 # reset on init
-        c.at_iteration = 0
+        c.at_iteration = -1
         return false
     end
     c.last_cond = s.covariance_matrix_cond
@@ -556,7 +556,10 @@ function status_summary(c::StopWhenCovarianceIllConditioned)
     return "cond(s.covariance_matrix) > $(c.threshold):\t$s"
 end
 function get_reason(c::StopWhenCovarianceIllConditioned)
-    return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
+    if c.at_iteration >= 0
+        return "At iteration $(c.at_iteration) the condition number of covariance matrix ($(c.last_cond)) exceeded the threshold ($(c.threshold)).\n"
+    end
+    return ""
 end
 function show(io::IO, c::StopWhenCovarianceIllConditioned)
     return print(
@@ -577,10 +580,11 @@ mutable struct StopWhenBestCostInGenerationConstant{TParam<:Real} <: StoppingCri
     iteration_range::Int
     best_objective_at_last_change::TParam
     iterations_since_change::Int
+    at_iteration::Int
 end
 
 function StopWhenBestCostInGenerationConstant{TParam}(iteration_range::Int) where {TParam}
-    return StopWhenBestCostInGenerationConstant{TParam}(iteration_range, Inf, 0)
+    return StopWhenBestCostInGenerationConstant{TParam}(iteration_range, Inf, 0, -1)
 end
 
 # It just indicates stagnation, not that convergence to a minimizer
@@ -592,10 +596,12 @@ function (c::StopWhenBestCostInGenerationConstant)(
     ::AbstractManoptProblem, s::CMAESState, i::Int
 )
     if i == 0 # reset on init
+        c.at_iteration = -1
         c.best_objective_at_last_change = Inf
         return false
     end
     if c.iterations_since_change >= c.iteration_range
+        c.at_iteration = i
         return true
     else
         if c.best_objective_at_last_change != s.best_fitness_current_gen
@@ -636,6 +642,7 @@ mutable struct StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
     fraction::TParam
     best_history::CircularBuffer{TParam}
     median_history::CircularBuffer{TParam}
+    at_iteration::Int
 end
 
 function StopWhenEvolutionStagnates(
@@ -647,6 +654,7 @@ function StopWhenEvolutionStagnates(
         fraction,
         CircularBuffer{TParam}(max_size),
         CircularBuffer{TParam}(max_size),
+        -1,
     )
 end
 
@@ -669,9 +677,11 @@ function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState,
     if i == 0 # reset on init
         empty!(c.best_history)
         empty!(c.median_history)
+        c.at_iteration = -1
         return false
     end
     if is_active_stopping_criterion(c)
+        c.at_iteration = i
         return true
     else
         push!(c.best_history, s.best_fitness_current_gen)
@@ -691,8 +701,11 @@ function status_summary(c::StopWhenEvolutionStagnates)
     median_median_new = median(c.median_history[thr_high:end])
     return "generation >= $(c.min_size) && $(median_best_old) <= $(median_best_new) && $(median_median_old) <= $(median_median_new):\t$s"
 end
-function get_reason(::StopWhenEvolutionStagnates)
-    return "Both median and best objective history became stagnant.\n"
+function get_reason(c::StopWhenEvolutionStagnates)
+    if c.at_iteration >= 0
+        return "Both median and best objective history became stagnant.\n"
+    end
+    return ""
 end
 function show(io::IO, c::StopWhenEvolutionStagnates)
     return print(
@@ -739,7 +752,10 @@ function status_summary(c::StopWhenPopulationStronglyConcentrated)
     return "norm(s.deviations, Inf) < $(c.tol) && norm(s.σ * s.p_c, Inf) < $(c.tol) :\t$s"
 end
 function get_reason(c::StopWhenPopulationStronglyConcentrated)
-    return "Standard deviation in all coordinates is smaller than $(c.tol) and `σ * p_c` has Inf norm lower than $(c.tol).\n"
+    if c.is_active
+        return "Standard deviation in all coordinates is smaller than $(c.tol) and `σ * p_c` has Inf norm lower than $(c.tol).\n"
+    end
+    return ""
 end
 function show(io::IO, c::StopWhenPopulationStronglyConcentrated)
     return print(
@@ -785,7 +801,10 @@ function status_summary(c::StopWhenPopulationDiverges)
     return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :\t$s"
 end
 function get_reason(c::StopWhenPopulationDiverges)
-    return "σ times maximum standard deviation exceeded $(c.tol). This indicates either much too small σ or divergent behavior.\n"
+    if c.is_active
+        return "σ times maximum standard deviation exceeded $(c.tol). This indicates either much too small σ or divergent behavior.\n"
+    end
+    return ""
 end
 function show(io::IO, c::StopWhenPopulationDiverges)
     return print(io, "StopWhenPopulationDiverges($(c.tol))\n    $(status_summary(c))")
@@ -842,7 +861,10 @@ function status_summary(c::StopWhenPopulationCostConcentrated)
     return "range of best objective values in the last $(length(c.best_value_history)) generations and all objective values in the current one < $(c.tol) :\t$s"
 end
 function get_reason(c::StopWhenPopulationCostConcentrated)
-    return "Range of best objective function values in the last $(length(c.best_value_history)) gnerations and all values in the current generation is below $(c.tol)\n"
+    if c.is_active
+        return "Range of best objective function values in the last $(length(c.best_value_history)) gnerations and all values in the current generation is below $(c.tol)\n"
+    end
+    return ""
 end
 function show(io::IO, c::StopWhenPopulationCostConcentrated)
     return print(
