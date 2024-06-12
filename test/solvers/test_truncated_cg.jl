@@ -17,6 +17,10 @@ using Manifolds, Manopt, ManifoldsBase, Test
     str1 = Manopt.status_summary(str)
     @test str1 == "Trust region exceeded:\tnot reached"
     @test repr(str) == "StopWhenTrustRegionIsExceeded()\n    $(str1)"
+    @test get_reason(str) == ""
+    # Trigger manually
+    str.at_iteration = 1
+    @test length(get_reason(str)) > 0
     scn = StopWhenCurvatureIsNegative()
     scn1 = Manopt.status_summary(scn)
     @test scn1 == "Curvature is negative:\tnot reached"

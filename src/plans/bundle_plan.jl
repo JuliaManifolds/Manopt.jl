@@ -121,7 +121,7 @@ mutable struct StopWhenLagrangeMultiplierLess{
 end
 function get_reason(sc::StopWhenLagrangeMultiplierLess)
     if (sc.at_iteration >= 0)
-        if isnothing(sc.sumbols)
+        if isnothing(sc.symbols)
             tol_str = join(
                 ["$ai < $bi" for (ai, bi) in zip(sc.values, sc.tolerances)], ", "
             )
@@ -134,7 +134,7 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
                 ", ",
             )
         end
-        return "After $(c.at_iteration) iterations the algorithm reached an approximate critical point with tolerances $tol_str.\n"
+        return "After $(sc.at_iteration) iterations the algorithm reached an approximate critical point with tolerances $tol_str.\n"
     end
     return ""
 end

@@ -14,10 +14,18 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test startswith(
             repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
         )
+        @test get_reason(sc1) == ""
+        # Trigger manually
+        sc1.at_iteration = 2
+        @test length(get_reason(sc1)) > 0
         sc2 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both)
         @test startswith(
             repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
         )
+        @test get_reason(sc2) == ""
+        # Trigger manually
+        sc2.at_iteration = 2
+        @test length(get_reason(sc2)) > 0
     end
     @testset "Allocating Subgradient" begin
         f(M, q) = distance(M, q, p)

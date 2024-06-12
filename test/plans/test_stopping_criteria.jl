@@ -187,6 +187,10 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s3.κ == 0.5
         update_stopping_criterion!(s3, :ResidualPower, 0.5)
         @test s3.θ == 0.5
+        @test get_reason(s3) == ""
+        # Trigger manually
+        s3.at_iteration = 1
+        @test length(get_reason(s3)) > 0
     end
 
     @testset "Stop with step size" begin
