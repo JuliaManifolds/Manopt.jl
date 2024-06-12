@@ -139,6 +139,5 @@ flat_example(::AbstractManifold, p) = 0.0
         @test griewank(M, p1) < 0.17
     end
     @testset "Special Stopping Criteria" begin
-        sc1 = StopWhenBestCostInGenerationConstant{Vector{Any}}(1)
     end
 end
