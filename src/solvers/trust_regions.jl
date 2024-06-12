@@ -174,8 +174,7 @@ function TrustRegionsState(
         TangentSpace(M, copy(M, p)), zero_vector(M, p)
     );
     X::T=zero_vector(M, p),
-    ρ_prime::R=0.1, #deprecated, remove on next breaking change
-    acceptance_rate=ρ_prime,
+    acceptance_rate=0.1,
     ρ_regularization::R=1000.0,
     randomize::Bool=false,
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),

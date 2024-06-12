@@ -53,7 +53,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
         sub_problem::Pr,
         sub_state::St;
         initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
+        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9),
     ) where {
         P,Pr<:AbstractManoptProblem,St<:AbstractManoptSolverState,T,SC<:StoppingCriterion
     }
@@ -67,7 +67,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
         p::P,
         sub_problem::S;
         initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
+        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9),
         evaluation=AllocatingEvaluation(),
     ) where {P,S<:Function,T,SC<:StoppingCriterion}
         return new{S,typeof(evaluation),P,T,SC}(
@@ -267,9 +267,9 @@ function difference_of_convex_algorithm!(
     initial_vector=zero_vector(M, p),
     objective_type=:Riemannian,
     stopping_criterion=if isnothing(gradient)
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9) | StopWhenGradientNormLess(1e-9)
     end,
     # Subsolver Magic Cascade.
     sub_cost=if isnothing(g)

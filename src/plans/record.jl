@@ -532,14 +532,9 @@ mutable struct RecordChange{
     function RecordChange(
         M::AbstractManifold=DefaultManifold();
         storage::Union{Nothing,StoreStateAction}=nothing,
-        manifold::Union{Nothing,AbstractManifold}=nothing,
         inverse_retraction_method::IRT=default_inverse_retraction_method(M),
     ) where {IRT<:AbstractInverseRetractionMethod}
         irm = inverse_retraction_method
-        if !isnothing(manifold)
-            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
-            irm = default_inverse_retraction_method(manifold)
-        end
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate])

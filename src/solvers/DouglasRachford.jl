@@ -286,7 +286,7 @@ function DouglasRachford!(
     end,
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenChangeLess(1e-5),
+                                          StopWhenChangeLess(M, 1e-5),
     kwargs..., #especially may contain decorator options
 ) where {
     Tλ,

@@ -73,16 +73,9 @@ function LevenbergMarquardt(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB=nothing,
-    jacobian_tangent_basis::AbstractBasis=if isnothing(jacB)
-        DefaultOrthonormalBasis()
-    else
-        jacB
-    end,
+    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
     kwargs...,
 )
-    !isnothing(jacB) &&
-        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
@@ -123,16 +116,9 @@ function LevenbergMarquardt!(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB=nothing,
-    jacobian_tangent_basis::AbstractBasis=if isnothing(jacB)
-        DefaultOrthonormalBasis()
-    else
-        jacB
-    end,
+    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
     kwargs...,
 )
-    !isnothing(jacB) &&
-        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))

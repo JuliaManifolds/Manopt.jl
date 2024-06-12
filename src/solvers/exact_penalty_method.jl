@@ -42,7 +42,7 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
     θ_ϵ::R
     stop::TStopping
     function ExactPenaltyMethodState(
-        ::AbstractManifold,
+        M::AbstractManifold,
         p::P,
         sub_problem::Pr,
         sub_state::St;
@@ -57,7 +57,7 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         ρ::R=1.0,
         θ_ρ::R=0.3,
         stopping_criterion::SC=StopAfterIteration(300) | (
-            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1e-10)
         ),
     ) where {
         P,
@@ -383,7 +383,7 @@ function exact_penalty_method!(
         sub_kwargs...,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1e-10)
     ),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}

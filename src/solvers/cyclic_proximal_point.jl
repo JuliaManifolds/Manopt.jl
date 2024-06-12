@@ -106,7 +106,7 @@ function cyclic_proximal_point!(
     p;
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000) |
-                                          StopWhenChangeLess(1e-12),
+                                          StopWhenChangeLess(M, 1e-12),
     λ=i -> 1 / i,
     kwargs...,
 ) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}

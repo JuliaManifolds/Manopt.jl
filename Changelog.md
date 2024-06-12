@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    a mandatory argument. To use the old variant,
    provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
 
+Quite a few deprecated keyword arguments and a few function signatures were removed
+
+ * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
+ * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
+* In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
+* `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positiona argument `M` and `inverse_retraction_method=`, respectively
+* in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
+* in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
+
+
+
 ## [0.4.64] June 4, 2024
 
 ### Added

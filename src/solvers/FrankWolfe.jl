@@ -243,7 +243,7 @@ function Frank_Wolfe_method!(
     stepsize::TStep=default_stepsize(M, FrankWolfeState),
     stopping_criterion::TStop=StopAfterIteration(200) |
                               StopWhenGradientNormLess(1.0e-8) |
-                              StopWhenChangeLess(1.0e-8),
+                              StopWhenChangeLess(M, 1.0e-8),
     sub_cost=FrankWolfeCost(p, initial_vector),
     sub_grad=FrankWolfeGradient(p, initial_vector),
     sub_kwargs=(;),

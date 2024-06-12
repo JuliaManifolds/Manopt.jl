@@ -86,9 +86,9 @@ mutable struct AugmentedLagrangianMethodState{
         stopping_criterion::SC=StopAfterIteration(300) |
                                (
                                    StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
-                                   StopWhenChangeLess(1e-10)
+                                   StopWhenChangeLess(M, 1e-10)
                                ) |
-                               StopWhenChangeLess(1e-10),
+                               StopWhenChangeLess(M, 1e-10),
         kwargs...,
     ) where {
         P,
@@ -427,7 +427,7 @@ function augmented_Lagrangian_method!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
                                           (
                                               StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
-                                              StopWhenChangeLess(1e-10)
+                                              StopWhenChangeLess(M, 1e-10)
                                           ) |
                                           StopWhenStepsizeLess(1e-10),
     kwargs...,

@@ -9,7 +9,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(myStoppingCriteriaSet())
 
-        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(0.1))
+        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(),0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
@@ -77,8 +77,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
 
     @testset "Stopping Criterion &/| operators" begin
         a = StopAfterIteration(200)
-        b = StopWhenChangeLess(1e-6)
-        sb = "StopWhenChangeLess(1.0e-6)\n    $(Manopt.status_summary(b))"
+        b = StopWhenChangeLess(Euclidean(), 1e-6)
+        sb = "StopWhenChangeLess(M, 1.0e-6)\n    $(Manopt.status_summary(b))"
         @test repr(b) == sb
         b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor
         @test repr(b2) == sb

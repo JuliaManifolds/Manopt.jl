@@ -530,12 +530,6 @@ Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
 # Constructor
 
-    NonmonotoneLinesearch()
-
-with the fields their order as optional arguments (deprecated).
-THis is deprecated, since both defaults and the memory allocation for the candidate do
-not take into account which manifold the line search operates on.
-
     NonmonotoneLinesearch(M)
 
 with the fields as keyword arguments and where the retraction
@@ -875,13 +869,8 @@ mutable struct WolfePowellLinesearch{
         max_stepsize::Real=max_stepsize(M, candidate_point),
         retraction_method::TRM=default_retraction_method(M),
         vector_transport_method::VTM=default_vector_transport_method(M),
-        linesearch_stopsize::Float64=0.0,            # deprecated remove on next breaking change
-        stop_when_stepsize_less::Float64=linesearch_stopsize, #
+        stop_when_stepsize_less::Float64=0.0,
     ) where {TRM,VTM,P,T}
-        (linesearch_stopsize > 0.0) && Base.depwarn(
-            WolfePowellLinesearch,
-            "`linesearch_backtrack` is deprecated – use `stop_when_stepsize_less` instead´.",
-        )
         return new{TRM,VTM,P,T}(
             c1,
             c2,
@@ -1023,7 +1012,7 @@ The other constructor is kept for backward compatibility.
         c2::Float64=0.999;
         retraction_method = default_retraction_method(M),
         vector_transport_method = default_vector_transport(M),
-        linesearch_stopsize = 0.0
+        stop_when_stepsize_less = 0.0
     )
 """
 mutable struct WolfePowellBinaryLinesearch{
@@ -1034,7 +1023,7 @@ mutable struct WolfePowellBinaryLinesearch{
     c1::Float64
     c2::Float64
     last_stepsize::Float64
-    linesearch_stopsize::Float64
+    stop_when_stepsize_less::Float64
 
     function WolfePowellBinaryLinesearch(
         M::AbstractManifold=DefaultManifold(),
@@ -1044,10 +1033,10 @@ mutable struct WolfePowellBinaryLinesearch{
         vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
             M
         ),
-        linesearch_stopsize::Float64=0.0,
+        stop_when_stepsize_less::Float64=0.0,
     )
         return new{typeof(retraction_method),typeof(vector_transport_method)}(
-            retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
+            retraction_method, vector_transport_method, c1, c2, 0.0, stop_when_stepsize_less
         )
     end
 end
@@ -1072,8 +1061,8 @@ function (a::WolfePowellBinaryLinesearch)(
         real(inner(M, xNew, gradient_new, η_xNew)) <
         a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     while (nAt || nWt) &&
-              (t > a.linesearch_stopsize) &&
-              ((α + β) / 2 - 1 > a.linesearch_stopsize)
+              (t > a.stop_when_stepsize_less) &&
+              ((α + β) / 2 - 1 > a.stop_when_stepsize_less)
         nAt && (β = t)            # A(t) fails
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
@@ -1100,7 +1089,7 @@ function show(io::IO, a::WolfePowellBinaryLinesearch)
         WolfePowellBinaryLinesearch(DefaultManifold(), $(a.c1), $(a.c2)) with keyword arguments
           * retraction_method = $(a.retraction_method)
           * vector_transport_method = $(a.vector_transport_method)
-          * linesearch_stopsize = $(a.linesearch_stopsize)""",
+          * stop_when_stepsize_less = $(a.stop_when_stepsize_less)""",
     )
 end
 function status_summary(a::WolfePowellBinaryLinesearch)

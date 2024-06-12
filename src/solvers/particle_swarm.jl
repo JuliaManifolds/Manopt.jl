@@ -71,7 +71,7 @@ mutable struct ParticleSwarmState{
         inertia=0.65,
         social_weight=1.4,
         cognitive_weight=1.4,
-        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(1e-4),
+        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(M,1e-4),
         retraction_method::RTM=default_retraction_method(M, eltype(swarm)),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(swarm)),
         vector_transport_method::VTM=default_vector_transport_method(M, eltype(swarm)),
@@ -230,16 +230,11 @@ the obtained (approximate) minimizer ``g``, see [`get_solver_return`](@ref) for 
 function particle_swarm(
     M::AbstractManifold,
     f;
-    n=nothing,
-    swarm_size=isnothing(n) ? 100 : n,
-    x0=nothing,
+    swarm_size=100,
     kwargs...,
 )
-    !isnothing(n) && (@warn "The keyword `n` is deprecated, use `swarm_size` instead")
-    !isnothing(x0) &&
-        (@warn "The keyword `x0` is deprecated, use `particle_swarm(M, f, x0)` instead")
     return particle_swarm(
-        M, f, isnothing(x0) ? [rand(M) for _ in 1:swarm_size] : x0; kwargs...
+        M, f, [rand(M) for _ in 1:swarm_size]; kwargs...
     )
 end
 function particle_swarm(

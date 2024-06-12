@@ -53,7 +53,7 @@ mutable struct DifferenceOfConvexProximalState{
         sub_state::St;
         X::T=zero_vector(M, p),
         stepsize::S=ConstantStepsize(M),
-        stopping_criterion::SC=StopWhenChangeLess(1e-8),
+        stopping_criterion::SC=StopWhenChangeLess(M, 1e-8),
         inverse_retraction_method::I=default_inverse_retraction_method(M),
         retraction_method::R=default_retraction_method(M),
         λ::Fλ=i -> 1,
@@ -315,9 +315,9 @@ function difference_of_convex_proximal_point!(
     retraction_method=default_retraction_method(M),
     stepsize=ConstantStepsize(M),
     stopping_criterion=if isnothing(get_gradient_function(mdcpo))
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9) | StopWhenGradientNormLess(1e-9)
     end,
     sub_cost=isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),
     sub_grad=if isnothing(grad_g)

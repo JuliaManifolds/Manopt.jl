@@ -47,11 +47,8 @@ function NonlinearLeastSquaresObjective(
     jacobian_f::TJ,
     num_components::Int;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB=nothing,
-    jacobian_tangent_basis::TB=isnothing(jacB) ? DefaultOrthonormalBasis() : jacB,
+    jacobian_tangent_basis::TB=DefaultOrthonormalBasis()
 ) where {TF,TJ,TB<:AbstractBasis}
-    !isnothing(jacB) &&
-        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     return NonlinearLeastSquaresObjective{typeof(evaluation),TF,TJ,TB}(
         f, jacobian_f, jacobian_tangent_basis, num_components
     )
