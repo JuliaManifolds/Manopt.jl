@@ -41,3 +41,12 @@ _kw_stepsize = raw"""
 _kw_stopping_criterion = raw"""
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 """
+
+_math_VT = raw"a vector transport ``T``"
+_math_inv_retr = raw"an inverse retraction ``\operatorname{retr}^{-1}``"
+_math_retr = raw" a retraction ``\operatorname{retr}``"
+_problem_default = raw"""
+```math
+\operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
+```
+"""

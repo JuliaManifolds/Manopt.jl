@@ -144,65 +144,75 @@ end
 #
 # Constructors
 #
-@doc raw"""
-    patricle_swarm(M, f; kwargs...)
-    patricle_swarm(M, f, swarm; kwargs...)
-    patricle_swarm(M, mco::AbstractManifoldCostObjective; kwargs..)
-    patricle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
-
-perform the particle swarm optimization algorithm (PSO), starting with an initial `swarm` [BorckmansIshtevaAbsil:2010](@cite).
-If no `swarm` is provided, `swarm_size` many random points are used.
-
-The aim of PSO is to find the particle position ``p`` on the `Manifold M` that solves approximately
-
-```math
-\min_{p ∈\mathcal{M}} F(p).
-```
-
-To this end, a swarm ``S = \{s_1, \ldots, s_n\}`` of particles is moved around the manifold `M` in the following manner.
-For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
-
+_doc_swarm = raw"``S = \{s_1, \ldots, s_n\}``"
+_doc_velocities = raw"""
 ```math
   X_k^{(i)} = ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
 ```
-
-where
-* ``s_k^{(i)}`` is the current particle position,
-* ``ω`` denotes the inertia,
-* ``c`` and ``s`` are a cognitive and a social weight, respectively,
-* ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* ``T`` denotes the vector transport and ``\operatorname{retr}^{-1}`` the inverse retraction used
-
-Then the position of the particle is updated as
-
+"""
+_doc_particle_update = raw"""
 ```math
 s_k^{(i+1)} = \operatorname{retr}_{s_k^{(i)}}(X_k^{(i)}),
 ```
-
-where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`.
-Then the single particles best entries ``p_k^{(i)}`` are updated as
-
+"""
+_doc_swarm_best = raw"""
 ```math
 p_k^{(i+1)} = \begin{cases}
 s_k^{(i+1)},  & \text{if } F(s_k^{(i+1)})<F(p_{k}^{(i)}),\\
 p_{k}^{(i)}, & \text{else,}
 \end{cases}
 ```
-
-and the global best position
-
+"""
+_doc_swarm_global_best = raw"""
 ```math
 g^{(i+1)} = \begin{cases}
 p_k^{(i+1)},  & \text{if } F(p_k^{(i+1)})<F(g_{k}^{(i)}),\\
 g_{k}^{(i)}, & \text{else,}
 \end{cases}
 ```
+"""
+
+@doc """
+    patricle_swarm(M, f; kwargs...)
+    patricle_swarm(M, f, swarm; kwargs...)
+    patricle_swarm(M, mco::AbstractManifoldCostObjective; kwargs..)
+    patricle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
+
+perform the particle swarm optimization algorithm (PSO) to solve
+$_problem_default
+PSO starts with an initial `swarm` [BorckmansIshtevaAbsil:2010](@cite) of points
+on the manifold.
+If no `swarm` is provided, `swarm_size` many random points are used.
+
+To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` in the following manner.
+For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
+$_doc_velocities
+
+where
+* ``s_k^{(i)}`` is the current particle position,
+* ``ω`` denotes the inertia,
+* ``c`` and ``s`` are a cognitive and a social weight, respectively,
+* ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
+* we further have $_math_VT and $_math_inv_retr
+
+Then the position of the particle is updated as
+
+$_doc_particle_update
+
+where we use $_math_retr on the `Manifold` `M`.
+Then the single particles best entries ``p_k^{(i)}`` are updated as
+
+$_doc_swarm_best
+
+and the global best position
+
+$_doc_swarm_global_best
 
 # Input
 
-* `M`:     a manifold ``\mathcal M``
-* `f`:     a cost function ``F:\mathcal M→ℝ`` to minimize
-* `swarm`: (`[rand(M) for _ in 1:swarm_size]`) an initial swarm of points.
+$_arg_M
+$_arg_f
+* `swarm = [rand(M) for _ in 1:swarm_size]`: an initial swarm of points.
 
 Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObjective`](@ref) `mco`.
 
