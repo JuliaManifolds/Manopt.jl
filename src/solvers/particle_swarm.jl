@@ -71,7 +71,7 @@ mutable struct ParticleSwarmState{
         inertia=0.65,
         social_weight=1.4,
         cognitive_weight=1.4,
-        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(M,1e-4),
+        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(M, 1e-4),
         retraction_method::RTM=default_retraction_method(M, eltype(swarm)),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(swarm)),
         vector_transport_method::VTM=default_vector_transport_method(M, eltype(swarm)),
@@ -227,15 +227,8 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 
 the obtained (approximate) minimizer ``g``, see [`get_solver_return`](@ref) for details
 """
-function particle_swarm(
-    M::AbstractManifold,
-    f;
-    swarm_size=100,
-    kwargs...,
-)
-    return particle_swarm(
-        M, f, [rand(M) for _ in 1:swarm_size]; kwargs...
-    )
+function particle_swarm(M::AbstractManifold, f; swarm_size=100, kwargs...)
+    return particle_swarm(M, f, [rand(M) for _ in 1:swarm_size]; kwargs...)
 end
 function particle_swarm(
     M::AbstractManifold,

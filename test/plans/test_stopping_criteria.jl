@@ -9,7 +9,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(myStoppingCriteriaSet())
 
-        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(),0.1))
+        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
         s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
