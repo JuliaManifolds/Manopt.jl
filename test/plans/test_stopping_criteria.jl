@@ -34,6 +34,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test length(get_reason(s3)) > 0
         # repack
         sn = StopWhenAny(StopAfterIteration(10), s3)
+        @test get_reason(sn) == ""
         @test !Manopt.indicates_convergence(sn) # since it might stop after 10 iterations
         @test startswith(repr(sn), "StopWhenAny with the")
         @test Manopt._fast_any(x -> false, ())
@@ -89,6 +90,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         b = StopWhenChangeLess(1e-6)
         sb = "StopWhenChangeLess(1.0e-6)\n    $(Manopt.status_summary(b))"
         @test repr(b) == sb
+        @test get_reason(b) == ""
         b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor
         @test repr(b2) == sb
         c = StopWhenGradientNormLess(1e-6)
@@ -141,6 +143,10 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         h = StopWhenSmallerOrEqual(:p, 1e-4)
         @test repr(h) ==
             "StopWhenSmallerOrEqual(:p, $(1e-4))\n    $(Manopt.status_summary(h))"
+        @test get_reason(h) == ""
+        # Trigger manually
+        h.at_iteration = 1
+        @test length(get_reason(h)) > 0
         swgcl1 = StopWhenGradientChangeLess(Euclidean(2), 1e-8)
         swgcl2 = StopWhenGradientChangeLess(1e-8)
         for swgcl in [swgcl1, swgcl2]
@@ -268,14 +274,21 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test !sc1(mp, s, 0) # test reset – triggers again
         @test length(get_reason(sc1)) == 0
         @test sc1.at_iteration == -1
+        # Trigger manually
+        sc1.at_iteration = 1
+        @test length(get_reason(sc1)) > 0
 
         s.p .= NaN
         sc2 = StopWhenIterateNaN()
         @test startswith(repr(sc2), "StopWhenIterateNaN()\n")
         @test sc2(mp, s, 1) #always returns true since p was now set to NaN
+        @test length(get_reason(sc2)) > 0
         s.p = p
         @test !sc2(mp, s, 0) # test reset, though this als already triggers
         @test length(get_reason(sc2)) == 0 # verify reset
         @test sc2.at_iteration == -1
+        # Trigger manually
+        sc1.at_iteration = 1
+        @test length(get_reason(sc1)) > 0
     end
 end
