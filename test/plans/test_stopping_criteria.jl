@@ -78,7 +78,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @testset "Stopping Criterion &/| operators" begin
         a = StopAfterIteration(200)
         b = StopWhenChangeLess(Euclidean(), 1e-6)
-        sb = "StopWhenChangeLess(M, 1.0e-6)\n    $(Manopt.status_summary(b))"
+        sb = "StopWhenChangeLess with threshold 1.0e-6\n    $(Manopt.status_summary(b))"
         @test repr(b) == sb
         b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor
         @test repr(b2) == sb

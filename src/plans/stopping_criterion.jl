@@ -194,9 +194,9 @@ default. You can also provide an inverse_retraction_method for the `distance` or
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
-    IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
+    R<:Real,IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
 } <: StoppingCriterion
-    threshold::Float64
+    threshold::R
     reason::String
     storage::TSSA
     inverse_retraction::IRT
@@ -204,13 +204,16 @@ mutable struct StopWhenChangeLess{
 end
 function StopWhenChangeLess(
     M::AbstractManifold,
-    ε::Float64;
+    ε::R;
     storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
-) where {IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{IRT,typeof(storage)}(
+) where {R<:Real,IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{R,IRT,typeof(storage)}(
         ε, "", storage, inverse_retraction_method, 0
     )
+end
+function StopWhenChangeLess(ε::R; kwargs...) where {R<:Real}
+    return StopWhenChangeLess(DefaultManifold(), ε; kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if i == 0 # reset on init
@@ -238,7 +241,9 @@ function status_summary(c::StopWhenChangeLess)
 end
 indicates_convergence(c::StopWhenChangeLess) = true
 function show(io::IO, c::StopWhenChangeLess)
-    return print(io, "StopWhenChangeLess($(c.threshold))\n    $(status_summary(c))")
+    return print(
+        io, "StopWhenChangeLess with threshold $(c.threshold)\n    $(status_summary(c))"
+    )
 end
 
 """

@@ -195,7 +195,7 @@ function DouglasRachford(
     N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
         M, f_, proxes_f_, p_, parallel, evaluation
     )
-    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation=evaluation)
+    mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation=evaluation)
     rs = DouglasRachford(N, mpo, q; evaluation=evaluation, parallel=parallel_, kwargs...)
     return _ensure_matching_output(p, rs)
 end

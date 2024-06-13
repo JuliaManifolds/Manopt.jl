@@ -3,12 +3,11 @@ using Test, Manopt, ManifoldsBase, Manifolds
 @testset "StoreStateAction" begin
     @testset "manifold $M" for M in [ManifoldsBase.DefaultManifold(2), Circle()]
         if M isa Circle
-            p = 0.4
-            X_zero = 0.0
+            p = [0.4]
         else
             p = [4.0, 2.0]
-            X_zero = [0.0, 0.0]
         end
+        X_zero = zero_vector(M, p)
 
         st = GradientDescentState(
             M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)

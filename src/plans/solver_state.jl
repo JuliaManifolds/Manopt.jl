@@ -359,7 +359,7 @@ is necessity for the construction.
 as vectors of symbols each referring to fields of the state (lower case symbols)
 or semantic ones (upper case).
 
-* `p_init` (`rand(M)`)
+* `p_init` (`rand(M)`) but making sure this is not a number but a (mutatable) array
 * `X_init` (`zero_vector(M, p_init)`)
 
 are used to initialize the point and vector storage, change these if you use other
@@ -417,7 +417,7 @@ end
     store_fields::Vector{Symbol}=Symbol[],
     store_points::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
     store_vectors::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
-    p_init=rand(M),
+    p_init=_ensure_mutating_variable(rand(M)),
     X_init=zero_vector(M, p_init),
     once=true,
 )
