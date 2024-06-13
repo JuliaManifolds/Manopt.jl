@@ -365,37 +365,42 @@ drops below a certain tolerance `tol_f` and `tol_p`, respectively.
     StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_x::Real=1e-8)
 
 """
-mutable struct StopWhenPopulationConcentrated{TF<:Real,TP<:Real} <: StoppingCriterion
-    tol_f::TF
-    tol_p::TP
-    reason::String
+mutable struct StopWhenPopulationConcentrated{F<:Real} <: StoppingCriterion
+    tol_f::F
+    tol_p::F
+    value_f::F
+    value_p::F
     at_iteration::Int
-    function StopWhenPopulationConcentrated(tol_f::Real=1e-8, tol_p::Real=1e-8)
-        return new{typeof(tol_f),typeof(tol_p)}(tol_f, tol_p, "", 0)
+    function StopWhenPopulationConcentrated(tol_f::F=1e-8, tol_p::F=1e-8) where {F<:Real}
+        return new{F}(tol_f, tol_p, zero(tol_f), zero(tol_p), -1)
     end
 end
 function (c::StopWhenPopulationConcentrated)(
     mp::AbstractManoptProblem, s::NelderMeadState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     M = get_manifold(mp)
-    max_cdiff = maximum(cs -> abs(s.costs[1] - cs), s.costs[2:end])
-    max_xdiff = maximum(
+    c.value_f = maximum(cs -> abs(s.costs[1] - cs), s.costs[2:end])
+    c.value_p = maximum(
         p -> distance(M, s.population.pts[1], p, s.inverse_retraction_method),
         s.population.pts[2:end],
     )
-    if max_cdiff < c.tol_f && max_xdiff < c.tol_p
-        c.reason = "After $i iterations the simplex has shrunk below the assumed level (maximum cost difference is $max_cdiff, maximum point distance is $max_xdiff).\n"
+    if c.value_f < c.tol_f && c.value_p < c.tol_p
         c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenPopulationConcentrated)
+    if (c.at_iteration >= 0)
+        return "After $(c.at_iteration) iterations the simplex has shrunk below the assumed level. Maximum cost difference is $(c.value_f) < $(c.tol_f), maximum point distance is $(c.value_p) < $(c.tol_p).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenPopulationConcentrated)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Population concentration: in f < $(c.tol_f) and in p < $(c.tol_p):\t$s"
 end

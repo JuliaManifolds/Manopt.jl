@@ -70,5 +70,10 @@ using Random
     @testset "Specific Stopping criteria" begin
         sc = StopWhenSwarmVelocityLess(1.0)
         @test startswith(repr(sc), "StopWhenSwarmVelocityLess")
+        @test get_reason(sc) == ""
+        # Trigger manually
+        sc.at_iteration = 2
+        sc.velocity_norms = [0.001, 0.001]
+        @test length(get_reason(sc)) > 0
     end
 end

@@ -111,12 +111,23 @@ include("../utils/example_tasks.jl")
         st1 = StopWhenFirstOrderProgress(0.5)
         @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)\n")
         @test Manopt.indicates_convergence(st1)
+        @test get_reason(st1) == ""
+        # fake a trigger
+        st1.at_iteration = 0
+        @test length(get_reason(st1)) > 0
+        st1.at_iteration = 1
+        @test length(get_reason(st1)) > 0
+
         st2 = StopWhenAllLanczosVectorsUsed(2)
         @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)\n")
         @test !Manopt.indicates_convergence(st2)
         @test startswith(
             repr(arcs2.sub_state), "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
         )
+        @test get_reason(st2) == ""
+        # manually trigger
+        st2.at_iteration = 1
+        @test length(get_reason(st2)) > 0
 
         f1(M, p) = p
         f1!(M, q, p) = copyto!(M, q, p)
