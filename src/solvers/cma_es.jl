@@ -531,7 +531,7 @@ mutable struct StopWhenCovarianceIllConditioned{T<:Real} <: StoppingCriterion
     at_iteration::Int
 end
 function StopWhenCovarianceIllConditioned(threshold::Real=1e14)
-    return StopWhenCovarianceIllConditioned{typeof(threshold)}(threshold, 1, 0)
+    return StopWhenCovarianceIllConditioned{typeof(threshold)}(threshold, 1, -1)
 end
 
 indicates_convergence(c::StopWhenCovarianceIllConditioned) = false
@@ -696,6 +696,9 @@ function status_summary(c::StopWhenEvolutionStagnates)
     has_stopped = is_active_stopping_criterion(c)
     s = has_stopped ? "reached" : "not reached"
     N = length(c.best_history)
+    if N == 0
+        return "best and median fitness not yet filled, stopping criterion:\t$s"
+    end
     thr_low = Int(ceil(N * c.fraction))
     thr_high = Int(floor(N * (1 - c.fraction)))
     median_best_old = median(c.best_history[1:thr_low])
@@ -788,24 +791,24 @@ far too small `σ`, or divergent behavior. This corresponds to `TolXUp` conditio
 mutable struct StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion
     tol::TParam
     last_σ_times_maxstddev::TParam
-    is_active::Bool
+    at_iteration::Int
 end
 function StopWhenPopulationDiverges(tol::Real)
-    return StopWhenPopulationDiverges{typeof(tol)}(tol, 1.0, false)
+    return StopWhenPopulationDiverges{typeof(tol)}(tol, 1.0, -1)
 end
 
 indicates_convergence(c::StopWhenPopulationDiverges) = false
 function is_active_stopping_criterion(c::StopWhenPopulationDiverges)
-    return c.is_active
+    return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, i::Int)
     if i == 0 # reset on init
-        c.is_active = false
+        c.at_iteration = -1
         return false
     end
     cur_σ_times_maxstddev = s.σ * maximum(s.deviations)
     if cur_σ_times_maxstddev / c.last_σ_times_maxstddev > c.tol
-        c.is_active = true
+        c.at_iteration = i
         return true
     end
     return false
@@ -816,7 +819,7 @@ function status_summary(c::StopWhenPopulationDiverges)
     return "cur_σ_times_maxstddev / c.last_σ_times_maxstddev > $(c.tol) :\t$s"
 end
 function get_reason(c::StopWhenPopulationDiverges)
-    if c.is_active
+    if c.at_iteration >= 0
         return "σ times maximum standard deviation exceeded $(c.tol). This indicates either much too small σ or divergent behavior.\n"
     end
     return ""
