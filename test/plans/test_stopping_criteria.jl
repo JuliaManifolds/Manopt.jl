@@ -12,7 +12,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
-        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
+        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1)])
         @test get_stopping_criteria(s)[1].maxIter == get_stopping_criteria(s2)[1].maxIter
 
         s3 = StopWhenCostLess(0.1)
