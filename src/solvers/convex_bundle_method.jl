@@ -342,7 +342,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, that is of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
 * `retraction_method`:         (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
-* `stopping_criterion`:        ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`) a functor, see[`StoppingCriterion`](@ref), indicating when to stop
+* `stopping_criterion`:        ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8; names=["-ξ"])`) a functor, see [`StoppingCriterion`](@ref), indicating when to stop
 * `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`
 
@@ -394,7 +394,7 @@ function convex_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     stopping_criterion::StoppingCriterion=StopWhenAny(
-        StopWhenLagrangeMultiplierLess(1e-8), StopAfterIteration(5000)
+        StopWhenLagrangeMultiplierLess(1e-8; names=["-ξ"]), StopAfterIteration(5000)
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=convex_bundle_method_subsolver,
@@ -550,24 +550,26 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 )
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerance[1]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ξ = $(-bms.ξ) ≤ $(sc.tolerance[1]).\n"
+    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerances[1]) && (i > 0)
+        sc.values[1] = -bms.ξ
         sc.at_iteration = i
         return true
     end
     ng = norm(M, bms.p_last_serious, bms.g)
-    if (sc.mode == :both) && (bms.ε ≤ sc.tolerance[1]) && (ng ≤ sc.tolerance[2]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter ε = $(bms.ε) ≤ $(sc.tolerance[1]) and |g| = $(ng) ≤ $(sc.tolerance[2]).\n"
+    if (sc.mode == :both) &&
+        (bms.ε ≤ sc.tolerances[1]) &&
+        (ng ≤ sc.tolerances[2]) &&
+        (i > 0)
+        sc.values[1] = bms.ε
+        sc.values[2] = ng
         sc.at_iteration = i
         return true
     end
     return false
 end
-
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
     ::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
 )

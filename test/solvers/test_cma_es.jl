@@ -138,4 +138,19 @@ flat_example(::AbstractManifold, p) = 0.0
         p1 = cma_es(M, griewank, [0.0, 1.0, 0.0]; σ=1.0, rng=MersenneTwister(123))
         @test griewank(M, p1) < 0.17
     end
+    @testset "Special Stopping Criteria" begin
+        sc1 = StopWhenBestCostInGenerationConstant{Float64}(10)
+        sc2 = StopWhenEvolutionStagnates(1, 2, 0.5)
+        @test contains(Manopt.status_summary(sc2), "not yet filled")
+        sc3 = StopWhenPopulationStronglyConcentrated(0.1)
+        sc4 = StopWhenPopulationCostConcentrated(0.1, 5)
+        sc5 = StopWhenCovarianceIllConditioned(1e-5)
+        sc6 = StopWhenPopulationDiverges(0.1)
+        for sc in [sc1, sc2, sc3, sc4, sc5, sc6]
+            @test get_reason(sc) == ""
+            # Manually set is active
+            sc.at_iteration = 10
+            @test length(get_reason(sc)) > 0
+        end
+    end
 end
