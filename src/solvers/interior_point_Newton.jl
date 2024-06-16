@@ -220,8 +220,8 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
 
     if m > 0
         b = ips.ρ * ips.σ
-        Xμ = (ips.μ .* ([inner(M, ips.p, grad_g[i], Xp) for i in 1:m] + g) .+ b) ./ ips.s
-        Xs = b ./ ips.μ - ips.s - (ips.s ./ ips.μ) .* Xμ 
+        Xs = -[inner(M, ips.p, grad_g[i], Xp) for i in 1:m] - g - ips.s
+        Xμ = (b .- ips.μ .* (ips.s + Xs)) ./ ips.s
     end
 
     copyto!(K[1], X[N, 1], Xp)
@@ -229,7 +229,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     (n > 0) && (copyto!(K[3], X[K, 3], Xλ))
     (m > 0) && (copyto!(K[4], X[K, 4], Xs))
 
-    α = ips.stepsize(amp, ips, i, X)#*0.1
+    α = ips.stepsize(amp, ips, i, X)
 
     # update params
     retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)

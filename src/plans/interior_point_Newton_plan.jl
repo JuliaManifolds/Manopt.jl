@@ -274,12 +274,11 @@ function (nrlg::NegativeReducedLagrangianGrad)(N::AbstractManifold, q)
     h = get_equality_constraints(M, cmo, p)
     grad_g = get_grad_inequality_constraints(M, cmo, p)
     grad_h = get_grad_equality_constraints(M, cmo, p)
-    X = zero_vector(N, q)
-    grad = get_gradient(M, cmo, p)
+    X = allocate_result(N, rand)
+    copyto!(M, X[N, 1], get_gradient(M, cmo, p))
     ν = μ + (μ .* g .+ b) ./ s
-    (m > 0) && (grad += sum(grad_g[i] * ν[i] for i in 1:m))
-    (n > 0) && (grad += sum(grad_h[j] * λ[j] for j in 1:n))
-    copyto!(M, X[N, 1], grad)
+    (m > 0) && (X[N, 1] += sum(grad_g[i] * ν[i] for i in 1:m))
+    (n > 0) && (X[N, 1] += sum(grad_h[j] * λ[j] for j in 1:n))
     (n > 0) && (copyto!(ℝ^n, X[N, 2], h))
     return -X
 end
@@ -320,13 +319,13 @@ function (rlh::ReducedLagrangianHess)(N::AbstractManifold, q, Y)
     copyto!(M, X[N, 1], get_hessian(M, cmo, p, Yp)) 
     if m > 0
         H_g = rlh.Hess_g(M, p, Yp)
-        X[N, 1] += sum([μ[i] / s[i] * inner(M, p, grad_g[i], Yp) * grad_g[i] for i in 1:m])
         X[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
+        X[N, 1] += sum([μ[i] / s[i] * inner(M, p, grad_g[i], Yp) * grad_g[i] for i in 1:m])
     end
     if n > 0
         H_h = rlh.Hess_h(M, p, Yp)
         X[N, 1] += sum([λ[j] * H_h[j] for j in 1:n])
-        X[N, 1] += [inner(M, p, grad_h[j], Yλ) for j in 1:n]
+        X[N, 1] += sum([Yλ[j] * grad_h[j] for j in 1:n])
         copyto!(ℝ^n, X[N, 2], [inner(M, p, grad_h[j], Yp) for j in 1:n])
     end
     #(m > 0) && (hess += Jg' * Diagonal(rlh.μ ./ rlh.s) * Jg * Y[N, 1]) # plus Hess g and Hess h
