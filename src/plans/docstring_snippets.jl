@@ -29,7 +29,6 @@ _kw_inverse_retraction_method = raw"""
   an inverse retraction ``\operatorname{retr}^{-1}`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 """
 
-
 _kw_others = raw"""
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
