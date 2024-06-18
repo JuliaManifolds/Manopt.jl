@@ -123,7 +123,7 @@ doc_gradient_descent = """
     gradient_descent!(M, f, grad_f, p; kwargs...)
     gradient_descent!(M, gradient_objective, p; kwargs...)
 
-perform a gradient descent
+perform the gradient descent algorithm
 
 $(doc_gd_iterate)
 
@@ -140,7 +140,7 @@ $_arg_alt_mgo
 
 # Keyword arguments
 
-* `direction = ` [`IdentityUpdateRule`](@ref)`()`:
+* `direction=`[`IdentityUpdateRule`](@ref)`()`:
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref)
 
@@ -150,16 +150,16 @@ $_kw_evaluation
 * $_kw_retraction_method_default :
 $_kw_retraction_method
 
-* `stepsize = ` [`default_stepsize`](@ref)`(M, GradientDescentState)`:
+* `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState)`:
 $_kw_stepsize
 
-* `stopping_criterion = ` [`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200) | ` [`StopWhenGradientNormLess`](@ref)`(1e-8)`:
 $_kw_stopping_criterion
 
-* `X = ` [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)` :
-  specify a memory internally to store the gradient
+* $_kw_X_default :
+$_kw_X, here the evaluated gradient function.
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation = ` keyword is ignored.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=`keyword is ignored.
 
 $_kw_others
 
