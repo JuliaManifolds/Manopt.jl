@@ -144,35 +144,35 @@ $_arg_alt_mgo
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref)
 
-* $_kw_evaluation_default :
-$_kw_evaluation
+* $_kw_evaluation_default:
+  $_kw_evaluation
 
-* $_kw_retraction_method_default :
-$_kw_retraction_method
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
 
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState)`:
-$_kw_stepsize
+  $_kw_stepsize
 
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200) | ` [`StopWhenGradientNormLess`](@ref)`(1e-8)`:
-$_kw_stopping_criterion
+  $_kw_stopping_criterion
 
-* $_kw_X_default :
-$_kw_X, here the evaluated gradient function.
-
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=`keyword is ignored.
+* $_kw_X_default:
+  $_kw_X, the evaluated gradient ``$_l_grad f`` evaluated at ``p^{(k)}``.
 
 $_kw_others
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
+If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=`keyword is ignored.
+The decorations are still applied to the objective.
 
 # Output
 
-the obtained (approximate) minimizer ``p^*``.
+the obtained approximate minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
 
 "$(doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
+
 function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
     return gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end

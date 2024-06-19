@@ -18,17 +18,14 @@ _arg_M = raw"* `M`, a manifold ``\mathcal M``"
 
 _kw_evaluation_default = raw"`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
 _kw_evaluation = raw"""
-  specify whether the functions that return a value on a manifold or a tangent space
+specify whether the functions that return a value on a manifold or a tangent space
   work by allocating its result([`AllocatingEvaluation`](@ref) or whether it accepts the result
   as its (usual second) input argument (after the manifold), that is we have an [`InplaceEvaluation`](@ref).
   For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`.
 """
 
 _kw_inverse_retraction_method_default = raw"`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_inverse_retraction_method = raw"""
-  an inverse retraction ``\operatorname{retr}^{-1}`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
-"""
-
+_kw_inverse_retraction_method = raw"an inverse retraction ``\operatorname{retr}^{-1}`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
 
 _kw_others = raw"""
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
@@ -36,26 +33,22 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 """
 
 _kw_retraction_method_default = raw"`retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_retraction_method = raw"""
-  a retraction ``\operatorname{retr}`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`).
-"""
+_kw_retraction_method = raw"a retraction ``\operatorname{retr}`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)."
 
-_kw_stepsize = raw"""
-  a functor inheriting from [`Stepsize`](@ref) to determine a step size
-"""
+_kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a step size"
 
-_kw_stopping_criterion = raw"""
-  a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-"""
+_kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
 
 _kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
-_kw_X = raw"""
-  specify a memory internally to store a tangent vector
-"""
+_kw_X = raw"specify a memory internally to store a tangent vector"
 
+_L_argmin = raw"\operatorname{arg\,min}"
+_l_grad = raw"\operatorname{grad}"
+_l_retr = raw"\operatorname{retr}"
+_t_vt = raw"\mathcal T"
 _math_VT = raw"a vector transport ``T``"
-_math_inv_retr = raw"an inverse retraction ``\operatorname{retr}^{-1}``"
-_math_retr = raw" a retraction ``\operatorname{retr}``"
+_math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
+_math_retr = " a retraction $_l_retr"
 _problem_default = raw"""
 ```math
 \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
