@@ -7,15 +7,18 @@ Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 """
 
+# Arguments
 _arg_f = raw"* `f`, a cost function ``f: \mathcal M→ℝ`` implemented as `(M, p) -> v`"
 _arg_grad_f = raw"""
 * `grad_f`, the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place
 """
-_arg_p = raw"* `p`, an initial value `p` ``= p_0 ∈ \mathcal M``"
+_arg_p = raw"* `p`, an initial value `p` ``= p^{(k)} ∈ \mathcal M``"
+_arg_M = "* `M`, a manifold ``$_l_M``"
 
-_arg_M = raw"* `M`, a manifold ``\mathcal M``"
-
+# Fields
+_field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M"
+_field_gradient = "`X`: the current gradient ``$(_l_grad)"
 _kw_evaluation_default = raw"`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
 _kw_evaluation = raw"""
 specify whether the functions that return a value on a manifold or a tangent space
@@ -25,7 +28,7 @@ specify whether the functions that return a value on a manifold or a tangent spa
 """
 
 _kw_inverse_retraction_method_default = raw"`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_inverse_retraction_method = raw"an inverse retraction ``\operatorname{retr}^{-1}`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
+_kw_inverse_retraction_method = "an inverse retraction ``$(_l_retr)^{-1}`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
 
 _kw_others = raw"""
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
@@ -42,10 +45,14 @@ _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@re
 _kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
 _kw_X = raw"specify a memory internally to store a tangent vector"
 
+# LateX symbols
 _L_argmin = raw"\operatorname{arg\,min}"
 _l_grad = raw"\operatorname{grad}"
+_l_M = raw"\mathcal M"
 _l_retr = raw"\operatorname{retr}"
 _t_vt = raw"\mathcal T"
+
+# Math terms
 _math_VT = raw"a vector transport ``T``"
 _math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
 _math_retr = " a retraction $_l_retr"
