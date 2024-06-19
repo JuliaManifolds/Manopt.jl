@@ -2,6 +2,25 @@
 #
 # This file collects a few docstrings to be reused in documentation to avoid retyping everything
 
+# LateX symbols
+_L_argmin = raw"\operatorname{arg\,min}"
+_l_grad = raw"\operatorname{grad}"
+_l_M = raw"\mathcal M"
+_l_retr = raw"\operatorname{retr}"
+_l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
+_t_vt = raw"\mathcal T"
+
+# Math terms
+_math_VT = raw"a vector transport ``T``"
+_math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
+_math_retr = " a retraction $_l_retr"
+_problem_default = raw"""
+```math
+\operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
+```
+"""
+
+# Arguments of functions
 _arg_alt_mgo = raw"""
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
@@ -13,21 +32,24 @@ _arg_grad_f = raw"""
 * `grad_f`, the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place
 """
-_arg_p = raw"* `p`, an initial value `p` ``= p^{(k)} ∈ \mathcal M``"
+_arg_p = raw"* `p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
 _arg_M = "* `M`, a manifold ``$_l_M``"
 
 # Fields
-_field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M"
-_field_gradient = "`X`: the current gradient ``$(_l_grad)"
-_kw_evaluation_default = raw"`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
-_kw_evaluation = raw"""
-specify whether the functions that return a value on a manifold or a tangent space
-  work by allocating its result([`AllocatingEvaluation`](@ref) or whether it accepts the result
-  as its (usual second) input argument (after the manifold), that is we have an [`InplaceEvaluation`](@ref).
-  For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`.
-"""
+_field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
+_field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"
+_field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
+_field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
+_field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$_l_retr_long``"
+# Keywords
+_kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
+_kw_evaluation = "specify whether the functions that return an array, for example a point\
+or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or\
+whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)).\
+Since usually the first argument is the manifold, the modified argument is the second."
+_kw_evaluation_example = "For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`."
 
-_kw_inverse_retraction_method_default = raw"`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
+_kw_inverse_retraction_method_default = "`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_inverse_retraction_method = "an inverse retraction ``$(_l_retr)^{-1}`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
 
 _kw_others = raw"""
@@ -41,23 +63,6 @@ _kw_retraction_method = raw"a retraction ``\operatorname{retr}`` to use, see [th
 _kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a step size"
 
 _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
-
+_kw_stop_note = "is used to set the field `stop`."
 _kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
 _kw_X = raw"specify a memory internally to store a tangent vector"
-
-# LateX symbols
-_L_argmin = raw"\operatorname{arg\,min}"
-_l_grad = raw"\operatorname{grad}"
-_l_M = raw"\mathcal M"
-_l_retr = raw"\operatorname{retr}"
-_t_vt = raw"\mathcal T"
-
-# Math terms
-_math_VT = raw"a vector transport ``T``"
-_math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
-_math_retr = " a retraction $_l_retr"
-_problem_default = raw"""
-```math
-\operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
-```
-"""

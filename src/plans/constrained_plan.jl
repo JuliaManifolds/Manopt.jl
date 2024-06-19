@@ -296,7 +296,7 @@ problem is for.
         hessian_inequality_range=range
     )
 
-Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation`](@ref)
+Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`)
 for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
 """
 struct ConstrainedManoptProblem{

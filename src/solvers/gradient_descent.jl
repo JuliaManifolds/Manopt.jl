@@ -1,26 +1,35 @@
 
-@doc raw"""
+@doc """
     GradientDescentState{P,T} <: AbstractGradientSolverState
 
-Describes a Gradient based descent algorithm, with
+Describes the state of a a Gradient based descent algorithm.
 
 # Fields
-a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p`:                  (`rand(M)` the current iterate
-* `X`:                  (`zero_vector(M,p)`) the current gradient ``\operatorname{grad}f(p)``, initialised to zero vector.
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `stepsize`:           ([`default_stepsize`](@ref)`(M, GradientDescentState)`) a [`Stepsize`](@ref)
-* `direction`:          ([`IdentityUpdateRule`](@ref)) a processor to compute the gradient
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) the retraction to use, defaults to
-  the default set for your manifold.
+* $_field_iterate
+* $_field_gradient
+* $_field_stop
+* $_field_step
+* `direction::`[`DirectionUpdateRule`](@ref) : a preocessor to handle the obtained gradient and compute a
+  direction to “walk into”.
+* $_field_retr
 
 # Constructor
 
-    GradientDescentState(M, p=rand(M); X=zero_vector(M, p), kwargs...)
+    GradientDescentState(M, p=rand(M); kwargs...)
 
-Generate gradient descent options, where `X` can be used to set the tangent vector to store
-the gradient in a certain type. All other fields are keyword arguments.
+Initialize the gradient descent solver state, where
+
+$_arg_M
+$_arg_p
+
+## Keyword Arguments
+
+* `direction=`[`IdentityUpdateRule`](@ref)`()`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)` $_kw_stop_note
+* `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState; retraction_method=retraction_method)`
+* $_kw_retraction_method_default
+* $_kw_X_default
 
 # See also
 
@@ -116,6 +125,7 @@ doc_gd_iterate = raw"""
 p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
 \qquad k=0,1,…
 ```
+where ``s_k > 0`` denotes a step size.
 """
 doc_gradient_descent = """
     gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
@@ -126,8 +136,7 @@ doc_gradient_descent = """
 perform the gradient descent algorithm
 
 $(doc_gd_iterate)
-
-with different choices of the stepsize ``s_k`` available (see `stepsize` option below).
+The algorithm can be performed in-place of `p`.
 
 # Input
 
@@ -142,10 +151,10 @@ $_arg_alt_mgo
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()`:
   specify to perform a certain processing of the direction, for example
-  [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref)
+  [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref).
 
 * $_kw_evaluation_default:
-  $_kw_evaluation
+  $_kw_evaluation $_kw_evaluation_example
 
 * $_kw_retraction_method_default:
   $_kw_retraction_method
@@ -268,8 +277,8 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
     get_gradient!(mp, s.X, s.p)
     return s
 end
-function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, i)
-    step, s.X = s.direction(p, s, i)
+function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)
+    step, s.X = s.direction(p, s, k)
     retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end
