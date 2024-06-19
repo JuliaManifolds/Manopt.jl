@@ -1,6 +1,6 @@
 #
 #
-# This file collects a few docstrings to be reused in documentation to avoid retyping everything
+# This file collects a few strings to be reused in documentation to avoid retyping everything
 
 # LateX symbols
 _L_argmin = raw"\operatorname{arg\,min}"
@@ -41,12 +41,13 @@ _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
 _field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$_l_retr_long``"
+_field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$_l_retr_long^{-1}``"
 # Keywords
 _kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
 _kw_evaluation = "specify whether the functions that return an array, for example a point\
 or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or\
 whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)).\
-Since usually the first argument is the manifold, the modified argument is the second."
+ Since usually the first argument is the manifold, the modified argument is the second."
 _kw_evaluation_example = "For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`."
 
 _kw_inverse_retraction_method_default = "`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"

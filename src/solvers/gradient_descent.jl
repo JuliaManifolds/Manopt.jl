@@ -2,7 +2,7 @@
 @doc """
     GradientDescentState{P,T} <: AbstractGradientSolverState
 
-Describes the state of a a Gradient based descent algorithm.
+Describes the state of a gradient based descent algorithm.
 
 # Fields
 
@@ -10,7 +10,7 @@ Describes the state of a a Gradient based descent algorithm.
 * $_field_gradient
 * $_field_stop
 * $_field_step
-* `direction::`[`DirectionUpdateRule`](@ref) : a preocessor to handle the obtained gradient and compute a
+* `direction::`[`DirectionUpdateRule`](@ref) : a processor to handle the obtained gradient and compute a
   direction to “walk into”.
 * $_field_retr
 
@@ -23,7 +23,7 @@ Initialize the gradient descent solver state, where
 $_arg_M
 $_arg_p
 
-## Keyword Arguments
+## Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)` $_kw_stop_note
@@ -120,14 +120,14 @@ function show(io::IO, gds::GradientDescentState)
     return print(io, s)
 end
 
-doc_gd_iterate = raw"""
+_doc_gd_iterate = raw"""
 ```math
 p_{k+1} = \operatorname{retr}_{p_k}\bigl( s_k\operatorname{grad}f(p_k) \bigr),
 \qquad k=0,1,…
 ```
 where ``s_k > 0`` denotes a step size.
 """
-doc_gradient_descent = """
+_doc_gradient_descent = """
     gradient_descent(M, f, grad_f, p=rand(M); kwargs...)
     gradient_descent(M, gradient_objective, p=rand(M); kwargs...)
     gradient_descent!(M, f, grad_f, p; kwargs...)
@@ -135,7 +135,7 @@ doc_gradient_descent = """
 
 perform the gradient descent algorithm
 
-$(doc_gd_iterate)
+$(_doc_gd_iterate)
 The algorithm can be performed in-place of `p`.
 
 # Input
@@ -162,7 +162,7 @@ $_arg_alt_mgo
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState)`:
   $_kw_stepsize
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200) | ` [`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $_kw_stopping_criterion
 
 * $_kw_X_default:
@@ -179,7 +179,7 @@ the obtained approximate minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
 
-"$(doc_gradient_descent)"
+"$(_doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
@@ -219,7 +219,7 @@ function gradient_descent(
     return gradient_descent!(M, mgo, q; kwargs...)
 end
 
-"$(doc_gradient_descent)"
+"$(_doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
 function gradient_descent!(
     M::AbstractManifold,

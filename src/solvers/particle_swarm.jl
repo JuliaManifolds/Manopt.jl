@@ -179,7 +179,7 @@ g_{k}^{(i)}, & \text{else,}
     patricle_swarm(M, mco::AbstractManifoldCostObjective, swarm; kwargs..)
 
 perform the particle swarm optimization algorithm (PSO) to solve
-$_problem_default
+$(_problem_default)
 PSO starts with an initial `swarm` [BorckmansIshtevaAbsil:2010](@cite) of points
 on the manifold.
 If no `swarm` is provided, `swarm_size` many random points are used.
@@ -193,13 +193,12 @@ where
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* we further have $_math_VT and $_math_inv_retr
+* $_math_VT and $_math_inv_retr
 
 Then the position of the particle is updated as
 
 $_doc_particle_update
 
-where we use $_math_retr on the `Manifold` `M`.
 Then the single particles best entries ``p_k^{(i)}`` are updated as
 
 $_doc_swarm_best

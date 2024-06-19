@@ -1,3 +1,10 @@
+_field_.*\b
+_arg_.*\b
+_kw_.*\b
+_l_.*\b
+_math_.*\b
+_problem_.*\b
+_doc_.*\b
 Absil
 Adagrad
 [A|a]djoint

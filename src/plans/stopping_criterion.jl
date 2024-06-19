@@ -688,7 +688,7 @@ function (c::StopWhenCostNaN)(
     if i == 0 # reset on init
         c.at_iteration = -1
     end
-    # but still check
+    # but still verify whether it yields NaN
     if isnan(get_cost(p, get_iterate(s)))
         c.at_iteration = i
         return true

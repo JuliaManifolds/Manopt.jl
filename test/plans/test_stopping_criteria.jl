@@ -275,7 +275,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s.p = p
         @test sc1(mp, s, 1) #always returns true since `f` is always NaN
         s.p = [0.0, 0.1]
-        @test !sc1(mp, s, 0) # test reset – triggers again
+        @test !sc1(mp, s, 0) # test reset. triggers again
         @test length(get_reason(sc1)) == 0
         @test sc1.at_iteration == -1
         # Trigger manually
@@ -288,7 +288,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test sc2(mp, s, 1) #always returns true since p was now set to NaN
         @test length(get_reason(sc2)) > 0
         s.p = p
-        @test !sc2(mp, s, 0) # test reset, though this als already triggers
+        @test !sc2(mp, s, 0) # test reset, though this already again triggers
         @test length(get_reason(sc2)) == 0 # verify reset
         @test sc2.at_iteration == -1
         # Trigger manually
