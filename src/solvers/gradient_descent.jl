@@ -20,6 +20,8 @@ Describes the state of a gradient based descent algorithm.
 
 Initialize the gradient descent solver state, where
 
+## Input
+
 $_arg_M
 $_arg_p
 
@@ -170,7 +172,7 @@ $_arg_alt_mgo
 
 $_kw_others
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=`keyword is ignored.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 # Output
@@ -179,7 +181,7 @@ the obtained approximate minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
 """
 
-"$(_doc_gradient_descent)"
+@doc "$(_doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 
 function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
