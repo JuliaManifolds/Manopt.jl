@@ -219,7 +219,7 @@ end
 #
 # Special single ones
 #
-@doc raw"""
+@doc """
     DebugChange(M=DefaultManifold())
 
 debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
@@ -227,11 +227,14 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
 
-* `storage`:                   (`StoreStateAction( [:Gradient] )` storage of the previous action
-* `prefix`:                    (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io`:                        (`stdout`) default stream to print the debug to.
-* `format`:                    ( `"$prefix %f"`) format to print the output.
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M)`) the inverse retraction
+* `storage=`[`StoreStateAction`](@ref)`( [:Gradient] )` storage of the previous action
+* `prefix="Last Change:": prefix of the debug output (ignored if you set `format`)
+* `io=stdout`: default stream to print the debug to.
+* `format="\$prefix %f"`: format to print the output.
+* $_kw_inverse_retraction_method_default:
+  $_kw_inverse_retraction_method
+
+the inverse retraction
   to be used for approximating distance.
 """
 mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
@@ -294,7 +297,7 @@ function show(io::IO, dc::DebugChange)
 end
 status_summary(dc::DebugChange) = "(:Change, \"$(escape_string(dc.format))\")"
 
-@doc raw"""
+@doc """
     DebugCost <: DebugAction
 
 print the current cost function value, see [`get_cost`](@ref).
@@ -304,9 +307,9 @@ print the current cost function value, see [`get_cost`](@ref).
 
 # Parameters
 
-* `format`: (`"$prefix %f"`) format to print the output
-* `io`:     (`stdout`) default stream to print the debug to.
-* `long`:   (`false`) short form to set the format to `f(x):` (default) or `current cost: ` and the cost
+* `format="\$prefix %f"`: format to print the output
+* `io=stdout`: default stream to print the debug to.
+* `long=false`: short form to set the format to `f(x):` (default) or `current cost: ` and the cost
 """
 mutable struct DebugCost <: DebugAction
     io::IO
@@ -439,9 +442,9 @@ print a certain entries change during iterates
 
 # Additional fields
 
-* `print`:    (`print`) function to print the result
-* `prefix`:   (`"Change of :Iterate"`) prefix to the print out
-* `format`:   (`"$prefix %e"`) format to print (uses the `prefix by default and scientific notation)
+* `print`:    function to print the result
+* `prefix`:   prefix to the print out
+* `format`:   format to print (uses the `prefix by default and scientific notation)
 * `field`:    Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
 * `distance`: function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage`:  a [`StoreStateAction`](@ref) to store the previous value of `:f`
@@ -450,13 +453,13 @@ print a certain entries change during iterates
 
     DebugEntryChange(f,d)
 
-# Keyword arguments
+## Keyword arguments
 
-* `io`:             (`stdout`) an `IOStream`
-* `prefix`:         (`"Change of $f"`)
-* `storage`:        (`StoreStateAction((f,))`) a [`StoreStateAction`](@ref)
-* `initial_value`: an initial value for the change of `o.field`.
-* `format`:         (`"$prefix %e"`) format to print the change
+* `io=stdout`:                      an `IOStream` used for the debug
+* `prefix="Change of $f"`:          the prefix
+* `storage=StoreStateAction((f,))`: a [`StoreStateAction`](@ref)
+* `initial_value=NaN`:              an initial value for the change of `o.field`.
+* `format="$prefix %e"`:            format to print the change
 """
 mutable struct DebugEntryChange <: DebugAction
     distance::Any
@@ -508,10 +511,10 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 
 # Keyword parameters
 
-* `storage`: (`StoreStateAction( (:Gradient,) )`) storage of the action for previous data
-* `prefix`:  (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `io`:      (`stdout`) default stream to print the debug to.
-* `format`:  ( `"$prefix %f"`) format to print the output
+* `storage=`[`StoreStateAction`](@ref)`( (:Gradient,) )`: storage of the action for previous data
+* `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
+* `io=stdout`: default stream to print the debug to.
+* `format="$prefix %f": format to print the output
 """
 mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
     io::IO
@@ -575,9 +578,9 @@ debug for the current iterate (stored in `get_iterate(o)`).
 
 # Parameters
 
-* `io`:        (`stdout`) default stream to print the debug to.
-* `format`:    (`"$prefix %s"`) format how to print the current iterate
-* `long`:      (`false`) whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix
+* `io=stdout`:           default stream to print the debug to.
+* `format="$prefix %s"`: format how to print the current iterate
+* `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix
 * `prefix`     (see `long` for default) set a prefix to be printed before the iterate
 """
 mutable struct DebugIterate <: DebugAction
@@ -610,8 +613,8 @@ status_summary(di::DebugIterate) = "(:Iterate, \"$(escape_string(di.format))\")"
 
 # Keyword parameters
 
-* `format`: (`"# %-6d"`) format to print the output
-* `io`:     (`stdout`) default stream to print the debug to.
+* `format="# %-6d"`: format to print the output
+* `io=stdout`: default stream to print the debug to.
 
 debug for the current iteration (prefixed with `#` by )
 """
@@ -694,8 +697,8 @@ empty, unless the algorithm stops.
 
 # Fields
 
-* `prefix`: (`""`) format to print the output
-* `io`:     (`stdout`) default stream to print the debug to.
+* `prefix=""`: format to print the output
+* `io=stdout`: default stream to print the debug to.
 
 # Constructor
 
@@ -783,12 +786,13 @@ The measured time is rounded using the given `time_accuracy` and printed after [
 
 # Keyword parameters
 
-* `io`:            (`stdout`) default stream to print the debug to.
-* `format`:        ( `"$prefix %s"`) format to print the output, where `%s` is the canonicalized time`.
-* `mode`:          (`:cumulative`) whether to display the total time or reset on every call using `:iterative`.
-* `prefix`:        (`"Last Change:"`) prefix of the debug output (ignored if you set `format`)
-* `start`:         (`false`) indicate whether to start the timer on creation or not. Otherwise it might only be started on first call.
-* `time_accuracy`: (`Millisecond(1)`) round the time to this period before printing the canonicalized time
+* `io=stdout`:             default stream to print the debug to.
+* `format="$prefix %s"`:   format to print the output, where `%s` is the canonicalized time`.
+* `mode=:cumulative`:      whether to display the total time or reset on every call using `:iterative`.
+* `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
+* `start=false`:           indicate whether to start the timer on creation or not.
+   Otherwise it might only be started on first call.
+* `time_accuracy=Millisecond(1)`: round the time to this period before printing the canonicalized time
 """
 mutable struct DebugTime <: DebugAction
     io::IO

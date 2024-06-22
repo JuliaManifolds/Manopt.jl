@@ -13,11 +13,13 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
     SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
 
-## Keyword
-* `p`:           (`rand(M)`) a point on the manifold to initialize the cache with
-* `X`:           (`get_gradient(M, obj, p)` or `zero_vector(M,p)`) a tangent vector to store the gradient in, see also `initialize`
-* `c`:           (`get_cost(M, obj, p)` or `0.0`) a value to store the cost function in `initialize`
-* `initialized`: (`true`) whether to initialize the cached `X` and `c` or not.
+## Keyword arguments
+
+* `p=rand(M)`: a point on the manifold to initialize the cache with
+* `X=get_gradient(M, obj, p)` or `zero_vector(M,p)`: a tangent vector to store the gradient in,
+  see also `initialize=`
+* `c=get_cost(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
+* `initialized=true`: whether to initialize the cached `X` and `c` or not.
 """
 mutable struct SimpleManifoldCachedObjective{
     E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E},P,T,C
@@ -236,12 +238,18 @@ which function evaluations to cache.
 
 # Keyword arguments
 
-* `p`:           (`rand(M)`) the type of the keys to be used in the caches. Defaults to the default representation on `M`.
-* `value`:       (`get_cost(M, objective, p)`) the type of values for numeric values in the cache
-* `X`:           (`zero_vector(M,p)`) the type of values to be cached for gradient and Hessian calls.
-* `cache`:       (`[:Cost]`) a vector of symbols indicating which function calls should be cached.
-* `cache_size`:  (`10`) number of (least recently used) calls to cache
-* `cache_sizes`: (`Dict{Symbol,Int}()`) a named tuple or dictionary specifying the sizes individually for each cache.
+* `p=rand(M)`:
+  the type of the keys to be used in the caches. Defaults to the default representation on `M`.
+* `value=get_cost(M, objective, p)`:
+  the type of values for numeric values in the cache
+* `X=zero_vector(M,p)`:
+  the type of values to be cached for gradient and Hessian calls.
+* `cache=[:Cost]`:
+  a vector of symbols indicating which function calls should be cached.
+* `cache_size=10`:
+  number of (least recently used) calls to cache
+* `cache_sizes=Dict{Symbol,Int}()`:
+  a named tuple or dictionary specifying the sizes individually for each cache.
 
 
 """

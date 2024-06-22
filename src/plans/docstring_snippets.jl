@@ -5,15 +5,25 @@
 # LateX symbols
 _L_argmin = raw"\operatorname{arg\,min}"
 _l_grad = raw"\operatorname{grad}"
+_l_grad_long = raw"\operatorname{grad}F: \mathcal M → T\mathcal M"
 _l_M = raw"\mathcal M"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
-_t_vt = raw"\mathcal T"
+_l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
 _l_C_subset_M = raw"\mathcal C \subset \mathcal M"
+_l_TpM(p="p") = "T_{$p}$_l_M"
+_l_M = raw"\mathcal M"
 # Math terms
 _math_VT = raw"a vector transport ``T``"
 _math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
 _math_retr = " a retraction $_l_retr"
+_math_reflect = raw"""
+```math
+  \operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x),
+```
+where ``\operatorname{retr}`` and ``\operatorname{retr}^{-1}`` denote a retraction and an inverse
+retraction, respectively.
+"""
 _problem_default = raw"""
 ```math
 \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
@@ -41,12 +51,15 @@ _arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `s
 _field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
 _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$_l_retr_long^{-1}``"
+_field_p = raw"`p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
 _field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$_l_retr_long``"
 _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
 _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function,\
 indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
+_field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$_l_vt``"
+_field_X = "`X` a tangent vector"
 
 # Keywords
 _kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
@@ -71,6 +84,11 @@ _kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a s
 
 _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
 _kw_stop_note = "is used to set the field `stop`."
+
+_kw_vector_transport_method_default = raw"`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
+_kw_vector_transport_method = raw"a vector transport ``\mathcal T`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
+
+
 _kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
 _kw_X = raw"specify a memory internally to store a tangent vector"
 

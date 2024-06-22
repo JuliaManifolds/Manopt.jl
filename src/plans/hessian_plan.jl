@@ -201,23 +201,29 @@ An abstract supertype for approximate Hessian functions, declares them also to b
 """
 abstract type AbstractApproxHessian <: Function end
 
-@doc raw"""
-    ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <: AbstractApproxHessian
-
-A functor to approximate the Hessian by a finite difference of gradient evaluation.
-
-Given a point `p` and a direction `X` and the gradient ``\operatorname{grad}F: \mathcal M → T\mathcal M``
-of a function ``F`` the Hessian is approximated as follows:
-let ``c`` be a stepsize, ``X∈ T_p\mathcal M`` a tangent vector and ``q = \operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)``
-be a step in direction ``X`` of length ``c`` following a retraction
-Then the Hessian is approximated by the finite difference of the gradients, where ``\mathcal T_{\cdot\gets\cdot}`` is a vector transport.
-
+_doc_ApproxHessian_formula = raw"""
 ```math
 \operatorname{Hess}F(p)[X] ≈
 \frac{\lVert X \rVert_p}{c}\Bigl(
   \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)
 \Bigl)
 ```
+"""
+_doc_ApproxHessian_step = raw"\operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X)"
+
+@doc """
+    ApproxHessianFiniteDifference{E, P, T, G, RTR, VTR, R <: Real} <: AbstractApproxHessian
+
+A functor to approximate the Hessian by a finite difference of gradient evaluation.
+
+Given a point `p` and a direction `X` and the gradient ````
+of a function ``f`` the Hessian is approximated as follows:
+let ``c`` be a stepsize, ``X ∈ $(_l_TpM())`` a tangent vector and ``q = $_doc_ApproxHessian_step``
+be a step in direction ``X`` of length ``c`` following a retraction
+Then the Hessian is approximated by the finite difference of the gradients,
+where ``$_l_vt`` is a vector transport.
+
+$_doc_ApproxHessian_formula
 
  # Fields
 
@@ -238,10 +244,12 @@ Then the Hessian is approximated by the finite difference of the gradients, wher
 
 ## Keyword arguments
 
-* `evaluation`:              ([`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
-* `steplength`:              (``2^{-14}``) step length ``c`` to approximate the gradient evaluations
-* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use in the approximation.
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
+* `evaluation=`[`AllocatingEvaluation`](@ref)) whether the gradient is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
+* `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
+* $_kw_retraction_method_default
+  $_kw_retraction_method
+* $_kw_vector_transport_method_default
+  $_kw_vector_transport_method
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real} <:
                AbstractApproxHessian
@@ -307,18 +315,26 @@ end
     ApproxHessianSymmetricRankOne{E, P, G, T, B<:AbstractBasis{ℝ}, VTR, R<:Real} <: AbstractApproxHessian
 
 A functor to approximate the Hessian by the symmetric rank one update.
+
 # Fields
-* `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
-* `ν` a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
-* `vector_transport_method` a vector transport to use.
+
+* `gradient!!`: the gradient function (either allocating or mutating, see `evaluation` parameter).
+* `ν`: a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
+* `vector_transport_method`: a vector transport to use.
+
 ## Internal temporary fields
-* `p_tmp` a temporary storage the current point `p`.
-* `grad_tmp` a temporary storage for the gradient at the current `p`.
-* `matrix` a temporary storage for the matrix representation of the approximating operator.
-* `basis` a temporary storage for an orthonormal basis at the current `p`.
+
+* `p_tmp`: a temporary storage the current point `p`.
+* `grad_tmp`: a temporary storage for the gradient at the current `p`.
+* `matrix`: a temporary storage for the matrix representation of the approximating operator.
+* `basis`: a temporary storage for an orthonormal basis at the current `p`.
+
 # Constructor
+
     ApproxHessianSymmetricRankOne(M, p, gradF; kwargs...)
+
 ## Keyword arguments
+
 * `initial_operator` (`Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))`) the matrix representation of the initial approximating operator.
 * `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)

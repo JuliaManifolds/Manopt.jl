@@ -14,6 +14,7 @@ An alternating gradient objective consists of
     This Objective is usually defined using the `ProductManifold` from `Manifolds.jl`, so `Manifolds.jl` to be loaded.
 
 # Constructors
+
     ManifoldAlternatingGradientObjective(F, gradF::Function;
         evaluation=AllocatingEvaluation()
     )
