@@ -143,7 +143,7 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 Generate the options with the following keyword arguments
 
-* `stopping_criterion=`[`StopAfterIteration(`](@ref)`(2000)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`
 * `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_l_Manifold("N"))``,
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
 
