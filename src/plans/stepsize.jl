@@ -99,12 +99,12 @@ A functor that represents several decreasing step sizes
 
 # Fields
 
-* `exponent`:   (`1`) a value ``e`` the current iteration numbers ``e``th exponential is
+* `exponent`:   a value ``e`` the current iteration numbers ``e``th exponential is
   taken of
-* `factor`:     (`1`) a value ``f`` to multiply the initial step size with every iteration
-* `length`:     (`1`) the initial step size ``l``.
-* `subtrahend`: (`0`) a value ``a`` that is subtracted every iteration
-* `shift`:      (`0`) shift the denominator iterator ``i`` by ``s```.
+* `factor`:     a value ``f`` to multiply the initial step size with every iteration
+* `length`:     the initial step size ``l``.
+* `subtrahend`: a value ``a`` that is subtracted every iteration
+* `shift`:      shift the denominator iterator ``i`` by ``s```.
 * `type`:       a symbol that indicates whether the stepsize is relatively (:relative),
     with respect to the gradient norm, or absolutely (:absolute) constant.
 
@@ -122,10 +122,13 @@ and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 Alternatively one can also use the following keyword.
 
-    DecreasingStepsize(
-        M::AbstractManifold=DefaultManifold(3);
-        length=injectivity_radius(M)/2, multiplier=1.0, subtrahend=0.0,
-        exponent=1.0, shift=0, type=:relative
+    DecreasingStepsize(M::AbstractManifold=DefaultManifold(3);
+        length=injectivity_radius(M)/2,
+        multiplier=1.0,
+        subtrahend=0.0,
+        exponent=1.0,
+        shift=0,
+        type=:relative,
     )
 
 initializes all fields, where none of them is mandatory and the length is set to
@@ -206,25 +209,22 @@ A functor representing Armijo line search including the last runs state string t
 
 # Fields
 
-* `initial_stepsize`:          (`1.0`) and initial step size
-* `retraction_method`:         (`default_retraction_method(M)`) the retraction to use
-* `contraction_factor`:        (`0.95`) exponent for line search reduction
-* `sufficient_decrease`:       (`0.1`) gain within Armijo's rule
-* `last_stepsize`:             (`initialstepsize`) the last step size to start the search with
-* `initial_guess`:             (`(p,s,i,l) -> l`)  based on a [`AbstractManoptProblem`](@ref) `p`,
+* `candidate_point`:           to store an interim result
+* `initial_stepsize`:          and initial step size
+* `retraction_method`:         the retraction to use
+* `contraction_factor`:        exponent for line search reduction
+* `sufficient_decrease`:       gain within Armijo's rule
+* `last_stepsize`:             the last step size to start the search with
+* `initial_guess`:             based on a [`AbstractManoptProblem`](@ref) `p`,
   [`AbstractManoptSolverState`](@ref) `s` and a current iterate `i` and a last step size `l`,
   this returns an initial guess. The default uses the last obtained stepsize
 
-as well as for internal use
-
-* `candidate_point`:           (`allocate_result(M, rand)`) to store an interim result
-
 Furthermore the following fields act as safeguards
 
-* `stop_when_stepsize_less`:    (`0.0`) smallest stepsize when to stop (the last one before is taken)
-* `stop_when_stepsize_exceeds`: ([`max_stepsize`](@ref)`(M, p)`) largest stepsize when to stop.
-* `stop_increasing_at_step`:    (`100`) last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`:    (`1000`) last step size to decrease the stepsize (phase 2),
+* `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds`: largest stepsize when to stop.
+* `stop_increasing_at_step`:    last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
@@ -243,9 +243,18 @@ with keywords.
 
 ## Keyword arguments
 
-  * `candidate_point`: (`allocate_result(M, rand)`) to pass memory for the candidate point
-  * `η`:               (`-get_gradient(mp, get_iterate(s));`) the search direction to use,
-  by default the steepest descent direction.
+* `candidate_point=`(`allocate_result(M, rand)`)
+* `η=-`[`get_gradient`9(@ref)(mp, get_iterate(s));`
+* `initial_stepsize=1.0`
+* `retraction_method=``default_retraction_method``(M)`
+* `contraction_factor=0.95`
+* `sufficient_decrease=0.1`
+* `last_stepsize=initialstepsize`
+* `initial_guess=(p,s,i,l) -> l`
+* `stop_when_stepsize_less=0.0`
+* `stop_when_stepsize_exceeds`
+* `stop_increasing_at_step=100`
+* `stop_decreasing_at_step=1000`
 """
 mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
     candidate_point::P
@@ -356,11 +365,11 @@ with the step size `s` as second argument.
 
 ## Keywords
 
-* `retraction_method`:          (`default_retraction_method(M)`) the retraction to use.
-* `stop_when_stepsize_less`:    (`0.0`) to avoid numerical underflow
-* `stop_when_stepsize_exceeds`: ([`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
-* `stop_increasing_at_step`:    (`100`) stop the initial increase of step size after these many steps
-* `stop_decreasing_at_step`:    (`1000`) stop the decreasing search after these many steps
+* `retraction_method=` `default_retraction_method` `(M)`: the retraction to use.
+* `stop_when_stepsize_less=0.0`: to avoid numerical underflow
+* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
+* `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
+* `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
 
 These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
 
@@ -444,7 +453,54 @@ function linesearch_backtrack!(
     return (s, msg)
 end
 
-@doc raw"""
+_doc_NM_linesearch = raw"""
+```math
+y_{k} = \operatorname{grad}F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1}))
+```
+"""
+
+_doc_NM_linesearch2 = raw"""
+```math
+s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1})),
+```
+"""
+
+_doc_NM_BB = raw"""
+```math
+α_k^{\text{BB}} = \begin{cases}
+\min(α_{\text{max}}, \max(α_{\text{min}}, τ_{k})),  & \text{if } ⟨s_{k}, y_{k}⟩_{x_k} > 0,\\
+α_{\text{max}}, & \text{else,}
+\end{cases}
+```
+"""
+
+_doc_NM_BB_direct = raw"""
+```math
+τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},
+```
+"""
+
+_doc_NM_BB_indirect = raw"""
+```math
+τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},
+```
+"""
+
+_doc_NM_BB_h = raw"""
+```math
+F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \operatorname{grad}F(x_k)))
+\leq
+\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\operatorname{grad}F(x_k), \operatorname{grad}F(x_k)⟩_{x_k},
+```
+"""
+
+_doc_NM_final = raw"""
+```math
+α_k = σ^h α_k^{\text{BB}}.
+```
+"""
+
+@doc """
     NonmonotoneLinesearch <: Linesearch
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
@@ -452,96 +508,86 @@ Together with a gradient descent algorithm this line search represents the Riema
 The order is shifted in comparison of the algorithm steps from the paper
 by Iannazzo and Porcelli so that in each iteration this line search first finds
 
-```math
-y_{k} = \operatorname{grad}F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1}))
-```
+$_doc_NM_linesearch
 
 and
 
-```math
-s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1})),
-```
+$_doc_NM_linesearch2
 
-where ``α_{k-1}`` is the step size computed in the last iteration and ``\operatorname{T}`` is a vector transport.
+where ``α_{k-1}`` is the step size computed in the last iteration and $_l_vt is a vector transport.
 Then the Barzilai—Borwein step size is
 
-```math
-α_k^{\text{BB}} = \begin{cases}
-\min(α_{\text{max}}, \max(α_{\text{min}}, τ_{k})),  & \text{if } ⟨s_{k}, y_{k}⟩_{x_k} > 0,\\
-α_{\text{max}}, & \text{else,}
-\end{cases}
-```
+$_doc_NM_BB
 
 where
 
-```math
-τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},
-```
+$_doc_NM_BB_direct
 
 if the direct strategy is chosen,
 
-```math
-τ_{k} = \frac{⟨s_{k}, y_{k}⟩_{x_k}}{⟨y_{k}, y_{k}⟩_{x_k}},
-```
+$_doc_NM_BB_indirect
 
 in case of the inverse strategy and an alternation between the two in case of the
 alternating strategy. Then find the smallest ``h = 0, 1, 2, …`` such that
 
-```math
-F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \operatorname{grad}F(x_k)))
-\leq
-\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\operatorname{grad}F(x_k), \operatorname{grad}F(x_k)⟩_{x_k},
-```
+$_doc_NM_BB_h
 
 where ``σ`` is a step length reduction factor ``∈ (0,1)``, ``m`` is the number of iterations
 after which the function value has to be lower than the current one
 and ``γ`` is the sufficient decrease parameter ``∈(0,1)``.
+
 Then find the new stepsize by
 
-```math
-α_k = σ^h α_k^{\text{BB}}.
-```
+$_doc_NM_final
 
 # Fields
 
-* `initial_stepsize`:        (`1.0`) the step size to start the search with
-* `memory_size`:             (`10`) number of iterations after which the cost value needs to be lower than the current one
-* `bb_min_stepsize`:         (`1e-3`) lower bound for the Barzilai-Borwein step size greater than zero
-* `bb_max_stepsize`:         (`1e3`) upper bound for the Barzilai-Borwein step size greater than min_stepsize
-* `retraction_method`:       (`ExponentialRetraction()`) the retraction to use
-* `strategy`:                (`direct`) defines if the new step size is computed using the direct, indirect or alternating strategy
-* `storage`:                 (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
-* `stepsize_reduction`:      (`0.5`) step size reduction factor contained in the interval (0,1)
-* `sufficient_decrease`:     (`1e-4`) sufficient decrease parameter contained in the interval (0,1)
-* `vector_transport_method`: (`ParallelTransport()`) the vector transport method to use
-
-as well as for internal use
-
-* `candidate_point`:           (`allocate_result(M, rand)`) to store an interim result
+* `initial_stepsize=1.0`:     the step size to start the search with
+* `memory_size=10`:           number of iterations after which the cost value needs to be lower than the current one
+* `bb_min_stepsize=1e-3`:     lower bound for the Barzilai-Borwein step size greater than zero
+* `bb_max_stepsize=1e3`:      upper bound for the Barzilai-Borwein step size greater than min_stepsize
+* `retraction_method`:        the retraction to use
+* `strategy=direct`:          defines if the new step size is computed using the direct, indirect or alternating strategy
+* `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
+* `stepsize_reduction=0.5`:   step size reduction factor contained in the interval (0,1)
+* `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval (0,1)
+* `vector_transport_method`:  the vector transport method to use
+* `candidate_point`:          to store an interim result
 
 Furthermore the following fields act as safeguards
 
-* `stop_when_stepsize_less:     (`0.0`) smallest stepsize when to stop (the last one before is taken)
-* `stop_when_stepsize_exceeds`: ([`max_stepsize`](@ref)`(M, p)`) largest stepsize when to stop.
-* `stop_increasing_at_step`:    (^100`) last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`:    (`1000`) last step size to decrease the stepsize (phase 2),
+* `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds`: largest stepsize when to stop.
+* `stop_increasing_at_step`:    last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
 # Constructor
 
-    NonmonotoneLinesearch()
+    NonmonotoneLinesearch(M=DefaultManifold(); kwargs...)
 
-with the fields their order as optional arguments (deprecated).
-THis is deprecated, since both defaults and the memory allocation for the candidate do
-not take into account which manifold the line search operates on.
+geerate the monotone linesearch
 
-    NonmonotoneLinesearch(M)
+## Keyword arguments
 
-with the fields as keyword arguments and where the retraction
-and vector transport are set to the default ones on `M`, respectively.
+* `candidate_point=allocate_result(M, rand)`: to store an interim result
+* `initial_stepsize=1.0`
+* `memory_size=10`
+* `bb_min_stepsize=1e-3`
+* `bb_max_stepsize=1e3`
+* $_kw_retraction_method_default
+* `strategy=direct`
+* `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``
+* `stepsize_reduction=0.5`
+* `sufficient_decrease=1e-4`
+* `stop_when_stepsize_less=0.0`
+* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p)`)
+* `stop_increasing_at_step=100`
+* `stop_decreasing_at_step=1000`
+* $_kw_vector_transport_method_default
 
-The constructors return the functor to perform nonmonotone line search.
+The constructor return the functor to perform nonmonotone line search.
 """
 mutable struct NonmonotoneLinesearch{
     TRM<:AbstractRetractionMethod,
@@ -843,13 +889,13 @@ Generate a Wolfe-Powell line search
 
 ## Keyword arguments
 
-* `candidate_point`:         (`allocate_result(M, rand)`) memory for a candidate
-* `candidate_tangent`:       (`allocate_result(M, zero_vector, candidate_point)`) memory for a gradient
-* `candidate_direcntion`:    (`allocate_result(M, zero_vector, candidate_point)`) memory for a direction
+* `candidate_point=allocate_result(M, rand)`: memory for a candidate
+* `candidate_tangent=allocate_result(M, zero_vector, candidate_point)`: memory for a gradient
+* `candidate_direcntion=allocate_result(M, zero_vector, candidate_point)`: memory for a direction
 * `max_stepsize`:            ([`max_stepsize`](@ref)`(M, p)`) largest stepsize allowed here.
-* `retraction_method`:       (`ExponentialRetraction()`) the retraction to use
-* `stop_when_stepsize_less`: (`0.0`) smallest stepsize when to stop (the last one before is taken)
-* `vector_transport_method`: (`ParallelTransport()`) the vector transport method to use
+* `retraction_method=ExponentialRetraction()`: the retraction to use
+* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `vector_transport_method=ParallelTransport()`: the vector transport method to use
 """
 mutable struct WolfePowellLinesearch{
     TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,T
@@ -1149,11 +1195,11 @@ Note that for ``α=0`` this is the Riemannian variant of `WNGRad`.
 
 # Fields
 
-* `count_threshold::Int`: (`4`) an `Integer` for ``\hat c``
-* `minimal_bound::Float64`: (`1e-4`) for ``b_{\mathrm{min}}``
-* `alternate_bound::Function`: (`(bk, hat_c) -> min(gradient_bound, max(gradient_bound, bk/(3*hat_c)`)
+* `count_threshold::Int=4`: an `Integer` for ``\hat c``
+* `minimal_bound::Float64=1e-4`: for ``b_{\mathrm{min}}``
+* `alternate_bound::Function=(bk, hat_c) -> min(gradient_bound, max(gradient_bound, bk/(3*hat_c)`:
   how to determine ``\hat b_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
-* `gradient_reduction::Float64`: (`0.9`)
+* `gradient_reduction::Float64=0.9`:
 * `gradient_bound` `norm(M, p0, grad_f(M,p0))` the bound ``b_k``.
 
 as well as the internal fields
@@ -1167,8 +1213,8 @@ as well as the internal fields
 
 Where all fields with defaults are keyword arguments and additional keyword arguments are
 
-* `adaptive`:   (`true`) switches the `gradient_reduction ``α`` to `0`.
-* `evaluation`: (`AllocatingEvaluation()`) specifies whether the gradient (that is used for initialisation only) is mutating or allocating
+* `adaptive=true`: switches the `gradient_reduction ``α`` to `0`.
+* `evaluation=AllocatingEvaluation()`: specifies whether the gradient (that is used for initialisation only) is mutating or allocating
 """
 mutable struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
     count_threshold::I

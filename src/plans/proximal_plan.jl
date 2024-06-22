@@ -124,26 +124,28 @@ end
 # Proximal based State
 #
 #
-@doc raw"""
+@doc """
     CyclicProximalPointState <: AbstractManoptSolverState
 
 stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
-* `p`:                  the current iterate
-* `stopping_criterion`:  a [`StoppingCriterion`](@ref)
-* `λ`:                  (@(i) -> 1/i) a function for the values of ``λ_k`` per iteration(cycle ``ì``
-* `oder_type`:          (`:LinearOrder`) whether to use a randomly permuted sequence (`:FixedRandomOrder`),
+
+* $_field_p
+* $_field_stop
+* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``ì``
+* `oder_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
   a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
-    CyclicProximalPointState(M, p)
+
+    CyclicProximalPointState(M, p; kwargs...)
 
 Generate the options with the following keyword arguments
 
-* `stopping_criterion`: (`StopAfterIteration(2000)`) a [`StoppingCriterion`](@ref).
-* `λ`:                  ( `i -> 1.0 / i`) a function to compute the ``λ_k, k ∈ \mathbb N``,
-* `evaluation_order`:   (`:LinearOrder`) a Symbol indicating the order the proximal maps are applied.
+* `stopping_criterion=`[`StopAfterIteration(`](@ref)`(2000)`
+* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_l_Manifold("N"))``,
+* `evaluation_order=:LinearOrder`: soecify the `order_type`
 
 # See also
 

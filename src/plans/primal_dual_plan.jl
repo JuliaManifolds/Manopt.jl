@@ -42,7 +42,7 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 * `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 

@@ -66,10 +66,10 @@ end
 @doc """
     PrimalDualSemismoothNewtonState <: AbstractPrimalDualSolverState
 
-* `m`:                         base point on ``\mathcal M``
-* `n`:                         base point on ``\mathcal N``
-* `x`:                         an initial point on ``x^{(0)} ∈ \mathcal M`` (and its previous iterate)
-* `ξ`:                         an initial tangent vector ``\xi^{(0)} ∈ T_{n}^*\mathcal N`` (and its previous iterate)
+* `m`:                         base point on ``$_l_M``
+* `n`:                         base point on ``$(_l_Manifold("N"))``
+* `x`:                         an initial point on ``x^{(0)} ∈ $_l_M`` (and its previous iterate)
+* `ξ`:                         an initial tangent vector ``\\xi^{(0)} ∈ T_{n}^*$(_l_Manifold("N"))`` (and its previous iterate)
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
 * `dual_stepsize::Float64`:    proximal parameter of the dual prox
 * `reg_param::Float64`:        regularisation parameter for the Newton matrix

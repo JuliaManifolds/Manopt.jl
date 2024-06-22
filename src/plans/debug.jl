@@ -150,7 +150,7 @@ end
 @doc raw"""
     DebugEvery <: DebugAction
 
-evaluate and print debug only every $i$th iteration. Otherwise no print is performed.
+evaluate and print debug only every ``k``th iteration. Otherwise no print is performed.
 Whether internal variables are updates is determined by `always_update`.
 
 This method does not perform any print itself but relies on it's children's print.

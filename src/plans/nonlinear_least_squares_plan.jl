@@ -132,7 +132,7 @@ function get_gradient!(
     return X
 end
 
-@doc raw"""
+@doc """
     LevenbergMarquardtState{P,T} <: AbstractGradientSolverState
 
 Describes a Gradient based descent algorithm, with
@@ -141,31 +141,40 @@ Describes a Gradient based descent algorithm, with
 
 A default value is given in brackets if a parameter can be left out in initialization.
 
-* `x`:                     a point (of type `P`) on a manifold as starting point
-* `stop`:                  (`StopAfterIteration(200) | StopWhenGradientNormLess(1e-12) | StopWhenStepsizeLess(1e-12)`)
-  a [`StoppingCriterion`](@ref)
-* `retraction_method`:     (`default_retraction_method(M, typeof(p))`) the retraction to use,
-  defaults to the default set for your manifold.
-* `residual_values`       value of ``F`` calculated in the solver setup or the previous iteration
-* `residual_values_temp`  value of ``F`` for the current proposal point
-* `jacF`                  the current Jacobian of ``F``
-* `gradient`              the current gradient of ``F``
-* `step_vector`           the tangent vector at `x` that is used to move to the next point
-* `last_stepsize`         length of `step_vector`
-* `η`                     Scaling factor for the sufficient cost decrease threshold required
+* $_field_iterate
+* $_field_stop
+* $_field_retr
+* `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
+* `residual_values_temp`: value of ``F`` for the current proposal point
+* `jacF`:                 the current Jacobian of ``F``
+* `gradient`:             the current gradient of ``F``
+* `step_vector`:          the tangent vector at `x` that is used to move to the next point
+* `last_stepsize`:        length of `step_vector`
+* `η`:                    Scaling factor for the sufficient cost decrease threshold required
   to accept new proposal points. Allowed range: `0 < η < 1`.
-* `damping_term`          current value of the damping term
-* `damping_term_min`      initial (and also minimal) value of the damping term
-* `β`                     parameter by which the damping term is multiplied when the current
+* `damping_term`:         current value of the damping term
+* `damping_term_min`:     initial (and also minimal) value of the damping term
+* `β`:                    parameter by which the damping term is multiplied when the current
   new point is rejected
-* `expect_zero_residual`:  (`false`) if true, the algorithm expects that the value of
+* `expect_zero_residual`: if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
 
 # Constructor
 
     LevenbergMarquardtState(M, initialX, initial_residual_values, initial_jacF; initial_vector), kwargs...)
 
-Generate Levenberg-Marquardt options.
+Generate the Levenberg-Marquardt solver state.
+
+# Keyword arguments
+
+The following fields are keyword arguments
+
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-12)[` | `](@ref StopWhenAny)[`StopWhenStepsizeLess`](@ref)`(1e-12)`
+* $_kw_retraction_method_default
+* `η=0.2,
+* `damping_term_min=0.1`
+* `β=5.0`
+* `expect_zero_residual=false`
 
 # See also
 

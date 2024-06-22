@@ -5,8 +5,9 @@
 # LateX symbols
 _L_argmin = raw"\operatorname{arg\,min}"
 _l_grad = raw"\operatorname{grad}"
-_l_grad_long = raw"\operatorname{grad}F: \mathcal M → T\mathcal M"
+_l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_M = raw"\mathcal M"
+_l_Manifold(M="M") = "\\mathcal $M"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
 _l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
@@ -24,6 +25,10 @@ _math_reflect = raw"""
 where ``\operatorname{retr}`` and ``\operatorname{retr}^{-1}`` denote a retraction and an inverse
 retraction, respectively.
 """
+function _math_sequence(name, index, i_start=1, i_end="n")
+    return "\\{$(name)_{$index}\\}_{i=$(i_start)}^{$i_end}"
+end
+
 _problem_default = raw"""
 ```math
 \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
@@ -87,7 +92,6 @@ _kw_stop_note = "is used to set the field `stop`."
 
 _kw_vector_transport_method_default = raw"`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_vector_transport_method = raw"a vector transport ``\mathcal T`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
-
 
 _kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
 _kw_X = raw"specify a memory internally to store a tangent vector"
