@@ -3,16 +3,19 @@
 # This file collects a few strings to be reused in documentation to avoid retyping everything
 
 # LateX symbols
+_l_Manifold(M="M") = "\\mathcal $M"
+_l_M = "$(_l_Manifold())"
+_l_TpM(p="p") = "T_{$p}$_l_M"
+
 _L_argmin = raw"\operatorname{arg\,min}"
 _l_grad = raw"\operatorname{grad}"
 _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
-_l_M = raw"\mathcal M"
-_l_Manifold(M="M") = "\\mathcal $M"
+_l_Hess = raw"\operatorname{Hess}"
+_l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
 _l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
 _l_C_subset_M = raw"\mathcal C \subset \mathcal M"
-_l_TpM(p="p") = "T_{$p}$_l_M"
 _l_M = raw"\mathcal M"
 # Math terms
 _math_VT = raw"a vector transport ``T``"
