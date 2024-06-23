@@ -55,7 +55,7 @@ mutable struct DifferenceOfConvexProximalState{
         stepsize::S=ConstantStepsize(M),
         stopping_criterion::SC=StopWhenChangeLess(1e-8),
         inverse_retraction_method::I=default_inverse_retraction_method(M),
-        retraction_method::R=default_retraction_method(M),
+        retraction_method::R=default_retraction_method(M, typeof(p)),
         λ::Fλ=i -> 1,
     ) where {
         P,
@@ -324,7 +324,7 @@ function difference_of_convex_proximal_point!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method=default_inverse_retraction_method(M),
     objective_type=:Riemannian,
-    retraction_method=default_retraction_method(M),
+    retraction_method=default_retraction_method(M, typeof(p)),
     stepsize=ConstantStepsize(M),
     stopping_criterion=if isnothing(get_gradient_function(mdcpo))
         StopAfterIteration(300) | StopWhenChangeLess(1e-9)

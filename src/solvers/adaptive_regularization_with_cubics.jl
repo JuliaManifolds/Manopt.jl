@@ -45,8 +45,8 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * $_kw_evaluation_default
 * $_kw_retraction_method_default
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
-* `sub_objective=nothing`
-* `sub_problem=nothing` is set to [`DefaultManoptProblem`] on the [`TangentSpace`](@extref) of `p` if an `sub_objecive` is provided
+* `sub_objective=nothing` a shortcut to provide a subobjective.
+* `sub_problem=nothing` is set to [`DefaultManoptProblem`] on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
 * `sub_state` is set to [`AllocatingEvaluation`] if `sub_problem` is a function and to a [`LanczosState`](@ref) on the tangent space otherwise
 """
 mutable struct AdaptiveRegularizationState{
@@ -96,7 +96,7 @@ function AdaptiveRegularizationState(
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to initial value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ_regularization::R=1e3,
     stopping_criterion::SC=StopAfterIteration(100),
-    retraction_method::RTM=default_retraction_method(M),
+    retraction_method::RTM=default_retraction_method(M, typeof(p)),
     σmin::R=1e-10,
     η1::R=0.1,
     η2::R=0.9,
@@ -395,7 +395,7 @@ function adaptive_regularization_with_cubics!(
     maxIterLanczos=min(300, manifold_dimension(M)),
     objective_type=:Riemannian,
     ρ_regularization::R=1e3,
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     σmin::R=1e-10,
     σ::R=100.0 / sqrt(manifold_dimension(M)),
     η1::R=0.1,

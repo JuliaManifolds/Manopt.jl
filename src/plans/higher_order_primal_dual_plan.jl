@@ -66,6 +66,8 @@ end
 @doc """
     PrimalDualSemismoothNewtonState <: AbstractPrimalDualSolverState
 
+# Fields
+
 * `m`:                         base point on ``$_l_M``
 * `n`:                         base point on ``$(_l_Manifold("N"))``
 * `x`:                         an initial point on ``x^{(0)} ∈ $_l_M`` (and its previous iterate)
@@ -86,18 +88,27 @@ If you activate these to be different from the default identity, you have to pro
 `p.Λ` for the algorithm to work (which might be `missing`).
 
 # Constructor
-    PrimalDualSemismoothNewtonState(M::AbstractManifold,
-        m::P, n::Q, x::P, ξ::T;
-        primal_stepsize=1/sqrt(8)
-        dual_stepsize=1/sqrt(8),
-        reg_param=1e-5,
-        stopping_criterion=StopAfterIteration(50),
-        update_primal_base=(amp, ams, i) -> o.m,
-        update_dual_base=(amp, ams, i) -> o.n,
-        retraction_method = default_retraction_method(M, typeof(p)),
-        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
-        vector_transport_method = default_vector_transport_method(M, typeof(p)),
-    )
+
+    PrimalDualSemismoothNewtonState(M::AbstractManifold, m::P, n::Q, x::P, ξ::T; kwargs...)
+
+Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
+
+## Keyword arguments
+
+* `primal_stepsize=1/sqrt(8)`
+* `dual_stepsize=1/sqrt(8)`
+* `reg_param=1e-5`
+* `update_primal_base=(amp, ams, i) -> o.m`
+* `update_dual_base=(amp, ams, i) -> o.n`
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
+* $_kw_inverse_retraction_method_default:
+  $_kw_inverse_retraction_method
+* `stopping_criterion=`[`StopAfterIteration`](@ref)(50):
+  $_kw_stopping_criterion
+* $_kw_vector_transport_method_default:
+  $_kw_vector_transport_method
+
 """
 mutable struct PrimalDualSemismoothNewtonState{
     P,

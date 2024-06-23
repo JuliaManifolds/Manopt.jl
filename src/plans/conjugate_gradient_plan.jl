@@ -85,7 +85,7 @@ mutable struct ConjugateGradientDescentState{
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
-        retr::AbstractRetractionMethod=default_retraction_method(M),
+        retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}

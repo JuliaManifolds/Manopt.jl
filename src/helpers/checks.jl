@@ -1,5 +1,5 @@
 
-@doc raw"""
+@doc """
     check_differential(M, F, dF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
 Check numerically whether the differential `dF(M,p,X)` of `F(M,p)` is correct.
@@ -21,7 +21,8 @@ no plot is generated,
 * `name="differential"`: name to display in the plot
 * `plot=false`: whether to plot the result (if `Plots.jl` is loaded).
   The plot is in log-log-scale. This is returned and can then also be saved.
-* `retraction_method=default_retraction_method(M, typeof(p))`: retraction method to use
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
 * `slope_tol=0.1`: tolerance for the slope (global) of the approximation
 * `throw_error=false`: throw an error message if the differential is wrong
 * `window=nothing`: specify window sizes within the `log_range` that are used for
@@ -68,18 +69,20 @@ function check_differential(
     )
 end
 
-@doc raw"""
-    check_gradient(M, F, gradF, p=rand(M), X=rand(M; vector_at=p); kwargs...)
-
-Verify numerically whether the gradient `gradF(M,p)` of `F(M,p)` is correct, that is whether
-
-
+_doc_check_gradient_formula = raw"""
 ```math
 f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \mathcal O(t^2)
 ```
+"""
+@doc """
+    check_gradient(M, f, grad_f, p=rand(M), X=rand(M; vector_at=p); kwargs...)
+
+Verify numerically whether the gradient `grad_f(M,p)` of `f(M,p)` is correct, that is whether
+
+$_doc_check_gradient_formula
 
 or in other words, that the error between the function ``f`` and its first order Taylor
-behaves in error ``\mathcal O(t^2)``, which indicates that the gradient is correct,
+behaves in error ``$_l_cO O(t^2)``, which indicates that the gradient is correct,
 cf. also [Boumal:2023; Section 4.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
@@ -88,7 +91,7 @@ no plot is generated.
 # Keyword arguments
 
 * `check_vector=true`:
-  verify that ``\operatorname{grad} f(p) ∈ T_p\mathcal M`` using `is_vector`.
+  verify that ``$_l_grad f(p) ∈ $(_l_TpM())`` using `is_vector`.
 * `exactness_tol=1e-12`:
   if all errors are below this tolerance, the gradient is considered to be exact
 * `io=nothing`:
@@ -104,8 +107,8 @@ no plot is generated.
 * `plot=false`:
   whether to plot the result (if `Plots.jl` is loaded).
   The plot is in log-log-scale. This is returned and can then also be saved.
-* `retraction_method=default_retraction_method(M, typeof(p))`:
-  retraction method to use
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
 * `atol`=:none`:
@@ -141,47 +144,45 @@ function check_gradient(
     return check_differential(M, f, df, p, X; name="gradient", error=error, kwargs...)
 end
 
-@doc raw"""
+_doc_check_Hess_formula = raw"""
+```math
+f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac{t^2}{2}⟨\operatorname{Hess}f(p)[X], X⟩ + \mathcal O(t^3)
+```
+"""
+
+@doc """
     check_Hessian(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p), Y=rand(M, vector_at=p); kwargs...)
 
-Verify numerically whether the Hessian ``\operatorname{Hess} f(M,p, X)`` of `f(M,p)` is correct.
+Verify numerically whether the Hessian `Hess_f(M,p, X)` of `f(M,p)` is correct.
 
 For this either a second-order retraction or a critical point ``p`` of `f` is required.
 The approximation is then
 
-```math
-f(\operatorname{retr}_p(tX)) = f(p) + t⟨\operatorname{grad} f(p), X⟩ + \frac{t^2}{2}⟨\operatorname{Hess}f(p)[X], X⟩ + \mathcal O(t^3)
-```
+$_doc_check_Hess_formula
 
 or in other words, that the error between the function ``f`` and its second order Taylor
-behaves in error ``\mathcal O(t^3)``, which indicates that the Hessian is correct,
+behaves in error ``$_l_cO (t^3)``, which indicates that the Hessian is correct,
 cf. also [Boumal:2023; Section 6.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
 no plot is generated.
-=true`:
-=true`:
-=true`:
-=false`:
-=:Default`:
 
 # Keyword arguments
 
 * `check_grad=true`:
-  verify that ``\operatorname{grad} f(p) ∈ T_p\mathcal M``.
+  verify that ``$_l_grad f(p) ∈ $(_l_TpM())``.
 * `check_linearity=true`:
   verify that the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry=true`:
   verify that the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector=false`:
-  verify that ``\operatorname{Hess} f(p)[X] ∈ T_p\mathcal M`` using `is_vector`.
+  verify that `$_l_Hess f(p)[X] ∈ $(_l_TpM())`` using `is_vector`.
 * `mode=:Default`:
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
   if the point `p` is a critical point.
   THen set the mode to `:CritalPoint` to use [`gradient_descent`](@ref) to find a critical point.
   Note: this requires (and evaluates) new tangent vectors `X` and `Y`
-
 * `atol`, `rtol`:      (same defaults as `isapprox`) tolerances that are passed down to all checks
 * `a`, `b`            two real values to verify linearity of the Hessian (if `check_linearity=true`)
 * `N=101`:
@@ -193,7 +194,7 @@ no plot is generated.
 * `gradient=grad_f(M, p)`:
   instead of the gradient function you can also provide the gradient at `p` directly
 * `Hessian=Hess_f(M, p, X)`:
-  instead of the Hessian function you can provide the result of ``\operatorname{Hess} f(p)[X]`` directly.
+  instead of the Hessian function you can provide the result of ``$_l_Hess f(p)[X]`` directly.
   Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry and/or when using `:CriticalPoint` mode.
 * `limits=(1e-8,1)`:
   specify the limits in the `log_range`
@@ -203,8 +204,8 @@ no plot is generated.
   number of points to use within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
   whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
-* `retraction_method=default_retraction_method(M, typeof(p))`:
-  retraction method to use for
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
 * `error=:none`:

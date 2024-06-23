@@ -202,7 +202,7 @@ function armijo_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
-@doc raw"""
+@doc """
     ArmijoLinesearch <: Linesearch
 
 A functor representing Armijo line search including the last runs state string the last stepsize.
@@ -244,9 +244,10 @@ with keywords.
 ## Keyword arguments
 
 * `candidate_point=`(`allocate_result(M, rand)`)
-* `η=-`[`get_gradient`9(@ref)(mp, get_iterate(s));`
+* `η=-`[`get_gradient`](@ref)`(mp, get_iterate(s))`
 * `initial_stepsize=1.0`
-* `retraction_method=``default_retraction_method``(M)`
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
 * `last_stepsize=initialstepsize`
@@ -275,7 +276,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
         contraction_factor::Real=0.95,
         initial_stepsize::Real=1.0,
         initial_guess=armijo_initial_guess,
-        retraction_method::TRM=default_retraction_method(M),
+        retraction_method::TRM=default_retraction_method(M, typeof(candidate_point)),
         stop_when_stepsize_less::Real=0.0,
         stop_when_stepsize_exceeds::Real=max_stepsize(M),
         stop_increasing_at_step::Int=100,
@@ -343,9 +344,9 @@ function status_summary(als::ArmijoLinesearch)
 end
 get_message(a::ArmijoLinesearch) = a.message
 
-@doc raw"""
-    (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p))
-    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p))
+@doc """
+    (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
+    (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
 
 perform a line search
 
@@ -356,16 +357,13 @@ perform a line search
 * an initial stepsize `s`
 * a sufficient `decrease`
 * a `contract`ion factor ``σ``
-* a `retr`action, which defaults to the `default_retraction_method(M)`
 * a search direction ``η = -X``
 * an offset, ``f_0 = F(x)``
 
-the method can also be performed in-place of `q`, that is the resulting best point one reaches
-with the step size `s` as second argument.
+## Keyword arguments
 
-## Keywords
-
-* `retraction_method=` `default_retraction_method` `(M)`: the retraction to use.
+* $_kw_retraction_method_default
+  $_kw_retraction_method
 * `stop_when_stepsize_less=0.0`: to avoid numerical underflow
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
@@ -401,7 +399,7 @@ function linesearch_backtrack!(
     contract,
     η::T=-X,
     f0=f(M, p);
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stop_when_stepsize_less=0.0,
     stop_when_stepsize_exceeds=max_stepsize(M, p) / norm(M, p, η),
     stop_increasing_at_step=100,
@@ -1032,14 +1030,7 @@ function status_summary(a::WolfePowellLinesearch)
     return "$a$s"
 end
 
-@doc raw"""
-    WolfePowellBinaryLinesearch <: Linesearch
-
-A [`Linesearch`](@ref) method that determines a step size `t` fulfilling the Wolfe conditions
-
-based on a binary chop. Let ``η`` be a search direction and ``c1,c_2>0`` be two constants.
-Then with
-
+_doc_WPBL_algorithm = raw"""Then with
 ```math
 A(t) = f(x_+) ≤ c1 t ⟨\operatorname{grad}f(x), η⟩_{x}
 \quad\text{and}\quad
@@ -1055,44 +1046,48 @@ Then the following Algorithm is performed similar to Algorithm 7 from [Huang:201
 3. If ``A(t)`` fails, set ``β=t``.
 4. If ``A(t)`` holds but ``W(t)`` fails, set ``α=t``.
 5. If ``β<∞`` set ``t=\frac{α+β}{2}``, otherwise set ``t=2α``.
+"""
+
+@doc """
+    WolfePowellBinaryLinesearch <: Linesearch
+
+A [`Linesearch`](@ref) method that determines a step size `t` fulfilling the Wolfe conditions
+
+based on a binary chop. Let ``η`` be a search direction and ``c1,c_2>0`` be two constants.
+
+$_doc_WPBL_algorithm
 
 # Constructors
 
-There exist two constructors, where, when provided the manifold `M` as a first (optional)
-parameter, its default retraction and vector transport are the default.
-In this case the retraction and the vector transport are also keyword arguments for ease of use.
-The other constructor is kept for backward compatibility.
+    WolfePowellLinesearch(M=DefaultManifold(), c1=10^(-4), c2=0.999; kwargs...)
 
-    WolfePowellLinesearch(
-        M=DefaultManifold(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999;
-        retraction_method = default_retraction_method(M),
-        vector_transport_method = default_vector_transport(M),
-        linesearch_stopsize = 0.0
-    )
+## Keyword arguments
+
+* `linesearch_stopsize = 0.0`: a numerical barrier when to stop due to underflow
+* $_kw_retraction_method_default:
+  $_kw_retraction_method
+* $_kw_vector_transport_method_default:
+  $_kw_vector_transport_method
 """
 mutable struct WolfePowellBinaryLinesearch{
-    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod
+    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,F
 } <: Linesearch
     retraction_method::TRM
     vector_transport_method::VTM
-    c1::Float64
-    c2::Float64
-    last_stepsize::Float64
-    linesearch_stopsize::Float64
+    c1::F
+    c2::F
+    last_stepsize::F
+    linesearch_stopsize::F
 
     function WolfePowellBinaryLinesearch(
         M::AbstractManifold=DefaultManifold(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999;
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-            M
-        ),
-        linesearch_stopsize::Float64=0.0,
-    )
-        return new{typeof(retraction_method),typeof(vector_transport_method)}(
+        c1::F=10^(-4),
+        c2::F=0.999;
+        retraction_method::RTM=default_retraction_method(M),
+        vector_transport_method::VTM=default_vector_transport_method(M),
+        linesearch_stopsize::F=0.0,
+    ) where {F,RTM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
+        return new{RTM,VTM,F}(
             retraction_method, vector_transport_method, c1, c2, 0.0, linesearch_stopsize
         )
     end
