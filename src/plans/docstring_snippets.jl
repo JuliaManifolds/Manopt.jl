@@ -53,11 +53,23 @@ _arg_grad_f = raw"""
 * `grad_f`, the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place
 """
+_arg_Hess_f = """
+* `Hess_f`, the Hessian ``$_l_Hess_long`` of f
+  as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place
+"""
 _arg_p = raw"* `p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
 _arg_M = "* `M`, a manifold ``$_l_M``"
 _arg_X = "* `X` a tangent vector"
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
 _arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem` or a [`AbstractEvaluationType`](@ref) if a closed form solution is provided."
+
+_doc_remark_tutorial_debug = "If you activate [`tutorial_mode`]"
+_doc_sec_output = """
+# Output
+
+The obtained approximate minimizer ``p^*``.
+To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+"""
 # Fields
 _field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
 _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"
@@ -95,6 +107,17 @@ _kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a s
 
 _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
 _kw_stop_note = "is used to set the field `stop`."
+
+_kw_sub_kwargs = "`sub_kwargs=(;)"
+_kw_sub_kwargs = "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective,\
+the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.
+"
+
+_kw_sub_objective = "a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword"
+function _kw_sub_objective_default_text(type::String)
+    return "By default, this is initialized as a [`$type`](@ref),\
+which can further be decorated by using the `sub_kwargs=` keyword"
+end
 
 _kw_vector_transport_method_default = raw"`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_vector_transport_method = raw"a vector transport ``\mathcal T`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."

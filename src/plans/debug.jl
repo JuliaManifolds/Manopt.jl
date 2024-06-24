@@ -220,7 +220,7 @@ end
 # Special single ones
 #
 @doc """
-    DebugChange(M=DefaultManifold())
+    DebugChange(M=DefaultManifold(); kwargs...)
 
 debug for the amount of change of the iterate (stored in `get_iterate(o)` of the [`AbstractManoptSolverState`](@ref))
 during the last iteration. See [`DebugEntryChange`](@ref) for the general case
@@ -228,9 +228,8 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 # Keyword parameters
 
 * `storage=`[`StoreStateAction`](@ref)`( [:Gradient] )` storage of the previous action
-* `prefix="Last Change:": prefix of the debug output (ignored if you set `format`)
+* `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`)
 * `io=stdout`: default stream to print the debug to.
-* `format="\$prefix %f"`: format to print the output.
 * $_kw_inverse_retraction_method_default:
   $_kw_inverse_retraction_method
 
@@ -444,7 +443,7 @@ print a certain entries change during iterates
 
 * `print`:    function to print the result
 * `prefix`:   prefix to the print out
-* `format`:   format to print (uses the `prefix by default and scientific notation)
+* `format`:   format to print (uses the `prefix` by default and scientific notation)
 * `field`:    Symbol the field can be accessed with within [`AbstractManoptSolverState`](@ref)
 * `distance`: function (p,o,x1,x2) to compute the change/distance between two values of the entry
 * `storage`:  a [`StoreStateAction`](@ref) to store the previous value of `:f`
@@ -514,7 +513,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `storage=`[`StoreStateAction`](@ref)`( (:Gradient,) )`: storage of the action for previous data
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`:
 * `io=stdout`: default stream to print the debug to.
-* `format="$prefix %f": format to print the output
+* `format="$prefix %f"`: format to print the output
 """
 mutable struct DebugGradientChange{VTR<:AbstractVectorTransportMethod} <: DebugAction
     io::IO
@@ -574,14 +573,14 @@ end
 debug for the current iterate (stored in `get_iterate(o)`).
 
 # Constructor
-    DebugIterate()
+    DebugIterate(; kwargs...)
 
-# Parameters
+# Keyword arguments
 
 * `io=stdout`:           default stream to print the debug to.
 * `format="$prefix %s"`: format how to print the current iterate
-* `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix
-* `prefix`     (see `long` for default) set a prefix to be printed before the iterate
+* `long=false`:          whether to have a long (`"current iterate:"`) or a short (`"p:"`) prefix default
+* `prefix`:              (see `long` for default) set a prefix to be printed before the iterate
 """
 mutable struct DebugIterate <: DebugAction
     io::IO

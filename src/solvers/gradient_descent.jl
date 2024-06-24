@@ -175,10 +175,9 @@ $_kw_others
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
-# Output
+$_doc_remark_tutorial_debug
 
-the obtained approximate minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details
+$_doc_sec_output
 """
 
 @doc "$(_doc_gradient_descent)"
