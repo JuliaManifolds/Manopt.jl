@@ -158,7 +158,6 @@ mutable struct ConvexBundleMethodState{
     λ::A
     sub_problem::Pr
     sub_state::St
-    # qs::AbstractVector{P}
     function ConvexBundleMethodState(
         M::TM,
         p::P;
@@ -167,7 +166,7 @@ mutable struct ConvexBundleMethodState{
         bundle_cap::Integer=25,
         m::R=1e-2,
         diameter::R=50.0,
-        domain::D,#(M, p) -> isfinite(f(M, p)),
+        domain::D,
         k_max=0,
         k_size::Int=100,
         p_estimate=p,
@@ -202,7 +201,6 @@ mutable struct ConvexBundleMethodState{
         ε = zero(R)
         λ = Vector{R}()
         ξ = zero(R)
-        # qs = [close_point(M, p, diameter / 2) for _ in 1:100]
         return new{
             P,
             T,
@@ -245,7 +243,6 @@ mutable struct ConvexBundleMethodState{
             λ,
             sub_problem,
             sub_state,
-            # qs,
         )
     end
 end
@@ -294,13 +291,19 @@ mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
     β::Float64
 end
 function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Any, args...; tol=0.0, kwargs...
+    amp::AbstractManoptProblem,
+    cbms::ConvexBundleMethodState,
+    ::Any,
+    args...;
+    tol=0.0,
+    kwargs...,
 )
     M = get_manifold(amp)
     t = 1.0
     q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     l = norm(M, cbms.p_last_serious, cbms.g)
-    while !cbms.domain(M, q) || (cbms.k_max > 0 && distance(M, cbms.p_last_serious, q) + tol < t * l)
+    while !cbms.domain(M, q) ||
+        (cbms.k_max > 0 && distance(M, cbms.p_last_serious, q) + tol < t * l)
         t *= dbt.β
         retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     end
@@ -389,7 +392,7 @@ function convex_bundle_method!(
     atol_λ::R=eps(),
     atol_errors::R=eps(),
     bundle_cap::Int=25,
-    diameter::R=π / 3,# k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3),
+    diameter::R=π / 3,
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_max=0,
@@ -517,14 +520,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
         end
         bms.linearization_errors[j] = (0 ≥ v ≥ -bms.atol_errors) ? 0 : v
     end
-    # Test inequality (13)
-    # for q in bms.qs
-    #     for (Xj, le) in zip(bms.transported_subgradients, bms.linearization_errors)
-    #         if get_cost(mp, q) < get_cost(mp, bms.p_last_serious) + inner(M, bms.p_last_serious, Xj, log(M, bms.p_last_serious, q)) - le
-    #             println(get_cost(mp, q) -(get_cost(mp, bms.p_last_serious) + inner(M, bms.p_last_serious, Xj, log(M, bms.p_last_serious, q)) - le))
-    #         end
-    #     end
-    # end
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
@@ -556,7 +551,7 @@ end
 # (c) if necessary one could implement the case where we have problem and state and call solve!
 
 #
-# Lagrange stopping crtierion
+# Lagrange stopping criterion
 function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
 )
@@ -594,7 +589,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             of the parameters involved in the estimation of the sectional curvature, such as `k_max` in the `convex_bundle_method` call.
             """
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
                 d.status = :No
             end
         elseif new_value < zero(number_eltype(st.ξ))
