@@ -374,7 +374,7 @@ function initialize_solver!(
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
     M = get_manifold(mp)
-	# Refactor to inplace
+    # Refactor to inplace
     for (j, (qj, Xj)) in enumerate(bms.bundle)
         vector_transport_to!(
             M,
