@@ -38,7 +38,6 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 
 with keywords for all fields with defaults besides `p_last_serious` which obtains the same type as `p`.
     You can use for example `X=` to specify the type of tangent vector to use
-
 """
 mutable struct ConvexBundleMethodState{
     P,
@@ -82,6 +81,7 @@ mutable struct ConvexBundleMethodState{
     λ::A
     sub_problem::Pr
     sub_state::St
+    ϱ::Nothing
     function ConvexBundleMethodState(
         M::TM,
         p::P;
@@ -92,7 +92,6 @@ mutable struct ConvexBundleMethodState{
         diameter::R=50.0,
         domain::D,
         k_max=0,
-        k_size::Int=100,
         stepsize::S=default_stepsize(M, SubGradientMethodState),
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -102,6 +101,9 @@ mutable struct ConvexBundleMethodState{
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         sub_problem::Pr=convex_bundle_method_subsolver,
         sub_state::St=AllocatingEvaluation(),
+        k_size=nothing,
+        p_estimate=nothing,
+        ϱ=nothing,
     ) where {
         D,
         IR<:AbstractInverseRetractionMethod,
@@ -109,6 +111,7 @@ mutable struct ConvexBundleMethodState{
         T,
         Pr,
         St,
+
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
@@ -124,6 +127,8 @@ mutable struct ConvexBundleMethodState{
         ε = zero(R)
         λ = Vector{R}()
         ξ = zero(R)
+        !all(isnothing.([k_size, p_estimate, ϱ])) &&
+            @error "Keyword arguments `k_size`, `p_estimate`, and the field `ϱ` are not used anymore. Use the field `k_max` instead."
         return new{
             P,
             T,
@@ -166,6 +171,7 @@ mutable struct ConvexBundleMethodState{
             λ,
             sub_problem,
             sub_state,
+            ϱ,
         )
     end
 end
@@ -316,7 +322,6 @@ function convex_bundle_method!(
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_max=0,
-    k_size::Int=100,
     stepsize::Stepsize=DomainBackTrackingStepsize(0.5),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -328,6 +333,9 @@ function convex_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=convex_bundle_method_subsolver,
     sub_state=evaluation,
+    k_size=nothing,
+    p_estimate=nothing,
+    ϱ=nothing,
     kwargs..., #especially may contain debug
 ) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -350,6 +358,9 @@ function convex_bundle_method!(
         vector_transport_method=vector_transport_method,
         sub_problem=sub_problem,
         sub_state=sub_state,
+        k_size=k_size,
+        p_estimate=p_estimate,
+        ϱ=ϱ,
     )
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
@@ -374,7 +385,7 @@ function initialize_solver!(
 end
 function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
     M = get_manifold(mp)
-    # Refactor to inplace
+    # Refactor to in-place
     for (j, (qj, Xj)) in enumerate(bms.bundle)
         vector_transport_to!(
             M,
