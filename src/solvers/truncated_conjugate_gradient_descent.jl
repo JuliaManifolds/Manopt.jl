@@ -145,34 +145,38 @@ to the power of 1+θ or the norm of the initial residual times κ.
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct StopWhenResidualIsReducedByFactorOrPower <: StoppingCriterion
-    κ::Float64
-    θ::Float64
-    reason::String
+mutable struct StopWhenResidualIsReducedByFactorOrPower{F} <: StoppingCriterion
+    κ::F
+    θ::F
     at_iteration::Int
-    function StopWhenResidualIsReducedByFactorOrPower(; κ::Float64=0.1, θ::Float64=1.0)
-        return new(κ, θ, "", 0)
+    function StopWhenResidualIsReducedByFactorOrPower(; κ::F=0.1, θ::F=1.0) where {F<:Real}
+        return new{F}(κ, θ, -1)
     end
 end
 function (c::StopWhenResidualIsReducedByFactorOrPower)(
     mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     TpM = get_manifold(mp)
     M = base_manifold(TpM)
     p = TpM.point
     if norm(M, p, tcgstate.residual) <=
        tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
-        c.reason = "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
+        c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenResidualIsReducedByFactorOrPower)
+    if (c.at_iteration >= 0)
+        return "The norm of the residual is less than or equal either to κ=$(c.κ) times the norm of the initial residual or to the norm of the initial residual to the power 1 + θ=$(1+(c.θ)). \n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenResidualIsReducedByFactorOrPower)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Residual reduced by factor $(c.κ) or power $(c.θ):\t$s"
 end
@@ -227,27 +231,35 @@ the norm of the next iterate is greater than the trust-region radius.
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct StopWhenTrustRegionIsExceeded <: StoppingCriterion
-    reason::String
+mutable struct StopWhenTrustRegionIsExceeded{F} <: StoppingCriterion
     at_iteration::Int
+    YPY::F
+    trr::F
+    StopWhenTrustRegionIsExceeded(v::F) where {F} = new{F}(-1, zero(v), zero(v))
 end
-StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded("", 0)
+StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded(0.0)
 function (c::StopWhenTrustRegionIsExceeded)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     if tcgs.YPY >= tcgs.trust_region_radius^2 && i >= 0
-        c.reason = "Trust-region radius violation (‖Y‖² = $(tcgs.YPY)) >= $(tcgs.trust_region_radius^2) = trust_region_radius²). \n"
+        c.YPY = tcgs.YPY
+        c.trr = tcgs.trust_region_radius
         c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenTrustRegionIsExceeded)
+    if c.at_iteration >= 0
+        return "Trust-region radius violation (‖Y‖² = $(c.YPY)) >= $(c.trr^2) = trust_region_radius²). \n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenTrustRegionIsExceeded)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Trust region exceeded:\t$s"
 end
@@ -275,27 +287,33 @@ yield a reduction of the model.
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct StopWhenCurvatureIsNegative <: StoppingCriterion
-    reason::String
+mutable struct StopWhenCurvatureIsNegative{R} <: StoppingCriterion
+    value::R
     at_iteration::Int
 end
-StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative("", 0)
+StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative(0.0)
+StopWhenCurvatureIsNegative(v::R) where {R<:Real} = StopWhenCurvatureIsNegative{R}(v, -1)
 function (c::StopWhenCurvatureIsNegative)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
     end
     if tcgs.δHδ <= 0 && i > 0
-        c.reason = "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(tcgs.δHδ))) <= 0).\n"
+        c.value = tcgs.δHδ
         c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenCurvatureIsNegative)
+    if c.at_iteration >= 0
+        return "Negative curvature. The model is not strictly convex (⟨δ,Hδ⟩_x = $(c.value))) <= 0).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenCurvatureIsNegative)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Curvature is negative:\t$s"
 end
@@ -320,29 +338,36 @@ A functor for testing if the curvature of the model value increased.
 
 [`truncated_conjugate_gradient_descent`](@ref), [`trust_regions`](@ref)
 """
-mutable struct StopWhenModelIncreased <: StoppingCriterion
-    reason::String
+mutable struct StopWhenModelIncreased{F} <: StoppingCriterion
     at_iteration::Int
-    model_value::Float64
+    model_value::F
+    inc_model_value::F
 end
-StopWhenModelIncreased() = StopWhenModelIncreased("", 0, Inf)
+StopWhenModelIncreased() = StopWhenModelIncreased(-1, Inf, Inf)
 function (c::StopWhenModelIncreased)(
     ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
+        c.at_iteration = -1
         c.model_value = Inf
+        c.inc_model_value = Inf
     end
     if i > 0 && (tcgs.model_value > c.model_value)
-        c.reason = "Model value increased from $(c.model_value) to $(tcgs.model_value).\n"
+        c.inc_model_value = tcgs.model_value
+        c.at_iteration = i
         return true
     end
     c.model_value = tcgs.model_value
     return false
 end
+function get_reason(c::StopWhenModelIncreased)
+    if c.at_iteration >= 0
+        return "Model value increased from $(c.model_value) to $( c.inc_model_value).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenModelIncreased)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "Model Increased:\t$s"
 end
@@ -661,7 +686,6 @@ function initialize_solver!(
     M = base_manifold(TpM)
     p = TpM.point
     trmo = get_objective(mp)
-    # TODO Reworked until here
     (tcgs.randomize) || zero_vector!(M, tcgs.Y, p)
     tcgs.HY = tcgs.randomize ? get_objective_hessian(M, trmo, p, tcgs.Y) : zero_vector(M, p)
     tcgs.X = get_objective_gradient(M, trmo, p) # Initialize gradient

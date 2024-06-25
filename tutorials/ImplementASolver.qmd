@@ -64,7 +64,7 @@ We can run the following steps of the algorithm
 There are two main ingredients a solver needs:
 a problem to work on and the state of a solver, which “identifies” the solver and stores intermediate results.
 
-### The “task”: an `AbstractManoptProblem`
+### Specifying the task: an `AbstractManoptProblem`
 
 A problem in `Manopt.jl` usually consists of a manifold (an ``[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)``{=commonmark}) and an [`AbstractManifoldObjective`](@ref)
 describing the function we have and its features.
@@ -78,7 +78,7 @@ all information that is static and independent of the specific solver at hand.
 
 Usually the problems variable is called `mp`.
 
-### The solver: an `AbstractManoptSolverState`
+### Specifying a solver: an `AbstractManoptSolverState`
 
 Everything that is needed by a solver during the iterations, all its parameters, interim
 values that are needed beyond just one iteration, is stored in a subtype of the
@@ -150,7 +150,7 @@ You implement these by multiple dispatch on the types after importing said funct
 import Manopt: initialize_solver!, step_solver!, get_iterate, get_solver_result
 ```
 
-The state above has two fields where we use the common names used in `Manopt.jl`,
+The state we defined before has two fields where we use the common names used in `Manopt.jl`,
 that is the [`StoppingCriterion`](@ref) is usually in `stop` and the iterate in `p`.
 If your choice is different, you need to reimplement
 
@@ -255,9 +255,7 @@ using Manopt: get_solver_return, indicates_convergence, status_summary
 
 ### A high level interface using the objective
 
-This could be considered as an interim step to the high-level interface:
-If objective, a [`ManifoldCostObjective`](@ref) is already initialized,
-the high level interface consists of the steps
+This could be considered as an interim step to the high-level interface: if objective, a [`ManifoldCostObjective`](@ref) is already initialized, the high level interface consists of the steps
 
 1. possibly decorate the objective
 2. generate the problem
@@ -303,7 +301,7 @@ function random_walk_algorithm!(M::AbstractManifold, f, p=rand(M); kwargs...)
 end
 ```
 
-## Ease of Use II: the State Summary
+## Ease of Use II: the state summary
 
 For the case that you set `return_state=true` the solver should return a summary of the run. When a `show` method is provided, users can easily read such summary in a terminal.
 It should reflect its main parameters, if they are not too verbose and provide information
@@ -340,9 +338,24 @@ For example to see the summary, we could now just call
 q = random_walk_algorithm!(M, f; return_state=true)
 ```
 
-## Conclusion & Beyond
+## Conclusion & beyond
 
 We saw in this tutorial how to implement a simple cost-based algorithm, to illustrate how optimization algorithms are covered in `Manopt.jl`.
 
 One feature we did not cover is that most algorithms allow for in-place and allocation functions, as soon as they work on more than just the cost, for example use gradients, proximal maps or Hessians.
 This is usually a keyword argument of the objective and hence also part of the high-level interfaces.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```

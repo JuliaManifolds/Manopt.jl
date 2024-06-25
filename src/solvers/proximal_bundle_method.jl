@@ -16,11 +16,11 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 * `p_last_serious`:            last serious iterate
 * `retraction_method`:         the retraction to use within
 * `stop`:                      a [`StoppingCriterion`](@ref)
-* `transported_subgradients`:  subgradients of the bundle that are transported to p_last_serious
+* `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
 * `vector_transport_method`:   the vector transport method to use within
 * `X`:                         (`zero_vector(M, p)`) the current element from the possible subgradients
   at `p` that was last evaluated.
-* `α₀`:                        (`1.2`) initalization value for `α`, used to update `η`
+* `α₀`:                        (`1.2`) initialization value for `α`, used to update `η`
 * `α`:                         curvature-dependent parameter used to update `η`
 * `ε`:                         (`1e-2`) stepsize-like parameter related to the injectivity radius of the manifold
 * `δ`:                         parameter for updating `μ`: if ``δ < 0`` then ``μ = \log(i + 1)``, else ``μ += δ μ``
@@ -32,10 +32,10 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 
 # Constructor
 
-ProximalBundleMethodState(M::AbstractManifold, p; kwargs...)
+    ProximalBundleMethodState(M::AbstractManifold, p; kwargs...)
 
-with keywords for all fields above besides `p_last_serious` which obtains the same type as `p`.
-You can use e.g. `X=` to specify the type of tangent vector to use
+with keywords for all fields from before besides `p_last_serious` which obtains the same type as `p`.
+You can use for example `X=` to specify the type of tangent vector to use
 
 """
 mutable struct ProximalBundleMethodState{
@@ -103,7 +103,7 @@ mutable struct ProximalBundleMethodState{
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
-        # Initialize indes set, bundle points, linearization errors, and stopping parameter
+        # Initialize index set, bundle points, linearization errors, and stopping parameter
         approx_errors = [zero(R)]
         bundle = [(copy(M, p), copy(M, p, X))]
         c = zero(R)
@@ -172,7 +172,7 @@ function show(io::IO, pbms::ProximalBundleMethodState)
     * curvature-dependent η:                      $(pbms.η)
     * proximal parameter μ:                       $(pbms.μ)
 
-    ## Stopping Criterion
+    ## Stopping criterion
     $(status_summary(pbms.stop))
     This indicates convergence: $Conv"""
     return print(io, s)
@@ -187,7 +187,7 @@ d_k = \frac{1}{\mu_l} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
 where ``X_{q_j}\in∂f(q_j)``, ``\mathrm{retr}`` is a retraction,
 ``p_k`` is the last serious iterate, ``\mu_l`` is a proximal parameter, and the
-``λ_j^k`` are solutionsto the quadratic subproblem provided by the
+``λ_j^k`` are solutions to the quadratic subproblem provided by the
 [`proximal_bundle_method_subsolver`](@ref).
 
 Though the subdifferential might be set valued, the argument `∂f` should always
@@ -208,15 +208,15 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 # Optional
 
 * `m`: a real number that controls the decrease of the cost function
-* `evaluation` – ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, i.e. is
-   of the form `∂f!(M, X, p)`.
+* `evaluation`: ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
+   allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place,
+   that is it is of the form `∂f!(M, X, p)`.
 * `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
-* `retraction` – (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
-* `stopping_criterion` – ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`)
+* `retraction`: (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `stopping_criterion`: ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
-...
+
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
 # Output
@@ -236,13 +236,13 @@ perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -d_k)`` in place
 
 # Input
 
-* `M` – a manifold ``\mathcal M``
-* `f` – a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`- the (sub)gradient ``\partial f:\mathcal M→ T\mathcal M`` of F
+* `M`:  a manifold ``\mathcal M``
+* `f`:  a cost function ``f:\mathcal M→ℝ`` to minimize
+* `∂f`: the (sub)gradient ``\partial f:\mathcal M→ T\mathcal M`` of F
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p` – an initial value ``p_0=p ∈ \mathcal M``
+* `p`:  an initial value ``p_0=p ∈ \mathcal M``
 
 for more details and all optional parameters, see [`proximal_bundle_method`](@ref).
 """
@@ -256,8 +256,9 @@ function proximal_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     bundle_size=50,
-    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(1e-8) |
-                                          StopAfterIteration(5000),
+    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(
+        1e-8; names=["-ν"]
+    ) | StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
@@ -439,18 +440,21 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
 )
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerance[1]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) ≤ $(sc.tolerance[1]).\n"
+    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerances[1]) && (i > 0)
+        sc.values[1] = -pbms.ν
         sc.at_iteration = i
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
-    if (sc.mode == :both) && (pbms.c ≤ sc.tolerance[1]) && (nd ≤ sc.tolerance[2]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) ≤ $(sc.tolerance[1]) and |d| = $(nd) ≤ $(sc.tolerance[2]).\n"
+    if (sc.mode == :both) &&
+        (pbms.c ≤ sc.tolerances[1]) &&
+        (nd ≤ sc.tolerances[2]) &&
+        (i > 0)
+        sc.values[1] = pbms.c
+        sc.values[2] = nd
         sc.at_iteration = i
         return true
     end

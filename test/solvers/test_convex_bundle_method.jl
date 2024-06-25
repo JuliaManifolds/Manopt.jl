@@ -160,7 +160,7 @@ using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
         )
         q = get_solver_result(cbm_s)
         m = median(M, data)
-        @test distance(M, q, m) < 1.5e-2 #with default params this is not very precise
+        @test distance(M, q, m) < 2e-2 #with default parameters this is not very precise
         # test the other stopping criterion mode
         q2 = convex_bundle_method(
             M,

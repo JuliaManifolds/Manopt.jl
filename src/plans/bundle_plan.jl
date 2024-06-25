@@ -30,7 +30,7 @@ The subproblem for the convex bundle method is
 ```
 
 where ``J_k = \{j ∈ J_{k-1} \ | \ λ_j > 0\} \cup \{k\}``.
-See [BergmannHerzogJasa:2024](@cite) for mre details
+See [BergmannHerzogJasa:2024](@cite) for more details
 
 !!! tip
     A default subsolver based on [`RipQP`.jl](https://github.com/JuliaSmoothOptimizers/RipQP.jl) and [`QuadraticModels`](https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl)
@@ -77,22 +77,22 @@ proximal_bundle_method_subsolver(
 
 Stopping Criteria for Lagrange multipliers.
 
-Currenlty these are meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
+Currently these are meant for the [`convex_bundle_method`](@ref) and [`proximal_bundle_method`](@ref),
 where based on the Lagrange multipliers an approximate (sub)gradient ``g`` and an error estimate ``ε``
 is computed.
 
-In `mode=:both` we require that both
+The `mode=:both` requires that both
 ``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
 and that
 ``c`` and ``\lvert d \rvert`` are smaller than their `tolerance`s for the [`proximal_bundle_method`](@ref).
 
-In the `mode=:estimate` we require that, for the [`convex_bundle_method`](@ref)
+The `mode=:estimate` requires that, for the [`convex_bundle_method`](@ref)
 ``-ξ = \lvert g \rvert^2 + ε`` is less than a given `tolerance`.
 For the [`proximal_bundle_method`](@ref), the equation reads ``-ν = μ \lvert d \rvert^2 + c``.
 
 # Constructors
 
-    StopWhenLagrangeMultiplierLess(tolerance=1e-6; mode::Symbol=:estimate)
+    StopWhenLagrangeMultiplierLess(tolerance=1e-6; mode::Symbol=:estimate, names=nothing)
 
 Create the stopping criterion for one of the `mode`s mentioned.
 Note that tolerance can be a single number for the `:estimate` case,
@@ -100,32 +100,59 @@ but a vector of two values is required for the `:both` mode.
 Here the first entry specifies the tolerance for ``ε`` (``c``),
 the second the tolerance for ``\lvert g \rvert`` (``\lvert d \rvert``), respectively.
 """
-mutable struct StopWhenLagrangeMultiplierLess{T<:Real,A<:AbstractVector{<:T}} <:
-               StoppingCriterion
-    tolerance::A
+mutable struct StopWhenLagrangeMultiplierLess{
+    T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}
+} <: StoppingCriterion
+    tolerances::A
+    values::A
+    names::B
     mode::Symbol
-    reason::String
     at_iteration::Int
-    function StopWhenLagrangeMultiplierLess(tol::T; mode::Symbol=:estimate) where {T<:Real}
-        return new{T,Vector{T}}([tol], mode, "", 0)
+    function StopWhenLagrangeMultiplierLess(
+        tol::T; mode::Symbol=:estimate, names::B=nothing
+    ) where {T<:Real,B<:Union{Nothing,<:AbstractVector{<:String}}}
+        return new{T,Vector{T},B}([tol], zero([tol]), names, mode, -1)
     end
     function StopWhenLagrangeMultiplierLess(
-        tols::A; mode::Symbol=:estimate
-    ) where {T<:Real,A<:AbstractVector{<:T}}
-        return new{T,A}(tols, mode, "", 0)
+        tols::A; mode::Symbol=:estimate, names::B=nothing
+    ) where {T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}}
+        return new{T,A,B}(tols, zero(tols), names, mode, -1)
     end
 end
+function get_reason(sc::StopWhenLagrangeMultiplierLess)
+    if (sc.at_iteration >= 0)
+        if isnothing(sc.names)
+            tol_str = join(
+                ["$ai < $bi" for (ai, bi) in zip(sc.values, sc.tolerances)], ", "
+            )
+        else
+            tol_str = join(
+                [
+                    "$si = $ai < $bi" for
+                    (si, ai, bi) in zip(sc.names, sc.values, sc.tolerances)
+                ],
+                ", ",
+            )
+        end
+        return "After $(sc.at_iteration) iterations the algorithm reached an approximate critical point with tolerances $tol_str.\n"
+    end
+    return ""
+end
+
 function status_summary(sc::StopWhenLagrangeMultiplierLess)
-    s = length(sc.reason) > 0 ? "reached" : "not reached"
-    msg = ""
-    (sc.mode === :both) && (msg = " ε ≤ $(sc.tolerance[1]) and |g| ≤ $(sc.tolerance[2])")
-    (sc.mode === :estimate) && (msg = "  -ξ ≤ $(sc.tolerance[1])")
-    return "Stopping parameter: $(msg) :\t$(s)"
+    s = (sc.at_iteration >= 0) ? "reached" : "not reached"
+    msg = "Lagrange multipliers"
+    isnothing(sc.names) && (msg *= " with tolerances $(sc.tolerances)")
+    if !isnothing(sc.names)
+        msg *= join(["$si < $bi" for (si, bi) in zip(sc.names, sc.tolerances)], ", ")
+    end
+    return "$(msg) :\t$(s)"
 end
 function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
+    n = isnothing(sc.names) ? "" : ", $(names)"
     return print(
         io,
-        "StopWhenLagrangeMultiplierLess($(sc.tolerance); mode=:$(sc.mode))\n    $(status_summary(sc))",
+        "StopWhenLagrangeMultiplierLess($(sc.tolerances); mode=:$(sc.mode)$n)\n    $(status_summary(sc))",
     )
 end
 

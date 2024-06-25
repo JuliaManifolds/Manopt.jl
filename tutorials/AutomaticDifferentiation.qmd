@@ -32,7 +32,7 @@ using FiniteDifferences, ManifoldDiff
 Random.seed!(42);
 ```
 
-## 1. (Intrinsic) Forward Differences
+## 1. (Intrinsic) forward differences
 
 A first idea is to generalize (multivariate) finite differences to Riemannian manifolds. Let $X_1,\ldots,X_d ∈ T_p\mathcal M$ denote an orthonormal basis of the tangent space $T_p\mathcal M$ at the point $p∈\mathcal M$ on the Riemannian manifold.
 
@@ -62,7 +62,8 @@ and since it is a tangent vector, we can write it in terms of a basis as
 	= \sum_{i=1}^{d} Df(p)[X_i]X_i
 ```
 
-and perform the approximation from above to obtain
+and perform the approximation from before to obtain
+
 ```math
 	\operatorname{grad}f(p) ≈ \sum_{i=1}^{d} G_h(X_i)X_i
 ```
@@ -70,7 +71,7 @@ for some suitable step size $h$. This comes at the cost of $d+1$ function evalua
 
 This is the first variant we can use. An advantage is that it is _intrinsic_ in the sense that it does not require any embedding of the manifold.
 
-### An Example: the Rayleigh Quotient
+### An example: the Rayleigh quotient
 
 The Rayleigh quotient is concerned with finding eigenvalues (and eigenvectors) of a symmetric matrix $A ∈ ℝ^{(n+1)×(n+1)}$. The optimization problem reads
 
@@ -142,7 +143,7 @@ More generally take a change of the metric into account as
 
 or in words: we have to change the Riesz representer of the (restricted/projected) differential of $f$ ($\tilde f$) to the one with respect to the Riemannian metric. This is done using [`change_representer`](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/metric.html#Manifolds.change_representer-Tuple{AbstractManifold,%20AbstractMetric,%20Any,%20Any}).
 
-### A Continued Example
+### A continued example
 
 We continue with the Rayleigh Quotient from before, now just starting with the definition of the Euclidean case in the embedding, the function $F$.
 
@@ -168,7 +169,7 @@ X3 = grad_f2_AD(M, p)
 norm(M, p, X1 - X3)
 ```
 
-### An Example for a Non-isometrically Embedded Manifold
+### An example for a non-isometrically embedded manifold
 
 on the manifold $\mathcal P(3)$ of symmetric positive definite matrices.
 
@@ -204,7 +205,7 @@ We could first just compute the gradient using `FiniteDifferences.jl`, but this 
 FiniteDifferences.grad(central_fdm(5, 1), G, q)
 ```
 
-Instead, we use the [`RiemannianProjectedBackend`](https://juliamanifolds.github.io/Manifolds.jl/latest/features/differentiation.html#Manifolds.RiemannianProjectionBackend) of `Manifolds.jl`, which in this case internally uses `FiniteDifferences.jl` to compute a Euclidean gradient but then uses the conversion explained above to derive the Riemannian gradient.
+Instead, we use the [`RiemannianProjectedBackend`](https://juliamanifolds.github.io/Manifolds.jl/latest/features/differentiation.html#Manifolds.RiemannianProjectionBackend) of `Manifolds.jl`, which in this case internally uses `FiniteDifferences.jl` to compute a Euclidean gradient but then uses the conversion explained before to derive the Riemannian gradient.
 
 We define this here again as a function `grad_G_FD` that could be used in the `Manopt.jl` framework within a gradient based optimization.
 
@@ -233,3 +234,18 @@ isapprox(M, q, G1, G2; atol=2 * 1e-12)
 ## Summary
 
 This tutorial illustrates how to use tools from Euclidean spaces, finite differences or automatic differentiation, to compute gradients on Riemannian manifolds. The scheme allows to use _any_ differentiation framework within the embedding to derive a Riemannian gradient.
+
+## Technical details
+
+This tutorial is cached. It was last run on the following package versions.
+
+```{julia}
+#| code-fold: true
+using Pkg
+Pkg.status()
+```
+```{julia}
+#| code-fold: true
+using Dates
+now()
+```

@@ -21,7 +21,7 @@ as well as for internal use
 * `p_old`                      the last iterate
 * `η`                          the current update direction
 * `X_old`                      the last gradient
-* `nondescent_direction_value` the value from the last inner product check for descent directions
+* `nondescent_direction_value` the value from the last inner product from checking for descent directions
 
 # Constructor
 
@@ -83,7 +83,7 @@ function QuasiNewtonState(
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     ),
-    nondescent_direction_behavior::Symbol=:step_towards_negative_gradient,
+    nondescent_direction_behavior::Symbol=:reinitialize_direction_update,
     kwargs..., # collect but ignore rest to be more tolerant
 ) where {
     P,
@@ -116,7 +116,7 @@ function get_message(qns::QuasiNewtonState)
     # collect messages from
     # (1) direction update or the
     # (2) the step size and combine them
-    # (3) the nondescent behaviour check message
+    # (3) the non-descent behaviour verification message
     msg1 = get_message(qns.direction_update)
     msg2 = get_message(qns.stepsize)
     msg3 = ""
@@ -206,8 +206,8 @@ The ``k``th iteration consists of
   at 0 and strictly increasing at 0 for the cautious update.
 * `direction_update`:        ([`InverseBFGS`](@ref)`()`) the update rule to use.
 * `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
-   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, x)`.
-* `initial_operator`:        (`Matrix{Float64}(I,n,n)`) initial matrix to use die the
+   allocation (default) form `gradF(M, p)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, p)`.
+* `initial_operator`:        (`Matrix{Float64}(I, n, n)`) initial matrix to use die the
   approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
 * `memory_size`:             (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
   value to use a full memory representation
@@ -221,11 +221,12 @@ The ``k``th iteration consists of
 * `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
 * `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
-* `nondescent_direction_behavior`: (`:step_towards_negative_gradient`) specify how non-descent direction is handled.
+* `nondescent_direction_behavior`: (`:reinitialize_direction_update`) specify how non-descent direction is handled.
   This can be
-  * ``:step_towards_negative_gradient` – the direction is replaced with negative gradient, a message is stored.
-  * `:ignore` – the check is not performed, so any computed direction is accepted. No message is stored.
-  * any other value performs the check, keeps the direction but stores a message.
+  * `:step_towards_negative_gradient`: the direction is replaced with negative gradient, a message is stored.
+  * `:ignore`: the verification is not performed, so any computed direction is accepted. No message is stored.
+  * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
+  * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
 
 # Output
@@ -370,6 +371,7 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     get_gradient!(amp, qns.X, qns.p)
     copyto!(M, qns.sk, qns.p, qns.X)
     copyto!(M, qns.yk, qns.p, qns.X)
+    initialize_update!(qns.direction_update)
     return qns
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
@@ -379,9 +381,13 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
         if qns.nondescent_direction_value > 0
-            if qns.nondescent_direction_behavior === :step_towards_negative_gradient
+            if qns.nondescent_direction_behavior === :step_towards_negative_gradient ||
+                qns.nondescent_direction_behavior === :reinitialize_direction_update
                 copyto!(M, qns.η, qns.X)
                 qns.η .*= -1
+            end
+            if qns.nondescent_direction_behavior === :reinitialize_direction_update
+                initialize_update!(qns.direction_update)
             end
         end
     end

@@ -14,10 +14,22 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test startswith(
             repr(sc1), "StopWhenLagrangeMultiplierLess([1.0e-8]; mode=:estimate)\n"
         )
+        @test get_reason(sc1) == ""
+        # Trigger manually
+        sc1.at_iteration = 2
+        @test length(get_reason(sc1)) > 0
         sc2 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both)
         @test startswith(
             repr(sc2), "StopWhenLagrangeMultiplierLess([1.0e-8, 1.0e-8]; mode=:both)\n"
         )
+        @test get_reason(sc2) == ""
+        # Trigger manually
+        sc2.at_iteration = 2
+        @test length(get_reason(sc2)) > 0
+        sc3 = StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both, names=["a", "b"])
+        # Trigger manually
+        sc3.at_iteration = 2
+        @test length(get_reason(sc3)) > 0
     end
     @testset "Allocating Subgradient" begin
         f(M, q) = distance(M, q, p)
@@ -85,7 +97,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         @test isapprox(M, p, X, Y)
         sr = solve!(mp, pbms)
         xHat = get_solver_result(sr)
-        # Check Fallbacks of Problem
+        # Test Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_subgradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, pbms.p)
@@ -97,7 +109,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             copy(p0);
             stopping_criterion=StopAfterIteration(200),
             evaluation=InplaceEvaluation(),
-            sub_state=AllocatingEvaluation(), #keep the default allocating subsolver here
+            sub_state=AllocatingEvaluation(), # keep the default allocating subsolver here
             return_state=true,
             debug=[],
         )
@@ -126,10 +138,10 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
         # with default parameters for both median and proximal bundle, this is not very precise
         m = median(M, data)
         @test distance(M, q, m) < 2 * 1e-3
-        # test accessors
+        # test access functions
         @test get_iterate(pbm_s) == q
         @test norm(M, q, get_subgradient(pbm_s)) < 1e-4
-        # twst the other stopping criterion mode
+        # test the other stopping criterion mode
         q2 = proximal_bundle_method(
             M,
             f,
@@ -138,7 +150,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             stopping_criterion=StopWhenLagrangeMultiplierLess([1e-8, 1e-8]; mode=:both),
         )
         @test distance(M, q2, m) < 2 * 1e-3
-        # Test bundle_size and inplace
+        # Test bundle size and in-place
         p_size = copy(p0)
         function ∂f!(M, X, p)
             X = sum(
