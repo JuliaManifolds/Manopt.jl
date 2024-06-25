@@ -37,9 +37,6 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 with keywords for all fields with defaults besides `p_last_serious` which obtains the same type as `p`.
     You can use e.g. `X=` to specify the type of tangent vector to use
 
-## Keyword arguments
-
-* `p_estimate`: (`p`) the point around which to estimate the sectional curvature of the manifold
 """
 mutable struct ConvexBundleMethodState{
     P,
@@ -94,7 +91,6 @@ mutable struct ConvexBundleMethodState{
         domain::D,
         k_max=0,
         k_size::Int=100,
-        p_estimate=p,
         stepsize::S=default_stepsize(M, SubGradientMethodState),
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -271,8 +267,6 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point.
 * `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, e.g. : domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
 * `k_max`:                     upper bound on the sectional curvature of the manifold.
-* `p_estimate`:                (`p`) the point around which to estimate the sectional curvature of the manifold.
-* `α`:                         (`(i) -> one(number_eltype(X)) / i`) a function for evaluating suitable stepsizes when obtaining candidate points at iteration `i`.
 * `evaluation`:                ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, i.e. is
    of the form `∂f!(M, X, p)`.
@@ -322,7 +316,6 @@ function convex_bundle_method!(
     m::R=1e-3,
     k_max=0,
     k_size::Int=100,
-    p_estimate=p,
     stepsize::Stepsize=DomainBackTrackingStepsize(0.5),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -349,7 +342,6 @@ function convex_bundle_method!(
         domain=domain,
         m=m,
         k_max=k_max,
-        p_estimate=p_estimate,
         stepsize=stepsize,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
