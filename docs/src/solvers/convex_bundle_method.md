@@ -31,6 +31,7 @@ DebugWarnIfLagrangeMultiplierIncreases
 
 ```@docs
 convex_bundle_method_subsolver
+DomainBackTrackingStepsize
 ```
 
 ## Literature
