@@ -31,10 +31,6 @@ DebugWarnIfLagrangeMultiplierIncreases
 
 ```@docs
 convex_bundle_method_subsolver
-estimate_sectional_curvature
-ζ_1
-ζ_2
-close_point
 ```
 
 ## Literature

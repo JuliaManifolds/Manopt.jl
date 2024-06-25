@@ -1,6 +1,5 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
 using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
-using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
 
 @testset "The Convex Bundle Method" begin
     M = Hyperbolic(4)
@@ -133,10 +132,6 @@ using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
         p = [1.0, 0.0, 0.0]
         κ = 1.0
         R = π / 2
-        @test estimate_sectional_curvature(M, p) ≈ κ
-        @test ζ_1(κ, R) ≈ 1.0
-        @test -10eps() ≤ ζ_2(κ, R) ≤ 10eps()
-        @test distance(M, p, close_point(M, p, R)) ≤ R
         cbms3 = ConvexBundleMethodState(
             M,
             p;
@@ -144,7 +139,6 @@ using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
             domain=(M, q) -> distance(M, q, p) < R / 2 ? true : false,
             stopping_criterion=StopAfterIteration(10),
         )
-        @test -10eps() ≤ cbms3.ϱ ≤ 10eps()
     end
     @testset "A simple median run" begin
         M = Sphere(2)
