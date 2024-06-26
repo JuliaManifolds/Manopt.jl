@@ -48,7 +48,7 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * $_kw_retraction_method_default
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
 * `sub_objective=nothing` a shortcut to provide a subobjective.
-* `sub_problem=nothing` is set to [`DefaultManoptProblem`] on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
+* `sub_problem=nothing` is set to [`DefaultManoptProblem`](@ref) on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
 * `sub_state` is set to [`AllocatingEvaluation`](@ref) if `sub_problem` is a function and to a [`LanczosState`](@ref) on the tangent space otherwise
 """
 mutable struct AdaptiveRegularizationState{
@@ -251,14 +251,15 @@ the default values are given in brackets
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 * $_kw_retraction_method_default:
   $_kw_retraction_method
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-9) | `[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-9)`[` | `](@ref StopWhenAny)[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
   $_kw_stopping_criterion
-* $_kw_sub_kwargs_default
+* $_kw_sub_kwargs_default:
+  $_kw_sub_kwargs
 * `sub_objective=nothing`: $_kw_sub_objective
   $(_kw_sub_objective_default_text("AdaptiveRagularizationWithCubicsModelObjective"))
 * `sub_state=`[`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)`:
   a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a function.
-* `sub_problem`:            [`DefaultManoptProblem`](@ref)`(M, sub_objective)` the problem (or a function) for the sub problem
+* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`: the problem (or a function) for the sub problem
 
 $_kw_others
 

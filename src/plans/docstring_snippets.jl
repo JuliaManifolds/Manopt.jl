@@ -71,6 +71,8 @@ The obtained approximate minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
 """
 # Fields
+_fild_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`).\
+  any negative value indicates that this was not yet the case; "
 _field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
 _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$_l_retr_long^{-1}``"
@@ -108,7 +110,7 @@ _kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a s
 _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
 _kw_stop_note = "is used to set the field `stop`."
 
-_kw_sub_kwargs = "`sub_kwargs=(;)"
+_kw_sub_kwargs_default = "`sub_kwargs=(;)`"
 _kw_sub_kwargs = "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective,\
 the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.
 "

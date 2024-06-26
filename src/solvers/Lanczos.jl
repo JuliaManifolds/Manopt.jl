@@ -2,7 +2,7 @@
 #
 # Lanczos sub solver
 #
-@doc raw"""
+@doc """
     LanczosState{P,T,SC,B,I,R,TM,V,Y} <: AbstractManoptSolverState
 
 Solve the adaptive regularized subproblem with a Lanczos iteration
@@ -10,14 +10,29 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 # Fields
 
 * `stop`:            the stopping criterion
+* `stop_newton`:     the stopping criterion for the inner Newton iteration
 * `σ`:               the current regularization parameter
 * `X`:               the Iterate
 * `Lanczos_vectors`: the obtained Lanczos vectors
 * `tridig_matrix`:   the tridiagonal coefficient matrix T
 * `coefficients`:    the coefficients ``y_1,...y_k`` that determine the solution
-* `Hp`:              a temporary vector containing the evaluation of the Hessian
-* `Hp_residual`:     a temporary vector containing the residual to the Hessian
+* `Hp`:              a temporary tangent vector containing the evaluation of the Hessian
+* `Hp_residual`:     a temporary tangent vector containing the residual to the Hessian
 * `S`:               the current obtained / approximated solution
+
+# Constructor
+
+    LanczosState(TpM::TangentSpace; kwargs...)
+
+## Keyword arguments
+
+* $_kw_X_default: the iterate using the manifold of the tangent space.
+* `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
+* `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`[` | `](@ref StopWhenAny)[`StopWhenFirstOrderProgress`](@ref)`(θ)`:
+   the stopping criterion for the Lanczos iteration.
+* `stopping_criterion_newtown=`[`StopAfterIteration`](@ref)`(200)`: the stopping criterion for the inner Newton iteration.
+* `σ=10.0`: specify the regularization parameter
 """
 mutable struct LanczosState{T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
     X::T
@@ -222,30 +237,36 @@ end
 #
 # Stopping Criteria
 #
-@doc raw"""
-    StopWhenFirstOrderProgress <: StoppingCriterion
-
-A stopping criterion related to the Riemannian adaptive regularization with cubics (ARC)
-solver indicating that the model function at the current (outer) iterate,
-
-```math
-    m(X) = f(p) + <X, \operatorname{grad}f(p)>
-      + \frac{1}{2} <X, \operatorname{Hess} f(p)[X]> +  \frac{σ}{3} \lVert X \rVert^3,
-```
-
-defined on the tangent space ``T_{p}\mathcal M`` fulfills at the current iterate ``X_k`` that
-
+_math_sc_firstorder = raw"""
 ```math
 m(X_k) \leq m(0)
 \quad\text{ and }\quad
 \lVert \operatorname{grad} m(X_k) \rVert ≤ θ \lVert X_k \rVert^2
 ```
+"""
+
+
+@doc """
+    StopWhenFirstOrderProgress <: StoppingCriterion
+
+A stopping criterion related to the Riemannian adaptive regularization with cubics (ARC)
+solver indicating that the model function at the current (outer) iterate,
+
+$_doc_ARC_mdoel
+
+defined on the tangent space ``$(_l_TpM())`` fulfills at the current iterate ``X_k`` that
+
+$_math_sc_firstorder
 
 # Fields
 
 * `θ`:      the factor ``θ`` in the second condition
-* `at_iteration`: indicates at which iteration (including `i=0`) the stopping criterion
-  was fulfilled and is `-1` while it is not fulfilled.
+* $_fild_at_iteration
+
+# Constructor
+
+    StopWhenAllLanczosVectorsUsed(θ)
+
 """
 mutable struct StopWhenFirstOrderProgress{F} <: StoppingCriterion
     θ::F
