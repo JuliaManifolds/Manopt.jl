@@ -245,7 +245,6 @@ m(X_k) \leq m(0)
 ```
 """
 
-
 @doc """
     StopWhenFirstOrderProgress <: StoppingCriterion
 
