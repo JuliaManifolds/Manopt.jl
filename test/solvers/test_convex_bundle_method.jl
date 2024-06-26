@@ -127,19 +127,6 @@ using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
     end
-    @testset "Utility Functions for the Convex Bundle Method" begin
-        M = Sphere(2)
-        p = [1.0, 0.0, 0.0]
-        κ = 1.0
-        R = π / 2
-        cbms3 = ConvexBundleMethodState(
-            M,
-            p;
-            diameter=R,
-            domain=(M, q) -> distance(M, q, p) < R / 2 ? true : false,
-            stopping_criterion=StopAfterIteration(10),
-        )
-    end
     @testset "A simple median run" begin
         M = Sphere(2)
         p1 = [1.0, 0.0, 0.0]
@@ -154,7 +141,7 @@ using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
             )
         end
         p0 = p1
-        cbm_s = convex_bundle_method(M, f, ∂f, p0; return_state=true)
+        cbm_s = convex_bundle_method(M, f, ∂f, p0; k_max=1.0, return_state=true)
         @test startswith(
             repr(cbm_s), "# Solver state for `Manopt.jl`s Convex Bundle Method\n"
         )
@@ -167,8 +154,22 @@ using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
             f,
             ∂f,
             p0;
+            k_max=1.0,
             stopping_criterion=StopWhenLagrangeMultiplierLess([1e-6, 1e-6]; mode=:both),
         )
         @test distance(M, q2, m) < 2e-2
+        # try to force entering the backtracking loop
+        diam = π / 4
+        domf(M, p) = distance(M, p, p0) < diam / 2 ? true : false
+        q2 = convex_bundle_method(
+            M,
+            f,
+            ∂f,
+            p0;
+            k_max=1.0,
+            diameter=diam,
+            domain=domf,
+            stopping_criterion=StopAfterIteration(3),
+        )
     end
 end
