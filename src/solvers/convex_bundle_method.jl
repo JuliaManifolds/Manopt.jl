@@ -81,7 +81,7 @@ mutable struct ConvexBundleMethodState{
     λ::A
     sub_problem::Pr
     sub_state::St
-    ϱ::Nothing
+    ϱ::Nothing# deprecated
     function ConvexBundleMethodState(
         M::TM,
         p::P;
@@ -101,9 +101,9 @@ mutable struct ConvexBundleMethodState{
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         sub_problem::Pr=convex_bundle_method_subsolver,
         sub_state::St=AllocatingEvaluation(),
-        k_size=nothing,
-        p_estimate=nothing,
-        ϱ=nothing,
+        k_size=nothing,# deprecated
+        p_estimate=nothing,# deprecated
+        ϱ=nothing,# deprecated
     ) where {
         D,
         IR<:AbstractInverseRetractionMethod,
@@ -171,7 +171,7 @@ mutable struct ConvexBundleMethodState{
             λ,
             sub_problem,
             sub_state,
-            ϱ,
+            ϱ,# deprecated
         )
     end
 end
@@ -333,9 +333,9 @@ function convex_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=convex_bundle_method_subsolver,
     sub_state=evaluation,
-    k_size=nothing,
-    p_estimate=nothing,
-    ϱ=nothing,
+    k_size=nothing,# deprecated
+    p_estimate=nothing,# deprecated
+    ϱ=nothing,# deprecated
     kwargs..., #especially may contain debug
 ) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
@@ -358,9 +358,9 @@ function convex_bundle_method!(
         vector_transport_method=vector_transport_method,
         sub_problem=sub_problem,
         sub_state=sub_state,
-        k_size=k_size,
-        p_estimate=p_estimate,
-        ϱ=ϱ,
+        k_size=k_size,# deprecated
+        p_estimate=p_estimate,# deprecated
+        ϱ=ϱ,# deprecated
     )
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))
