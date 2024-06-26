@@ -17,7 +17,7 @@ _l_refl = raw"\operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{re
 
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
-_l_cal(letter::String) = raw"\mathcal "*"$letter"
+_l_cal(letter::String) = raw"\mathcal " * "$letter"
 _l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
 _l_C_subset_M = raw"\mathcal C \subset \mathcal M"
 _l_M = raw"\mathcal M"
