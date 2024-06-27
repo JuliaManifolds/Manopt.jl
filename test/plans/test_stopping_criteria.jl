@@ -234,7 +234,6 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         swecl(dmp, gds, 0) # reset
         @test length(get_reason(swecl)) == 0
     end
-
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
