@@ -279,8 +279,6 @@ end
 
 mutable struct ReducedLagrangianHess{T}
     cmo::ConstrainedManifoldObjective
-    Hess_g
-    Hess_h
     μ::T
     λ::T
     s::T
@@ -380,7 +378,6 @@ function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjectiv
     copyto!(M, X[N, 1], get_hessian(M, cmo, p, grad_L))
     if m > 0
         H_g = get_hess_inequality_constraint(M, cmo, p, grad_L, :)
-        H_g = Hess_g(M, p, grad_L)
         X[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
         X[N, 1] += sum([(g + s)[i] * grad_g[i] for i in 1:m])
         copyto!(ℝ^m, X[N, 2], [inner(M, p, grad_g[i], grad_L) for i in 1:m] + μ .* s .* s)

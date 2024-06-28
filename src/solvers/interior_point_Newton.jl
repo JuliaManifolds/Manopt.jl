@@ -1,7 +1,7 @@
 @doc raw"""
     interior_point_Newton(M, f,. grad_f, Hess_f; kwargs...)
 
-Perform the interior point Newton Method.
+Perform the interior point Newton method following [LaiYoshise:2024](@cite).
 """
 function interior_point_Newton(
     M::AbstractManifold,
