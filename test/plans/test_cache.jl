@@ -282,7 +282,7 @@ A `SimpleManifoldCachedObjective`""",
         )
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)
-        # otherise different
+        # otherwise different
         f1 = Manopt.get_cost_function(c_obj)
         @test f1 != f
         @test f1(M, p) == f(M, p)
@@ -331,7 +331,7 @@ A `SimpleManifoldCachedObjective`""",
         s_obj = Manopt.SimpleManifoldCachedObjective(M, obj_g; p=similar(p), X=similar(X))
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj_g) === Manopt.get_cost_function(s_obj, true)
-        # otherise different
+        # otherwise different
         f1 = Manopt.get_cost_function(s_obj)
         @test f1 != f
         @test f1(M, p) == f(M, p)
