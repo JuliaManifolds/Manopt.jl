@@ -1,11 +1,14 @@
-# not-in-place,
-# takes M, f, grad_f, Hess_f and possibly constraint functions and their graidents
+@doc raw"""
+    interior_point_Newton(M, f,. grad_f, Hess_f; kwargs...)
+
+Perform the interior point Newton Method.
+"""
 function interior_point_Newton(
     M::AbstractManifold,
     f,
     grad_f,
     Hess_f,
-    p;
+    p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
     h=nothing,
@@ -13,13 +16,48 @@ function interior_point_Newton(
     grad_h=nothing,
     Hess_g=nothing,
     Hess_h=nothing,
+    inequality_constrains::Union{Integer,Nothing}=nothing,
+    equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
 )
     q = copy(M, p)
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-    cmo = ConstrainedManifoldObjective(mho, g, grad_g, h, grad_h; evaluation=evaluation)
+    num_eq = if isnothing(equality_constrains)
+        _number_of_constraints(h, grad_h; M=M, p=p)
+    else
+        inequality_constrains
+    end
+    num_ineq = if isnothing(inequality_constrains)
+        _number_of_constraints(g, grad_g; M=M, p=p)
+    else
+        inequality_constrains
+    end
+    cmo = ConstrainedManifoldObjective(
+        M,
+        f,
+        grad_f;
+        hess_f=Hess_f,
+        g=g,
+        grad_g=grad_g,
+        hess_g=Hess_g,
+        h=h,
+        grad_h=grad_h,
+        hess_h=Hess_h,
+        evaluation=evaluation,
+        inequality_constrains=num_ineq,
+        equality_constrains=num_eq,
+        M=M,
+        p=p,
+    )
     return interior_point_Newton!(
-        M, cmo, Hess_g, Hess_h, q; evaluation=evaluation, kwargs...
+        M,
+        cmo,
+        Hess_g,
+        Hess_h,
+        q;
+        evaluation=evaluation,
+        inequality_constrains=num_ineq,
+        equality_constrains=num_eq,
+        kwargs...,
     )
 end
 
@@ -40,7 +78,7 @@ function interior_point_Newton(
     Hess_h=nothing,
     kwargs...,
 )
-    q = [p]
+    p_ = [p]
     f_(M, p) = f(M, p[])
 
     grad_f_ = _to_mutating_gradient(grad_f, evaluation)
@@ -53,28 +91,31 @@ function interior_point_Newton(
     grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
     Hess_h_ = isnothing(Hess_h) ? nothing : _to_mutating_gradient(Hess_h, evaluation)
 
-    mho = ManifoldHessianObjective(f_, grad_f_, Hess_f_)
-    cmo = ConstrainedManifoldObjective(mho, g_, grad_g_, h_, grad_h_; evaluation=evaluation)
-
     rs = interior_point_Newton(
-        M, cmo, Hess_g_, Hess_h_, q; evaluation=evaluation, kwargs...
+        M,
+        f_,
+        grad_f_,
+        Hess_f_,
+        p_;
+        evaluation=evaluation,
+        g=g_,
+        h=h_,
+        grad_g=grad_g_,
+        grad_h=grad_h_,
+        Hess_g=Hess_g_,
+        Hess_h=Hess_h_,
+        kwargs...,
     )
-
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return (typeof(p_) == typeof(rs)) ? rs[] : rs
 end
 
 # not-in-place
 # takes only manifold, constrained objetive and initial point
 function interior_point_Newton(
-    M::AbstractManifold,
-    cmo::O,
-    Hess_g,
-    Hess_h,
-    p;
-    kwargs...
+    M::AbstractManifold, cmo::O, p; kwargs...
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
-    return interior_point_Newton!(M, cmo, Hess_g, Hess_h, q; kwargs...)
+    return interior_point_Newton!(M, cmo, q; kwargs...)
 end
 
 # in-place
@@ -92,31 +133,57 @@ function interior_point_Newton!(
     grad_h=nothing,
     Hess_g=nothing,
     Hess_h=nothing,
+    inequality_constrains=nothing,
+    equality_constrains=nothing,
     kwargs...,
 )
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f)
-    cmo = ConstrainedManifoldObjective(mho, g, grad_g, h, grad_h; evaluation=evaluation)
+    if isnothing(inequality_constrains)
+        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    end
+    if isnothing(equality_constrains)
+        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    end
+    cmo = ConstrainedManifoldObjective(
+        M,
+        f,
+        grad_f;
+        hess_f=Hess_f,
+        g=g,
+        grad_g=grad_g,
+        hess_g=Hess_g,
+        h=h,
+        grad_h=grad_h,
+        hess_h=Hess_h,
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
+        M=M,
+        p=p,
+    )
     dcmo = decorate_objective!(M, cmo; kwargs...)
-
-    return interior_point_Newton!(M, dcmo, p, Hess_g=Hess_g, Hess_h=Hess_h, evaluation=evaluation, kwargs...)
+    return interior_point_Newton!(
+        M,
+        dcmo,
+        p;
+        evaluation=evaluation,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
+        kwargs...,
+    )
 end
-
-# MAIN SOLVER
 function interior_point_Newton!(
     M::AbstractManifold,
     cmo::O,
-    Hess_g,
-    Hess_h,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     X=get_gradient(M, cmo, p),
-    μ=ones(length(get_inequality_constraints(M, cmo, p))),
-    λ=zeros(length(get_equality_constraints(M, cmo, p))),
+    μ::Vector=ones(length(get_inequality_constraint(M, cmo, p, :))),
+    λ::Vector=zeros(length(get_equality_constraint(M, cmo, p, :))),
     s=μ,
-    ρ=μ's / length(get_inequality_constraints(M, cmo, p)),
+    ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
     stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-5),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     _N=M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s),
     stepsize::Stepsize=InteriorPointLinesearch(
         _N;
@@ -160,8 +227,6 @@ function interior_point_Newton!(
     ips = InteriorPointState(
         M,
         cmo,
-        Hess_g,
-        Hess_h,
         p,
         sub_problem,
         sub_state;

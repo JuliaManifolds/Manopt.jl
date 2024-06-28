@@ -6,11 +6,11 @@ A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p
 grad_f(M, p) = (I - p * p') * A * p
-Hess_f(M, p, X) = A * X  - (p' * A * X)*p - (p' * A * p)*X
+Hess_f(M, p, X) = A * X - (p' * A * X) * p - (p' * A * p) * X
 
 g(M, p) = -p
 grad_g(M, p) = [(p * p' - I)[:, i] for i in 1:3]
-Hess_g(M, p, X) = [(X*p')[:, i] for i in 1:3]
+Hess_g(M, p, X) = [(X * p')[:, i] for i in 1:3]
 Hess_h(M, p, X) = [zeros(3) for i in 1:3]
 M = Manifolds.Sphere(2)
 
@@ -79,7 +79,6 @@ q[K, 4] = s.s
 #rec .+= 0.005 * rec;
 
 #-------------------------------------------------------------------------------------------------#
-
 
 using GLMakie, Makie, GeometryTypes
 
