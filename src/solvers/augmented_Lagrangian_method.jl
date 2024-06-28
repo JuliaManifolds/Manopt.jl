@@ -272,41 +272,57 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 # Keyword Arguments
 
 * $_kw_evaluation_default: $_kw_evaluation
+
 * `ϵ=1e-3`:           the accuracy tolerance
 * `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;
   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
-* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints
-* `μ_max=20.0`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
+
+  * `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `g` is performed to estimate these.
+
+* `gradient_range=nothing`: specify how both gradients of the constraints are represented
+
+* `gradient_equality_range=gradient_range`:
+   specify how gradients of the equality constraints are represented, see [`VectorGradientFunction`](@ref).
+
+* `gradient_inequality_range=gradient_range`:
+   specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
+
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+   If not provided, a call to the gradient of `g` is performed to estimate these.
+
 * `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints
 * `λ_max=20.0`:       an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min=- λ_max`:    a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `τ=0.8`:            factor for the improvement of the evaluation of the penalty parameter
+
+* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints
+* `μ_max=20.0`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
+
 * `ρ=1.0`:            the penalty parameter
+* `τ=0.8`:            factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ=0.3`:          the scaling factor of the penalty parameter
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`: the scaling factor of the exactness
-* `equality_constraints=nothing`: the number ``n`` of equality constraints.
-  If not provided, a call to the gradient of `g` is performed to estimate these.
-* `gradient_range=nothing`: specify how both gradients of the constraints are represented
-* `gradient_equality_range=gradient_range`:
-* `gradient_inequality_range=gradient_range`:
-* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-   If not provided, a call to the gradient of `g` is performed to estimate these.
+
 * `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
    $(_kw_used_in("sub_problem"))
+
 * `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
   $(_kw_used_in("sub_problem"))
-* `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example the `debug=` keyword.
-* `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
-* `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
+
+* $_kw_sub_kwargs_default: $_kw_sub_kwargs
+
+* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`:
+   problem for the subsolver
+* `sub_state=`[`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion.
+  See also `sub_kwargs=`.
+
 * `stopping_criterion=$_sc_alm_default`: $_kw_stopping_criterion
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$_doc_sec_output
 """
 
 @doc "$(_doc_alm)"
