@@ -1,5 +1,5 @@
 using Manifolds, ManifoldsBase, Manopt, Test, Random
-using LinearAlgebra: I, tr, Symmetric
+using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
 
 include("../utils/example_tasks.jl")
 
@@ -7,8 +7,10 @@ include("../utils/example_tasks.jl")
     Random.seed!(42)
     n = 8
     k = 3
-    A = Symmetric(randn(n, n))
+    A = Symmetric(diagm(0 => 1.0:8.0, 1 => ones(7), -1 => ones(7)))
     M = Grassmann(n, k)
+    f_min = -0.5 * sum(eigvals(A)[(n - k + 1):n])
+    p_min = eigvecs(A)[:, (n - k + 1):n]
 
     f(M, p) = -0.5 * tr(p' * A * p)
     grad_f(M, p) = -A * p + p * (p' * A * p)
@@ -109,12 +111,23 @@ include("../utils/example_tasks.jl")
         st1 = StopWhenFirstOrderProgress(0.5)
         @test startswith(repr(st1), "StopWhenFirstOrderProgress(0.5)\n")
         @test Manopt.indicates_convergence(st1)
+        @test get_reason(st1) == ""
+        # fake a trigger
+        st1.at_iteration = 0
+        @test length(get_reason(st1)) > 0
+        st1.at_iteration = 1
+        @test length(get_reason(st1)) > 0
+
         st2 = StopWhenAllLanczosVectorsUsed(2)
         @test startswith(repr(st2), "StopWhenAllLanczosVectorsUsed(2)\n")
         @test !Manopt.indicates_convergence(st2)
         @test startswith(
             repr(arcs2.sub_state), "# Solver state for `Manopt.jl`s Lanczos Iteration\n"
         )
+        @test get_reason(st2) == ""
+        # manually trigger
+        st2.at_iteration = 1
+        @test length(get_reason(st2)) > 0
 
         f1(M, p) = p
         f1!(M, q, p) = copyto!(M, q, p)
@@ -133,23 +146,24 @@ include("../utils/example_tasks.jl")
         p1 = adaptive_regularization_with_cubics(
             M, f, grad_f, Hess_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        # Second run with random p0
+        @test abs(f(M, p1) - f_min) < 1e-14
+        @test isapprox(M, p_min, p1)
         Random.seed!(42)
         p2 = adaptive_regularization_with_cubics(
             M, f, grad_f, Hess_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        @test isapprox(M, p1, p2)
+        @test isapprox(M, p_min, p2)
         # Third with approximate Hessian
         p3 = adaptive_regularization_with_cubics(
             M, f, grad_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        @test isapprox(M, p1, p3)
+        @test isapprox(M, p_min, p3)
         # Fourth with approximate Hessian and random point
         Random.seed!(36)
         p4 = adaptive_regularization_with_cubics(
             M, f, grad_f; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        @test isapprox(M, p1, p4)
+        @test isapprox(M, p_min, p4)
         # with a large η1 to trigger the bad model case once
         p5 = adaptive_regularization_with_cubics(
             M,
@@ -161,20 +175,20 @@ include("../utils/example_tasks.jl")
             η1=0.89,
             retraction_method=PolarRetraction(),
         )
-        @test isapprox(M, p1, p5)
+        @test isapprox(M, p_min, p5)
 
         # in place
         q1 = copy(M, p0)
         adaptive_regularization_with_cubics!(
             M, f, grad_f, Hess_f, q1; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        @test isapprox(M, p1, q1)
+        @test isapprox(M, p_min, q1)
         # in place with approx Hess
         q2 = copy(M, p0)
         adaptive_regularization_with_cubics!(
             M, f, grad_f, q2; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        @test isapprox(M, p1, q2)
+        @test isapprox(M, p_min, q2)
 
         # test both in-place and allocating variants of `grad_g``
         X0 = grad_f(M, p0)
@@ -204,7 +218,10 @@ include("../utils/example_tasks.jl")
             return_objective=true,
             return_state=true,
         )
-        @test isapprox(M, p1, q3)
+        @test isapprox(M, p_min, q3)
+
+        # test that we do not het nan if we start at the minimizer
+        r1 = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p_min)
     end
 
     @testset "A short solver run on the circle" begin
@@ -219,5 +236,13 @@ include("../utils/example_tasks.jl")
             Mc, fc, grad_fc, hess_fc, p0; θ=0.5, σ=100.0, evaluation=InplaceEvaluation()
         )
         @test fc(Mc, p0) > fc(Mc, p2)
+    end
+
+    @testset "Start at a point with _exactly_ gradient zero" begin
+        p0 = zeros(2)
+        M = Euclidean(2)
+        f2(M, p) = 0
+        grad_f2(M, p) = [0.0, 0.0]
+        @test adaptive_regularization_with_cubics(M, f2, grad_f2, p0) == p0
     end
 end

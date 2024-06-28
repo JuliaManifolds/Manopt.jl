@@ -190,9 +190,11 @@ Otherwise the problem is not constrained and you should consider using unconstra
 * `u_exponent`:                (`1/100`) exponent of the u update factor;
 * `u_min`:                     (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `ρ`:                         (`1.0`) the penalty parameter
+* `equality_constraints`:      (`nothing`) the number ``n`` of equality constraints.
 * `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
 * `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
 * `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
+* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
 * `min_stepsize`:              (`1e-10`) the minimal step size
 * `sub_cost`:                  ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
 * `sub_grad`:                  ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
@@ -203,7 +205,11 @@ Otherwise the problem is not constrained and you should consider using unconstra
 * `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
-mainly the [`ArrayPowerRepresentation`](@ref) (from `Manifolds.jl`) can be used if the gradients can be computed more efficiently in that representation.
+mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
+
+With `equality_constraints` and `inequality_constraints` you have to provide the dimension
+of the ranges of `h` and `g`, respectively. If not provided, together with `M` and the start point `p0`,
+a call to either of these is performed to try to infer these.
 
 # Output
 
@@ -223,15 +229,19 @@ function exact_penalty_method(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains=-1,
-    equality_constrains=-1,
+    inequality_constrains::Union{Integer,Nothing}=nothing,
+    equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
-    if inequality_constrains == -1
-        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    num_eq = if isnothing(equality_constrains)
+        _number_of_constraints(h, grad_h; M=M, p=p)
+    else
+        inequality_constrains
     end
-    if equality_constrains == -1
-        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    num_ineq = if isnothing(inequality_constrains)
+        _number_of_constraints(g, grad_g; M=M, p=p)
+    else
+        inequality_constrains
     end
     cmo = ConstrainedManifoldObjective(
         f,
@@ -241,8 +251,8 @@ function exact_penalty_method(
         h,
         grad_h;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constrains=num_eq,
+        inequality_constrains=num_ineq,
         M=M,
         p=p,
     )
@@ -307,14 +317,14 @@ function exact_penalty_method!(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains=-1,
-    equality_constrains=-1,
+    inequality_constrains=nothing,
+    equality_constrains=nothing,
     kwargs...,
 )
-    if inequality_constrains == -1
+    if isnothing(inequality_constrains)
         inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
     end
-    if equality_constrains == -1
+    if isnothing(equality_constrains)
         equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
     end
     cmo = ConstrainedManifoldObjective(

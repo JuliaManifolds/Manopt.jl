@@ -108,12 +108,11 @@ using Manopt: get_value, get_value_function, get_gradient_function
     X = [1.0, 0.5, 0.25]
     gh = [X, -X]
     # Hessian
-    for vhf in [
-        vhf_fa,
-        vhf_va,
-        vhf_fi,
-        #vhf_vi,
-    ]
+    @test Manopt.get_hessian_function(vhf_fa) === hess_g
+    @test all(Manopt.get_hessian_function(vhf_va) .=== [hess_g1, hess_g2])
+    @test Manopt.get_hessian_function(vhf_fi) === hess_g!
+    @test all(Manopt.get_hessian_function(vhf_vi) .=== [hess_g1!, hess_g2!])
+    for vhf in [vhf_fa, vhf_va, vhf_fi, vhf_vi]
         @test get_hessian(M, vhf, p, X) == gh
         @test get_hessian(M, vhf, p, X, :) == gh
         @test get_hessian(M, vhf, p, X, 1:2) == gh

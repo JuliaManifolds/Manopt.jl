@@ -5,25 +5,52 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.64] unreleased
+## [0.4.67] – unreleased
+
+### Fixed
+
+* a few typos in the documentation
+
+## [0.4.66] June 27, 2024
+
+### Changed
+
+* Remove functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`
+* Remove some unused fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState` in favor of jut `k_max`
+* Change parameter `R` placement in `ProximalBundleMethodState` to fifth position
+
+## [0.4.65] June 13, 2024
+
+### Changed
+
+* refactor stopping criteria to not store a `sc.reason` internally, but instead only
+  generate the reason (and hence allocate a string) when actually asked for a reason.
+
+## [0.4.64] June 4, 2024
 
 ### Added
 
 * Remodel the constraints and their gradients into separate `VectorGradientFunctions`
   to reduce code duplication and encapsulate the inner model of these functions and their gradients
 * Introduce a `ConstrainedManoptProblem` to model different ranges for the gradients in the
-  new `VectorGradientFunction`s beyod the default `NestedPowerRepresentation`
+  new `VectorGradientFunction`s beyond the default `NestedPowerRepresentation`
+* introduce a `VectorHessianFunction` to also model that one can provide the vector of Hessians
+  to constraints
 * introduce a more flexible indexing beyond single indexing, to also include arbitrary ranges
   when accessing vector functions and their gradients and hence also for constraints and
   their gradients.
-* deprecate `get_grad_equality_constraints(M, o, p)`, use `get_grad_equality_constraint(M, o, p, :)`
-  from the more flexible indexing instead.
 
 ### Changed
 
 * Remodel `ConstrainedManifoldObjective` to store an `AbstractManifoldObjective`
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
   therein and implementing access to this Hessian
+* Fixed a bug that Lanczos produced NaNs when started exactly in a minimizer, since we divide by the gradient norm.
+
+### Deprecated
+
+* deprecate `get_grad_equality_constraints(M, o, p)`, use `get_grad_equality_constraint(M, o, p, :)`
+  from the more flexible indexing instead.
 
 ## [0.4.63] May 11, 2024
 

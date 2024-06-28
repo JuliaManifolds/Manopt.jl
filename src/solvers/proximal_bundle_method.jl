@@ -43,11 +43,11 @@ mutable struct ProximalBundleMethodState{
     T,
     Pr,
     St,
+    R<:Real,
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-    R<:Real,
 } <: AbstractManoptSolverState where {P,T,Pr}
     approx_errors::AbstractVector{R}
     bundle::AbstractVector{Tuple{P,T}}
@@ -114,7 +114,7 @@ mutable struct ProximalBundleMethodState{
         λ = [zero(R)]
         η = zero(R)
         ν = zero(R)
-        return new{P,T,Pr,St,IR,TR,SC,VT,R}(
+        return new{P,T,Pr,St,R,IR,TR,SC,VT}(
             approx_errors,
             bundle,
             c,
@@ -256,8 +256,9 @@ function proximal_bundle_method!(
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
     retraction_method::TRetr=default_retraction_method(M, typeof(p)),
     bundle_size=50,
-    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(1e-8) |
-                                          StopAfterIteration(5000),
+    stopping_criterion::StoppingCriterion=StopWhenLagrangeMultiplierLess(
+        1e-8; names=["-ν"]
+    ) | StopAfterIteration(5000),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     α₀=1.2,
     ε=1e-2,
@@ -289,13 +290,15 @@ function proximal_bundle_method!(
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
 end
-function initialize_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState)
+function initialize_solver!(
+    mp::AbstractManoptProblem, pbms::ProximalBundleMethodState{P,T,Pr,St,R}
+) where {P,T,Pr,St,R}
     M = get_manifold(mp)
     copyto!(M, pbms.p_last_serious, pbms.p)
     get_subgradient!(mp, pbms.X, pbms.p)
     pbms.bundle = [(copy(M, pbms.p), copy(M, pbms.p, pbms.X))]
     empty!(pbms.λ)
-    push!(pbms.λ, zero(eltype(pbms.p)))
+    push!(pbms.λ, zero(R))
     return pbms
 end
 function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i)
@@ -437,18 +440,21 @@ function (sc::StopWhenLagrangeMultiplierLess)(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
 )
     if i == 0 # reset on init
-        sc.reason = ""
-        sc.at_iteration = 0
+        sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerance[1]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter -ν = $(-pbms.ν) ≤ $(sc.tolerance[1]).\n"
+    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerances[1]) && (i > 0)
+        sc.values[1] = -pbms.ν
         sc.at_iteration = i
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
-    if (sc.mode == :both) && (pbms.c ≤ sc.tolerance[1]) && (nd ≤ sc.tolerance[2]) && (i > 0)
-        sc.reason = "After $i iterations the algorithm reached an approximate critical point: the parameter c = $(pbms.c) ≤ $(sc.tolerance[1]) and |d| = $(nd) ≤ $(sc.tolerance[2]).\n"
+    if (sc.mode == :both) &&
+        (pbms.c ≤ sc.tolerances[1]) &&
+        (nd ≤ sc.tolerances[2]) &&
+        (i > 0)
+        sc.values[1] = pbms.c
+        sc.values[2] = nd
         sc.at_iteration = i
         return true
     end
@@ -484,7 +490,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             `proximal_bundle_method` call.
             """
             if d.status === :Once
-                @warn "Further warnings will be supressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
                 d.status = :No
             end
         elseif new_value < zero(number_eltype(st.ν))

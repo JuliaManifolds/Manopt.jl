@@ -1,6 +1,6 @@
 @doc raw"""
     EmbeddedManifoldObjective{P, T, E, O2, O1<:AbstractManifoldObjective{E}} <:
-       AbstractDecoratedManifoldObjective{O2, O1}
+       AbstractDecoratedManifoldObjective{E,O2}
 
 Declare an objective to be defined in the embedding.
 This also declares the gradient to be defined in the embedding,
@@ -183,13 +183,13 @@ function get_hessian!(
 end
 
 function get_hessian_function(
-    emo::EmbeddedManifoldObjective{P,T,AllocatingEvaluation}, recursive=false
+    emo::EmbeddedManifoldObjective{P,T,AllocatingEvaluation}, recursive::Bool=false
 ) where {P,T}
     recursive && (return get_hessian_function(emo.objective, recursive))
     return (M, p, X) -> get_hessian(M, emo, p, X)
 end
 function get_hessian_function(
-    emo::EmbeddedManifoldObjective{P,T,InplaceEvaluation}, recursive=false
+    emo::EmbeddedManifoldObjective{P,T,InplaceEvaluation}, recursive::Bool=false
 ) where {P,T}
     recursive && (return get_hessian_function(emo.objective, recursive))
     return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)
@@ -232,8 +232,9 @@ end
     X = get_grad_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
     get_grad_equality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
 
-evaluate the gradient of the `j`th equality constraint ``\operatorname{grad} h_j(p)`` defined in the embedding, that is embed `p`
-before calling the gradient function stored in the [`EmbeddedManifoldObjective`](@ref).
+Evaluate the gradient of the `j`th equality constraint ``\operatorname{grad} h_j(p)``
+defined in the embedding, that is embed `p` before calling the gradient function stored in
+the [`EmbeddedManifoldObjective`](@ref).
 
 The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).
@@ -300,11 +301,12 @@ function get_grad_equality_constraint!(
     return Y
 end
 @doc raw"""
-    X = get_grad_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, i)
-    get_grad_inequality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, i)
+    X = get_grad_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
+    get_grad_inequality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
 
-evaluate the gradient of the `i`th inequality constraint ``\operatorname{grad} g_i(p)`` defined in the embedding, that is embed `p`
-before calling the gradient function stored in the [`EmbeddedManifoldObjective`](@ref).
+Evaluate the gradient of the `j`th inequality constraint ``\operatorname{grad} g_j(p)``
+defined in the embedding, that is embed `p` before calling the gradient function stored in
+the [`EmbeddedManifoldObjective`](@ref).
 
 The returned gradient is then converted to a Riemannian gradient calling
 [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library.html#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any}).

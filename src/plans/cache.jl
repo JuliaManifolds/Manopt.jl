@@ -855,13 +855,13 @@ function get_hessian!(M::AbstractManifold, Y, co::ManifoldCachedObjective, p, X)
 end
 
 function get_hessian_function(
-    emo::ManifoldCachedObjective{AllocatingEvaluation}, recursive=false
+    emo::ManifoldCachedObjective{AllocatingEvaluation}, recursive::Bool=false
 )
     recursive && (return get_hessian_function(emo.objective, recursive))
     return (M, p, X) -> get_hessian(M, emo, p, X)
 end
 function get_hessian_function(
-    emo::ManifoldCachedObjective{InplaceEvaluation}, recursive=false
+    emo::ManifoldCachedObjective{InplaceEvaluation}, recursive::Bool=false
 )
     recursive && (return get_hessian_function(emo.objective, recursive))
     return (M, Y, p, X) -> get_hessian!(M, Y, emo, p, X)

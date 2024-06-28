@@ -431,7 +431,7 @@ function initialize_solver!(::AbstractManoptProblem, dcps::DifferenceOfConvexPro
     return dcps
 end
 #=
-    Varant I: allocating closed form of the prox
+    Variant I: allocating closed form of the prox
 =#
 function step_solver!(
     amp::AbstractManoptProblem,
@@ -450,7 +450,7 @@ function step_solver!(
 end
 
 #=
-    Varant II: in-place closed form of the prox
+    Variant II: in-place closed form of the prox
 =#
 function step_solver!(
     amp::AbstractManoptProblem,
@@ -468,7 +468,7 @@ function step_solver!(
     return dcps
 end
 #=
-    Varant III: subsolver variant of the prox
+    Variant III: subsolver variant of the prox
 =#
 function step_solver!(
     amp::AbstractManoptProblem,

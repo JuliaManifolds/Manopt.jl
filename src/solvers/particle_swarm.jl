@@ -385,12 +385,11 @@ is less than a threshold.
 
 initialize the stopping criterion to a certain `tolerance`.
 """
-mutable struct StopWhenSwarmVelocityLess <: StoppingCriterion
-    threshold::Float64
-    reason::String
+mutable struct StopWhenSwarmVelocityLess{F<:Real} <: StoppingCriterion
+    threshold::F
     at_iteration::Int
-    velocity_norms::Vector{Float64}
-    StopWhenSwarmVelocityLess(tolerance::Float64) = new(tolerance, "", 0, Float64[])
+    velocity_norms::Vector{F}
+    StopWhenSwarmVelocityLess(tolerance::F) where {F} = new{F}(tolerance, -1, F[])
 end
 # It just indicates loss of velocity, not convergence to a minimizer
 indicates_convergence(c::StopWhenSwarmVelocityLess) = false
@@ -398,22 +397,27 @@ function (c::StopWhenSwarmVelocityLess)(
     mp::AbstractManoptProblem, pss::ParticleSwarmState, i::Int
 )
     if i == 0 # reset on init
-        c.reason = ""
-        c.at_iteration = 0
-        c.velocity_norms = zeros(Float64, length(pss.swarm)) # init to correct length
+        c.at_iteration = -1
+        # init to correct length
+        c.velocity_norms = zeros(eltype(c.velocity_norms), length(pss.swarm))
         return false
     end
     M = get_manifold(mp)
     c.velocity_norms .= [norm(M, p, X) for (p, X) in zip(pss.swarm, pss.velocity)]
     if i > 0 && norm(c.velocity_norms) < c.threshold
-        c.reason = "At iteration $(i) the algorithm reached a velocity of the swarm ($(norm(c.velocity_norms))) less than the threshold ($(c.threshold)).\n"
         c.at_iteration = i
         return true
     end
     return false
 end
+function get_reason(c::StopWhenSwarmVelocityLess)
+    if (c.at_iteration >= 0) && (norm(c.velocity_norms) < c.threshold)
+        return "At iteration $(c.at_iteration) the algorithm reached a velocity of the swarm ($(norm(c.velocity_norms))) less than the threshold ($(c.threshold)).\n"
+    end
+    return ""
+end
 function status_summary(c::StopWhenSwarmVelocityLess)
-    has_stopped = length(c.reason) > 0
+    has_stopped = (c.at_iteration >= 0) && (norm(c.velocity_norms) < c.threshold)
     s = has_stopped ? "reached" : "not reached"
     return "swarm velocity norm < $(c.threshold):\t$s"
 end

@@ -2,7 +2,7 @@
     AbstractVectorialType
 
 An abstract type for different representations of a vectorial function
-    ``f: \mathcal → \mathbb R^m`` and its (component-wise) gradient/Jacobian
+    ``f: \mathcal M → \mathbb R^m`` and its (component-wise) gradient/Jacobian
 """
 abstract type AbstractVectorialType end
 
@@ -12,11 +12,11 @@ abstract type AbstractVectorialType end
 A type to indicate that gradient of the constraints is implemented as a
 Jacobian matrix with respect to a certain basis, that is if the constraints are
 given as ``g: \mathcal M → ℝ^m`` with respect to a basis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
-This can be written as ``J_g(p) = (c_1^{\mathrm{T)},…,c_m^{\mathrm{T)})^{\mathrm{T)} \in ℝ^{m,d}``, that is,
+This can be written as ``J_g(p) = (c_1^{\mathrm{T}},…,c_m^{\mathrm{T}})^{\mathrm{T}} \in ℝ^{m,d}``, that is,
 every row ``c_i`` of this matrix is a set of coefficients such that
 `get_coefficients(M, p, c, B)` is the tangent vector ``\oepratorname{grad} g_i(p)``
 
-for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_(p) ∈ T_p\mathcal M``,
+for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal M``,
     ``i=1,…,m``.
 
 # Fields
@@ -46,7 +46,7 @@ end
     ComponentVectorialType <: AbstractVectorialType
 
 A type to indicate that constraints are implemented as component functions,
-for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_(p) ∈ T_p\mathcal M``, ``i=1,…,m``.
+for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal M``, ``i=1,…,m``.
 """
 struct ComponentVectorialType <: AbstractVectorialType end
 
@@ -63,7 +63,7 @@ struct FunctionVectorialType <: AbstractVectorialType end
 
 Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` with an
 [`AbstractEvaluationType`](@ref) `E` and an [`AbstractVectorialType`](@ref) to specify the
-format ``f`` is imlemented as.
+format ``f`` is implemented as.
 
 # Representations of ``f``
 
@@ -98,11 +98,11 @@ abstract type AbstractVectorFunction{E<:AbstractEvaluationType,FT<:AbstractVecto
               Function end
 
 @doc raw"""
-    VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractManifoldObjective{E}
+    VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractManifoldObjective{E}
 
-Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (componentwise)
+Represent an abstract vectorial function ``f:\mathcal M → ℝ^n`` that provides a (component wise)
 gradient.
-The [´AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
+The [`AbstractEvaluationType`](@ref) `E` indicates the evaluation type,
 and the [`AbstractVectorialType`](@ref)s `FT` and `JT` the formats in which
 the function and the gradient are provided, see [`AbstractVectorFunction`](@ref) for an explanation.
 """
@@ -111,7 +111,7 @@ abstract type AbstractVectorGradientFunction{
 } <: AbstractVectorFunction{E,FT} end
 
 @doc raw"""
-    VectorGradientFunction{E, FT, JT, F, J, I} <: <: AbstractVectorGradientFunction{E, FT, JT}
+    VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractVectorGradientFunction{E, FT, JT}
 
 Represent a function ``f:\mathcal M → ℝ^n`` including it first derivative,
 either as a vector of gradients of a Jacobian
@@ -131,7 +131,7 @@ And advantage here is, that again the single components can be evaluated individ
 
 * `value!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!:     the Jacobian of ``f``
+* `jacobian!!`:     the Jacobian of ``f``
 * `jacobian_type`: indicating / storing data for the type of ``J_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
@@ -146,7 +146,7 @@ And advantage here is, that again the single components can be evaluated individ
 Create a `VectorGradientFunction` of `f`  and its Jacobian (vector of gradients) `Jf`,
 where `f` maps into the Euclidean space of dimension `range_dimension`.
 Their types are specified by the `function_type`, and `jacobian_type`, respectively.
-The Jacobian can further be given as an allocating variant or an inplace-variant, specified
+The Jacobian can further be given as an allocating variant or an in-place variant, specified
 by the `evaluation=` keyword.
 """
 struct VectorGradientFunction{
@@ -172,7 +172,12 @@ function VectorGradientFunction(
     function_type::FT=FunctionVectorialType(),
     jacobian_type::JT=FunctionVectorialType(),
 ) where {
-    I,F,J,E<:AbstractEvaluationType,FT<:AbstractVectorialType,JT<:AbstractVectorialType
+    I<:Integer,
+    F,
+    J,
+    E<:AbstractEvaluationType,
+    FT<:AbstractVectorialType,
+    JT<:AbstractVectorialType,
 }
     return VectorGradientFunction{E,FT,JT,F,J,I}(
         f, function_type, Jf, jacobian_type, range_dimension
@@ -193,9 +198,9 @@ or a single tangent space of the power manifold of lenth `n`.
 
 * `value!!`:          the cost function ``f``, which can take different formats
 * `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!:     the Jacobian of ``f``
+* `jacobian!!`:     the Jacobian of ``f``
 * `jacobian_type`: indicating / storing data for the type of ``J_f``
-* `hessians!!:     the Hessians of ``f`` (in a component wise sense)
+* `hessians!!`:     the Hessians of ``f`` (in a component wise sense)
 * `hessian_type`:  indicating / storing data for the type of ``H_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
@@ -210,7 +215,7 @@ or a single tangent space of the power manifold of lenth `n`.
 
 Create a `VectorGradientFunction` of `f`  and its Jacobian (vector of gradients) `Jf`
 and (vector of) Hessians, where `f` maps into the Euclidean space of dimension `range_dimension`.
-Their types are specified by the `function_type`, and `jacobian_type`, and and `hessian_type`,
+Their types are specified by the `function_type`, and `jacobian_type`, and `hessian_type`,
 respectively. The Jacobian and Hessian can further be given as an allocating variant or an
 inplace-variant, specified by the `evaluation=` keyword.
 """
@@ -243,7 +248,7 @@ function VectorHessianFunction(
     jacobian_type::JT=FunctionVectorialType(),
     hessian_type::HT=FunctionVectorialType(),
 ) where {
-    I,
+    I<:Integer,
     F,
     J,
     H,
@@ -275,7 +280,7 @@ The `i` can be a linear index, you can provide
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
     M::AbstractManifold, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
-) where {E}
+) where {E<:AbstractEvaluationType}
     c = vgf.value!!(M, p)
     if isa(c, Number)
         return c
@@ -288,12 +293,12 @@ function get_value(
     vgf::AbstractVectorFunction{E,<:ComponentVectorialType},
     p,
     i::Integer,
-) where {E}
+) where {E<:AbstractEvaluationType}
     return vgf.value!![i](M, p)
 end
 function get_value(
     M::AbstractManifold, vgf::AbstractVectorFunction{E,<:ComponentVectorialType}, p, i=:
-) where {E}
+) where {E<:AbstractEvaluationType}
     return [f(M, p) for f in vgf.value!![i]]
 end
 
@@ -321,7 +326,13 @@ Since `i` is assumed to be a linear index, you can provide
 * a `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients
 """
-get_gradient(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p, i, range=nothing)
+get_gradient(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction,
+    p,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+)
 
 _vgf_index_to_length(b::BitVector, n) = sum(b)
 _vgf_index_to_length(::Colon, n) = n
@@ -360,7 +371,7 @@ function get_gradient(
     p,
     i::Integer,
     ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT}
+) where {FT<:AbstractVectorialType}
     return vgf.jacobian!![i](M, p)
 end
 function get_gradient(
@@ -369,7 +380,7 @@ function get_gradient(
     p,
     i::Integer,
     ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT}
+) where {FT<:AbstractVectorialType}
     X = zero_vector(M, p)
     return vgf.jacobian!![i](M, X, p)
 end
@@ -387,10 +398,8 @@ function get_gradient!(
     p,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
-    pM = PowerManifold(M, range, vgf.range_dimension...)
+) where {FT<:AbstractVectorialType}
     JF = vgf.jacobian!!(M, p)
-    rep_size = representation_size(M)
     get_vector!(M, X, p, JF[i, :], vgf.jacobian_type.basis) #convert rows to gradients
     return X
 end
@@ -403,7 +412,7 @@ function get_gradient!(
     p,
     i=:,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
@@ -421,7 +430,7 @@ function get_gradient!(
     p,
     i::Integer,
     ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT}
+) where {FT<:AbstractVectorialType}
     return copyto!(M, X, p, vgf.jacobian!![i](M, p))
 end
 function get_gradient!(
@@ -449,7 +458,7 @@ function get_gradient!(
     p,
     i::Colon,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
@@ -466,7 +475,7 @@ function get_gradient!(
     p,
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     mP = PowerManifold(M, range, n)
     copyto!(mP, X, vgf.jacobian!!(M, p)[mP, i])
@@ -479,7 +488,7 @@ function get_gradient!(
     p,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     mP = PowerManifold(M, range, vgf.range_dimension)
     copyto!(M, X, p, vgf.jacobian!!(M, p)[mP, i])
     return X
@@ -495,7 +504,7 @@ function get_gradient!(
     p,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
     P = fill(p, pM)
@@ -516,7 +525,7 @@ function get_gradient!(
     p,
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
     JF = reshape(
@@ -541,7 +550,7 @@ function get_gradient!(
     p,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT}
+) where {FT<:AbstractVectorialType}
     return vgf.jacobian!![i](M, X, p)
 end
 function get_gradient!(
@@ -551,7 +560,7 @@ function get_gradient!(
     p,
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
     rep_size = representation_size(M)
@@ -570,7 +579,7 @@ function get_gradient!(
     p,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     pM = PowerManifold(M, range, vgf.range_dimension...)
     P = fill(p, pM)
     x = zero_vector(pM, P)
@@ -585,7 +594,7 @@ function get_gradient!(
     p,
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT}
+) where {FT<:AbstractVectorialType}
     #Single access for function is a bit expensive
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM_out = PowerManifold(M, range, n)
@@ -619,22 +628,24 @@ Since `i` is assumed to be a linear index, you can provide
 * a `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients
 """
-get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range=nothing)
+get_hessian(
+    M::AbstractManifold,
+    vgf::VectorHessianFunction,
+    p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+)
 
 # Generic case, allocate (a) a single tangent vector
 function get_hessian(
     M::AbstractManifold,
-    vhf::VectorHessianFunction{E,FT,JT,HT},
+    vhf::VectorHessianFunction,
     p,
     X,
     i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {
-    E<:Manopt.AbstractEvaluationType,
-    FT<:Manopt.AbstractVectorialType,
-    JT<:Manopt.AbstractVectorialType,
-    HT<:Union{ComponentVectorialType,FunctionVectorialType},
-}
+)
     Y = zero_vector(M, p)
     return get_hessian!(M, Y, vhf, p, X, i, range)
 end
@@ -652,28 +663,6 @@ function get_hessian(
     P = fill(p, pM)
     Y = zero_vector(pM, P)
     return get_hessian!(M, Y, vhf, p, X, i, range)
-end
-# (c) Special cases where allocations can be skipped
-function get_hessian(
-    M::AbstractManifold,
-    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i::Integer,
-    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT,JT}
-    return vhf.hessians!![i](M, p, X)
-end
-function get_hessian(
-    M::AbstractManifold,
-    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i::Integer,
-    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT,JT}
-    Y = zero_vector(M, p)
-    return vhf.hessians!![i](M, Y, p, X)
 end
 
 #
@@ -827,10 +816,10 @@ function get_hessian!(
     return Y
 end
 
-get_hessian_function(vgf::VectorGradientFunction, recursive=false) = vgf.hessians!!
+get_hessian_function(vgf::VectorHessianFunction, recursive::Bool=false) = vgf.hessians!!
 
 @doc raw"""
-    length(vgf::VectorGradientFunction)
+    length(vgf::AbstractVectorFunction)
 
 Return the length of the vector the function ``f: \mathcal M → ℝ^n`` maps into,
 that is the number `n`.
