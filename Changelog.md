@@ -5,12 +5,25 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.66] WIP
+## [0.4.67] WIP
 
 ### Added
 
 * Unify doc strings and presentation of keyword arguments
 * activate running vale on CI.
+
+### Fixed
+
+* a few typos in the documentation
+
+
+## [0.4.66] June 27, 2024
+
+### Changed
+
+* Remove functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`
+* Remove some unused fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState` in favor of jut `k_max`
+* Change parameter `R` placement in `ProximalBundleMethodState` to fifth position
 
 ## [0.4.65] June 13, 2024
 

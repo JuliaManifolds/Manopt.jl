@@ -7,7 +7,7 @@ if "--help" ∈ ARGS
         """
 docs/make.jl
 
-Render the `Manopt.jl` documenation with optional arguments
+Render the `Manopt.jl` documentation with optional arguments
 
 Arguments
 * `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,

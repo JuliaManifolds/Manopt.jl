@@ -207,8 +207,7 @@ $_arg_alt_mgo
 * `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:
   the gradient of the Frank-Wolfe sub problem. $(_kw_used_in("sub_objective"))
 
-* `sub_kwargs=(;)`:
-  specify keyword arguments passed to decorators of both the `sub_problem=` and `sub_state` as well as to the default state of the `substate`.
+* $_kw_sub_kwargs_default: $_kw_sub_kwargs
 
 * `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
   the objective for the Frank-Wolfe sub problem. $(_kw_used_in("sub_problem"))

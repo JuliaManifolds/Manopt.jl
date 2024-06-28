@@ -1078,8 +1078,8 @@ This collected vector is added to the `:Iteration => [...]` pair.
 If necessary, these pairs are created
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`DebugGroupFactory`](@ref)
-is called for the `Vector` and the result is added to the debug dictonaries entry
-with said symbold. This is wrapped into the [`DebugWhenActive`](@ref),
+is called for the `Vector` and the result is added to the debug dictionary's entry
+with said symbol. This is wrapped into the [`DebugWhenActive`](@ref),
 when the `:WhenActive` symbol is present
 
 # Return value
@@ -1163,7 +1163,7 @@ If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of
 If any integers are present, the last of these is used to wrap the group in a
 [`DebugEvery`](@ref)`(k)`.
 
-If `:WhenActive` is present, the resulting Action is wrappedn in [`DebugWhenActive`](@ref),
+If `:WhenActive` is present, the resulting Action is wrapped in [`DebugWhenActive`](@ref),
 making it deactivatable by its parent solver.
 """
 function DebugGroupFactory(a::Vector; activation_offset=1)

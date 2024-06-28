@@ -790,7 +790,7 @@ This collected vector is added to the `:Iteration => [...]` pair.
 If any of these two pairs does not exist, it is pairs are created when adding the corresponding symbols
 
 For each `Pair` of a `Symbol` and a `Vector`, the [`RecordGroupFactory`](@ref)
-is called for the `Vector` and the result is added to the debug dictionaries entry
+is called for the `Vector` and the result is added to the debug dictionary's entry
 with said symbol. This is wrapped into the [`RecordWhenActive`](@ref),
 when the `:WhenActive` symbol is present
 
