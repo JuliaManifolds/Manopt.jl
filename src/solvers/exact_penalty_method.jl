@@ -9,12 +9,12 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `p`:                   a set point on a manifold as starting point
 * `sub_problem`:         an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state`:           an [`AbstractManoptSolverState`](@ref) for the subsolver
-* `ϵ`:                   (`1e–3`) the accuracy tolerance
-* `ϵ_min`:               (`1e-6`) the lower bound for the accuracy tolerance
-* `u`:                   (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_min`:               (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ`:                   (`1.0`) the penalty parameter
-* `θ_ρ`:                 (`0.3`) the scaling factor of the penalty parameter
+* `ϵ=1e–3`: the accuracy tolerance
+* `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
+* `u=1e–1`: the smoothing parameter and threshold for violation of the constraints
+* `u_min=1e-6`: the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ=1.0`: the penalty parameter
+* `θ_ρ=0.3`: the scaling factor of the penalty parameter
 * `stopping_criterion`:  ([`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(min_stepsize))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 # Constructor
@@ -172,10 +172,10 @@ where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
-* `g`:      (`nothing`) the inequality constraints
-* `h`:      (`nothing`) the equality constraints
-* `grad_g`: (`nothing`) the gradient of the inequality constraints
-* `grad_h`: (`nothing`) the gradient of the equality constraints
+* `g=nothing`: the inequality constraints
+* `h=nothing`: the equality constraints
+* `grad_g=nothing`: the gradient of the inequality constraints
+* `grad_h=nothing`: the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
 Otherwise the problem is not constrained and you should consider using unconstrained solvers like [`quasi_Newton`](@ref).
@@ -183,22 +183,22 @@ Otherwise the problem is not constrained and you should consider using unconstra
 # Optional
 
 * `smoothing`:                 ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
-* `ϵ`:                         (`1e–3`) the accuracy tolerance
-* `ϵ_exponent`:                (`1/100`) exponent of the ϵ update factor;
-* `ϵ_min`:                     (`1e-6`) the lower bound for the accuracy tolerance
-* `u`:                         (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_exponent`:                (`1/100`) exponent of the u update factor;
-* `u_min`:                     (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ`:                         (`1.0`) the penalty parameter
-* `equality_constraints`:      (`nothing`) the number ``n`` of equality constraints.
+* `ϵ=1e–3`: the accuracy tolerance
+* `ϵ_exponent=1/100`: exponent of the ϵ update factor;
+* `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
+* `u=1e–1`: the smoothing parameter and threshold for violation of the constraints
+* `u_exponent=1/100`: exponent of the u update factor;
+* `u_min=1e-6`: the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ=1.0`: the penalty parameter
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
 * `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
-* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
-* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
-* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
-* `min_stepsize`:              (`1e-10`) the minimal step size
+* `gradient_equality_range=gradient_range`: specify how the gradients of the equality constraints are represented
+* `gradient_inequality_range=gradient_range`: specify how the gradients of the inequality constraints are represented
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+* `min_stepsize=1e-10`: the minimal step size
 * `sub_cost`:                  ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
 * `sub_grad`:                  ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_kwargs`:                (`(;)`) keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
+* `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
 * `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`, provide a problem for the subsolver
 * `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.

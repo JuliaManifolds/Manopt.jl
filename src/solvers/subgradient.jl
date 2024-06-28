@@ -10,7 +10,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 * `stop`:              ([`StopAfterIteration`](@ref)`(5000)``)a [`StoppingCriterion`](@ref)
 * `p`:                 (initial or current) value the algorithm is at
 * `p_star`:            optimal value (initialized to a copy of `p`.)
-* `X`:                 (`zero_vector(M, p)`) the current element from the possible
+* `X=zero_vector(M, p)`: the current element from the possible
   subgradients at `p` that was last evaluated.
 
 # Constructor
@@ -99,7 +99,7 @@ For more details see [FerreiraOliveira:1998](@cite).
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p`:  (`rand(M)`) an initial value ``p_0=p ∈ \mathcal M``
+* `p=rand(M)`: an initial value ``p_0=p ∈ \mathcal M``
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 
@@ -108,7 +108,7 @@ alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` c
 * `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the subgradient
   works by allocation (default) form `∂f(M, y)` or [`InplaceEvaluation`](@ref) in place
   of the form `∂f!(M, X, x)`.
-* `retraction`:         (`default_retraction_method(M, typeof(p))`) a retraction to use.
+* `retraction=default_retraction_method(M, typeof(p))`: a retraction to use.
 * `stepsize`:           ([`ConstantStepsize`](@ref)`(M)`) specify a [`Stepsize`](@ref)
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(5000)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.

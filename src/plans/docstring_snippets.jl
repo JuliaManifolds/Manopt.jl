@@ -6,7 +6,6 @@
 _l_Manifold(M="M") = "\\mathcal $M"
 _l_M = "$(_l_Manifold())"
 _l_TpM(p="p") = "T_{$p}$_l_M"
-
 _l_cO = raw"\mathcal O"
 _L_argmin = raw"\operatorname{arg\,min}"
 _l_grad = raw"\operatorname{grad}"
@@ -14,6 +13,8 @@ _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess = raw"\operatorname{Hess}"
 _l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_refl = raw"\operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x)"
+_l_min = raw"\min"
+_l_max = raw"\min"
 
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
@@ -41,6 +42,16 @@ _problem_default = raw"""
 \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
 ```
 """
+
+_problem_constrained = raw"""```math
+\begin{aligned}
+\min_{p ∈\mathcal{M}} &f(p)\\
+\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
+\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
+\end{aligned}
+```
+"""
+
 
 # Arguments of functions
 _arg_alt_mgo = raw"""
@@ -72,8 +83,12 @@ _doc_sec_output = """
 The obtained approximate minimizer ``p^*``.
 To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
 """
+
+_sc_any = "[` | `](@ref StopWhenAny)"
+_sc_all = "[` & `](@ref StopWhenAll)"
+
 # Fields
-_fild_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`).\
+_field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`).\
   any negative value indicates that this was not yet the case; "
 _field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
 _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"

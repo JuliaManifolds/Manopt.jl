@@ -11,10 +11,10 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 * `direction`:          ([`StochasticGradient`](@ref)) a direction update to use
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
 * `stepsize`:           ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `evaluation_order`:   (`:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`),
+* `evaluation_order=:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order`:              the current permutation
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `retraction_method=default_retraction_method(M, typeof(p))`: a `retraction(M, p, X)` to use.
 
 # Constructor
 
@@ -142,17 +142,17 @@ alternatively to the gradient you can provide an [`ManifoldStochasticGradientObj
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
 
 # Optional
-* `cost`:               (`missing`) you can provide a cost function for example to track the function value
+* `cost=missing`: you can provide a cost function for example to track the function value
 * `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradients works by
    allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order`:   (`:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`),
+* `evaluation_order=:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
 * `stepsize`:           ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `order_type`:         (`:RandomOder`) a type of ordering of gradient evaluations.
+* `order_type=:RandomOder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
-* `order`:              (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a retraction to use.
+* `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
+* `retraction_method=default_retraction_method(M, typeof(p))`: a retraction to use.
 
 # Output
 

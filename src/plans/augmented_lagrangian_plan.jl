@@ -1,4 +1,6 @@
-_doc_AL_Cost = raw"""
+_doc_al_cost() = "$(_l_cal("L"))_\\rho(p, μ, λ)"
+_doc_al_Cost(iter) = "$(_l_cal("L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
+_doc_AL_Cost_long = raw"""
 ```math
 \mathcal L_\rho(p, μ, λ)
 = f(x) + \frac{ρ}{2} \biggl(
@@ -17,7 +19,7 @@ of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@
 This struct is also a functor `(M,p) -> v` that can be used as a cost function within a solver,
 based on the internal [`ConstrainedManifoldObjective`](@ref) it computes
 
-$_doc_AL_Cost
+$_doc_AL_Cost_long
 
 ## Fields
 

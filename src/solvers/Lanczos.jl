@@ -29,7 +29,7 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 * $_kw_X_default: the iterate using the manifold of the tangent space.
 * `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`[` | `](@ref StopWhenAny)[`StopWhenFirstOrderProgress`](@ref)`(θ)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$_sc_any[`StopWhenFirstOrderProgress`](@ref)`(θ)`:
    the stopping criterion for the Lanczos iteration.
 * `stopping_criterion_newtown=`[`StopAfterIteration`](@ref)`(200)`: the stopping criterion for the inner Newton iteration.
 * `σ=10.0`: specify the regularization parameter
@@ -260,7 +260,7 @@ $_math_sc_firstorder
 # Fields
 
 * `θ`:      the factor ``θ`` in the second condition
-* $_fild_at_iteration
+* $_field_at_iteration
 
 # Constructor
 

@@ -34,7 +34,7 @@ where `f` and the proximal maps `proxes_f` can also be given directly as a [`Man
 
 * `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
   or [`InplaceEvaluation`](@ref) in place of form `prox!(M, y, λ, x)`.
-* `evaluation_order`:   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+* `evaluation_order=:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Random`) or the default linear one.
 * `λ`:                  (`iter -> 1/iter` ) a function returning the (square summable but
   not summable) sequence of ``λ_i``

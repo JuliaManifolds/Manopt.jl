@@ -7,26 +7,26 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 
 * `approx_errors`:            approximation of the linearization errors at the last serious step
 * `bundle`:                   bundle that collects each iterate with the computed subgradient at the iterate
-* `bundle_size`:              (`50`) the maximal size of the bundle
+* `bundle_size=50`: the maximal size of the bundle
 * `c`:                         convex combination of the approximation errors
 * `d`:                         descent direction
 * `inverse_retraction_method`: the inverse retraction to use within
-* `m`:                         (`0.0125`) the parameter to test the decrease of the cost
+* `m=0.0125`: the parameter to test the decrease of the cost
 * `p`:                         current candidate point
 * `p_last_serious`:            last serious iterate
 * `retraction_method`:         the retraction to use within
 * `stop`:                      a [`StoppingCriterion`](@ref)
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
 * `vector_transport_method`:   the vector transport method to use within
-* `X`:                         (`zero_vector(M, p)`) the current element from the possible subgradients
+* `X=zero_vector(M, p)`: the current element from the possible subgradients
   at `p` that was last evaluated.
-* `α₀`:                        (`1.2`) initialization value for `α`, used to update `η`
+* `α₀=1.2`: initialization value for `α`, used to update `η`
 * `α`:                         curvature-dependent parameter used to update `η`
-* `ε`:                         (`1e-2`) stepsize-like parameter related to the injectivity radius of the manifold
+* `ε=1e-2`: stepsize-like parameter related to the injectivity radius of the manifold
 * `δ`:                         parameter for updating `μ`: if ``δ < 0`` then ``μ = \log(i + 1)``, else ``μ += δ μ``
 * `η`:                         curvature-dependent term for updating the approximation errors
 * `λ`:                         convex coefficients that solve the subproblem
-* `μ`:                         (`0.5`) (initial) proximal parameter for the subproblem
+* `μ=0.5`: (initial) proximal parameter for the subproblem
 * `ν`:                         the stopping parameter given by ``ν = - μ |d|^2 - c``
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
 
@@ -211,11 +211,11 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 * `evaluation`: ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place,
    that is it is of the form `∂f!(M, X, p)`.
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
-* `retraction`: (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction method to use
+* `retraction=default_retraction_method(M, typeof(p))`: a `retraction(M, p, X)` to use.
 * `stopping_criterion`: ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`)
   a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
+* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: a vector transport method to use
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 

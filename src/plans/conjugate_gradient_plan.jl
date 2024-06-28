@@ -51,7 +51,7 @@ The following fields from above <re keyword arguments
 
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`
 * `stepsize=[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`)
-* `stop=[`StopAfterIteration`](@ref)`(500)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+* `stop=[`StopAfterIteration`](@ref)`(500)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
 * $_kw_retraction_method_default
 * $_kw_vector_transport_method_default
 

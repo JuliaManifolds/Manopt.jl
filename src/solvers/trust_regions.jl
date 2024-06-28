@@ -8,23 +8,23 @@ Store the state of the trust-regions solver.
 
 All the following fields (besides `p`) can be set by specifying them as keywords.
 
-* `acceptance_rate`:         (`0.1`) a lower bound of the performance ratio for the iterate
+* `acceptance_rate=0.1`: a lower bound of the performance ratio for the iterate
   that decides if the iteration is accepted or not.
-* `max_trust_region_radius`: (`sqrt(manifold_dimension(M))`) the maximum trust-region radius
+* `max_trust_region_radius=sqrt(manifold_dimension(M))`: the maximum trust-region radius
 * `p`:                       (`rand(M)` if a manifold is provided) the current iterate
-* `project!`:                (`copyto!`) specify a projection operation for tangent vectors
+* `project!=copyto!`: specify a projection operation for tangent vectors
   for numerical stability. A function `(M, Y, p, X) -> ...` working in place of `Y`.
   per default, no projection is performed, set it to `project!` to activate projection.
 * `stop`:                    ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
-* `randomize`:               (`false`) indicates if the trust-region solve is to be initiated with a
+* `randomize=false`: indicates if the trust-region solve is to be initiated with a
   random tangent vector. If set to true, no preconditioner is used. This option is set to true
   in some scenarios to escape saddle points, but is otherwise seldom activated.
-* `ρ_regularization`:        (`10000.0`) regularize the model fitness ``ρ`` to avoid division by zero
+* `ρ_regularization=10000.0`: regularize the model fitness ``ρ`` to avoid division by zero
 * `sub_problem`:             an [`AbstractManoptProblem`](@ref) problem or a function `(M, p, X) -> q` or `(M, q, p, X)` for the a closed form solution of the sub problem
 * `sub_state`:               ([`TruncatedConjugateGradientState`](@ref)`(M, p, X)`)
-* `σ`:                       (`0.0` or `1e-6` depending on `randomize`) Gaussian standard deviation when creating the random initial tangent vector
-* `trust_region_radius`:     (`max_trust_region_radius / 8`) the (initial) trust-region radius
-* `X`:                       (`zero_vector(M,p)`) the current gradient `grad_f(p)`
+* `σ=0.0` or `1e-6` depending on `randomize`: Gaussian standard deviation when creating the random initial tangent vector
+* `trust_region_radius=max_trust_region_radius / 8`: the (initial) trust-region radius
+* `X=zero_vector(M,p)`: the current gradient `grad_f(p)`
   Use this default to specify the type of tangent vector to allocate also for the internal (tangent vector) fields.
 
 # Internal fields
@@ -278,19 +278,19 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 * `f`:      a cost function ``f : \mathcal M → ℝ`` to minimize
 * `grad_f`: the gradient ``\operatorname{grad}F : \mathcal M → T \mathcal M`` of ``F``
 * `Hess_f`: (optional), the Hessian ``\operatorname{Hess}F(x): T_x\mathcal M → T_x\mathcal M``, ``X ↦ \operatorname{Hess}F(x)[X] = ∇_ξ\operatorname{grad}f(x)``
-* `p`:      (`rand(M)`) an initial value ``x  ∈  \mathcal M``
+* `p=rand(M)`: an initial value ``x  ∈  \mathcal M``
 
 # Keyword arguments
 
 * `acceptance_rate`:        Accept/reject threshold: if ρ (the performance ratio for the iterate)
   is at least the acceptance rate ρ', the candidate is accepted.
   This value should  be between ``0`` and ``\frac{1}{4}``
-* `augmentation_threshold`: (`0.75`) trust-region augmentation threshold: if ρ is larger than this threshold,
+* `augmentation_threshold=0.75`: trust-region augmentation threshold: if ρ is larger than this threshold,
   a solution is on the trust region boundary and negative curvature, and the radius is extended (augmented)
-* `augmentation_factor`:    (`2.0`) trust-region augmentation factor
+* `augmentation_factor=2.0`: trust-region augmentation factor
 * `evaluation`:             ([`AllocatingEvaluation`](@ref)) specify whether the gradient
   and Hessian work by allocation (default) or [`InplaceEvaluation`](@ref) in place
-* `κ`:                      (`0.1`) the linear convergence target rate of the tCG method
+* `κ=0.1`: the linear convergence target rate of the tCG method
     [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
 * `max_trust_region_radius`: the maximum trust-region radius
 * `preconditioner`:          a preconditioner (a symmetric, positive definite operator
@@ -299,9 +299,9 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
   within the subsolver for numerical stability. The required form is `(M, Y, p, X) -> ...` working in place of `Y`.
 * `randomize`;              set to true if the trust-region solve is to be initiated with a
   random tangent vector and no preconditioner is used.
-* `ρ_regularization`:       (`1e3`) regularize the performance evaluation ``ρ`` to avoid numerical inaccuracies.
-* `reduction_factor`:       (`0.25`) trust-region reduction factor
-* `reduction_threshold`:    (`0.1`) trust-region reduction threshold: if ρ is below this threshold,
+* `ρ_regularization=1e3`: regularize the performance evaluation ``ρ`` to avoid numerical inaccuracies.
+* `reduction_factor=0.25`: trust-region reduction factor
+* `reduction_threshold=0.1`: trust-region reduction threshold: if ρ is below this threshold,
   the trust region radius is reduced by `reduction_factor`.
 * `retraction` (`default_retraction_method(M, typeof(p))`) a retraction to use
 * `stopping_criterion`:     ([`StopAfterIteration`](@ref)`(1000) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`) a functor inheriting
@@ -311,7 +311,7 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 * `sub_problem`:            ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
 * `sub_state`:              ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
   with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `θ`:                      (`1.0`) 1+θ is the superlinear convergence target rate of the tCG-method
+* `θ=1.0`: 1+θ is the superlinear convergence target rate of the tCG-method
   [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
 * `trust_region_radius`:     the initial trust-region radius
 

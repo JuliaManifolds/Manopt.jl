@@ -164,7 +164,7 @@ $_arg_alt_mgo
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState)`:
   $_kw_stepsize
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $_kw_stopping_criterion
 
 * $_kw_X_default:

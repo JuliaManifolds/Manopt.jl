@@ -6,16 +6,16 @@ describe the Steihaug-Toint truncated conjugate-gradient method, with
 # Fields
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `Y`:                   (`zero_vector(M,p)`) Current iterate, whose type is also used for the other, internal, tangent vector fields
+* `Y=zero_vector(M,p)`: Current iterate, whose type is also used for the other, internal, tangent vector fields
 * `stop`:                a [`StoppingCriterion`](@ref).
 * `X`:                   the gradient ``\operatorname{grad}f(p)```
 * `δ`:                   the conjugate gradient search direction
-* `θ`:                   (`1.0`) 1+θ is the superlinear convergence target rate.
-* `κ`:                   (`0.1`) the linear convergence target rate.
-* `trust_region_radius`: (`injectivity_radius(M)/4`) the trust-region radius
+* `θ=1.0`: 1+θ is the superlinear convergence target rate.
+* `κ=0.1`: the linear convergence target rate.
+* `trust_region_radius=injectivity_radius(M)/4`: the trust-region radius
 * `residual`:            the gradient of the model ``m(Y)``
-* `randomize`:           (`false`)
-* `project!`:            (`copyto!`) for numerical stability it is possible to project onto
+* `randomize=false`:
+* `project!=copyto!`: for numerical stability it is possible to project onto
   the tangent space after every iteration. By default this only copies instead.
 
 # Internal fields
@@ -416,12 +416,12 @@ directly.
 * `evaluation`:          ([`AllocatingEvaluation`](@ref)) specify whether the gradient and Hessian work by
    allocation (default) or [`InplaceEvaluation`](@ref) in place
 * `preconditioner`:      a preconditioner for the Hessian H
-* `θ`:                   (`1.0`) 1+θ is the superlinear convergence target rate.
-* `κ`:                   (`0.1`) the linear convergence target rate.
+* `θ=1.0`: 1+θ is the superlinear convergence target rate.
+* `κ=0.1`: the linear convergence target rate.
 * `randomize`:           set to true if the trust-region solve is initialized to a random tangent vector.
   This disables preconditioning.
-* `trust_region_radius`: (`injectivity_radius(M)/4`) a trust-region radius
-* `project!`:            (`copyto!`) for numerical stability it is possible to project onto
+* `trust_region_radius=injectivity_radius(M)/4`: a trust-region radius
+* `project!=copyto!`: for numerical stability it is possible to project onto
   the tangent space after every iteration. By default this only copies instead.
 * `stopping_criterion`:  ([`StopAfterIteration`](@ref)`(manifol_dimension(M)) | `[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(;κ=κ, θ=θ) | `[`StopWhenCurvatureIsNegative`](@ref)`() | `[`StopWhenTrustRegionIsExceeded`](@ref)`() | `[`StopWhenModelIncreased`](@ref)`()`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop,

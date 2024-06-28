@@ -198,30 +198,30 @@ The ``k``th iteration consists of
 
 # Optional
 
-* `basis`:                   (`DefaultOrthonormalBasis()`) basis within the tangent spaces
+* `basis=DefaultOrthonormalBasis()`: basis within the tangent spaces
  to represent the Hessian (inverse).
-* `cautious_update`:         (`false`) whether or not to use
+* `cautious_update=false`: whether or not to use
   a [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-* `cautious_function`:       (`(x) -> x*10^(-4)`) a monotone increasing function that is zero
+* `cautious_function=(x) -> x*10^(-4)`: a monotone increasing function that is zero
   at 0 and strictly increasing at 0 for the cautious update.
 * `direction_update`:        ([`InverseBFGS`](@ref)`()`) the update rule to use.
 * `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
    allocation (default) form `gradF(M, p)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, p)`.
-* `initial_operator`:        (`Matrix{Float64}(I, n, n)`) initial matrix to use die the
+* `initial_operator=Matrix{Float64}(I, n, n)`: initial matrix to use die the
   approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
-* `memory_size`:             (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
+* `memory_size=20`: limited memory, number of ``s_k, y_k`` to store. Set to a negative
   value to use a full memory representation
-* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a retraction method to use
-* `scale_initial_operator`:  (`true`) scale initial operator with
+* `retraction_method=default_retraction_method(M, typeof(p))`: a retraction method to use
+* `scale_initial_operator=true`: scale initial operator with
   ``\frac{⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}`` in the computation
-* `stabilize`:               (`true`) stabilize the method numerically by projecting computed (Newton-)
+* `stabilize=true`: stabilize the method numerically by projecting computed (Newton-)
   directions to the tangent space to reduce numerical errors
 * `stepsize`:                ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
   specify a [`Stepsize`](@ref).
 * `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
   specify a [`StoppingCriterion`](@ref)
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
-* `nondescent_direction_behavior`: (`:reinitialize_direction_update`) specify how non-descent direction is handled.
+* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: a vector transport to use.
+* `nondescent_direction_behavior=:reinitialize_direction_update`: specify how non-descent direction is handled.
   This can be
   * `:step_towards_negative_gradient`: the direction is replaced with negative gradient, a message is stored.
   * `:ignore`: the verification is not performed, so any computed direction is accepted. No message is stored.

@@ -24,15 +24,15 @@ Store all options required for the DouglasRachford algorithm,
 
 Generate the options for a Manifold `M` and an initial point `p`, where the following keyword arguments can be used
 
-* `λ`:                    (`(iter)->1.0`) function to provide the value for the proximal parameter
+* `λ=(iter)->1.0`: function to provide the value for the proximal parameter
   during the calls
-* `α`:                    (`(iter)->0.9`) relaxation of the step from old to new iterate, to be precise
+* `α=(iter)->0.9`: relaxation of the step from old to new iterate, to be precise
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double reflection involved in the DR algorithm
 * `R`:                    ([`reflect`](@ref) or `reflect!`) method employed in the iteration to perform the reflection of `x` at
   the prox `p`, which function is used depends on `reflection_evaluation`.
 * `reflection_evaluation`: ([`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works in-place or allocating (default)
 * `stopping_criterion`:   ([`StopAfterIteration`](@ref)`(300)`) a [`StoppingCriterion`](@ref)
-* `parallel`:             (`false`) indicate whether to use a parallel Douglas-Rachford or not.
+* `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
     P,
@@ -155,8 +155,8 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 
 * `evaluation`:            ([`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
   or [`InplaceEvaluation`](@ref) in-place
-* `λ`:                     (`(iter) -> 1.0`) function to provide the value for the proximal parameter during the calls
-* `α`:                     (`(iter) -> 0.9`) relaxation of the step from old to new iterate, to be precise
+* `λ=(iter) -> 1.0`: function to provide the value for the proximal parameter during the calls
+* `α=(iter) -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``t_{k+1} = g(α_k; t_k, s_k)``, where ``s_k`` is the result
   of the double reflection involved in the DR algorithm
 * `inverse_retraction_method` - (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within
@@ -166,12 +166,12 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
   This uses by default [`reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
 * `reflection_evaluation`: ([`AllocatingEvaluation`](@ref) whether `R` works in-place or allocating
-* `retraction_method`:     (`default_retraction_method(M, typeof(p))`) the retraction to use in
+* `retraction_method=default_retraction_method(M, typeof(p))`: the retraction to use in
   - the reflection (ignored, if you set `R` directly)
   - the relaxation step
 * `stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-5)`)
   a [`StoppingCriterion`](@ref).
-* `parallel`:              (`false`) indicate whether to use a parallel Douglas-Rachford or not.
+* `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 

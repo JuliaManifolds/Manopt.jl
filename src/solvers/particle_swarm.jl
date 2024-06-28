@@ -8,14 +8,14 @@ Describes a particle swarm optimizing algorithm, with
 
 # Fields
 
-* `cognitive_weight`:          (`1.4`) a cognitive weight factor
-* `inertia`:                   (`0.65`) the inertia of the particles
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, eltype(swarm))`) an inverse retraction to use.
-* `retraction_method`:         (`default_retraction_method(M, eltype(swarm))`) the retraction to use
-* `social_weight`:             (`1.4`) a social weight factor
-* `stopping_criterion`:        (`[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
+* `cognitive_weight=1.4`: a cognitive weight factor
+* `inertia=0.65`: the inertia of the particles
+* `inverse_retraction_method=default_inverse_retraction_method(M, eltype(swarm))`: an inverse retraction to use.
+* `retraction_method=default_retraction_method(M, eltype(swarm))`: the retraction to use
+* `social_weight=1.4`: a social weight factor
+* `stopping_criterion=[`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`:
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `vector_transport_method`:  (`default_vector_transport_method(M, eltype(swarm))`) a vector transport to use
+* `vector_transport_method=default_vector_transport_method(M, eltype(swarm))`: a vector transport to use
 * `velocity`:                 a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
 
 # Internal and temporary fields
@@ -217,15 +217,15 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 
 # Optional
 
-* `cognitive_weight`:          (`1.4`) a cognitive weight factor
-* `inertia`:                   (`0.65`) the inertia of the particles
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, eltype(swarm))`) an inverse retraction to use.
-* `swarm_size`:                (`100`) swarm size, if it should be generated randomly
-* `retraction_method`:         (`default_retraction_method(M, eltype(swarm))`) a retraction to use.
-* `social_weight`:             (`1.4`) a social weight factor
+* `cognitive_weight=1.4`: a cognitive weight factor
+* `inertia=0.65`: the inertia of the particles
+* `inverse_retraction_method=default_inverse_retraction_method(M, eltype(swarm))`: an inverse retraction to use.
+* `swarm_size=100`: swarm size, if it should be generated randomly
+* `retraction_method=default_retraction_method(M, eltype(swarm))`: a retraction to use.
+* `social_weight=1.4`: a social weight factor
 * `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenChangeLess`](@ref)`(1e-4)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `vector_transport_method`:   (`default_vector_transport_method(M, eltype(swarm))`) a vector transport method to use.
+* `vector_transport_method=default_vector_transport_method(M, eltype(swarm))`: a vector transport method to use.
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
@@ -287,7 +287,7 @@ perform the particle swarm optimization algorithm (PSO), starting with the initi
 
 * `M`:     a manifold ``\mathcal M``
 * `f`:     a cost function ``f:\mathcal M→ℝ`` to minimize
-* `swarm`: (`[rand(M) for _ in 1:swarm_size]`) an initial swarm of points.
+* `swarm=[rand(M) for _ in 1:swarm_size]`: an initial swarm of points.
 
 Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObjective`](@ref) `mco`.
 

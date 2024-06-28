@@ -80,25 +80,25 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 
 # Fields
 
-* `atol_λ`:                    (`eps()`) tolerance parameter for the convex coefficients in λ
-* `atol_errors`:               (`eps()`) tolerance parameter for the linearization errors
+* `atol_λ=eps()`: tolerance parameter for the convex coefficients in λ
+* `atol_errors=eps()`: tolerance parameter for the linearization errors
 * `bundle`:                    bundle that collects each iterate with the computed subgradient at the iterate
-* `bundle_cap`:                (`25`) the maximal number of elements the bundle is allowed to remember
-* `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point
-* `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates
+* `bundle_cap=25`: the maximal number of elements the bundle is allowed to remember
+* `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point
+* `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates
   to true when the current candidate is in the domain of the objective `f`, and false otherwise,
   for example `domain = (M, p) -> p ∈ dom f(M, p) ? true : false`
 * `g`:                         descent direction
 * `inverse_retraction_method`: the inverse retraction to use within
 * `linearization_errors`:      linearization errors at the last serious step
-* `m`:                         (`1e-3`) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
+* `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
 * `p`:                         current candidate point
 * `p_last_serious`:            last serious iterate
 * `retraction_method`:         the retraction to use within
 * `stop`:                      a [`StoppingCriterion`](@ref)
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
 * `vector_transport_method`:   the vector transport method to use within
-* `X`:                         (`zero_vector(M, p)`) the current element from the possible subgradients at `p` that was last evaluated.
+* `X=zero_vector(M, p)`: the current element from the possible subgradients at `p` that was last evaluated.
 * `stepsize`:                  ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `ε`:                         convex combination of the linearization errors
 * `λ`:                         convex coefficients that solve the subproblem
@@ -117,8 +117,8 @@ with keywords for all fields with defaults besides `p_last_serious` which obtain
 ## Keyword arguments
 
 * `k_max`:      upper bound on the sectional curvature of the manifold
-* `k_size`:     (`100`) sample size for the estimation of the bounds on the sectional curvature of the manifold
-* `p_estimate`: (`p`) the point around which to estimate the sectional curvature of the manifold
+* `k_size=100`: sample size for the estimation of the bounds on the sectional curvature of the manifold
+* `p_estimate=p`: the point around which to estimate the sectional curvature of the manifold
 """
 mutable struct ConvexBundleMethodState{
     P,
@@ -324,26 +324,26 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
   restricted to always only returning one value/element from the subdifferential.
   This function can be passed as an allocation function `(M, p) -> X` or
   a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p`:  (`rand(M)`) an initial value ``p_0 ∈ \mathcal M``
+* `p=rand(M)`: an initial value ``p_0 ∈ \mathcal M``
 
 # Optional
 
-* `atol_λ`:                    (`eps()`) tolerance parameter for the convex coefficients in λ.
-* `atol_errors`:               (`eps()`) tolerance parameter for the linearization errors.
-* `m`:                         (`1e-3`) the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
-* `diameter`:                  (`50.0`) estimate for the diameter of the level set of the objective function at the starting point.
-* `domain`:                    (`(M, p) -> isfinite(f(M, p))`) a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, for example domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
+* `atol_λ=eps()`: tolerance parameter for the convex coefficients in λ.
+* `atol_errors=eps()`: tolerance parameter for the linearization errors.
+* `m=1e-3`: the parameter to test the decrease of the cost: ``f(q_{k+1}) \le f(p_k) + m \xi``.
+* `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point.
+* `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise, for example domain = (M, p) -> p ∈ dom f(M, p) ? true : false.
 * `k_max`:                     upper bound on the sectional curvature of the manifold.
-* `k_size`:                    (`100``) sample size for the estimation of the bounds on the sectional curvature of the manifold if  `k_max` is not provided.
-* `p_estimate`:                (`p`) the point around which to estimate the sectional curvature of the manifold.
-* `α`:                         (`(i) -> one(number_eltype(X)) / i`) a function for evaluating suitable stepsizes when obtaining candidate points at iteration `i`.
+* `k_size=100``: sample size for the estimation of the bounds on the sectional curvature of the manifold if  `k_max` is not provided.
+* `p_estimate=p`: the point around which to estimate the sectional curvature of the manifold.
+* `α=(i) -> one(number_eltype(X)) / i`: a function for evaluating suitable stepsizes when obtaining candidate points at iteration `i`.
 * `ϱ`:                         curvature-dependent bound.
 * `evaluation`:                ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
    allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place, that is of the form `∂f!(M, X, p)`.
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use
-* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction method to use
+* `retraction_method=default_retraction_method(M, typeof(p))`: a `retraction(M, p, X)` to use.
 * `stopping_criterion`:        ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8; names=["-ξ"])`) a functor, see [`StoppingCriterion`](@ref), indicating when to stop
-* `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport method to use
+* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: a vector transport method to use
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`
 
 # Output

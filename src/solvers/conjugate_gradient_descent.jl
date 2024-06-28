@@ -73,12 +73,12 @@ They all compute ``β_k`` such that this algorithm updates the search direction 
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
 * `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)`.
-* `retraction_method`: (`default_retraction_method(M, typeof(p))`) a retraction method to use.
+* `retraction_method=default_retraction_method(M, typeof(p))`: a retraction method to use.
 * `stepsize`:                ([`ArmijoLinesearch`](@ref) via [`default_stepsize`](@ref)) A [`Stepsize`](@ref) function applied to the
   search direction. The default is a constant step size 1.
-* `stopping_criterion`:      (`stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`)
+* `stopping_criterion=stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`:
   a function indicating when to stop.
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) vector transport method to transport
+* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: vector transport method to transport
   the old descent direction when computing the new descent direction.
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.

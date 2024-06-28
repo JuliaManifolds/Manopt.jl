@@ -1,6 +1,8 @@
 #
 # State
 #
+
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$_sc_any([`StopWhenSmallerOrEqual](@ref)`(:ϵ, ϵ_min)`$_sc_all[`StopWhenChangeLess`](@ref)`(1e-10) )$_sc_any[`StopWhenChangeLess`](@ref)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -10,21 +12,21 @@ Describes the augmented Lagrangian method, with
 
 a default value is given in brackets if a parameter can be left out in initialization.
 
-* `ϵ`:                  (`1e–3`) the accuracy tolerance
-* `ϵ_min`:              (`1e-6`) the lower bound for the accuracy tolerance
-* `λ`:                  (`ones(n)`) the Lagrange multiplier with respect to the equality constraints
-* `λ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_min`:              (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `ϵ`:     the accuracy tolerance
+* `ϵ_min`: the lower bound for the accuracy tolerance
+* `λ`:     the Lagrange multiplier with respect to the equality constraints
+* `λ_max`: an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min`: a lower bound for the Lagrange multiplier belonging to the equality constraints
 * $_field_p
-* `penalty`:            evaluation of the current penalty term, initialized to `Inf`.
-* `μ`:                  (`ones(m)`) the Lagrange multiplier with respect to the inequality constraints
-* `μ_max`:              (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `ρ`:                  (`1.0`) the penalty parameter
+* `penalty`: evaluation of the current penalty term, initialized to `Inf`.
+* `μ`:     the Lagrange multiplier with respect to the inequality constraints
+* `μ_max`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `ρ`:     the penalty parameter
 * $_field_sub_problem
-* $_fieldsub_state
-* `τ`:                  (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `θ_ρ`:                (`0.3`) the scaling factor of the penalty parameter
-* `θ_ϵ`:                ((`(ϵ_min/ϵ)^(ϵ_exponent)`) the scaling factor of the accuracy tolerance
+* $_field_sub_state
+* `τ`:     factor for the improvement of the evaluation of the penalty parameter
+* `θ_ρ`:   the scaling factor of the penalty parameter
+* `θ_ϵ`:   the scaling factor of the accuracy tolerance
 * $_field_stop
 
 
@@ -44,7 +46,20 @@ manifold- or objective specific defaults.
 
 ## Keyword arguments
 
+the following keyword arguments are available to initialise the corresponding fields
 
+* `ϵ=1e–3`
+* `ϵ_min=1e-6`
+* `λ=ones(n)`: `n` is the number of equality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
+* `λ_max=20.0`
+* `λ_min=- λ_max`
+* `μ=ones(m)`: `m` is the number of inequality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
+* `μ_max=20.0`
+* `ρ=1.0`
+* `τ=0.8`
+* `θ_ρ=0.3`
+* `θ_ϵ=(ϵ_min/ϵ)^(ϵ_exponent)`
+* stopping_criterion=$_sc_alm_default.
 
 # See also
 
@@ -83,11 +98,11 @@ mutable struct AugmentedLagrangianMethodState{
         sub_state::St;
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
+        λ::V=ones(length(get_equality_constraint(M, co, p, :))),
         λ_max::R=20.0,
         λ_min::R=-λ_max,
-        μ_max::R=20.0,
         μ::V=ones(length(get_inequality_constraint(M, co, p, :))),
-        λ::V=ones(length(get_equality_constraint(M, co, p, :))),
+        μ_max::R=20.0,
         ρ::R=1.0,
         τ::R=0.8,
         θ_ρ::R=0.3,
@@ -162,120 +177,139 @@ function show(io::IO, alms::AugmentedLagrangianMethodState)
     return print(io, s)
 end
 
-@doc raw"""
-    augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
-    augmented_Lagrangian_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
-
-perform the augmented Lagrangian method (ALM) [LiuBoumal:2019](@cite).
-
-The aim of the ALM is to find the solution of the constrained optimisation task
-
+_doc_alm_λ_update = raw"""
 ```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
+λ_j^{(k+1)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k)} + ρ^{(k)} h_j(p^{(k+1)})) \text{for all} j=1,…,p,
 ```
-
-where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^p`` are twice continuously differentiable functions from `M` to ℝ.
-In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
-``\mathcal{L}_{ρ^{(k-1)}}(p, μ^{(k-1)}, λ^{(k-1)})`` is minimized on ``\mathcal{M}``,
-where ``μ^{(k-1)} ∈ \mathbb R^n`` and ``λ^{(k-1)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k-1)}`` is the current penalty parameter.
-
-The Lagrange multipliers are then updated by
-
+"""
+_doc_alm_μ_update = raw"""
 ```math
-λ_j^{(k)} =\operatorname{clip}_{[λ_{\min},λ_{\max}]} (λ_j^{(k-1)} + ρ^{(k-1)} h_j(p^{(k)})) \text{for all} j=1,…,p,
+μ_i^{(k+1)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k)} + ρ^{(k)} g_i(p^{(k+1)})) \text{ for all } i=1,…,m,
 ```
-
-and
-
-```math
-μ_i^{(k)} =\operatorname{clip}_{[0,μ_{\max}]} (μ_i^{(k-1)} + ρ^{(k-1)} g_i(p^{(k)})) \text{ for all } i=1,…,m,
-```
-
-where ``λ_{\min} \leq λ_{\max}`` and ``μ_{\max}`` are the multiplier boundaries.
-
-Next, the accuracy tolerance ``ϵ`` is updated as
-
+"""
+_doc_alm_ε_update = raw"""
 ```math
 ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
 ```
+"""
 
-where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
-
-Last, the penalty parameter ``ρ`` is updated as follows: with
-
+_doc_alm_σ = raw"""
 ```math
 σ^{(k)}=\max_{j=1,…,p, i=1,…,m} \{\|h_j(p^{(k)})\|, \|\max_{i=1,…,m}\{g_i(p^{(k)}), -\frac{μ_i^{(k-1)}}{ρ^{(k-1)}} \}\| \}.
 ```
+"""
 
-`ρ` is updated as
-
+_doc_alm_ρ_update = raw"""
 ```math
 ρ^{(k)} = \begin{cases}
 ρ^{(k-1)}/θ_ρ,  & \text{if } σ^{(k)}\leq θ_ρ σ^{(k-1)} ,\\
 ρ^{(k-1)}, & \text{else,}
 \end{cases}
 ```
+"""
+
+_doc_alm = """
+    augmented_Lagrangian_method(M, f, grad_f, p=rand(M); kwargs...)
+    augmented_Lagrangian_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
+    augmented_Lagrangian_method!(M, f, grad_f, p; kwargs...)
+    augmented_Lagrangian_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
+
+perform the augmented Lagrangian method (ALM) [LiuBoumal:2019](@cite).
+This method can work in-place of `p`.
+
+The aim of the ALM is to find the solution of the constrained optimisation task
+
+$_problem_constrained
+
+where `M` is a Riemannian manifold, and ``f``, ``$(_math_sequence("g", "i", "1", "n"))`` and ``$(_math_sequence("h", "j", "1", "m"))
+are twice continuously differentiable functions from `M` to ℝ.
+In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
+ ``$(_doc_al_Cost("k"))`` is minimized on $_l_M,
+  where ``μ^{(k)} ∈ ℝ^n`` and ``λ^{(k)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
+
+The Lagrange multipliers are then updated by
+
+$_doc_alm_λ_update
+
+and
+
+$_doc_alm_μ_update
+
+   where ``λ_{$_l_min} ≤ λ_{$_l_max}`` and ``μ_{$_l_max}`` are the multiplier boundaries.
+
+Next, the accuracy tolerance ``ϵ`` is updated as
+
+$_doc_alm_ε_update
+
+ where ``ϵ_{$_l_min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
+
+Last, the penalty parameter ``ρ`` is updated as follows: with
+
+$_doc_alm_σ
+
+`ρ` is updated as
+
+$_doc_alm_ρ_update
 
 where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 # Input
 
-* `M`      a manifold ``\mathcal M``
-* `f`      a cost function ``F:\mathcal M→ℝ`` to minimize
-* `grad_f` the gradient of the cost function
+$_arg_M
+$_arg_f
+$_arg_grad_f
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 
-* `g`:      (`nothing`) the inequality constraints
-* `h`:      (`nothing`) the equality constraints
-* `grad_g`: (`nothing`) the gradient of the inequality constraints
-* `grad_h`: (`nothing`) the gradient of the equality constraints
+* `g=nothing`: the inequality constraints
+* `h=nothing`: the equality constraints
+* `grad_g=nothing`: the gradient of the inequality constraints
+* `grad_h=nothing`: the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
 Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
-# Optional
+# Keyword Arguments
 
-* `ϵ`:                         (`1e-3`) the accuracy tolerance
-* `ϵ_min`:                     (`1e-6`) the lower bound for the accuracy tolerance
-* `ϵ_exponent`:                (`1/100`) exponent of the ϵ update factor;
-   also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
-* `θ_ϵ`:                       (`(ϵ_min / ϵ)^(ϵ_exponent)`) the scaling factor of the exactness
-* `μ`:                         (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the inequality constraints
-* `μ_max`:                     (`20.0`) an upper bound for the Lagrange multiplier belonging to the inequality constraints
-* `λ`:                         (`ones(size(h(M,x),1))`) the Lagrange multiplier with respect to the equality constraints
-* `λ_max`:                     (`20.0`) an upper bound for the Lagrange multiplier belonging to the equality constraints
-* `λ_min`:                     (`- λ_max`) a lower bound for the Lagrange multiplier belonging to the equality constraints
-* `τ`:                         (`0.8`) factor for the improvement of the evaluation of the penalty parameter
-* `ρ`:                         (`1.0`) the penalty parameter
-* `θ_ρ`:                       (`0.3`) the scaling factor of the penalty parameter
-* `equality_constraints`:      (`nothing`) the number ``n`` of equality constraints.
-* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
-* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
-* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
-* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
-* `sub_grad`:                  ([`AugmentedLagrangianGrad`](@ref)`(problem, ρ, μ, λ)`) use augmented Lagrangian gradient, especially with the same numbers `ρ,μ` as in the options for the sub problem
-* `sub_kwargs`:                (`(;)`) keyword arguments to decorate the sub options, for example the `debug=` keyword.
-* `sub_stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-8)`) specify a stopping criterion for the subsolver.
+* $_kw_evaluation_default: $_kw_evaluation
+* `ϵ=1e-3`:           the accuracy tolerance
+* `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
+* `ϵ_exponent=1/100`: exponent of the ϵ update factor;
+  also 1/number of iterations until maximal accuracy is needed to end algorithm naturally
+* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints
+* `μ_max=20.0`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
+* `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints
+* `λ_max=20.0`:       an upper bound for the Lagrange multiplier belonging to the equality constraints
+* `λ_min=- λ_max`:    a lower bound for the Lagrange multiplier belonging to the equality constraints
+* `τ=0.8`:            factor for the improvement of the evaluation of the penalty parameter
+* `ρ=1.0`:            the penalty parameter
+* `θ_ρ=0.3`:          the scaling factor of the penalty parameter
+* `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`: the scaling factor of the exactness
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `g` is performed to estimate these.
+* `gradient_range=nothing`: specify how both gradients of the constraints are represented
+* `gradient_equality_range=gradient_range`:
+* `gradient_inequality_range=gradient_range`:
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+   If not provided, a call to the gradient of `g` is performed to estimate these.
+* `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+   $(_kw_used_in("sub_problem"))
+* `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
+  $(_kw_used_in("sub_problem"))
+* `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example the `debug=` keyword.
 * `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`) problem for the subsolver
 * `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `stopping_criterion=$_sc_alm_default`: $_kw_stopping_criterion
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
-
-With `equality_constraints` and `inequality_constraints` you have to provide the dimension
-of the ranges of `h` and `g`, respectively. If not provided, together with `M` and the start point `p0`,
-a call to either of these is performed to try to infer these.
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+
+@doc "$(_doc_alm)"
 function augmented_Lagrangian_method(
     M::AbstractManifold,
     f::TF,
@@ -356,13 +390,7 @@ function augmented_Lagrangian_method(
     return (typeof(q) == typeof(rs)) ? rs[] : rs
 end
 
-@doc raw"""
-    augmented_Lagrangian_method!(M, f, grad_f, p=rand(M); kwargs...)
-
-perform the augmented Lagrangian method (ALM) in-place of `p`.
-
-For all options, see [`augmented_Lagrangian_method`](@ref).
-"""
+@doc "$(_doc_alm)"
 function augmented_Lagrangian_method!(
     M::AbstractManifold,
     f::TF,

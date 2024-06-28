@@ -169,7 +169,7 @@ Generate the Levenberg-Marquardt solver state.
 
 The following fields are keyword arguments
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-12)[` | `](@ref StopWhenAny)[`StopWhenStepsizeLess`](@ref)`(1e-12)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-12)$_sc_any[`StopWhenStepsizeLess`](@ref)`(1e-12)`
 * $_kw_retraction_method_default
 * `η=0.2,
 * `damping_term_min=0.1`

@@ -30,10 +30,10 @@ then the keyword `jacobian_tangent_basis` below is ignored
 
 * `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
   or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)`.
-* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
+* `retraction_method=default_retraction_method(M, typeof(p))`: a `retraction(M,x,ξ)` to use.
 * `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1e-12)`)
   a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
-* `expect_zero_residual`:    (`false`) whether or not the algorithm might expect that the value of
+* `expect_zero_residual=false`: whether or not the algorithm might expect that the value of
   residual (objective) at minimum is equal to 0.
 * `η`:                       scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `damping_term_min`:        initial (and also minimal) value of the damping term

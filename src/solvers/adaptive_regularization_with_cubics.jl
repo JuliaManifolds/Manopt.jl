@@ -251,7 +251,7 @@ the default values are given in brackets
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 * $_kw_retraction_method_default:
   $_kw_retraction_method
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-9)`[` | `](@ref StopWhenAny)[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-9)`$_sc_any[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
   $_kw_stopping_criterion
 * $_kw_sub_kwargs_default:
   $_kw_sub_kwargs

@@ -11,23 +11,23 @@ initialized automatically and values with a default may be left out.
 * `X`:                              an initial tangent vector ``X^{(0)}∈T^*\mathcal N`` (and its previous iterate)
 * `pbar`:                           the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `Xbar`:                           the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
-* `primal_stepsize`:                (`1/sqrt(8)`) proximal parameter of the primal prox
-* `dual_stepsize`:                  (`1/sqrt(8)`) proximal parameter of the dual prox
-* `acceleration`:                   (`0.`) acceleration factor due to Chambolle & Pock
-* `relaxation`:                     (`1.`) relaxation in the primal relaxation step (to compute `pbar`)
-* `relax`:                          (`:primal`) which variable to relax (`:primal` or `:dual`)
+* `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
+* `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
+* `acceleration=0.`: acceleration factor due to Chambolle & Pock
+* `relaxation=1.`) relaxation in the primal relaxation step (to compute `pbar`:
+* `relax=:primal`) which variable to relax (`:primal` or `:dual`:
 * `stop`:                           a [`StoppingCriterion`](@ref)
-* `variant`:                        (`exact`) whether to perform an `:exact` or `:linearized` Chambolle-Pock
-* `update_primal_base`:             (`(p,o,i) -> o.m`) function to update the primal base
-* `update_dual_base`:               (`(p,o,i) -> o.n`) function to update the dual base
-* `retraction_method`:              (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method`:      (`default_inverse_retraction_method(M, typeof(p))`) an inverse
+* `variant=exact`: whether to perform an `:exact` or `:linearized` Chambolle-Pock
+* `update_primal_base=(p,o,i) -> o.m`: function to update the primal base
+* `update_dual_base=(p,o,i) -> o.n`: function to update the dual base
+* `retraction_method=default_retraction_method(M, typeof(p))`: the retraction to use
+* `inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse
   retraction to use on the manifold ``\mathcal M``.
-* `inverse_retraction_method_dual`: (`default_inverse_retraction_method(N, typeof(n))`)
+* `inverse_retraction_method_dual=default_inverse_retraction_method(N, typeof(n))`:
   an inverse retraction to use on manifold ``\mathcal N``.
-* `vector_transport_method`:        (`default_vector_transport_method(M, typeof(p))`) a vector transport to
+* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: a vector transport to
   use on the manifold ``\mathcal M``.
-* `vector_transport_method_dual`:   (`default_vector_transport_method(N, typeof(n))`) a
+* `vector_transport_method_dual=default_vector_transport_method(N, typeof(n))`: a
   vector transport to use on manifold ``\mathcal N``.
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -200,22 +200,22 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 # Optional parameters
 
-* `acceleration`:                (`0.05`)
-* `dual_stepsize`:               (`1/sqrt(8)`) proximal parameter of the primal prox
+* `acceleration=0.05`:
+* `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 * `evaluation`:                  ([`AllocatingEvaluation`](@ref)`()) specify whether the proximal maps
   and operators are allocating functions `(Manifolds, parameters) -> result`  or
    given as mutating functions `(Manifold, result, parameters)` -> result`
-* `Λ`:                           (`missing`) the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
-* `linearized_forward_operator`: (`missing`) its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
-* `primal_stepsize`:             (`1/sqrt(8)`) proximal parameter of the dual prox
-* `relaxation`:                  (`1.`) the relaxation parameter ``γ``
-* `relax`:                       (`:primal`) whether to relax the primal or dual
-* `variant`:                     (`:exact` if `Λ` is missing, otherwise `:linearized`) variant to use.
+* `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
+* `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
+* `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
+* `relaxation=1.`: the relaxation parameter ``γ``
+* `relax=:primal`: whether to relax the primal or dual
+* `variant=:exact` if `Λ` is missing, otherwise `:linearized`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
-* `stopping_criterion`:          (`[StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
-* `update_primal_base`:          (`missing`) function to update `m` (identity by default/missing)
-* `update_dual_base`:            (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method`:           (`default_retraction_method(M, typeof(p))`) the retraction to use
+* `stopping_criterion=[StopAfterIteration`](@ref)`(100)`: a [`StoppingCriterion`](@ref)
+* `update_primal_base=missing`: function to update `m` (identity by default/missing)
+* `update_dual_base=missing`: function to update `n` (identity by default/missing)
+* `retraction_method=default_retraction_method(M, typeof(p))`: the retraction to use
 * `inverse_retraction_method`    (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
 * `vector_transport_method`      (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
 
