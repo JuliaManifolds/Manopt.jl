@@ -1,7 +1,5 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
-# Random.seed!(42)
-# A = -Symmetric(rand(3,3))
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 
 f(M, p) = 0.5 * p' * A * p

@@ -32,15 +32,14 @@ function interior_point_Newton(
         inequality_constrains
     end
     cmo = ConstrainedManifoldObjective(
-        M,
         f,
-        grad_f;
+        grad_f,
+        g,
+        grad_g,
+        h,
+        grad_h;
         hess_f=Hess_f,
-        g=g,
-        grad_g=grad_g,
         hess_g=Hess_g,
-        h=h,
-        grad_h=grad_h,
         hess_h=Hess_h,
         evaluation=evaluation,
         inequality_constrains=num_ineq,
@@ -51,8 +50,6 @@ function interior_point_Newton(
     return interior_point_Newton!(
         M,
         cmo,
-        Hess_g,
-        Hess_h,
         q;
         evaluation=evaluation,
         inequality_constrains=num_ineq,
@@ -144,15 +141,14 @@ function interior_point_Newton!(
         equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
     end
     cmo = ConstrainedManifoldObjective(
-        M,
         f,
-        grad_f;
+        grad_f,
+        g,
+        grad_g,
+        h,
+        grad_h;
         hess_f=Hess_f,
-        g=g,
-        grad_g=grad_g,
         hess_g=Hess_g,
-        h=h,
-        grad_h=grad_h,
         hess_h=Hess_h,
         evaluation=evaluation,
         equality_constrains=equality_constrains,
@@ -200,7 +196,7 @@ function interior_point_Newton!(
     sub_objective=decorate_objective!(
         TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))),
         SymmetricLinearSystemObjective(
-            ReducedLagrangianHess(cmo, Hess_g, Hess_h, μ, λ, s),
+            ReducedLagrangianHess(cmo, μ, λ, s),
             NegativeReducedLagrangianGrad(cmo, μ, λ, s, ρ * σ),
         ),
         sub_kwargs...,

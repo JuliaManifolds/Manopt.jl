@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.67] – unreleased
 
+### Added
+
+* Introduces a Riemannian Interior Point Newton Method based on the paper by Lai & Yoshise.
+
 ### Fixed
 
 * a few typos in the documentation
