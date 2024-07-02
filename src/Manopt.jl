@@ -173,6 +173,7 @@ include("solvers/LevenbergMarquardt.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/proximal_bundle_method.jl")
+include("solvers/proximal_gradient_method.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
@@ -464,6 +465,8 @@ export adaptive_regularization_with_cubics,
     primal_dual_semismooth_Newton,
     proximal_bundle_method,
     proximal_bundle_method!,
+    proximal_gradient_method,
+    proximal_gradient_method!,
     quasi_Newton,
     quasi_Newton!,
     stochastic_gradient_descent,
