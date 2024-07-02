@@ -179,7 +179,8 @@ function initialize_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMe
 end
 function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, i)
     M = get_manifold(amp)
-    get_gradient!(mp, pgms.X, pgms.p)
+    get_gradient!(amp, pgms.X, pgms.p)
+    # Maybe one could omit the q and do both steps in place of p
     # (a) gradient step
     retract!(M, pgms.q, pgms.p, -pgms.λ(i) * pgms.X, pgms.retraction_method)
     # (b) prox
