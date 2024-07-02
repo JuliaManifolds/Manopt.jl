@@ -122,7 +122,7 @@ p^{(k+1)} = prox_{λ_kh}\Bigl(
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
-If you provide the [`ManifoldProximalMapObjective`](@ref) directly, these decorations can still be specified
+If you provide the [`ManifoldProximalGradientObjective`](@ref) directly, these decorations can still be specified
 """
 function proximal_gradient_method(
     M::AbstractManifold,
