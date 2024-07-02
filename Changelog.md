@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.67] – unreleased
 
+### Added
+* Adds the `proximal_gradient_method`.
+
 ### Fixed
 
 * a few typos in the documentation

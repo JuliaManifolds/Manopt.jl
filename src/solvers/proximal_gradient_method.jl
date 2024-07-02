@@ -98,6 +98,9 @@ Let ``λ_k \geq 0`` be a sequence of (proximal) parameters, initialise
 and ``k=0``
 Then perform as long as the stopping criterion is not fulfilled
 ```math
+p^{(k+1)} = prox_{λ_kh}\Bigl(
+\operatorname{retr}_{p^{(k)}}\bigl(-λ_k \operatorname{grad} g(p^{(k)}\bigr)
+\Bigr)
 ```
 
 # Input
