@@ -30,7 +30,7 @@ res = interior_point_Newton(
     g=g,
     grad_g=grad_g,
     Hess_g=Hess_g,
-    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
+    stop=StopAfterIteration(200) | StopWhenChangeLess(1e-12),
     debug=[
         :Iteration,
         " | ",
@@ -41,8 +41,6 @@ res = interior_point_Newton(
         :Change,
         " ",
         :GradientNorm,
-        " ",
-        :Feasibility,
         "\n",
         :Stop,
     ],
@@ -64,8 +62,8 @@ q[K, 1] = get_iterate(s)
 q[K, 2] = s.μ
 q[K, 4] = s.s
 
-# F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
-# grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, Hess_g, Hess_h, q)
+F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
+grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, q)
 
 # using Plots
 

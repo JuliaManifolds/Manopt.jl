@@ -2,6 +2,8 @@
     interior_point_Newton(M, f,. grad_f, Hess_f; kwargs...)
 
 Perform the interior point Newton method following [LaiYoshise:2024](@cite).
+
+
 """
 function interior_point_Newton(
     M::AbstractManifold,
@@ -57,9 +59,6 @@ function interior_point_Newton(
         kwargs...,
     )
 end
-
-# not-in-place
-# case where dim(M) = 1 and in particular p is a number
 function interior_point_Newton(
     M::AbstractManifold,
     f,
@@ -105,18 +104,12 @@ function interior_point_Newton(
     )
     return (typeof(p_) == typeof(rs)) ? rs[] : rs
 end
-
-# not-in-place
-# takes only manifold, constrained objetive and initial point
 function interior_point_Newton(
     M::AbstractManifold, cmo::O, p; kwargs...
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return interior_point_Newton!(M, cmo, q; kwargs...)
 end
-
-# in-place
-# takes M, f, grad_f, Hess_f and possibly constreint functions and their graidents
 function interior_point_Newton!(
     M::AbstractManifold,
     f,
@@ -239,13 +232,10 @@ function interior_point_Newton!(
     solve!(dmp, ips)
     return get_solver_return(get_objective(dmp), ips)
 end
-
-# inititializer, might add more here
 function initialize_solver!(::AbstractManoptProblem, ips::InteriorPointState)
     return ips
 end
 
-# step solver
 function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     M = get_manifold(amp)
     cmo = get_objective(amp)
@@ -289,10 +279,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     (m > 0) && (copyto!(K[2], X[K, 2], Xμ))
     (n > 0) && (copyto!(K[3], X[K, 3], Xλ))
     (m > 0) && (copyto!(K[4], X[K, 4], Xs))
-
+    # determine stepsize
     α = ips.stepsize(amp, ips, i, X)
-
-    # update params
+    # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
     if m > 0
         ips.μ += α * Xμ
@@ -301,9 +290,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
         ips.σ = calculate_σ(M, cmo, ips.p, ips.μ, ips.λ, ips.s)
     end
     (n > 0) && (ips.λ += α * Xλ)
-
     get_gradient!(M, ips.X, cmo, ips.p)
-
     return ips
 end
 
