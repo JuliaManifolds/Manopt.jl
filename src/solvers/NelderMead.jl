@@ -49,7 +49,7 @@ function NelderMeadSimplex(
     return NelderMeadSimplex(pts)
 end
 
-@doc raw"""
+@doc """
     NelderMeadState <: AbstractManoptSolverState
 
 Describes all parameters and the state of a Nelder-Mead heuristic based
@@ -61,25 +61,37 @@ The naming of these parameters follows the [Wikipedia article](https://en.wikipe
 of the Euclidean case. The default is given in brackets, the required value range
 after the description
 
-* `population`                an `Array{`point`,1}` of ``n+1`` points ``x_i``, ``i=1,…,n+1``, where ``n`` is the
-  dimension of the manifold.
-* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
-* `α=1.`) reflection parameter (``α > 0``:
-* `γ=2.`) expansion parameter (``γ > 0``:
-* `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
-* `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-* `p=copy(population.pts[1])`: - a field to collect the current best value (initialized to _some_ point here)
-* `retraction_method=default_retraction_method(M, typeof(p))`: the retraction to use.
-* `inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+* `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
+  is the [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) of `M`.
+* $_field_step
+* `α`: the reflection parameter ``α > 0``:
+* `γ` the expansion parameter ``γ > 0``:
+* `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
+* `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
+* `p`: a field to store the current best value (initialized to _some_ point here)
+* $_field_retr
+* $_field_inv_retr
 
 # Constructors
 
-    NelderMeadState(M[, population::NelderMeadSimplex]; kwargs...)
+    NelderMeadState(M, population::NelderMeadSimplex=NelderMeadSimplex(M)); kwargs...)
 
 Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
-In the constructor all fields (besides the population) are keyword arguments.
+# Keyword arguments
+
+# Keyword arguments
+
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`$_sc_any[`StopWhenPopulationConcentrated`](@ref)`()`):
+  a [`StoppingCriterion`](@ref)
+* `α=1.0`: reflection parameter ``α > 0``:
+* `γ=2.0` expansion parameter ``γ``:
+* `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
+* `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
+* $_kw_retraction_method_default: $_kw_retraction_method
+* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+* `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
 """
 mutable struct NelderMeadState{
     T,
@@ -168,15 +180,15 @@ function set_iterate!(O::NelderMeadState, ::AbstractManifold, p)
     return O
 end
 
-@doc raw"""
-    NelderMead(M::AbstractManifold, f)
-    NelderMead(M::AbstractManifold, f, population::NelderMeadSimplex)
-    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective)
-    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective, population::NelderMeadSimplex)
+_doc_NelderMead = """
+    NelderMead(M::AbstractManifold, f, population=NelderMeadSimplex(M))
+    NelderMead(M::AbstractManifold, mco::AbstractManifoldCostObjective, population=NelderMeadSimplex(M))
+    NelderMead!(M::AbstractManifold, f, population)
+    NelderMead!(M::AbstractManifold, mco::AbstractManifoldCostObjective, population)
 
-Solve a Nelder-Mead minimization problem for the cost function ``f:  \mathcal M`` on the
-manifold `M`. If the initial population `p` is not given, a random set of
-points is chosen.
+Solve a Nelder-Mead minimization problem for the cost function ``f:  $_l_M`` on the
+manifold `M`. If the initial [`NelderMeadSimplex`](@ref) is not provided, a random set of
+points is chosen. The compuation can be performed in-place of the `population`.
 
 This algorithm is adapted from the Euclidean Nelder-Mead method, see
 [https://en.wikipedia.org/wiki/Nelder-Mead_method](https://en.wikipedia.org/wiki/Nelder-Mead_method)
@@ -185,31 +197,32 @@ and
 
 # Input
 
-* `M`:            a manifold ``\mathcal M``
-* `f`:            a cost function to minimize
-* `population`:   (``n+1`` `rand(M)`s) an initial population of ``n+1`` points, where ``n``
-  is the dimension of the manifold `M`.
+$_arg_M
+$_arg_f
+* `population::`[`NelderMeadSimplex`](@ref)`=`[`NelderMeadSimplex`](@ref)`(M)`: an initial simplex of ``d+1`` points, where ``d``
+  is the [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) of `M`.
 
-# Optional
+# Keyword arguments
 
-* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(2000) | `[`StopWhenPopulationConcentrated`](@ref)`()`) a [`StoppingCriterion`](@ref)
-* `α=1.`) reflection parameter (``α > 0``:
-* `γ=2.`) expansion parameter (``γ``:
-* `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \frac{1}{2}``,
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`$_sc_any[`StopWhenPopulationConcentrated`](@ref)`()`):
+  a [`StoppingCriterion`](@ref)
+* `α=1.0`: reflection parameter ``α > 0``:
+* `γ=2.0` expansion parameter ``γ``:
+* `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-* `retraction_method=default_retraction_method(M, typeof(p))`: the retraction to use
-* `inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+* $_kw_retraction_method_default: $_kw_retraction_method
+* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
 
-and the ones that are passed to [`decorate_state!`](@ref) for decorators.
+$_kw_others
 
 !!! note
     The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
     load `Manifolds.jl` to use its statistics part.
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$_doc_sec_output
 """
+
+@doc "$(_doc_NelderMead)"
 NelderMead(M::AbstractManifold, args...; kwargs...)
 function NelderMead(M::AbstractManifold, f; kwargs...)
     return NelderMead(M, f, NelderMeadSimplex(M); kwargs...)
@@ -232,15 +245,7 @@ function NelderMead(
     rs = NelderMead(M, f_, population_; kwargs...)
     return (P == eltype(rs)) ? rs[] : rs
 end
-@doc raw"""
-    NelderMead(M::AbstractManifold, f [, population::NelderMeadSimplex])
-
-Solve a Nelder Mead minimization problem for the cost function `f` on the
-manifold `M`. If the initial population `population` is not given, a random set of
-points is chosen. If it is given, the computation is done in place of `population`.
-
-For more options see [`NelderMead`](@ref).
-"""
+@doc "$(_doc_NelderMead)"
 NelderMead!(M::AbstractManifold, args...; kwargs...)
 function NelderMead!(M::AbstractManifold, f, population::NelderMeadSimplex; kwargs...)
     mco = ManifoldCostObjective(f)

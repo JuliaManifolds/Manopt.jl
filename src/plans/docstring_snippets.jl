@@ -60,13 +60,13 @@ the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 """
 
 # Arguments
-_arg_f = raw"* `f`, a cost function ``f: \mathcal M→ℝ`` implemented as `(M, p) -> v`"
+_arg_f = raw"* `f`: a cost function ``f: \mathcal M→ℝ`` implemented as `(M, p) -> v`"
 _arg_grad_f = raw"""
-* `grad_f`, the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
+* `grad_f`: the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place
 """
 _arg_Hess_f = """
-* `Hess_f`, the Hessian ``$_l_Hess_long`` of f
+* `Hess_f`: the Hessian ``$_l_Hess_long`` of f
   as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place
 """
 _arg_p = raw"* `p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
