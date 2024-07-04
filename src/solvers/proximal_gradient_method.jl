@@ -45,7 +45,7 @@ function ProximalGradientMethodState(
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
 ) where {P,T,S,F,RM<:AbstractRetractionMethod}
-    return AlteratingDirectionMethodOfMultipliersState{P,T,S,F,RM}(
+    return ProximalGradientMethodState{P,T,S,F,RM}(
         λ, p, copy(M, p), stopping_criterion, X, retraction_method
     )
 end
@@ -158,7 +158,7 @@ function proximal_gradient_method!(
     X=zero_vector(M, p),
     retraction_method=default_retraction_method(M, typeof(p)),
     kwargs...,
-) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{ManifoldProximalGradientObjective,AbstractDecoratedManifoldObjective}}
     dmpgo = decorate_objective!(M, mpgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpgo)
     pgms = ProximalGradientMethodState(

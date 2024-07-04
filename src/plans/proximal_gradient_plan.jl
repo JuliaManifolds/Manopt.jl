@@ -37,7 +37,7 @@ struct ManifoldProximalGradientObjective{E<:AbstractEvaluationType,TC,TG,TP} <:
     function ManifoldProximalGradientObjective(
         f::TF, grad_g::TG, prox_h::TP; evaluation::E=AllocatingEvaluation()
     ) where {TF,TG,TP,E<:AbstractEvaluationType}
-        return ManifoldProximalGradientObjective{E,TF,TG,TP}(f, grad_g, prox_h)
+        return new{E,TF,TG,TP}(f, grad_g, prox_h)
     end
 end
 
