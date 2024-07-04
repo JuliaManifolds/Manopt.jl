@@ -8,7 +8,8 @@ A simplex for the Nelder-Mead algorithm.
 
     NelderMeadSimplex(M::AbstractManifold)
 
-Construct a  simplex using ``n+1`` random points from manifold `M`, where ``n`` is the manifold dimension of `M`.
+Construct a  simplex using ``d+1`` random points from manifold `M`,
+where ``d`` is the [`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`) of `M`.
 
     NelderMeadSimplex(
         M::AbstractManifold,
@@ -78,8 +79,6 @@ after the description
 
 Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
-
-# Keyword arguments
 
 # Keyword arguments
 
@@ -214,10 +213,6 @@ $_arg_f
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
 
 $_kw_others
-
-!!! note
-    The manifold `M` used here has to either provide a `mean(M, pts)` or you have to
-    load `Manifolds.jl` to use its statistics part.
 
 $_doc_sec_output
 """
