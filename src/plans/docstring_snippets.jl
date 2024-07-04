@@ -22,6 +22,7 @@ _l_cal(letter::String) = raw"\mathcal " * "$letter"
 _l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
 _l_C_subset_M = raw"\mathcal C \subset \mathcal M"
 _l_M = raw"\mathcal M"
+_l_txt(s) = "\\text{$s}"
 # Math terms
 _math_VT = raw"a vector transport ``T``"
 _math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
@@ -51,7 +52,6 @@ _problem_constrained = raw"""```math
 \end{aligned}
 ```
 """
-
 
 # Arguments of functions
 _arg_alt_mgo = raw"""

@@ -136,7 +136,7 @@ data ``p`` and the (two) proximal maps `proxMaps`, see [ BergmannPerschSteidl:20
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``\mathcal M^k`` is introduced as the first
-proximal map and the second proximal map of the is set to the `mean` (Riemannian Center of mass).
+proximal map and the second proximal map of the is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is, component wise in a vector.
 
@@ -230,7 +230,7 @@ data ``p ∈ \mathcal M`` and the (two) proximal maps `proxes_f` in place of `p`
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
 a vectorial proximal map on the power manifold ``\mathcal M^k`` is introduced as the first
-proximal map and the second proximal map of the is set to the `mean` (Riemannian Center of mass).
+proximal map and the second proximal map of the is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is component wise in a vector.
 
