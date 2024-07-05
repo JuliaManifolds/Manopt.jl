@@ -42,7 +42,7 @@ manifold- or objective specific defaults.
 """
 mutable struct AugmentedLagrangianMethodState{
     P,
-    Pr<:Union{F, AbstractManoptProblem} where F,
+    Pr<:Union{F,AbstractManoptProblem} where {F},
     St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
     R<:Real,
     V<:AbstractVector{<:R},
@@ -92,11 +92,11 @@ mutable struct AugmentedLagrangianMethodState{
         kwargs...,
     ) where {
         P,
-        Pr<:AbstractManoptProblem,
+        Pr<:Union{F,AbstractManoptProblem} where {F},
+        St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
         R<:Real,
         V,
         SC<:StoppingCriterion,
-        St<:AbstractManoptSolverState,
     }
         alms = new{P,Pr,St,R,V,SC}()
         alms.p = p

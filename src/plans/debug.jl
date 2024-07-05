@@ -382,6 +382,83 @@ function show(io::IO, di::DebugEntry)
     return print(io, "DebugEntry(:$(di.field); format=\"$(escape_string(di.format))\")")
 end
 
+"""
+    DebugFeasibility <: DebugAction
+
+Display information about the feasibility of the current iterate
+
+# Fields
+* `atol`:   absolute tolerance for when either equality or inequality constraints are counted as violated
+* `format`: a vector of symbols and string formatting the output
+* `io`:     default stream to print the debug to.
+
+The following symbols are filled with values
+
+* `:Feasbile` display true or false depending on whether the iterate is feasible
+* `:FeasbileEq` display `=` or `≠` equality constraints are fulfilled or not
+* `:FeasbileInEq` display `≤` or `>` inequality constraints are fulfilled or not
+* `:NumEq` display the number of equality constraints infeasible
+* `:NumEqNz` display the number of equality constraints infeasible if exists
+* `:NumIneq` display the number of inequality constraints infeasible
+* `:NumIneqNz` display the number of inequality constraints infeasible if exists
+* `:TotalEq` display the sum of how much the equality constraints are violated
+* `:TotalInEq` display the sum of how much the inequality constraints are violated
+
+format to print the output.
+
+# Constructor
+
+DebugFeasibility(
+    format=["feasible: ", :Feasible];
+    io::IO=stdout,
+    atol=1e-13
+)
+
+"""
+mutable struct DebugFeasibility <: DebugAction
+    atol::Float64
+    format::Vector{Union{String,Symbol}}
+    io::IO
+    function DebugFeasibility(format=["feasible: ", :Feasible]; io::IO=stdout, atol=1e-13)
+        return new(atol, format, io)
+    end
+end
+function (d::DebugFeasibility)(
+    mp::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
+)
+    s = ""
+    p = get_iterate(st)
+    eqc = get_equality_constraints(mp, p)
+    eqc_nz = eqc[abs.(eqc) .> d.atol]
+    ineqc = get_inequality_constraints(mp, p)
+    ineqc_pos = ineqc[ineqc .> d.atol]
+    feasible = (length(eqc_nz) == 0) && (length(ineqc_pos) == 0)
+    n_eq = length(eqc_nz)
+    n_ineq = length(ineqc_pos)
+    for f in d.format
+        (f isa String) && (s *= f)
+        (f === :Feasible) && (s *= feasible ? "Yes" : "No")
+        (f === :FeasibleEq) && (s *= n_eq == 0 ? "=" : "≠")
+        (f === :FeasibleIneq) && (s *= n_ineq == 0 ? "≤" : ">")
+        (f === :NumEq) && (s *= "$(n_eq)")
+        (f === :NumEqNz) && (s *= n_eq == 0 ? "" : "$(n_eq)")
+        (f === :NumIneq) && (s *= "$(n_ineq)")
+        (f === :NumIneqNz) && (s *= n_ineq == 0 ? "" : "$(n_ineq)")
+        (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz);init=0.0))")
+        (f === :TotalInEq) && (s *= "$(sum(ineq_pos;init=0.0))")
+    end
+    print(d.io, (i > 0) ? s : "")
+    return nothing
+end
+function show(io::IO, d::DebugFeasibility)
+    sf = "[" * (join([e isa String ? "$e" : ":$e" for e in d.format], ", ")) * "]"
+    return print(io, "DebugFeasibility($sf; atol=$(d.atol))")
+end
+function status_summary(d::DebugFeasibility)
+    sf = "[" * (join([e isa String ? "$e" : ":$e" for e in d.format], ", ")) * "]"
+    return "(:Feasibility, $sf)"
+end
+
 @doc raw"""
     DebugIfEntry <: DebugAction
 

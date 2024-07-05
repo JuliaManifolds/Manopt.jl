@@ -33,8 +33,7 @@ mutable struct ExactPenaltyMethodState{
     St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
     R<:Real,
     TStopping<:StoppingCriterion,
-} <:
-               AbstractSubProblemSolverState
+} <: AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
     sub_state::St
