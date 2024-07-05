@@ -8,11 +8,9 @@ function SymmetricLinearSystemObjective(A::TA, b::Tb) where {TA,Tb}
     return SymmetricLinearSystemObjective{AllocatingEvaluation,TA,Tb}(A, b)
 end
 
-function set_manopt_parameter!(
-    slso::SymmetricLinearSystemObjective, symbol_value::Val, value
-)
-    set_manopt_parameter!(slso.A, symbol_value, value)
-    set_manopt_parameter!(slso.b, symbol_value, value)
+function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
+    set_manopt_parameter!(slso.A, symbol, value)
+    set_manopt_parameter!(slso.b, symbol, value)
     return slso
 end
 
