@@ -25,7 +25,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `θ_ρ`:                (`0.3`) the scaling factor of the penalty parameter
 * `θ_ϵ`:                ((`(ϵ_min/ϵ)^(ϵ_exponent)`) the scaling factor of the accuracy tolerance
 * `penalty`:            evaluation of the current penalty term, initialized to `Inf`.
-* `stopping_criterion`: (`(`[`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `stop`: (`(`[`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(1e-10))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 
 # Constructor
@@ -268,8 +268,8 @@ the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) fo
 """
 function augmented_Lagrangian_method(
     M::AbstractManifold,
-    f::TF,
-    grad_f::TGF,
+    f,
+    grad_f,
     p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
@@ -279,7 +279,7 @@ function augmented_Lagrangian_method(
     inequality_constrains::Union{Integer,Nothing}=nothing,
     equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
-) where {TF,TGF}
+)
     q = copy(M, p)
     num_eq = if isnothing(equality_constrains)
         _number_of_constraints(h, grad_h; M=M, p=p)

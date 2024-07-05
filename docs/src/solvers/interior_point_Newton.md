@@ -10,8 +10,15 @@ interior_point_Newton
 
 ## State
 
+```@docs
+InteriorPointNewtonState
+```
+
 ## Helpers
 
+```@docs
+Manopt.InteriorPointLinesearch
+```
 ## References
 
 ```@bibliography

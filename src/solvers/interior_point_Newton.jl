@@ -1,8 +1,101 @@
 @doc raw"""
-    interior_point_Newton(M, f,. grad_f, Hess_f; kwargs...)
+    interior_point_Newton(M, f,. grad_f, Hess_f, p=rand(M); kwargs...)
 
-Perform the interior point Newton method following [LaiYoshise:2024](@cite).
+perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
+In order to solve the constrained problem
+
+```math
+\begin{aligned}
+\min_{p ∈\mathcal{M}} &f(p)\\
+\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
+\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
+\end{aligned}
+```
+
+By looking at the optimality conditions of the Lagrangian
+
+```math
+\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+```
+
+using the gradient of the Lagrangian
+
+```math
+\operatorname{grad}\mathcal L(p, μ, λ) = \operatorname{grad}f(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p) + \sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
+```
+
+, the slack variables ``s=-g(p) ∈ ℝ^m`` and the Hadamard (or elementwise)product denoted by
+``⊙`` this yields the vector field
+
+```math
+F(p, μ, λ, s) = \begin{pmatrix}
+\operatorname{grad}\mathcal L(p, μ, λ)\\
+g(p) + s\\
+h(p)
+μ ⊙ s
+\end{pmatrix}, \text{ where } p \in \mathcal M, μ, s \in ℝ^m\text{ and } λ \in ℝ^n
+```
+
+The interior point Newton method iteratively solves ``F(p, μ, λ, s) = 0`` such that ``\displaystyle\sum_{i=1}^m \mu_is_i = 0``,
+by a Newton method, that is
+
+M=diag μ, S = diag(s)
+
+```math
+\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
+\text{ where }
+X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n
+```
+together denote the new search direction.
+This can for example be done in the reduced form.
+
+Note that since the vector field ``F`` includes the gradients of the constraint
+functions ``g,h`, its gradient or Jacobian requires the Hessians of the constraints.
+
+For that seach direction a line search is performed, that additionally ensures that
+the constraints are further fulfilled.
+
+
+
+(TODO: Link to sub cost/grad/Hessian, and Linesearch once documented)
+
+# Input
+
+* `M`:      a manifold ``\mathcal M``
+* `f`:      a cost function ``f : \mathcal M → ℝ`` to minimize
+* `grad_f`: the gradient ``\operatorname{grad} f : \mathcal M → T \mathcal M`` of ``f``
+* `Hess_f`: the Hessian ``\operatorname{Hess}f(p): T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
+* `p=[`rand`](@extref ManifoldsBase.rand)`(M)`: an initial value ``x  ∈  \mathcal M``
+
+# Keyword arguments
+
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+* `g=nothing`: the inequality constraints
+* `grad_g=nothing`: the gradient of the inequality constraints
+* `grad_h=nothing`: the gradient of the equality constraints
+* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
+* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
+* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
+* `h=nothing`: the equality constraints
+* `Hess_g=nothing`: the Hessian of the inequality constraints
+* `Hess_h=nothing`: the Hessian of the equality constraints
+* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
+* `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
+* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints ``g``
+* `s=μ`: initial value for the slack variables
+* `σ= μ's/length(μ)`: ? (TODO find details about barrier parameter)
+* `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
+* `retraction_method`: TODO
+* `stepsize=`[`InteriorPointLinesearch`](@ref)`()`:
+* `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
+* `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
+* `sub_problem=TODO`: provide a problem for the subsolver
+* `sub_state=TODO`: a state specifying the subsolver
+
+# Output
+
+the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 """
 function interior_point_Newton(
@@ -171,7 +264,8 @@ function interior_point_Newton!(
     s=μ,
     ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
-    stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-5),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     _N=M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s),
     stepsize::Stepsize=InteriorPointLinesearch(
@@ -217,7 +311,7 @@ function interior_point_Newton!(
     !is_feasible(M, cmo, p) && throw(ErrorException("Starting point p must be feasible."))
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
-    ips = InteriorPointState(
+    ips = InteriorPointNewtonState(
         M,
         cmo,
         p,
@@ -227,7 +321,7 @@ function interior_point_Newton!(
         μ=μ,
         λ=λ,
         s=s,
-        stop=stop,
+        stop=stopping_criterion,
         retraction_method=retraction_method,
         stepsize=stepsize,
         kwargs...,
@@ -236,11 +330,11 @@ function interior_point_Newton!(
     solve!(dmp, ips)
     return get_solver_return(get_objective(dmp), ips)
 end
-function initialize_solver!(::AbstractManoptProblem, ips::InteriorPointState)
+function initialize_solver!(::AbstractManoptProblem, ips::InteriorPointNewtonState)
     return ips
 end
 
-function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
+function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, i)
     M = get_manifold(amp)
     cmo = get_objective(amp)
 
@@ -298,4 +392,4 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointState, i)
     return ips
 end
 
-get_solver_result(ips::InteriorPointState) = ips.p
+get_solver_result(ips::InteriorPointNewtonState) = ips.p

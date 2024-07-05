@@ -859,7 +859,7 @@ g_i(p) ≤ 0, \text{ for all } i=1,…,m\quad\text{ and }\quad h_j(p) = 0, \text
     * `:error`: throws an error
     * `:info`: displays the error message as an @info
     * `:none`: (default) the function just returns true/false
-    * `:warn - displays the error message as a @warning.
+    * `:warn`: displays the error message as a @warning.
 
 The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@extref ManifoldsBase.is_point) if the point is verfied (see `check_point`).
 

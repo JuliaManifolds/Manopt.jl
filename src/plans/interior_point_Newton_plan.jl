@@ -1,5 +1,22 @@
 # struct for state of interior point algorithm
-mutable struct InteriorPointState{
+"""
+    InteriorPointNewtonState <:
+
+# Fields
+* `p` the current iterate
+* `sub_problem`:        an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
+* `X`: TODO
+* `λ`:                  the Lagrange multiplier with respect to the equality constraints
+* `μ`:                  the Lagrange multiplier with respect to the inequality constraints
+* `s`: the current slack variable
+* `ρ`: TODO
+* `σ`: TODO
+* `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
+* `retraction_method`: the retraction method to use on `M`.
+* `stepsize` the stepsize to use
+"""
+mutable struct InteriorPointNewtonState{
     P,
     Pr<:AbstractManoptProblem,
     St<:AbstractManoptSolverState,
@@ -8,7 +25,7 @@ mutable struct InteriorPointState{
     TStop<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
     TStepsize<:Stepsize,
-} <: AbstractGradientSolverState
+} <: AbstractHessianSolverState
     p::P
     sub_problem::Pr
     sub_state::St
@@ -21,7 +38,7 @@ mutable struct InteriorPointState{
     stop::TStop
     retraction_method::TRTM
     stepsize::TStepsize
-    function InteriorPointState(
+    function InteriorPointNewtonState(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
         p::P,
@@ -71,23 +88,23 @@ mutable struct InteriorPointState{
 end
 
 # get & set iterate
-get_iterate(ips::InteriorPointState) = ips.p
-function set_iterate!(ips::InteriorPointState, ::AbstractManifold, p)
+get_iterate(ips::InteriorPointNewtonState) = ips.p
+function set_iterate!(ips::InteriorPointNewtonState, ::AbstractManifold, p)
     ips.p = p
     return ips
 end
 # get & set gradient (not sure if needed?)
-get_gradient(ips::InteriorPointState) = ips.X
-function set_gradient!(ips::InteriorPointState, ::AbstractManifold, X)
+get_gradient(ips::InteriorPointNewtonState) = ips.X
+function set_gradient!(ips::InteriorPointNewtonState, ::AbstractManifold, X)
     ips.X = X
     return ips
 end
 # only message on stepsize for now
-function get_message(ips::InteriorPointState)
+function get_message(ips::InteriorPointNewtonState)
     return get_message(ips.stepsize)
 end
 # pretty print state info
-function show(io::IO, ips::InteriorPointState)
+function show(io::IO, ips::InteriorPointNewtonState)
     i = get_count(ips, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(ips.stop) ? "Yes" : "No"
@@ -97,9 +114,10 @@ function show(io::IO, ips::InteriorPointState)
     ## Parameters
     * ρ: $(ips.ρ)
     * σ: $(ips.σ)
+    * retraction method: $(ips.retraction_method)
+
     ## Stopping criterion
     $(status_summary(ips.stop))
-    * retraction method: $(ips.retraction_method)
     ## Stepsize
     $(ips.stepsize)
     This indicates convergence: $Conv
@@ -111,7 +129,7 @@ end
 #
 # A special linesearch for IP Newton
 function interior_point_initial_guess(
-    mp::AbstractManoptProblem, ips::InteriorPointState, ::Int, l::Real
+    mp::AbstractManoptProblem, ips::InteriorPointNewtonState, ::Int, l::Real
 )
     N = get_manifold(mp) × ℝ^length(ips.μ) × ℝ^length(ips.λ) × ℝ^length(ips.s)
     q = rand(N)
@@ -125,6 +143,15 @@ function interior_point_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
+@doc """
+    InteriorPointLinesearch <: Linesearch
+
+An (maybe interims) line search for IPNewton.
+
+TODO: Check whether we can hopefully optimize / adapt this function to be just Armijo again,
+by checking/externalizing the current `MeritFunction` and `GradMeritFunction` dependency,
+probably by storing these in the state or even the objective?
+"""
 mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F,DF,IF} <:
                Linesearch
     candidate_point::Q
@@ -175,7 +202,7 @@ mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F,DF,IF} 
     end
 end
 function (ipls::InteriorPointLinesearch)(
-    mp::AbstractManoptProblem, ips::InteriorPointState, i::Int, η; kwargs...
+    mp::AbstractManoptProblem, ips::InteriorPointNewtonState, i::Int, η; kwargs...
 )
     N = get_manifold(mp) × ℝ^length(ips.μ) × ℝ^length(ips.λ) × ℝ^length(ips.s)
     q = allocate_result(N, rand)
@@ -398,7 +425,6 @@ mutable struct ConstraintLineSearchCheckFunction{CO}
     τ2::Float64
     γ::Float64
 end
-# ConstraintLineSearchCheckFunction(N::ProductManifold, q0) = ....
 function (clcf::ConstraintLineSearchCheckFunction)(N, q)
     #p = q[N,1]
     μ = q[N, 2]

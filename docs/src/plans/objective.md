@@ -223,9 +223,16 @@ get_grad_equality_constraint
 get_grad_inequality_constraint
 get_hess_equality_constraint
 get_hess_inequality_constraint
+is_feasible
 ```
 
-### A vectorial cost function
+#### Internal functions
+
+```@docs
+Manopt.get_feasibility_status
+```
+
+### Vectorial objectives
 
 ```@docs
 Manopt.AbstractVectorFunction

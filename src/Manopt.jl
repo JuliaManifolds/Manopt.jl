@@ -333,7 +333,7 @@ export AbstractGradientSolverState,
     ExactPenaltyMethodState,
     FrankWolfeState,
     GradientDescentState,
-    InteriorPointState,
+    InteriorPointNewtonState,
     LanczosState,
     LevenbergMarquardtState,
     NelderMeadState,
@@ -387,7 +387,6 @@ export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export equality_constraints_length,
-    inequality_constraints_length,
     get_constraints,
     get_inequality_constraint,
     get_equality_constraint,
@@ -398,7 +397,9 @@ export equality_constraints_length,
     get_hess_inequality_constraint,
     get_hess_inequality_constraint!,
     get_hess_equality_constraint,
-    get_hess_equality_constraint!
+    get_hess_equality_constraint!,
+    inequality_constraints_length,
+    is_feasible
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
