@@ -1,6 +1,6 @@
 # struct for state of interior point algorithm
 """
-    InteriorPointNewtonState <:
+    InteriorPointNewtonState <: AbstractHessianSolverState
 
 # Fields
 * `p` the current iterate
