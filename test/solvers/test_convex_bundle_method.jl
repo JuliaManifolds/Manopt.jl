@@ -1,6 +1,5 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff
 using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
-using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
 
 @testset "The Convex Bundle Method" begin
     M = Hyperbolic(4)
@@ -128,24 +127,6 @@ using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
     end
-    @testset "Utility Functions for the Convex Bundle Method" begin
-        M = Sphere(2)
-        p = [1.0, 0.0, 0.0]
-        κ = 1.0
-        R = π / 2
-        @test estimate_sectional_curvature(M, p) ≈ κ
-        @test ζ_1(κ, R) ≈ 1.0
-        @test -10eps() ≤ ζ_2(κ, R) ≤ 10eps()
-        @test distance(M, p, close_point(M, p, R)) ≤ R
-        cbms3 = ConvexBundleMethodState(
-            M,
-            p;
-            diameter=R,
-            domain=(M, q) -> distance(M, q, p) < R / 2 ? true : false,
-            stopping_criterion=StopAfterIteration(10),
-        )
-        @test -10eps() ≤ cbms3.ϱ ≤ 10eps()
-    end
     @testset "A simple median run" begin
         M = Sphere(2)
         p1 = [1.0, 0.0, 0.0]
@@ -160,7 +141,7 @@ using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
             )
         end
         p0 = p1
-        cbm_s = convex_bundle_method(M, f, ∂f, p0; return_state=true)
+        cbm_s = convex_bundle_method(M, f, ∂f, p0; k_max=1.0, return_state=true)
         @test startswith(
             repr(cbm_s), "# Solver state for `Manopt.jl`s Convex Bundle Method\n"
         )
@@ -173,8 +154,22 @@ using Manopt: estimate_sectional_curvature, ζ_1, ζ_2, close_point
             f,
             ∂f,
             p0;
+            k_max=1.0,
             stopping_criterion=StopWhenLagrangeMultiplierLess([1e-6, 1e-6]; mode=:both),
         )
         @test distance(M, q2, m) < 2e-2
+        # try to force entering the backtracking loop
+        diam = π / 4
+        domf(M, p) = distance(M, p, p0) < diam / 2 ? true : false
+        q2 = convex_bundle_method(
+            M,
+            f,
+            ∂f,
+            p0;
+            k_max=1.0,
+            diameter=diam,
+            domain=domf,
+            stopping_criterion=StopAfterIteration(3),
+        )
     end
 end

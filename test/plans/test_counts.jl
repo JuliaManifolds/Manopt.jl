@@ -71,7 +71,7 @@ include("../utils/dummy_types.jl")
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)
-        # otherise different
+        # otherwise different
         f1 = get_cost_function(c_obj)
         @test f1 != f
         @test f1(M, p) == f(M, p)

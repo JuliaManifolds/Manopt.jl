@@ -620,7 +620,7 @@ function status_summary(c::StopWhenBestCostInGenerationConstant)
 end
 function get_reason(c::StopWhenBestCostInGenerationConstant)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration): for the last $(c.iterations_since_change) generatiosn the best objective value in each generation was equal to $(c.best_objective_at_last_change).\n"
+        return "At iteration $(c.at_iteration): for the last $(c.iterations_since_change) generations the best objective value in each generation was equal to $(c.best_objective_at_last_change).\n"
     end
     return ""
 end
@@ -880,7 +880,7 @@ function status_summary(c::StopWhenPopulationCostConcentrated)
 end
 function get_reason(c::StopWhenPopulationCostConcentrated)
     if c.at_iteration >= 0
-        return "Range of best objective function values in the last $(length(c.best_value_history)) gnerations and all values in the current generation is below $(c.tol)\n"
+        return "Range of best objective function values in the last $(length(c.best_value_history)) generations and all values in the current generation is below $(c.tol)\n"
     end
     return ""
 end

@@ -641,7 +641,7 @@ function step_solver!(
         tcgs.model_value = new_model_value
         return tcgs
     end
-    # otherweise accept step
+    # otherwise accept step
     copyto!(M, tcgs.Y, p, new_Y)
     tcgs.model_value = new_model_value
     copyto!(M, tcgs.HY, p, new_HY)

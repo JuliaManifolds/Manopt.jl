@@ -22,6 +22,20 @@ Quite a few deprecated keyword arguments and a few function signatures were remo
 * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
 * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
 
+## [0.4.67] – unreleased
+
+### Fixed
+
+* a few typos in the documentation
+
+## [0.4.66] June 27, 2024
+
+### Changed
+
+* Remove functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`
+* Remove some unused fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState` in favor of jut `k_max`
+* Change parameter `R` placement in `ProximalBundleMethodState` to fifth position
+
 ## [0.4.65] June 13, 2024
 
 ### Changed
