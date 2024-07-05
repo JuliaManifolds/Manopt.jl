@@ -392,12 +392,6 @@ function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjectiv
     return 2 * X
 end
 
-function is_feasible(M, cmo, p)
-    g = get_inequality_constraints(M, cmo, p)
-    h = get_equality_constraints(M, cmo, p)
-    return is_point(M, p) && all(g .<= 0) && all(h .== 0)
-end
-
 mutable struct ConstraintLineSearchCheckFunction{CO}
     cmo::CO
     τ1::Float64

@@ -831,16 +831,88 @@ function get_hess_inequality_constraint!(
 end
 
 @doc raw"""
-    inequality_constraints_length(co::ConstrainedManifoldObjective)
+    inequality_constraints_length(cmo::ConstrainedManifoldObjective)
 
-Return the number of inequality constraints of an [`ConstrainedManifoldObjective`](@ref).
+Return the number of inequality constraints of an [`ConstrainedManifoldObjective`](@ref) `cmo`.
 This acts transparently through [`AbstractDecoratedManifoldObjective`](@ref)s
 """
-function inequality_constraints_length(co::ConstrainedManifoldObjective)
-    return isnothing(co.inequality_constraints) ? 0 : length(co.inequality_constraints)
+function inequality_constraints_length(cmo::ConstrainedManifoldObjective)
+    return isnothing(cmo.inequality_constraints) ? 0 : length(cmo.inequality_constraints)
 end
-function inequality_constraints_length(co::AbstractDecoratedManifoldObjective)
-    return inequality_constraints_length(get_objective(co, false))
+function inequality_constraints_length(admo::AbstractDecoratedManifoldObjective)
+    return inequality_constraints_length(get_objective(admo, false))
+end
+
+@doc raw"""
+    is_feasible(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, kwargs...)
+
+Evaluate whether a boint `p` on `M` is feasible with respect to the [`ConstrainedManifoldObjective`](@ref) `cmo`.
+That is for the provided inequality constaints ``g: \mathcal M → ℝ^m`` and equality constaints ``h: \mathcal M \to ℝ^m``
+from within `cmo`, the point ``p ∈ \mathcal M`` is feasible if
+```math
+g_i(p) ≤ 0, \text{ for all } i=1,…,m\quad\text{ and }\quad h_j(p) = 0, \text{ for all } j=1,…,n.
+```
+
+# Keyword arguments
+* `check_point::Bool=true`: whether to also verify that ``p∈\mathcal M` holds, using [`is_point`](@extref ManifoldsBase.is_point)
+* `error::Symbol=:none`: if the point is not feasible, this symbol determines how to report the error.
+    * `:error`: throws an error
+    * `:info`: displays the error message as an @info
+    * `:none`: (default) the function just returns true/false
+    * `:warn - displays the error message as a @warning.
+
+The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@extref ManifoldsBase.is_point) if the point is verfied (see `check_point`).
+
+All other keywords are passed on to `is_poi`
+"""
+function is_feasible(M, cmo, p; check_point::Bool=true, error::Symbol=:none, kwargs...)
+    v = !check_point || is_point(M, p; error=error)
+    g = get_inequality_constraints(M, cmo, p)
+    h = get_equality_constraints(M, cmo, p)
+    feasible = v && all(g .<= 0) && all(h .== 0)
+    # if we are feasible or no error shall be generated
+    ((error === :none) || feasible) && return feasible
+    # collect information about infeasibily
+    if (error === :info) || (error === :warn) || (error === :error)
+        s = get_feasibility_status(M, cmo, p; g=g, h=h)
+        (error === :error) && error(s)
+        (error === :info) && @info s
+        (error === :warn) && @warn s
+    end
+    return feasible
+end
+
+@doc raw"""
+    get_feasibility_status(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        g = get_inequality_constraints(M, cmo, p),
+        h = get_equality_constraints(M, cmo, p),
+    )
+
+Generate a message about the feasibiliy of `p` with respect to the [`ConstrainedManifoldObjective`](@ref).
+You can also provide the evaluated vectors for the values of `g` and `h` as keyword arguments,
+in case you had them evaluated before.
+"""
+function get_feasibility_status(
+    M,
+    cmo,
+    p;
+    g=get_inequality_constraints(M, cmo, p),
+    h=get_equality_constraints(M, cmo, p),
+)
+    g_violated = sum(g .> 0)
+    h_violated = sum(h .!= 0)
+    return """
+    The point $p on $M is not feasible for the provided constants.
+
+    * There are $(g_violated) of $(length(g)) inequality constraints violated. $(
+    g_violated > 0 ? "The sum of violation is $(sum(max.(g,Ref(0))))." : ""
+    )
+    * There are $(h_violated) of $(length(h)) equality constraints violated. $(
+    h_violated > 0 ? "The sum of violation is $(sum(abs.(h)))." : ""
+    )
+    """
 end
 
 function Base.show(
