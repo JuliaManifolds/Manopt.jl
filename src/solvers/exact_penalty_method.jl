@@ -27,7 +27,13 @@ construct an exact penalty options with the remaining previously mentioned field
 
 [`exact_penalty_method`](@ref)
 """
-mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriterion} <:
+mutable struct ExactPenaltyMethodState{
+    P,
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+    St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
+    R<:Real,
+    TStopping<:StoppingCriterion,
+} <:
                AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
@@ -61,8 +67,9 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         ),
     ) where {
         P,
-        Pr<:AbstractManoptProblem,
-        St<:AbstractManoptSolverState,
+        F,
+        Pr<:Union{F,AbstractManoptProblem},
+        St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
         R<:Real,
         SC<:StoppingCriterion,
     }
@@ -373,7 +380,7 @@ function exact_penalty_method!(
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
     sub_kwargs=(;),
-    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
+    sub_problem::Union{F,AbstractManoptProblem}=DefaultManoptProblem(
         M,
         decorate_objective!(
             M,
@@ -385,7 +392,7 @@ function exact_penalty_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_state::AbstractManoptSolverState=decorate_state!(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         QuasiNewtonState(
             M,
             copy(M, p);
@@ -403,7 +410,7 @@ function exact_penalty_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},F}
     emps = ExactPenaltyMethodState(
         M,
         p,

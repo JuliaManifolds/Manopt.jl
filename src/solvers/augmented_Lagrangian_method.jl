@@ -42,8 +42,8 @@ manifold- or objective specific defaults.
 """
 mutable struct AugmentedLagrangianMethodState{
     P,
-    Pr<:AbstractManoptProblem,
-    St<:AbstractManoptSolverState,
+    Pr<:Union{F, AbstractManoptProblem} where F,
+    St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
     R<:Real,
     V<:AbstractVector{<:R},
     TStopping<:StoppingCriterion,
