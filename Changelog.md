@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Introduces a Riemannian Interior Point Newton Method based on the paper by Lai & Yoshise.
+* Add a `is_feasible` function and a detailed `DebugFeasibility` debug action
+
 
 ### Fixed
 

@@ -404,7 +404,6 @@ export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, Exact
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
-export ConjugateResidualCost, ConjugateResidualGrad, ConjugateResidualHess
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate

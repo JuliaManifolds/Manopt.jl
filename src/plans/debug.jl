@@ -424,7 +424,7 @@ mutable struct DebugFeasibility <: DebugAction
     end
 end
 function (d::DebugFeasibility)(
-    mp::AbstractManoptProblem, st::AbstractManoptSolverState, i::Int
+    mp::AbstractManoptProblem, st::AbstractManoptSolverState, k::Int
 )
     s = ""
     p = get_iterate(st)
@@ -447,7 +447,7 @@ function (d::DebugFeasibility)(
         (f === :TotalEq) && (s *= "$(sum(abs.(eqc_nz);init=0.0))")
         (f === :TotalInEq) && (s *= "$(sum(ineq_pos;init=0.0))")
     end
-    print(d.io, (i > 0) ? s : "")
+    print(d.io, (k > 0) ? s : "")
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)

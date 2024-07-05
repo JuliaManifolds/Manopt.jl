@@ -66,8 +66,7 @@ mutable struct ExactPenaltyMethodState{
         ),
     ) where {
         P,
-        F,
-        Pr<:Union{F,AbstractManoptProblem},
+        Pr<:Union{F,AbstractManoptProblem} where {F},
         St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
         R<:Real,
         SC<:StoppingCriterion,
@@ -379,7 +378,7 @@ function exact_penalty_method!(
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
     sub_kwargs=(;),
-    sub_problem::Union{F,AbstractManoptProblem}=DefaultManoptProblem(
+    sub_problem::Pr=DefaultManoptProblem(
         M,
         decorate_objective!(
             M,
@@ -409,7 +408,10 @@ function exact_penalty_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},F}
+) where {
+    O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+}
     emps = ExactPenaltyMethodState(
         M,
         p,
