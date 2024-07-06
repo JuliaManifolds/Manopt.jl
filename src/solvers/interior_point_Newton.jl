@@ -41,7 +41,7 @@ The interior point Newton method iteratively solves ``F(p, μ, λ, s) = 0`` such
 by a Newton method, that is
 
 ```math
-\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
+\operatorname{grad} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
 \text{ where }
 X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n
 ```
@@ -53,8 +53,6 @@ functions ``g,h`, its gradient or Jacobian requires the Hessians of the constrai
 
 For that seach direction a line search is performed, that additionally ensures that
 the constraints are further fulfilled.
-
-
 
 (TODO: Link to sub cost/grad/Hessian, and Linesearch once documented)
 
@@ -72,19 +70,19 @@ the constraints are further fulfilled.
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
-* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
-* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
-* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
+* `gradient_range=nothing`: specify how gradients are represented, where `nothing` is equivalent to [`NestedPowerRepresentation`](@extref)
+* `gradient_equality_range=gradient_range`: specify how the gradients of the equality constraints are represented
+* `gradient_inequality_range=gradient_range`: specify how the gradients of the inequality constraints are represented
 * `h=nothing`: the equality constraints
 * `Hess_g=nothing`: the Hessian of the inequality constraints
 * `Hess_h=nothing`: the Hessian of the equality constraints
-* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
 * `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 * `s=μ`: initial value for the slack variables
 * `σ= μ's/length(μ)`: ? (TODO find details about barrier parameter)
 * `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
-* `retraction_method`: TODO
+* `retraction_method=[`default_retraction_method`](@extref)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
 * `stepsize=`[`InteriorPointLinesearch`](@ref)`()`:
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
@@ -340,6 +338,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     g = get_inequality_constraints(amp, ips.p)
     grad_g = get_grad_inequality_constraints(amp, ips.p)
 
+    # This should not be necesary, since the subproblem knows this domain
     N = M × ℝ^n
     q = rand(N)
     copyto!(N[1], q[N, 1], ips.p)

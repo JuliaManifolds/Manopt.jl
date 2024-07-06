@@ -14,16 +14,8 @@ function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol::Sym
     return slso
 end
 
-#=
-# set arbitrary parameter of A and b if such a parameter exists
-# too hacky? Yes
-function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, elem::Symbol, param)
-    (elem in fieldnames(typeof(slso.A))) && setproperty!(slso.A, elem, param)
-    (elem in fieldnames(typeof(slso.b))) && setproperty!(slso.b, elem, param)
-    return slso
-end
-=#
-
+# TODO: Be more careful and precise with in-place and allocating evaluations here
+#
 # evaluate the quadratic cost: Q(X) = 1/2 ⟨X, A(X)⟩ - ⟨b, X⟩ associated to the system Ax = b
 function get_cost(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
     M = base_manifold(TpM)
@@ -43,6 +35,7 @@ function get_gradient!(TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjectiv
     M = base_manifold(TpM)
     p = TpM.point
     # This was inconcsistent: slso.A(M, Y, p, X) - slso.b(M, p)
+    # Does A always work in-place?
     slso.A(M, Y, p, X)
     Y .-= slso.b(M, p)
     return Y
@@ -52,6 +45,7 @@ end
 function get_hessian(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X, V)
     M = base_manifold(TpM)
     p = TpM.point
+    # or both?
     return slso.A(M, p, V)
 end
 
