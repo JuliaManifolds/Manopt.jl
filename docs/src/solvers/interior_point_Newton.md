@@ -14,6 +14,13 @@ interior_point_Newton
 InteriorPointNewtonState
 ```
 
+## Subproblem functions
+
+```@docs
+CondensedKKTVectorField
+CondensedKKTVectorFieldJacobian
+```
+
 ## Helpers
 
 ```@docs

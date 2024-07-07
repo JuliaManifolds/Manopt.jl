@@ -252,6 +252,174 @@ function get_last_stepsize(step::InteriorPointLinesearch, ::Any...)
     return step.last_stepsize
 end
 
+@doc raw"""
+    CondensedKKTVectorField{}
+
+Fiven the constrained optimixzation problem
+
+```math
+\begin{aligned}
+\min_{p ∈\mathcal{M}} &f(p)\\
+\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
+\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
+\end{aligned}
+```
+
+we reformulate the KKT conditions of the Lagrangian
+from the optimality conditions of the Lagrangian
+
+```math
+\mathcal L(p, μ, λ,) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+```
+
+in a perturbed / barrier method in a condensed form
+using a slack variable ``s ∈ ℝ^m`` and a barrier parameter ``β``
+and the Riemannian gradient of the Lagrangian with respect to the first parameter
+``\operatorname{grad}_p L(p, μ, λ)``.
+
+Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
+
+```math
+\mathcal A[X,Y] = -b,\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+```
+where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator and
+this struct models the right hand side
+
+```math
+b = \begin{pmatrix}
+\operatorname{grad} f(p)
++ \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
++ \displaystyle\sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
++ \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}\bigl(
+  μ_i(g_i(p)+s_i) + β - μ_is_i
+\bigr)\operatorname{grad} g_i(p)\\
+h(p)
+\end{pmatrix} ∈ T_p\mathcal M × ℝ^n
+```
+
+# Fields
+
+* `cmo` the [`ConstrainedManifoldObjective`](@ref)
+* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
+* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
+* `s::Vthe vector in ``ℝ^m`` of sclack variables
+* `β::R` the barrier parameter ``β∈ℝ``
+"""
+mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R}
+    cmo::O
+    μ::V
+    λ::V
+    s::V
+    β::R
+end
+
+function (cKKTvf::CondensedKKTVectorField)(N::AbstractManifold, q)
+    Y = zero_vector(N, q)
+    cKKTvf(N, Y, q)
+    return Y
+end
+function (cKKTvf::CondensedKKTVectorField)(N::AbstractManifold, Y, q)
+    M = N[1]
+    cmo = cKKTvf.cmo
+    p, μ, λ, s = q[N, 1], cKKTvf.μ, q[N, 2], cKKTvf.s
+    β = cKKTvf.β
+    m, n = length(μ), length(λ)
+    g = get_inequality_constraints(M, cmo, p)
+    h = get_equality_constraints(M, cmo, p)
+    grad_g = get_grad_inequality_constraint(M, cmo, p, :)
+    # grad_h = get_grad_equality_constraint(M, cmo, p, :)
+    copyto!(M, Y[N, 1], get_gradient(M, cmo, p))
+
+    ν = μ + (μ .* g .+ β) ./ s
+    (m > 0) && (
+        Y[N, 1] += sum(
+            ((μ[i] * g[i] + β - μ[i] * s[i]) / s[i]) * grad_g[i] * ν[i] for i in 1:m
+        )
+    )
+    # I do not understand where this comes from
+    # (n > 0) && (X[N, 1] -= sum(grad_h[j] * λ[j] for j in 1:n))
+    (n > 0) && (copyto!(N[2], Y[N, 2], h))
+    return Y
+end
+
+@doc raw"""
+    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,T}
+
+Fiven the constrained optimixzation problem
+
+```math
+\begin{aligned}
+\min_{p ∈\mathcal{M}} &f(p)\\
+\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
+\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
+\end{aligned}
+```
+
+we reformulate the KKT conditions of the Lagrangian
+from the optimality conditions of the Lagrangian
+
+```math
+\mathcal L(p, μ, λ, s) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+```
+
+in a perturbed / barrier method enhanced as well as condensed form as using ``\operatorname{grad}_o L(p, μ, λ)``
+the Riemannian gradient of the Lagrangian with respect to the first parameter.
+
+Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
+
+```math
+\mathcal A[X,Y] = -b,\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+```
+where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator
+
+```math
+\mathcal A[X,Y] = \begin{pmatrix}
+\operatorname{Hess}_p\mathcal L(p, μ, λ)
++ \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}⟨\operatorname{grad} g_i(p), X⟩\operatorname{grad} g_i(p)
++ \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
+\\
+\Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n
+\end{pmatrix} ∈ T_p\mathcal M × ℝ^n
+```
+"""
+mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,R}
+    cmo::O
+    μ::V
+    λ::V
+    s::V
+    b::R
+end
+
+function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, p, X)
+    Y = zero_vector(N, p)
+    cKKTvfJ(N, Y, p, X)
+    return Y
+end
+function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
+    M = N[1]
+    cmo = cKKTvfJ.cmo
+    p, μ, λ, s = q[N, 1], cKKTvfJ.μ, q[N, 2], cKKTvfJ.s
+    m, n = length(μ), length(λ)
+    Xp, Xλ = X[N, 1], X[N, 2]
+    # First Summand of Hess L
+    copyto!(M, X[N, 1], get_hessian(M, cmo, p, Xp))
+    if m > 0
+        grad_g = get_grad_inequality_constraint(M, cmo, p, :)
+        H_g = get_hess_inequality_constraint(M, cmo, p, Xp, :)
+        # Summand of Hess L
+        Y[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
+        Y[N, 1] += sum([μ[i] / s[i] * inner(M, p, grad_g[i], Xp) * grad_g[i] for i in 1:m])
+    end
+    if n > 0
+        grad_h = get_grad_equality_constraint(M, cmo, p, :)
+        H_h = get_hess_equality_constraint(M, cmo, p, Xp, :)
+        # Summand of Hess L
+        Y[N, 1] += sum([λ[j] * H_h[j] for j in 1:n])
+        Y[N, 1] += sum([Xλ[j] * grad_h[j] for j in 1:n])
+        copyto!(N[2], Y[N, 2], [inner(M, p, grad_h[j], Xp) for j in 1:n])
+    end
+    return Y
+end
 #
 #
 # Subproblem gradient and hessian

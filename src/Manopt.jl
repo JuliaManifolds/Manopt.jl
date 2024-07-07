@@ -405,6 +405,7 @@ export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, Exact
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
+export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -484,6 +485,7 @@ export adaptive_regularization_with_cubics,
     truncated_conjugate_gradient_descent!,
     trust_regions,
     trust_regions!
+#
 # Solver helpers
 export decorate_state!, decorate_objective!
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
