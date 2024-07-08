@@ -211,6 +211,14 @@ It might be beneficial to use the adapted problem to specify different ranges fo
 ConstrainedManoptProblem
 ```
 
+as well as the helper functions
+
+```@docs
+LagrangianCost
+LagrangianGradient
+LagrangianHessian
+```
+
 #### Access functions
 
 ```@docs

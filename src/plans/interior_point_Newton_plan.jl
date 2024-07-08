@@ -312,7 +312,6 @@ mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R}
     s::V
     β::R
 end
-
 function (cKKTvf::CondensedKKTVectorField)(N::AbstractManifold, q)
     Y = zero_vector(N, q)
     cKKTvf(N, Y, q)
@@ -340,6 +339,26 @@ function (cKKTvf::CondensedKKTVectorField)(N::AbstractManifold, Y, q)
     # (n > 0) && (X[N, 1] -= sum(grad_h[j] * λ[j] for j in 1:n))
     (n > 0) && (copyto!(N[2], Y[N, 2], h))
     return Y
+end
+
+function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:μ}, μ)
+    cKKTvf.μ = μ
+    return cKKTvf
+end
+
+function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:λ}, λ)
+    cKKTvf.λ = λ
+    return cKKTvf
+end
+
+function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:s}, s)
+    cKKTvf.s = s
+    return cKKTvf
+end
+
+function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:β}, β)
+    cKKTvf.β = β
+    return cKKTvf
 end
 
 @doc raw"""
@@ -389,7 +408,6 @@ mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V
     s::V
     b::R
 end
-
 function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, p, X)
     Y = zero_vector(N, p)
     cKKTvfJ(N, Y, p, X)
@@ -419,6 +437,26 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         copyto!(N[2], Y[N, 2], [inner(M, p, grad_h[j], Xp) for j in 1:n])
     end
     return Y
+end
+
+function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:μ}, μ)
+    cKKTvfJ.μ = μ
+    return cKKTvfJ
+end
+
+function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:λ}, λ)
+    cKKTvfJ.λ = λ
+    return cKKTvfJ
+end
+
+function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:s}, s)
+    cKKTvfJ.s = s
+    return cKKTvfJ
+end
+
+function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:β}, β)
+    cKKTvfJ.β = β
+    return cKKTvfJ
 end
 #
 #

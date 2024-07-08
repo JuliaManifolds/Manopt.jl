@@ -344,6 +344,174 @@ get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
 get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
 @doc raw"""
+    LagrangianCost{CO, V, T}
+
+Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
+
+```math
+\mathcal L(p, μ, λ)
+= f(p) +  \sum_{i=1}^m μ_ig_i(p) + \sum_{j=1}^n λ_jh_j(p)
+```
+
+# Fields
+
+* `co::CO`, `μ::T`, `λ::T` as mentioned, where `T` represents a vector type.
+
+# Constructor
+
+    LagrangianCost(co, μ, λ)
+
+Create a functor for the Lagrangian with fixed dual variables.
+
+# Example
+
+When you directly want to evaluate the Lagrangian ``\mathcal L``
+you can also call
+
+```
+LagrangianCost(co, μ, λ)(M,p)
+```
+"""
+mutable struct LagrangianCost{CO,T}
+    co::CO
+    μ::T
+    λ::T
+end
+function (lc::LagrangianCost)(M, p)
+    c = get_cost(M, lc.co, p)
+    g = get_inequality_constraint(M, L.co, p, :)
+    h = get_equality_constraint(M, L.co, p, :)
+    (length(g) > 0) && (c += sum(L.μ .* g))
+    (length(h) > 0) && (c += sum(L.λ .* h))
+    return c
+end
+function set_manopt_parameter!(lc::LagrangianCost, ::Val{:μ}, μ)
+    lc.μ = μ
+    return lc
+end
+function set_manopt_parameter!(lc::LagrangianCost, ::Val{:λ}, λ)
+    lc.λ = λ
+    return lc
+end
+
+@doc raw"""
+    LagrangianGradient{CO, V, T}
+
+Implement the gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
+
+```math
+\operatorname{grad} \mathcal L(p, μ, λ)
+= \operatorname{grad} f(p) +  \sum_{i=1}^m μ_i \operatorname{grad} g_i(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
+```
+
+# Fields
+
+* `co::CO`, `μ::T`, `λ::T` as mentioned, where `T` represents a vector type.
+
+# Constructor
+
+    LagrangianGradient(co, μ, λ)
+
+Create a functor for the Lagrangian with fixed dual variables.
+
+# Example
+
+When you directly want to evaluate the gradient of the Lagrangian ``\operatorname{grad} \mathcal L``
+you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
+"""
+mutable struct LagrangianGradient{CO,T}
+    co::CO
+    μ::T
+    λ::T
+end
+function (lc::LagrangianGradient)(M, p)
+    X = zero_vector(M, p)
+    return lc(M, X, p)
+end
+function (lc::LagrangianGradient)(M, X, p)
+    Y = copy(M, p, X)
+    get_gradient!(M, X, lc.co, p)
+    n = inequality_constraints_length(lc.co)
+    m = equality_constraints_length(lc.co)
+    for i in 1:n
+        get_grad_inequality_constraint!(M, Y, lc.co, p, i)
+        X += lc.μ[i] * Y
+    end
+    for j in 1:m
+        get_grad_equality_constraint!(M, Y, lc.co, p, j)
+        X += lc.λ[j] * Y
+    end
+    return X
+end
+function set_manopt_parameter!(lc::LagrangianGradient, ::Val{:μ}, μ)
+    lc.μ = μ
+    return lc
+end
+function set_manopt_parameter!(lc::LagrangianGradient, ::Val{:λ}, λ)
+    lc.λ = λ
+    return lc
+end
+
+@doc raw"""
+    LagrangianHessian{CO, V, T}
+
+Implement the Hessian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
+
+```math
+\operatorname{Hess} \mathcal L(p, μ, λ)[X]
+= \operatorname{Hess} f(p) +  \sum_{i=1}^m μ_i \operatorname{Hess} g_i(p)[X] + \sum_{j=1}^n λ_j \operatorname{Hess} h_j(p)[X]
+```
+
+# Fields
+
+* `co::CO`, `μ::T`, `λ::T` as mentioned, where `T` represents a vector type.
+
+# Constructor
+
+    LagrangianHessian(co, μ, λ)
+
+Create a functor for the Lagrangian with fixed dual variables.
+
+# Example
+
+When you directly want to evaluate the gradient of the Lagrangian ``\operatorname{grad} \mathcal L``
+you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
+"""
+mutable struct LagrangianHessian{CO,T}
+    co::CO
+    μ::T
+    λ::T
+end
+
+function (lc::LagrangianHessian)(M, p, X)
+    Y = zero_vector(M, p)
+    return lc(M, Y, p, X)
+end
+function (lc::LagrangianHessian)(M, Y, p, X)
+    Z = copy(M, p, X)
+    get_hessian!(M, Y, lc.co, p, X)
+    n = inequality_constraints_length(lc.co)
+    m = equality_constraints_length(lc.co)
+    for i in 1:n
+        get_hess_inequality_constraint!(M, Z, lc.co, p, X, i)
+        Y += lc.μ[i] * Z
+    end
+    for j in 1:m
+        get_grad_equality_constraint!(M, Z, lc.co, p, X, j)
+        Y += lc.λ[j] * Z
+    end
+    return Y
+end
+function set_manopt_parameter!(lc::LagrangianHessian, ::Val{:μ}, μ)
+    lc.μ = μ
+    return lc
+end
+function set_manopt_parameter!(lc::LagrangianHessian, ::Val{:λ}, λ)
+    lc.λ = λ
+    return lc
+end
+
+@doc raw"""
     equality_constraints_length(co::ConstrainedManifoldObjective)
 
 Return the number of equality constraints of an [`ConstrainedManifoldObjective`](@ref).
