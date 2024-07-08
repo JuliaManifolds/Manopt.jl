@@ -1,6 +1,11 @@
+@doc raw"""
+    ConjugateResidualState{T,R,TStop<:StoppingCriterion} <: AbstractManoptSolverState
+
+
+"""
 mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
                AbstractManoptSolverState
-    x::T
+    X::T
     r::T
     d::T
     Ar::T
@@ -11,18 +16,18 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
     function ConjugateResidualState(
         TpM::TangentSpace,
         slso::SymmetricLinearSystemObjective;
-        x::T=rand(TpM),
-        r::T=-get_gradient(TpM, slso, x),
+        X::T=rand(TpM),
+        r::T=-get_gradient(TpM, slso, X), # fix
         d::T=r,
-        Ar::T=get_hessian(TpM, slso, x, r),
+        Ar::T=get_hessian(TpM, slso, X, r), # fix
         Ad::T=Ar,
         α::R=0.0,
         β::R=0.0,
-        stop::StoppingCriterion=StopAfterIteration(5) | StopWhenGradientNormLess(1e-8),
+        stop::SC=StopAfterIteration(5) | StopWhenGradientNormLess(1e-8),
         kwargs...,
-    ) where {T,R}
-        crs = new{T,R,typeof(stop)}()
-        crs.x = x
+    ) where {T,R,SC<:StoppingCriterion}
+        crs = new{T,R,SC}()
+        crs.X = X
         crs.r = r
         crs.d = d
         crs.Ar = Ar
@@ -34,9 +39,9 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
     end
 end
 
-get_iterate(crs::ConjugateResidualState) = crs.x
-function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, x)
-    crs.x = x
+get_iterate(crs::ConjugateResidualState) = crs.X
+function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, X)
+    crs.X = X
     return crs
 end
 
@@ -69,6 +74,20 @@ function show(io::IO, crs::ConjugateResidualState)
     return print(io, s)
 end
 
+@doc raw"""
+    conjugate_residual(TpM::TangentSpace, A, b, p=rand(M))
+    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(M))
+    conjugate_residual!(TpM::TangentSpace, A, b, p)
+    conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
+
+Compute the solution of ``\mathcal A[X] = b``, where
+
+* ``\mathcal A`` is a linear operator on ``T_p\mathcal M``
+* ``X, b ∈ T_p\mathcal M`` are tangent vectors.
+
+This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite).
+
+"""
 function conjugate_residual(
     TpM::TangentSpace,
     slso::SymmetricLinearSystemObjective,
@@ -95,10 +114,10 @@ function initialize_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
 )
     p = get_manifold(amp).point
-    crs.x = rand(get_manifold(amp))
-    crs.r = -get_gradient(amp, crs.x)
+    crs.p = rand(get_manifold(amp))
+    crs.r = -get_gradient(amp, crs.p)
     crs.d = crs.r
-    crs.Ar = get_hessian(amp, crs.x, crs.r)
+    crs.Ar = get_hessian(amp, crs.p, crs.r)
     crs.Ad = crs.Ar
     crs.α = 0.0
     crs.β = 0.0

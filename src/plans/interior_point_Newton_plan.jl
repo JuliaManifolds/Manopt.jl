@@ -458,6 +458,14 @@ function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:
     cKKTvfJ.β = β
     return cKKTvfJ
 end
+
+# Ideas for names
+# KKTVectorField -> F
+# KKTVectorFieldJacobian -> Jf
+# KKTMaritFunction -> || F ||
+
+# -----------------------------------------------------------------------------
+# old code, old names
 #
 #
 # Subproblem gradient and hessian
