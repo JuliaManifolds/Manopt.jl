@@ -41,12 +41,13 @@ The interior point Newton method iteratively solves ``F(p, μ, λ, s) = 0`` such
 by a Newton method, that is
 
 ```math
-\operatorname{grad} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
+\operatorname{Jacobian} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
 \text{ where }
-X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n
+X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n,
 ```
-together denote the new search direction.
-This can for example be done in the reduced form.
+see [`CondensedKKTVectorFieldJacobian`](@ref) and [`CondensedKKTVectorField`](@ref), respectively,
+for the reduced form, this is usually solved in.
+From the resulting `X` and `Z` in the reeuced form, the other two can be computed.
 
 Note that since the vector field ``F`` includes the gradients of the constraint
 functions ``g,h`, its gradient or Jacobian requires the Hessians of the constraints.
