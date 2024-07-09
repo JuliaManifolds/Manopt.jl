@@ -490,10 +490,26 @@ mutable struct KKTVectorField{O<:ConstrainedManifoldObjective,V}
     s::V
 end
 
+function (KKTvf::KKTVectorField)(N, q)
+    Y = zero_vector(N, q)
+    KKTvf(N, Y, q)
+end
+function (KKTvf::KKTVectorField)(N, Y, q)
+    M = N[1]
+    p = q[N,1]
+    LagrangianGradient(N[1], KKTvf.μ , KKTvf.λ)(M, Y[N, 1], p)
+    m, n = length(KKTvf.μ), length(KKTvf.λ)
+    (m > 0) && (Y[N,2] = get_equality_constraint(M, KKTvf.cmo, p) + KKTvf.s)
+    (n > 0) && (Y[N,3] = get_inequality_constraint(M, KKTvf.cmo, p))
+    (m > 0) && (Y[N,4] = KKTvf.μ .* KKTvf.s)
+    return Y
+end
+
 # Ideas for names
 # KKTVectorField -> F
 # KKTVectorFieldJacobian -> Jf
-# KKTMeritFunction -> || F ||
+# KKTVectorCost (Merit) -> || F ||
+# KKTVectorGradient (MeritGrad)
 
 # -----------------------------------------------------------------------------
 # old code, old names
