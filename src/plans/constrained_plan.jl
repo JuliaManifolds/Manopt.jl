@@ -1,3 +1,22 @@
+
+"""
+    AbstractConstrainedFunctor
+
+A common supertype for fucntors that model constraint functions.
+
+This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
+constraints
+"""
+abstract type AbstractConstrainedFunctor end
+"""
+    AbstractConstrainedFunctor
+
+A common supertype for fucntors that model constraint functions with slack.
+
+This supertype additionally provides access for the field ``s`` the slack variable
+"""
+abstract type AbstractConstrainedSlackFunctor <: AbstractConstrainedFunctor end
+
 @doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
 
@@ -997,6 +1016,9 @@ function get_hess_inequality_constraint!(
     isnothing(co.equality_constraints) && (return X)
     return get_hessian!(M, Y, co.inequality_constraints, p, X, j, range)
 end
+get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
+get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
+get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
 
 @doc raw"""
     inequality_constraints_length(cmo::ConstrainedManifoldObjective)
@@ -1081,6 +1103,21 @@ function get_feasibility_status(
     h_violated > 0 ? "The sum of violation is $(sum(abs.(h)))." : ""
     )
     """
+end
+
+function set_manopt_parameter!(acf::AbstractConstrainedFunctor, ::Val{:μ}, μ)
+    acf.μ = μ
+    return acf
+end
+
+function set_manopt_parameter!(acf::AbstractConstrainedFunctor, ::Val{:λ}, λ)
+    acf.λ = λ
+    return acf
+end
+
+function set_manopt_parameter!(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}, s)
+    acsf.s = s
+    return acsf
 end
 
 function Base.show(

@@ -13,33 +13,6 @@ In order to solve the constrained problem
 \end{aligned}
 ```
 
-By looking at the optimality conditions of the Lagrangian
-
-```math
-\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
-```
-
-using the gradient of the Lagrangian
-
-```math
-\operatorname{grad}\mathcal L(p, μ, λ) = \operatorname{grad}f(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p) + \sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
-```
-
-, the slack variables ``s=-g(p) ∈ ℝ^m`` and the Hadamard (or elementwise) product denoted by
-``⊙`` this yields the vector field
-
-```math
-F(p, μ, λ, s) = \begin{pmatrix}
-\operatorname{grad}\mathcal L(p, μ, λ)\\
-g(p) + s\\
-h(p)\\
-μ ⊙ s
-\end{pmatrix}, \text{ where } p \in \mathcal M, μ, s \in ℝ^m\text{ and } λ \in ℝ^n
-```
-
-The interior point Newton method iteratively solves ``F(p, μ, λ, s) = 0`` such that ``\displaystyle\sum_{i=1}^m \mu_is_i = 0``,
-by a Newton method, that is
-
 ```math
 \operatorname{Jacobian} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
 \text{ where }

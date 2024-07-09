@@ -214,9 +214,12 @@ ConstrainedManoptProblem
 as well as the helper functions
 
 ```@docs
+AbstractConstrainedFunctor
+AbstractConstrainedSlackFunctor
 LagrangianCost
 LagrangianGradient
 LagrangianHessian
+KKTVectorField
 ```
 
 #### Access functions

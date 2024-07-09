@@ -149,6 +149,25 @@ using Requires
 using SparseArrays
 using Statistics
 
+"""
+Rn(s::Symbol=:Manifolds, args; kwargs...)
+
+A small internal helper function to choose a Euclidean space.
+By default, this uses the [`DefaultManifold`](@ref) unless you load
+a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
+from [`Manifolds.jl`](@extref Manifolds.Manifolds)
+"""
+Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
+@doc """
+   Rn_default()
+
+Specify a default value to dispatch [`Rn`](@ref) on.
+This default is set to `Manifolds`, indicating, that when this package is loded,
+it is the preferred package to ask for a Euclidean space.
+"""
+Rn_default() = :Manifolds
+Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
+
 include("plans/plan.jl")
 # solvers general framework
 include("solvers/solver.jl")

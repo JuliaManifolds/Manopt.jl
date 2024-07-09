@@ -14,7 +14,7 @@
 * `σ`: TODO
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
 * `retraction_method`: the retraction method to use on `M`.
-* `stepsize` the stepsize to use
+* `stepsize::`[`Stepsize`](@ref): the stepsize to use
 """
 mutable struct InteriorPointNewtonState{
     P,
@@ -53,9 +53,9 @@ mutable struct InteriorPointNewtonState{
         stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::AbstractRetractionMethod=default_retraction_method(M),
         stepsize::Stepsize=InteriorPointLinesearch(
-            M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s);
+            M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s));
             retraction_method=default_retraction_method(
-                M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
+                M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s))
             ),
             initial_stepsize=1.0,
         ),
@@ -131,7 +131,7 @@ end
 function interior_point_initial_guess(
     mp::AbstractManoptProblem, ips::InteriorPointNewtonState, ::Int, l::Real
 )
-    N = get_manifold(mp) × ℝ^length(ips.μ) × ℝ^length(ips.λ) × ℝ^length(ips.s)
+    N = get_manifold(mp) × Rn(length(ips.μ)) × Rn(length(ips.λ)) × Rn(length(ips.s))
     q = rand(N)
     copyto!(N[1], q[N, 1], ips.p)
     copyto!(N[2], q[N, 2], ips.μ)
@@ -204,7 +204,7 @@ end
 function (ipls::InteriorPointLinesearch)(
     mp::AbstractManoptProblem, ips::InteriorPointNewtonState, i::Int, η; kwargs...
 )
-    N = get_manifold(mp) × ℝ^length(ips.μ) × ℝ^length(ips.λ) × ℝ^length(ips.s)
+    N = get_manifold(mp) × Rn(length(ips.μ)) × Rn(length(ips.λ)) × Rn(length(ips.s))
     q = allocate_result(N, rand)
     copyto!(N[1], q[N, 1], get_iterate(ips))
     copyto!(N[2], q[N, 2], ips.μ)
@@ -252,8 +252,12 @@ function get_last_stepsize(step::InteriorPointLinesearch, ::Any...)
     return step.last_stepsize
 end
 
+#
+# Constraint functors
+#
+
 @doc raw"""
-    CondensedKKTVectorField{}
+    CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R} <: AbstractConstrainedSlackFunctor
 
 Fiven the constrained optimixzation problem
 
@@ -305,7 +309,8 @@ h(p)
 * `s::Vthe vector in ``ℝ^m`` of sclack variables
 * `β::R` the barrier parameter ``β∈ℝ``
 """
-mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R}
+mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R} <:
+               AbstractConstrainedSlackFunctor
     cmo::O
     μ::V
     λ::V
@@ -341,28 +346,13 @@ function (cKKTvf::CondensedKKTVectorField)(N::AbstractManifold, Y, q)
     return Y
 end
 
-function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:μ}, μ)
-    cKKTvf.μ = μ
-    return cKKTvf
-end
-
-function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:λ}, λ)
-    cKKTvf.λ = λ
-    return cKKTvf
-end
-
-function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:s}, s)
-    cKKTvf.s = s
-    return cKKTvf
-end
-
 function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:β}, β)
     cKKTvf.β = β
     return cKKTvf
 end
 
 @doc raw"""
-    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,T}
+    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,T}  <: AbstractConstrainedSlackFunctor
 
 Fiven the constrained optimixzation problem
 
@@ -401,7 +391,8 @@ where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator
 \end{pmatrix} ∈ T_p\mathcal M × ℝ^n
 ```
 """
-mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,R}
+mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,R} <:
+               AbstractConstrainedSlackFunctor
     cmo::O
     μ::V
     λ::V
@@ -439,30 +430,70 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     return Y
 end
 
-function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:μ}, μ)
-    cKKTvfJ.μ = μ
-    return cKKTvfJ
-end
-
-function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:λ}, λ)
-    cKKTvfJ.λ = λ
-    return cKKTvfJ
-end
-
-function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:s}, s)
-    cKKTvfJ.s = s
-    return cKKTvfJ
-end
-
 function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:β}, β)
     cKKTvfJ.β = β
     return cKKTvfJ
 end
 
+@doc raw"""
+    KKTVectorField <: AbstractConstrainedSlackFunctor
+
+Implement the vectorfield ``F`` KKT-conditions, inlcuding a slack variable
+for the inequality constraints.
+
+Given the [`LagrangianCost`](@ref)
+
+```math
+\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p),
+```
+
+the [`LagrangianGradient`](@ref)
+
+```math
+\operatorname{grad}\mathcal L(p, μ, λ) = \operatorname{grad}f(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p) + \sum_{i=1}^m μ_i \operatorname{grad} g_i(p),
+```
+
+and introducing the slack variables ``s=-g(p) ∈ ℝ^m``
+the vector field is given by
+
+```math
+F(p, μ, λ, s) = \begin{pmatrix}
+\operatorname{grad}\mathcal L(p, μ, λ)\\
+g(p) + s\\
+h(p)\\
+μ ⊙ s
+\end{pmatrix}, \text{ where } p \in \mathcal M, μ, s \in ℝ^m\text{ and } λ \in ℝ^n,
+```
+where ``⊙`` denotes the hadamard (or elementwise) product
+
+# Fields
+
+* `cmo` the [`ConstrainedManifoldObjective`](@ref)
+* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
+* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
+* `s::Vthe vector in ``ℝ^m`` of sclack variables
+
+# Constructor
+
+    KKTVectorField(cmo::ConstrainedManifoldObjective, μ, λ, s)
+
+# Example
+
+Define `F = KKTVectorField(cmo::ConstrainedManifoldObjective, μ, λ, s)`
+and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+Then, both the allocating variant `F(N, p)` as well as the in-place variant `F(N, p)`
+"""
+mutable struct KKTVectorField{O<:ConstrainedManifoldObjective,V}
+    cmo::O
+    μ::V
+    λ::V
+    s::V
+end
+
 # Ideas for names
 # KKTVectorField -> F
 # KKTVectorFieldJacobian -> Jf
-# KKTMaritFunction -> || F ||
+# KKTMeritFunction -> || F ||
 
 # -----------------------------------------------------------------------------
 # old code, old names
@@ -514,7 +545,7 @@ function (nrlg::NegativeReducedLagrangianGrad)(N::AbstractManifold, q)
     ν = μ + (μ .* g .+ b) ./ s
     (m > 0) && (X[N, 1] += sum(grad_g[i] * ν[i] for i in 1:m))
     (n > 0) && (X[N, 1] += sum(grad_h[j] * λ[j] for j in 1:n))
-    (n > 0) && (copyto!(ℝ^n, X[N, 2], h))
+    (n > 0) && (copyto!(N[2], X[N, 2], h))
     return -X
 end
 
@@ -559,7 +590,7 @@ function (rlh::ReducedLagrangianHess)(N::AbstractManifold, q, Y)
         H_h = get_hess_equality_constraint(M, cmo, p, Yp, :)
         X[N, 1] += sum([λ[j] * H_h[j] for j in 1:n])
         X[N, 1] += sum([Yλ[j] * grad_h[j] for j in 1:n])
-        copyto!(ℝ^n, X[N, 2], [inner(M, p, grad_h[j], Yp) for j in 1:n])
+        copyto!(N[2], X[N, 2], [inner(M, p, grad_h[j], Yp) for j in 1:n])
     end
     return X
 end
@@ -592,7 +623,7 @@ function calculate_σ(
     return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s)
 end
 function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
-    N = M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s)
+    N = M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s))
     q = allocate_result(N, rand)
     copyto!(N[1], q[N, 1], p)
     copyto!(N[2], q[N, 2], μ)
@@ -621,14 +652,14 @@ function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjectiv
         H_g = get_hess_inequality_constraint(M, cmo, p, grad_L, :)
         X[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
         X[N, 1] += sum([(g + s)[i] * grad_g[i] for i in 1:m])
-        copyto!(ℝ^m, X[N, 2], [inner(M, p, grad_g[i], grad_L) for i in 1:m] + μ .* s .* s)
-        copyto!(ℝ^m, X[N, 4], g + s + μ .* μ .* s)
+        copyto!(N[2], X[N, 2], [inner(M, p, grad_g[i], grad_L) for i in 1:m] + μ .* s .* s)
+        copyto!(N[4], X[N, 4], g + s + μ .* μ .* s)
     end
     if n > 0
         H_h = get_hess_equality_constraint(M, cmo, p, grad_L, :)
         X[N, 1] += sum([λ[j] * H_h[j] for i in 1:n])
         X[N, 1] += sum([h[j] * grad_h[j] for j in 1:n])
-        copyto!(ℝ^n, X[N, 3], [inner(M, p, grad_h[j], grad_L) for j in 1:n])
+        copyto!(N[3], X[N, 3], [inner(M, p, grad_h[j], grad_L) for j in 1:n])
     end
     return 2 * X
 end

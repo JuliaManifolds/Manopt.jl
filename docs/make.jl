@@ -168,6 +168,7 @@ makedocs(;
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "CMA-ES" => "solvers/cma_es.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
+            "Conjugate Residual" => "solvers/conjugate_residual.md",
             "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
