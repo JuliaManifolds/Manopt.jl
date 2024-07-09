@@ -380,6 +380,7 @@ Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
 \mathcal A[X,Y] = -b,\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
 ```
 where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator
+on ``T_q\mathcal N = T_p\mathcal M × ℝ^n`` given by
 
 ```math
 \mathcal A[X,Y] = \begin{pmatrix}
@@ -388,7 +389,7 @@ where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator
 + \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
 \\
 \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n
-\end{pmatrix} ∈ T_p\mathcal M × ℝ^n
+\end{pmatrix}
 ```
 """
 mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,R} <:
@@ -514,7 +515,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 \operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess} \mathcal L(p, μ, λ)[X] + \sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
+    \operatorname{Hess} \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
     \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + W_i\Bigr)_{i=1}^m\\
     \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
     μ ⊙ W + s ⊙ Y
@@ -585,7 +586,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 \operatorname{J}^* F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess} \mathcal L(p, μ, λ)[X] + \sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
+    \operatorname{Hess} \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
     \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + s_iW_i\Bigr)_{i=1}^m\\
     \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
     μ ⊙ W + Y
@@ -688,7 +689,8 @@ end
 @doc raw"""
     KKTVectorFieldNormSqGradient <: AbstractConstrainedSlackFunctor
 
-Compute the gradient of the [`KKTVectorFieldNormSq`][@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rvert^2``, that is of the norm of the [`KKTVectorField`](@ref) ``F``.
+Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rvert^2``,
+that is of the norm squared of the [`KKTVectorField`](@ref) ``F``.
 
 This is given in [LaiYoshise:2024](@cite) as the gradient of their merit function,
 which we can write with the adjoint ``J^*`` of the Jacobian
@@ -697,7 +699,10 @@ which we can write with the adjoint ``J^*`` of the Jacobian
 \operatorname{grad} φ = 2\operatorname{J}^* F(p, μ, λ, s)[F(p, μ, λ, s)],
 ```
 
-but also a bit more concrete using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad} \mathcal L(p,μ,λ) ∈ T_p\mathcal M`` as
+and hence is computed with [`KKTVectorFieldJacobianAdjoint`](@ref) and [`KKTVectorField`](@ref).
+
+For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad} \mathcal L(p,μ,λ) ∈ T_p\mathcal M``,
+for a shorthand of the first component of ``F``, as
 
 ```math
 \operatorname{grad} φ
@@ -710,7 +715,6 @@ but also a bit more concrete using the [`LagrangianGradient`](@ref) ``L = \opera
 \end{pmatrix},
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
-We still use the shorter form with [`KKTVectorFieldJacobianAdjoint`](@ref) and [`KKTVectorField`](@ref).
 
 # Fields
 
