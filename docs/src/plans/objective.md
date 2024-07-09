@@ -219,7 +219,6 @@ AbstractConstrainedSlackFunctor
 LagrangianCost
 LagrangianGradient
 LagrangianHessian
-KKTVectorField
 ```
 
 #### Access functions

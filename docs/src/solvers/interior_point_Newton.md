@@ -19,6 +19,11 @@ InteriorPointNewtonState
 ```@docs
 CondensedKKTVectorField
 CondensedKKTVectorFieldJacobian
+KKTVectorField
+KKTVectorFieldJacobian
+KKTVectorFieldJacobianAdjoint
+KKTVectorFieldNormSq
+KKTVectorFieldNormSqGradient
 ```
 
 ## Helpers

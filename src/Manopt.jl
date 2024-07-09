@@ -153,7 +153,7 @@ using Statistics
 Rn(s::Symbol=:Manifolds, args; kwargs...)
 
 A small internal helper function to choose a Euclidean space.
-By default, this uses the [`DefaultManifold`](@ref) unless you load
+By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
 a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
 from [`Manifolds.jl`](@extref Manifolds.Manifolds)
 """
@@ -421,6 +421,8 @@ export equality_constraints_length,
     is_feasible
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
+export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldJacobianAdjoint
+export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
 export LagrangianCost, LagrangianHessian, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
