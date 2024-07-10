@@ -240,7 +240,11 @@ mutable struct InteriorPointLinesearch{TRM<:AbstractRetractionMethod,Q,F,DF,IF} 
     end
 end
 function (ipls::InteriorPointLinesearch)(
-    mp::AbstractManoptProblem, ips::InteriorPointNewtonState, i::Int, η; kwargs...
+    mp::AbstractManoptProblem,
+    ips::InteriorPointNewtonState,
+    i::Int,
+    η=-get_gradient(mp, get_iterate(ips));
+    kwargs...,
 )
     N = get_manifold(mp) × Rn(length(ips.μ)) × Rn(length(ips.λ)) × Rn(length(ips.s))
     q = allocate_result(N, rand)

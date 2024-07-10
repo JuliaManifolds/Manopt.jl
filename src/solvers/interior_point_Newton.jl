@@ -237,7 +237,7 @@ function interior_point_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    _N=M × ℝ^length(μ) × ℝ^length(λ) × ℝ^length(s),
+    _N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)),
     stepsize::Stepsize=InteriorPointLinesearch(
         _N;
         retraction_method=default_retraction_method(_N),
@@ -250,19 +250,22 @@ function interior_point_Newton!(
         initial_stepsize=1.0,
     ),
     sub_kwargs=(;),
+    _sub_M = M × Rn(length(λ)),
+    _sub_p = rand(_sub_M),
     sub_objective=decorate_objective!(
-        TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))),
+        TangentSpace(_sub_M, _sub_p),
         SymmetricLinearSystemObjective(
-            ReducedLagrangianHess(cmo, μ, λ, s),
-            NegativeReducedLagrangianGrad(cmo, μ, λ, s, ρ * σ),
+            CondensedKKTVectorFieldJacobian(cmo, μ, λ, s),
+            CondensedKKTVectorField(cmo, μ, λ, s)
+            zero_vector(_sub_M, _sub_p),
         ),
         sub_kwargs...,
     ),
-    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(20) |
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(5) |
                                               StopWhenGradientNormLess(1e-5),
     sub_state::St=decorate_state!(
         ConjugateResidualState(
-            TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))),
+            TangentSpace(_sub_M, rand(_sub_M)),
             sub_objective;
             stop=sub_stopping_criterion,
             sub_kwargs...,
@@ -270,7 +273,7 @@ function interior_point_Newton!(
         sub_kwargs...,
     ),
     sub_problem::Pr=DefaultManoptProblem(
-        TangentSpace(M × ℝ^length(λ), rand(M × ℝ^length(λ))), sub_objective
+        TangentSpace(_sub_M, _sub_p), sub_objective
     ),
     kwargs...,
 ) where {
@@ -322,7 +325,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
 
     # make deterministic as opposed to random?
 
-    set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), rand(TqN))
+    set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), rand(N; vector_at=q))
 
     set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
 
@@ -330,7 +333,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
     set_manopt_parameter!(ips.sub_problem, :Objective, :barrier_param, ips.ρ * ips.σ)
-
+    set_manopt_parameter!(ips.sub_problem, :Objective, :b, -get_gradient(ips.sub_problem, q))
     # product manifold on which to perform linesearch
     K = M × ℝ^m × ℝ^n × ℝ^m
     X = allocate_result(K, rand)

@@ -19,7 +19,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         TpM::TangentSpace,
         slso::SymmetricLinearSystemObjective;
         X::T=rand(TpM),
-        r::T=-get_gradient(TpM, slso, X), # fix
+        r::T=get_gradient(TpM, slso, X), # fix
         d::T=r,
         Ar::T=get_hessian(TpM, slso, X, r), # fix
         Ad::T=Ar,
@@ -138,11 +138,11 @@ function initialize_solver!(
     M = base_manifold(get_manifold(amp))
     p = base_point(get_manifold(amp))
     crs.X = rand(get_manifold(amp))
-    crs.r = -get_gradient(amp, crs.X)
+    crs.r = get_gradient(amp, crs.X)
     copyto!(M, p, crs.d,crs.r)
     copyto!(M, p, crs.r_old, crs.r)
-    crs.Ar = get_hessian(amp, crs.X, crs.r)
     copyto!(M, p, crs.Ar_old, crs.Ar)
+    crs.Ar = get_hessian(amp, crs.X, crs.r)
     copyto!(M, p, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0
@@ -154,16 +154,17 @@ function step_solver!(
 )
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
-    p = TpM.point
-    # store current values (RB:) These are just references, nothing is copied here.
-    # ...so we could also just write crs. upfront in the following formulae
-    crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
+    p = base_point(TpM)
+    den = inner(M, p, crs.Ad, crs.Ad)
+    crs.α = inner(M, p, crs.r, crs.Ar) / (den == 0 ? 1.0 : den)
+    println("α:", crs.α)
     crs.X += crs.α * crs.d
-    copyto!(M, p, crs.r_old, crs.r)
+    copyto!(M, crs.r_old, p, crs.r)
     crs.r -= crs.α * crs.Ad
     copyto!(M, crs.Ar_old, p, crs.Ar)
     crs.Ar = get_hessian(amp, crs.X, crs.r)
-    crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.r_old, crs.Ar_old)
+    den = inner(M, p, crs.r_old, crs.Ar_old)
+    crs.β = inner(M, p, crs.r, crs.Ar) / (den == 0 ? 1.0 : den)
     crs.d = crs.r + crs.β * crs.d
     crs.Ad = crs.Ar + crs.β * crs.Ad
     return crs
