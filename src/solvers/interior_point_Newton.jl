@@ -250,14 +250,13 @@ function interior_point_Newton!(
         initial_stepsize=1.0,
     ),
     sub_kwargs=(;),
-    _sub_M = M × Rn(length(λ)),
-    _sub_p = rand(_sub_M),
+    _sub_M=M × Rn(length(λ)),
+    _sub_p=rand(_sub_M),
     sub_objective=decorate_objective!(
         TangentSpace(_sub_M, _sub_p),
         SymmetricLinearSystemObjective(
-            CondensedKKTVectorFieldJacobian(cmo, μ, λ, s),
-            CondensedKKTVectorField(cmo, μ, λ, s)
-            zero_vector(_sub_M, _sub_p),
+            CondensedKKTVectorFieldJacobian(cmo, μ, λ, s, σ * ρ),
+            CondensedKKTVectorField(cmo, μ, λ, s, σ * ρ),
         ),
         sub_kwargs...,
     ),
@@ -272,9 +271,7 @@ function interior_point_Newton!(
         );
         sub_kwargs...,
     ),
-    sub_problem::Pr=DefaultManoptProblem(
-        TangentSpace(_sub_M, _sub_p), sub_objective
-    ),
+    sub_problem::Pr=DefaultManoptProblem(TangentSpace(_sub_M, _sub_p), sub_objective),
     kwargs...,
 ) where {
     O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
@@ -333,7 +330,6 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
     set_manopt_parameter!(ips.sub_problem, :Objective, :barrier_param, ips.ρ * ips.σ)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :b, -get_gradient(ips.sub_problem, q))
     # product manifold on which to perform linesearch
     K = M × ℝ^m × ℝ^n × ℝ^m
     X = allocate_result(K, rand)

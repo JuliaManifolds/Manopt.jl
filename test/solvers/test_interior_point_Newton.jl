@@ -1,7 +1,7 @@
 using Manifolds, Manopt, LinearAlgebra, Random
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
-
+println(eigvals(A))
 f(M, p) = 0.5 * p' * A * p
 grad_f(M, p) = (I - p * p') * A * p
 Hess_f(M, p, X) = A * X - (p' * A * X) * p - (p' * A * p) * X
