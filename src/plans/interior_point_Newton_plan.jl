@@ -3,6 +3,7 @@
     InteriorPointNewtonState <: AbstractHessianSolverState
 
 # Fields
+
 * `p` the current iterate
 * `sub_problem`:        an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
@@ -15,14 +16,37 @@
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
 * `retraction_method`: the retraction method to use on `M`.
 * `stepsize::`[`Stepsize`](@ref): the stepsize to use
+* `step_objectve::AbstractManoptObjective`: the objective to use in the step size
+* `centrality_condition`: add a further check to accept steps in the `stepsize`
+
+# Constructor
+
+    InteriorPointNewtonState(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        p,
+        sub_problem::Pr,
+        sub_state::St;
+        kwargs...
+    )
+
+Initialize the state, where both the [`AbstractManifold`](@extref) and the [`ConstrainedManifoldObjective`](@ref)
+are used to fill in reasonable defaults for the keywords.
+
+# Input
+
+# Keyword arguments
+
 """
 mutable struct InteriorPointNewtonState{
     P,
+    T,
     Pr<:AbstractManoptProblem,
     St<:AbstractManoptSolverState,
-    T,
     R,
     TStop<:StoppingCriterion,
+    TSObj<:AbstractManifoldGradientObjective,
+    F,
     TRTM<:AbstractRetractionMethod,
     TStepsize<:Stepsize,
 } <: AbstractHessianSolverState
@@ -38,6 +62,8 @@ mutable struct InteriorPointNewtonState{
     stop::TStop
     retraction_method::TRTM
     stepsize::TStepsize
+    step_objective::TSObj
+    step_centrality::F
     function InteriorPointNewtonState(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
@@ -50,27 +76,35 @@ mutable struct InteriorPointNewtonState{
         s::T=ones(length(get_inequality_constraint(M, cmo, p, :))),
         ρ::R=μ's / length(get_inequality_constraint(M, cmo, p, :)),
         σ::R=calculate_σ(M, cmo, p, μ, λ, s),
-        stop::StoppingCriterion=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-        stepsize::Stepsize=InteriorPointLinesearch(
+        stop::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
+        retraction_method::RTM=default_retraction_method(M),
+        stepsize::S=InteriorPointLinesearch(
             M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s));
             retraction_method=default_retraction_method(
                 M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s))
             ),
             initial_stepsize=1.0,
         ),
+        step_objective::SCO=ManifoldGradientObjective(
+            KKTVectorFieldNormSq(cmo, μ, λ, s),
+            KKTVectorFieldNormSqGradient(cmo, μ, λ, s);
+            evaluation=InplaceEvaluation(),
+        ),
+        centrality_condition::F=(N, p) -> true, # Todo
         kwargs...,
-    ) where {P,Pr,St,T,R}
-        ips = new{
-            P,
-            typeof(sub_problem),
-            typeof(sub_state),
-            T,
-            R,
-            typeof(stop),
-            typeof(retraction_method),
-            typeof(stepsize),
-        }()
+    ) where {
+        P,
+        Pr,
+        St,
+        T,
+        R,
+        F,
+        SC<:StoppingCriterion,
+        SCO<:AbstractManifoldGradientObjective,
+        RTM<:AbstractRetractionMethod,
+        S<:Stepsize,
+    }
+        ips = new{P,T,Pr,St,R,SC,SCO,F,RTM,S}()
         ips.p = p
         ips.sub_problem = sub_problem
         ips.sub_state = sub_state
@@ -83,6 +117,8 @@ mutable struct InteriorPointNewtonState{
         ips.stop = stop
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
+        ips.step_objective = step_objective
+        ips.step_centrality = centrality_condition
         return ips
     end
 end
@@ -142,6 +178,8 @@ function interior_point_initial_guess(
     max_step = max_stepsize(N, q)
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
+
+# Maybe remove when changed to Armijo
 
 @doc """
     InteriorPointLinesearch <: Linesearch

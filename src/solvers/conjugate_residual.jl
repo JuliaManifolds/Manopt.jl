@@ -114,10 +114,10 @@ function initialize_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
 )
     p = get_manifold(amp).point
-    crs.p = rand(get_manifold(amp))
-    crs.r = -get_gradient(amp, crs.p)
+    crs.X = rand(get_manifold(amp))
+    crs.r = -get_gradient(amp, crs.X)
     crs.d = crs.r
-    crs.Ar = get_hessian(amp, crs.p, crs.r)
+    crs.Ar = get_hessian(amp, crs.X, crs.r)
     crs.Ad = crs.Ar
     crs.α = 0.0
     crs.β = 0.0
@@ -140,14 +140,14 @@ function step_solver!(
 
     crs.α = inner(M, p, r, Ar) / inner(M, p, Ad, Ad)
 
-    crs.x += crs.α * d
+    crs.X += crs.α * d
 
     crs.r -= crs.α * Ad
-    crs.Ar = get_hessian(amp, crs.x, crs.r)
+    crs.Ar = get_hessian(amp, crs.X, crs.r)
     crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, r, Ar)
     crs.d = crs.r + crs.β * d
     crs.Ad = crs.Ar + crs.β * Ad
     return crs
 end
 
-get_solver_result(crs::ConjugateResidualState) = crs.x
+get_solver_result(crs::ConjugateResidualState) = crs.X

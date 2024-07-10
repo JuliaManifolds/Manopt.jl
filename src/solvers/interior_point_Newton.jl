@@ -338,6 +338,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     Y = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
     Xp, Xλ = Y[N, 1], Y[N, 2]
 
+    # Compute the remaining part of the solution
     if m > 0
         b = ips.ρ * ips.σ
         Xs = -[inner(M, ips.p, grad_g[i], Xp) for i in 1:m] - g - ips.s
