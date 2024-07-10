@@ -7,8 +7,10 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
                AbstractManoptSolverState
     X::T
     r::T
+    r_old::T
     d::T
     Ar::T
+    Ar_old::T
     Ad::T
     α::R
     β::R
@@ -26,11 +28,15 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         stop::SC=StopAfterIteration(5) | StopWhenGradientNormLess(1e-8),
         kwargs...,
     ) where {T,R,SC<:StoppingCriterion}
+        M = base_manifold(TpM)
+        p = base_point(TpM)
         crs = new{T,R,SC}()
         crs.X = X
         crs.r = r
+        crs.r_old = copy(M, p, r)
         crs.d = d
         crs.Ar = Ar
+        crs.Ar_old = copy(M, p, Ar)
         crs.Ad = Ad
         crs.α = α
         crs.β = β
@@ -85,8 +91,24 @@ Compute the solution of ``\mathcal A[X] = b``, where
 * ``\mathcal A`` is a linear operator on ``T_p\mathcal M``
 * ``X, b ∈ T_p\mathcal M`` are tangent vectors.
 
-This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite).
+This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
+is initalised with ``X^{(0)}`` as
 
+* the initial residual ``r^{(0)} = X^{(0)} - \mathcal A[X^{(0)}]``
+* the initial conjugate direction ``d^{(0)} = r^{(0)}``
+* initialize ``Y^{(0)} = \mathcal A[X^{(0)}]
+
+performed
+the following steps at iteration ``k=0,…``:
+
+1. compute a step size ``α_k = \frac{⟨ r^{(k)}, \mathcal A[r^{(k)}] ⟩_p}{\lVert \mathcal A[d^{(0)}] \rVert_p}
+2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}
+2. update the residual ``r^{(k+1)} = r^{(k)} - α_k Y^{(k)}``
+4. compute ``Z = \mathcal A[r^{(k+1)}]``
+5. Update the conjugate coefficient ``β_k = \frac{⟨ r^{(k+1)}, \mathcal A[r^{(k+1)}] ⟩_p}{⟨ r^{(k)}, \mathcal A[r^{(k)}] ⟩_p}
+6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
+7. Update  ``Y^{(0)} = Z + β_k Y^{(k})`` the evaluated ``\mamthcal A[d^{(k)]``
+8. increase ``k`` to ``k+1``.
 """
 function conjugate_residual(
     TpM::TangentSpace,
@@ -113,15 +135,17 @@ end
 function initialize_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
 )
-    p = get_manifold(amp).point
+    M = base_manifold(get_manifold(amp))
+    p = base_point(get_manifold(amp))
     crs.X = rand(get_manifold(amp))
     crs.r = -get_gradient(amp, crs.X)
-    crs.d = crs.r
+    copyto!(M, p, crs.d,crs.r)
+    copyto!(M, p, crs.r_old, crs.r)
     crs.Ar = get_hessian(amp, crs.X, crs.r)
-    crs.Ad = crs.Ar
+    copyto!(M, p, crs.Ar_old, crs.Ar)
+    copyto!(M, p, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0
-
     return crs
 end
 
@@ -133,20 +157,15 @@ function step_solver!(
     p = TpM.point
     # store current values (RB:) These are just references, nothing is copied here.
     # ...so we could also just write crs. upfront in the following formulae
-    r = crs.r
-    d = crs.d
-    Ar = crs.Ar
-    Ad = crs.Ad
-
-    crs.α = inner(M, p, r, Ar) / inner(M, p, Ad, Ad)
-
-    crs.X += crs.α * d
-
-    crs.r -= crs.α * Ad
+    crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
+    crs.X += crs.α * crs.d
+    copyto!(M, p, crs.r_old, crs.r)
+    crs.r -= crs.α * crs.Ad
+    copyto!(M, crs.Ar_old, p, crs.Ar)
     crs.Ar = get_hessian(amp, crs.X, crs.r)
-    crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, r, Ar)
-    crs.d = crs.r + crs.β * d
-    crs.Ad = crs.Ar + crs.β * Ad
+    crs.β = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.r_old, crs.Ar_old)
+    crs.d = crs.r + crs.β * crs.d
+    crs.Ad = crs.Ar + crs.β * crs.Ad
     return crs
 end
 

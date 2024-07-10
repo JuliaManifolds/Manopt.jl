@@ -11,7 +11,7 @@ module Manopt
 import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
-
+import ManifoldsBase: base_manifold, base_point
 using ColorSchemes
 using ColorTypes
 using Colors
