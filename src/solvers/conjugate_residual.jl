@@ -1,14 +1,37 @@
 @doc raw"""
     ConjugateResidualState{T,R,TStop<:StoppingCriterion} <: AbstractManoptSolverState
 
-* X::T
-* r::T
-* d::T
-* Ar::T
-* Ad::T
-* α::R
-* β::R
-* stop::TStop
+A state for the [`conjugate_residual`](@ref) solver.
+
+# Fields
+
+* `X::T`: the iterate
+* `r::T`: the residual ``r = -b(p) - \mathcal A(p)[X]``
+* `d::T`: the conjugate direction
+* `Ar::T`, `Ad::T`: storages for ``\mathcal A``
+* `rAr::R`: internal field for storing ``⟨ r, \mathcal A(p)[r] ⟩``
+* `α::R`: a step length
+* `β::R`: the conjugate coefficient
+* `stop::TStop`: a [`StoppingCriterion`] for the solver
+
+# Constructor
+
+        function ConjugateResidualState(
+            TpM::TangentSpace,
+            slso::SymmetricLinearSystemObjective;
+            X=rand(TpM),
+            r=-get_gradient(TpM, slso, X),
+            d=copy(TpM, r),
+            Ar=get_hessian(TpM, slso, X, r),
+            Ad=copy(TpM, Ar),
+            α::R=0.0,
+            β::R=0.0,
+            stopping_criterion=StopAfterIteration(manifold_dimension(TpM)) |
+                               StopWhenGradientNormLess(1e-8),
+            kwargs...,
+    )
+
+    Initialise the state with default values.
 """
 mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
                AbstractManoptSolverState
@@ -17,6 +40,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
     d::T
     Ar::T
     Ad::T
+    rAr::R
     α::R
     β::R
     stop::TStop
@@ -24,7 +48,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         TpM::TangentSpace,
         slso::SymmetricLinearSystemObjective;
         X::T=rand(TpM),
-        r::T=get_gradient(TpM, slso, X),
+        r::T=-get_gradient(TpM, slso, X),
         d::T=copy(TpM, r),
         Ar::T=get_hessian(TpM, slso, X, r),
         Ad::T=copy(TpM, Ar),
@@ -44,6 +68,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         crs.Ad = Ad
         crs.α = α
         crs.β = β
+        crs.rAr = zero(R)
         crs.stop = stopping_criterion
         return crs
     end
@@ -103,7 +128,7 @@ is initalised with ``X^{(0)}`` as
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
 * initialize ``Y^{(0)} = \mathcal A[X^{(0)}]
 
-performed the following steps at iteration ``k=0,…``:
+performed the following steps at iteration ``k=0,…`` until the `stopping_criterion=` is fulfilled.
 
 1. compute a step size ``α_k = \frac{⟨ r^{(k)}, \mathcal A[r^{(k)}] ⟩_p}{\lVert \mathcal A[d^{(0)}] \rVert_p}
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}
@@ -114,9 +139,8 @@ performed the following steps at iteration ``k=0,…``:
 7. Update  ``Y^{(0)} = -Z + β_k Y^{(k})`` the evaluated ``\mamthcal A[d^{(k)]``
 8. increase ``k`` to ``k+1``.
 
-until some stopping criterion is met.
-
 # Input
+
 * `TpM` the [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`) as the domain
 * `A` a symmetric linear operator on the tangent space `(M, p, X) -> Y`
 * `b` a vector field on the tangent space `(M, p) -> X`
@@ -124,14 +148,32 @@ until some stopping criterion is met.
 
 # Keyword arguments
 
+* `evaluation` specify whether `A` and `b` are implemented allocating or in-place
 * `stopping_criterion::`[`StoppingCriterion`]`=`[`StopAfterIteration`(`[`manifold_dimension`](@extref ManifoldsBase.manifold_dimension)`(TpM)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`
 
+# Output
+
+the obtained (approximate) minimizer ``X^*``.
+To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
 """
+conjugate_residual(TpM::TangentSpace, args...; kwargs...)
+
 function conjugate_residual(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, x0; kwargs...
+    TpM::TangentSpace,
+    A,
+    b,
+    X=rand(TpM);
+    evaluation::AbstractEvaluationType=AllocatingEvaluation,
+    kwargs...,
 )
-    y0 = copy(TpM, x0)
-    return conjugate_residual!(TpM, slso, y0; kwargs...)
+    slso = SymmetricLinearSystemObjective(A, b; evaluation=evaluation, kwargs...)
+    return conjugate_residual(TpM, slso, X; evaluation=evaluation, kwargs...)
+end
+function conjugate_residual(
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=rand(TpM); kwargs...
+)
+    Y = copy(TpM, X)
+    return conjugate_residual!(TpM, slso, Y; kwargs...)
 end
 
 function conjugate_residual!(
@@ -156,8 +198,6 @@ function initialize_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
 )
     TpM = get_manifold(amp)
-    #zero_vector!(base_manifold(TpM), crs.X, base_point(TpM))
-    # Compute first residual: - b - A[X]
     get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
     crs.r *= -1
     crs.r .-= get_b(TpM, get_objective(amp), crs.X)
@@ -177,10 +217,10 @@ function step_solver!(
     p = base_point(TpM)
     crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
     crs.X += crs.α * crs.d
-    rAr = inner(M, p, crs.r, crs.Ar)
+    crs.rAr = inner(M, p, crs.r, crs.Ar)
     crs.r -= crs.α * crs.Ad
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    crs.β = inner(M, p, crs.r, crs.Ar) / rAr
+    crs.β = inner(M, p, crs.r, crs.Ar) / crs.rAr
     crs.d = crs.r + crs.β * crs.d
     crs.Ad = crs.Ar + crs.β * crs.Ad
     return crs

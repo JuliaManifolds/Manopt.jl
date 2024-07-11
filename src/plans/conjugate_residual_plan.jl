@@ -6,6 +6,7 @@ Model the objective
 ```math
 f(X) = \frac{1}{2} \lVert \mathcal A[X] + b \rVert_p^2,\qquad X ∈ T_p\mathcal M,
 ```
+
 defined on the tangent space ``T_p\mathcal M`` at ``p`` on the manifold ``\mathcal M``.
 
 In other words this is an objective to solve ``\mathcal A(p)[X] = -b(p)``
@@ -25,6 +26,7 @@ and similarly ``b`` can either be a function `(M, p) -> X` or `(M, X, p) -> X`
 
     SymmetricLinearSystemObjective(A, b; evaluation=AllocatingEvaluation())
 
+Generate the objective specifying whether the two parts work allocating or in-place.
 """
 mutable struct SymmetricLinearSystemObjective{E<:AbstractEvaluationType,TA,T} <:
                AbstractManifoldObjective{E}
@@ -33,7 +35,7 @@ mutable struct SymmetricLinearSystemObjective{E<:AbstractEvaluationType,TA,T} <:
 end
 
 function SymmetricLinearSystemObjective(
-    A::TA, b::T; evaluation::E=AllocatingEvaluation()
+    A::TA, b::T; evaluation::E=AllocatingEvaluation(), kwargs...
 ) where {TA,T,E<:AbstractEvaluationType}
     return SymmetricLinearSystemObjective{E,TA,T}(A, b)
 end
