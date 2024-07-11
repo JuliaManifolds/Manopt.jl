@@ -16,7 +16,7 @@
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
 * `retraction_method`: the retraction method to use on `M`.
 * `stepsize::`[`Stepsize`](@ref): the stepsize to use
-* `step_objectve::AbstractManoptObjective`: the objective to use in the step size
+* `step_problem::AbstractManoptObjective`: the problem used in the step size
 * `centrality_condition`: add a further check to accept steps in the `stepsize`
 
 # Constructor
@@ -41,14 +41,13 @@ are used to fill in reasonable defaults for the keywords.
 mutable struct InteriorPointNewtonState{
     P,
     T,
-    Pr<:AbstractManoptProblem,
-    St<:AbstractManoptSolverState,
+    Pr<:Union{AbstractManoptProblem,F} where {F},
+    St<:Union{AbstractManoptSolverState,AbstractEvaluationType},
     R,
     TStop<:StoppingCriterion,
-    TSObj<:AbstractManifoldGradientObjective,
-    F,
     TRTM<:AbstractRetractionMethod,
     TStepsize<:Stepsize,
+    TStepPr<:AbstractManoptProblem,
 } <: AbstractHessianSolverState
     p::P
     sub_problem::Pr
@@ -62,8 +61,7 @@ mutable struct InteriorPointNewtonState{
     stop::TStop
     retraction_method::TRTM
     stepsize::TStepsize
-    step_objective::TSObj
-    step_centrality::F
+    step_problem::TStepPr
     function InteriorPointNewtonState(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
@@ -78,33 +76,35 @@ mutable struct InteriorPointNewtonState{
         σ::R=calculate_σ(M, cmo, p, μ, λ, s),
         stop::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::RTM=default_retraction_method(M),
-        stepsize::S=InteriorPointLinesearch(
-            M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s));
-            retraction_method=default_retraction_method(
-                M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s))
-            ),
-            initial_stepsize=1.0,
-        ),
-        step_objective::SCO=ManifoldGradientObjective(
+        step_objective=ManifoldGradientObjective(
             KKTVectorFieldNormSq(cmo, μ, λ, s),
             KKTVectorFieldNormSqGradient(cmo, μ, λ, s);
             evaluation=InplaceEvaluation(),
         ),
+        step_problem::StepPr=DefaultManoptProblem(
+            M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)), step_objective
+        ),
         centrality_condition::F=(N, p) -> true, # Todo
+        stepsize::S=ArmijoLinesearch(
+            get_manifold(step_problem);
+            retraction_method=default_retraction_method(get_manifold(step_problem)),
+            initial_stepsize=1.0,
+            additional_decrease_condition=centrality_condition,
+        ),
         kwargs...,
     ) where {
         P,
+        T,
         Pr,
         St,
-        T,
         R,
         F,
         SC<:StoppingCriterion,
-        SCO<:AbstractManifoldGradientObjective,
+        StepPr<:AbstractManoptProblem,
         RTM<:AbstractRetractionMethod,
         S<:Stepsize,
     }
-        ips = new{P,T,Pr,St,R,SC,SCO,F,RTM,S}()
+        ips = new{P,T,Pr,St,R,SC,RTM,S,StepPr}()
         ips.p = p
         ips.sub_problem = sub_problem
         ips.sub_state = sub_state
@@ -117,8 +117,8 @@ mutable struct InteriorPointNewtonState{
         ips.stop = stop
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
-        ips.step_objective = step_objective
-        ips.step_centrality = centrality_condition
+        #ips.step_centrality = centrality_condition
+        ips.step_problem = step_problem
         return ips
     end
 end

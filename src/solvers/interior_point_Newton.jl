@@ -237,22 +237,25 @@ function interior_point_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    _N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)),
     sub_kwargs=(;),
     _sub_M=M × Rn(length(λ)),
     _sub_p=rand(_sub_M),
-    step_objective = ManifoldGradientObjective(
+    centrality_condition=ConstraintLineSearchCheckFunction(
+        cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s), 0.1
+    ), # TODO
+    step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo, μ, λ, s),
-        KKTVectorFieldNormSqGradient(cmo, μ, λ, s),
+        KKTVectorFieldNormSqGradient(cmo, μ, λ, s);
         evaluation=evaluation,
     ),
-    stepsize::Stepsize=InteriorPointLinesearch(
-        _N;
-        retraction_method=default_retraction_method(_N),
-        additional_decrease_condition=ConstraintLineSearchCheckFunction(
-            cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s) , 0.1
-        ),
+    step_problem=DefaultManoptProblem(
+        M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)), step_objective
+    ),
+    stepsize::Stepsize=ArmijoLinesearch(
+        get_manifold(step_problem);
+        retraction_method=default_retraction_method(get_manifold(step_problem)),
         initial_stepsize=1.0,
+        additional_decrease_condition=centrality_condition,
     ),
     sub_objective=decorate_objective!(
         TangentSpace(_sub_M, _sub_p),
@@ -317,7 +320,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     q = base_point(get_manifold(ips.sub_problem))
     copyto!(N[1], q[N, 1], ips.p)
     copyto!(N[2], q[N, 2], ips.λ)
-    set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), zero_vector(N,q))
+    set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), zero_vector(N, q))
 
     set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
 
