@@ -14,6 +14,12 @@ conjugate_residual
 ConjugateResidualState
 ```
 
+# Objetive
+
+```@docs
+SymmetricLinearSystemObjective
+```
+
 ## Literature
 
 ```@bibliography

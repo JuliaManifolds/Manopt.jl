@@ -110,9 +110,9 @@ function show(io::IO, crs::ConjugateResidualState)
 end
 
 @doc raw"""
-    conjugate_residual(TpM::TangentSpace, A, b, p=rand(TpM)) # TODO
+    conjugate_residual(TpM::TangentSpace, A, b, p=rand(TpM))
     conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(TpM))
-    conjugate_residual!(TpM::TangentSpace, A, b, p) # TODO
+    conjugate_residual!(TpM::TangentSpace, A, b, p)
     conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
 
 Compute the solution of ``\mathcal A(p)[X] = -b(p)``, where
@@ -124,19 +124,19 @@ Compute the solution of ``\mathcal A(p)[X] = -b(p)``, where
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initalised with ``X^{(0)}`` as
 
-* the initial residual ``r^{(0)} = -b(p) - \mathcal A[X^{(0)}]``
+* the initial residual ``r^{(0)} = -b(p) - \mathcal A(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
-* initialize ``Y^{(0)} = \mathcal A[X^{(0)}]
+* initialize ``Y^{(0)} = \mathcal A(p)[X^{(0)}]``
 
 performed the following steps at iteration ``k=0,…`` until the `stopping_criterion=` is fulfilled.
 
-1. compute a step size ``α_k = \frac{⟨ r^{(k)}, \mathcal A[r^{(k)}] ⟩_p}{\lVert \mathcal A[d^{(0)}] \rVert_p}
-2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}
+1. compute a step size ``α_k = \displaystyle\frac{\langle r^{(k)}, \mathcal A(p)[r^{(k)}] \rangle_p}{\langle \mathcal A(p)[d^{(k)}], \mathcal A(p)[d^{(k)}] \rangle_p}``
+2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
 2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
-4. compute ``Z = \mathcal A[r^{(k+1)}]``
-5. Update the conjugate coefficient ``β_k = \frac{⟨ r^{(k+1)}, \mathcal A[r^{(k+1)}] ⟩_p}{⟨ r^{(k)}, \mathcal A[r^{(k)}] ⟩_p}
+4. compute ``Z = \mathcal A(p)[r^{(k+1)}]``
+5. Update the conjugate coefficient ``β_k = \displaystyle\frac{\langle r^{(k+1)}, \mathcal A(p)[r^{(k+1)}] \rangle_p}{\langle r^{(k)}, \mathcal A(p)[r^{(k)}] \rangle_p}``
 6. Update the conjugate direction ``d^{(k+1)} = -r^{(k+1)} + β_kd^{(k)}``
-7. Update  ``Y^{(0)} = -Z + β_k Y^{(k})`` the evaluated ``\mamthcal A[d^{(k)]``
+7. Update  ``Y^{(0)} = -Z + β_k Y^{(k})``, the evaluated ``\mamthcal A[d^{(k)]``
 8. increase ``k`` to ``k+1``.
 
 # Input

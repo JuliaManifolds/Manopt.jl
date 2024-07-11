@@ -428,6 +428,7 @@ export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
+export SymmetricLinearSystemObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate

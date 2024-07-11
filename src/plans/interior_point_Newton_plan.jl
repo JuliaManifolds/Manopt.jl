@@ -30,7 +30,7 @@
         kwargs...
     )
 
-Initialize the state, where both the [`AbstractManifold`](@extref) and the [`ConstrainedManifoldObjective`](@ref)
+Initialize the state, where both the [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) and the [`ConstrainedManifoldObjective`](@ref)
 are used to fill in reasonable defaults for the keywords.
 
 # Input

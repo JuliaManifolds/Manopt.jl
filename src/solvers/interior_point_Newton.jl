@@ -238,20 +238,17 @@ function interior_point_Newton!(
                                           StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     _N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)),
+    sub_kwargs=(;),
+    _sub_M=M × Rn(length(λ)),
+    _sub_p=rand(_sub_M),
     stepsize::Stepsize=InteriorPointLinesearch(
         _N;
         retraction_method=default_retraction_method(_N),
         additional_decrease_condition=ConstraintLineSearchCheckFunction(
-            cmo,
-            length(μ) * minimum(μ .* s) / sum(μ .* s),
-            sum(μ .* s) / sqrt(MeritFunction(_N, cmo, p, μ, λ, s)),
-            0.1,
+            cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s), 0.1
         ),
         initial_stepsize=1.0,
     ),
-    sub_kwargs=(;),
-    _sub_M=M × Rn(length(λ)),
-    _sub_p=rand(_sub_M),
     sub_objective=decorate_objective!(
         TangentSpace(_sub_M, _sub_p),
         SymmetricLinearSystemObjective(
