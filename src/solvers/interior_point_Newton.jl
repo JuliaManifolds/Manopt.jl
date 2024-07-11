@@ -60,7 +60,7 @@ the constraints are further fulfilled.
 * `stepsize=`[`InteriorPointLinesearch`](@ref)`()`:
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
-* `sub_problem=TODO`: provide a problem for the subsolver
+* `sub_problem=TODO`: provide a problem for the subsolver, which is assumed to work on the tangent space of `\mathcal M \times ℝ^n`
 * `sub_state=TODO`: a state specifying the subsolver
 
 # Output
@@ -241,11 +241,16 @@ function interior_point_Newton!(
     sub_kwargs=(;),
     _sub_M=M × Rn(length(λ)),
     _sub_p=rand(_sub_M),
+    step_objective = ManifoldGradientObjective(
+        KKTVectorFieldNormSq(cmo, μ, λ, s),
+        KKTVectorFieldNormSqGradient(cmo, μ, λ, s),
+        evaluation=evaluation,
+    ),
     stepsize::Stepsize=InteriorPointLinesearch(
         _N;
         retraction_method=default_retraction_method(_N),
         additional_decrease_condition=ConstraintLineSearchCheckFunction(
-            cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s), 0.1
+            cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s) , 0.1
         ),
         initial_stepsize=1.0,
     ),
@@ -257,7 +262,7 @@ function interior_point_Newton!(
         ),
         sub_kwargs...,
     ),
-    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(5) |
+    sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopWhenGradientNormLess(1e-5),
     sub_state::St=decorate_state!(
         ConjugateResidualState(
@@ -275,7 +280,7 @@ function interior_point_Newton!(
     St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
     Pr<:Union{F,AbstractManoptProblem} where {F},
 }
-    !is_feasible(M, cmo, p) && throw(ErrorException("Starting point p must be feasible."))
+    !is_feasible(M, cmo, p; error=:error)
     dcmo = decorate_objective!(M, cmo; kwargs...)
     dmp = DefaultManoptProblem(M, dcmo)
     ips = InteriorPointNewtonState(
@@ -304,22 +309,15 @@ end
 function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, i)
     M = get_manifold(amp)
     cmo = get_objective(amp)
-
     m, n = length(ips.μ), length(ips.λ)
-    g = get_inequality_constraints(amp, ips.p)
-    grad_g = get_grad_inequality_constraints(amp, ips.p)
+    g = get_inequality_constraint(amp, ips.p, :)
+    grad_g = get_grad_inequality_constraint(amp, ips.p, :)
 
-    # This should not be necesary, since the subproblem knows this domain
-    N = M × ℝ^n
-    q = rand(N)
+    N = base_manifold(get_manifold(ips.sub_problem))
+    q = base_point(get_manifold(ips.sub_problem))
     copyto!(N[1], q[N, 1], ips.p)
     copyto!(N[2], q[N, 2], ips.λ)
-    TpM = TangentSpace(M, ips.p)
-    TqN = TangentSpace(N, q)
-
-    # make deterministic as opposed to random?
-
-    set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), rand(N; vector_at=q))
+    set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), zero_vector(N,q))
 
     set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
 
@@ -328,8 +326,6 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
     set_manopt_parameter!(ips.sub_problem, :Objective, :barrier_param, ips.ρ * ips.σ)
     # product manifold on which to perform linesearch
-    K = M × ℝ^m × ℝ^n × ℝ^m
-    X = allocate_result(K, rand)
 
     Y = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
     Xp, Xλ = Y[N, 1], Y[N, 2]
@@ -341,6 +337,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
         Xμ = (b .- ips.μ .* (ips.s + Xs)) ./ ips.s
     end
 
+    # How to find K in a good way? -> move that to setting something in the stepsize?
+    K = M × Rn(m) × Rn(n) × Rn(m)
+    X = allocate_result(K, rand)
     copyto!(K[1], X[N, 1], Xp)
     (m > 0) && (copyto!(K[2], X[K, 2], Xμ))
     (n > 0) && (copyto!(K[3], X[K, 3], Xλ))
