@@ -1,25 +1,19 @@
-using Manifolds, Manopt, LinearAlgebra, Random
+using Manifolds, Manopt, Test
 
-M = Manifolds.Sphere(2)
-p = rand(M)
-TpM = TangentSpace(M, p)
+@testset "Conjugate Residual" begin
+    M = ℝ^2
+    p = [1.0, 1.0]
+    TpM = TangentSpace(M, p)
 
-A = (M, p, X) -> [2.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 2.0] * X
-b = (M, p) -> [2.0, -1.0, 0.0]
+    Am = [2.0 1.0; 1.0 4.0]
+    bv = [1.0, 2.0]
+    ps = Am \ (-bv)
+    X0 = [3.0, 4.0]
+    A(M, X, V) = Am * V
+    b(M, p) = bv
 
-o = Manopt.SymmetricLinearSystemObjective(A, b)
-
-record = [:Iterate]
-
-X0 = rand(TpM)
-
-res = conjugate_residual(
-    TpM,
-    o,
-    X0;
-    stop=StopWhenGradientNormLess(1e-5) | StopAfterIteration(20),
-    record=record,
-    return_state=true,
-)
-
-rec = get_record(res)
+    slso = Manopt.SymmetricLinearSystemObjective(A, b)
+    pT = Manopt.conjugate_residual(TpM, slso, X0)
+    @test norm(ps - pT) < 3e-16
+    @test get_cost(TpM, slso, pT) < 5e-16
+end

@@ -64,24 +64,21 @@ function get_cost(
     return 0.5 * norm(M, p, W + Y)^2
 end
 
-function get_gradient(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
-)
-    M = base_manifold(TpM)
-    p = base_point(TpM)
-    # Evaluate A[X] - b
-    return slso.A!!(M, p, X) + slso.b!!(M, p)
+function get_b(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X)
+    return slso.b!!(base_manifold(TpM), base_point(TpM))
 end
-function get_gradient(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X
-)
+function get_b(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X)
     M = base_manifold(TpM)
     p = base_point(TpM)
     Y = zero_vector(M, p)
-    W = copy(M, p, Y)
-    slso.b!!(M, Y, p)
-    slso.A!!(M, W, p, X)
-    return slso.A!!(M, p, X) + slso.b!!(M, p)
+    return slso.b!!(M, Y, p)
+end
+
+function get_gradient(
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X
+)
+    p = base_point(TpM)
+    return get_hessian(TpM, slso, p, X) + get_b(TpM, slso, X)
 end
 function get_gradient!(
     TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
@@ -127,7 +124,7 @@ function get_hessian!(
     copyto!(M, W, p, slso.A!!(M, p, V))
     return W
 end
-function get_hessian(
+function get_hessian!(
     TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
 )
     return slso.A!!(base_manifold(TpM), W, base_point(TpM), V)

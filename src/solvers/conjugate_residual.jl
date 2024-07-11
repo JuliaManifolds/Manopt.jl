@@ -25,7 +25,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         slso::SymmetricLinearSystemObjective;
         X::T=rand(TpM),
         r::T=get_gradient(TpM, slso, X),
-        d::T=copy(TpM,r),
+        d::T=copy(TpM, r),
         Ar::T=get_hessian(TpM, slso, X, r),
         Ad::T=copy(TpM, Ar),
         α::R=0.0,
@@ -140,8 +140,9 @@ function initialize_solver!(
 )
     TpM = get_manifold(amp)
     zero_vector!(base_manifold(TpM), crs.X, base_point(TpM))
-    get_gradient!(amp, crs.r, crs.X)
-    crs.r *=-1
+    # Compute first residual: -b - A[X]
+    crs.r -= get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
+    crs.r .-= get_b(TpM, get_objective(amp), crs.X)
     copyto!(TpM, crs.d, crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(TpM, crs.Ad, crs.Ar)
@@ -153,28 +154,17 @@ end
 function step_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i
 )
-    println("# $i")
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    println("r: ", crs.r, " Ar:", crs.Ar, "Ad", crs.Ad)
     crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
-    println("α:", crs.α, "(", inner(M, p, crs.Ad, crs.Ad), ")")
     crs.X += crs.α * crs.d
-    println("X: ", crs.X)
     rAr = inner(M, p, crs.r, crs.Ar)
     crs.r -= crs.α * crs.Ad
-    println("r: ", crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    println("Ar: ", crs.Ar)
     crs.β = inner(M, p, crs.r, crs.Ar) / rAr
-    println("β: ", crs.β)
     crs.d = crs.r + crs.β * crs.d
-    println("d: ", crs.d)
-    println("-Ar: ", crs.Ar)
-    println("-Ad: ", crs.Ad)
     crs.Ad = crs.Ar + crs.β * crs.Ad
-    println("Ad: ", crs.Ad)
     return crs
 end
 
