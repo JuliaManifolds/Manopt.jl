@@ -1,12 +1,23 @@
 @doc raw"""
     ConjugateResidualState{T,R,TStop<:StoppingCriterion} <: AbstractManoptSolverState
 
-
+* X::T
+* r::T
+* b::T
+* r_old::T
+* d::T
+* Ar::T
+* Ar_old::T
+* Ad::T
+* α::R
+* β::R
+* stop::TStop
 """
 mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
                AbstractManoptSolverState
     X::T
     r::T
+    b::T
     r_old::T
     d::T
     Ar::T
@@ -19,9 +30,10 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         TpM::TangentSpace,
         slso::SymmetricLinearSystemObjective;
         X::T=rand(TpM),
-        r::T=get_gradient(TpM, slso, X), # fix
+        b::T=get_gradient(TpM, slso, X),
+        r::T=copy(TpM, b),
         d::T=r,
-        Ar::T=get_hessian(TpM, slso, X, r), # fix
+        Ar::T=get_hessian(TpM, slso, X, r),
         Ad::T=Ar,
         α::R=0.0,
         β::R=0.0,
@@ -32,11 +44,12 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         p = base_point(TpM)
         crs = new{T,R,SC}()
         crs.X = X
+        crs.b = b
         crs.r = r
-        crs.r_old = copy(M, p, r)
+        crs.r_old = copy(TpM, r)
         crs.d = d
         crs.Ar = Ar
-        crs.Ar_old = copy(M, p, Ar)
+        crs.Ar_old = copy(TpM, Ar)
         crs.Ad = Ad
         crs.α = α
         crs.β = β
@@ -137,12 +150,13 @@ function initialize_solver!(
 )
     M = base_manifold(get_manifold(amp))
     p = base_point(get_manifold(amp))
-    crs.X = rand(get_manifold(amp))
-    get_gradient!(amp, crs.r, crs.X)
+    get_gradient!(amp, crs.b, crs.X)
+    get_hessian!(amp, crs.r, p, crs.X)
+    crs.r = -crs.b - crs.r
     copyto!(M, p, crs.d, crs.r)
     copyto!(M, p, crs.r_old, crs.r)
     copyto!(M, p, crs.Ar_old, crs.Ar)
-    crs.Ar = get_hessian(amp, crs.X, crs.r)
+    get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(M, p, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0
@@ -162,11 +176,11 @@ function step_solver!(
     copyto!(M, crs.r_old, p, crs.r)
     crs.r -= crs.α * crs.Ad
     copyto!(M, crs.Ar_old, p, crs.Ar)
-    crs.Ar = get_hessian(amp, crs.X, crs.r)
+    get_hessian!(amp, crs.Ar, crs.X, crs.r)
     den = inner(M, p, crs.r_old, crs.Ar_old)
     crs.β = inner(M, p, crs.r, crs.Ar) / (den == 0 ? 1.0 : den)
-    crs.d = -crs.r + crs.β * crs.d
-    crs.Ad = -crs.Ar + crs.β * crs.Ad
+    crs.d = crs.r + crs.β * crs.d
+    crs.Ad = crs.Ar + crs.β * crs.Ad
     return crs
 end
 
