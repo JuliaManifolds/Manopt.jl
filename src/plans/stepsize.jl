@@ -308,20 +308,25 @@ function (a::ArmijoLinesearch)(
 )
     p = get_iterate(s)
     X = get_gradient!(mp, get_gradient(s), p)
+    return a(mp, p, X, η; initial_guess=a.initial_guess(mp, s, i, a.last_stepsize))
+end
+function (a::ArmijoLinesearch)(
+    mp::AbstractManoptProblem, p, X, η; initial_guess=1.0, kwargs...
+)
+    l = norm(get_manifold(mp), p, η)
     (a.last_stepsize, a.message) = linesearch_backtrack!(
         get_manifold(mp),
         a.candidate_point,
         (M, p) -> get_cost_function(get_objective(mp))(M, p),
         p,
         X,
-        a.initial_guess(mp, s, i, a.last_stepsize),
+        initial_guess,
         a.sufficient_decrease,
         a.contraction_factor,
         η;
         retraction_method=a.retraction_method,
-        stop_when_stepsize_less=a.stop_when_stepsize_less / norm(get_manifold(mp), p, η),
-        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds /
-                                   norm(get_manifold(mp), p, η),
+        stop_when_stepsize_less=a.stop_when_stepsize_less / l,
+        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds / l,
         stop_increasing_at_step=a.stop_increasing_at_step,
         stop_decreasing_at_step=a.stop_decreasing_at_step,
         additional_decrease_condition=a.additional_decrease_condition,

@@ -28,9 +28,6 @@ KKTVectorFieldNormSqGradient
 
 ## Helpers
 
-```@docs
-Manopt.InteriorPointLinesearch
-```
 ## References
 
 ```@bibliography

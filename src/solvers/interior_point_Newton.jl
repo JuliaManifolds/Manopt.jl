@@ -57,7 +57,7 @@ the constraints are further fulfilled.
 * `σ= μ's/length(μ)`: ? (TODO find details about barrier parameter)
 * `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
 * `retraction_method=[`default_retraction_method`](@extref)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
-* `stepsize=`[`InteriorPointLinesearch`](@ref)`()`:
+* `stepsize=` TODO
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
 * `sub_problem=TODO`: provide a problem for the subsolver, which is assumed to work on the tangent space of `\mathcal M \times ℝ^n`
@@ -341,14 +341,21 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     end
 
     # How to find K in a good way? -> move that to setting something in the stepsize?
-    K = M × Rn(m) × Rn(n) × Rn(m)
-    X = allocate_result(K, rand)
-    copyto!(K[1], X[N, 1], Xp)
-    (m > 0) && (copyto!(K[2], X[K, 2], Xμ))
-    (n > 0) && (copyto!(K[3], X[K, 3], Xλ))
-    (m > 0) && (copyto!(K[4], X[K, 4], Xs))
+    N = get_manifold(ips.step_problem)
+    # generate current full iterate
+    q = allocate_result(N, rand)
+    copyto!(N[1], q[N, 1], get_iterate(ips))
+    copyto!(N[2], q[N, 2], ips.μ)
+    copyto!(N[3], q[N, 3], ips.λ)
+    copyto!(N[4], q[N, 4], ips.s)
+    # generate current full gradient
+    X = allocate_result(N, zero_vector)
+    copyto!(N[1], X[N, 1], Xp)
+    (m > 0) && (copyto!(N[2], X[N, 2], Xμ))
+    (n > 0) && (copyto!(N[3], X[N, 3], Xλ))
+    (m > 0) && (copyto!(N[4], X[N, 4], Xs))
     # determine stepsize
-    α = ips.stepsize(amp, ips, i, X)
+    α = ips.stepsize(ips.step_problem, q, X, -X)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
     if m > 0
