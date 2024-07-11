@@ -61,7 +61,7 @@ function get_cost(
     W = copy(M, p, Y)
     slso.b!!(M, Y, p)
     slso.A!!(M, W, p, X)
-    return 0.5 * norm(M, p, W - Y)^2
+    return 0.5 * norm(M, p, W + Y)^2
 end
 
 function get_gradient(
@@ -100,7 +100,7 @@ function get_gradient!(
     W = copy(M, p, Y)
     slso.b!!(M, Y, p)
     slso.A!!(M, W, p, X)
-    Y .-= W
+    Y .+= W
     return Y
 end
 
@@ -124,7 +124,7 @@ function get_hessian!(
 )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    copyto!(M, p, W, slso.A!!(M, p, V))
+    copyto!(M, W, p, slso.A!!(M, p, V))
     return W
 end
 function get_hessian(

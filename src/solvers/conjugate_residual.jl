@@ -3,11 +3,8 @@
 
 * X::T
 * r::T
-* b::T
-* r_old::T
 * d::T
 * Ar::T
-* Ar_old::T
 * Ad::T
 * α::R
 * β::R
@@ -17,11 +14,8 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
                AbstractManoptSolverState
     X::T
     r::T
-    b::T
-    r_old::T
     d::T
     Ar::T
-    Ar_old::T
     Ad::T
     α::R
     β::R
@@ -30,11 +24,10 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         TpM::TangentSpace,
         slso::SymmetricLinearSystemObjective;
         X::T=rand(TpM),
-        b::T=get_gradient(TpM, slso, X),
-        r::T=copy(TpM, b),
-        d::T=r,
+        r::T=get_gradient(TpM, slso, X),
+        d::T=copy(TpM,r),
         Ar::T=get_hessian(TpM, slso, X, r),
-        Ad::T=Ar,
+        Ad::T=copy(TpM, Ar),
         α::R=0.0,
         β::R=0.0,
         stop::SC=StopAfterIteration(5) | StopWhenGradientNormLess(1e-8),
@@ -44,12 +37,9 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         p = base_point(TpM)
         crs = new{T,R,SC}()
         crs.X = X
-        crs.b = b
         crs.r = r
-        crs.r_old = copy(TpM, r)
         crs.d = d
         crs.Ar = Ar
-        crs.Ar_old = copy(TpM, Ar)
         crs.Ad = Ad
         crs.α = α
         crs.β = β
@@ -64,9 +54,9 @@ function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, X)
     return crs
 end
 
-get_gradient(crs::ConjugateResidualState) = -crs.r
+get_gradient(crs::ConjugateResidualState) = crs.r
 function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
-    crs.r = -r
+    crs.r = r
     return crs
 end
 
@@ -148,16 +138,13 @@ end
 function initialize_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState
 )
-    M = base_manifold(get_manifold(amp))
-    p = base_point(get_manifold(amp))
-    get_gradient!(amp, crs.b, crs.X)
-    get_hessian!(amp, crs.r, p, crs.X)
-    crs.r = -crs.b - crs.r
-    copyto!(M, p, crs.d, crs.r)
-    copyto!(M, p, crs.r_old, crs.r)
-    copyto!(M, p, crs.Ar_old, crs.Ar)
+    TpM = get_manifold(amp)
+    zero_vector!(base_manifold(TpM), crs.X, base_point(TpM))
+    get_gradient!(amp, crs.r, crs.X)
+    crs.r *=-1
+    copyto!(TpM, crs.d, crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    copyto!(M, p, crs.Ad, crs.Ar)
+    copyto!(TpM, crs.Ad, crs.Ar)
     crs.α = 0.0
     crs.β = 0.0
     return crs
@@ -166,21 +153,28 @@ end
 function step_solver!(
     amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, i
 )
+    println("# $i")
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    den = inner(M, p, crs.Ad, crs.Ad)
-    crs.α = inner(M, p, crs.r, crs.Ar) / (den == 0 ? 1.0 : den)
-    println("α:", crs.α, "(", den, ")")
+    println("r: ", crs.r, " Ar:", crs.Ar, "Ad", crs.Ad)
+    crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
+    println("α:", crs.α, "(", inner(M, p, crs.Ad, crs.Ad), ")")
     crs.X += crs.α * crs.d
-    copyto!(M, crs.r_old, p, crs.r)
+    println("X: ", crs.X)
+    rAr = inner(M, p, crs.r, crs.Ar)
     crs.r -= crs.α * crs.Ad
-    copyto!(M, crs.Ar_old, p, crs.Ar)
+    println("r: ", crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
-    den = inner(M, p, crs.r_old, crs.Ar_old)
-    crs.β = inner(M, p, crs.r, crs.Ar) / (den == 0 ? 1.0 : den)
+    println("Ar: ", crs.Ar)
+    crs.β = inner(M, p, crs.r, crs.Ar) / rAr
+    println("β: ", crs.β)
     crs.d = crs.r + crs.β * crs.d
+    println("d: ", crs.d)
+    println("-Ar: ", crs.Ar)
+    println("-Ad: ", crs.Ad)
     crs.Ad = crs.Ar + crs.β * crs.Ad
+    println("Ad: ", crs.Ad)
     return crs
 end
 
