@@ -64,19 +64,21 @@ function get_cost(
     return 0.5 * norm(M, p, W + Y)^2
 end
 
-function get_b(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X)
+function get_b(
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
+)
     return slso.b!!(base_manifold(TpM), base_point(TpM))
 end
-function get_b(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X)
+function get_b(
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X
+)
     M = base_manifold(TpM)
     p = base_point(TpM)
     Y = zero_vector(M, p)
     return slso.b!!(M, Y, p)
 end
 
-function get_gradient(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X
-)
+function get_gradient(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
     p = base_point(TpM)
     return get_hessian(TpM, slso, p, X) + get_b(TpM, slso, X)
 end

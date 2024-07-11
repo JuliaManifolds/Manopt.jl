@@ -30,7 +30,8 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         Ad::T=copy(TpM, Ar),
         α::R=0.0,
         β::R=0.0,
-        stop::SC=StopAfterIteration(5) | StopWhenGradientNormLess(1e-8),
+        stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
+                               StopWhenGradientNormLess(1e-8),
         kwargs...,
     ) where {T,R,SC<:StoppingCriterion}
         M = base_manifold(TpM)
@@ -43,7 +44,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         crs.Ad = Ad
         crs.α = α
         crs.β = β
-        crs.stop = stop
+        crs.stop = stopping_criterion
         return crs
     end
 end
@@ -84,25 +85,25 @@ function show(io::IO, crs::ConjugateResidualState)
 end
 
 @doc raw"""
-    conjugate_residual(TpM::TangentSpace, A, b, p=rand(M))
-    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(M))
-    conjugate_residual!(TpM::TangentSpace, A, b, p)
+    conjugate_residual(TpM::TangentSpace, A, b, p=rand(TpM)) # TODO
+    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(TpM))
+    conjugate_residual!(TpM::TangentSpace, A, b, p) # TODO
     conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
 
-Compute the solution of ``\mathcal A[X] = -b``, where
+Compute the solution of ``\mathcal A(p)[X] = -b(p)``, where
 
 * ``\mathcal A`` is a linear operator on ``T_p\mathcal M``
-* ``X, b ∈ T_p\mathcal M`` are tangent vectors.
+* ``b`` is a vector field on the manifold
+* ``X ∈ T_p\mathcal M`` are tangent vectors.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initalised with ``X^{(0)}`` as
 
-* the initial residual ``r^{(0)} = X^{(0)} + \mathcal A[X^{(0)}]``
+* the initial residual ``r^{(0)} = -b(p) - \mathcal A[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
 * initialize ``Y^{(0)} = \mathcal A[X^{(0)}]
 
-performed
-the following steps at iteration ``k=0,…``:
+performed the following steps at iteration ``k=0,…``:
 
 1. compute a step size ``α_k = \frac{⟨ r^{(k)}, \mathcal A[r^{(k)}] ⟩_p}{\lVert \mathcal A[d^{(0)}] \rVert_p}
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}
@@ -112,22 +113,38 @@ the following steps at iteration ``k=0,…``:
 6. Update the conjugate direction ``d^{(k+1)} = -r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(0)} = -Z + β_k Y^{(k})`` the evaluated ``\mamthcal A[d^{(k)]``
 8. increase ``k`` to ``k+1``.
+
+until some stopping criterion is met.
+
+# Input
+* `TpM` the [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`) as the domain
+* `A` a symmetric linear operator on the tangent space `(M, p, X) -> Y`
+* `b` a vector field on the tangent space `(M, p) -> X`
+
+
+# Keyword arguments
+
+* `stopping_criterion::`[`StoppingCriterion`]`=`[`StopAfterIteration`(`[`manifold_dimension`](@extref ManifoldsBase.manifold_dimension)`(TpM)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+
 """
 function conjugate_residual(
-    TpM::TangentSpace,
-    slso::SymmetricLinearSystemObjective,
-    x0;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, x0; kwargs...
 )
     y0 = copy(TpM, x0)
-    return conjugate_residual!(TpM, slso, y0; evaluation=evaluation, kwargs...)
+    return conjugate_residual!(TpM, slso, y0; kwargs...)
 end
 
 function conjugate_residual!(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, x0; kwargs...
-)
-    crs = ConjugateResidualState(TpM, slso; kwargs...)
+    TpM::TangentSpace,
+    slso::SymmetricLinearSystemObjective,
+    x0;
+    stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
+                           StopWhenGradientNormLess(1e-8),
+    kwargs...,
+) where {SC<:StoppingCriterion}
+    crs = ConjugateResidualState(
+        TpM, slso; stopping_criterion=stopping_criterion, kwargs...
+    )
     dslso = decorate_objective!(TpM, slso; kwargs...)
     dmp = DefaultManoptProblem(TpM, dslso)
     crs = decorate_state!(crs; kwargs...)
