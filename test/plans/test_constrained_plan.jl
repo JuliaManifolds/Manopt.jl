@@ -351,7 +351,25 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-
+    @testset "Lagrangian Cost, Grad and Hessian" begin
+        μ = [1.0, 1.0]
+        λ = [1.0]
+        s = [3.0, 4.0]
+        coh = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, hess_g=hess_g, h=h, grad_h=grad_h, hess_h=hess_h, M=M)
+        Lc = LagrangianCost(coh, μ, λ)
+        @test startswith(repr(mLc), "LagrangianCost")
+        Lg = LagrangianGradient(coh, μ, λ)
+        @test startswith(repr(mLg), "LagrangianGradient")
+        Lh = LagrangianHessian(coh, μ, λ)
+        @test startswith(repr(mLh), "LagrangianHessian")
+        @test Lc(M, p) == f(M, p) + g(M, p)'μ + h(M, p)'λ
+        @test Lg(M,p) ==gf + sum(gg .* μ) + sum(gh .* λ)
+        LX = zero_vector(M,p)
+        Lg(M, LX, p)
+        @test LX == Lg(M,p)
+        @test Lh(M, p, X) == hf + sum(hg .* μ) + sum(hh .* λ)
+        Lh(M, LX, p, X)
+        @test LX == Lh(M, p, X)
     @testset "Augmented Lagrangian Cost & Grad" begin
         μ = [1.0, 1.0]
         λ = [1.0]

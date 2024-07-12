@@ -398,10 +398,10 @@ mutable struct LagrangianCost{CO,T}
 end
 function (lc::LagrangianCost)(M, p)
     c = get_cost(M, lc.co, p)
-    g = get_inequality_constraint(M, L.co, p, :)
-    h = get_equality_constraint(M, L.co, p, :)
-    (length(g) > 0) && (c += sum(L.μ .* g))
-    (length(h) > 0) && (c += sum(L.λ .* h))
+    g = get_inequality_constraint(M, lc.co, p, :)
+    h = get_equality_constraint(M, lc.co, p, :)
+    (length(g) > 0) && (c += sum(lc.μ .* g))
+    (length(h) > 0) && (c += sum(lc.λ .* h))
     return c
 end
 function set_manopt_parameter!(lc::LagrangianCost, ::Val{:μ}, μ)
@@ -411,6 +411,9 @@ end
 function set_manopt_parameter!(lc::LagrangianCost, ::Val{:λ}, λ)
     lc.λ = λ
     return lc
+end
+function show(io::IO, lc::LagrangianCost)
+    return print(io, "LagrangianCost\n\twith μ=$(lc.μ), λ=$(lc.λ)")
 end
 
 @doc raw"""
@@ -470,6 +473,9 @@ function set_manopt_parameter!(lc::LagrangianGradient, ::Val{:λ}, λ)
     lc.λ = λ
     return lc
 end
+function show(io::IO, lg::LagrangianGradient)
+    return print(io, "LagrangianGradient\n\twith μ=$(lg.μ), λ=$(lg.λ)")
+end
 
 @doc raw"""
     LagrangianHessian{CO, V, T}
@@ -501,7 +507,6 @@ mutable struct LagrangianHessian{CO,T}
     μ::T
     λ::T
 end
-
 function (lc::LagrangianHessian)(M, p, X)
     Y = zero_vector(M, p)
     return lc(M, Y, p, X)
@@ -528,6 +533,9 @@ end
 function set_manopt_parameter!(lc::LagrangianHessian, ::Val{:λ}, λ)
     lc.λ = λ
     return lc
+end
+function show(io::IO, lh::LagrangianHessian)
+    return print(io, "LagrangianHessian\n\twith μ=$(lh.μ), λ=$(lh.λ)")
 end
 
 @doc raw"""

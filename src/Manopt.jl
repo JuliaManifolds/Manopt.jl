@@ -423,7 +423,7 @@ export equality_constraints_length,
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldJacobianAdjoint
 export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
-export LagrangianCost, LagrangianHessian, LagrangianHessian
+export LagrangianCost, LagrangianGradient, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective

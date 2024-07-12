@@ -355,7 +355,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     (n > 0) && (copyto!(N[3], X[N, 3], Xλ))
     (m > 0) && (copyto!(N[4], X[N, 4], Xs))
     # determine stepsize
-    α = ips.stepsize(ips.step_problem, q, X, -X)
+    α = ips.stepsize(ips.step_problem, q, -X, X;)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
     if m > 0
