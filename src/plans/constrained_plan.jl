@@ -446,22 +446,22 @@ mutable struct LagrangianGradient{CO,T}
     μ::T
     λ::T
 end
-function (lc::LagrangianGradient)(M, p)
+function (lg::LagrangianGradient)(M, p)
     X = zero_vector(M, p)
-    return lc(M, X, p)
+    return lg(M, X, p)
 end
-function (lc::LagrangianGradient)(M, X, p)
+function (lg::LagrangianGradient)(M, X, p)
     Y = copy(M, p, X)
-    get_gradient!(M, X, lc.co, p)
-    n = inequality_constraints_length(lc.co)
-    m = equality_constraints_length(lc.co)
+    get_gradient!(M, X, lg.co, p)
+    n = inequality_constraints_length(lg.co)
+    m = equality_constraints_length(lg.co)
     for i in 1:n
-        get_grad_inequality_constraint!(M, Y, lc.co, p, i)
-        X += lc.μ[i] * Y
+        get_grad_inequality_constraint!(M, Y, lg.co, p, i)
+        copyto!(M, X, p, X + lg.μ[i] * Y)
     end
     for j in 1:m
-        get_grad_equality_constraint!(M, Y, lc.co, p, j)
-        X += lc.λ[j] * Y
+        get_grad_equality_constraint!(M, Y, lg.co, p, j)
+        copyto!(M, X, p, X + lg.λ[j] * Y)
     end
     return X
 end
@@ -518,11 +518,11 @@ function (lc::LagrangianHessian)(M, Y, p, X)
     m = equality_constraints_length(lc.co)
     for i in 1:n
         get_hess_inequality_constraint!(M, Z, lc.co, p, X, i)
-        Y += lc.μ[i] * Z
+        copyto!(M, Y, p, Y + lc.μ[i] * Z)
     end
     for j in 1:m
-        get_grad_equality_constraint!(M, Z, lc.co, p, X, j)
-        Y += lc.λ[j] * Z
+        get_hess_equality_constraint!(M, Z, lc.co, p, X, j)
+        copyto!(M, Y, p, Y + lc.λ[j] * Z)
     end
     return Y
 end
