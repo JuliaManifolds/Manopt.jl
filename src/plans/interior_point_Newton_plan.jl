@@ -200,7 +200,7 @@ we reformulate the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-\mathcal L(p, μ, λ,) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
 ```
 
 in a perturbed / barrier method in a condensed form
@@ -211,13 +211,13 @@ and the Riemannian gradient of the Lagrangian with respect to the first paramete
 Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A[X,Y] = -b,\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+\mathcal A(p)[X,Y] = -b(p),\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
 ```
 where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator and
-this struct models the right hand side
+this struct models the right hand side ``b(p) ∈ T_p\mathcal M`` given by
 
 ```math
-b = \begin{pmatrix}
+b(p) = \begin{pmatrix}
 \operatorname{grad} f(p)
 + \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
 + \displaystyle\sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
@@ -225,7 +225,7 @@ b = \begin{pmatrix}
   μ_i(g_i(p)+s_i) + β - μ_is_i
 \bigr)\operatorname{grad} g_i(p)\\
 h(p)
-\end{pmatrix} ∈ T_p\mathcal M × ℝ^n
+\end{pmatrix}
 ```
 
 # Fields
@@ -233,7 +233,7 @@ h(p)
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
 * `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
 * `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::Vthe vector in ``ℝ^m`` of sclack variables
+* `s::V` the vector in ``ℝ^m`` of sclack variables
 * `β::R` the barrier parameter ``β∈ℝ``
 """
 mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R} <:
@@ -255,20 +255,21 @@ function (cKKTvf::CondensedKKTVectorField)(N::AbstractManifold, Y, q)
     p, μ, λ, s = q[N, 1], cKKTvf.μ, q[N, 2], cKKTvf.s
     β = cKKTvf.β
     m, n = length(μ), length(λ)
-    g = get_inequality_constraints(M, cmo, p)
-    h = get_equality_constraints(M, cmo, p)
+    # Revise to maybe element wise evals, especially for the gradients
+    g = get_inequality_constraint(M, cmo, p, :)
+    h = get_equality_constraint(M, cmo, p, :)
     grad_g = get_grad_inequality_constraint(M, cmo, p, :)
-    # grad_h = get_grad_equality_constraint(M, cmo, p, :)
-    copyto!(M, Y[N, 1], get_gradient(M, cmo, p))
-
-    ν = μ + (μ .* g .+ β) ./ s
+    grad_h = get_grad_equality_constraint(M, cmo, p, :)
+    # Lagrangian
+    get_gradient!(M, Y[N, 1], cmo, p) #grad f
+    (m > 0) && (Y[N, 1] += sum(μ .* grad_g))
+    (n > 0) && (Y[N, 1] += sum(λ .* grad_h))
+    # condensened last term
     (m > 0) && (
         Y[N, 1] += sum(
-            ((μ[i] * g[i] + β - μ[i] * s[i]) / s[i]) * grad_g[i] * ν[i] for i in 1:m
+            ((μ[i] * g[i] + β - μ[i] * s[i]) * μ[i] / s[i]) * grad_g[i] for i in 1:m
         )
     )
-    # I do not understand where this comes from
-    # (n > 0) && (X[N, 1] -= sum(grad_h[j] * λ[j] for j in 1:n))
     (n > 0) && (copyto!(N[2], Y[N, 2], h))
     return Y
 end
@@ -295,7 +296,7 @@ we reformulate the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-\mathcal L(p, μ, λ, s) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
 ```
 
 in a perturbed / barrier method enhanced as well as condensed form as using ``\operatorname{grad}_o L(p, μ, λ)``
@@ -345,6 +346,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         H_g = get_hess_inequality_constraint(M, cmo, p, Xp, :)
         # Summand of Hess L
         Y[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
+        # condensed term
         Y[N, 1] += sum([μ[i] / s[i] * inner(M, p, grad_g[i], Xp) * grad_g[i] for i in 1:m])
     end
     if n > 0
@@ -352,7 +354,9 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         H_h = get_hess_equality_constraint(M, cmo, p, Xp, :)
         # Summand of Hess L
         Y[N, 1] += sum([λ[j] * H_h[j] for j in 1:n])
+        # condensed term
         Y[N, 1] += sum([Xλ[j] * grad_h[j] for j in 1:n])
+        # condensed term in second part
         copyto!(N[2], Y[N, 2], [inner(M, p, grad_h[j], Xp) for j in 1:n])
     end
     return Y
@@ -694,7 +698,7 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     copyto!(N[2], q[N, 2], μ)
     copyto!(N[3], q[N, 3], λ)
     copyto!(N[4], q[N, 4], s)
-    return min(0.5, (KKTVectorFieldNormSq(cmo, μ, λ, s)(N,q))^(1 / 4))
+    return min(0.5, (KKTVectorFieldNormSq(cmo, μ, λ, s)(N, q))^(1 / 4))
 end
 mutable struct ConstraintLineSearchCheckFunction{CO}
     cmo::CO
@@ -705,11 +709,10 @@ end
 function (clcf::ConstraintLineSearchCheckFunction)(N, q)
     #p = q[N,1]
     μ = q[N, 2]
-    λ = q[N,3]
+    λ = q[N, 3]
     s = q[N, 4]
     KKTvf = KKTVectorFieldNormSq(clcf.cmo, μ, λ, s)
     (minimum(μ .* s) - clcf.γ * clcf.τ1 / length(μ) < 0) && return false
-    (sum(μ .* s) - clcf.γ * clcf.τ2 * sqrt(KKTvf(N, q)) < 0) &&
-        return false
+    (sum(μ .* s) - clcf.γ * clcf.τ2 * sqrt(KKTvf(N, q)) < 0) && return false
     return true
 end

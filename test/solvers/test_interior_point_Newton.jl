@@ -1,7 +1,7 @@
 using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 _debug_iterates_plot = false
-_debug_gradient_check = true
+_debug_gradient_check = false
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 println(eigvals(A))
@@ -76,8 +76,8 @@ if _debug_gradient_check
 end
 
 if _debug_iterates_plot
-    prepend!(rec, [p_0]);
-    rec .+= 0.005 * rec;
+    prepend!(rec, [p_0])
+    rec .+= 0.005 * rec
     #-------------------------------------------------------------------------------------------------#
     using GLMakie, Makie, GeometryTypes
     n = 30
@@ -114,7 +114,7 @@ if _debug_iterates_plot
     v2 = π2.(normgrads)
     v3 = π3.(normgrads)
 
-    scene = Scene();
+    scene = Scene()
     cam3d!(scene)
     range_f = (minimum(f_.(pts)), maximum(f_.(pts)))
 
