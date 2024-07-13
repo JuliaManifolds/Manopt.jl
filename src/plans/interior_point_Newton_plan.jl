@@ -563,7 +563,7 @@ function (KKTvfJa::KKTVectorFieldJacobianAdjoint)(N, Z, q, Y)
         get_grad_inequality_constraint!(M, Xt, KKTvfJa.cmo, p, i)
         Z[N, 1] += Y[N, 1][2] * Xt
         # set second components as well
-        Z[N, 2][i] = inner(M, p, Xt, X) + KKTvfJa.s[i] * Y[N, 4]
+        Z[N, 2][i] = inner(M, p, Xt, X) + KKTvfJa.s[i] * Y[N, 4][i]
     end
     for j in 1:n
         get_grad_equality_constraint!(M, Y, KKTvfJa.cmo, p, j)
@@ -674,39 +674,14 @@ function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, q)
     return Y
 end
 function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
-    Z = copy(M, q, Y)
-    KKTVectorField(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(M, Z, q)
+    Z = copy(N, q, Y)
+    KKTVectorField(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Z, q)
     KKTVectorFieldJacobianAdjoint(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Y, q)
     return Y
 end
 
 # -----------------------------------------------------------------------------
-# old code, old names
-#
-#
-# Subproblem gradient and hessian
-function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
-    return MeritFunction(N, cmo, q[N, 1], q[N, 2], q[N, 3], q[N, 4])
-end
-function MeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, q)
-    return MeritFunction(N, get_objective(cmo, true), q[N, 1], q[N, 2], q[N, 3], q[N, 4])
-end
-function MeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
-    M = N[1]
-    m, n = length(μ), length(λ)
-    g = get_inequality_constraint(M, cmo, p, :)
-    h = get_equality_constraint(M, cmo, p, :)
-    grad_g = get_grad_inequality_constraint(M, cmo, p, :)
-    grad_h = get_grad_equality_constraint(M, cmo, p, :)
-    grad_L = get_gradient(M, cmo, p)
-    (m > 0) && (grad_L += sum([μ[i] * grad_g[i] for i in 1:m]))
-    (n > 0) && (grad_L += sum([λ[j] * grad_h[j] for j in 1:n]))
-    ϕ = inner(M, p, grad_L, grad_L)
-    (m > 0) && (ϕ += norm(g + s)^2 + norm(μ .* s)^2)
-    (n > 0) && (ϕ += norm(h)^2)
-    return ϕ
-end
-
+# old code, old names - todo check / rename / document
 function calculate_σ(
     N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s
 )
@@ -719,41 +694,8 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     copyto!(N[2], q[N, 2], μ)
     copyto!(N[3], q[N, 3], λ)
     copyto!(N[4], q[N, 4], s)
-    return min(0.5, MeritFunction(N, cmo, q)^(1 / 4))
+    return min(0.5, (KKTVectorFieldNormSq(cmo, μ, λ, s)(N,q))^(1 / 4))
 end
-
-function GradMeritFunction(N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, q)
-    return GradMeritFunction(N, get_objective(cmo, true), q)
-end
-function GradMeritFunction(N::AbstractManifold, cmo::ConstrainedManifoldObjective, q)
-    M = N[1]
-    p, μ, λ, s = q[N, 1], q[N, 2], q[N, 3], q[N, 4]
-    m, n = length(μ), length(λ)
-    g = get_inequality_constraints(M, cmo, p)
-    h = get_equality_constraints(M, cmo, p)
-    grad_g = get_grad_inequality_constraints(M, cmo, p)
-    grad_h = get_grad_equality_constraints(M, cmo, p)
-    grad_L = get_gradient(M, cmo, p)
-    (m > 0) && (grad_L += sum([μ[i] * grad_g[i] for i in 1:m]))
-    (n > 0) && (grad_L += sum([λ[j] * grad_h[j] for j in 1:n]))
-    X = allocate_result(N, rand)
-    copyto!(M, X[N, 1], get_hessian(M, cmo, p, grad_L))
-    if m > 0
-        H_g = get_hess_inequality_constraint(M, cmo, p, grad_L, :)
-        X[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
-        X[N, 1] += sum([(g + s)[i] * grad_g[i] for i in 1:m])
-        copyto!(N[2], X[N, 2], [inner(M, p, grad_g[i], grad_L) for i in 1:m] + μ .* s .* s)
-        copyto!(N[4], X[N, 4], g + s + μ .* μ .* s)
-    end
-    if n > 0
-        H_h = get_hess_equality_constraint(M, cmo, p, grad_L, :)
-        X[N, 1] += sum([λ[j] * H_h[j] for i in 1:n])
-        X[N, 1] += sum([h[j] * grad_h[j] for j in 1:n])
-        copyto!(N[3], X[N, 3], [inner(M, p, grad_h[j], grad_L) for j in 1:n])
-    end
-    return 2 * X
-end
-
 mutable struct ConstraintLineSearchCheckFunction{CO}
     cmo::CO
     τ1::Float64
@@ -763,10 +705,11 @@ end
 function (clcf::ConstraintLineSearchCheckFunction)(N, q)
     #p = q[N,1]
     μ = q[N, 2]
-    #λ = q[N,3]
+    λ = q[N,3]
     s = q[N, 4]
+    KKTvf = KKTVectorFieldNormSq(clcf.cmo, μ, λ, s)
     (minimum(μ .* s) - clcf.γ * clcf.τ1 / length(μ) < 0) && return false
-    (sum(μ .* s) - clcf.γ * clcf.τ2 * sqrt(MeritFunction(N, clcf.cmo, q)) < 0) &&
+    (sum(μ .* s) - clcf.γ * clcf.τ2 * sqrt(KKTvf(N, q)) < 0) &&
         return false
     return true
 end

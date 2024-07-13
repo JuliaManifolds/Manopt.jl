@@ -1,4 +1,7 @@
-using Manifolds, Manopt, LinearAlgebra, Random
+using Manifolds, Manopt, LinearAlgebra, Random, Test
+
+_debug_iterates_plot = false
+_debug_gradient_check = true
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 println(eigvals(A))
@@ -30,7 +33,6 @@ res = interior_point_Newton(
     g=g,
     grad_g=grad_g,
     Hess_g=Hess_g,
-    #stop=StopAfterIteration(17),
     stop=StopAfterIteration(200) | StopWhenChangeLess(1e-12),
     debug=[
         :Iteration,
@@ -65,94 +67,79 @@ q[K, 1] = get_iterate(s)
 q[K, 2] = s.μ
 q[K, 4] = s.s
 
-F = (N, q) -> Manopt.MeritFunction(N, cmo, q)
-grad_F = (N, q) -> Manopt.GradMeritFunction(N, cmo, q)
+if _debug_gradient_check
+    F = KKTVectorFieldNormSq(cmo, s.μ, s.λ, s.s)
+    grad_F = KKTVectorFieldNormSqGradient(cmo, s.μ, s.λ, s.s)
 
-# using Plots
+    using Plots
+    check_gradient(K, F, grad_F, q; plot=true, error=:info)
+end
 
-# check_gradient(K, F, grad_F, q; plot=true)
+if _debug_iterates_plot
+    prepend!(rec, [p_0]);
+    rec .+= 0.005 * rec;
+    #-------------------------------------------------------------------------------------------------#
+    using GLMakie, Makie, GeometryTypes
+    n = 30
 
-#  check_gradient(K, F, grad_F, q; error=:info)
+    π1(x) = x[1]
+    π2(x) = x[2]
+    π3(x) = x[3]
 
-#prepend!(rec, [p_0]);
-#rec .+= 0.005 * rec;
+    h(x) = [cos(x[1])sin(x[2]), sin(x[1])sin(x[2]), cos(x[2])]
 
-#-------------------------------------------------------------------------------------------------#
+    U = [[θ, ϕ] for θ in LinRange(0, 2π, n), ϕ in LinRange(0, π, n)]
+    V = [[θ, ϕ] for θ in LinRange(0, π / 2, n), ϕ in LinRange(0, π / 2, n)]
 
-using GLMakie, Makie, GeometryTypes
+    pts = h.(U)
+    pts_ = h.(V)
 
-n = 30
+    f_ = p -> f(M, p)
 
-π1(x) = x[1]
-π2(x) = x[2]
-π3(x) = x[3]
+    s = maximum(f_.(pts)) - minimum(f_.(pts))
+    s_ = maximum(f_.(pts_)) - minimum(f_.(pts_))
 
-h(x) = [cos(x[1])sin(x[2]), sin(x[1])sin(x[2]), cos(x[2])]
+    x1 = π1.(pts)
+    x2 = π2.(pts)
+    x3 = π3.(pts)
 
-U = [[θ, ϕ] for θ in LinRange(0, 2π, n), ϕ in LinRange(0, π, n)]
-V = [[θ, ϕ] for θ in LinRange(0, π / 2, n), ϕ in LinRange(0, π / 2, n)]
+    x1_ = π1.(pts_)
+    x2_ = π2.(pts_)
+    x3_ = π3.(pts_)
 
-pts = h.(U)
-pts_ = h.(V)
+    grads = grad_f.(Ref(M), pts)
+    normgrads = grads ./ norm.(grads)
 
-f_ = p -> f(M, p)
+    v1 = π1.(normgrads)
+    v2 = π2.(normgrads)
+    v3 = π3.(normgrads)
 
-s = maximum(f_.(pts)) - minimum(f_.(pts))
-s_ = maximum(f_.(pts_)) - minimum(f_.(pts_))
+    scene = Scene();
+    cam3d!(scene)
+    range_f = (minimum(f_.(pts)), maximum(f_.(pts)))
 
-x1 = π1.(pts)
-x2 = π2.(pts)
-x3 = π3.(pts)
+    surface!(
+        scene,
+        x1,
+        x2,
+        x3;
+        color=f_.(pts),
+        colormap=(:temperaturemap, 0.4),
+        backlight=1.0f0,
+        colorrange=range_f,
+    )
 
-x1_ = π1.(pts_)
-x2_ = π2.(pts_)
-x3_ = π3.(pts_)
+    surface!(
+        scene,
+        x1_,
+        x2_,
+        x3_;
+        color=f_.(pts_),
+        colormap=(:temperaturemap, 1.0),
+        backlight=1.0f0,
+        colorrange=range_f,
+    )
 
-grads = grad_f.(Ref(M), pts)
-normgrads = grads ./ norm.(grads)
-
-v1 = π1.(normgrads)
-v2 = π2.(normgrads)
-v3 = π3.(normgrads)
-
-scene = Scene();
-
-cam3d!(scene)
-
-range_f = (minimum(f_.(pts)), maximum(f_.(pts)))
-
-surface!(
-    scene,
-    x1,
-    x2,
-    x3;
-    color=f_.(pts),
-    colormap=(:temperaturemap, 0.4),
-    backlight=1.0f0,
-    colorrange=range_f,
-)
-
-surface!(
-    scene,
-    x1_,
-    x2_,
-    x3_;
-    color=f_.(pts_),
-    colormap=(:temperaturemap, 1.0),
-    backlight=1.0f0,
-    colorrange=range_f,
-)
-
-scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
-
-# Makie.arrows!(
-#     scene, vec(x1), vec(x2), vec(x3), vec(v1), vec(v2), vec(v3);
-#     arrowsize   = vec(norm.(grads))/80,
-#     arrowcolor  = vec(norm.(grads)),
-#     linecolor   = vec(norm.(grads)),
-#     linewidth   = vec(norm.(grads))/200,
-#     lengthscale = 0.08,
-#     colormap    = :reds
-# )
-
-scene
+    scatter!(scene, π1.(rec), π2.(rec), π3.(rec); color=:black)
+    scene
+end
