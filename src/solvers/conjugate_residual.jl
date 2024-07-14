@@ -137,7 +137,6 @@ performed the following steps at iteration ``k=0,…`` until the `stopping_crite
 5. Update the conjugate coefficient ``β_k = \displaystyle\frac{\langle r^{(k+1)}, \mathcal A(p)[r^{(k+1)}] \rangle_p}{\langle r^{(k)}, \mathcal A(p)[r^{(k)}] \rangle_p}``
 6. Update the conjugate direction ``d^{(k+1)} = -r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(0)} = -Z + β_k Y^{(k})``, the evaluated ``\mamthcal A[d^{(k)]``
-8. increase ``k`` to ``k+1``.
 
 # Input
 
@@ -148,8 +147,8 @@ performed the following steps at iteration ``k=0,…`` until the `stopping_crite
 
 # Keyword arguments
 
-* `evaluation` specify whether `A` and `b` are implemented allocating or in-place
-* `stopping_criterion::`[`StoppingCriterion`]`=`[`StopAfterIteration`(`[`manifold_dimension`](@extref ManifoldsBase.manifold_dimension)`(TpM)`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+* `evaluation=`[`AllocatingEvaluation`](@ref) specify whether `A` and `b` are implemented allocating or in-place
+* `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`[`manifold_dimension`](@extref ManifoldsBase.manifold_dimension-Tuple{AbstractManifold})`(TpM))`[` | `](@ref StopWhenAny)[`StopWhenGradientNormLess`](@ref)`(1e-8)`
 
 # Output
 

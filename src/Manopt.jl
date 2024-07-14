@@ -421,7 +421,7 @@ export equality_constraints_length,
     is_feasible
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
-export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldJacobianAdjoint
+export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldAdjointJacobian
 export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
 export LagrangianCost, LagrangianGradient, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad

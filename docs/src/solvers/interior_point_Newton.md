@@ -21,7 +21,7 @@ CondensedKKTVectorField
 CondensedKKTVectorFieldJacobian
 KKTVectorField
 KKTVectorFieldJacobian
-KKTVectorFieldJacobianAdjoint
+KKTVectorFieldAdjointJacobian
 KKTVectorFieldNormSq
 KKTVectorFieldNormSqGradient
 ```

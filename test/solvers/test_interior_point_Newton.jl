@@ -1,7 +1,7 @@
 using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 _debug_iterates_plot = false
-_debug_gradient_check = false
+_debug_gradient_check = true
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 println(eigvals(A))

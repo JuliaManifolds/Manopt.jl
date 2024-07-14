@@ -54,6 +54,18 @@ include("../utils/dummy_types.jl")
     grad_h1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
     hess_h1(M, p, X) = [0.0, 0.0, 0.0]
     hess_h1!(M, Y, p, X) = (Y .= [0.0, 0.0, 0.0])
+
+    #A set of values for an example point and tangent
+    p = [1.0, 2.0, 3.0]
+    c = [[0.0, -3.0], [5.0]]
+    gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
+    gh = [[0.0, 0.0, 2.0]]
+    gf = 2 * p
+    X = [1.0, 0.0, 0.0]
+    hf = [2.0, 2.0, 2.0]
+    hg = [X, -X]
+    hh = [[0.0, 0.0, 0.0]]
+
     cofa = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h; inequality_constraints=2, equality_constraints=1
     )
@@ -183,16 +195,6 @@ include("../utils/dummy_types.jl")
         gradient_equality_range=ArrayPowerRepresentation(),
         gradient_inequality_range=ArrayPowerRepresentation(),
     )
-
-    p = [1.0, 2.0, 3.0]
-    c = [[0.0, -3.0], [5.0]]
-    gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
-    gh = [[0.0, 0.0, 2.0]]
-    gf = 2 * p
-    X = [1.0, 0.0, 0.0]
-    hf = [2.0, 2.0, 2.0]
-    hg = [X, -X]
-    hh = [[0.0, 0.0, 0.0]]
 
     @testset "ConstrainedManoptProblem special cases" begin
         Y = zero_vector(M, p)
@@ -351,10 +353,11 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-    @testset "Lagrangian Cost, Grad and Hessian" begin
+    @testset "Lagrangians" begin
         μ = [1.0, 1.0]
         λ = [1.0]
         s = [3.0, 4.0]
+        β = 7.0
         coh = ConstrainedManifoldObjective(
             f,
             grad_f;
@@ -367,20 +370,42 @@ include("../utils/dummy_types.jl")
             hess_h=hess_h,
             M=M,
         )
-        Lc = LagrangianCost(coh, μ, λ)
-        @test startswith(repr(Lc), "LagrangianCost")
-        Lg = LagrangianGradient(coh, μ, λ)
-        @test startswith(repr(Lg), "LagrangianGradient")
-        Lh = LagrangianHessian(coh, μ, λ)
-        @test startswith(repr(Lh), "LagrangianHessian")
-        @test Lc(M, p) == f(M, p) + g(M, p)'μ + h(M, p)'λ
-        @test Lg(M, p) == gf + sum(gg .* μ) + sum(gh .* λ)
-        LX = zero_vector(M, p)
-        Lg(M, LX, p)
-        @test LX == Lg(M, p)
-        @test Lh(M, p, X) == hf + sum(hg .* μ) + sum(hh .* λ)
-        Lh(M, LX, p, X)
-        @test LX == Lh(M, p, X)
+        @testset "Lagrangian Cost, Grad and Hessian" begin
+            Lc = LagrangianCost(coh, μ, λ)
+            @test startswith(repr(Lc), "LagrangianCost")
+            Lg = LagrangianGradient(coh, μ, λ)
+            @test startswith(repr(Lg), "LagrangianGradient")
+            Lh = LagrangianHessian(coh, μ, λ)
+            @test startswith(repr(Lh), "LagrangianHessian")
+            @test Lc(M, p) == f(M, p) + g(M, p)'μ + h(M, p)'λ
+            @test Lg(M, p) == gf + sum(gg .* μ) + sum(gh .* λ)
+            LX = zero_vector(M, p)
+            Lg(M, LX, p)
+            @test LX == Lg(M, p)
+            @test Lh(M, p, X) == hf + sum(hg .* μ) + sum(hh .* λ)
+            Lh(M, LX, p, X)
+            @test LX == Lh(M, p, X)
+        end
+        @testset "Full KKT and its norm" begin
+            # Full KKT Vector field
+            KKTvf = KKTVectorField(coh, μ, λ, s)
+            @test startswith(repr(KKTvf), "KKTVectorField\n")
+            KKTvfJ = KKTVectorFieldJacobian(coh, μ, λ, s)
+            @test startswith(repr(KKTvfJ), "KKTVectorFieldJacobian\n")
+            KKTvfAdJ = KKTVectorFieldAdjointJacobian(coh, μ, λ, s)
+            @test startswith(repr(KKTvfAdJ), "KKTVectorFieldAdjointJacobian\n")
+            # Full KKT Vector field norm – the Merit function
+            KKTvfN = KKTVectorFieldNormSq(coh, μ, λ, s)
+            @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq\n")
+            KKTvfNG = KKTVectorFieldNormSqGradient(coh, μ, λ, s)
+            @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient\n")
+        end
+        @testset "Condensed KKT, Jacobian" begin
+            CKKTvf = CondensedKKTVectorField(coh, μ, λ, s, β)
+            @test startswith(repr(CKKTvf), "CondensedKKTVectorField\n")
+            CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, λ, s, β)
+            @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian\n")
+        end
     end
     @testset "Augmented Lagrangian Cost & Grad" begin
         μ = [1.0, 1.0]

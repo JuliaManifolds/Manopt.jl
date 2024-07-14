@@ -279,6 +279,13 @@ function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:β}, β)
     return cKKTvf
 end
 
+function show(io::IO, CKKTvf::CondensedKKTVectorField)
+    return print(
+        io,
+        "CondensedKKTVectorField\n\twith μ=$(CKKTvf.μ), λ=$(CKKTvf.λ), s=$(CKKTvf.s), β=$(CKKTvf.β).",
+    )
+end
+
 @doc raw"""
     CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,T}  <: AbstractConstrainedSlackFunctor
 
@@ -326,7 +333,7 @@ mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V
     μ::V
     λ::V
     s::V
-    b::R
+    β::R
 end
 function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, q, X)
     Y = zero_vector(N, q)
@@ -360,6 +367,12 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         copyto!(N[2], Y[N, 2], [inner(M, p, grad_h[j], Xp) for j in 1:n])
     end
     return Y
+end
+function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
+    return print(
+        io,
+        "CondensedKKTVectorFieldJacobian\n\twith μ=$(CKKTvfJ.μ), λ=$(CKKTvfJ.λ), s=$(CKKTvfJ.s), β=$(CKKTvfJ.β).",
+    )
 end
 
 function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:β}, β)
@@ -422,7 +435,6 @@ mutable struct KKTVectorField{O<:ConstrainedManifoldObjective,V} <:
     λ::V
     s::V
 end
-
 function (KKTvf::KKTVectorField)(N, q)
     Y = zero_vector(N, q)
     return KKTvf(N, Y, q)
@@ -437,12 +449,15 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     (m > 0) && (Y[N, 4] = KKTvf.μ .* KKTvf.s)
     return Y
 end
+function show(io::IO, KKTvf::KKTVectorField)
+    return print(io, "KKTVectorField\n\twith μ=$(KKTvf.μ), λ=$(KKTvf.λ), s=$(KKTvf.s).")
+end
 
 @doc raw"""
     KKTVectorFieldJacobian <: AbstractConstrainedSlackFunctor
 
 Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
-for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobianAdjoint`](@ref)..
+for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldAdjointJacobian`](@ref)..
 
 ```math
 \operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
@@ -508,9 +523,14 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
     Z[N, 4] = KKTvfJ.μ .* Y[N, 4] + KKTvfJ.s .* Y[N, 2]
     return Z
 end
+function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
+    return print(
+        io, "KKTVectorFieldJacobian\n\twith μ=$(KKTvfJ.μ), λ=$(KKTvfJ.λ), s=$(KKTvfJ.s)."
+    )
+end
 
 @doc raw"""
-    KKTVectorFieldJacobianAdjoint <: AbstractConstrainedSlackFunctor
+    KKTVectorFieldAdjointJacobian <: AbstractConstrainedSlackFunctor
 
 Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobian`](@ref).
@@ -536,26 +556,26 @@ See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess} \mathcal L(p, μ,
 
 # Constructor
 
-    KKTVectorFieldJacobianAdjoint(cmo::ConstrainedManifoldObjective, μ, λ, s)
+    KKTVectorFieldAdjointJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)
 
 # Example
 
-Define `F = KKTVectorFieldJacobianAdjoint(cmo::ConstrainedManifoldObjective, μ, λ, s)`
+Define `F = KKTVectorFieldAdjointJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)`
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q, Y)` or as the in-place variant `F(N, Z, q, Y)`.
 """
-mutable struct KKTVectorFieldJacobianAdjoint{O<:ConstrainedManifoldObjective,V} <:
+mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective,V} <:
                AbstractConstrainedSlackFunctor
     cmo::O
     μ::V
     λ::V
     s::V
 end
-function (KKTvfJa::KKTVectorFieldJacobianAdjoint)(N, q, Y)
+function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, q, Y)
     Z = zero_vector(N, q)
     return KKTvfJa(N, Z, q, Y)
 end
-function (KKTvfJa::KKTVectorFieldJacobianAdjoint)(N, Z, q, Y)
+function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
     M = N[1]
     p = q[N, 1]
     X = Y[N, 1]
@@ -578,6 +598,13 @@ function (KKTvfJa::KKTVectorFieldJacobianAdjoint)(N, Z, q, Y)
     # Fourth component
     Z[N, 4] = KKTvfJa.μ .* Y[N, 4] + Y[N, 2]
     return Z
+end
+
+function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
+    return print(
+        io,
+        "KKTVectorFieldAdjointJacobian\n\twith μ=$(KKTvfAdJ.μ), λ=$(KKTvfAdJ.λ), s=$(KKTvfAdJ.s).",
+    )
 end
 
 @doc raw"""
@@ -616,6 +643,12 @@ function (KKTvc::KKTVectorFieldNormSq)(N, q; Y=zero_vector(N, q))
     KKTVectorField(KKTvc.cmo, KKTvc.μ, KKTvc.λ, KKTvc.s)(N, Y, q)
     return inner(N, q, Y, Y)
 end
+function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
+    return print(
+        io,
+        "KKTVectorFieldNormSq\n\twith μ=$(KKTvfNSq.μ), λ=$(KKTvfNSq.λ), s=$(KKTvfNSq.s).",
+    )
+end
 
 @doc raw"""
     KKTVectorFieldNormSqGradient <: AbstractConstrainedSlackFunctor
@@ -630,7 +663,7 @@ which we can write with the adjoint ``J^*`` of the Jacobian
 \operatorname{grad} φ = 2\operatorname{J}^* F(p, μ, λ, s)[F(p, μ, λ, s)],
 ```
 
-and hence is computed with [`KKTVectorFieldJacobianAdjoint`](@ref) and [`KKTVectorField`](@ref).
+and hence is computed with [`KKTVectorFieldAdjointJacobian`](@ref) and [`KKTVectorField`](@ref).
 
 For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad} \mathcal L(p,μ,λ) ∈ T_p\mathcal M``,
 for a shorthand of the first component of ``F``, as
@@ -680,12 +713,18 @@ end
 function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
     Z = copy(N, q, Y)
     KKTVectorField(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Z, q)
-    KKTVectorFieldJacobianAdjoint(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Y, q)
+    KKTVectorFieldAdjointJacobian(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Y, q)
     return Y
+end
+function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
+    return print(
+        io,
+        "KKTVectorFieldNormSqGradient\n\twith μ=$(KKTvfNSqGrad.μ), λ=$(KKTvfNSqGrad.λ), s=$(KKTvfNSqGrad.s).",
+    )
 end
 
 # -----------------------------------------------------------------------------
-# old code, old names - todo check / rename / document
+# old code, old names - TODO check / rename / document
 function calculate_σ(
     N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s
 )
