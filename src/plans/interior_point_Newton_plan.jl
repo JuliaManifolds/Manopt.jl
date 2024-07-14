@@ -77,8 +77,8 @@ mutable struct InteriorPointNewtonState{
         stop::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::RTM=default_retraction_method(M),
         step_objective=ManifoldGradientObjective(
-            KKTVectorFieldNormSq(cmo, μ, λ, s),
-            KKTVectorFieldNormSqGradient(cmo, μ, λ, s);
+            KKTVectorFieldNormSq(M, cmo, μ, λ, s),
+            KKTVectorFieldNormSqGradient(M, cmo, μ, λ, s);
             evaluation=InplaceEvaluation(),
         ),
         step_problem::StepPr=DefaultManoptProblem(
@@ -563,7 +563,6 @@ function (KKTvfJ::KKTVectorFieldJacobian)(M, Z, p, Y)
         copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 2][i] * Xt)
         # set second components as well
         Z[N, 2][i] = inner(M, p, Xt, X) + Y[N, 4][i]
-        println(Z[N, 2])
     end
     for j in 1:n
         get_grad_equality_constraint!(M, Xt, KKTvfJ.cmo, p, j)
@@ -571,7 +570,6 @@ function (KKTvfJ::KKTVectorFieldJacobian)(M, Z, p, Y)
         # set third components as well
         Z[N, 3][j] = inner(M, p, Xt, X)
     end
-    println(Z[N, 2])
     # Fourth component
     Z[N, 4] = μ .* Y[N, 4] + s .* Y[N, 2]
     return Z
@@ -858,7 +856,7 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     copyto!(N[2], q[N, 2], μ)
     copyto!(N[3], q[N, 3], λ)
     copyto!(N[4], q[N, 4], s)
-    return min(0.5, (KKTVectorFieldNormSq(cmo, μ, λ, s)(N, q))^(1 / 4))
+    return min(0.5, (KKTVectorFieldNormSq(M, cmo, μ, λ, s)(M, p))^(1 / 4))
 end
 mutable struct ConstraintLineSearchCheckFunction{CO}
     cmo::CO
