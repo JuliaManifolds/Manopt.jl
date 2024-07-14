@@ -245,8 +245,8 @@ function interior_point_Newton!(
         cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s), 0.1
     ), # TODO
     step_objective=ManifoldGradientObjective(
-        KKTVectorFieldNormSq(M, cmo, μ, λ, s),
-        KKTVectorFieldNormSqGradient(M, cmo, μ, λ, s);
+        KKTVectorFieldNormSq(cmo),
+        KKTVectorFieldNormSqGradient(cmo);
         evaluation=evaluation,
     ),
     step_problem=DefaultManoptProblem(
@@ -261,8 +261,8 @@ function interior_point_Newton!(
     sub_objective=decorate_objective!(
         TangentSpace(_sub_M, _sub_p),
         SymmetricLinearSystemObjective(
-            CondensedKKTVectorFieldJacobian(cmo, μ, λ, s, σ * ρ),
-            CondensedKKTVectorField(cmo, μ, λ, s, σ * ρ),
+            CondensedKKTVectorFieldJacobian(cmo, μ, s, σ*ρ),
+            CondensedKKTVectorField(cmo, μ, s, σ * ρ),
         ),
         sub_kwargs...,
     ),

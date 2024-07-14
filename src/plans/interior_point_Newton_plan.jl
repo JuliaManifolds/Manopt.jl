@@ -77,8 +77,8 @@ mutable struct InteriorPointNewtonState{
         stop::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::RTM=default_retraction_method(M),
         step_objective=ManifoldGradientObjective(
-            KKTVectorFieldNormSq(M, cmo, μ, λ, s),
-            KKTVectorFieldNormSqGradient(M, cmo, μ, λ, s);
+            KKTVectorFieldNormSq(cmo),
+            KKTVectorFieldNormSqGradient(cmo);
             evaluation=InplaceEvaluation(),
         ),
         step_problem::StepPr=DefaultManoptProblem(
@@ -348,7 +348,7 @@ end
 function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     M = N[1]
     cmo = cKKTvfJ.cmo
-    p, μ, λ, s = q[N, 1], q[N, 2], q[N, 3], q[N, 4]
+    p, μ, λ, s = q[N, 1], cKKTvfJ.μ, q[N, 2], cKKTvfJ.s
     m, n = length(μ), length(λ)
     Xp, Xλ = X[N, 1], X[N, 2]
     # First Summand of Hess L
@@ -737,7 +737,7 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     copyto!(N[2], q[N, 2], μ)
     copyto!(N[3], q[N, 3], λ)
     copyto!(N[4], q[N, 4], s)
-    return min(0.5, (KKTVectorFieldNormSq(M, cmo, μ, λ, s)(M, p))^(1 / 4))
+    return min(0.5, (KKTVectorFieldNormSq(cmo)(N, q))^(1 / 4))
 end
 mutable struct ConstraintLineSearchCheckFunction{CO}
     cmo::CO
@@ -750,7 +750,7 @@ function (clcf::ConstraintLineSearchCheckFunction)(N, q)
     μ = q[N, 2]
     λ = q[N, 3]
     s = q[N, 4]
-    KKTvf = KKTVectorFieldNormSq(clcf.cmo, μ, λ, s)
+    KKTvf = KKTVectorFieldNormSq(clcf.cmo)
     (minimum(μ .* s) - clcf.γ * clcf.τ1 / length(μ) < 0) && return false
     (sum(μ .* s) - clcf.γ * clcf.τ2 * sqrt(KKTvf(N, q)) < 0) && return false
     return true

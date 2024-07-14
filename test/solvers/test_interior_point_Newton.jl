@@ -68,8 +68,8 @@ q[K, 2] = s.μ
 q[K, 4] = s.s
 
 if _debug_gradient_check
-    F = KKTVectorFieldNormSq(cmo, s.μ, s.λ, s.s)
-    grad_F = KKTVectorFieldNormSqGradient(cmo, s.μ, s.λ, s.s)
+    F = KKTVectorFieldNormSq(cmo)
+    grad_F = KKTVectorFieldNormSqGradient(cmo)
 
     using Plots
     check_gradient(K, F, grad_F, q; plot=true, error=:info)

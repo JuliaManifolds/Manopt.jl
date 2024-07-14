@@ -1118,11 +1118,6 @@ function set_manopt_parameter!(acf::AbstractConstrainedFunctor, ::Val{:μ}, μ)
     return acf
 end
 
-function set_manopt_parameter!(acf::AbstractConstrainedFunctor, ::Val{:λ}, λ)
-    acf.λ = λ
-    return acf
-end
-
 function set_manopt_parameter!(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}, s)
     acsf.s = s
     return acsf
