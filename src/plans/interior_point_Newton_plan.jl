@@ -427,26 +427,20 @@ where ``⊙`` denotes the Hadamard (or elementwise) product
 # Fields
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `N` the product manifold ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``
-* `q` a point on `N` containing
-  * `p` some point on `M`
-  * `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-  * `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-  * `s::V` the vector in ``ℝ^m`` of sclack variables
 
 While the point `p` is arbitrary and usually not needed, it serves as internal memory
 in the computations. Furthermore Both fields together also calrify the product manifold structure to use.
 
 # Constructor
 
-    KKTVectorField(M, cmo::ConstrainedManifoldObjective, μ, λ, s; N = M × ℝ^m × ℝ^n × ℝ^m)
-    KKTVectorField(N, cmo::ConstrainedManifoldObjective, q)
+    KKTVectorField(cmo::ConstrainedManifoldObjective)
 
 # Example
 
-Define `F = KKTVectorField(cmo::ConstrainedManifoldObjective, μ, λ, s)`.
-Then, both the allocating variant `F(M, p)` as well as the in-place variant `F(M, Y, p)`.
-Note that `Y` is from the product manifold `N` given by ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+Define `F = KKTVectorField(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
+and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+Then, you can call this cost as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
+where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
 struct KKTVectorField{O<:ConstrainedManifoldObjective} <: AbstractConstrainedSlackFunctor
     cmo::O
@@ -492,21 +486,19 @@ See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess} \mathcal L(p, μ,
 # Fields
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::Vthe vector in ``ℝ^m`` of sclack variables
 
 # Constructor
 
-    KKTVectorFieldJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)
+    KKTVectorFieldJacobian(cmo::ConstrainedManifoldObjective)
 
-TODO
+Generate the Jacobian of the KKT vector field related to some [`ConstrainedManifoldObjective`](@ref) `cmo`.
 
 # Example
 
-Define `F = KKTVectorFieldJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)`
+Define `JF = KKTVectorFieldJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `F(N, q, Y)` or as the in-place variant `F(N, Z, q, Y)`.
+Then, you can call this cost as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
+where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
 mutable struct KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective} <:
                AbstractConstrainedSlackFunctor
@@ -566,19 +558,19 @@ See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess} \mathcal L(p, μ,
 # Fields
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::Vthe vector in ``ℝ^m`` of sclack variables
 
 # Constructor
 
-    KKTVectorFieldAdjointJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)
+    KKTVectorFieldAdjointJacobian(cmo::ConstrainedManifoldObjective)
+
+Generate the Adjoint Jacobian of the KKT vector field related to some [`ConstrainedManifoldObjective`](@ref) `cmo`.
 
 # Example
 
-Define `F = KKTVectorFieldAdjointJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)`
+Define `AdJF = KKTVectorFieldAdjointJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `F(N, q, Y)` or as the in-place variant `F(N, Z, q, Y)`.
+Then, you can call this cost as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
+where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
 mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective} <:
                AbstractConstrainedSlackFunctor
@@ -626,20 +618,17 @@ In [LaiYoshise:2024](@cite) this is called the merit function.
 
 # Fields
 
-TODO
+* `cmo` the [`ConstrainedManifoldObjective`](@ref)
 
 # Constructor
 
-    KKTVectorFieldNormSq(cmo::ConstrainedManifoldObjective, μ, λ, s)
-
-TODO
+    KKTVectorFieldNormSq(cmo::ConstrainedManifoldObjective)
 
 # Example
 
-Define `F = KKTVectorFieldNormSq(cmo::ConstrainedManifoldObjective, μ, λ, s)`
+Define `f = KKTVectorFieldNormSq(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `F(N, q)` but you can also provide memory to compute the
-gradient in, before taking its norm `F(N, q; Y=zero_vector(N,q))`.
+Then, you can call this cost as `f(N, q)`, where `q` is a point on `N`.
 """
 mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective} <:
                AbstractConstrainedSlackFunctor
@@ -687,20 +676,17 @@ where ``⊙`` denotes the Hadamard (or elementwise) product.
 # Fields
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::Vthe vector in ``ℝ^m`` of sclack variables
 
 # Constructor
 
-    KKTVectorFieldNormSqGradient(cmo::ConstrainedManifoldObjective, μ, λ, s)
+    KKTVectorFieldNormSqGradient(cmo::ConstrainedManifoldObjective)
 
 # Example
 
-Define `F = KKTVectorFieldNormSqGradient(cmo::ConstrainedManifoldObjective, μ, λ, s)`
+Define `grad_f = KKTVectorFieldNormSqGradient(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
-Then, you can call this cost as `F(N, q)` but you can also provide memory to compute the
-gradient in, before taking its norm `F(N, Y, q)`.
+Then, you can call this cost as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
+where `q` is a point on `N` and `Y` is a tangent vector at `q` returning the resulting gradient at.
 """
 mutable struct KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective} <:
                AbstractConstrainedSlackFunctor

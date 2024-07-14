@@ -1,7 +1,7 @@
 using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 _debug_iterates_plot = false
-_debug_gradient_check = true
+_debug_gradient_check = false
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 println(eigvals(A))
@@ -44,6 +44,10 @@ res = interior_point_Newton(
         :Change,
         " ",
         :GradientNorm,
+        " ",
+        :σ,
+        " ",
+        :ρ,
         # " ",
         # :Iterate,
         "\n",
@@ -60,19 +64,20 @@ rec = get_record(res[2])
 s = get_state(res[2])
 m = 3
 n = 0
-K = M × ℝ^m × ℝ^n × ℝ^m
+N = M × ℝ^m × ℝ^n × ℝ^m
 cmo = res[1]
 q = rand(K)
-q[K, 1] = get_iterate(s)
-q[K, 2] = s.μ
-q[K, 4] = s.s
+q[N, 1] = get_iterate(s)
+q[N, 2] = s.μ
+q[N, 4] = s.s
 
 if _debug_gradient_check
     F = KKTVectorFieldNormSq(cmo)
     grad_F = KKTVectorFieldNormSqGradient(cmo)
-
+    X = zero_vector(N, q)
+    X[N, 1] = [0.0, 1.0, 0.0]
     using Plots
-    check_gradient(K, F, grad_F, q; plot=true, error=:info)
+    check_gradient(N, F, grad_F, q, X; plot=true, error=:info)
 end
 
 if _debug_iterates_plot
