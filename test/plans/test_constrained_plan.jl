@@ -394,15 +394,15 @@ include("../utils/dummy_types.jl")
         end
         @testset "Full KKT and its norm" begin
             # Full KKT Vector field
-            KKTvf = KKTVectorField(M, coh, μ, λ, s)
+            KKTvf = KKTVectorField(coh)
             @test startswith(repr(KKTvf), "KKTVectorField\n")
             Xp = LagrangianGradient(coh, μ, λ)(M, p) #Xμ = g + s; Xλ = h, Xs = μ .* s
-            Y = KKTvf(M, p)
+            Y = KKTvf(N, q)
             @test Y[N, 1] == Xp
             @test Y[N, 2] == c[1] + s
             @test Y[N, 3] == c[2]
             @test Y[N, 4] == μ .* s
-            KKTvfJ = KKTVectorFieldJacobian(M, coh, μ, λ, s)
+            KKTvfJ = KKTVectorFieldJacobian(coh)
             @test startswith(repr(KKTvfJ), "KKTVectorFieldJacobian\n")
             #
             Xp =
@@ -411,13 +411,13 @@ include("../utils/dummy_types.jl")
                 sum(Y[N, 3] .* gh)
             Xμ = [inner(M, p, gg[i], Y[N, 1]) + Y[N, 4][i] for i in 1:length(gg)]
             Xλ = [inner(M, p, gh[j], Y[N, 1]) for j in 1:length(gh)]
-            Z = KKTvfJ(M, p, Y)
+            Z = KKTvfJ(N, q, Y)
             @test Z[N, 1] == Xp
             @test Z[N, 2] == Xμ
             @test Z[N, 3] == Xλ
             @test Z[N, 4] == μ .* Y[N, 4] + s .* Y[N, 2]
 
-            KKTvfAdJ = KKTVectorFieldAdjointJacobian(M, coh, μ, λ, s)
+            KKTvfAdJ = KKTVectorFieldAdjointJacobian(coh)
             @test startswith(repr(KKTvfAdJ), "KKTVectorFieldAdjointJacobian\n")
             Xp2 =
                 LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
@@ -425,28 +425,28 @@ include("../utils/dummy_types.jl")
                 sum(Y[N, 3] .* gh)
             Xμ2 = [inner(M, p, gg[i], Y[N, 1]) + s[i] * Y[N, 4][i] for i in 1:length(gg)]
             Xλ2 = [inner(M, p, gh[j], Y[N, 1]) for j in 1:length(gh)]
-            Z2 = KKTvfAdJ(M, p, Y)
+            Z2 = KKTvfAdJ(N, q, Y)
             @test Z2[N, 1] == Xp2
             @test Z2[N, 2] == Xμ2
             @test Z2[N, 3] == Xλ2
             @test Z2[N, 4] == μ .* Y[N, 4] + Y[N, 2]
 
             # Full KKT Vector field norm – the Merit function
-            KKTvfN = KKTVectorFieldNormSq(M, coh, μ, λ, s)
+            KKTvfN = KKTVectorFieldNormSq(coh)
             @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq\n")
-            vfn = KKTvfN(M, p)
+            vfn = KKTvfN(N, q)
             @test vfn == norm(N, q, Y)^2
-            KKTvfNG = KKTVectorFieldNormSqGradient(M, coh, μ, λ, s)
+            KKTvfNG = KKTVectorFieldNormSqGradient(coh)
             @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient\n")
-            Zg1 = KKTvf(M, p)
-            Zg2 = KKTvfAdJ(M, p, Zg1)
-            W = KKTvfNG(M, p)
+            Zg1 = KKTvf(N, q)
+            Zg2 = KKTvfAdJ(N, q, Zg1)
+            W = KKTvfNG(N, q)
             @test W == Zg2
         end
         @testset "Condensed KKT, Jacobian" begin
-            CKKTvf = CondensedKKTVectorField(coh, μ, λ, s, β)
+            CKKTvf = CondensedKKTVectorField(coh, μ, s, β)
             @test startswith(repr(CKKTvf), "CondensedKKTVectorField\n")
-            CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, λ, s, β)
+            CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, s, β)
             @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian\n")
         end
     end
