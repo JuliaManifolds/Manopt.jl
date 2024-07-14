@@ -414,43 +414,72 @@ where ``⊙`` denotes the Hadamard (or elementwise) product
 # Fields
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::Vthe vector in ``ℝ^m`` of sclack variables
+* `N` the product manifold ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``
+* `q` a point on `N` containing
+  * `p` some point on `M`
+  * `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
+  * `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
+  * `s::V` the vector in ``ℝ^m`` of sclack variables
+
+While the point `p` is arbitrary and usually not needed, it serves as internal memory
+in the computations. Furthermore Both fields together also calrify the product manifold structure to use.
 
 # Constructor
 
-    KKTVectorField(cmo::ConstrainedManifoldObjective, μ, λ, s)
+    KKTVectorField(M, cmo::ConstrainedManifoldObjective, μ, λ, s; N = M × ℝ^m × ℝ^n × ℝ^m)
+    KKTVectorField(N, cmo::ConstrainedManifoldObjective, q)
 
 # Example
 
-Define `F = KKTVectorField(cmo::ConstrainedManifoldObjective, μ, λ, s)`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
-Then, both the allocating variant `F(N, p)` as well as the in-place variant `F(N, p)`
+Define `F = KKTVectorField(cmo::ConstrainedManifoldObjective, μ, λ, s)`.
+Then, both the allocating variant `F(M, p)` as well as the in-place variant `F(M, Y, p)`.
+Note that `Y` is from the product manifold `N` given by ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 """
-mutable struct KKTVectorField{O<:ConstrainedManifoldObjective,V} <:
-               AbstractConstrainedSlackFunctor
+struct KKTVectorField{O<:ConstrainedManifoldObjective,TN,P} <:
+       AbstractConstrainedSlackFunctor
     cmo::O
-    μ::V
-    λ::V
-    s::V
+    N::TN
+    q::P
+    function KKTVectorField(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        μ,
+        λ,
+        s;
+        N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(μ)),
+    )
+        @assert length(s) == length(μ) "The lengths of μ ($(length(μ))) and s ($(length(s))) have to agree, but they do not"
+        q = rand(N)
+        q[N, 2] = μ
+        q[N, 3] = λ
+        q[N, 4] = s
+        return KKTVectorField(N, cmo, q)
+    end
+    function KKTVectorField(
+        N::TN, cmo::O, q::P
+    ) where {TN<:ProductManifold,O<:ConstrainedManifoldObjective,P}
+        return new{O,TN,P}(cmo, N, q)
+    end
 end
-function (KKTvf::KKTVectorField)(N, q)
-    Y = zero_vector(N, q)
-    return KKTvf(N, Y, q)
+function (KKTvf::KKTVectorField)(M, p)
+    copyto!(M, KKTvf.q[KKTvf.N, 1], p)
+    Y = zero_vector(KKTvf.N, KKTvf.q)
+    return KKTvf(M, Y, p)
 end
-function (KKTvf::KKTVectorField)(N, Y, q)
-    M = N[1]
-    p = q[N, 1]
-    LagrangianGradient(KKTvf.cmo, KKTvf.μ, KKTvf.λ)(M, Y[N, 1], p)
-    m, n = length(KKTvf.μ), length(KKTvf.λ)
-    (m > 0) && (Y[N, 2] = get_inequality_constraint(M, KKTvf.cmo, p, :) + KKTvf.s)
-    (n > 0) && (Y[N, 3] = get_equality_constraint(M, KKTvf.cmo, p, :))
-    (m > 0) && (Y[N, 4] = KKTvf.μ .* KKTvf.s)
+function (KKTvf::KKTVectorField)(M, Y, p)
+    # To improve readability
+    μ, λ, s = KKTvf.q[KKTvf.N, 2], KKTvf.q[KKTvf.N, 3], KKTvf.q[KKTvf.N, 4]
+    LagrangianGradient(KKTvf.cmo, μ, λ)(M, Y[KKTvf.N, 1], p)
+    m, n = length(μ), length(λ)
+    (m > 0) && (Y[KKTvf.N, 2] = get_inequality_constraint(M, KKTvf.cmo, p, :) + s)
+    (n > 0) && (Y[KKTvf.N, 3] = get_equality_constraint(M, KKTvf.cmo, p, :))
+    (m > 0) && (Y[KKTvf.N, 4] = μ .* s)
     return Y
 end
 function show(io::IO, KKTvf::KKTVectorField)
-    return print(io, "KKTVectorField\n\twith μ=$(KKTvf.μ), λ=$(KKTvf.λ), s=$(KKTvf.s).")
+    N = KKTvf.N
+    q = KKTvf.q
+    return print(io, "KKTVectorField\n\twith  μ=$(q[N, 2]), λ=$(q[N, 3]), s=$(q[N, 4]).")
 end
 
 @doc raw"""
@@ -482,50 +511,76 @@ See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess} \mathcal L(p, μ,
 
     KKTVectorFieldJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)
 
+TODO
+
 # Example
 
 Define `F = KKTVectorFieldJacobian(cmo::ConstrainedManifoldObjective, μ, λ, s)`
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q, Y)` or as the in-place variant `F(N, Z, q, Y)`.
 """
-mutable struct KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V} <:
+mutable struct KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,TN,P} <:
                AbstractConstrainedSlackFunctor
     cmo::O
-    μ::V
-    λ::V
-    s::V
+    N::TN
+    q::P
+    function KKTVectorFieldJacobian(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        μ,
+        λ,
+        s;
+        N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(μ)),
+    )
+        @assert length(s) == length(μ) "The lengths of μ ($(length(μ))) and s ($(length(s))) have to agree, but they do not"
+        q = rand(N)
+        q[N, 2] = μ
+        q[N, 3] = λ
+        q[N, 4] = s
+        return KKTVectorFieldJacobian(N, cmo, q)
+    end
+    function KKTVectorFieldJacobian(
+        N::TN, cmo::O, q::P
+    ) where {TN<:ProductManifold,O<:ConstrainedManifoldObjective,P}
+        return new{O,TN,P}(cmo, N, q)
+    end
 end
-function (KKTvfJ::KKTVectorFieldJacobian)(N, q, Y)
-    Z = zero_vector(N, q)
-    return KKTvfJ(N, Z, q, Y)
+function (KKTvfJ::KKTVectorFieldJacobian)(M, p, Y)
+    copyto!(M, KKTvfJ.q[KKTvfJ.N, 1], p)
+    Z = zero_vector(KKTvfJ.N, KKTvfJ.q)
+    return KKTvfJ(M, Z, p, Y)
 end
-function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
-    M = N[1]
-    p = q[N, 1]
+function (KKTvfJ::KKTVectorFieldJacobian)(M, Z, p, Y)
+    N, q = KKTvfJ.N, KKTvfJ.q
+    μ, λ, s = q[N, 2], q[N, 3], q[N, 4]
     X = Y[N, 1]
     # First component
-    LagrangianHessian(KKTvfJ.cmo, KKTvfJ.μ, KKTvfJ.λ)(M, Z[N, 1], p, Y[N, 1])
+    LagrangianHessian(KKTvfJ.cmo, μ, λ)(M, Z[N, 1], p, Y[N, 1])
     Xt = copy(M, p, X)
-    m, n = length(KKTvfJ.μ), length(KKTvfJ.λ)
+    m, n = length(μ), length(λ)
     for i in 1:m
         get_grad_inequality_constraint!(M, Xt, KKTvfJ.cmo, p, i)
-        Z[N, 1] += Y[N, 1][2] * Xt
+        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 2][i] * Xt)
         # set second components as well
-        Z[N, 2][i] = inner(M, p, Xt, X) + Y[N, 4]
+        Z[N, 2][i] = inner(M, p, Xt, X) + Y[N, 4][i]
+        println(Z[N, 2])
     end
     for j in 1:n
-        get_grad_equality_constraint!(M, Y, KKTvfJ.cmo, p, j)
-        Z[N, 1] += Y[N, 1][3] * Xt
+        get_grad_equality_constraint!(M, Xt, KKTvfJ.cmo, p, j)
+        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 3][j] * Xt)
         # set third components as well
         Z[N, 3][j] = inner(M, p, Xt, X)
     end
+    println(Z[N, 2])
     # Fourth component
-    Z[N, 4] = KKTvfJ.μ .* Y[N, 4] + KKTvfJ.s .* Y[N, 2]
+    Z[N, 4] = μ .* Y[N, 4] + s .* Y[N, 2]
     return Z
 end
 function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
+    N = KKTvfJ.N
+    q = KKTvfJ.q
     return print(
-        io, "KKTVectorFieldJacobian\n\twith μ=$(KKTvfJ.μ), λ=$(KKTvfJ.λ), s=$(KKTvfJ.s)."
+        io, "KKTVectorFieldJacobian\n\twith  μ=$(q[N, 2]), λ=$(q[N, 3]), s=$(q[N, 4])."
     )
 end
 
@@ -564,46 +619,67 @@ Define `F = KKTVectorFieldAdjointJacobian(cmo::ConstrainedManifoldObjective, μ,
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q, Y)` or as the in-place variant `F(N, Z, q, Y)`.
 """
-mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective,V} <:
+mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective,TN,P} <:
                AbstractConstrainedSlackFunctor
     cmo::O
-    μ::V
-    λ::V
-    s::V
+    N::TN
+    q::P
+    function KKTVectorFieldAdjointJacobian(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        μ,
+        λ,
+        s;
+        N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(μ)),
+    )
+        @assert length(s) == length(μ) "The lengths of μ ($(length(μ))) and s ($(length(s))) have to agree, but they do not"
+        q = rand(N)
+        q[N, 2] = μ
+        q[N, 3] = λ
+        q[N, 4] = s
+        return KKTVectorFieldAdjointJacobian(N, cmo, q)
+    end
+    function KKTVectorFieldAdjointJacobian(
+        N::TN, cmo::O, q::P
+    ) where {TN<:ProductManifold,O<:ConstrainedManifoldObjective,P}
+        return new{O,TN,P}(cmo, N, q)
+    end
 end
-function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, q, Y)
-    Z = zero_vector(N, q)
-    return KKTvfJa(N, Z, q, Y)
+function (KKTvfJa::KKTVectorFieldAdjointJacobian)(M, p, Y)
+    copyto!(M, KKTvfJa.q[KKTvfJa.N, 1], p)
+    Z = zero_vector(KKTvfJa.N, KKTvfJa.q)
+    return KKTvfJa(M, Z, p, Y)
 end
-function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
-    M = N[1]
-    p = q[N, 1]
+function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(M, Z, p, Y)
+    N, q = KKTvfAdJ.N, KKTvfAdJ.q
+    μ, λ, s = q[N, 2], q[N, 3], q[N, 4]
     X = Y[N, 1]
     # First component
-    LagrangianHessian(KKTvfJa.cmo, KKTvfJa.μ, KKTvfJa.λ)(M, Z[N, 1], p, Y[N, 1])
+    LagrangianHessian(KKTvfAdJ.cmo, μ, λ)(M, Z[N, 1], p, X)
     Xt = copy(M, p, X)
-    m, n = length(KKTvfJa.μ), length(KKTvfJa.λ)
+    m, n = length(μ), length(λ)
     for i in 1:m
-        get_grad_inequality_constraint!(M, Xt, KKTvfJa.cmo, p, i)
-        Z[N, 1] += Y[N, 1][2] * Xt
+        get_grad_inequality_constraint!(M, Xt, KKTvfAdJ.cmo, p, i)
+        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 2][i] * Xt)
         # set second components as well
-        Z[N, 2][i] = inner(M, p, Xt, X) + KKTvfJa.s[i] * Y[N, 4][i]
+        Z[N, 2][i] = inner(M, p, Xt, X) + s[i] * Y[N, 4][i]
     end
     for j in 1:n
-        get_grad_equality_constraint!(M, Y, KKTvfJa.cmo, p, j)
-        Z[N, 1] += Y[N, 1][3] * Xt
+        get_grad_equality_constraint!(M, Xt, KKTvfAdJ.cmo, p, j)
+        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 3][j] * Xt)
         # set third components as well
         Z[N, 3][j] = inner(M, p, Xt, X)
     end
     # Fourth component
-    Z[N, 4] = KKTvfJa.μ .* Y[N, 4] + Y[N, 2]
+    Z[N, 4] = μ .* Y[N, 4] + Y[N, 2]
     return Z
 end
-
 function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
+    N = KKTvfAdJ.N
+    q = KKTvfAdJ.q
     return print(
         io,
-        "KKTVectorFieldAdjointJacobian\n\twith μ=$(KKTvfAdJ.μ), λ=$(KKTvfAdJ.λ), s=$(KKTvfAdJ.s).",
+        "KKTVectorFieldAdjointJacobian\n\twith  μ=$(q[N, 2]), λ=$(q[N, 3]), s=$(q[N, 4]).",
     )
 end
 
@@ -616,14 +692,13 @@ In [LaiYoshise:2024](@cite) this is called the merit function.
 
 # Fields
 
-* `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::Vthe vector in ``ℝ^m`` of sclack variables
+TODO
 
 # Constructor
 
     KKTVectorFieldNormSq(cmo::ConstrainedManifoldObjective, μ, λ, s)
+
+TODO
 
 # Example
 
@@ -632,21 +707,42 @@ and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q)` but you can also provide memory to compute the
 gradient in, before taking its norm `F(N, q; Y=zero_vector(N,q))`.
 """
-mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective,V} <:
+mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective,TN,P} <:
                AbstractConstrainedSlackFunctor
     cmo::O
-    μ::V
-    λ::V
-    s::V
+    N::TN
+    q::P
+    function KKTVectorFieldNormSq(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        μ,
+        λ,
+        s;
+        N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(μ)),
+    )
+        @assert length(s) == length(μ) "The lengths of μ ($(length(μ))) and s ($(length(s))) have to agree, but they do not"
+        q = rand(N)
+        q[N, 2] = μ
+        q[N, 3] = λ
+        q[N, 4] = s
+        return KKTVectorFieldNormSq(N, cmo, q)
+    end
+    function KKTVectorFieldNormSq(
+        N::TN, cmo::O, q::P
+    ) where {TN<:ProductManifold,O<:ConstrainedManifoldObjective,P}
+        return new{O,TN,P}(cmo, N, q)
+    end
 end
-function (KKTvc::KKTVectorFieldNormSq)(N, q; Y=zero_vector(N, q))
-    KKTVectorField(KKTvc.cmo, KKTvc.μ, KKTvc.λ, KKTvc.s)(N, Y, q)
-    return inner(N, q, Y, Y)
+function (KKTvc::KKTVectorFieldNormSq)(M, p; Y=zero_vector(KKTvc.N, KKTvc.q))
+    copyto!(M, KKTvc.q[KKTvc.N, 1], p)
+    KKTVectorField(KKTvc.N, KKTvc.cmo, KKTvc.q)(M, Y, p)
+    return inner(KKTvc.N, KKTvc.q, Y, Y)
 end
 function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
+    N = KKTvfNSq.N
+    q = KKTvfNSq.q
     return print(
-        io,
-        "KKTVectorFieldNormSq\n\twith μ=$(KKTvfNSq.μ), λ=$(KKTvfNSq.λ), s=$(KKTvfNSq.s).",
+        io, "KKTVectorFieldNormSq\n\twith  μ=$(q[N, 2]), λ=$(q[N, 3]), s=$(q[N, 4])."
     )
 end
 
@@ -698,28 +794,53 @@ and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q)` but you can also provide memory to compute the
 gradient in, before taking its norm `F(N, Y, q)`.
 """
-mutable struct KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective,V} <:
+mutable struct KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective,TN,P} <:
                AbstractConstrainedSlackFunctor
     cmo::O
-    μ::V
-    λ::V
-    s::V
+    N::TN
+    q::P
+    function KKTVectorFieldNormSqGradient(
+        M::AbstractManifold,
+        cmo::ConstrainedManifoldObjective,
+        μ,
+        λ,
+        s;
+        N=M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(μ)),
+    )
+        @assert length(s) == length(μ) "The lengths of μ ($(length(μ))) and s ($(length(s))) have to agree, but they do not"
+        q = rand(N)
+        q[N, 2] = μ
+        q[N, 3] = λ
+        q[N, 4] = s
+        return KKTVectorFieldNormSqGradient(N, cmo, q)
+    end
+    function KKTVectorFieldNormSqGradient(
+        N::TN, cmo::O, q::P
+    ) where {TN<:ProductManifold,O<:ConstrainedManifoldObjective,P}
+        return new{O,TN,P}(cmo, N, q)
+    end
 end
-function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, q)
-    Y = zero_vector(N, q)
-    KKTcfNG(N, Y, q)
+function (KKTcfNG::KKTVectorFieldNormSqGradient)(M, p)
+    copyto!(M, KKTcfNG.q[KKTcfNG.N, 1], p)
+    Y = zero_vector(KKTcfNG.N, KKTcfNG.q)
+    KKTcfNG(M, Y, p)
     return Y
 end
-function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
-    Z = copy(N, q, Y)
-    KKTVectorField(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Z, q)
-    KKTVectorFieldAdjointJacobian(KKTcfNG.cmo, KKTcfNG.μ, KKTcfNG.λ, KKTcfNG.s)(N, Y, q)
+function (KKTcfNG::KKTVectorFieldNormSqGradient)(M, Y, p)
+    N = KKTcfNG.N
+    q = KKTcfNG.q
+    copyto!(M, q[N, 1], p)
+    Z = copy(KKTcfNG.N, KKTcfNG.q, Y)
+    KKTVectorField(N, KKTcfNG.cmo, q)(M, Z, p)
+    KKTVectorFieldAdjointJacobian(N, KKTcfNG.cmo, q)(M, Y, p, Z)
     return Y
 end
 function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
+    N = KKTvfNSqGrad.N
+    q = KKTvfNSqGrad.q
     return print(
         io,
-        "KKTVectorFieldNormSqGradient\n\twith μ=$(KKTvfNSqGrad.μ), λ=$(KKTvfNSqGrad.λ), s=$(KKTvfNSqGrad.s).",
+        "KKTVectorFieldNormSqGradient\n\twith  μ=$(q[N, 2]), λ=$(q[N, 3]), s=$(q[N, 4]).",
     )
 end
 

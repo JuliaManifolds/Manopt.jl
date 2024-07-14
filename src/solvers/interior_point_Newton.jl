@@ -13,8 +13,11 @@ In order to solve the constrained problem
 \end{aligned}
 ```
 
+This algorithms iteratively solves the linear system based on extending the KKT system
+by a slack variable `s`.
+
 ```math
-\operatorname{Jacobian} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
+\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
 \text{ where }
 X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n,
 ```
@@ -28,15 +31,13 @@ functions ``g,h`, its gradient or Jacobian requires the Hessians of the constrai
 For that seach direction a line search is performed, that additionally ensures that
 the constraints are further fulfilled.
 
-(TODO: Link to sub cost/grad/Hessian, and Linesearch once documented)
-
 # Input
 
 * `M`:      a manifold ``\mathcal M``
 * `f`:      a cost function ``f : \mathcal M → ℝ`` to minimize
 * `grad_f`: the gradient ``\operatorname{grad} f : \mathcal M → T \mathcal M`` of ``f``
 * `Hess_f`: the Hessian ``\operatorname{Hess}f(p): T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
-* `p=[`rand`](@extref ManifoldsBase.rand)`(M)`: an initial value ``x  ∈  \mathcal M``
+* `p=`[`rand`](@extref Base.rand-Tuple{AbstractManifold})`(M)`: an initial value ``p  ∈  \mathcal M``
 
 # Keyword arguments
 
