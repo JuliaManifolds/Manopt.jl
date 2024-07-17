@@ -203,7 +203,7 @@ end
 
 function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState, k)
     # compute Newton direction
-    E = get_manifold(mp) # vector bundle (codomain of F)
+    E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
 
@@ -221,7 +221,7 @@ function step_solver!(
     k,
 ) where {P,T,PR}
     # compute Newton direction
-    E = get_manifold(mp) # vector bundle (codomain of F)
+    E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
     s.X = s.sub_problem(mp, s, k)
@@ -234,7 +234,7 @@ function step_solver!(
     mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
 ) where {P,T,PR}
     # compute Newton direction
-    E = get_manifold(mp) # vector bundle (codomain of F)
+    E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
     s.sub_problem(mp, s.X, s, k)
