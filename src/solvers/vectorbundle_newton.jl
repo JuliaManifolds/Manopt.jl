@@ -58,7 +58,7 @@ function VectorbundleNewtonState(
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
-    vector_transport_method::VTM=default_vector_transport_method(E, typeof(F(p))),
+    vector_transport_method::VTM=default_vector_transport_method(E, typeof(F(M, p))),
 ) where {
     P,
     T,
@@ -175,10 +175,10 @@ raw"""
     in a matrix form (TODO?? (a) matrix, (b) matrix action (c) something nice for Q?)
 """
 function get_derivative(M, E, vbo::VectorbundleObjective, p)
-    return vbo.derivative!!(get:manifold(M), p)
+    return vbo.derivative!!(M, p)
 end
 function get_derivative(vpb::VectorbundleManoptProblem, p)
-    return get_bundle_map(
+    return get_derivative(
         get_manifold(vpb), get_vectorbundle(vpb), get_objective(vpb, true), p
     )
 end

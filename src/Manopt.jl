@@ -276,7 +276,7 @@ export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem
-export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
+export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem, VectorbundleManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
@@ -305,7 +305,8 @@ export AbstractDecoratedManifoldObjective,
     AbstractVectorFunction,
     AbstractVectorGradientFunction,
     VectorGradientFunction,
-    VectorHessianFunction
+    VectorHessianFunction,
+    VectorbundleObjective
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -340,7 +341,8 @@ export AbstractGradientSolverState,
     StochasticGradientDescentState,
     SubGradientMethodState,
     TruncatedConjugateGradientState,
-    TrustRegionsState
+    TrustRegionsState,
+    VectorbundleNewtonState
 
 # Objectives and Costs
 export NelderMeadSimplex
@@ -395,6 +397,7 @@ export equality_constraints_length,
     get_hess_inequality_constraint!,
     get_hess_equality_constraint,
     get_hess_equality_constraint!
+export get_vectorbundle, get_derivative, get_connection_map, get_bundle_map
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
