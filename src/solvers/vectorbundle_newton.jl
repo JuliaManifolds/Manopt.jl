@@ -140,7 +140,7 @@ raw"""
     Evaluate the vector field ``F: \mathcal M → \mathcal E`` at ``p``
 """
 function get_bundle_map(M, E, vbo::VectorbundleObjective, p)
-    return vbo.bundle_map!!(get:manifold(M), p)
+    return vbo.bundle_map!!(M, p)
 end
 function get_bundle_map(M, E, vbo::VectorbundleObjective{InplaceEvaluation}, p)
     X = zero_vector(E, p)
