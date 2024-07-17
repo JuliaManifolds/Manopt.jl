@@ -1,5 +1,3 @@
 using Manopt, Manifolds, Test
 
-@testset "VectorbundleNewton" begin
-    
-end
+@testset "VectorbundleNewton" begin end
