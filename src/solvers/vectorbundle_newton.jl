@@ -109,10 +109,15 @@ function VectorbundleObjective(
     return VectorbundleObjective{E,C,G,F}(bundle_map, derivative, connection_map)
 end
 
-# We need a VectorbundleProblem with domain M, codomain vector bundle E, and an objective
 
+raw"""
+    VectorbundleManoptProblem{
+    TM<:AbstractManifold,TV<:AbstractManifold,O<:AbstractManifoldObjective
+}
+
+Model a vector bundle problem, that consists of the domain manifold ``\mathcal M`` that is a AbstractManifold, the range vector bundle ``\mathcal E`` and an VectorbundleObjective
 """
-"""
+# sollte da O nicht ein VectorbundleObjective sein?
 struct VectorbundleManoptProblem{
     TM<:AbstractManifold,TV<:AbstractManifold,O<:AbstractManifoldObjective
 } <: AbstractManoptProblem{TM}
@@ -121,11 +126,27 @@ struct VectorbundleManoptProblem{
     objective::O
 end
 
-"""
+raw"""
+    get_vectorbundle(vbp::VectorbundleManoptProblem)
+
+    returns the range vector bundle stored within a [`VectorbundleManoptProblem`](@ref)
 """
 get_vectorbundle(vbp::VectorbundleManoptProblem) = vbp.vectorbundle
 
+raw"""
+    get_manifold(vbp::VectorbundleManoptProblem)
+
+    returns the domain manifold stored within a [`VectorbundleManoptProblem`](@ref)
+"""
 get_manifold(vbp::VectorbundleManoptProblem) = vbp.manifold
+
+
+raw"""
+    get_objective(mp::VectorbundleManoptProblem, recursive=false)
+
+return the objective [`VectorbundleObjective`](@ref) stored within an [`VectorbundleManoptProblem`](@ref).
+If `recursive is set to true, it additionally unwraps all decorators of the objective`
+"""
 
 function get_objective(vbp::VectorbundleManoptProblem, recursive=false)
     return recursive ? get_objective(vbp.objective, true) : vbp.objective
