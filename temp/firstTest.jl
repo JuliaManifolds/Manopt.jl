@@ -61,18 +61,18 @@ end
 
 # ╔═╡ 6a07e0c2-ba0f-4d23-8e98-3f86138298be
 begin
-	import Manopt.get_submersion
-	function get_submersion(M::Sphere, p)
-		return p'p - 1
-	end
+    import Manopt.get_submersion
+    function get_submersion(M::Sphere, p)
+        return p'p - 1
+    end
 end
 
 # ╔═╡ d1e0f7aa-f1cc-4ef6-90de-a8dbc0aec0b4
 begin
-	import Manopt.get_submersion_derivative
-	function get_submersion_derivative(M::Sphere, p)
-		return p'
-	end
+    import Manopt.get_submersion_derivative
+    function get_submersion_derivative(M::Sphere, p)
+        return p'
+    end
 end
 
 # ╔═╡ 2f11d1ca-4434-11ef-2ca7-f52cd378d278
@@ -84,14 +84,14 @@ function solve(mp, s, k)
     F_p = get_bundle_map(M, E, o, s.p)
     Fprime_p = get_derivative(M, E, o, s.p)
     connection = get_connection_map(mp, F_p)
-	submersion_derivative = get_submersion_derivative(M, s.p)
+    submersion_derivative = get_submersion_derivative(M, s.p)
 
     #covDeriv = connection(F, Fprime)
     covariant_derivative = Fprime_p - connection#*p'(F_p)
     #newton_matrix = vcat(covariant_derivative, s.p')
-	newton_matrix = vcat(covariant_derivative, submersion_derivative)
+    newton_matrix = vcat(covariant_derivative, submersion_derivative)
     #ptilde = vcat(s.p, 0)
-	ptilde = vcat(submersion_derivative', 0)
+    ptilde = vcat(submersion_derivative', 0)
     newton_matrix = hcat(newton_matrix, ptilde)
     rhs = -1.0 * F_p[E, :vector]'
     rhs = vcat(rhs, 0)

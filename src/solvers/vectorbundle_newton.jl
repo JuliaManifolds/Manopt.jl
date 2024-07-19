@@ -8,6 +8,7 @@ Is state for the vectorbundle Newton method
 * 'p': current iterate
 * 'X': current Newton Direction
 * `stopping_criterion`: stopping criterion
+* `stepsize`: damping factor for the Newton direction
 * `retraction_method`:  the retraction to use in the Newton update 
 * 'vector_transport_method': the vector transport to use
 
@@ -24,9 +25,10 @@ Is state for the vectorbundle Newton method
 
 # Keyword arguments
 
-* X=zero_vector(M, p)
+* `X=`zero_vector(M, p)
 * `retraction_method=``default_retraction_method`(M, typeof(p)),
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)``,
+* `stepsize=`1.0
 * `vector_transport_method=``default_vector_transport_method`(E, typeof(F(p)))
 
 """
@@ -37,6 +39,7 @@ mutable struct VectorbundleNewtonState{
     Pr,
     St,
     TStop<:StoppingCriterion,
+    TStep<:Stepsize,
     TRTM<:AbstractRetractionMethod,
     TVM<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState
@@ -45,6 +48,7 @@ mutable struct VectorbundleNewtonState{
     sub_problem::Pr
     sub_state::St
     stop::TStop
+    stepsize::TStep
     retraction_method::TRTM
     vector_transport_method::TVM
 end
@@ -59,6 +63,7 @@ function VectorbundleNewtonState(
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
+    stepsize::S=default_stepsize(M, VectorbundleNewtonState),
     vector_transport_method::VTM=default_vector_transport_method(E, typeof(F(M, p))),
 ) where {
     P,
@@ -67,17 +72,23 @@ function VectorbundleNewtonState(
     Op,
     RM<:AbstractRetractionMethod,
     SC<:StoppingCriterion,
+    S<:Stepsize,
     VTM<:AbstractVectorTransportMethod,
 }
-    return VectorbundleNewtonState{P,T,Pr,Op,SC,RM,VTM}(
+    return VectorbundleNewtonState{P,T,Pr,Op,SC,S,RM,VTM}(
         p,
         X,
         sub_problem,
         sub_state,
         stopping_criterion,
+        stepsize,
         retraction_method,
         vector_transport_method,
     )
+end
+
+function default_stepsize(M::AbstractManifold, ::Type{VectorbundleNewtonState})
+    return ConstantStepsize(M)
 end
 
 function show(io::IO, vbns::VectorbundleNewtonState)
@@ -293,6 +304,6 @@ function step_solver!(
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
     s.sub_problem(mp, s.X, s, k)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.retraction_method)
+    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize, s.retraction_method)
     return s
 end
