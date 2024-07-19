@@ -100,6 +100,8 @@ function show(io::IO, vbns::VectorbundleNewtonState)
     $Iter
     ## Parameters
     * retraction method: $(vbns.retraction_method)
+    * vector transport: $(vbns.vector_transport_method)
+    * step size: $(vbns.stepsize)
 
     ## Stopping criterion
 
