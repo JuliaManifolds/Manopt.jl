@@ -8,7 +8,7 @@ Is state for the vectorbundle Newton method
 * 'p': current iterate
 * 'X': current Newton Direction
 * `stopping_criterion`: stopping criterion
-* `retraction_method`:  the retraction to used
+* `retraction_method`:  the retraction to use in the Newton update 
 * 'vector_transport_method': the vector transport to use
 
 # Constructor
@@ -30,6 +30,7 @@ Is state for the vectorbundle Newton method
 * `vector_transport_method=``default_vector_transport_method`(E, typeof(F(p)))
 
 """
+#sub_problem und sub_state dokumentieren?
 mutable struct VectorbundleNewtonState{
     P,
     T,
@@ -79,16 +80,33 @@ function VectorbundleNewtonState(
     )
 end
 
+function show(io::IO, vbns::VectorbundleNewtonState)
+    i = get_count(vbns, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(vbns.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Vectorbundle Newton Method
+    $Iter
+    ## Parameters
+    * retraction method: $(vbns.retraction_method)
+
+    ## Stopping criterion
+
+    $(status_summary(vbns.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+
 @doc raw"""
     VectorbundleObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
-specify an objective containing a cost and its gradient
+specify an objective containing a vector bundle map, its derivative, and a connection map
 
 # Fields
 
 * `bundle_map!!`:       a mapping ``F: \mathcal M → \mathcal E`` into a vector bundle
 * `derivative!!`: the derivative ``F': T\mathcal M → T\mathcal E`` of the bundle map ``F``.
-* 'connection_map': connection map used in the Newton equation
+* 'connection_map!!': connection map used in the Newton equation
 
 # Constructors
     VectorbundleObjective(bundle_map, derivative, connection_map; evaluation=AllocatingEvaluation())
@@ -108,7 +126,6 @@ function VectorbundleObjective(
 ) where {C,G,F,E<:AbstractEvaluationType}
     return VectorbundleObjective{E,C,G,F}(bundle_map, derivative, connection_map)
 end
-
 
 raw"""
     VectorbundleManoptProblem{
@@ -140,12 +157,11 @@ raw"""
 """
 get_manifold(vbp::VectorbundleManoptProblem) = vbp.manifold
 
-
 raw"""
     get_objective(mp::VectorbundleManoptProblem, recursive=false)
 
 return the objective [`VectorbundleObjective`](@ref) stored within an [`VectorbundleManoptProblem`](@ref).
-If `recursive is set to true, it additionally unwraps all decorators of the objective`
+If `recursive` is set to true, it additionally unwraps all decorators of the `objective`
 """
 
 function get_objective(vbp::VectorbundleManoptProblem, recursive=false)
@@ -217,6 +233,23 @@ end
 function get_connection_map(vbp::VectorbundleManoptProblem, q)
     return get_connection_map(get_vectorbundle(vbp), get_objective(vbp, true), q)
 end
+
+raw"""
+    get_submersion(M, p)
+
+    returns the submersion at point ``p`` which defines the manifold 
+    ``\mathcal M = \{p : c(p) = 0 \}``
+"""
+
+function get_submersion(M::AbstractManifold, p) end
+
+raw"""
+    get_submersion_derivative(M,p)
+
+    returns the derivative ``c'(p) : T_p\mathcal{M} \to \mathcal R``of the submersion at point ``p`` which defines the manifold in matrix form 
+"""
+
+function get_submersion_derivative(M::AbstractManifold, p) end
 
 function initialize_solver!(::VectorbundleManoptProblem, s::VectorbundleNewtonState)
     return s
