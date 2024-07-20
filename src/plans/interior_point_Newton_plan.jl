@@ -196,7 +196,7 @@ Fiven the constrained optimixzation problem
 \end{aligned}
 ```
 
-we reformulate the KKT conditions of the Lagrangian
+Then reformulating the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
@@ -211,10 +211,11 @@ and the Riemannian gradient of the Lagrangian with respect to the first paramete
 Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A(p)[X,Y] = -b(p),\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } (X,Y) ∈ T_{(p,λ)}\mathcal N
 ```
-where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator and
-this struct models the right hand side ``b(p) ∈ T_p\mathcal M`` given by
+
+where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator and
+this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}\mathcal M`` given by
 
 ```math
 b(p) = \begin{pmatrix}
@@ -320,11 +321,11 @@ Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
 ```math
 \mathcal A[X,Y] = -b,\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
 ```
-where ``\mathcal A: T_q\mathcal N → T_q\mathcal N`` is a linear operator
-on ``T_q\mathcal N = T_p\mathcal M × ℝ^n`` given by
+where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator
+on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
 
 ```math
-\mathcal A[X,Y] = \begin{pmatrix}
+\mathcal A(p,λ)[X,Y] = \begin{pmatrix}
 \operatorname{Hess}_p\mathcal L(p, μ, λ)
 + \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}⟨\operatorname{grad} g_i(p), X⟩\operatorname{grad} g_i(p)
 + \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
@@ -351,6 +352,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     p, μ, λ, s = q[N, 1], cKKTvfJ.μ, q[N, 2], cKKTvfJ.s
     m, n = length(μ), length(λ)
     Xp, Xλ = X[N, 1], X[N, 2]
+    zero_vector!(N, Y, q)
     # First Summand of Hess L
     copyto!(M, X[N, 1], get_hessian(M, cmo, p, Xp))
     if m > 0

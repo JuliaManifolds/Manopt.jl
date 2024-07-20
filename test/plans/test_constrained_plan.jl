@@ -58,6 +58,7 @@ include("../utils/dummy_types.jl")
     #A set of values for an example point and tangent
     p = [1.0, 2.0, 3.0]
     c = [[0.0, -3.0], [5.0]]
+    fp = 14.0
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     gh = [[0.0, 0.0, 2.0]]
     gf = 2 * p
@@ -446,8 +447,34 @@ include("../utils/dummy_types.jl")
         @testset "Condensed KKT, Jacobian" begin
             CKKTvf = CondensedKKTVectorField(coh, μ, s, β)
             @test startswith(repr(CKKTvf), "CondensedKKTVectorField\n")
+            b1 =
+                gf +
+                sum(λ .* gh) +
+                sum(μ .* gg) +
+                sum(((μ ./ s) .* (μ .* (c[1] .+ s) .+ β .- μ .* s)) .* gg)
+            b2 = c[2]
+            Nc = M × ℝ^1 # (p,λ)
+            qc = rand(Nc)
+            qc[Nc, 1] = p
+            qc[Nc, 2] = λ
+            V = CKKTvf(Nc, qc)
+            @test_broken V[Nc, 1] == b1 #TODO: fix
+            @test V[Nc, 2] == b2
+            V2 = copy(Nc, qc, V)
+            CKKTvf(Nc, V2, qc)
+            @test V2 == V
             CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, s, β)
             @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian\n")
+            Yc = zero_vector(Nc, q)
+            Yc[Nc, 1] = [1.0, 3.0, 5.0]
+            Yc[Nc, 2] = [7.0]
+            # Compute by hand – somehow the formula is still missing a Y
+            # Za = ,,,
+
+            W = CKKTVfJ(Nc, qc, Yc)
+            W2 = copy(Nc, qc, Yc)
+            CKKTVfJ(Nc, W2, qc, Yc)
+            @test_broken W2 == W
         end
     end
     @testset "Augmented Lagrangian Cost & Grad" begin
