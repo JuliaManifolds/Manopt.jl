@@ -276,7 +276,8 @@ export mid_point, mid_point!, reflect, reflect!
 #
 # Problems
 export AbstractManoptProblem
-export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem, VectorbundleManoptProblem
+export DefaultManoptProblem,
+    TwoManifoldProblem, ConstrainedManoptProblem, VectorbundleManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,

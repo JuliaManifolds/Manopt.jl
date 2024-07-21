@@ -9,7 +9,7 @@ Is state for the vectorbundle Newton method
 * 'X': current Newton Direction
 * `stopping_criterion`: stopping criterion
 * `stepsize`: damping factor for the Newton direction
-* `retraction_method`:  the retraction to use in the Newton update 
+* `retraction_method`:  the retraction to use in the Newton update
 * 'vector_transport_method': the vector transport to use
 
 # Constructor
@@ -250,7 +250,7 @@ end
 raw"""
     get_submersion(M, p)
 
-    returns the submersion at point ``p`` which defines the manifold 
+    returns the submersion at point ``p`` which defines the manifold
     ``\mathcal M = \{p : c(p) = 0 \}``
 """
 
@@ -259,7 +259,7 @@ function get_submersion(M::AbstractManifold, p) end
 raw"""
     get_submersion_derivative(M,p)
 
-    returns the derivative ``c'(p) : T_p\mathcal{M} \to \mathcal R``of the submersion at point ``p`` which defines the manifold in matrix form 
+    returns the derivative ``c'(p) : T_p\mathcal{M} \to \mathcal R``of the submersion at point ``p`` which defines the manifold in matrix form
 """
 
 function get_submersion_derivative(M::AbstractManifold, p) end
@@ -293,7 +293,7 @@ function step_solver!(
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
     s.X = s.sub_problem(mp, s, k)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.retraction_method)
+    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize(mp, s, k), s.retraction_method)
     return s
 end
 
@@ -306,6 +306,6 @@ function step_solver!(
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
     s.sub_problem(mp, s.X, s, k)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize, s.retraction_method)
+    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize(mp, s, k), s.retraction_method)
     return s
 end
