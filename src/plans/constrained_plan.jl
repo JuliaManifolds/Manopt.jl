@@ -1065,8 +1065,8 @@ All other keywords are passed on to `is_poi`
 """
 function is_feasible(M, cmo, p; check_point::Bool=true, error::Symbol=:none, kwargs...)
     v = !check_point || is_point(M, p; error=error)
-    g = get_inequality_constraints(M, cmo, p)
-    h = get_equality_constraints(M, cmo, p)
+    g = get_inequality_constraint(M, cmo, p, :)
+    h = get_equality_constraint(M, cmo, p, :)
     feasible = v && all(g .<= 0) && all(h .== 0)
     # if we are feasible or no error shall be generated
     ((error === :none) || feasible) && return feasible
