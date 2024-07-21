@@ -357,7 +357,6 @@ include("../utils/dummy_types.jl")
     @testset "Lagrangians" begin
         μ = [1.0, 1.0]
         λ = [1.0]
-        s = [3.0, 4.0]
         β = 7.0
         N = M × ℝ^2 × ℝ^1 × ℝ^2
         q = rand(N)
@@ -458,7 +457,7 @@ include("../utils/dummy_types.jl")
             qc[Nc, 1] = p
             qc[Nc, 2] = λ
             V = CKKTvf(Nc, qc)
-            @test_broken V[Nc, 1] == b1 #TODO: fix
+            @test_broken V[Nc, 1] == b1 #TODO: fix λ -> Y?
             @test V[Nc, 2] == b2
             V2 = copy(Nc, qc, V)
             CKKTvf(Nc, V2, qc)
@@ -470,8 +469,19 @@ include("../utils/dummy_types.jl")
             Yc[Nc, 2] = [7.0]
             # Compute by hand – somehow the formula is still missing a Y
             # Za = ,,,
-
-            W = CKKTVfJ(Nc, qc, Yc)
+            Wc = zero_vector(Nc, qc)
+            # (1) Hess L + The g sum + the grad g sum
+            Wc[N, 1] = hf + sum(hg .* μ) + sum(hh .* Yc[2])
+            # (2) grad g terms
+            Wc[N, 1] += sum(
+                (μ ./ s) .*
+                [inner(Nc[1], qc[N, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
+            )
+            # (3) grad h terms
+            Wc[N, 1] += sum(Yc[N, 2] .* gh)
+            # Second component, just h terms
+            Wc[N, 2] =
+                [inner(Nc[1], qc[N, 1], gh[j], Yc[Nc, 1]) for j in 1:length(gh)]W = CKKTVfJ(Nc, qc, Yc)
             W2 = copy(Nc, qc, Yc)
             CKKTVfJ(Nc, W2, qc, Yc)
             @test_broken W2 == W
