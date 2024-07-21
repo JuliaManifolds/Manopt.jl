@@ -458,7 +458,7 @@ include("../utils/dummy_types.jl")
             qc[Nc, 1] = p
             qc[Nc, 2] = λ
             V = CKKTvf(Nc, qc)
-            @test_broken V[Nc, 1] == b1 #TODO: fix λ -> Y?
+            @test V[Nc, 1] == b1
             @test V[Nc, 2] == b2
             V2 = copy(Nc, qc, V)
             CKKTvf(Nc, V2, qc)
@@ -485,7 +485,7 @@ include("../utils/dummy_types.jl")
             W2 = copy(Nc, qc, Yc)
             CKKTVfJ(Nc, W2, qc, Yc)
             @test W2 == W
-            @test_broken Wc == W #TODO: Check formula and implementation again
+            @test Wc == W
         end
     end
     @testset "Augmented Lagrangian Cost & Grad" begin

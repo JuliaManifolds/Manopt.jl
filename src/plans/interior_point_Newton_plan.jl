@@ -255,22 +255,23 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     p, μ, λ, s = q[N, 1], cKKTvf.μ, q[N, 2], cKKTvf.s
     β = cKKTvf.β
     m, n = length(μ), length(λ)
-    # Revise to maybe element wise evals, especially for the gradients
-    g = get_inequality_constraint(M, cmo, p, :)
-    h = get_equality_constraint(M, cmo, p, :)
-    grad_g = get_grad_inequality_constraint(M, cmo, p, :)
-    grad_h = get_grad_equality_constraint(M, cmo, p, :)
-    # Lagrangian
+    # First term of the lagrangian
     get_gradient!(M, Y[N, 1], cmo, p) #grad f
-    (m > 0) && (Y[N, 1] += sum(μ .* grad_g))
-    (n > 0) && (Y[N, 1] += sum(λ .* grad_h))
-    # condensened last term
-    (m > 0) && (
-        Y[N, 1] += sum(
-            ((μ[i] * g[i] + β - μ[i] * s[i]) * μ[i] / s[i]) * grad_g[i] for i in 1:m
-        )
-    )
-    (n > 0) && (copyto!(N[2], Y[N, 2], h))
+    X = zero_vector(M, p)
+    for i in 1:m
+        get_grad_inequality_constraint!(M, X, cKKTvf.cmo, p, i)
+        gi = get_inequality_constraint(M, cKKTvf.cmo, p, i)
+        # Lagrangian term
+        Y[N, 1] += μ[i] * X
+        #
+        Y[N, 1] += (μ[i] / s[i]) * (μ[i] * (gi + s[i]) + β - μ[i] * s[i]) * X
+    end
+    for j in 1:n
+        get_grad_equality_constraint!(M, X, cKKTvf.cmo, p, j)
+        hj = get_equality_constraint(M, cKKTvf.cmo, p, j)
+        Y[N, 1] += λ[j] * X
+        Y[N, 2][j] = hj
+    end
     return Y
 end
 
@@ -348,31 +349,31 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, q, X)
 end
 function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     M = N[1]
-    cmo = cKKTvfJ.cmo
     p, μ, λ, s = q[N, 1], cKKTvfJ.μ, q[N, 2], cKKTvfJ.s
     m, n = length(μ), length(λ)
     Xp, Xλ = X[N, 1], X[N, 2]
     zero_vector!(N, Y, q)
+    Xt = zero_vector(M, p)
     # First Summand of Hess L
-    copyto!(M, X[N, 1], get_hessian(M, cmo, p, Xp))
-    if m > 0
-        grad_g = get_grad_inequality_constraint(M, cmo, p, :)
-        H_g = get_hess_inequality_constraint(M, cmo, p, Xp, :)
+    copyto!(M, Y[N, 1], get_hessian(M, cKKTvfJ.cmo, p, Xp))
+    # Build the rest iteratively
+    for i in 1:m #ineq
+        get_hess_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, i)
         # Summand of Hess L
-        Y[N, 1] += sum([μ[i] * H_g[i] for i in 1:m])
+        Y[N, 1] += μ[i] * Xt
+        get_grad_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, i)
         # condensed term
-        Y[N, 1] += sum([μ[i] / s[i] * inner(M, p, grad_g[i], Xp) * grad_g[i] for i in 1:m])
+        Y[N, 1] += (μ[i] / s[i]) * inner(M, p, Xt, Xp) * Xt
     end
-    if n > 0
-        # Less allocations with for loops?
-        grad_h = get_grad_equality_constraint(M, cmo, p, :)
-        H_h = get_hess_equality_constraint(M, cmo, p, Xp, :)
+    for j in 1:n #eq
+        get_hess_equality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, j)
         # Summand of Hess L
-        Y[N, 1] += sum([λ[j] * H_h[j] for j in 1:n])
+        Y[N, 1] += λ[j] * Xt
+        get_grad_equality_constraint!(M, Xt, cKKTvfJ.cmo, p, j)
         # condensed term
-        Y[N, 1] += sum([Xλ[j] * grad_h[j] for j in 1:n])
+        Y[N, 1] += Xλ[j] * Xt
         # condensed term in second part
-        copyto!(N[2], Y[N, 2], [inner(M, p, grad_h[j], Xp) for j in 1:n])
+        Y[N, 2][j] = inner(M, p, Xt, Xp)
     end
     return Y
 end
