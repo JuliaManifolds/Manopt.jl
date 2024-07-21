@@ -218,9 +218,9 @@ where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear 
 this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}\mathcal M`` given by
 
 ```math
-b(p) = \begin{pmatrix}
+b(p,λ) = \begin{pmatrix}
 \operatorname{grad} f(p)
-+ \displaystyle\sum_{j=1}^n Y_j \operatorname{grad} h_j(p)
++ \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
 + \displaystyle\sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
 + \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}\bigl(
   μ_i(g_i(p)+s_i) + β - μ_is_i
@@ -263,7 +263,7 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     # Lagrangian
     get_gradient!(M, Y[N, 1], cmo, p) #grad f
     (m > 0) && (Y[N, 1] += sum(μ .* grad_g))
-    (n > 0) && (Y[N, 1] += sum(Y .* grad_h))
+    (n > 0) && (Y[N, 1] += sum(λ .* grad_h))
     # condensened last term
     (m > 0) && (
         Y[N, 1] += sum(
@@ -319,14 +319,14 @@ the Riemannian gradient of the Lagrangian with respect to the first parameter.
 Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A[X,Y] = -b,\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
 ```
 where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator
 on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
 
 ```math
 \mathcal A(p,λ)[X,Y] = \begin{pmatrix}
-\operatorname{Hess}_p\mathcal L(p, μ, Y)
+\operatorname{Hess}_p\mathcal L(p, μ, λ)[X]
 + \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}⟨\operatorname{grad} g_i(p), X⟩\operatorname{grad} g_i(p)
 + \displaystyle\sum_{j=1}^n Y_j \operatorname{grad} h_j(p)
 \\
@@ -370,7 +370,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
         # Summand of Hess L
         Y[N, 1] += sum([λ[j] * H_h[j] for j in 1:n])
         # condensed term
-        Y[N, 1] += sum([Y[j] * grad_h[j] for j in 1:n])
+        Y[N, 1] += sum([Xλ[j] * grad_h[j] for j in 1:n])
         # condensed term in second part
         copyto!(N[2], Y[N, 2], [inner(M, p, grad_h[j], Xp) for j in 1:n])
     end

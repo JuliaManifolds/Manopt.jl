@@ -358,6 +358,7 @@ include("../utils/dummy_types.jl")
         μ = [1.0, 1.0]
         λ = [1.0]
         β = 7.0
+        s = [1.0, 2.0]
         N = M × ℝ^2 × ℝ^1 × ℝ^2
         q = rand(N)
         q[N, 1] = p
@@ -399,7 +400,7 @@ include("../utils/dummy_types.jl")
             Xp = LagrangianGradient(coh, μ, λ)(M, p) #Xμ = g + s; Xλ = h, Xs = μ .* s
             Y = KKTvf(N, q)
             @test Y[N, 1] == Xp
-            @test Y[N, 2] == c[1] + s
+            @test Y[N, 2] == c[1] .+ s
             @test Y[N, 3] == c[2]
             @test Y[N, 4] == μ .* s
             KKTvfJ = KKTVectorFieldJacobian(coh)
@@ -464,11 +465,10 @@ include("../utils/dummy_types.jl")
             @test V2 == V
             CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, s, β)
             @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian\n")
-            Yc = zero_vector(Nc, q)
+            Yc = zero_vector(Nc, qc)
             Yc[Nc, 1] = [1.0, 3.0, 5.0]
             Yc[Nc, 2] = [7.0]
             # Compute by hand – somehow the formula is still missing a Y
-            # Za = ,,,
             Wc = zero_vector(Nc, qc)
             # (1) Hess L + The g sum + the grad g sum
             Wc[N, 1] = hf + sum(hg .* μ) + sum(hh .* Yc[2])
@@ -477,14 +477,15 @@ include("../utils/dummy_types.jl")
                 (μ ./ s) .*
                 [inner(Nc[1], qc[N, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
             )
-            # (3) grad h terms
+            # (3) grad h terms (note the Y_2 component)
             Wc[N, 1] += sum(Yc[N, 2] .* gh)
             # Second component, just h terms
-            Wc[N, 2] =
-                [inner(Nc[1], qc[N, 1], gh[j], Yc[Nc, 1]) for j in 1:length(gh)]W = CKKTVfJ(Nc, qc, Yc)
+            Wc[N, 2] = [inner(Nc[1], qc[N, 1], gh[j], Yc[Nc, 1]) for j in 1:length(gh)]
+            W = CKKTVfJ(Nc, qc, Yc)
             W2 = copy(Nc, qc, Yc)
             CKKTVfJ(Nc, W2, qc, Yc)
-            @test_broken W2 == W
+            @test W2 == W
+            @test_broken Wc == W #TODO: Check formula and implementation again
         end
     end
     @testset "Augmented Lagrangian Cost & Grad" begin
