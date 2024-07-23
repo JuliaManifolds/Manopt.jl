@@ -62,10 +62,10 @@ function solve(mp, s, k)
 	end
 
 	# basis representation of F_p
-	f = get_coordinates(M, s.p, -1.0*F_p, DefaultOrthogonalBasis())
+	f = get_coordinates(M, s.p, F_p, DefaultOrthogonalBasis())
 
 	# solve linear system -> get coefficients of tangent vector
-	deltax_basis = newton_matrix / (f')
+	deltax_basis = newton_matrix / (-f')
 
 	deltax = get_vector(M, s.p, deltax_basis, B)
 	return deltax
@@ -105,8 +105,8 @@ p = [zeros(n - 1)..., 1]
 p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, p;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=StopAfterIteration(15),
-	debug=[:Iteration, :Change, 1, "\n", :Stop]
+	stopping_criterion=StopAfterIteration(1),
+	debug=[:Iteration, :Change, 1, "\n", :Iterate, "\n", :Stop]
 )
 
 # ╔═╡ bc89b23b-7a44-4b55-9e32-8ef3f8a4b323
