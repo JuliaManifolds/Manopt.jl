@@ -477,7 +477,9 @@ export adaptive_regularization_with_cubics,
     truncated_conjugate_gradient_descent,
     truncated_conjugate_gradient_descent!,
     trust_regions,
-    trust_regions!
+    trust_regions!,
+    vectorbundle_newton,
+    vectorbundle_newton!
 # Solver helpers
 export decorate_state!, decorate_objective!
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!

@@ -253,7 +253,6 @@ raw"""
     returns the submersion at point ``p`` which defines the manifold
     ``\mathcal M = \{p : c(p) = 0 \}``
 """
-
 function get_submersion(M::AbstractManifold, p) end
 
 raw"""
@@ -261,8 +260,96 @@ raw"""
 
     returns the derivative ``c'(p) : T_p\mathcal{M} \to \mathcal R``of the submersion at point ``p`` which defines the manifold in matrix form
 """
-
 function get_submersion_derivative(M::AbstractManifold, p) end
+
+@doc raw"""
+    vectorbundle_newton(M, E, F, F_prime, Q, p; kwargs...)
+    vectorbundle_newton(M, E, vbo p0; kwargs...)
+    vectorbundle_newton!(M, E, F, F_prime, Q, p; kwargs...)
+    vectorbundle_newton(M, E, vbo, p0; kwargs...)
+
+Peform the vector bundle newon method on the vector bundle `E` over the manifold `M`
+for `F` and `F_prime` using the connection map `Q`.
+The point `p` denotes the start point. The algorithm can be run in-place of `p`.
+
+You can also provide an [`VectorBundleObjective`](@ref) containing `F`, ``F'`` and ``Q``.
+"""
+vectorbundle_newton(M::AbstractManifold, E::AbstractManifold, args...; kwargs...) #replace type of E with VectorBundle once this is available in ManifoldsBase
+
+function vectorbundle_newton(
+    M::AbstractManifold, E::AbstractManifold, F, F_prime, Q, p; kwargs...
+)
+    q = copy(M, p)
+    return vectorbundle_newton!(M, E, F, F_prime, Q, q; kwargs...)
+end
+function vectorbundle_newton(
+    M::AbstractManifold, E::AbstractManifold, vbo::VectorbundleObjective, p; kwargs...
+)
+    q = copy(M, p)
+    return vectorbundle_newton!(M, E, vbo, q; kwargs...)
+end
+function vectorbundle_newton!(
+    M::AbstractManifold,
+    E::AbstractManifold,
+    F,
+    F_prime,
+    Q,
+    p;
+    evaluation=AllocatingEvaluation(),
+    kwargs...,
+)
+    vbo = VectorbundleObjective(F, F_prime, Q; evaluation=evaluation)
+    return vectorbundle_newton!(M, E, vbo, p; evaluation=evaluation, kwargs...)
+end
+function vectorbundle_newton!(
+    M::AbstractManifold,
+    E::AbstractManifold,
+    vbo::O,
+    p::P;
+    evaluation=AllocatingEvaluation(),
+    sub_problem::Pr=nothing, #TODO: find/implement good default solver
+    sub_state::Op=nothing, #TODO: find/implement good default solver
+    X::T=zero_vector(M, p),
+    retraction_method::RM=default_retraction_method(M, typeof(p)),
+    stopping_criterion::SC=StopAfterIteration(1000),
+    stepsize::S=default_stepsize(M, VectorbundleNewtonState),
+    vector_transport_method::VTM=default_vector_transport_method(
+        E, typeof(get_bundle_map(M, E, vbo, p)),
+    ),
+    kwargs...,
+) where {
+    P,
+    T,
+    Pr,
+    O<:Union{AbstractDecoratedManifoldObjective,VectorbundleObjective},
+    Op,
+    RM<:AbstractRetractionMethod,
+    SC<:StoppingCriterion,
+    S<:Stepsize,
+    VTM<:AbstractVectorTransportMethod,
+}
+    # Once we have proper defaults, these checks should be removed
+    isnothing(sub_problem) && error("Please provide a sub_problem")
+    isnothing(sub_state) && error("Please provide a sub_state")
+    dvbo = decorate_objective!(M, vbo; kwargs...)
+    vbp = VectorbundleManoptProblem(M, E, dvbo)
+    vbs = VectorbundleNewtonState(
+        M,
+        E,
+        get_objective(vbo).bundle_map!!, #This is a bit of a too concrete access, maybe improve
+        p,
+        sub_problem,
+        sub_state;
+        X=X,
+        retraction_method=retraction_method,
+        stopping_criterion=stopping_criterion,
+        stepsize=stepsize,
+        vector_transport_method=vector_transport_method,
+    )
+    dvbs = decorate_state!(vbs; kwargs...)
+    solve!(vbp, dvbs)
+    return get_solver_return(get_objective(vbp), dvbs)
+end
 
 function initialize_solver!(::VectorbundleManoptProblem, s::VectorbundleNewtonState)
     return s

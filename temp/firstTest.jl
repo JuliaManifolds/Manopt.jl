@@ -125,6 +125,25 @@ solve!(problem, state)
 # ╔═╡ 5d019884-80a4-46b2-a2d0-bf0f2771db20
 f(M, state.p)
 
+# ╔═╡ 9b49618b-2034-4ff2-9e8d-90d5127ae411
+md"""
+Instead of creating objective, problem, and state manually, we now also have a high-level interface:
+"""
+
+# ╔═╡ 310ac543-b448-4776-a66b-62d0de5695d0
+p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, p;
+	sub_problem=solve,
+	sub_state=AllocatingEvaluation(),
+	stopping_criterion=StopAfterIteration(15),
+	debug=[:Iteration, :Change, 1, "\n", :Stop]
+)
+
+# ╔═╡ e112fd45-dacc-49af-89ad-993d6a064860
+f(M, p_res)
+
+# ╔═╡ 4855e08c-4464-4a9b-bd68-de59a7c4884c
+# We might have started at an eigenvalue already?
+
 # ╔═╡ Cell order:
 # ╠═9c6adf5c-d521-4227-bf44-64f317bccba5
 # ╠═af19557a-9a39-4861-bc89-5fa932c26364
@@ -144,3 +163,7 @@ f(M, state.p)
 # ╠═1583e00e-85ec-4faa-9429-a3bcd804aa36
 # ╠═6656986c-ebea-4850-9daa-8e453fda9bac
 # ╠═5d019884-80a4-46b2-a2d0-bf0f2771db20
+# ╟─9b49618b-2034-4ff2-9e8d-90d5127ae411
+# ╠═310ac543-b448-4776-a66b-62d0de5695d0
+# ╠═e112fd45-dacc-49af-89ad-993d6a064860
+# ╠═4855e08c-4464-4a9b-bd68-de59a7c4884c
