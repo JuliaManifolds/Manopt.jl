@@ -428,9 +428,9 @@ function (d::DebugFeasibility)(
 )
     s = ""
     p = get_iterate(st)
-    eqc = get_equality_constraints(mp, p)
+    eqc = get_equality_constraint(mp, p, :)
     eqc_nz = eqc[abs.(eqc) .> d.atol]
-    ineqc = get_inequality_constraints(mp, p)
+    ineqc = get_inequality_constraint(mp, p, :)
     ineqc_pos = ineqc[ineqc .> d.atol]
     feasible = (length(eqc_nz) == 0) && (length(ineqc_pos) == 0)
     n_eq = length(eqc_nz)
