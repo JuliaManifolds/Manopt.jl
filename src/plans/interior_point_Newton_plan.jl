@@ -1,3 +1,12 @@
+struct StepsizeState{P,T} <: AbstractManoptSolverState
+    q::P
+    X::T
+end
+get_iterate(s::StepsizeState) = s.q
+get_gradient(s::StepsizeState) = s.X
+set_iterate!(s::StepsizeState, M, q) = copyto!(M, s.q, q)
+set_gradient!(s::StepsizeState, M, q, X) = copyto!(M, s.X, q, X)
+
 # struct for state of interior point algorithm
 """
     InteriorPointNewtonState <: AbstractHessianSolverState
@@ -47,10 +56,11 @@ mutable struct InteriorPointNewtonState{
     Pr<:Union{AbstractManoptProblem,F} where {F},
     St<:Union{AbstractManoptSolverState,AbstractEvaluationType},
     R,
-    TStop<:StoppingCriterion,
+    SC<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
     TStepsize<:Stepsize,
     TStepPr<:AbstractManoptProblem,
+    TStepSt<:AbstractManoptSolverState,
 } <: AbstractHessianSolverState
     p::P
     sub_problem::Pr
@@ -61,10 +71,11 @@ mutable struct InteriorPointNewtonState{
     s::T
     ρ::R
     σ::R
-    stop::TStop
+    stop::SC
     retraction_method::TRTM
     stepsize::TStepsize
     step_problem::TStepPr
+    step_state::TStepSt
     function InteriorPointNewtonState(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
@@ -77,7 +88,7 @@ mutable struct InteriorPointNewtonState{
         s::T=ones(length(get_inequality_constraint(M, cmo, p, :))),
         ρ::R=μ's / length(get_inequality_constraint(M, cmo, p, :)),
         σ::R=calculate_σ(M, cmo, p, μ, λ, s),
-        stop::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
+        stopping_criterion::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::RTM=default_retraction_method(M),
         step_objective=ManifoldGradientObjective(
             KKTVectorFieldNormSq(cmo),
@@ -87,6 +98,8 @@ mutable struct InteriorPointNewtonState{
         step_problem::StepPr=DefaultManoptProblem(
             M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)), step_objective
         ),
+        _q=rand(get_manifold(step_problem)),
+        step_state::StepSt=StepsizeState(_q, zero_vector(get_manifold(step_problem), _q)),
         centrality_condition::F=(N, p) -> true, # Todo
         stepsize::S=ArmijoLinesearch(
             get_manifold(step_problem);
@@ -104,10 +117,11 @@ mutable struct InteriorPointNewtonState{
         F,
         SC<:StoppingCriterion,
         StepPr<:AbstractManoptProblem,
+        StepSt<:AbstractManoptSolverState,
         RTM<:AbstractRetractionMethod,
         S<:Stepsize,
     }
-        ips = new{P,T,Pr,St,R,SC,RTM,S,StepPr}()
+        ips = new{P,T,Pr,St,R,SC,RTM,S,StepPr,StepSt}()
         ips.p = p
         ips.sub_problem = sub_problem
         ips.sub_state = sub_state
@@ -117,11 +131,11 @@ mutable struct InteriorPointNewtonState{
         ips.s = s
         ips.ρ = ρ
         ips.σ = σ
-        ips.stop = stop
+        ips.stop = stopping_criterion
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
-        #ips.step_centrality = centrality_condition
         ips.step_problem = step_problem
+        ips.step_state = step_state
         return ips
     end
 end

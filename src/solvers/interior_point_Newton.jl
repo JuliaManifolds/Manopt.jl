@@ -250,6 +250,8 @@ function interior_point_Newton!(
     step_problem=DefaultManoptProblem(
         M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)), step_objective
     ),
+    _q=rand(get_manifold(step_problem)),
+    step_state=StepsizeState(_q, zero_vector(get_manifold(step_problem), _q)),
     stepsize::Stepsize=ArmijoLinesearch(
         get_manifold(step_problem);
         retraction_method=default_retraction_method(get_manifold(step_problem)),
@@ -296,8 +298,10 @@ function interior_point_Newton!(
         μ=μ,
         λ=λ,
         s=s,
-        stop=stopping_criterion,
+        stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
+        step_problem=step_problem,
+        step_state=step_state,
         stepsize=stepsize,
         kwargs...,
     )
@@ -342,20 +346,22 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
 
     # How to find K in a good way? -> move that to setting something in the stepsize?
     N = get_manifold(ips.step_problem)
-    # generate current full iterate
-    q = allocate_result(N, rand)
+    # generate current full iterate in step state
+    q = get_iterate(ips.step_state)
     copyto!(N[1], q[N, 1], get_iterate(ips))
     copyto!(N[2], q[N, 2], ips.μ)
     copyto!(N[3], q[N, 3], ips.λ)
     copyto!(N[4], q[N, 4], ips.s)
+    set_iterate!(ips.step_state, M, q)
     # generate current full gradient
-    X = allocate_result(N, zero_vector)
+    X = get_gradient(ips.step_state)
     copyto!(N[1], X[N, 1], Xp)
     (m > 0) && (copyto!(N[2], X[N, 2], Xμ))
     (n > 0) && (copyto!(N[3], X[N, 3], Xλ))
     (m > 0) && (copyto!(N[4], X[N, 4], Xs))
+    set_gradient!(ips.step_state, M, q, X)
     # determine stepsize
-    α = ips.stepsize(ips.step_problem, q, -X, X;)
+    α = ips.stepsize(ips.step_problem, ips.step_state, i)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
     if m > 0
