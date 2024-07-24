@@ -35,8 +35,11 @@ are used to fill in reasonable defaults for the keywords.
 
 # Input
 
+TODO
+
 # Keyword arguments
 
+TODO
 """
 mutable struct InteriorPointNewtonState{
     P,
@@ -736,9 +739,7 @@ mutable struct ConstraintLineSearchCheckFunction{CO}
     γ::Float64
 end
 function (clcf::ConstraintLineSearchCheckFunction)(N, q)
-    #p = q[N,1]
     μ = q[N, 2]
-    λ = q[N, 3]
     s = q[N, 4]
     KKTvf = KKTVectorFieldNormSq(clcf.cmo)
     (minimum(μ .* s) - clcf.γ * clcf.τ1 / length(μ) < 0) && return false

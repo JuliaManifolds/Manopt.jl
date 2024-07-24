@@ -51,7 +51,6 @@ function get_cost(
 )
     M = base_manifold(TpM)
     p = base_point(TpM)
-    b = slso.b!!(M, p)
     return 0.5 * norm(M, p, slso.A!!(M, p, X) + slso.b!!(M, p))^2
 end
 function get_cost(

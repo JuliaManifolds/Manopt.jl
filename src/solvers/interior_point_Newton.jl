@@ -254,6 +254,7 @@ function interior_point_Newton!(
         get_manifold(step_problem);
         retraction_method=default_retraction_method(get_manifold(step_problem)),
         initial_stepsize=1.0,
+        initial_guess=interior_point_initial_guess,
         additional_decrease_condition=centrality_condition,
     ),
     sub_objective=decorate_objective!(
@@ -326,7 +327,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_manopt_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :barrier_param, ips.ρ * ips.σ)
+    set_manopt_parameter!(ips.sub_problem, :Objective, :β, ips.ρ * ips.σ)
     # product manifold on which to perform linesearch
 
     Y = get_solver_result(solve!(ips.sub_problem, ips.sub_state))

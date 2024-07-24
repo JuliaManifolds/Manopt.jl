@@ -135,7 +135,7 @@ performed the following steps at iteration ``k=0,…`` until the `stopping_crite
 2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
 4. compute ``Z = \mathcal A(p)[r^{(k+1)}]``
 5. Update the conjugate coefficient ``β_k = \displaystyle\frac{\langle r^{(k+1)}, \mathcal A(p)[r^{(k+1)}] \rangle_p}{\langle r^{(k)}, \mathcal A(p)[r^{(k)}] \rangle_p}``
-6. Update the conjugate direction ``d^{(k+1)} = -r^{(k+1)} + β_kd^{(k)}``
+6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(0)} = -Z + β_k Y^{(k})``, the evaluated ``\mamthcal A[d^{(k)]``
 
 # Input
@@ -161,7 +161,7 @@ function conjugate_residual(
     TpM::TangentSpace,
     A,
     b,
-    X=rand(TpM);
+    X=zero_vector(TpM);
     evaluation::AbstractEvaluationType=AllocatingEvaluation,
     kwargs...,
 )
@@ -169,7 +169,7 @@ function conjugate_residual(
     return conjugate_residual(TpM, slso, X; evaluation=evaluation, kwargs...)
 end
 function conjugate_residual(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=rand(TpM); kwargs...
+    TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=zero_vector(TpM); kwargs...
 )
     Y = copy(TpM, X)
     return conjugate_residual!(TpM, slso, Y; kwargs...)

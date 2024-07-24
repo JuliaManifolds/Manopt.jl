@@ -15,47 +15,20 @@ Hess_g(M, p, X) = [(X * p')[:, i] for i in 1:3]
 Hess_h(M, p, X) = [zeros(3) for i in 1:3]
 M = Manifolds.Sphere(2)
 
-x = rand()
-y = sqrt(1 - x^2) * rand()
-z = sqrt(1 - x^2 - y^2)
-
-# p_0 = [x, y, z]
-p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
+# p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
+p_0 = 1.0/sqrt(2) .* [0.0, 1.0, 1.0]
 
 record = [:Iterate]
 
-res = interior_point_Newton(
-    M,
-    f,
-    grad_f,
-    Hess_f,
-    p_0;
-    g=g,
-    grad_g=grad_g,
-    Hess_g=Hess_g,
+res = interior_point_Newton(M, f, grad_f, Hess_f, p_0;
+    g=g, grad_g=grad_g, Hess_g=Hess_g,
     stop=StopAfterIteration(200) | StopWhenChangeLess(1e-12),
-    debug=[
-        :Iteration,
-        " | ",
-        :Cost,
-        " | ",
-        :Stepsize,
-        " | ",
-        :Change,
-        " ",
-        :GradientNorm,
-        " ",
-        :σ,
-        " ",
-        :ρ,
-        # " ",
-        # :Iterate,
-        "\n",
-        :Stop,
+    debug=[:Iteration, " | ", :Iterate, " | ", :Cost, " | ", :Stepsize, " | ", :Change, "\n\t",
+        :GradientNorm," ",:Feasibility," ",:σ," ",:ρ, "\n", :Stop,
     ],
     record=record,
     return_state=true,
-    return_objective=true, # retruns objective in res[1]
+    return_objective=true,
 )
 
 rec = get_record(res[2])
