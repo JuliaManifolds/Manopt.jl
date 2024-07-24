@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.67] – unreleased
 
+### Added
+
+* `max_stepsize` methods for `Hyperrectangle`.
+
 ### Fixed
 
 * a few typos in the documentation
+* `WolfePowellLinesearch` do longer uses `max_stepsize` with invalid point by default.
 
 ## [0.4.66] June 27, 2024
 
