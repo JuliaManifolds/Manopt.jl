@@ -38,3 +38,4 @@ For manifolds with corners, however, a line search capable of handling break poi
 ```@bibliography
 Pages = ["stepsize.md"]
 Canonical=false
+```

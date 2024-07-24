@@ -22,6 +22,12 @@ function max_stepsize(M::FixedRankMatrices, p)
 end
 max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
 
+"""
+    max_stepsize(M::Hyperrectangle, p)
+
+The default maximum stepsize for `Hyperrectangle` manifold with corners is maximum
+of distances from `p` to each boundary.
+"""
 function max_stepsize(M::Hyperrectangle, p)
     ms = 0.0
     for i in eachindex(M.lb, p)
