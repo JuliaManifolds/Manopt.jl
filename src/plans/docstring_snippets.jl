@@ -8,6 +8,7 @@ _l_M = "$(_l_Manifold())"
 _l_TpM(p="p") = "T_{$p}$_l_M"
 _l_cO = raw"\mathcal O"
 _L_argmin = raw"\operatorname{arg\,min}"
+_l_DΛ = "DΛ: T_{m}$(_l_M) → T_{Λ(m)}$(_l_Manifold("N"))"
 _l_grad = raw"\operatorname{grad}"
 _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess = raw"\operatorname{Hess}"
@@ -92,9 +93,9 @@ _field_at_iteration = "`at_iteration`: an integer indicating at which the stoppi
   any negative value indicates that this was not yet the case; "
 _field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
 _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"
-_field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$_l_retr_long^{-1}``"
+_field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_l_retr)^{-1}``"
 _field_p = raw"`p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
-_field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$_l_retr_long``"
+_field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$(_l_retr_long)``"
 _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
 _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function,\
 indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
@@ -120,7 +121,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 """
 
 _kw_retraction_method_default = raw"`retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_retraction_method = raw"a retraction ``\operatorname{retr}`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)."
+_kw_retraction_method = "a retraction ``$(_l_retr)`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)."
 
 _kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a step size"
 
@@ -138,8 +139,8 @@ function _kw_sub_objective_default_text(type::String)
 which can further be decorated by using the `sub_kwargs=` keyword"
 end
 
-_kw_vector_transport_method_default = raw"`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_vector_transport_method = raw"a vector transport ``\mathcal T`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
+_kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
+_kw_vector_transport_method = "a vector transport ``$_l_vt`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
 
 _kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
 _kw_X = raw"specify a memory internally to store a tangent vector"
