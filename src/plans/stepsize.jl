@@ -872,7 +872,7 @@ mutable struct WolfePowellLinesearch{
         candidate_point::P=allocate_result(M, rand),
         candidate_tangent::T=allocate_result(M, zero_vector, candidate_point),
         candidate_direction::T=allocate_result(M, zero_vector, candidate_point),
-        max_stepsize::Real=max_stepsize(M, candidate_point),
+        max_stepsize::Real=max_stepsize(M),
         retraction_method::TRM=default_retraction_method(M),
         vector_transport_method::VTM=default_vector_transport_method(M),
         linesearch_stopsize::Float64=0.0,            # deprecated remove on next breaking change
@@ -909,6 +909,7 @@ function (a::WolfePowellLinesearch)(
     X = get_gradient(ams)
     l = real(inner(M, p, η, X))
     grad_norm = norm(M, p, η)
+    println("a.max_stepsize: ", a.max_stepsize)
     max_step_increase = ifelse(
         isfinite(a.max_stepsize), min(1e9, a.max_stepsize / grad_norm), 1e9
     )
