@@ -909,7 +909,6 @@ function (a::WolfePowellLinesearch)(
     X = get_gradient(ams)
     l = real(inner(M, p, η, X))
     grad_norm = norm(M, p, η)
-    println("a.max_stepsize: ", a.max_stepsize)
     max_step_increase = ifelse(
         isfinite(a.max_stepsize), min(1e9, a.max_stepsize / grad_norm), 1e9
     )
