@@ -5,7 +5,7 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.67] – unreleased
+## [0.4.67] – July 25, 2024
 
 ### Added
 
@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * a few typos in the documentation
-* `WolfePowellLinesearch` do longer uses `max_stepsize` with invalid point by default.
+* `WolfePowellLinesearch` no longer uses `max_stepsize` with invalid point by default.
 
 ## [0.4.66] June 27, 2024
 
