@@ -13,6 +13,7 @@ begin
     #using RandomMatrices
     using Manopt
     using Manifolds
+	using Random
     using PlutoUI
 end;
 
@@ -21,7 +22,7 @@ begin
 
     #Random.seed!(42)
 
-    n = 10
+    n = 3
 
     # Eigenwerte vorgeben und orthogonal transformieren:
 
@@ -36,7 +37,15 @@ begin
 
     # Transformation von D:
     #A = O' * D * O
-    A = D
+	A = D
+    for i in 1:n
+		for j in 1:n
+			if i != j
+				A[i,j] = 0.1
+			end
+		end
+	end
+	println(eigvals(A))
 end;
 
 # ╔═╡ 9910fbe2-d9b9-48b6-96da-7db072ca6b71
@@ -110,20 +119,24 @@ M = Sphere(n - 1)
 E = TangentBundle(M)
 
 # ╔═╡ 2913b52c-950f-4027-b552-b07f1cca1b76
-p = [zeros(n - 1)..., 1]
-#p=rand(M)
+begin
+#p = [zeros(n - 1)..., 1]
+Random.seed!(40)
+p=rand(M)
+println(p)
+end;
 
 # ╔═╡ 6d416d63-230b-4ee7-8e49-fb0a60a6778a
-problem = VectorbundleManoptProblem(M, E, obj)
+#problem = VectorbundleManoptProblem(M, E, obj)
 
 # ╔═╡ 1583e00e-85ec-4faa-9429-a3bcd804aa36
-state = VectorbundleNewtonState(M, E, f_prime, p, solve, AllocatingEvaluation())
+#state = VectorbundleNewtonState(M, E, f_prime, p, solve, AllocatingEvaluation())
 
 # ╔═╡ 6656986c-ebea-4850-9daa-8e453fda9bac
-solve!(problem, state)
+#solve!(problem, state)
 
 # ╔═╡ 5d019884-80a4-46b2-a2d0-bf0f2771db20
-f(M, state.p)
+#f(M, state.p)
 
 # ╔═╡ 9b49618b-2034-4ff2-9e8d-90d5127ae411
 md"""
@@ -135,6 +148,7 @@ p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, 
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=StopAfterIteration(15),
+	retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, :Change, 1, "\n", :Stop]
 )
 
