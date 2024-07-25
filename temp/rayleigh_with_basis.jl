@@ -78,7 +78,7 @@ function solve(mp, s, k)
 	end
 
 	# solve linear system -> get coefficients of tangent vector
-	deltax_basis = inv(newton_matrix)*(-f)
+	deltax_basis = (newton_matrix)\(-f)
 
 	deltax = get_vector(M, s.p, deltax_basis, B)
 	return deltax
@@ -124,7 +124,7 @@ p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, 
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=StopAfterIteration(15),
 	retraction_method=ProjectionRetraction(),
-	debug=[:Iteration, :Change, 1, "\n", :Stop]
+	debug=[:Iteration, (:Change, "Change: %1.8e"), 1, "\n", :Stop]
 )
 
 # ╔═╡ bc89b23b-7a44-4b55-9e32-8ef3f8a4b323
