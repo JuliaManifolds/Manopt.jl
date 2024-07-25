@@ -88,7 +88,7 @@ function VectorbundleNewtonState(
 end
 
 function default_stepsize(M::AbstractManifold, ::Type{VectorbundleNewtonState})
-    return ConstantStepsize(M)
+    return ConstantStepsize(1.0)
 end
 
 function show(io::IO, vbns::VectorbundleNewtonState)
@@ -211,7 +211,7 @@ function get_bundle_map!(M, E, X, vbo::VectorbundleObjective{InplaceEvaluation},
 end
 function get_bundle_map!(vbp::VectorbundleManoptProblem, X, p)
     get_bundle_map!(
-        get_manifold(vbp), get_vectorbundle(vb, p), X, get_objective(vbp, true), p
+        get_manifold(vbp), get_vectorbundle(vbp), X, get_objective(vbp, true), p
     )
     return X
 end
