@@ -14,6 +14,7 @@ begin
     using Manopt
     using Manifolds
     using PlutoUI
+	using Random
 end;
 
 # ╔═╡ c9598db9-9e9a-4882-838b-ddc753fa4b1f
@@ -21,7 +22,7 @@ begin
 
     #Random.seed!(42)
 
-    n = 10
+    n = 3
 
     # Eigenwerte vorgeben und orthogonal transformieren:
 
@@ -37,6 +38,14 @@ begin
     # Transformation von D:
     #A = O' * D * O
     A = D
+    for i in 1:n
+		for j in 1:n
+			if i != j
+				A[i,j] = 0.1
+			end
+		end
+	end
+	println(eigvals(A))
 end;
 
 # ╔═╡ bfadf38e-46e8-4f63-a905-dc150925102b
@@ -62,10 +71,14 @@ function solve(mp, s, k)
 	end
 
 	# basis representation of F_p
-	f = get_coordinates(M, s.p, F_p, DefaultOrthogonalBasis())
+	#f = get_coordinates(M, s.p, F_p, DefaultOrthogonalBasis())
+	f = zeros(n-1)
+	for i in 1:n-1
+		f[i] = F_p[E,:vector]*b[i]
+	end
 
 	# solve linear system -> get coefficients of tangent vector
-	deltax_basis = newton_matrix / (-f')
+	deltax_basis = inv(newton_matrix)*(-f)
 
 	deltax = get_vector(M, s.p, deltax_basis, B)
 	return deltax
@@ -98,15 +111,20 @@ M = Sphere(n - 1)
 E = TangentBundle(M)
 
 # ╔═╡ 00255503-1b2f-4a58-83cf-8027f55be5ff
-p = [zeros(n - 1)..., 1]
-#p=rand(M)
+begin
+#p = [zeros(n - 1)..., 1]
+Random.seed!(40)
+p=rand(M)
+println(p)
+end;
 
 # ╔═╡ 6e0d91a9-83b7-4930-bcc4-86620088a1b7
 p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, p;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=StopAfterIteration(1),
-	debug=[:Iteration, :Change, 1, "\n", :Iterate, "\n", :Stop]
+	stopping_criterion=StopAfterIteration(15),
+	retraction_method=ProjectionRetraction(),
+	debug=[:Iteration, :Change, 1, "\n", :Stop]
 )
 
 # ╔═╡ bc89b23b-7a44-4b55-9e32-8ef3f8a4b323
