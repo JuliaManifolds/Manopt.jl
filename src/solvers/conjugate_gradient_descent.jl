@@ -28,19 +28,30 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
     return print(io, s)
 end
 
-@doc raw"""
-    conjugate_gradient_descent(M, F, gradF, p=rand(M))
-    conjugate_gradient_descent(M, gradient_objective, p)
-
-perform a conjugate gradient based descent
-
+_doc_CG_formula = raw"""
 ````math
 p_{k+1} = \operatorname{retr}_{p_k} \bigl( s_kδ_k \bigr),
 ````
+"""
+_doc_update_delta_k = raw"""
+````math
+\delta_k=\operatorname{grad}f(p_k) + β_k \delta_{k-1}
+````
+"""
 
-where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`
+_doc_CG = """
+    conjugate_gradient_descent(M, f, grad_f, p=rand(M))
+    conjugate_gradient_descent!(M, f, grad_f, p)
+    conjugate_gradient_descent(M, gradient_objective, p)
+    conjugate_gradient_descent!(M, gradient_objective, p; kwargs...)
+
+perform a conjugate gradient based descent-
+
+$(_doc_CG_formula)
+
+where ``$(_l_retr)`` denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction ``δ_k`` based on
-the last direction ``δ_{k-1}`` and both gradients ``\operatorname{grad}f(x_k)``,``\operatorname{grad}f(x_{k-1})``.
+the last direction ``δ_{k-1}`` and both gradients ``$(_l_grad)f(x_k)``,``$(_l_grad) f(x_{k-1})``.
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Alternatively to `f` and `grad_f` you can provide
@@ -54,39 +65,36 @@ These can all be combined with a [`ConjugateGradientBealeRestart`](@ref) rule.
 
 They all compute ``β_k`` such that this algorithm updates the search direction as
 
-````math
-\delta_k=\operatorname{grad}f(p_k) + β_k \delta_{k-1}
-````
+$(_doc_update_delta_k)
 
 # Input
 
-* `M`      a manifold ``\mathcal M``
-* `f`      a cost function ``F:\mathcal M→ℝ`` to minimize implemented as a function `(M,p) -> v`
-* `grad_f` the gradient ``\operatorname{grad}F:\mathcal M → T\mathcal M`` of ``F`` implemented also as `(M,x) -> X`
-* `p`      an initial value ``x∈\mathcal M``
+$(_arg_M)
+$(_arg_f)
+$(_arg_grad_f)
+$(_arg_p)
 
-# Optional
+# Keyword arguments
 
-* `coefficient`:             ([`ConjugateDescentCoefficient`](@ref) `<:` [`DirectionUpdateRule`](@ref))
+* `coefficient::DirectionUpdateRule=[`ConjugateDescentCoefficient`](@ref)`()`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, i) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
-* `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by allocation (default) form `gradF(M, x)`
-  or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)`.
-* `retraction_method=default_retraction_method(M, typeof(p))`: a retraction method to use.
-* `stepsize`:                ([`ArmijoLinesearch`](@ref) via [`default_stepsize`](@ref)) A [`Stepsize`](@ref) function applied to the
-  search direction. The default is a constant step size 1.
-* `stopping_criterion=stopWhenAny( stopAtIteration(200), stopGradientNormLess(10.0^-8))`:
-  a function indicating when to stop.
-* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: vector transport method to transport
-  the old descent direction when computing the new descent direction.
+* $(_kw_evaluation_default): $(_kw_evaluation)
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
+* `stepsize=[`ArmijoLinesearch`](@ref)`(M)`: $_kw_stepsize
+  via [`default_stepsize`](@ref)) passing on the `default_retraction_method`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+  $(_kw_stopping_criterion)
+* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, `evaluation` is ignored.
+If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+The decorations are still applied to the objective.
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_doc_sec_output)
 """
+
+@doc "$(_doc_CG)"
 conjugate_gradient_descent(M::AbstractManifold, args...; kwargs...)
 function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
     return conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
@@ -120,29 +128,7 @@ function conjugate_gradient_descent(
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)
 end
 
-@doc raw"""
-    conjugate_gradient_descent!(M, F, gradF, x)
-    conjugate_gradient_descent!(M, gradient_objective, p; kwargs...)
-
-perform a conjugate gradient based descent in place of `x` as
-
-````math
-p_{k+1} = \operatorname{retr}_{p_k} \bigl( s_k\delta_k \bigr),
-````
-where ``\operatorname{retr}`` denotes a retraction on the `Manifold` `M`
-
-# Input
-* `M`:      a manifold ``\mathcal M``
-* `f`:      a cost function ``F:\mathcal M→ℝ`` to minimize
-* `grad_f`: the gradient ``\operatorname{grad}F:\mathcal M→ T\mathcal M`` of F
-* `p`:      an initial value ``p∈\mathcal M``
-
-Alternatively to `f` and `grad_f` you can provide
-the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
-
-for more details and options, especially the [`DirectionUpdateRule`](@ref)s,
-see [`conjugate_gradient_descent`](@ref).
-"""
+@doc "$(_doc_CG)"
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(
     M::AbstractManifold,

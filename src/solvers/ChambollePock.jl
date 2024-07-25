@@ -191,23 +191,22 @@ end
 _doc_ChambollePock_formula = raw"""
 Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
 ```math
-\mathcal E(p) = F(p) + G( Λ(p) ),
+\mathcal f(p) = F(p) + G( Λ(p) ),
 ```
 where ``F:\mathcal M → ℝ``, ``G:\mathcal N → ℝ``,
 and ``Λ:\mathcal M → \mathcal N``.
 """
 
-@doc """
-    ChambollePock(
-        M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_linear_operator;
-        forward_operator=missing,
-        linearized_forward_operator=missing,
-        evaluation=AllocatingEvaluation()
-    )
+_doc_ChambollePock = """
+    ChambollePock(M, N, f, p, X, m, n, prox_G, prox_G_dual, adjoint_linear_operator; kwargs...)
+    ChambollePock!(M, N, f, p, X, m, n, prox_G, prox_G_dual, adjoint_linear_operator; kwargs...)
+
 
 Perform the Riemannian Chambolle—Pock algorithm.
 
 $_doc_ChambollePock_formula
+
+This can be done inplace of ``p``.
 
  # Input parameters
 
@@ -255,6 +254,8 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 $_doc_sec_output
 """
+
+@doc "$(_doc_ChambollePock)"
 function ChambollePock(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -290,12 +291,8 @@ function ChambollePock(
         kwargs...,
     )
 end
-@doc raw"""
-    ChambollePock(M, N, cost, x0, ξ0, m, n, prox_F, prox_G_dual, adjoint_linear_operator)
 
-Perform the Riemannian Chambolle—Pock algorithm in place of `x`, `ξ`, and potentially `m`,
-`n` if they are not fixed. See [`ChambollePock`](@ref) for details and optional parameters.
-"""
+@doc "$(_doc_ChambollePock)"
 function ChambollePock!(
     M::AbstractManifold,
     N::AbstractManifold,

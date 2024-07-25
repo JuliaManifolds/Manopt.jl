@@ -77,7 +77,7 @@ _arg_X = "* `X` a tangent vector"
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
 _arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem` or a [`AbstractEvaluationType`](@ref) if a closed form solution is provided."
 
-_doc_remark_tutorial_debug = "If you activate [`tutorial_mode`]"
+_doc_remark_tutorial_debug = "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings."
 _doc_sec_output = """
 # Output
 
