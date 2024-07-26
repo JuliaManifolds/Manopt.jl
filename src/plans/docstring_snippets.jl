@@ -14,6 +14,7 @@ _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess = raw"\operatorname{Hess}"
 _l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_refl = raw"\operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x)"
+_l_subgrad = raw"∂"
 _l_min = raw"\min"
 _l_max = raw"\min"
 
@@ -76,6 +77,11 @@ _arg_inline_M = "the manifold `M`"
 _arg_X = "* `X` a tangent vector"
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
 _arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem` or a [`AbstractEvaluationType`](@ref) if a closed form solution is provided."
+_arg_subgrad_f = raw"""
+* `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
+  as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place.
+  This function should always only return one element from the subgradient.
+"""
 
 _doc_remark_tutorial_debug = "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings."
 _doc_sec_output = """
@@ -91,8 +97,9 @@ _sc_all = "[` & `](@ref StopWhenAll)"
 # Fields
 _field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`).\
   any negative value indicates that this was not yet the case; "
-_field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $_l_M``"
-_field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$_l_M``"
+_field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $(_l_M)``"
+_field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$(_l_M)``"
+_field_subgradient = "`X` : the current subgradient ``$(_l_subgrad)f(p^{(k)}) ∈ T_p$_l_M``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_l_retr)^{-1}``"
 _field_p = raw"`p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
 _field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$(_l_retr_long)``"
@@ -148,3 +155,5 @@ _kw_X = raw"specify a memory internally to store a tangent vector"
 function _kw_used_in(s::String)
     return "This is used to define the `$s=` keyword and has hence no effect, if you set `$s` directly."
 end
+
+_link_zero_vector = "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
