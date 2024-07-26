@@ -95,8 +95,7 @@ _sc_any = "[` | `](@ref StopWhenAny)"
 _sc_all = "[` & `](@ref StopWhenAll)"
 
 # Fields
-_field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`).\
-  any negative value indicates that this was not yet the case; "
+_field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case; "
 _field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $(_l_M)``"
 _field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$(_l_M)``"
 _field_subgradient = "`X` : the current subgradient ``$(_l_subgrad)f(p^{(k)}) ∈ T_p$_l_M``"
@@ -104,8 +103,7 @@ _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMetho
 _field_p = raw"`p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
 _field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$(_l_retr_long)``"
 _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
-_field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function,\
-indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
+_field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function, indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
 _field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$_l_vt``"
@@ -113,10 +111,7 @@ _field_X = "`X` a tangent vector"
 
 # Keywords
 _kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
-_kw_evaluation = "specify whether the functions that return an array, for example a point\
-or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or\
-whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)).\
- Since usually the first argument is the manifold, the modified argument is the second."
+_kw_evaluation = "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second."
 _kw_evaluation_example = "For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`."
 
 _kw_inverse_retraction_method_default = "`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
@@ -136,14 +131,11 @@ _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@re
 _kw_stop_note = "is used to set the field `stop`."
 
 _kw_sub_kwargs_default = "`sub_kwargs=(;)`"
-_kw_sub_kwargs = "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective,\
-the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.
-"
+_kw_sub_kwargs = "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself."
 
 _kw_sub_objective = "a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword"
 function _kw_sub_objective_default_text(type::String)
-    return "By default, this is initialized as a [`$type`](@ref),\
-which can further be decorated by using the `sub_kwargs=` keyword"
+    return "By default, this is initialized as a [`$type`](@ref), which can further be decorated by using the `sub_kwargs=` keyword"
 end
 
 _kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
