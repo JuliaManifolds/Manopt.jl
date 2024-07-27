@@ -17,7 +17,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 The sub task consists of a method to solve
 
 ```math
-    $(_L_argmin)_{q∈$(_l_M)}\\ g(p) - ⟨X, $(_l_log)_p q⟩
+    $(_l_argmin)_{q∈$(_l_M)}\\ g(p) - ⟨X, $(_l_log)_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and
@@ -118,7 +118,7 @@ _doc_DoC = """
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2023](@cite) to minimize
 
 ```math
-    $(_L_argmin)_{p∈$(_l_M)}\\ g(p) - h(p)
+    $(_l_argmin)_{p∈$(_l_M)}\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.
@@ -129,7 +129,7 @@ Then repeat for ``k=0,1,…``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ $(_L_argmin)_{q ∈ $(_l_M)} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_l_argmin)_{q ∈ $(_l_M)} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
 ```
 
 until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
@@ -144,13 +144,13 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
   $(_kw_stopping_criterion)
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
-  $(_kw_used_in("sub_problem"))
+  $(_kw_used_in("sub_objective"))
 * `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`:
   gradient to be used within the default `sub_problem`.
-  $(_kw_used_in("sub_problem"))
+  $(_kw_used_in("sub_objective"))
 * `sub_hess`:              (a finite difference approximation using `sub_grad` by default):
    specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
-  $(_kw_used_in("sub_problem"))
+  $(_kw_used_in("sub_objective"))
 * $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
    the objective used within `sub_problem`.
