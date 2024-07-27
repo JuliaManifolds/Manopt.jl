@@ -48,7 +48,7 @@ mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <
         f::F,
         proxes_f::Union{Tuple,AbstractVector},
         nOP::Vector{<:Integer};
-        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+        evaluation::E=AllocatingEvaluation(),
     ) where {E<:AbstractEvaluationType,F}
         return if length(nOP) != length(proxes_f)
             throw(
