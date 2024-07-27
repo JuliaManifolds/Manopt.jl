@@ -9,14 +9,22 @@
 specify a problem for solvers based on the evaluation of proximal maps.
 
 # Fields
-* `cost` - a function ``F:\mathcal M→ℝ`` to
+
+* `cost`: a function ``F:\mathcal M→ℝ`` to
   minimize
-* `proxes` - proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
+* `proxes`: proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
   as functions `(M, λ, p) -> q`.
-* `number_of_proxes` - (`ones(length(proxes))`` number of proximal maps per function,
+* `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
   functions return more than one entry per function, you have to adapt this value.
   if not specified, it is set to one prox per function.
+
+# Constructor
+
+    ManifoldProximalMapObjective(cost, proxes, numer_of_proxes=onex(length(proxes));
+       evaluation=Allocating)
+
+
 # See also
 
 [`cyclic_proximal_point`](@ref), [`get_cost`](@ref), [`get_proximal_map`](@ref)
@@ -37,11 +45,11 @@ mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <
         )
     end
     function ManifoldProximalMapObjective(
-        f,
+        f::F,
         proxes_f::Union{Tuple,AbstractVector},
         nOP::Vector{<:Integer};
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    )
+    ) where {E<:AbstractEvaluationType,F}
         return if length(nOP) != length(proxes_f)
             throw(
                 ErrorException(
@@ -49,7 +57,7 @@ mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <
                 ),
             )
         else
-            new{typeof(evaluation),typeof(f),typeof(proxes_f),typeof(nOP)}(f, proxes_f, nOP)
+            new{E,F,typeof(proxes_f),typeof(nOP)}(f, proxes_f, nOP)
         end
     end
 end

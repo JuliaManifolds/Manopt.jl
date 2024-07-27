@@ -311,6 +311,8 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
 * `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.
 
+$(_kw_others)
+
 $(_doc_sec_output)
 """
 

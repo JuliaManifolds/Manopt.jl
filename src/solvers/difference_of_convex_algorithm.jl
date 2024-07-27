@@ -8,11 +8,11 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* `p`           the current iterate, a point on the manifold
-* `X`           the current subgradient, a tangent vector to `p`.
-* `sub_problem` problem for the subsolver
-* `sub_state`   state of the subproblem
-* `stop`        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `p`:           the current iterate, a point on the manifold
+* `X`:           the current subgradient, a tangent vector to `p`.
+* `sub_problem`: problem for the subsolver
+* `sub_state`:   state of the subproblem
+* `stop`:        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
 
 For the sub task, a method to solve
 
