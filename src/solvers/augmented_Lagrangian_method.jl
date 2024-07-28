@@ -322,6 +322,8 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
 
+$(_kw_others)
+
 $_doc_sec_output
 """
 
