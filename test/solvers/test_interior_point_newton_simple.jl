@@ -2,14 +2,14 @@ using Manopt, Manifolds, Plots
 
 M = Euclidean(1)
 f(M, p) = p[1]^2
-grad_f(M, p) = 2*p
+grad_f(M, p) = 2 * p
 Hess_f(M, o, X) = [2;;]
 
-g(M, p) = [-p[1]-1,] # -p+1 <= 0 <=> 1 <= p
-grad_g(M,p) = [-1,]
+g(M, p) = [-p[1] - 1] # -p+1 <= 0 <=> 1 <= p
+grad_g(M, p) = [-1]
 Hess_g(M, p, X) = [0;;]
 
-p_0 = [2.0,]
+p_0 = [2.0]
 
 st = interior_point_Newton(
     M,
@@ -62,7 +62,7 @@ q[N, 4] = s.s
 # LagrangianCost
 L = LagrangianCost(cmo, s.μ, s.λ)
 grad_L = LagrangianGradient(cmo, s.μ, s.λ)
-check_gradient(M, L, grad_L, p_0, [1.0,]; plot=true, error=:info)
+check_gradient(M, L, grad_L, p_0, [1.0]; plot=true, error=:info)
 
 #
 # KKTVectorField
