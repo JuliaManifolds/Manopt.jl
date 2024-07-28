@@ -70,7 +70,13 @@ mutable struct DouglasRachfordState{
         λ::Fλ=i -> 1.0,
         α::Fα=i -> 0.9,
         reflection_evaluation::E=AllocatingEvaluation(),
-        R::FR=(E == AllocatingEvaluation ? Manopt.reflect : Manopt.reflect!),
+        R::FR=(
+            if reflection_evaluation isa AllocatingEvaluation
+                Manopt.reflect
+            else
+                Manopt.reflect!
+            end
+        ),
         stopping_criterion::S=StopAfterIteration(300),
         parallel=false,
         retraction_method::TM=default_retraction_method(M, typeof(p)),
