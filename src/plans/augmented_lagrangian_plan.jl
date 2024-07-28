@@ -1,4 +1,4 @@
-_doc_al_cost() = "$(_l_cal("L"))_\\rho(p, μ, λ)"
+#_doc_al_Cost() = "$(_l_cal("L"))_\\rho(p, μ, λ)"
 _doc_al_Cost(iter) = "$(_l_cal("L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
 _doc_AL_Cost_long = raw"""
 ```math
