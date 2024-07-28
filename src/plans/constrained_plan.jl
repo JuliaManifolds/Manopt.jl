@@ -453,13 +453,13 @@ end
 function (lg::LagrangianGradient)(M, X, p)
     Y = copy(M, p, X)
     get_gradient!(M, X, lg.co, p)
-    n = inequality_constraints_length(lg.co)
-    m = equality_constraints_length(lg.co)
-    for i in 1:n
+    m = inequality_constraints_length(lg.co)
+    n = equality_constraints_length(lg.co)
+    for i in 1:m
         get_grad_inequality_constraint!(M, Y, lg.co, p, i)
         copyto!(M, X, p, X + lg.μ[i] * Y)
     end
-    for j in 1:m
+    for j in 1:n
         get_grad_equality_constraint!(M, Y, lg.co, p, j)
         copyto!(M, X, p, X + lg.λ[j] * Y)
     end
@@ -835,7 +835,7 @@ function get_grad_inequality_constraint!(
     j=:,
     range::AbstractPowerRepresentation=NestedPowerRepresentation(),
 )
-    isnothing(co.equality_constraints) && (return X)
+    isnothing(co.inequality_constraints) && (return X)
     return get_gradient!(M, X, co.inequality_constraints, p, j, range)
 end
 
