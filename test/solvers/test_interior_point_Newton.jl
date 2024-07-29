@@ -74,7 +74,7 @@ if _debug_gradient_check
     F = KKTVectorFieldNormSq(cmo)
     grad_F = KKTVectorFieldNormSqGradient(cmo)
     X = zero_vector(N, q)
-    X[N, 1] = [0.0, 1.0, 0.0]
+    X[N, 1] = rand(M; vector_at=q.x[1])
     using Plots
     check_gradient(N, F, grad_F, q, X; plot=true, error=:info)
 end
