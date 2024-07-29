@@ -1,26 +1,36 @@
 using Manopt, Manifolds, Plots
 
 M = Euclidean(1)
+p = [2.0]
+X = [4.0]
+
 f(M, p) = p[1]^2
 grad_f(M, p) = 2 * p
 Hess_f(M, o, X) = 2 * X
+cf = check_gradient(M, f, grad_f, p_0, X; error=:info)
+cf2 = check_Hessian(M, f, grad_f, Hess_f, p_0, X; error=:info)
 
 g(M, p) = [-p[1] + 1] # -p+1 <= 0 <=> 1 <= p
-grad_g(M, p) = [-1]
-Hess_g(M, p, X) = [0;;]
+grad_g(M, p) = [[-1.0]]
+Hess_g(M, p, X) = [[0.0]]
 
-p_0 = [2.0]
+# Chekc first (ond only) component
+_g(M, p) = -p[1] + 1 # -p+1 <= 0 <=> 1 <= p
+_grad_g(M, p) = [-1.0]
+_Hess_g(M, p, X) = [0.0]
+cf = check_gradient(M, _g, _grad_g, p_0, X; error=:info)
+cf2 = check_Hessian(M, _g, _grad_g, _Hess_g, p_0, X; error=:info)
 
 res = interior_point_Newton(
     M,
     f,
     grad_f,
     Hess_f,
-    p_0;
+    p;
     g=g,
     grad_g=grad_g,
     Hess_g=Hess_g,
-    stopping_criterion=StopAfterIteration(400) | StopWhenChangeLess(1e-12),
+    stopping_criterion=StopAfterIteration(0) | StopWhenChangeLess(1e-12),
     #stepsize=ConstantStepsize(0.01),
     debug=[
         :Iteration,
@@ -68,14 +78,13 @@ q[N, 4] = s
 L = LagrangianCost(cmo, μ, λ)
 grad_L = LagrangianGradient(cmo, μ, λ)
 Hess_L = LagrangianHessian(cmo, μ, λ)
-cL = check_gradient(M, L, grad_L, p_0, [1.0]; plot=true, error=:info)
-
+cL = check_gradient(M, L, grad_L, p, X; plot=true, error=:info)
+cL2 = check_Hessian(M, L, grad_L, Hess_L, p, X; error=:info)
 #
 #
 #
 K = KKTVectorField(cmo)
 JK = KKTVectorFieldJacobian(cmo)
-X = [4.0]
 Y = [2.0]
 Z = Vector{Float64}[] # h, not necessary
 W = [2.0]
@@ -86,6 +95,22 @@ qX = zero_vector(N, q)
 qX[N, 1], qX[N, 2], qX[N, 3], qX[N, 4] = X, Y, Z, W
 K(N, q)
 JK(N, q, qX)
+
+#
+#
+# Condensed with barrier β
+β = 3.5
+CK = CondensedKKTVectorField(cmo, μ, s, β)
+CKJ = CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
+Tq2N2 = get_manifold(st.sub_problem)
+N2 = base_manifold(Tq2N2)
+q2 = get_manifold(st.sub_problem).point
+q2[N2, 1] = p
+q2X = zero_vector(N2, q2)
+q2X[N, 1] = X
+A = CKJ(N2, q2, q2X)
+b = CK(N2, q2)
+
 #
 # KKTVectorField Norm Sq
 F = KKTVectorFieldNormSq(cmo)

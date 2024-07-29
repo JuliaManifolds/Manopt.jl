@@ -354,7 +354,7 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     zero_vector!(N, Y, q)
     Xt = zero_vector(M, p)
     # First Summand of Hess L
-    copyto!(M, Y[N, 1], get_hessian(M, cKKTvfJ.cmo, p, Xp))
+    copyto!(M, Y[N, 1], get_hessian(M, cKKTvfJ.cmo, p, Xp)) # Hess f
     # Build the rest iteratively
     for i in 1:m #ineq
         get_hess_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, i)

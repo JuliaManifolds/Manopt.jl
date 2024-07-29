@@ -1021,7 +1021,7 @@ function get_hess_inequality_constraint!(
     j=:,
     range::AbstractPowerRepresentation=NestedPowerRepresentation(),
 )
-    isnothing(co.equality_constraints) && (return X)
+    isnothing(co.inequality_constraints) && (return X)
     return get_hessian!(M, Y, co.inequality_constraints, p, X, j, range)
 end
 get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
