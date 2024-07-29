@@ -29,8 +29,7 @@ res = interior_point_Newton(
     g=g,
     grad_g=grad_g,
     Hess_g=Hess_g,
-    stopping_criterion=StopAfterIteration(5) | StopWhenChangeLess(1e-12),
-    stepsize=ConstantStepsize(0.01),
+    stopping_criterion=StopAfterIteration(12000) | StopWhenChangeLess(1e-12),
     debug=[
         :Iteration,
         " | ",
@@ -51,6 +50,7 @@ res = interior_point_Newton(
         :ρ,
         "\n",
         :Stop,
+        10,
     ],
     record=record,
     return_state=true,

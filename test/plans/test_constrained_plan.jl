@@ -440,7 +440,7 @@ include("../utils/dummy_types.jl")
             KKTvfNG = KKTVectorFieldNormSqGradient(coh)
             @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient\n")
             Zg1 = KKTvf(N, q)
-            Zg2 = KKTvfAdJ(N, q, Zg1)
+            Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
             W = KKTvfNG(N, q)
             @test W == Zg2
         end
