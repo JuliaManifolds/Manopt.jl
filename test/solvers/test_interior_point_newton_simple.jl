@@ -7,8 +7,8 @@ X = [4.0]
 f(M, p) = p[1]^2
 grad_f(M, p) = 2 * p
 Hess_f(M, o, X) = 2 * X
-cf = check_gradient(M, f, grad_f, p_0, X; error=:info)
-cf2 = check_Hessian(M, f, grad_f, Hess_f, p_0, X; error=:info)
+cf = check_gradient(M, f, grad_f, p, X; error=:info)
+cf2 = check_Hessian(M, f, grad_f, Hess_f, p, X; error=:info)
 
 g(M, p) = [-p[1] + 1] # -p+1 <= 0 <=> 1 <= p
 grad_g(M, p) = [[-1.0]]
@@ -18,8 +18,8 @@ Hess_g(M, p, X) = [[0.0]]
 _g(M, p) = -p[1] + 1 # -p+1 <= 0 <=> 1 <= p
 _grad_g(M, p) = [-1.0]
 _Hess_g(M, p, X) = [0.0]
-cf = check_gradient(M, _g, _grad_g, p_0, X; error=:info)
-cf2 = check_Hessian(M, _g, _grad_g, _Hess_g, p_0, X; error=:info)
+cf = check_gradient(M, _g, _grad_g, p, X; error=:info)
+cf2 = check_Hessian(M, _g, _grad_g, _Hess_g, p, X; error=:info)
 
 res = interior_point_Newton(
     M,
@@ -56,14 +56,14 @@ res = interior_point_Newton(
     return_state=true,
     return_objective=true,
 )
-p_1 = get_solver_result(st)
+p_1 = get_solver_result(res)
 cmo = res[1]
 st = get_state(res[2])
 m = 1
 n = 0
 N = M × ℝ^m × ℝ^n × ℝ^m
 cmo = res[1]
-p = get_iterate(st)
+p = get_iterate(res[2])
 λ = st.λ
 μ = st.μ
 s = st.s
@@ -88,11 +88,11 @@ JK = KKTVectorFieldJacobian(cmo)
 Y = [2.0]
 Z = Vector{Float64}[] # h, not necessary
 W = [2.0]
+qX = zero_vector(N, q)
+qX[N, 1], qX[N, 2], qX[N, 3], qX[N, 4] = X, Y, Z, W
 JsK = KKTVectorFieldAdjointJacobian(cmo)
 JsK(N, q, qX)
 
-qX = zero_vector(N, q)
-qX[N, 1], qX[N, 2], qX[N, 3], qX[N, 4] = X, Y, Z, W
 K(N, q)
 JK(N, q, qX)
 
