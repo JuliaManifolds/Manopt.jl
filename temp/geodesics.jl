@@ -12,7 +12,7 @@ begin
 	using LinearAlgebra
 	using Manopt
 	using Manifolds
-	#using OffsetArrays
+	using OffsetArrays
 end;
 
 # ╔═╡ b099f6dc-6434-44e1-a4c5-03b9f1bcab0d
@@ -26,20 +26,20 @@ end;
 begin
 	function discretized_y(y)
 		List_of_y = []
-		push!(List_of_y, y(Omega[1])) # das sollte eigentlich erst vor der Schleife zur Berechnung der diskretisierten Energie passieren.
-		for i in 2:length(Omega)
+		for i in 1:length(Omega)
 			push!(List_of_y, y(Omega[i]))
 		end
-		push!(List_of_y, [1,0,0]) # Hier genauso
 		return List_of_y
 	end
 end;
 
 # ╔═╡ 44630e2e-439e-42be-ab12-8366ba2e7335
 function discretized_energy(M, y)
-	Oy = discretized_y(y)
+	discretizedy = discretized_y(y)
+	Oy = OffsetArray([[0,0,1], discretizedy...], 0:length(Omega))
+	push!(Oy, [1,0,0])
 	E = 0
-	for i in 2:length(Omega)
+	for i in 1:length(Omega)
 		E = E + (Oy[i+1] - Oy[i])'* (Oy[i+1] - Oy[i])
 	end
 	E = 1/(2.0*stepsize) * E
@@ -59,9 +59,11 @@ M = Sphere(2)
 # ╔═╡ 29417198-97f6-44d9-8e8b-df92a93ac1d5
 begin
 	function discretized_energy_derivative(M, y)
-		Oy = discretized_y(y)
+		discretizedy = discretized_y(y)
+		Oy = OffsetArray([[0,0,1], discretizedy...], 0:length(Omega))
+		push!(Oy, [1,0,0])
 		derivative_energy_discretized = []
-		for i in 2:length(Omega)
+		for i in 1:length(Omega)
 			B = get_basis(M, Oy[i], DefaultOrthogonalBasis())
 			b = get_vectors(M, Oy[i], B) # basis of tangent space at y_i
 			for j in 1:length(b)
@@ -74,7 +76,7 @@ begin
 end;
 
 # ╔═╡ 91b514d2-fa28-4cf5-a4b6-550dbbe6d7dc
-norm(discretized_energy_derivative(M, y))
+norm(discretized_energy_derivative(M, y)) # sollte 0 sein, glaub das liegt daran, dass der erste punkt (also y(0)) zweimal vorkommt 
 
 # ╔═╡ dc2f8de4-f6af-400a-9e16-2b079a7697db
 #gradient_descent(M, discretized_energy, discretized_energy_derivative)
