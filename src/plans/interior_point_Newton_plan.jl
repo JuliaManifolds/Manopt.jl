@@ -701,9 +701,10 @@ function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, q)
     return Y
 end
 function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, Y, q)
-    Z = copy(N, q, Y)
+    Z = allocate(N, Y)
     KKTVectorField(KKTcfNG.cmo)(N, Z, q)
     KKTVectorFieldAdjointJacobian(KKTcfNG.cmo)(N, Y, q, Z)
+    Y .*= 2
     return Y
 end
 function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
