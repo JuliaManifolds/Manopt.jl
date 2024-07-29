@@ -179,24 +179,6 @@ function show(io::IO, ips::InteriorPointNewtonState)
 end
 
 #
-#
-# A special linesearch for IP Newton
-function interior_point_initial_guess(
-    mp::AbstractManoptProblem, ips::InteriorPointNewtonState, ::Int, l::Real
-)
-    N = get_manifold(mp) × Rn(length(ips.μ)) × Rn(length(ips.λ)) × Rn(length(ips.s))
-    q = rand(N)
-    copyto!(N[1], q[N, 1], ips.p)
-    copyto!(N[2], q[N, 2], ips.μ)
-    copyto!(N[3], q[N, 3], ips.λ)
-    copyto!(N[4], q[N, 4], ips.s)
-    Y = GradMeritFunction(N, get_objective(mp), q)
-    grad_norm = norm(N, q, Y)
-    max_step = max_stepsize(N, q)
-    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
-end
-
-#
 # Constraint functors
 #
 
@@ -728,6 +710,19 @@ function show(io::IO, KKTvfNSqGrad::KKTVectorFieldNormSqGradient)
     return print(
         io, "KKTVectorFieldNormSqGradient\nwith the objective\n\t$(KKTvfNSqGrad.cmo)"
     )
+end
+
+#
+#
+# A special linesearch for IP Newton
+function interior_point_initial_guess(
+    mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R
+) where {R<:Real}
+    N = get_manifold(mp)
+    Y = get_gradient(N, get_objective(mp), ips.q)
+    grad_norm = norm(N, ips.q, Y)
+    max_step = max_stepsize(N, ips.q)
+    return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
 # -----------------------------------------------------------------------------
