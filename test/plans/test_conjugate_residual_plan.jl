@@ -42,7 +42,7 @@ using Manifolds, Manopt, Test
         @test get_hessian!(TpM, Y0, slso, p, X0) == hessAX0
         @test Y0 == hessAX0
         zero_vector!(TpM, Y0, X0)
-        @test get_hessian!(TpM, Y0, slso, p, X0) == hessAX0
+        @test get_hessian!(TpM, Y0, slso2, p, X0) == hessAX0
         @test Y0 == hessAX0
     end
     @testset "Conjugate residual state" begin
