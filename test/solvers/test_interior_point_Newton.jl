@@ -44,7 +44,7 @@ res = interior_point_Newton(
         :ρ,
         "\n",
         :Stop,
-        1,
+        10,
     ],
     record=record,
     return_state=true,

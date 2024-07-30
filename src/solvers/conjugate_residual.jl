@@ -70,7 +70,7 @@ function conjugate_residual!(
     X;
     stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
                            StopWhenRelativeResidualLess(
-        base_manifold(TpM), base_point(TpM), get_b(TpM, slso, X), 1e-8
+        norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso, X)), 1e-8
     ),
     kwargs...,
 ) where {SC<:StoppingCriterion}

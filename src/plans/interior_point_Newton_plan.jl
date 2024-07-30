@@ -812,7 +812,6 @@ function (c::StopWhenKKTResidualLess)(
         c.residual += abs(hj)^2
     end
     c.residual = sqrt(c.residual)
-    println("Residual: ", c.residual)
     if c.residual < c.ε
         c.at_iteration = k
         return true
