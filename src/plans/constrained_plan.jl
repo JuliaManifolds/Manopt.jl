@@ -1,21 +1,63 @@
 
 """
-    AbstractConstrainedFunctor
+    AbstractConstrainedFunctor{T}
 
 A common supertype for fucntors that model constraint functions.
 
 This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
-constraints
+constraintsnof type `T`.
 """
-abstract type AbstractConstrainedFunctor end
+abstract type AbstractConstrainedFunctor{T} end
+
+function set_manopt_parameter!(
+    acf::AbstractConstrainedFunctor{T}, ::Val{:μ}, μ::T
+) where {T}
+    acf.μ = μ
+    return acf
+end
+get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
+function set_manopt_parameter!(
+    acf::AbstractConstrainedFunctor{T}, ::Val{:λ}, λ::T
+) where {T}
+    acf.λ = λ
+    return acf
+end
+get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
+
 """
-    AbstractConstrainedFunctor
+    AbstractConstrainedSlackFunctor{T,R}
 
 A common supertype for fucntors that model constraint functions with slack.
 
-This supertype additionally provides access for the field ``s`` the slack variable
+This supertype additionally provides access for the fields
+* `μ::T` the dual for the inequality constraints
+* `s::T` the slack parametyer, and
+* `β::R` the  the barrier parameter
+which is also of typee `T`.
 """
-abstract type AbstractConstrainedSlackFunctor <: AbstractConstrainedFunctor end
+abstract type AbstractConstrainedSlackFunctor{T,R} end
+
+function set_manopt_parameter!(
+    acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:s}, s::T
+) where {T}
+    acsf.s = s
+    return acsf
+end
+get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
+function set_manopt_parameter!(
+    acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:μ}, μ::T
+) where {T}
+    acsf.μ = μ
+    return acsf
+end
+get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:μ}) = acsf.μ
+function set_manopt_parameter!(
+    acsf::AbstractConstrainedSlackFunctor{T,R}, ::Val{:β}, β::R
+) where {T,R}
+    acsf.β = β
+    return acsf
+end
+get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
 
 @doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
@@ -363,12 +405,12 @@ get_manifold(cmp::ConstrainedManoptProblem) = cmp.manifold
 get_objective(cmp::ConstrainedManoptProblem) = cmp.objective
 
 @doc raw"""
-    LagrangianCost{CO, V, T}
+    LagrangianCost{CO,T} <: AbstractConstrainedFunctor{T}
 
 Implement the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
 
 ```math
-\mathcal L(p, μ, λ)
+\mathcal L(p; μ, λ)
 = f(p) +  \sum_{i=1}^m μ_ig_i(p) + \sum_{j=1}^n λ_jh_j(p)
 ```
 
@@ -391,7 +433,7 @@ you can also call
 LagrangianCost(co, μ, λ)(M,p)
 ```
 """
-mutable struct LagrangianCost{CO,T}
+mutable struct LagrangianCost{CO,T} <: AbstractConstrainedFunctor{T}
     co::CO
     μ::T
     λ::T
@@ -404,25 +446,18 @@ function (lc::LagrangianCost)(M, p)
     (length(h) > 0) && (c += sum(lc.λ .* h))
     return c
 end
-function set_manopt_parameter!(lc::LagrangianCost, ::Val{:μ}, μ)
-    lc.μ = μ
-    return lc
-end
-function set_manopt_parameter!(lc::LagrangianCost, ::Val{:λ}, λ)
-    lc.λ = λ
-    return lc
-end
 function show(io::IO, lc::LagrangianCost)
     return print(io, "LagrangianCost\n\twith μ=$(lc.μ), λ=$(lc.λ)")
 end
 
 @doc raw"""
-    LagrangianGradient{CO, V, T}
+    LagrangianGradient{CO,T}
 
-Implement the gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
+The gradient of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
+with respect to the variable ``p``. The formula reads
 
 ```math
-\operatorname{grad} \mathcal L(p, μ, λ)
+\operatorname{grad}_p \mathcal L(p; μ, λ)
 = \operatorname{grad} f(p) +  \sum_{i=1}^m μ_i \operatorname{grad} g_i(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
 ```
 
@@ -438,10 +473,10 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the gradient of the Lagrangian ``\operatorname{grad} \mathcal L``
+When you directly want to evaluate the gradient of the Lagrangian ``\operatorname{grad}_p \mathcal L``
 you can also call `LagrangianGradient(co, μ, λ)(M,p)` or `LagrangianGradient(co, μ, λ)(M,X,p)` for the in-place variant.
 """
-mutable struct LagrangianGradient{CO,T}
+mutable struct LagrangianGradient{CO,T} <: AbstractConstrainedFunctor{T}
     co::CO
     μ::T
     λ::T
@@ -465,14 +500,6 @@ function (lg::LagrangianGradient)(M, X, p)
     end
     return X
 end
-function set_manopt_parameter!(lc::LagrangianGradient, ::Val{:μ}, μ)
-    lc.μ = μ
-    return lc
-end
-function set_manopt_parameter!(lc::LagrangianGradient, ::Val{:λ}, λ)
-    lc.λ = λ
-    return lc
-end
 function show(io::IO, lg::LagrangianGradient)
     return print(io, "LagrangianGradient\n\twith μ=$(lg.μ), λ=$(lg.λ)")
 end
@@ -480,10 +507,11 @@ end
 @doc raw"""
     LagrangianHessian{CO, V, T}
 
-Implement the Hessian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`.
+The Hesian of the Lagrangian of a [`ConstrainedManifoldObjective`](@ref) `co`
+with respect to the variable ``p``. The formula reads
 
 ```math
-\operatorname{Hess} \mathcal L(p, μ, λ)[X]
+\operatorname{Hess}_p \mathcal L(p; μ, λ)[X]
 = \operatorname{Hess} f(p) +  \sum_{i=1}^m μ_i \operatorname{Hess} g_i(p)[X] + \sum_{j=1}^n λ_j \operatorname{Hess} h_j(p)[X]
 ```
 
@@ -499,40 +527,32 @@ Create a functor for the Lagrangian with fixed dual variables.
 
 # Example
 
-When you directly want to evaluate the gradient of the Lagrangian ``\operatorname{grad} \mathcal L``
+When you directly want to evaluate the Hessian of the Lagrangian ``\operatorname{Hess}_p \mathcal L``
 you can also call `LagrangianHessian(co, μ, λ)(M, p, X)` or `LagrangianHessian(co, μ, λ)(M, Y, p, X)` for the in-place variant.
 """
-mutable struct LagrangianHessian{CO,T}
+mutable struct LagrangianHessian{CO,T} <: AbstractConstrainedFunctor{T}
     co::CO
     μ::T
     λ::T
 end
-function (lc::LagrangianHessian)(M, p, X)
+function (lH::LagrangianHessian)(M, p, X)
     Y = zero_vector(M, p)
-    return lc(M, Y, p, X)
+    return lH(M, Y, p, X)
 end
-function (lc::LagrangianHessian)(M, Y, p, X)
+function (lH::LagrangianHessian)(M, Y, p, X)
     Z = copy(M, p, X)
-    get_hessian!(M, Y, lc.co, p, X)
-    n = inequality_constraints_length(lc.co)
-    m = equality_constraints_length(lc.co)
+    get_hessian!(M, Y, lH.co, p, X)
+    n = inequality_constraints_length(lH.co)
+    m = equality_constraints_length(lH.co)
     for i in 1:n
-        get_hess_inequality_constraint!(M, Z, lc.co, p, X, i)
-        copyto!(M, Y, p, Y + lc.μ[i] * Z)
+        get_hess_inequality_constraint!(M, Z, lH.co, p, X, i)
+        copyto!(M, Y, p, Y + lH.μ[i] * Z)
     end
     for j in 1:m
-        get_hess_equality_constraint!(M, Z, lc.co, p, X, j)
-        copyto!(M, Y, p, Y + lc.λ[j] * Z)
+        get_hess_equality_constraint!(M, Z, lH.co, p, X, j)
+        copyto!(M, Y, p, Y + lH.λ[j] * Z)
     end
     return Y
-end
-function set_manopt_parameter!(lc::LagrangianHessian, ::Val{:μ}, μ)
-    lc.μ = μ
-    return lc
-end
-function set_manopt_parameter!(lc::LagrangianHessian, ::Val{:λ}, λ)
-    lc.λ = λ
-    return lc
 end
 function show(io::IO, lh::LagrangianHessian)
     return print(io, "LagrangianHessian\n\twith μ=$(lh.μ), λ=$(lh.λ)")
@@ -1024,9 +1044,6 @@ function get_hess_inequality_constraint!(
     isnothing(co.inequality_constraints) && (return X)
     return get_hessian!(M, Y, co.inequality_constraints, p, X, j, range)
 end
-get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
-get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
 
 @doc raw"""
     inequality_constraints_length(cmo::ConstrainedManifoldObjective)
@@ -1073,7 +1090,7 @@ function is_feasible(M, cmo, p; check_point::Bool=true, error::Symbol=:none, kwa
     # collect information about infeasibily
     if (error === :info) || (error === :warn) || (error === :error)
         s = get_feasibility_status(M, cmo, p; g=g, h=h)
-        (error === :error) && error(s)
+        (error === :error) && throw(ErrorException(s))
         (error === :info) && @info s
         (error === :warn) && @warn s
     end
@@ -1111,16 +1128,6 @@ function get_feasibility_status(
     h_violated > 0 ? "The sum of violation is $(sum(abs.(h)))." : ""
     )
     """
-end
-
-function set_manopt_parameter!(acf::AbstractConstrainedFunctor, ::Val{:μ}, μ)
-    acf.μ = μ
-    return acf
-end
-
-function set_manopt_parameter!(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}, s)
-    acsf.s = s
-    return acsf
 end
 
 function Base.show(

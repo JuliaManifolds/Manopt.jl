@@ -183,7 +183,7 @@ end
 #
 
 @doc raw"""
-    CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R} <: AbstractConstrainedSlackFunctor
+    CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunctor{T,R}
 
 Fiven the constrained optimixzation problem
 
@@ -231,16 +231,19 @@ h(p)
 # Fields
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
-* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `λ::V` the vector in ``ℝ^n`` of coefficients for the equality constraints
-* `s::V` the vector in ``ℝ^m`` of sclack variables
+* `μ::T` the vector in ``ℝ^m`` of coefficients for the inequality constraints
+* `s::T` the vector in ``ℝ^m`` of sclack variables
 * `β::R` the barrier parameter ``β∈ℝ``
+
+# Constructor
+
+    CondensedKKTVectorField(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,V,R} <:
-               AbstractConstrainedSlackFunctor
+mutable struct CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <:
+               AbstractConstrainedSlackFunctor{T,R}
     cmo::O
-    μ::V
-    s::V
+    μ::T
+    s::T
     β::R
 end
 function (cKKTvf::CondensedKKTVectorField)(N, q)
@@ -274,19 +277,6 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     return Y
 end
 
-function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:β}, β)
-    cKKTvf.β = β
-    return cKKTvf
-end
-function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:μ}, μ)
-    cKKTvf.μ = μ
-    return cKKTvf
-end
-function set_manopt_parameter!(cKKTvf::CondensedKKTVectorField, ::Val{:s}, s)
-    cKKTvf.s = s
-    return cKKTvf
-end
-
 function show(io::IO, CKKTvf::CondensedKKTVectorField)
     return print(
         io, "CondensedKKTVectorField\n\twith μ=$(CKKTvf.μ), s=$(CKKTvf.s), β=$(CKKTvf.β)"
@@ -294,7 +284,7 @@ function show(io::IO, CKKTvf::CondensedKKTVectorField)
 end
 
 @doc raw"""
-    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,T}  <: AbstractConstrainedSlackFunctor
+    CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R}  <: AbstractConstrainedSlackFunctor{T,R}
 
 Fiven the constrained optimixzation problem
 
@@ -333,12 +323,23 @@ on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
 \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n
 \end{pmatrix}
 ```
+
+# Fields
+
+* `cmo` the [`ConstrainedManifoldObjective`](@ref)
+* `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
+* `s::V` the vector in ``ℝ^m`` of sclack variables
+* `β::R` the barrier parameter ``β∈ℝ``
+
+# Constructor
+
+    CondensedKKTVectorFieldJacobian(cmo, μ, s, β)
 """
-mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,V,R} <:
-               AbstractConstrainedSlackFunctor
+mutable struct CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R} <:
+               AbstractConstrainedSlackFunctor{T,R}
     cmo::O
-    μ::V
-    s::V
+    μ::T
+    s::T
     β::R
 end
 function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, q, X)
@@ -376,19 +377,6 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     end
     return Y
 end
-
-function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:β}, β)
-    cKKTvfJ.β = β
-    return cKKTvfJ
-end
-function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:μ}, μ)
-    cKKTvfJ.μ = μ
-    return cKKTvfJ
-end
-function set_manopt_parameter!(cKKTvfJ::CondensedKKTVectorFieldJacobian, ::Val{:s}, s)
-    cKKTvfJ.s = s
-    return cKKTvfJ
-end
 function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
     return print(
         io,
@@ -397,7 +385,7 @@ function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
 end
 
 @doc raw"""
-    KKTVectorField <: AbstractConstrainedSlackFunctor
+    KKTVectorField
 
 Implement the vectorfield ``F`` KKT-conditions, inlcuding a slack variable
 for the inequality constraints.
@@ -405,7 +393,7 @@ for the inequality constraints.
 Given the [`LagrangianCost`](@ref)
 
 ```math
-\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p),
+\mathcal L(p; μ, λ) = f(p) + \sum_{i=1}^m μ_ig_i(p) + \sum_{j=1}^n λ_jh_j(p)
 ```
 
 the [`LagrangianGradient`](@ref)
@@ -445,7 +433,7 @@ and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
-struct KKTVectorField{O<:ConstrainedManifoldObjective} <: AbstractConstrainedSlackFunctor
+struct KKTVectorField{O<:ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvf::KKTVectorField)(N, q)
@@ -469,7 +457,7 @@ function show(io::IO, KKTvf::KKTVectorField)
 end
 
 @doc raw"""
-    KKTVectorFieldJacobian <: AbstractConstrainedSlackFunctor
+    KKTVectorFieldJacobian
 
 Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldAdjointJacobian`](@ref)..
@@ -503,8 +491,7 @@ and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
-mutable struct KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective} <:
-               AbstractConstrainedSlackFunctor
+mutable struct KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvfJ::KKTVectorFieldJacobian)(N, q, Y)
@@ -541,7 +528,7 @@ function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
 end
 
 @doc raw"""
-    KKTVectorFieldAdjointJacobian <: AbstractConstrainedSlackFunctor
+    KKTVectorFieldAdjointJacobian
 
 Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobian`](@ref).
@@ -575,8 +562,7 @@ and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
-mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective} <:
-               AbstractConstrainedSlackFunctor
+mutable struct KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvfJa::KKTVectorFieldAdjointJacobian)(N, q, Y)
@@ -613,7 +599,7 @@ function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
 end
 
 @doc raw"""
-    KKTVectorFieldNormSq <: AbstractConstrainedSlackFunctor
+    KKTVectorFieldNormSq
 
 Implement the square of the norm of the vectorfield ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref), where this functor applies the norm to.
@@ -633,8 +619,7 @@ Define `f = KKTVectorFieldNormSq(cmo)` for some [`ConstrainedManifoldObjective`]
 and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `f(N, q)`, where `q` is a point on `N`.
 """
-mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective} <:
-               AbstractConstrainedSlackFunctor
+mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTvc::KKTVectorFieldNormSq)(N, q)
@@ -647,7 +632,7 @@ function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
 end
 
 @doc raw"""
-    KKTVectorFieldNormSqGradient <: AbstractConstrainedSlackFunctor
+    KKTVectorFieldNormSqGradient
 
 Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rVert^2``,
 that is of the norm squared of the [`KKTVectorField`](@ref) ``F``.
@@ -691,8 +676,7 @@ and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` returning the resulting gradient at.
 """
-mutable struct KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective} <:
-               AbstractConstrainedSlackFunctor
+mutable struct KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective}
     cmo::O
 end
 function (KKTcfNG::KKTVectorFieldNormSqGradient)(N, q)

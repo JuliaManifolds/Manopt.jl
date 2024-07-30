@@ -354,6 +354,24 @@ include("../utils/dummy_types.jl")
             end
         end
     end
+    @testset "is_feasible" begin
+        coh = ConstrainedManifoldObjective(
+            f,
+            grad_f;
+            hess_f=hess_f,
+            g=g,
+            grad_g=grad_g,
+            hess_g=hess_g,
+            h=h,
+            grad_h=grad_h,
+            hess_h=hess_h,
+            M=M,
+        )
+        @test is_feasible(M, coh, [-2.0, 3.0, 0.5]; error=:info)
+        @test_throws ErrorException is_feasible(M, coh, p; error=:error)
+        @test_logs (:info,) !is_feasible(M, coh, p; error=:info)
+        @test_logs (:warn,) !is_feasible(M, coh, p; error=:warn)
+    end
     @testset "Lagrangians" begin
         μ = [1.0, 1.0]
         λ = [1.0]
@@ -392,6 +410,21 @@ include("../utils/dummy_types.jl")
             @test Lh(M, p, X) == hf + sum(hg .* μ) + sum(hh .* λ)
             Lh(M, LX, p, X)
             @test LX == Lh(M, p, X)
+            # Get & Set
+            @test Manopt.set_manopt_parameter!(Lc, :μ, [2.0, 2.0]) == Lc
+            @test Manopt.get_manopt_parameter(Lc, :μ) == [2.0, 2.0]
+            @test Manopt.set_manopt_parameter!(Lc, :λ, [2.0]) == Lc
+            @test Manopt.get_manopt_parameter(Lc, :λ) == [2.0]
+
+            @test Manopt.set_manopt_parameter!(Lg, :μ, [2.0, 2.0]) == Lg
+            @test Manopt.get_manopt_parameter(Lg, :μ) == [2.0, 2.0]
+            @test Manopt.set_manopt_parameter!(Lg, :λ, [2.0]) == Lg
+            @test Manopt.get_manopt_parameter(Lg, :λ) == [2.0]
+
+            @test Manopt.set_manopt_parameter!(Lh, :μ, [2.0, 2.0]) == Lh
+            @test Manopt.get_manopt_parameter(Lh, :μ) == [2.0, 2.0]
+            @test Manopt.set_manopt_parameter!(Lh, :λ, [2.0]) == Lh
+            @test Manopt.get_manopt_parameter(Lh, :λ) == [2.0]
         end
         @testset "Full KKT and its norm" begin
             # Full KKT Vector field
@@ -507,6 +540,10 @@ include("../utils/dummy_types.jl")
                 @test gALC(M, p) ≈ ag
                 gALC(M, X, p)
                 @test gALC(M, X, p) ≈ ag
+                @test Manopt.set_manopt_parameter!(ALC, :ρ, 2 * ρ) == ALC
+                @test Manopt.get_manopt_parameter(ALC, :ρ) == 2 * ρ
+                @test Manopt.set_manopt_parameter!(gALC, :ρ, 2 * ρ) == gALC
+                @test Manopt.get_manopt_parameter(gALC, :ρ) == 2 * ρ
             end
         end
     end
