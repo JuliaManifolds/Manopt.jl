@@ -12,8 +12,10 @@ using Manifolds, Manopt, Test
     A(M, X, V) = Am * V
     b(M, p) = bv
 
-    slso = Manopt.SymmetricLinearSystemObjective(A, b)
-    pT = Manopt.conjugate_residual(TpM, slso, X0)
+    slso = SymmetricLinearSystemObjective(A, b)
+    pT = conjugate_residual(TpM, slso, X0)
+    pT2 = conjugate_residual(TpM, A, b, X0)
     @test norm(ps - pT) < 3e-15
+    @test norm(pT2 - pT) < 3e-15
     @test get_cost(TpM, slso, pT) < 5e-15
 end

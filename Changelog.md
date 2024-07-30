@@ -5,6 +5,17 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.68] – August 1, 2024
+
+### Added
+
+* an `interior_point_newton`
+* a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
+* `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
+* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation
+* New stopping criteria
+  * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
+
 ## [0.4.67] – July 25, 2024
 
 ### Added

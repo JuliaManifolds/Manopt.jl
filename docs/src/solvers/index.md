@@ -91,7 +91,13 @@ For these you can use
 * The [Interior Point Newton Method](interior_point_Newton.md) (IPM) rephrases the KKT system of a constrained problem into an Newton iteration being performed in every iteration.
 * [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩`` is required, where ``p_k`` is a fixed point on the manifold (changed in every iteration).
 
-# Alphabetical list List of algorithms
+## On the tangent space
+
+* [Conjugate Residual](conjugate_residual.md) a solver for a linear system ``\mathcal A[X] + b = 0`` on a tangent space.
+* [Steihaug-Toint Truncated Conjugate-Gradient Method](truncated_conjugate_gradient_descent.md) a solver for a constrained problem defined on a tangent space.
+
+
+## Alphabetical list List of algorithms
 
 | Solver   | Function        | State   |
 |:---------|:----------------|:---------|
@@ -99,7 +105,7 @@ For these you can use
 | [Augmented Lagrangian Method](augmented_Lagrangian_method.md) | [`augmented_Lagrangian_method`](@ref) | [`AugmentedLagrangianMethodState`](@ref) |
 | [Chambolle-Pock](ChambollePock.md) | [`ChambollePock`](@ref) | [`ChambollePockState`](@ref) |
 | [Conjugate Gradient Descent](conjugate_gradient_descent.md) | [`conjugate_gradient_descent`](@ref) | [`ConjugateGradientDescentState`](@ref) |
-| [Conjugate Residual](conjugate_residual.md) | [`conjugate_residual`](@ref) | |
+| [Conjugate Residual](conjugate_residual.md) | [`conjugate_residual`](@ref) | [`ConjugateResidualState`](@ref) |
 | [Convex Bundle Method](convex_bundle_method.md) | [`convex_bundle_method`](@ref) |  [`ConvexBundleMethodState`](@ref) |
 | [Cyclic Proximal Point](cyclic_proximal_point.md) | [`cyclic_proximal_point`](@ref) |  [`CyclicProximalPointState`](@ref) |
 | [Difference of Convex Algorithm](@ref solver-difference-of-convex) | [`difference_of_convex_algorithm`](@ref) | [`DifferenceOfConvexState`](@ref) |

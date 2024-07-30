@@ -396,7 +396,7 @@ The following symbols are filled with values
 
 * `:Feasbile` display true or false depending on whether the iterate is feasible
 * `:FeasbileEq` display `=` or `≠` equality constraints are fulfilled or not
-* `:FeasbileInEq` display `≤` or `>` inequality constraints are fulfilled or not
+* `:FeasbileInEq` display `≤` or `≰` inequality constraints are fulfilled or not
 * `:NumEq` display the number of equality constraints infeasible
 * `:NumEqNz` display the number of equality constraints infeasible if exists
 * `:NumIneq` display the number of inequality constraints infeasible
@@ -419,7 +419,9 @@ mutable struct DebugFeasibility <: DebugAction
     atol::Float64
     format::Vector{Union{String,Symbol}}
     io::IO
-    function DebugFeasibility(format=["feasible: ", :Feasible]; io::IO=stdout, atol=1e-13)
+    function DebugFeasibility(
+        format=["\"feasible: \"", :Feasible]; io::IO=stdout, atol=1e-13
+    )
         return new(atol, format, io)
     end
 end
@@ -439,7 +441,7 @@ function (d::DebugFeasibility)(
         (f isa String) && (s *= f)
         (f === :Feasible) && (s *= feasible ? "Yes" : "No")
         (f === :FeasibleEq) && (s *= n_eq == 0 ? "=" : "≠")
-        (f === :FeasibleIneq) && (s *= n_ineq == 0 ? "≤" : ">")
+        (f === :FeasibleIneq) && (s *= n_ineq == 0 ? "≤" : "≰")
         (f === :NumEq) && (s *= "$(n_eq)")
         (f === :NumEqNz) && (s *= n_eq == 0 ? "" : "$(n_eq)")
         (f === :NumIneq) && (s *= "$(n_ineq)")
