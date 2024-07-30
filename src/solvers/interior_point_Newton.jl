@@ -57,7 +57,7 @@ the constraints are further fulfilled.
 * `s=μ`: initial value for the slack variables
 * `σ=μ's/length(μ)`: ? (TODO find details about barrier parameter)
 * `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
-* `retraction_method=`[`default_retraction_method`](@extref)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
+* `retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
 * `stepsize=` TODO
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
