@@ -71,7 +71,7 @@ function solve(mp, s, k)
 	end
 
 	# basis representation of F_p
-	#f = get_coordinates(M, s.p, F_p, DefaultOrthogonalBasis())
+	#f = get_coordinates(M, s.p, F_p, DefaultOrthogonalBasis()) funktioniert nicht, da wir hier eine duale Paarung brauchen
 	f = zeros(n-1)
 	for i in 1:n-1
 		f[i] = F_p[E,:vector]*b[i]
