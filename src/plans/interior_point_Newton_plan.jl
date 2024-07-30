@@ -599,7 +599,7 @@ function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
 end
 
 @doc raw"""
-    KKTVectorFieldNormSq
+    KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
 
 Implement the square of the norm of the vectorfield ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref), where this functor applies the norm to.
@@ -632,7 +632,7 @@ function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
 end
 
 @doc raw"""
-    KKTVectorFieldNormSqGradient
+    KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective}
 
 Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rVert^2``,
 that is of the norm squared of the [`KKTVectorField`](@ref) ``F``.
