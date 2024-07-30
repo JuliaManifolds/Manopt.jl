@@ -1,115 +1,4 @@
 @doc raw"""
-    ConjugateResidualState{T,R,TStop<:StoppingCriterion} <: AbstractManoptSolverState
-
-A state for the [`conjugate_residual`](@ref) solver.
-
-# Fields
-
-* `X::T`: the iterate
-* `r::T`: the residual ``r = -b(p) - \mathcal A(p)[X]``
-* `d::T`: the conjugate direction
-* `Ar::T`, `Ad::T`: storages for ``\mathcal A``
-* `rAr::R`: internal field for storing ``⟨ r, \mathcal A(p)[r] ⟩``
-* `α::R`: a step length
-* `β::R`: the conjugate coefficient
-* `stop::TStop`: a [`StoppingCriterion`] for the solver
-
-# Constructor
-
-        function ConjugateResidualState(
-            TpM::TangentSpace,
-            slso::SymmetricLinearSystemObjective;
-            X=rand(TpM),
-            r=-get_gradient(TpM, slso, X),
-            d=copy(TpM, r),
-            Ar=get_hessian(TpM, slso, X, r),
-            Ad=copy(TpM, Ar),
-            α::R=0.0,
-            β::R=0.0,
-            stopping_criterion=StopAfterIteration(manifold_dimension(TpM)) |
-                               StopWhenGradientNormLess(1e-8),
-            kwargs...,
-    )
-
-    Initialise the state with default values.
-"""
-mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
-               AbstractManoptSolverState
-    X::T
-    r::T
-    d::T
-    Ar::T
-    Ad::T
-    rAr::R
-    α::R
-    β::R
-    stop::TStop
-    function ConjugateResidualState(
-        TpM::TangentSpace,
-        slso::SymmetricLinearSystemObjective;
-        X::T=rand(TpM),
-        r::T=-get_gradient(TpM, slso, X),
-        d::T=copy(TpM, r),
-        Ar::T=get_hessian(TpM, slso, X, r),
-        Ad::T=copy(TpM, Ar),
-        α::R=0.0,
-        β::R=0.0,
-        stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
-                               StopWhenGradientNormLess(1e-8),
-        kwargs...,
-    ) where {T,R,SC<:StoppingCriterion}
-        M = base_manifold(TpM)
-        p = base_point(TpM)
-        crs = new{T,R,SC}()
-        crs.X = X
-        crs.r = r
-        crs.d = d
-        crs.Ar = Ar
-        crs.Ad = Ad
-        crs.α = α
-        crs.β = β
-        crs.rAr = zero(R)
-        crs.stop = stopping_criterion
-        return crs
-    end
-end
-
-get_iterate(crs::ConjugateResidualState) = crs.X
-function set_iterate!(crs::ConjugateResidualState, ::AbstractManifold, X)
-    crs.X = X
-    return crs
-end
-
-get_gradient(crs::ConjugateResidualState) = crs.r
-function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
-    crs.r = r
-    return crs
-end
-
-function get_message(crs::ConjugateResidualState)
-    return get_message(crs.α)
-end
-
-function show(io::IO, crs::ConjugateResidualState)
-    i = get_count(crs, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(crs.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s Conjugate Residual Method
-    $Iter
-    ## Parameters
-    * α: $(crs.α)
-    * β: $(crs.β)
-
-    ## Stopping criterion
-    $(status_summary(crs.stop))
-
-    This indicates convergence: $Conv
-    """
-    return print(io, s)
-end
-
-@doc raw"""
     conjugate_residual(TpM::TangentSpace, A, b, p=rand(TpM))
     conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(TpM))
     conjugate_residual!(TpM::TangentSpace, A, b, p)
@@ -178,9 +67,11 @@ end
 function conjugate_residual!(
     TpM::TangentSpace,
     slso::SymmetricLinearSystemObjective,
-    x0;
+    X;
     stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
-                           StopWhenGradientNormLess(1e-8),
+                           StopWhenRelativeResidualLess(
+        base_manifold(TpM), base_point(TpM), get_b(TpM, slso, X), 1e-8
+    ),
     kwargs...,
 ) where {SC<:StoppingCriterion}
     crs = ConjugateResidualState(

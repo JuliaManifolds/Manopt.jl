@@ -726,6 +726,39 @@ function interior_point_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
+"""
+InteriorPointCentralityCondition{CO}
+
+A functor to check the centrality condition.
+
+"""
+mutable struct InteriorPointCentralityCondition{CO}
+    cmo::CO
+    γ::Float64
+end
+function (ipcc::InteriorPointCentralityCondition)(N, q)
+    μ = q[N, 2]
+    s = q[N, 4]
+    KKTvf = KKTVectorFieldNormSq(ipcc.cmo)
+    # ‖F(q)‖
+    NormKKT = sqrt(KKTvf(N, q))
+    # τ1, τ2
+    τ1 = length(μ) * minimum(μ .* s) / sum(μ .* s)
+    τ2 = sum(μ .* s) / NormKKT
+    # f1 false
+    (minimum(μ .* s) - ipcc.γ * τ1 / length(μ) < 0) && return false
+    # f2 false
+    (sum(μ .* s) - ipcc.γ * τ2 * NormKKT < 0) && return false
+    return true
+end
+function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:γ})
+    return ipcc.γ
+end
+function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ}, γ)
+    ipcc.γ = γ
+    return ipcc
+end
+
 # -----------------------------------------------------------------------------
 # old code, old names - TODO check / rename / document
 function calculate_σ(
@@ -741,18 +774,4 @@ function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p,
     copyto!(N[3], q[N, 3], λ)
     copyto!(N[4], q[N, 4], s)
     return min(0.5, (KKTVectorFieldNormSq(cmo)(N, q))^(1 / 4))
-end
-mutable struct ConstraintLineSearchCheckFunction{CO}
-    cmo::CO
-    τ1::Float64
-    τ2::Float64
-    γ::Float64
-end
-function (clcf::ConstraintLineSearchCheckFunction)(N, q)
-    μ = q[N, 2]
-    s = q[N, 4]
-    KKTvf = KKTVectorFieldNormSq(clcf.cmo)
-    (minimum(μ .* s) - clcf.γ * clcf.τ1 / length(μ) < 0) && return false
-    (sum(μ .* s) - clcf.γ * clcf.τ2 * sqrt(KKTvf(N, q)) < 0) && return false
-    return true
 end

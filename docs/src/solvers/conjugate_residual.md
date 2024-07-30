@@ -8,16 +8,22 @@ CurrentModule = Manopt
 conjugate_residual
 ```
 
-# State
+## State
 
 ```@docs
 ConjugateResidualState
 ```
 
-# Objetive
+## Objetive
 
 ```@docs
 SymmetricLinearSystemObjective
+```
+
+## Additional stopping criterion
+
+```@docs
+StopWhenRelativeResidualLess
 ```
 
 ## Literature

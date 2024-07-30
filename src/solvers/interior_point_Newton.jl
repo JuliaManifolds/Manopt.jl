@@ -55,7 +55,7 @@ the constraints are further fulfilled.
 * `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 * `s=μ`: initial value for the slack variables
-* `σ= μ's/length(μ)`: ? (TODO find details about barrier parameter)
+* `σ=μ's/length(μ)`: ? (TODO find details about barrier parameter)
 * `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
 * `retraction_method=[`default_retraction_method`](@extref)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
 * `stepsize=` TODO
@@ -235,15 +235,14 @@ function interior_point_Newton!(
     s=μ,
     ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
+    γ=0.9,
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     sub_kwargs=(;),
     _sub_M=M × Rn(length(λ)),
     _sub_p=rand(_sub_M),
-    centrality_condition=ConstraintLineSearchCheckFunction(
-        cmo, length(μ) * minimum(μ .* s) / sum(μ .* s), sum(μ .* s), 0.1
-    ), # TODO
+    centrality_condition=InteriorPointCentralityCondition(cmo, γ),
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
@@ -360,6 +359,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     (n > 0) && (copyto!(N[3], X[N, 3], Xλ))
     (m > 0) && (copyto!(N[4], X[N, 4], Xs))
     set_gradient!(ips.step_state, M, q, X)
+    # Update centrality factor – Maybe do this as an update function?
+    γ = get_manopt_parameter(ips.stepsize, :DecreaseCondition, :γ)
+    set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :γ, (γ + 0.5) / 2)
     # determine stepsize
     α = ips.stepsize(ips.step_problem, ips.step_state, i)
     # Update Parameters and slack

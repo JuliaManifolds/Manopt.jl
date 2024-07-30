@@ -555,7 +555,8 @@ export StopAfter,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
     StopWhenSwarmVelocityLess,
-    StopWhenTrustRegionIsExceeded
+    StopWhenTrustRegionIsExceeded,
+    StopWhenRelativeResidualLess
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion
 export update_stopping_criterion!

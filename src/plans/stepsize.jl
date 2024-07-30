@@ -350,6 +350,20 @@ function status_summary(als::ArmijoLinesearch)
     return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
 get_message(a::ArmijoLinesearch) = a.message
+function get_manopt_parameter(a::ArmijoLinesearch, s::Val{:DecreaseCondition}, args...)
+    return get_manopt_parameter(a.additional_decrease_condition, args...)
+end
+function get_manopt_parameter(a::ArmijoLinesearch, ::Val{:IncreaseCondition}, args...)
+    return get_manopt_parameter(a.additional_increase_condition, args...)
+end
+function set_manopt_parameter!(a::ArmijoLinesearch, s::Val{:DecreaseCondition}, args...)
+    set_manopt_parameter!(a.additional_decrease_condition, args...)
+    return a
+end
+function set_manopt_parameter!(a::ArmijoLinesearch, ::Val{:IncreaseCondition}, args...)
+    set_manopt_parameter!(a.additional_increase_condition, args...)
+    return a
+end
 
 @doc raw"""
     (s, msg) = linesearch_backtrack(

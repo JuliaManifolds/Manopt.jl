@@ -28,6 +28,10 @@ KKTVectorFieldNormSqGradient
 
 ## Helpers
 
+```@docs
+InteriorPointCentralityCondition
+```
+
 ## References
 
 ```@bibliography
