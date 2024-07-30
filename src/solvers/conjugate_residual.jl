@@ -4,11 +4,12 @@
     conjugate_residual!(TpM::TangentSpace, A, b, p)
     conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
 
-Compute the solution of ``\mathcal A(p)[X] = -b(p)``, where
+Compute the solution of ``\mathcal A(p)[X] + b(p) = 0_p ``, where
 
 * ``\mathcal A`` is a linear operator on ``T_p\mathcal M``
 * ``b`` is a vector field on the manifold
-* ``X ∈ T_p\mathcal M`` are tangent vectors.
+* ``X ∈ T_p\mathcal M`` is a tangent vector
+* ``0_p``is the zero vector ``T_p\mathcal M``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initalised with ``X^{(0)}`` as
