@@ -242,6 +242,7 @@ function interior_point_Newton!(
     sub_kwargs=(;),
     _sub_M=M × Rn(length(λ)),
     _sub_p=rand(_sub_M),
+    _sub_X=rand(_sub_M; vector_at=_sub_p),
     centrality_condition=InteriorPointCentralityCondition(cmo, γ),
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
@@ -267,11 +268,15 @@ function interior_point_Newton!(
         sub_kwargs...,
     ),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
-                                              StopWhenGradientNormLess(1e-5),
+                                              StopWhenRelativeResidualLess(
+        norm(_sub_M, _sub_p, get_b(TangentSpace(_sub_M, _sub_p), sub_objective, _sub_X)),
+        1e-8,
+    ),
     sub_state::St=decorate_state!(
         ConjugateResidualState(
-            TangentSpace(_sub_M, rand(_sub_M)),
+            TangentSpace(_sub_M, _sub_p),
             sub_objective;
+            X=_sub_X,
             stop=sub_stopping_criterion,
             sub_kwargs...,
         );

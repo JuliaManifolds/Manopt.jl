@@ -1,7 +1,6 @@
 using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 _debug_iterates_plot = false
-_debug_gradient_check = false
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
 println(eigvals(A))
@@ -33,16 +32,12 @@ res = interior_point_Newton(
     debug=[
         :Iteration,
         " | ",
-        :Iterate,
-        " | ",
         :Cost,
         " | ",
         :Stepsize,
         " | ",
         :Change,
         "\n\t",
-        :GradientNorm,
-        " ",
         :Feasibility,
         " ",
         :σ,
@@ -59,31 +54,10 @@ res = interior_point_Newton(
 
 rec = get_record(res[2])
 
-# ------------------------- check gradient
-s = get_state(res[2])
-m = 3
-n = 0
-N = M × ℝ^m × ℝ^n × ℝ^m
-cmo = res[1]
-q = rand(N)
-q[N, 1] = get_iterate(s)
-q[N, 2] = s.μ
-q[N, 4] = s.s
-
-if _debug_gradient_check
-    F = KKTVectorFieldNormSq(cmo)
-    grad_F = KKTVectorFieldNormSqGradient(cmo)
-    X = zero_vector(N, q)
-    X[N, 1] = rand(M; vector_at=q.x[1])
-    using Plots
-    check_gradient(N, F, grad_F, q, X; plot=true, error=:info)
-end
-
 if _debug_iterates_plot
-    prepend!(rec, [p_0])
-    rec .+= 0.005 * rec
-    #-------------------------------------------------------------------------------------------------#
     using GLMakie, Makie, GeometryTypes
+    prepend!(rec, [p_0])
+    rec .+= 0.0075 * rec # scale slighly to lie on the sphere
     n = 30
 
     π1(x) = x[1]

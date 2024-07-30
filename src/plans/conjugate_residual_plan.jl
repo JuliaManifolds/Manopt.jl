@@ -263,7 +263,7 @@ is below a certain threshold, i.e.
   \frac{\lVert r^{(k)} \rVert}{c} ≤ ε,
 ```
 
-where ``c = \lVert b \rVert of the initial vector from the vector field in ``\mathcal A(p)[X] = -b(p)``,
+where ``c = \lVert b \rVert`` of the initial vector from the vector field in ``\mathcal A(p)[X] = -b(p)``,
 from the [`conjugate_residual`](@ref)
 
 # Fields
@@ -278,7 +278,13 @@ from the [`conjugate_residual`](@ref)
 
     StopWhenRelativeResidualLess(c, ε; norm_r = 2*c*ε)
 
+Initialise the stopping criterion.
 
+!!! note
+
+    The initial norm of the vector field ``c = \lVert b \rVert``
+    that is stored internally is updated on initialisation, that is,
+    if the stopping criterion is called with `k<=0`.
 """
 mutable struct StopWhenRelativeResidualLess{R} <: StoppingCriterion
     c::R
@@ -286,19 +292,21 @@ mutable struct StopWhenRelativeResidualLess{R} <: StoppingCriterion
     norm_r::R
     at_iteration::Int
     function StopWhenRelativeResidualLess(c::R, ε::R; norm_r::R=2 * c * ε) where {R}
-        return new{R}(c, ε, norm_r, 0.1)
+        return new{R}(c, ε, norm_r, -1)
     end
 end
 function (swrr::StopWhenRelativeResidualLess)(
-    amp::AbstractManoptProblem{<:TangentSpace}, ips::ConjugateResidualState, k::Int
+    amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, k::Int
 )
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
-    swrr.norm_r = norm(M, p, ips.r)
-    if k <= 0 #init -> reset r-norm
-        swrr.norm_r = 2 * swrr.c * swrr.ε
-        return true
+    #compute current r-norm
+    swrr.norm_r = norm(M, p, crs.r)
+    if k <= 0
+        # on init also update the right hand side norm
+        swrr.c = norm(M, p, get_b(TpM, get_objective(amp), crs.X))
+        return true # just init the norm
     end
     # now k > 0
     if swrr.norm_r / swrr.c < swrr.ε #residual small enough
