@@ -649,7 +649,7 @@ end
 @doc raw"""
     KKTVectorFieldNormSqGradient <: AbstractConstrainedSlackFunctor
 
-Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rvert^2``,
+Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rVert^2``,
 that is of the norm squared of the [`KKTVectorField`](@ref) ``F``.
 
 This is given in [LaiYoshise:2024](@cite) as the gradient of their merit function,
@@ -727,7 +727,7 @@ function interior_point_initial_guess(
 end
 
 """
-InteriorPointCentralityCondition{CO}
+    InteriorPointCentralityCondition{CO}
 
 A functor to check the centrality condition.
 
@@ -760,7 +760,7 @@ function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ
 end
 
 @doc raw"""
-StopWhenKKTResidualLess <: StoppingCriterion
+    StopWhenKKTResidualLess <: StoppingCriterion
 
 Stop when the KKT residual
 

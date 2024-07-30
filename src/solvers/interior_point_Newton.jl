@@ -53,15 +53,15 @@ the constraints are further fulfilled.
 * `Hess_h=nothing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
 * `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
-* `μ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the inequality constraints ``g``
+* `μ=ones(length(g(M,x)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 * `s=μ`: initial value for the slack variables
 * `σ=μ's/length(μ)`: ? (TODO find details about barrier parameter)
 * `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
-* `retraction_method=[`default_retraction_method`](@extref)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
+* `retraction_method=`[`default_retraction_method`](@extref)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
 * `stepsize=` TODO
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
-* `sub_problem=TODO`: provide a problem for the subsolver, which is assumed to work on the tangent space of `\mathcal M \times ℝ^n`
+* `sub_problem=TODO`: provide a problem for the subsolver, which is assumed to work on the tangent space of ``\mathcal M \times ℝ^n``
 * `sub_state=TODO`: a state specifying the subsolver
 
 # Output
