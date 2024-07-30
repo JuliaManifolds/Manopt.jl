@@ -14,7 +14,7 @@ defined on the tangent space ``T_p\mathcal M`` at ``p`` on the manifold ``\mathc
 
 In other words this is an objective to solve ``\mathcal A(p)[X] = -b(p)``
 for some linear symmetric operator and a vector function.
-Note the minus on the right hand side, which makes this objective especially taylored
+Note the minus on the right hand side, which makes this objective especially tailored
 for (iteratively) solving Newton-like equations.
 
 # Fields
