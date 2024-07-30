@@ -545,18 +545,19 @@ export StopAfter,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
+    StopWhenKKTResidualLess,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
     StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
     StopWhenPopulationDiverges,
     StopWhenPopulationStronglyConcentrated,
+    StopWhenRelativeResidualLess,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
     StopWhenSwarmVelocityLess,
-    StopWhenTrustRegionIsExceeded,
-    StopWhenRelativeResidualLess
+    StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion
 export update_stopping_criterion!

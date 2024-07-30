@@ -32,6 +32,12 @@ KKTVectorFieldNormSqGradient
 InteriorPointCentralityCondition
 ```
 
+## Additional stopping criteria
+
+```@docs
+StopWhenKKTResidualLess
+```
+
 ## References
 
 ```@bibliography

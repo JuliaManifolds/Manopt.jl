@@ -236,8 +236,6 @@ function interior_point_Newton!(
     ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
     γ=0.9,
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenChangeLess(1e-5),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     sub_kwargs=(;),
     _sub_M=M × Rn(length(λ)),
@@ -259,6 +257,8 @@ function interior_point_Newton!(
         initial_guess=interior_point_initial_guess,
         additional_decrease_condition=centrality_condition,
     ),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+                                          StopWhenKKTResidualLess(1e-8),
     sub_objective=decorate_objective!(
         TangentSpace(_sub_M, _sub_p),
         SymmetricLinearSystemObjective(

@@ -306,7 +306,7 @@ function (swrr::StopWhenRelativeResidualLess)(
     if k <= 0
         # on init also update the right hand side norm
         swrr.c = norm(M, p, get_b(TpM, get_objective(amp), crs.X))
-        return true # just init the norm
+        return false # just init the norm, but do not stop
     end
     # now k > 0
     if swrr.norm_r / swrr.c < swrr.ε #residual small enough
@@ -324,11 +324,12 @@ end
 function status_summary(swrr::StopWhenRelativeResidualLess)
     has_stopped = (swrr.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "‖r^(k)‖ / c < $(swrr.ε):\t$s"
+    return "‖r^(k)‖ / c < ε:\t$s"
 end
 indicates_convergence(::StopWhenRelativeResidualLess) = true
 function show(io::IO, swrr::StopWhenRelativeResidualLess)
     return print(
-        io, "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))\n    $(status_summary(c))"
+        io,
+        "StopWhenRelativeResidualLess($(swrr.c), $(swrr.ε))\n    $(status_summary(swrr))",
     )
 end

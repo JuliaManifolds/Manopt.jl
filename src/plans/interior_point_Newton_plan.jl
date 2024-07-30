@@ -759,8 +759,83 @@ function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ
     return ipcc
 end
 
-# -----------------------------------------------------------------------------
-# old code, old names - TODO check / rename / document
+@doc raw"""
+StopWhenKKTResidualLess <: StoppingCriterion
+
+Stop when the KKT residual
+
+```
+r^2
+= \lVert \operatorname{grad} \mathcal L(p, μ, λ) \rVert^2
++ \sum_{i=1}^m [μ_i]_{-}^2 + [g_i(p)]_+^2 + \lvert \mu_ig_i(p)^2
++ \sum_{j=1}^n \lvert h_i(p)\rvert^2.
+```
+
+is less than a given threshold ``r < ε``.
+We use ``[v]_+ = \max\{0,v\}`` and ``[v]_- = \min\{0,t\}``
+for the positive and negative part of ``v``, respectively
+
+# Fields
+
+* `ε`: a threshold
+* `at_iteration`:
+
+"""
+mutable struct StopWhenKKTResidualLess{R} <: StoppingCriterion
+    ε::R
+    residual::R
+    at_iteration::Int
+    function StopWhenKKTResidualLess(ε::R) where {R}
+        return new{R}(ε, zero(ε), -1)
+    end
+end
+function (c::StopWhenKKTResidualLess)(
+    amp::AbstractManoptProblem, ipns::InteriorPointNewtonState, k::Int
+)
+    M = get_manifold(amp)
+    (k <= 0) && return false
+    # now k > 0
+    # Check residual
+    μ, λ, s, p = ipns.μ, ipns.λ, ipns.s, ipns.p
+    c.residual = 0.0
+    m, n = length(ipns.μ), length(ipns.λ)
+    # First component
+    c.residual += norm(M, p, LagrangianGradient(get_objective(amp), μ, λ)(M, p))
+    # ineq constr part
+    for i in 1:m
+        gi = get_inequality_constraint(amp, ipns.p, i)
+        c.residual += min(0.0, μ[i])^2 + max(gi, 0)^2 + abs(μ[i] * gi)^2
+    end
+    # eq constr part
+    for j in 1:n
+        hj = get_equality_constraint(amp, ipns.p, j)
+        c.residual += abs(hj)^2
+    end
+    c.residual = sqrt(c.residual)
+    println("Residual: ", c.residual)
+    if c.residual < c.ε
+        c.at_iteration = k
+        return true
+    end
+    return false
+end
+function get_reason(c::StopWhenKKTResidualLess)
+    if (c.at_iteration >= 0)
+        return "After iteration #$(c.at_iteration) the algorithm stopped with a KKT residual $(c.residual) < $(c.ε).\n"
+    end
+    return ""
+end
+function status_summary(swrr::StopWhenKKTResidualLess)
+    has_stopped = (swrr.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "‖F(p, λ, μ)‖ < ε:\t$s"
+end
+indicates_convergence(::StopWhenKKTResidualLess) = true
+function show(io::IO, c::StopWhenKKTResidualLess)
+    return print(io, "StopWhenKKTResidualLess($(c.ε))\n    $(status_summary(c))")
+end
+
+# An internal function to compute the new σ
 function calculate_σ(
     N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s
 )
