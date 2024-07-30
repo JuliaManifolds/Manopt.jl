@@ -93,7 +93,7 @@ function initialize_solver!(
 )
     TpM = get_manifold(amp)
     get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
-    crs.r *= -1
+    crs.r .*= -1
     crs.r .-= get_b(TpM, get_objective(amp), crs.X)
     copyto!(TpM, crs.d, crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
@@ -110,13 +110,13 @@ function step_solver!(
     M = base_manifold(TpM)
     p = base_point(TpM)
     crs.α = inner(M, p, crs.r, crs.Ar) / inner(M, p, crs.Ad, crs.Ad)
-    crs.X += crs.α * crs.d
+    crs.X .+= crs.α .* crs.d
     crs.rAr = inner(M, p, crs.r, crs.Ar)
-    crs.r -= crs.α * crs.Ad
+    crs.r .-= crs.α .* crs.Ad
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
     crs.β = inner(M, p, crs.r, crs.Ar) / crs.rAr
-    crs.d = crs.r + crs.β * crs.d
-    crs.Ad = crs.Ar + crs.β * crs.Ad
+    crs.d .= crs.r .+ crs.β .* crs.d
+    crs.Ad .= crs.Ar .+ crs.β .* crs.Ad
     return crs
 end
 
