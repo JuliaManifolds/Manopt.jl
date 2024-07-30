@@ -98,5 +98,9 @@ Random.seed!(42)
             ],
         )
         @test Manopt.max_stepsize(Mfr, pfr) == manifold_dimension(Mfr)
+
+        M = Hyperrectangle([-3, -1.5], [3, 1.5])
+        @test Manopt.max_stepsize(M) ≈ 6.0
+        @test Manopt.max_stepsize(M, [-1, 0.5]) ≈ 4.0
     end
 end

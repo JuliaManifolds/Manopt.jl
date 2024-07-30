@@ -56,9 +56,10 @@ Manopt.LineSearchesStepsize
 Loading `Manifolds.jl` introduces the following additional functions
 
 ```@docs
-mid_point
-Manopt.max_stepsize(::TangentBundle, ::Any)
 Manopt.max_stepsize(::FixedRankMatrices, ::Any)
+Manopt.max_stepsize(::Hyperrectangle, ::Any)
+Manopt.max_stepsize(::TangentBundle, ::Any)
+mid_point
 ```
 
 Internally, `Manopt.jl` provides the two additional functions to choose some
