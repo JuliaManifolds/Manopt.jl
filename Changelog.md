@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
 * `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
 * add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation
+* Add `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to constuct the hessian objective of its Lagrangian
 * New stopping criteria
   * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
 

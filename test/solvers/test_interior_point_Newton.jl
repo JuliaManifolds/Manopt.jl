@@ -3,7 +3,6 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
 _debug_iterates_plot = false
 
 A = -[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0]
-println(eigvals(A))
 f(M, p) = 0.5 * p' * A * p
 grad_f(M, p) = (I - p * p') * A * p
 Hess_f(M, p, X) = A * X - (p' * A * X) * p - (p' * A * p) * X
@@ -50,6 +49,9 @@ res = interior_point_Newton(
     return_state=true,
     return_objective=true,
 )
+
+q = get_solver_result(res)
+@test distance(M, q, [0.0, 0.0, 1.0]) < 2e-4
 
 rec = get_record(res[2])
 

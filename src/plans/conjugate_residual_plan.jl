@@ -22,8 +22,9 @@ for (iteratively) solving Newton-like equations.
 * `A!!`: a symmetric, linear operator on the tangent space
 * `b!!`: a gradient function
 
-where ``A!!`` can work as an allocating operator `(M, p, X) -> Y` or an in-place one `(M, Y, p, X) -> Y`,
-and similarly ``b`` can either be a function `(M, p) -> X` or `(M, X, p) -> X`
+where `A!!` can work as an allocating operator `(M, p, X) -> Y` or an in-place one `(M, Y, p, X) -> Y`,
+and similarly `b!!` can either be a function `(M, p) -> X` or `(M, X, p) -> X`.
+The first variants allocate for the result, the second variants work in-place.
 
 # Constructor
 
@@ -153,7 +154,7 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `rAr::R`: internal field for storing ``⟨ r, \mathcal A(p)[r] ⟩``
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
-* `stop::TStop`: a [`StoppingCriterion`] for the solver
+* `stop::TStop`: a [`StoppingCriterion`](@ref) for the solver
 
 # Constructor
 
@@ -227,10 +228,6 @@ function set_gradient!(crs::ConjugateResidualState, ::AbstractManifold, r)
     return crs
 end
 
-function get_message(crs::ConjugateResidualState)
-    return get_message(crs.α)
-end
-
 function show(io::IO, crs::ConjugateResidualState)
     i = get_count(crs, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -263,7 +260,7 @@ is below a certain threshold, i.e.
   \frac{\lVert r^{(k)} \rVert}{c} ≤ ε,
 ```
 
-where ``c = \lVert b \rVert`` of the initial vector from the vector field in ``\mathcal A(p)[X] = -b(p)``,
+where ``c = \lVert b \rVert`` of the initial vector from the vector field in ``\mathcal A(p)[X] + b(p) = 0_p``,
 from the [`conjugate_residual`](@ref)
 
 # Fields
@@ -284,7 +281,7 @@ Initialise the stopping criterion.
 
     The initial norm of the vector field ``c = \lVert b \rVert``
     that is stored internally is updated on initialisation, that is,
-    if the stopping criterion is called with `k<=0`.
+    if this stopping criterion is called with `k<=0`.
 """
 mutable struct StopWhenRelativeResidualLess{R} <: StoppingCriterion
     c::R
