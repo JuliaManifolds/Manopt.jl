@@ -12,8 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * an `interior_point_newton`
 * a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
 * `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
-* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation
-* Add `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to constuct the hessian objective of its Lagrangian
+* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation emplying the new `is_feasible`function
+* Add Several new functors
+  * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the hessian objective of its Lagrangian
+  * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system withiin `interior_point_newton`
+  * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and ``KKTVectorFieldAdjointJacobian`
+  * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_newton`
 * New stopping criteria
   * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
 

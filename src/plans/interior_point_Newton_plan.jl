@@ -385,7 +385,7 @@ function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
 end
 
 @doc raw"""
-    KKTVectorField
+    KKTVectorField{O<:ConstrainedManifoldObjective}
 
 Implement the vectorfield ``F`` KKT-conditions, inlcuding a slack variable
 for the inequality constraints.
@@ -457,7 +457,7 @@ function show(io::IO, KKTvf::KKTVectorField)
 end
 
 @doc raw"""
-    KKTVectorFieldJacobian
+    KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective}
 
 Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldAdjointJacobian`](@ref)..
