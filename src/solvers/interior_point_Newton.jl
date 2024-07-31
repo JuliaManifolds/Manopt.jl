@@ -269,7 +269,7 @@ function interior_point_Newton!(
     kwargs...,
 ) where {
     O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
-    St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
+    St<:AbstractManoptSolverState,
     Pr<:Union{F,AbstractManoptProblem} where {F},
 }
     !is_feasible(M, cmo, p; error=:error)

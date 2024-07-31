@@ -30,7 +30,7 @@ construct an exact penalty options with the remaining previously mentioned field
 mutable struct ExactPenaltyMethodState{
     P,
     Pr<:Union{F,AbstractManoptProblem} where {F},
-    St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
+    St<:AbstractManoptSolverState,
     R<:Real,
     TStopping<:StoppingCriterion,
 } <: AbstractSubProblemSolverState
@@ -50,7 +50,7 @@ mutable struct ExactPenaltyMethodState{
         ::AbstractManifold,
         p::P,
         sub_problem::Pr,
-        sub_state::St;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         ϵ_exponent=1 / 100,
@@ -64,17 +64,12 @@ mutable struct ExactPenaltyMethodState{
         stopping_criterion::SC=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
         ),
-    ) where {
-        P,
-        Pr<:Union{F,AbstractManoptProblem} where {F},
-        St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
-        R<:Real,
-        SC<:StoppingCriterion,
-    }
-        epms = new{P,Pr,St,R,SC}()
+    ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,SC<:StoppingCriterion}
+        sub_state_storage = maybe_wrap_allocation_type(sub_state)
+        epms = new{P,Pr,typeof(sub_state_storage),R,SC}()
         epms.p = p
         epms.sub_problem = sub_problem
-        epms.sub_state = sub_state
+        epms.sub_state = sub_state_storage
         epms.ϵ = ϵ
         epms.ϵ_min = ϵ_min
         epms.u = u
@@ -412,11 +407,12 @@ function exact_penalty_method!(
     O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
     Pr<:Union{F,AbstractManoptProblem} where {F},
 }
+    sub_state_storage = maybe_wrap_allocation_type(sub_state)
     emps = ExactPenaltyMethodState(
         M,
         p,
         sub_problem,
-        sub_state;
+        sub_state_storage;
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         u=u,

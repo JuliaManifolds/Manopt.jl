@@ -43,7 +43,7 @@ manifold- or objective specific defaults.
 mutable struct AugmentedLagrangianMethodState{
     P,
     Pr<:Union{F,AbstractManoptProblem} where {F},
-    St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
+    St<:AbstractManoptSolverState,
     R<:Real,
     V<:AbstractVector{<:R},
     TStopping<:StoppingCriterion,
@@ -70,7 +70,7 @@ mutable struct AugmentedLagrangianMethodState{
         co::ConstrainedManifoldObjective,
         p::P,
         sub_problem::Pr,
-        sub_state::St;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         λ_max::R=20.0,
@@ -90,18 +90,12 @@ mutable struct AugmentedLagrangianMethodState{
                                ) |
                                StopWhenChangeLess(1e-10),
         kwargs...,
-    ) where {
-        P,
-        Pr<:Union{F,AbstractManoptProblem} where {F},
-        St<:Union{AbstractEvaluationType,AbstractManoptSolverState},
-        R<:Real,
-        V,
-        SC<:StoppingCriterion,
-    }
-        alms = new{P,Pr,St,R,V,SC}()
+    ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,V,SC<:StoppingCriterion}
+        sub_state_storage = maybe_wrap_allocation_type(sub_state)
+        alms = new{P,Pr,typeof(sub_state_storage),R,V,SC}()
         alms.p = p
         alms.sub_problem = sub_problem
-        alms.sub_state = sub_state
+        alms.sub_state = sub_state_storage
         alms.ϵ = ϵ
         alms.ϵ_min = ϵ_min
         alms.λ_max = λ_max
