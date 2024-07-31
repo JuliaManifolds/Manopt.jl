@@ -87,16 +87,6 @@ function interior_point_Newton(
     kwargs...,
 )
     q = copy(M, p)
-    num_eq = if isnothing(equality_constrains)
-        _number_of_constraints(h, grad_h; M=M, p=p)
-    else
-        inequality_constrains
-    end
-    num_ineq = if isnothing(inequality_constrains)
-        _number_of_constraints(g, grad_g; M=M, p=p)
-    else
-        inequality_constrains
-    end
     cmo = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -108,20 +98,12 @@ function interior_point_Newton(
         hess_g=Hess_g,
         hess_h=Hess_h,
         evaluation=evaluation,
-        inequality_constrains=num_ineq,
-        equality_constrains=num_eq,
+        inequality_constrains=inequality_constrains,
+        equality_constrains=equality_constrains,
         M=M,
         p=p,
     )
-    return interior_point_Newton!(
-        M,
-        cmo,
-        q;
-        evaluation=evaluation,
-        inequality_constrains=num_ineq,
-        equality_constrains=num_eq,
-        kwargs...,
-    )
+    return interior_point_Newton!(M, cmo, q; evaluation=evaluation, kwargs...)
 end
 function interior_point_Newton(
     M::AbstractManifold,

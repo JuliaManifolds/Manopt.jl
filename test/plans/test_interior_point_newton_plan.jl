@@ -64,6 +64,7 @@ using ManifoldsBase, Manifolds, Manopt, Test
         M, coh, p, DefaultManoptProblem(sub_M, sub_obj), sub_state
     )
     # Getters & Setters
+    @test length(Manopt.get_message(ipns)) == 0
     @test set_iterate!(ipns, M, 2 * p) == ipns
     @test get_iterate(ipns) == 2 * p
     @test set_gradient!(ipns, M, 3 * p) == ipns
