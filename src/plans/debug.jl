@@ -419,9 +419,7 @@ mutable struct DebugFeasibility <: DebugAction
     atol::Float64
     format::Vector{Union{String,Symbol}}
     io::IO
-    function DebugFeasibility(
-        format=["feasible: ", :Feasible]; io::IO=stdout, atol=1e-13
-    )
+    function DebugFeasibility(format=["feasible: ", :Feasible]; io::IO=stdout, atol=1e-13)
         return new(atol, format, io)
     end
 end
