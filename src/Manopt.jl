@@ -150,7 +150,8 @@ using SparseArrays
 using Statistics
 
 """
-Rn(s::Symbol=:Manifolds, args; kwargs...)
+    Rn(args; kwargs...)
+    Rn(s::Symbol=:Manifolds, args; kwargs...)
 
 A small internal helper function to choose a Euclidean space.
 By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
@@ -158,12 +159,16 @@ a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
 from [`Manifolds.jl`](@extref Manifolds.Manifolds)
 """
 Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
+
 @doc """
-   Rn_default()
+    Rn_default()
 
 Specify a default value to dispatch [`Rn`](@ref) on.
 This default is set to `Manifolds`, indicating, that when this package is loded,
-it is the preferred package to ask for a Euclidean space.
+it is the preferred package to ask for a vector space space.
+
+The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
+If you load `Manifolds.jl` this switches to using [`Euclidan`](@extref Manifolds.Euclidean).
 """
 Rn_default() = :Manifolds
 Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)

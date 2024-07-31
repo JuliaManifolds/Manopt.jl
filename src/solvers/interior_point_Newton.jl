@@ -24,13 +24,14 @@ by a slack variable `s`.
 \text{ where }
 X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n,
 ```
+
 see [`CondensedKKTVectorFieldJacobian`](@ref) and [`CondensedKKTVectorField`](@ref), respectively,
 for the reduced form, this is usually solved in.
 From the resulting `X` and `Z` in the reeuced form, the other two, ``Y``, ``W``, are then computed.
 
-From the gradient ``(X,y,Z,W)` at the current iterate `(p, μ, λ, s)`,
-a line search is performed using the [``]
-
+From the gradient ``(X,y,Z,W)`` at the current iterate ``(p, μ, λ, s)``,
+a line search is performed using the [`KKTVectorFieldNormSq`](@ref) norm of the KKT vector field (squared)
+and its gradient [`KKTVectorFieldNormSqGradient`](@ref) together with the [`InteriorPointCentralityCondition`](@ref).
 
 Note that since the vector field ``F`` includes the gradients of the constraint
 functions ``g,h`, its gradient or Jacobian requires the Hessians of the constraints.
@@ -71,29 +72,45 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
 * `λ=ones(length(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M,x)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
-* `retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
+* `retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`:
+  the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
 * `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
-* `s=μ`: initial value for the slack variables
+* `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
-* `step_problem`: wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
-* `step_state`: the [`StepSt=StepsizeState`] with point and search direction
+* `step_objective`: a [`ManifoldGradientObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
+* `step_problem`: the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
+  as the problem the linesearch `stepsize=` employs for determining a step size
+* `step_state`: the [`StepsizeState`](@ref) with point and search direction
 * `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
   additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
-* `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)`:
+  a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
-* `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
-* `sub_problem=TODO`: provide a problem for the subsolver, which is assumed to work on the tangent space of ``\mathcal M \times ℝ^n``
-* `sub_state=TODO`: a state specifying the subsolver
-* `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
-* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
-* `Y=zero(μ)`:  the current gradient with respct to `μ`
-* `Z=zero(λ)`:  the current gradient with respct to `λ`
-* `W=zero(s)`:  the current gradient with respct to `s`
+* `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
+  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``\mathcal A(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``\mathcal A(X) + b = 0`` we aim to solve.
+  This is used to setup the `sub_problem`. If you set the `sub_problem` directly, this keyword has no effect.
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = \lVert b \rVert`` from the system to solve.
+  This keyword is used in the `sub_state`. If you set that keyword diretly, this keyword does not have an effect.
+* `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``\mathcal M × ℝ^n`` to a manopt problem.
+   This is the manifold and objective for the sub solver.
+* `sub_state=`[`ConjugateResidualState`](@ref): a state specifying the subsolver. This default is also decorated with the `sub_kwargs...`.
+* `vector_space=`[`Rn`](@ref Manopt.Rn): specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
+  th initial gradient with respect to `p`.
+* `Y=zero(μ)`:  the initial gradient with respct to `μ`
+* `Z=zero(λ)`:  the initial gradient with respct to `λ`
+* `W=zero(s)`:  the initial gradient with respct to `s`
+
+As well as internal keywords used to set up these given keywords like `_step_M`, `_step_p`, `_sub_M`, `_sub_p`, and `_sub_X`,
+that should not be changed.
+
+All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
+[`decorate_objective!`](@ref) for objective, respectively.
 
 # Output
 
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
-
+The obtained approximate constrained minimizer ``p^*``.
+To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
 """
 
 @doc "$(_doc_IPN)"
@@ -251,7 +268,7 @@ function interior_point_Newton!(
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     sub_kwargs=(;),
     vector_space=Rn,
-    centrality_condition=InteriorPointCentralityCondition(cmo, γ),
+    centrality_condition=InteriorPointCentralityCondition(cmo, γ, zero(γ), zero(γ)),
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
@@ -311,7 +328,8 @@ function interior_point_Newton!(
         sub_problem,
         sub_state;
         X=X,
-        Y=Y.Z = Z,
+        Y=Y,
+        Z=Z,
         W=W,
         μ=μ,
         λ=λ,
@@ -379,6 +397,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     # Update centrality factor – Maybe do this as an update function?
     γ = get_manopt_parameter(ips.stepsize, :DecreaseCondition, :γ)
     set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :γ, (γ + 0.5) / 2)
+    set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
     # determine stepsize
     α = ips.stepsize(ips.step_problem, ips.step_state, i)
     # Update Parameters and slack

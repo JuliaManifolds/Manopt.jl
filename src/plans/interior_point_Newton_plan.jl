@@ -76,21 +76,21 @@ are used to fill in reasonable defaults for the keywords.
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
 * `μ=ones(m)`
-* `X=zero_vector(M, p)
+* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
 * `Y=zero(μ)`
 * `λ=zeros(n)`
 * `Z=zero(λ)`
 * `s=ones(m)`
 * `W=zero(s)`
-* `ρ= μ's/m`
+* `ρ=μ's/m`
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
-* `stopping_criterion=`[`StopAfterIteration`[(@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`
 * `retraction_method=default_retraction_method(M, typeof(p))`
-* `step_objective=[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
-* `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
+* `vector_space=`[`Rn`](@ref Manopt.Rn): specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
-* `step_state`: the [`StepSt=StepsizeState`] with point and search direction
-* `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
+* `step_state`: the [`StepsizeState`](@ref) with point and search direction
+* `stepsize`: an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
   additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
 
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
@@ -585,7 +585,7 @@ function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
 end
 
 @doc raw"""
-    KKTVectorFieldAdjointJacobian
+    KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective}
 
 Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobian`](@ref).
@@ -767,30 +767,74 @@ function interior_point_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
-"""
+@doc raw"""
     InteriorPointCentralityCondition{CO}
 
 A functor to check the centrality condition.
 
-TODO
+In order to obtain a step in the linesearch performed within the [`interior_point_Newton`](@ref),
+Section 6 of [LaiYoshise:2024](@cite) propose the following additional conditions to hold.
+
+For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
+that is we are at a point ``q = (p, λ, μ, s)``  on ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
+
+Then, let
+
+```math
+τ_1 = \frac{m⋅\min\{ μ ⊙ s\}}{μ^{\mathrm{T}}s}
+\quad\text{ and }\quad
+τ_2 = \frac{μ^{\mathrm{T}}s}{\lVert F(q) \rVert}
+```
+where ``⊙`` denotes the Hadamard (or elementwise) product.
+
+For a new candidate ``q(α) = \bigl(p(α), λ(α), μ(α), s(α)\bigr) := (\operatorname{retr}_p(αX), λ+αY, μ+αZ, s+αW)``,
+we then define two functions
+
+```math
+c_1(α) = \min\{ μ(α) ⊙ s(α) \} - \frac{γτ_1 μ(α)^{\mathrm{T}}s(α)}{m}
+\quad\text{ and }\quad
+c_2(α) = μ(α)^{\mathrm{T}}s(α) – γτ_2 \lVert F(q(α)) \rVert.
+```
+
+While the paper now states that the (Armijo) linesearch starts at a point
+``\tilde α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
+into the linesearch as well.
+
+The functor `InteriorPointCentralityCondition(cmo, γ, μ, s, normKKT)(N,qα)`
+defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are nonnegative.
+
+# Fields
+
+* `cmo`: a [`ConstrainedManifoldObjective`](@ref)
+* `γ`: a constant
+* `τ1`, `τ2`: the constants given in the formula.
+
+# Constructor
+
+    InteriorPointCentralityCondition(cmo, γ, τ1, τ2)
+
+!!! note
+
+    Besides [`get_manopt_parameter`](@ref) for all three constants,
+    and [`set_manopt_parameter!`](@ref) for ``γ``,
+    to update ``τ_1`` and ``τ_2``, call `set_manopt_parameter(ipcc, :τ, N, q)` to update
+    both ``τ_1`` and ``τ_2`` according to the formulae above.
 """
-mutable struct InteriorPointCentralityCondition{CO}
+mutable struct InteriorPointCentralityCondition{CO,R}
     cmo::CO
-    γ::Float64
+    γ::R
+    τ1::R
+    τ2::R
 end
-function (ipcc::InteriorPointCentralityCondition)(N, q)
-    μ = q[N, 2]
-    s = q[N, 4]
-    KKTvf = KKTVectorFieldNormSq(ipcc.cmo)
-    # ‖F(q)‖
-    NormKKT = sqrt(KKTvf(N, q))
-    # τ1, τ2
-    τ1 = length(μ) * minimum(μ .* s) / sum(μ .* s)
-    τ2 = sum(μ .* s) / NormKKT
+function (ipcc::InteriorPointCentralityCondition)(N, qα)
+    μα = qα[N, 2]
+    sα = qα[N, 4]
+    m = length(μα)
     # f1 false
-    (minimum(μ .* s) - ipcc.γ * τ1 / length(μ) < 0) && return false
+    (minimum(μα .* sα) - ipcc.γ * ipcc.τ1 * sum(μα .* sα) / m < 0) && return false
+    normKKTqα = sqrt(KKTVectorFieldNormSq(ipcc.cmo)(N, qα))
     # f2 false
-    (sum(μ .* s) - ipcc.γ * τ2 * NormKKT < 0) && return false
+    (sum(μα .* sα) - ipcc.γ * ipcc.τ2 * normKKTqα < 0) && return false
     return true
 end
 function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:γ})
@@ -798,6 +842,21 @@ function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:γ}
 end
 function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ}, γ)
     ipcc.γ = γ
+    return ipcc
+end
+function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ1})
+    return ipcc.τ1
+end
+function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ2})
+    return ipcc.τ2
+end
+function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:τ}, N, q)
+    μ = q[N, 2]
+    s = q[N, 4]
+    m = length(μ)
+    normKKTq = sqrt(KKTVectorFieldNormSq(ipcc.cmo)(N, q))
+    ipcc.τ1 = m * minimum(μ .* s) / sum(μ .* s)
+    ipcc.τ2 = sum(μ .* s) / normKKTq
     return ipcc
 end
 

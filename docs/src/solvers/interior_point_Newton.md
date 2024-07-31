@@ -6,6 +6,7 @@ CurrentModule = Manopt
 
 ```@docs
 interior_point_Newton
+interior_point_Newton!
 ```
 
 ## State
