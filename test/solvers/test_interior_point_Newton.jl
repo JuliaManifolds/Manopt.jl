@@ -26,7 +26,7 @@ res = interior_point_Newton(
     g=g,
     grad_g=grad_g,
     Hess_g=Hess_g,
-    stopping_criterion=StopAfterIteration(200) | StopWhenKKTResidualLess(1e-2),
+    stopping_criterion=StopAfterIteration(800) | StopWhenKKTResidualLess(1e-2),
     debug=[
         :Iteration,
         " | ",

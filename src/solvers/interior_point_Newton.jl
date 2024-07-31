@@ -279,11 +279,10 @@ function interior_point_Newton!(
     stepsize::Stepsize=ArmijoLinesearch(
         _step_M;
         retraction_method=default_retraction_method(_step_M),
-        initial_stepsize=1.0,
         initial_guess=interior_point_initial_guess,
         additional_decrease_condition=centrality_condition,
     ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+    stopping_criterion::StoppingCriterion=StopAfterIteration(800) |
                                           StopWhenKKTResidualLess(1e-8),
     _sub_M=M × vector_space(length(λ)),
     _sub_p=rand(_sub_M),
