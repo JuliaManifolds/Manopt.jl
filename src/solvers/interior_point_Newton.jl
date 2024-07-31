@@ -152,51 +152,6 @@ function interior_point_Newton(
     return interior_point_Newton!(M, cmo, q; evaluation=evaluation, kwargs...)
 end
 function interior_point_Newton(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    g=nothing,
-    h=nothing,
-    grad_g=nothing,
-    grad_h=nothing,
-    Hess_g=nothing,
-    Hess_h=nothing,
-    kwargs...,
-)
-    p_ = [p]
-    f_(M, p) = f(M, p[])
-
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    Hess_f_ = _to_mutating_gradient(Hess_f, evaluation)
-
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    Hess_g_ = isnothing(Hess_g) ? nothing : _to_mutating_gradient(Hess_g, evaluation)
-    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
-    Hess_h_ = isnothing(Hess_h) ? nothing : _to_mutating_gradient(Hess_h, evaluation)
-
-    rs = interior_point_Newton(
-        M,
-        f_,
-        grad_f_,
-        Hess_f_,
-        p_;
-        evaluation=evaluation,
-        g=g_,
-        h=h_,
-        grad_g=grad_g_,
-        grad_h=grad_h_,
-        Hess_g=Hess_g_,
-        Hess_h=Hess_h_,
-        kwargs...,
-    )
-    return (typeof(p_) == typeof(rs)) ? rs[] : rs
-end
-function interior_point_Newton(
     M::AbstractManifold, cmo::O, p; kwargs...
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)

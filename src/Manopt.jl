@@ -530,6 +530,7 @@ export Stepsize
 export AdaptiveWNGradient, ConstantStepsize, DecreasingStepsize, PolyakStepsize
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
+export InteriorPointCentralityCondition
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet

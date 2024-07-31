@@ -504,7 +504,7 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     μ, λ, s = q[N, 2], q[N, 3], q[N, 4]
     LagrangianGradient(KKTvf.cmo, μ, λ)(M, Y[N, 1], p)
     m, n = length(μ), length(λ)
-    (m > 0) && (Y[N, 2] = get_inequality_constraint(M, KKTvf.cmo, p, :) + s)
+    (m > 0) && (Y[N, 2] = get_inequality_constraint(M, KKTvf.cmo, p, :) .+ s)
     (n > 0) && (Y[N, 3] = get_equality_constraint(M, KKTvf.cmo, p, :))
     (m > 0) && (Y[N, 4] = μ .* s)
     return Y
@@ -768,7 +768,7 @@ function interior_point_initial_guess(
 end
 
 @doc raw"""
-    InteriorPointCentralityCondition{CO}
+    InteriorPointCentralityCondition{CO,R}
 
 A functor to check the centrality condition.
 
@@ -811,7 +811,10 @@ defined here evaluates this condition and returns true if both ``c_1`` and ``c_2
 
 # Constructor
 
+    InteriorPointCentralityCondition(cmo, γ)
     InteriorPointCentralityCondition(cmo, γ, τ1, τ2)
+
+Initialise the centrality conditions. The parameters `τ1`, `τ2` are initialise to zero if not provided.
 
 !!! note
 
@@ -825,6 +828,9 @@ mutable struct InteriorPointCentralityCondition{CO,R}
     γ::R
     τ1::R
     τ2::R
+end
+function InteriorPointCentralityCondition(cmo::CO, γ::R) where {CO,R}
+    return InteriorPointCentralityCondition{CO,R}(cmo, γ, zero(γ), zero(γ))
 end
 function (ipcc::InteriorPointCentralityCondition)(N, qα)
     μα = qα[N, 2]
