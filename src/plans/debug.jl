@@ -420,7 +420,7 @@ mutable struct DebugFeasibility <: DebugAction
     format::Vector{Union{String,Symbol}}
     io::IO
     function DebugFeasibility(
-        format=["\"feasible: \"", :Feasible]; io::IO=stdout, atol=1e-13
+        format=["feasible: ", :Feasible]; io::IO=stdout, atol=1e-13
     )
         return new(atol, format, io)
     end
@@ -453,11 +453,11 @@ function (d::DebugFeasibility)(
     return nothing
 end
 function show(io::IO, d::DebugFeasibility)
-    sf = "[" * (join([e isa String ? "$e" : ":$e" for e in d.format], ", ")) * "]"
+    sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
     return print(io, "DebugFeasibility($sf; atol=$(d.atol))")
 end
 function status_summary(d::DebugFeasibility)
-    sf = "[" * (join([e isa String ? "$e" : ":$e" for e in d.format], ", ")) * "]"
+    sf = "[" * (join([e isa String ? "\"$e\"" : ":$e" for e in d.format], ", ")) * "]"
     return "(:Feasibility, $sf)"
 end
 
