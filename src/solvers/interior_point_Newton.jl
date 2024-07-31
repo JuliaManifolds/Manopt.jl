@@ -350,7 +350,9 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_gradient!(ips.step_state, M, q, X)
     # Update centrality factor – Maybe do this as an update function?
     γ = get_manopt_parameter(ips.stepsize, :DecreaseCondition, :γ)
-    set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :γ, (γ + 0.5) / 2)
+    if !isnothing(γ)
+        set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :γ, (γ + 0.5) / 2)
+    end
     set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
     # determine stepsize
     α = ips.stepsize(ips.step_problem, ips.step_state, i)
