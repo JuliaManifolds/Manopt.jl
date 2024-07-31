@@ -1,5 +1,8 @@
-@doc raw"""
-    interior_point_Newton(M, f,. grad_f, Hess_f, p=rand(M); kwargs...)
+_doc_IPN = raw"""
+    interior_point_Newton(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
+    interior_point_Newton(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
+    interior_point_Newton!(M, f, grad_f, Hess_f, p; kwargs...)
+    interior_point_Newton(M, ConstrainedManifoldObjective, p; kwargs...)
 
 perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
@@ -23,7 +26,11 @@ X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n,
 ```
 see [`CondensedKKTVectorFieldJacobian`](@ref) and [`CondensedKKTVectorField`](@ref), respectively,
 for the reduced form, this is usually solved in.
-From the resulting `X` and `Z` in the reeuced form, the other two can be computed.
+From the resulting `X` and `Z` in the reeuced form, the other two, ``Y``, ``W``, are then computed.
+
+From the gradient ``(X,y,Z,W)` at the current iterate `(p, μ, λ, s)`,
+a line search is performed using the [``]
+
 
 Note that since the vector field ``F`` includes the gradients of the constraint
 functions ``g,h`, its gradient or Jacobian requires the Hessians of the constraints.
@@ -39,9 +46,19 @@ the constraints are further fulfilled.
 * `Hess_f`: the Hessian ``\operatorname{Hess}f(p): T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
 * `p=`[`rand`](@extref Base.rand-Tuple{AbstractManifold})`(M)`: an initial value ``p  ∈  \mathcal M``
 
+or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints
+
 # Keyword arguments
 
+The keyword arguments related to the constraints (the first eleven) are ignored if you
+pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
+
+* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)` an additional condition when to accept a step size.
+  This ensures that the resulting iterate is still an interior point.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
+* `evaluation=`[`AllocatingEvaluation`](@ref)`()`:
+  specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second."
+* `γ=0.9`: A factor in the [`InteriorPointCentralityCondition`](@ref) updated during the iterations.
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
@@ -52,23 +69,35 @@ the constraints are further fulfilled.
 * `Hess_g=nothing`: the Hessian of the inequality constraints
 * `Hess_h=nothing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-* `λ=ones(size(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
+* `λ=ones(length(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M,x)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
-* `s=μ`: initial value for the slack variables
-* `σ=μ's/length(μ)`: ? (TODO find details about barrier parameter)
-* `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
 * `retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`: the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
-* `stepsize=` TODO
+* `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
+* `s=μ`: initial value for the slack variables
+* `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
+* `step_problem`: wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
+* `step_state`: the [`StepSt=StepsizeState`] with point and search direction
+* `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
+  additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
+* `stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-5)`: a stopping criterion
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_stopping_criterion=TODO`: specify a stopping criterion for the subsolver.
 * `sub_problem=TODO`: provide a problem for the subsolver, which is assumed to work on the tangent space of ``\mathcal M \times ℝ^n``
 * `sub_state=TODO`: a state specifying the subsolver
+* `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
+* `Y=zero(μ)`:  the current gradient with respct to `μ`
+* `Z=zero(λ)`:  the current gradient with respct to `λ`
+* `W=zero(s)`:  the current gradient with respct to `s`
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 
 """
+
+@doc "$(_doc_IPN)"
+interior_point_Newton(M::AbstractManifold, args...; kwargs...)
 function interior_point_Newton(
     M::AbstractManifold,
     f,
@@ -156,6 +185,10 @@ function interior_point_Newton(
     q = copy(M, p)
     return interior_point_Newton!(M, cmo, q; kwargs...)
 end
+
+@doc "$(_doc_IPN)"
+interior_point_Newton!(M::AbstractManifold, args...; kwargs...)
+
 function interior_point_Newton!(
     M::AbstractManifold,
     f,
@@ -210,7 +243,7 @@ function interior_point_Newton!(
     Y=zero(μ),
     λ::Vector=zeros(length(get_equality_constraint(M, cmo, p, :))),
     Z=zero(λ),
-    s=μ,
+    s=copy(μ),
     W=zero(s),
     ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
@@ -278,6 +311,8 @@ function interior_point_Newton!(
         sub_problem,
         sub_state;
         X=X,
+        Y=Y.Z = Z,
+        W=W,
         μ=μ,
         λ=λ,
         s=s,
@@ -334,7 +369,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     copyto!(N[3], q[N, 3], ips.λ)
     copyto!(N[4], q[N, 4], ips.s)
     set_iterate!(ips.step_state, M, q)
-    # generate current full gradient
+    # generate current full gradient in step state
     X = get_gradient(ips.step_state)
     copyto!(N[1], X[N, 1], ips.X)
     (m > 0) && (copyto!(N[2], X[N, 2], ips.Z))

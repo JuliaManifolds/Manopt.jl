@@ -76,6 +76,7 @@ are used to fill in reasonable defaults for the keywords.
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
 * `μ=ones(m)`
+* `X=zero_vector(M, p)
 * `Y=zero(μ)`
 * `λ=zeros(n)`
 * `Z=zero(λ)`
@@ -87,10 +88,10 @@ Let `m` and `n` denote the number of inequality and equality constraints, respec
 * `retraction_method=default_retraction_method(M, typeof(p))`
 * `step_objective=[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
-* `step_problem` wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
+* `step_problem`: wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepSt=StepsizeState`] with point and search direction
 * `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
-  additional condition to accept a step.
+  additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
 
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """
