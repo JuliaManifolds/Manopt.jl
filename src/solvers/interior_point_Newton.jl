@@ -173,12 +173,6 @@ function interior_point_Newton!(
     equality_constrains=nothing,
     kwargs...,
 )
-    if isnothing(inequality_constrains)
-        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
-    end
-    if isnothing(equality_constrains)
-        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
-    end
     cmo = ConstrainedManifoldObjective(
         f,
         grad_f,
