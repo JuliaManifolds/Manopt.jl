@@ -519,6 +519,15 @@ include("../utils/dummy_types.jl")
             CKKTVfJ(Nc, W2, qc, Yc)
             @test W2 == W
             @test Wc == W
+            # get & set
+            for ck in [CKKTvf, CKKTVfJ]
+                @test Manopt.set_manopt_parameter!(ck, :μ, [2.0, 2.0]) == ck
+                @test Manopt.get_manopt_parameter(ck, :μ) == [2.0, 2.0]
+                @test Manopt.set_manopt_parameter!(ck, :s, [2.0, 2.0]) == ck
+                @test Manopt.get_manopt_parameter(ck, :s) == [2.0, 2.0]
+                @test Manopt.set_manopt_parameter!(ck, :β, 2.0) == ck
+                @test Manopt.get_manopt_parameter(ck, :β) == 2.0
+            end
         end
     end
     @testset "Augmented Lagrangian Cost & Grad" begin

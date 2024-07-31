@@ -30,6 +30,7 @@ KKTVectorFieldNormSqGradient
 
 ```@docs
 InteriorPointCentralityCondition
+Manopt.calculate_σ
 ```
 
 ## Additional stopping criteria

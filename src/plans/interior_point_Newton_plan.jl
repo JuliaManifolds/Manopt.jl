@@ -1,32 +1,53 @@
+"""
+    StepsizeState{P,T} <: AbstractManoptSolverState
+
+A state to store a point and a descent direction used within a linesearch,
+if these are different from the iterate and search direction of the main solver.
+
+# Fields
+
+* `p::P`: a point on a manifold
+* `X::T`: a tangent vector at `p`.
+
+# Constructor
+
+    StepsizeState(p,X)
+
+# See also
+
+[`interior_point_Newton`](@ref)
+"""
 struct StepsizeState{P,T} <: AbstractManoptSolverState
-    q::P
+    p::P
     X::T
 end
-get_iterate(s::StepsizeState) = s.q
+get_iterate(s::StepsizeState) = s.p
 get_gradient(s::StepsizeState) = s.X
-set_iterate!(s::StepsizeState, M, q) = copyto!(M, s.q, q)
-set_gradient!(s::StepsizeState, M, q, X) = copyto!(M, s.X, q, X)
+set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
+set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 
-# struct for state of interior point algorithm
-"""
+@doc raw"""
     InteriorPointNewtonState <: AbstractHessianSolverState
 
 # Fields
 
-* `p` the current iterate
-* `sub_problem`:        an [`AbstractManoptProblem`](@ref) problem for the subsolver
-* `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
-* `X`: TODO
-* `λ`:                  the Lagrange multiplier with respect to the equality constraints
-* `μ`:                  the Lagrange multiplier with respect to the inequality constraints
-* `s`: the current slack variable
-* `ρ`: TODO
-* `σ`: TODO
+* `λ`:           the Lagrange multiplier with respect to the equality constraints
+* `μ`:           the Lagrange multiplier with respect to the inequality constraints
+* `p`:           the current iterate
+* `s`:           the current slack variable
+* `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the subsolver
+* `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the subsolver
+* `X`:           the current gradient with respct to `p`
+* `Y`:           the current gradient with respct to `μ`
+* `Z`:           the current gradient with respct to `λ`
+* `W`:           the current gradient with respct to `s`
+* `ρ`:           store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem
+* `σ`:           scaling factor for the barrier parameter `β` in the sub problem
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
 * `retraction_method`: the retraction method to use on `M`.
 * `stepsize::`[`Stepsize`](@ref): the stepsize to use
-* `step_problem::AbstractManoptObjective`: the problem used in the step size
-* `centrality_condition`: add a further check to accept steps in the `stepsize`
+* `step_problem`: an [`AbstractManoptProblem`](@ref) storing the manifold and objective for the line search
+* `step_state`: storing iterate and search direction in a state for the line search, see [`StepsizeState`](@ref)
 
 # Constructor
 
@@ -44,17 +65,41 @@ are used to fill in reasonable defaults for the keywords.
 
 # Input
 
-TODO
+* `M`:           a Riemannian manifold
+* `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
+* `p`:           a point on `M` as the inital point of the algorithm
+* `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the sub solver
+* `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the sub solver
 
 # Keyword arguments
 
-TODO
+Let `m` and `n` denote the number of inequality and equality constraints, respectively
+
+* `μ=ones(m)`
+* `Y=zero(μ)`
+* `λ=zeros(n)`
+* `Z=zero(λ)`
+* `s=ones(m)`
+* `W=zero(s)`
+* `ρ= μ's/m`
+* `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
+* `stopping_criterion=`[`StopAfterIteration`[(@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`
+* `retraction_method=default_retraction_method(M, typeof(p))`
+* `step_objective=[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
+* `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `step_problem` wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
+* `step_state`: the [`StepSt=StepsizeState`] with point and search direction
+* `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
+  additional condition to accept a step.
+
+and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """
 mutable struct InteriorPointNewtonState{
     P,
     T,
     Pr<:Union{AbstractManoptProblem,F} where {F},
     St<:Union{AbstractManoptSolverState,AbstractEvaluationType},
+    V,
     R,
     SC<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
@@ -63,12 +108,15 @@ mutable struct InteriorPointNewtonState{
     TStepSt<:AbstractManoptSolverState,
 } <: AbstractHessianSolverState
     p::P
+    X::T
     sub_problem::Pr
     sub_state::St
-    X::T # not sure if needed?
-    μ::T
-    λ::T
-    s::T
+    μ::V
+    λ::V
+    s::V
+    Y::V
+    Z::V
+    W::V
     ρ::R
     σ::R
     stop::SC
@@ -82,10 +130,13 @@ mutable struct InteriorPointNewtonState{
         p::P,
         sub_problem::Pr,
         sub_state::St;
-        X::T=get_gradient(M, cmo, p), # not sure if needed?
-        μ::T=ones(length(get_inequality_constraint(M, cmo, p, :))),
-        λ::T=zeros(length(get_equality_constraint(M, cmo, p, :))),
-        s::T=ones(length(get_inequality_constraint(M, cmo, p, :))),
+        X::T=zero_vector(M, p),
+        μ::V=ones(length(get_inequality_constraint(M, cmo, p, :))),
+        Y::V=zero(μ),
+        λ::V=zeros(length(get_equality_constraint(M, cmo, p, :))),
+        Z::V=zero(λ),
+        s::V=ones(length(get_inequality_constraint(M, cmo, p, :))),
+        W::V=zero(s),
         ρ::R=μ's / length(get_inequality_constraint(M, cmo, p, :)),
         σ::R=calculate_σ(M, cmo, p, μ, λ, s),
         stopping_criterion::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
@@ -95,11 +146,12 @@ mutable struct InteriorPointNewtonState{
             KKTVectorFieldNormSqGradient(cmo);
             evaluation=InplaceEvaluation(),
         ),
-        step_problem::StepPr=DefaultManoptProblem(
-            M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)), step_objective
-        ),
-        _q=rand(get_manifold(step_problem)),
-        step_state::StepSt=StepsizeState(_q, zero_vector(get_manifold(step_problem), _q)),
+        vector_space=Rn,
+        _step_M=M × vector_space(length(μ)) × vector_space(length(λ)) ×
+                vector_space(length(s)),
+        step_problem::StepPr=DefaultManoptProblem(_step_M, step_objective),
+        _step_p=rand(_step_M),
+        step_state::StepSt=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
         centrality_condition::F=(N, p) -> true, # Todo
         stepsize::S=ArmijoLinesearch(
             get_manifold(step_problem);
@@ -113,6 +165,7 @@ mutable struct InteriorPointNewtonState{
         T,
         Pr,
         St,
+        V,
         R,
         F,
         SC<:StoppingCriterion,
@@ -121,16 +174,19 @@ mutable struct InteriorPointNewtonState{
         RTM<:AbstractRetractionMethod,
         S<:Stepsize,
     }
-        ips = new{P,T,Pr,St,R,SC,RTM,S,StepPr,StepSt}()
+        ips = new{P,T,Pr,St,V,R,SC,RTM,S,StepPr,StepSt}()
         ips.p = p
         ips.sub_problem = sub_problem
         ips.sub_state = sub_state
-        ips.X = X
         ips.μ = μ
         ips.λ = λ
         ips.s = s
         ips.ρ = ρ
         ips.σ = σ
+        ips.X = X
+        ips.Y = Y
+        ips.Z = Z
+        ips.W = W
         ips.stop = stopping_criterion
         ips.retraction_method = retraction_method
         ips.stepsize = stepsize
@@ -704,9 +760,9 @@ function interior_point_initial_guess(
     mp::AbstractManoptProblem, ips::StepsizeState, ::Int, l::R
 ) where {R<:Real}
     N = get_manifold(mp)
-    Y = get_gradient(N, get_objective(mp), ips.q)
-    grad_norm = norm(N, ips.q, Y)
-    max_step = max_stepsize(N, ips.q)
+    Y = get_gradient(N, get_objective(mp), ips.p)
+    grad_norm = norm(N, ips.p, Y)
+    max_step = max_stepsize(N, ips.p)
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
@@ -715,6 +771,7 @@ end
 
 A functor to check the centrality condition.
 
+TODO
 """
 mutable struct InteriorPointCentralityCondition{CO}
     cmo::CO
@@ -819,14 +876,38 @@ function show(io::IO, c::StopWhenKKTResidualLess)
 end
 
 # An internal function to compute the new σ
+@doc raw"""
+    calculate_σ(M, cmo, p, μ, λ, s)
+
+Compute the new ``σ`` factor for the barrier parameter in [`interior_point_Newton`](@ref) as
+
+```math
+\min\{\frac{1}{2}, \lVert F(p; μ, λ, s)\rVert^{\frac{1}{2}} \},
+```
+where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is used.
+
+# Keyword arguments
+
+* `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `N` the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
+* `q` provide memory on `N` for interims computations
+"""
 function calculate_σ(
-    N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s
+    N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...
 )
-    return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s)
+    return calculate_σ(N, get_objective(cmo, true), p, μ, λ, s; kwargs...)
 end
-function calculate_σ(M::AbstractManifold, cmo::ConstrainedManifoldObjective, p, μ, λ, s)
-    N = M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s))
-    q = allocate_result(N, rand)
+function calculate_σ(
+    M::AbstractManifold,
+    cmo::ConstrainedManifoldObjective,
+    p,
+    μ,
+    λ,
+    s;
+    vector_space=Rn,
+    N=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+    q=allocate_result(N, rand),
+)
     copyto!(N[1], q[N, 1], p)
     copyto!(N[2], q[N, 2], μ)
     copyto!(N[3], q[N, 3], λ)

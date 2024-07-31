@@ -231,34 +231,37 @@ function interior_point_Newton!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     X=get_gradient(M, cmo, p),
     μ::Vector=ones(length(get_inequality_constraint(M, cmo, p, :))),
+    Y=zero(μ),
     λ::Vector=zeros(length(get_equality_constraint(M, cmo, p, :))),
+    Z=zero(λ),
     s=μ,
+    W=zero(s),
     ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
     γ=0.9,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     sub_kwargs=(;),
-    _sub_M=M × Rn(length(λ)),
-    _sub_p=rand(_sub_M),
-    _sub_X=rand(_sub_M; vector_at=_sub_p),
+    vector_space=Rn,
     centrality_condition=InteriorPointCentralityCondition(cmo, γ),
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
-    step_problem=DefaultManoptProblem(
-        M × Rn(length(μ)) × Rn(length(λ)) × Rn(length(s)), step_objective
-    ),
-    _q=rand(get_manifold(step_problem)),
-    step_state=StepsizeState(_q, zero_vector(get_manifold(step_problem), _q)),
+    _step_M=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+    step_problem=DefaultManoptProblem(_step_M, step_objective),
+    _step_p=rand(_step_M),
+    step_state=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
     stepsize::Stepsize=ArmijoLinesearch(
-        get_manifold(step_problem);
-        retraction_method=default_retraction_method(get_manifold(step_problem)),
+        _step_M;
+        retraction_method=default_retraction_method(_step_M),
         initial_stepsize=1.0,
         initial_guess=interior_point_initial_guess,
         additional_decrease_condition=centrality_condition,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenKKTResidualLess(1e-8),
+    _sub_M=M × vector_space(length(λ)),
+    _sub_p=rand(_sub_M),
+    _sub_X=rand(_sub_M; vector_at=_sub_p),
     sub_objective=decorate_objective!(
         TangentSpace(_sub_M, _sub_p),
         SymmetricLinearSystemObjective(
@@ -320,10 +323,6 @@ end
 function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, i)
     M = get_manifold(amp)
     cmo = get_objective(amp)
-    m, n = length(ips.μ), length(ips.λ)
-    g = get_inequality_constraint(amp, ips.p, :)
-    grad_g = get_grad_inequality_constraint(amp, ips.p, :)
-
     N = base_manifold(get_manifold(ips.sub_problem))
     q = base_point(get_manifold(ips.sub_problem))
     copyto!(N[1], q[N, 1], ips.p)
@@ -331,24 +330,26 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), zero_vector(N, q))
 
     set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
-
     set_manopt_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
     set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
     set_manopt_parameter!(ips.sub_problem, :Objective, :β, ips.ρ * ips.σ)
     # product manifold on which to perform linesearch
 
-    Y = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
-    Xp, Xλ = Y[N, 1], Y[N, 2]
+    X2 = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
+    ips.X, ips.Z = X2[N, 1], X2[N, 2] #for p and λ
 
     # Compute the remaining part of the solution
+    m, n = length(ips.μ), length(ips.λ)
     if m > 0
-        b = ips.ρ * ips.σ
-        Xs = -[inner(M, ips.p, grad_g[i], Xp) for i in 1:m] - g - ips.s
-        Xμ = (b .- ips.μ .* (ips.s + Xs)) ./ ips.s
+        g = get_inequality_constraint(amp, ips.p, :)
+        grad_g = get_grad_inequality_constraint(amp, ips.p, :)
+        β = ips.ρ * ips.σ
+        # for s and μ
+        ips.W = -[inner(M, ips.p, grad_g[i], ips.X) for i in 1:m] - g - ips.s
+        ips.Y = (β .- ips.μ .* (ips.s + ips.W)) ./ ips.s
     end
 
-    # How to find K in a good way? -> move that to setting something in the stepsize?
     N = get_manifold(ips.step_problem)
     # generate current full iterate in step state
     q = get_iterate(ips.step_state)
@@ -359,10 +360,10 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     set_iterate!(ips.step_state, M, q)
     # generate current full gradient
     X = get_gradient(ips.step_state)
-    copyto!(N[1], X[N, 1], Xp)
-    (m > 0) && (copyto!(N[2], X[N, 2], Xμ))
-    (n > 0) && (copyto!(N[3], X[N, 3], Xλ))
-    (m > 0) && (copyto!(N[4], X[N, 4], Xs))
+    copyto!(N[1], X[N, 1], ips.X)
+    (m > 0) && (copyto!(N[2], X[N, 2], ips.Z))
+    (n > 0) && (copyto!(N[3], X[N, 3], ips.Y))
+    (m > 0) && (copyto!(N[4], X[N, 4], ips.W))
     set_gradient!(ips.step_state, M, q, X)
     # Update centrality factor – Maybe do this as an update function?
     γ = get_manopt_parameter(ips.stepsize, :DecreaseCondition, :γ)
@@ -370,15 +371,15 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     # determine stepsize
     α = ips.stepsize(ips.step_problem, ips.step_state, i)
     # Update Parameters and slack
-    retract!(M, ips.p, ips.p, α * Xp, ips.retraction_method)
+    retract!(M, ips.p, ips.p, α * ips.X, ips.retraction_method)
     if m > 0
-        ips.μ += α * Xμ
-        ips.s += α * Xs
+        ips.μ += α * ips.Y
+        ips.s += α * ips.W
         ips.ρ = ips.μ'ips.s / m
-        ips.σ = calculate_σ(M, cmo, ips.p, ips.μ, ips.λ, ips.s)
+        # we can use the memory from above still
+        ips.σ = calculate_σ(M, cmo, ips.p, ips.μ, ips.λ, ips.s; N=N, q=q)
     end
-    (n > 0) && (ips.λ += α * Xλ)
-    get_gradient!(M, ips.X, cmo, ips.p)
+    (n > 0) && (ips.λ += α * ips.Z)
     return ips
 end
 
