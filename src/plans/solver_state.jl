@@ -24,8 +24,8 @@ Subsolver state indicating that a closed-form solution is available with
 """
 struct ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState end
 
-maybe_wrap_allocation_type(s::AbstractManoptSolverState) = s
-function maybe_wrap_allocation_type(::E) where {E<:AbstractEvaluationType}
+maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
+function maybe_wrap_evaluation_type(::E) where {E<:AbstractEvaluationType}
     return ClosedFormSubSolverState{E}()
 end
 

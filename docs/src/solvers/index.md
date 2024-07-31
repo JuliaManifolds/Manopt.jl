@@ -199,3 +199,11 @@ also use the third (lowest level) and just call
 ```
 solve!(problem, state)
 ```
+
+### Closed-form subsolvers
+
+If a subsolver solution is available in closed form, `ClosedFormSubSolverState` is used to indicate that.
+
+```@docs
+Manopt.ClosedFormSubSolverState
+```

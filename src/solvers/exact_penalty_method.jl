@@ -65,7 +65,7 @@ mutable struct ExactPenaltyMethodState{
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
         ),
     ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,SC<:StoppingCriterion}
-        sub_state_storage = maybe_wrap_allocation_type(sub_state)
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         epms = new{P,Pr,typeof(sub_state_storage),R,SC}()
         epms.p = p
         epms.sub_problem = sub_problem
@@ -407,7 +407,7 @@ function exact_penalty_method!(
     O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
     Pr<:Union{F,AbstractManoptProblem} where {F},
 }
-    sub_state_storage = maybe_wrap_allocation_type(sub_state)
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     emps = ExactPenaltyMethodState(
         M,
         p,
