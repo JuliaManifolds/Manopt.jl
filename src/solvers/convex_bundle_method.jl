@@ -55,7 +55,7 @@ mutable struct ConvexBundleMethodState{
     TS<:Stepsize,
     TSC<:StoppingCriterion,
     VT<:AbstractVectorTransportMethod,
-} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int,Pr,St}
+} <: AbstractManoptSolverState where {R<:Real,P,T,I<:Int,Pr}
     atol_λ::R
     atol_errors::R
     bundle::B

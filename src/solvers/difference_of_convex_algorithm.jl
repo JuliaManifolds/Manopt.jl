@@ -40,8 +40,9 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion`         a [`StopAfterIteration`](@ref)`(200)` a stopping criterion
 """
-mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
-               AbstractSubProblemSolverState
+mutable struct DifferenceOfConvexState{
+    Pr,St<:AbstractManoptSolverState,P,T,SC<:StoppingCriterion
+} <: AbstractSubProblemSolverState
     p::P
     X::T
     sub_problem::Pr
@@ -67,7 +68,7 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
         sub_problem::S;
         initial_vector::T=zero_vector(M, p),
         stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
-        evaluation=AllocatingEvaluation(),
+        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ) where {P,S<:Function,T,SC<:StoppingCriterion}
         sub_state_storage = maybe_wrap_evaluation_type(evaluation)
         return new{S,typeof(sub_state_storage),P,T,SC}(
@@ -374,7 +375,7 @@ function difference_of_convex_algorithm!(
             M,
             p,
             sub_problem;
-            evaluation=sub_state,
+            evaluation=evaluation,
             stopping_criterion=stopping_criterion,
             initial_vector=initial_vector,
         )
@@ -412,7 +413,7 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{F,ClosedFormSubSolverState{InplaceEvaluation}},
+    dcs::DifferenceOfConvexState{<:Function,ClosedFormSubSolverState{InplaceEvaluation}},
     i,
 ) where {F}
     M = get_manifold(amp)
@@ -425,7 +426,7 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{F,ClosedFormSubSolverState{AllocatingEvaluation}},
+    dcs::DifferenceOfConvexState{<:Function,ClosedFormSubSolverState{AllocatingEvaluation}},
     i,
 ) where {F}
     M = get_manifold(amp)

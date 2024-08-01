@@ -103,6 +103,7 @@ mutable struct ProximalBundleMethodState{
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         # Initialize index set, bundle points, linearization errors, and stopping parameter
         approx_errors = [zero(R)]
         bundle = [(copy(M, p), copy(M, p, X))]
@@ -294,7 +295,7 @@ function proximal_bundle_method!(
 end
 function initialize_solver!(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState{P,T,Pr,St,R}
-) where {P,T,Pr,St,R}
+) where {P,T,Pr,St<:AbstractManoptSolverState,R<:Real}
     M = get_manifold(mp)
     copyto!(M, pbms.p_last_serious, pbms.p)
     get_subgradient!(mp, pbms.X, pbms.p)
