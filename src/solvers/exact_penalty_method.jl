@@ -233,16 +233,6 @@ function exact_penalty_method(
     equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
-    num_eq = if isnothing(equality_constrains)
-        _number_of_constraints(h, grad_h; M=M, p=p)
-    else
-        inequality_constrains
-    end
-    num_ineq = if isnothing(inequality_constrains)
-        _number_of_constraints(g, grad_g; M=M, p=p)
-    else
-        inequality_constrains
-    end
     cmo = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -251,8 +241,8 @@ function exact_penalty_method(
         h,
         grad_h;
         evaluation=evaluation,
-        equality_constrains=num_eq,
-        inequality_constrains=num_ineq,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
         M=M,
         p=p,
     )
