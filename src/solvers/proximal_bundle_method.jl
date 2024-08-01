@@ -29,6 +29,7 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 * `μ`:                         (`0.5`) (initial) proximal parameter for the subproblem
 * `ν`:                         the stopping parameter given by ``ν = - μ |d|^2 - c``
 * `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
+* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver
 
 # Constructor
 
@@ -42,7 +43,7 @@ mutable struct ProximalBundleMethodState{
     P,
     T,
     Pr,
-    St,
+    St<:AbstractManoptSolverState,
     R<:Real,
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
@@ -90,12 +91,11 @@ mutable struct ProximalBundleMethodState{
         δ::R=1.0,
         μ::R=0.5,
         sub_problem::Pr=proximal_bundle_method_subsolver,
-        sub_state::St=AllocatingEvaluation(),
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=AllocatingEvaluation(),
     ) where {
         P,
         T,
         Pr,
-        St,
         R<:Real,
         IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
@@ -110,11 +110,12 @@ mutable struct ProximalBundleMethodState{
         d = copy(M, p, X)
         lin_errors = [zero(R)]
         transported_subgradients = [copy(M, p, X)]
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         α = zero(R)
         λ = [zero(R)]
         η = zero(R)
         ν = zero(R)
-        return new{P,T,Pr,St,R,IR,TR,SC,VT}(
+        return new{P,T,Pr,typeof(sub_state_storage),R,IR,TR,SC,VT}(
             approx_errors,
             bundle,
             c,
@@ -139,7 +140,7 @@ mutable struct ProximalBundleMethodState{
             μ,
             ν,
             sub_problem,
-            sub_state,
+            sub_state_storage,
         )
     end
 end
@@ -265,12 +266,13 @@ function proximal_bundle_method!(
     δ=-1.0,#0.0,
     μ=0.5,#1.0,
     sub_problem=proximal_bundle_method_subsolver,
-    sub_state=evaluation,
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=evaluation,
     kwargs..., #especially may contain debug
 ) where {TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     pbms = ProximalBundleMethodState(
         M,
         p;
@@ -285,7 +287,7 @@ function proximal_bundle_method!(
         δ=δ,
         μ=μ,
         sub_problem=sub_problem,
-        sub_state=sub_state,
+        sub_state=sub_state_storage,
     )
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))
@@ -414,7 +416,7 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 # Dispatching on different types of subsolvers
 # (a) closed form allocating
 function _proximal_bundle_subsolver!(
-    M, pbms::ProximalBundleMethodState{P,T,F,AllocatingEvaluation}
+    M, pbms::ProximalBundleMethodState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}}
 ) where {P,T,F}
     pbms.λ = pbms.sub_problem(
         M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
@@ -423,7 +425,7 @@ function _proximal_bundle_subsolver!(
 end
 # (b) closed form in-place
 function _proximal_bundle_subsolver!(
-    M, pbms::ProximalBundleMethodState{P,T,F,InplaceEvaluation}
+    M, pbms::ProximalBundleMethodState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}}
 ) where {P,T,F}
     pbms.sub_problem(
         M,
