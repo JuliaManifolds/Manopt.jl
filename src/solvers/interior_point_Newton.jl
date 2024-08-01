@@ -29,12 +29,12 @@ see [`CondensedKKTVectorFieldJacobian`](@ref) and [`CondensedKKTVectorField`](@r
 for the reduced form, this is usually solved in.
 From the resulting `X` and `Z` in the reeuced form, the other two, ``Y``, ``W``, are then computed.
 
-From the gradient ``(X,y,Z,W)`` at the current iterate ``(p, μ, λ, s)``,
+From the gradient ``(X,Y,Z,W)`` at the current iterate ``(p, μ, λ, s)``,
 a line search is performed using the [`KKTVectorFieldNormSq`](@ref) norm of the KKT vector field (squared)
 and its gradient [`KKTVectorFieldNormSqGradient`](@ref) together with the [`InteriorPointCentralityCondition`](@ref).
 
 Note that since the vector field ``F`` includes the gradients of the constraint
-functions ``g,h`, its gradient or Jacobian requires the Hessians of the constraints.
+functions ``g, h``, its gradient or Jacobian requires the Hessians of the constraints.
 
 For that seach direction a line search is performed, that additionally ensures that
 the constraints are further fulfilled.
@@ -59,7 +59,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
   where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
 * `evaluation=`[`AllocatingEvaluation`](@ref)`()`:
-  specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second."
+  specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
@@ -70,8 +70,8 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 * `Hess_g=nothing`: the Hessian of the inequality constraints
 * `Hess_h=nothing`: the Hessian of the equality constraints
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
-* `λ=ones(length(h(M,x),1))`: the Lagrange multiplier with respect to the equality constraints ``h``
-* `μ=ones(length(g(M,x)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
+* `λ=ones(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
+* `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
 * `retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`:
   the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
 * `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
@@ -217,14 +217,14 @@ function interior_point_Newton!(
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     X=get_gradient(M, cmo, p),
-    μ::Vector=ones(length(get_inequality_constraint(M, cmo, p, :))),
-    Y=zero(μ),
-    λ::Vector=zeros(length(get_equality_constraint(M, cmo, p, :))),
-    Z=zero(λ),
-    s=copy(μ),
-    W=zero(s),
-    ρ=μ's / length(μ),
-    σ=calculate_σ(M, cmo, p, μ, λ, s),
+    μ::AbstractVector=ones(inequality_constraints_length(cmo)),
+    Y::AbstractVector=zero(μ),
+    λ::AbstractVector=zeros(equality_constraints_length(cmo)),
+    Z::AbstractVector=zero(λ),
+    s::AbstractVector=copy(μ),
+    W::AbstractVector=zero(s),
+    ρ::Real=μ's / length(μ),
+    σ::Real=calculate_σ(M, cmo, p, μ, λ, s),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     sub_kwargs=(;),
     vector_space=Rn,
@@ -233,7 +233,7 @@ function interior_point_Newton!(
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
-    _step_M=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+    _step_M::AbstractManifold=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
     step_problem=DefaultManoptProblem(_step_M, step_objective),
     _step_p=rand(_step_M),
     step_state=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
