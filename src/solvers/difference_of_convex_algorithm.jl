@@ -413,7 +413,7 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{<:Function,ClosedFormSubSolverState{InplaceEvaluation}},
+    dcs::DifferenceOfConvexState{F,ClosedFormSubSolverState{InplaceEvaluation}},
     i,
 ) where {F}
     M = get_manifold(amp)
@@ -426,7 +426,7 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{<:Function,ClosedFormSubSolverState{AllocatingEvaluation}},
+    dcs::DifferenceOfConvexState{F,ClosedFormSubSolverState{AllocatingEvaluation}},
     i,
 ) where {F}
     M = get_manifold(amp)
