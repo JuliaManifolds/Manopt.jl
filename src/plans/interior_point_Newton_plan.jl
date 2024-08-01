@@ -773,7 +773,8 @@ end
 A functor to check the centrality condition.
 
 In order to obtain a step in the linesearch performed within the [`interior_point_Newton`](@ref),
-Section 6 of [LaiYoshise:2024](@cite) propose the following additional conditions to hold.
+Section 6 of [LaiYoshise:2024](@cite) propose the following additional conditions to hold
+inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
 For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
 that is we are at a point ``q = (p, λ, μ, s)``  on ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
@@ -814,7 +815,8 @@ defined here evaluates this condition and returns true if both ``c_1`` and ``c_2
     InteriorPointCentralityCondition(cmo, γ)
     InteriorPointCentralityCondition(cmo, γ, τ1, τ2)
 
-Initialise the centrality conditions. The parameters `τ1`, `τ2` are initialise to zero if not provided.
+Initialise the centrality conditions.
+The parameters `τ1`, `τ2` are initialise to zero if not provided.
 
 !!! note
 
