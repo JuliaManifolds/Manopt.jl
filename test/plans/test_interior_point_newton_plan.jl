@@ -78,10 +78,14 @@ using ManifoldsBase, Manifolds, Manopt, Test
     @test Manopt.indicates_convergence(sc)
     @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)\n")
     #
-    ipcc = InteriorPointCentralityCondition(coh, 1.0, 0.0, 0.0)
+    ipcc = InteriorPointCentralityCondition(coh, 1.0)
     @test Manopt.set_manopt_parameter!(ipcc, :τ, step_M, step_p) == ipcc
     @test Manopt.set_manopt_parameter!(ipcc, :γ, 2.0) == ipcc
     @test Manopt.get_manopt_parameter(ipcc, :γ) == 2.0
     @test Manopt.get_manopt_parameter(ipcc, :τ1) == 2 / 3
     @test Manopt.get_manopt_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1e-7
+    @test !ipcc(step_M, step_p)
+    ipcc.τ1 = 0.01 # trick conditions so ipcc succeeds
+    ipcc.τ2 = 0.01
+    @test ipcc(step_M, step_p)
 end

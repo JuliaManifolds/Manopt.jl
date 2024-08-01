@@ -54,12 +54,12 @@ or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hes
 The keyword arguments related to the constraints (the first eleven) are ignored if you
 pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 
-* `centrality_condition=`[`InteriorPointCentralityCondition`](@ref)`(cmo, γ)` an additional condition when to accept a step size.
-  This ensures that the resulting iterate is still an interior point.
+* `centrality_condition=missing`; an additional condition when to accept a step size.
+  This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
+  where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
 * `evaluation=`[`AllocatingEvaluation`](@ref)`()`:
   specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second."
-* `γ=0.9`: A factor in the [`InteriorPointCentralityCondition`](@ref) updated during the iterations.
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
@@ -106,6 +106,12 @@ that should not be changed.
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
+
+!!! note
+
+    The `centrality_condition=mising` disables to check centrality during the line search,
+    but you can pass [`InteriorPointCentralityCondition`](@ref)`(cmo, γ)`, where `γ` is a constant,
+    to activate this check.
 
 # Output
 
@@ -219,11 +225,11 @@ function interior_point_Newton!(
     W=zero(s),
     ρ=μ's / length(μ),
     σ=calculate_σ(M, cmo, p, μ, λ, s),
-    γ=0.9,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     sub_kwargs=(;),
     vector_space=Rn,
-    centrality_condition=InteriorPointCentralityCondition(cmo, γ, zero(γ), zero(γ)),
+    #γ=0.9,
+    centrality_condition=missing, #InteriorPointCentralityCondition(cmo, γ, zero(γ), zero(γ)),
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
@@ -235,7 +241,11 @@ function interior_point_Newton!(
         _step_M;
         retraction_method=default_retraction_method(_step_M),
         initial_guess=interior_point_initial_guess,
-        additional_decrease_condition=centrality_condition,
+        additional_decrease_condition=if ismissing(centrality_condition)
+            (M, p) -> true
+        else
+            centrality_condition
+        end,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(800) |
                                           StopWhenKKTResidualLess(1e-8),
