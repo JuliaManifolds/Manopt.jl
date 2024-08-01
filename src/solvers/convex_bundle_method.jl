@@ -110,8 +110,6 @@ mutable struct ConvexBundleMethodState{
         P,
         T,
         Pr,
-        St,
-
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
         SC<:StoppingCriterion,
