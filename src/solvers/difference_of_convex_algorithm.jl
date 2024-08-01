@@ -40,8 +40,9 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 * `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
 * `stopping_criterion`         a [`StopAfterIteration`](@ref)`(200)` a stopping criterion
 """
-mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
-               AbstractSubProblemSolverState
+mutable struct DifferenceOfConvexState{
+    Pr,St<:AbstractManoptSolverState,P,T,SC<:StoppingCriterion
+} <: AbstractSubProblemSolverState
     p::P
     X::T
     sub_problem::Pr
@@ -68,10 +69,14 @@ mutable struct DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
         sub_problem::S;
         initial_vector::T=zero_vector(M, p),
         stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
-        evaluation=AllocatingEvaluation(),
+        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ) where {P,S<:Function,T,SC<:StoppingCriterion}
-        return new{S,typeof(evaluation),P,T,SC}(
-            p, initial_vector, sub_problem, evaluation, stopping_criterion
+        return new{S,ClosedFormSubSolverState{typeof(evaluation)},P,T,SC}(
+            p,
+            initial_vector,
+            sub_problem,
+            ClosedFormSubSolverState(evaluation),
+            stopping_criterion,
         )
     end
 end
@@ -374,7 +379,7 @@ function difference_of_convex_algorithm!(
             M,
             p,
             sub_problem;
-            evaluation=sub_state,
+            evaluation=evaluation,
             stopping_criterion=stopping_criterion,
             initial_vector=initial_vector,
         )
@@ -412,7 +417,7 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{<:Function,InplaceEvaluation},
+    dcs::DifferenceOfConvexState{<:Function,ClosedFormSubSolverState{InplaceEvaluation}},
     i,
 )
     M = get_manifold(amp)
@@ -425,7 +430,7 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{<:Function,AllocatingEvaluation},
+    dcs::DifferenceOfConvexState{<:Function,ClosedFormSubSolverState{AllocatingEvaluation}},
     i,
 )
     M = get_manifold(amp)

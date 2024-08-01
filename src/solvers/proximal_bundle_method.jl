@@ -42,7 +42,7 @@ mutable struct ProximalBundleMethodState{
     P,
     T,
     Pr,
-    St,
+    St<:AbstractManoptSolverState,
     R<:Real,
     IR<:AbstractInverseRetractionMethod,
     TR<:AbstractRetractionMethod,
@@ -90,12 +90,11 @@ mutable struct ProximalBundleMethodState{
         δ::R=1.0,
         μ::R=0.5,
         sub_problem::Pr=proximal_bundle_method_subsolver,
-        sub_state::St=AllocatingEvaluation(),
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=AllocatingEvaluation(),
     ) where {
         P,
         T,
         Pr,
-        St,
         R<:Real,
         IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
@@ -103,6 +102,7 @@ mutable struct ProximalBundleMethodState{
         SC<:StoppingCriterion,
         VT<:AbstractVectorTransportMethod,
     }
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         # Initialize index set, bundle points, linearization errors, and stopping parameter
         approx_errors = [zero(R)]
         bundle = [(copy(M, p), copy(M, p, X))]
@@ -114,7 +114,7 @@ mutable struct ProximalBundleMethodState{
         λ = [zero(R)]
         η = zero(R)
         ν = zero(R)
-        return new{P,T,Pr,St,R,IR,TR,SC,VT}(
+        return new{P,T,Pr,typeof(sub_state_storage),R,IR,TR,SC,VT}(
             approx_errors,
             bundle,
             c,
@@ -139,7 +139,7 @@ mutable struct ProximalBundleMethodState{
             μ,
             ν,
             sub_problem,
-            sub_state,
+            sub_state_storage,
         )
     end
 end
@@ -292,7 +292,7 @@ function proximal_bundle_method!(
 end
 function initialize_solver!(
     mp::AbstractManoptProblem, pbms::ProximalBundleMethodState{P,T,Pr,St,R}
-) where {P,T,Pr,St,R}
+) where {P,T,Pr,St<:AbstractManoptSolverState,R<:Real}
     M = get_manifold(mp)
     copyto!(M, pbms.p_last_serious, pbms.p)
     get_subgradient!(mp, pbms.X, pbms.p)
@@ -414,7 +414,7 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 # Dispatching on different types of subsolvers
 # (a) closed form allocating
 function _proximal_bundle_subsolver!(
-    M, pbms::ProximalBundleMethodState{P,T,F,AllocatingEvaluation}
+    M, pbms::ProximalBundleMethodState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}}
 ) where {P,T,F}
     pbms.λ = pbms.sub_problem(
         M, pbms.p_last_serious, pbms.μ, pbms.approx_errors, pbms.transported_subgradients
@@ -423,7 +423,7 @@ function _proximal_bundle_subsolver!(
 end
 # (b) closed form in-place
 function _proximal_bundle_subsolver!(
-    M, pbms::ProximalBundleMethodState{P,T,F,InplaceEvaluation}
+    M, pbms::ProximalBundleMethodState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}}
 ) where {P,T,F}
     pbms.sub_problem(
         M,
