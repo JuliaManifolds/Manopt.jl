@@ -464,7 +464,7 @@ the vector field is given by
 
 ```math
 F(p, μ, λ, s) = \begin{pmatrix}
-\operatorname{grad}\mathcal L(p, μ, λ)\\
+\operatorname{grad}_p \mathcal L(p, μ, λ)\\
 g(p) + s\\
 h(p)\\
 μ ⊙ s
@@ -521,7 +521,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 \operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess} \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
+    \operatorname{Hess}_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
     \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + W_i\Bigr)_{i=1}^m\\
     \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
     μ ⊙ W + s ⊙ Y
@@ -529,7 +529,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess} \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess}_p \mathcal L(p, μ, λ)[X]``.
 
 # Fields
 
@@ -592,7 +592,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 \operatorname{J}^* F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess} \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
+    \operatorname{Hess}_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
     \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + s_iW_i\Bigr)_{i=1}^m\\
     \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
     μ ⊙ W + Y
@@ -600,7 +600,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess} \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess}_p \mathcal L(p, μ, λ)[X]``.
 
 # Fields
 
@@ -703,14 +703,14 @@ which we can write with the adjoint ``J^*`` of the Jacobian
 
 and hence is computed with [`KKTVectorFieldAdjointJacobian`](@ref) and [`KKTVectorField`](@ref).
 
-For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad} \mathcal L(p,μ,λ) ∈ T_p\mathcal M``,
+For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad}_p \mathcal L(p,μ,λ) ∈ T_p\mathcal M``,
 for a shorthand of the first component of ``F``, as
 
 ```math
 \operatorname{grad} φ
 =
 2 \begin{pmatrix}
-\operatorname{grad} \mathcal L(p,μ,λ)[L] + (g_i(p) + s_i)\operatorname{grad} g_i(p) + h_j(p)\operatorname{grad} h_j(p)\\
+\operatorname{grad}_p \mathcal L(p,μ,λ)[L] + (g_i(p) + s_i)\operatorname{grad} g_i(p) + h_j(p)\operatorname{grad} h_j(p)\\
   \Bigl( ⟨\operatorname{grad} g_i(p), L⟩ + s_i\Bigr)_{i=1}^m + μ ⊙ s ⊙ s\\
   \Bigl( ⟨\operatorname{grad} h_j(p), L⟩ \Bigr)_{j=1}^n\\
   g + s + μ ⊙ μ ⊙ s
@@ -875,7 +875,7 @@ Stop when the KKT residual
 
 ```
 r^2
-= \lVert \operatorname{grad} \mathcal L(p, μ, λ) \rVert^2
+= \lVert \operatorname{grad}_p \mathcal L(p, μ, λ) \rVert^2
 + \sum_{i=1}^m [μ_i]_{-}^2 + [g_i(p)]_+^2 + \lvert \mu_ig_i(p)^2
 + \sum_{j=1}^n \lvert h_i(p)\rvert^2.
 ```
