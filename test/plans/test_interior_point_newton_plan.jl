@@ -77,6 +77,10 @@ using ManifoldsBase, Manifolds, Manopt, Test
     @test !sc(dmp, ipns, 1) #not yet reached
     @test Manopt.indicates_convergence(sc)
     @test startswith(repr(sc), "StopWhenKKTResidualLess(1.0e-5)\n")
+    # Fake stop
+    sc.residual = 1e-7
+    sc.at_iteration = 1
+    @test length(get_reason(sc)) > 0
     #
     ipcc = InteriorPointCentralityCondition(coh, 1.0)
     @test Manopt.set_manopt_parameter!(ipcc, :τ, step_M, step_p) == ipcc

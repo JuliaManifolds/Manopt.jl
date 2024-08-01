@@ -434,10 +434,4 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         set_manopt_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
     end
-    @testset "DebugFeasibility" begin
-        df = DebugFeasibility()
-        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible]; atol=1.0e-13)"
-        # short form:
-        @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
-    end
 end

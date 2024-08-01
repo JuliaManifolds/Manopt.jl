@@ -72,12 +72,15 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
         )
         @test q == q2
 
-        # (c) call with objective
+        # (c) call with objective - but then we also test the Centrality cond
         coh = ConstrainedManifoldObjective(
             f, grad_f, g, grad_g, nothing, nothing; hess_f=Hess_f, hess_g=Hess_g, M=M, p=p_0
         )
-        q3 = interior_point_Newton(M, coh, p_0; stopping_criterion=sc)
-        @test q3 == q2
+        ipcc = InteriorPointCentralityCondition(coh, 0.9)
+        q3 = interior_point_Newton(
+            M, coh, p_0; stopping_criterion=sc, centrality_condition=ipcc
+        )
+        @test distance(M, q3, [0.0, 0.0, 1.0]) < 2e-4
         if _debug_iterates_plot
             using GLMakie, Makie, GeometryTypes
             rec = get_record(res[2])

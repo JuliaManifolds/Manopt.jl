@@ -354,7 +354,7 @@ include("../utils/dummy_types.jl")
             end
         end
     end
-    @testset "is_feasible" begin
+    @testset "is_feasible & DebugFeasibility" begin
         coh = ConstrainedManifoldObjective(
             f,
             grad_f;
@@ -371,6 +371,16 @@ include("../utils/dummy_types.jl")
         @test_throws ErrorException is_feasible(M, coh, p; error=:error)
         @test_logs (:info,) !is_feasible(M, coh, p; error=:info)
         @test_logs (:warn,) !is_feasible(M, coh, p; error=:warn)
+        # Dummy state
+        st = Manopt.StepsizeState(p, X)
+        mp = DefaultManoptProblem(M, coh)
+        io = IOBuffer()
+        df = DebugFeasibility(; io=io)
+        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible]; atol=1.0e-13)"
+        # short form:
+        @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
+        df(mp, st, 1)
+        @test String(take!(io)) == "feasible: No"
     end
     @testset "Lagrangians" begin
         μ = [1.0, 1.0]
