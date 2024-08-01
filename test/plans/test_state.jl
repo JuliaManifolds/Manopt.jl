@@ -89,6 +89,9 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test d2.state.X == ones(3)
         @test get_stopping_criterion(d2) === s2.stop
     end
+    @testset "Closed Form State" begin
+        @test ClosedFormSubSolverState() isa ClosedFormSubSolverState{AllocatingEvaluation}
+    end
     @testset "Generic Objective and State solver returns" begin
         f(M, p) = 1
         o = ManifoldCostObjective(f)
