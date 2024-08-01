@@ -137,20 +137,20 @@ function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentS
     return ConstantStepsize(M)
 end
 
-_doc_SGM = """
+_doc_SGD = """
     stochastic_gradient_descent(M, grad_f, p=rand(M); kwargs...)
     stochastic_gradient_descent(M, msgo; kwargs...)
-    stochastic_gradient_descent!(M, grad_f, p)
-    stochastic_gradient_descent!(M, msgo, p)
+    stochastic_gradient_descent!(M, grad_f, p; kwargs...)
+    stochastic_gradient_descent!(M, msgo, p; kwargs...)
 
-perform a stochastic gradient descent. This can be perfomed in-place of `p`
+perform a stochastic gradient descent. This can be perfomed in-place of `p`.
 
 # Input
 
-* $(_arg_M)
+$(_arg_M)
 * `grad_f`: a gradient function, that either returns a vector of the gradients
   or is a vector of gradient functions
-* $(_arg_p)
+$(_arg_p)
 
 alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
@@ -174,7 +174,7 @@ $(_kw_others)
 $(_doc_sec_output)
 """
 
-@doc "$(_doc_SGM)"
+@doc "$(_doc_SGD)"
 stochastic_gradient_descent(M::AbstractManifold, args...; kwargs...)
 function stochastic_gradient_descent(M::AbstractManifold, grad_f; kwargs...)
     return stochastic_gradient_descent(M, grad_f, rand(M); kwargs...)
@@ -223,7 +223,7 @@ function stochastic_gradient_descent(
     return stochastic_gradient_descent!(M, msgo, q; kwargs...)
 end
 
-@doc "$(_doc_SGM)"
+@doc "$(_doc_SGD)"
 stochastic_gradient_descent!(::AbstractManifold, args...; kwargs...)
 function stochastic_gradient_descent!(
     M::AbstractManifold,

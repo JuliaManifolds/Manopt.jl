@@ -73,8 +73,8 @@ _arg_Hess_f = """
 * `Hess_f`: the Hessian ``$_l_Hess_long`` of f
   as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place
 """
-_arg_p = raw"* `p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
-_arg_M = "* `M`, a manifold ``$_l_M``"
+_arg_p = raw"* `p` an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
+_arg_M = "* `M` a manifold ``$_l_M``"
 _arg_inline_M = "the manifold `M`"
 _arg_X = "* `X` a tangent vector"
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
