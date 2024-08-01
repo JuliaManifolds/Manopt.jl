@@ -90,7 +90,8 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test get_stopping_criterion(d2) === s2.stop
     end
     @testset "Closed Form State" begin
-        @test Manopt.ClosedFormSubSolverState() isa Manopt.ClosedFormSubSolverState{AllocatingEvaluation}
+        @test Manopt.ClosedFormSubSolverState() isa
+            Manopt.ClosedFormSubSolverState{AllocatingEvaluation}
     end
     @testset "Generic Objective and State solver returns" begin
         f(M, p) = 1
