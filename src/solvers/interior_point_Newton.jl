@@ -233,7 +233,8 @@ function interior_point_Newton!(
     step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
-    _step_M::AbstractManifold=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
+    _step_M::AbstractManifold=M × vector_space(length(μ)) × vector_space(length(λ)) ×
+                              vector_space(length(s)),
     step_problem=DefaultManoptProblem(_step_M, step_objective),
     _step_p=rand(_step_M),
     step_state=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
