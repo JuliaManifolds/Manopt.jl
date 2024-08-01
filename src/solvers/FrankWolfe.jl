@@ -88,9 +88,6 @@ function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
 end
-function get_message(::FrankWolfeState{P,T,F,<:InplaceEvaluation}) where {P,T,F}
-    return ""
-end
 
 function set_iterate!(fws::FrankWolfeState, p)
     fws.p = p
