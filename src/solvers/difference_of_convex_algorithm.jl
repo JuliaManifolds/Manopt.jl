@@ -387,11 +387,7 @@ end
 function initialize_solver!(::AbstractManoptProblem, dcs::DifferenceOfConvexState)
     return dcs
 end
-function step_solver!(
-    amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{<:AbstractManoptProblem,<:AbstractManoptSolverState},
-    i,
-)
+function step_solver!(amp::AbstractManoptProblem, dcs::DifferenceOfConvexState, i)
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p)
     set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :p, dcs.p)
