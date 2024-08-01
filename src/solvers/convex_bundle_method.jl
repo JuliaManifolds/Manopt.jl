@@ -30,7 +30,7 @@ Stores option values for a [`convex_bundle_method`](@ref) solver.
 * `λ`:                         convex coefficients that solve the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -\lvert g\rvert^2 – ε``
 * `sub_problem`:               ([`convex_bundle_method_subsolver`]) a function that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
-* `sub_state`:                 an [`AbstractEvaluationType`](@ref) indicating whether `sub_problem` works in-place of `λ` or allocates a solution
+* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver
 
 # Constructor
 
@@ -42,8 +42,8 @@ with keywords for all fields with defaults besides `p_last_serious` which obtain
 mutable struct ConvexBundleMethodState{
     P,
     T,
-    Pr,
-    St,
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+    St<:AbstractManoptSolverState,
     R,
     A<:AbstractVector{<:R},
     B<:AbstractVector{Tuple{<:P,<:T}},
@@ -100,7 +100,7 @@ mutable struct ConvexBundleMethodState{
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
         sub_problem::Pr=convex_bundle_method_subsolver,
-        sub_state::St=AllocatingEvaluation(),
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=AllocatingEvaluation(),
         k_size=nothing,# deprecated
         p_estimate=nothing,# deprecated
         ϱ=nothing,# deprecated
@@ -119,6 +119,7 @@ mutable struct ConvexBundleMethodState{
         VT<:AbstractVectorTransportMethod,
         R<:Real,
     }
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         bundle = Vector{Tuple{P,T}}()
         g = zero_vector(M, p)
         last_stepsize = one(R)
@@ -133,7 +134,7 @@ mutable struct ConvexBundleMethodState{
             P,
             T,
             Pr,
-            St,
+            typeof(sub_state_storage),
             typeof(m),
             typeof(linearization_errors),
             typeof(bundle),
@@ -170,7 +171,7 @@ mutable struct ConvexBundleMethodState{
             ξ,
             λ,
             sub_problem,
-            sub_state,
+            sub_state_storage,
             ϱ,# deprecated
         )
     end
@@ -332,7 +333,7 @@ function convex_bundle_method!(
     ),
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=convex_bundle_method_subsolver,
-    sub_state=evaluation,
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=evaluation,
     k_size=nothing,# deprecated
     p_estimate=nothing,# deprecated
     ϱ=nothing,# deprecated
@@ -341,6 +342,7 @@ function convex_bundle_method!(
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     bms = ConvexBundleMethodState(
         M,
         p;
@@ -357,7 +359,7 @@ function convex_bundle_method!(
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
         sub_problem=sub_problem,
-        sub_state=sub_state,
+        sub_state=sub_state_storage,
         k_size=k_size,# deprecated
         p_estimate=p_estimate,# deprecated
         ϱ=ϱ,# deprecated
@@ -461,7 +463,7 @@ end
 # Dispatching on different types of subsolvers
 # (a) closed form allocating
 function _convex_bundle_subsolver!(
-    M, bms::ConvexBundleMethodState{P,T,F,AllocatingEvaluation}
+    M, bms::ConvexBundleMethodState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}}
 ) where {P,T,F}
     bms.λ = bms.sub_problem(
         M, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
@@ -470,7 +472,7 @@ function _convex_bundle_subsolver!(
 end
 # (b) closed form in-place
 function _convex_bundle_subsolver!(
-    M, bms::ConvexBundleMethodState{P,T,F,InplaceEvaluation}
+    M, bms::ConvexBundleMethodState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}}
 ) where {P,T,F}
     bms.sub_problem(
         M, bms.λ, bms.p_last_serious, bms.linearization_errors, bms.transported_subgradients
