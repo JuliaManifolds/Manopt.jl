@@ -15,6 +15,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 * `stop`:                      ([`StopWhenChangeLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
 * `X`, `Y`:                    (`zero_vector(M,p)`) the current gradient and descent direction, respectively
   their common type is set by the keyword `X`
+* `sub_problem`:               an [`AbstractManoptProblem`](@ref) problem or a function `(M, p, X) -> q` or `(M, q, p, X)` for the a closed form solution of the sub problem
+* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver or an [`AbstractEvaluationType`](@ref) in case the sub problem is provided as a function
 
 # Constructor
 
@@ -415,7 +417,7 @@ function difference_of_convex_proximal_point!(
         M,
         p,
         sub_problem,
-        sub_state;
+        maybe_wrap_evaluation_type(sub_state);
         X=X,
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,

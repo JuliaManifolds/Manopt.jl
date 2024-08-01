@@ -288,11 +288,12 @@ function Frank_Wolfe_method!(
 }
     dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     fws = FrankWolfeState(
         M,
         p,
         sub_problem,
-        sub_state;
+        sub_state_storage;
         initial_vector=initial_vector,
         retraction_method=retraction_method,
         stepsize=stepsize,
