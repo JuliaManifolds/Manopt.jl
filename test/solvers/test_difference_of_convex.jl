@@ -65,7 +65,7 @@ import Manifolds: inner
         dcps = DifferenceOfConvexProximalState( #Initialize with random point
             M,
             dcppa_sub_problem,
-            dcppa_sub_objective,
+            dcppa_sub_state,
         )
         set_iterate!(dcps, M, p1)
         @test dcps.p == p1
