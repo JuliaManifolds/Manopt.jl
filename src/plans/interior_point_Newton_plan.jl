@@ -37,10 +37,10 @@ set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 * `s`:           the current slack variable
 * `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the subsolver
-* `X`:           the current gradient with respct to `p`
-* `Y`:           the current gradient with respct to `μ`
-* `Z`:           the current gradient with respct to `λ`
-* `W`:           the current gradient with respct to `s`
+* `X`:           the current gradient with respect to `p`
+* `Y`:           the current gradient with respect to `μ`
+* `Z`:           the current gradient with respect to `λ`
+* `W`:           the current gradient with respect to `s`
 * `ρ`:           store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem
 * `σ`:           scaling factor for the barrier parameter `β` in the sub problem
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
@@ -101,7 +101,7 @@ mutable struct InteriorPointNewtonState{
     Pr<:Union{AbstractManoptProblem,F} where {F},
     St<:AbstractManoptSolverState,
     V,
-    R,
+    R<:Real,
     SC<:StoppingCriterion,
     TRTM<:AbstractRetractionMethod,
     TStepsize<:Stepsize,
@@ -242,7 +242,7 @@ end
 @doc raw"""
     CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunctor{T,R}
 
-Fiven the constrained optimixzation problem
+Given the constrained optimization problem
 
 ```math
 \begin{aligned}
@@ -314,22 +314,23 @@ function (cKKTvf::CondensedKKTVectorField)(N, Y, q)
     p, μ, λ, s = q[N, 1], cKKTvf.μ, q[N, 2], cKKTvf.s
     β = cKKTvf.β
     m, n = length(μ), length(λ)
+    Y1, Y2 = submanifold_components(N, Y)
     # First term of the lagrangian
-    get_gradient!(M, Y[N, 1], cmo, p) #grad f
+    get_gradient!(M, Y1, cmo, p) #grad f
     X = zero_vector(M, p)
     for i in 1:m
         get_grad_inequality_constraint!(M, X, cKKTvf.cmo, p, i)
         gi = get_inequality_constraint(M, cKKTvf.cmo, p, i)
         # Lagrangian term
-        Y[N, 1] += μ[i] * X
+        Y1 .+= μ[i] .* X
         #
-        Y[N, 1] += (μ[i] / s[i]) * (μ[i] * (gi + s[i]) + β - μ[i] * s[i]) * X
+        Y1 .+= (μ[i] / s[i]) * (μ[i] * (gi + s[i]) + β - μ[i] * s[i]) .* X
     end
     for j in 1:n
         get_grad_equality_constraint!(M, X, cKKTvf.cmo, p, j)
         hj = get_equality_constraint(M, cKKTvf.cmo, p, j)
-        Y[N, 1] += λ[j] * X
-        Y[N, 2][j] = hj
+        Y1 .+= λ[j] .* X
+        Y2[j] = hj
     end
     return Y
 end
@@ -343,7 +344,7 @@ end
 @doc raw"""
     CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R}  <: AbstractConstrainedSlackFunctor{T,R}
 
-Fiven the constrained optimixzation problem
+Given the constrained optimization problem
 
 ```math
 \begin{aligned}
@@ -385,7 +386,7 @@ on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
 
 * `cmo` the [`ConstrainedManifoldObjective`](@ref)
 * `μ::V` the vector in ``ℝ^m`` of coefficients for the inequality constraints
-* `s::V` the vector in ``ℝ^m`` of sclack variables
+* `s::V` the vector in ``ℝ^m`` of slack variables
 * `β::R` the barrier parameter ``β∈ℝ``
 
 # Constructor
@@ -412,25 +413,26 @@ function (cKKTvfJ::CondensedKKTVectorFieldJacobian)(N, Y, q, X)
     zero_vector!(N, Y, q)
     Xt = zero_vector(M, p)
     # First Summand of Hess L
-    copyto!(M, Y[N, 1], get_hessian(M, cKKTvfJ.cmo, p, Xp)) # Hess f
+    Y1, Y2 = submanifold_components(N, Y)
+    copyto!(M, Y1, get_hessian(M, cKKTvfJ.cmo, p, Xp)) # Hess f
     # Build the rest iteratively
     for i in 1:m #ineq
         get_hess_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, i)
         # Summand of Hess L
-        Y[N, 1] += μ[i] * Xt
+        Y1 .+= μ[i] .* Xt
         get_grad_inequality_constraint!(M, Xt, cKKTvfJ.cmo, p, i)
         # condensed term
-        Y[N, 1] += (μ[i] / s[i]) * inner(M, p, Xt, Xp) * Xt
+        Y1 .+= ((μ[i] / s[i]) * inner(M, p, Xt, Xp)) .* Xt
     end
     for j in 1:n #eq
         get_hess_equality_constraint!(M, Xt, cKKTvfJ.cmo, p, Xp, j)
         # Summand of Hess L
-        Y[N, 1] += λ[j] * Xt
+        Y1 .+= λ[j] .* Xt
         get_grad_equality_constraint!(M, Xt, cKKTvfJ.cmo, p, j)
         # condensed term
-        Y[N, 1] += Xλ[j] * Xt
+        Y1 .+= Xλ[j] .* Xt
         # condensed term in second part
-        Y[N, 2][j] = inner(M, p, Xt, Xp)
+        Y2[j] = inner(M, p, Xt, Xp)
     end
     return Y
 end
@@ -501,12 +503,13 @@ function (KKTvf::KKTVectorField)(N, Y, q)
     M = N[1]
     p = q[N, 1]
     # To improve readability
-    μ, λ, s = q[N, 2], q[N, 3], q[N, 4]
+    _q1, μ, λ, s = submanifold_components(N, q)
+    Y1, Y2, Y3, Y4 = submanifold_components(N, Y)
     LagrangianGradient(KKTvf.cmo, μ, λ)(M, Y[N, 1], p)
     m, n = length(μ), length(λ)
-    (m > 0) && (Y[N, 2] = get_inequality_constraint(M, KKTvf.cmo, p, :) .+ s)
-    (n > 0) && (Y[N, 3] = get_equality_constraint(M, KKTvf.cmo, p, :))
-    (m > 0) && (Y[N, 4] = μ .* s)
+    (m > 0) && (Y2 .= get_inequality_constraint(M, KKTvf.cmo, p, :) .+ s)
+    (n > 0) && (Y3 .= get_equality_constraint(M, KKTvf.cmo, p, :))
+    (m > 0) && (Y4 .= μ .* s)
     return Y
 end
 function show(io::IO, KKTvf::KKTVectorField)
@@ -560,24 +563,27 @@ function (KKTvfJ::KKTVectorFieldJacobian)(N, Z, q, Y)
     p = q[N, 1]
     μ, λ, s = q[N, 2], q[N, 3], q[N, 4]
     X = Y[N, 1]
+
+    Y1, Y2, Y3, Y4 = submanifold_components(N, Y)
+    Z1, Z2, Z3, Z4 = submanifold_components(N, Z)
     # First component
-    LagrangianHessian(KKTvfJ.cmo, μ, λ)(M, Z[N, 1], p, Y[N, 1])
+    LagrangianHessian(KKTvfJ.cmo, μ, λ)(M, Z1, p, Y1)
     Xt = copy(M, p, X)
     m, n = length(μ), length(λ)
     for i in 1:m
         get_grad_inequality_constraint!(M, Xt, KKTvfJ.cmo, p, i)
-        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 2][i] * Xt)
+        Z1 .+= Y2[i] .* Xt
         # set second components as well
-        Z[N, 2][i] = inner(M, p, Xt, X) + Y[N, 4][i]
+        Z2[i] = inner(M, p, Xt, X) + Y4[i]
     end
     for j in 1:n
         get_grad_equality_constraint!(M, Xt, KKTvfJ.cmo, p, j)
-        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 3][j] * Xt)
+        Z1 .+= Y3[j] .* Xt
         # set third components as well
-        Z[N, 3][j] = inner(M, p, Xt, X)
+        Z3[j] = inner(M, p, Xt, X)
     end
     # Fourth component
-    Z[N, 4] = μ .* Y[N, 4] + s .* Y[N, 2]
+    Z4 .= μ .* Y4 .+ s .* Y2
     return Z
 end
 function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
@@ -635,20 +641,22 @@ function (KKTvfAdJ::KKTVectorFieldAdjointJacobian)(N, Z, q, Y)
     LagrangianHessian(KKTvfAdJ.cmo, μ, λ)(M, Z[N, 1], p, X)
     Xt = copy(M, p, X)
     m, n = length(μ), length(λ)
+    Z1, Z2, Z3, Z4 = submanifold_components(N, Z)
+    Y1, Y2, Y3, Y4 = submanifold_components(N, Y)
     for i in 1:m
         get_grad_inequality_constraint!(M, Xt, KKTvfAdJ.cmo, p, i)
-        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 2][i] * Xt)
+        Z1 .+= Y2[i] .* Xt
         # set second components as well
-        Z[N, 2][i] = inner(M, p, Xt, X) + s[i] * Y[N, 4][i]
+        Z2[i] = inner(M, p, Xt, X) + s[i] * Y4[i]
     end
     for j in 1:n
         get_grad_equality_constraint!(M, Xt, KKTvfAdJ.cmo, p, j)
-        copyto!(M, Z[N, 1], p, Z[N, 1] + Y[N, 3][j] * Xt)
+        Z1 .+= Y3[j] .* Xt
         # set third components as well
-        Z[N, 3][j] = inner(M, p, Xt, X)
+        Z3[j] = inner(M, p, Xt, X)
     end
     # Fourth component
-    Z[N, 4] = μ .* Y[N, 4] + Y[N, 2]
+    Z4 .= μ .* Y4 .+ Y2
     return Z
 end
 function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
@@ -976,9 +984,10 @@ function calculate_σ(
     N=M × vector_space(length(μ)) × vector_space(length(λ)) × vector_space(length(s)),
     q=allocate_result(N, rand),
 )
-    copyto!(N[1], q[N, 1], p)
-    copyto!(N[2], q[N, 2], μ)
-    copyto!(N[3], q[N, 3], λ)
-    copyto!(N[4], q[N, 4], s)
+    q1, q2, q3, q4 = submanifold_components(N, q)
+    copyto!(N[1], q1, p)
+    q2 .= μ
+    q3 .= λ
+    q4 .= s
     return min(0.5, (KKTVectorFieldNormSq(cmo)(N, q))^(1 / 4))
 end
