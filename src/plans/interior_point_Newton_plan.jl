@@ -87,7 +87,7 @@ Let `m` and `n` denote the number of inequality and equality constraints, respec
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`
 * `retraction_method=default_retraction_method(M, typeof(p))`
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
-* `vector_space=`[`Rn`](@ref Manopt.Rn): specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 * `stepsize`: an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
@@ -99,7 +99,7 @@ mutable struct InteriorPointNewtonState{
     P,
     T,
     Pr<:Union{AbstractManoptProblem,F} where {F},
-    St<:Union{AbstractManoptSolverState,AbstractEvaluationType},
+    St<:AbstractManoptSolverState,
     V,
     R,
     SC<:StoppingCriterion,
@@ -130,7 +130,7 @@ mutable struct InteriorPointNewtonState{
         cmo::ConstrainedManifoldObjective,
         p::P,
         sub_problem::Pr,
-        sub_state::St;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         X::T=zero_vector(M, p),
         μ::V=ones(length(get_inequality_constraint(M, cmo, p, :))),
         Y::V=zero(μ),
@@ -165,7 +165,6 @@ mutable struct InteriorPointNewtonState{
         P,
         T,
         Pr,
-        St,
         V,
         R,
         F,
@@ -175,10 +174,11 @@ mutable struct InteriorPointNewtonState{
         RTM<:AbstractRetractionMethod,
         S<:Stepsize,
     }
-        ips = new{P,T,Pr,St,V,R,SC,RTM,S,StepPr,StepSt}()
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+        ips = new{P,T,Pr,typeof(sub_state_storage),V,R,SC,RTM,S,StepPr,StepSt}()
         ips.p = p
         ips.sub_problem = sub_problem
-        ips.sub_state = sub_state
+        ips.sub_state = sub_state_storage
         ips.μ = μ
         ips.λ = λ
         ips.s = s
@@ -956,7 +956,7 @@ where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is
 
 # Keyword arguments
 
-* `vector_space=`[`Rn`](@ref Manopt.Rn) specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `N` the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
 * `q` provide memory on `N` for interims computations
 """
