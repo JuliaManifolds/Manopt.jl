@@ -94,7 +94,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 * `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``\mathcal M × ℝ^n`` to a manopt problem.
    This is the manifold and objective for the sub solver.
 * `sub_state=`[`ConjugateResidualState`](@ref): a state specifying the subsolver. This default is also decorated with the `sub_kwargs...`.
-* `vector_space=`[`Rn`](@ref Manopt.Rn): specify which manifold to use for the vector space components ``ℝ^m,ℝ^n``
+* `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
   th initial gradient with respect to `p`.
 * `Y=zero(μ)`:  the initial gradient with respct to `μ`

@@ -2,7 +2,7 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 @testset "Interior Point Newton Solver" begin
     @testset "A solver run on the Sphere" begin
-        # We can take a loog ak debug prints of one run and plot the result
+        # We can take a look at debug prints of one run and plot the result
         # on CI and when running with ] test Manopt, both have to be set to false.
         _debug_iterates_plot = false
         _debug = false
