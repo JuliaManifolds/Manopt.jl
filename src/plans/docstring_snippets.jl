@@ -98,8 +98,8 @@ _sc_all = "[` & `](@ref StopWhenAll)"
 
 # Fields
 _field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case; "
-_field_iterate = "`p` : the current iterate ``p=p^{(k)} ∈ $(_l_M)``"
-_field_gradient = "`X` : the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$(_l_M)``"
+_field_iterate = "`p`: the current iterate ``p=p^{(k)} ∈ $(_l_M)``"
+_field_gradient = "`X`: the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$(_l_M)``"
 _field_subgradient = "`X` : the current subgradient ``$(_l_subgrad)f(p^{(k)}) ∈ T_p$_l_M``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_l_retr)^{-1}``"
 _field_p = raw"`p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
@@ -109,7 +109,7 @@ _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`A
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
 _field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$_l_vt``"
-_field_X = "`X` a tangent vector"
+_field_X = "`X`: a tangent vector"
 
 # Keywords
 _kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
