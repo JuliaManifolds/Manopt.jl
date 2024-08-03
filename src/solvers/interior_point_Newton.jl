@@ -331,7 +331,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     # product manifold on which to perform linesearch
 
     X2 = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
-    ips.X, ips.Z = X2[N, 1], X2[N, 2] #for p and λ
+    ips.X, ips.Z = submanifold_components(N, X2) #for p and λ
 
     # Compute the remaining part of the solution
     m, n = length(ips.μ), length(ips.λ)
@@ -340,17 +340,18 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
         grad_g = get_grad_inequality_constraint(amp, ips.p, :)
         β = ips.ρ * ips.σ
         # for s and μ
-        ips.W = -[inner(M, ips.p, grad_g[i], ips.X) for i in 1:m] - g - ips.s
-        ips.Y = (β .- ips.μ .* (ips.s + ips.W)) ./ ips.s
+        ips.W .= [-inner(M, ips.p, grad_g[i], ips.X) for i in 1:m] .- g .- ips.s
+        ips.Y .= (β .- ips.μ .* (ips.s + ips.W)) ./ ips.s
     end
 
     N = get_manifold(ips.step_problem)
     # generate current full iterate in step state
     q = get_iterate(ips.step_state)
-    copyto!(N[1], q[N, 1], get_iterate(ips))
-    copyto!(N[2], q[N, 2], ips.μ)
-    copyto!(N[3], q[N, 3], ips.λ)
-    copyto!(N[4], q[N, 4], ips.s)
+    q1, q2, q3, q4 = submanifold_components(N, q)
+    copyto!(N[1], q1, get_iterate(ips))
+    q2 .= ips.μ
+    q3 .= ips.λ
+    q4 .= ips.s
     set_iterate!(ips.step_state, M, q)
     # generate current full gradient in step state
     X = get_gradient(ips.step_state)
@@ -370,13 +371,13 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * ips.X, ips.retraction_method)
     if m > 0
-        ips.μ += α * ips.Y
-        ips.s += α * ips.W
+        ips.μ .+= α .* ips.Y
+        ips.s .+= α .* ips.W
         ips.ρ = ips.μ'ips.s / m
         # we can use the memory from above still
         ips.σ = calculate_σ(M, cmo, ips.p, ips.μ, ips.λ, ips.s; N=N, q=q)
     end
-    (n > 0) && (ips.λ += α * ips.Z)
+    (n > 0) && (ips.λ .+= α .* ips.Z)
     return ips
 end
 
