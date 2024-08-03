@@ -37,7 +37,7 @@ point type `P` and a tangent vector type `T``
 
     ConvexBundleMethodState(M::AbstractManifold, p=rand(M); kwargs...)
 
-Generate the state for the [`convex_bundle_method`](@ref) on the manifodl `M`
+Generate the state for the [`convex_bundle_method`](@ref) on the manifold `M`
 with initial point `p`.
 
 # Keyword arguments
@@ -272,10 +272,9 @@ _doc_convex_bundle_method = """
     convex_bundle_method(M, f, ∂f, p)
     convex_bundle_method!(M, f, ∂f, p)
 
-perform a convex bundle method ``p_{k+1} = $(_l_retr)_{p_k}(-g_k)`` where
+perform a convex bundle method ``p^{(k+1)} = $(_l_retr)_{p^{(k)}}(-g_k)`` where
 
 $(_doc_cbm_gk)
-
 
 and ``p_k`` is the last serious iterate, ``X_{q_j} ∈ ∂f(q_j)``, and the ``λ_j^k`` are solutions
 to the quadratic subproblem provided by the [`convex_bundle_method_subsolver`](@ref).
@@ -305,7 +304,8 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
+* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`:
+  $(_kw_stopping_criterion)
 * `X=`$(_link_zero_vector) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem

@@ -1,43 +1,57 @@
-@doc raw"""
+@doc """
     ProximalBundleMethodState <: AbstractManoptSolverState
 
 stores option values for a [`proximal_bundle_method`](@ref) solver.
 
 # Fields
 
+* `α`:                        curvature-dependent parameter used to update `η`
+* `α₀`:                       initialization value for `α`, used to update `η`
 * `approx_errors`:            approximation of the linearization errors at the last serious step
 * `bundle`:                   bundle that collects each iterate with the computed subgradient at the iterate
-* `bundle_size=50`: the maximal size of the bundle
-* `c`:                         convex combination of the approximation errors
-* `d`:                         descent direction
-* `inverse_retraction_method`: the inverse retraction to use within
-* `m=0.0125`: the parameter to test the decrease of the cost
-* `p`:                         current candidate point
-* `p_last_serious`:            last serious iterate
-* `retraction_method`:         the retraction to use within
-* `stop`:                      a [`StoppingCriterion`](@ref)
-* `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
-* `vector_transport_method`:   the vector transport method to use within
-* `X=zero_vector(M, p)`: the current element from the possible subgradients
-  at `p` that was last evaluated.
-* `α₀=1.2`: initialization value for `α`, used to update `η`
-* `α`:                         curvature-dependent parameter used to update `η`
-* `ε=1e-2`: stepsize-like parameter related to the injectivity radius of the manifold
-* `δ`:                         parameter for updating `μ`: if ``δ < 0`` then ``μ = \log(i + 1)``, else ``μ += δ μ``
-* `η`:                         curvature-dependent term for updating the approximation errors
-* `λ`:                         convex coefficients that solve the subproblem
-* `μ=0.5`: (initial) proximal parameter for the subproblem
-* `ν`:                         the stopping parameter given by ``ν = - μ |d|^2 - c``
-* `sub_problem`:               a function evaluating with new allocations that solves the sub problem on `M` given the last serious iterate `p_last_serious`, the linearization errors `linearization_errors`, and the transported subgradients `transported_subgradients`,
-* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver
+* `bundle_size`:              the maximal size of the bundle
+* `c`:                        convex combination of the approximation errors
+* `d`:                        descent direction
+* `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
+* `ε`:                        stepsize-like parameter related to the injectivity radius of the manifold
+* `η`:                        curvature-dependent term for updating the approximation errors
+* $(_field_inv_retr)
+* `λ`:                        convex coefficients that solve the subproblem
+* `m`:                        the parameter to test the decrease of the cost
+* `μ`:                        (initial) proximal parameter for the subproblem
+* `ν`:                        the stopping parameter given by ``ν = - μ |d|^2 - c``
+* `p`:                        current candidate point
+* `p_last_serious`:           last serious iterate
+* $(_field_retr)
+* $(_field_stop)
+* `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
+* $(_field_vector_transp)
+* $(_field_subgradient)
+* $(_field_sub_problem)
+* $(_field_sub_state)
 
 # Constructor
 
-    ProximalBundleMethodState(M::AbstractManifold, p; kwargs...)
+    ProximalBundleMethodState(M::AbstractManifold, p=rand(M); kwargs...)
 
-with keywords for all fields from before besides `p_last_serious` which obtains the same type as `p`.
-You can use for example `X=` to specify the type of tangent vector to use
+Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
+with initial point `p`.
 
+# Keyword arguments
+
+* `α₀=1.2`
+* `bundle_size=50`
+* `δ=1.0`
+* `ε=1e-2`
+* `μ=0.5`
+* `m=0.0125`
+* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
+* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
+* `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
+* `sub_state=`[`AllocatingEvaluation`](@ref)
+* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+* `X=`$(_link_zero_vector) specify the type of tangent vector to use.
 """
 mutable struct ProximalBundleMethodState{
     P,
@@ -180,17 +194,24 @@ function show(io::IO, pbms::ProximalBundleMethodState)
     return print(io, s)
 end
 
-@doc raw"""
-    proximal_bundle_method(M, f, ∂f, p)
-
-perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -d_k)``, where
+_doc_PBM_dk = raw"""
 ```math
-d_k = \frac{1}{\mu_l} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
+d_k = \frac{1}{\mu_k} \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
 ```
-where ``X_{q_j}\in∂f(q_j)``, ``\mathrm{retr}`` is a retraction,
-``p_k`` is the last serious iterate, ``\mu_l`` is a proximal parameter, and the
-``λ_j^k`` are solutions to the quadratic subproblem provided by the
-[`proximal_bundle_method_subsolver`](@ref).
+
+with ``X_{q_j} ∈ ∂f(q_j)``, ``p_k`` the last serious iterate,
+``\mu_k`` a proximal parameter, and the
+``λ_j^k`` as solutions to the quadratic subproblem provided by the
+sub solver, see for example the [`proximal_bundle_method_subsolver`](@ref).
+"""
+_doc_PBM = """
+    proximal_bundle_method(M, f, ∂f, p, kwargs...)
+    proximal_bundle_method!(M, f, ∂f, p, kwargs...)
+
+perform a proximal bundle method ``p^{(k+1)} = $(_l_retr)_{p^{(k)}}(-d_k)``,
+where ``$(_l_retr)`` is a retraction and
+
+$(_doc_PBM_dk)
 
 Though the subdifferential might be set valued, the argument `∂f` should always
 return _one_ element from the subdifferential, but not necessarily deterministic.
@@ -199,55 +220,42 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 
 # Input
 
-* `M`: a manifold ``\mathcal M``
-* `f`: a cost function ``F:\mathcal M → ℝ`` to minimize
-* `∂f`: the (sub)gradient ``∂ f: \mathcal M → T\mathcal M`` of f
-  restricted to always only returning one value/element from the subdifferential.
-  This function can be passed as an allocation function `(M, p) -> X` or
-  a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p`: an initial value ``p ∈ \mathcal M``
+* $(_arg_M)
+* $(_arg_f)
+* $(_arg_subgrad_f)
+* $(_arg_p)
 
-# Optional
+# Keyword arguments
 
-* `m`: a real number that controls the decrease of the cost function
-* `evaluation`: ([`AllocatingEvaluation`](@ref)) specify whether the subgradient works by
-   allocation (default) form `∂f(M, q)` or [`InplaceEvaluation`](@ref) in place,
-   that is it is of the form `∂f!(M, X, p)`.
-* `inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction method to use
-* `retraction=default_retraction_method(M, typeof(p))`: a `retraction(M, p, X)` to use.
-* `stopping_criterion`: ([`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`)
-  a functor, see[`StoppingCriterion`](@ref), indicating when to stop.
-* `vector_transport_method=default_vector_transport_method(M, typeof(p))`: a vector transport method to use
+* `α₀=1.2`:          initialization value for `α`, used to update `η`
+* `bundle_size=50`:  the maximal size of the bundle
+* `δ=1.0`:           parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
+* `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
+* $(_kw_evaluation_default): $(_kw_evaluation)
+* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+* `m=0.0125`:        a real number that controls the decrease of the cost function
+* `μ=0.5`:           initial proximal parameter for the subproblem
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
+* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`:
+  $(_kw_stopping_criterion)
+* `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
+* `sub_state=`[`AllocatingEvaluation`](@ref)
+* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
-and the ones that are passed to [`decorate_state!`](@ref) for decorators.
+$(_kw_others)
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_doc_sec_output)
 """
+
+@doc "$(_doc_PBM)"
 function proximal_bundle_method(
     M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...
 ) where {TF,TdF}
     p_star = copy(M, p)
     return proximal_bundle_method!(M, f, ∂f, p_star; kwargs...)
 end
-@doc raw"""
-    proximal_bundle_method!(M, f, ∂f, p)
 
-perform a proximal bundle method ``p_{j+1} = \mathrm{retr}(p_k, -d_k)`` in place of `p`
-
-# Input
-
-* `M`:  a manifold ``\mathcal M``
-* `f`:  a cost function ``f:\mathcal M→ℝ`` to minimize
-* `∂f`: the (sub)gradient ``\partial f:\mathcal M→ T\mathcal M`` of F
-  restricted to always only returning one value/element from the subdifferential.
-  This function can be passed as an allocation function `(M, p) -> X` or
-  a mutating function `(M, X, p) -> X`, see `evaluation`.
-* `p`:  an initial value ``p_0=p ∈ \mathcal M``
-
-for more details and all optional parameters, see [`proximal_bundle_method`](@ref).
-"""
+@doc "$(_doc_PBM)"
 function proximal_bundle_method!(
     M::AbstractManifold,
     f::TF,
