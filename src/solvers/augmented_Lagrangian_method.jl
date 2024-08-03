@@ -29,7 +29,6 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `θ_ϵ`:   the scaling factor of the accuracy tolerance
 * $_field_stop
 
-
 # Constructor
 
     AugmentedLagrangianMethodState(
@@ -67,7 +66,7 @@ the following keyword arguments are available to initialise the corresponding fi
 """
 mutable struct AugmentedLagrangianMethodState{
     P,
-    Pr<:AbstractManoptProblem,
+    Pr<:Union{F,AbstractManoptProblem} where {F},
     St<:AbstractManoptSolverState,
     R<:Real,
     V<:AbstractVector{<:R},
@@ -95,7 +94,7 @@ mutable struct AugmentedLagrangianMethodState{
         co::ConstrainedManifoldObjective,
         p::P,
         sub_problem::Pr,
-        sub_state::St;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         λ::V=ones(length(get_equality_constraint(M, co, p, :))),
@@ -115,18 +114,12 @@ mutable struct AugmentedLagrangianMethodState{
                                ) |
                                StopWhenChangeLess(1e-10),
         kwargs...,
-    ) where {
-        P,
-        Pr<:AbstractManoptProblem,
-        R<:Real,
-        V,
-        SC<:StoppingCriterion,
-        St<:AbstractManoptSolverState,
-    }
-        alms = new{P,Pr,St,R,V,SC}()
+    ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,V,SC<:StoppingCriterion}
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+        alms = new{P,Pr,typeof(sub_state_storage),R,V,SC}()
         alms.p = p
         alms.sub_problem = sub_problem
-        alms.sub_state = sub_state
+        alms.sub_state = sub_state_storage
         alms.ϵ = ϵ
         alms.ϵ_min = ϵ_min
         alms.λ_max = λ_max
@@ -330,8 +323,8 @@ $_doc_sec_output
 @doc "$(_doc_alm)"
 function augmented_Lagrangian_method(
     M::AbstractManifold,
-    f::TF,
-    grad_f::TGF,
+    f,
+    grad_f,
     p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     g=nothing,
@@ -341,18 +334,8 @@ function augmented_Lagrangian_method(
     inequality_constrains::Union{Integer,Nothing}=nothing,
     equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
-) where {TF,TGF}
+)
     q = copy(M, p)
-    num_eq = if isnothing(equality_constrains)
-        _number_of_constraints(h, grad_h; M=M, p=p)
-    else
-        inequality_constrains
-    end
-    num_ineq = if isnothing(inequality_constrains)
-        _number_of_constraints(g, grad_g; M=M, p=p)
-    else
-        inequality_constrains
-    end
     cmo = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -361,8 +344,8 @@ function augmented_Lagrangian_method(
         h,
         grad_h;
         evaluation=evaluation,
-        inequality_constrains=num_ineq,
-        equality_constrains=num_eq,
+        inequality_constrains=inequality_constrains,
+        equality_constrains=equality_constrains,
         M=M,
         p=p,
     )

@@ -16,7 +16,9 @@ import Manopt:
     get_gradient!,
     set_manopt_parameter!,
     reflect,
-    reflect!
+    reflect!,
+    Rn,
+    Rn_default
 using LinearAlgebra: cholesky, det, diag, dot, Hermitian, qr, Symmetric, triu, I, Diagonal
 import ManifoldsBase: copy, mid_point, mid_point!
 
@@ -29,6 +31,8 @@ if isdefined(Base, :get_extension)
 else
     using ..Manifolds
 end
+
+Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)
 
 const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
 include("manifold_functions.jl")

@@ -218,6 +218,10 @@ A functor representing Armijo line search including the last runs state string t
 * `initial_guess`:             based on a [`AbstractManoptProblem`](@ref) `p`,
   [`AbstractManoptSolverState`](@ref) `s` and a current iterate `i` and a last step size `l`,
   this returns an initial guess. The default uses the last obtained stepsize
+* `additional_decrease_condition`: (`(M,p) -> true`) specify a condition a new point has to additionally
+  fulfill. The default accepts all points.
+* `additional_increase_condition`: (`(M,p) -> true`) specify a condtion that additionally to
+  checking a valid increase has to be fulfilled. The default accepts all points.
 
 Furthermore the following fields act as safeguards
 
@@ -257,33 +261,37 @@ with keywords.
 * `stop_increasing_at_step=100`
 * `stop_decreasing_at_step=1000`
 """
-mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
+mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,I,F,IGF,DF,IF} <: Linesearch
     candidate_point::P
-    contraction_factor::Float64
-    initial_guess::F
-    initial_stepsize::Float64
-    last_stepsize::Float64
+    contraction_factor::F
+    initial_guess::IGF
+    initial_stepsize::F
+    last_stepsize::F
     message::String
     retraction_method::TRM
-    sufficient_decrease::Float64
-    stop_when_stepsize_less::Float64
-    stop_when_stepsize_exceeds::Float64
-    stop_increasing_at_step::Int
-    stop_decreasing_at_step::Int
+    sufficient_decrease::F
+    stop_when_stepsize_less::F
+    stop_when_stepsize_exceeds::F
+    stop_increasing_at_step::I
+    stop_decreasing_at_step::I
+    additional_decrease_condition::DF
+    additional_increase_condition::IF
     function ArmijoLinesearch(
         M::AbstractManifold=DefaultManifold();
+        additional_decrease_condition::DF=(M, p) -> true,
+        additional_increase_condition::IF=(M, p) -> true,
         candidate_point::P=allocate_result(M, rand),
-        contraction_factor::Real=0.95,
-        initial_stepsize::Real=1.0,
-        initial_guess=armijo_initial_guess,
-        retraction_method::TRM=default_retraction_method(M, typeof(candidate_point)),
-        stop_when_stepsize_less::Real=0.0,
-        stop_when_stepsize_exceeds::Real=max_stepsize(M),
-        stop_increasing_at_step::Int=100,
-        stop_decreasing_at_step::Int=1000,
+        contraction_factor::F=0.95,
+        initial_stepsize::F=1.0,
+        initial_guess::IGF=armijo_initial_guess,
+        retraction_method::TRM=default_retraction_method(M),
+        stop_when_stepsize_less::F=0.0,
+        stop_when_stepsize_exceeds=max_stepsize(M),
+        stop_increasing_at_step::I=100,
+        stop_decreasing_at_step::I=1000,
         sufficient_decrease=0.1,
-    ) where {TRM,P}
-        return new{TRM,P,typeof(initial_guess)}(
+    ) where {TRM,P,I,F,IGF,DF,IF}
+        return new{TRM,P,I,F,IGF,DF,IF}(
             candidate_point,
             contraction_factor,
             initial_guess,
@@ -296,6 +304,8 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
             stop_when_stepsize_exceeds,
             stop_increasing_at_step,
             stop_decreasing_at_step,
+            additional_decrease_condition,
+            additional_increase_condition,
         )
     end
 end
@@ -308,22 +318,29 @@ function (a::ArmijoLinesearch)(
 )
     p = get_iterate(s)
     X = get_gradient!(mp, get_gradient(s), p)
+    return a(mp, p, X, η; initial_guess=a.initial_guess(mp, s, i, a.last_stepsize))
+end
+function (a::ArmijoLinesearch)(
+    mp::AbstractManoptProblem, p, X, η; initial_guess=1.0, kwargs...
+)
+    l = norm(get_manifold(mp), p, η)
     (a.last_stepsize, a.message) = linesearch_backtrack!(
         get_manifold(mp),
         a.candidate_point,
         (M, p) -> get_cost_function(get_objective(mp))(M, p),
         p,
         X,
-        a.initial_guess(mp, s, i, a.last_stepsize),
+        initial_guess,
         a.sufficient_decrease,
         a.contraction_factor,
         η;
         retraction_method=a.retraction_method,
-        stop_when_stepsize_less=a.stop_when_stepsize_less / norm(get_manifold(mp), p, η),
-        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds /
-                                   norm(get_manifold(mp), p, η),
+        stop_when_stepsize_less=a.stop_when_stepsize_less / l,
+        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds / l,
         stop_increasing_at_step=a.stop_increasing_at_step,
         stop_decreasing_at_step=a.stop_decreasing_at_step,
+        additional_decrease_condition=a.additional_decrease_condition,
+        additional_increase_condition=a.additional_increase_condition,
     )
     return a.last_stepsize
 end
@@ -343,6 +360,20 @@ function status_summary(als::ArmijoLinesearch)
     return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
 get_message(a::ArmijoLinesearch) = a.message
+function get_manopt_parameter(a::ArmijoLinesearch, s::Val{:DecreaseCondition}, args...)
+    return get_manopt_parameter(a.additional_decrease_condition, args...)
+end
+function get_manopt_parameter(a::ArmijoLinesearch, ::Val{:IncreaseCondition}, args...)
+    return get_manopt_parameter(a.additional_increase_condition, args...)
+end
+function set_manopt_parameter!(a::ArmijoLinesearch, s::Val{:DecreaseCondition}, args...)
+    set_manopt_parameter!(a.additional_decrease_condition, args...)
+    return a
+end
+function set_manopt_parameter!(a::ArmijoLinesearch, ::Val{:IncreaseCondition}, args...)
+    set_manopt_parameter!(a.additional_increase_condition, args...)
+    return a
+end
 
 @doc """
     (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
@@ -368,6 +399,8 @@ perform a line search
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
 * `stop_decreasing_at_step=`1000`: stop the decreasing search after these many steps
+* `additional_increase_condition=(M,p) -> true`: impose an additional condition for an increased step size to be accepted
+* `additional_decrease_condition=(M,p) -> true`: impose an additional condition for an decreased step size to be accepted
 
 These keywords are used as safeguards, where only the max stepsize is a very manifold specific one.
 
@@ -400,6 +433,8 @@ function linesearch_backtrack!(
     η::T=-X,
     f0=f(M, p);
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
+    additional_increase_condition=(M, p) -> true,
+    additional_decrease_condition=(M, p) -> true,
     stop_when_stepsize_less=0.0,
     stop_when_stepsize_exceeds=max_stepsize(M, p) / norm(M, p, η),
     stop_increasing_at_step=100,
@@ -413,7 +448,9 @@ function linesearch_backtrack!(
         msg = "The search direction η might not be a descent direction, since ⟨η, grad_f(p)⟩ ≥ 0."
     end
     i = 0
-    while f_q < f0 + decrease * s * search_dir_inner # increase
+    # Ensure that both the original condition and the additional one are fulfilled afterwards
+    while f_q < f0 + decrease * s * search_dir_inner || !additional_increase_condition(M, q)
+        (stop_increasing_at_step == 0) && break
         i = i + 1
         s = s / contract
         retract!(M, q, p, η, s, retraction_method)
@@ -431,7 +468,9 @@ function linesearch_backtrack!(
         end
     end
     i = 0
-    while f_q > f0 + decrease * s * search_dir_inner # decrease
+    # Ensure that both the original condition and the additional one are fulfilled afterwards
+    while (f_q > f0 + decrease * s * search_dir_inner) ||
+        (!additional_decrease_condition(M, q))
         i = i + 1
         s = contract * s
         retract!(M, q, p, η, s, retraction_method)

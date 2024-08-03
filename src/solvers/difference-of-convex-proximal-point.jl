@@ -16,6 +16,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 * $(_field_stop)
 * `X`, `Y`: the current gradient and descent direction, respectively
   their common type is set by the keyword `X`
+* `sub_problem`:               an [`AbstractManoptProblem`](@ref) problem or a function `(M, p, X) -> q` or `(M, q, p, X)` for the a closed form solution of the sub problem
+* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver or an [`AbstractEvaluationType`](@ref) in case the sub problem is provided as a function
 
 # Constructor
 
@@ -33,7 +35,7 @@ mutable struct DifferenceOfConvexProximalState{
     P,
     T,
     Pr,
-    St,
+    St<:AbstractManoptSolverState,
     S<:Stepsize,
     SC<:StoppingCriterion,
     RTR<:AbstractRetractionMethod,
@@ -55,7 +57,7 @@ mutable struct DifferenceOfConvexProximalState{
         M::AbstractManifold,
         p::P,
         sub_problem::Pr,
-        sub_state::St;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         X::T=zero_vector(M, p),
         stepsize::S=ConstantStepsize(M),
         stopping_criterion::SC=StopWhenChangeLess(1e-8),
@@ -66,20 +68,20 @@ mutable struct DifferenceOfConvexProximalState{
         P,
         T,
         Pr,
-        St,
         S<:Stepsize,
         SC<:StoppingCriterion,
         I<:AbstractInverseRetractionMethod,
         R<:AbstractRetractionMethod,
         Fλ,
     }
-        return new{P,T,Pr,St,S,SC,R,I,Fλ}(
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+        return new{P,T,Pr,typeof(sub_state_storage),S,SC,R,I,Fλ}(
             λ,
             p,
             copy(M, p),
             copy(M, p),
             sub_problem,
-            sub_state,
+            sub_state_storage,
             X,
             retraction_method,
             inverse_retraction_method,
@@ -354,7 +356,7 @@ function difference_of_convex_proximal_point!(
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState,Nothing}=if !isnothing(
         prox_g
     )
-        evaluation
+        maybe_wrap_evaluation_type(evaluation)
     elseif isnothing(sub_objective)
         nothing
     else
@@ -400,7 +402,7 @@ function difference_of_convex_proximal_point!(
         M,
         p,
         sub_problem,
-        sub_state;
+        maybe_wrap_evaluation_type(sub_state);
         X=X,
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,
@@ -421,7 +423,9 @@ end
 =#
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcps::DifferenceOfConvexProximalState{P,T,<:Function,AllocatingEvaluation},
+    dcps::DifferenceOfConvexProximalState{
+        P,T,<:Function,ClosedFormSubSolverState{AllocatingEvaluation}
+    },
     i,
 ) where {P,T}
     M = get_manifold(amp)
@@ -440,7 +444,9 @@ end
 =#
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcps::DifferenceOfConvexProximalState{P,T,<:Function,InplaceEvaluation},
+    dcps::DifferenceOfConvexProximalState{
+        P,T,<:Function,ClosedFormSubSolverState{InplaceEvaluation}
+    },
     i,
 ) where {P,T}
     M = get_manifold(amp)

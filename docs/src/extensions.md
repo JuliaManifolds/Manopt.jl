@@ -62,6 +62,14 @@ Manopt.max_stepsize(::TangentBundle, ::Any)
 mid_point
 ```
 
+Internally, `Manopt.jl` provides the two additional functions to choose some
+Euclidean space when needed as
+
+```@docs
+Manopt.Rn
+Manopt.Rn_default
+```
+
 ## JuMP.jl
 
 Manopt can be used using the [JuMP.jl](https://github.com/jump-dev/JuMP.jl) interface.

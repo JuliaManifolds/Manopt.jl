@@ -43,8 +43,13 @@ construct an exact penalty state.
 
 [`exact_penalty_method`](@ref)
 """
-mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriterion} <:
-               AbstractSubProblemSolverState
+mutable struct ExactPenaltyMethodState{
+    P,
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+    St<:AbstractManoptSolverState,
+    R<:Real,
+    TStopping<:StoppingCriterion,
+} <: AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
     sub_state::St
@@ -61,7 +66,7 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         ::AbstractManifold,
         p::P,
         sub_problem::Pr,
-        sub_state::St;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         ϵ_exponent=1 / 100,
@@ -75,17 +80,12 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         stopping_criterion::SC=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
         ),
-    ) where {
-        P,
-        Pr<:AbstractManoptProblem,
-        St<:AbstractManoptSolverState,
-        R<:Real,
-        SC<:StoppingCriterion,
-    }
-        epms = new{P,Pr,St,R,SC}()
+    ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,SC<:StoppingCriterion}
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+        epms = new{P,Pr,typeof(sub_state_storage),R,SC}()
         epms.p = p
         epms.sub_problem = sub_problem
-        epms.sub_state = sub_state
+        epms.sub_state = sub_state_storage
         epms.ϵ = ϵ
         epms.ϵ_min = ϵ_min
         epms.u = u
@@ -266,16 +266,6 @@ function exact_penalty_method(
     equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
-    num_eq = if isnothing(equality_constrains)
-        _number_of_constraints(h, grad_h; M=M, p=p)
-    else
-        inequality_constrains
-    end
-    num_ineq = if isnothing(inequality_constrains)
-        _number_of_constraints(g, grad_g; M=M, p=p)
-    else
-        inequality_constrains
-    end
     cmo = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -284,8 +274,8 @@ function exact_penalty_method(
         h,
         grad_h;
         evaluation=evaluation,
-        equality_constrains=num_eq,
-        inequality_constrains=num_ineq,
+        equality_constrains=equality_constrains,
+        inequality_constrains=inequality_constrains,
         M=M,
         p=p,
     )
@@ -399,7 +389,7 @@ function exact_penalty_method!(
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
     sub_kwargs=(;),
-    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
+    sub_problem::Pr=DefaultManoptProblem(
         M,
         decorate_objective!(
             M,
@@ -411,7 +401,7 @@ function exact_penalty_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_state::AbstractManoptSolverState=decorate_state!(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         QuasiNewtonState(
             M,
             copy(M, p);
@@ -429,12 +419,16 @@ function exact_penalty_method!(
         StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
     ),
     kwargs...,
-) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+) where {
+    O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+}
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     emps = ExactPenaltyMethodState(
         M,
         p,
         sub_problem,
-        sub_state;
+        sub_state_storage;
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         u=u,

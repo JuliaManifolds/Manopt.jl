@@ -5,8 +5,6 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 
 # Fields
 
-a default value is given in brackets if a parameter can be left out in initialization.
-
 * `η1`, `η1`: bounds for evaluating the regularization parameter
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
@@ -19,13 +17,13 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `σ`: the current cubic regularization parameter
 * `σmin`: lower bound for the cubic regularization parameter
 * `ρ_regularization`: regularization parameter for computing ρ.
- When approaching convergence ρ may be difficult to compute with numerator and denominator approaching zero.
- Regularizing the ratio lets ρ go to 1 near convergence.
+  When approaching convergence ρ may be difficult to compute with numerator and denominator approaching zero.
+  Regularizing the ratio lets ρ go to 1 near convergence.
 * `ρ`: the current regularized ratio of actual improvement and model improvement.
 * `ρ_denominator`: a value to store the denominator from the computation of ρ
   to allow for a warning or error when this value is non-positive.
 * $_field_retr
-* $_field_step
+* $_field_stop
 * $_arg_sub_problem
 * $_arg_sub_state
 
@@ -54,8 +52,8 @@ Construct the solver state with all fields stated as keyword arguments and the f
 mutable struct AdaptiveRegularizationState{
     P,
     T,
-    Pr<:Union{AbstractManoptProblem,<:Function},
-    St<:Union{AbstractManoptSolverState,<:AbstractEvaluationType},
+    Pr,
+    St<:AbstractManoptSolverState,
     TStop<:StoppingCriterion,
     R,
     TRTM<:AbstractRetractionMethod,
@@ -114,12 +112,12 @@ function AdaptiveRegularizationState(
     RTM<:AbstractRetractionMethod,
 }
     isnothing(sub_problem) && error("No sub_problem provided,")
-
-    return AdaptiveRegularizationState{P,T,Pr,St,SC,R,RTM}(
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+    return AdaptiveRegularizationState{P,T,Pr,typeof(sub_state_storage),SC,R,RTM}(
         p,
         X,
         sub_problem,
-        sub_state,
+        sub_state_storage,
         copy(M, p),
         copy(M, p, X),
         copy(M, p, X),
@@ -443,13 +441,14 @@ function adaptive_regularization_with_cubics!(
     if isnothing(sub_problem)
         sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
     end
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     X = copy(M, p, initial_tangent_vector)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,
         p,
         X;
-        sub_state=sub_state,
+        sub_state=sub_state_storage,
         sub_problem=sub_problem,
         σ=σ,
         ρ_regularization=ρ_regularization,
@@ -515,13 +514,13 @@ function solve_arc_subproblem!(
     return s
 end
 function solve_arc_subproblem!(
-    M, s, problem::P, ::AllocatingEvaluation, p
+    M, s, problem::P, ::ClosedFormSubSolverState{AllocatingEvaluation}, p
 ) where {P<:Function}
     copyto!(M, s, p, problem(M, p))
     return s
 end
 function solve_arc_subproblem!(
-    M, s, problem!::P, ::InplaceEvaluation, p
+    M, s, problem!::P, ::ClosedFormSubSolverState{InplaceEvaluation}, p
 ) where {P<:Function}
     problem!(M, s, p)
     return s
