@@ -203,9 +203,9 @@ abstract type AbstractApproxHessian <: Function end
 
 _doc_ApproxHessian_formula = raw"""
 ```math
-\operatorname{Hess}F(p)[X] ≈
+\operatorname{Hess}f(p)[X] ≈
 \frac{\lVert X \rVert_p}{c}\Bigl(
-  \mathcal T_{p\gets q}\bigr(\operatorname{grad}F(q)\bigl) - \operatorname{grad}F(p)
+  \mathcal T_{p\gets q}\bigr(\operatorname{grad}f(q)\bigl) - \operatorname{grad}f(p)
 \Bigl)
 ```
 """
@@ -216,7 +216,7 @@ _doc_ApproxHessian_step = raw"\operatorname{retr}_p(\frac{c}{\lVert X \rVert_p}X
 
 A functor to approximate the Hessian by a finite difference of gradient evaluation.
 
-Given a point `p` and a direction `X` and the gradient ````
+Given a point `p` and a direction `X` and the gradient ``$(_l_grad) f(p)``
 of a function ``f`` the Hessian is approximated as follows:
 let ``c`` be a stepsize, ``X ∈ $(_l_TpM())`` a tangent vector and ``q = $_doc_ApproxHessian_step``
 be a step in direction ``X`` of length ``c`` following a retraction
