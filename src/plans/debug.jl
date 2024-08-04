@@ -831,11 +831,11 @@ mutable struct DebugWhenActive{D<:DebugAction} <: DebugAction
         return new{D}(d, active, always_update)
     end
 end
-function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, i)
+function (dwa::DebugWhenActive)(p::AbstractManoptProblem, st::AbstractManoptSolverState, k)
     if dwa.active
-        dwa.debug(p, st, i)
-    elseif (i <= 0) && (dwa.always_update)
-        dwa.debug(p, st, i)
+        dwa.debug(p, st, k)
+    elseif (k < 0) && (dwa.always_update)
+        dwa.debug(p, st, k)
     end
 end
 function show(io::IO, dwa::DebugWhenActive)
