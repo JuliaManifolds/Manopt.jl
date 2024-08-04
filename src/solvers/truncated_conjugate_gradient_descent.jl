@@ -11,7 +11,7 @@ Let `T` denote the type of a tangent vector and `R <: Real`.
 * `δHδ`, `YPδ`, `δPδ`, `YPδ`: temporary inner products with `Hδ` and preconditioned inner products.
 * `Hδ`, `HY`:                 temporary results of the Hessian applied to `δ` and `Y`, respectively.
 * `κ::R`:                     the linear convergence target rate.
-* `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
+* `project!`:                 for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize`:          indicate whether `X` is initialised to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
@@ -456,7 +456,7 @@ directly.
 * `κ=0.1`:                the linear convergence target rate.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize`:            indicate whether `X` is initialised to a random vector or not.
+* `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
   This disables preconditioning.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(`[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)`(base_manifold(TpM))`)
