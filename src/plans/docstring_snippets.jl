@@ -19,6 +19,7 @@ _l_refl = raw"\operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{re
 _l_subgrad = raw"∂"
 _l_min = raw"\min"
 _l_max = raw"\min"
+_l_norm(v, i) = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
 
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"

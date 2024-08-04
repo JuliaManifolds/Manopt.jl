@@ -201,7 +201,7 @@ $(_arg_p)
 
 # Keyword arguments
 
-* `basis=`[`DefaultOrthonormalBasis`](@ref)`()`:
+* `basis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
   basis to use within each of the the tangent spaces to represent
   the Hessian (inverse) for the cases where it is stored in full (matrix) form.
 * `cautious_update=false`:
