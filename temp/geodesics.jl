@@ -86,6 +86,8 @@ end;
 
 # ╔═╡ 01912d65-df98-4d29-b60e-7466c069972c
 begin
+	# One could also write M × M × M × M × M × M × M × M × M × M
+	# or we could take the power manifold M^(10)
 	Mproduct = ProductManifold(M,M,M,M,M,M,M,M,M,M)
 	#for i in 1:length(Omega)-1
 	#	Mproduct = ProductManifold(Mproduct, M)
@@ -97,7 +99,13 @@ end;
 norm(discretized_energy_derivative(Mproduct, discretized_y(y)))
 
 # ╔═╡ dc2f8de4-f6af-400a-9e16-2b079a7697db
-#gradient_descent(Mproduct, discretized_energy, discretized_energy_derivative, discretized_y(y))
+gradient_descent(Mproduct, discretized_energy, discretized_energy_derivative, discretized_y(y))
+
+# ╔═╡ ab589ad2-76aa-48d0-8b5d-df685b6efbb6
+# The problem with the current y is, that is is on a NestedPowerManifold not on a Product Manifold. But we can discuss that tomorrow, when discussing Data structures anyways.
+
+# ╔═╡ d23bfdec-085e-4628-8791-3d6afe06cb6c
+discretized_y(y)
 
 # ╔═╡ Cell order:
 # ╠═6e502c97-0b1a-4403-8f81-6c15c832ce97
@@ -113,3 +121,5 @@ norm(discretized_energy_derivative(Mproduct, discretized_y(y)))
 # ╠═01912d65-df98-4d29-b60e-7466c069972c
 # ╠═6111683a-ee67-4ce6-b7e8-b5fd0c4aab72
 # ╠═dc2f8de4-f6af-400a-9e16-2b079a7697db
+# ╠═ab589ad2-76aa-48d0-8b5d-df685b6efbb6
+# ╠═d23bfdec-085e-4628-8791-3d6afe06cb6c
