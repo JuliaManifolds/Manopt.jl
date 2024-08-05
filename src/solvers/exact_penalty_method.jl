@@ -229,8 +229,8 @@ function exact_penalty_method(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains::Union{Integer,Nothing}=nothing,
-    equality_constrains::Union{Nothing,Integer}=nothing,
+    inequality_constraints::Union{Integer,Nothing}=nothing,
+    equality_constraints::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
     p_ = _ensure_mutating_variable(p)
@@ -258,8 +258,8 @@ function exact_penalty_method(
         h_,
         grad_h_;
         evaluation=evaluation,
-        equality_constrains=num_eq,
-        inequality_constrains=num_ineq,
+        equality_constraints=num_eq,
+        inequality_constraints=num_ineq,
         M=M,
         p=p_,
     )
@@ -268,8 +268,8 @@ function exact_penalty_method(
         cmo,
         p_;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         kwargs...,
     )
     return _ensure_matching_output(p, rs)
@@ -300,15 +300,15 @@ function exact_penalty_method!(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains=nothing,
-    equality_constrains=nothing,
+    inequality_constraints=nothing,
+    equality_constraints=nothing,
     kwargs...,
 )
-    if isnothing(inequality_constrains)
-        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    if isnothing(inequality_constraints)
+        inequality_constraints = _number_of_constraints(g, grad_g; M=M, p=p)
     end
-    if isnothing(equality_constrains)
-        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    if isnothing(equality_constraints)
+        equality_constraints = _number_of_constraints(h, grad_h; M=M, p=p)
     end
     cmo = ConstrainedManifoldObjective(
         f,
@@ -318,8 +318,8 @@ function exact_penalty_method!(
         h,
         grad_h;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         M=M,
         p=p,
     )
@@ -328,8 +328,8 @@ function exact_penalty_method!(
         cmo,
         p;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         kwargs...,
     )
 end
