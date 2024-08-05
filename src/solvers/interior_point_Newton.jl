@@ -311,7 +311,7 @@ end
 function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState)
     M = get_manifold(amp)
     cmo = get_objective(amp)
-    !is_feasible(M, cmo, p; error=:error)
+    !is_feasible(M, cmo, ips.p; error=:error)
     return ips
 end
 

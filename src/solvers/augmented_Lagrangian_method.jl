@@ -274,7 +274,14 @@ function augmented_Lagrangian_method(
     equality_constraints::Union{Nothing,Integer}=nothing,
     kwargs...,
 )
-    q = copy(M, p)
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    h_ = _ensure_mutating_cost(h, p)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
+
     cmo = ConstrainedManifoldObjective(
         f_,
         grad_f_,
