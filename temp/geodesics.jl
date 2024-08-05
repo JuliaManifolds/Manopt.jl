@@ -14,6 +14,7 @@ begin
 	using Manifolds
 	using OffsetArrays
 	using Plots
+	using Random
 end;
 
 # ╔═╡ b099f6dc-6434-44e1-a4c5-03b9f1bcab0d
@@ -126,7 +127,11 @@ discretized_energy_derivative(M2, discretized_y(y))
 M2.manifold
 
 # ╔═╡ 24a4c417-2f74-4418-86cf-b6c980a70149
-y_0 = discretized_y(y)
+begin
+	Random.seed!(42)
+	p = rand(M)
+	y_0 = [1/norm(discretized_y(y)[i]+0.0001*p)*(discretized_y(y)[i]+0.0001*p) for i in 1:N]
+end;
 #y_0 = rand(M2)
 
 # ╔═╡ 792e458c-a7e0-4c22-af23-1b0cf532743a
@@ -141,9 +146,6 @@ is_point(M2,y_opt)
 # ╔═╡ ab589ad2-76aa-48d0-8b5d-df685b6efbb6
 # The problem with the current y is, that is is on a NestedPowerManifold not on a Product Manifold. But we can discuss that tomorrow, when discussing Data structures anyways.
 
-# ╔═╡ d23bfdec-085e-4628-8791-3d6afe06cb6c
-discretized_y(y)
-
 # ╔═╡ 998b1fd7-6574-43e6-9d41-3d2aa7e51927
 # Für product bräuchtest du ArrayPartition(y1, y2,...,yN)
 
@@ -152,6 +154,56 @@ discretized_y(y)
 
 # ╔═╡ 8d48f6e9-65a9-40e8-8fba-598a1bf8cb45
 # M^10 (matrix representation)
+
+# ╔═╡ 53cad866-4efd-4558-ab84-938a0ab8f726
+#M3 = (ProductManifold(Euclidean(3), Euclidean(1)))^N
+M3 = PowerManifold(Euclidean(4), NestedPowerRepresentation(), N);
+
+# ╔═╡ bf2d374a-ae6a-44d7-a9ff-0316785bf545
+function A(M, y, X)
+	Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
+	Ay = zero_vector(M, y)
+	C = -1/h*Diagonal([ones(3)..., 0])
+	for i in 1:N
+		E = Diagonal([1/h * (2+(-Oy[j-1][1:3]+2*Oy[j][1:3]-Oy[j+1][1:3])'*(-Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][j] - Oy[i][1:3])) for j in 1:3])
+		E = vcat(E, y[i][1:3]')
+		E = hcat(E, [y[i][1:3]...,0])
+		if i == 1
+			Ay[M, i] = E*X[i] + C*X[i+1]
+		elseif i == N
+			Ay[M, i] = C*X[i-1] + E*X[i]
+		else
+			Ay[M, i] = C*X[i-1] + E*X[i] + C*X[i+1]
+		end
+	end
+	return Ay
+end
+
+# ╔═╡ 13981f8e-0e10-4432-954c-6d5d79cc26e6
+function b(M, y)
+		# Include boundary points
+		Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
+		X = zero_vector(M,y)
+		for i in 1:length(Omega)
+			c = [ -1.0*1/h * (2*Oy[i][1:3] - Oy[i-1][1:3] - Oy[i+1][1:3])'* Matrix{Float64}(I, 3, 3)[1:3,j] for j in 1:3]
+			X[M, i] = [c...,0]
+		end
+		return X
+end
+
+# ╔═╡ 56fd52a0-e09c-4c78-b4d7-515b7519219e
+begin
+	discretized_ylambda = [[y(Ωi)...,0] for Ωi in Omega]
+end
+
+# ╔═╡ c2251ffd-2248-4845-9b64-4f58a7d18809
+TyM = TangentSpace(M3, discretized_ylambda);
+
+# ╔═╡ 374c7849-ddc4-4564-9f98-d2d0607e3774
+res = conjugate_residual(TyM, A, b; debug=[:Iteration, :Cost, " | ",:GradientNorm, 25,"\n",:Stop]);
+
+# ╔═╡ a92f2332-51c8-4a57-af48-93b8c610d38f
+res_norms_of_tangentvectors = [norm(res[i][1:3]) for i in 1:N]
 
 # ╔═╡ Cell order:
 # ╠═6e502c97-0b1a-4403-8f81-6c15c832ce97
@@ -178,7 +230,13 @@ discretized_y(y)
 # ╠═dc2f8de4-f6af-400a-9e16-2b079a7697db
 # ╠═e8bf7131-31f0-4bf5-b7ad-8826ebd8fb37
 # ╠═ab589ad2-76aa-48d0-8b5d-df685b6efbb6
-# ╠═d23bfdec-085e-4628-8791-3d6afe06cb6c
 # ╠═998b1fd7-6574-43e6-9d41-3d2aa7e51927
 # ╠═d12d9db3-bbdd-4779-a5d0-fc85448d7290
 # ╠═8d48f6e9-65a9-40e8-8fba-598a1bf8cb45
+# ╠═53cad866-4efd-4558-ab84-938a0ab8f726
+# ╠═bf2d374a-ae6a-44d7-a9ff-0316785bf545
+# ╠═13981f8e-0e10-4432-954c-6d5d79cc26e6
+# ╠═56fd52a0-e09c-4c78-b4d7-515b7519219e
+# ╠═c2251ffd-2248-4845-9b64-4f58a7d18809
+# ╠═374c7849-ddc4-4564-9f98-d2d0607e3774
+# ╠═a92f2332-51c8-4a57-af48-93b8c610d38f
