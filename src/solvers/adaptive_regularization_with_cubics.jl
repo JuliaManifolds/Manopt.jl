@@ -21,9 +21,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `retraction_method`:  (`default_retraction_method(M)`) the retraction to use
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(100)`) a [`StoppingCriterion`](@ref)
 * `sub_problem`:        sub problem solved in each iteration
-* `sub_state`:          sub state for solving the sub problem, either a solver state if
-  the problem is an [`AbstractManoptProblem`](@ref) or an [`AbstractEvaluationType`](@ref) if it is a function,
-  where it defaults to [`AllocatingEvaluation`](@ref).
+* `sub_state`:          an [`AbstractManoptSolverState`](@ref) for the subsolver
 
 Furthermore the following integral fields are defined
 
@@ -43,8 +41,8 @@ Construct the solver state with all fields stated as keyword arguments.
 mutable struct AdaptiveRegularizationState{
     P,
     T,
-    Pr<:Union{AbstractManoptProblem,<:Function},
-    St<:Union{AbstractManoptSolverState,<:AbstractEvaluationType},
+    Pr,
+    St<:AbstractManoptSolverState,
     TStop<:StoppingCriterion,
     R,
     TRTM<:AbstractRetractionMethod,
@@ -103,12 +101,12 @@ function AdaptiveRegularizationState(
     RTM<:AbstractRetractionMethod,
 }
     isnothing(sub_problem) && error("No sub_problem provided,")
-
-    return AdaptiveRegularizationState{P,T,Pr,St,SC,R,RTM}(
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+    return AdaptiveRegularizationState{P,T,Pr,typeof(sub_state_storage),SC,R,RTM}(
         p,
         X,
         sub_problem,
-        sub_state,
+        sub_state_storage,
         copy(M, p),
         copy(M, p, X),
         copy(M, p, X),
@@ -428,13 +426,14 @@ function adaptive_regularization_with_cubics!(
     if isnothing(sub_problem)
         sub_problem = DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
     end
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     X = copy(M, p, initial_tangent_vector)
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,
         p,
         X;
-        sub_state=sub_state,
+        sub_state=sub_state_storage,
         sub_problem=sub_problem,
         σ=σ,
         ρ_regularization=ρ_regularization,
@@ -500,13 +499,13 @@ function solve_arc_subproblem!(
     return s
 end
 function solve_arc_subproblem!(
-    M, s, problem::P, ::AllocatingEvaluation, p
+    M, s, problem::P, ::ClosedFormSubSolverState{AllocatingEvaluation}, p
 ) where {P<:Function}
     copyto!(M, s, p, problem(M, p))
     return s
 end
 function solve_arc_subproblem!(
-    M, s, problem!::P, ::InplaceEvaluation, p
+    M, s, problem!::P, ::ClosedFormSubSolverState{InplaceEvaluation}, p
 ) where {P<:Function}
     problem!(M, s, p)
     return s

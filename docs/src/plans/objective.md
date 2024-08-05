@@ -211,6 +211,16 @@ It might be beneficial to use the adapted problem to specify different ranges fo
 ConstrainedManoptProblem
 ```
 
+as well as the helper functions
+
+```@docs
+AbstractConstrainedFunctor
+AbstractConstrainedSlackFunctor
+LagrangianCost
+LagrangianGradient
+LagrangianHessian
+```
+
 #### Access functions
 
 ```@docs
@@ -223,9 +233,16 @@ get_grad_equality_constraint
 get_grad_inequality_constraint
 get_hess_equality_constraint
 get_hess_inequality_constraint
+is_feasible
 ```
 
-### A vectorial cost function
+#### Internal functions
+
+```@docs
+Manopt.get_feasibility_status
+```
+
+### Vectorial objectives
 
 ```@docs
 Manopt.AbstractVectorFunction

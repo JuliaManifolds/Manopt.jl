@@ -1,5 +1,5 @@
 @doc raw"""
-    AugmentedLagrangianCost{CO,R,T}
+    AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunctor
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -25,7 +25,7 @@ number type used and ``T`` the vector type.
 
     AugmentedLagrangianCost(co, ρ, μ, λ)
 """
-mutable struct AugmentedLagrangianCost{CO,R,T}
+mutable struct AugmentedLagrangianCost{CO,R,T} <: AbstractConstrainedFunctor{T}
     co::CO
     ρ::R
     μ::T
@@ -35,14 +35,8 @@ function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:ρ}, ρ)
     alc.ρ = ρ
     return alc
 end
-function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:μ}, μ)
-    alc.μ = μ
-    return alc
-end
-function set_manopt_parameter!(alc::AugmentedLagrangianCost, ::Val{:λ}, λ)
-    alc.λ = λ
-    return alc
-end
+get_manopt_parameter(alc::AugmentedLagrangianCost, ::Val{:ρ}) = alc.ρ
+
 function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
     gp = get_inequality_constraint(M, L.co, p, :)
     hp = get_equality_constraint(M, L.co, p, :)
@@ -56,7 +50,7 @@ function (L::AugmentedLagrangianCost)(M::AbstractManifold, p)
 end
 
 @doc raw"""
-    AugmentedLagrangianGrad{CO,R,T}
+    AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
 
 Stores the parameters ``ρ ∈ ℝ``, ``μ ∈ ℝ^m``, ``λ ∈ ℝ^n``
 of the augmented Lagrangian associated to the [`ConstrainedManifoldObjective`](@ref) `co`.
@@ -81,7 +75,7 @@ number type used and ``T`` the vector type.
     AugmentedLagrangianGrad(co, ρ, μ, λ)
 
 """
-mutable struct AugmentedLagrangianGrad{CO,R,T}
+mutable struct AugmentedLagrangianGrad{CO,R,T} <: AbstractConstrainedFunctor{T}
     co::CO
     ρ::R
     μ::T
@@ -91,20 +85,11 @@ function (LG::AugmentedLagrangianGrad)(M::AbstractManifold, p)
     X = zero_vector(M, p)
     return LG(M, X, p)
 end
-
 function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:ρ}, ρ)
     alg.ρ = ρ
     return alg
 end
-function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:μ}, μ)
-    alg.μ = μ
-    return alg
-end
-function set_manopt_parameter!(alg::AugmentedLagrangianGrad, ::Val{:λ}, λ)
-    alg.λ = λ
-    return alg
-end
-
+get_manopt_parameter(alg::AugmentedLagrangianGrad, ::Val{:ρ}) = alg.ρ
 # default, that is especially when the `grad_g` and `grad_h` are functions.
 function (LG::AugmentedLagrangianGrad)(
     M::AbstractManifold, X, p, range=NestedPowerRepresentation()

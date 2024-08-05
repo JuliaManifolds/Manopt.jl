@@ -11,7 +11,7 @@ module Manopt
 import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
-
+import ManifoldsBase: base_manifold, base_point
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -149,6 +149,30 @@ using Requires
 using SparseArrays
 using Statistics
 
+"""
+    Rn(args; kwargs...)
+    Rn(s::Symbol=:Manifolds, args; kwargs...)
+
+A small internal helper function to choose a Euclidean space.
+By default, this uses the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) unless you load
+a more advanced Euclidean space like [`Euclidean`](@extref Manifolds.Euclidean)
+from [`Manifolds.jl`](@extref Manifolds.Manifolds)
+"""
+Rn(args...; kwargs...) = Rn(Val(Rn_default()), args...; kwargs...)
+
+@doc """
+    Rn_default()
+
+Specify a default value to dispatch [`Rn`](@ref) on.
+This default is set to `Manifolds`, indicating, that when this package is loded,
+it is the preferred package to ask for a vector space space.
+
+The default within `Manopt.jl` is to use the [`DefaultManifold`](@extref ManifoldsBase.DefaultManifold) from `ManifoldsBase.jl`.
+If you load `Manifolds.jl` this switches to using [`Euclidan`](@extref Manifolds.Euclidean).
+"""
+Rn_default() = :Manifolds
+Rn(::Val{T}, args...; kwargs...) where {T} = DefaultManifold(args...; kwargs...)
+
 include("plans/plan.jl")
 # solvers general framework
 include("solvers/solver.jl")
@@ -160,6 +184,7 @@ include("solvers/convex_bundle_method.jl")
 include("solvers/ChambollePock.jl")
 include("solvers/cma_es.jl")
 include("solvers/conjugate_gradient_descent.jl")
+include("solvers/conjugate_residual.jl")
 include("solvers/cyclic_proximal_point.jl")
 include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference-of-convex-proximal-point.jl")
@@ -169,6 +194,7 @@ include("solvers/Lanczos.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
+include("solvers/interior_point_Newton.jl")
 include("solvers/LevenbergMarquardt.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
@@ -284,6 +310,7 @@ export AbstractDecoratedManifoldObjective,
     AbstractManifoldGradientObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
+    AbstractManifoldSubObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
     EmbeddedManifoldObjective,
@@ -325,6 +352,7 @@ export AbstractGradientSolverState,
     ConvexBundleMethodState,
     ChambollePockState,
     ConjugateGradientDescentState,
+    ConjugateResidualState,
     CyclicProximalPointState,
     DifferenceOfConvexState,
     DifferenceOfConvexProximalState,
@@ -332,6 +360,7 @@ export AbstractGradientSolverState,
     ExactPenaltyMethodState,
     FrankWolfeState,
     GradientDescentState,
+    InteriorPointNewtonState,
     LanczosState,
     LevenbergMarquardtState,
     NelderMeadState,
@@ -339,6 +368,7 @@ export AbstractGradientSolverState,
     PrimalDualSemismoothNewtonState,
     ProximalBundleMethodState,
     RecordSolverState,
+    StepsizeState,
     StochasticGradientDescentState,
     SubGradientMethodState,
     TruncatedConjugateGradientState,
@@ -386,7 +416,6 @@ export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
 export equality_constraints_length,
-    inequality_constraints_length,
     get_constraints,
     get_inequality_constraint,
     get_equality_constraint,
@@ -397,13 +426,20 @@ export equality_constraints_length,
     get_hess_inequality_constraint,
     get_hess_inequality_constraint!,
     get_hess_equality_constraint,
-    get_hess_equality_constraint!
+    get_hess_equality_constraint!,
+    inequality_constraints_length,
+    is_feasible
 export get_vectorbundle, get_derivative, get_connection_map, get_bundle_map
 # Subproblem cost/grad
 export AugmentedLagrangianCost, AugmentedLagrangianGrad, ExactPenaltyCost, ExactPenaltyGrad
+export KKTVectorField, KKTVectorFieldJacobian, KKTVectorFieldAdjointJacobian
+export KKTVectorFieldNormSq, KKTVectorFieldNormSqGradient
+export LagrangianCost, LagrangianGradient, LagrangianHessian
 export ProximalDCCost, ProximalDCGrad, LinearizedDCCost, LinearizedDCGrad
 export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
+export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
+export SymmetricLinearSystemObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -445,6 +481,8 @@ export adaptive_regularization_with_cubics,
     cma_es!,
     conjugate_gradient_descent,
     conjugate_gradient_descent!,
+    conjugate_residual,
+    conjugate_residual!,
     cyclic_proximal_point,
     cyclic_proximal_point!,
     difference_of_convex_algorithm,
@@ -459,6 +497,8 @@ export adaptive_regularization_with_cubics,
     Frank_Wolfe_method!,
     gradient_descent,
     gradient_descent!,
+    interior_point_Newton,
+    interior_point_Newton!,
     LevenbergMarquardt,
     LevenbergMarquardt!,
     NelderMead,
@@ -480,6 +520,7 @@ export adaptive_regularization_with_cubics,
     trust_regions!,
     vectorbundle_newton,
     vectorbundle_newton!
+#
 # Solver helpers
 export decorate_state!, decorate_objective!
 export initialize_solver!, step_solver!, get_solver_result, stop_solver!
@@ -496,6 +537,7 @@ export Stepsize
 export AdaptiveWNGradient, ConstantStepsize, DecreasingStepsize, PolyakStepsize
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
+export InteriorPointCentralityCondition
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
@@ -517,12 +559,14 @@ export StopAfter,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
+    StopWhenKKTResidualLess,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
     StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
     StopWhenPopulationDiverges,
     StopWhenPopulationStronglyConcentrated,
+    StopWhenRelativeResidualLess,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
@@ -538,8 +582,9 @@ export render_asymptote
 #
 # Debugs
 export DebugSolverState, DebugAction, DebugGroup, DebugEntry, DebugEntryChange, DebugEvery
-export DebugChange,
-    DebugGradientChange, DebugIterate, DebugIteration, DebugDivider, DebugTime
+export DebugChange, DebugGradientChange
+export DebugIterate, DebugIteration, DebugDivider, DebugTime
+export DebugFeasibility
 export DebugCost, DebugStoppingCriterion
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugPrimalBaseChange, DebugPrimalBaseIterate, DebugPrimalChange, DebugPrimalIterate

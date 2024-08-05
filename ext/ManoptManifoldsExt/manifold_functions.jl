@@ -18,7 +18,36 @@ the choice of typical distance in Matlab Manopt, the dimension of `M`. See
 [this note](https://github.com/NicolasBoumal/manopt/blob/97b6eb6b185334ab7b3991585ed2c044d69ee905/manopt/manifolds/fixedrank/fixedrankembeddedfactory.m#L76-L78)
 """
 function max_stepsize(M::FixedRankMatrices, p)
-    return manifold_dimension(M)
+    return max_stepsize(M)
+end
+max_stepsize(M::FixedRankMatrices) = manifold_dimension(M)
+
+"""
+    max_stepsize(M::Hyperrectangle, p)
+
+The default maximum stepsize for `Hyperrectangle` manifold with corners is maximum
+of distances from `p` to each boundary.
+"""
+function max_stepsize(M::Hyperrectangle, p)
+    ms = 0.0
+    for i in eachindex(M.lb, p)
+        dist_ub = M.ub[i] - p[i]
+        if dist_ub > 0
+            ms = max(ms, dist_ub)
+        end
+        dist_lb = p[i] - M.lb[i]
+        if dist_lb > 0
+            ms = max(ms, dist_lb)
+        end
+    end
+    return ms
+end
+function max_stepsize(M::Hyperrectangle)
+    ms = 0.0
+    for i in eachindex(M.lb, M.ub)
+        ms = max(ms, M.ub[i] - M.lb[i])
+    end
+    return ms
 end
 
 """
