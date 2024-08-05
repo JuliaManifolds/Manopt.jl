@@ -221,13 +221,6 @@ function get_subgradient!(
     return get_gradient!(M, X, agmo, p)
 end
 
-function _to_mutating_gradient(grad_f, evaluation::AllocatingEvaluation)
-    return grad_f_(M, p) = [grad_f(M, p[])]
-end
-function _to_mutating_gradient(grad_f, evaluation::InplaceEvaluation)
-    return grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
-end
-
 @doc raw"""
     get_gradient(agst::AbstractGradientSolverState)
 
@@ -458,7 +451,6 @@ mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
-Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, [p]; kwargs...)
 function Nesterov(
     M::AbstractManifold,
     p::P;
@@ -469,7 +461,8 @@ function Nesterov(
         M, P
     ),
 ) where {P,T}
-    return Nesterov{P,T}(γ, μ, copy(M, p), shrinkage, inverse_retraction_method)
+    p_ = _ensure_mutating_variable(p)
+    return Nesterov{typeof(p_),T}(γ, μ, copy(M, p_), shrinkage, inverse_retraction_method)
 end
 function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, i)
     M = get_manifold(mp)

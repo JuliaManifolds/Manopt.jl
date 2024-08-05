@@ -9,7 +9,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(myStoppingCriteriaSet())
 
-        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(0.1))
+        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
         @test get_reason(s) === ""
@@ -17,7 +17,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s.criteria[2].last_change = 0.05
         s.criteria[2].at_iteration = 3
         @test length(get_reason(s.criteria[2])) > 0
-        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
+        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1)])
         @test get_stopping_criteria(s)[1].max_iterations ==
             get_stopping_criteria(s2)[1].max_iterations
 
@@ -87,8 +87,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
 
     @testset "Stopping Criterion &/| operators" begin
         a = StopAfterIteration(200)
-        b = StopWhenChangeLess(1e-6)
-        sb = "StopWhenChangeLess(1.0e-6)\n    $(Manopt.status_summary(b))"
+        b = StopWhenChangeLess(Euclidean(), 1e-6)
+        sb = "StopWhenChangeLess with threshold 1.0e-6\n    $(Manopt.status_summary(b))"
         @test repr(b) == sb
         @test get_reason(b) == ""
         b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor

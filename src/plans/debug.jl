@@ -245,22 +245,12 @@ mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::Union{Nothing,AbstractManifold}=nothing,
-        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             M
         ),
     )
         irm = inverse_retraction_method
         # Deprecated, remove in Manopt 0.5
-        if !isnothing(manifold)
-            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
-            irm = default_inverse_retraction_method(manifold)
-        end
-        if !isnothing(invretr)
-            @warn "invretr keyword is deprecated, use `inverse_retraction_method`, which this one overrides for now."
-            irm = invretr
-        end
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate])

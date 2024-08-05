@@ -75,6 +75,52 @@ function ReturnManifoldObjective(
     return ReturnManifoldObjective{E,O2,O1}(o)
 end
 
+#
+# Internal converters if the variable in the high-level interface is a number.
+#
+
+function _ensure_mutating_cost(cost, q::Number)
+    return isnothing(cost) ? cost : (M, p) -> cost(M, p[])
+end
+function _ensure_mutating_cost(cost, p)
+    return cost
+end
+
+function _ensure_mutating_gradient(grad_f, p, evaluation::AbstractEvaluationType)
+    return grad_f
+end
+function _ensure_mutating_gradient(grad_f, q::Number, evaluation::AllocatingEvaluation)
+    return isnothing(grad_f) ? grad_f : (M, p) -> [grad_f(M, p[])]
+end
+function _ensure_mutating_gradient(grad_f, q::Number, evaluation::InplaceEvaluation)
+    return isnothing(grad_f) ? grad_f : (M, X, p) -> (X .= [grad_f(M, p[])])
+end
+
+function _ensure_mutating_hessian(hess_f, p, evaluation::AbstractEvaluationType)
+    return hess_f
+end
+function _ensure_mutating_hessian(hess_f, q::Number, evaluation::AllocatingEvaluation)
+    return isnothing(hess_f) ? hess_f : (M, p, X) -> [hess_f(M, p[], X[])]
+end
+function _ensure_mutating_hessian(hess_f, q::Number, evaluation::InplaceEvaluation)
+    return isnothing(hess_f) ? hess_f : (M, Y, p, X) -> (Y .= [hess_f(M, p[], X[])])
+end
+
+function _ensure_mutating_prox(prox_f, p, evaluation::AbstractEvaluationType)
+    return prox_f
+end
+function _ensure_mutating_prox(prox_f, q::Number, evaluation::AllocatingEvaluation)
+    return isnothing(prox_f) ? prox_f : (M, λ, p) -> [prox_f(M, λ, p[])]
+end
+function _ensure_mutating_prox(prox_f, q::Number, evaluation::InplaceEvaluation)
+    return isnothing(prox_f) ? prox_f : (M, q, λ, p) -> (q .= [prox_f(M, λ, p[])])
+end
+
+_ensure_mutating_variable(p) = p
+_ensure_mutating_variable(q::Number) = [q]
+_ensure_matching_output(::T, q::Vector{T}) where {T} = length(q) == 1 ? q[] : q
+_ensure_matching_output(p, q) = q
+
 """
     dispatch_objective_decorator(o::AbstractManoptSolverState)
 

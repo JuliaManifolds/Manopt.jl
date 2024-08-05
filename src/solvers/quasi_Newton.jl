@@ -172,7 +172,7 @@ function default_stepsize(
         M;
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
-        linesearch_stopsize=1e-10,
+        stop_when_stepsize_less=1e-10,
     )
 end
 @doc raw"""
@@ -241,24 +241,12 @@ function quasi_Newton(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    return quasi_Newton(M, mgo, p; kwargs...)
-end
-function quasi_Newton(
-    M::AbstractManifold,
-    f::TF,
-    grad_f::TDF,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TF,TDF}
-    # redefine initial point
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    rs = quasi_Newton(M, f_, grad_f_, q; evaluation=AllocatingEvaluation(), kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    rs = quasi_Newton(M, mgo, p_; kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function quasi_Newton(
     M::AbstractManifold, mgo::O, p; kwargs...

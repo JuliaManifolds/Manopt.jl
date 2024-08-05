@@ -56,7 +56,7 @@ mutable struct DifferenceOfConvexProximalState{
         sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         X::T=zero_vector(M, p),
         stepsize::S=ConstantStepsize(M),
-        stopping_criterion::SC=StopWhenChangeLess(1e-8),
+        stopping_criterion::SC=StopWhenChangeLess(M, 1e-8),
         inverse_retraction_method::I=default_inverse_retraction_method(M),
         retraction_method::R=default_retraction_method(M),
         λ::Fλ=i -> 1,
@@ -227,50 +227,38 @@ function difference_of_convex_proximal_point(
     M::AbstractManifold,
     grad_h,
     p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     cost=nothing,
-    gradient=nothing,
-    kwargs...,
-)
-    mdcpo = ManifoldDifferenceOfConvexProximalObjective(
-        grad_h; cost=cost, gradient=gradient, evaluation=evaluation
-    )
-    return difference_of_convex_proximal_point(
-        M, mdcpo, p; evaluation=evaluation, kwargs...
-    )
-end
-function difference_of_convex_proximal_point(
-    M::AbstractManifold,
-    grad_h,
-    p::Number;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    cost=nothing,
     gradient=nothing,
     g=nothing,
     grad_g=nothing,
     prox_g=nothing,
     kwargs...,
 )
-    q = [p]
-    cost_ = isnothing(cost) ? nothing : (M, p) -> cost(M, p[])
-    grad_h_ = _to_mutating_gradient(grad_h, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    prox_g_ = isnothing(prox_g) ? nothing : _to_mutating_gradient(prox_g, evaluation)
+    p_ = _ensure_mutating_variable(p)
+    cost_ = _ensure_mutating_cost(cost, p)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    prox_g_ = _ensure_mutating_prox(prox_g, p, evaluation)
 
+    mdcpo = ManifoldDifferenceOfConvexProximalObjective(
+        grad_h_; cost=cost_, gradient=gradient_, evaluation=evaluation
+    )
     rs = difference_of_convex_proximal_point(
         M,
-        grad_h_,
-        q;
+        mdcpo,
+        p_;
         cost=cost_,
         evaluation=evaluation,
         gradient=gradient_,
         g=g_,
         grad_g=grad_g_,
         prox_g=prox_g_,
+        kwargs...,
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 
 function difference_of_convex_proximal_point(
@@ -330,9 +318,11 @@ function difference_of_convex_proximal_point!(
     retraction_method=default_retraction_method(M),
     stepsize=ConstantStepsize(M),
     stopping_criterion=if isnothing(get_gradient_function(mdcpo))
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
+        StopAfterIteration(300) |
+        StopWhenChangeLess(M, 1e-9) |
+        StopWhenGradientNormLess(1e-9)
     end,
     sub_cost=isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),
     sub_grad=if isnothing(grad_g)
@@ -507,14 +497,3 @@ function step_solver!(
     end
     return dcps
 end
-#
-# Deprecated old variants with `prox_g` as a parameter
-#
-@deprecate difference_of_convex_proximal_point(
-    M::AbstractManifold, prox_g, grad_h, p; kwargs...
-) difference_of_convex_proximal_point(
-    M::AbstractManifold, grad_h, p; prox_g=prox_g, kwargs...
-)
-@deprecate difference_of_convex_proximal_point!(M, grad_h, prox_g, p; kwargs...) difference_of_convex_proximal_point!(
-    M, grad_h, p; prox_g=prox_g, kwargs...
-)

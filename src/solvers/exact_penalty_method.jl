@@ -47,7 +47,7 @@ mutable struct ExactPenaltyMethodState{
     θ_ϵ::R
     stop::TStopping
     function ExactPenaltyMethodState(
-        ::AbstractManifold,
+        M::AbstractManifold,
         p::P,
         sub_problem::Pr,
         sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
@@ -62,7 +62,7 @@ mutable struct ExactPenaltyMethodState{
         ρ::R=1.0,
         θ_ρ::R=0.3,
         stopping_criterion::SC=StopAfterIteration(300) | (
-            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1e-10)
         ),
     ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,SC<:StoppingCriterion}
         sub_state_storage = maybe_wrap_evaluation_type(sub_state)
@@ -229,57 +229,40 @@ function exact_penalty_method(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains::Union{Integer,Nothing}=nothing,
-    equality_constrains::Union{Nothing,Integer}=nothing,
+    inequality_constraints::Union{Integer,Nothing}=nothing,
+    equality_constraints::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    h_ = _ensure_mutating_cost(h, p)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
     cmo = ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        g,
-        grad_g,
-        h,
-        grad_h;
+        f_,
+        grad_f_,
+        g_,
+        grad_g_,
+        h_,
+        grad_h_;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=equality_constraints,
         M=M,
-        p=p,
+        p=p_,
     )
-    return exact_penalty_method(
+    rs = exact_penalty_method(
         M,
         cmo,
-        p;
+        p_;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         kwargs...,
     )
-end
-function exact_penalty_method(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p::Number;
-    g=nothing,
-    h=nothing,
-    grad_g=nothing,
-    grad_h=nothing,
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
-    cmo = ConstrainedManifoldObjective(
-        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation, M=M, p=p
-    )
-    rs = exact_penalty_method(M, cmo, q; evaluation=evaluation, kwargs...)
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 function exact_penalty_method(
     M::AbstractManifold, cmo::O, p=rand(M); kwargs...
@@ -307,15 +290,15 @@ function exact_penalty_method!(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains=nothing,
-    equality_constrains=nothing,
+    inequality_constraints=nothing,
+    equality_constraints=nothing,
     kwargs...,
 )
-    if isnothing(inequality_constrains)
-        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    if isnothing(inequality_constraints)
+        inequality_constraints = _number_of_constraints(g, grad_g; M=M, p=p)
     end
-    if isnothing(equality_constrains)
-        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    if isnothing(equality_constraints)
+        equality_constraints = _number_of_constraints(h, grad_h; M=M, p=p)
     end
     cmo = ConstrainedManifoldObjective(
         f,
@@ -325,8 +308,8 @@ function exact_penalty_method!(
         h,
         grad_h;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         M=M,
         p=p,
     )
@@ -335,8 +318,8 @@ function exact_penalty_method!(
         cmo,
         p;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         kwargs...,
     )
 end
@@ -390,7 +373,7 @@ function exact_penalty_method!(
         sub_kwargs...,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1e-10)
     ),
     kwargs...,
 ) where {

@@ -228,18 +228,8 @@ function StopWhenChangeLess(
         ε, zero(ε), storage, inverse_retraction_method, -1
     )
 end
-function StopWhenChangeLess(
-    ε::F;
-    storage::StoreStateAction=StoreStateAction([:Iterate]),
-    manifold::AbstractManifold=DefaultManifold(),
-    inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
-) where {F,IRT<:AbstractInverseRetractionMethod}
-    if !(manifold isa DefaultManifold)
-        @warn "The `manifold` keyword is deprecated, use the first positional argument `M` instead."
-    end
-    return StopWhenChangeLess{F,IRT,typeof(storage)}(
-        ε, zero(ε), storage, inverse_retraction_method, -1
-    )
+function StopWhenChangeLess(ε::R; kwargs...) where {R<:Real}
+    return StopWhenChangeLess(DefaultManifold(), ε; kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, i)
     if i == 0 # reset on init
@@ -271,7 +261,9 @@ function status_summary(c::StopWhenChangeLess)
 end
 indicates_convergence(c::StopWhenChangeLess) = true
 function show(io::IO, c::StopWhenChangeLess)
-    return print(io, "StopWhenChangeLess($(c.threshold))\n    $(status_summary(c))")
+    return print(
+        io, "StopWhenChangeLess with threshold $(c.threshold)\n    $(status_summary(c))"
+    )
 end
 
 """
@@ -931,13 +923,13 @@ If either `s1` (or `s2`) is already an [`StopWhenAll`](@ref), then `s2` (or `s1`
 appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`).
 
 # Example
-    a = StopAfterIteration(200) & StopWhenChangeLess(1e-6)
+    a = StopAfterIteration(200) & StopWhenChangeLess(M, 1e-6)
     b = a & StopWhenGradientNormLess(1e-6)
 
 Is the same as
 
-    a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6))
-    b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+    a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6))
+    b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6), StopWhenGradientNormLess(1e-6))
 """
 function Base.:&(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
     return StopWhenAll(s1, s2)
@@ -1026,13 +1018,13 @@ If either `s1` (or `s2`) is already an [`StopWhenAny`](@ref), then `s2` (or `s1`
 appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`)
 
 # Example
-    a = StopAfterIteration(200) | StopWhenChangeLess(1e-6)
+    a = StopAfterIteration(200) | StopWhenChangeLess(M, 1e-6)
     b = a | StopWhenGradientNormLess(1e-6)
 
 Is the same as
 
-    a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6))
-    b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+    a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6))
+    b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6), StopWhenGradientNormLess(1e-6))
 """
 function Base.:|(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
     return StopWhenAny(s1, s2)

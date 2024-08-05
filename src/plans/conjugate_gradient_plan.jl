@@ -96,25 +96,7 @@ mutable struct ConjugateGradientDescentState{
         return cgs
     end
 end
-@deprecate ConjugateGradientDescentState(
-    M::AbstractManifold,
-    p,
-    sC::StoppingCriterion,
-    s::Stepsize,
-    dU::DirectionUpdateRule,
-    retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    vtr::AbstractVectorTransportMethod=default_vector_transport_method(M, typeof(p)),
-    initial_gradient=zero_vector(M, p),
-) ConjugateGradientDescentState(
-    M,
-    p;
-    stopping_criterion=sC,
-    stepsize=s,
-    coefficient=dU,
-    retraction_method=retr,
-    vector_transport_method=vtr,
-    initial_gradient=initial_gradient,
-)
+
 function ConjugateGradientDescentState(
     M::AbstractManifold,
     p::P;

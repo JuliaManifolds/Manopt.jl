@@ -376,13 +376,15 @@ function show(io::IO, c::StopWhenModelIncreased)
 end
 
 @doc raw"""
-    truncated_conjugate_gradient_descent(M, f, grad_f, p; kwargs...)
-    truncated_conjugate_gradient_descent(M, f, grad_f, p, X; kwargs...)
-    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f; kwargs...)
-    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p; kwargs...)
-    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p, X; kwargs...)
-    truncated_conjugate_gradient_descent(M, mho::ManifoldHessianObjective, p, X; kwargs...)
-    truncated_conjugate_gradient_descent(M, trmo::TrustRegionModelObjective, p, X; kwargs...)
+    truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p);
+        kwargs...
+    )
+    truncated_conjugate_gradient_descent(M, mho::ManifoldHessianObjective, p=rand(M), X=rand(M; vector_at=p);
+        kwargs...
+    )
+    truncated_conjugate_gradient_descent(M, trmo::TrustRegionModelObjective, p=rand(M), X=rand(M; vector_at=p);
+        kwargs...
+    )
 
 solve the trust-region subproblem
 
@@ -403,7 +405,7 @@ see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).
 * `M`:      a manifold ``\mathcal M``
 * `f`:      a cost function ``f: \mathcal M → ℝ`` to minimize
 * `grad_f`: the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of `F`
-* `Hess_f`: (optional, cf. [`ApproxHessianFiniteDifference`](@ref)) the Hessian ``\operatorname{Hess}f: T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
+* `Hess_f`: the Hessian ``\operatorname{Hess}f: T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}F(p)[X] = ∇_X\operatorname{grad}f(p)``
 * `p`:      a point on the manifold ``p ∈ \mathcal M``
 * `X`:      an initial tangential vector ``X ∈ T_p\mathcal M``
 
@@ -437,65 +439,13 @@ the obtained (approximate) minimizer ``Y^*``, see [`get_solver_return`](@ref) fo
 """
 truncated_conjugate_gradient_descent(M::AbstractManifold, args; kwargs...)
 # No Hessian, no point/vector
-function truncated_conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
-    return truncated_conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
-end
-# No Hessian, no vector
-function truncated_conjugate_gradient_descent(M::AbstractManifold, f, grad_f, p; kwargs...)
-    return truncated_conjugate_gradient_descent(
-        M, f, grad_f, p, rand(M; vector_at=p); kwargs...
-    )
-end
-# no Hessian
 function truncated_conjugate_gradient_descent(
     M::AbstractManifold,
     f,
     grad_f,
-    p,
-    X;
-    evaluation=AllocatingEvaluation(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    kwargs...,
-)
-    Hess_f = ApproxHessianFiniteDifference(
-        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
-    )
-    return truncated_conjugate_gradient_descent(
-        M,
-        f,
-        grad_f,
-        Hess_f,
-        p,
-        X;
-        evaluation=evaluation,
-        retraction_method=retraction_method,
-        kwargs...,
-    )
-end
-# no point/vector
-function truncated_conjugate_gradient_descent(
-    M::AbstractManifold, f, grad_f, Hess_f::TH; kwargs...
-) where {TH<:Function}
-    return truncated_conjugate_gradient_descent(M, f, grad_f, Hess_f, rand(M); kwargs...)
-end
-# no vector
-function truncated_conjugate_gradient_descent(
-    M::AbstractManifold, f, grad_f, Hess_f::TH, p; kwargs...
-) where {TH<:Function}
-    return truncated_conjugate_gradient_descent(
-        M, f, grad_f, Hess_f, p, rand(M; vector_at=p); kwargs...
-    )
-end
-#
-# All defaults filled, generate mho
-#
-function truncated_conjugate_gradient_descent(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f::TH,
-    p,
-    X;
+    Hess_f,
+    p=rand(M),
+    X=rand(M; vector_at=p);
     evaluation=AllocatingEvaluation(),
     preconditioner=if evaluation isa InplaceEvaluation
         (M, Y, p, X) -> (Y .= X)
@@ -503,52 +453,26 @@ function truncated_conjugate_gradient_descent(
         (M, p, X) -> X
     end,
     kwargs...,
-) where {TH<:Function}
-    mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
-    return truncated_conjugate_gradient_descent(
-        M, mho, p, X; evaluation=evaluation, kwargs...
+)
+    p_ = _ensure_mutating_variable(p)
+    X_ = _ensure_mutating_variable(X)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    preconditioner_ = _ensure_mutating_hessian(preconditioner, p, evaluation)
+    Hess_f_ = _ensure_mutating_hessian(Hess_f, p, evaluation)
+
+    mho = ManifoldHessianObjective(
+        f_, grad_f_, Hess_f_, preconditioner_; evaluation=evaluation
     )
-end
-function truncated_conjugate_gradient_descent(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f::TH, #fill a default below before dispatching on p::Number
-    p::Number,
-    X::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    preconditioner=(M, p, X) -> X,
-    kwargs...,
-) where {TH<:Function}
-    q = [p]
-    Y = [X]
-    f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        grad_f_ = (M, p) -> [grad_f(M, p[])]
-        Hess_f_ = (M, p, X) -> [Hess_f(M, p[], X[])]
-        precon_ = (M, p, X) -> [preconditioner(M, p[], X[])]
-    else
-        grad_f_ = (M, X, p) -> (X .= [grad_f(M, p[])])
-        Hess_f_ = (M, Y, p, X) -> (Y .= [Hess_f(M, p[], X[])])
-        precon_ = (M, Y, p, X) -> (Y .= [preconditioner(M, p[], X[])])
-    end
     rs = truncated_conjugate_gradient_descent(
-        M,
-        f_,
-        grad_f_,
-        Hess_f_,
-        q,
-        Y;
-        preconditioner=precon_,
-        evaluation=evaluation,
-        kwargs...,
+        M, mho, p_, X_; evaluation=evaluation, kwargs...
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 #
 # Objective 1 -> generate model
 function truncated_conjugate_gradient_descent(
-    M::AbstractManifold, mho::O, p, X; kwargs...
+    M::AbstractManifold, mho::O, p=rand(M), X=rand(M; vector_at=p); kwargs...
 ) where {O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective}}
     trmo = TrustRegionModelObjective(mho)
     TpM = TangentSpace(M, copy(M, p))
@@ -570,8 +494,7 @@ function truncated_conjugate_gradient_descent(
 end
 
 @doc raw"""
-    truncated_conjugate_gradient_descent!(M, f, grad_f, Hess_f, p, X; kwargs...)
-    truncated_conjugate_gradient_descent!(M, f, grad_f, p, X; kwargs...)
+    truncated_conjugate_gradient_descent!(M, f, grad_f, Hess_f, p=rand(M), X=rand(M; vector_at=p); kwargs...)
 
 solve the trust-region subproblem in place of `X` (and `p`).
 
@@ -591,33 +514,7 @@ function truncated_conjugate_gradient_descent!(
     M::AbstractManifold,
     f,
     grad_f,
-    p,
-    X;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    kwargs...,
-)
-    hess_f = ApproxHessianFiniteDifference(
-        M, copy(M, p), grad_f; evaluation=evaluation, retraction_method=retraction_method
-    )
-    return truncated_conjugate_gradient_descent!(
-        M,
-        f,
-        grad_f,
-        hess_f,
-        p,
-        X;
-        evaluation=evaluation,
-        retraction_method=retraction_method,
-        kwargs...,
-    )
-end
-# From functions to objective
-function truncated_conjugate_gradient_descent!(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    Hess_f::TH,
+    Hess_f,
     p,
     X;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -627,7 +524,7 @@ function truncated_conjugate_gradient_descent!(
         (M, p, X) -> X
     end,
     kwargs...,
-) where {TH<:Function}
+)
     mho = ManifoldHessianObjective(f, grad_f, Hess_f, preconditioner; evaluation=evaluation)
     return truncated_conjugate_gradient_descent!(
         M, mho, p, X; evaluation=evaluation, kwargs...

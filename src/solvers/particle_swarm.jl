@@ -71,7 +71,7 @@ mutable struct ParticleSwarmState{
         inertia=0.65,
         social_weight=1.4,
         cognitive_weight=1.4,
-        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(1e-4),
+        stopping_criterion::SCT=StopAfterIteration(500) | StopWhenChangeLess(M, 1e-4),
         retraction_method::RTM=default_retraction_method(M, eltype(swarm)),
         inverse_retraction_method::IRM=default_inverse_retraction_method(M, eltype(swarm)),
         vector_transport_method::VTM=default_vector_transport_method(M, eltype(swarm)),
@@ -227,40 +227,23 @@ If you provide the [`ManifoldGradientObjective`](@ref) directly, these decoratio
 
 the obtained (approximate) minimizer ``g``, see [`get_solver_return`](@ref) for details
 """
-function particle_swarm(
-    M::AbstractManifold,
-    f;
-    n=nothing,
-    swarm_size=isnothing(n) ? 100 : n,
-    x0=nothing,
-    kwargs...,
-)
-    !isnothing(n) && (@warn "The keyword `n` is deprecated, use `swarm_size` instead")
-    !isnothing(x0) &&
-        (@warn "The keyword `x0` is deprecated, use `particle_swarm(M, f, x0)` instead")
-    return particle_swarm(
-        M, f, isnothing(x0) ? [rand(M) for _ in 1:swarm_size] : x0; kwargs...
-    )
-end
-function particle_swarm(M::AbstractManifold, f, swarm::AbstractVector; kwargs...)
-    mco = ManifoldCostObjective(f)
-    return particle_swarm(M, mco, swarm; kwargs...)
+function particle_swarm(M::AbstractManifold, f; swarm_size=100, kwargs...)
+    return particle_swarm(M, f, [rand(M) for _ in 1:swarm_size]; kwargs...)
 end
 function particle_swarm(
     M::AbstractManifold,
     f,
-    swarm::AbstractVector{T};
+    swarm::AbstractVector;
     velocity::AbstractVector=[rand(M; vector_at=y) for y in swarm],
     kwargs...,
-) where {T<:Number}
-    f_(M, p) = f(M, p[])
-    swarm_ = [[s] for s in swarm]
-    velocity_ = [[v] for v in velocity]
-    rs = particle_swarm(M, f_, swarm_; velocity=velocity_, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(swarm_[1]) == typeof(rs)) ? rs[] : rs
+)
+    f_ = _ensure_mutating_cost(f, first(swarm))
+    swarm_ = [_ensure_mutating_variable(s) for s in swarm]
+    velocity_ = [_ensure_mutating_variable(v) for v in velocity]
+    mco = ManifoldCostObjective(f_)
+    rs = particle_swarm(M, mco, swarm_; velocity=velocity_, kwargs...)
+    return _ensure_matching_output(first(swarm), rs)
 end
-
 function particle_swarm(
     M::AbstractManifold, mco::O, swarm::AbstractVector; kwargs...
 ) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}

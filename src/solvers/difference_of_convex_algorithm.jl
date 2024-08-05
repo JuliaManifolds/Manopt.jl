@@ -54,7 +54,7 @@ mutable struct DifferenceOfConvexState{
         sub_problem::Pr,
         sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
+        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9),
     ) where {P,Pr<:AbstractManoptProblem,T,SC<:StoppingCriterion}
         sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         return new{Pr,typeof(sub_state_storage),P,T,SC}(
@@ -67,7 +67,7 @@ mutable struct DifferenceOfConvexState{
         p::P,
         sub_problem::S;
         initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(1e-9),
+        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9),
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     ) where {P,S<:Function,T,SC<:StoppingCriterion}
         sub_state_storage = maybe_wrap_evaluation_type(evaluation)
@@ -197,45 +197,30 @@ function difference_of_convex_algorithm(
     ∂h,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    gradient=nothing,
-    kwargs...,
-)
-    mdco = ManifoldDifferenceOfConvexObjective(
-        f, ∂h; gradient=gradient, evaluation=evaluation
-    )
-    return difference_of_convex_algorithm(
-        M, mdco, p; g=g, evaluation=evaluation, gradient=gradient, kwargs...
-    )
-end
-function difference_of_convex_algorithm(
-    M::AbstractManifold,
-    f,
-    g,
-    ∂h,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     grad_g=nothing,
     gradient=nothing,
     kwargs...,
 )
-    q = [p]
-    f_(M, p) = f(M, p[])
-    g_(M, p) = g(M, p[])
-    gradient_ = isnothing(gradient) ? nothing : _to_mutating_gradient(gradient, evaluation)
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    ∂h_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(∂h, evaluation)
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    g_ = _ensure_mutating_cost(g, p)
+    gradient_ = _ensure_mutating_gradient(gradient, p, evaluation)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    ∂h_ = _ensure_mutating_gradient(∂h, p, evaluation)
+    mdco = ManifoldDifferenceOfConvexObjective(
+        f_, ∂h_; gradient=gradient_, evaluation=evaluation
+    )
     rs = difference_of_convex_algorithm(
         M,
-        f_,
-        g_,
-        ∂h_,
-        q;
+        mdco,
+        p_;
+        g=g_,
+        evaluation=evaluation,
         gradient=gradient_,
         grad_g=grad_g_,
-        evaluation=evaluation,
         kwargs...,
     )
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 function difference_of_convex_algorithm(
     M::AbstractManifold, mdco::O, p; kwargs...
@@ -283,9 +268,11 @@ function difference_of_convex_algorithm!(
     initial_vector=zero_vector(M, p),
     objective_type=:Riemannian,
     stopping_criterion=if isnothing(gradient)
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9)
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(1e-9) | StopWhenGradientNormLess(1e-9)
+        StopAfterIteration(300) |
+        StopWhenChangeLess(M, 1e-9) |
+        StopWhenGradientNormLess(1e-9)
     end,
     # Subsolver Magic Cascade.
     sub_cost=if isnothing(g)

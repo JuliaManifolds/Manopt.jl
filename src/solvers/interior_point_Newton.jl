@@ -180,8 +180,8 @@ function interior_point_Newton!(
     grad_h=nothing,
     Hess_g=nothing,
     Hess_h=nothing,
-    inequality_constrains=nothing,
-    equality_constrains=nothing,
+    inequality_constraints=nothing,
+    equality_constraints=nothing,
     kwargs...,
 )
     cmo = ConstrainedManifoldObjective(
@@ -195,21 +195,13 @@ function interior_point_Newton!(
         hess_g=Hess_g,
         hess_h=Hess_h,
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         M=M,
         p=p,
     )
     dcmo = decorate_objective!(M, cmo; kwargs...)
-    return interior_point_Newton!(
-        M,
-        dcmo,
-        p;
-        evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
-        kwargs...,
-    )
+    return interior_point_Newton!(M, dcmo, p; evaluation=evaluation, kwargs...)
 end
 function interior_point_Newton!(
     M::AbstractManifold,
@@ -310,7 +302,10 @@ function interior_point_Newton!(
     solve!(dmp, ips)
     return get_solver_return(get_objective(dmp), ips)
 end
-function initialize_solver!(::AbstractManoptProblem, ips::InteriorPointNewtonState)
+function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState)
+    M = get_manifold(amp)
+    cmo = get_objective(amp)
+    !is_feasible(M, cmo, ips.p; error=:error)
     return ips
 end
 

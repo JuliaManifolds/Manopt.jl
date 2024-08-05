@@ -170,34 +170,21 @@ function stochastic_gradient_descent(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
-    return stochastic_gradient_descent(M, msgo, p; evaluation=evaluation, kwargs...)
-end
-function stochastic_gradient_descent(
-    M::AbstractManifold,
-    grad_f,
-    p::Number;
-    cost=Missing(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_ = ismissing(cost) ? cost : (M, p) -> cost(M, p[])
-    if grad_f isa Function
-        n = grad_f(M, p) isa Number
-        grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
-    else
-        if evaluation isa AllocatingEvaluation
-            grad_f_ = [(M, p) -> [f(M, p[])] for f in grad_f]
+    p_ = _ensure_mutating_variable(p)
+    cost_ = _ensure_mutating_cost(cost, p)
+    if p isa Number
+        if grad_f isa Function
+            n = grad_f(M, p) isa Number
+            grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
         else
-            grad_f_ = [(M, X, p) -> (X .= [f(M, p[])]) for f in grad_f]
+            grad_f_ = [_ensure_mutating_gradient(f, p, evaluation) for f in grad_f]
         end
+    else
+        grad_f_ = grad_f
     end
-    rs = stochastic_gradient_descent(
-        M, grad_f_, q; cost=f_, evaluation=evaluation, kwargs...
-    )
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    msgo = ManifoldStochasticGradientObjective(grad_f_; cost=cost_, evaluation=evaluation)
+    rs = stochastic_gradient_descent(M, msgo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function stochastic_gradient_descent(
     M::AbstractManifold, msgo::O, p; kwargs...

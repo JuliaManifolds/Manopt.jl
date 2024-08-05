@@ -26,7 +26,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(M, 1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
             debug=d,
             record=[:Iteration, :Cost, 1],
@@ -40,7 +40,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(M, 1e-16),
             stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
         )
         @test p == p2
@@ -59,7 +59,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
@@ -70,7 +70,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
@@ -81,7 +81,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
@@ -91,7 +91,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
             direction=Nesterov(M, data[1]),
         )
         @test isapprox(M, p, p6; atol=1e-13)
