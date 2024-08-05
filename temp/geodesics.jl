@@ -18,7 +18,7 @@ end;
 
 # ╔═╡ b099f6dc-6434-44e1-a4c5-03b9f1bcab0d
 begin
-	N=10
+	N=50
 	h = 1/(N+2)*π/2
 	Omega = range(; start=0.0, stop = π/2, length=N+2)[2:end-1]
 	y0 = [0,0,1] # startpoint of geodesic
@@ -114,7 +114,7 @@ begin
 end;
 
 # ╔═╡ 9325a36b-0ae0-45b3-ba6f-9465e3097b46
-M2 = PowerManifold(M, NestedPowerRepresentation(), 10)
+M2 = PowerManifold(M, NestedPowerRepresentation(), N)
 
 # ╔═╡ 6111683a-ee67-4ce6-b7e8-b5fd0c4aab72
 norm(discretized_energy_derivative(M2, discretized_y(y)))
