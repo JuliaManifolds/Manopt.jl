@@ -22,11 +22,40 @@ Quite a few deprecated keyword arguments and a few function signatures were remo
 * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
 * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
 
-## [0.4.67] – unreleased
+## [0.4.69] – August 3, 2024
+
+### Changed
+
+* Improved performance of Interior Point Newton Method.
+
+## [0.4.68] – August 2, 2024
+
+### Added
+
+* an Interior Point Newton Method, the `interior_point_newton`
+* a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
+* `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
+* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation employing the new `is_feasible` function
+* add a `InteriorPointCentralityCondition` check that can be added for step candidates within the line search of `interior_point_newton`
+* Add Several new functors
+  * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the hessian objective of its Lagrangian
+  * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system within `interior_point_newton`
+  * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and ``KKTVectorFieldAdjointJacobian`
+  * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_newton`
+* New stopping criteria
+  * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
+  * A `StopWhenKKTResidualLess` for the `interior_point_newton`
+
+## [0.4.67] – July 25, 2024
+
+### Added
+
+* `max_stepsize` methods for `Hyperrectangle`.
 
 ### Fixed
 
 * a few typos in the documentation
+* `WolfePowellLinesearch` no longer uses `max_stepsize` with invalid point by default.
 
 ## [0.4.66] June 27, 2024
 

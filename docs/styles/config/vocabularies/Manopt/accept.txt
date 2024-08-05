@@ -49,6 +49,7 @@ Jasa
 Jax
 JuMP.jl
 kwargs
+Lai
 Levenberg
 Lagrangian
 Lanczos
@@ -112,5 +113,6 @@ tridiagonal
 Weinmann
 Willem
 Wolfe
+Yoshise
 Yuan
 Zhang

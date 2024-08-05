@@ -16,6 +16,31 @@ provide the access functions accordingly
 """
 abstract type AbstractManoptSolverState end
 
+"""
+    ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState
+
+Subsolver state indicating that a closed-form solution is available with
+[`AbstractEvaluationType`](@ref) `E`.
+
+# Constructor
+
+    ClosedFormSubSolverState(; evaluation=AllocatingEvaluation())
+"""
+struct ClosedFormSubSolverState{E<:AbstractEvaluationType} <: AbstractManoptSolverState end
+function ClosedFormSubSolverState(::E) where {E<:AbstractEvaluationType}
+    return ClosedFormSubSolverState{E}()
+end
+function ClosedFormSubSolverState(;
+    evaluation::E=AllocatingEvaluation()
+) where {E<:AbstractEvaluationType}
+    return ClosedFormSubSolverState(evaluation)
+end
+
+maybe_wrap_evaluation_type(s::AbstractManoptSolverState) = s
+function maybe_wrap_evaluation_type(::E) where {E<:AbstractEvaluationType}
+    return ClosedFormSubSolverState{E}()
+end
+
 @doc raw"""
     AbstractGradientSolverState <: AbstractManoptSolverState
 

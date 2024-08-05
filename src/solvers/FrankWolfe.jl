@@ -32,7 +32,7 @@ mutable struct FrankWolfeState{
     P,
     T,
     Pr,
-    St,
+    St<:AbstractManoptSolverState,
     TStep<:Stepsize,
     TStop<:StoppingCriterion,
     TM<:AbstractRetractionMethod,
@@ -50,7 +50,7 @@ mutable struct FrankWolfeState{
         M::AbstractManifold,
         p::P,
         sub_problem::Pr,
-        sub_state::Op;
+        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
         initial_vector::T=zero_vector(M, p),
         stopping_criterion::TStop=StopAfterIteration(200) |
                                   StopWhenGradientNormLess(1.0e-6),
@@ -60,18 +60,18 @@ mutable struct FrankWolfeState{
     ) where {
         P,
         Pr,
-        Op,
         T,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,
         TM<:AbstractRetractionMethod,
         ITM<:AbstractInverseRetractionMethod,
     }
-        return new{P,T,Pr,Op,TStep,TStop,TM,ITM}(
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+        return new{P,T,Pr,typeof(sub_state_storage),TStep,TStop,TM,ITM}(
             p,
             initial_vector,
             sub_problem,
-            sub_state,
+            sub_state_storage,
             stopping_criterion,
             stepsize,
             retraction_method,
@@ -87,9 +87,6 @@ get_iterate(fws::FrankWolfeState) = fws.p
 function get_message(fws::FrankWolfeState)
     # for now only the sub solver might have messages
     return get_message(fws.sub_state)
-end
-function get_message(::FrankWolfeState{P,T,F,<:InplaceEvaluation}) where {P,T,F}
-    return ""
 end
 
 function set_iterate!(fws::FrankWolfeState, p)
@@ -279,11 +276,12 @@ function Frank_Wolfe_method!(
 }
     dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     fws = FrankWolfeState(
         M,
         p,
         sub_problem,
-        sub_state;
+        sub_state_storage;
         initial_vector=initial_vector,
         retraction_method=retraction_method,
         stepsize=stepsize,
@@ -297,11 +295,7 @@ function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)
     return fws
 end
-function step_solver!(
-    amp::AbstractManoptProblem,
-    fws::FrankWolfeState{P,T,<:AbstractManoptProblem,<:AbstractManoptSolverState},
-    i,
-) where {P,T}
+function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, i)
     M = get_manifold(amp)
     # update gradient
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F(p), store the result in O.X
@@ -323,7 +317,9 @@ end
 # Variant 2: sub task is a mutating function providing a closed form solution
 #
 function step_solver!(
-    amp::AbstractManoptProblem, fws::FrankWolfeState{P,T,F,InplaceEvaluation}, i
+    amp::AbstractManoptProblem,
+    fws::FrankWolfeState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}},
+    i,
 ) where {P,T,F}
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
@@ -344,7 +340,9 @@ end
 # Variant 3: sub task is an allocating function providing a closed form solution
 #
 function step_solver!(
-    amp::AbstractManoptProblem, fws::FrankWolfeState{P,T,F,AllocatingEvaluation}, i
+    amp::AbstractManoptProblem,
+    fws::FrankWolfeState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}},
+    i,
 ) where {P,T,F}
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X

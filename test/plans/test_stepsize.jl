@@ -26,6 +26,13 @@ using Manopt, Manifolds, Test
     # no stepsize yet so `repr` and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""
+    @testset "Armijo setter / getters" begin
+        # Check that the passdowns work, though; since the defaults are functions, they return nothing
+        @test isnothing(Manopt.get_manopt_parameter(s, :IncreaseCondition, :Dummy))
+        @test isnothing(Manopt.get_manopt_parameter(s, :DecreaseCondition, :Dummy))
+        @test Manopt.set_manopt_parameter!(s, :IncreaseCondition, :Dummy, 1) == s #setters return s
+        @test Manopt.set_manopt_parameter!(s, :DecreaseCondition, :Dummy, 1) == s
+    end
     @testset "Linesearch safeguards" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)

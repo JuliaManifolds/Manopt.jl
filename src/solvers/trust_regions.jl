@@ -65,7 +65,14 @@ A trust region state, where the sub problem is solved in closed form by a functi
 [`trust_regions`](@ref), [`trust_regions!`](@ref)
 """
 mutable struct TrustRegionsState{
-    P,T,Pr,St,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj
+    P,
+    T,
+    Pr,
+    St<:AbstractManoptSolverState,
+    SC<:StoppingCriterion,
+    RTR<:AbstractRetractionMethod,
+    R<:Real,
+    Proj,
 } <: AbstractSubProblemSolverState
     p::P
     X::T
@@ -111,7 +118,16 @@ mutable struct TrustRegionsState{
         reduction_factor=0.25,
         augmentation_factor=2.0,
         σ::R=random ? 1e-6 : 0.0,
-    ) where {P,T,Pr,St,SC<:StoppingCriterion,RTR<:AbstractRetractionMethod,R<:Real,Proj}
+    ) where {
+        P,
+        T,
+        Pr,
+        St<:AbstractManoptSolverState,
+        SC<:StoppingCriterion,
+        RTR<:AbstractRetractionMethod,
+        R<:Real,
+        Proj,
+    }
         trs = new{P,T,Pr,St,SC,RTR,R,Proj}()
         trs.p = p
         trs.X = X
@@ -140,23 +156,20 @@ function TrustRegionsState(
     return TrustRegionsState(M, rand(M), sub_problem; kwargs...)
 end
 # No point but state -> add point
-function TrustRegionsState(
-    M, sub_problem::Pr, sub_state::St; kwargs...
-) where {
-    Pr<:Union{AbstractManoptProblem,T} where {T},
-    St<:Union{AbstractManoptSolverState,AbstractEvaluationType},
-}
+function TrustRegionsState(M, sub_problem, sub_state::AbstractManoptSolverState; kwargs...)
     return TrustRegionsState(M, rand(M), sub_problem, sub_state; kwargs...)
 end
 # point, but no state for a function -> add evaluation as state
 function TrustRegionsState(
     M,
     p,
-    sub_problem::Pr;
+    sub_problem::Function;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
-) where {Pr<:Function}
-    return TrustRegionsState(M, p, sub_problem, evaluation; kwargs...)
+)
+    return TrustRegionsState(
+        M, p, sub_problem, ClosedFormSubSolverState(evaluation); kwargs...
+    )
 end
 function TrustRegionsState(
     M, p, mho::H; kwargs...
@@ -170,7 +183,7 @@ function TrustRegionsState(
     M::TM,
     p::P,
     sub_problem::Pr,
-    sub_state::St=TruncatedConjugateGradientState(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=TruncatedConjugateGradientState(
         TangentSpace(M, copy(M, p)), zero_vector(M, p)
     );
     X::T=zero_vector(M, p),
@@ -190,7 +203,6 @@ function TrustRegionsState(
 ) where {
     TM<:AbstractManifold,
     Pr<:AbstractManoptProblem,
-    St,
     P,
     T,
     R<:Real,
@@ -198,7 +210,8 @@ function TrustRegionsState(
     RTR<:AbstractRetractionMethod,
     Proj,
 }
-    return TrustRegionsState{P,T,Pr,St,SC,RTR,R,Proj}(
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+    return TrustRegionsState{P,T,Pr,typeof(sub_state_storage),SC,RTR,R,Proj}(
         p,
         X,
         trust_region_radius,
@@ -211,7 +224,7 @@ function TrustRegionsState(
         reduction_threshold,
         augmentation_threshold,
         sub_problem,
-        sub_state,
+        sub_state_storage,
         project!,
         reduction_factor,
         augmentation_factor,
