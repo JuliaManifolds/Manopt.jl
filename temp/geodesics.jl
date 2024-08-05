@@ -19,7 +19,7 @@ end;
 
 # ╔═╡ b099f6dc-6434-44e1-a4c5-03b9f1bcab0d
 begin
-	N=50
+	N=25
 	h = 1/(N+2)*π/2
 	Omega = range(; start=0.0, stop = π/2, length=N+2)[2:end-1]
 	y0 = [0,0,1] # startpoint of geodesic
@@ -49,6 +49,9 @@ end;
 
 # ╔═╡ ca8817dd-117c-4f98-b5c3-df3167adacdd
 length(Omega)
+
+# ╔═╡ 42ab08f5-c7e6-4a54-8df1-81df0e75c566
+collect(Omega)/π
 
 # ╔═╡ 026fb1e8-0ca2-4b02-bc70-1d625c907ea2
 function y(t)
@@ -103,17 +106,6 @@ end;
 # ╔═╡ 56128130-b9a4-4fed-8da5-16d869fc3621
 length(Omega)
 
-# ╔═╡ 01912d65-df98-4d29-b60e-7466c069972c
-begin
-	# One could also write M × M × M × M × M × M × M × M × M × M
-	# or we could take the power manifold M^(10)
-	Mproduct = ProductManifold(M,M,M,M,M,M,M,M,M,M)
-	#for i in 1:length(Omega)-1
-	#	Mproduct = ProductManifold(Mproduct, M)
-	#end
-	#rand(Mproduct)
-end;
-
 # ╔═╡ 9325a36b-0ae0-45b3-ba6f-9465e3097b46
 M2 = PowerManifold(M, NestedPowerRepresentation(), N)
 
@@ -129,8 +121,8 @@ M2.manifold
 # ╔═╡ 24a4c417-2f74-4418-86cf-b6c980a70149
 begin
 	Random.seed!(42)
-	p = rand(M)
-	y_0 = [1/norm(discretized_y(y)[i]+0.0001*p)*(discretized_y(y)[i]+0.0001*p) for i in 1:N]
+	p = rand(M2)
+	y_0 = [1/norm(discretized_y(y)[i]+0.0001*p[M2,i])*(discretized_y(y)[i]+0.0001*p[M2,i]) for i in 1:N]
 end;
 #y_0 = rand(M2)
 
@@ -165,7 +157,8 @@ function A(M, y, X)
 	Ay = zero_vector(M, y)
 	C = -1/h*Diagonal([ones(3)..., 0])
 	for i in 1:N
-		E = Diagonal([1/h * (2+(-Oy[j-1][1:3]+2*Oy[j][1:3]-Oy[j+1][1:3])'*(-Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][j] - Oy[i][1:3])) for j in 1:3])
+#		E = Diagonal([1/h * (2+(-Oy[j-1][1:3]+2*Oy[j][1:3]-Oy[j+1][1:3])'*(-Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][j] - Oy[i][1:3])) for j in 1:3])
+		E = Diagonal([1/h * (2+(-Oy[i-1][1:3]+2*Oy[i][1:3]-Oy[i+1][1:3])'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3])) for j in 1:3])
 		E = vcat(E, y[i][1:3]')
 		E = hcat(E, [y[i][1:3]...,0])
 		if i == 1
@@ -196,14 +189,58 @@ begin
 	discretized_ylambda = [[y(Ωi)...,0] for Ωi in Omega]
 end
 
+# ╔═╡ 439574d4-b78b-4610-81f9-143c6d049573
+B3 = get_basis(M3, discretized_ylambda, DefaultOrthonormalBasis());
+
+# ╔═╡ 04e55f95-94c3-4f0f-a51c-db74b6ae429a
+b3 = get_vectors(M3, discretized_ylambda, B3);
+
+# ╔═╡ add85a20-58b0-4b74-a66c-98cc3b74cfa6
+begin
+    Ac = zeros(manifold_dimension(M3),manifold_dimension(M3));
+    for (i,b) in enumerate(b3)
+	  Ac[:,i] = get_coordinates(M3, discretized_ylambda, A(M3, discretized_ylambda, b), B3)
+   end
+end
+
+# ╔═╡ 1ed8903b-98dd-4e88-97e4-66ffc357506c
+det(Ac)
+
+# ╔═╡ 000bcde0-5a29-4ba5-9c7c-e2fc40ea199e
+Ac
+
+# ╔═╡ 74848c8a-fe1d-49d2-873f-c6f7fd081d39
+det(Ac)
+
+# ╔═╡ df272fef-a844-4853-a9a8-87d5db0b6ef2
+bc = get_coordinates(M3, discretized_ylambda, b(M3, discretized_ylambda), B3)
+
+# ╔═╡ 02faf6d3-8a19-4cb7-9824-f035d02e2b4d
+Xc = Ac \ (-bc)
+
+# ╔═╡ c0aad8b6-7f95-431e-ae9d-0215b9a80bda
+res_c = get_vector(M3, discretized_ylambda, Xc, B3)
+
 # ╔═╡ c2251ffd-2248-4845-9b64-4f58a7d18809
 TyM = TangentSpace(M3, discretized_ylambda);
 
-# ╔═╡ 374c7849-ddc4-4564-9f98-d2d0607e3774
-res = conjugate_residual(TyM, A, b; debug=[:Iteration, :Cost, " | ",:GradientNorm, 25,"\n",:Stop]);
+# ╔═╡ ccc7f9c1-1677-4205-a1eb-ca03521a64e2
+manifold_dimension(M3)
 
-# ╔═╡ a92f2332-51c8-4a57-af48-93b8c610d38f
-res_norms_of_tangentvectors = [norm(res[i][1:3]) for i in 1:N]
+# ╔═╡ 374c7849-ddc4-4564-9f98-d2d0607e3774
+@time res = conjugate_residual(TyM, A, b; stopping_criterion=StopAfterIteration(300), debug=[:Iteration, :Cost, " | ",:GradientNorm, 100,"\n",:Stop]);
+
+# ╔═╡ 57e24ad7-a076-4c8e-80ac-5acad19a2203
+res;
+
+# ╔═╡ 64b5e297-5186-4488-b8d8-03aab78d89d1
+res_c;
+
+# ╔═╡ ba242dea-2c53-4d89-9bc2-3b88f75722da
+norm(M3, discretized_ylambda, A(M3,discretized_ylambda,res) + b(M3,discretized_ylambda))
+
+# ╔═╡ 87667dcb-1f13-436e-80b3-6d91d9922d0e
+norm(M3, discretized_ylambda, A(M3,discretized_ylambda,res_c) + b(M3,discretized_ylambda))
 
 # ╔═╡ Cell order:
 # ╠═6e502c97-0b1a-4403-8f81-6c15c832ce97
@@ -213,6 +250,7 @@ res_norms_of_tangentvectors = [norm(res[i][1:3]) for i in 1:N]
 # ╠═4bfb39d0-a561-4dec-a59a-9c4bffc15b8d
 # ╠═44630e2e-439e-42be-ab12-8366ba2e7335
 # ╠═ca8817dd-117c-4f98-b5c3-df3167adacdd
+# ╠═42ab08f5-c7e6-4a54-8df1-81df0e75c566
 # ╠═026fb1e8-0ca2-4b02-bc70-1d625c907ea2
 # ╠═f42ccb22-16aa-4857-b3e2-5c480d3615da
 # ╠═dce98ded-fbd7-49c3-a3bd-fc9bae4bdacb
@@ -220,7 +258,6 @@ res_norms_of_tangentvectors = [norm(res[i][1:3]) for i in 1:N]
 # ╠═700b7f9f-93cb-4c01-b470-6a42fb129af4
 # ╠═29417198-97f6-44d9-8e8b-df92a93ac1d5
 # ╠═56128130-b9a4-4fed-8da5-16d869fc3621
-# ╠═01912d65-df98-4d29-b60e-7466c069972c
 # ╠═6111683a-ee67-4ce6-b7e8-b5fd0c4aab72
 # ╠═a6bb5c25-22fc-4ffc-a32c-dfd30a3519bc
 # ╠═9325a36b-0ae0-45b3-ba6f-9465e3097b46
@@ -235,8 +272,21 @@ res_norms_of_tangentvectors = [norm(res[i][1:3]) for i in 1:N]
 # ╠═8d48f6e9-65a9-40e8-8fba-598a1bf8cb45
 # ╠═53cad866-4efd-4558-ab84-938a0ab8f726
 # ╠═bf2d374a-ae6a-44d7-a9ff-0316785bf545
+# ╠═439574d4-b78b-4610-81f9-143c6d049573
+# ╠═04e55f95-94c3-4f0f-a51c-db74b6ae429a
+# ╠═add85a20-58b0-4b74-a66c-98cc3b74cfa6
+# ╠═1ed8903b-98dd-4e88-97e4-66ffc357506c
+# ╠═000bcde0-5a29-4ba5-9c7c-e2fc40ea199e
 # ╠═13981f8e-0e10-4432-954c-6d5d79cc26e6
+# ╠═df272fef-a844-4853-a9a8-87d5db0b6ef2
+# ╠═02faf6d3-8a19-4cb7-9824-f035d02e2b4d
+# ╠═74848c8a-fe1d-49d2-873f-c6f7fd081d39
+# ╠═c0aad8b6-7f95-431e-ae9d-0215b9a80bda
 # ╠═56fd52a0-e09c-4c78-b4d7-515b7519219e
 # ╠═c2251ffd-2248-4845-9b64-4f58a7d18809
+# ╠═ccc7f9c1-1677-4205-a1eb-ca03521a64e2
 # ╠═374c7849-ddc4-4564-9f98-d2d0607e3774
-# ╠═a92f2332-51c8-4a57-af48-93b8c610d38f
+# ╠═57e24ad7-a076-4c8e-80ac-5acad19a2203
+# ╠═64b5e297-5186-4488-b8d8-03aab78d89d1
+# ╠═ba242dea-2c53-4d89-9bc2-3b88f75722da
+# ╠═87667dcb-1f13-436e-80b3-6d91d9922d0e
