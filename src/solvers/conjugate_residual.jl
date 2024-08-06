@@ -28,7 +28,7 @@ performed the following steps at iteration ``k=0,…`` until the `stopping_crite
 6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(k+1)} = -Z + β_k Y^{(k)}``
 
-Note that the right hand side of Step 7 is the same as evaluating ``\mathcal A[d^{(k+1)]``, but avoids the actual evaluation
+Note that the right hand side of Step 7 is the same as evaluating ``\mathcal A[d^{(k+1)}]``, but avoids the actual evaluation
 
 # Input
 
