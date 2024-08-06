@@ -361,7 +361,11 @@ function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState,
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
 
-    # TODO: parse parameters to sub_state
+    # TODO: pass parameters to sub_state
+    # set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(N, q)) Set start point x0
+    set_manopt_parameter!(s.sub_problem, :Manifold, :Basepoint, s.p)
+
+    set_iterate!(s.sub_state, get_manifold(s.sub_problem), s.X)
     solve!(s.sub_problem, s.sub_state)
     s.X = get_solver_result(s.sub_state)
     # retract

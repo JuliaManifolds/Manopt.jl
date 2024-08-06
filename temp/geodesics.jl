@@ -242,6 +242,29 @@ norm(M3, discretized_ylambda, A(M3,discretized_ylambda,res) + b(M3,discretized_y
 # ╔═╡ 87667dcb-1f13-436e-80b3-6d91d9922d0e
 norm(M3, discretized_ylambda, A(M3,discretized_ylambda,res_c) + b(M3,discretized_ylambda))
 
+# ╔═╡ a9ce4e0f-439a-4aa5-b7d6-83b275458fff
+# Ideen
+# (a) closed form solution (wie oben mit Ac und bc)
+# solve_linear_system(M, A, b, x0)
+# * super langsam
+# * vielleicht ein erster einfacher Ansatz
+#
+# Frmps(problem, newtonstate, k) = solve_linear_system(problem.manifold, A, b, newtonstate.p)
+# dann 
+# (b) wir benutzen einen Subsolver.
+#=
+p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, p;
+	# A automatisch aus f_second_derivative erzeugen
+	A=
+    b=
+    sub_problem=DefaultProblem(TyM, SymmetricLinearSystemObjective(A,b),
+	sub_state=ConjugateResidualState(TyM, SymmetricLinearSystemObjective(A,b))
+	stopping_criterion=StopAfterIteration(15),
+	retraction_method=ProjectionRetraction(),
+	debug=[:Iteration, :Change, 1, "\n", :Stop]
+)
+=#
+
 # ╔═╡ Cell order:
 # ╠═6e502c97-0b1a-4403-8f81-6c15c832ce97
 # ╠═441ed744-8225-417b-9ee7-258b5dc11a78
@@ -290,3 +313,4 @@ norm(M3, discretized_ylambda, A(M3,discretized_ylambda,res_c) + b(M3,discretized
 # ╠═64b5e297-5186-4488-b8d8-03aab78d89d1
 # ╠═ba242dea-2c53-4d89-9bc2-3b88f75722da
 # ╠═87667dcb-1f13-436e-80b3-6d91d9922d0e
+# ╠═a9ce4e0f-439a-4aa5-b7d6-83b275458fff
