@@ -13,8 +13,8 @@ begin
 	using Manopt
 	using Manifolds
 	using OffsetArrays
-	using Plots
 	using Random
+    using WGLMakie, Makie, GeometryTypes
 end;
 
 # ╔═╡ caf81526-dfb2-438e-99d2-03c6b60405af
@@ -40,7 +40,8 @@ discretized_ylambda = [[y(Ωi)...,1] for Ωi in Omega]
 # ╔═╡ 7e6db5df-7f76-4235-94e9-e7561b0c3e06
 begin
 	Random.seed!(4)
-	f = 10*rand(TangentBundle(M3))
+	#f = 10*rand(TangentBundle(M3))
+	f = [[0.0, 10.0, 0.0] for _ in 1:N]
 	#f = [1/norm(0.1*p[TangentBundle(M3),i])*(+0.1*p[TangentBundle(M3),i]) for i in 1:N]
 end;
 
@@ -116,13 +117,26 @@ discretized_ylambda
 
 # ╔═╡ ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
 begin
-	pythonplot()
-	S = Sphere(2)
-	pts = [ [1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0] ]
-	scene = plot(S, p_res; wireframe_color=colorant"#CCCCCC", markersize=1)
+    n = 30
+    π1(x) = x[1]
+    π2(x) = x[2]
+    π3(x) = x[3]
+    level_h(x) = [cos(x[1])sin(x[2]), sin(x[1])sin(x[2]), cos(x[2])]
+    U = [[θ, ϕ] for θ in LinRange(0, 2π, n), ϕ in LinRange(0, π, n)]
+	pts = 0.99 .* level_h.(U)
+	scene = Scene()
+    cam3d!(scene)
+	surface!(scene, π1.(pts), π2.(pts), π3.(pts), colorrange = (-2,-1), highclip=(:gray, 0.3), shading=false, transparency=true)
+	#scene = plot(S, p_res; wireframe_color=colorant"#CCCCCC", markersize=1)
 	#plot(S, discretized_ylambda; wireframe_color=colorant"#CCCCCC", markersize=1)
 	#plot!(scene, S, pts; wireframe=false, geodesic_interpolation=100, linewidth=2)
+	scatter!(scene, π1.(p_res), π2.(p_res), π3.(p_res); markersize =4)
+	scatter!(scene, π1.(discretized_ylambda), π2.(discretized_ylambda), π3.(discretized_ylambda); markersize =3, color=:blue)
+	scene
 end
+
+# ╔═╡ 8e5c0307-25fc-4ba6-991f-f4cbd1cd08a3
+
 
 # ╔═╡ Cell order:
 # ╠═b7726008-53f6-11ef-216f-c1984c3e1e7b
@@ -141,3 +155,4 @@ end
 # ╠═5d0a6ccb-a0a0-44b9-a80a-cb244db00af7
 # ╠═b083f8e4-0dff-43d5-8bce-0f4dd85d9569
 # ╠═ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
+# ╠═8e5c0307-25fc-4ba6-991f-f4cbd1cd08a3
