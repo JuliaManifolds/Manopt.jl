@@ -365,7 +365,7 @@ function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState,
     # set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(N, q)) Set start point x0
     set_manopt_parameter!(s.sub_problem, :Manifold, :Basepoint, s.p)
 
-    set_iterate!(s.sub_state, get_manifold(s.sub_problem), s.X)
+    set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(get_manifold(s.sub_problem), s.p))
     solve!(s.sub_problem, s.sub_state)
     s.X = get_solver_result(s.sub_state)
     # retract

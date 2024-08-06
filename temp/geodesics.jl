@@ -265,6 +265,26 @@ p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, 
 )
 =#
 
+# ╔═╡ cf9075b5-34a4-4011-bddc-3634a26c2651
+function solve_linear_system(M, A, b, p)
+	B = get_basis(M, p, DefaultOrthonormalBasis())
+	base = get_vectors(M, p, B)
+	Ac = zeros(manifold_dimension(M),manifold_dimension(M));
+    for (i,basis_vector) in enumerate(base)
+	  Ac[:,i] = get_coordinates(M, p, A(M, p, basis_vector), B)
+	end
+	bc = get_coordinates(M, p, b(M, p), B)
+	Xc = Ac \ (-bc)
+	res_c = get_vector(M, p, Xc, B)
+	return res_c
+end
+
+# ╔═╡ c3bda27e-1309-4229-b3bb-90ba5c01a7cf
+res_c2 = solve_linear_system(M3, A, b, discretized_ylambda)
+
+# ╔═╡ 42201bc1-1937-4862-b7a6-d5e9c0f83808
+res
+
 # ╔═╡ Cell order:
 # ╠═6e502c97-0b1a-4403-8f81-6c15c832ce97
 # ╠═441ed744-8225-417b-9ee7-258b5dc11a78
@@ -314,3 +334,6 @@ p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, 
 # ╠═ba242dea-2c53-4d89-9bc2-3b88f75722da
 # ╠═87667dcb-1f13-436e-80b3-6d91d9922d0e
 # ╠═a9ce4e0f-439a-4aa5-b7d6-83b275458fff
+# ╠═cf9075b5-34a4-4011-bddc-3634a26c2651
+# ╠═c3bda27e-1309-4229-b3bb-90ba5c01a7cf
+# ╠═42201bc1-1937-4862-b7a6-d5e9c0f83808

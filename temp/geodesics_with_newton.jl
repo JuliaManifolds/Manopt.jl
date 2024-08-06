@@ -96,7 +96,7 @@ function b(M, y)
 end
 
 # ╔═╡ c1408f56-fafb-4580-bbad-5e7c6c8a613c
-discretized_ylambda = [[y(Ωi)...,0] for Ωi in Omega];
+discretized_ylambda = [[y(Ωi)...,1.0] for Ωi in Omega];
 
 # ╔═╡ c5a084e7-d654-46fe-ba44-0563e7446195
 M3 = PowerManifold(Euclidean(4), NestedPowerRepresentation(), N);
@@ -106,15 +106,17 @@ TyM = TangentSpace(M3, discretized_ylambda);
 
 # ╔═╡ 5a229c03-4dc8-4346-bbec-f6d5812ade10
 function connection_map(E, q)
-    return
+    return q
 end
+
+# ╔═╡ a9026295-3e8a-44b6-845e-808f01ad54f2
+discretized_ylambda[1]
 
 # ╔═╡ 844c027c-5f42-4d27-a1fb-2b01ec4404ac
 p_res = vectorbundle_newton(M3, TangentBundle(M3), discretized_energy_derivative, discretized_energy_second_derivative, connection_map, discretized_ylambda;
     sub_problem=DefaultManoptProblem(TyM, SymmetricLinearSystemObjective(A,b)),
 	sub_state=ConjugateResidualState(TyM, SymmetricLinearSystemObjective(A,b)),
 	stopping_criterion=StopAfterIteration(15),
-	#retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, :Change, 1, "\n", :Stop]
 )
 
@@ -132,4 +134,5 @@ p_res = vectorbundle_newton(M3, TangentBundle(M3), discretized_energy_derivative
 # ╠═c5a084e7-d654-46fe-ba44-0563e7446195
 # ╠═c51df677-1c05-4637-8670-894b2611fda2
 # ╠═5a229c03-4dc8-4346-bbec-f6d5812ade10
+# ╠═a9026295-3e8a-44b6-845e-808f01ad54f2
 # ╠═844c027c-5f42-4d27-a1fb-2b01ec4404ac

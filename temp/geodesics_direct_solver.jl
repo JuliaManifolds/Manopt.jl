@@ -19,7 +19,7 @@ end;
 
 # ╔═╡ b457e285-89de-410b-8b6a-f83b2c87e8b3
 begin
-	N=25
+	N=300
 	h = 1/(N+2)*π/2
 	Omega = range(; start=0.0, stop = π/2, length=N+2)[2:end-1]
 	y0 = [0,0,1] # startpoint of geodesic
@@ -72,7 +72,7 @@ discretized_ylambda = [[y(Ωi)...,1] for Ωi in Omega]
 
 # ╔═╡ 91c4d59f-bbb7-467d-89af-9327b219c6d8
 function connection_map(E, q)
-    return
+    return q
 end
 
 # ╔═╡ 1814b9b3-4b1c-42a1-ace6-c065e7cf817e
@@ -98,8 +98,14 @@ p_res = vectorbundle_newton(M3, TangentBundle(M3), b, A, connection_map, discret
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=StopAfterIteration(10),
 	#retraction_method=ProjectionRetraction(),
-	debug=[:Iteration, :Change, 1, "\n", :Stop]
+	debug=[:Iteration, (:Change, "Change: %1.8e"), 1, "\n", :Stop]
 )
+
+# ╔═╡ 80bce5a2-1f27-4aad-b8a5-7b5e45cf17e0
+p_res
+
+# ╔═╡ 2eeb7627-5784-4677-9ec7-8077a0c051c9
+discretized_ylambda
 
 # ╔═╡ 3a22cc9a-770e-4494-9287-dd8fc2238ee7
 begin
@@ -109,13 +115,16 @@ begin
 end;
 
 # ╔═╡ d3c50114-acc3-4b60-b1c1-3658032b4b7d
-p_res2 = vectorbundle_newton(M3, TangentBundle(M3), b, A, connection_map, y_0;
+@time p_res2 = vectorbundle_newton(M3, TangentBundle(M3), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=StopAfterIteration(10),
+	stopping_criterion=StopAfterIteration(20),
 	#retraction_method=ProjectionRetraction(),
-	debug=[:Iteration, :Change, 1, "\n", :Stop]
+	debug=[:Iteration, (:Change, "Last Change: %1.9e"), 1, "\n", :Stop]
 )
+
+# ╔═╡ 50b2e338-c807-414b-b715-f0a08ecfb9af
+p_res2
 
 # ╔═╡ Cell order:
 # ╠═1adeba2e-53cf-11ef-15b8-9146d96dd44c
@@ -130,5 +139,8 @@ p_res2 = vectorbundle_newton(M3, TangentBundle(M3), b, A, connection_map, y_0;
 # ╠═e7f593e8-9305-4e3a-956f-1e3754a4ac80
 # ╠═1814b9b3-4b1c-42a1-ace6-c065e7cf817e
 # ╠═0a79f7c2-d016-4186-b52c-3f0ebc7a829f
+# ╠═80bce5a2-1f27-4aad-b8a5-7b5e45cf17e0
+# ╠═2eeb7627-5784-4677-9ec7-8077a0c051c9
 # ╠═3a22cc9a-770e-4494-9287-dd8fc2238ee7
 # ╠═d3c50114-acc3-4b60-b1c1-3658032b4b7d
+# ╠═50b2e338-c807-414b-b715-f0a08ecfb9af
