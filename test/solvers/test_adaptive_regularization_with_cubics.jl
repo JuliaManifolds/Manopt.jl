@@ -224,7 +224,8 @@ include("../utils/example_tasks.jl")
         )
         @test isapprox(M, p_min, q3)
 
-        # test that we do not het nan if we start at the minimizer
+        # test that this still returns the minimizer, that is when starting
+        # at the minimizer
         r1 = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p_min)
     end
 

@@ -292,12 +292,13 @@ where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector 
 last direction multiplied by momentum ``m``.
 
 # Fields
-* `p_old`:                   (`rand(M)`) remember the last iterate for parallel transporting the last direction
-* `momentum`:                (`0.2`) factor for momentum
-* `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions
+
+* `p_old`:  remember the last iterate for parallel transporting the last direction
+* `momentum`: factor for momentum
+* `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) vector transport method to use
-* `X_old`:                   (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
+* `vector_transport_method`: vector transport method to use
+* `X_old`: the last gradient/direction update added as momentum
 
 # Constructors
 
@@ -307,7 +308,8 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
         M::AbstractManifold;
         p=rand(M),
         s::DirectionUpdateRule=IdentityUpdateRule();
-        X=zero_vector(p.M, x0), momentum=0.2
+        X=zero_vector(M, p),
+        momentum=0.2
         vector_transport_method=default_vector_transport_method(M, typeof(p)),
     )
 

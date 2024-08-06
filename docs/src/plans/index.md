@@ -26,7 +26,7 @@ The following symbols are used.
 | Symbol       | Used in  | Description                                                |
 | :----------- | :------ | :--------------------------------------------------------- |
 | `:Activity` | [`DebugWhenActive`](@ref) | activity of the debug action stored within |
-| `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at |
+| `:Basepoint` | [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) | the point the tangent space is at |
 | `:Cost` | generic |the cost function (within an objective, as pass down) |
 | `:Debug` | [`DebugSolverState`](@ref) | the stored `debugDictionary` |
 | `:Gradient` | generic | the gradient function (within an objective, as pass down) |

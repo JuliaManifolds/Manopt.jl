@@ -10,8 +10,8 @@ The types can be used to still dispatch on also the undecorated objective type `
 # Fields
 
 * `objective`: the objective that is defined in the embedding
-* `p`:         (`nothing`) a point in the embedding.
-* `X`:         (`nothing`) a tangent vector in the embedding
+* `p=nothing`: a point in the embedding.
+* `X=nothing`: a tangent vector in the embedding
 
 When a point in the embedding `p` is provided, `embed!` is used in place of this point to reduce
 memory allocations. Similarly `X` is used when embedding tangent vectors

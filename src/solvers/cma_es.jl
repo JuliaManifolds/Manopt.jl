@@ -352,20 +352,20 @@ setting.
 
 # Optional
 
-* `p_m`:                (`rand(M)`) an initial point `p`
-* `σ`:                  (`1.0`) initial standard deviation
+* `p_m=rand(M)`: an initial point `p`
+* `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)
-* `tol_fun`:            (`1e-12`) tolerance for the `StopWhenPopulationCostConcentrated`, similar to
+* `tol_fun=1e-12`: tolerance for the `StopWhenPopulationCostConcentrated`, similar to
   absolute difference between function values at subsequent points
-* `tol_x`:              (`1e-12`) tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
+* `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-* `stopping_criterion`: (`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`)
-* `retraction_method`:  (`default_retraction_method(M, typeof(p_m))`)
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p_m))`)
+* `stopping_criterion=default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`:
+* `retraction_method=default_retraction_method(M, typeof(p_m))`:
+* `vector_transport_method=default_vector_transport_method(M, typeof(p_m))`:
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
-* `rng`:                (`default_rng()`) random number generator for generating new points
+* `rng=default_rng()`: random number generator for generating new points
   on `M`
 
 # Output
@@ -729,7 +729,7 @@ norm of `σ * p_c` is smaller than `tol`. This corresponds to `TolX` condition f
 
 # Fields
 
-* `tol` the tolerance to check against
+* `tol` the tolerance to verify against
 * `at_iteration` an internal field to indicate at with iteration ``i \geq 0`` the tolerance was met.
 
 # Constructor

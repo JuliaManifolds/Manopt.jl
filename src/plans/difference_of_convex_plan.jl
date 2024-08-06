@@ -225,7 +225,7 @@ where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
 
 # Fields
 
-* `cost`:     (`nothing`) implementation of ``f(p) = g(p)-h(p)`` (optional)
+* `cost`:     implementation of ``f(p) = g(p)-h(p)``
 * `gradient`: the gradient of the cost
 * `grad_h!!`: a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
 

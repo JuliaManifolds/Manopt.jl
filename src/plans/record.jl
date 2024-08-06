@@ -216,7 +216,7 @@ end
 @doc raw"""
     RecordEvery <: RecordAction
 
-record only every $i$th iteration.
+record only every ``k``th iteration.
 Otherwise (optionally, but activated by default) just update internal tracking
 values.
 

@@ -42,7 +42,7 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 * `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
@@ -695,12 +695,13 @@ The constructor accepts a printing function and some (shared) storage, which
 should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
-DebugDualResidual()
+DebugDualResidual(; kwargs...)
 
-with the keywords
-* `io` (`stdout`) - stream to perform the debug to
-* format (`"$prefix%s"`) format to print the dual residual, using the
-* `prefix` (`"Dual Residual: "`) short form to just set the prefix
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="$prefix%s"`: format to print the dual residual, using the
+* `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugDualResidual <: DebugAction
@@ -756,12 +757,13 @@ should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
 
-    DebugPrimalResidual()
+    DebugPrimalResidual(; kwargs...)
 
-with the keywords
-* `io` (`stdout`) - stream to perform the debug to
-* format (`"$prefix%s"`) format to print the dual residual, using the
-* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="$prefix%s"`: format to print the dual residual, using the
+* `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalResidual <: DebugAction
@@ -818,9 +820,12 @@ should at least record `:Iterate`, `:X` and `:n`.
     DebugPrimalDualResidual()
 
 with the keywords
-* `io` (`stdout`) - stream to perform the debug to
-* format (`"$prefix%s"`) format to print the dual residual, using the
-* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="$prefix%s"`: format to print the dual residual, using the
+* `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
