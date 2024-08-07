@@ -14,7 +14,7 @@ begin
 	using Manifolds
 	using OffsetArrays
 	using Random
-    using WGLMakie, Makie, GeometryTypes
+    using WGLMakie, Makie, GeometryTypes, Colors
 end;
 
 # ╔═╡ caf81526-dfb2-438e-99d2-03c6b60405af
@@ -122,19 +122,30 @@ discretized_ylambda
 
 # ╔═╡ ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
 begin
-    n = 30
-    π1(x) = x[1]
-    π2(x) = x[2]
-    π3(x) = x[3]
-    level_h(x) = [cos(x[1])sin(x[2]), sin(x[1])sin(x[2]), cos(x[2])]
-    U = [[θ, ϕ] for θ in LinRange(0, 2π, n), ϕ in LinRange(0, π, n)]
-	pts = 0.99 .* level_h.(U)
-	scene = Scene()
-    cam3d!(scene)
-	surface!(scene, π1.(pts), π2.(pts), π3.(pts), colorrange = (-2,-1), highclip=(:gray, 0.3), shading=NoShading, transparency=true)
-	scatter!(scene, π1.(p_res), π2.(p_res), π3.(p_res); markersize =4)
-	scatter!(scene, π1.(discretized_ylambda), π2.(discretized_ylambda), π3.(discretized_ylambda); markersize =3, color=:blue)
-	scene
+n = 45
+u = range(0,stop=2*π,length=n);
+v = range(0,stop=π,length=n);
+sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
+for i in 1:n
+    for j in 1:n
+        sx[i,j] = cos.(u[i]) * sin(v[j]);
+        sy[i,j] = sin.(u[i]) * sin(v[j]);
+        sz[i,j] = cos(v[j]);
+    end
+end
+fig, ax, plt = surface(
+  sx,sy,sz,
+  color = fill(RGBA(1.,1.,1.,0.3), n, n),
+  shading = Makie.automatic
+)
+ax.show_axis = false
+wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3))
+    π1(x) = 1.02*x[1]
+    π2(x) = 1.02*x[2]
+    π3(x) = 1.02*x[3]
+	scatter!(ax, π1.(p_res), π2.(p_res), π3.(p_res); markersize =8)
+	scatter!(ax, π1.(discretized_ylambda), π2.(discretized_ylambda), π3.(discretized_ylambda); markersize =3, color=:blue)
+	fig
 end
 
 # ╔═╡ 9e5c02e0-15d2-4c3e-b70d-70fd9b20f65c
