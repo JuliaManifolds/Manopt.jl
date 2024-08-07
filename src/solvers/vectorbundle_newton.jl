@@ -250,15 +250,19 @@ end
 raw"""
     get_submersion(M, p)
 
+    ```math
+    c: ℝ^n → ℝ
+    ```
+
     returns the submersion at point ``p`` which defines the manifold
-    ``\mathcal M = \{p : c(p) = 0 \}``
+    ``\mathcal M = \{p \in \bbR^n : c(p) = 0 \}``
 """
 function get_submersion(M::AbstractManifold, p) end
 
 raw"""
     get_submersion_derivative(M,p)
 
-    returns the derivative ``c'(p) : T_p\mathcal{M} \to \mathcal R``of the submersion at point ``p`` which defines the manifold in matrix form
+    returns the derivative ``c'(p) : T_p\mathcal{M} \to \mathcal R^{n-d}`` of the submersion at point ``p`` which defines the manifold in matrix form
 """
 function get_submersion_derivative(M::AbstractManifold, p) end
 
@@ -369,7 +373,7 @@ function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState,
     solve!(s.sub_problem, s.sub_state)
     s.X = get_solver_result(s.sub_state)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.retraction_method)
+    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize(mp, s, k), s.retraction_method)
     return s
 end
 
