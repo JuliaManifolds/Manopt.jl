@@ -17,6 +17,34 @@ begin
     using WGLMakie, Makie, GeometryTypes, Colors
 end;
 
+# ╔═╡ 668bf47a-5ea8-4fbb-beb4-087569f024c5
+begin
+	# Hack fix.
+	using ManifoldsBase
+	using ManifoldsBase: PowerManifoldNested, get_iterator, _access_nested, _read, _write
+	import ManifoldsBase: _get_vectors
+	function _get_vectors(
+    M::PowerManifoldNested,
+    p,
+    B::CachedBasis{𝔽,<:AbstractBasis{𝔽},<:PowerBasisData},
+) where {𝔽}
+    zero_tv = zero_vector(M, p)
+    rep_size = representation_size(M.manifold)
+    vs = typeof(zero_tv)[]
+    for i in get_iterator(M)
+        b_i = _access_nested(M, B.data.bases, i)
+        p_i = _read(M, rep_size, p, i)
+        # println(get_vectors(M.manifold, p_i, b_i))
+        for v in get_vectors(M.manifold, p_i, b_i) #b_i.data
+            new_v = copy(M, p, zero_tv)
+            copyto!(M.manifold, _write(M, rep_size, new_v, i), p_i, v)
+            push!(vs, new_v)
+        end
+    end
+    return vs
+end
+end
+
 # ╔═╡ caf81526-dfb2-438e-99d2-03c6b60405af
 begin
 	N=300
@@ -83,6 +111,7 @@ S = Manifolds.Sphere(2)
 function A(M, y, X)
 	Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
 	Ay = zero_vector(M, y)
+	P = M.manifold
 	#C = -1/h*Diagonal([ones(3)..., 0])
 	for i in 1:N
 #		E = Diagonal([1/h * (2+(-Oy[j-1][1:3]+2*Oy[j][1:3]-Oy[j+1][1:3])'*(-Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][j] - Oy[i][1:3])) for j in 1:3])
@@ -95,13 +124,13 @@ function A(M, y, X)
 		#E = vcat(E, y_i')
 		#E = hcat(E, [y_i...,0])
 		if i == 1
-			Ay[M, i][M.manifold, 1] = E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(Oy[M, i][M.manifold, 2]) - 1/h*X[M, i+1][M.manifold,1]
-			Ay[M, i][M.manifold, 2] = get_submersion_derivative(M.manifold[1], y_i) * X[M, i][M.manifold, 1]
+			Ay[M, i][P, 1] = E*X[M, i][P, 1] + get_submersion_derivative(P[1], y_i)' * only(X[M, i][P, 2]) - 1/h*X[M, i+1][P,1]
+			Ay[M, i][P, 2] = get_submersion_derivative(P[1], y_i) * X[M, i][P, 1]
 		elseif i == N
-			Ay[M, i][M.manifold, 1] = - 1/h*X[M, i-1][M.manifold,1] + E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(Oy[M, i][M.manifold, 2])
+			Ay[M, i][M.manifold, 1] = - 1/h*X[M, i-1][M.manifold,1] + E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(X[M, i][M.manifold, 2])
 			Ay[M, i][M.manifold, 2] = get_submersion_derivative(M.manifold[1], y_i) * X[M, i][M.manifold, 1]
 		else
-			Ay[M, i][M.manifold, 1] = - 1/h*X[M, i-1][M.manifold,1] + E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(Oy[M, i][M.manifold, 2]) - 1/h*X[M, i+1][M.manifold,1]
+			Ay[M, i][M.manifold, 1] = - 1/h*X[M, i-1][M.manifold,1] + E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(X[M, i][M.manifold, 2]) - 1/h*X[M, i+1][M.manifold,1]
 			Ay[M, i][M.manifold, 2] = get_submersion_derivative(M.manifold[1], y_i) * X[M, i][M.manifold, 1]
 		end
 	end
@@ -138,7 +167,8 @@ function solve_linear_system(M, A, b, p)
 	base = get_vectors(M, p, B)
 	Ac = zeros(manifold_dimension(M),manifold_dimension(M));
     for (i,basis_vector) in enumerate(base)
-	  Ac[M,i] = get_coordinates(M, p, A(M, p, basis_vector), B)
+      G = A(M, p, basis_vector)
+	  Ac[:,i] = get_coordinates(M, p, G, B)
 	end
 	bc = get_coordinates(M, p, b(M, p), B)
 	Xc = Ac \ (-bc)
@@ -166,15 +196,13 @@ p_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=StopAfterIteration(10),
 	#retraction_method=ProjectionRetraction(),
-	debug=[:Iteration, (:Change, "Change: %1.8e"), 1, "\n", :Stop]
+	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop]
 )
 
 # ╔═╡ b083f8e4-0dff-43d5-8bce-0f4dd85d9569
 discretized_ylambda
 
 # ╔═╡ ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
-# ╠═╡ disabled = true
-#=╠═╡
 begin
 n = 45
 u = range(0,stop=2*π,length=n);
@@ -197,12 +225,10 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3))
     π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
-	surface!(ax, π1.(pts), π2.(pts), π3.(pts), colorrange = (-2,-1), highclip=(:gray, 0.3), shading=NoShading, transparency=true)
 	scatter!(ax, π1.(p_res), π2.(p_res), π3.(p_res); markersize =4)
 	scatter!(ax, π1.(y_0), π2.(y_0), π3.(y_0); markersize =3, color=:blue)
 	fig
 end
-  ╠═╡ =#
 
 # ╔═╡ 9e5c02e0-15d2-4c3e-b70d-70fd9b20f65c
 # ╠═╡ disabled = true
@@ -213,6 +239,7 @@ is_point(Manifolds.Sphere(2), p_res[150][1:3]; error=:info)
 # ╔═╡ Cell order:
 # ╠═b7726008-53f6-11ef-216f-c1984c3e1e7b
 # ╠═64eb4ec9-2b11-42ed-987a-f72066adefe1
+# ╠═668bf47a-5ea8-4fbb-beb4-087569f024c5
 # ╠═caf81526-dfb2-438e-99d2-03c6b60405af
 # ╠═5e585c93-44c4-48a9-a66d-d21f32ced5fd
 # ╠═294a2d81-bff8-48f0-8cb4-9f02ad8ae9b8
