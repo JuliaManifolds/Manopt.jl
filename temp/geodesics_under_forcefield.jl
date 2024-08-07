@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.43
+# v0.19.45
 
 using Markdown
 using InteractiveUtils
@@ -39,10 +39,14 @@ discretized_ylambda = [[y(Ωi)...,1] for Ωi in Omega]
 
 # ╔═╡ 7e6db5df-7f76-4235-94e9-e7561b0c3e06
 begin
-	Random.seed!(4)
+	#Random.seed!(4)
 	#f = 10*rand(TangentBundle(M3))
-	f = [[0.0, 10.0, 0.0] for _ in 1:N]
+	#f = [[0.0, 1.0, 0.0] for _ in 1:N]
 	#f = [1/norm(0.1*p[TangentBundle(M3),i])*(+0.1*p[TangentBundle(M3),i]) for i in 1:N]
+	function f(M, p)
+		return project(M, p, [0.0, 4, 0.0])
+		#return [0.0, 1.0, 0.0]
+	end
 end;
 
 # ╔═╡ 572cddcc-bc6a-4c92-b649-b109c7233f00
@@ -52,7 +56,9 @@ function A(M, y, X)
 	C = -1/h*Diagonal([ones(3)..., 0])
 	for i in 1:N
 #		E = Diagonal([1/h * (2+(-Oy[j-1][1:3]+2*Oy[j][1:3]-Oy[j+1][1:3])'*(-Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][j] - Oy[i][1:3])) for j in 1:3])
-		E = Diagonal([1/h * (2+(-Oy[i-1][1:3]+2*Oy[i][1:3]-Oy[i+1][1:3])'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3])) - h * f[i][1:3]'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3]) for j in 1:3])
+		E = Diagonal([1/h * (2+(-Oy[i-1][1:3]+2*Oy[i][1:3]-Oy[i+1][1:3])'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3])) - 0.5 * (-f(Manifolds.Sphere(2), Oy[i-1][1:3])+2*f(Manifolds.Sphere(2), Oy[i][1:3])-f(Manifolds.Sphere(2),Oy[i+1][1:3]))'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3]) 
+		#- h * f(Manifolds.Sphere(2), Oy[i][1:3])' * ([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3])
+		for j in 1:3])
 		E = vcat(E, y[i][1:3]')
 		E = hcat(E, [y[i][1:3]...,0])
 		if i == 1
@@ -72,7 +78,9 @@ function b(M, y)
 		Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
 		X = zero_vector(M,y)
 		for i in 1:length(Omega)
-			c = [ 1/h * (2*Oy[i][1:3] - Oy[i-1][1:3] - Oy[i+1][1:3])'* Matrix{Float64}(I, 3, 3)[1:3,j] + Oy[i][1:3]'*Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][4] + h * f[i][j] for j in 1:3]
+			c = [ 1/h * (2*Oy[i][1:3] - Oy[i-1][1:3] - Oy[i+1][1:3])'* Matrix{Float64}(I, 3, 3)[1:3,j] + Oy[i][1:3]'*Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][4] - 0.5 * (-f(Manifolds.Sphere(2), Oy[i-1][1:3])[j]+2*f(Manifolds.Sphere(2), Oy[i][1:3])[j]-f(Manifolds.Sphere(2), Oy[i+1][1:3])[j])
+			#- h * f(Manifolds.Sphere(2), Oy[i][1:3])[j]
+			for j in 1:3]
 			X[M, i] = [c...,0]
 		end
 		return X
@@ -109,9 +117,6 @@ p_res = vectorbundle_newton(M3, TangentBundle(M3), b, A, connection_map, discret
 	debug=[:Iteration, (:Change, "Change: %1.8e"), 1, "\n", :Stop]
 )
 
-# ╔═╡ 5d0a6ccb-a0a0-44b9-a80a-cb244db00af7
-is_point(M3, p_res)
-
 # ╔═╡ b083f8e4-0dff-43d5-8bce-0f4dd85d9569
 discretized_ylambda
 
@@ -126,17 +131,14 @@ begin
 	pts = 0.99 .* level_h.(U)
 	scene = Scene()
     cam3d!(scene)
-	surface!(scene, π1.(pts), π2.(pts), π3.(pts), colorrange = (-2,-1), highclip=(:gray, 0.3), shading=false, transparency=true)
-	#scene = plot(S, p_res; wireframe_color=colorant"#CCCCCC", markersize=1)
-	#plot(S, discretized_ylambda; wireframe_color=colorant"#CCCCCC", markersize=1)
-	#plot!(scene, S, pts; wireframe=false, geodesic_interpolation=100, linewidth=2)
+	surface!(scene, π1.(pts), π2.(pts), π3.(pts), colorrange = (-2,-1), highclip=(:gray, 0.3), shading=NoShading, transparency=true)
 	scatter!(scene, π1.(p_res), π2.(p_res), π3.(p_res); markersize =4)
 	scatter!(scene, π1.(discretized_ylambda), π2.(discretized_ylambda), π3.(discretized_ylambda); markersize =3, color=:blue)
 	scene
 end
 
-# ╔═╡ 8e5c0307-25fc-4ba6-991f-f4cbd1cd08a3
-
+# ╔═╡ 9e5c02e0-15d2-4c3e-b70d-70fd9b20f65c
+is_point(Manifolds.Sphere(2), p_res[150][1:3]; error=:info)
 
 # ╔═╡ Cell order:
 # ╠═b7726008-53f6-11ef-216f-c1984c3e1e7b
@@ -152,7 +154,6 @@ end
 # ╠═c6c8216f-7f71-4f04-a766-edadd38000fa
 # ╠═a99c6ea8-203d-4440-ac1e-2ce9c342f3e4
 # ╠═5596b132-af0f-4896-8617-bbe1d7c9bf41
-# ╠═5d0a6ccb-a0a0-44b9-a80a-cb244db00af7
 # ╠═b083f8e4-0dff-43d5-8bce-0f4dd85d9569
 # ╠═ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
-# ╠═8e5c0307-25fc-4ba6-991f-f4cbd1cd08a3
+# ╠═9e5c02e0-15d2-4c3e-b70d-70fd9b20f65c
