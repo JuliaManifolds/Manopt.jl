@@ -78,9 +78,9 @@ end;
 
 # ╔═╡ 359b1c09-77f0-4c88-9b04-b60fd863d81a
 function A(M, y, X)
+	# Include boundary points
 	Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
 	Ay = zero_vector(M, y)
-	#C = -1/h*Diagonal([ones(3)..., 0])
 	for i in 1:N
 		y_i = Oy[M, i]
 		y_next = Oy[M, i+1]
@@ -134,7 +134,7 @@ function solve_linear_system(M, A, b, p)
 	Xc = (Ac) \ (-bc)
 	res_c = get_vector(M, p, Xc, B)
 	#println(diag(diag_A))
-	#println(cond(diag_A*Ac))
+	#println(cond(Ac))
 	#println(Ac)
 	#println(bc)
 	#println(Xc)
