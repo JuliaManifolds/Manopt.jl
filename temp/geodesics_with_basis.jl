@@ -107,9 +107,7 @@ function b(M, y)
 			y_i = Oy[M, i]
 			y_next = Oy[M, i+1]
 			y_pre = Oy[M, i-1]
-			c = [ 1/h * (2*y_i - y_pre - y_next)[j] - h * f(Manifolds.Sphere(2), y_i)[j]
-			for j in 1:3]
-			X[M, i] = c
+			X[M, i] = 1/h * (2*y_i - y_pre - y_next) .- h * f(M.manifold, y_i)
 		end
 		return X
 end
@@ -125,11 +123,14 @@ function solve_linear_system(M, A, b, p)
 	base = get_vectors(M, p, B)
 	n = manifold_dimension(M)
 	Ac = zeros(n,n);
+	bc = zeros(n)
     for (i,basis_vector) in enumerate(base)
       G = A(M, p, basis_vector)
 	  Ac[:,i] = get_coordinates(M, p, G, B)
+	  # Ac[i,:] = get_coordinates(M, p, G, B)'
+      bc[i] = b(M, p)'*basis_vector
 	end
-	bc = get_coordinates(M, p, b(M, p), B)
+	# bc = get_coordinates(M, p, b(M, p), B)
 	#diag_A = Diagonal([abs(Ac[i,i]) < 1e-12 ? 1.0 : 1.0/Ac[i,i] for i in 1:n])
 	Xc = (Ac) \ (-bc)
 	res_c = get_vector(M, p, Xc, B)
@@ -153,14 +154,29 @@ begin
 end;
 
 # ╔═╡ 2121ac73-bc7e-4084-a29f-dc9abd3a298d
-p_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
+st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=StopAfterIteration(20),
 	stepsize=ConstantStepsize(1.0),
 	#retraction_method=ProjectionRetraction(),
-	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop]
+	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop],
+	record=[:Iterate, :Change],
+	return_state=true
 )
+
+# ╔═╡ b7a906ca-15c9-405d-9031-b797d4527f37
+iterates = get_record(st_res, :Iteration, :Iterate)
+
+# ╔═╡ f95ae6ff-a967-4600-99c4-4ba73c88b6d2
+begin
+	change = get_record(st_res, :Iteration, :Change)[2:end]
+	fig_c, ax_c, plt_c = lines(1:length(change), log.(change))
+	fig_c
+end
+
+# ╔═╡ 214fe41a-c6d9-43d8-a00f-519af35214c9
+p_res = get_solver_result(st_res);
 
 # ╔═╡ 56a7fe1a-a4fd-415a-80ea-3b75deee1c13
 begin
@@ -175,10 +191,11 @@ for i in 1:n
         sz[i,j] = cos(v[j]);
     end
 end
-fig, ax, plt = surface(
+fig, ax, plt = meshscatter(
   sx,sy,sz,
-  color = fill(RGBA(1.,1.,1.,0.3), n, n),
-  shading = Makie.automatic
+  color = fill(RGBA(1.,1.,1.,0.75), n, n),
+  shading = Makie.automatic,
+  transparency=true
 )
 ax.show_axis = false
 wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3))
@@ -206,4 +223,7 @@ end
 # ╠═0f5b255b-9b6e-43d6-883d-3f1759ea2f59
 # ╠═5371c088-e0d6-4508-a1cd-1fefad8c333b
 # ╠═2121ac73-bc7e-4084-a29f-dc9abd3a298d
+# ╠═b7a906ca-15c9-405d-9031-b797d4527f37
+# ╠═f95ae6ff-a967-4600-99c4-4ba73c88b6d2
+# ╠═214fe41a-c6d9-43d8-a00f-519af35214c9
 # ╠═56a7fe1a-a4fd-415a-80ea-3b75deee1c13
