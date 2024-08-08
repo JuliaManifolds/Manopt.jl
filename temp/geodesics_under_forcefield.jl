@@ -47,7 +47,7 @@ end
 
 # ╔═╡ caf81526-dfb2-438e-99d2-03c6b60405af
 begin
-	N=300
+	N=200
 	h = 1/(N+2)*π/2
 	Omega = range(; start=0.0, stop = π/2, length=N+2)[2:end-1]
 	y0 = ArrayPartition([0,0,1], [0,]) # startpoint of geodesic
@@ -77,8 +77,6 @@ M3 = PowerManifold(Euclidean(4), NestedPowerRepresentation(), N);
 begin
 S1 = Manifolds.Sphere(2) × ℝ^1
 power = PowerManifold(S1, NestedPowerRepresentation(), N);
-
-# zugriff auf y mit y[power, i][S, 1] für punkt auf sphäre
 end;
 
 # ╔═╡ c4664660-037f-4711-8d08-24f4c404979c
@@ -90,7 +88,7 @@ end;
 discretized_ylambda = [ArrayPartition(y(Ωi),[1,]) for Ωi in Omega];
 
 # ╔═╡ d47d15a4-022b-44d2-9df2-3a7d733b1555
-discretized_ylambda[power, 3][S1, 2]
+discretized_ylambda[power, 1][S1, 2]
 
 # ╔═╡ 7e6db5df-7f76-4235-94e9-e7561b0c3e06
 begin
@@ -99,8 +97,8 @@ begin
 	#f = [[0.0, 1.0, 0.0] for _ in 1:N]
 	#f = [1/norm(0.1*p[TangentBundle(M3),i])*(+0.1*p[TangentBundle(M3),i]) for i in 1:N]
 	function f(M, p)
-		return project(M, p, [0.0, 2.0, 0.0])
-		#return [0.0, 1.0, 0.0]
+		return project(M, p, [0.0, -3.0, 0.0])
+		#return [0.0, 2, 0.0]
 	end
 end;
 
@@ -115,23 +113,24 @@ function A(M, y, X)
 	#C = -1/h*Diagonal([ones(3)..., 0])
 	for i in 1:N
 #		E = Diagonal([1/h * (2+(-Oy[j-1][1:3]+2*Oy[j][1:3]-Oy[j+1][1:3])'*(-Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][j] - Oy[i][1:3])) for j in 1:3])
-		y_i = Oy[M, i][M.manifold, 1]
-		y_next = Oy[M, i][M.manifold, 1]
-		y_pre = Oy[M, i][M.manifold, 1]
-		E = Diagonal([1/h * (2+(-y_pre+2*y_i-y_next)'*([ - (i==j ? 2.0 : 1.0) * y_i[j] for i=1:3])) - 0.5 * (project(S, y_i, -f(S, y_i)+2*f(S, y_i)-f(S,y_next)))'*([ - (i==j ? 2.0 : 1.0) * y_i[j] for i=1:3]) for j in 1:3])
-		#- h * f(Manifolds.Sphere(2), Oy[i][1:3])' * ([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3])
+		y_i = Oy[M, i][P, 1]
+		y_next = Oy[M, i+1][P, 1]
+		y_pre = Oy[M, i-1][P, 1]
+		E = Diagonal([1/h * (2+((-y_pre+2*y_i-y_next)'*([ - (i==j ? 2.0 : 1.0) * y_i[j] for i=1:3]))) - h * f(S, y_i)' * ([ - (k==j ? 2.0 : 1.0) * y_i[j] for k=1:3]) for j in 1:3])
+
+
 		#E = Diagonal([1/h * (2+(-Oy[i-1][1:3]+2*Oy[i][1:3]-Oy[i+1][1:3])'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3])) - 0.5 * (project(S, Oy[i][1:3], -f(S, Oy[i-1][1:3])-f(S,Oy[i+1][1:3])))'*([ - (i==j ? 2.0 : 1.0) * Oy[i][j] for i=1:3]) for j in 1:3])
 		#E = vcat(E, y_i')
 		#E = hcat(E, [y_i...,0])
 		if i == 1
-			Ay[M, i][P, 1] = E*X[M, i][P, 1] + get_submersion_derivative(P[1], y_i)' * only(X[M, i][P, 2]) - 1/h*X[M, i+1][P,1]
+			Ay[M, i][P, 1] = E*X[M, i][P, 1] + get_submersion_derivative(P[1], y_i)' * only(X[M, i][P, 2]) - 1/h * X[M, i+1][P,1]
 			Ay[M, i][P, 2] = get_submersion_derivative(P[1], y_i) * X[M, i][P, 1]
 		elseif i == N
-			Ay[M, i][M.manifold, 1] = - 1/h*X[M, i-1][M.manifold,1] + E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(X[M, i][M.manifold, 2])
-			Ay[M, i][M.manifold, 2] = get_submersion_derivative(M.manifold[1], y_i) * X[M, i][M.manifold, 1]
+			Ay[M, i][P, 1] = - 1/h*X[M, i-1][P,1] + E*X[M, i][P, 1] + get_submersion_derivative(P[1], y_i)' * only(X[M, i][P, 2])
+			Ay[M, i][P, 2] = get_submersion_derivative(P[1], y_i) * X[M, i][P, 1]
 		else
-			Ay[M, i][M.manifold, 1] = - 1/h*X[M, i-1][M.manifold,1] + E*X[M, i][M.manifold, 1] + get_submersion_derivative(M.manifold[1], y_i)' * only(X[M, i][M.manifold, 2]) - 1/h*X[M, i+1][M.manifold,1]
-			Ay[M, i][M.manifold, 2] = get_submersion_derivative(M.manifold[1], y_i) * X[M, i][M.manifold, 1]
+			Ay[M, i][P, 1] = - 1/h*X[M, i-1][P,1] + E*X[M, i][P, 1] + get_submersion_derivative(P[1], y_i)' * only(X[M, i][P, 2]) - 1/h*X[M, i+1][P,1]
+			Ay[M, i][P, 2] = get_submersion_derivative(P[1], y_i) * X[M, i][P, 1]
 		end
 	end
 	return Ay
@@ -142,16 +141,16 @@ function b(M, y)
 		# Include boundary points
 		Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
 		X = zero_vector(M,y)
+		P = M.manifold
 		for i in 1:length(Omega)
-			y_i = Oy[M, i][M.manifold, 1]
-			y_next = Oy[M, i][M.manifold, 1]
-			y_pre = Oy[M, i][M.manifold, 1]
-			c = [ 1/h * (2*y_i - y_pre - y_next)'* Matrix{Float64}(I, 3, 3)[1:3,j] + y_i'*Matrix{Float64}(I, 3, 3)[1:3,j]*only(Oy[M, i][M.manifold,2]) - 0.5 * (project(S, y_i, -f(S, y_pre)+2*f(S, y_i)-f(S,y_next)))[j]
-			#- h * f(Manifolds.Sphere(2), Oy[i][1:3])[j]
-			for j in 1:3]
+			y_i = Oy[M, i][P, 1]
+			y_next = Oy[M, i+1][P, 1]
+			y_pre = Oy[M, i-1][P, 1]
+			c = [ 1/h * (2*y_i - y_pre - y_next)[j] + y_i[j]*only(Oy[M, i][P,2]) - h * f(Manifolds.Sphere(2), y_i)[j]
+			for j in 1:3]			
 			#c = [ 1/h * (2*Oy[i][1:3] - Oy[i-1][1:3] - Oy[i+1][1:3])'* Matrix{Float64}(I, 3, 3)[1:3,j] + Oy[i][1:3]'*Matrix{Float64}(I, 3, 3)[1:3,j]*Oy[i][4] - 0.5 * (project(S, Oy[i][1:3], -f(S, Oy[i-1][1:3])-f(S,Oy[i+1][1:3])))[j] for j in 1:3]
-			X[M, i][M.manifold, 1] = c
-			X[M, i][M.manifold, 2] = [0,]
+			X[M, i][P, 1] = c
+			X[M, i][P, 2] = [0,]
 		end
 		return X
 end
@@ -165,14 +164,24 @@ end
 function solve_linear_system(M, A, b, p)
 	B = get_basis(M, p, DefaultOrthonormalBasis())
 	base = get_vectors(M, p, B)
-	Ac = zeros(manifold_dimension(M),manifold_dimension(M));
+	n = manifold_dimension(M)
+	Ac = zeros(n,n);
     for (i,basis_vector) in enumerate(base)
       G = A(M, p, basis_vector)
 	  Ac[:,i] = get_coordinates(M, p, G, B)
 	end
 	bc = get_coordinates(M, p, b(M, p), B)
-	Xc = Ac \ (-bc)
+	diag_A = Diagonal([abs(Ac[i,i]) < 1e-12 ? 1.0 : 1.0/Ac[i,i] for i in 1:n])
+	Xc = (Ac) \ (-bc)
+	for j in 1:N
+		Xc[3*j] = 0.0
+	end
 	res_c = get_vector(M, p, Xc, B)
+	#println(diag(diag_A))
+	#println(cond(diag_A*Ac))
+	#println(Ac)
+	#println(bc)
+	#println(Xc)
 	return res_c
 end
 
@@ -183,7 +192,7 @@ solve(problem, newtonstate, k) = solve_linear_system(problem.manifold, A, b, new
 begin
 	Random.seed!(42)
 	p = rand(M3)
-	#y_0 = [[project(S, (discretized_ylambda[i][1:3]+0.01*p[M3,i][1:3]))..., discretized_ylambda[i][4]] for i in 1:N]
+	#y_0 = [ArrayPartition(project(S, (discretized_ylambda[i][1:3]+0.01*p[M3,i][1:3])),[discretized_ylambda[i][4],]) for i in 1:N]
 	y_0 = discretized_ylambda
 end;
 
@@ -194,13 +203,11 @@ is_point(S, y_0[1][1:3])
 p_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=StopAfterIteration(10),
+	stopping_criterion=StopAfterIteration(20),
+	stepsize=ConstantStepsize(1.0),
 	#retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop]
 )
-
-# ╔═╡ b083f8e4-0dff-43d5-8bce-0f4dd85d9569
-discretized_ylambda
 
 # ╔═╡ ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
 begin
@@ -231,10 +238,10 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3))
 end
 
 # ╔═╡ 9e5c02e0-15d2-4c3e-b70d-70fd9b20f65c
-# ╠═╡ disabled = true
-#=╠═╡
-is_point(Manifolds.Sphere(2), p_res[150][1:3]; error=:info)
-  ╠═╡ =#
+is_point(Manifolds.Sphere(2), p_res[power, 5][S1, 1]; error=:info)
+
+# ╔═╡ 9efe1888-b5f2-43c1-8937-043ae98aff93
+p_res[power, 1][S1, 2]
 
 # ╔═╡ Cell order:
 # ╠═b7726008-53f6-11ef-216f-c1984c3e1e7b
@@ -258,6 +265,6 @@ is_point(Manifolds.Sphere(2), p_res[150][1:3]; error=:info)
 # ╠═be86da09-ddc7-420c-8571-ee73387b3fef
 # ╠═98100077-a040-4b7e-b832-db49913382a6
 # ╠═5596b132-af0f-4896-8617-bbe1d7c9bf41
-# ╠═b083f8e4-0dff-43d5-8bce-0f4dd85d9569
 # ╠═ea267cbc-0ad4-4fb8-b378-eff8be2d7c3f
 # ╠═9e5c02e0-15d2-4c3e-b70d-70fd9b20f65c
+# ╠═9efe1888-b5f2-43c1-8937-043ae98aff93
