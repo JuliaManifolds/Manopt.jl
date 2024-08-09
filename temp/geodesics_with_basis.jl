@@ -198,7 +198,7 @@ fig, ax, plt = meshscatter(
   transparency=true
 )
 ax.show_axis = false
-wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3))
+wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3); transparency=true)
     π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
