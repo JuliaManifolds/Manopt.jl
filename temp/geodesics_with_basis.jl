@@ -78,7 +78,17 @@ end;
 
 # ╔═╡ dfb46586-a6df-4abf-b719-9d882c1ad6a6
 function proj_prime(S, p, X, Y) # S_i*(Y)
-	return (- X*p' - p*X')*Y 
+	#return project(S, p, (- X*p' - p*X')*Y) 
+	return (- X*p' - p*X')*Y
+end
+
+# ╔═╡ 4cd9e4c6-50b9-440e-b48f-923ceda898c2
+begin
+	St = Manifolds.Sphere(2)
+	pt = [0.0, 0.0, 1.0]
+	Xt = [1.0, 0.0, 0.0]
+	Yt = [0.0, 1.0, 0.0]
+	proj_prime(St, pt, Xt, Yt)
 end
 
 # ╔═╡ 359b1c09-77f0-4c88-9b04-b60fd863d81a
@@ -92,12 +102,13 @@ function A(M, y, X)
 		y_next = Oy[M, i+1]
 		y_pre = Oy[M, i-1]
 		X_i = X[M,i]
-		Z[M,i] = - 1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
-		Z[M,i] = 0.5*proj_prime(S, y_i, X_i, Z[M,i])
+		
+		Z[M,i] = -1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
+		Z[M,i] = proj_prime(S, y_i, X_i, Z[M,i]) # This has to be fixed to an intrinsic thingy
 		if i > 1
 			Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_pre, X[M,i-1], y_i))
 		end
- 		Z[M,i] = Z[M,i] + 2/h * (X[M,i])
+		Z[M,i] = Z[M,i] + 2/h * (X[M,i])
 		if i < N
 			Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_next, X[M,i+1], y_i))
 		end
@@ -216,6 +227,44 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	fig
 end
 
+# ╔═╡ aa585ca9-e959-433a-bc64-28314c9bb578
+[y0, yT]
+
+# ╔═╡ 5ea2bd5c-de32-473f-b35c-c2018c2d1483
+begin
+M=power
+b0 = b(M, y_0)
+i = 7
+ch = 1e-6
+B = get_basis(M, y_0, DefaultOrthonormalBasis())
+base = get_vectors(M, y_0, B)
+y_1 = exp(M, y_0, ch*base[i])
+b1 = b(M, y_1)
+checkA = 1/ch*(b1 - b0)
+A0 = A(M, y_0, base[M,i])
+end
+
+# ╔═╡ dc242752-1def-4f30-94e0-8b356eeaa2e3
+y_0[M,div(i+1,2)]
+
+# ╔═╡ ccaad174-2648-408a-b57d-461c0db4f114
+base[M,i]
+
+# ╔═╡ 526e6d30-c6a7-43a6-896c-1748320cf199
+A0-checkA
+
+# ╔═╡ 18ebe91d-5b47-45f6-9e56-47e4ea2ed6e2
+A0
+
+# ╔═╡ 32c30ea4-1682-49dc-9a84-ecd32fab9813
+checkA
+
+# ╔═╡ de98b330-0065-4fdb-8a86-478ac02f0b21
+y_0[M,1]
+
+# ╔═╡ 6b456efe-5776-47f7-bfcc-ac2063f59f85
+check_vector(S, y_0[M,1], A0[M,1])
+
 # ╔═╡ Cell order:
 # ╠═05150bda-555a-11ef-02cc-fd6f8ee616be
 # ╠═04a41fef-6fac-40b9-8923-220742eb77ac
@@ -226,6 +275,7 @@ end
 # ╠═186a0713-c773-4489-8a23-4f274c1add7c
 # ╠═507e2957-3f61-407c-b272-dac9df00eb0f
 # ╠═dfb46586-a6df-4abf-b719-9d882c1ad6a6
+# ╠═4cd9e4c6-50b9-440e-b48f-923ceda898c2
 # ╠═359b1c09-77f0-4c88-9b04-b60fd863d81a
 # ╠═eac9f22e-6a5e-4bda-9460-85e0cdd17b2c
 # ╠═8ab155bc-24c1-4499-a7d1-b9206af67629
@@ -237,3 +287,12 @@ end
 # ╠═f95ae6ff-a967-4600-99c4-4ba73c88b6d2
 # ╠═214fe41a-c6d9-43d8-a00f-519af35214c9
 # ╠═56a7fe1a-a4fd-415a-80ea-3b75deee1c13
+# ╠═aa585ca9-e959-433a-bc64-28314c9bb578
+# ╠═5ea2bd5c-de32-473f-b35c-c2018c2d1483
+# ╠═dc242752-1def-4f30-94e0-8b356eeaa2e3
+# ╠═ccaad174-2648-408a-b57d-461c0db4f114
+# ╠═526e6d30-c6a7-43a6-896c-1748320cf199
+# ╠═18ebe91d-5b47-45f6-9e56-47e4ea2ed6e2
+# ╠═32c30ea4-1682-49dc-9a84-ecd32fab9813
+# ╠═de98b330-0065-4fdb-8a86-478ac02f0b21
+# ╠═6b456efe-5776-47f7-bfcc-ac2063f59f85
