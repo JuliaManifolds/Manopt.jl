@@ -47,7 +47,7 @@ end
 
 # ╔═╡ 50d33c0d-859b-4ab3-bba6-0e3a2046a2ae
 begin
-	N=200
+	N=100
 	h = 1/(N+2)*π/2
 	Omega = range(; start=0.0, stop = π/2, length=N+2)[2:end-1]
 	y0 = [0,0,1] # startpoint of geodesic
@@ -76,38 +76,46 @@ begin
 	end
 end;
 
+# ╔═╡ dfb46586-a6df-4abf-b719-9d882c1ad6a6
+function proj_prime(S, p, X, Y) # S_i*(Y)
+	return (- X*p' - p*X')*Y 
+end
+
 # ╔═╡ 359b1c09-77f0-4c88-9b04-b60fd863d81a
 function A(M, y, X)
 	# Include boundary points
 	Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
-	Ay = zero_vector(M, y)
+	S = M.manifold
+	Z = zero_vector(M, y)
 	for i in 1:N
 		y_i = Oy[M, i]
 		y_next = Oy[M, i+1]
 		y_pre = Oy[M, i-1]
-		E = Diagonal([1/h * (2+((-y_pre+2*y_i-y_next)'*([ - (i==j ? 2.0 : 1.0) * y_i[j] for i=1:3]))) - h * f(S, y_i)' * ([ - (k==j ? 2.0 : 1.0) * y_i[j] for k=1:3]) for j in 1:3])
-
-		if i == 1
-			Ay[M, i] = E*X[M, i] - 1/h * X[M, i+1]
-		elseif i == N
-			Ay[M, i] = - 1/h*X[M, i-1] + E*X[M, i]
-		else
-			Ay[M, i] = - 1/h*X[M, i-1]+ E*X[M, i] - 1/h*X[M, i+1]
+		X_i = X[M,i]
+		Z[M,i] = - 1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
+		Z[M,i] = 0.5*proj_prime(S, y_i, X_i, Z[M,i])
+		if i > 1
+			Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_pre, X[M,i-1], y_i))
+		end
+ 		Z[M,i] = Z[M,i] + 2/h * (X[M,i])
+		if i < N
+			Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_next, X[M,i+1], y_i))
 		end
 	end
-	return Ay
+	return Z
 end
 
 # ╔═╡ eac9f22e-6a5e-4bda-9460-85e0cdd17b2c
 function b(M, y)
 		# Include boundary points
 		Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
+		S = M.manifold
 		X = zero_vector(M,y)
 		for i in 1:length(Omega)
 			y_i = Oy[M, i]
 			y_next = Oy[M, i+1]
 			y_pre = Oy[M, i-1]
-			X[M, i] = 1/h * (2*y_i - y_pre - y_next) .- h * f(M.manifold, y_i)
+			X[M, i] = - 1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
 		end
 		return X
 end
@@ -132,12 +140,12 @@ function solve_linear_system(M, A, b, p)
 	end
 	# bc = get_coordinates(M, p, b(M, p), B)
 	#diag_A = Diagonal([abs(Ac[i,i]) < 1e-12 ? 1.0 : 1.0/Ac[i,i] for i in 1:n])
+	#println(Ac)
+	#println(bc)
 	Xc = (Ac) \ (-bc)
 	res_c = get_vector(M, p, Xc, B)
 	#println(diag(diag_A))
 	#println(cond(Ac))
-	#println(Ac)
-	#println(bc)
 	#println(Xc)
 	return res_c
 end
@@ -198,12 +206,13 @@ fig, ax, plt = meshscatter(
   transparency=true
 )
 ax.show_axis = false
-wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.3); transparency=true)
+wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
     π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
-	scatter!(ax, π1.(p_res), π2.(p_res), π3.(p_res); markersize =4)
-	scatter!(ax, π1.(y_0), π2.(y_0), π3.(y_0); markersize =3, color=:blue)
+	scatter!(ax, π1.(p_res), π2.(p_res), π3.(p_res); markersize =8, color=:orange)
+	scatter!(ax, π1.(y_0), π2.(y_0), π3.(y_0); markersize =8, color=:blue)
+	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
 	fig
 end
 
@@ -216,6 +225,7 @@ end
 # ╠═98507869-f90b-4149-bbb4-ab59eb1597da
 # ╠═186a0713-c773-4489-8a23-4f274c1add7c
 # ╠═507e2957-3f61-407c-b272-dac9df00eb0f
+# ╠═dfb46586-a6df-4abf-b719-9d882c1ad6a6
 # ╠═359b1c09-77f0-4c88-9b04-b60fd863d81a
 # ╠═eac9f22e-6a5e-4bda-9460-85e0cdd17b2c
 # ╠═8ab155bc-24c1-4499-a7d1-b9206af67629
