@@ -401,9 +401,9 @@ end
 # It just indicates loss of velocity, not convergence to a minimizer
 indicates_convergence(c::StopWhenSwarmVelocityLess) = false
 function (c::StopWhenSwarmVelocityLess)(
-    mp::AbstractManoptProblem, pss::ParticleSwarmState, i::Int
+    mp::AbstractManoptProblem, pss::ParticleSwarmState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         # init to correct length
         c.velocity_norms = zeros(eltype(c.velocity_norms), length(pss.swarm))
@@ -411,8 +411,8 @@ function (c::StopWhenSwarmVelocityLess)(
     end
     M = get_manifold(mp)
     c.velocity_norms .= [norm(M, p, X) for (p, X) in zip(pss.swarm, pss.velocity)]
-    if i > 0 && norm(c.velocity_norms) < c.threshold
-        c.at_iteration = i
+    if k > 0 && norm(c.velocity_norms) < c.threshold
+        c.at_iteration = k
         return true
     end
     return false

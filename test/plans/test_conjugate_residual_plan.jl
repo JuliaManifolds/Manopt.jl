@@ -23,8 +23,8 @@ using Manifolds, Manopt, Test
         @test get_cost(TpM, slso, X0) ≈ cost_value
         @test get_cost(TpM, slso2, X0) ≈ cost_value
 
-        @test Manopt.get_b(TpM, slso, X0) == bv
-        @test Manopt.get_b(TpM, slso2, X0) == bv
+        @test Manopt.get_b(TpM, slso) == bv
+        @test Manopt.get_b(TpM, slso2) == bv
 
         @test get_gradient(TpM, slso, X0) == grad_value
         @test get_gradient(TpM, slso2, X0) == grad_value

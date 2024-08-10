@@ -33,7 +33,7 @@ Tangent bundle with the Sasaki metric has 0 injectivity radius, so the maximum s
 `Hyperrectangle` also has 0 injectivity radius and an estimate based on maximum of dimensions along each index is used instead.
 For manifolds with corners, however, a line search capable of handling break points along the projected search direction should be used, and such algorithms do not call `max_stepsize`.
 
-Some solvers have a different iterate from the one used for linesearch. Then the following state can be used to wrap
+Some solvers have a different iterate from the one used for the line search. Then the following state can be used to wrap
 these locally
 
 ```@docs

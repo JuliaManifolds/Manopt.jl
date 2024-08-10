@@ -256,7 +256,7 @@ end
 function step_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
-    i::Integer,
+    k::Integer,
 ) where {mT<:AbstractManifold}
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)

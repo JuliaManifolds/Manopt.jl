@@ -51,7 +51,7 @@ with initial point `p`.
 * `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
 * `sub_state=`[`AllocatingEvaluation`](@ref)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
-* `X=`$(_link_zero_vector) specify the type of tangent vector to use.
+* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
 """
 mutable struct ProximalBundleMethodState{
     P,
@@ -312,7 +312,7 @@ function initialize_solver!(
     push!(pbms.λ, zero(R))
     return pbms
 end
-function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i)
+function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, k)
     M = get_manifold(mp)
     pbms.transported_subgradients = [
         if qj ≈ pbms.p_last_serious
@@ -366,7 +366,7 @@ function step_solver!(mp::AbstractManoptProblem, pbms::ProximalBundleMethodState
     if get_cost(mp, pbms.p) ≤ (get_cost(mp, pbms.p_last_serious) + pbms.m * pbms.ν)
         copyto!(M, pbms.p_last_serious, pbms.p)
         if pbms.δ < zero(eltype(pbms.μ))
-            pbms.μ = log(i + 1)
+            pbms.μ = log(k + 1)
         else
             pbms.μ += pbms.δ * pbms.μ
         end
@@ -448,25 +448,25 @@ function _proximal_bundle_subsolver!(
 end
 
 function (sc::StopWhenLagrangeMultiplierLess)(
-    mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, i::Int
+    mp::AbstractManoptProblem, pbms::ProximalBundleMethodState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerances[1]) && (i > 0)
+    if (sc.mode == :estimate) && (-pbms.ν ≤ sc.tolerances[1]) && (k > 0)
         sc.values[1] = -pbms.ν
-        sc.at_iteration = i
+        sc.at_iteration = k
         return true
     end
     nd = norm(M, pbms.p_last_serious, pbms.d)
     if (sc.mode == :both) &&
         (pbms.c ≤ sc.tolerances[1]) &&
         (nd ≤ sc.tolerances[2]) &&
-        (i > 0)
+        (k > 0)
         sc.values[1] = pbms.c
         sc.values[2] = nd
-        sc.at_iteration = i
+        sc.at_iteration = k
         return true
     end
     return false
@@ -488,14 +488,14 @@ to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always:`
 """
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
-    ::AbstractManoptProblem, st::ProximalBundleMethodState, i::Int
+    ::AbstractManoptProblem, st::ProximalBundleMethodState, k::Int
 )
-    (i < 1) && (return nothing)
+    (k < 1) && (return nothing)
     if d.status !== :No
         new_value = -st.ν
         if new_value ≥ d.old_value * d.tol
             @warn """The stopping parameter increased by at least $(d.tol).
-            At iteration #$i the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
+            At iteration #$k the stopping parameter -ν increased from $(d.old_value) to $(new_value).\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
             the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
             `proximal_bundle_method` call.
@@ -506,7 +506,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             end
         elseif new_value < zero(number_eltype(st.ν))
             @warn """The stopping parameter is negative.
-            At iteration #$i the stopping parameter -ν became negative.\n
+            At iteration #$k the stopping parameter -ν became negative.\n
             Consider changing either the initial proximal parameter `μ`, its update coefficient `δ`, or
             the stepsize-like parameter `ε` related to the invectivity radius of the manifold in the
             `proximal_bundle_method` call.

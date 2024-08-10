@@ -78,7 +78,7 @@ $(_arg_p)
 
 * `coefficient::DirectionUpdateRule=[`ConjugateDescentCoefficient`](@ref)`()`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
-  the resulting function maps are `(amp, cgs, i) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
+  the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
 * $(_kw_evaluation_default): $(_kw_evaluation)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
@@ -181,13 +181,13 @@ function initialize_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDe
     cgs.β = 0.0
     return cgs
 end
-function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i)
+function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
     M = get_manifold(amp)
     copyto!(M, cgs.p_old, cgs.p)
-    current_stepsize = get_stepsize(amp, cgs, i, cgs.δ)
+    current_stepsize = get_stepsize(amp, cgs, k, cgs.δ)
     retract!(M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method)
     get_gradient!(amp, cgs.X, cgs.p)
-    cgs.β = cgs.coefficient(amp, cgs, i)
+    cgs.β = cgs.coefficient(amp, cgs, k)
     vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
     cgs.δ .*= cgs.β
     cgs.δ .-= cgs.X

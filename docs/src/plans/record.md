@@ -41,6 +41,6 @@ Further specific [`RecordAction`](@ref)s can be found when specific types of [`A
 
 ```@docs
 initialize_solver!(amp::AbstractManoptProblem, rss::RecordSolverState)
-step_solver!(p::AbstractManoptProblem, s::RecordSolverState, i)
-stop_solver!(p::AbstractManoptProblem, s::RecordSolverState, i)
+step_solver!(p::AbstractManoptProblem, s::RecordSolverState, k)
+stop_solver!(p::AbstractManoptProblem, s::RecordSolverState, k)
 ```

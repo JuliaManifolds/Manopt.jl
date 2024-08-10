@@ -41,7 +41,7 @@ Initialise the TCG state.
 * `randomize=false`
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)`(base_manifold(TpM))`)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link_manifold_dimension("base_manifold(Tpm)"))`)`
   $(_sc_any)[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc_any)[`StopWhenTrustRegionIsExceeded`](@ref)`()`
   $(_sc_any)[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc_any)[`StopWhenModelIncreased`](@ref)`()`:
   $(_kw_stopping_criterion)
@@ -171,17 +171,17 @@ mutable struct StopWhenResidualIsReducedByFactorOrPower{F} <: StoppingCriterion
     end
 end
 function (c::StopWhenResidualIsReducedByFactorOrPower)(
-    mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, i::Int
+    mp::AbstractManoptProblem, tcgstate::TruncatedConjugateGradientState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
     end
     TpM = get_manifold(mp)
     M = base_manifold(TpM)
     p = TpM.point
     if norm(M, p, tcgstate.residual) <=
-       tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && i > 0
-        c.at_iteration = i
+       tcgstate.initialResidualNorm * min(c.κ, tcgstate.initialResidualNorm^(c.θ)) && k > 0
+        c.at_iteration = k
         return true
     end
     return false
@@ -260,15 +260,15 @@ mutable struct StopWhenTrustRegionIsExceeded{F} <: StoppingCriterion
 end
 StopWhenTrustRegionIsExceeded() = StopWhenTrustRegionIsExceeded(0.0)
 function (c::StopWhenTrustRegionIsExceeded)(
-    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
+    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
     end
-    if tcgs.YPY >= tcgs.trust_region_radius^2 && i >= 0
+    if tcgs.YPY >= tcgs.trust_region_radius^2 && k >= 0
         c.YPY = tcgs.YPY
         c.trr = tcgs.trust_region_radius
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     return false
@@ -318,14 +318,14 @@ end
 StopWhenCurvatureIsNegative() = StopWhenCurvatureIsNegative(0.0)
 StopWhenCurvatureIsNegative(v::R) where {R<:Real} = StopWhenCurvatureIsNegative{R}(v, -1)
 function (c::StopWhenCurvatureIsNegative)(
-    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
+    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
     end
-    if tcgs.δHδ <= 0 && i > 0
+    if tcgs.δHδ <= 0 && k > 0
         c.value = tcgs.δHδ
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     return false
@@ -371,16 +371,16 @@ mutable struct StopWhenModelIncreased{F} <: StoppingCriterion
 end
 StopWhenModelIncreased() = StopWhenModelIncreased(-1, Inf, Inf)
 function (c::StopWhenModelIncreased)(
-    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, i::Int
+    ::AbstractManoptProblem, tcgs::TruncatedConjugateGradientState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         c.model_value = Inf
         c.inc_model_value = Inf
     end
-    if i > 0 && (tcgs.model_value > c.model_value)
+    if k > 0 && (tcgs.model_value > c.model_value)
         c.inc_model_value = tcgs.model_value
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     c.model_value = tcgs.model_value
@@ -459,7 +459,7 @@ directly.
 * `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
   This disables preconditioning.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)`(base_manifold(TpM))`)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link_manifold_dimension("base_manifold(Tpm)"))`)`
   $(_sc_any)[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc_any)[`StopWhenTrustRegionIsExceeded`](@ref)`()`
   $(_sc_any)[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc_any)[`StopWhenModelIncreased`](@ref)`()`:
   $(_kw_stopping_criterion)

@@ -351,14 +351,14 @@ function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)
     return fws
 end
-function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, i)
+function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, k)
     M = get_manifold(amp)
     # update gradient
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F(p), store the result in O.X
     # solve sub task
     solve!(fws.sub_problem, fws.sub_state) # call the subsolver
     q = get_solver_result(fws.sub_state)
-    s = fws.stepsize(amp, fws, i)
+    s = fws.stepsize(amp, fws, k)
     # step along the geodesic
     retract!(
         M,
@@ -375,13 +375,13 @@ end
 function step_solver!(
     amp::AbstractManoptProblem,
     fws::FrankWolfeState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}},
-    i,
+    k,
 ) where {P,T,F}
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = copy(M, fws.p)
     fws.sub_problem(M, q, fws.p, fws.X) # evaluate the closed form solution and store the result in q
-    s = fws.stepsize(amp, fws, i)
+    s = fws.stepsize(amp, fws, k)
     # step along the geodesic
     retract!(
         M,
@@ -398,13 +398,13 @@ end
 function step_solver!(
     amp::AbstractManoptProblem,
     fws::FrankWolfeState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}},
-    i,
+    k,
 ) where {P,T,F}
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = fws.sub_problem(M, fws.p, fws.X) # evaluate the closed form solution and store the result in O.p
     # step along the geodesic
-    s = fws.stepsize(amp, fws, i)
+    s = fws.stepsize(amp, fws, k)
     # step along the geodesic
     retract!(
         M,

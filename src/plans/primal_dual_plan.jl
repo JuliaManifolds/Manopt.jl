@@ -730,12 +730,12 @@ mutable struct DebugDualResidual <: DebugAction
     end
 end
 function (d::DebugDualResidual)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -746,7 +746,7 @@ function (d::DebugDualResidual)(
             dual_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 @doc raw"""
     DebugPrimalResidual <: DebugAction
@@ -790,12 +790,12 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -806,7 +806,7 @@ function (d::DebugPrimalResidual)(
             primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 @doc raw"""
     DebugPrimalDualResidual <: DebugAction
@@ -852,12 +852,12 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -867,7 +867,7 @@ function (d::DebugPrimalDualResidual)(
             dual_residual(tmp, apds, p_old, X_old, n_old)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(M))
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 
 #
@@ -937,10 +937,10 @@ mutable struct DebugDualChange <: DebugAction
     end
 end
 function (d::DebugDualChange)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     N = get_manifold(tmp, 2)
-    if all(has_storage.(Ref(d.storage), [:X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:X, :n])) && k > 0 # all values stored
         #fetch
         X_old = get_storage(d.storage, :X)
         n_old = get_storage(d.storage, :n)
@@ -953,7 +953,7 @@ function (d::DebugDualChange)(
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 
 """

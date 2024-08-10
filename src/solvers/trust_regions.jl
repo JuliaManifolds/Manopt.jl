@@ -579,7 +579,7 @@ function initialize_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState)
     return trs
 end
 
-function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, i)
+function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     M = get_manifold(mp)
     mho = get_objective(mp)
     # Determine the initial tangent vector used as start point for the subsolvereta0

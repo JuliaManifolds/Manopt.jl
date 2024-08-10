@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Unify doc strings and presentation of keyword arguments
-* activate running vale on CI.
+  * general indexing, for example in a vector, uses `i`
+  * index for inequality constraints is unified to `i` running from `1,...,m`
+  * index for equality constraints is unified to `j` running from `1,...,n`
+  * iterations are using now `k`
+* Doc strings unified and even reusing similar docstring snippets.
 
 ## [0.4.69] – August 3, 2024
 

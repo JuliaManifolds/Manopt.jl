@@ -207,9 +207,9 @@ mutable struct DebugProximalParameter <: DebugAction
     end
 end
 function (d::DebugProximalParameter)(
-    ::AbstractManoptProblem, cpps::CyclicProximalPointState, i::Int
+    ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
 )
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
+    (k > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
     return nothing
 end
 
@@ -226,7 +226,7 @@ mutable struct RecordProximalParameter <: RecordAction
     RecordProximalParameter() = new(Array{Float64,1}())
 end
 function (r::RecordProximalParameter)(
-    ::AbstractManoptProblem, cpps::CyclicProximalPointState, i::Int
+    ::AbstractManoptProblem, cpps::CyclicProximalPointState, k::Int
 )
-    return record_or_reset!(r, cpps.λ(i), i)
+    return record_or_reset!(r, cpps.λ(k), k)
 end

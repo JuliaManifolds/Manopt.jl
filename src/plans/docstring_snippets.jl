@@ -3,31 +3,33 @@
 # This file collects a few strings to be reused in documentation to avoid retyping everything
 
 # LateX symbols
-_l_Manifold(M="M") = "\\mathcal $M"
-_l_M = "$(_l_Manifold())"
-_l_TpM(p="p") = "T_{$p}$_l_M"
+_l_cal(letter::String) = raw"\mathcal " * "$letter"
 _l_cO = raw"\mathcal O"
+_l_ds = raw"\displaystyle"
 _l_argmin = raw"\operatorname{arg\,min}"
-_l_DΛ = "DΛ: T_{m}$(_l_M) → T_{Λ(m)}$(_l_Manifold("N"))"
+_l_frac(a, b) = raw"\frac" * "{$a}{$b}"
 _l_grad = raw"\operatorname{grad}"
-_l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess = raw"\operatorname{Hess}"
-_l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_log = raw"\log"
 _l_prox = raw"\operatorname{prox}"
 _l_refl = raw"\operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x)"
 _l_subgrad = raw"∂"
 _l_min = raw"\min"
 _l_max = raw"\min"
-_l_norm(v, i) = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
-
+_l_norm(v, i="") = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
+# Semantics
+_l_Manifold(M="M") = _l_cal(M)
+_l_M = "$(_l_Manifold())"
+_l_TpM(p="p") = "T_{$p}$_l_M"
+_l_DΛ = "DΛ: T_{m}$(_l_M) → T_{Λ(m)}$(_l_Manifold("N"))"
+_l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
+_l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
-_l_cal(letter::String) = raw"\mathcal " * "$letter"
 _l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
-_l_C_subset_M = raw"\mathcal C \subset \mathcal M"
-_l_M = raw"\mathcal M"
+_l_C_subset_M = "$(_l_cal("C")) ⊂ $(_l_cal("M"))"
 _l_txt(s) = "\\text{$s}"
+
 # Math terms
 _math_VT = raw"a vector transport ``T``"
 _math_inv_retr = "an inverse retraction ``$_l_retr^{-1}``"
@@ -151,4 +153,15 @@ function _kw_used_in(s::String)
     return "This is used to define the `$s=` keyword and has hence no effect, if you set `$s` directly."
 end
 
-_link_zero_vector = "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
+function _link_zero_vector(M="M", p="p")
+    arg = length(M) > 0 ? "`($M, $p)`" : ""
+    return "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$arg"
+end
+function _link_manifold_dimension(M="M")
+    arg = length(M) > 0 ? "`($M)`" : ""
+    return "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$arg"
+end
+function _link_rand(M="M")
+    arg = length(M) > 0 ? "`($M)`" : ""
+    return "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$arg"
+end

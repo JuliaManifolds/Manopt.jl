@@ -1,11 +1,11 @@
 #
 # A Simple Cache for Objectives
 #
-@doc raw"""
+@doc """
      SimpleManifoldCachedObjective{O<:AbstractManifoldGradientObjective{E,TC,TG}, P, T,C} <: AbstractManifoldGradientObjective{E,TC,TG}
 
 Provide a simple cache for an [`AbstractManifoldGradientObjective`](@ref) that is for a given point `p` this cache
-stores a point `p` and a gradient ``\operatorname{grad} f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
+stores a point `p` and a gradient ``$(_l_grad) f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
 
 Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
@@ -15,10 +15,10 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
 ## Keyword arguments
 
-* `p=rand(M)`: a point on the manifold to initialize the cache with
+* `p=`$(_link_rand()): a point on the manifold to initialize the cache with
 * `X=get_gradient(M, obj, p)` or `zero_vector(M,p)`: a tangent vector to store the gradient in,
   see also `initialize=`
-* `c=get_cost(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
+* `c=[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`
 * `initialized=true`: whether to initialize the cached `X` and `c` or not.
 """
 mutable struct SimpleManifoldCachedObjective{
@@ -414,13 +414,13 @@ end
 #
 # Constraints
 function get_equality_constraint(
-    M::AbstractManifold, co::ManifoldCachedObjective, p, i::Integer
+    M::AbstractManifold, co::ManifoldCachedObjective, p, j::Integer
 )
     (!haskey(co.cache, :EqualityConstraint)) &&
-        return get_equality_constraint(M, co.objective, p, i)
+        return get_equality_constraint(M, co.objective, p, j)
     return copy(# Return a copy of the version in the cache
-        get!(co.cache[:EqualityConstraint], (copy(M, p), i)) do
-            get_equality_constraint(M, co.objective, p, i)
+        get!(co.cache[:EqualityConstraint], (copy(M, p), j)) do
+            get_equality_constraint(M, co.objective, p, j)
         end,
     )
 end
@@ -578,18 +578,18 @@ function get_grad_equality_constraint!(
     X,
     co::ManifoldCachedObjective,
     p,
-    i::Integer,
+    j::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 )
     !(haskey(co.cache, :GradEqualityConstraint)) &&
-        return get_grad_equality_constraint!(M, X, co.objective, p, i)
+        return get_grad_equality_constraint!(M, X, co.objective, p, j)
     copyto!(
         M,
         X,
         p,
-        get!(co.cache[:GradEqualityConstraint], (copy(M, p), i)) do
+        get!(co.cache[:GradEqualityConstraint], (copy(M, p), j)) do
             # This evaluates in place of X
-            get_grad_equality_constraint!(M, X, co.objective, p, i)
+            get_grad_equality_constraint!(M, X, co.objective, p, j)
             copy(M, p, X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )
@@ -748,18 +748,18 @@ function get_grad_inequality_constraint!(
     X,
     co::ManifoldCachedObjective,
     p,
-    j::Integer,
+    i::Integer,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 )
     !(haskey(co.cache, :GradInequalityConstraint)) &&
-        return get_grad_inequality_constraint!(M, X, co.objective, p, j)
+        return get_grad_inequality_constraint!(M, X, co.objective, p, i)
     copyto!(
         M,
         X,
         p,
-        get!(co.cache[:GradInequalityConstraint], (copy(M, p), j)) do
+        get!(co.cache[:GradInequalityConstraint], (copy(M, p), i)) do
             # This evaluates in place of X
-            get_grad_inequality_constraint!(M, X, co.objective, p, j)
+            get_grad_inequality_constraint!(M, X, co.objective, p, i)
             copy(M, p, X) #this creates a copy to be placed in the cache
         end, #and copy the values back to X
     )

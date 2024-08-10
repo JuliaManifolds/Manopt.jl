@@ -55,7 +55,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
-* `X=`$(_link_zero_vector) specify the type of tangent vector to use.
+* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref)
 * `sub_state=[`AllocatingEvaluation`](@ref)
@@ -306,7 +306,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
-* `X=`$(_link_zero_vector) specify the type of tangent vector to use.
+* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
 * `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.
@@ -399,7 +399,7 @@ function initialize_solver!(
     push!(bms.transported_subgradients, zero_vector(M, bms.p))
     return bms
 end
-function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
+function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k)
     M = get_manifold(mp)
     # Refactor to in-place
     for (j, (qj, Xj)) in enumerate(bms.bundle)
@@ -416,7 +416,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     bms.g .= sum(bms.λ .* bms.transported_subgradients)
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
-    step = get_stepsize(mp, bms, i)
+    step = get_stepsize(mp, bms, k)
     retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
     bms.last_stepsize = step
     get_subgradient!(mp, bms.X, bms.p)
@@ -468,7 +468,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
-function get_last_stepsize(::AbstractManoptProblem, bms::ConvexBundleMethodState, i)
+function get_last_stepsize(::AbstractManoptProblem, bms::ConvexBundleMethodState, kw)
     return bms.last_stepsize
 end
 
@@ -498,38 +498,38 @@ end
 #
 # Lagrange stopping criterion
 function (sc::StopWhenLagrangeMultiplierLess)(
-    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, i::Int
+    mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         sc.at_iteration = -1
     end
     M = get_manifold(mp)
-    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerances[1]) && (i > 0)
+    if (sc.mode == :estimate) && (-bms.ξ ≤ sc.tolerances[1]) && (k > 0)
         sc.values[1] = -bms.ξ
-        sc.at_iteration = i
+        sc.at_iteration = k
         return true
     end
     ng = norm(M, bms.p_last_serious, bms.g)
     if (sc.mode == :both) &&
         (bms.ε ≤ sc.tolerances[1]) &&
         (ng ≤ sc.tolerances[2]) &&
-        (i > 0)
+        (k > 0)
         sc.values[1] = bms.ε
         sc.values[2] = ng
-        sc.at_iteration = i
+        sc.at_iteration = k
         return true
     end
     return false
 end
 function (d::DebugWarnIfLagrangeMultiplierIncreases)(
-    ::AbstractManoptProblem, st::ConvexBundleMethodState, i::Int
+    ::AbstractManoptProblem, st::ConvexBundleMethodState, k::Int
 )
-    (i < 1) && (return nothing)
+    (k < 1) && (return nothing)
     if d.status !== :No
         new_value = -st.ξ
         if new_value ≥ d.old_value * d.tol
             @warn """The Lagrange multiplier increased by at least $(d.tol).
-            At iteration #$i the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
+            At iteration #$k the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
             Consider decreasing either the `diameter` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as
             `k_max` in the `convex_bundle_method` call.
@@ -541,7 +541,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             end
         elseif new_value < zero(number_eltype(st.ξ))
             @warn """The Lagrange multiplier is positive.
-            At iteration #$i the negative of the Lagrange multiplier, -ξ, became negative.\n
+            At iteration #$k the negative of the Lagrange multiplier, -ξ, became negative.\n
             Consider increasing either the `diameter` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as
             `k_max` in the `convex_bundle_method` call.
@@ -555,9 +555,9 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
 end
 
 function (d::DebugStepsize)(
-    dmp::P, bms::ConvexBundleMethodState, i::Int
+    dmp::P, bms::ConvexBundleMethodState, k::Int
 ) where {P<:AbstractManoptProblem}
-    (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, bms, i))
+    (k < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, bms, k))
     return nothing
 end

@@ -20,28 +20,28 @@ function initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
     return dss
 end
 """
-    step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
+    step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
 
 Extend the `i`th step of the solver by a hook to run debug prints,
 that were added to the `:BeforeIteration` and `:Iteration` entries of the debug lists.
 """
-function step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
-    get(dss.debugDictionary, :BeforeIteration, DebugDivider(""))(amp, get_state(dss), i)
-    step_solver!(amp, dss.state, i)
-    get(dss.debugDictionary, :Iteration, DebugDivider(""))(amp, get_state(dss), i)
+function step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
+    get(dss.debugDictionary, :BeforeIteration, DebugDivider(""))(amp, get_state(dss), k)
+    step_solver!(amp, dss.state, k)
+    get(dss.debugDictionary, :Iteration, DebugDivider(""))(amp, get_state(dss), k)
     return dss
 end
 
 """
-    stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
+    stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
 
 Extend the `stop_solver!`, whether to stop the solver by a hook to run debug,
 that were added to the `:Stop` entry of the debug lists.
 """
-function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)
-    stop = stop_solver!(amp, dss.state, i)
+function stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k::Int)
+    stop = stop_solver!(amp, dss.state, k)
     if stop
-        get(dss.debugDictionary, :Stop, DebugDivider(""))(amp, get_state(dss), i)
+        get(dss.debugDictionary, :Stop, DebugDivider(""))(amp, get_state(dss), k)
     end
     return stop
 end

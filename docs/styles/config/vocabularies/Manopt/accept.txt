@@ -69,6 +69,7 @@ Lui
 Manifolds.jl
 ManifoldsBase.jl
 [Mm]anopt(:?.org|.jl)?
+Markus
 Marquardt
 Moakher
 Munkvold
@@ -97,6 +98,7 @@ Riemer
 Riemopt
 Riesz
 Rosenbrock
+Sasaki
 semicontinuous
 Steihaug
 Stiefel
@@ -105,6 +107,7 @@ Souza
 Steidl
 Stephansen
 [Ss]tepsize
+Stokkenes
 [Ss]ubdifferential
 [Ss]ubgradient
 subsampled

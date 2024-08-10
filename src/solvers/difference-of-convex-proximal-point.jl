@@ -426,15 +426,15 @@ function step_solver!(
     dcps::DifferenceOfConvexProximalState{
         P,T,<:Function,ClosedFormSubSolverState{AllocatingEvaluation}
     },
-    i,
+    k,
 ) where {P,T}
     M = get_manifold(amp)
     # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
-    retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
-    copyto!(M, dcps.r, dcps.sub_problem(M, dcps.λ(i), dcps.q))
+    retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
+    copyto!(M, dcps.r, dcps.sub_problem(M, dcps.λ(k), dcps.q))
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
-    s = dcps.stepsize(amp, dcps, i)
+    s = dcps.stepsize(amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     return dcps
 end
@@ -447,15 +447,15 @@ function step_solver!(
     dcps::DifferenceOfConvexProximalState{
         P,T,<:Function,ClosedFormSubSolverState{InplaceEvaluation}
     },
-    i,
+    k,
 ) where {P,T}
     M = get_manifold(amp)
     # each line is one step in the documented solver steps. Note the reuse of `dcps.X`
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
-    retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
-    dcps.sub_problem(M, dcps.r, dcps.λ(i), dcps.q)
+    retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
+    dcps.sub_problem(M, dcps.r, dcps.λ(k), dcps.q)
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
-    s = dcps.stepsize(amp, dcps, i)
+    s = dcps.stepsize(amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     return dcps
 end
@@ -467,25 +467,25 @@ function step_solver!(
     dcps::DifferenceOfConvexProximalState{
         P,T,<:AbstractManoptProblem,<:AbstractManoptSolverState
     },
-    i,
+    k,
 ) where {P,T}
     M = get_manifold(amp)
     # Evaluate gradient of h into X
     get_subtrahend_gradient!(amp, dcps.X, dcps.p)
     # do a step in that direction
-    retract!(M, dcps.q, dcps.p, dcps.λ(i) * dcps.X, dcps.retraction_method)
+    retract!(M, dcps.q, dcps.p, dcps.λ(k) * dcps.X, dcps.retraction_method)
     # use this point (q) for the proximal map
     set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Cost, :λ, dcps.λ(k))
     set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :p, dcps.q)
-    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(i))
+    set_manopt_parameter!(dcps.sub_problem, :Objective, :Gradient, :λ, dcps.λ(k))
     set_iterate!(dcps.sub_state, M, copy(M, dcps.q))
     solve!(dcps.sub_problem, dcps.sub_state)
     copyto!(M, dcps.r, get_solver_result(dcps.sub_state))
     # use that direction
     inverse_retract!(M, dcps.X, dcps.p, dcps.r, dcps.inverse_retraction_method)
     # to determine a step size
-    s = dcps.stepsize(amp, dcps, i)
+    s = dcps.stepsize(amp, dcps, k)
     retract!(M, dcps.p, dcps.p, s * dcps.X, dcps.retraction_method)
     if !isnothing(get_gradient_function(get_objective(amp)))
         get_gradient!(amp, dcps.X, dcps.p)

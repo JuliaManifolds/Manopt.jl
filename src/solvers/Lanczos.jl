@@ -123,12 +123,12 @@ function initialize_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::Lanc
     return ls
 end
 
-function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, i)
+function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k)
     TpM = get_manifold(dmp)
     p = TpM.point
     M = base_manifold(TpM)
     arcmo = get_objective(dmp)
-    if i == 1 #the first is known directly
+    if k == 1 #the first is known directly
         nX = norm(M, p, ls.X)
         if length(ls.Lanczos_vectors) == 0
             push!(ls.Lanczos_vectors, ls.X ./ nX)
@@ -145,65 +145,65 @@ function step_solver!(dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosSta
     else # `i > 1`
         β = norm(M, p, ls.Hp_residual)
         if β > 1e-12 # Obtained new orthogonal Lanczos long enough with respect to numerical stability
-            if length(ls.Lanczos_vectors) < i
+            if length(ls.Lanczos_vectors) < k
                 push!(ls.Lanczos_vectors, ls.Hp_residual ./ β)
             else
-                copyto!(M, ls.Lanczos_vectors[i], p, ls.Hp_residual ./ β)
+                copyto!(M, ls.Lanczos_vectors[k], p, ls.Hp_residual ./ β)
             end
         else # Generate new random vector and
             # modified Gram Schmidt of new vector with respect to Q
             rand!(M, ls.Hp_residual; vector_at=p)
-            for k in 1:(i - 1)
+            for k in 1:(k - 1)
                 ls.Hp_residual .=
                     ls.Hp_residual -
                     inner(M, p, ls.Lanczos_vectors[k], ls.Hp_residual) *
                     ls.Lanczos_vectors[k]
             end
-            if length(ls.Lanczos_vectors) < i
+            if length(ls.Lanczos_vectors) < k
                 push!(ls.Lanczos_vectors, ls.Hp_residual ./ norm(M, p, ls.Hp_residual))
             else
                 copyto!(
                     M,
-                    ls.Lanczos_vectors[i],
+                    ls.Lanczos_vectors[k],
                     p,
                     ls.Hp_residual ./ norm(M, p, ls.Hp_residual),
                 )
             end
         end
         # Update Hessian and residual
-        get_objective_hessian!(M, ls.Hp, arcmo, p, ls.Lanczos_vectors[i])
-        ls.Hp_residual .= ls.Hp - β * ls.Lanczos_vectors[i - 1]
-        α = inner(M, p, ls.Hp_residual, ls.Lanczos_vectors[i])
-        ls.Hp_residual .= ls.Hp_residual - α * ls.Lanczos_vectors[i]
+        get_objective_hessian!(M, ls.Hp, arcmo, p, ls.Lanczos_vectors[k])
+        ls.Hp_residual .= ls.Hp - β * ls.Lanczos_vectors[k - 1]
+        α = inner(M, p, ls.Hp_residual, ls.Lanczos_vectors[k])
+        ls.Hp_residual .= ls.Hp_residual - α * ls.Lanczos_vectors[k]
         # Update tridiagonal matrix
-        ls.tridig_matrix[i, i] = α
-        ls.tridig_matrix[i - 1, i] = β
-        ls.tridig_matrix[i, i - 1] = β
-        min_cubic_Newton!(dmp, ls, i)
+        ls.tridig_matrix[k, k] = α
+        ls.tridig_matrix[k - 1, k] = β
+        ls.tridig_matrix[k, k - 1] = β
+        min_cubic_Newton!(dmp, ls, k)
     end
-    copyto!(M, ls.S, p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:i))
+    copyto!(M, ls.S, p, sum(ls.Lanczos_vectors[k] * ls.coefficients[k] for k in 1:k))
     return ls
 end
 #
 # Solve Lanczos sub problem
 #
-function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, i)
+function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k)
     TpM = get_manifold(mp)
     p = TpM.point
     M = base_manifold(TpM)
     tol = 1e-16
 
-    gvec = zeros(i)
+    gvec = zeros(k)
     gvec[1] = norm(M, p, ls.X)
-    λ = opnorm(Array(@view ls.tridig_matrix[1:i, 1:i])) + 2
-    T_λ = @view(ls.tridig_matrix[1:i, 1:i]) + λ * I
+    λ = opnorm(Array(@view ls.tridig_matrix[1:k, 1:k])) + 2
+    T_λ = @view(ls.tridig_matrix[1:k, 1:k]) + λ * I
 
-    λ_min = eigmin(Array(@view ls.tridig_matrix[1:i, 1:i]))
+    λ_min = eigmin(Array(@view ls.tridig_matrix[1:k, 1:k]))
     lower_barrier = max(0, -λ_min)
-    k = 0
-    y = zeros(i)
-    while !ls.stop_newton(mp, ls, k)
-        k += 1
+    j = 0
+    y = zeros(k)
+    while !ls.stop_newton(mp, ls, j)
+        j += 1
         y = -(T_λ \ gvec)
         ynorm = norm(y, 2)
         ϕ = 1 / ynorm - ls.σ / λ # when ϕ is "zero" then y is the solution.
@@ -230,7 +230,7 @@ function min_cubic_Newton!(mp::AbstractManoptProblem{<:TangentSpace}, ls::Lanczo
         T_λ = T_λ + Δλ * I
         λ = λ + Δλ
     end
-    ls.coefficients[1:i] .= y
+    ls.coefficients[1:k] .= y
     return ls.coefficients
 end
 
@@ -273,9 +273,9 @@ mutable struct StopWhenFirstOrderProgress{F} <: StoppingCriterion
     StopWhenFirstOrderProgress(θ::F) where {F} = new{F}(θ, -1)
 end
 function (c::StopWhenFirstOrderProgress)(
-    dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, i::Int
+    dmp::AbstractManoptProblem{<:TangentSpace}, ls::LanczosState, k::Int
 )
-    if (i == 0)
+    if (k == 0)
         if norm(ls.X) == zero(eltype(ls.X))
             c.at_iteration = 0
             return true
@@ -288,12 +288,12 @@ function (c::StopWhenFirstOrderProgress)(
     p = TpM.point
     M = base_manifold(TpM)
     nX = norm(M, p, get_gradient(dmp, p))
-    y = @view(ls.coefficients[1:(i - 1)])
-    Ty = @view(ls.tridig_matrix[1:i, 1:(i - 1)]) * y
+    y = @view(ls.coefficients[1:(k - 1)])
+    Ty = @view(ls.tridig_matrix[1:k, 1:(k - 1)]) * y
     ny = norm(y)
-    model_grad_norm = norm(nX .* [1, zeros(i - 1)...] + Ty + ls.σ * ny * [y..., 0])
+    model_grad_norm = norm(nX .* [1, zeros(k - 1)...] + Ty + ls.σ * ny * [y..., 0])
     prog = (model_grad_norm <= c.θ * ny^2)
-    (prog) && (c.at_iteration = i)
+    (prog) && (c.at_iteration = k)
     return prog
 end
 function get_reason(c::StopWhenFirstOrderProgress)
@@ -306,9 +306,9 @@ function get_reason(c::StopWhenFirstOrderProgress)
     return ""
 end
 function (c::StopWhenFirstOrderProgress)(
-    dmp::AbstractManoptProblem{<:TangentSpace}, ams::AbstractManoptSolverState, i::Int
+    dmp::AbstractManoptProblem{<:TangentSpace}, ams::AbstractManoptSolverState, k::Int
 )
-    if (i == 0)
+    if (k == 0)
         c.at_iteration = -1
         return false
     end
@@ -320,7 +320,7 @@ function (c::StopWhenFirstOrderProgress)(
     # norm of current iterate
     nX = norm(base_manifold(TpM), p, q)
     prog = (nG <= c.θ * nX^2)
-    prog && (c.at_iteration = i)
+    prog && (c.at_iteration = k)
     return prog
 end
 function status_summary(c::StopWhenFirstOrderProgress)

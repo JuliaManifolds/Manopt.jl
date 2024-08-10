@@ -26,7 +26,7 @@ get_gradient(s::StepsizeState) = s.X
 set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
 set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 
-@doc raw"""
+@doc """
     InteriorPointNewtonState <: AbstractHessianSolverState
 
 # Fields
@@ -65,11 +65,11 @@ are used to fill in reasonable defaults for the keywords.
 
 # Input
 
-* `M`:           a Riemannian manifold
+$(_arg_M)
 * `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
-* `p`:           a point on `M` as the inital point of the algorithm
-* `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the sub solver
-* `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the sub solver
+$(_arg_p)
+$(_arg_sub_problem)
+$(_arg_sub_state)
 
 # Keyword arguments
 
@@ -88,7 +88,7 @@ Let `m` and `n` denote the number of inequality and equality constraints, respec
 * `retraction_method=default_retraction_method(M, typeof(p))`
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `step_problem`: wrap the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``
+* `step_problem`: wrap the manifold ``$(_l_M) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 * `stepsize`: an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
   additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
@@ -895,8 +895,8 @@ for the positive and negative part of ``v``, respectively
 # Fields
 
 * `ε`: a threshold
+* `residual`: store the last residual if the stopping criterion is hit.
 * `at_iteration`:
-
 """
 mutable struct StopWhenKKTResidualLess{R} <: StoppingCriterion
     ε::R
@@ -953,7 +953,7 @@ end
 
 # An internal function to compute the new σ
 @doc raw"""
-    calculate_σ(M, cmo, p, μ, λ, s)
+    calculate_σ(M, cmo, p, μ, λ, s; kwargs...)
 
 Compute the new ``σ`` factor for the barrier parameter in [`interior_point_Newton`](@ref) as
 
@@ -966,7 +966,7 @@ where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is
 
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `N` the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
-* `q` provide memory on `N` for interims computations
+* `q` provide memory on `N` for interims evaluation of the vector field
 """
 function calculate_σ(
     N::AbstractManifold, cmo::AbstractDecoratedManifoldObjective, p, μ, λ, s; kwargs...

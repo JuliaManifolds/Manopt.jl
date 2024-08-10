@@ -159,9 +159,9 @@ function DecreasingStepsize(
     return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
 end
 function (s::DecreasingStepsize)(
-    amp::P, ams::O, i::Int, args...; kwargs...
+    amp::P, ams::O, k::Int, args...; kwargs...
 ) where {P<:AbstractManoptProblem,O<:AbstractManoptSolverState}
-    ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
+    ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
     if s.type == :absolute
         ns = norm(get_manifold(amp), get_iterate(ams), get_gradient(ams))
         if ns > eps(eltype(ds))
@@ -240,7 +240,7 @@ with the fields keyword arguments and the retraction is set to the default retra
 
 The constructors return the functor to perform Armijo line search, where
 
-    (a::ArmijoLinesearch)(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
+    (a::ArmijoLinesearch)(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
 
 of a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams` and a current iterate `i`
 with keywords.
@@ -312,13 +312,13 @@ end
 function (a::ArmijoLinesearch)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
-    i::Int,
+    k::Int,
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
     p = get_iterate(s)
     X = get_gradient!(mp, get_gradient(s), p)
-    return a(mp, p, X, η; initial_guess=a.initial_guess(mp, s, i, a.last_stepsize))
+    return a(mp, p, X, η; initial_guess=a.initial_guess(mp, s, k, a.last_stepsize))
 end
 function (a::ArmijoLinesearch)(
     mp::AbstractManoptProblem, p, X, η; initial_guess=1.0, kwargs...
@@ -719,7 +719,7 @@ end
 function (a::NonmonotoneLinesearch)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
-    i::Int,
+    k::Int,
     η=-get_gradient(mp, get_iterate(s));
     kwargs...,
 )
@@ -741,7 +741,7 @@ function (a::NonmonotoneLinesearch)(
         η,
         p_old,
         X_old,
-        i,
+        k,
     )
 end
 function (a::NonmonotoneLinesearch)(
@@ -879,7 +879,7 @@ function PolyakStepsize(; γ::F=(i) -> 1 / i, initial_cost_estimate::R=0.0) wher
     return PolyakStepsize{F,R}(γ, initial_cost_estimate)
 end
 function (ps::PolyakStepsize)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int, args...; kwargs...
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int, args...; kwargs...
 )
     M = get_manifold(amp)
     p = get_iterate(ams)
@@ -887,7 +887,7 @@ function (ps::PolyakStepsize)(
     # Evaluate the cost
     c = get_cost(M, get_objective(amp), p)
     (c < ps.best_cost_value) && (ps.best_cost_value = c)
-    α = (c - ps.best_cost_value + ps.γ(i)) / (norm(M, p, X)^2)
+    α = (c - ps.best_cost_value + ps.γ(k)) / (norm(M, p, X)^2)
     return α
 end
 function show(io::IO, ps::PolyakStepsize)

@@ -469,7 +469,7 @@ function initialize_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegulariza
     get_gradient!(dmp, arcs.X, arcs.p)
     return arcs
 end
-function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState, i)
+function step_solver!(dmp::AbstractManoptProblem, arcs::AdaptiveRegularizationState, k)
     M = get_manifold(dmp)
     mho = get_objective(dmp)
     # Update sub state

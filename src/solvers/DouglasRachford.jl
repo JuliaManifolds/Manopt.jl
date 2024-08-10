@@ -131,15 +131,15 @@ function set_iterate!(drs::DouglasRachfordState, p)
 end
 
 function (d::DebugProximalParameter)(
-    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, k::Int
 )
-    (i > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(i))
+    (k > 0) && Printf.format(d.io, Printf.Format(d.format), cpps.λ(k))
     return nothing
 end
 function (r::RecordProximalParameter)(
-    ::AbstractManoptProblem, cpps::DouglasRachfordState, i::Int
+    ::AbstractManoptProblem, cpps::DouglasRachfordState, k::Int
 )
-    return record_or_reset!(r, cpps.λ(i), i)
+    return record_or_reset!(r, cpps.λ(k), k)
 end
 _doc_Douglas_Rachford = """
     DouglasRachford(M, f, proxes_f, p)
@@ -368,19 +368,19 @@ function prepare_proxes(proxes_f, parallel, evaluation::AbstractEvaluationType)
     return prox1, prox2, parallel_
 end
 function initialize_solver!(::AbstractManoptProblem, ::DouglasRachfordState) end
-function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, i)
+function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, k)
     M = get_manifold(amp)
-    get_proximal_map!(amp, drs.p_tmp, drs.λ(i), drs.s, 1)
+    get_proximal_map!(amp, drs.p_tmp, drs.λ(k), drs.s, 1)
     #dispatch on allocation type for the reflection, see below.
     _reflect!(M, drs.s_tmp, drs.p_tmp, drs.s, drs.R, drs.reflection_evaluation)
-    get_proximal_map!(amp, drs.p, drs.λ(i), drs.s_tmp, 2)
+    get_proximal_map!(amp, drs.p, drs.λ(k), drs.s_tmp, 2)
     _reflect!(M, drs.s_tmp, drs.p, drs.s_tmp, drs.R, drs.reflection_evaluation)
     # relaxation
     drs.s = retract(
         M,
         drs.s,
         inverse_retract(M, drs.s, drs.s_tmp, drs.inverse_retraction_method),
-        drs.α(i),
+        drs.α(k),
         drs.retraction_method,
     )
     return drs

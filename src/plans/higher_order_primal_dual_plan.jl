@@ -98,8 +98,8 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 * `primal_stepsize=1/sqrt(8)`
 * `dual_stepsize=1/sqrt(8)`
 * `reg_param=1e-5`
-* `update_primal_base=(amp, ams, i) -> o.m`
-* `update_dual_base=(amp, ams, i) -> o.n`
+* `update_primal_base=(amp, ams, k) -> o.m`
+* `update_dual_base=(amp, ams, k) -> o.n`
 * $_kw_retraction_method_default:
   $_kw_retraction_method
 * $_kw_inverse_retraction_method_default:

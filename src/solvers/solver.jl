@@ -140,27 +140,27 @@ function solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
 end
 
 """
-    step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
+    step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
 
 Do one iteration step (the `i`th) for an [`AbstractManoptProblem`](@ref)` p` by modifying
 the values in the [`AbstractManoptSolverState`](@ref) `ams`.
 """
-step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
-function step_solver!(p::AbstractManoptProblem, s::ReturnSolverState, i)
-    return step_solver!(p, s.state, i)
+step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
+function step_solver!(p::AbstractManoptProblem, s::ReturnSolverState, k)
+    return step_solver!(p, s.state, k)
 end
 
 """
-    stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
+    stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
 
 depending on the current [`AbstractManoptProblem`](@ref) `amp`, the current state of the solver
 stored in [`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` this function
 determines whether to stop the solver, which by default means to call
 the internal [`StoppingCriterion`](@ref). `ams.stop`
 """
-function stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
-    return ams.stop(amp, ams, i)
+function stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
+    return ams.stop(amp, ams, k)
 end
-function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, i)
-    return stop_solver!(p, s.state, i)
+function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, k)
+    return stop_solver!(p, s.state, k)
 end

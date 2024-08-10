@@ -204,9 +204,9 @@ function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodSta
     sgs.X = zero_vector(M, sgs.p)
     return sgs
 end
-function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, i)
+function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, k)
     get_subgradient!(mp, sgs.X, sgs.p)
-    step = get_stepsize(mp, sgs, i)
+    step = get_stepsize(mp, sgs, k)
     M = get_manifold(mp)
     retract!(M, sgs.p, sgs.p, -step * sgs.X, sgs.retraction_method)
     (get_cost(mp, sgs.p) < get_cost(mp, sgs.p_star)) && copyto!(M, sgs.p_star, sgs.p)
@@ -226,9 +226,9 @@ function (cs::ConstantStepsize)(
     return s
 end
 function (s::DecreasingStepsize)(
-    amp::AbstractManoptProblem, sgs::SubGradientMethodState, i::Int, args...; kwargs...
+    amp::AbstractManoptProblem, sgs::SubGradientMethodState, k::Int, args...; kwargs...
 )
-    ds = (s.length - i * s.subtrahend) * (s.factor^i) / ((i + s.shift)^(s.exponent))
+    ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
     if s.type == :absolute
         ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
         if ns > eps(eltype(ds))

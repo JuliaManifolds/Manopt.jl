@@ -335,7 +335,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     return s
 end
 
-@doc raw"""
+@doc """
     cma_es(M, f, p_m=rand(M); σ::Real=1.0, kwargs...)
 
 Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
@@ -347,12 +347,12 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``\mathcal M``
-* `f`:      a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
+* `M`:      a manifold ``$(_l_M) M``
+* `f`:      a cost function ``f: $(_l_M)→ℝ`` to find a minimizer ``p^*`` for
 
 # Optional
 
-* `p_m=rand(M)`: an initial point `p`
+* `p_m=`$(_link_rand()): an initial point `p`
 * `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)
@@ -368,10 +368,9 @@ setting.
 * `rng=default_rng()`: random number generator for generating new points
   on `M`
 
-# Output
+$(_kw_others)
 
-the obtained (approximate) minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
+$(_doc_sec_output)
 """
 function cma_es(M::AbstractManifold, f; kwargs...)
     mco = ManifoldCostObjective(f)
@@ -537,15 +536,15 @@ end
 indicates_convergence(c::StopWhenCovarianceIllConditioned) = false
 is_active_stopping_criterion(c::StopWhenCovarianceIllConditioned) = c.at_iteration > 0
 function (c::StopWhenCovarianceIllConditioned)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
     c.last_cond = s.covariance_matrix_cond
-    if i > 0 && c.last_cond > c.threshold
-        c.at_iteration = i
+    if k > 0 && c.last_cond > c.threshold
+        c.at_iteration = k
         return true
     end
     return false
@@ -593,15 +592,15 @@ function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
     return c.iterations_since_change >= c.iteration_range
 end
 function (c::StopWhenBestCostInGenerationConstant)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         c.best_objective_at_last_change = Inf
         return false
     end
     if c.iterations_since_change >= c.iteration_range
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     else
         if c.best_objective_at_last_change != s.best_fitness_current_gen
@@ -676,15 +675,15 @@ function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
         median(c.median_history[1:thr_low]) <= median(c.median_history[thr_high:end])
     return best_stagnant && median_stagnant
 end
-function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, i::Int)
-    if i == 0 # reset on init
+function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, k::Int)
+    if k == 0 # reset on init
         empty!(c.best_history)
         empty!(c.median_history)
         c.at_iteration = -1
         return false
     end
     if is_active_stopping_criterion(c)
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     else
         push!(c.best_history, s.best_fitness_current_gen)
@@ -750,16 +749,16 @@ function is_active_stopping_criterion(c::StopWhenPopulationStronglyConcentrated)
     return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationStronglyConcentrated)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
     norm_inf_dev = norm(s.deviations, Inf)
     norm_inf_p_c = norm(s.p_c, Inf)
     if norm_inf_dev < c.tol && s.σ * norm_inf_p_c < c.tol
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     return false
@@ -801,14 +800,14 @@ indicates_convergence(c::StopWhenPopulationDiverges) = false
 function is_active_stopping_criterion(c::StopWhenPopulationDiverges)
     return c.at_iteration >= 0
 end
-function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, i::Int)
-    if i == 0 # reset on init
+function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, k::Int)
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
     cur_σ_times_maxstddev = s.σ * maximum(s.deviations)
     if cur_σ_times_maxstddev / c.last_σ_times_maxstddev > c.tol
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     return false
@@ -856,9 +855,9 @@ function is_active_stopping_criterion(c::StopWhenPopulationCostConcentrated)
     return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationCostConcentrated)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
@@ -867,7 +866,7 @@ function (c::StopWhenPopulationCostConcentrated)(
         min_hist, max_hist = extrema(c.best_value_history)
         if max_hist - min_hist < c.tol &&
             s.best_fitness_current_gen - s.worst_fitness_current_gen < c.tol
-            c.at_iteration = i
+            c.at_iteration = k
             return true
         end
     end

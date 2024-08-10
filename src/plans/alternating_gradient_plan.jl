@@ -120,10 +120,10 @@ function get_gradient(
     M::AbstractManifold,
     mago::ManifoldAlternatingGradientObjective{InplaceEvaluation,TC},
     p,
-    k,
+    i,
 ) where {TC}
-    X = zero_vector(M[k], p[M, k])
-    get_gradient!(M, X, mago, p, k)
+    X = zero_vector(M[i], p[M, i])
+    get_gradient!(M, X, mago, p, i)
     return X
 end
 function get_gradient!(

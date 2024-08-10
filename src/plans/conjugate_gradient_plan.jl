@@ -658,7 +658,7 @@ end
 end
 
 function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
-    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
@@ -669,7 +669,7 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
 
     # call actual rule
-    β = u.coefficient.direction_update(amp, cgs, i)
+    β = u.coefficient.direction_update(amp, cgs, k)
 
     denom = norm(M, cgs.p, cgs.X)
     Xoldpk = vector_transport_to(

@@ -37,7 +37,7 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 
 ## further keyword arguments
 
-* `initial_vector=`$(_link_zero_vector): how to initialize the inner gradient tangent vector
+* `initial_vector=`$(_link_zero_vector()): how to initialize the inner gradient tangent vector
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`: a stopping criterion
 """
 mutable struct DifferenceOfConvexState{
@@ -140,7 +140,7 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 * $(_kw_evaluation_default): $(_kw_evaluation)
 * `gradient=nothing`:        specify ``$(_l_grad) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
-* `initial_vector=`$(_link_zero_vector): initialise the inner tangent vector to store the subgradient result.
+* `initial_vector=`$(_link_zero_vector()): initialise the inner tangent vector to store the subgradient result.
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-8)`:
   $(_kw_stopping_criterion)
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
@@ -368,7 +368,7 @@ end
 function initialize_solver!(::AbstractManoptProblem, dcs::DifferenceOfConvexState)
     return dcs
 end
-function step_solver!(amp::AbstractManoptProblem, dcs::DifferenceOfConvexState, i)
+function step_solver!(amp::AbstractManoptProblem, dcs::DifferenceOfConvexState, kw)
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p)
     set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :p, dcs.p)
