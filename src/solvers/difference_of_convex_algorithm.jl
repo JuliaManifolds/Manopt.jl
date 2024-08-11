@@ -1,5 +1,5 @@
 
-@doc raw"""
+@doc """
     DifferenceOfConvexState{Pr,St,P,T,SC<:StoppingCriterion} <:
                AbstractManoptSolverState
 
@@ -8,19 +8,19 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* `p`           the current iterate, a point on the manifold
-* `X`           the current subgradient, a tangent vector to `p`.
-* `sub_problem` problem for the subsolver
-* `sub_state`   state of the subproblem
-* `stop`        a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* $(_field_iterate)
+* $(_field_subgradient)
+* $(_field_sub_problem)
+* $(_field_sub_state)
+* $(_field_stop)
 
-For the sub task, a method to solve
+The sub task consists of a method to solve
 
 ```math
-    \operatorname*{argmin}_{q∈\mathcal M}\ g(p) - ⟨X, \log_p q⟩
+    $(_l_argmin)_{q∈$(_l_M)}\\ g(p) - ⟨X, $(_l_log)_p q⟩
 ```
 
-is needed. Besides a problem and options, one can also provide a function and
+is needed. Besides a problem and a state, one can also provide a function and
 an [`AbstractEvaluationType`](@ref), respectively, to indicate
 a closed form solution for the sub task.
 
@@ -37,8 +37,8 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 
 ## further keyword arguments
 
-* `initial_vector=zero_vector` (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
-* `stopping_criterion`         a [`StopAfterIteration`](@ref)`(200)` a stopping criterion
+* `initial_vector=`$(_link_zero_vector()): how to initialize the inner gradient tangent vector
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`: a stopping criterion
 """
 mutable struct DifferenceOfConvexState{
     Pr,St<:AbstractManoptSolverState,P,T,SC<:StoppingCriterion
@@ -110,82 +110,72 @@ function show(io::IO, dcs::DifferenceOfConvexState)
     This indicates convergence: $Conv"""
     return print(io, s)
 end
-@doc raw"""
+_doc_DoC = """
     difference_of_convex_algorithm(M, f, g, ∂h, p=rand(M); kwargs...)
     difference_of_convex_algorithm(M, mdco, p; kwargs...)
+    difference_of_convex_algorithm!(M, f, g, ∂h, p; kwargs...)
+    difference_of_convex_algorithm!(M, mdco, p; kwargs...)
 
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2023](@cite) to minimize
 
 ```math
-    \operatorname*{arg\,min}_{p∈\mathcal M}\  g(p) - h(p)
+    $(_l_argmin)_{p∈$(_l_M)}\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.
 
 This algorithm performs the following steps given a start point `p`= ``p^{(0)}``.
-Then repeat for ``k=0,1,\ldots``
+Then repeat for ``k=0,1,…``
 
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ \operatorname*{argmin}_{q ∈ \mathcal M} g(q) - ⟨X^{(k)}, \log_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_l_argmin)_{q ∈ $(_l_M)} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
 ```
 
-until the `stopping_criterion` is fulfilled.
+until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 
-# Optional parameters
+# Keyword arguments
 
-* `evaluation`          ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
-  allocation (default) form `grad_f(M, p)` or [`InplaceEvaluation`](@ref) form `grad_f!(M, X, x)`
-* `gradient`            (`nothing`) specify ``\operatorname{grad} f``, for debug / analysis or enhancing `stopping_criterion=`
-* `grad_g`              (`nothing`) specify the gradient of `g`. If specified, a subsolver is automatically set up.
-* `initial_vector`      (`zero_vector(M, p)`) initialise the inner tangent vector to store the subgradient result.
-* `stopping_criterion`  ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenChangeLess`](@ref)`(1e-8)`)
-  a [`StoppingCriterion`](@ref) for the algorithm. This includes a [`StopWhenGradientNormLess`](@ref)`(1e-8)`, when a `gradient` is provided.
-
-if you specify the [`ManifoldDifferenceOfConvexObjective`](@ref) `mdco`, additionally
-
-* `g`                   - (`nothing`) specify the function `g` If specified, a subsolver is automatically set up.
-
-
-While there are several parameters for a sub solver, the easiest is to provide the function `grad_g=`,
-such that together with the mandatory function `g` a default cost and gradient can be generated and passed to
-a default subsolver. Hence the easiest example call looks like
-
-```
-difference_of_convex_algorithm(M, f, g, grad_h, p; grad_g=grad_g)
-```
-
-# Optional parameters for the sub problem
-
-* `sub_cost`              ([`LinearizedDCCost`](@ref)`(g, p, initial_vector)`)
-  a cost to be used within the default `sub_problem`
-  Use this if you have a more efficient version than the default that is built using `g` from before.
-* `sub_grad`              ([`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`
+* $(_kw_evaluation_default): $(_kw_evaluation)
+* `gradient=nothing`:        specify ``$(_l_grad) f``, for debug / analysis or enhancing the `stopping_criterion=`
+* `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
+* `initial_vector=`$(_link_zero_vector()): initialise the inner tangent vector to store the subgradient result.
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-8)`:
+  $(_kw_stopping_criterion)
+* `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
+* `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
+  $(_kw_used_in("sub_objective"))
+* `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`:
   gradient to be used within the default `sub_problem`.
-  This is generated by default when `grad_g` is provided. You can specify your own by overwriting this keyword.
-* `sub_hess`              (a finite difference approximation by default) specify a Hessian
-   of the subproblem, which the default solver, see `sub_state` needs
-* `sub_kwargs`            (`(;)`) pass keyword arguments to the `sub_state`, in form of
-  a `Dict(:kwname=>value)`, unless you set the `sub_state` directly.
-* `sub_objective`         (a gradient or Hessian objective based on the last 3 keywords)
-  provide the objective used within `sub_problem` (if that is not specified by the user)
-* `sub_problem`           ([`DefaultManoptProblem`](@ref)`(M, sub_objective)` specify a manopt problem for the sub-solver runs.
+  $(_kw_used_in("sub_objective"))
+* `sub_hess`:              (a finite difference approximation using `sub_grad` by default):
+   specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
+  $(_kw_used_in("sub_objective"))
+* $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
+* `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
+   the objective used within `sub_problem`.
+  $(_kw_used_in("sub_problem"))
+* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`:
+  specify a manopt problem or a function for the sub-solver runs.
   You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state`             ([`TrustRegionsState`](@ref) by default, requires `sub_hessian` to be provided; decorated with `sub_kwargs`).
-  Choose the solver by specifying a solver state to solve the `sub_problem`
+* `sub_state`([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian`):
+  the subsolver to be used when solving the sub problem.
+  By default this is also decorated using the `sub_kwargs`.
   if the `sub_problem` if a function (a closed form solution), this is set to `evaluation`
   and can be changed to the evaluation type of the closed form solution accordingly.
-* `sub_stopping_criterion` ([`StopAfterIteration`](@ref)`(300) | `[`StopWhenStepsizeLess`](@ref)`(1e-9) | `[`StopWhenGradientNormLess`](@ref)`(1e-9)`)
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc_any)[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
   a stopping criterion used withing the default `sub_state=`
-* `sub_stepsize`           ([`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`,
+  $(_kw_used_in("sub_state"))
+* `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
+  $(_kw_used_in("sub_state"))
 
-all others are passed on to decorate the inner [`DifferenceOfConvexState`](@ref).
+$(_kw_others)
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_doc_sec_output)
 """
+
+@doc "$(_doc_DoC)"
 difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h; kwargs...)
     return difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h, rand(M); kwargs...)
@@ -244,16 +234,7 @@ function difference_of_convex_algorithm(
     return difference_of_convex_algorithm!(M, mdco, q; kwargs...)
 end
 
-@doc raw"""
-    difference_of_convex_algorithm!(M, f, g, ∂h, p; kwargs...)
-    difference_of_convex_algorithm!(M, mdco, p; kwargs...)
-
-Run the difference of convex algorithm and perform the steps in place of `p`.
-See [`difference_of_convex_algorithm`](@ref) for more details.
-
-if you specify the [`ManifoldDifferenceOfConvexObjective`](@ref) `mdco`,
-the `g` is a keyword argument.
-"""
+@doc "$(_doc_DoC)"
 difference_of_convex_algorithm!(M::AbstractManifold, args...; kwargs...)
 function difference_of_convex_algorithm!(
     M::AbstractManifold,
@@ -387,7 +368,7 @@ end
 function initialize_solver!(::AbstractManoptProblem, dcs::DifferenceOfConvexState)
     return dcs
 end
-function step_solver!(amp::AbstractManoptProblem, dcs::DifferenceOfConvexState, i)
+function step_solver!(amp::AbstractManoptProblem, dcs::DifferenceOfConvexState, kw)
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p)
     set_manopt_parameter!(dcs.sub_problem, :Objective, :Cost, :p, dcs.p)

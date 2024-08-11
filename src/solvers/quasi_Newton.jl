@@ -1,42 +1,41 @@
-@doc raw"""
+@doc """
     QuasiNewtonState <: AbstractManoptSolverState
 
-These Quasi Newton [`AbstractManoptSolverState`](@ref) represent any quasi-Newton based method and can be
-used with any update rule for the direction.
+The [`AbstractManoptSolverState`](@ref) represent any quasi-Newton based method and stores
+all necessary fields.
 
 # Fields
 
-* `p`                             the current iterate, a point on a manifold
-* `X`                             the current gradient
-* `sk`                            the current step
-* `yk`                            the current gradient difference
-* `direction_update`              an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
-* `nondescent_direction_behavior` a `Symbol` to specify how to handle direction that are not descent ones.
-* `retraction_method`             an `AbstractRetractionMethod`
-* `stepsize`                      a [`Stepsize`](@ref)
-* `stop`                          a [`StoppingCriterion`](@ref)
+* `direction_update`:              an [`AbstractQuasiNewtonDirectionUpdate`](@ref) rule.
+* `η`:                             the current update direction
+* `nondescent_direction_behavior`: a `Symbol` to specify how to handle direction that are not descent ones.
+* `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
+* $(_field_p)
+* `p_old`:                         the last iterate
+* `sk`:                            the current step
+* `yk`:                            the current gradient difference
+* $(_field_retr)
+* $(_field_step)
+* $(_field_stop)
+* $(_field_gradient)
+* `X_old`:                         the last gradient
 
-as well as for internal use
-
-* `p_old`                      the last iterate
-* `η`                          the current update direction
-* `X_old`                      the last gradient
-* `nondescent_direction_value` the value from the last inner product from checking for descent directions
 
 # Constructor
 
-    QuasiNewtonState(
-        M::AbstractManifold,
-        x;
-        initial_vector=zero_vector(M,x),
-        direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(M, x, InverseBFGS(), 20;
-            vector_transport_method=vector_transport_method,
-        )
-        stopping_criterion=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
-        retraction_method::RM=default_retraction_method(M, typeof(p)),
-        vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-        stepsize=default_stepsize(M; QuasiNewtonState)
-    )
+    QuasiNewtonState(M::AbstractManifold, p; kwargs...)
+
+Generate the Quasi Newton state on the manifold `M` with start point `p`.
+
+## Keyword arguments
+
+* `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
+* `stopping_criterion=`[`StopAfterIteration`9(@ref)`(1000)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
+* `stepsize=default_stepsize(M; QuasiNewtonState)`: $(_kw_stepsize)
+  The default here is the [`WolfePowellLinesearch`](@ref) using the keywords `retraction_method` and `vector_transport_method`
+* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+* $(_kw_X_default)
 
 # See also
 
@@ -70,7 +69,8 @@ end
 function QuasiNewtonState(
     M::AbstractManifold,
     p::P;
-    initial_vector::T=zero_vector(M, p),
+    initial_vector::T=zero_vector(M, p), # deprecated
+    X::T=initial_vector,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
         M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method
@@ -94,19 +94,18 @@ function QuasiNewtonState(
     RM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    sk_init = zero_vector(M, p)
-    return QuasiNewtonState{P,typeof(sk_init),D,SC,typeof(stepsize),RM,VTM,Float64}(
+    return QuasiNewtonState{P,T,D,SC,S,RM,VTM,Float64}(
         p,
         copy(M, p),
-        copy(M, p, initial_vector),
-        initial_vector,
-        sk_init,
-        copy(M, sk_init),
+        copy(M, p, X),
+        X,
+        copy(M, p, X),
+        copy(M, p, X),
         direction_update,
         retraction_method,
         stepsize,
         stopping_criterion,
-        copy(M, p, initial_vector),
+        copy(M, p, X),
         vector_transport_method,
         nondescent_direction_behavior,
         1.0,
@@ -175,64 +174,76 @@ function default_stepsize(
         linesearch_stopsize=1e-10,
     )
 end
-@doc raw"""
-    quasi_Newton(M, f, grad_f, p)
+_doc_QN_init_scaling = raw"``\frac{⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}``"
+_doc_QN = """
+    quasi_Newton(M, f, grad_f, p; kwargs...)
+    quasi_Newton!(M, f, grad_f, p; kwargs...)
 
-Perform a quasi Newton iteration for `f` on the manifold `M` starting
-in the point `p`.
+Perform a quasi Newton iteration to solve
 
+$(_problem_default)
+
+with start point `p`. The iterations can be done in-place of `p```=p^{(0)}``.
 The ``k``th iteration consists of
 
-1. Compute the search direction ``η_k = -\mathcal{B}_k [\operatorname{grad}f (p_k)]`` or solve ``\mathcal{H}_k [η_k] = -\operatorname{grad}f (p_k)]``.
-2. Determine a suitable stepsize ``α_k`` along the curve ``\gamma(α) = R_{p_k}(α η_k)``, usually by using [`WolfePowellLinesearch`](@ref).
-3. Compute `p_{k+1} = R_{p_k}(α_k η_k)``.
-4. Define ``s_k = T_{p_k, α_k η_k}(α_k η_k)`` and ``y_k = \operatorname{grad}f(p_{k+1}) - T_{p_k, α_k η_k}(\operatorname{grad}f(p_k))``.
-5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_k``.
+1. Compute the search direction ``η^{(k)} = -$(_l_cal("B"))_k [$(_l_grad)f (p^{(k)})]`` or solve ``$(_l_cal("H"))_k [η^{(k)}] = -$(_l_grad)f (p^{(k)})]``.
+2. Determine a suitable stepsize ``α_k`` along the curve ``γ(α) = R_{p^{(k)}}(α η^{(k)})``, usually by using [`WolfePowellLinesearch`](@ref).
+3. Compute ``p^{(k+1)} = R_{p^{(k)}}(α_k η^{(k)})``.
+4. Define ``s_k = $(_l_cal("T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_l_grad)f(p^{(k+1)}) - $(_l_cal("T"))_{p^{(k)}, α_k η^{(k)}}($(_l_grad)f(p^{(k)}))``, where ``$(_l_cal("T"))`` denotes a vector transport.
+5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_{k+1}``.
 
 # Input
 
-* `M`      a manifold ``\mathcal{M}``.
-* `f`      a cost function ``F : \mathcal{M} →ℝ`` to minimize.
-* `grad_f` the gradient ``\operatorname{grad}F : \mathcal{M} →T_x\mathcal M`` of ``F``.
-* `p`      an initial value ``p ∈ \mathcal{M}``.
+$(_arg_M)
+$(_arg_f)
+$(_arg_grad_f)
+$(_arg_p)
 
-# Optional
+# Keyword arguments
 
-* `basis`:                   (`DefaultOrthonormalBasis()`) basis within the tangent spaces
- to represent the Hessian (inverse).
-* `cautious_update`:         (`false`) whether or not to use
-  a [`QuasiNewtonCautiousDirectionUpdate`](@ref)
-* `cautious_function`:       (`(x) -> x*10^(-4)`) a monotone increasing function that is zero
-  at 0 and strictly increasing at 0 for the cautious update.
-* `direction_update`:        ([`InverseBFGS`](@ref)`()`) the update rule to use.
-* `evaluation`:              ([`AllocatingEvaluation`](@ref)) specify whether the gradient works by
-   allocation (default) form `gradF(M, p)` or [`InplaceEvaluation`](@ref) in place of form `gradF!(M, X, p)`.
-* `initial_operator`:        (`Matrix{Float64}(I, n, n)`) initial matrix to use die the
-  approximation, where `n=manifold_dimension(M)`, see also `scale_initial_operator`.
-* `memory_size`:             (`20`) limited memory, number of ``s_k, y_k`` to store. Set to a negative
-  value to use a full memory representation
-* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a retraction method to use
-* `scale_initial_operator`:  (`true`) scale initial operator with
-  ``\frac{⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}`` in the computation
-* `stabilize`:               (`true`) stabilize the method numerically by projecting computed (Newton-)
-  directions to the tangent space to reduce numerical errors
-* `stepsize`:                ([`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`)
-  specify a [`Stepsize`](@ref).
-* `stopping_criterion`:      ([`StopAfterIteration`](@ref)`(max(1000, memory_size)) | `[`StopWhenGradientNormLess`](@ref)`(1e-6)`)
-  specify a [`StoppingCriterion`](@ref)
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) a vector transport to use.
-* `nondescent_direction_behavior`: (`:reinitialize_direction_update`) specify how non-descent direction is handled.
-  This can be
+* `basis=`[`DefaultOrthonormalBasis`](@extref ManifoldsBase.DefaultOrthonormalBasis)`()`:
+  basis to use within each of the the tangent spaces to represent
+  the Hessian (inverse) for the cases where it is stored in full (matrix) form.
+* `cautious_update=false`:
+   whether or not to use the [`QuasiNewtonCautiousDirectionUpdate`](@ref)
+   which wraps the `direction_upate`.
+* `cautious_function=(x) -> x * 1e-4`:
+  a monotone increasing function for the cautious update that is zero at ``x=0``
+  and strictly increasing at ``0``
+* `direction_update=`[`InverseBFGS`](@ref)`()`:
+  the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
+* $(_kw_evaluation_default):
+  $(_kw_evaluation)
+  $(_kw_evaluation_example)
+* `initial_operator=Matrix{Float64}(I, n, n)`:
+   initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
+   that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.
+   See also `scale_initial_operator`.
+* `memory_size=20`: limited memory, number of ``s_k, y_k`` to store.
+   Set to a negative value to use a full memory (matrix) representation
+* `nondescent_direction_behavior=:reinitialize_direction_update`:
+  specify how non-descent direction is handled. This can be
   * `:step_towards_negative_gradient`: the direction is replaced with negative gradient, a message is stored.
   * `:ignore`: the verification is not performed, so any computed direction is accepted. No message is stored.
   * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
   * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
+* `scale_initial_operator=true`: scale initial operator with $(_doc_QN_init_scaling) in the computation
+* `stabilize=true`: stabilize the method numerically by projecting computed (Newton-)
+  directions to the tangent space to reduce numerical errors
+* `stepsize=`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`:
+  $(_kw_stepsize)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
+  $(_kw_stopping_criterion)
+* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
-# Output
+$(_kw_others)
 
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details.
+$(_doc_sec_output)
 """
+
+@doc "$(_doc_QN)"
 function quasi_Newton(
     M::AbstractManifold,
     f::TF,
@@ -266,20 +277,8 @@ function quasi_Newton(
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
-@doc raw"""
-    quasi_Newton!(M, F, gradF, x; options...)
 
-Perform a quasi Newton iteration for `F` on the manifold `M` starting
-in the point `x` using a retraction ``R`` and a vector transport ``T``.
-
-# Input
-* `M`     a manifold ``\mathcal{M}``.
-* `F`     a cost function ``F: \mathcal{M} →ℝ`` to minimize.
-* `gradF` the gradient ``\operatorname{grad}F : \mathcal{M} → T_x\mathcal M`` of ``F`` implemented as `gradF(M,p)`.
-* `x`     an initial value ``x ∈ \mathcal{M}``.
-
-For all optional parameters, see [`quasi_Newton`](@ref).
-"""
+@doc "$(_doc_QN)"
 quasi_Newton!(M::AbstractManifold, params...; kwargs...)
 function quasi_Newton!(
     M::AbstractManifold,
@@ -374,7 +373,7 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
     initialize_update!(qns.direction_update)
     return qns
 end
-function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
+function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     M = get_manifold(mp)
     get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
@@ -391,7 +390,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
             end
         end
     end
-    α = qns.stepsize(mp, qns, iter, qns.η)
+    α = qns.stepsize(mp, qns, k, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))
     retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
@@ -417,7 +416,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, iter)
     copyto!(M, qns.X_old, qns.p, qns.X)
     get_gradient!(mp, qns.X, qns.p)
     qns.yk .= qns.X ./ β .- qns.X_old
-    update_hessian!(qns.direction_update, mp, qns, qns.p_old, iter)
+    update_hessian!(qns.direction_update, mp, qns, qns.p_old, k)
     return qns
 end
 
@@ -428,14 +427,14 @@ function locking_condition_scale(
 end
 
 @doc raw"""
-    update_hessian!(d, amp, st, p_old, iter)
+    update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, amp, st, p_old, k)
 
-update the Hessian within the [`QuasiNewtonState`](@ref) `o` given a [`AbstractManoptProblem`](@ref) `amp`
+update the Hessian within the [`QuasiNewtonState`](@ref) `st` given a [`AbstractManoptProblem`](@ref) `amp`
 as well as the an [`AbstractQuasiNewtonDirectionUpdate`](@ref) `d` and the last iterate `p_old`.
-Note that the current (`iter`th) iterate is already stored in `o.x`.
+Note that the current (`k`th) iterate is already stored in [`get_iterate`](@ref)`(st)`.
 
-See also [`AbstractQuasiNewtonUpdateRule`](@ref) for the different rules that are available
-within `d`.
+See also [`AbstractQuasiNewtonUpdateRule`](@ref) and its subtypes for the different rules
+that are available within `d`.
 """
 update_hessian!(d::AbstractQuasiNewtonDirectionUpdate, ::Any, ::Any, ::Any, ::Any)
 

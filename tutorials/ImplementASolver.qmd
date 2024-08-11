@@ -118,7 +118,7 @@ the retraction based on a given manifold.
 #| output: false
 function RandomWalkState(M::AbstractManifold, p::P=rand(M);
     σ = 0.1,
-    retraction_method::R=default_retraction_method(M),
+    retraction_method::R=default_retraction_method(M, typeof(p)),
     stopping_criterion::S=StopAfterIteration(200)
 ) where {P, R<:AbstractRetractionMethod, S<:StoppingCriterion}
     return RandomWalkState{P,R,S}(p, copy(M, p), σ, retraction_method, stopping_criterion)

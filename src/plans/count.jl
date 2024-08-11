@@ -311,10 +311,10 @@ function get_equality_constraint(
     return get_equality_constraint(M, co.objective, p, c)
 end
 function get_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+    M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
 )
-    _count_if_exists(co, :EqualityConstraint, i)
-    return get_equality_constraint(M, co.objective, p, i)
+    _count_if_exists(co, :EqualityConstraint, j)
+    return get_equality_constraint(M, co.objective, p, j)
 end
 function get_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
@@ -349,10 +349,10 @@ function get_grad_equality_constraint(
     return get_grad_equality_constraint(M, co.objective, p, i)
 end
 function get_grad_equality_constraint(
-    M::AbstractManifold, co::ManifoldCountObjective, p, i::Integer
+    M::AbstractManifold, co::ManifoldCountObjective, p, j::Integer
 )
-    _count_if_exists(co, :GradEqualityConstraint, i)
-    return get_grad_equality_constraint(M, co.objective, p, i)
+    _count_if_exists(co, :GradEqualityConstraint, j)
+    return get_grad_equality_constraint(M, co.objective, p, j)
 end
 function get_grad_equality_constraint(M::AbstractManifold, co::ManifoldCountObjective, p, i)
     for j in _to_iterable_indices(1:equality_constraints_length(co.objective), i)
@@ -367,10 +367,10 @@ function get_grad_equality_constraint!(
     return get_grad_equality_constraint!(M, X, co.objective, p, i)
 end
 function get_grad_equality_constraint!(
-    M::AbstractManifold, X, co::ManifoldCountObjective, p, i::Integer
+    M::AbstractManifold, X, co::ManifoldCountObjective, p, j::Integer
 )
-    _count_if_exists(co, :GradEqualityConstraint, i)
-    return get_grad_equality_constraint!(M, X, co.objective, p, i)
+    _count_if_exists(co, :GradEqualityConstraint, j)
+    return get_grad_equality_constraint!(M, X, co.objective, p, j)
 end
 function get_grad_equality_constraint!(
     M::AbstractManifold, X, co::ManifoldCountObjective, p, i
