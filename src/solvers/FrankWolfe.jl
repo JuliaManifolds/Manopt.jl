@@ -74,8 +74,7 @@ mutable struct FrankWolfeState{
         p::P,
         sub_problem::Pr,
         sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
-        initial_vector::T=zero_vector(M, p), #deprecated
-        X::T=initial_vector,
+        X::T=zero_vector(M, p),
         stopping_criterion::TStop=StopAfterIteration(200) | StopWhenGradientNormLess(1e-6),
         stepsize::TStep=default_stepsize(M, FrankWolfeState),
         retraction_method::TM=default_retraction_method(M, typeof(p)),
@@ -92,7 +91,7 @@ mutable struct FrankWolfeState{
         sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         return new{P,T,Pr,typeof(sub_state_storage),TStep,TStop,TM,ITM}(
             p,
-            initial_vector,
+            X,
             sub_problem,
             sub_state_storage,
             stopping_criterion,
@@ -276,7 +275,7 @@ function Frank_Wolfe_method!(
     M::AbstractManifold,
     mgo::O,
     p;
-    X=zero_vector(M, p), #deprecated
+    X=zero_vector(M, p),
     evaluation=AllocatingEvaluation(),
     objective_type=:Riemannian,
     retraction_method=default_retraction_method(M, typeof(p)),
@@ -325,7 +324,7 @@ function Frank_Wolfe_method!(
         p,
         sub_problem,
         sub_state_storage;
-        initial_vector=initial_vector,
+        X=X,
         retraction_method=retraction_method,
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,

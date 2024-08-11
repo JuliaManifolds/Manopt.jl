@@ -9,12 +9,9 @@ using Manopt, Manifolds, Test
     @test endswith(s_stat, "of 1.0")
     @test Manopt.get_message(s) == ""
 
-    s2 = NonmonotoneLinesearch()
+    s2 = NonmonotoneLinesearch(Euclidean(2))
     @test startswith(repr(s2), "NonmonotoneLinesearch() with keyword arguments\n")
     @test Manopt.get_message(s2) == ""
-
-    s2b = NonmonotoneLinesearch(Euclidean(2)) # with manifold -> faster storage
-    @test startswith(repr(s2b), "NonmonotoneLinesearch() with keyword arguments\n")
 
     s3 = WolfePowellBinaryLinesearch()
     @test Manopt.get_message(s3) == ""

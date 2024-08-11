@@ -1111,7 +1111,7 @@ mutable struct WolfePowellBinaryLinesearch{
     c1::F
     c2::F
     last_stepsize::F
-    linesearch_stopsize::F
+    stop_when_stepsize_less::F
 
     function WolfePowellBinaryLinesearch(
         M::AbstractManifold=DefaultManifold(),
