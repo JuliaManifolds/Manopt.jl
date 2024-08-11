@@ -19,7 +19,7 @@ function DirectionUpdateRuleStorage(
     return DirectionUpdateRuleStorage{typeof(dur),typeof(sa)}(dur, sa)
 end
 
-@doc raw"""
+@doc """
     ConjugateGradientState <: AbstractGradientSolverState
 
 specify options for a conjugate gradient descent algorithm, that solves a
@@ -27,15 +27,15 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 
-* `p`:                       the current iterate, a point on a manifold
-* `X`:                       the current gradient, also denoted as ``ξ`` or ``X_k`` for the gradient in the ``k``th step.
+* $_field_p
+* $_field_X
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
-* `coefficient`:             ([`ConjugateDescentCoefficient`](@ref)`()`) a [`DirectionUpdateRule`](@ref) function to determine the new `β`
-* `stepsize`:                ([`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`) a [`Stepsize`](@ref) function
-* `stop`:                    ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1e-8)`) a [`StoppingCriterion`](@ref)
-* `retraction_method`:       (`default_retraction_method(M, typeof(p))`) a type of retraction
-* `vector_transport_method`: (`default_retraction_method(M, typeof(p))`) a type of retraction
+* `coefficient`:             function to determine the new `β`
+* $_field_step
+* $_field_stop
+* $_field_retr
+* $_field_vector_transp
 
 # Constructor
 
@@ -45,6 +45,15 @@ where the last five fields can be set by their names as keyword and the
 `X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,
 and `δ` is initialized to a copy of this vector.
 
+## Keyword arguments
+
+The following fields from above <re keyword arguments
+
+* `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`
+* `stepsize=[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`)
+* `stop=[`StopAfterIteration`](@ref)`(500)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
+* $_kw_retraction_method_default
+* $_kw_vector_transport_method_default
 
 # See also
 
@@ -76,7 +85,7 @@ mutable struct ConjugateGradientDescentState{
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
-        retr::AbstractRetractionMethod=default_retraction_method(M),
+        retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
@@ -631,7 +640,7 @@ end
 end
 
 function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
-    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
 )
     M = get_manifold(amp)
     if !has_storage(u.storage, PointStorageKey(:Iterate)) ||
@@ -642,7 +651,7 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
 
     # call actual rule
-    β = u.coefficient.direction_update(amp, cgs, i)
+    β = u.coefficient.direction_update(amp, cgs, k)
 
     denom = norm(M, cgs.p, cgs.X)
     Xoldpk = vector_transport_to(

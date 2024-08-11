@@ -1,29 +1,25 @@
-_doc_IPN = raw"""
+_doc_IPN_subsystem =
+    raw"""
+```math
+\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
+\text{ where }
+""" * "X ∈ $(_l_TpM()), Y,W ∈ ℝ^m, Z ∈ ℝ^n,\n```\n"
+_doc_IPN = """
     interior_point_Newton(M, f, grad_f, Hess_f, p=rand(M); kwargs...)
     interior_point_Newton(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
-    interior_point_Newton!(M, f, grad_f, Hess_f, p; kwargs...)
+    interior_point_Newton!(M, f, grad]_f, Hess_f, p; kwargs...)
     interior_point_Newton(M, ConstrainedManifoldObjective, p; kwargs...)
 
 perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
 In order to solve the constrained problem
 
-```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
-```
+$_problem_constrained
 
 This algorithms iteratively solves the linear system based on extending the KKT system
 by a slack variable `s`.
 
-```math
-\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = -F(p, μ, λ, s),
-\text{ where }
-X ∈ T_p\mathcal M, Y,W ∈ ℝ^m, Z ∈ ℝ^n,
-```
+$(_doc_IPN_subsystem)
 
 see [`CondensedKKTVectorFieldJacobian`](@ref) and [`CondensedKKTVectorField`](@ref), respectively,
 for the reduced form, this is usually solved in.
@@ -41,11 +37,11 @@ the constraints are further fulfilled.
 
 # Input
 
-* `M`:      a manifold ``\mathcal M``
-* `f`:      a cost function ``f : \mathcal M → ℝ`` to minimize
-* `grad_f`: the gradient ``\operatorname{grad} f : \mathcal M → T \mathcal M`` of ``f``
-* `Hess_f`: the Hessian ``\operatorname{Hess}f(p): T_p\mathcal M → T_p\mathcal M``, ``X ↦ \operatorname{Hess}f(p)[X] = ∇_X\operatorname{grad}f(p)``
-* `p=`[`rand`](@extref Base.rand-Tuple{AbstractManifold})`(M)`: an initial value ``p  ∈  \mathcal M``
+* `M`:      a manifold ``$(_l_M)``
+* `f`:      a cost function ``f : $(_l_M) → ℝ`` to minimize
+* `grad_f`: the gradient ``$(_l_grad) f : $(_l_M) → T $(_l_M)`` of ``f``
+* `Hess_f`: the Hessian ``$(_l_Hess)f(p): T_p$(_l_M) → T_p$(_l_M)``, ``X ↦ $(_l_Hess)f(p)[X] = ∇_X$(_l_grad)f(p)``
+* `p=$(_link_rand()): an initial value ``p  ∈  $(_l_M)``
 
 or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints
 
@@ -78,7 +74,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 * `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
 * `step_objective`: a [`ManifoldGradientObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
-* `step_problem`: the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
+* `step_problem`: the manifold ``$(_l_M) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 * `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
@@ -87,11 +83,11 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
-  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``\mathcal A(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``\mathcal A(X) + b = 0`` we aim to solve.
-  This is used to setup the `sub_problem`. If you set the `sub_problem` directly, this keyword has no effect.
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = \lVert b \rVert`` from the system to solve.
-  This keyword is used in the `sub_state`. If you set that keyword diretly, this keyword does not have an effect.
-* `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``\mathcal M × ℝ^n`` to a manopt problem.
+  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_l_cal("A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_l_cal("A"))(X) + b = 0`` we aim to solve.
+  $(_kw_used_in("sub_problem"))
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_l_norm("b"))`` from the system to solve.
+  $(_kw_used_in("sub_state"))
+* `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``$(_l_M) × ℝ^n`` to a manopt problem.
    This is the manifold and objective for the sub solver.
 * `sub_state=`[`ConjugateResidualState`](@ref): a state specifying the subsolver. This default is also decorated with the `sub_kwargs...`.
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
@@ -255,8 +251,7 @@ function interior_point_Newton!(
     ),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopWhenRelativeResidualLess(
-        norm(_sub_M, _sub_p, get_b(TangentSpace(_sub_M, _sub_p), sub_objective, _sub_X)),
-        1e-8,
+        norm(_sub_M, _sub_p, get_b(TangentSpace(_sub_M, _sub_p), sub_objective)), 1e-8
     ),
     sub_state::St=decorate_state!(
         ConjugateResidualState(
@@ -309,7 +304,7 @@ function initialize_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewton
     return ips
 end
 
-function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, i)
+function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState, k)
     M = get_manifold(amp)
     cmo = get_objective(amp)
     N = base_manifold(get_manifold(ips.sub_problem))
@@ -362,7 +357,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     end
     set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
     # determine stepsize
-    α = ips.stepsize(ips.step_problem, ips.step_state, i)
+    α = ips.stepsize(ips.step_problem, ips.step_state, k)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * ips.X, ips.retraction_method)
     if m > 0

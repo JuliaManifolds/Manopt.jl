@@ -337,8 +337,8 @@ internal storage for [`AbstractStateAction`](@ref)s to store a tuple of fields f
 [`AbstractManoptSolverState`](@ref)s
 
 This functor possesses the usual interface of functions called during an
-iteration and acts on `(p, s, i)`, where `p` is a [`AbstractManoptProblem`](@ref),
-`s` is an [`AbstractManoptSolverState`](@ref) and `i` is the current iteration.
+iteration and acts on `(p, s, k)`, where `p` is a [`AbstractManoptProblem`](@ref),
+`s` is an [`AbstractManoptSolverState`](@ref) and `k` is the current iteration.
 
 # Fields
 
@@ -478,10 +478,10 @@ function _store_vector_assert_type(
 end
 
 function (a::StoreStateAction)(
-    amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
 )
-    (!a.once || a.last_stored != i) && (update_storage!(a, amp, s))
-    a.last_stored = i
+    (!a.once || a.last_stored != k) && (update_storage!(a, amp, s))
+    a.last_stored = k
     return a
 end
 

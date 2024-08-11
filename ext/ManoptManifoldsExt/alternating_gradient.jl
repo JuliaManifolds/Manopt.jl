@@ -16,18 +16,18 @@ function get_gradient(
 end
 
 @doc raw"""
-    X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, k)
-    get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, k)
+    X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, i)
+    get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, i)
 
-Evaluate one of the component gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
+Evaluate one of the component gradients ``\operatorname{grad}f_i``, ``i∈\{1,…,n\}``, at `x` (in place of `Y`).
 """
 function get_gradient(
     M::ProductManifold,
     mago::ManifoldAlternatingGradientObjective{AllocatingEvaluation,TC,<:Function},
     p,
-    k,
+    i,
 ) where {TC}
-    return get_gradient(M, mago, p)[M, k]
+    return get_gradient(M, mago, p)[M, i]
 end
 function get_gradient!(
     M::AbstractManifold,

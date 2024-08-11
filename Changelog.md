@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [0.5.0] unreleased
 
+## Changed
+
+* Unify doc strings and presentation of keyword arguments
+  * general indexing, for example in a vector, uses `i`
+  * index for inequality constraints is unified to `i` running from `1,...,m`
+  * index for equality constraints is unified to `j` running from `1,...,n`
+  * iterations are using now `k`
+* Doc strings unified and even reusing similar docstring snippets.
+
 ## Removed
 
  * the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now
    a mandatory argument. To use the old variant,
    provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
-
-Quite a few deprecated keyword arguments and a few function signatures were removed
-
+* all deprecated keyword arguments and a few function signatures were removed
  * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
  * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
 * In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
@@ -56,6 +63,7 @@ Quite a few deprecated keyword arguments and a few function signatures were remo
 
 * a few typos in the documentation
 * `WolfePowellLinesearch` no longer uses `max_stepsize` with invalid point by default.
+
 
 ## [0.4.66] June 27, 2024
 

@@ -184,8 +184,8 @@ mutable struct DebugDivider{TIO<:IO} <: DebugAction
     divider::String
     DebugDivider(divider=" | "; io::IO=stdout) = new{typeof(io)}(io, divider)
 end
-function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
-    (i >= 0) && (!isempty(d.divider)) && (print(d.io, d.divider))
+function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
+    (k >= 0) && (!isempty(d.divider)) && (print(d.io, d.divider))
     return nothing
 end
 ```

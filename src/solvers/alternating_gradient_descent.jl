@@ -220,9 +220,9 @@ function initialize_solver!(
         (shuffle!(agds.order))
     return agds
 end
-function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, i)
+function step_solver!(amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k)
     M = get_manifold(amp)
-    step, agds.X = agds.direction(amp, agds, i)
+    step, agds.X = agds.direction(amp, agds, k)
     j = agds.order[agds.k]
     retract!(M[j], agds.p[M, j], agds.p[M, j], -step * agds.X[M, j])
     agds.i += 1

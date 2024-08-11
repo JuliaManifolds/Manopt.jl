@@ -285,12 +285,13 @@ where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector 
 last direction multiplied by momentum ``m``.
 
 # Fields
-* `p_old`:                   (`rand(M)`) remember the last iterate for parallel transporting the last direction
-* `momentum`:                (`0.2`) factor for momentum
-* `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions
+
+* `p_old`:  remember the last iterate for parallel transporting the last direction
+* `momentum`: factor for momentum
+* `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p))`) vector transport method to use
-* `X_old`:                   (`zero_vector(M,x0)`) the last gradient/direction update added as momentum
+* `vector_transport_method`: vector transport method to use
+* `X_old`: the last gradient/direction update added as momentum
 
 # Constructors
 
@@ -300,7 +301,8 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
         M::AbstractManifold;
         p=rand(M),
         s::DirectionUpdateRule=IdentityUpdateRule();
-        X=zero_vector(p.M, x0), momentum=0.2
+        X=zero_vector(M, p),
+        momentum=0.2
         vector_transport_method=default_vector_transport_method(M, typeof(p)),
     )
 
@@ -327,11 +329,11 @@ function MomentumGradient(
     )
 end
 function (mg::MomentumGradient)(
-    mp::AbstractManoptProblem, s::AbstractGradientSolverState, i
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
 )
     M = get_manifold(mp)
     p = get_iterate(s)
-    step, dir = mg.direction(mp, s, i) #get inner direction and step size
+    step, dir = mg.direction(mp, s, k) #get inner direction and step size
     mg.X_old =
         mg.momentum *
         vector_transport_to(M, mg.p_old, mg.X_old, p, mg.vector_transport_method) -
@@ -391,10 +393,10 @@ function AverageGradient(
         gradients, p, direction, vector_transport_method
     )
 end
-function (a::AverageGradient)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, i)
+function (a::AverageGradient)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, k)
     pop!(a.gradients)
     M = get_manifold(mp)
-    step, d = a.direction(mp, s, i) #get inner gradient and step
+    step, d = a.direction(mp, s, k) #get inner gradient and step
     a.gradients = vcat([deepcopy(d)], a.gradients)
     for i in 1:(length(a.gradients) - 1) #transport & shift in place
         vector_transport_to!(
@@ -464,9 +466,9 @@ function Nesterov(
     p_ = _ensure_mutating_variable(p)
     return Nesterov{typeof(p_),T}(γ, μ, copy(M, p_), shrinkage, inverse_retraction_method)
 end
-function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, i)
+function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, k)
     M = get_manifold(mp)
-    h = get_stepsize(mp, s, i)
+    h = get_stepsize(mp, s, k)
     p = get_iterate(s)
     α = (h * (n.γ - n.μ) + sqrt(h^2 * (n.γ - n.μ)^2 + 4 * h * n.γ)) / 2
     γbar = (1 - α) * n.γ + α * n.μ
@@ -482,7 +484,7 @@ function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState
         (((1 - α) * n.γ) / γbar) * inverse_retract(M, y, n.v, n.inverse_retraction_method) -
         (α / γbar) * gradf_yk
     n.v = retract(M, y, d, s.retraction_method)
-    n.γ = 1 / (1 + n.shrinkage(i)) * γbar
+    n.γ = 1 / (1 + n.shrinkage(k)) * γbar
     return h, (-1 / h) * inverse_retract(M, p, xn, n.inverse_retraction_method) # outer update
 end
 
@@ -509,8 +511,8 @@ mutable struct DebugGradient <: DebugAction
         return new(io, format)
     end
 end
-function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    (i < 1) && return nothing
+function (d::DebugGradient)(::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
+    (k < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_gradient(s))
     return nothing
 end
@@ -546,9 +548,9 @@ mutable struct DebugGradientNorm <: DebugAction
     end
 end
 function (d::DebugGradientNorm)(
-    mp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    mp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
 )
-    (i < 1) && return nothing
+    (k < 1) && return nothing
     Printf.format(
         d.io,
         Printf.Format(d.format),
@@ -584,10 +586,10 @@ mutable struct DebugStepsize <: DebugAction
     end
 end
 function (d::DebugStepsize)(
-    p::P, s::O, i::Int
+    p::P, s::O, k::Int
 ) where {P<:AbstractManoptProblem,O<:AbstractGradientSolverState}
-    (i < 1) && return nothing
-    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, i))
+    (k < 1) && return nothing
+    Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(p, s, k))
     return nothing
 end
 function show(io::IO, ds::DebugStepsize)
@@ -613,9 +615,9 @@ mutable struct RecordGradient{T} <: RecordAction
 end
 RecordGradient(ξ::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
-    ::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
 ) where {T}
-    return record_or_reset!(r, get_gradient(s), i)
+    return record_or_reset!(r, get_gradient(s), k)
 end
 show(io::IO, ::RecordGradient{T}) where {T} = print(io, "RecordGradient{$T}()")
 
@@ -629,10 +631,10 @@ mutable struct RecordGradientNorm <: RecordAction
     RecordGradientNorm() = new(Array{Float64,1}())
 end
 function (r::RecordGradientNorm)(
-    mp::AbstractManoptProblem, ast::AbstractManoptSolverState, i::Int
+    mp::AbstractManoptProblem, ast::AbstractManoptSolverState, k::Int
 )
     M = get_manifold(mp)
-    return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), i)
+    return record_or_reset!(r, norm(M, get_iterate(ast), get_gradient(ast)), k)
 end
 show(io::IO, ::RecordGradientNorm) = print(io, "RecordGradientNorm()")
 
@@ -645,6 +647,6 @@ mutable struct RecordStepsize <: RecordAction
     recorded_values::Array{Float64,1}
     RecordStepsize() = new(Array{Float64,1}())
 end
-function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, i)
-    return record_or_reset!(r, get_last_stepsize(p, s, i), i)
+function (r::RecordStepsize)(p::AbstractManoptProblem, s::AbstractGradientSolverState, k)
+    return record_or_reset!(r, get_last_stepsize(p, s, k), k)
 end
