@@ -478,8 +478,10 @@ function is always included and the old, probably no longer relevant, informatio
 * `scale`                   initial scaling of the Hessian
 * `vector_transport_method` a `AbstractVectorTransportMethod`
 * `message`                 a string containing a potential warning that might have appeared
+* `project!`:               a function to stabilize the update by projecting on the tangent space
 
 # Constructor
+
     QuasiNewtonLimitedMemoryDirectionUpdate(
         M::AbstractManifold,
         x,
@@ -487,7 +489,7 @@ function is always included and the old, probably no longer relevant, informatio
         memory_size;
         initial_vector=zero_vector(M,x),
         scale::Real=1.0
-        project::Bool=true
+        project!=copyto!
     )
 
 # See also
@@ -502,13 +504,14 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     F,
     V<:AbstractVector{F},
     VT<:AbstractVectorTransportMethod,
+    Proj,
 } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
     ξ::Vector{F}
     ρ::Vector{F}
     scale::F
-    project::Bool
+    project!::Proj
     vector_transport_method::VT
     message::String
 end
@@ -519,21 +522,21 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     memory_size::Int;
     initial_vector::T=zero_vector(M, p),
     scale::Real=1.0,
-    project::Bool=true,
+    (project!)::Proj=copyto!,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod}
+) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod,Proj}
     mT = allocate_result_type(
         M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, scale)
     )
     m1 = zeros(mT, memory_size)
     m2 = zeros(mT, memory_size)
-    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,mT,typeof(m1),VTM}(
+    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,mT,typeof(m1),VTM,Proj}(
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
         m1,
         m2,
         convert(mT, scale),
-        project,
+        project!,
         vector_transport_method,
         "",
     )
@@ -542,7 +545,7 @@ get_message(d::QuasiNewtonLimitedMemoryDirectionUpdate) = d.message
 function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     s = "limited memory $T (size $(length(d.memory_s)))"
     (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
-    d.project && (s = "$(s), projections, ")
+    (d.project! !== copyto!) && (s = "$(s), projections, ")
     s = "$(s)and $(d.vector_transport_method) as vector transport."
     return s
 end
@@ -601,7 +604,8 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
             r .+= coeff .* d.memory_s[i]
         end
     end
-    d.project && embed_project!(M, r, p, r)
+    # potentially stabilize step by projecting.
+    d.project!(M, r, p, r)
     r .*= -1
     return r
 end

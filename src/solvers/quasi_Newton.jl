@@ -228,10 +228,10 @@ $(_arg_p)
   * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
   * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
+* `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
+  the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `scale_initial_operator=true`: scale initial operator with $(_doc_QN_init_scaling) in the computation
-* `stabilize=true`: stabilize the method numerically by projecting computed (Newton-)
-  directions to the tangent space to reduce numerical errors
 * `stepsize=`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`:
   $(_kw_stepsize)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
@@ -293,7 +293,7 @@ function quasi_Newton!(
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     memory_size::Int=min(manifold_dimension(M), 20),
-    stabilize::Bool=true,
+    (project!)=copyto!,
     initial_operator::AbstractMatrix=(
         if memory_size >= 0
             fill(1.0, 0, 0) # don't allocate `initial_operator` for limited memory operation
@@ -319,7 +319,7 @@ function quasi_Newton!(
             direction_update,
             memory_size;
             scale=scale_initial_operator,
-            project=stabilize,
+            (project!)=project!,
             vector_transport_method=vector_transport_method,
         )
     else

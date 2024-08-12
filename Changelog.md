@@ -19,7 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so internally that is clear; accessing it from outside hence reads anyways `Manopt.get_parameter`
 * `set_manopt_parameter!` has been renamed to `set_parameter!` since it is internal,
   so internally that is clear; accessing it from outside hence reads `Manopt.set_parameter!`
-
+* changed the `stabilize::Bool=` keyword in `quasi_Newton` to the more flexible `project!=`
+  keyword, this is also more in line with the other solvers. Internally the same is done
+  within the `QuasiNewtonLimitedMemoryDirectionUpdate`. To adapt,
+  * the previous `stabilize=true` is now set with `(project!)=embed_project!` in general,
+    and if the manifold is represented by points in the embedding, like the sphere, `(project!)=project!` suffices
+  * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
 
 ## Removed
 
