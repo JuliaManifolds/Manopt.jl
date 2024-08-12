@@ -103,23 +103,23 @@ _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 """
-    set_manopt_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
+    set_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
 
 Set certain values specified by `args...` into the elements of the `recordDictionary`
 """
-function set_manopt_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
+function set_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
     for d in values(rss.recordDictionary)
-        set_manopt_parameter!(d, args...)
+        set_parameter!(d, args...)
     end
     return rss
 end
 # all other pass through
-function set_manopt_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
-    return set_manopt_parameter!(rss.state, v, args...)
+function set_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return set_parameter!(rss.state, v, args...)
 end
 # all other pass through
-function get_manopt_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
-    return get_manopt_parameter(rss.state, v, args...)
+function get_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(rss.state, v, args...)
 end
 
 @doc """
@@ -243,7 +243,7 @@ function (re::RecordEvery)(
     # Set activity to activate or deactivate subsolvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
-    set_manopt_parameter!(
+    set_parameter!(
         ams, :SubState, :Record, :Activity, !(k < 1) && (rem(k + 1, re.every) == 0)
     )
     return nothing
@@ -463,11 +463,11 @@ end
 function status_summary(rwa::RecordWhenActive)
     return repr(rwa)
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, v::Val, args...)
-    set_manopt_parameter!(rwa.record, v, args...)
+function set_parameter!(rwa::RecordWhenActive, v::Val, args...)
+    set_parameter!(rwa.record, v, args...)
     return rwa
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
+function set_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
     return rwa.active = v
 end
 get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)

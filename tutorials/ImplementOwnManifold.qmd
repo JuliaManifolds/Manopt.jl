@@ -48,7 +48,7 @@ Random.seed!(42)
 #| code-fold: true
 #| output: false
 # to keep the output and usage simple let's deactivate tutorial mode here
-Manopt.set_manopt_parameter!(:Mode, "None")
+Manopt.set_parameter!(:Mode, "None")
 ```
 
 We also define the same manifold as in

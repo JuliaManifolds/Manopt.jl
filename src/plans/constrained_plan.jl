@@ -9,20 +9,16 @@ constraintsnof type `T`.
 """
 abstract type AbstractConstrainedFunctor{T} end
 
-function set_manopt_parameter!(
-    acf::AbstractConstrainedFunctor{T}, ::Val{:μ}, μ::T
-) where {T}
+function set_parameter!(acf::AbstractConstrainedFunctor{T}, ::Val{:μ}, μ::T) where {T}
     acf.μ = μ
     return acf
 end
-get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
-function set_manopt_parameter!(
-    acf::AbstractConstrainedFunctor{T}, ::Val{:λ}, λ::T
-) where {T}
+get_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
+function set_parameter!(acf::AbstractConstrainedFunctor{T}, ::Val{:λ}, λ::T) where {T}
     acf.λ = λ
     return acf
 end
-get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
+get_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
 
 """
     AbstractConstrainedSlackFunctor{T,R}
@@ -37,27 +33,23 @@ which is also of typee `T`.
 """
 abstract type AbstractConstrainedSlackFunctor{T,R} end
 
-function set_manopt_parameter!(
-    acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:s}, s::T
-) where {T}
+function set_parameter!(acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:s}, s::T) where {T}
     acsf.s = s
     return acsf
 end
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
-function set_manopt_parameter!(
-    acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:μ}, μ::T
-) where {T}
+get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
+function set_parameter!(acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:μ}, μ::T) where {T}
     acsf.μ = μ
     return acsf
 end
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:μ}) = acsf.μ
-function set_manopt_parameter!(
+get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:μ}) = acsf.μ
+function set_parameter!(
     acsf::AbstractConstrainedSlackFunctor{T,R}, ::Val{:β}, β::R
 ) where {T,R}
     acsf.β = β
     return acsf
 end
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
+get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
 
 @doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}

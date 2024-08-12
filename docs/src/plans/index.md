@@ -16,8 +16,8 @@ By splitting these two parts, one problem can be define an then be solved  using
 Still there might be the need to set certain parameters within any of these structures. For that there is
 
 ```@docs
-set_manopt_parameter!
-get_manopt_parameter
+set_parameter!
+get_parameter
 Manopt.status_summary
 ```
 
@@ -52,7 +52,7 @@ often also with `:p` and similarly the gradient with `:X`.
 This is discouraged for both readability as well as to stay more generic, and it is recommended
 to use `:Iterate` and `:Gradient` instead in generic settings.
 
-You can further activate a “Tutorial” mode by `set_manopt_parameter!(:Mode, "Tutorial")`. Internally, the following convenience function is available.
+You can further activate a “Tutorial” mode by `set_parameter!(:Mode, "Tutorial")`. Internally, the following convenience function is available.
 
 ```@docs
 Manopt.is_tutorial_mode

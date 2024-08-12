@@ -47,9 +47,9 @@ function SymmetricLinearSystemObjective(
     return SymmetricLinearSystemObjective{E,TA,T}(A, b)
 end
 
-function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
-    set_manopt_parameter!(slso.A!!, symbol, value)
-    set_manopt_parameter!(slso.b!!, symbol, value)
+function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
+    set_parameter!(slso.A!!, symbol, value)
+    set_parameter!(slso.b!!, symbol, value)
     return slso
 end
 

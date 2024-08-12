@@ -25,10 +25,10 @@ using Manopt, Manifolds, Test
     @test Manopt.get_message(s4) == ""
     @testset "Armijo setter / getters" begin
         # Check that the passdowns work, though; since the defaults are functions, they return nothing
-        @test isnothing(Manopt.get_manopt_parameter(s, :IncreaseCondition, :Dummy))
-        @test isnothing(Manopt.get_manopt_parameter(s, :DecreaseCondition, :Dummy))
-        @test Manopt.set_manopt_parameter!(s, :IncreaseCondition, :Dummy, 1) == s #setters return s
-        @test Manopt.set_manopt_parameter!(s, :DecreaseCondition, :Dummy, 1) == s
+        @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))
+        @test isnothing(Manopt.get_parameter(s, :DecreaseCondition, :Dummy))
+        @test Manopt.set_parameter!(s, :IncreaseCondition, :Dummy, 1) == s #setters return s
+        @test Manopt.set_parameter!(s, :DecreaseCondition, :Dummy, 1) == s
     end
     @testset "Linesearch safeguards" begin
         M = Euclidean(2)

@@ -116,19 +116,15 @@ function show(io::IO, tcgs::TruncatedConjugateGradientState)
     This indicates convergence: $Conv"""
     return print(io, s)
 end
-function set_manopt_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
+function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:Iterate}, Y)
     return tcgs.Y = Y
 end
 get_iterate(tcgs::TruncatedConjugateGradientState) = tcgs.Y
-function set_manopt_parameter!(
-    tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r
-)
+function set_parameter!(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionRadius}, r)
     return tcgs.trust_region_radius = r
 end
 
-function get_manopt_parameter(
-    tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionExceeded}
-)
+function get_parameter(tcgs::TruncatedConjugateGradientState, ::Val{:TrustRegionExceeded})
     return (tcgs.YPY >= tcgs.trust_region_radius^2)
 end
 

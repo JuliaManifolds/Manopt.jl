@@ -67,23 +67,23 @@ function DebugSolverState(
 end
 
 """
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
+    set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
 
 Set certain values specified by `args...` into the elements of the `debugDictionary`
 """
-function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
+function set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     for d in values(dss.debugDictionary)
-        set_manopt_parameter!(d, args...)
+        set_parameter!(d, args...)
     end
     return dss
 end
 # all other pass through
-function set_manopt_parameter!(dss::DebugSolverState, v::Val{T}, args...) where {T}
-    return set_manopt_parameter!(dss.state, v, args...)
+function set_parameter!(dss::DebugSolverState, v::Val{T}, args...) where {T}
+    return set_parameter!(dss.state, v, args...)
 end
 # all other pass through
-function get_manopt_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
-    return get_manopt_parameter(dss.state, v, args...)
+function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(dss.state, v, args...)
 end
 
 function status_summary(dst::DebugSolverState)
@@ -136,14 +136,14 @@ function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
     return print(io, "DebugGroup([$s])")
 end
-function set_manopt_parameter!(dg::DebugGroup, v::Val, args...)
+function set_parameter!(dg::DebugGroup, v::Val, args...)
     for di in dg.group
-        set_manopt_parameter!(di, v, args...)
+        set_parameter!(di, v, args...)
     end
     return dg
 end
-function set_manopt_parameter!(dg::DebugGroup, e::Symbol, args...)
-    set_manopt_parameter!(dg, Val(e), args...)
+function set_parameter!(dg::DebugGroup, e::Symbol, args...)
+    set_parameter!(dg, Val(e), args...)
     return dg
 end
 
@@ -183,7 +183,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
     # set activity for this iterate in subsolvers
-    set_manopt_parameter!(
+    set_parameter!(
         st,
         :SubState,
         :Debug,
@@ -207,12 +207,12 @@ function status_summary(de::DebugEvery)
     end
     return "[$s, $(de.every)]"
 end
-function set_manopt_parameter!(de::DebugEvery, e::Symbol, args...)
-    set_manopt_parameter!(de, Val(e), args...)
+function set_parameter!(de::DebugEvery, e::Symbol, args...)
+    set_parameter!(de, Val(e), args...)
     return de
 end
-function set_manopt_parameter!(de::DebugEvery, args...)
-    set_manopt_parameter!(de.debug, args...)
+function set_parameter!(de::DebugEvery, args...)
+    set_parameter!(de.debug, args...)
     return de
 end
 
@@ -834,11 +834,11 @@ end
 function status_summary(dwa::DebugWhenActive)
     return repr(dwa)
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, v::Val, args...)
-    set_manopt_parameter!(dwa.debug, v, args...)
+function set_parameter!(dwa::DebugWhenActive, v::Val, args...)
+    set_parameter!(dwa.debug, v, args...)
     return dwa
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
+function set_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
     return dwa.active = v
 end
 

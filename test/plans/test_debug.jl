@@ -15,10 +15,10 @@ Manopt.get_message(::TestMessageState) = "DebugTest"
 mutable struct TestDebugParameterState <: AbstractManoptSolverState
     value::Int
 end
-function Manopt.set_manopt_parameter!(d::TestDebugParameterState, ::Val{:value}, v)
+function Manopt.set_parameter!(d::TestDebugParameterState, ::Val{:value}, v)
     (d.value = v; return d)
 end
-Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
+Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 
 @testset "Debug State" begin
     # helper to get debug as string
@@ -240,8 +240,8 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
     @testset "Debug and parameter passthrough" begin
         s = TestDebugParameterState(0)
         d = DebugSolverState(s, DebugDivider(" | "))
-        Manopt.set_manopt_parameter!(d, :value, 1)
-        @test Manopt.get_manopt_parameter(d, :value) == 1
+        Manopt.set_parameter!(d, :value, 1)
+        @test Manopt.get_parameter(d, :value) == 1
     end
     @testset "Debug Warnings" begin
         M = ManifoldsBase.DefaultManifold(2)
@@ -406,8 +406,8 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dD = DebugDivider(" | "; io=io)
         dA = DebugWhenActive(dD, false)
         @test !dA.active
-        set_manopt_parameter!(dA, :Dummy, true) # pass down
-        set_manopt_parameter!(dA, :Activity, true) # activate
+        set_parameter!(dA, :Dummy, true) # pass down
+        set_parameter!(dA, :Activity, true) # activate
         @test dA.active
         @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"
         @test Manopt.status_summary(dA) == repr(dA)
@@ -417,13 +417,13 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dE = DebugEvery(dA, 2)
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
-        set_manopt_parameter!(dE, :Activity, false) # deactivate
+        set_parameter!(dE, :Activity, false) # deactivate
         dE(mp, st, -1) # test that reset is still working
         dE(mp, st, 2)
         @test endswith(String(take!(io)), "")
         @test !dA.active
         dG = DebugGroup([dA])
-        set_manopt_parameter!(dG, :Activity, true) # activate in group
+        set_parameter!(dG, :Activity, true) # activate in group
         dG(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         # test its usage in the factory independent of position
@@ -431,7 +431,7 @@ Manopt.get_manopt_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
-        set_manopt_parameter!(dst, :Debug, :Activity, true)
+        set_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
     end
 end

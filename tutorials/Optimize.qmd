@@ -163,7 +163,7 @@ It can be set using
 
 ```{julia}
 #| warning: true
-Manopt.set_manopt_parameter!(:Mode, "Tutorial")
+Manopt.set_parameter!(:Mode, "Tutorial")
 ```
 
 to activate these. Continuing from the example before, one might argue, that the
@@ -210,7 +210,7 @@ keyword, that in `Tutorial` mode contains additional warnings.
 The other option is to globally reset the `:Mode` back to
 ```{julia}
 #| warning: true
-Manopt.set_manopt_parameter!(:Mode, "")
+Manopt.set_parameter!(:Mode, "")
 ```
 
 ## Example 2: computing the median of symmetric positive definite matrices

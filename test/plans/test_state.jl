@@ -15,7 +15,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         a = ArmijoLinesearch(M; initial_stepsize=1.0)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
-        set_manopt_parameter!(s, :Dummy, 1)
+        set_parameter!(s, :Dummy, 1)
     end
 
     @testset "Decreasing Stepsize" begin

@@ -83,11 +83,11 @@ using ManifoldsBase, Manifolds, Manopt, Test
     @test length(get_reason(sc)) > 0
     #
     ipcc = InteriorPointCentralityCondition(coh, 1.0)
-    @test Manopt.set_manopt_parameter!(ipcc, :τ, step_M, step_p) == ipcc
-    @test Manopt.set_manopt_parameter!(ipcc, :γ, 2.0) == ipcc
-    @test Manopt.get_manopt_parameter(ipcc, :γ) == 2.0
-    @test Manopt.get_manopt_parameter(ipcc, :τ1) == 2 / 3
-    @test Manopt.get_manopt_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1e-7
+    @test Manopt.set_parameter!(ipcc, :τ, step_M, step_p) == ipcc
+    @test Manopt.set_parameter!(ipcc, :γ, 2.0) == ipcc
+    @test Manopt.get_parameter(ipcc, :γ) == 2.0
+    @test Manopt.get_parameter(ipcc, :τ1) == 2 / 3
+    @test Manopt.get_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1e-7
     @test !ipcc(step_M, step_p)
     ipcc.τ1 = 0.01 # trick conditions so ipcc succeeds
     ipcc.τ2 = 0.01

@@ -62,11 +62,11 @@ function ExactPenaltyCost(
 ) where {R}
     return ExactPenaltyCost{typeof(smoothing),typeof(co),R}(co, ρ, u)
 end
-function set_manopt_parameter!(epc::ExactPenaltyCost, ::Val{:ρ}, ρ)
+function set_parameter!(epc::ExactPenaltyCost, ::Val{:ρ}, ρ)
     epc.ρ = ρ
     return epc
 end
-function set_manopt_parameter!(epc::ExactPenaltyCost, ::Val{:u}, u)
+function set_parameter!(epc::ExactPenaltyCost, ::Val{:u}, u)
     epc.u = u
     return epc
 end
@@ -115,11 +115,11 @@ mutable struct ExactPenaltyGrad{S,CO,R}
     ρ::R
     u::R
 end
-function set_manopt_parameter!(epg::ExactPenaltyGrad, ::Val{:ρ}, ρ)
+function set_parameter!(epg::ExactPenaltyGrad, ::Val{:ρ}, ρ)
     epg.ρ = ρ
     return epg
 end
-function set_manopt_parameter!(epg::ExactPenaltyGrad, ::Val{:u}, u)
+function set_parameter!(epg::ExactPenaltyGrad, ::Val{:u}, u)
     epg.u = u
     return epg
 end

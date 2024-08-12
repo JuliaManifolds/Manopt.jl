@@ -3,10 +3,10 @@ using Manopt: RecordFactory, RecordGroupFactory, RecordActionFactory
 mutable struct TestRecordParameterState <: AbstractManoptSolverState
     value::Int
 end
-function Manopt.set_manopt_parameter!(d::TestRecordParameterState, ::Val{:value}, v)
+function Manopt.set_parameter!(d::TestRecordParameterState, ::Val{:value}, v)
     (d.value = v; return d)
 end
-Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
+Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
 
 @testset "Record State" begin
     # helper to get debug as string
@@ -24,7 +24,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test Manopt.status_summary(a) == ":Iteration"
     # constructors
     rs = RecordSolverState(gds, a)
-    Manopt.set_manopt_parameter!(rs, :Record, RecordCost())
+    Manopt.set_parameter!(rs, :Record, RecordCost())
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
     @test get_state(gds) == gds
     @test get_state(rs) == gds
@@ -207,9 +207,9 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rwa(dmp, gds, -1) # Reset
         @test length(get_record(rwa)) == 0
         rwa(dmp, gds, 1)
-        set_manopt_parameter!(rwa, :Activity, false)
+        set_parameter!(rwa, :Activity, false)
         # passthrough to inner
-        set_manopt_parameter!(rwa, :test, 1)
+        set_parameter!(rwa, :test, 1)
         @test !rwa.active
         # test inactive
         rwa(dmp, gds, 2)
@@ -304,7 +304,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @testset "Record and parameter passthrough" begin
         s = TestRecordParameterState(0)
         r = RecordSolverState(s, RecordIteration())
-        Manopt.set_manopt_parameter!(r, :value, 1)
-        @test Manopt.get_manopt_parameter(r, :value) == 1
+        Manopt.set_parameter!(r, :value, 1)
+        @test Manopt.get_parameter(r, :value) == 1
     end
 end

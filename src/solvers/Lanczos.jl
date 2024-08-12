@@ -79,7 +79,7 @@ function set_iterate!(ls::LanczosState, M, X)
     ls.X .= X
     return ls
 end
-function set_manopt_parameter!(ls::LanczosState, ::Val{:σ}, σ)
+function set_parameter!(ls::LanczosState, ::Val{:σ}, σ)
     ls.σ = σ
     return ls
 end

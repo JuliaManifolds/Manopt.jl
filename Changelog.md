@@ -14,7 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * index for inequality constraints is unified to `i` running from `1,...,m`
   * index for equality constraints is unified to `j` running from `1,...,n`
   * iterations are using now `k`
-* Doc strings unified and even reusing similar docstring snippets.
+* doc strings unified and even reusing similar docstring snippets.
+* `get_manopt_parameter` has been renamed to `get_parameter` since it is internal,
+  so internally that is clear; accessing it from outside hence reads anyways `Manopt.get_parameter`
+* `set_manopt_parameter!` has been renamed to `set_parameter!` since it is internal,
+  so internally that is clear; accessing it from outside hence reads `Manopt.set_parameter!`
+
 
 ## Removed
 

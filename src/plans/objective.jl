@@ -166,7 +166,7 @@ function _get_objective(o::AbstractManifoldObjective, ::Val{true}, rec=true)
 end
 
 """
-    set_manopt_parameter!(amo::AbstractManifoldObjective, element::Symbol, args...)
+    set_parameter!(amo::AbstractManifoldObjective, element::Symbol, args...)
 
 Set a certain `args...` from the [`AbstractManifoldObjective`](@ref) `amo` to `value.
 This function should dispatch on `Val(element)`.
@@ -175,14 +175,14 @@ Currently supported
 * `:Cost` passes to the [`get_cost_function`](@ref)
 * `:Gradient` passes to the [`get_gradient_function`](@ref)
 """
-set_manopt_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
+set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 
-function set_manopt_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
-    set_manopt_parameter!(get_cost_function(amo), args...)
+function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
+    set_parameter!(get_cost_function(amo), args...)
     return amo
 end
-function set_manopt_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
-    set_manopt_parameter!(get_gradient_function(amo), args...)
+function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
+    set_parameter!(get_gradient_function(amo), args...)
     return amo
 end
 

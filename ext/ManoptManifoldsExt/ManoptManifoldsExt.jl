@@ -14,7 +14,7 @@ import Manopt:
     alternating_gradient_descent!,
     get_gradient,
     get_gradient!,
-    set_manopt_parameter!,
+    set_parameter!,
     reflect,
     reflect!,
     Rn,

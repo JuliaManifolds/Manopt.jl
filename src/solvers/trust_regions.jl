@@ -573,9 +573,9 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     end
     # Update the current gradient
     get_gradient!(M, trs.X, mho, trs.p)
-    set_manopt_parameter!(trs.sub_problem, :Manifold, :Basepoint, copy(M, trs.p))
-    set_manopt_parameter!(trs.sub_state, :Iterate, copy(M, trs.p, trs.Y))
-    set_manopt_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
+    set_parameter!(trs.sub_problem, :Manifold, :Basepoint, copy(M, trs.p))
+    set_parameter!(trs.sub_state, :Iterate, copy(M, trs.p, trs.Y))
+    set_parameter!(trs.sub_state, :TrustRegionRadius, trs.trust_region_radius)
     solve!(trs.sub_problem, trs.sub_state)
     #
     copyto!(M, trs.Y, trs.p, get_solver_result(trs.sub_state))
@@ -623,7 +623,7 @@ function step_solver!(mp::AbstractManoptProblem, trs::TrustRegionsState, k)
     if ρ < trs.reduction_threshold || !model_decreased || isnan(ρ)
         trs.trust_region_radius *= trs.reduction_factor
     elseif ρ > trs.augmentation_threshold &&
-        get_manopt_parameter(trs.sub_state, :TrustRegionExceeded)
+        get_parameter(trs.sub_state, :TrustRegionExceeded)
         # (b) performed great and exceed/reach the trust region boundary -> increase radius
         trs.trust_region_radius = min(
             trs.augmentation_factor * trs.trust_region_radius, trs.max_trust_region_radius

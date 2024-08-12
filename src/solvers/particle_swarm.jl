@@ -143,10 +143,10 @@ function set_iterate!(pss::ParticleSwarmState, p)
     pss.p = p
     return pss
 end
-function set_manopt_parameter!(pss::ParticleSwarmState, ::Val{:Population}, swarm)
+function set_parameter!(pss::ParticleSwarmState, ::Val{:Population}, swarm)
     return pss.swarm = swarm
 end
-function get_manopt_parameter(pss::ParticleSwarmState, ::Val{:Population})
+function get_parameter(pss::ParticleSwarmState, ::Val{:Population})
     return pss.swarm
 end
 

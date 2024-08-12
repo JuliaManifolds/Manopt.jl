@@ -828,8 +828,8 @@ The parameters `τ1`, `τ2` are initialise to zero if not provided.
 
 !!! note
 
-    Besides [`get_manopt_parameter`](@ref) for all three constants,
-    and [`set_manopt_parameter!`](@ref) for ``γ``,
+    Besides [`get_parameter`](@ref) for all three constants,
+    and [`set_parameter!`](@ref) for ``γ``,
     to update ``τ_1`` and ``τ_2``, call `set_manopt_parameter(ipcc, :τ, N, q)` to update
     both ``τ_1`` and ``τ_2`` according to the formulae above.
 """
@@ -853,20 +853,20 @@ function (ipcc::InteriorPointCentralityCondition)(N, qα)
     (sum(μα .* sα) - ipcc.γ * ipcc.τ2 * normKKTqα < 0) && return false
     return true
 end
-function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:γ})
+function get_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:γ})
     return ipcc.γ
 end
-function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ}, γ)
+function set_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:γ}, γ)
     ipcc.γ = γ
     return ipcc
 end
-function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ1})
+function get_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ1})
     return ipcc.τ1
 end
-function get_manopt_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ2})
+function get_parameter(ipcc::InteriorPointCentralityCondition, ::Val{:τ2})
     return ipcc.τ2
 end
-function set_manopt_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:τ}, N, q)
+function set_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:τ}, N, q)
     μ = q[N, 2]
     s = q[N, 4]
     m = length(μ)

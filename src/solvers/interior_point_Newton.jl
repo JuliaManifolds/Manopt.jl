@@ -313,11 +313,11 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     copyto!(N[2], q[N, 2], ips.λ)
     set_iterate!(ips.sub_state, get_manifold(ips.sub_problem), zero_vector(N, q))
 
-    set_manopt_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :s, ips.s)
-    set_manopt_parameter!(ips.sub_problem, :Objective, :β, ips.ρ * ips.σ)
+    set_parameter!(ips.sub_problem, :Manifold, :Basepoint, q)
+    set_parameter!(ips.sub_problem, :Objective, :μ, ips.μ)
+    set_parameter!(ips.sub_problem, :Objective, :λ, ips.λ)
+    set_parameter!(ips.sub_problem, :Objective, :s, ips.s)
+    set_parameter!(ips.sub_problem, :Objective, :β, ips.ρ * ips.σ)
     # product manifold on which to perform linesearch
 
     X2 = get_solver_result(solve!(ips.sub_problem, ips.sub_state))
@@ -351,11 +351,11 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     (m > 0) && (copyto!(N[4], X[N, 4], ips.W))
     set_gradient!(ips.step_state, M, q, X)
     # Update centrality factor – Maybe do this as an update function?
-    γ = get_manopt_parameter(ips.stepsize, :DecreaseCondition, :γ)
+    γ = get_parameter(ips.stepsize, :DecreaseCondition, :γ)
     if !isnothing(γ)
-        set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :γ, (γ + 0.5) / 2)
+        set_parameter!(ips.stepsize, :DecreaseCondition, :γ, (γ + 0.5) / 2)
     end
-    set_manopt_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
+    set_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
     # determine stepsize
     α = ips.stepsize(ips.step_problem, ips.step_state, k)
     # Update Parameters and slack
