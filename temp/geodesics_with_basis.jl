@@ -72,14 +72,15 @@ discretized_y = [y(Ωi) for Ωi in Omega];
 begin
 	# force
 	function f(M, p)
-		return project(M, p, [0.0, -3.0, 0.0])
+		#return project(M, p, [0.0, -1.0, 0.0])
+		return [0.0, -3.0, 0.0]
 	end
 end;
 
 # ╔═╡ dfb46586-a6df-4abf-b719-9d882c1ad6a6
 function proj_prime(S, p, X, Y) # S_i*(Y)
-	#return project(S, p, (- X*p' - p*X')*Y) 
-	return (- X*p' - p*X')*Y
+	return project(S, p, (- X*p' - p*X')*Y) 
+	#return (- X*p' - p*X')*Y
 end
 
 # ╔═╡ 4cd9e4c6-50b9-440e-b48f-923ceda898c2
@@ -103,14 +104,18 @@ function A(M, y, X)
 		y_pre = Oy[M, i-1]
 		X_i = X[M,i]
 		
-		Z[M,i] = -1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
+		#Z[M,i] = -1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
+		Z[M,i] = 1/h * (2*y_i - y_next - y_pre) .- h * f(S, y_i)
+
 		Z[M,i] = proj_prime(S, y_i, X_i, Z[M,i]) # This has to be fixed to an intrinsic thingy
 		if i > 1
-			Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_pre, X[M,i-1], y_i))
+			#Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_pre, X[M,i-1], y_i))
+			Z[M,i] = Z[M,i] - 1/h * X[M,i-1]
 		end
 		Z[M,i] = Z[M,i] + 2/h * (X[M,i])
 		if i < N
-			Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_next, X[M,i+1], y_i))
+			#Z[M,i] = Z[M,i] - 1/h * (parallel_transport_to(S, y_next, X[M,i+1], y_i))
+			Z[M,i] = Z[M,i] - 1/h * X[M,i+1]
 		end
 	end
 	return Z
@@ -126,7 +131,8 @@ function b(M, y)
 			y_i = Oy[M, i]
 			y_next = Oy[M, i+1]
 			y_pre = Oy[M, i-1]
-			X[M, i] = - 1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
+			#X[M, i] = -1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
+			X[M,i]= 1/h * (2.0*y_i - y_next - y_pre) .- h * f(S, y_i)
 		end
 		return X
 end
@@ -176,7 +182,7 @@ end;
 st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=StopAfterIteration(20),
+	stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(1e-13)),
 	stepsize=ConstantStepsize(1.0),
 	#retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop],
@@ -235,13 +241,13 @@ begin
 M=power
 b0 = b(M, y_0)
 i = 7
-ch = 1e-6
+ch = 1e-8
 B = get_basis(M, y_0, DefaultOrthonormalBasis())
 base = get_vectors(M, y_0, B)
 y_1 = exp(M, y_0, ch*base[i])
 b1 = b(M, y_1)
-checkA = 1/ch*(b1 - b0)
-A0 = A(M, y_0, base[M,i])
+checkA = (b1 - b0)
+A0 = A(M, y_0, ch*base[M,i])
 end
 
 # ╔═╡ dc242752-1def-4f30-94e0-8b356eeaa2e3
