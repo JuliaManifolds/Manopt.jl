@@ -34,8 +34,8 @@ StopWhenResidualIsReducedByFactorOrPower
 StopWhenTrustRegionIsExceeded
 StopWhenCurvatureIsNegative
 StopWhenModelIncreased
-update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, ::Any)
-update_stopping_criterion!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
+set_parameter!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, ::Any)
+set_parameter!(::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, ::Any)
 ```
 
 ## Trust region model

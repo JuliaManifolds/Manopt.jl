@@ -201,11 +201,11 @@ function show(io::IO, c::StopWhenResidualIsReducedByFactorOrPower)
 end
 
 @doc raw"""
-    update_stopping_criterion!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualPower, v)
+    set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualPower, v)
 
 Update the residual Power `θ`  to `v`.
 """
-function update_stopping_criterion!(
+function set_parameter!(
     c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualPower}, v
 )
     c.θ = v
@@ -213,11 +213,11 @@ function update_stopping_criterion!(
 end
 
 @doc raw"""
-    update_stopping_criterion!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualFactor, v)
+    set_parameter!(c::StopWhenResidualIsReducedByFactorOrPower, :ResidualFactor, v)
 
 Update the residual Factor `κ` to `v`.
 """
-function update_stopping_criterion!(
+function set_parameter!(
     c::StopWhenResidualIsReducedByFactorOrPower, ::Val{:ResidualFactor}, v
 )
     c.κ = v

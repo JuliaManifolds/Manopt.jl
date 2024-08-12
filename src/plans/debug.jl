@@ -81,6 +81,9 @@ end
 function set_parameter!(dss::DebugSolverState, v::Val{T}, args...) where {T}
     return set_parameter!(dss.state, v, args...)
 end
+function set_parameter!(dss::DebugSolverState, v::Val{:StoppingCriterion}, args...)
+    return set_parameter!(dss.state, v, args...)
+end
 # all other pass through
 function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
     return get_parameter(dss.state, v, args...)

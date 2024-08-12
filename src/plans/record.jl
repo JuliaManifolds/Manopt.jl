@@ -117,6 +117,9 @@ end
 function set_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
     return set_parameter!(rss.state, v, args...)
 end
+function set_parameter!(rss::RecordSolverState, v::Val{:StoppingCriterion}, args...)
+    return set_parameter!(rss.state, v, args...)
+end
 # all other pass through
 function get_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
     return get_parameter(rss.state, v, args...)

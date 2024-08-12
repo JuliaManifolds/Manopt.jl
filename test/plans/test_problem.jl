@@ -14,7 +14,7 @@ using Manopt, Manifolds, Test
         cpi = DefaultManoptProblem(M, moi)
         @test Manopt.evaluation_type(cpi) === InplaceEvaluation
     end
-    @testset "set_manopt_parameter functions" begin
+    @testset "set_parameter functions" begin
         f(M, p) = 1 # dummy cost
         mco = ManifoldCostObjective(f)
         dmp = DefaultManoptProblem(Euclidean(3), mco)

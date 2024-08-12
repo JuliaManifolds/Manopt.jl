@@ -567,7 +567,6 @@ export StopAfter,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion
-export update_stopping_criterion!
 #
 # Exports
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD

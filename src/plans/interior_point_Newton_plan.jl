@@ -830,7 +830,7 @@ The parameters `τ1`, `τ2` are initialise to zero if not provided.
 
     Besides [`get_parameter`](@ref) for all three constants,
     and [`set_parameter!`](@ref) for ``γ``,
-    to update ``τ_1`` and ``τ_2``, call `set_manopt_parameter(ipcc, :τ, N, q)` to update
+    to update ``τ_1`` and ``τ_2``, call `set_parameter(ipcc, :τ, N, q)` to update
     both ``τ_1`` and ``τ_2`` according to the formulae above.
 """
 mutable struct InteriorPointCentralityCondition{CO,R}

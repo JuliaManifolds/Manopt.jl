@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positiona argument `M` and `inverse_retraction_method=`, respectively
 * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
 * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
+* `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
+  * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
+  * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explixit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
+
 
 ## [0.4.69] – August 3, 2024
 

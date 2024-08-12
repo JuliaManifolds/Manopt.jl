@@ -523,7 +523,7 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     set_parameter!(alms.sub_problem, :Objective, :Gradient, :λ, alms.λ)
     set_iterate!(alms.sub_state, M, copy(M, alms.p))
 
-    update_stopping_criterion!(alms, :MinIterateChange, alms.ϵ)
+    set_parameter!(alms, :StoppingCriterion, :MinIterateChange, alms.ϵ)
 
     new_p = get_solver_result(solve!(alms.sub_problem, alms.sub_state))
     alms.last_stepsize = distance(M, alms.p, new_p, default_inverse_retraction_method(M))

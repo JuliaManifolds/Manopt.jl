@@ -453,7 +453,7 @@ function step_solver!(
     set_parameter!(epms.sub_problem, :Objective, :Gradient, :ρ, epms.ρ)
     set_parameter!(epms.sub_problem, :Objective, :Gradient, :u, epms.u)
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
-    update_stopping_criterion!(epms, :MinIterateChange, epms.ϵ)
+    set_parameter!(epms, :StoppingCriterion, :MinIterateChange, epms.ϵ)
 
     epms.p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
 
