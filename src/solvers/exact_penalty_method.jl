@@ -22,13 +22,13 @@ Describes the exact penalty method, with
 
     ExactPenaltyMethodState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
 
-construct an exact penalty state.
+construct the exact penalty state.
 
     ExactPenaltyMethodState(M::AbstractManifold, sub_problem;
         evaluation=AllocatingEvaluation(), kwargs...
 )
 
-construct an exact penalty state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+construct the exact penalty state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 # Keyword arguments
 

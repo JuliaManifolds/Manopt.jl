@@ -38,7 +38,7 @@ import Manifolds: inner
         dca_sub_problem = DefaultManoptProblem(M, dca_sub_objective)
         dca_sub_state = GradientDescentState(M, copy(M, p0))
 
-        dcs = DifferenceOfConvexState(M, copy(M, p0), dca_sub_problem, dca_sub_state)
+        dcs = DifferenceOfConvexState(M, dca_sub_problem, dca_sub_state; p=copy(M, p0))
         @test Manopt.get_message(dcs) == ""
 
         set_iterate!(dcs, M, p1)

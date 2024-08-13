@@ -21,11 +21,20 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Constructor
 
-    DifferenceOfConvexProximalState(M, p; kwargs...)
+    DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
+
+construct an difference of convex proximal point state
+
+    DifferenceOfConvexProximalState(M::AbstractManifold, sub_problem;
+        evaluation=AllocatingEvaluation(), kwargs...
+)
+
+construct an difference of convex proximal point state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 # Keyword arguments
 
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+* $(_kw_p_default): $(_kw_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=`[`ConstantStepsize`](@ref)`(M)`: $(_kw_stepsize)
 * `stopping_criterion=`[StopWhenChangeLess`](@ref)`(1e-8)`: $(_kw_stopping_criterion)
@@ -55,9 +64,9 @@ mutable struct DifferenceOfConvexProximalState{
     stop::SC
     function DifferenceOfConvexProximalState(
         M::AbstractManifold,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
+        sub_state::St;
+        p::P=rand(M),
         X::T=zero_vector(M, p),
         stepsize::S=ConstantStepsize(M),
         stopping_criterion::SC=StopWhenChangeLess(M, 1e-8),
@@ -67,21 +76,21 @@ mutable struct DifferenceOfConvexProximalState{
     ) where {
         P,
         T,
-        Pr,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
         S<:Stepsize,
+        St<:AbstractManoptSolverState,
         SC<:StoppingCriterion,
         I<:AbstractInverseRetractionMethod,
         R<:AbstractRetractionMethod,
         Fλ,
     }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        return new{P,T,Pr,typeof(sub_state_storage),S,SC,R,I,Fλ}(
+        return new{P,T,Pr,St,S,SC,R,I,Fλ}(
             λ,
             p,
             copy(M, p),
             copy(M, p),
             sub_problem,
-            sub_state_storage,
+            sub_state,
             X,
             retraction_method,
             inverse_retraction_method,
@@ -90,11 +99,11 @@ mutable struct DifferenceOfConvexProximalState{
         )
     end
 end
-# no point -> add point
 function DifferenceOfConvexProximalState(
-    M::AbstractManifold, sub_problem, sub_state; kwargs...
-)
-    return DifferenceOfConvexProximalState(M, rand(M), sub_problem, sub_state; kwargs...)
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return DifferenceOfConvexProximalState(M, sub_problem, cfs; kwargs...)
 end
 get_iterate(dcps::DifferenceOfConvexProximalState) = dcps.p
 function set_iterate!(dcps::DifferenceOfConvexProximalState, M, p)
@@ -390,9 +399,9 @@ function difference_of_convex_proximal_point!(
     dmp = DefaultManoptProblem(M, dmdcpo)
     dcps = DifferenceOfConvexProximalState(
         M,
-        p,
         sub_problem,
         maybe_wrap_evaluation_type(sub_state);
+        p=p,
         X=X,
         stepsize=stepsize,
         stopping_criterion=stopping_criterion,

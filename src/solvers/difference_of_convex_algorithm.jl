@@ -37,11 +37,12 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 
 ## further keyword arguments
 
-* `initial_vector=`$(_link_zero_vector()): how to initialize the inner gradient tangent vector
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`: a stopping criterion
+* $(_kw_p_default): $(_kw_p)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`: $(_kw_stopping_criterion)
+* $(_kw_X_default): $(_kw_X)
 """
 mutable struct DifferenceOfConvexState{
-    Pr,St<:AbstractManoptSolverState,P,T,SC<:StoppingCriterion
+    P,T,Pr,St<:AbstractManoptSolverState,SC<:StoppingCriterion
 } <: AbstractSubProblemSolverState
     p::P
     X::T
@@ -50,32 +51,28 @@ mutable struct DifferenceOfConvexState{
     stop::SC
     function DifferenceOfConvexState(
         M::AbstractManifold,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
-        initial_vector::T=zero_vector(M, p),
+        sub_state::St;
+        p::P=rand(M),
+        X::T=zero_vector(M, p),
         stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9),
-    ) where {P,Pr<:AbstractManoptProblem,T,SC<:StoppingCriterion}
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        return new{Pr,typeof(sub_state_storage),P,T,SC}(
-            p, initial_vector, sub_problem, sub_state, stopping_criterion
-        )
-    end
-    # Function
-    function DifferenceOfConvexState(
-        M::AbstractManifold,
-        p::P,
-        sub_problem::S;
-        initial_vector::T=zero_vector(M, p),
-        stopping_criterion::SC=StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9),
-        evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    ) where {P,S<:Function,T,SC<:StoppingCriterion}
-        sub_state_storage = maybe_wrap_evaluation_type(evaluation)
-        return new{S,typeof(sub_state_storage),P,T,SC}(
-            p, initial_vector, sub_problem, sub_state_storage, stopping_criterion
-        )
+    ) where {
+        P,
+        T,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
+        St<:AbstractManoptSolverState,
+        SC<:StoppingCriterion,
+    }
+        return new{P,T,Pr,St,SC}(p, X, sub_problem, sub_state, stopping_criterion)
     end
 end
+function DifferenceOfConvexState(
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return DifferenceOfConvexState(M, sub_problem, cfs; kwargs...)
+end
+
 get_iterate(dcs::DifferenceOfConvexState) = dcs.p
 function set_iterate!(dcs::DifferenceOfConvexState, M, p)
     copyto!(M, dcs.p, p)
@@ -140,7 +137,6 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 * $(_kw_evaluation_default): $(_kw_evaluation)
 * `gradient=nothing`:        specify ``$(_l_grad) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
-* `initial_vector=`$(_link_zero_vector()): initialise the inner tangent vector to store the subgradient result.
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-8)`:
   $(_kw_stopping_criterion)
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
@@ -169,6 +165,7 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
   $(_kw_used_in("sub_state"))
 * `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
   $(_kw_used_in("sub_state"))
+* $(_kw_X_default): $(_kw_X)
 
 $(_kw_others)
 
@@ -246,7 +243,7 @@ function difference_of_convex_algorithm!(
     g=nothing,
     grad_g=nothing,
     gradient=nothing,
-    initial_vector=zero_vector(M, p),
+    X=zero_vector(M, p),
     objective_type=:Riemannian,
     stopping_criterion=if isnothing(gradient)
         StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
@@ -259,14 +256,12 @@ function difference_of_convex_algorithm!(
     sub_cost=if isnothing(g)
         nothing
     else
-        LinearizedDCCost(g, copy(M, p), copy(M, p, initial_vector))
+        LinearizedDCCost(g, copy(M, p), copy(M, p, X))
     end,
     sub_grad=if isnothing(grad_g)
         nothing
     else
-        LinearizedDCGrad(
-            grad_g, copy(M, p), copy(M, p, initial_vector); evaluation=evaluation
-        )
+        LinearizedDCGrad(grad_g, copy(M, p), copy(M, p, X); evaluation=evaluation)
     end,
     sub_hess=ApproxHessianFiniteDifference(M, copy(M, p), sub_grad; evaluation=evaluation),
     sub_kwargs=(;),
@@ -319,35 +314,23 @@ function difference_of_convex_algorithm!(
 ) where {O<:Union{ManifoldDifferenceOfConvexObjective,AbstractDecoratedManifoldObjective}}
     dmdco = decorate_objective!(M, mdco; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmdco)
-    if isnothing(sub_problem)
-        error(
-            """
-            Subproblem not correctly initialized. Please provide _either_
-            * a `sub_problem=` to be solved
-            * a `sub_objective` to automatically generate the sub problem,
-            * `sub_grad=` (as well as the usually given `sub_cost=`) to automatically generate the sub objective _or_
-            * `grad_g=` keywords to automatically generate the sub problems gradient.
-            """,
-        )
-    elseif sub_problem isa AbstractManoptProblem
-        dcs = DifferenceOfConvexState(
-            M,
-            p,
-            sub_problem,
-            sub_state;
-            stopping_criterion=stopping_criterion,
-            initial_vector=initial_vector,
-        )
-    else
-        dcs = DifferenceOfConvexState(
-            M,
-            p,
-            sub_problem;
-            evaluation=evaluation,
-            stopping_criterion=stopping_criterion,
-            initial_vector=initial_vector,
-        )
-    end
+    isnothing(sub_problem) && error(
+        """
+        Subproblem not correctly initialized. Please provide _either_
+        * a `sub_problem=` to be solved
+        * a `sub_objective` to automatically generate the sub problem,
+        * `sub_grad=` (as well as the usually given `sub_cost=`) to automatically generate the sub objective _or_
+        * `grad_g=` keywords to automatically generate the sub problems gradient.
+        """,
+    )
+    dcs = DifferenceOfConvexState(
+        M,
+        sub_problem,
+        maybe_wrap_evaluation_type(sub_state);
+        p=p,
+        stopping_criterion=stopping_criterion,
+        X=X,
+    )
     ddcs = decorate_state!(dcs; kwargs...)
     solve!(dmp, ddcs)
     return get_solver_return(get_objective(dmp), ddcs)
@@ -377,9 +360,9 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{F,ClosedFormSubSolverState{InplaceEvaluation}},
+    dcs::DifferenceOfConvexState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}},
     i,
-) where {F}
+) where {P,T,F}
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
     dcs.sub_problem(M, dcs.p, dcs.p, dcs.X) # evaluate the closed form solution and store the result in p
@@ -390,9 +373,9 @@ end
 #
 function step_solver!(
     amp::AbstractManoptProblem,
-    dcs::DifferenceOfConvexState{F,ClosedFormSubSolverState{AllocatingEvaluation}},
+    dcs::DifferenceOfConvexState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}},
     i,
-) where {F}
+) where {P,T,F}
     M = get_manifold(amp)
     get_subtrahend_gradient!(amp, dcs.X, dcs.p) # evaluate grad F in place for O.X
     # run the subsolver in-place of a copy of the current iterate and copy it back to the current iterate

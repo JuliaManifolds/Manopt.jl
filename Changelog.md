@@ -37,12 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * when previously `p` and eventually `X` where positional arguments, they are now moved
       to keyword arguments of the same name for start point and tangent vector.
     * in detail
-      * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
-      * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-      * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added
-      * ``ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
       * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
         the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
+      * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
+      * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+      * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+      * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+      * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+
 
 ## Removed
 
