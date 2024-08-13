@@ -31,17 +31,19 @@ a default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    AugmentedLagrangianMethodState(
-        M::AbstractManifold,
-        co::ConstrainedManifoldObjective,
-        p,
-        sub_problem,
-        sub_state;
-        kwargs...
+    AugmentedLagrangianMethodState(M::AbstractManifold, co::ConstrainedManifoldObjective,
+        sub_problem, sub_state; kwargs...
     )
 
 construct an augmented Lagrangian method options, where $(_arg_inline_M) and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
 manifold- or objective specific defaults.
+
+    AugmentedLagrangianMethodState(M::AbstractManifold, co::ConstrainedManifoldObjective,
+        sub_problem; evaluation=AllocatingEvaluation(), kwargs...
+    )
+
+construct an augmented Lagrangian method options, where $(_arg_inline_M) and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
+manifold- or objective specific defaults, and `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 ## Keyword arguments
 
@@ -54,6 +56,7 @@ the following keyword arguments are available to initialise the corresponding fi
 * `λ_min=- λ_max`
 * `μ=ones(m)`: `m` is the number of inequality constraints in the [`ConstrainedManifoldObjective`](@ref) `co`.
 * `μ_max=20.0`
+* $(_kw_p_default): $(_kw_p)
 * `ρ=1.0`
 * `τ=0.8`
 * `θ_ρ=0.3`
@@ -92,9 +95,9 @@ mutable struct AugmentedLagrangianMethodState{
     function AugmentedLagrangianMethodState(
         M::AbstractManifold,
         co::ConstrainedManifoldObjective,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
+        sub_state::St;
+        p::P=rand(M),
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         λ::V=ones(length(get_equality_constraint(M, co, p, :))),
@@ -114,12 +117,18 @@ mutable struct AugmentedLagrangianMethodState{
                                ) |
                                StopWhenChangeLess(M, 1e-10),
         kwargs...,
-    ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,V,SC<:StoppingCriterion}
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        alms = new{P,Pr,typeof(sub_state_storage),R,V,SC}()
+    ) where {
+        P,
+        Pr<:Union{F,AbstractManoptProblem} where {F},
+        St<:AbstractManoptSolverState,
+        R<:Real,
+        V,
+        SC<:StoppingCriterion,
+    }
+        alms = new{P,Pr,St,R,V,SC}()
         alms.p = p
         alms.sub_problem = sub_problem
-        alms.sub_state = sub_state_storage
+        alms.sub_state = sub_state
         alms.ϵ = ϵ
         alms.ϵ_min = ϵ_min
         alms.λ_max = λ_max
@@ -136,6 +145,16 @@ mutable struct AugmentedLagrangianMethodState{
         alms.last_stepsize = Inf
         return alms
     end
+end
+function AugmentedLagrangianMethodState(
+    M::AbstractManifold,
+    co::ConstrainedManifoldObjective,
+    sub_problem::Pr;
+    evaluation::E=AllocatingEvaluation(),
+    kwargs...,
+) where {Pr,E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return AugmentedLagrangianMethodState(M, co, sub_problem, cfs; kwargs...)
 end
 
 get_iterate(alms::AugmentedLagrangianMethodState) = alms.p
@@ -470,12 +489,13 @@ function augmented_Lagrangian_method!(
                                           StopWhenStepsizeLess(1e-10),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     alms = AugmentedLagrangianMethodState(
         M,
         cmo,
-        p,
         sub_problem,
-        sub_state;
+        sub_state_storage;
+        p=p,
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         λ_max=λ_max,

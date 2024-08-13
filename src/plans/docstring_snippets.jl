@@ -45,6 +45,27 @@ function _math_sequence(name, index, i_start=1, i_end="n")
     return "\\{$(name)_{$index}\\}_{i=$(i_start)}^{$i_end}"
 end
 
+#
+#
+# Links
+
+function _link_zero_vector(M="M", p="p")
+    arg = length(M) > 0 ? "`($M, $p)`" : ""
+    return "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$arg"
+end
+function _link_manifold_dimension(M="M")
+    arg = length(M) > 0 ? "`($M)`" : ""
+    return "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$arg"
+end
+function _link_rand(M="M")
+    arg = length(M) > 0 ? "`($M)`" : ""
+    return "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$arg"
+end
+
+#
+#
+# Problems
+
 _problem_default = raw"""
 ```math
 \operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
@@ -114,6 +135,8 @@ _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
 _field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$_l_vt``"
 _field_X = "`X`: a tangent vector"
 
+#
+#
 # Keywords
 _kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
 _kw_evaluation = "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second."
@@ -126,6 +149,9 @@ _kw_others = raw"""
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
 """
+
+_kw_p_default = "`p=`$(_link_rand())"
+_kw_p = raw"specify an initial value for the point `p`."
 
 _kw_retraction_method_default = raw"`retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_retraction_method = "a retraction ``$(_l_retr)`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)."
@@ -146,22 +172,10 @@ end
 _kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_vector_transport_method = "a vector transport ``$_l_vt`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
 
-_kw_X_default = raw"`X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`"
+_kw_X_default = "`X=`$(_link_zero_vector())"
 _kw_X = raw"specify a memory internally to store a tangent vector"
+_kw_X_init = raw"specify an initial value for the tangent vector"
 
 function _kw_used_in(s::String)
     return "This is used to define the `$s=` keyword and has hence no effect, if you set `$s` directly."
-end
-
-function _link_zero_vector(M="M", p="p")
-    arg = length(M) > 0 ? "`($M, $p)`" : ""
-    return "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$arg"
-end
-function _link_manifold_dimension(M="M")
-    arg = length(M) > 0 ? "`($M)`" : ""
-    return "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$arg"
-end
-function _link_rand(M="M")
-    arg = length(M) > 0 ? "`($M)`" : ""
-    return "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$arg"
 end

@@ -25,6 +25,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * the previous `stabilize=true` is now set with `(project!)=embed_project!` in general,
     and if the manifold is represented by points in the embedding, like the sphere, `(project!)=project!` suffices
   * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
+  * the way to initialise sub solvers in the solver states has been unified
+
+    * most solvers had positional arguments for a problem and a state. These could be a function and an `AbstractEvaluationType` or a manopt problem and a solver state.
+    * some had that as keyword arguments with a check and errors.
+
+    In the new variant
+    * the `sub_problem` is always a positional argument; namely the last one
+    * if the `sub_state` is given as a positional argument after the problem, it has to be
+      a manopt solver state
+    * you can provide the new `ClosedFormSolverState(e::AbstractEvaluationType)` for the state
+      to indicate that the `sub_problem` is a closed form solution (function call) and how it
+      has to be called
+    * if you do not provide the `sub_state` as positional, the keyword `evaluation=` is used
+      to generate the state `ClosedFormSolverState`.
+    * when previously `p` and eventually `X` where positional arguments, they are now moved
+      to keyword arguments of the same name for start point and tangent vector.
+    * in detail
+      * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
+      * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p` as keyword argument
+      * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
+        the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
 
 ## Removed
 

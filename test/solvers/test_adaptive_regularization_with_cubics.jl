@@ -38,14 +38,11 @@ include("../utils/example_tasks.jl")
     end
 
     @testset "State and repr" begin
-        # neither provided a problem nor an objective yields an error
-        @test_throws ErrorException AdaptiveRegularizationState(ℝ^2)
-
         arcs = AdaptiveRegularizationState(
             M,
-            p0;
-            sub_problem=DefaultManoptProblem(M2, arcmo),
-            sub_state=GradientDescentState(M2, zero_vector(M, p0)),
+            DefaultManoptProblem(M2, arcmo),
+            GradientDescentState(M2, zero_vector(M, p0));
+            p=p0,
         )
         @test startswith(
             repr(arcs),
@@ -59,9 +56,9 @@ include("../utils/example_tasks.jl")
         @test arcs.X == X1
         arcs2 = AdaptiveRegularizationState(
             M,
-            p0;
-            sub_objective=arcmo,
-            sub_state=LanczosState(M2; maxIterLanczos=1),
+            DefaultManoptProblem(M2, arcmo),
+            LanczosState(M2; maxIterLanczos=1);
+            p=p0,
             stopping_criterion=StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
@@ -71,7 +68,7 @@ include("../utils/example_tasks.jl")
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
         arcs3 = AdaptiveRegularizationState(
-            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos=2); p=p0
         )
         #add a fake Lanczos
         initialize_solver!(arcs3.sub_problem, arcs3.sub_state)
@@ -90,7 +87,7 @@ include("../utils/example_tasks.jl")
         )
         # a second that copies
         arcs4 = AdaptiveRegularizationState(
-            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos=2); p=p0
         )
         #add a fake Lanczos
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
@@ -142,7 +139,7 @@ include("../utils/example_tasks.jl")
         )
         @test r == p0
         # Dummy construction with a function for the `sub_problem`
-        arcs4 = AdaptiveRegularizationState(M, p0; sub_problem=f1)
+        arcs4 = AdaptiveRegularizationState(M, f1; p=p0)
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
     end
 

@@ -35,7 +35,7 @@ using LinearAlgebra: I, tr
         # dummy ALM problem
         sp = DefaultManoptProblem(M, ManifoldCostObjective(f))
         ss = NelderMeadState(M)
-        alms = AugmentedLagrangianMethodState(M, co, p0, sp, ss)
+        alms = AugmentedLagrangianMethodState(M, co, sp, ss; p=p0)
         set_iterate!(alms, M, 2 .* p0)
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0

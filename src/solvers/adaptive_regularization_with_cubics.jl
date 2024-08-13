@@ -31,7 +31,7 @@ Furthermore the following integral fields are defined
 
 # Constructor
 
-    AdaptiveRegularizationState(M, p=rand(M); X=zero_vector(M, p); kwargs...)
+    AdaptiveRegularizationState(M, sub_problem, sub_state; kwargs...)
 
 Construct the solver state with all fields stated as keyword arguments and the following defaults
 
@@ -43,11 +43,13 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `σmin=1e-7
 * `ρ_regularization=1e3`
 * $_kw_evaluation_default
+* $(_kw_p_default)
 * $_kw_retraction_method_default
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
 * `sub_objective=nothing` a shortcut to provide a subobjective.
 * `sub_problem=nothing` is set to [`DefaultManoptProblem`](@ref) on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
 * `sub_state` is set to [`AllocatingEvaluation`](@ref) if `sub_problem` is a function and to a [`LanczosState`](@ref) on the tangent space otherwise
+* $(_kw_X_default)
 """
 mutable struct AdaptiveRegularizationState{
     P,
@@ -80,19 +82,10 @@ end
 
 function AdaptiveRegularizationState(
     M::AbstractManifold,
+    sub_problem::Pr,
+    sub_state::St;
     p::P=rand(M),
-    X::T=zero_vector(M, p);
-    sub_objective=nothing,
-    sub_problem::Pr=if isnothing(sub_objective)
-        nothing
-    else
-        DefaultManoptProblem(TangentSpace(M, copy(M, p)), sub_objective)
-    end,
-    sub_state::St=if sub_problem isa Function
-        AllocatingEvaluation()
-    else
-        LanczosState(TangentSpace(M, copy(M, p)))
-    end,
+    X::T=zero_vector(M, p),
     σ::R=100.0 / sqrt(manifold_dimension(M)),# Had this to initial value of 0.01. However try same as in MATLAB: 100/sqrt(dim(M))
     ρ_regularization::R=1e3,
     stopping_criterion::SC=StopAfterIteration(100),
@@ -106,18 +99,16 @@ function AdaptiveRegularizationState(
     P,
     T,
     R,
-    Pr<:Union{<:AbstractManoptProblem,<:Function,Nothing},
-    St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType},
+    Pr<:Union{<:AbstractManoptProblem,F} where {F},
+    St<:AbstractManoptSolverState,
     SC<:StoppingCriterion,
     RTM<:AbstractRetractionMethod,
 }
-    isnothing(sub_problem) && error("No sub_problem provided,")
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-    return AdaptiveRegularizationState{P,T,Pr,typeof(sub_state_storage),SC,R,RTM}(
+    return AdaptiveRegularizationState{P,T,Pr,St,SC,R,RTM}(
         p,
         X,
         sub_problem,
-        sub_state_storage,
+        sub_state,
         copy(M, p),
         copy(M, p, X),
         copy(M, p, X),
@@ -134,7 +125,12 @@ function AdaptiveRegularizationState(
         γ2,
     )
 end
-
+function AdaptiveRegularizationState(
+    M, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return AdaptiveRegularizationState(M, sub_problem, cfs; kwargs...)
+end
 get_iterate(s::AdaptiveRegularizationState) = s.p
 function set_iterate!(s::AdaptiveRegularizationState, p)
     s.p = p
@@ -427,10 +423,10 @@ function adaptive_regularization_with_cubics!(
     dmp = DefaultManoptProblem(M, dmho)
     arcs = AdaptiveRegularizationState(
         M,
-        p,
-        X;
-        sub_state=sub_state_storage,
-        sub_problem=sub_problem,
+        sub_problem,
+        sub_state_storage;
+        p=p,
+        X=X,
         σ=σ,
         ρ_regularization=ρ_regularization,
         stopping_criterion=stopping_criterion,
