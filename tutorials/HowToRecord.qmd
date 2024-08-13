@@ -124,7 +124,7 @@ We first generate the problem and the state, to also illustrate the low-level wo
 p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 s = GradientDescentState(
     M;
-    p=copy(data[1]);
+    p=copy(data[1]),
     stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
 )
 ```
