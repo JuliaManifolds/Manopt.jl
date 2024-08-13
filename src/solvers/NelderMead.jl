@@ -73,13 +73,14 @@ after the description
 
 # Constructors
 
-    NelderMeadState(M, population::NelderMeadSimplex=NelderMeadSimplex(M)); kwargs...)
+    NelderMeadState(M; kwargs...)
 
 Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
 # Keyword arguments
 
+* `population=`[`NelderMeadSimplex`](@ref)`(M)`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`$_sc_any[`StopWhenPopulationConcentrated`](@ref)`()`):
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
@@ -111,8 +112,8 @@ mutable struct NelderMeadState{
     retraction_method::TR
     inverse_retraction_method::TI
     function NelderMeadState(
-        M::AbstractManifold,
-        population::NelderMeadSimplex{T}=NelderMeadSimplex(M);
+        M::AbstractManifold;
+        population::NelderMeadSimplex{T}=NelderMeadSimplex(M),
         stopping_criterion::StoppingCriterion=StopAfterIteration(2000) |
                                               StopWhenPopulationConcentrated(),
         α=1.0,
@@ -283,8 +284,8 @@ function NelderMead!(
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
-        M,
-        population;
+        M;
+        population=population,
         stopping_criterion=stopping_criterion,
         α=α,
         γ=γ,

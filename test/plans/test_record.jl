@@ -14,7 +14,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     M = ManifoldsBase.DefaultManifold(2)
     p = [4.0, 2.0]
     gds = GradientDescentState(
-        M, copy(p); stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        M;
+        p=copy(p);
+        stopping_criterion=StopAfterIteration(20),
+        stepsize=ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)

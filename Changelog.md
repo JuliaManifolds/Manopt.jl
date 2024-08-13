@@ -25,30 +25,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * the previous `stabilize=true` is now set with `(project!)=embed_project!` in general,
     and if the manifold is represented by points in the embedding, like the sphere, `(project!)=project!` suffices
   * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
-  * the way to initialise sub solvers in the solver states has been unified In the new variant
-    * the `sub_problem` is always a positional argument; namely the last one
-    * if the `sub_state` is given as a optional positional argument after the problem, it has to be
-      a manopt solver state
-    * you can provide the new `ClosedFormSolverState(e::AbstractEvaluationType)` for the state
-      to indicate that the `sub_problem` is a closed form solution (function call) and how it
-      has to be called
-    * if you do not provide the `sub_state` as positional, the keyword `evaluation=` is used
-      to generate the state `ClosedFormSolverState`.
-    * when previously `p` and eventually `X` where positional arguments, they are now moved
-      to keyword arguments of the same name for start point and tangent vector.
-    * in detail
-      * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
-        the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
-      * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
-      * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-      * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-      * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-      * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-
+* the positional argument `p` (usually the last or the third to last if subsolvers existed) has been moved to a keyword argument `p=` in all State constructors
+* in `NelderMeadState` the `population` moved from positional to keyword argument as well,
+* the way to initialise sub solvers in the solver states has been unified In the new variant
+  * the `sub_problem` is always a positional argument; namely the last one
+  * if the `sub_state` is given as a optional positional argument after the problem, it has to be a manopt solver state
+  * you can provide the new `ClosedFormSolverState(e::AbstractEvaluationType)` for the state
+    to indicate that the `sub_problem` is a closed form solution (function call) and how it
+    has to be called
+  * if you do not provide the `sub_state` as positional, the keyword `evaluation=` is used
+    to generate the state `ClosedFormSolverState`.
+  * when previously `p` and eventually `X` where positional arguments, they are now moved
+    to keyword arguments of the same name for start point and tangent vector.
+  * in detail
+    * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
+      the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
+    * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
+    * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+  *
 
 ## Removed
 
- * the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now
+* the `convex_bundle_method` and its `ConvexBundleMethodState` no longer accept the keywords `k_size`, `p_estimate` nor `ϱ`, they are superseded by just providing `k_max`.
+* the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now
    a mandatory argument. To use the old variant,
    provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
 * all deprecated keyword arguments and a few function signatures were removed

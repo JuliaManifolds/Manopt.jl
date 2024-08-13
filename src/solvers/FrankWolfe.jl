@@ -29,25 +29,28 @@ $_doc_FW_sub
 
 # Constructor
 
-    FrankWolfeState(M, p, sub_problem, sub_state; kwargs...)
+    FrankWolfeState(M, sub_problem, sub_state; kwargs...)
 
-Initialise the Frank Wolfe method state with.
+Initialise the Frank Wolfe method state.
+
+FrankWolfeState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
+
+Initialise the Frank Wolfe method state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 ## Input
 
-* $_arg_M
-* $_arg_p
-* $_arg_X
-* $_arg_sub_problem
-* $_arg_sub_state
+$_arg_M
+$_arg_sub_problem
+$_arg_sub_state
 
 ## Keyword arguments
 
+* $(_kw_p_default): $(_kw_p)
+* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-6)` $_kw_stop_note
 * `stepsize=`[`default_stepsize`](@ref)`(M, FrankWolfeState)`
-* $_kw_retraction_method_default
-* $_kw_inverse_retraction_method_default
-* $_kw_X_default
+* $(_kw_X_default): $(_kw_X)
 
 where the remaining fields from before are keyword arguments.
 """
@@ -71,9 +74,9 @@ mutable struct FrankWolfeState{
     inverse_retraction_method::ITM
     function FrankWolfeState(
         M::AbstractManifold,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
+        sub_state::St;
+        p::P=rand(M),
         X::T=zero_vector(M, p),
         stopping_criterion::TStop=StopAfterIteration(200) | StopWhenGradientNormLess(1e-6),
         stepsize::TStep=default_stepsize(M, FrankWolfeState),
@@ -81,19 +84,19 @@ mutable struct FrankWolfeState{
         inverse_retraction_method::ITM=default_inverse_retraction_method(M, typeof(p)),
     ) where {
         P,
-        Pr,
         T,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
+        St<:AbstractManoptSolverState,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,
         TM<:AbstractRetractionMethod,
         ITM<:AbstractInverseRetractionMethod,
     }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        return new{P,T,Pr,typeof(sub_state_storage),TStep,TStop,TM,ITM}(
+        return new{P,T,Pr,St,TStep,TStop,TM,ITM}(
             p,
             X,
             sub_problem,
-            sub_state_storage,
+            sub_state,
             stopping_criterion,
             stepsize,
             retraction_method,
@@ -101,6 +104,13 @@ mutable struct FrankWolfeState{
         )
     end
 end
+function FrankWolfeState(
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return FrankWolfeState(M, sub_problem, cfs; kwargs...)
+end
+
 function default_stepsize(::AbstractManifold, ::Type{FrankWolfeState})
     return DecreasingStepsize(; length=2.0, shift=2)
 end
@@ -216,7 +226,7 @@ $_arg_alt_mgo
   For points 2 and 3 the `sub_state` has to be set to the corresponding [`AbstractEvaluationType`](@ref), [`AllocatingEvaluation`](@ref) and [`InplaceEvaluation`](@ref), respectively
   This keyword takes further into account `sub_kwargs` to evejtually decorate the problem
 
-* `sub_state= if sub_problem isa Function evaluation else GradientDescentState(M, copy(M,p); kwargs...)`:
+* `sub_state= if sub_problem isa Function evaluation else GradientDescentState(M; p=copy(M,p); kwargs...)`:
 
   specify either the solver for a `sub_problem` or the kind of evaluation if the sub problem is given by a closed form solution
   this keyword takes into account the `sub_stopping_criterion`, and the `sub_kwargs`, that are also used to potentially decorate the state.
@@ -298,8 +308,8 @@ function Frank_Wolfe_method!(
     else
         decorate_state!(
             GradientDescentState(
-                M,
-                copy(M, p);
+                M;
+                p=copy(M, p),
                 stopping_criterion=sub_stopping_criterion,
                 stepsize=default_stepsize(
                     M, GradientDescentState; retraction_method=retraction_method
@@ -321,9 +331,9 @@ function Frank_Wolfe_method!(
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     fws = FrankWolfeState(
         M,
-        p,
         sub_problem,
         sub_state_storage;
+        p=p,
         X=X,
         retraction_method=retraction_method,
         stepsize=stepsize,

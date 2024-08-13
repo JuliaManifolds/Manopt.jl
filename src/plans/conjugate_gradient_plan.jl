@@ -39,7 +39,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Constructor
 
-    ConjugateGradientState(M, p)
+    ConjugateGradientState(M; kwargs...)
 
 where the last five fields can be set by their names as keyword and the
 `X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,
@@ -49,6 +49,7 @@ and `δ` is initialized to a copy of this vector.
 
 The following fields from above <re keyword arguments
 
+* $(_kw_p_default): $(_kw_p)
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`
 * `stepsize=[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`)
 * `stop=[`StopAfterIteration`](@ref)`(500)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
@@ -107,8 +108,8 @@ mutable struct ConjugateGradientDescentState{
 end
 
 function ConjugateGradientDescentState(
-    M::AbstractManifold,
-    p::P;
+    M::AbstractManifold;
+    p::P=rand(M),
     coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(

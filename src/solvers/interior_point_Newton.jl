@@ -276,9 +276,9 @@ function interior_point_Newton!(
     ips = InteriorPointNewtonState(
         M,
         cmo,
-        p,
         sub_problem,
         sub_state;
+        p=p,
         X=X,
         Y=Y,
         Z=Z,

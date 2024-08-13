@@ -17,7 +17,7 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Constructor
 
-    StochasticGradientDescentState(M, p, X; kwargs...)
+    StochasticGradientDescentState(M; kwargs...)
 
 Create a `StochasticGradientDescentState` with start point `p`.
 
@@ -26,10 +26,13 @@ Create a `StochasticGradientDescentState` with start point `p`.
 * `direction=`[`StochasticGradient`](@ref)`($(_link_zero_vector()))
 * `order_type=:RandomOrder``
 * `order=Int[]`: specify how to store the order of indices for the next epoche
+* $(_kw_p_default): $(_kw_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`: $(_kw_stopping_criterion)
 * `stepsize=`[`default_stepsize`[@ref)`(M, StochasticGradientDescentState)`: $(_kw_stepsize)
    This default is the [`ConstantStepsize`](@ref)`(M)`
+* $(_kw_X_default): $(_kw_X)
+
 """
 mutable struct StochasticGradientDescentState{
     TX,
@@ -51,9 +54,9 @@ mutable struct StochasticGradientDescentState{
 end
 
 function StochasticGradientDescentState(
-    M::AbstractManifold,
-    p::P,
-    X::Q;
+    M::AbstractManifold;
+    p::P=rand(M),
+    X::T=zero_vector(M, p),
     direction::D=StochasticGradient(zero_vector(M, p)),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
@@ -62,13 +65,13 @@ function StochasticGradientDescentState(
     stepsize::S=default_stepsize(M, StochasticGradientDescentState),
 ) where {
     P,
-    Q,
+    T,
     D<:DirectionUpdateRule,
     RM<:AbstractRetractionMethod,
     SC<:StoppingCriterion,
     S<:Stepsize,
 }
-    return StochasticGradientDescentState{P,Q,D,SC,S,RM}(
+    return StochasticGradientDescentState{P,T,D,SC,S,RM}(
         p,
         X,
         direction,
@@ -239,9 +242,9 @@ function stochastic_gradient_descent!(
     dmsgo = decorate_objective!(M, msgo; kwargs...)
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
-        M,
-        p,
-        zero_vector(M, p);
+        M;
+        p=p,
+        X=zero_vector(M, p),
         direction=direction,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,

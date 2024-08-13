@@ -38,13 +38,16 @@ If you activate these to be different from the default identity, you have to pro
 
 # Constructor
 
-    ChambollePockState(M::AbstractManifold, N::AbstractManifold,
-        m::P, n::Q, p::P, X::T, primal_stepsize::R, dual_stepsize::R;
+    ChambollePockState(M::AbstractManifold, N::AbstractManifold;
         kwargs...
     ) where {P, Q, T, R <: Real}
 
 # Keyword arguments
 
+* `n=``$(_link_rand("N"))
+* `p=`$(_link_rand())
+* `m=`$(_link_rand())
+* `X=`$(_link_zero_vector())
 * `acceleration=0.0`
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
@@ -99,11 +102,11 @@ mutable struct ChambollePockState{
 end
 function Manopt.ChambollePockState(
     M::AbstractManifold,
-    N::AbstractManifold,
-    m::P,
-    n::Q,
-    p::P,
-    X::T;
+    N::AbstractManifold;
+    m::P=rand(M),
+    n::Q=rand(N),
+    p::P=rand(M),
+    X::T=zero_vector(M, p),
     primal_stepsize::R=1 / sqrt(8),
     dual_stepsize::R=1 / sqrt(8),
     acceleration::R=0.0,
@@ -340,11 +343,11 @@ function ChambollePock!(
     tmp = TwoManifoldProblem(M, N, dpdmo)
     cps = ChambollePockState(
         M,
-        m,
-        n,
-        p,
-        X;
-        N=N,
+        N;
+        m=m,
+        n=n,
+        p=p,
+        X=X,
         primal_stepsize=primal_stepsize,
         dual_stepsize=dual_stepsize,
         acceleration=acceleration,

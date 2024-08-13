@@ -8,7 +8,10 @@ include("../utils/dummy_types.jl")
     M = ManifoldsBase.DefaultManifold(2)
     p = [4.0, 2.0]
     gst = GradientDescentState(
-        M, zero(p); stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        M;
+        p=zero(p),
+        stopping_criterion=StopAfterIteration(20),
+        stepsize=ConstantStepsize(M),
     )
     set_iterate!(gst, M, p)
     @test get_iterate(gst) == p

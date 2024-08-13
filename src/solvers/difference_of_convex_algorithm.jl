@@ -26,8 +26,8 @@ a closed form solution for the sub task.
 
 # Constructors
 
-    DifferenceOfConvexState(M, p, sub_problem, sub_state; kwargs...)
-    DifferenceOfConvexState(M, p, sub_solver; evaluation=InplaceEvaluation(), kwargs...)
+    DifferenceOfConvexState(M, sub_problem, sub_state; kwargs...)
+    DifferenceOfConvexState(M, sub_solver; evaluation=InplaceEvaluation(), kwargs...)
 
 Generate the state either using a solver from Manopt, given by
 an [`AbstractManoptProblem`](@ref) `sub_problem` and an [`AbstractManoptSolverState`](@ref) `sub_state`,
@@ -296,13 +296,16 @@ function difference_of_convex_algorithm!(
         decorate_state!(
             if isnothing(sub_hess)
                 GradientDescentState(
-                    M, copy(M, p); stopping_criterion=sub_stopping_criterion, sub_kwargs...
+                    M;
+                    p=copy(M, p),
+                    stopping_criterion=sub_stopping_criterion,
+                    sub_kwargs...,
                 )
             else
                 TrustRegionsState(
                     M,
-                    copy(M, p),
                     sub_objective;
+                    p=copy(M, p),
                     stopping_criterion=sub_stopping_criterion,
                     sub_kwargs...,
                 )

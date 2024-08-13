@@ -137,11 +137,11 @@ function primal_dual_semismooth_Newton!(
     dpdmsno = decorate_objective!(M, pdmsno; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
-        M,
-        m,
-        n,
-        p,
-        X;
+        M;
+        m=m,
+        n=n,
+        p=p,
+        X=X,
         primal_stepsize=primal_stepsize,
         dual_stepsize=dual_stepsize,
         regularization_parameter=reg_param,

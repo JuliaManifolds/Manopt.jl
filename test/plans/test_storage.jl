@@ -10,7 +10,7 @@ using Test, Manopt, ManifoldsBase, Manifolds
         X_zero = zero_vector(M, p)
 
         st = GradientDescentState(
-            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)

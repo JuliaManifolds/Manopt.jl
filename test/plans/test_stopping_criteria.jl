@@ -25,7 +25,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         p = DefaultManoptProblem(
             Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         )
-        s = GradientDescentState(Euclidean(), 1.0)
+        s = GradientDescentState(Euclidean(); p=1.0)
         @test !s3(p, s, 1)
         @test length(get_reason(s3)) == 0
         s.p = 0.3
@@ -197,8 +197,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
-            Euclidean(),
-            1.0;
+            Euclidean();
+            p=1.0,
             stopping_criterion=StopAfterIteration(100),
             stepsize=ConstantStepsize(Euclidean()),
         )
@@ -218,8 +218,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
-            Euclidean(),
-            1.0;
+            Euclidean();
+            p=1.0,
             stopping_criterion=StopAfterIteration(100),
             stepsize=ConstantStepsize(Euclidean()),
         )

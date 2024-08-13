@@ -36,7 +36,7 @@ import Manifolds: inner
         @test X2 == X3
         dca_sub_objective = ManifoldGradientObjective(dca_sub_cost, dca_sub_grad)
         dca_sub_problem = DefaultManoptProblem(M, dca_sub_objective)
-        dca_sub_state = GradientDescentState(M, copy(M, p0))
+        dca_sub_state = GradientDescentState(M; p=copy(M, p0))
 
         dcs = DifferenceOfConvexState(M, dca_sub_problem, dca_sub_state; p=copy(M, p0))
         @test Manopt.get_message(dcs) == ""
@@ -60,7 +60,7 @@ import Manifolds: inner
 
         dcppa_sub_objective = ManifoldGradientObjective(dcppa_sub_cost, dcppa_sub_grad)
         dcppa_sub_problem = DefaultManoptProblem(M, dcppa_sub_objective)
-        dcppa_sub_state = GradientDescentState(M, copy(M, p0))
+        dcppa_sub_state = GradientDescentState(M; p=copy(M, p0))
 
         dcps = DifferenceOfConvexProximalState( #Initialize with random point
             M,

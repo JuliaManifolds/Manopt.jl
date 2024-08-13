@@ -41,7 +41,7 @@ include("../utils/example_tasks.jl")
         arcs = AdaptiveRegularizationState(
             M,
             DefaultManoptProblem(M2, arcmo),
-            GradientDescentState(M2, zero_vector(M, p0));
+            GradientDescentState(M2; p=zero_vector(M, p0));
             p=p0,
         )
         @test startswith(
@@ -200,8 +200,8 @@ include("../utils/example_tasks.jl")
 
         sub_problem = DefaultManoptProblem(M2, arcmo)
         sub_state = GradientDescentState(
-            M2,
-            zero_vector(M, p0);
+            M2;
+            p=zero_vector(M, p0),
             stopping_criterion=StopAfterIteration(500) |
                                StopWhenGradientNormLess(1e-11) |
                                StopWhenFirstOrderProgress(0.1),

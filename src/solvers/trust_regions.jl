@@ -28,28 +28,27 @@ Store the state of the trust-regions solver.
 
 # Constructors
 
-    TrustRegionsState(M, mho; kwargs...)
-    TrustRegionsState(M, p, mho; kwargs...)
+    TrustRegionsState(M, mho::AbstractManifoldHessianObjective; kwargs...)
     TrustRegionsState(M, sub_problem, sub_state; kwargs...)
-    TrustRegionsState(M, p, sub_problem, sub_state; kwargs...)
-    TrustRegionsState(M, f::Function; evaluation=AllocatingEvaluation, kwargs...)
-    TrustRegionsState(M, p, f; evaluation=AllocatingEvaluation, kwargs...)
+    TrustRegionsState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
+
+create a trust region state.
+* given a [`AbstractManifoldHessianObjective`](@ref) `mho`, the default sub solver,
+  a [`TruncatedConjugateGradientState`](@ref) with `mho` used to define the problem on a tangent space is created
+* given a `sub_problem` and an `evaluation=` keyword, the sub problem solver is assumed to be the closed form solution,
+  where `evaluation` determines how to call the sub function.
 
 # Input
 
 $(_arg_M)
-$(_arg_p)
-
-as well as either
-
-* an [`ManifoldHessianObjective`](@ref) `mho`, then `sub_state` and `sub_problem` are filled with a default (deprecated).
-* a `sub_problem` and a `sub_state`
-* a function `f` and its `evaluation` as a closed form solution for the sub solver.
+$_arg_sub_problem
+$_arg_sub_state
 
 ## Keyword arguments
 
 * `acceptance_rate=0.1`
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
+* $(_kw_p_default): $(_kw_p)
 * `project!=copyto!`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
@@ -148,43 +147,12 @@ mutable struct TrustRegionsState{
         return trs
     end
 end
-# No point, no state -> add point
+
 function TrustRegionsState(
-    M, sub_problem::Pr; kwargs...
-) where {Pr<:Union{AbstractManoptProblem,<:Function,AbstractManifoldHessianObjective}}
-    return TrustRegionsState(M, rand(M), sub_problem; kwargs...)
-end
-# No point but state -> add point
-function TrustRegionsState(M, sub_problem, sub_state::AbstractManoptSolverState; kwargs...)
-    return TrustRegionsState(M, rand(M), sub_problem, sub_state; kwargs...)
-end
-# point, but no state for a function -> add evaluation as state
-function TrustRegionsState(
-    M,
-    p,
-    sub_problem::Function;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    return TrustRegionsState(
-        M, p, sub_problem, ClosedFormSubSolverState(evaluation); kwargs...
-    )
-end
-function TrustRegionsState(
-    M, p, mho::H; kwargs...
-) where {H<:AbstractManifoldHessianObjective}
-    TpM = TangentSpace(M, copy(M, p))
-    problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
-    state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
-    return TrustRegionsState(M, p, problem, state; kwargs...)
-end
-function TrustRegionsState(
-    M::TM,
-    p::P,
+    M::AbstractManifold,
     sub_problem::Pr,
-    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=TruncatedConjugateGradientState(
-        TangentSpace(M, copy(M, p)), zero_vector(M, p)
-    );
+    sub_state::St;
+    p::P=rand(M),
     X::T=zero_vector(M, p),
     acceptance_rate=0.1,
     ρ_regularization::R=1000.0,
@@ -200,17 +168,16 @@ function TrustRegionsState(
     project!::Proj=copyto!,
     σ=randomize ? 1e-4 : 0.0,
 ) where {
-    TM<:AbstractManifold,
-    Pr<:AbstractManoptProblem,
     P,
     T,
+    Pr<:Union{AbstractManoptProblem,F} where {F},
+    St<:AbstractManoptSolverState,
     R<:Real,
     SC<:StoppingCriterion,
     RTR<:AbstractRetractionMethod,
     Proj,
 }
-    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-    return TrustRegionsState{P,T,Pr,typeof(sub_state_storage),SC,RTR,R,Proj}(
+    return TrustRegionsState{P,T,Pr,St,SC,RTR,R,Proj}(
         p,
         X,
         trust_region_radius,
@@ -223,12 +190,26 @@ function TrustRegionsState(
         reduction_threshold,
         augmentation_threshold,
         sub_problem,
-        sub_state_storage,
+        sub_state,
         project!,
         reduction_factor,
         augmentation_factor,
         σ,
     )
+end
+function TrustRegionsState(
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return TrustRegionsState(M, sub_problem, cfs; kwargs...)
+end
+function TrustRegionsState(
+    M::AbstractManifold, mho::AbstractManifoldHessianObjective; p=rand(M), kwargs...
+)
+    TpM = TangentSpace(M, copy(M, p))
+    problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
+    state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
+    return TrustRegionsState(M, problem, state; p=p, kwargs...)
 end
 get_iterate(trs::TrustRegionsState) = trs.p
 function set_iterate!(trs::TrustRegionsState, M, p)
@@ -491,8 +472,8 @@ function trust_regions!(
                                               StopWhenModelIncreased(),
     sub_state::AbstractManoptSolverState=decorate_state!(
         TruncatedConjugateGradientState(
-            TangentSpace(M, copy(M, p)),
-            zero_vector(M, p);
+            TangentSpace(M, copy(M, p));
+            X=zero_vector(M, p),
             θ=θ,
             κ=κ,
             trust_region_radius,
@@ -519,9 +500,9 @@ function trust_regions!(
     dmp = DefaultManoptProblem(M, dmho)
     trs = TrustRegionsState(
         M,
-        p,
         sub_problem,
-        sub_state;
+        maybe_wrap_evaluation_type(sub_state);
+        p=p,
         X=get_gradient(dmp, p),
         trust_region_radius=trust_region_radius,
         max_trust_region_radius=max_trust_region_radius,

@@ -12,6 +12,7 @@ if these are different from the iterate and search direction of the main solver.
 # Constructor
 
     StepsizeState(p,X)
+    StepsizeState(M::AbstractManifold; p=rand(M), x=zero_vector(M,p)
 
 # See also
 
@@ -21,6 +22,7 @@ struct StepsizeState{P,T} <: AbstractManoptSolverState
     p::P
     X::T
 end
+StepsizeState(M::AbstractManifold; p=rand(M), X=zero_vector(M, p)) = StepsizeState(p, X)
 get_iterate(s::StepsizeState) = s.p
 get_gradient(s::StepsizeState) = s.X
 set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
@@ -54,7 +56,6 @@ set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
     InteriorPointNewtonState(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
-        p,
         sub_problem::Pr,
         sub_state::St;
         kwargs...
@@ -67,7 +68,6 @@ are used to fill in reasonable defaults for the keywords.
 
 $(_arg_M)
 * `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
-$(_arg_p)
 $(_arg_sub_problem)
 $(_arg_sub_state)
 
@@ -75,6 +75,7 @@ $(_arg_sub_state)
 
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
+* $(_kw_p_default): $(_kw_p)
 * `μ=ones(m)`
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
 * `Y=zero(μ)`
@@ -128,9 +129,9 @@ mutable struct InteriorPointNewtonState{
     function InteriorPointNewtonState(
         M::AbstractManifold,
         cmo::ConstrainedManifoldObjective,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
+        sub_state::St;
+        p::P=rand(M),
         X::T=zero_vector(M, p),
         μ::V=ones(length(get_inequality_constraint(M, cmo, p, :))),
         Y::V=zero(μ),
@@ -153,7 +154,7 @@ mutable struct InteriorPointNewtonState{
         step_problem::StepPr=DefaultManoptProblem(_step_M, step_objective),
         _step_p=rand(_step_M),
         step_state::StepSt=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
-        centrality_condition::F=(N, p) -> true, # Todo
+        centrality_condition::F=(N, p) -> true,
         stepsize::S=ArmijoLinesearch(
             get_manifold(step_problem);
             retraction_method=default_retraction_method(get_manifold(step_problem)),
@@ -164,7 +165,8 @@ mutable struct InteriorPointNewtonState{
     ) where {
         P,
         T,
-        Pr,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
+        St<:AbstractManoptSolverState,
         V,
         R,
         F,
@@ -174,11 +176,10 @@ mutable struct InteriorPointNewtonState{
         RTM<:AbstractRetractionMethod,
         S<:Stepsize,
     }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        ips = new{P,T,Pr,typeof(sub_state_storage),V,R,SC,RTM,S,StepPr,StepSt}()
+        ips = new{P,T,Pr,St,V,R,SC,RTM,S,StepPr,StepSt}()
         ips.p = p
         ips.sub_problem = sub_problem
-        ips.sub_state = sub_state_storage
+        ips.sub_state = sub_state
         ips.μ = μ
         ips.λ = λ
         ips.s = s
@@ -196,7 +197,16 @@ mutable struct InteriorPointNewtonState{
         return ips
     end
 end
-
+function InteriorPointNewtonState(
+    M::AbstractManifold,
+    cmo::ConstrainedManifoldObjective,
+    sub_problem;
+    evaluation::E=AllocatingEvaluation(),
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return InteriorPointNewtonState(M, cmo, sub_problem, cfs; kwargs...)
+end
 # get & set iterate
 get_iterate(ips::InteriorPointNewtonState) = ips.p
 function set_iterate!(ips::InteriorPointNewtonState, ::AbstractManifold, p)

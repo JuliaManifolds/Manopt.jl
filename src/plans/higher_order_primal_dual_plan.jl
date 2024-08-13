@@ -89,12 +89,16 @@ If you activate these to be different from the default identity, you have to pro
 
 # Constructor
 
-    PrimalDualSemismoothNewtonState(M::AbstractManifold, m::P, n::Q, x::P, ξ::T; kwargs...)
+    PrimalDualSemismoothNewtonState(M::AbstractManifold; kwargs...)
 
 Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 
 ## Keyword arguments
 
+* `m=`$(_link_rand())
+* `n=``$(_link_rand("N"))
+* `p=`$(_link_rand())
+* `X=`$(_link_zero_vector())
 * `primal_stepsize=1/sqrt(8)`
 * `dual_stepsize=1/sqrt(8)`
 * `reg_param=1e-5`
@@ -133,11 +137,11 @@ mutable struct PrimalDualSemismoothNewtonState{
     vector_transport_method::VTM
 
     function PrimalDualSemismoothNewtonState(
-        M::AbstractManifold,
-        m::P,
-        n::Q,
-        p::P,
-        X::T;
+        M::AbstractManifold;
+        m::P=rand(M),
+        n::Q=rand(N),
+        p::P=rand(M),
+        X::T=zero_vector(M, p),
         primal_stepsize::Float64=1 / sqrt(8),
         dual_stepsize::Float64=1 / sqrt(8),
         regularization_parameter::Float64=1e-5,

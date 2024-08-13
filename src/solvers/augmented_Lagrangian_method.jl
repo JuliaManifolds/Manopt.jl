@@ -459,9 +459,9 @@ function augmented_Lagrangian_method!(
                                               StopWhenStepsizeLess(1e-8),
     sub_state::AbstractManoptSolverState=decorate_state!(
         QuasiNewtonState(
-            M,
-            copy(p);
-            initial_vector=zero_vector(M, p),
+            M;
+            p=copy(M, p),
+            X=zero_vector(M, p),
             direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, copy(M, p), InverseBFGS(), min(manifold_dimension(M), 30)
             ),

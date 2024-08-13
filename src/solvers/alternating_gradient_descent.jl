@@ -19,7 +19,7 @@ see also [`alternating_gradient_descent`](@ref).
 
 # Constructors
 
-    AlternatingGradientDescentState(M, p; kwargs...)
+    AlternatingGradientDescentState(M; kwargs...)
 
 Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
 `retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments
@@ -45,8 +45,8 @@ mutable struct AlternatingGradientDescentState{
     inner_iterations::Int
 end
 function AlternatingGradientDescentState(
-    M::AbstractManifold,
-    p::P;
+    M::AbstractManifold;
+    p::P=rand(M),
     X::T=zero_vector(M, p),
     inner_iterations::Int=5,
     order_type::Symbol=:Linear,

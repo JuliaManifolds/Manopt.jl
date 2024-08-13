@@ -67,8 +67,8 @@ mutable struct QuasiNewtonState{
     nondescent_direction_value::R
 end
 function QuasiNewtonState(
-    M::AbstractManifold,
-    p::P;
+    M::AbstractManifold;
+    p::P=rand(M),
     initial_vector::T=zero_vector(M, p), # deprecated
     X::T=initial_vector,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
@@ -340,8 +340,8 @@ function quasi_Newton!(
     dmgo = decorate_objective!(M, mgo; debug=debug, kwargs...)
     mp = DefaultManoptProblem(M, dmgo)
     qns = QuasiNewtonState(
-        M,
-        p;
+        M;
+        p=p,
         initial_vector=get_gradient(mp, p),
         direction_update=local_dir_upd,
         stopping_criterion=stopping_criterion,

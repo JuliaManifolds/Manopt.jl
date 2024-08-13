@@ -24,8 +24,8 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
   to allow for a warning or error when this value is non-positive.
 * $_field_retr
 * $_field_stop
-* $_arg_sub_problem
-* $_arg_sub_state
+* $_field_sub_problem
+* $_field_sub_state
 
 Furthermore the following integral fields are defined
 

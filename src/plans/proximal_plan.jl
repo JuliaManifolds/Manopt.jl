@@ -147,13 +147,16 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Constructor
 
-    CyclicProximalPointState(M, p; kwargs...)
+    CyclicProximalPointState(M; kwargs...)
 
-Generate the options with the following keyword arguments
+Generate the options
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_l_Manifold("N"))``,
+# Keyword arguments
+
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
+* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_l_Manifold("N"))``,
+* $(_kw_p_default): $(_kw_p)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`
 
 # See also
 
@@ -169,8 +172,8 @@ mutable struct CyclicProximalPointState{P,TStop<:StoppingCriterion,Tλ} <:
 end
 
 function CyclicProximalPointState(
-    ::AbstractManifold,
-    p::P;
+    M::AbstractManifold;
+    p::P=rand(M),
     stopping_criterion::S=StopAfterIteration(2000),
     λ::F=(i) -> 1.0 / i,
     evaluation_order::Symbol=:LinearOrder,

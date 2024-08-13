@@ -16,18 +16,18 @@ Describes the state of a gradient based descent algorithm.
 
 # Constructor
 
-    GradientDescentState(M, p=rand(M); kwargs...)
+    GradientDescentState(M; kwargs...)
 
 Initialize the gradient descent solver state, where
 
 ## Input
 
 $_arg_M
-$_arg_p
 
 ## Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()`
+* $(_kw_p_default): $(_kw_p)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)` $_kw_stop_note
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState; retraction_method=retraction_method)`
 * $_kw_retraction_method_default
@@ -51,40 +51,27 @@ mutable struct GradientDescentState{
     stepsize::TStepsize
     stop::TStop
     retraction_method::TRTM
-    function GradientDescentState{P,T}(
-        M::AbstractManifold,
-        p::P,
-        X::T,
-        stop::StoppingCriterion=StopAfterIteration(100),
-        step::Stepsize=default_stepsize(M, GradientDescentState),
-        retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-        direction::DirectionUpdateRule=IdentityUpdateRule(),
-    ) where {P,T}
-        s = new{P,T,typeof(stop),typeof(step),typeof(direction),typeof(retraction_method)}()
-        s.direction = direction
-        s.p = p
-        s.retraction_method = retraction_method
-        s.stepsize = step
-        s.stop = stop
-        s.X = X
-        return s
-    end
 end
-
 function GradientDescentState(
-    M::AbstractManifold,
-    p::P=rand(M);
+    M::AbstractManifold;
+    p::P=rand(M),
     X::T=zero_vector(M, p),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenGradientNormLess(1e-8),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize=default_stepsize(
+    stopping_criterion::SC=StopAfterIteration(200) | StopWhenGradientNormLess(1e-8),
+    retraction_method::RTM=default_retraction_method(M, typeof(p)),
+    stepsize::S=default_stepsize(
         M, GradientDescentState; retraction_method=retraction_method
     ),
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
-) where {P,T}
-    return GradientDescentState{P,T}(
-        M, p, X, stopping_criterion, stepsize, retraction_method, direction
+    direction::D=IdentityUpdateRule(),
+) where {
+    P,
+    T,
+    SC<:StoppingCriterion,
+    RTM<:AbstractRetractionMethod,
+    S<:Stepsize,
+    D<:DirectionUpdateRule,
+}
+    return GradientDescentState{P,T,SC,S,D,RTM}(
+        p, X, direction, stepsize, stopping_criterion, retraction_method
     )
 end
 function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, k)
@@ -247,8 +234,8 @@ function gradient_descent!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
-        M,
-        p;
+        M;
+        p=p,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         direction=direction,

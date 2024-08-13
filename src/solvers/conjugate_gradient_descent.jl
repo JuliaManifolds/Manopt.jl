@@ -148,8 +148,8 @@ function conjugate_gradient_descent!(
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
-        M,
-        p;
+        M;
+        p=p,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         coefficient=coefficient,

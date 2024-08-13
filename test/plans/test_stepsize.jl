@@ -74,7 +74,7 @@ using Manopt, Manifolds, Test
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         s = AdaptiveWNGradient(; gradient_reduction=0.5, count_threshold=2)
-        gds = GradientDescentState(M, p)
+        gds = GradientDescentState(M; p=p)
         @test get_initial_stepsize(s) == 1.0
         @test get_last_stepsize(s) == 1.0
         @test s(mp, gds, 0) == 1.0
@@ -98,7 +98,7 @@ using Manopt, Manifolds, Test
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
-        gds = GradientDescentState(M, p)
+        gds = GradientDescentState(M; p=p)
         abs_dec_step = DecreasingStepsize(;
             length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
         )

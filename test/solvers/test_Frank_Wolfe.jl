@@ -32,14 +32,14 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
         Y = similar(X)
         FG(M, Y, p)
         @test FG(M, p) == Y
-        s = FrankWolfeState(M, p, oracle!, InplaceEvaluation())
+        s = FrankWolfeState(M, oracle!; evaluation=InplaceEvaluation(), p=p)
         @test Manopt.get_message(s) == ""
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
         set_iterate!(s, 2 .* p)
         @test get_iterate(s) == 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)
-        s2 = FrankWolfeState(M, p, dmp, gds)
+        s2 = FrankWolfeState(M, dmp, gds; p=p)
         @test Manopt.get_message(s2) == ""
     end
     @testset "Two small Test runs" begin

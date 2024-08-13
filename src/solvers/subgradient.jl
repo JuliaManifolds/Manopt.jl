@@ -14,12 +14,13 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Constructor
 
-    SubGradientMethodState(M::AbstractManifold, p; kwargs...)
+    SubGradientMethodState(M::AbstractManifold; kwargs...)
 
-Initialise the Subgradient method state to initial point `p`
+Initialise the Subgradient method state
 
 # Keyword arguments
 
+* $(_kw_p_default): $(_kw_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=`[`default_stepsize`](@ref)`(M, SubGradientMethodState)`,
   which here defaults to [`ConstantStepsize`](@ref)`(M)`
@@ -36,8 +37,8 @@ mutable struct SubGradientMethodState{
     stop::TSC
     X::T
     function SubGradientMethodState(
-        M::TM,
-        p::P;
+        M::TM;
+        p::P=rand(M),
         stopping_criterion::SC=StopAfterIteration(5000),
         stepsize::S=default_stepsize(M, SubGradientMethodState),
         X::T=zero_vector(M, p),
@@ -176,8 +177,8 @@ function subgradient_method!(
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sgs = SubGradientMethodState(
-        M,
-        p;
+        M;
+        p=p,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         retraction_method=retraction_method,

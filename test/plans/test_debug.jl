@@ -27,7 +27,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
@@ -247,7 +247,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
@@ -292,7 +292,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
@@ -376,7 +376,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [-4.0, 2.0]
         st = GradientDescentState(
-            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
@@ -398,7 +398,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-            M, p; stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)

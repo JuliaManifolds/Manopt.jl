@@ -32,10 +32,10 @@ Initialise the TCG state.
 ## Input
 
 * `TpM`: a [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`)
-* `Y`: an initial tangent vector
 
 ## Keyword arguments
 
+* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
 * `κ=0.1`
 * `project!::F=copyto!`: initialise the numerical stabilisation to just copy the result
 * `randomize=false`
@@ -71,8 +71,8 @@ mutable struct TruncatedConjugateGradientState{T,R<:Real,SC<:StoppingCriterion,P
     project!::Proj
     initialResidualNorm::Float64
     function TruncatedConjugateGradientState(
-        TpM::TangentSpace,
-        Y::T=rand(TpM);
+        TpM::TangentSpace;
+        X::T=rand(TpM),
         trust_region_radius::R=injectivity_radius(base_manifold(TpM)) / 4.0,
         randomize::Bool=false,
         project!::F=copyto!,
@@ -91,7 +91,7 @@ mutable struct TruncatedConjugateGradientState{T,R<:Real,SC<:StoppingCriterion,P
     ) where {T,R<:Real,F}
         tcgs = new{T,R,typeof(stopping_criterion),F}()
         tcgs.stop = stopping_criterion
-        tcgs.Y = Y
+        tcgs.Y = X
         tcgs.trust_region_radius = trust_region_radius
         tcgs.randomize = randomize
         tcgs.project! = project!
@@ -576,8 +576,8 @@ function truncated_conjugate_gradient_descent!(
     dtrm = decorate_objective!(TpM, trm; kwargs...)
     mp = DefaultManoptProblem(TpM, dtrm)
     tcgs = TruncatedConjugateGradientState(
-        TpM,
-        X;
+        TpM;
+        X=X,
         trust_region_radius=trust_region_radius,
         randomize=randomize,
         θ=θ,

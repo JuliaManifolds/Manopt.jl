@@ -31,6 +31,12 @@ construct an difference of convex proximal point state
 
 construct an difference of convex proximal point state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
+## Input
+
+$_arg_M
+$_arg_sub_problem
+$_arg_sub_state
+
 # Keyword arguments
 
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
@@ -362,17 +368,20 @@ function difference_of_convex_proximal_point!(
         decorate_state!(
             if isnothing(sub_hess)
                 GradientDescentState(
-                    M, copy(M, p); stopping_criterion=sub_stopping_criterion, sub_kwargs...
+                    M;
+                    p=copy(M, p),
+                    stopping_criterion=sub_stopping_criterion,
+                    sub_kwargs...,
                 )
             else
                 TrustRegionsState(
                     M,
-                    copy(M, p),
                     DefaultManoptProblem(
                         TangentSpace(M, copy(M, p)),
                         TrustRegionModelObjective(sub_objective),
                     ),
-                    TruncatedConjugateGradientState(TangentSpace(M, p); sub_kwargs...),
+                    TruncatedConjugateGradientState(TangentSpace(M, p); sub_kwargs...);
+                    p=copy(M, p),
                 )
             end;
             sub_kwargs...,

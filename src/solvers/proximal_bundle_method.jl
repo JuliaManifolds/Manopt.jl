@@ -32,10 +32,10 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 
 # Constructor
 
-    ProximalBundleMethodState(M::AbstractManifold, p=rand(M); kwargs...)
+    ProximalBundleMethodState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
+    ProximalBundleMethodState(M::AbstractManifold, sub_problem=proximal_bundle_method_subsolver; evaluation=AllocatingEvaluation(), kwargs...)
 
 Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
-with initial point `p`.
 
 # Keyword arguments
 
@@ -46,6 +46,7 @@ with initial point `p`.
 * `μ=0.5`
 * `m=0.0125`
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+* $(_kw_p_default): $(_kw_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
 * `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
@@ -91,7 +92,9 @@ mutable struct ProximalBundleMethodState{
     sub_state::St
     function ProximalBundleMethodState(
         M::TM,
-        p::P;
+        sub_problem::Pr,
+        sub_state::St;
+        p::P=rand(M),
         m::R=0.0125,
         inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::TR=default_retraction_method(M, typeof(p)),
@@ -104,12 +107,11 @@ mutable struct ProximalBundleMethodState{
         ε::R=1e-2,
         δ::R=1.0,
         μ::R=0.5,
-        sub_problem::Pr=proximal_bundle_method_subsolver,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=AllocatingEvaluation(),
     ) where {
         P,
         T,
-        Pr,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
+        St<:AbstractManoptSolverState,
         R<:Real,
         IR<:AbstractInverseRetractionMethod,
         TM<:AbstractManifold,
@@ -125,12 +127,11 @@ mutable struct ProximalBundleMethodState{
         d = copy(M, p, X)
         lin_errors = [zero(R)]
         transported_subgradients = [copy(M, p, X)]
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         α = zero(R)
         λ = [zero(R)]
         η = zero(R)
         ν = zero(R)
-        return new{P,T,Pr,typeof(sub_state_storage),R,IR,TR,SC,VT}(
+        return new{P,T,Pr,St,R,IR,TR,SC,VT}(
             approx_errors,
             bundle,
             c,
@@ -155,10 +156,20 @@ mutable struct ProximalBundleMethodState{
             μ,
             ν,
             sub_problem,
-            sub_state_storage,
+            sub_state,
         )
     end
 end
+function ProximalBundleMethodState(
+    M::AbstractManifold,
+    sub_problem=proximal_bundle_method_subsolver;
+    evaluation::E=AllocatingEvaluation(),
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return ProximalBundleMethodState(M, sub_problem, cfs; kwargs...)
+end
+
 get_iterate(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 function set_iterate!(pbms::ProximalBundleMethodState, M, p)
     copyto!(M, pbms.p_last_serious, p)
@@ -220,10 +231,10 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 
 # Input
 
-* $(_arg_M)
-* $(_arg_f)
-* $(_arg_subgrad_f)
-* $(_arg_p)
+$(_arg_M)
+$(_arg_f)
+$(_arg_subgrad_f)
+$(_arg_p)
 
 # Keyword arguments
 
@@ -284,7 +295,9 @@ function proximal_bundle_method!(
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     pbms = ProximalBundleMethodState(
         M,
-        p;
+        sub_problem,
+        maybe_wrap_evaluation_type(sub_state);
+        p=p,
         m=m,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
@@ -295,8 +308,6 @@ function proximal_bundle_method!(
         ε=ε,
         δ=δ,
         μ=μ,
-        sub_problem=sub_problem,
-        sub_state=sub_state_storage,
     )
     pbms = decorate_state!(pbms; kwargs...)
     return get_solver_return(solve!(mp, pbms))

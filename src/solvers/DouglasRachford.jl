@@ -21,12 +21,11 @@ Store all options required for the DouglasRachford algorithm,
 
 # Constructor
 
-    DouglasRachfordState(M, p; kwargs...)
+    DouglasRachfordState(M; kwargs...)
 
 # Input
 
-* $(_arg_M)
-* $(_arg_p)
+$(_arg_M)
 
 # Keyword arguments
 
@@ -35,6 +34,7 @@ Store all options required for the DouglasRachford algorithm,
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
   during the calls
+* $(_kw_p_default): $(_kw_p)
 * `R=`[`reflect`](@ref)`(!)`: method employed in the iteration to perform the reflection of `p` at
   the prox of `p`, which function is used depends on `reflection_evaluation`.
 * `reflection_evaluation=`[`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works in-place or allocating (default)
@@ -65,8 +65,8 @@ mutable struct DouglasRachfordState{
     stop::S
     parallel::Bool
     function DouglasRachfordState(
-        M::AbstractManifold,
-        p::P;
+        M::AbstractManifold;
+        p::P=rand(M),
         λ::Fλ=i -> 1.0,
         α::Fα=i -> 0.9,
         reflection_evaluation::E=AllocatingEvaluation(),
@@ -166,13 +166,13 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 
 # Input
 
-* $(_arg_M)
-* $(_arg_f)
+$(_arg_M)
+$(_arg_f)
 * `proxes_f`: functions of the form `(M, λ, p)-> q` performing a proximal maps,
   where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
   These can also be given in the [`InplaceEvaluation`](@ref) variants `(M, q, λ p) -> q`
   computing in place of `q`.
-* $(_arg_p)
+$(_arg_p)
 
 # Keyword arguments
 
@@ -289,8 +289,8 @@ function DouglasRachford!(
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(
-        M,
-        p;
+        M;
+        p=p,
         λ=λ,
         α=α,
         R=R,

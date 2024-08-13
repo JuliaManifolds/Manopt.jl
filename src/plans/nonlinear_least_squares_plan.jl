@@ -158,7 +158,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 
 # Constructor
 
-    LevenbergMarquardtState(M, p, initial_residual_values, initial_jacF; kwargs...)
+    LevenbergMarquardtState(M, initial_residual_values, initial_jacF; kwargs...)
 
 Generate the Levenberg-Marquardt solver state.
 
@@ -204,10 +204,10 @@ mutable struct LevenbergMarquardtState{
     last_step_successful::Bool
     function LevenbergMarquardtState(
         M::AbstractManifold,
-        p::P,
         initial_residual_values::Tresidual_values,
-        initial_jacF::TJac,
-        initial_gradient::TGrad=zero_vector(M, p);
+        initial_jacF::TJac;
+        p::P=rand(M),
+        X::TGrad=zero_vector(M, p),
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                               StopWhenGradientNormLess(1e-12) |
                                               StopWhenStepsizeLess(1e-12),
@@ -246,8 +246,8 @@ mutable struct LevenbergMarquardtState{
             initial_residual_values,
             copy(initial_residual_values),
             initial_jacF,
-            initial_gradient,
-            allocate(M, initial_gradient),
+            X,
+            allocate(M, X),
             zero(Tparams),
             η,
             damping_term_min,

@@ -212,10 +212,10 @@ $(_doc_EMP_ρ_update)
 
 # Input
 
-* $(_arg_M)
-* $(_arg_f)
-* $(_arg_grad_f)
-* $(_arg_p)
+$(_arg_M)
+$(_arg_f)
+$(_arg_grad_f)
+$(_arg_p)
 
 # Keyword arguments
  if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`
@@ -406,8 +406,8 @@ function exact_penalty_method!(
                            StopWhenStepsizeLess(1e-8),
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             initial_vector=zero_vector(M, p),
             direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, copy(M, p), InverseBFGS(), 30

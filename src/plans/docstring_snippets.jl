@@ -102,7 +102,7 @@ _arg_M = "* `M` a manifold ``$_l_M``"
 _arg_inline_M = "the manifold `M`"
 _arg_X = "* `X` a tangent vector"
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
-_arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem` or a [`AbstractEvaluationType`](@ref) if a closed form solution is provided."
+_arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem`."
 _arg_subgrad_f = raw"""
 * `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place.

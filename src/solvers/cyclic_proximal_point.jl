@@ -16,19 +16,18 @@ function show(io::IO, cpps::CyclicProximalPointState)
     return print(io, s)
 end
 _doc_CPPA = """
-    cyclic_proximal_point(M, f, proxes_f, p; kwargs...)
-    cyclic_proximal_point(M, mpo, p; kwargs...)
-    cyclic_proximal_point!(M, f, proxes_f, p; kwargs...)
-    cyclic_proximal_point!(M, mpo, p; kwargs...)
+    cyclic_proximal_point(M, f, proxes_f; kwargs...)
+    cyclic_proximal_point(M, mpo; kwargs...)
+    cyclic_proximal_point!(M, f, proxes_f; kwargs...)
+    cyclic_proximal_point!(M, mpo; kwargs...)
 
 perform a cyclic proximal point algorithm. This can be done in-place of `p`.
 
 # Input
 
-* $(_arg_M)
+$(_arg_M)
 * `f`:        a cost function ``f: $(_l_M) M→ℝ`` to minimize
 * `proxes_f`: an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
-* $(_arg_p)
 
 where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
 
@@ -95,7 +94,11 @@ function cyclic_proximal_point!(
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(
-        M, p; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
+        M;
+        p=p,
+        stopping_criterion=stopping_criterion,
+        λ=λ,
+        evaluation_order=evaluation_order,
     )
     dcpps = decorate_state!(cpps; kwargs...)
     solve!(dmp, dcpps)
