@@ -376,7 +376,7 @@ end
         grad_f(M, p) = 2 * sum(p)
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
-        qns = QuasiNewtonState(M, p)
+        qns = QuasiNewtonState(M; p=p)
         # push zeros to memory
         push!(qns.direction_update.memory_s, copy(p))
         push!(qns.direction_update.memory_s, copy(p))
@@ -396,8 +396,8 @@ end
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:step_towards_negative_gradient,
         )
@@ -411,8 +411,8 @@ end
         ) solve!(mp, dqns)
 
         qns = QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:step_towards_negative_gradient,
         )
@@ -421,8 +421,8 @@ end
         @test qns.direction_update.num_times_init == 1
 
         qns = QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:reinitialize_direction_update,
         )

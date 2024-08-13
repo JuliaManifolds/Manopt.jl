@@ -15,7 +15,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     p = [4.0, 2.0]
     gds = GradientDescentState(
         M;
-        p=copy(p);
+        p=copy(p),
         stopping_criterion=StopAfterIteration(20),
         stepsize=ConstantStepsize(M),
     )

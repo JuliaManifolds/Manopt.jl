@@ -23,8 +23,8 @@ include("../utils/example_tasks.jl")
 
         dU = SteepestDirectionUpdateRule()
         s1 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -38,8 +38,8 @@ include("../utils/example_tasks.jl")
 
         dU = ConjugateDescentCoefficient()
         s2 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -57,8 +57,8 @@ include("../utils/example_tasks.jl")
 
         dU = DaiYuanCoefficient()
         s3 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -75,8 +75,8 @@ include("../utils/example_tasks.jl")
 
         dU = FletcherReevesCoefficient()
         s4 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -93,8 +93,8 @@ include("../utils/example_tasks.jl")
 
         dU = HagerZhangCoefficient()
         s5 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -114,8 +114,8 @@ include("../utils/example_tasks.jl")
 
         dU = HestenesStiefelCoefficient()
         s6 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -131,8 +131,8 @@ include("../utils/example_tasks.jl")
 
         dU = LiuStoreyCoefficient()
         s7 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,
@@ -148,8 +148,8 @@ include("../utils/example_tasks.jl")
 
         dU = PolakRibiereCoefficient()
         s8 = ConjugateGradientDescentState(
-            M,
-            x0;
+            M;
+            p=x0,
             stopping_criterion=sC,
             stepsize=s,
             coefficient=dU,

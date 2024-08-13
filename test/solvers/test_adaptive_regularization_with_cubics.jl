@@ -29,7 +29,7 @@ include("../utils/example_tasks.jl")
         Manopt.get_objective_gradient!(M, X0, arcmo, p0)
         isapprox(M, p0, X0, get_gradient(M, mho, p0))
 
-        g = get_gradient_function(arcmo)
+        g = Manopt.get_gradient_function(arcmo)
         isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
         X0 = zero_vector(M, p0)
         X1 = similar(X0)

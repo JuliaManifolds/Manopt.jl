@@ -97,8 +97,8 @@ function alternating_gradient_descent!(
     dagmo = Manopt.decorate_objective!(M, agmo; kwargs...)
     dmp = DefaultManoptProblem(M, dagmo)
     agds = AlternatingGradientDescentState(
-        M,
-        p;
+        M;
+        p=p,
         inner_iterations=inner_iterations,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,

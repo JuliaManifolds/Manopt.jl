@@ -208,7 +208,7 @@ function TrustRegionsState(
 )
     TpM = TangentSpace(M, copy(M, p))
     problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
-    state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
+    state = TruncatedConjugateGradientState(TpM; X=get_gradient(M, mho, p))
     return TrustRegionsState(M, problem, state; p=p, kwargs...)
 end
 get_iterate(trs::TrustRegionsState) = trs.p

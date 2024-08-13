@@ -61,7 +61,7 @@ using ManifoldsBase, Manifolds, Manopt, Test
     sub_state = ConjugateResidualState(TangentSpace(sub_M, sub_p), sub_obj)
     dmp = DefaultManoptProblem(M, coh)
     ipns = InteriorPointNewtonState(
-        M, coh, p, DefaultManoptProblem(sub_M, sub_obj), sub_state
+        M, coh, DefaultManoptProblem(sub_M, sub_obj), sub_state; p=p
     )
     # Getters & Setters
     @test length(Manopt.get_message(ipns)) == 0

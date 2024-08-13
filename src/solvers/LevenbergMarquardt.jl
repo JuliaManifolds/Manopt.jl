@@ -161,9 +161,9 @@ function LevenbergMarquardt!(
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
         M,
-        p,
         initial_residual_values,
         initial_jacobian_f;
+        p=p,
         β,
         η,
         damping_term_min,

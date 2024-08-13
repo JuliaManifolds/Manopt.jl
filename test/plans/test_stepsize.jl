@@ -116,7 +116,7 @@ using Manopt, Manifolds, Test
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
-        sgs = SubGradientMethodState(M, p)
+        sgs = SubGradientMethodState(M; p=p)
         ps = PolyakStepsize()
         @test repr(ps) ==
             "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = 0.0"

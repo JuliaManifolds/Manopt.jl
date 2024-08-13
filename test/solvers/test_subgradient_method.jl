@@ -8,17 +8,17 @@ include("../utils/example_tasks.jl")
     p0 = [5.0, 2.0]
     q0 = [10.0, 5.0]
     sgs = SubGradientMethodState(
-        M, p0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
+        M; p=p0, stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
     )
     sgs_ac = SubGradientMethodState(
-        M,
-        q0;
+        M;
+        p=q0,
         stopping_criterion=StopAfterIteration(200),
         stepsize=ConstantStepsize(1.0, :absolute),
     )
     sgs_ad = SubGradientMethodState(
-        M,
-        q0;
+        M;
+        p=q0,
         stopping_criterion=StopAfterIteration(200),
         stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :absolute),
     )

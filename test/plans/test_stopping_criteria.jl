@@ -167,7 +167,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         ho = ManifoldHessianObjective(x -> x, (M, x) -> x, (M, x) -> x, x -> x)
         hp = DefaultManoptProblem(Euclidean(), ho)
         tcgs = TruncatedConjugateGradientState(
-            TangentSpace(Euclidean(), 1.0), 0.0; trust_region_radius=2.0, randomize=false
+            TangentSpace(Euclidean(), 1.0); X=0.0, trust_region_radius=2.0, randomize=false
         )
         tcgs.model_value = 1.0
         s = StopWhenModelIncreased()
@@ -249,7 +249,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         c2 = StopWhenSubgradientNormLess(1e-6)
         sc2 = "StopWhenSubgradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c2))"
         @test repr(c2) == sc2
-        st = SubGradientMethodState(M, p; stopping_criterion=c2)
+        st = SubGradientMethodState(M; p=p, stopping_criterion=c2)
         st.X = ∂f(M, 2p)
         @test !c2(mp, st, 1)
         st.X = ∂f(M, p)
