@@ -194,7 +194,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         rss = RecordSubsolver()
         @test repr(rss) == "RecordSubsolver(; record=[:Iteration], record_type=Any)"
         @test Manopt.status_summary(rss) == ":Subsolver"
-        epms = ExactPenaltyMethodState(M, rand(M), dmp, rs)
+        epms = ExactPenaltyMethodState(M, dmp, rs)
         rss(dmp, epms, 1)
     end
     @testset "RecordWhenActive" begin

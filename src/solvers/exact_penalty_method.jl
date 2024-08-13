@@ -20,9 +20,15 @@ Describes the exact penalty method, with
 
 # Constructor
 
-    ExactPenaltyMethodState(M::AbstractManifold, p, sub_problem, sub_state; kwargs...)
+    ExactPenaltyMethodState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
 
 construct an exact penalty state.
+
+    ExactPenaltyMethodState(M::AbstractManifold, sub_problem;
+        evaluation=AllocatingEvaluation(), kwargs...
+)
+
+construct an exact penalty state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 # Keyword arguments
 
@@ -34,6 +40,7 @@ construct an exact penalty state.
 * `u_min=1e-6`
 * `u_exponent=1 / 100`:  a shortcut for the scaling factor ``θ_u``.
 * `θ_u=(u_min / u)^(u_exponent)`
+* $(_kw_p_default): $(_kw_p)
 * `ρ=1.0`
 * `θ_ρ=0.3`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc_any)` (`
@@ -64,9 +71,9 @@ mutable struct ExactPenaltyMethodState{
     stop::TStopping
     function ExactPenaltyMethodState(
         M::AbstractManifold,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
+        sub_state::St;
+        p::P=rand(M),
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         ϵ_exponent=1 / 100,
@@ -80,7 +87,13 @@ mutable struct ExactPenaltyMethodState{
         stopping_criterion::SC=StopAfterIteration(300) | (
             StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1e-10)
         ),
-    ) where {P,Pr<:Union{F,AbstractManoptProblem} where {F},R<:Real,SC<:StoppingCriterion}
+    ) where {
+        P,
+        Pr<:Union{F,AbstractManoptProblem} where {F},
+        St<:AbstractManoptSolverState,
+        R<:Real,
+        SC<:StoppingCriterion,
+    }
         sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         epms = new{P,Pr,typeof(sub_state_storage),R,SC}()
         epms.p = p
@@ -98,6 +111,13 @@ mutable struct ExactPenaltyMethodState{
         return epms
     end
 end
+function ExactPenaltyMethodState(
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return ExactPenaltyMethodState(M, sub_problem, cfs; kwargs...)
+end
+
 get_iterate(epms::ExactPenaltyMethodState) = epms.p
 function get_message(epms::ExactPenaltyMethodState)
     # for now only the sub solver might have messages
@@ -409,9 +429,9 @@ function exact_penalty_method!(
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     emps = ExactPenaltyMethodState(
         M,
-        p,
         sub_problem,
         sub_state_storage;
+        p=p,
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         u=u,

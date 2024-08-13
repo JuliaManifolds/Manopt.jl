@@ -149,10 +149,10 @@ end
 function AugmentedLagrangianMethodState(
     M::AbstractManifold,
     co::ConstrainedManifoldObjective,
-    sub_problem::Pr;
+    sub_problem;
     evaluation::E=AllocatingEvaluation(),
     kwargs...,
-) where {Pr,E<:AbstractEvaluationType}
+) where {E<:AbstractEvaluationType}
     cfs = ClosedFormSubSolverState(; evaluation=evaluation)
     return AugmentedLagrangianMethodState(M, co, sub_problem, cfs; kwargs...)
 end

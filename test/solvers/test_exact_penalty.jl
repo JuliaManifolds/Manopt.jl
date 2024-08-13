@@ -42,7 +42,7 @@ using LinearAlgebra: I, tr
     # Dummy options
     mco = ManifoldCostObjective(f)
     dmp = DefaultManoptProblem(M, mco)
-    epms = ExactPenaltyMethodState(M, p0, dmp, NelderMeadState(M))
+    epms = ExactPenaltyMethodState(M, dmp, NelderMeadState(M); p=p0)
     @test Manopt.get_message(epms) == ""
     set_iterate!(epms, M, 2 .* p0)
     @test get_iterate(epms) == 2 .* p0
