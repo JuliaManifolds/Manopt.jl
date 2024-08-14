@@ -233,15 +233,10 @@ $(_doc_sec_output)
 
 @doc "$(_doc_DCPPA)"
 difference_of_convex_proximal_point(M::AbstractManifold, args...; kwargs...)
-function difference_of_convex_proximal_point(M::AbstractManifold, grad_h; kwargs...)
-    return difference_of_convex_proximal_point(
-        M::AbstractManifold, grad_h, rand(M); kwargs...
-    )
-end
 function difference_of_convex_proximal_point(
     M::AbstractManifold,
     grad_h,
-    p;
+    p=rand(M);
     cost=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     gradient=nothing,

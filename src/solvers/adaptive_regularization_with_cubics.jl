@@ -230,8 +230,6 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 
 # Keyword arguments
 
-the default values are given in brackets
-
 * `σ=100.0 / sqrt(manifold_dimension(M)`: initial regularization parameter
 * `σmin=1e-10`: minimal regularization value ``σ_{\\min}``
 * `η1=0.1`: lower model success threshold

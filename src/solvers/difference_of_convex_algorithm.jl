@@ -174,15 +174,12 @@ $(_doc_sec_output)
 
 @doc "$(_doc_DoC)"
 difference_of_convex_algorithm(M::AbstractManifold, args...; kwargs...)
-function difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h; kwargs...)
-    return difference_of_convex_algorithm(M::AbstractManifold, f, g, ∂h, rand(M); kwargs...)
-end
 function difference_of_convex_algorithm(
     M::AbstractManifold,
     f,
     g,
     ∂h,
-    p;
+    p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     grad_g=nothing,
     gradient=nothing,

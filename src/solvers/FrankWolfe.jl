@@ -157,8 +157,8 @@ _doc_FW_problem = raw"""
 """
 _doc_FW_sk_default = raw"``s_k = \frac{2}{k+2}``"
 _doc_Frank_Wolfe_method = """
-    Frank_Wolfe_method(M, f, grad_f, p)
-    Frank_Wolfe_method(M, gradient_objective, p; kwargs...)
+    Frank_Wolfe_method(M, f, grad_f, p=rand(M))
+    Frank_Wolfe_method(M, gradient_objective, p=rand(M); kwargs...)
     Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
     Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
 
@@ -250,7 +250,7 @@ function Frank_Wolfe_method(
     M::AbstractManifold,
     f,
     grad_f,
-    p;
+    p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
@@ -262,7 +262,7 @@ function Frank_Wolfe_method(
     return _ensure_matching_output(p, rs)
 end
 function Frank_Wolfe_method(
-    M::AbstractManifold, mgo::O, p; kwargs...
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return Frank_Wolfe_method!(M, mgo, q; kwargs...)

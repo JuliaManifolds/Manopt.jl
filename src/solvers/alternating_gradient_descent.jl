@@ -150,32 +150,36 @@ end
 function alternating_gradient_descent end
 function alternating_gradient_descent! end
 
-@doc raw"""
+_doc_AGD = """
     alternating_gradient_descent(M::ProductManifold, f, grad_f, p=rand(M))
     alternating_gradient_descent(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
+    alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
+    alternating_gradient_descent!(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
 
-perform an alternating gradient descent
+perform an alternating gradient descent. This can be done in-place of the start point `p`
 
 # Input
 
-* `M`:      the product manifold ``\mathcal M = \mathcal M_1 × \mathcal M_2 × ⋯ ×\mathcal M_n``
-* `f`:      the objective function (cost) defined on `M`.
+$_arg_M
+$_arg_f
 * `grad_f`: a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` or
   * is a vector functions each returning a component part of the whole gradient
-* `p`:      an initial value ``p_0 ∈ \mathcal M``
+$_arg_p
 
-# Optional
-* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradients work by
-  allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of
-  the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order`:   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+# Keyword arguments
+
+* $_kw_evaluation_default:
+  $_kw_evaluation
+* `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
-* `inner_iterations`:   (`5`) how many gradient steps to take in a component before alternating to the next
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
-* `stepsize`:           ([`ArmijoLinesearch`](@ref)`()`) a [`Stepsize`](@ref)
-* `order`:              (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+* `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`):
+  $(_kw_stopping_criterion)
+* `stepsize=`[`ArmijoLinesearch`](@ref)`()`:
+  $(_kw_stepsize)
+* `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
+* $(_kw_retraction_method_default): $(_kw_retraction_method)
 
 # Output
 
@@ -188,26 +192,11 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
     the `i`th components gradient is computed / returned.
 
 """
+
+@doc "$(_doc_AGD)"
 alternating_gradient_descent(::AbstractManifold, args...; kwargs...)
 
-@doc raw"""
-    alternating_gradient_descent!(M::ProductManifold, f, grad_f, p)
-    alternating_gradient_descent!(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
-
-perform a alternating gradient descent in place of `p`.
-
-# Input
-
-* `M`:      a product manifold ``\mathcal M``
-* `f`:      the objective functioN (cost)
-* `grad_f`: a gradient function, that either returns a vector of the subgradients or is
-  a vector of gradients
-* `p`:      an initial value ``p_0 ∈ \mathcal M``
-
-you can also pass a [`ManifoldAlternatingGradientObjective`](@ref) `ago` containing `f` and `grad_f` instead.
-
-for all optional parameters, see [`alternating_gradient_descent`](@ref).
-"""
+@doc "$(_doc_AGD)"
 alternating_gradient_descent!(M::AbstractManifold, args...; kwargs...)
 
 function initialize_solver!(

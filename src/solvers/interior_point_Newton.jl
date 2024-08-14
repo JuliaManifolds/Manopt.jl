@@ -134,7 +134,6 @@ function interior_point_Newton(
     equality_constrains::Union{Nothing,Integer}=nothing,
     kwargs...,
 )
-    q = copy(M, p)
     cmo = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -151,7 +150,7 @@ function interior_point_Newton(
         M=M,
         p=p,
     )
-    return interior_point_Newton!(M, cmo, q; evaluation=evaluation, kwargs...)
+    return interior_point_Newton(M, cmo, p; evaluation=evaluation, kwargs...)
 end
 function interior_point_Newton(
     M::AbstractManifold, cmo::O, p; kwargs...

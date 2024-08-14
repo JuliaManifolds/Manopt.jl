@@ -170,14 +170,11 @@ $_doc_sec_output
 @doc "$(_doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 
-function gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
-    return gradient_descent(M, f, grad_f, rand(M); kwargs...)
-end
 function gradient_descent(
     M::AbstractManifold,
     f,
     grad_f,
-    p;
+    p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
