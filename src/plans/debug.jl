@@ -1164,20 +1164,26 @@ one are called with an `i=0` for reset.
 
 1. Providing a simple vector of symbols, numbers and strings like
 
-    [:Iterate, " | ", :Cost, :Stop, 10]
+   ```
+   [:Iterate, " | ", :Cost, :Stop, 10]
+   ```
 
-Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
-as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
-It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of the dictionary.
+   Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
+   as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
+   It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of the dictionary.
 
 2. The same can also be written a bit more precise as
 
-    DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
+   ```
+   DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
+   ```
 
 3. We can even make the stoping criterion concrete and pass Actions directly,
-  for example explicitly Making the stop more concrete, we get
+   for example explicitly Making the stop more concrete, we get
 
-    DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
+   ```
+   DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
+   ```
 """
 function DebugFactory(a::Vector{<:Any})
     entries = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a)
@@ -1218,14 +1224,14 @@ function DebugFactory(a::Vector{<:Any})
 end
 
 @doc raw"""
-   DebugGroupFactory(a::Vector)
+    DebugGroupFactory(a::Vector)
 
-Generate a [`DebugGroup`] of [`DebugAction`](@ref)s. The following rules are used
+Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules are used
 
 1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
-2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=``,
-  see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
-3. Any `String` is passed to `DebugActionFactory(d::String)`](@ref)`
+2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
+   see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
+3. Any `String` is passed to [`DebugActionFactory`](@ref DebugActionFactory(d::String))
 4. Any [`DebugAction`](@ref) is included as is.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.

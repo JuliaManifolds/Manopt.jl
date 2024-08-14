@@ -283,10 +283,9 @@ want to use another manifolds form of defaults compared to the one of the solver
 
 # Fields
 
-* `direction_update_type::T`: Type this factory is for.
-* `M::Union{Nothing,AbstractManifold}`
-* `arguments`: arguments that are passed to the `DirectionUpdateRule`
-* `keyword_arguments`: keyword arguments to pass to the update rule upon creation
+* `M::Union{Nothing,AbstractManifold}` (optional) provide a manifold for defaults
+* `args`: arguments that are passed to the `DirectionUpdateRule`
+* `kwargs`: keyword arguments to pass to the update rule upon creation
 
 # Constructor
 
