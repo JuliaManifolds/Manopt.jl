@@ -133,7 +133,7 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             pts[1];
-            direction=MomentumGradient(M, copy(M, pts[1])),
+            direction=MomentumGradient(),
             stepsize=ConstantStepsize(M),
             debug=[], # do not warn about increasing step here
         )

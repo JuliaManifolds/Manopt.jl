@@ -448,10 +448,9 @@ export has_storage, get_storage, update_storage!
 export objective_cache_factory
 #
 # Direction Update Rules
-export DirectionUpdateRule,
-    IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
-export DirectionUpdateRule,
-    SteepestDirectionUpdateRule,
+export DirectionUpdateRule, DirectionUpdateRuleFactory
+export Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+export SteepestDirectionUpdateRule,
     HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
     PolakRibiereCoefficient,

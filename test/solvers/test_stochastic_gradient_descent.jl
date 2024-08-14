@@ -119,9 +119,7 @@ using Manopt, Manifolds, Test
             sgrad_f1,
             p;
             order_type=:Random,
-            direction=MomentumGradient(
-                M, p; direction=StochasticGradient(zero_vector(M, p))
-            ),
+            direction=MomentumGradient(p; direction=StochasticGradient(zero_vector(M, p))),
         )
         @test is_point(M, q6, true)
     end

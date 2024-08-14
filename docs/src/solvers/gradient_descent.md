@@ -27,6 +27,11 @@ AverageGradient
 Nesterov
 ```
 
+```@docs
+DirectionUpdateRuleFactory
+Manopt.MomentumGradientRule
+```
+
 ## Debug actions
 
 ```@docs

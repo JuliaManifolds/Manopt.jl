@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [0.5.0] unreleased
 
+This breaking update is mainly concerned with improving a unified experience through all solvers and some usability improvements, such that for example the different gradient update rules are easier to specify.
+
+In general we introduce a few factories, that avoid having to pass the manifold to keyword arguments
+
+## Added
+
+* A `DirectionUpdateRuleFactory` that postpones the creation/allcation of manifold-specific fields in direction updates.
+  * `MomentumGradient` now serves as a constructor for the factory of a `MomentumGradientRule`
+  * `Gradient` now serves as a constructor for the factory of a `IdentityUpdateRule`
+
 ## Changed
+
+* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `DirectionUpdateRuleFactory` instead.
+  * `AverageGradient` is now called `AverageGradient`
 
 * Unify doc strings and presentation of keyword arguments
   * general indexing, for example in a vector, uses `i`

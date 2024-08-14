@@ -227,7 +227,7 @@ function gradient_descent!(
     else
         []
     end,
-    direction=IdentityUpdateRule(),
+    direction=Gradient(),
     X=zero_vector(M, p),
     kwargs..., #collect rest
 ) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
@@ -238,7 +238,7 @@ function gradient_descent!(
         p=p,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
-        direction=direction,
+        direction=_produce_rule(M, direction),
         retraction_method=retraction_method,
         X=X,
     )

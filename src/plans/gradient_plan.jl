@@ -270,19 +270,104 @@ individual one that provides these values.
 abstract type DirectionUpdateRule end
 
 """
+    DirectionUpdateRuleFactory{M,T,A,K} <: DirectionUpdateRule
+
+A generic factory to create direction update rules.
+Motivated by the fact that in some situations it is nicer to not being forced
+to specify a manifold, this factory allows to postpone that.
+It still stores all parameters one wants to provide, even those that would
+require the manifold to be filled with a reasonable default.
+Any optional parameter or keyword argument can hence still be overwritten.
+Similarly you can also pass a msnifold to the constructor, in case you
+want to use another manifolds form of defaults compared to the one of the solver.
+
+# Fields
+
+* `direction_update_type::T`: Type this factory is for.
+* `M::Union{Nothing,AbstractManifold}`
+* `arguments`: arguments that are passed to the `DirectionUpdateRule`
+* `keyword_arguments`: keyword arguments to pass to the update rule upon creation
+
+# Constructor
+
+    DirectionUpdateRuleFactory(T, args...; kwargs...)
+    DirectionUpdateRuleFactory(T, M, args...; kwargs...)
+
+## Input
+
+* `T` a subtype of the `DirectionUpdateRule` this factory is meant to construct
+* `M` (optional) a manifold used for the defaults
+
+as well as arguments and keyword arguments for the update rule.
+"""
+struct DirectionUpdateRuleFactory{T,TM<:Union{AbstractManifold,Nothing},A,K}
+    M::TM
+    args::A
+    kwargs::K
+end
+function DirectionUpdateRuleFactory(
+    T::Type{<:DirectionUpdateRule}, M::TM, args...; kwargs...
+) where {TM<:AbstractManifold}
+    return DirectionUpdateRuleFactory{T,TM,typeof(args),typeof(kwargs)}(M, args, kwargs)
+end
+function DirectionUpdateRuleFactory(T::Type{<:DirectionUpdateRule}, args...; kwargs...)
+    return DirectionUpdateRuleFactory{T,Nothing,typeof(args),typeof(kwargs)}(
+        nothing, args, kwargs
+    )
+end
+function (durf::DirectionUpdateRuleFactory{T})(M::AbstractManifold) where {T}
+    return T(M, durf.args...; durf.kwargs...)
+end
+function (durf::DirectionUpdateRuleFactory{T,<:AbstractManifold})() where {T}
+    return T(durf.M, durf.args...; durf.kwargs...)
+end
+# allow both in arguments, resolve by eventually poducing a rule
+_produce_rule(::AbstractManifold, d::DirectionUpdateRule) = d
+_produce_rule(M::AbstractManifold, d::DirectionUpdateRuleFactory) = d(M)
+
+"""
     IdentityUpdateRule <: DirectionUpdateRule
 
 The default gradient direction update is the identity, usually it just evaluates the gradient.
+
+Use `Gradient()` to create the corresponding factory.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
+IdentityUpdateRule(M) = IdentityUpdateRule() # Temp hack for the mockup
+Gradient() = DirectionUpdateRuleFactory(IdentityUpdateRule)
 
 """
-    MomentumGradient <: DirectionUpdateRule
+    MomentumGradient()
 
 Append a momentum to a gradient processor, where the last direction and last iterate are
 stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
 where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
 last direction multiplied by momentum ``m``.
+
+# Input
+
+* `M` (optional)
+
+# Keyword arguments
+
+* $(_kw_p_default)
+* `direction_update=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
+* $(_kw_X_default)`
+* `momentum=0.2` amount of momentum to use
+* `vector_transport_method=default_vector_transport_method(M, typeof(p)),
+
+!!! info
+    This function generates a [`DirectionUpdateRuleFactory`](@ref) for this
+    for the [`MomentumGradientRule`](@ref). If you do not provide the manifold
+    or any other of the keywords that require the manifold for a default,
+    you can provide a manifold later to use that manifold's default's instead.
+"""
+MomentumGradient(args...; kwargs...) =
+    DirectionUpdateRuleFactory(MomentumGradientRule, args...; kwargs...)
+
+"""
+    MomentumGradientRule <: DirectionUpdateRule
+
 
 # Fields
 
@@ -297,7 +382,7 @@ last direction multiplied by momentum ``m``.
 
 Add momentum to a gradient problem, where by default just a gradient evaluation is used
 
-    MomentumGradient(
+    MomentumGradientRule(
         M::AbstractManifold;
         p=rand(M),
         s::DirectionUpdateRule=IdentityUpdateRule();
@@ -307,8 +392,11 @@ Add momentum to a gradient problem, where by default just a gradient evaluation 
     )
 
 Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
+
+# See also
+[`MomentumGradient`](@ref)
 """
-mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
+mutable struct MomentumGradientRule{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
     momentum::R
     p_old::P
@@ -316,7 +404,7 @@ mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} 
     vector_transport_method::VTM
     X_old::T
 end
-function MomentumGradient(
+function MomentumGradientRule(
     M::AbstractManifold,
     p::P=rand(M);
     direction::DirectionUpdateRule=IdentityUpdateRule(),
@@ -324,11 +412,11 @@ function MomentumGradient(
     X=zero_vector(M, p),
     momentum=0.2,
 ) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(X),typeof(momentum),VTM}(
+    return MomentumGradientRule{P,typeof(X),typeof(momentum),VTM}(
         momentum, p, direction, vector_transport_method, X
     )
 end
-function (mg::MomentumGradient)(
+function (mg::MomentumGradientRule)(
     mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
 )
     M = get_manifold(mp)
