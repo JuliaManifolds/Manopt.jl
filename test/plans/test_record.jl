@@ -16,7 +16,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     gds = GradientDescentState(
         M;
         p=copy(p),
-        stopping_criterion=StopAfterIteration(20),
+        stopping_criterion=StopAfterIteration(10),
         stepsize=ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
@@ -32,6 +32,8 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test get_state(gds) == gds
     @test get_state(rs) == gds
     @test_throws MethodError get_state(dmp)
+    Manopt.set_parameter!(rs, :StoppingCriterion, :MaxIteration, 20)
+    @test rs.state.stop.max_iterations == 20 #Maybe turn into a getter?
     #
     @test get_initial_stepsize(dmp, rs) == 1.0
     @test get_stepsize(dmp, rs, 1) == 1.0

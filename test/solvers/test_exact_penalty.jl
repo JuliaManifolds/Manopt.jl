@@ -47,6 +47,9 @@ using LinearAlgebra: I, tr
     set_iterate!(epms, M, 2 .* p0)
     @test get_iterate(epms) == 2 .* p0
     @test startswith(repr(epms), "# Solver state for `Manopt.jl`s Exact Penalty Method\n")
+    # With dummy closed form solution
+    epmsc = ExactPenaltyMethodState(M, f)
+    @test epmsc.sub_state isa Manopt.ClosedFormSubSolverState
     @testset "Numbers" begin
         Me = Euclidean()
         fe(M, p) = (p + 5)^2

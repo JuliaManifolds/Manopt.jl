@@ -44,6 +44,9 @@ using LinearAlgebra: I, tr
         )
         @test Manopt.get_sub_problem(alms) === sp
         @test Manopt.get_sub_state(alms) === ss
+        # With dummy closed form solution
+        almsc = AugmentedLagrangianMethodState(M, co, f)
+        @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
     end
     @testset "Numbers" begin
         M = Euclidean()

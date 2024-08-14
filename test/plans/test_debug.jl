@@ -27,7 +27,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         M = ManifoldsBase.DefaultManifold(2)
         p = [4.0, 2.0]
         st = GradientDescentState(
-            M; p=p, stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+            M; p=p, stopping_criterion=StopAfterIteration(10), stepsize=ConstantStepsize(M)
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
@@ -43,6 +43,10 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugSolverState(st, ["|"]).debugDictionary[:Iteration].divider == a1.divider
         @test endswith(repr(DebugSolverState(st, a1)), "\"|\"")
         @test repr(DebugSolverState(st, Dict{Symbol,DebugAction}())) == repr(st)
+        # Passthrough
+        dss = DebugSolverState(st, a1)
+        Manopt.set_parameter!(dss, :StoppingCriterion, :MaxIteration, 20)
+        @test dss.state.stop.max_iterations == 20 #Maybe turn into a getter?
         # single AbstractStateActions
         # DebugDivider
         a1(mp, st, 0)

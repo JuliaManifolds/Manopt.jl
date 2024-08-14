@@ -17,6 +17,12 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
         Hess_g(M, p, X) = [(X * p')[:, i] for i in 1:3]
         M = Manifolds.Sphere(2)
 
+        # With dummy closed form solution
+        ipnsc = InteriorPointNewtonState(
+            M, ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, M=M), f
+        )
+        @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
+
         p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
         # p_0 = 1.0 / sqrt(2) .* [0.0, 1.0, 1.0]
         p_opt = [0.0, 0.0, 1.0]

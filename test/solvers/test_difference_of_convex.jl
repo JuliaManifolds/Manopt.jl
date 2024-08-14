@@ -40,6 +40,8 @@ import Manifolds: inner
 
         dcs = DifferenceOfConvexState(M, dca_sub_problem, dca_sub_state; p=copy(M, p0))
         @test Manopt.get_message(dcs) == ""
+        dcsc = DifferenceOfConvexState(M, f)
+        @test dcsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         set_iterate!(dcs, M, p1)
         @test dcs.p == p1
@@ -71,6 +73,9 @@ import Manifolds: inner
         @test dcps.p == p1
         set_gradient!(dcps, M, p1, X1)
         @test dcps.X == X1
+        # Dummy closed form sub
+        dcpsc = DifferenceOfConvexProximalState(M, f)
+        @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
         @test_throws ErrorException difference_of_convex_algorithm(
