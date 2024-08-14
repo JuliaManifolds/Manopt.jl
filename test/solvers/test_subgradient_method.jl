@@ -102,6 +102,10 @@ include("../utils/example_tasks.jl")
         Random.seed!(23)
         q4 = subgradient_method(M, f, ∂f!; evaluation=InplaceEvaluation())
         @test isapprox(M, q4, p; atol=0.5) # random point -> not that close
+        # in-place
+        q5 = copy(M, p0)
+        subgradient_method!(M, f, ∂f!, q5; evaluation=InplaceEvaluation())
+        @test isapprox(M, q3, q5)
         # Check Fallbacks of Problem
         @test get_cost(mp, q1) == 0.0
         @test norm(M, q1, get_subgradient(mp, q1)) == 0
