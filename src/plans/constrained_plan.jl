@@ -571,24 +571,6 @@ within the [`ConstrainedManifoldObjective`](@ref).
 """
 get_unconstrained_objective(co::ConstrainedManifoldObjective) = co.objective
 
-function get_constraints(mp::AbstractManoptProblem, p)
-    Base.depwarn(
-        "get_constraints will be removed in a future release, use `get_equality_constraint($mp, $p, :)` and `get_inequality_constraint($mp, $p, :)`, respectively",
-        :get_constraints,
-    )
-    return [
-        get_inequality_constraint(get_manifold(mp), get_objective(mp), p, :),
-        get_equality_constraint(get_manifold(mp), get_objective(mp), p, :),
-    ]
-end
-function get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
-    Base.depwarn(
-        "get_constraints will be removed in a future release, use `get_equality_constraint($M, $co, $p, :)` and `get_inequality_constraint($M, $co, $p, :)`, respectively",
-        :get_constraints,
-    )
-    return [get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :)]
-end
-
 function get_cost(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
     return get_cost(M, co.objective, p)
 end

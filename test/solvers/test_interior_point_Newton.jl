@@ -1,6 +1,13 @@
 using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 @testset "Interior Point Newton Solver" begin
+    @testset "StepsizeState" begin
+        M = Manifolds.Sphere(2)
+        a = StepsizeState(M)
+        b = StepsizeState(a.p, a.X)
+        @test a.p === b.p
+        @test a.X === b.X
+    end
     @testset "A solver run on the Sphere" begin
         # We can take a look at debug prints of one run and plot the result
         # on CI and when running with ] test Manopt, both have to be set to false.
