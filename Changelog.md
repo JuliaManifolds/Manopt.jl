@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [0.5.0] unreleased
 
-This breaking update is mainly concerned with improving a unified experience through all solvers and some usability improvements, such that for example the different gradient update rules are easier to specify.
+This breaking update is mainly concerned with improving a unified experience through all solvers
+and some usability improvements, such that for example the different gradient update rules are easier to specify.
 
 In general we introduce a few factories, that avoid having to pass the manifold to keyword arguments
 
@@ -19,9 +20,12 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 
 ## Changed
 
-* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `DirectionUpdateRuleFactory` instead.
-  * `AverageGradient` is now called `AverageGradient`
+* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `DirectionUpdateRuleFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory.
+  * `AverageGradient` is now called `AverageGradientState`,
+   `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary
 
+* `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes bool, sometimes real) and was unused.
+  It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldes gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
 * Unify doc strings and presentation of keyword arguments
   * general indexing, for example in a vector, uses `i`
   * index for inequality constraints is unified to `i` running from `1,...,m`
@@ -66,16 +70,16 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 * the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now
    a mandatory argument. To use the old variant,
    provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
-* all deprecated keyword arguments and a few function signatures were removed
- * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
- * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
-* In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
-* `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positiona argument `M` and `inverse_retraction_method=`, respectively
-* in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
-* in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
-* `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
-  * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
-  * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explixit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
+* all deprecated keyword arguments and a few function signatures were removed:
+  * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
+  * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
+ * In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
+ * `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positional argument `M` and `inverse_retraction_method=`, respectively
+ * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
+ * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
+ * `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
+   * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
+   * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
 
 
 ## [0.4.69] – August 3, 2024

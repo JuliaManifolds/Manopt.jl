@@ -174,7 +174,7 @@ function default_stepsize(
         stop_when_stepsize_less=1e-10,
     )
 end
-_doc_QN_init_scaling = raw"``\frac{⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}``"
+_doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}``"
 _doc_QN = """
     quasi_Newton(M, f, grad_f, p; kwargs...)
     quasi_Newton!(M, f, grad_f, p; kwargs...)
@@ -215,10 +215,12 @@ $(_arg_p)
 * $(_kw_evaluation_default):
   $(_kw_evaluation)
   $(_kw_evaluation_example)
-* `initial_operator=Matrix{Float64}(I, n, n)`:
+* `initial_operator= initial_scale*Matrix{Float64}(I, n, n)`:
    initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
    that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.
-   See also `scale_initial_operator`.
+   See also `initial_scale`.
+* `initial_scale=1.0`: scale initial `s` to use in with $(_doc_QN_init_scaling) in the computation of the limited memory approach.
+  see also `initial_operator`
 * `memory_size=20`: limited memory, number of ``s_k, y_k`` to store.
    Set to a negative value to use a full memory (matrix) representation
 * `nondescent_direction_behavior=:reinitialize_direction_update`:
@@ -231,7 +233,6 @@ $(_arg_p)
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `scale_initial_operator=true`: scale initial operator with $(_doc_QN_init_scaling) in the computation
 * `stepsize=`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`:
   $(_kw_stepsize)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
@@ -301,7 +302,7 @@ function quasi_Newton!(
             Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))
         end
     ),
-    scale_initial_operator::Bool=true,
+    initial_scale::Real=1.0,
     stepsize::Stepsize=default_stepsize(
         M,
         QuasiNewtonState;
@@ -318,7 +319,7 @@ function quasi_Newton!(
             p,
             direction_update,
             memory_size;
-            scale=scale_initial_operator,
+            initial_scale=initial_scale,
             (project!)=project!,
             vector_transport_method=vector_transport_method,
         )
@@ -328,7 +329,7 @@ function quasi_Newton!(
             direction_update,
             basis,
             initial_operator;
-            scale=scale_initial_operator,
+            initial_scale=initial_scale,
             vector_transport_method=vector_transport_method,
         )
     end
@@ -439,8 +440,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    if iter == 1 && d.scale == true
-        d.matrix = skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
+    if iter == 1
+        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
     end
     d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
@@ -458,8 +459,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    if iter == 1 && d.scale == true
-        d.matrix = inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
+    if iter == 1
+        d.matrix = d.initial_scale * inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + yk_c * yk_c' / skyk_c -
@@ -481,8 +482,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    if iter == 1 && d.scale == true
-        d.matrix = inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
+    if iter == 1
+        d.matrix = d.initial_scale * inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
@@ -504,8 +505,8 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
-    if iter == 1 && d.scale == true
-        d.matrix = skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
+    if iter == 1
+        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
     end
     d.matrix =
         (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +

@@ -33,8 +33,8 @@ end
         qnu = InverseBFGS()
         d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
         @test Manopt.status_summary(d) ==
-            "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
-        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
+            "$(qnu) with initial scaling 1.0 and vector transport method ParallelTransport()."
+        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], 1.0, InverseBFGS(), ParallelTransport())\n"
         @test repr(d) == s
         @test Manopt.get_message(d) == ""
     end
