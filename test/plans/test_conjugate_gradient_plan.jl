@@ -37,7 +37,7 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
     @testset "representation and summary of Coefficients" begin
         pt = repr(ParallelTransport())
         @test repr(ConjugateDescentCoefficient()) == "ConjugateDescentCoefficient()"
-        @test repr(DaiYuanCoefficient()) == "DaiYuanCoefficient($pt)"
+        @test repr(DaiYuanCoefficientRule()) == "DaiYuanCoefficient($pt)"
         @test repr(HagerZhangCoefficient()) == "HagerZhangCoefficient($pt)"
         @test repr(HestenesStiefelCoefficient()) == "HestenesStiefelCoefficient($pt)"
         @test repr(PolakRibiereCoefficient()) == "PolakRibiereCoefficient($pt)"

@@ -55,7 +55,7 @@ include("../utils/example_tasks.jl")
         s2.δ = δ2
         @test s2.coefficient(dmp, s2, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
 
-        dU = DaiYuanCoefficient()
+        dU = DaiYuanCoefficientRule()
         s3 = ConjugateGradientDescentState(
             M;
             p=x0,

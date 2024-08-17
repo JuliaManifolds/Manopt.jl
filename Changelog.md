@@ -21,9 +21,13 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 ## Changed
 
 * Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `DirectionUpdateRuleFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory.
-  * `AverageGradient` is now called `AverageGradientState`,
-   `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary
-
+  * `AverageGradient` is now called `AverageGradientRule`,
+   `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+  * The `IdentityUpdateRule` now accepts a manifold optionally for consistency, and you can use `Gradient()` for short as well as its factory. Hence `direction=Gradient()` is now available.
+* `MomentumGradient` is now called `MomentumGradientRule`.
+  `MomentumGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+* `Nesterov` is now called `NesterovRule`.
+  `Nesterov` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
 * `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes bool, sometimes real) and was unused.
   It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldes gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
 * Unify doc strings and presentation of keyword arguments

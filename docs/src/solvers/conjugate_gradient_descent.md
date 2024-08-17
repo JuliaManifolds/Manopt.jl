@@ -23,7 +23,7 @@ The update rules act as [`DirectionUpdateRule`](@ref), which internally always f
 ```@docs
 ConjugateGradientBealeRestart
 ConjugateDescentCoefficient
-DaiYuanCoefficient
+DaiYuanCoefficientRule
 FletcherReevesCoefficient
 HagerZhangCoefficient
 HestenesStiefelCoefficient

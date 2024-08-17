@@ -4,7 +4,7 @@
 
 # In general every dictionary here can be either :Symbol-> String or :Symbol -> Dictionary enrties
 
-_MANOPT_DOC_TYPE = Dict{Symbol,Union{String,Dict,Function}}()
+_MANOPT_DOC_TYPE = Dict{Symbol,Union{String,Dict,Function}}
 
 _manopt_docs = _MANOPT_DOC_TYPE()
 # ---
@@ -12,8 +12,10 @@ _manopt_docs = _MANOPT_DOC_TYPE()
 _manopt_docs[:LaTeX] = _MANOPT_DOC_TYPE()
 _l = _manopt_docs[:LaTeX]
 _l[:Cal] = (letter) -> raw"\mathcal " * "$letter"
-_l[:frac] = (a,b) -> raw"\frac" * "{$a}{$b}"
-
+_l[:frac] = (a, b) -> raw"\frac" * "{$a}{$b}"
+_l[:bar] = (letter) -> raw"\bar" * "$(letter)"
+_l[:bigl] = raw"\bigl"
+_l[:bigr] = raw"\bigr"
 # ---
 # Mathematics and semantic symbols
 # :symbol the symbol,
@@ -36,10 +38,11 @@ _link = _manopt_docs[:Link]
 # :type a type
 #
 _manopt_docs[:Var] = _MANOPT_DOC_TYPE()
+_var = _manopt_docs[:Var]
 _var[:p] = Dict(
-  :description => "a point on a manifold ``$(_l[:Cal]("M"))``",
-  :type => "P",
-  default => "rand(M)", # TODO Fix when the Links dictionary exists
+    :description => "a point on a manifold ``$(_l[:Cal]("M"))``",
+    :type => "P",
+    :default => "rand(M)", # TODO Fix when the Links dictionary exists
 )
 
 # ---

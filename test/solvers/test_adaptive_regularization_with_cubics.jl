@@ -240,11 +240,13 @@ include("../utils/example_tasks.jl")
         @test fc(Mc, p0) > fc(Mc, p2)
     end
 
-    @testset "Start at a point with _exactly_ gradient zero" begin
+    @testset "Start at a point with _exactly_ gradient zero - In Tutorial mode" begin
         p0 = zeros(2)
         M = Euclidean(2)
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
         f2(M, p) = 0
         grad_f2(M, p) = [0.0, 0.0]
         @test adaptive_regularization_with_cubics(M, f2, grad_f2, p0) == p0
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
     end
 end

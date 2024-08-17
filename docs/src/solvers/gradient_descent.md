@@ -27,9 +27,13 @@ AverageGradient
 Nesterov
 ```
 
+which internally use
+
 ```@docs
 DirectionUpdateRuleFactory
 Manopt.MomentumGradientRule
+Manopt.AverageGradientRule
+Manopt.NesterovRule
 ```
 
 ## Debug actions

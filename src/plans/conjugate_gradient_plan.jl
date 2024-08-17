@@ -181,7 +181,7 @@ end
 show(io::IO, ::ConjugateDescentCoefficient) = print(io, "ConjugateDescentCoefficient()")
 
 @doc raw"""
-    DaiYuanCoefficient <: DirectionUpdateRule
+    DaiYuanCoefficientRule <: DirectionUpdateRule
 
 Computes an update coefficient for the conjugate gradient method, where
 the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
@@ -202,7 +202,7 @@ Then the coefficient reads
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    function DaiYuanCoefficient(
+    function DaiYuanCoefficientRule(
         M::AbstractManifold=DefaultManifold(2);
         t::AbstractVectorTransportMethod=default_vector_transport_method(M)
     )
@@ -210,20 +210,27 @@ See also [`conjugate_gradient_descent`](@ref)
 Construct the Dai—Yuan coefficient update rule, where the parallel transport is the
 default vector transport and a new storage is created by default.
 """
-struct DaiYuanCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+struct DaiYuanCoefficientRule{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
     transport_method::TVTM
-    function DaiYuanCoefficient(t::AbstractVectorTransportMethod)
+    function DaiYuanCoefficientRule(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
 end
-function DaiYuanCoefficient(M::AbstractManifold=DefaultManifold(2))
-    return DaiYuanCoefficient(default_vector_transport_method(M))
+function DaiYuanCoefficientRule(
+    M::AbstractManifold=DefaultManifold();
+    vector_transport_method=default_vector_transport_method(M),
+)
+    return DaiYuanCoefficientRule(vector_transport_method)
+end
+## TODO: continue here with the docs.
+function DaiYuanCoefficient(args; kwargs...)
+    return DirectionUpdateRuleFactory(DaiYuanCoefficientRule, args...; kwargs...)
 end
 
-update_rule_storage_points(::DaiYuanCoefficient) = Tuple{:Iterate}
-update_rule_storage_vectors(::DaiYuanCoefficient) = Tuple{:Gradient,:δ}
+update_rule_storage_points(::DaiYuanCoefficientRule) = Tuple{:Iterate}
+update_rule_storage_vectors(::DaiYuanCoefficientRule) = Tuple{:Gradient,:δ}
 
-function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficient})(
+function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
@@ -244,7 +251,7 @@ function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficient})(
     update_storage!(u.storage, amp, cgs)
     return coef
 end
-function show(io::IO, u::DaiYuanCoefficient)
+function show(io::IO, u::DaiYuanCoefficientRule)
     return print(io, "DaiYuanCoefficient($(u.transport_method))")
 end
 

@@ -92,7 +92,7 @@ using ManifoldDiff: grad_distance
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
-            direction=Nesterov(M, data[1]),
+            direction=Nesterov(M; p=copy(M, data[1])),
         )
         @test isapprox(M, p, p6; atol=1e-13)
 
@@ -139,7 +139,12 @@ using ManifoldDiff: grad_distance
         )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(
-            M, f, grad_f, pts[1]; direction=AverageGradient(M, copy(M, pts[1]); n=5)
+            M,
+            f,
+            grad_f,
+            pts[1];
+            direction=AverageGradient(M; n=5),
+            stopping_criterion=StopAfterIteration(800),
         )
         @test isapprox(M, north, n4; atol=1e-7)
         n5 = copy(M, pts[1])
