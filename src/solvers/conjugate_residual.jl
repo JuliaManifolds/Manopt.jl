@@ -4,9 +4,9 @@
     conjugate_residual!(TpM::TangentSpace, A, b, p)
     conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
 
-Compute the solution of ``$(_l_cal("A"))(p)[X] + b(p) = 0_p ``, where
+Compute the solution of ``$(_l[:Cal]("A"))(p)[X] + b(p) = 0_p ``, where
 
-* ``$(_l_cal("A"))`` is a linear, symmetric operator on ``$(_l_TpM)``
+* ``$(_l[:Cal]("A"))`` is a linear, symmetric operator on ``$(_l_TpM)``
 * ``b`` is a vector field on the manifold
 * ``X ∈ $(_l_TpM)`` is a tangent vector
 * ``0_p`` is the zero vector ``$(_l_TpM)``.
@@ -14,21 +14,21 @@ Compute the solution of ``$(_l_cal("A"))(p)[X] + b(p) = 0_p ``, where
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initalised with ``X^{(0)}`` as the zero vector and
 
-* the initial residual ``r^{(0)} = -b(p) - $(_l_cal("A"))(p)[X^{(0)}]``
+* the initial residual ``r^{(0)} = -b(p) - $(_l[:Cal]("A"))(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
-* initialize ``Y^{(0)} = $(_l_cal("A"))(p)[X^{(0)}]``
+* initialize ``Y^{(0)} = $(_l[:Cal]("A"))(p)[X^{(0)}]``
 
 performed the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
 
-1. compute a step size ``α_k = $(_l_ds)$(_l_frac("⟨ r^{(k)}, $(_l_cal("A"))(p)[r^{(k)}] ⟩_p","⟨ $(_l_cal("A"))(p)[d^{(k)}], $(_l_cal("A"))(p)[d^{(k)}] ⟩_p"))``
+1. compute a step size ``α_k = $(_l_ds)$(_l[:frac]("⟨ r^{(k)}, $(_l[:Cal]("A"))(p)[r^{(k)}] ⟩_p","⟨ $(_l[:Cal]("A"))(p)[d^{(k)}], $(_l[:Cal]("A"))(p)[d^{(k)}] ⟩_p"))``
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
 2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
-4. compute ``Z = $(_l_cal("A"))(p)[r^{(k+1)}]``
-5. Update the conjugate coefficient ``β_k = $(_l_ds)$(_l_frac("⟨ r^{(k+1)}, $(_l_cal("A"))(p)[r^{(k+1)}] ⟩_p", "⟨ r^{(k)}, $(_l_cal("A"))(p)[r^{(k)}] ⟩_p"))``
+4. compute ``Z = $(_l[:Cal]("A"))(p)[r^{(k+1)}]``
+5. Update the conjugate coefficient ``β_k = $(_l_ds)$(_l[:frac]("⟨ r^{(k+1)}, $(_l[:Cal]("A"))(p)[r^{(k+1)}] ⟩_p", "⟨ r^{(k)}, $(_l[:Cal]("A"))(p)[r^{(k)}] ⟩_p"))``
 6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(k+1)} = -Z + β_k Y^{(k)}``
 
-Note that the right hand side of Step 7 is the same as evaluating ``$(_l_cal("A"))[d^{(k+1)}]``, but avoids the actual evaluation
+Note that the right hand side of Step 7 is the same as evaluating ``$(_l[:Cal]("A"))[d^{(k+1)}]``, but avoids the actual evaluation
 
 # Input
 

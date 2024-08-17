@@ -2,12 +2,58 @@
 #
 # This file collects a few strings to be reused in documentation to avoid retyping everything
 
+# In general every dictionary here can be either :Symbol-> String or :Symbol -> Dictionary enrties
+
+_MANOPT_DOC_TYPE = Dict{Symbol,Union{String,Dict,Function}}()
+
+_manopt_docs = _MANOPT_DOC_TYPE()
+# ---
+# LaTeX
+_manopt_docs[:LaTeX] = _MANOPT_DOC_TYPE()
+_l = _manopt_docs[:LaTeX]
+_l[:Cal] = (letter) -> raw"\mathcal " * "$letter"
+_l[:frac] = (a,b) -> raw"\frac" * "{$a}{$b}"
+
+# ---
+# Mathematics and semantic symbols
+# :symbol the symbol,
+# :descr the description
+_manopt_docs[:Math] = _MANOPT_DOC_TYPE()
+
+# ---
+# Links
+# Collect short forms for links, especially Interdocs ones.
+_manopt_docs[:Link] = _MANOPT_DOC_TYPE()
+_link = _manopt_docs[:Link]
+
+# ---
+# Variables
+# in fields, keyword arguments, parameters
+# for each variable as a symbol, we store
+# The variable name should be the symbol
+# :default – in positional or keyword arguments
+# :description – a text description of the variable
+# :type a type
+#
+_manopt_docs[:Var] = _MANOPT_DOC_TYPE()
+_var[:p] = Dict(
+  :description => "a point on a manifold ``$(_l[:Cal]("M"))``",
+  :type => "P",
+  default => "rand(M)", # TODO Fix when the Links dictionary exists
+)
+
+# ---
+# Problems
+
+# ---
+# Notes
+
+# ---
+# Old strings
+
 # LateX symbols
-_l_cal(letter::String) = raw"\mathcal " * "$letter"
-_l_cO = raw"\mathcal O"
 _l_ds = raw"\displaystyle"
 _l_argmin = raw"\operatorname{arg\,min}"
-_l_frac(a, b) = raw"\frac" * "{$a}{$b}"
 _l_grad = raw"\operatorname{grad}"
 _l_Hess = raw"\operatorname{Hess}"
 _l_log = raw"\log"
@@ -18,7 +64,7 @@ _l_min = raw"\min"
 _l_max = raw"\min"
 _l_norm(v, i="") = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
 # Semantics
-_l_Manifold(M="M") = _l_cal(M)
+_l_Manifold(M="M") = _l[:Cal](M)
 _l_M = "$(_l_Manifold())"
 _l_TpM(p="p") = "T_{$p}$_l_M"
 _l_DΛ = "DΛ: T_{m}$(_l_M) → T_{Λ(m)}$(_l_Manifold("N"))"
@@ -27,7 +73,7 @@ _l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
 _l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
-_l_C_subset_M = "$(_l_cal("C")) ⊂ $(_l_cal("M"))"
+_l_C_subset_M = "$(_l[:Cal]("C")) ⊂ $(_l[:Cal]("M"))"
 _l_txt(s) = "\\text{$s}"
 
 # Math terms

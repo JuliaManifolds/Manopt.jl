@@ -83,7 +83,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
-  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_l_cal("A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_l_cal("A"))(X) + b = 0`` we aim to solve.
+  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_l[:Cal]("A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_l[:Cal]("A"))(X) + b = 0`` we aim to solve.
   $(_kw_used_in("sub_problem"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_l_norm("b"))`` from the system to solve.
   $(_kw_used_in("sub_state"))

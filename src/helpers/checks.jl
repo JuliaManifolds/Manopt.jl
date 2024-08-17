@@ -82,7 +82,7 @@ Verify numerically whether the gradient `grad_f(M,p)` of `f(M,p)` is correct, th
 $_doc_check_gradient_formula
 
 or in other words, that the error between the function ``f`` and its first order Taylor
-behaves in error ``$_l_cO O(t^2)``, which indicates that the gradient is correct,
+behaves in error ``$_l[:Cal]("O") O(t^2)``, which indicates that the gradient is correct,
 cf. also [Boumal:2023; Section 4.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
@@ -161,7 +161,7 @@ The approximation is then
 $_doc_check_Hess_formula
 
 or in other words, that the error between the function ``f`` and its second order Taylor
-behaves in error ``$_l_cO (t^3)``, which indicates that the Hessian is correct,
+behaves in error ``$_l[:Cal]("O") (t^3)``, which indicates that the Hessian is correct,
 cf. also [Boumal:2023; Section 6.8](@cite).
 
 Note that if the errors are below the given tolerance and the method is exact,
