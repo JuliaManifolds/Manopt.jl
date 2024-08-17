@@ -169,7 +169,7 @@ using ManifoldDiff: grad_distance
         f(M, p) = distance(M, p, q) .^ 2
         # choose a wrong gradient such that ConstantStepsize yields an increase
         grad_f(M, p) = -grad_distance(M, q, p)
-        @test_logs (:info,) set_parameter!(:Mode, "Tutorial")
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
         @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(
             M, f, grad_f, 1 / sqrt(2) .* [1.0, -1.0, 0.0]; stepsize=ConstantStepsize(1.0)
         )
@@ -177,6 +177,6 @@ using ManifoldDiff: grad_distance
         @test_logs (:warn,) (:warn,) gradient_descent(
             M, f, grad_f2, 1 / sqrt(2) .* [1.0, -1.0, 0.0];
         )
-        @test_logs (:info,) set_parameter!(:Mode, "")
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
     end
 end

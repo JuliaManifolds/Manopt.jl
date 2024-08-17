@@ -66,9 +66,12 @@ In general we introduce a few factories, that avoid having to pass the manifold 
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-  *
 
-## Removed
+### Fixed
+
+* the `AverageGradientRule` filled its internal vector of gradients wrongly – or mixed it up in parallel transport. This is now fixed.
+
+### Removed
 
 * the `convex_bundle_method` and its `ConvexBundleMethodState` no longer accept the keywords `k_size`, `p_estimate` nor `ϱ`, they are superseded by just providing `k_max`.
 * the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now
