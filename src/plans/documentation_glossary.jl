@@ -1,16 +1,25 @@
 #
+# Manopt Glossary
+# ===
 #
-# This file collects a few strings to be reused in documentation to avoid retyping everything
+# This file collects
+# * LaTeX snippets
+# * math formulae
+# * Variable names
+# * links
+# * notes
+#
+# to keep naming, notation, and formatting
 
 # In general every dictionary here can be either :Symbol-> String or :Symbol -> Dictionary enrties
 
 _MANOPT_DOC_TYPE = Dict{Symbol,Union{String,Dict,Function}}
 
-_manopt_docs = _MANOPT_DOC_TYPE()
+_manopt_glossary = _MANOPT_DOC_TYPE()
 # ---
 # LaTeX
-_manopt_docs[:LaTeX] = _MANOPT_DOC_TYPE()
-_l = _manopt_docs[:LaTeX]
+_manopt_glossary[:LaTeX] = _MANOPT_DOC_TYPE()
+_l = _manopt_glossary[:LaTeX]
 _l[:Cal] = (letter) -> raw"\mathcal " * "$letter"
 _l[:frac] = (a, b) -> raw"\frac" * "{$a}{$b}"
 _l[:bar] = (letter) -> raw"\bar" * "$(letter)"
@@ -20,14 +29,14 @@ _l[:bigr] = raw"\bigr"
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :descr the description
-_manopt_docs[:Math] = _MANOPT_DOC_TYPE()
+_manopt_glossary[:Math] = _MANOPT_DOC_TYPE()
 
 # ---
 # Links
 # Collect short forms for links, especially Interdocs ones.
-_manopt_docs[:Link] = _MANOPT_DOC_TYPE()
-_link = _manopt_docs[:Link]
-
+_manopt_glossary[:Link] = _MANOPT_DOC_TYPE()
+_link = _manopt_glossary[:Link]
+_link[:Manopt] = "[`Manopt.jl`](https://manoptjl.org)"
 # ---
 # Variables
 # in fields, keyword arguments, parameters
@@ -37,8 +46,8 @@ _link = _manopt_docs[:Link]
 # :description – a text description of the variable
 # :type a type
 #
-_manopt_docs[:Var] = _MANOPT_DOC_TYPE()
-_var = _manopt_docs[:Var]
+_manopt_glossary[:Var] = _MANOPT_DOC_TYPE()
+_var = _manopt_glossary[:Var]
 _var[:p] = Dict(
     :description => "a point on a manifold ``$(_l[:Cal]("M"))``",
     :type => "P",
@@ -50,7 +59,17 @@ _var[:p] = Dict(
 
 # ---
 # Notes
-
+_manopt_glossary[:Note] = _MANOPT_DOC_TYPE()
+_note = _manopt_glossary[:Note]
+_note[:ManifoldDefaultFactory] =
+    (type::String,) -> """
+!!! info
+    This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`]()@ref).
+    If you do not provide a manifold, the manifold `M` later provided to (usually) generate
+    the corresponding [`AbstractManoptSolverState`](@ref) will be used.
+    This affects all arguments and keyword argumentss with defaults that depend on the manifold,
+    unless provided with a value here.
+"""
 # ---
 # Old strings
 

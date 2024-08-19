@@ -230,7 +230,7 @@ function stochastic_gradient_descent!(
     M::AbstractManifold,
     msgo::O,
     p;
-    direction::Union{DirectionUpdateRule,DirectionUpdateRuleFactory}=StochasticGradient(
+    direction::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=StochasticGradient(
         zero_vector(M, p)
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
@@ -247,7 +247,7 @@ function stochastic_gradient_descent!(
         M;
         p=p,
         X=zero_vector(M, p),
-        direction=_produce_rule(M, direction),
+        direction=_produce_type(direction, M),
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
         order_type=order_type,

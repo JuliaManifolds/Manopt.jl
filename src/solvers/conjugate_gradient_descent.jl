@@ -61,7 +61,7 @@ Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficientRule`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).
-These can all be combined with a [`ConjugateGradientBealeRestart`](@ref) rule.
+These can all be combined with a [`ConjugateGradientBealeRestartRule`](@ref) rule.
 
 They all compute ``β_k`` such that this algorithm updates the search direction as
 
@@ -134,7 +134,7 @@ function conjugate_gradient_descent!(
     M::AbstractManifold,
     mgo::O,
     p;
-    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -152,7 +152,7 @@ function conjugate_gradient_descent!(
         p=p,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
-        coefficient=coefficient,
+        coefficient=_produce_type(coefficient, M),
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
         initial_gradient=initial_gradient,

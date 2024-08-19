@@ -5,8 +5,8 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-  gradient_descent
-  gradient_descent!
+gradient_descent
+gradient_descent!
 ```
 
 ## State
@@ -27,12 +27,12 @@ AverageGradient
 Nesterov
 ```
 
-which internally use
+which internally use the [`ManifoldDefaultsFactory`](@ref) and
 
 ```@docs
-DirectionUpdateRuleFactory
-Manopt.MomentumGradientRule
 Manopt.AverageGradientRule
+Manopt.ConjugateDescentCoefficientRule
+Manopt.MomentumGradientRule
 Manopt.NesterovRule
 ```
 

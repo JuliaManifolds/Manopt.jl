@@ -14,13 +14,11 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 
 ## Added
 
-* A `DirectionUpdateRuleFactory` that postpones the creation/allcation of manifold-specific fields in direction updates.
-  * `MomentumGradient` now serves as a constructor for the factory of a `MomentumGradientRule`
-  * `Gradient` now serves as a constructor for the factory of a `IdentityUpdateRule`
+* A `ManifoldDefaultsFactory` that postpones the creation/allcation of manifold-specific fields in for example direction updates, stepsizes and stopping criteria.
 
 ## Changed
 
-* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `DirectionUpdateRuleFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory.
+* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `ManifoldDefaultsFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory.
   * `AverageGradient` is now called `AverageGradientRule`,
    `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
   * The `IdentityUpdateRule` now accepts a manifold optionally for consistency, and you can use `Gradient()` for short as well as its factory. Hence `direction=Gradient()` is now available.

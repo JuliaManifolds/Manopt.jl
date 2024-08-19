@@ -36,7 +36,7 @@ include("../utils/example_tasks.jl")
         @test default_stepsize(M, typeof(s1)) isa ArmijoLinesearch
         @test Manopt.get_message(s1) == ""
 
-        dU = ConjugateDescentCoefficient()
+        dU = Manopt.ConjugateDescentCoefficientRule()
         s2 = ConjugateGradientDescentState(
             M;
             p=x0,
@@ -55,7 +55,7 @@ include("../utils/example_tasks.jl")
         s2.δ = δ2
         @test s2.coefficient(dmp, s2, 2) == dot(grad_2, grad_2) / dot(-δ2, grad_1)
 
-        dU = DaiYuanCoefficientRule()
+        dU = DaiYuanCoefficientRule(M)
         s3 = ConjugateGradientDescentState(
             M;
             p=x0,

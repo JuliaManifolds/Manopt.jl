@@ -57,3 +57,12 @@ You can further activate a “Tutorial” mode by `set_parameter!(:Mode, "Tutori
 ```@docs
 Manopt.is_tutorial_mode
 ```
+
+# A factory for providing manifold defaults
+
+In several cases a manifold might not yet be known at the time a (keyword) argument should be provided. Therefore, any type with a manifold default can be wrapped into a factory.
+
+```@docs
+Manopt.ManifoldDefaultsFactory
+Manopt._produce_type
+```

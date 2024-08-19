@@ -270,61 +270,6 @@ individual one that provides these values.
 abstract type DirectionUpdateRule end
 
 """
-    DirectionUpdateRuleFactory{M,T,A,K} <: DirectionUpdateRule
-
-A generic factory to create direction update rules.
-Motivated by the fact that in some situations it is nicer to not being forced
-to specify a manifold, this factory allows to postpone that.
-It still stores all parameters one wants to provide, even those that would
-require the manifold to be filled with a reasonable default.
-Any optional parameter or keyword argument can hence still be overwritten.
-Similarly you can also pass a msnifold to the constructor, in case you
-want to use another manifolds form of defaults compared to the one of the solver.
-
-# Fields
-
-* `M::Union{Nothing,AbstractManifold}` (optional) provide a manifold for defaults
-* `args`: arguments that are passed to the `DirectionUpdateRule`
-* `kwargs`: keyword arguments to pass to the update rule upon creation
-
-# Constructor
-
-    DirectionUpdateRuleFactory(T, args...; kwargs...)
-    DirectionUpdateRuleFactory(T, M, args...; kwargs...)
-
-## Input
-
-* `T` a subtype of the `DirectionUpdateRule` this factory is meant to construct
-* `M` (optional) a manifold used for the defaults
-
-as well as arguments and keyword arguments for the update rule.
-"""
-struct DirectionUpdateRuleFactory{T,TM<:Union{AbstractManifold,Nothing},A,K}
-    M::TM
-    args::A
-    kwargs::K
-end
-function DirectionUpdateRuleFactory(
-    T::Type{<:DirectionUpdateRule}, M::TM, args...; kwargs...
-) where {TM<:AbstractManifold}
-    return DirectionUpdateRuleFactory{T,TM,typeof(args),typeof(kwargs)}(M, args, kwargs)
-end
-function DirectionUpdateRuleFactory(T::Type{<:DirectionUpdateRule}, args...; kwargs...)
-    return DirectionUpdateRuleFactory{T,Nothing,typeof(args),typeof(kwargs)}(
-        nothing, args, kwargs
-    )
-end
-function (durf::DirectionUpdateRuleFactory{T})(M::AbstractManifold) where {T}
-    return T(M, durf.args...; durf.kwargs...)
-end
-function (durf::DirectionUpdateRuleFactory{T,<:AbstractManifold})() where {T}
-    return T(durf.M, durf.args...; durf.kwargs...)
-end
-# allow both in arguments, resolve by eventually poducing a rule
-_produce_rule(::AbstractManifold, d::DirectionUpdateRule) = d
-_produce_rule(M::AbstractManifold, d::DirectionUpdateRuleFactory) = d(M)
-
-"""
     IdentityUpdateRule <: DirectionUpdateRule
 
 The default gradient direction update is the identity, usually it just evaluates the gradient.
@@ -332,8 +277,7 @@ The default gradient direction update is the identity, usually it just evaluates
 Use `Gradient()` to create the corresponding factory.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
-IdentityUpdateRule(M) = IdentityUpdateRule() # Temp hack for the mockup
-Gradient() = DirectionUpdateRuleFactory(IdentityUpdateRule)
+Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifold=false)
 
 """
     MomentumGradientRule <: DirectionUpdateRule
@@ -420,27 +364,27 @@ last direction multiplied by momentum ``m``.
 * `momentum=0.2` amount of momentum to use
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
-!!! info
-    This function generates a [`DirectionUpdateRuleFactory`](@ref) for this
-    for the [`MomentumGradientRule`](@ref). If you do not provide the manifold
-    or any other of the keywords that require the manifold for a default,
-    you can provide a manifold later to use that manifold's default's instead.
+$(_note[:ManifoldDefaultFactory]("MomentumGradientRule"))
+
 """
 MomentumGradient(args...; kwargs...) =
-    DirectionUpdateRuleFactory(MomentumGradientRule, args...; kwargs...)
+    ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
 
 """
     AverageGradientRule <: DirectionUpdateRule
 
 Add an average of gradients to a gradient processor. A set of previous directions (from the
-inner processor) and the last iterate are stored, average is taken after vector transporting
+inner processor) and the last iterate are stored. The average is taken after vector transporting
 them to the current iterates tangent space.
 
+
 # Fields
+
 * `gradients`:               the last `n` gradient/direction updates
 * `last_iterate`:            last iterate (needed to transport the gradients)
 * `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
 * `vector_transport_method`: vector transport method to use
+
 
 # Constructors
 
@@ -517,16 +461,12 @@ them to the current iterates tangent space.
 * $(_kw_X_default)`
 * `vector_transport_method=default_vector_transport_method(M, typeof(p)),
 
-!!! info
-    This function generates a [`DirectionUpdateRuleFactory`](@ref) for this
-    for the [`AverageGradientRule`](@ref). If you do not provide the manifold
-    or any other of the keywords that require the manifold for a default,
-    you can provide a manifold later to use that manifold's default's instead.
+$(_note[:ManifoldDefaultFactory]("AverageGradientRule"))
 """
 AverageGradient(args...; kwargs...) =
-    DirectionUpdateRuleFactory(AverageGradientRule, args...; kwargs...)
+    ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
 
-@doc raw"""
+@doc """
     NesterovRule <: DirectionUpdateRule
 
 Compute a Nesterov inspired direction update rule.
@@ -534,13 +474,27 @@ See [`Nesterov`](@ref) for details
 
 # Fields
 
-* `γ`
-* `μ` the strong convexity coefficient
-* `v` (=``=v_k``, ``v_0=x_0``) an interim point to compute the next gradient evaluation point `y_k`
-* `shrinkage` (`= i -> 0.8`) a function to compute the shrinkage ``β_k`` per iterate.
+* `γ::Real`, `μ::Real`: coefficients from the last iterate
+* `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
+* `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k``.
+* `inverse_retraction_method::AbstractInverseRetractionMethod`: the inverse retraction to use
+
 
 # Constructor
 
+    NesterovRule(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+
+* $(_kw_p_default)
+* `γ=0.001``
+* `μ=0.9``
+* `shrinkage = k -> 0.8`
+* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+
+# See also
+
+[`Nesterov`](@ref)
 """
 mutable struct NesterovRule{P,R<:Real} <: DirectionUpdateRule
     γ::R
@@ -585,6 +539,7 @@ function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverS
     n.γ = 1 / (1 + n.shrinkage(k)) * γbar
     return h, (-1 / h) * inverse_retract(M, p, xn, n.inverse_retraction_method) # outer update
 end
+
 @doc """
     Nesterov()
 
@@ -618,14 +573,10 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_l_retr)^{-1}_{p_k}p_{k+
 * `shrinkage = k -> 0.8`
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 
-!!! info
-    This function generates a [`DirectionUpdateRuleFactory`](@ref) for this
-    for the [`NesterovRule`](@ref). If you do not provide the manifold
-    or any other of the keywords that require the manifold for a default,
-    you can provide a manifold later to use that manifold's default's instead.
+$(_note[:ManifoldDefaultFactory]("NesterovRule"))
 """
 function Nesterov(args...; kwargs...)
-    return DirectionUpdateRuleFactory(NesterovRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)
 end
 
 @doc raw"""

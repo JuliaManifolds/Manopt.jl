@@ -110,7 +110,7 @@ end
 function ConjugateGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
-    coefficient::DirectionUpdateRule=ConjugateDescentCoefficient(),
+    coefficient::DirectionUpdateRule=ConjugateDescentCoefficientRule(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -154,16 +154,28 @@ and the last update direction ``\delta=\delta_k``,  based on [Fletcher:1987](@ci
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
-    ConjugateDescentCoefficient(a::StoreStateAction=())
+    ConjugateDescentCoefficientRule()
 
 Construct the conjugate descent coefficient update rule, a new storage is created by default.
 """
-struct ConjugateDescentCoefficient <: DirectionUpdateRule end
+struct ConjugateDescentCoefficientRule <: DirectionUpdateRule end
 
-update_rule_storage_points(::ConjugateDescentCoefficient) = Tuple{:Iterate}
-update_rule_storage_vectors(::ConjugateDescentCoefficient) = Tuple{:Gradient}
+## TODO: continue here with the docs.
+"""
+    ConjugateDescentCoefficient()
 
-function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficient})(
+
+"""
+function ConjugateDescentCoefficient()
+    return ManifoldDefaultsFactory(
+        Manopt.ConjugateDescentCoefficientRule; requires_manifold=false
+    )
+end
+
+update_rule_storage_points(::ConjugateDescentCoefficientRule) = Tuple{:Iterate}
+update_rule_storage_vectors(::ConjugateDescentCoefficientRule) = Tuple{:Gradient}
+
+function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficientRule})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, i
 )
     M = get_manifold(amp)
@@ -178,7 +190,9 @@ function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficient})(
     update_storage!(u.storage, amp, cgs)
     return coef
 end
-show(io::IO, ::ConjugateDescentCoefficient) = print(io, "ConjugateDescentCoefficient()")
+function show(io::IO, ::ConjugateDescentCoefficientRule)
+    return print(io, "ConjugateDescentCoefficientRule()")
+end
 
 @doc raw"""
     DaiYuanCoefficientRule <: DirectionUpdateRule
@@ -217,14 +231,13 @@ struct DaiYuanCoefficientRule{TVTM<:AbstractVectorTransportMethod} <: DirectionU
     end
 end
 function DaiYuanCoefficientRule(
-    M::AbstractManifold=DefaultManifold();
-    vector_transport_method=default_vector_transport_method(M),
+    M::AbstractManifold; vector_transport_method=default_vector_transport_method(M)
 )
     return DaiYuanCoefficientRule(vector_transport_method)
 end
 ## TODO: continue here with the docs.
 function DaiYuanCoefficient(args; kwargs...)
-    return DirectionUpdateRuleFactory(DaiYuanCoefficientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DaiYuanCoefficientRule, args...; kwargs...)
 end
 
 update_rule_storage_points(::DaiYuanCoefficientRule) = Tuple{:Iterate}
@@ -592,7 +605,7 @@ function (u::DirectionUpdateRuleStorage{SteepestDirectionUpdateRule})(
 end
 
 @doc raw"""
-    ConjugateGradientBealeRestart <: DirectionUpdateRule
+    ConjugateGradientBealeRestartRule <: DirectionUpdateRule
 
 An update rule might require a restart, that is using pure gradient as descent direction,
 if the last two gradients are nearly orthogonal, see [HagerZhang:2006; page 12](@cite) (in the preprint, page 46 in Journal page numbers).
@@ -613,41 +626,45 @@ The default threshold is chosen as `0.2` as recommended in [Powell:1977](@cite)
 
 # Constructor
 
-    ConjugateGradientBealeRestart(
-        direction_update::D,
-        threshold=0.2;
-        manifold::AbstractManifold = DefaultManifold(),
-        vector_transport_method::V=default_vector_transport_method(manifold),
+    ConjugateGradientBealeRestartRule(
+        M::AbstractManifold,
+        direction_update::D;
+        threshold=0.2,
+        vector_transport_method::V=default_vector_transport_method(M),
     )
 """
-mutable struct ConjugateGradientBealeRestart{
+mutable struct ConjugateGradientBealeRestartRule{
     DUR<:DirectionUpdateRule,VT<:AbstractVectorTransportMethod,F
 } <: DirectionUpdateRule
     direction_update::DUR
     threshold::F
     vector_transport_method::VT
-    function ConjugateGradientBealeRestart(
-        direction_update::D,
-        threshold=0.2;
-        manifold::AbstractManifold=DefaultManifold(),
-        vector_transport_method::V=default_vector_transport_method(manifold),
-    ) where {D<:DirectionUpdateRule,V<:AbstractVectorTransportMethod}
-        return new{D,V,typeof(threshold)}(
-            direction_update, threshold, vector_transport_method
-        )
-    end
+end
+function ConjugateGradientBealeRestartRule(
+    M::AbstractManifold,
+    direction_update::Union{DirectionUpdateRule,ManifoldDefaultsFactory};
+    threshold=0.2,
+    vector_transport_method::V=default_vector_transport_method(M),
+) where {V<:AbstractVectorTransportMethod}
+    dir = _produce_type(direction_update, M)
+    return ConjugateGradientBealeRestartRule{typeof(dir),V,typeof(threshold)}(
+        dir, threshold, vector_transport_method
+    )
+end
+function ConjugateGradientBealeRestart(args...; kwargs...)
+    return ManifoldDefaultsFactory(ConjugateGradientBealeRestartRule, args...; kwargs...)
 end
 
-@inline function update_rule_storage_points(dur::ConjugateGradientBealeRestart)
+@inline function update_rule_storage_points(dur::ConjugateGradientBealeRestartRule)
     dur_p = update_rule_storage_points(dur.direction_update)
     return :Iterate in dur_p.parameters ? dur_p : Tuple{:Iterate,dur_p.parameters...}
 end
-@inline function update_rule_storage_vectors(dur::ConjugateGradientBealeRestart)
+@inline function update_rule_storage_vectors(dur::ConjugateGradientBealeRestartRule)
     dur_X = update_rule_storage_vectors(dur.direction_update)
     return :Gradient in dur_X.parameters ? dur_X : Tuple{:Gradient,dur_X.parameters...}
 end
 
-function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
+function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestartRule})(
     amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
 )
     M = get_manifold(amp)
@@ -670,9 +687,9 @@ function (u::DirectionUpdateRuleStorage{<:ConjugateGradientBealeRestart})(
     update_storage!(u.storage, amp, cgs)
     return real(num / denom) > u.coefficient.threshold ? zero(β) : β
 end
-function show(io::IO, u::ConjugateGradientBealeRestart)
+function show(io::IO, u::ConjugateGradientBealeRestartRule)
     return print(
         io,
-        "ConjugateGradientBealeRestart($(u.direction_update), $(u.threshold); vector_transport_method=$(u.vector_transport_method))",
+        "ConjugateGradientBealeRestartRule($(u.direction_update), $(u.threshold), $(u.vector_transport_method))",
     )
 end

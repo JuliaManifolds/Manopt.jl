@@ -235,7 +235,7 @@ function gradient_descent!(
         p=p,
         stopping_criterion=stopping_criterion,
         stepsize=stepsize,
-        direction=_produce_rule(M, direction),
+        direction=_produce_type(direction, M),
         retraction_method=retraction_method,
         X=X,
     )

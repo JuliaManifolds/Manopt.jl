@@ -9,8 +9,8 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
     @testset "Test Restart CG" begin
         M = Euclidean(2)
         du = DummyCGCoeff()
-        dur2 = ConjugateGradientBealeRestart(du, 0.3)
-        dur3 = ConjugateGradientBealeRestart(du, 0.1)
+        dur2 = ConjugateGradientBealeRestartRule(M, du; threshold=0.3)
+        dur3 = ConjugateGradientBealeRestartRule(M, du; threshold=0.1)
         f(M, p) = norm(M, p)^2
         grad_f(M, p) = p
         p0 = [1.0, 0.0]
@@ -35,14 +35,18 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         @test cgs3.coefficient(pr, cgs3, 1) == 0
     end
     @testset "representation and summary of Coefficients" begin
-        pt = repr(ParallelTransport())
-        @test repr(ConjugateDescentCoefficient()) == "ConjugateDescentCoefficient()"
-        @test repr(DaiYuanCoefficientRule()) == "DaiYuanCoefficient($pt)"
+        p = ParallelTransport()
+        pt = repr(p)
+        @test repr(Manopt.ConjugateDescentCoefficientRule()) ==
+            "ConjugateDescentCoefficientRule()"
+        @test repr(Manopt.DaiYuanCoefficientRule(p)) == "DaiYuanCoefficient($pt)"
         @test repr(HagerZhangCoefficient()) == "HagerZhangCoefficient($pt)"
         @test repr(HestenesStiefelCoefficient()) == "HestenesStiefelCoefficient($pt)"
         @test repr(PolakRibiereCoefficient()) == "PolakRibiereCoefficient($pt)"
-        cgbr = ConjugateGradientBealeRestart(ConjugateDescentCoefficient())
-        s1 = "ConjugateGradientBealeRestart(ConjugateDescentCoefficient(), 0.2; vector_transport_method=$pt)"
+        cgbr = Manopt.ConjugateGradientBealeRestartRule(
+            Euclidean(), ConjugateDescentCoefficient()
+        )
+        s1 = "ConjugateGradientBealeRestartRule(ConjugateDescentCoefficientRule(), 0.2, ParallelTransport())"
         @test repr(cgbr) == s1
         @test repr(LiuStoreyCoefficient()) == "LiuStoreyCoefficient($pt)"
     end
