@@ -292,7 +292,7 @@ $(_var[:field](:p, "p_old"))
 * `momentum::Real`: factor for the momentum
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-* `vector_transport_method`: vector transport method to use
+$(_var[:field](:vector_transport_method))
 $(_var[:field](:X, "X_old"))
 
 # Constructors
@@ -307,7 +307,7 @@ Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for int
 $(_var[:keyword](:p))
 * `s=`[`IdentityUpdateRule`](@ref)`()`
 * `momentum=0.2`
-* `vector_transport_method=default_vector_transport_method(M, typeof(p))`
+$(_var[:keyword](:vector_transport_method))
 $(_var[:keyword](:X))
 
 

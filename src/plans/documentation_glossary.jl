@@ -30,7 +30,11 @@ _l[:bigr] = raw"\bigr"
 # :symbol the symbol,
 # :descr the description
 _manopt_glossary[:Math] = _MANOPT_DOC_TYPE()
-
+_math = _manopt_glossary[:Math]
+_math[:vector_transport] = Dict(
+    :symbol => (a="⋅", b="⋅") -> raw"\mathcal T_{" * "$a←$b" * "}",
+    :name => "the vector transport",
+)
 # ---
 # Links
 # Collect short forms for links, especially Interdocs ones.
@@ -59,16 +63,27 @@ _var[:argumemt] =
     (s::Symbol, display="$s"; kwargs...) ->
         "* `$(display): $(_var[s][:description](; kwargs...))"
 _var[:keyword] = #desc: whether or not to print the description (again)
-    (s::Symbol, display="$s"; description::Bool=true, kwargs...) ->
-        "* `$(display)=`$(_var[s][:default](;kwargs...))$(description ? ": $(_var[s][:description](; kwargs...))" : "")"
+    (s::Symbol, display="$s"; type=false, description::Bool=true, kwargs...) ->
+        "* `$(display)$(type ? _var[s][:type] : "")=`$(_var[s][:default](;kwargs...))$(description ? ": $(_var[s][:description](; kwargs...))" : "")"
 
+_var[:vector_transport_method] = Dict(
+    :description =>
+        (; M="M", p="p") ->
+            "a vector transport ``$(_math[:vector_transport][:symbol]())`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
+    :type => "AbstractVectorTransportMethod",
+    :default =>
+        (; M="M", p="p") ->
+            "[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
+)
 _var[:p] = Dict(
     :description => (; M="M") -> "a point on the manifold ``$(_l[:Cal](M))``",
     :type => "P",
     :default => (; M="M") -> "`rand($M)`", # TODO Fix when the Links dictionary exists
 )
 _var[:X] = Dict(
-    :description => (; M="M", p="p") -> "a tangent bector at the point `$p` on the manifold ``$(_l[:Cal]("M"))``",
+    :description =>
+        (; M="M", p="p") ->
+            "a tangent bector at the point `$p` on the manifold ``$(_l[:Cal]("M"))``",
     :type => "T",
     :default => (; M="M", p="p") -> "`zero_vector($M,$p)`", # TODO Fix when the Links dictionary exists
 )
@@ -112,7 +127,6 @@ _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
-_l_vt = raw"\mathcal T_{\cdot\gets\cdot}"
 _l_C_subset_M = "$(_l[:Cal]("C")) ⊂ $(_l[:Cal]("M"))"
 _l_txt(s) = "\\text{$s}"
 
@@ -218,7 +232,7 @@ _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`
 _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function, indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
-_field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$_l_vt``"
+_field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$(_math[:vector_transport][:symbol]())``"
 _field_X = "`X`: a tangent vector"
 
 #
@@ -256,7 +270,7 @@ function _kw_sub_objective_default_text(type::String)
 end
 
 _kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_vector_transport_method = "a vector transport ``$_l_vt`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
+_kw_vector_transport_method = "a vector transport ``$(_math[:vector_transport][:symbol]())`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
 
 _kw_X_default = "`X=`$(_link_zero_vector())"
 _kw_X = raw"specify a memory internally to store a tangent vector"

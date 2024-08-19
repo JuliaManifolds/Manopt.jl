@@ -551,7 +551,7 @@ and
 
 $_doc_NM_linesearch2
 
-where ``α_{k-1}`` is the step size computed in the last iteration and $_l_vt is a vector transport.
+where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math[:vector_transport][:symbol]())`` is a vector transport.
 Then the Barzilai—Borwein step size is
 
 $_doc_NM_BB

@@ -26,7 +26,7 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
 * $(_field_vector_transp)
 * `vector_transport_method_dual::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`):
-  a vector transport ``$(_l_vt)``on ``$(_l_Manifold("N"))``
+  a vector transport ``$(_math[:vector_transport][:symbol]())``on ``$(_l_Manifold("N"))``
 
 Here, `P` is a point type on ``$(_l_M)``, `T` its tangent vector type, `Q` a point type on ``$(_l_Manifold("N"))``,
 and `R<:Real` is a real number type
@@ -63,7 +63,7 @@ If you activate these to be different from the default identity, you have to pro
 * `update_dual_base=missing`
 * $_kw_vector_transport_method_default: $_kw_vector_transport_method
 * `vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_l_vt)`` to use on ``$(_l_Manifold("N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+  a vector transport ``$(_math[:vector_transport][:symbol]())`` to use on ``$(_l_Manifold("N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
@@ -253,7 +253,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * $_kw_retraction_method_default: $_kw_retraction_method
 * $_kw_vector_transport_method_default: $_kw_vector_transport_method
 * `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$_l_vt`` to use on $(_l_Manifold("N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+  a vector transport ``$(_math[:vector_transport][:symbol]())`` to use on $(_l_Manifold("N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
 $_doc_sec_output
 """
