@@ -43,17 +43,35 @@ _link[:Manopt] = "[`Manopt.jl`](https://manoptjl.org)"
 # for each variable as a symbol, we store
 # The variable name should be the symbol
 # :default – in positional or keyword arguments
-# :description – a text description of the variable
+# :description – a text description of the variable (always functions)
 # :type a type
 #
 _manopt_glossary[:Var] = _MANOPT_DOC_TYPE()
 _var = _manopt_glossary[:Var]
-_var[:p] = Dict(
-    :description => "a point on a manifold ``$(_l[:Cal]("M"))``",
-    :type => "P",
-    :default => "rand(M)", # TODO Fix when the Links dictionary exists
-)
+#Meta: How to format an argument, a field of a struct, and a keyword
+_var[:argumemt] =
+    (s::Symbol, display="$s"; kwargs...) ->
+        "* `$(display)`: $(_var[s][:description](;kwargs...))"
+_var[:field] =
+    (s::Symbol, display="$s"; kwargs...) ->
+        "* `$(display)::$(_var[s][:type])`: $(_var[s][:description](; kwargs...))"
+_var[:argumemt] =
+    (s::Symbol, display="$s"; kwargs...) ->
+        "* `$(display): $(_var[s][:description](; kwargs...))"
+_var[:keyword] = #desc: whether or not to print the description (again)
+    (s::Symbol, display="$s"; description::Bool=true, kwargs...) ->
+        "* `$(display)=`$(_var[s][:default](;kwargs...))$(description ? ": $(_var[s][:description](; kwargs...))" : "")"
 
+_var[:p] = Dict(
+    :description => (; M="M") -> "a point on the manifold ``$(_l[:Cal](M))``",
+    :type => "P",
+    :default => (; M="M") -> "`rand($M)`", # TODO Fix when the Links dictionary exists
+)
+_var[:X] = Dict(
+    :description => (; M="M", p="p") -> "a tangent bector at the point `$p` on the manifold ``$(_l[:Cal]("M"))``",
+    :type => "T",
+    :default => (; M="M", p="p") -> "`zero_vector($M,$p)`", # TODO Fix when the Links dictionary exists
+)
 # ---
 # Problems
 

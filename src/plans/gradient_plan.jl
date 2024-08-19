@@ -274,7 +274,8 @@ abstract type DirectionUpdateRule end
 
 The default gradient direction update is the identity, usually it just evaluates the gradient.
 
-Use `Gradient()` to create the corresponding factory.
+You can also use `Gradient()` to create the corresponding factory, though this only delays
+this parameter-free instantiation to later.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
 Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifold=false)
@@ -282,30 +283,33 @@ Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifol
 """
     MomentumGradientRule <: DirectionUpdateRule
 
+Store the necessary information to compute the [`MomentumGradient`](@ref)
+direction update.
 
 # Fields
 
-* `p_old`:  remember the last iterate for parallel transporting the last direction
-* `momentum`: factor for momentum
+$(_var[:field](:p, "p_old"))
+* `momentum::Real`: factor for the momentum
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
 * `vector_transport_method`: vector transport method to use
-* `X_old`: the last gradient/direction update added as momentum
+$(_var[:field](:X, "X_old"))
 
 # Constructors
 
-Add momentum to a gradient problem, where by default just a gradient evaluation is used
 
-    MomentumGradientRule(
-        M::AbstractManifold;
-        p=rand(M),
-        s::DirectionUpdateRule=IdentityUpdateRule();
-        X=zero_vector(M, p),
-        momentum=0.2
-        vector_transport_method=default_vector_transport_method(M, typeof(p)),
-    )
+    MomentumGradientRule(M::AbstractManifold; kwargs...)
 
 Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
+
+## Keyword arguments
+
+$(_var[:keyword](:p))
+* `s=`[`IdentityUpdateRule`](@ref)`()`
+* `momentum=0.2`
+* `vector_transport_method=default_vector_transport_method(M, typeof(p))`
+$(_var[:keyword](:X))
+
 
 # See also
 [`MomentumGradient`](@ref)
@@ -365,7 +369,6 @@ last direction multiplied by momentum ``m``.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
 $(_note[:ManifoldDefaultFactory]("MomentumGradientRule"))
-
 """
 MomentumGradient(args...; kwargs...) =
     ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
