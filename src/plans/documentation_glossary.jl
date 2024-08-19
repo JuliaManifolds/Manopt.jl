@@ -65,7 +65,12 @@ _var[:argumemt] =
 _var[:keyword] = #desc: whether or not to print the description (again)
     (s::Symbol, display="$s"; type=false, description::Bool=true, kwargs...) ->
         "* `$(display)$(type ? _var[s][:type] : "")=`$(_var[s][:default](;kwargs...))$(description ? ": $(_var[s][:description](; kwargs...))" : "")"
-
+#Actual variables
+_var[:p] = Dict(
+    :description => (; M="M") -> "a point on the manifold ``$(_l[:Cal](M))``",
+    :type => "P",
+    :default => (; M="M") -> "`rand($M)`", # TODO Fix when the Links dictionary exists
+)
 _var[:vector_transport_method] = Dict(
     :description =>
         (; M="M", p="p") ->
@@ -74,11 +79,6 @@ _var[:vector_transport_method] = Dict(
     :default =>
         (; M="M", p="p") ->
             "[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
-)
-_var[:p] = Dict(
-    :description => (; M="M") -> "a point on the manifold ``$(_l[:Cal](M))``",
-    :type => "P",
-    :default => (; M="M") -> "`rand($M)`", # TODO Fix when the Links dictionary exists
 )
 _var[:X] = Dict(
     :description =>
