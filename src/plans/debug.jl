@@ -1170,7 +1170,7 @@ one are called with an `i=0` for reset.
 
    Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
    as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
-   It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of the dictionary.
+   It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorithm` entry of the dictionary.
 
 2. The same can also be written a bit more precise as
 

@@ -278,7 +278,7 @@ to specify a manifold, this factory allows to postpone that.
 It still stores all parameters one wants to provide, even those that would
 require the manifold to be filled with a reasonable default.
 Any optional parameter or keyword argument can hence still be overwritten.
-Similarly you can also pass a msnifold to the constructor, in case you
+Similarly you can also pass a manifold to the constructor, in case you
 want to use another manifolds form of defaults compared to the one of the solver.
 
 # Fields
