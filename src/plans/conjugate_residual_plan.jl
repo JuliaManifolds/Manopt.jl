@@ -3,7 +3,7 @@
 # Objective.
 _doc_CR_cost = """
 ```math
-f(X) = $(_tex(:frac, 1,2)) $(_l_norm(_tex(:Cal, "A")*"[X] + b","p"))^2,\\qquad X ∈ $(_l_TpM()),
+f(X) = $(_tex(:frac, 1,2)) $(_tex(:norm, _tex(:Cal, "A")*"[X] + b"; index="p"))^2,\\qquad X ∈ $(_l_TpM()),
 ```
 """
 @doc """
@@ -292,10 +292,10 @@ Stop when re relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_tex(:displaystyle))$(_tex(:frac, _l_norm("r^{(k)"),"c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)"),"c")) ≤ ε,
 ```
 
-where ``c = $(_l_norm("b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,
+where ``c = $(_tex(:norm, "b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,
 from the [`conjugate_residual`](@ref)
 
 # Fields
@@ -313,7 +313,7 @@ Initialise the stopping criterion.
 
 !!! note
 
-    The initial norm of the vector field ``c = $(_l_norm("b"))``
+    The initial norm of the vector field ``c = $(_tex(:norm, "b"))``
     that is stored internally is updated on initialisation, that is,
     if this stopping criterion is called with `k<=0`.
 """

@@ -9,9 +9,9 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `dual_stepsize::R`:   proximal parameter of the dual prox
 * $(_field_inv_retr)
 * `inverse_retraction_method_dual::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`):
-  an inverse retraction ``$(_tex(:invretr))`` on ``$(_l_Manifold("N"))``
+  an inverse retraction ``$(_tex(:invretr))`` on ``$(_tex(:Cal, "N"))``
 * `m::P`:               base point on ``$(_math(:M))``
-* `n::Q`:               base point on ``$(_l_Manifold("N"))``
+* `n::Q`:               base point on ``$(_tex(:Cal, "N"))``
 * `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:M))``
 * `pbar::P`:            the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `primal_stepsize::R`: proximal parameter of the primal prox
@@ -26,9 +26,9 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
 * $(_field_vector_transp)
 * `vector_transport_method_dual::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`):
-  a vector transport ``$(_math(:vector_transport, :symbol))``on ``$(_l_Manifold("N"))``
+  a vector transport ``$(_math(:vector_transport, :symbol))``on ``$(_tex(:Cal, "N"))``
 
-Here, `P` is a point type on ``$(_math(:M))``, `T` its tangent vector type, `Q` a point type on ``$(_l_Manifold("N"))``,
+Here, `P` is a point type on ``$(_math(:M))``, `T` its tangent vector type, `Q` a point type on ``$(_tex(:Cal, "N"))``,
 and `R<:Real` is a real number type
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -53,7 +53,7 @@ If you activate these to be different from the default identity, you have to pro
 * `primal_stepsize=1/sqrt(8)`
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_tex(:invretr))`` to use on ``$(_l_Manifold("N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+  an inverse retraction ``$(_tex(:invretr))`` to use on ``$(_tex(:Cal, "N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 * $_kw_retraction_method_default: $_kw_retraction_method
@@ -63,7 +63,7 @@ If you activate these to be different from the default identity, you have to pro
 * `update_dual_base=missing`
 * $_kw_vector_transport_method_default: $_kw_vector_transport_method
 * `vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on ``$(_l_Manifold("N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on ``$(_tex(:Cal, "N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
@@ -239,7 +239,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * $_kw_evaluation_default: $_kw_evaluation
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_tex(:invretr))`` to use on $(_l_Manifold("N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+  an inverse retraction ``$(_tex(:invretr))`` to use on $(_tex(:Cal, "N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
@@ -253,7 +253,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * $_kw_retraction_method_default: $_kw_retraction_method
 * $_kw_vector_transport_method_default: $_kw_vector_transport_method
 * `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on $(_l_Manifold("N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on $(_tex(:Cal, "N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
 $_doc_sec_output
 """

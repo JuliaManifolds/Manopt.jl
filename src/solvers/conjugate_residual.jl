@@ -41,7 +41,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 
 * `evaluation=`[`AllocatingEvaluation`](@ref) specify whether `A` and `b` are implemented allocating or in-place
 * `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,
-  where `c` is the norm of ``$(_l_norm("b"))``.
+  where `c` is the norm of ``$(_tex(:norm,"b"))``.
 
 # Output
 

@@ -17,7 +17,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 The sub task consists of a method to solve
 
 ```math
-    $(_tex(:argmin))_{q∈$(_math(:M))}\\ g(p) - ⟨X, $(_l_log)_p q⟩
+    $(_tex(:argmin))_{q∈$(_math(:M))}\\ g(p) - ⟨X, $(_tex(:log))_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and
@@ -127,7 +127,7 @@ Then repeat for ``k=0,1,…``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:M))} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:M))} g(q) - ⟨X^{(k)}, $(_tex(:log))_{p^{(k)}}q⟩
 ```
 
 until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.

@@ -188,7 +188,7 @@ _doc_EPM = """
 perform the exact penalty method (EPM) [LiuBoumal:2019](@cite)
 The aim of the EPM is to find a solution of the constrained optimisation task
 
-$(_problem_constrained)
+$(_problem(:Constrained))
 
 where `M` is a Riemannian manifold, and ``f``, ``$(_math_sequence("g", "i", "1", "n"))`` and ``$(_math_sequence("h", "j", "1", "m"))``
 are twice continuously differentiable functions from `M` to ℝ.

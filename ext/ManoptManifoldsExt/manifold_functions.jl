@@ -115,7 +115,7 @@ end
 Reflect the point `x` from the manifold `M` at point `p`, given by
 
 ```math
-$_l_refl
+$(_tex(:reflect))
 ```
 
 where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse

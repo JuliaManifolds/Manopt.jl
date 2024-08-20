@@ -138,7 +138,7 @@ A functor for testing if the norm of residual at the current iterate is reduced
 either by a power of 1+θ or by a factor κ compared to the norm of the initial
 residual. The criterion hence reads
 
-``$(_l_norm("r_k","p")) ≦ $(_l_norm("r_0","p^{(0)}")) \\min \\bigl( κ, $(_l_norm("r_0","p^{(0)}"))  \\bigr)``.
+``$(_tex(:norm, "r_k"; index="p")) ≦ $(_tex(:norm, "r_0"; index="p^{(0)}")) $(_tex(:min)) $(_tex(:bigl))( κ, $(_tex(:norm, "r_0"; index="p^{(0)}"))  $(_tex(:bigr)))``.
 
 # Fields
 
@@ -228,7 +228,7 @@ end
     StopWhenTrustRegionIsExceeded <: StoppingCriterion
 
 A functor for testing if the norm of the next iterate in the Steihaug-Toint truncated conjugate gradient
-method is larger than the trust-region radius ``θ ≤ $(_l_norm("Y^{(k)}^{*}","p^{(k)}"))``
+method is larger than the trust-region radius ``θ ≤ $(_tex(:norm, "Y^{(k)}^{*}"; index="p^{(k)}"))``
 and to end the algorithm when the trust region has been left.
 
 # Fields

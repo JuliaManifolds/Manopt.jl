@@ -68,10 +68,10 @@ end
 
 # Fields
 
-* `m`:                         base point on ``$_l_M``
-* `n`:                         base point on ``$(_l_Manifold("N"))``
-* `x`:                         an initial point on ``x^{(0)} ∈ $_l_M`` (and its previous iterate)
-* `ξ`:                         an initial tangent vector ``\\xi^{(0)} ∈ T_{n}^*$(_l_Manifold("N"))`` (and its previous iterate)
+$(_var(:Field, :p, "m"))
+$(_var(:Field, :p, "n"; M="N"))
+$(_var(:Field, :p))
+$(_var(:Field, :X))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
 * `dual_stepsize::Float64`:    proximal parameter of the dual prox
 * `reg_param::Float64`:        regularisation parameter for the Newton matrix
@@ -202,14 +202,14 @@ function set_iterate!(pdsn::PrimalDualSemismoothNewtonState, p)
     pdsn.p = p
     return pdsn
 end
-@doc raw"""
+@doc """
     y = get_differential_primal_prox(M::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective σ, x)
     get_differential_primal_prox!(p::TwoManifoldProblem, y, σ, x)
 
 Evaluate the differential proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-D\operatorname{prox}_{σF}(x)[X]
+D$(_tex(:prox))_{σF}(x)[X]
 ```
 
 which can also be computed in place of `y`.
@@ -283,14 +283,14 @@ function get_differential_primal_prox!(
     return get_differential_primal_prox!(M, Y, get_objective(admo, false), σ, p, X)
 end
 
-@doc raw"""
+@doc """
     η = get_differential_dual_prox(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, n, τ, X, ξ)
     get_differential_dual_prox!(N::AbstractManifold, pdsno::PrimalDualManifoldSemismoothNewtonObjective, η, n, τ, X, ξ)
 
 Evaluate the differential proximal map of ``G_n^*`` stored within [`PrimalDualManifoldSemismoothNewtonObjective`](@ref)
 
 ```math
-D\operatorname{prox}_{τG_n^*}(X)[ξ]
+D$(_tex(:prox))_{τG_n^*}(X)[ξ]
 ```
 
 which can also be computed in place of `η`.

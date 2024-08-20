@@ -96,14 +96,14 @@ function PrimalDualManifoldObjective(
     )
 end
 
-@doc raw"""
+@doc """
     q = get_primal_prox(M::AbstractManifold, p::AbstractPrimalDualManifoldObjective, σ, p)
     get_primal_prox!(M::AbstractManifold, p::AbstractPrimalDualManifoldObjective, q, σ, p)
 
 Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-\operatorname{prox}_{σF}(x)
+$(_tex(:prox))_{σF}(x)
 ```
 
 which can also be computed in place of `y`.
@@ -164,14 +164,14 @@ function get_primal_prox!(
     return get_primal_prox!(M, q, get_objective(admo, false), σ, p)
 end
 
-@doc raw"""
+@doc """
     Y = get_dual_prox(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
     get_dual_prox!(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, Y, n, τ, X)
 
 Evaluate the proximal map of ``g_n^*`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-  Y = \operatorname{prox}_{τG_n^*}(X)
+  Y = $(_tex(:prox))}_{τG_n^*}(X)
 ```
 
 which can also be computed in place of `Y`.

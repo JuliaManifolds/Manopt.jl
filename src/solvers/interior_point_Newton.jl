@@ -14,7 +14,7 @@ perform the interior point Newton method following [LaiYoshise:2024](@cite).
 
 In order to solve the constrained problem
 
-$_problem_constrained
+$(_problem(:Constrained))
 
 This algorithms iteratively solves the linear system based on extending the KKT system
 by a slack variable `s`.
@@ -85,7 +85,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
   includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_tex(:Cal, "A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_tex(:Cal, "A"))(X) + b = 0`` we aim to solve.
   $(_kw_used_in("sub_problem"))
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_l_norm("b"))`` from the system to solve.
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_tex(:norm,"b"))`` from the system to solve.
   $(_kw_used_in("sub_state"))
 * `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``$(_math(:M)) × ℝ^n`` to a manopt problem.
    This is the manifold and objective for the sub solver.

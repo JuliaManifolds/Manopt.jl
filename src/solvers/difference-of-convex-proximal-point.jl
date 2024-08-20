@@ -165,7 +165,7 @@ Compute the difference of convex proximal point algorithm [SouzaOliveira:2015](@
 ```
 
 where you have to provide the subgradient ``∂h`` of ``h`` and either
-* the proximal map ``$(_l_prox)_{λg}`` of `g` as a function `prox_g(M, λ, p)` or  `prox_g(M, q, λ, p)`
+* the proximal map ``$(_tex(:prox))_{λg}`` of `g` as a function `prox_g(M, λ, p)` or  `prox_g(M, q, λ, p)`
 * the functions `g` and `grad_g` to compute the proximal map using a sub solver
 * your own sub-solver, specified by `sub_problem=`and `sub_state=`
 
@@ -174,7 +174,7 @@ Then repeat for ``k=0,1,…``
 
 1. ``X^{(k)}  ∈ $(_tex(:grad)) h(p^{(k)})``
 2. ``q^{(k)} = $(_tex(:retr))_{p^{(k)}}(λ_kX^{(k)})``
-3. ``r^{(k)} = $(_l_prox)_{λ_kg}(q^{(k)})``
+3. ``r^{(k)} = $(_tex(:prox))_{λ_kg}(q^{(k)})``
 4. ``X^{(k)} = $(_tex(:invretr))_{p^{(k)}}(r^{(k)})``
 5. Compute a stepsize ``s_k`` and
 6. set ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(s_kX^{(k)})``.

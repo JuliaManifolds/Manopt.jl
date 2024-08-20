@@ -231,12 +231,12 @@ This method can work in-place of `p`.
 
 The aim of the ALM is to find the solution of the constrained optimisation task
 
-$_problem_constrained
+$_problem(:Constrained)
 
 where `M` is a Riemannian manifold, and ``f``, ``$(_math_sequence("g", "i", "1", "n"))`` and ``$(_math_sequence("h", "j", "1", "m"))
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
- ``$(_doc_al_Cost("k"))`` is minimized on $_l_M,
+ ``$(_doc_al_Cost("k"))`` is minimized on $(_tex(:Cal, "M")),
   where ``μ^{(k)} ∈ ℝ^n`` and ``λ^{(k)} ∈ ℝ^m`` are the current iterates of the Lagrange multipliers and ``ρ^{(k)}`` is the current penalty parameter.
 
 The Lagrange multipliers are then updated by
@@ -247,13 +247,13 @@ and
 
 $_doc_alm_μ_update
 
-   where ``λ_{$_l_min} ≤ λ_{$_l_max}`` and ``μ_{$_l_max}`` are the multiplier boundaries.
+   where ``λ_{$(_tex(:text, "min"))} ≤ λ_{$(_tex(:text, "max"))}`` and ``μ_{$(_tex(:text, "max"))}`` are the multiplier boundaries.
 
 Next, the accuracy tolerance ``ϵ`` is updated as
 
 $_doc_alm_ε_update
 
- where ``ϵ_{$_l_min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
+ where ``ϵ_{$(_tex(:text, "min"))}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor.
 
 Last, the penalty parameter ``ρ`` is updated as follows: with
 

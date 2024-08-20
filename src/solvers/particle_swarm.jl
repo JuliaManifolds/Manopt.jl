@@ -191,7 +191,7 @@ _doc_PSO = """
 
 perform the particle swarm optimization algorithm (PSO) to solve
 
-$(_problem_default)
+$(_problem(:Default))
 
 PSO starts with an initial `swarm` [BorckmansIshtevaAbsil:2010](@cite) of points
 on the manifold.

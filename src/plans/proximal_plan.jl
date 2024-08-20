@@ -3,16 +3,16 @@
 # Proximal Point Problem and State
 #
 #
-@doc raw"""
+@doc """
     ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
 
 specify a problem for solvers based on the evaluation of proximal maps.
 
 # Fields
 
-* `cost`: a function ``F:\mathcal M→ℝ`` to
+* `cost`: a function ``F:$(_tex(:Cal, "M"))→ℝ`` to
   minimize
-* `proxes`: proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
+* `proxes`: proximal maps ``$(_tex(:prox))_{λφ}:$(_tex(:Cal, "M")) → $(_tex(:Cal, "M"))``
   as functions `(M, λ, p) -> q`.
 * `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
@@ -154,7 +154,7 @@ Generate the options
 # Keyword arguments
 
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_l_Manifold("N"))``,
+* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
 * $(_kw_p_default): $(_kw_p)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`
 

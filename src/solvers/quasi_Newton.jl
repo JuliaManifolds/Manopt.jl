@@ -181,7 +181,7 @@ _doc_QN = """
 
 Perform a quasi Newton iteration to solve
 
-$(_problem_default)
+$(_problem(:Default))
 
 with start point `p`. The iterations can be done in-place of `p```=p^{(0)}``.
 The ``k``th iteration consists of

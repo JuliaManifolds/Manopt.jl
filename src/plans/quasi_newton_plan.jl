@@ -331,7 +331,7 @@ in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
 In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}``
 and ``B_{k+1}``, and the basis ``$(_math_sequence("b", "i", "1", "n"))`` is transported into the upcoming tangent
-space ``T_{p_{k+1}} $_l_M``, preferably with an isometric vector transport, or generated there.
+space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector transport, or generated there.
 
 # Provided functors
 

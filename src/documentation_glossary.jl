@@ -58,14 +58,22 @@ define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
 define!(:LaTeX, :grad, raw"\operatorname{grad}")
 define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
-define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
+define!(:LaTeX, :log, raw"\log")
+define!(:LaTeX, :max, raw"\max")
+define!(:LaTeX, :min, raw"\min")
+define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert" * "$v" * raw"\rVert" * "_{$index}")
+define!(:LaTeX, :prox, raw"\operatorname{prox}")
+define!(:LaTeX, :reflect, raw"\operatorname{refl}")
+define!(:LaTeX, :retr, raw"\operatorname{retr}")
+define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
+#
 # ---
 # Mathematics and semantic symbols
 # :symbol the symbol,
-# :descr the description
+# :description the description
 define!(:Math, :M, _tex(:Cal, "M"))
 define!(:Math, :Manifold, :symbol, _tex(:Cal, "M"))
 define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
@@ -74,10 +82,10 @@ define!(
 )
 define!(:Math, :vector_transport, :name, "the vector transport")
 _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
+#
 # ---
 # Links
 # Collect short forms for links, especially Interdocs ones.
-_manopt_glossary[:Link] = _MANOPT_DOC_TYPE()
 _link(args...; kwargs...) = glossary(:Link, args...; kwargs...)
 define!(:Link, :Manopt, "[`Manopt.jl`](https://manoptjl.org)")
 define!(
@@ -199,6 +207,25 @@ define!(
 """,
 )
 
+define!(
+    :Problem,
+    :Constrained,
+    (; M="M", p="p") -> """
+    ```math
+\\begin{aligned}
+\\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
+$(_tex(:text, "subject to")) &g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
+\\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+\\end{aligned}
+```
+""",
+)
+define!(
+    :Problem,
+    :Default,
+    (; M="M", p="p") -> "\n```math\n$(_tex(:argmin))_{$p ∈ $(_tex(:Cal, M))} f($p)\n```\n",
+)
+_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
 #
 #
 # Stopping Criteria
@@ -208,20 +235,9 @@ _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 
 # ---
 # Old strings
-
-# LateX symbols
-_l_log = raw"\log"
-_l_prox = raw"\operatorname{prox}"
-_l_refl = raw"\operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x)"
-_l_subgrad = raw"∂"
-_l_min = raw"\min"
-_l_max = raw"\min"
-_l_norm(v, i="") = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
 # Semantics
-_l_Manifold(M="M") = _tex(:Cal, "M")
-_l_M = "$(_l_Manifold())"
-_l_TpM(p="p") = "T_{$p}$_l_M"
-_l_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_l_Manifold("N"))"
+_l_TpM(p="p") = "T_{$p}$(_tex(:Cal, "M"))"
+_l_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_tex(:Cal, "N")))"
 _l_C_subset_M = "$(_tex(:Cal, "C")) ⊂ $(_tex(:Cal, "M"))"
 
 # Math terms
@@ -238,25 +254,6 @@ retraction, respectively.
 function _math_sequence(name, index, i_start=1, i_end="n")
     return "\\{$(name)_{$index}\\}_{i=$(i_start)}^{$i_end}"
 end
-
-#
-#
-# Problems
-
-_problem_default = raw"""
-```math
-\operatorname*{arg\,min}_{p ∈ \mathcal M} f(p)
-```
-"""
-
-_problem_constrained = raw"""```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
-```
-"""
 
 # Arguments of functions
 _arg_alt_mgo = raw"""
@@ -294,7 +291,7 @@ To obtain the whole final state of the solver, see [`get_solver_return`](@ref) f
 _field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case; "
 _field_iterate = "`p`: the current iterate ``p=p^{(k)} ∈ $(_math(:M))``"
 _field_gradient = "`X`: the current gradient ``$(_tex(:grad))f(p^{(k)}) ∈ T_p$(_math(:M))``"
-_field_subgradient = "`X` : the current subgradient ``$(_l_subgrad)f(p^{(k)}) ∈ T_p$_l_M``"
+_field_subgradient = "`X` : the current subgradient ``$(_tex(:subgrad))f(p^{(k)}) ∈ T_p$(_tex(:Cal, "M"))``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_tex(:invretr))``"
 _field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$(_tex(:retr))``"
 _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
