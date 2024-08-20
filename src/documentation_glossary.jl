@@ -60,7 +60,7 @@ define!(:LaTeX, :grad, raw"\operatorname{grad}")
 define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
-define!(:LaTeX, :text, (letter) -> raw"\text{"*"$letter"*"}")
+define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 # ---
 # Mathematics and semantic symbols
@@ -145,11 +145,7 @@ define!(
 )
 
 define!(
-    :Variable,
-    :M,
-    :description,
-    (; M="M") ->
-        "a Riemannian manifold ``$(_tex(:Cal, M))``",
+    :Variable, :M, :description, (; M="M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
 )
 define!(:Variable, :M, :type, "`$(_link(:AbstractManifold))` ")
 
