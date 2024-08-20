@@ -37,11 +37,11 @@ the constraints are further fulfilled.
 
 # Input
 
-* `M`:      a manifold ``$(_l_M)``
-* `f`:      a cost function ``f : $(_l_M) → ℝ`` to minimize
-* `grad_f`: the gradient ``$(_l_grad) f : $(_l_M) → T $(_l_M)`` of ``f``
-* `Hess_f`: the Hessian ``$(_l_Hess)f(p): T_p$(_l_M) → T_p$(_l_M)``, ``X ↦ $(_l_Hess)f(p)[X] = ∇_X$(_l_grad)f(p)``
-* `p=$(_link_rand()): an initial value ``p  ∈  $(_l_M)``
+* `M`:      a manifold ``$(_math(:M))``
+* `f`:      a cost function ``f : $(_math(:M)) → ℝ`` to minimize
+* `grad_f`: the gradient ``$(_l_grad) f : $(_math(:M)) → T $(_math(:M))`` of ``f``
+* `Hess_f`: the Hessian ``$(_l_Hess)f(p): T_p$(_math(:M)) → T_p$(_math(:M))``, ``X ↦ $(_l_Hess)f(p)[X] = ∇_X$(_l_grad)f(p)``
+$(_var(:Field, :p))
 
 or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints
 
@@ -74,7 +74,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
 * `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
 * `step_objective`: a [`ManifoldGradientObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
-* `step_problem`: the manifold ``$(_l_M) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
+* `step_problem`: the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 * `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
@@ -83,11 +83,11 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
-  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_l[:Cal]("A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_l[:Cal]("A"))(X) + b = 0`` we aim to solve.
+  includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_tex(:Cal, "A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_tex(:Cal, "A"))(X) + b = 0`` we aim to solve.
   $(_kw_used_in("sub_problem"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_l_norm("b"))`` from the system to solve.
   $(_kw_used_in("sub_state"))
-* `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``$(_l_M) × ℝ^n`` to a manopt problem.
+* `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``$(_math(:M)) × ℝ^n`` to a manopt problem.
    This is the manifold and objective for the sub solver.
 * `sub_state=`[`ConjugateResidualState`](@ref): a state specifying the subsolver. This default is also decorated with the `sub_kwargs...`.
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``

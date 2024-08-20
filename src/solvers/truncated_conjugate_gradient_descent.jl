@@ -35,13 +35,13 @@ Initialise the TCG state.
 
 ## Keyword arguments
 
-* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
+* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 * `κ=0.1`
 * `project!::F=copyto!`: initialise the numerical stabilisation to just copy the result
 * `randomize=false`
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link_manifold_dimension("base_manifold(Tpm)"))`)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
   $(_sc_any)[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc_any)[`StopWhenTrustRegionIsExceeded`](@ref)`()`
   $(_sc_any)[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc_any)[`StopWhenModelIncreased`](@ref)`()`:
   $(_kw_stopping_criterion)
@@ -421,7 +421,7 @@ solve the trust-region subproblem
 
 $(_doc_TCG_subproblem)
 
-on a manifold ``$(_l_M)`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
+on a manifold ``$(_math(:M))`` by using the Steihaug-Toint truncated conjugate-gradient (tCG) method.
 This can be done inplace of `X`.
 
 For a description of the algorithm and theorems offering convergence guarantees,
@@ -453,7 +453,7 @@ directly.
 * `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
   This disables preconditioning.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link_manifold_dimension("base_manifold(Tpm)"))`)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
   $(_sc_any)[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc_any)[`StopWhenTrustRegionIsExceeded`](@ref)`()`
   $(_sc_any)[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc_any)[`StopWhenModelIncreased`](@ref)`()`:
   $(_kw_stopping_criterion)

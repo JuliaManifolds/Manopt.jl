@@ -149,6 +149,8 @@ using Requires
 using SparseArrays
 using Statistics
 
+include("documentation_glossary.jl")
+
 """
     Rn(args; kwargs...)
     Rn(s::Symbol=:Manifolds, args; kwargs...)

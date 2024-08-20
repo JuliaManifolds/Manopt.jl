@@ -10,12 +10,12 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * $(_field_inv_retr)
 * `inverse_retraction_method_dual::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`):
   an inverse retraction ``$(_l_retr)^{-1}`` on ``$(_l_Manifold("N"))``
-* `m::P`:               base point on ``$(_l_M)``
+* `m::P`:               base point on ``$(_math(:M))``
 * `n::Q`:               base point on ``$(_l_Manifold("N"))``
-* `p::P`:               an initial point on ``p^{(0)} ∈ $(_l_M)``
+* `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:M))``
 * `pbar::P`:            the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `primal_stepsize::R`: proximal parameter of the primal prox
-* `X::T`:               an initial tangent vector ``X^{(0)} ∈ T_{p^{(0)}}$(_l_M)``
+* `X::T`:               an initial tangent vector ``X^{(0)} ∈ T_{p^{(0)}}$(_math(:M))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
 * `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
@@ -26,9 +26,9 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
 * $(_field_vector_transp)
 * `vector_transport_method_dual::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`):
-  a vector transport ``$(_math[:vector_transport][:symbol]())``on ``$(_l_Manifold("N"))``
+  a vector transport ``$(_math(:vector_transport, :symbol))``on ``$(_l_Manifold("N"))``
 
-Here, `P` is a point type on ``$(_l_M)``, `T` its tangent vector type, `Q` a point type on ``$(_l_Manifold("N"))``,
+Here, `P` is a point type on ``$(_math(:M))``, `T` its tangent vector type, `Q` a point type on ``$(_l_Manifold("N"))``,
 and `R<:Real` is a real number type
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -44,10 +44,10 @@ If you activate these to be different from the default identity, you have to pro
 
 # Keyword arguments
 
-* `n=``$(_link_rand("N"))
-* `p=`$(_link_rand())
-* `m=`$(_link_rand())
-* `X=`$(_link_zero_vector())
+* `n=``$(Manopt._link(:rand; M="N"))
+* `p=`$(Manopt._link(:rand))
+* `m=`$(Manopt._link(:rand))
+* `X=`$(Manopt._link(:zero_vector))
 * `acceleration=0.0`
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
@@ -63,7 +63,7 @@ If you activate these to be different from the default identity, you have to pro
 * `update_dual_base=missing`
 * $_kw_vector_transport_method_default: $_kw_vector_transport_method
 * `vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_math[:vector_transport][:symbol]())`` to use on ``$(_l_Manifold("N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on ``$(_l_Manifold("N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
@@ -253,7 +253,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * $_kw_retraction_method_default: $_kw_retraction_method
 * $_kw_vector_transport_method_default: $_kw_vector_transport_method
 * `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_math[:vector_transport][:symbol]())`` to use on $(_l_Manifold("N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on $(_l_Manifold("N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
 $_doc_sec_output
 """

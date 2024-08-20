@@ -62,7 +62,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
-* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
+* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref)
 * `sub_state=[`AllocatingEvaluation`](@ref)
@@ -317,7 +317,7 @@ $(_arg_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
-* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
+* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
 * `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.

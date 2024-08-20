@@ -52,7 +52,7 @@ Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 * `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
 * `sub_state=`[`AllocatingEvaluation`](@ref)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
-* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
+* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 """
 mutable struct ProximalBundleMethodState{
     P,

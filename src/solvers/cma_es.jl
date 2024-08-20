@@ -347,12 +347,12 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``$(_l_M) M``
-* `f`:      a cost function ``f: $(_l_M)→ℝ`` to find a minimizer ``p^*`` for
+* `M`:      a manifold ``$(_math(:M))``
+* `f`:      a cost function ``f: $(_math(:M))→ℝ`` to find a minimizer ``p^*`` for
 
 # Optional
 
-* `p_m=`$(_link_rand()): an initial point `p`
+* `p_m=`$(Manopt._link(:rand)): an initial point `p`
 * `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)

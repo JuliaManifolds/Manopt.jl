@@ -1,5 +1,5 @@
-#_doc_al_Cost() = "$(_l[:Cal]("L"))_\\rho(p, μ, λ)"
-_doc_al_Cost(iter) = "$(_l[:Cal]("L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
+#_doc_al_Cost() = "$(_tex(:Cal, "L"))_\\rho(p, μ, λ)"
+_doc_al_Cost(iter) = "$(_tex(:Cal, "L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
 _doc_AL_Cost_long = raw"""
 ```math
 \mathcal L_\rho(p, μ, λ)
@@ -69,7 +69,7 @@ additionally this gradient does accept a positional last argument to specify the
 for the internal gradient call of the constrained objective.
 
 based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
-`$_l_grad $(_l[:Cal]("L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
+`$_l_grad $(_tex(:Cal, "L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 
 ## Fields
 

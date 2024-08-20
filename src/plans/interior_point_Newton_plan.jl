@@ -89,7 +89,7 @@ Let `m` and `n` denote the number of inequality and equality constraints, respec
 * `retraction_method=default_retraction_method(M, typeof(p))`
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `step_problem`: wrap the manifold ``$(_l_M) × ℝ^m × ℝ^n × ℝ^m``
+* `step_problem`: wrap the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
 * `stepsize`: an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
   additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`

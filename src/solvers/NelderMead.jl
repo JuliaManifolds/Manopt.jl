@@ -9,7 +9,7 @@ A simplex for the Nelder-Mead algorithm.
     NelderMeadSimplex(M::AbstractManifold)
 
 Construct a  simplex using ``d+1`` random points from manifold `M`,
-where ``d`` is the $(_link_manifold_dimension("")) of `M`.
+where ``d`` is the $(_link(:manifold_dimension; M="")) of `M`.
 
     NelderMeadSimplex(
         M::AbstractManifold,
@@ -61,7 +61,7 @@ of the Euclidean case. The default is given in brackets, the required value rang
 after the description
 
 * `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
-  is the $(_link_manifold_dimension("")) of `M`.
+  is the $(_link(:manifold_dimension; M="")) of `M`.
 * $_field_step
 * `α`: the reflection parameter ``α > 0``:
 * `γ` the expansion parameter ``γ > 0``:
@@ -216,7 +216,7 @@ or Algorithm 4.1 in [http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf
 $_arg_M
 $_arg_f
 * `population::`[`NelderMeadSimplex`](@ref)`=`[`NelderMeadSimplex`](@ref)`(M)`: an initial simplex of ``d+1`` points, where ``d``
-  is the $(_link_manifold_dimension("")) of `M`.
+  is the $(_link(:manifold_dimension; M="")) of `M`.
 
 # Keyword arguments
 

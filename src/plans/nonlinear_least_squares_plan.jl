@@ -8,7 +8,7 @@ A type for nonlinear least squares problems.
 Specify a nonlinear least squares problem
 
 # Fields
-* `f`                      a function ``f: $(_l_M) → ℝ^d`` to minimize
+* `f`                      a function ``f: $(_math(:M)) → ℝ^d`` to minimize
 * `jacobian!!`             Jacobian of the function ``f``
 * `jacobian_tangent_basis` the basis of tangent space used for computing the Jacobian.
 * `num_components`         number of values returned by `f` (equal to `d`).
@@ -170,7 +170,7 @@ The following fields are keyword arguments
 * `damping_term_min=0.1`
 * `η=0.2`,
 * `expect_zero_residual=false`
-* `initial_gradient=`$(_link_zero_vector())
+* `initial_gradient=`$(_link(:zero_vector))
 * $_kw_retraction_method_default
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-12)`$_sc_any[`StopWhenStepsizeLess`](@ref)`(1e-12)`
 

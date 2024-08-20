@@ -11,7 +11,7 @@ Solve an optimization problem of the form
 
 $(_doc_LM_formula)
 
-where ``f: $(_l_M) → ℝ^d`` is a continuously differentiable function,
+where ``f: $(_math(:M)) → ℝ^d`` is a continuously differentiable function,
 using the Riemannian Levenberg-Marquardt algorithm [Peeters:1993](@cite).
 The implementation follows Algorithm 1 [AdachiOkunoTakeda:2022](@cite).
 The second signature performs the optimization in-place of `p`.
@@ -19,7 +19,7 @@ The second signature performs the optimization in-place of `p`.
 # Input
 
 $(_arg_M)
-* `f`:              a cost function ``f: $(_l_M) M→ℝ^d``
+* `f`:              a cost function ``f: $(_math(:M)) M→ℝ^d``
 * `jacobian_f`:     the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.

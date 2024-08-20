@@ -17,7 +17,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 The sub task consists of a method to solve
 
 ```math
-    $(_l_argmin)_{q∈$(_l_M)}\\ g(p) - ⟨X, $(_l_log)_p q⟩
+    $(_l_argmin)_{q∈$(_math(:M))}\\ g(p) - ⟨X, $(_l_log)_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and
@@ -116,7 +116,7 @@ _doc_DoC = """
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2023](@cite) to minimize
 
 ```math
-    $(_l_argmin)_{p∈$(_l_M)}\\ g(p) - h(p)
+    $(_l_argmin)_{p∈$(_math(:M))}\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.
@@ -127,7 +127,7 @@ Then repeat for ``k=0,1,…``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ $(_l_argmin)_{q ∈ $(_l_M)} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_l_argmin)_{q ∈ $(_math(:M))} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
 ```
 
 until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.

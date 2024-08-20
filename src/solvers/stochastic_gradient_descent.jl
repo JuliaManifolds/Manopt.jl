@@ -23,7 +23,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 
 # Keyword arguments
 
-* `direction=`[`StochasticGradient`](@ref)`($(_link_zero_vector()))
+* `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
 * `order_type=:RandomOrder``
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 * $(_kw_p_default): $(_kw_p)
@@ -161,7 +161,7 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 # Keyword arguments
 
 * `cost=missing`: you can provide a cost function for example to track the function value
-* `direction=`[`StochasticGradient`](@ref)`($(_link_zero_vector()))
+* `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
 * $(_kw_evaluation_default): $(_kw_evaluation)
 * `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.

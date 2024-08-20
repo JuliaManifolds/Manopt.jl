@@ -95,10 +95,10 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 
 ## Keyword arguments
 
-* `m=`$(_link_rand())
-* `n=``$(_link_rand("N"))
-* `p=`$(_link_rand())
-* `X=`$(_link_zero_vector())
+* `m=`$(Manopt._link(:rand))
+* `n=``$(Manopt._link(:rand; M="N"))
+* `p=`$(Manopt._link(:rand))
+* `X=`$(Manopt._link(:zero_vector))
 * `primal_stepsize=1/sqrt(8)`
 * `dual_stepsize=1/sqrt(8)`
 * `reg_param=1e-5`

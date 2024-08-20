@@ -28,6 +28,7 @@ if that entrs is
 * a function, it is called with `args...` and `kwargs...` passed
 * a dictionary, then the arguments and keyword arguments are passed to this dictionary, assuming `args[1]` is a symbol
 """
+#do not document for now, until we have an internals section
 glossary(s::Symbol, args...; kwargs...) = glossary(_manopt_glossary, s, args...; kwargs...)
 function glossary(g::_MANOPT_DOC_TYPE, s::Symbol, args...; kwargs...)
     return glossary(g[s], args...; kwargs...)
@@ -58,6 +59,9 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :descr the description
+define!(:Math, :M, _tex(:Cal, "M"))
+define!(:Math, :Manifold, :symbol, _tex(:Cal, "M"))
+define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
 define!(
     :Math, :vector_transport, :symbol, (a="⋅", b="⋅") -> raw"\mathcal T_{" * "$a←$b" * "}"
 )
@@ -67,7 +71,7 @@ _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
 # Links
 # Collect short forms for links, especially Interdocs ones.
 _manopt_glossary[:Link] = _MANOPT_DOC_TYPE()
-_link(args, kwargs...) = glossary(:Link, args...; kwargs...)
+_link(args...; kwargs...) = glossary(:Link, args...; kwargs...)
 define!(:Link, :Manopt, "[`Manopt.jl`](https://manoptjl.org)")
 define!(
     :Link,
@@ -75,7 +79,18 @@ define!(
     (; M="M") ->
         "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$(length(M) > 0 ? "`($M)`" : "")",
 )
-
+define!(
+    :Link,
+    :zero_vector,
+    (; M="M", p="p") ->
+        "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$(length(M) > 0 ? "`($M, $p)`" : "")",
+)
+define!(
+    :Link,
+    :manifold_dimension,
+    (; M="M") ->
+        "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$(length(M) > 0 ? "`($M)`" : "")",
+)
 # ---
 # Variables
 # in fields, keyword arguments, parameters
@@ -113,39 +128,51 @@ define!(
 )
 define!(:Variable, :p, :type, "P")
 define!(:Variable, :p, :default, (; M="M") -> _link(:rand; M=M))
-#=  Old ones
-_var[:vector_transport_method] = Dict(
-    :description =>
-        (; M="M", p="p") ->
-            "a vector transport ``$(_math[:vector_transport][:symbol]())`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
-    :type => "AbstractVectorTransportMethod",
-    :default =>
-        (; M="M", p="p") ->
-            "[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
-)
-_var[:X] = Dict(
-    :description =>
-        (; M="M", p="p") ->
-            "a tangent bector at the point `$p` on the manifold ``$(_l[:Cal]("M"))``",
-    :type => "T",
-    :default => (; M="M", p="p") -> "`zero_vector($M,$p)`", # TODO Fix when the Links dictionary exists
-) =#
-# ---
-# Problems
 
-# ---
-# Notes
-_manopt_glossary[:Note] = _MANOPT_DOC_TYPE()
-_note = _manopt_glossary[:Note]
-_note[:ManifoldDefaultFactory] =
-    (type::String,) -> """
+define!(
+    :Variable,
+    :vector_transport_method,
+    :description,
+    (; M="M", p="p") ->
+        "a vector transport ``$(_math(:vector_transport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)",
+)
+define!(:Variable, :vector_transport_method, :type, "AbstractVectorTransportMethodP")
+define!(
+    :Variable,
+    :vector_transport_method,
+    :default,
+    (; M="M", p="p") ->
+        "[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
+)
+
+define!(
+    :Variable,
+    :X,
+    :description,
+    (; M="M", p="p") ->
+        "a tangent bector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``",
+)
+define!(:Variable, :X, :type, "X")
+define!(:Variable, :X, :default, (; M="M", p="p") -> _link(:zero_vector; M=M, p=p))
+
+#
+#
+# Notes / Remarks
+_note(args...; kwargs...) = glossary(:Note, args...; kwargs...)
+
+define!(
+    :Note,
+    :ManifoldDefaultFactory,
+    (type::String) -> """
 !!! info
     This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`]()@ref).
     If you do not provide a manifold, the manifold `M` later provided to (usually) generate
     the corresponding [`AbstractManoptSolverState`](@ref) will be used.
     This affects all arguments and keyword argumentss with defaults that depend on the manifold,
     unless provided with a value here.
-"""
+""",
+)
+
 # ---
 # Old strings
 
@@ -165,7 +192,7 @@ _l_norm(v, i="") = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
 _l_Manifold(M="M") = _tex(:Cal, "M")
 _l_M = "$(_l_Manifold())"
 _l_TpM(p="p") = "T_{$p}$_l_M"
-_l_DΛ = "DΛ: T_{m}$(_l_M) → T_{Λ(m)}$(_l_Manifold("N"))"
+_l_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_l_Manifold("N"))"
 _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_retr = raw"\operatorname{retr}"
@@ -186,23 +213,6 @@ retraction, respectively.
 """
 function _math_sequence(name, index, i_start=1, i_end="n")
     return "\\{$(name)_{$index}\\}_{i=$(i_start)}^{$i_end}"
-end
-
-#
-#
-# Links
-
-function _link_zero_vector(M="M", p="p")
-    arg = length(M) > 0 ? "`($M, $p)`" : ""
-    return "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$arg"
-end
-function _link_manifold_dimension(M="M")
-    arg = length(M) > 0 ? "`($M)`" : ""
-    return "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$arg"
-end
-function _link_rand(M="M")
-    arg = length(M) > 0 ? "`($M)`" : ""
-    return "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$arg"
 end
 
 #
@@ -265,8 +275,8 @@ _sc_all = "[` & `](@ref StopWhenAll)"
 
 # Fields
 _field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case; "
-_field_iterate = "`p`: the current iterate ``p=p^{(k)} ∈ $(_l_M)``"
-_field_gradient = "`X`: the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$(_l_M)``"
+_field_iterate = "`p`: the current iterate ``p=p^{(k)} ∈ $(_math(:M))``"
+_field_gradient = "`X`: the current gradient ``$(_l_grad)f(p^{(k)}) ∈ T_p$(_math(:M))``"
 _field_subgradient = "`X` : the current subgradient ``$(_l_subgrad)f(p^{(k)}) ∈ T_p$_l_M``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_l_retr)^{-1}``"
 _field_p = raw"`p`, an initial value `p` ``= p^{(0)} ∈ \mathcal M``"
@@ -293,7 +303,7 @@ All other keyword arguments are passed to [`decorate_state!`](@ref) for state de
 [`decorate_objective!`](@ref) for objective, respectively.
 """
 
-_kw_p_default = "`p=`$(_link_rand())"
+_kw_p_default = "`p=`$(Manopt._link(:rand))"
 _kw_p = raw"specify an initial value for the point `p`."
 
 _kw_retraction_method_default = raw"`retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
@@ -315,7 +325,7 @@ end
 _kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_vector_transport_method = "a vector transport ``$(_math(:vector_transport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
 
-_kw_X_default = "`X=`$(_link_zero_vector())"
+_kw_X_default = "`X=`$(_link(:zero_vector))"
 _kw_X = raw"specify a memory internally to store a tangent vector"
 _kw_X_init = raw"specify an initial value for the tangent vector"
 

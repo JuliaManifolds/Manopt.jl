@@ -15,7 +15,7 @@ Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
 ## Keyword arguments
 
-* `p=`$(_link_rand()): a point on the manifold to initialize the cache with
+* `p=`$(Manopt._link(:rand)): a point on the manifold to initialize the cache with
 * `X=get_gradient(M, obj, p)` or `zero_vector(M,p)`: a tangent vector to store the gradient in,
   see also `initialize=`
 * `c=[`get_cost`](@ref)`(M, obj, p)` or `0.0`: a value to store the cost function in `initialize`

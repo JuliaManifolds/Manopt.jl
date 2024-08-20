@@ -101,7 +101,6 @@ by `set_parameter!(:Mode, "")`.
 """
 is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 
-include("documentation_glossary.jl")
 include("manifold_default_factory.jl")
 include("objective.jl")
 include("problem.jl")

@@ -161,7 +161,7 @@ _doc_DCPPA = """
 Compute the difference of convex proximal point algorithm [SouzaOliveira:2015](@cite) to minimize
 
 ```math
-    $(_l_argmin)_{p∈$(_l_M)} g(p) - h(p)
+    $(_l_argmin)_{p∈$(_math(:M))} g(p) - h(p)
 ```
 
 where you have to provide the subgradient ``∂h`` of ``h`` and either

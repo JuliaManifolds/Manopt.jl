@@ -288,12 +288,12 @@ direction update.
 
 # Fields
 
-$(_var[:field](:p, "p_old"))
+$(_var(:Field, :p, "p_old"))
 * `momentum::Real`: factor for the momentum
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-$(_var[:field](:vector_transport_method))
-$(_var[:field](:X, "X_old"))
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :X, "X_old"))
 
 # Constructors
 
@@ -304,11 +304,11 @@ Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for int
 
 ## Keyword arguments
 
-$(_var[:keyword](:p))
+$(_var(:Keyword, :p))
 * `s=`[`IdentityUpdateRule`](@ref)`()`
 * `momentum=0.2`
-$(_var[:keyword](:vector_transport_method))
-$(_var[:keyword](:X))
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :X))
 
 
 # See also
@@ -362,13 +362,13 @@ last direction multiplied by momentum ``m``.
 
 # Keyword arguments
 
-* $(_kw_p_default)
+$(_var(:Keyword, :p))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
-* $(_kw_X_default)`
+$(_var(:Keyword, :X))
 * `momentum=0.2` amount of momentum to use
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 
-$(_note[:ManifoldDefaultFactory]("MomentumGradientRule"))
+$(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
 MomentumGradient(args...; kwargs...) =
     ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
@@ -464,7 +464,7 @@ them to the current iterates tangent space.
 * $(_kw_X_default)`
 * `vector_transport_method=default_vector_transport_method(M, typeof(p)),
 
-$(_note[:ManifoldDefaultFactory]("AverageGradientRule"))
+$(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
 AverageGradient(args...; kwargs...) =
     ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
@@ -548,19 +548,19 @@ end
 
 Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
 
-* a step size ``h_k<$(_l[:frac]("1","L"))`` (from the [`GradientDescentState`](@ref)
+* a step size ``h_k<$(_tex(:frac, "1", "L"))`` (from the [`GradientDescentState`](@ref)
 * a `shrinkage` parameter ``β_k``
 * and a current iterate ``p_k``
 * as well as the interim values ``γ_k`` and ``v_k`` from the previous iterate.
 
 This compute a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
 
-1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k$(_l[:bigl])((1-α_k)γ_k+α_k μ$(_l[:bigr]))``.
-2. Set ``$(_l[:bar]("γ"))_k+1 = (1-α_k)γ_k + α_kμ``
+1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k$(_tex(:bigl))((1-α_k)γ_k+α_k μ$(_tex(:bigr)))``.
+2. Set ``$(_tex(:bar, "γ"))_k+1 = (1-α_k)γ_k + α_kμ``
 3. ``y_k = $(_l_retr)_{p_k}\\Bigl(\\frac{α_kγ_k}{γ_k + α_kμ}$(_l_retr)^{-1}_{p_k}v_k \\Bigr)``
 4. ``x_{k+1} = $(_l_retr)_{y_k}(-h_k $(_l_grad)f(y_k))``
-5. ``v_{k+1} = $(_l_retr)_{y_k}\\Bigl(\\frac{(1-α_k)γ_k}{$(_l[:bar]("γ"))_k}$(_l_retr)_{y_k}^{-1}(v_k) - \\frac{α_k}{$(_l[:bar]("γ"))_{k+1}}$(_l_grad)f(y_k) \\Bigr)``
-6. ``γ_{k+1} = \\frac{1}{1+β_k}$(_l[:bar]("γ"))_{k+1}``
+5. ``v_{k+1} = $(_l_retr)_{y_k}\\Bigl(\\frac{(1-α_k)γ_k}{$(_tex(:bar, "γ"))_k}$(_l_retr)_{y_k}^{-1}(v_k) - \\frac{α_k}{$(_tex(:bar, "γ"))_{k+1}}$(_l_grad)f(y_k) \\Bigr)``
+6. ``γ_{k+1} = \\frac{1}{1+β_k}$(_tex(:bar, "γ"))_{k+1}``
 
 Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_l_retr)^{-1}_{p_k}p_{k+1}`` is returned.
 
@@ -576,7 +576,7 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_l_retr)^{-1}_{p_k}p_{k+
 * `shrinkage = k -> 0.8`
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 
-$(_note[:ManifoldDefaultFactory]("NesterovRule"))
+$(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)

@@ -103,7 +103,7 @@ For more details see [FerreiraOliveira:1998](@cite).
 
 $(_arg_M)
 $(_arg_f)
-* `∂f`: the (sub)gradient ``∂ f: $(_l_M) → T$(_l_M)`` of f
+* `∂f`: the (sub)gradient ``∂ f: $(_math(:M)) → T$(_math(:M))`` of f
 $(_arg_p)
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.

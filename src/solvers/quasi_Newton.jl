@@ -186,10 +186,10 @@ $(_problem_default)
 with start point `p`. The iterations can be done in-place of `p```=p^{(0)}``.
 The ``k``th iteration consists of
 
-1. Compute the search direction ``η^{(k)} = -$(_l[:Cal]("B"))_k [$(_l_grad)f (p^{(k)})]`` or solve ``$(_l[:Cal]("H"))_k [η^{(k)}] = -$(_l_grad)f (p^{(k)})]``.
+1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_l_grad)f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_l_grad)f (p^{(k)})]``.
 2. Determine a suitable stepsize ``α_k`` along the curve ``γ(α) = R_{p^{(k)}}(α η^{(k)})``, usually by using [`WolfePowellLinesearch`](@ref).
 3. Compute ``p^{(k+1)} = R_{p^{(k)}}(α_k η^{(k)})``.
-4. Define ``s_k = $(_l[:Cal]("T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_l_grad)f(p^{(k+1)}) - $(_l[:Cal]("T"))_{p^{(k)}, α_k η^{(k)}}($(_l_grad)f(p^{(k)}))``, where ``$(_l[:Cal]("T"))`` denotes a vector transport.
+4. Define ``s_k = $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_l_grad)f(p^{(k+1)}) - $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}($(_l_grad)f(p^{(k)}))``, where ``$(_tex(:Cal, "T"))`` denotes a vector transport.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_{k+1}``.
 
 # Input
