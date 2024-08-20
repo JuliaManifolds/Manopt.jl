@@ -16,31 +16,66 @@
 _MANOPT_DOC_TYPE = Dict{Symbol,Union{String,Dict,Function}}
 
 _manopt_glossary = _MANOPT_DOC_TYPE()
+
+# easier access functions
+"""
+    glossary(s::Symbol, args...; kwargs...)
+    glossary(g::Dict, s::Symbol, args...; kwargs...)
+
+Access an entry in the glossary at `Symbol` s
+if that entrs is
+* a string, this is returned
+* a function, it is called with `args...` and `kwargs...` passed
+* a dictionary, then the arguments and keyword arguments are passed to this dictionary, assuming `args[1]` is a symbol
+"""
+glossary(s::Symbol, args...; kwargs...) = glossary(_manopt_glossary, s, args...; kwargs...)
+function glossary(g::_MANOPT_DOC_TYPE, s::Symbol, args...; kwargs...)
+    return glossary(g[s], args...; kwargs...)
+end
+glossary(s::String, args...; kwargs...) = s
+glossary(f::Function, args...; kwargs...) = f(args...; kwargs...)
+
+define!(s::Symbol, args...) = define!(_manopt_glossary, s, args...)
+function define!(g::_MANOPT_DOC_TYPE, s::Symbol, e::Union{String,Function})
+    g[s] = e
+    return g
+end
+function define!(g::_MANOPT_DOC_TYPE, s1::Symbol, s2::Symbol, args...)
+    !(haskey(g, s1)) && (g[s1] = _MANOPT_DOC_TYPE())
+    define!(g[s1], s2, args...)
+    return g
+end
+
 # ---
 # LaTeX
-_manopt_glossary[:LaTeX] = _MANOPT_DOC_TYPE()
-_l = _manopt_glossary[:LaTeX]
-_l[:Cal] = (letter) -> raw"\mathcal " * "$letter"
-_l[:frac] = (a, b) -> raw"\frac" * "{$a}{$b}"
-_l[:bar] = (letter) -> raw"\bar" * "$(letter)"
-_l[:bigl] = raw"\bigl"
-_l[:bigr] = raw"\bigr"
+define!(:LaTeX, :Cal, (letter) -> raw"\mathcal " * "$letter")
+define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
+define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
+define!(:LaTeX, :bigl, raw"\bigl")
+define!(:LaTeX, :bigr, raw"\bigr")
+_tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 # ---
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :descr the description
-_manopt_glossary[:Math] = _MANOPT_DOC_TYPE()
-_math = _manopt_glossary[:Math]
-_math[:vector_transport] = Dict(
-    :symbol => (a="⋅", b="⋅") -> raw"\mathcal T_{" * "$a←$b" * "}",
-    :name => "the vector transport",
+define!(
+    :Math, :vector_transport, :symbol, (a="⋅", b="⋅") -> raw"\mathcal T_{" * "$a←$b" * "}"
 )
+define!(:Math, :vector_transport, :name, "the vector transport")
+_math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
 # ---
 # Links
 # Collect short forms for links, especially Interdocs ones.
 _manopt_glossary[:Link] = _MANOPT_DOC_TYPE()
-_link = _manopt_glossary[:Link]
-_link[:Manopt] = "[`Manopt.jl`](https://manoptjl.org)"
+_link(args, kwargs...) = glossary(:Link, args...; kwargs...)
+define!(:Link, :Manopt, "[`Manopt.jl`](https://manoptjl.org)")
+define!(
+    :Link,
+    :rand,
+    (; M="M") ->
+        "[`rand`](@extref Base.rand-Tuple{AbstractManifold})$(length(M) > 0 ? "`($M)`" : "")",
+)
+
 # ---
 # Variables
 # in fields, keyword arguments, parameters
@@ -50,27 +85,35 @@ _link[:Manopt] = "[`Manopt.jl`](https://manoptjl.org)"
 # :description – a text description of the variable (always functions)
 # :type a type
 #
-_manopt_glossary[:Var] = _MANOPT_DOC_TYPE()
-_var = _manopt_glossary[:Var]
+_var(args...; kwargs...) = glossary(:Variable, args...; kwargs...)
+
 #Meta: How to format an argument, a field of a struct, and a keyword
-_var[:argumemt] =
+define!(
+    :Variable,
+    :Argument,
     (s::Symbol, display="$s"; kwargs...) ->
-        "* `$(display)`: $(_var[s][:description](;kwargs...))"
-_var[:field] =
-    (s::Symbol, display="$s"; kwargs...) ->
-        "* `$(display)::$(_var[s][:type])`: $(_var[s][:description](; kwargs...))"
-_var[:argumemt] =
-    (s::Symbol, display="$s"; kwargs...) ->
-        "* `$(display): $(_var[s][:description](; kwargs...))"
-_var[:keyword] = #desc: whether or not to print the description (again)
-    (s::Symbol, display="$s"; type=false, description::Bool=true, kwargs...) ->
-        "* `$(display)$(type ? _var[s][:type] : "")=`$(_var[s][:default](;kwargs...))$(description ? ": $(_var[s][:description](; kwargs...))" : "")"
-#Actual variables
-_var[:p] = Dict(
-    :description => (; M="M") -> "a point on the manifold ``$(_l[:Cal](M))``",
-    :type => "P",
-    :default => (; M="M") -> "`rand($M)`", # TODO Fix when the Links dictionary exists
+        "* `$(display)`: $(_var(s, :description;kwargs...))",
 )
+define!(
+    :Variable,
+    :Field,
+    (s::Symbol, display="$s"; kwargs...) ->
+        "* `$(display)::$(_var(s, :type))`: $(_var(s, :description; kwargs...))",
+)
+define!(
+    :Variable,
+    :Keyword,
+    (s::Symbol, display="$s"; type=false, description::Bool=true, kwargs...) ->
+        "* `$(display)$(type ? _var(s, :type) : "")=`$(_var(s, :default;kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")",
+)
+#
+# Actual variables
+define!(
+    :Variable, :p, :description, (; M="M") -> "a point on the manifold ``$(_tex(:Cal, M))``"
+)
+define!(:Variable, :p, :type, "P")
+define!(:Variable, :p, :default, (; M="M") -> _link(:rand; M=M))
+#=  Old ones
 _var[:vector_transport_method] = Dict(
     :description =>
         (; M="M", p="p") ->
@@ -86,7 +129,7 @@ _var[:X] = Dict(
             "a tangent bector at the point `$p` on the manifold ``$(_l[:Cal]("M"))``",
     :type => "T",
     :default => (; M="M", p="p") -> "`zero_vector($M,$p)`", # TODO Fix when the Links dictionary exists
-)
+) =#
 # ---
 # Problems
 
@@ -119,7 +162,7 @@ _l_min = raw"\min"
 _l_max = raw"\min"
 _l_norm(v, i="") = raw"\lVert" * "$v" * raw"\rVert" * "_{$i}"
 # Semantics
-_l_Manifold(M="M") = _l[:Cal](M)
+_l_Manifold(M="M") = _tex(:Cal, "M")
 _l_M = "$(_l_Manifold())"
 _l_TpM(p="p") = "T_{$p}$_l_M"
 _l_DΛ = "DΛ: T_{m}$(_l_M) → T_{Λ(m)}$(_l_Manifold("N"))"
@@ -127,7 +170,7 @@ _l_grad_long = raw"\operatorname{grad} f: \mathcal M → T\mathcal M"
 _l_Hess_long = "$_l_Hess f(p)[⋅]: $(_l_TpM()) → $(_l_TpM())"
 _l_retr = raw"\operatorname{retr}"
 _l_retr_long = raw"\operatorname{retr}: T\mathcal M \to \mathcal M"
-_l_C_subset_M = "$(_l[:Cal]("C")) ⊂ $(_l[:Cal]("M"))"
+_l_C_subset_M = "$(_tex(:Cal, "C")) ⊂ $(_tex(:Cal, "M"))"
 _l_txt(s) = "\\text{$s}"
 
 # Math terms
@@ -232,7 +275,7 @@ _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`
 _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function, indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
-_field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$(_math[:vector_transport][:symbol]())``"
+_field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$(_math(:vector_transport, :symbol))``"
 _field_X = "`X`: a tangent vector"
 
 #
@@ -270,7 +313,7 @@ function _kw_sub_objective_default_text(type::String)
 end
 
 _kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_vector_transport_method = "a vector transport ``$(_math[:vector_transport][:symbol]())`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
+_kw_vector_transport_method = "a vector transport ``$(_math(:vector_transport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
 
 _kw_X_default = "`X=`$(_link_zero_vector())"
 _kw_X = raw"specify a memory internally to store a tangent vector"
