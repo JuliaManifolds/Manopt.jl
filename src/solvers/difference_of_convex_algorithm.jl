@@ -17,7 +17,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 The sub task consists of a method to solve
 
 ```math
-    $(_l_argmin)_{q∈$(_math(:M))}\\ g(p) - ⟨X, $(_l_log)_p q⟩
+    $(_tex(:argmin))_{q∈$(_math(:M))}\\ g(p) - ⟨X, $(_l_log)_p q⟩
 ```
 
 is needed. Besides a problem and a state, one can also provide a function and
@@ -116,7 +116,7 @@ _doc_DoC = """
 Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2023](@cite) to minimize
 
 ```math
-    $(_l_argmin)_{p∈$(_math(:M))}\\ g(p) - h(p)
+    $(_tex(:argmin))_{p∈$(_math(:M))}\\ g(p) - h(p)
 ```
 
 where you need to provide ``f(p) = g(p) - h(p)``, ``g`` and the subdifferential ``∂h`` of ``h``.
@@ -127,7 +127,7 @@ Then repeat for ``k=0,1,…``
 1. Take ``X^{(k)}  ∈ ∂h(p^{(k)})``
 2. Set the next iterate to the solution of the subproblem
 ```math
-  p^{(k+1)} ∈ $(_l_argmin)_{q ∈ $(_math(:M))} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
+  p^{(k+1)} ∈ $(_tex(:argmin))_{q ∈ $(_math(:M))} g(q) - ⟨X^{(k)}, $(_l_log)_{p^{(k)}}q⟩
 ```
 
 until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
@@ -135,9 +135,9 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 # Keyword arguments
 
 * $(_kw_evaluation_default): $(_kw_evaluation)
-* `gradient=nothing`:        specify ``$(_l_grad) f``, for debug / analysis or enhancing the `stopping_criterion=`
+* `gradient=nothing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-8)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`:
   $(_kw_stopping_criterion)
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
@@ -160,7 +160,7 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
   By default this is also decorated using the `sub_kwargs`.
   if the `sub_problem` if a function (a closed form solution), this is set to `evaluation`
   and can be changed to the evaluation type of the closed form solution accordingly.
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc_any)[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
   a stopping criterion used withing the default `sub_state=`
   $(_kw_used_in("sub_state"))
 * `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.

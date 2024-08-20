@@ -25,7 +25,7 @@ Store all options required for the DouglasRachford algorithm,
 
 # Input
 
-$(_arg_M)
+$(_var(:Argument, :M; type=true))
 
 # Keyword arguments
 
@@ -166,13 +166,13 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 * `proxes_f`: functions of the form `(M, λ, p)-> q` performing a proximal maps,
   where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
   These can also be given in the [`InplaceEvaluation`](@ref) variants `(M, q, λ p) -> q`
   computing in place of `q`.
-$(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -189,7 +189,7 @@ $(_arg_p)
 * `reflection_evaluation`: ([`AllocatingEvaluation`](@ref) whether `R` works in-place or allocating
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-5)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)`:
   $(_kw_stopping_criterion)
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 

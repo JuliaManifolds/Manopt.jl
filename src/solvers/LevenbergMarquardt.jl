@@ -18,12 +18,12 @@ The second signature performs the optimization in-place of `p`.
 
 # Input
 
-$(_arg_M)
+$(_var(:Argument, :M; type=true))
 * `f`:              a cost function ``f: $(_math(:M)) M→ℝ^d``
 * `jacobian_f`:     the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
-$(_arg_p)
+$(_var(:Argument, :p))
 * `num_components`: length of the vector returned by the cost function (`d`).
   By default its value is -1 which means that it is determined automatically by
   calling `f` one additional time. This is only possible when `evaluation` is `AllocatingEvaluation`,
@@ -47,7 +47,7 @@ then the keyword `jacobian_tangent_basis` below is ignored
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_tangent_basis`:  an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) specify the basis of the tangent space for `jacobian_f`.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-12)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`:
 
 $(_kw_others)
 

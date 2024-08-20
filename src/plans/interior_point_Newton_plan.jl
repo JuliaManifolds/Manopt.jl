@@ -66,7 +66,7 @@ are used to fill in reasonable defaults for the keywords.
 
 # Input
 
-$(_arg_M)
+$(_var(:Argument, :M; type=true))
 * `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
 $(_arg_sub_problem)
 $(_arg_sub_state)

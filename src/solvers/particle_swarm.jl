@@ -40,7 +40,7 @@ The `p` used in the following defaults is the type of one point from the swarm.
 * `inverse_retraction_method=default_inverse_retraction_method(M, eltype(swarm))`: an inverse retraction to use.
 * $(_kw_retraction_method_default)
 * `social_weight=1.4`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-4)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`
 * $(_kw_vector_transport_method_default)
 
 # See also
@@ -223,8 +223,8 @@ $_doc_swarm_global_best
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 * `swarm = [rand(M) for _ in 1:swarm_size]`: an initial swarm of points.
 
 Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObjective`](@ref) `mco`.
@@ -237,7 +237,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `social_weight=1.4`: a social weight factor
 * `swarm_size=100`: swarm size, if it should be generated randomly
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-4)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`:
   $(_kw_stopping_criterion)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position

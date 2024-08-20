@@ -150,10 +150,10 @@ perform a stochastic gradient descent. This can be perfomed in-place of `p`.
 
 # Input
 
-$(_arg_M)
+$(_var(:Argument, :M; type=true))
 * `grad_f`: a gradient function, that either returns a vector of the gradients
   or is a vector of gradient functions
-$(_arg_p)
+$(_var(:Argument, :p))
 
 alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.

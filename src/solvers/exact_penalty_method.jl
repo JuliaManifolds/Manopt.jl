@@ -7,7 +7,7 @@ Describes the exact penalty method, with
 
 * `ϵ`: the accuracy tolerance
 * `ϵ_min`: the lower bound for the accuracy tolerance
-* $(_field_p)
+$(_var(:Field, :p))
 * `ρ`: the penalty parameter
 * $(_field_sub_problem)
 * $(_field_sub_state)
@@ -43,8 +43,8 @@ construct the exact penalty state, where `sub_problem` is a closed form solution
 * $(_kw_p_default): $(_kw_p)
 * `ρ=1.0`
 * `θ_ρ=0.3`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc_any)` (`
-  [`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-10) )`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`
+  [`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )`
 
 # See also
 
@@ -212,10 +212,10 @@ $(_doc_EMP_ρ_update)
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $(_arg_grad_f)
-$(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
  if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`
@@ -253,11 +253,11 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
   $(_kw_used_in("sub_problem"))
 * * $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc_any)[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
   $(_kw_used_in("sub_state"))
 * `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`: the problem for the subsolver. The objective can also be decorated with argumens from `sub_kwargs`.
 * `sub_state=`[`QuasiNewtonState`](@ref)`(...)` a solver to use for the sub problem. By default an L-BFGS is used.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc_any)` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc_all)[`StopWhenChangeLess`](@ref)`(1e-10) )`: $(_kw_stopping_criterion)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`: $(_kw_stopping_criterion)
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.

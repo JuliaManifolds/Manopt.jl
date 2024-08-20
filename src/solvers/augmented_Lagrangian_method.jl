@@ -2,7 +2,7 @@
 # State
 #
 
-_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$_sc_any([`StopWhenSmallerOrEqual](@ref)`(:ϵ, ϵ_min)`$_sc_all[`StopWhenChangeLess`](@ref)`(1e-10) )$_sc_any[`StopWhenChangeLess`](@ref)`"
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))([`StopWhenSmallerOrEqual](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )$(_sc(:Any))[`StopWhenChangeLess`](@ref)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -17,7 +17,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `λ`:     the Lagrange multiplier with respect to the equality constraints
 * `λ_max`: an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`: a lower bound for the Lagrange multiplier belonging to the equality constraints
-* $_field_p
+$(_var(:Field, :p))
 * `penalty`: evaluation of the current penalty term, initialized to `Inf`.
 * `μ`:     the Lagrange multiplier with respect to the inequality constraints
 * `μ_max`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
@@ -267,8 +267,8 @@ where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $_arg_grad_f
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)

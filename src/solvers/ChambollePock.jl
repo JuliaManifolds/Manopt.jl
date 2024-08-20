@@ -9,7 +9,7 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `dual_stepsize::R`:   proximal parameter of the dual prox
 * $(_field_inv_retr)
 * `inverse_retraction_method_dual::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`):
-  an inverse retraction ``$(_l_retr)^{-1}`` on ``$(_l_Manifold("N"))``
+  an inverse retraction ``$(_tex(:invretr))`` on ``$(_l_Manifold("N"))``
 * `m::P`:               base point on ``$(_math(:M))``
 * `n::Q`:               base point on ``$(_l_Manifold("N"))``
 * `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:M))``
@@ -53,7 +53,7 @@ If you activate these to be different from the default identity, you have to pro
 * `primal_stepsize=1/sqrt(8)`
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_l_retr)^{-1}`` to use on ``$(_l_Manifold("N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+  an inverse retraction ``$(_tex(:invretr))`` to use on ``$(_l_Manifold("N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 * $_kw_retraction_method_default: $_kw_retraction_method
@@ -213,12 +213,12 @@ This can be done inplace of ``p``.
 
  # Input parameters
 
- $_arg_M
- * `N`, a manifold ``$(_l_Manifold("N"))``
-$_arg_p
-$_arg_X
-* `m`, a base point on $_l_M
-* `n`, a base point on $(_l_Manifold("N"))
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M, "N"; type=true))
+$(_var(:Argument, :p))
+$(_var(:Argument, :X))
+$(_var(:Argument, :p, "m"))
+$(_var(:Argument, :p, "n"; M="N"))
 * `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$_l_DΛ``
 * `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^\\ast_n``
 
@@ -239,7 +239,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * $_kw_evaluation_default: $_kw_evaluation
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_l_retr)^{-1}`` to use on $(_l_Manifold("N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+  an inverse retraction ``$(_tex(:invretr))`` to use on $(_l_Manifold("N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox

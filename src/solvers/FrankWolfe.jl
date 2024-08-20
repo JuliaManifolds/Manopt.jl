@@ -39,7 +39,7 @@ Initialise the Frank Wolfe method state, where `sub_problem` is a closed form so
 
 ## Input
 
-$_arg_M
+$(_var(:Argument, :M; type=true))
 $_arg_sub_problem
 $_arg_sub_state
 
@@ -48,7 +48,7 @@ $_arg_sub_state
 * $(_kw_p_default): $(_kw_p)
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-6)` $_kw_stop_note
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)` $_kw_stop_note
 * `stepsize=`[`default_stepsize`](@ref)`(M, FrankWolfeState)`
 * $(_kw_X_default): $(_kw_X)
 
@@ -183,10 +183,10 @@ use a retraction and its inverse.
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $_arg_grad_f
-$_arg_p
+$(_var(:Argument, :p))
 
 $_arg_alt_mgo
 
@@ -201,11 +201,11 @@ $_arg_alt_mgo
 * `stepsize=`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`:
   $_kw_stepsize, where the default is the step size $_doc_FW_sk_default
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)
   $_kw_stopping_criterion
 
 * $_kw_X_default:
-  $_kw_X, the evaluated gradient ``$_l_grad f`` evaluated at ``p^{(k)}``.
+  $_kw_X, the evaluated gradient ``$(_tex(:grad))f`` evaluated at ``p^{(k)}``.
 
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_kw_used_in("sub_objective"))
@@ -231,7 +231,7 @@ $_arg_alt_mgo
   specify either the solver for a `sub_problem` or the kind of evaluation if the sub problem is given by a closed form solution
   this keyword takes into account the `sub_stopping_criterion`, and the `sub_kwargs`, that are also used to potentially decorate the state.
 
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$_sc_any[`StopWhenStepsizeLess`](@ref)`(1e-8)`:
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`:
   $_kw_stopping_criterion for the sub solver. $(_kw_used_in("sub_state"))
 
 $_kw_others

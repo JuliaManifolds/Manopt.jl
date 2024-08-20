@@ -118,7 +118,7 @@ Reflect the point `x` from the manifold `M` at point `p`, given by
 $_l_refl
 ```
 
-where ``$_l_retr`` and ``$_l_retr^{-1}`` denote a retraction and an inverse
+where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse
 retraction, respectively.
 This can also be done in place of `q`.
 
@@ -131,8 +131,8 @@ This can also be done in place of `q`.
 
 and for the `reflect!` additionally
 
-* $_kw_X_default
-  a temporary memory to compute the inverse retraction in place.
+$(_var(:Keyword, :X))
+  as temporary memory to compute the inverse retraction in place.
   otherwise this is the memory that would be allocated anyways.
 """
 function reflect(

@@ -42,7 +42,7 @@ Generate the state for the [`convex_bundle_method`](@ref) on the manifold `M`
 
 ## Input
 
-$_arg_M
+$(_var(:Argument, :M; type=true))
 $_arg_sub_problem
 $_arg_sub_state
 
@@ -61,7 +61,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
+* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref)
@@ -283,7 +283,7 @@ _doc_convex_bundle_method = """
     convex_bundle_method(M, f, ∂f, p)
     convex_bundle_method!(M, f, ∂f, p)
 
-perform a convex bundle method ``p^{(k+1)} = $(_l_retr)_{p^{(k)}}(-g_k)`` where
+perform a convex bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-g_k)`` where
 
 $(_doc_cbm_gk)
 
@@ -297,10 +297,10 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $(_arg_subgrad_f)
-$(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -315,7 +315,7 @@ $(_arg_p)
 * `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`:
+* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)

@@ -18,7 +18,7 @@ Let `T` denote the type of a tangent vector and `R <: Real`.
 * $(_field_stop)
 * `θ::R`:                     the superlinear convergence target rate of ``1+θ``
 * `trust_region_radius::R`:   the trust-region radius
-* `X::T`:                     the gradient ``$(_l_grad)f(p)``
+* `X::T`:                     the gradient ``$(_tex(:grad))f(p)``
 * `Y::T`:                     current iterate tangent vector
 * `z::T`:                     the preconditioned residual
 * `z_r::R`:                   inner product of the residual and `z`
@@ -42,8 +42,8 @@ Initialise the TCG state.
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
-  $(_sc_any)[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc_any)[`StopWhenTrustRegionIsExceeded`](@ref)`()`
-  $(_sc_any)[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc_any)[`StopWhenModelIncreased`](@ref)`()`:
+  $(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`
+  $(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`:
   $(_kw_stopping_criterion)
 
 # See also
@@ -288,7 +288,7 @@ end
     StopWhenCurvatureIsNegative <: StoppingCriterion
 
 A functor for testing if the curvature of the model is negative,
-``⟨δ_k, $(_l_Hess) F(p)[δ_k]⟩_p ≦ 0``.
+``⟨δ_k, $(_tex(:Hess)) F(p)[δ_k]⟩_p ≦ 0``.
 In this case, the model is not strictly convex, and the stepsize as computed does not
 yield a reduction of the model.
 
@@ -429,12 +429,12 @@ see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $(_arg_grad_f)
 $(_arg_Hess_f)
-$(_arg_p)
-$(_arg_X)
+$(_var(:Argument, :p))
+$(_var(:Argument, :X))
 
 Instead of the three functions, you either provide a [`ManifoldHessianObjective`](@ref) `mho`
 which is then used to build the trust region model, or a [`TrustRegionModelObjective`](@ref) `trmo`
@@ -454,8 +454,8 @@ directly.
   This disables preconditioning.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
-  $(_sc_any)[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc_any)[`StopWhenTrustRegionIsExceeded`](@ref)`()`
-  $(_sc_any)[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc_any)[`StopWhenModelIncreased`](@ref)`()`:
+  $(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`
+  $(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`:
   $(_kw_stopping_criterion)
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4`: the initial trust-region radius
 

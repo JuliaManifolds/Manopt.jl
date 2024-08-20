@@ -91,7 +91,7 @@ no plot is generated.
 # Keyword arguments
 
 * `check_vector=true`:
-  verify that ``$_l_grad f(p) ∈ $(_l_TpM())`` using `is_vector`.
+  verify that ``$(_tex(:grad))f(p) ∈ $(_l_TpM())`` using `is_vector`.
 * `exactness_tol=1e-12`:
   if all errors are below this tolerance, the gradient is considered to be exact
 * `io=nothing`:
@@ -170,13 +170,13 @@ no plot is generated.
 # Keyword arguments
 
 * `check_grad=true`:
-  verify that ``$_l_grad f(p) ∈ $(_l_TpM())``.
+  verify that ``$(_tex(:grad))f(p) ∈ $(_l_TpM())``.
 * `check_linearity=true`:
   verify that the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry=true`:
   verify that the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector=false`:
-  verify that `$_l_Hess f(p)[X] ∈ $(_l_TpM())`` using `is_vector`.
+  verify that `$(_tex(:Hess)) f(p)[X] ∈ $(_l_TpM())`` using `is_vector`.
 * `mode=:Default`:
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian
@@ -194,7 +194,7 @@ no plot is generated.
 * `gradient=grad_f(M, p)`:
   instead of the gradient function you can also provide the gradient at `p` directly
 * `Hessian=Hess_f(M, p, X)`:
-  instead of the Hessian function you can provide the result of ``$_l_Hess f(p)[X]`` directly.
+  instead of the Hessian function you can provide the result of ``$(_tex(:Hess)) f(p)[X]`` directly.
   Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry and/or when using `:CriticalPoint` mode.
 * `limits=(1e-8,1)`:
   specify the limits in the `log_range`

@@ -49,9 +49,9 @@ perform a conjugate gradient based descent-
 
 $(_doc_CG_formula)
 
-where ``$(_l_retr)`` denotes a retraction on the `Manifold` `M`
+where ``$(_tex(:retr))`` denotes a retraction on the `Manifold` `M`
 and one can employ different rules to update the descent direction ``δ_k`` based on
-the last direction ``δ_{k-1}`` and both gradients ``$(_l_grad)f(x_k)``,``$(_l_grad) f(x_{k-1})``.
+the last direction ``δ_{k-1}`` and both gradients ``$(_tex(:grad))f(x_k)``,``$(_tex(:grad)) f(x_{k-1})``.
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Alternatively to `f` and `grad_f` you can provide
@@ -69,10 +69,10 @@ $(_doc_update_delta_k)
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $(_arg_grad_f)
-$(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -84,7 +84,7 @@ $(_arg_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=[`ArmijoLinesearch`](@ref)`(M)`: $_kw_stepsize
   via [`default_stepsize`](@ref)) passing on the `default_retraction_method`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $(_kw_stopping_criterion)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 

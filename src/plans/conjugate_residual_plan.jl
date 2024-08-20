@@ -106,7 +106,7 @@ evaluate the gradient of
 
 $(_doc_CR_cost)
 
-Which is ``$(_l_grad) f(X) = $(_tex(:Cal, "A"))[X]+b``. This can be computed in-place of `Y`.
+Which is ``$(_tex(:grad)) f(X) = $(_tex(:Cal, "A"))[X]+b``. This can be computed in-place of `Y`.
 """
 function get_gradient(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
     p = base_point(TpM)
@@ -141,7 +141,7 @@ evaluate the Hessian of
 
 $(_doc_CR_cost)
 
-Which is ``$(_l_Hess) f(X)[Y] = $(_tex(:Cal, "A"))[V]``. This can be computed in-place of `W`.
+Which is ``$(_tex(:Hess)) f(X)[Y] = $(_tex(:Cal, "A"))[V]``. This can be computed in-place of `W`.
 """
 function get_hessian(
     TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
@@ -204,7 +204,7 @@ Initialise the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`($(_link(:manifold_dimension)))`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`($(_link(:manifold_dimension)))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`
 
 # See also
 
@@ -292,7 +292,7 @@ Stop when re relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_l_ds)$(_tex(:frac, _l_norm("r^{(k)"),"c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _l_norm("r^{(k)"),"c")) ≤ ε,
 ```
 
 where ``c = $(_l_norm("b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,

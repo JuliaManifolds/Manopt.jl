@@ -316,7 +316,7 @@ a basis ``$(_math_sequence("b", "i", "1", "n"))`` are determined by solving a li
 $_doc_QN_H_full_system
 
 where ``H_k`` is the matrix representing the operator with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``
-and ``\\widehat{$_l_grad} f(p_k)}`` represents the coordinates of the gradient of
+and ``\\widehat{$(_tex(:grad))} f(p_k)}`` represents the coordinates of the gradient of
 the objective function ``f`` in ``x_k`` with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``.
 If a method is chosen where Hessian inverse is approximated, the coordinates of the search
 direction ``η_k`` with respect to a basis ``$(_math_sequence("b", "i", "1", "n"))`` are obtained simply by
@@ -325,7 +325,7 @@ matrix-vector multiplication
 $_doc_QN_B_full_system
 
 where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``
-and `\\widehat{$_l_grad} f(p_k)}``. In the end, the search direction ``η_k`` is
+and `\\widehat{$(_tex(:grad))} f(p_k)}``. In the end, the search direction ``η_k`` is
 generated from the coordinates ``\\hat{eta_k}`` and the vectors of the basis ``$(_math_sequence("b", "i", "1", "n"))``
 in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.

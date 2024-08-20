@@ -209,7 +209,7 @@ Let ``Xp^{(k)}`` denote the minimizer of the model ``m_k`` and use the model imp
 $_doc_ARC_improvement
 
 With two thresholds ``η_2 ≥ η_1 > 0``
-set ``p_{k+1} = $(_l_retr)_{p_k}(X_k)`` if ``ρ ≥ η_1``
+set ``p_{k+1} = $(_tex(:retr))_{p_k}(X_k)`` if ``ρ ≥ η_1``
 and reject the candidate otherwise, that is, set ``p_{k+1} = p_k``.
 
 Further update the regularization parameter using factors ``0 < γ_1 < 1 < γ_2`` reads
@@ -220,11 +220,11 @@ For more details see [AgarwalBoumalBullinsCartis:2020](@cite).
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $_arg_grad_f
 $_arg_Hess_f
-$_arg_p
+$(_var(:Argument, :p))
 
 the cost `f` and its gradient and Hessian might also be provided as a [`ManifoldHessianObjective`](@ref)
 
@@ -243,7 +243,7 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 * $_kw_retraction_method_default:
   $_kw_retraction_method
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-9)`$_sc_any[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
   $_kw_stopping_criterion
 * $_kw_sub_kwargs_default:
   $_kw_sub_kwargs

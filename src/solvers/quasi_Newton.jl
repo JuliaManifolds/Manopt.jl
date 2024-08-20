@@ -10,7 +10,7 @@ all necessary fields.
 * `η`:                             the current update direction
 * `nondescent_direction_behavior`: a `Symbol` to specify how to handle direction that are not descent ones.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
-* $(_field_p)
+$(_var(:Field, :p))
 * `p_old`:                         the last iterate
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
@@ -30,7 +30,7 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 ## Keyword arguments
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
-* `stopping_criterion=`[`StopAfterIteration`9(@ref)`(1000)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`
+* `stopping_criterion=`[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=default_stepsize(M; QuasiNewtonState)`: $(_kw_stepsize)
   The default here is the [`WolfePowellLinesearch`](@ref) using the keywords `retraction_method` and `vector_transport_method`
@@ -186,18 +186,18 @@ $(_problem_default)
 with start point `p`. The iterations can be done in-place of `p```=p^{(0)}``.
 The ``k``th iteration consists of
 
-1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_l_grad)f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_l_grad)f (p^{(k)})]``.
+1. Compute the search direction ``η^{(k)} = -$(_tex(:Cal, "B"))_k [$(_tex(:grad))f (p^{(k)})]`` or solve ``$(_tex(:Cal, "H"))_k [η^{(k)}] = -$(_tex(:grad))f (p^{(k)})]``.
 2. Determine a suitable stepsize ``α_k`` along the curve ``γ(α) = R_{p^{(k)}}(α η^{(k)})``, usually by using [`WolfePowellLinesearch`](@ref).
 3. Compute ``p^{(k+1)} = R_{p^{(k)}}(α_k η^{(k)})``.
-4. Define ``s_k = $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_l_grad)f(p^{(k+1)}) - $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}($(_l_grad)f(p^{(k)}))``, where ``$(_tex(:Cal, "T"))`` denotes a vector transport.
+4. Define ``s_k = $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}(α_k η^{(k)})`` and ``y_k = $(_tex(:grad))f(p^{(k+1)}) - $(_tex(:Cal, "T"))_{p^{(k)}, α_k η^{(k)}}($(_tex(:grad))f(p^{(k)}))``, where ``$(_tex(:Cal, "T"))`` denotes a vector transport.
 5. Compute the new approximate Hessian ``H_{k+1}`` or its inverse ``B_{k+1}``.
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $(_arg_grad_f)
-$(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -235,7 +235,7 @@ $(_arg_p)
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`:
   $(_kw_stepsize)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 

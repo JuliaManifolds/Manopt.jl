@@ -69,7 +69,7 @@ additionally this gradient does accept a positional last argument to specify the
 for the internal gradient call of the constrained objective.
 
 based on the internal [`ConstrainedManifoldObjective`](@ref) and computes the gradient
-`$_l_grad $(_tex(:Cal, "L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
+`$(_tex(:grad))$(_tex(:Cal, "L"))_{ρ}(p, μ, λ)``, see also [`AugmentedLagrangianCost`](@ref).
 
 ## Fields
 

@@ -22,7 +22,7 @@ Initialize the gradient descent solver state, where
 
 ## Input
 
-$_arg_M
+$(_var(:Argument, :M; type=true))
 
 ## Keyword arguments
 
@@ -129,10 +129,10 @@ The algorithm can be performed in-place of `p`.
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $_arg_grad_f
-$_arg_p
+$(_var(:Argument, :p))
 
 $_arg_alt_mgo
 
@@ -151,11 +151,11 @@ $_arg_alt_mgo
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState)`:
   $_kw_stepsize
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $_kw_stopping_criterion
 
 * $_kw_X_default:
-  $_kw_X, the evaluated gradient ``$_l_grad f`` evaluated at ``p^{(k)}``.
+  $_kw_X, the evaluated gradient ``$(_tex(:grad))f`` evaluated at ``p^{(k)}``.
 
 $_kw_others
 

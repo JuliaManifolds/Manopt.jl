@@ -39,8 +39,8 @@ the constraints are further fulfilled.
 
 * `M`:      a manifold ``$(_math(:M))``
 * `f`:      a cost function ``f : $(_math(:M)) → ℝ`` to minimize
-* `grad_f`: the gradient ``$(_l_grad) f : $(_math(:M)) → T $(_math(:M))`` of ``f``
-* `Hess_f`: the Hessian ``$(_l_Hess)f(p): T_p$(_math(:M)) → T_p$(_math(:M))``, ``X ↦ $(_l_Hess)f(p)[X] = ∇_X$(_l_grad)f(p)``
+* `grad_f`: the gradient ``$(_tex(:grad)) f : $(_math(:M)) → T $(_math(:M))`` of ``f``
+* `Hess_f`: the Hessian ``$(_tex(:Hess))f(p): T_p$(_math(:M)) → T_p$(_math(:M))``, ``X ↦ $(_tex(:Hess))f(p)[X] = ∇_X$(_tex(:grad))f(p)``
 $(_var(:Field, :p))
 
 or a [`ConstrainedManifoldObjective`](@ref) `cmo` containing `f`, `grad_f`, `Hess_f`, and the constraints

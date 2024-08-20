@@ -160,12 +160,12 @@ perform an alternating gradient descent. This can be done in-place of the start 
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 * `grad_f`: a gradient, that can be of two cases
   * is a single function returning an `ArrayPartition` or
   * is a vector functions each returning a component part of the whole gradient
-$_arg_p
+$(_var(:Argument, :p))
 
 # Keyword arguments
 

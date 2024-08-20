@@ -5,7 +5,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-* $(_field_p)
+$(_var(:Field, :p))
 * `p_star`: optimal value
 * $(_field_retr)
 * $(_field_step)
@@ -91,8 +91,8 @@ _doc_SGM = """
     subgradient_method!(M, f, ∂f, p; kwargs...)
     subgradient_method!(M, sgo, p; kwargs...)
 
-perform a subgradient method ``p^{(k+1)} = $(_l_retr)\\bigl(p^{(k)}, s^{(k)}∂f(p^{(k)})\\bigr)``,
-where ``$(_l_retr)`` is a retraction, ``s^{(k)}`` is a step size.
+perform a subgradient method ``p^{(k+1)} = $(_tex(:retr))\\bigl(p^{(k)}, s^{(k)}∂f(p^{(k)})\\bigr)``,
+where ``$(_tex(:retr))`` is a retraction, ``s^{(k)}`` is a step size.
 
 Though the subgradient might be set valued,
 the argument `∂f` should always return _one_ element from the subgradient, but
@@ -101,10 +101,10 @@ For more details see [FerreiraOliveira:1998](@cite).
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 * `∂f`: the (sub)gradient ``∂ f: $(_math(:M)) → T$(_math(:M))`` of f
-$(_arg_p)
+$(_var(:Argument, :p))
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 

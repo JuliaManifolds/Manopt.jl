@@ -33,7 +33,7 @@ construct an difference of convex proximal point state, where `sub_problem` is a
 
 ## Input
 
-$_arg_M
+$(_var(:Argument, :M; type=true))
 $_arg_sub_problem
 $_arg_sub_state
 
@@ -161,7 +161,7 @@ _doc_DCPPA = """
 Compute the difference of convex proximal point algorithm [SouzaOliveira:2015](@cite) to minimize
 
 ```math
-    $(_l_argmin)_{p∈$(_math(:M))} g(p) - h(p)
+    $(_tex(:argmin))_{p∈$(_math(:M))} g(p) - h(p)
 ```
 
 where you have to provide the subgradient ``∂h`` of ``h`` and either
@@ -172,12 +172,12 @@ where you have to provide the subgradient ``∂h`` of ``h`` and either
 This algorithm performs the following steps given a start point `p`= ``p^{(0)}``.
 Then repeat for ``k=0,1,…``
 
-1. ``X^{(k)}  ∈ $(_l_grad) h(p^{(k)})``
-2. ``q^{(k)} = $(_l_retr)_{p^{(k)}}(λ_kX^{(k)})``
+1. ``X^{(k)}  ∈ $(_tex(:grad)) h(p^{(k)})``
+2. ``q^{(k)} = $(_tex(:retr))_{p^{(k)}}(λ_kX^{(k)})``
 3. ``r^{(k)} = $(_l_prox)_{λ_kg}(q^{(k)})``
-4. ``X^{(k)} = $(_l_retr)^{-1}_{p^{(k)}}(r^{(k)})``
+4. ``X^{(k)} = $(_tex(:invretr))_{p^{(k)}}(r^{(k)})``
 5. Compute a stepsize ``s_k`` and
-6. set ``p^{(k+1)} = $(_l_retr)_{p^{(k)}}(s_kX^{(k)})``.
+6. set ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(s_kX^{(k)})``.
 
 until the `stopping_criterion` is fulfilled.
 
@@ -191,7 +191,7 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
 * `λ`:                          ( `k -> 1/2` ) a function returning the sequence of prox parameters ``λ_k``
 * `cost=nothing`: provide the cost `f`, for debug reasons / analysis
 * $(_kw_evaluation_default): $(_kw_evaluation)
-* `gradient=nothing`: specify ``$(_l_grad) f``, for debug / analysis
+* `gradient=nothing`: specify ``$(_tex(:grad)) f``, for debug / analysis
    or enhancing the `stopping_criterion`
 * `prox_g=nothing`: specify a proximal map for the sub problem _or_ both of the following
 * `g=nothing`: specify the function `g`.
@@ -199,9 +199,9 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
 * $(_kw_inverse_retraction_method_default); $(_kw_inverse_retraction_method)
 * $(_kw_retraction_method_default); $(_kw_retraction_method)
 * `stepsize=`[`ConstantStepsize`](@ref)`(M)`): $(_kw_stepsize)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-8)`):
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`):
   $(_kw_stopping_criterion)
-  A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc_any), when a `gradient` is provided.
+  A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
   $(_kw_used_in("sub_objective"))
@@ -222,7 +222,7 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
   By default this is also decorated using the `sub_kwargs`.
   if the `sub_problem` if a function (a closed form solution), this is set to `evaluation`
   and can be changed to the evaluation type of the closed form solution accordingly.
-* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(300)`$(_sc_any)`[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
+* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))`[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   a stopping criterion used withing the default `sub_state=`
   $(_kw_used_in("sub_state"))
 

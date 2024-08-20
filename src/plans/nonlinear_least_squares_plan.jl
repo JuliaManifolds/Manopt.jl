@@ -172,7 +172,7 @@ The following fields are keyword arguments
 * `expect_zero_residual=false`
 * `initial_gradient=`$(_link(:zero_vector))
 * $_kw_retraction_method_default
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$_sc_any[`StopWhenGradientNormLess`](@ref)`(1e-12)`$_sc_any[`StopWhenStepsizeLess`](@ref)`(1e-12)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`
 
 # See also
 

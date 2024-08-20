@@ -20,11 +20,11 @@ is initalised with ``X^{(0)}`` as the zero vector and
 
 performed the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
 
-1. compute a step size ``α_k = $(_l_ds)$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p","⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
+1. compute a step size ``α_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p","⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
 2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
 4. compute ``Z = $(_tex(:Cal, "A"))(p)[r^{(k+1)}]``
-5. Update the conjugate coefficient ``β_k = $(_l_ds)$(_tex(:frac, "⟨ r^{(k+1)}, $(_tex(:Cal, "A"))(p)[r^{(k+1)}] ⟩_p", "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p"))``
+5. Update the conjugate coefficient ``β_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k+1)}, $(_tex(:Cal, "A"))(p)[r^{(k+1)}] ⟩_p", "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p"))``
 6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(k+1)} = -Z + β_k Y^{(k)}``
 
@@ -40,7 +40,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 # Keyword arguments
 
 * `evaluation=`[`AllocatingEvaluation`](@ref) specify whether `A` and `b` are implemented allocating or in-place
-* `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$_sc_any[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,
+* `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,
   where `c` is the norm of ``$(_l_norm("b"))``.
 
 # Output

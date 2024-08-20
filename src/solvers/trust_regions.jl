@@ -8,9 +8,9 @@ Store the state of the trust-regions solver.
 
 * `acceptance_rate`:         a lower bound of the performance ratio for the iterate
   that decides if the iteration is accepted or not.
-* `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_l_Hess) f(p)[⋅]` of `X`, `Y`, `Z`
+* `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]` of `X`, `Y`, `Z`
 * `max_trust_region_radius`: the maximum trust-region radius
-* $(_field_p)
+$(_var(:Field, :p))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * $(_field_stop)
@@ -40,7 +40,7 @@ create a trust region state.
 
 # Input
 
-$(_arg_M)
+$(_var(:Argument, :M; type=true))
 $_arg_sub_problem
 $_arg_sub_state
 
@@ -50,7 +50,7 @@ $_arg_sub_state
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
 * $(_kw_p_default): $(_kw_p)
 * `project!=copyto!`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
 * `randomize=false`
 * `ρ_regularization=10000.0`
@@ -269,11 +269,11 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 
 # Input
 
-$(_arg_M)
-$(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 $(_arg_grad_f)
 $(_arg_Hess_f)
-$(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -299,7 +299,7 @@ $(_arg_p)
 * `reduction_threshold=0.1`: trust-region reduction threshold: if ρ is below this threshold,
   the trust region radius is reduced by `reduction_factor`.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
 * $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
 * `sub_stopping_criterion` – the default from [`truncated_conjugate_gradient_descent`](@ref):
