@@ -70,7 +70,7 @@ end
 
 $(_var(:Field, :p, "m"))
 $(_var(:Field, :p, "n", "Q"; M="N"))
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 $(_var(:Field, :X))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
 * `dual_stepsize::Float64`:    proximal parameter of the dual prox

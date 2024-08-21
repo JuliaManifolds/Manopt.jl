@@ -238,7 +238,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 * `acceleration=0.05`: acceleration parameter
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
-* $_kw_evaluation_default: $_kw_evaluation
+$(_var(:Keyword, :evaluation))
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
   an inverse retraction ``$(_tex(:invretr))`` to use on $(_tex(:Cal, "N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).

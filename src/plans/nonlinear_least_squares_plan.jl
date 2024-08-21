@@ -138,7 +138,7 @@ Describes a Gradient based descent algorithm, with
 
 A default value is given in brackets if a parameter can be left out in initialization.
 
-* $_field_iterate
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * $_field_stop
 * $_field_retr
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration

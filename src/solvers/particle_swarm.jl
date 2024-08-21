@@ -20,9 +20,9 @@ Describes a particle swarm optimizing algorithm, with
 # Internal and temporary fields
 
 * `cognitive_vector`: temporary storage for a tangent vector related to `cognitive_weight`
-* `p`:                storage for the best point ``p`` visited by all particles.
+$(_var(:Field, :p; comment=" storing the best point visited by all particles"))
 * `positional_best`:  storing the best position ``p_i`` every single swarm participant visited
-* `q`:                temporary storage for a point to avoid allocations during a step of the algorithm
+$(_var(:Field, :p, "q"; comment=" serving as temporary storage for interims results; avoids allocations"))
 * `social_vec`:       temporary storage for a tangent vector related to `social_weight`
 * `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a","i","1","N"))``
 

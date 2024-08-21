@@ -1,14 +1,14 @@
 #
 # State
 #
-@doc raw"""
+@doc """
     CMAESState{P,T} <: AbstractManoptSolverState
 
 State of covariance matrix adaptation evolution strategy.
 
 # Fields
 
-* `p`                           the best point found so far
+$(_var(:Field, :p; comment=" storing the best point found so far"))
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -30,8 +30,8 @@ State of covariance matrix adaptation evolution strategy.
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
 * `p_m`                         point around which the search for new candidates is done
 * `σ`                           step size
-* `p_σ`                         coordinates of a vector in ``T_{p_m} \mathcal M``
-* `p_c`                         coordinates of a vector in ``T_{p_m} \mathcal M``
+* `p_σ`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
+* `p_c`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
 * `deviations`                  standard deviations of coordinate RNG
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution

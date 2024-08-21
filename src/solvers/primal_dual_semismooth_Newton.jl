@@ -26,7 +26,7 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 # Keyword arguments
 
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.

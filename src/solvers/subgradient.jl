@@ -5,7 +5,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `p_star`: optimal value
 * $(_field_retr)
 * $(_field_step)
@@ -108,9 +108,9 @@ $(_var(:Argument, :p))
 
 alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` can be provided.
 
-# Optional
+# Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=`[`default_stepsize`](@ref)`(M, SubGradientMethodState)`: $(_kw_stepsize)
   which here defaults to [`ConstantStepsize`](@ref)`(M)`

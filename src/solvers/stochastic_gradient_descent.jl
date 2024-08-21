@@ -6,7 +6,7 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-* $(_field_iterate)
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `direction`:  a direction update to use
 * $(_field_stop)
 * $(_field_step)
@@ -162,7 +162,7 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 
 * `cost=missing`: you can provide a cost function for example to track the function value
 * `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
 * `order_type=:RandomOder`: a type of ordering of gradient evaluations.

@@ -19,7 +19,7 @@ point type `P` and a tangent vector type `T``
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
 * `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
-* $(_field_iterate)
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `p_last_serious::P`:         last serious iterate
 * $(_field_retr)
 * $(_field_stop)
@@ -310,7 +310,7 @@ $(_var(:Argument, :p))
 * `m=1e-3`: : the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 * `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
 * `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)

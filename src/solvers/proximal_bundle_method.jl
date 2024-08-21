@@ -20,7 +20,7 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 * `m`:                        the parameter to test the decrease of the cost
 * `μ`:                        (initial) proximal parameter for the subproblem
 * `ν`:                        the stopping parameter given by ``ν = - μ |d|^2 - c``
-* `p`:                        current candidate point
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `p_last_serious`:           last serious iterate
 * $(_field_retr)
 * $(_field_stop)
@@ -242,7 +242,7 @@ $(_var(:Argument, :p))
 * `bundle_size=50`:  the maximal size of the bundle
 * `δ=1.0`:           parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
 * `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 * `μ=0.5`:           initial proximal parameter for the subproblem

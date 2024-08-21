@@ -1,8 +1,8 @@
-@doc """
-    conjugate_residual(TpM::TangentSpace, A, b, p=rand(TpM))
-    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(TpM))
-    conjugate_residual!(TpM::TangentSpace, A, b, p)
-    conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
+_doc_conjugate_residual = """
+    conjugate_residual(TpM::TangentSpace, A, b, X=zero_vector(TpM))
+    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=zero_vector(TpM))
+    conjugate_residual!(TpM::TangentSpace, A, b, X)
+    conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
 
 Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 
@@ -35,19 +35,18 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 * `TpM` the [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`) as the domain
 * `A` a symmetric linear operator on the tangent space `(M, p, X) -> Y`
 * `b` a vector field on the tangent space `(M, p) -> X`
-
+* `X` the initial tangent vector
 
 # Keyword arguments
 
-* `evaluation=`[`AllocatingEvaluation`](@ref) specify whether `A` and `b` are implemented allocating or in-place
+$(_var(:Keyword, :evaluation))
 * `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,
-  where `c` is the norm of ``$(_tex(:norm,"b"))``.
+  where `c` is ``$(_tex(:norm,"b"))``.
 
-# Output
-
-the obtained (approximate) minimizer ``X^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
+$(_note(:OutputSection))
 """
+
+@doc "$_doc_conjugate_residual"
 conjugate_residual(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual(
@@ -67,6 +66,9 @@ function conjugate_residual(
     Y = copy(TpM, X)
     return conjugate_residual!(TpM, slso, Y; kwargs...)
 end
+
+@doc "$_doc_conjugate_residual"
+conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual!(
     TpM::TangentSpace,

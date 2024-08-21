@@ -67,7 +67,7 @@ after the description
 * `γ` the expansion parameter ``γ > 0``:
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
-* `p`: a field to store the current best value (initialized to _some_ point here)
+$(_var(:Field, :p; comment=" storing the current best point"))
 * $_field_retr
 * $_field_inv_retr
 

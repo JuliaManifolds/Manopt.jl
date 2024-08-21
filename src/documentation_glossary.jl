@@ -55,16 +55,19 @@ define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
 define!(:LaTeX, :bigl, raw"\bigl")
 define!(:LaTeX, :bigr, raw"\bigr")
+define!(:LaTeX, :Bigl, raw"\Bigl")
+define!(:LaTeX, :Bigr, raw"\Bigr")
 define!(:LaTeX, :Cal, (letter) -> raw"\mathcal " * "$letter")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
 define!(:LaTeX, :grad, raw"\operatorname{grad}")
+define!(:LaTeX, :hat, (letter) -> raw"\hat{" * "$letter" * "}")
 define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
 define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
 define!(:LaTeX, :log, raw"\log")
 define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
-define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert" * "$v" * raw"\rVert" * "_{$index}")
+define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
@@ -157,8 +160,8 @@ define!(
 define!(
     :Variable,
     :Field,
-    (s::Symbol, display="$s", t=""; kwargs...) ->
-        "* `$(display)::$(length(t) > 0 ? t : _var(s, :type))`: $(_var(s, :description; kwargs...))",
+    (s::Symbol, display="$s", t=""; comment="", kwargs...) ->
+        "* `$(display)::$(length(t) > 0 ? t : _var(s, :type))`: $(_var(s, :description; kwargs...))$(comment)",
 )
 define!(
     :Variable,
@@ -168,14 +171,38 @@ define!(
         display="$s",
         t="";
         default="",
+        comment="",
         type=false,
         description::Bool=true,
         kwargs...,
     ) ->
-        "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")=`$(length(default) > 0 ? default : _var(s, :default; kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")",
+        "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")=`$(length(default) > 0 ? default : _var(s, :default; kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")$(comment)",
 )
 #
 # Actual variables
+
+define!(
+    :Variable,
+    :at_iteration,
+    :description,
+    "an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case;",
+)
+define!(:Variable, :at_iteration, :type, "Int")
+
+define!(
+    :Variable,
+    :evaluation,
+    :description,
+    "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.",
+)
+define!(:Variable, :evaluation, :type, "AbstractEvaluationType")
+define!(:Variable, :evaluation, :default, "[`AllocatingEvaluation`](@ref)`()`")
+define!(
+    :Variable,
+    :evaluation,
+    :GradientExample,
+    "For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`.",
+)
 
 define!(
     :Variable,
@@ -287,9 +314,9 @@ define!(
     :X,
     :description,
     (; M="M", p="p", note="") ->
-        "a tangent bector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``. $note",
+        "a tangent vector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``. $note",
 )
-define!(:Variable, :X, :type, "X")
+define!(:Variable, :X, :type, "T")
 define!(:Variable, :X, :default, (; M="M", p="p") -> _link(:zero_vector; M=M, p=p))
 
 #
@@ -366,8 +393,6 @@ _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 # Old strings
 
 # Fields
-_field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case; "
-_field_iterate = "`p`: the current iterate ``p=p^{(k)} ∈ $(_math(:M))``"
 _field_gradient = "`X`: the current gradient ``$(_tex(:grad))f(p^{(k)}) ∈ T_p$(_math(:M))``"
 _field_subgradient = "`X` : the current subgradient ``$(_tex(:subgrad))f(p^{(k)}) ∈ T_p$(_tex(:Cal, "M"))``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_tex(:invretr))``"
@@ -382,10 +407,6 @@ _field_X = "`X`: a tangent vector"
 #
 #
 # Keywords
-_kw_evaluation_default = "`evaluation=`[`AllocatingEvaluation`](@ref)`()`"
-_kw_evaluation = "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second."
-_kw_evaluation_example = "For example `grad_f(M,p)` allocates, but `grad_f!(M, X, p)` computes the result in-place of `X`."
-
 _kw_inverse_retraction_method_default = "`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_inverse_retraction_method = "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
 

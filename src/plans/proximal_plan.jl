@@ -139,7 +139,7 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
 
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * $_field_stop
 * `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``ì``
 * `oder_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),

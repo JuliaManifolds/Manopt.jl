@@ -260,7 +260,7 @@ $_math_sc_firstorder
 # Fields
 
 * `θ`:      the factor ``θ`` in the second condition
-* $_field_at_iteration
+$(_var(:Field, :at_iteration))
 
 # Constructor
 

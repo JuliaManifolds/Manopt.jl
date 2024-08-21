@@ -29,13 +29,13 @@ set_iterate!(s::StepsizeState, M, p) = copyto!(M, s.p, p)
 set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 
 @doc """
-    InteriorPointNewtonState <: AbstractHessianSolverState
+    InteriorPointNewtonState{P,T} <: AbstractHessianSolverState
 
 # Fields
 
 * `λ`:           the Lagrange multiplier with respect to the equality constraints
 * `μ`:           the Lagrange multiplier with respect to the inequality constraints
-* `p`:           the current iterate
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `s`:           the current slack variable
 * `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the subsolver

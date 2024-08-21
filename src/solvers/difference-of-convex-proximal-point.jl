@@ -10,8 +10,9 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 * $(_field_inv_retr)
 * $(_field_retr)
-* `p`, `q`, `r`:               the current iterate, the gradient step and the prox, respectively
-  their type is set by initializing `p`
+$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p, "q"; comment=" storing the gradient step"))
+$(_var(:Field, :p, "r"; comment=" storing the result of the proximal map"))
 * $(_field_step)
 * $(_field_stop)
 * `X`, `Y`: the current gradient and descent direction, respectively
@@ -190,7 +191,7 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
 
 * `λ`:                          ( `k -> 1/2` ) a function returning the sequence of prox parameters ``λ_k``
 * `cost=nothing`: provide the cost `f`, for debug reasons / analysis
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `gradient=nothing`: specify ``$(_tex(:grad)) f``, for debug / analysis
    or enhancing the `stopping_criterion`
 * `prox_g=nothing`: specify a proximal map for the sub problem _or_ both of the following

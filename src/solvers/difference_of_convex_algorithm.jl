@@ -8,7 +8,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* $(_field_iterate)
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * $(_field_subgradient)
 * $(_field_sub_problem)
 * $(_field_sub_state)
@@ -134,7 +134,7 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 
 # Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `gradient=nothing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`:

@@ -144,7 +144,7 @@ residual. The criterion hence reads
 
 * `κ`:      the reduction factor
 * `θ`:      part of the reduction power
-* $(_field_at_iteration)
+$(_var(:Field, :at_iteration))
 
 # Constructor
 
@@ -233,7 +233,7 @@ and to end the algorithm when the trust region has been left.
 
 # Fields
 
-* $(_field_at_iteration)
+$(_var(:Field, :at_iteration))
 * `trr` the trust region radius
 * `YPY` the computed norm of ``Y``.
 
@@ -294,7 +294,7 @@ yield a reduction of the model.
 
 # Fields
 
-* $(_field_at_iteration)
+$(_var(:Field, :at_iteration))
 * `value` store the value of the inner product.
 * `reason`: stores a reason of stopping if the stopping criterion has been reached,
   see [`get_reason`](@ref).
@@ -348,7 +348,7 @@ A functor for testing if the curvature of the model value increased.
 
 # Fields
 
-* $(_field_at_iteration)
+$(_var(:Field, :at_iteration))
 * `model_value`stre the last model value
 * `inc_model_value` store the model value that increased
 
@@ -442,7 +442,7 @@ directly.
 
 # Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `preconditioner`:       a preconditioner for the Hessian H.
   This is either an allocating function `(M, p, X) -> Y` or an in-place function `(M, Y, p, X) -> Y`,
   see `evaluation`, and by default set to the identity.

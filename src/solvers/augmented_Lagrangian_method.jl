@@ -17,7 +17,7 @@ a default value is given in brackets if a parameter can be left out in initializ
 * `λ`:     the Lagrange multiplier with respect to the equality constraints
 * `λ_max`: an upper bound for the Lagrange multiplier belonging to the equality constraints
 * `λ_min`: a lower bound for the Lagrange multiplier belonging to the equality constraints
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `penalty`: evaluation of the current penalty term, initialized to `Inf`.
 * `μ`:     the Lagrange multiplier with respect to the inequality constraints
 * `μ_max`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
@@ -283,8 +283,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 
 # Keyword Arguments
 
-* $_kw_evaluation_default: $_kw_evaluation
-
+$(_var(:Keyword, :evaluation))
 * `ϵ=1e-3`:           the accuracy tolerance
 * `ϵ_min=1e-6`:       the lower bound for the accuracy tolerance
 * `ϵ_exponent=1/100`: exponent of the ϵ update factor;

@@ -34,7 +34,7 @@ then the keyword `jacobian_tangent_basis` below is ignored
 
 # Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `η=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `expect_zero_residual=false`: whether or not the algorithm might expect that the value of
   residual (objective) at minimum is equal to 0.

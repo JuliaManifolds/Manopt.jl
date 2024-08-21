@@ -10,7 +10,7 @@ Store the state of the trust-regions solver.
   that decides if the iteration is accepted or not.
 * `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]` of `X`, `Y`, `Z`
 * `max_trust_region_radius`: the maximum trust-region radius
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * $(_field_stop)
@@ -283,7 +283,7 @@ $(_var(:Argument, :p))
 * `augmentation_threshold=0.75`: trust-region augmentation threshold: if ρ is larger than this threshold,
   a solution is on the trust region boundary and negative curvature, and the radius is extended (augmented)
 * `augmentation_factor=2.0`: trust-region augmentation factor
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `κ=0.1`: the linear convergence target rate of the tCG method
     [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
 * `max_trust_region_radius`: the maximum trust-region radius

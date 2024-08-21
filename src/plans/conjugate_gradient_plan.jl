@@ -27,7 +27,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 $(_var(:Field, :X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .

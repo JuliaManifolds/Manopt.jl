@@ -1,7 +1,7 @@
 
 @inline _extract_val(::Val{T}) where {T} = T
 
-@doc raw"""
+@doc """
     AbstractManoptSolverState
 
 A general super type for all solver states.
@@ -9,9 +9,9 @@ A general super type for all solver states.
 # Fields
 
 The following fields are assumed to be default. If you use different ones,
-provide the access functions accordingly
+adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
 
-* `p` a point on a manifold with the current iterate
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `stop` a [`StoppingCriterion`](@ref).
 """
 abstract type AbstractManoptSolverState end

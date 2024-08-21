@@ -189,22 +189,20 @@ A state for the [`conjugate_residual`](@ref) solver.
 
 # Constructor
 
-    function ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective;
-        kwargs...
-    )
+    ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective; kwargs...)
 
 Initialise the state with default values.
 
 ## Keyword arguments
 
-* `X``$(_link(:zero_vector))`
-* `r=-get_gradient(TpM, slso, X)`
+* `r=-`[`get_gradient`](@ref)`(TpM, slso, X)`
 * `d=copy(TpM, r)`
-* `Ar=get_hessian(TpM, slso, X, r)`
+* `Ar=`[`get_hessian`](@ref)`(TpM, slso, X, r)`
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`($(_link(:manifold_dimension)))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+$(_var(:Keyword, :X))
 
 # See also
 
@@ -300,7 +298,7 @@ from the [`conjugate_residual`](@ref)
 
 # Fields
 
-$(_field_at_iteration)
+$(_var(:Field, :at_iteration))
 * `c`: the initial norm
 * `ε`: the threshold
 * `norm_rk`: the last computed norm of the residual

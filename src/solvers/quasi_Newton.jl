@@ -10,7 +10,7 @@ all necessary fields.
 * `η`:                             the current update direction
 * `nondescent_direction_behavior`: a `Symbol` to specify how to handle direction that are not descent ones.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `p_old`:                         the last iterate
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
@@ -212,9 +212,7 @@ $(_var(:Argument, :p))
   and strictly increasing at ``0``
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
-* $(_kw_evaluation_default):
-  $(_kw_evaluation)
-  $(_kw_evaluation_example)
+$(_var(:Keyword, :evaluation; comment=_var(:evaluation, :GradientExample)))
 * `initial_operator= initial_scale*Matrix{Float64}(I, n, n)`:
    initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
    that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.

@@ -80,7 +80,7 @@ $(_var(:Argument, :p))
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stepsize=[`ArmijoLinesearch`](@ref)`(M)`: $_kw_stepsize
   via [`default_stepsize`](@ref)) passing on the `default_retraction_method`

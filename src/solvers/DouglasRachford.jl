@@ -12,7 +12,7 @@ Store all options required for the DouglasRachford algorithm,
 * `λ`:                         function to provide the value for the proximal parameter during the calls
 * `parallel`:                  indicate whether to use a parallel Douglas-Rachford or not.
 * `R`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
-* $(_field_iterate)
+$(_var(:Field, :p; comment=" storing the current iterate"))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
 * `reflection_evaluation`:     whether `R` works in-place or allocating
 * $(_field_retr)
@@ -179,7 +179,7 @@ $(_var(:Argument, :p))
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection
   involved in the DR algorithm and ``g`` is a curve induced by the retraction and its inverse.
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter ``λ_k``

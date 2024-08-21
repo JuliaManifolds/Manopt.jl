@@ -6,7 +6,7 @@ Describes the state of a gradient based descent algorithm.
 
 # Fields
 
-* $_field_iterate
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * $_field_gradient
 * $_field_stop
 * $_field_step
@@ -142,8 +142,7 @@ $(_note(:GradientObjective))
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref).
 
-* $_kw_evaluation_default:
-  $_kw_evaluation $_kw_evaluation_example
+$(_var(:Keyword, :evaluation; comment=_var(:evaluation, :GradientExample)))
 
 * $_kw_retraction_method_default:
   $_kw_retraction_method

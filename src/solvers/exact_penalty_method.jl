@@ -7,7 +7,7 @@ Describes the exact penalty method, with
 
 * `ϵ`: the accuracy tolerance
 * `ϵ_min`: the lower bound for the accuracy tolerance
-$(_var(:Field, :p))
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `ρ`: the penalty parameter
 * $(_field_sub_problem)
 * $(_field_sub_state)

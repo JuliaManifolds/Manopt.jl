@@ -14,7 +14,7 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* $_field_iterate
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * $_field_gradient
 * $_field_inv_retr
 * $_field_sub_problem
@@ -192,8 +192,7 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
-* $_kw_evaluation_default:
-  $_kw_evaluation $_kw_evaluation_example
+$(_var(:Keyword, :evaluation))
 
 * $_kw_retraction_method_default:
   $_kw_retraction_method

@@ -33,7 +33,7 @@ where `f` and the proximal maps `proxes_f` can also be given directly as a [`Man
 
 # Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Random`) or the default linear one.
 * `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``

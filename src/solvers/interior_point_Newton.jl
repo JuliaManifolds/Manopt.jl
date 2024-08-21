@@ -54,8 +54,7 @@ pass a [`ConstrainedManifoldObjective`](@ref) `cmo`
   This can be used to ensure that the resulting iterate is still an interior point if you provide a check `(N,q) -> true/false`,
   where `N` is the manifold of the `step_problem`.
 * `equality_constraints=nothing`: the number ``n`` of equality constraints.
-* `evaluation=`[`AllocatingEvaluation`](@ref)`()`:
-  specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.
+$(_var(:Keyword, :evaluation))
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints

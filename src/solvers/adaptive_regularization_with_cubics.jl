@@ -9,7 +9,7 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
 * `s`: the current solution from the subsolver
-* $_field_iterate
+$(_var(:Field, :p; comment=" storing the current iterate"))
 * `q`: a point for the candidates to evaluate model and ρ
 * $_field_gradient
 * `s`: the tangent vector step resulting from minimizing the model
@@ -35,6 +35,8 @@ Furthermore the following integral fields are defined
 
 Construct the solver state with all fields stated as keyword arguments and the following defaults
 
+## Keyword arguments
+
 * `η1=0.1`
 * `η2=0.9`
 * `γ1=0.1`
@@ -42,14 +44,14 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `σ=100/manifold_dimension(M)`
 * `σmin=1e-7
 * `ρ_regularization=1e3`
-* $_kw_evaluation_default
-* $(_kw_p_default)
+$(_var(:Keyword, :evaluation))
+$(_var(:Keyword, :p))
 * $_kw_retraction_method_default
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
 * `sub_objective=nothing` a shortcut to provide a subobjective.
 * `sub_problem=nothing` is set to [`DefaultManoptProblem`](@ref) on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
 * `sub_state` is set to [`AllocatingEvaluation`](@ref) if `sub_problem` is a function and to a [`LanczosState`](@ref) on the tangent space otherwise
-* $(_kw_X_default)
+$(_var(:Keyword, :X))
 """
 mutable struct AdaptiveRegularizationState{
     P,
@@ -236,14 +238,14 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
 * `η2=0.9`: upper model success threshold
 * `γ1=0.1`: regularization reduction factor (for the success case)
 * `γ2=2.0`: regularization increment factor (for the non-success case)
-* $_kw_evaluation_default:
-  $_kw_evaluation
+$(_var(:Keyword, :evaluation))
 * `initial_tangent_vector=zero_vector(M, p)`: initialize any tangent vector data,
 * `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 * $_kw_retraction_method_default:
   $_kw_retraction_method
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
+
+  * `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
   $_kw_stopping_criterion
 * $_kw_sub_kwargs_default:
   $_kw_sub_kwargs
