@@ -229,9 +229,9 @@ $(_var(:Argument, :f))
 * $_kw_retraction_method_default: $_kw_retraction_method
 * $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
 
-$_kw_others
+$(_note(:OtherKeywords))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_NelderMead)"

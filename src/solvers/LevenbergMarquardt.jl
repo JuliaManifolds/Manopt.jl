@@ -49,9 +49,9 @@ then the keyword `jacobian_tangent_basis` below is ignored
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`:
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_LM)"

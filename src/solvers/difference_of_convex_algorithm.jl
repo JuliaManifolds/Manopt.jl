@@ -167,9 +167,9 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
   $(_kw_used_in("sub_state"))
 * $(_kw_X_default): $(_kw_X)
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_DoC)"

@@ -190,7 +190,7 @@ The aim of the EPM is to find a solution of the constrained optimisation task
 
 $(_problem(:Constrained))
 
-where `M` is a Riemannian manifold, and ``f``, ``$(_math_sequence("g", "i", "1", "n"))`` and ``$(_math_sequence("h", "j", "1", "m"))``
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
 are twice continuously differentiable functions from `M` to ℝ.
 For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
 
@@ -262,9 +262,9 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_EPM)"

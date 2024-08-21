@@ -226,9 +226,9 @@ DC functions is obtained for ``s_k = 1`` and one can hence employ usual line sea
   a stopping criterion used withing the default `sub_state=`
   $(_kw_used_in("sub_state"))
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_DCPPA)"

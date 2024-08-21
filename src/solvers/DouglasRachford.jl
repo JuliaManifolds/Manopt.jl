@@ -193,9 +193,9 @@ $(_var(:Argument, :p))
   $(_kw_stopping_criterion)
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_Douglas_Rachford)"

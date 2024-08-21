@@ -134,7 +134,7 @@ $(_var(:Argument, :f))
 $_arg_grad_f
 $(_var(:Argument, :p))
 
-$_arg_alt_mgo
+$(_note(:GradientObjective))
 
 # Keyword arguments
 
@@ -157,14 +157,14 @@ $_arg_alt_mgo
 * $_kw_X_default:
   $_kw_X, the evaluated gradient ``$(_tex(:grad))f`` evaluated at ``p^{(k)}``.
 
-$_kw_others
+$(_note(:OtherKeywords))
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
-$_doc_remark_tutorial_debug
+$(_note(:TutorialMode))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_gradient_descent)"

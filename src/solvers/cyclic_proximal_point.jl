@@ -39,9 +39,9 @@ where `f` and the proximal maps `proxes_f` can also be given directly as a [`Man
 * `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`): $(_kw_stopping_criterion)
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_CPPA)"

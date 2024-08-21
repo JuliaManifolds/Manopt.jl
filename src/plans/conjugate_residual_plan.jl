@@ -3,7 +3,7 @@
 # Objective.
 _doc_CR_cost = """
 ```math
-f(X) = $(_tex(:frac, 1,2)) $(_tex(:norm, _tex(:Cal, "A")*"[X] + b"; index="p"))^2,\\qquad X ∈ $(_l_TpM()),
+f(X) = $(_tex(:frac, 1,2)) $(_tex(:norm, _tex(:Cal, "A")*"[X] + b"; index="p"))^2,\\qquad X ∈ $(_math(:TpM)),
 ```
 """
 @doc """
@@ -13,7 +13,7 @@ Model the objective
 
 $(_doc_CR_cost)
 
-defined on the tangent space ``$(_l_TpM)`` at ``p`` on the manifold ``$(_math(:M))``.
+defined on the tangent space ``$(_math(:TpM))`` at ``p`` on the manifold ``$(_math(:M))``.
 
 In other words this is an objective to solve ``$(_tex(:Cal, "A")) = -b(p)``
 for some linear symmetric operator and a vector function.

@@ -315,9 +315,9 @@ $(_var(:Argument, :p))
 For the case that no Hessian is provided, the Hessian is computed using finite difference, see
 [`ApproxHessianFiniteDifference`](@ref).
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 
 # See also
 [`truncated_conjugate_gradient_descent`](@ref)

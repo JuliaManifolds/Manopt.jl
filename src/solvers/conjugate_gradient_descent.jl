@@ -91,7 +91,7 @@ $(_var(:Argument, :p))
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_CG)"

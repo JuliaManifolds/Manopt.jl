@@ -253,9 +253,9 @@ $(_var(:Argument, :p))
 * `sub_state=`[`AllocatingEvaluation`](@ref)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_PBM)"

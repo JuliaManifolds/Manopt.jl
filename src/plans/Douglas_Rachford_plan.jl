@@ -22,7 +22,10 @@ reflect(M::AbstractManifold, pr::Function, x; kwargs...)
 
 Reflect the point `x` from the manifold `M` at point `p`, given by
 
-$_math_reflect
+```math
+$(_tex(:reflect))_p(q) = $(_tex(:retr))_p(-$(_tex(:invretr))_p q),
+```
+where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse retraction, respectively.
 
 This can also be done in place of `q`.
 

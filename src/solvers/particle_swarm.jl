@@ -24,7 +24,7 @@ Describes a particle swarm optimizing algorithm, with
 * `positional_best`:  storing the best position ``p_i`` every single swarm participant visited
 * `q`:                temporary storage for a point to avoid allocations during a step of the algorithm
 * `social_vec`:       temporary storage for a tangent vector related to `social_weight`
-* `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math_sequence("a","i","1","N"))``
+* `swarm`:            a set of points (of type `AbstractVector{P}`) on a manifold ``$(_math(:Sequence, "a","i","1","N"))``
 
 # Constructor
 
@@ -154,11 +154,7 @@ end
 # Constructors
 #
 _doc_swarm = raw"``S = \{s_1, \ldots, s_n\}``"
-_doc_velocities = raw"""
-```math
-  X_k^{(i)} = ω \, \operatorname{T}_{s_k^{(i)}\gets s_k^{(i-1)}}X_k^{(i-1)} + c r_1  \operatorname{retr}_{s_k^{(i)}}^{-1}(p_k^{(i)}) + s r_2 \operatorname{retr}_{s_k^{(i)}}^{-1}(p),
-```
-"""
+
 _doc_particle_update = raw"""
 ```math
 s_k^{(i+1)} = \operatorname{retr}_{s_k^{(i)}}(X_k^{(i)}),
@@ -200,14 +196,19 @@ The computation can be perfomed in-place of `swarm`.
 
 To this end, a swarm $_doc_swarm of particles is moved around the manifold `M` in the following manner.
 For every particle ``s_k^{(i)}`` the new particle velocities ``X_k^{(i)}`` are computed in every step ``i`` of the algorithm by
-$_doc_velocities
+
+```math
+X_k^{(i)} = ω $(_math(:vector_transport, :symbol, "s_k^{(i)", "s_k^{(i-1)}")) X_k^{(i-1)} + c r_1  $(_tex(:invretr))_{s_k^{(i)}}(p_k^{(i)}) + s r_2 $(_tex(:invretr))_{s_k^{(i)}}(p),
+```
+
 
 where
 * ``s_k^{(i)}`` is the current particle position,
 * ``ω`` denotes the inertia,
 * ``c`` and ``s`` are a cognitive and a social weight, respectively,
 * ``r_j``, ``j=1,2`` are random factors which are computed new for each particle and step
-* $_math_VT and $_math_inv_retr
+* $(_math(:vector_transport, :symbol)) is a vector transport, and
+* $(_tex(:invretr)) is an inverse retraction
 
 Then the position of the particle is updated as
 
@@ -242,10 +243,10 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 * `velocity`:                  a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles, per default a random tangent vector per initial position
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 If you provide the objective directly, these decorations can still be specified
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 @doc "$(_doc_PSO)"
 function particle_swarm(M::AbstractManifold, f; swarm_size=100, kwargs...)

@@ -172,9 +172,9 @@ then using the `cost=` keyword does not have any effect since if so, the cost is
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
 * $(_kw_retraction_method_default): $(_kw_retraction_method)
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_SGD)"

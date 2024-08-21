@@ -322,9 +322,9 @@ $(_var(:Argument, :p))
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
 * `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_convex_bundle_method)"

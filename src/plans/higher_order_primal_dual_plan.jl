@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     PrimalDualManifoldSemismoothNewtonObjective{E<:AbstractEvaluationType, TC, LO, ALO, PF, DPF, PG, DPG, L} <: AbstractPrimalDualManifoldObjective{E, TC, PF}
 
 Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. [DiepeveenLellmann:2021](@cite)
@@ -7,11 +7,11 @@ Describes a Problem for the Primal-dual Riemannian semismooth Newton algorithm. 
 
 * `cost`:                        ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_operator`:         the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `linearized_adjoint_operator`: the adjoint differential ``(DΛ)^* :  \mathcal N → T\mathcal M``
+* `linearized_adjoint_operator`: the adjoint differential ``(DΛ)^* : $(_math(:M; M="N")) → $(_math(:TM))``
 * `prox_F`:                      the proximal map belonging to ``F``
 * `diff_prox_F`:                 the (Clarke Generalized) differential of the proximal maps of ``F``
-* `prox_G_dual`:                 the proximal map belonging to ``g_n^*``
-* `diff_prox_dual_G`:            the (Clarke Generalized) differential of the proximal maps of ``G^\ast_n``
+* `prox_G_dual`:                 the proximal map belonging to `G^$(_tex(:ast))_n``
+* `diff_prox_dual_G`:            the (Clarke Generalized) differential of the proximal maps of ``G^$(_tex(:ast))_n``
 * `Λ`:                           the exact forward operator. This operator is required if `Λ(m)=n` does not hold.
 
 # Constructor
@@ -69,7 +69,7 @@ end
 # Fields
 
 $(_var(:Field, :p, "m"))
-$(_var(:Field, :p, "n"; M="N"))
+$(_var(:Field, :p, "n", "Q"; M="N"))
 $(_var(:Field, :p))
 $(_var(:Field, :X))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
@@ -96,7 +96,7 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
 ## Keyword arguments
 
 * `m=`$(Manopt._link(:rand))
-* `n=``$(Manopt._link(:rand; M="N"))
+* `n=`$(Manopt._link(:rand; M="N"))
 * `p=`$(Manopt._link(:rand))
 * `X=`$(Manopt._link(:zero_vector))
 * `primal_stepsize=1/sqrt(8)`

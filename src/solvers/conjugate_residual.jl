@@ -6,10 +6,10 @@
 
 Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 
-* ``$(_tex(:Cal, "A"))`` is a linear, symmetric operator on ``$(_l_TpM)``
+* ``$(_tex(:Cal, "A"))`` is a linear, symmetric operator on ``$(_math(:TpM))``
 * ``b`` is a vector field on the manifold
-* ``X ∈ $(_l_TpM)`` is a tangent vector
-* ``0_p`` is the zero vector ``$(_l_TpM)``.
+* ``X ∈ $(_math(:TpM))`` is a tangent vector
+* ``0_p`` is the zero vector ``$(_math(:TpM))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initalised with ``X^{(0)}`` as the zero vector and

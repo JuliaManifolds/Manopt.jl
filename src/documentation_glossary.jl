@@ -49,7 +49,9 @@ end
 
 # ---
 # LaTeX
+
 define!(:LaTeX, :argmin, raw"\operatorname{arg\,min}")
+define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
 define!(:LaTeX, :bigl, raw"\bigl")
 define!(:LaTeX, :bigr, raw"\bigr")
@@ -74,14 +76,38 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :description the description
-define!(:Math, :M, _tex(:Cal, "M"))
-define!(:Math, :Manifold, :symbol, _tex(:Cal, "M"))
+define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
+define!(:Math, :Manifold, :symbol, (; M="M") -> _tex(:Cal, M))
 define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :Iterate, (; p="p", k="k") -> "$(p)^{($(k))}")
+define!(
+    :Math,
+    :Sequence,
+    (var, ind, from, to) -> raw"\{" * "$(var)_$(ind)" * raw"\}" * "_{$(ind)=$from}^{$to}",
+)
+define!(:Math, :TM, (; M="M") -> _math(:TangentBundle, :symbol; M=M))
+define!(:Math, :TangentBundle, :symbol, (; M="M") -> "T$(_tex(:Cal, M))")
+define!(
+    :Math,
+    :TangentBundle,
+    :description,
+    (; M="M") -> "the tangent bundle of the manifold ``$(_math(:M; M=M))``",
+)
+define!(:Math, :TpM, (; M="M", p="p") -> _math(:TangentSpace, :symbol; M=M, p=p))
+define!(:Math, :TangentSpace, :symbol, (; M="M", p="p") -> "T_{$p}$(_tex(:Cal, M))")
+define!(
+    :Math,
+    :TangentSpace,
+    :description,
+    (; M="M", p="p") ->
+        "the tangent space at the point ``p`` on the manifold ``$(_math(:M; M=M))``",
+)
 define!(
     :Math, :vector_transport, :symbol, (a="⋅", b="⋅") -> raw"\mathcal T_{" * "$a←$b" * "}"
 )
 define!(:Math, :vector_transport, :name, "the vector transport")
 _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
+
 #
 # ---
 # Links
@@ -126,20 +152,27 @@ _var(args...; kwargs...) = glossary(:Variable, args...; kwargs...)
 define!(
     :Variable,
     :Argument,
-    (s::Symbol, display="$s"; type=false, kwargs...) ->
-        "* `$(display)$(type ? "::$(_var(s, :type))" : "")`: $(_var(s, :description;kwargs...))",
+    (s::Symbol, display="$s", t=_var(s, :type); type=false, kwargs...) ->
+        "* `$(display)$(type ? "::$(t)" : "")`: $(_var(s, :description;kwargs...))",
 )
 define!(
     :Variable,
     :Field,
-    (s::Symbol, display="$s"; kwargs...) ->
-        "* `$(display)::$(_var(s, :type))`: $(_var(s, :description; kwargs...))",
+    (s::Symbol, display="$s", t=_var(s, :type); kwargs...) ->
+        "* `$(display)::$(t)`: $(_var(s, :description; kwargs...))",
 )
 define!(
     :Variable,
     :Keyword,
-    (s::Symbol, display="$s"; type=false, description::Bool=true, kwargs...) ->
-        "* `$(display)$(type ? "::$(_var(s, :type))" : "")=`$(_var(s, :default;kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")",
+    (
+        s::Symbol,
+        display="$s",
+        t=_var(s, :type);
+        type=false,
+        description::Bool=true,
+        kwargs...,
+    ) ->
+        "* `$(display)$(type ? "::$(t)" : "")=`$(_var(s, :default;kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")",
 )
 #
 # Actual variables
@@ -151,6 +184,7 @@ define!(
     (; M="M", p="p") ->
         "a cost function ``f: $(_tex(:Cal, M))→ ℝ`` implemented as `($M, $p) -> v`",
 )
+define!(:Variable, :f, :type, "Any")
 
 define!(
     :Variable, :M, :description, (; M="M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
@@ -193,7 +227,6 @@ define!(:Variable, :X, :default, (; M="M", p="p") -> _link(:zero_vector; M=M, p=
 #
 # Notes / Remarks
 _note(args...; kwargs...) = glossary(:Note, args...; kwargs...)
-
 define!(
     :Note,
     :ManifoldDefaultFactory,
@@ -206,7 +239,34 @@ define!(
     unless provided with a value here.
 """,
 )
+define!(
+    :Note,
+    :GradientObjective,
+    (; objective="gradient_objective", f="f", grad_f="grad_f") -> """
+Alternatively to `$f` and `$grad_f` you can provide
+the corresponding [`AbstractManifoldGradientObjective`](@ref) `$objective` directly.
+""",
+)
+define!(
+    :Note,
+    :OtherKeywords,
+    "All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or [`decorate_objective!`](@ref) for objective decorators, respectively.",
+)
+define!(
+    :Note,
+    :OutputSection,
+    (; p_min="p^*") -> """
+# Output
 
+The obtained approximate minimizer ``$(p_min)``.
+To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+""",
+)
+define!(
+    :Note,
+    :TutorialMode,
+    "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings.",
+)
 define!(
     :Problem,
     :Constrained,
@@ -235,31 +295,6 @@ _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 
 # ---
 # Old strings
-# Semantics
-_l_TpM(p="p") = "T_{$p}$(_tex(:Cal, "M"))"
-_l_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_tex(:Cal, "N")))"
-_l_C_subset_M = "$(_tex(:Cal, "C")) ⊂ $(_tex(:Cal, "M"))"
-
-# Math terms
-_math_VT = raw"a vector transport ``T``"
-_math_inv_retr = "an inverse retraction ``$(_tex(:invretr))``"
-_math_retr = " a retraction $(_tex(:retr))"
-_math_reflect = raw"""
-```math
-  \operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x),
-```
-where ``\operatorname{retr}`` and ``\operatorname{retr}^{-1}`` denote a retraction and an inverse
-retraction, respectively.
-"""
-function _math_sequence(name, index, i_start=1, i_end="n")
-    return "\\{$(name)_{$index}\\}_{i=$(i_start)}^{$i_end}"
-end
-
-# Arguments of functions
-_arg_alt_mgo = raw"""
-Alternatively to `f` and `grad_f` you can provide
-the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
-"""
 
 # Arguments
 _arg_grad_f = raw"""
@@ -270,21 +305,12 @@ _arg_Hess_f = """
 * `Hess_f`: the Hessian ``$(_tex(:Hess))_long`` of f
   as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place
 """
-_arg_inline_M = "the manifold `M`"
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
 _arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem`."
 _arg_subgrad_f = raw"""
 * `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
   as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place.
   This function should always only return one element from the subgradient.
-"""
-
-_doc_remark_tutorial_debug = "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings."
-_doc_sec_output = """
-# Output
-
-The obtained approximate minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
 """
 
 # Fields
@@ -310,11 +336,6 @@ _kw_evaluation_example = "For example `grad_f(M,p)` allocates, but `grad_f!(M, X
 
 _kw_inverse_retraction_method_default = "`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
 _kw_inverse_retraction_method = "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
-
-_kw_others = raw"""
-All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
-[`decorate_objective!`](@ref) for objective, respectively.
-"""
 
 _kw_p_default = "`p=`$(Manopt._link(:rand))"
 _kw_p = raw"specify an initial value for the point `p`."

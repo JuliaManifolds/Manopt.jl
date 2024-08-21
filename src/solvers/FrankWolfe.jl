@@ -162,7 +162,7 @@ _doc_Frank_Wolfe_method = """
     Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
     Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
 
-Perform the Frank-Wolfe algorithm to compute for ``$_l_C_subset_M``
+Perform the Frank-Wolfe algorithm to compute for ``$(_tex(:Cal, "C")) ⊂ $(_tex(:Cal, "M"))``
 the constrained problem
 
 $_doc_FW_problem
@@ -188,7 +188,7 @@ $(_var(:Argument, :f))
 $_arg_grad_f
 $(_var(:Argument, :p))
 
-$_arg_alt_mgo
+$(_note(:GradientObjective))
 
 # Keyword arguments
 
@@ -234,7 +234,7 @@ $_arg_alt_mgo
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`:
   $_kw_stopping_criterion for the sub solver. $(_kw_used_in("sub_state"))
 
-$_kw_others
+$(_note(:OtherKeywords))
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.

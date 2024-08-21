@@ -13,7 +13,7 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 * `q`: a point for the candidates to evaluate model and ρ
 * $_field_gradient
 * `s`: the tangent vector step resulting from minimizing the model
-  problem in the tangent space ``$(_l_TpM())``
+  problem in the tangent space ``$(_math(:TpM))``
 * `σ`: the current cubic regularization parameter
 * `σmin`: lower bound for the cubic regularization parameter
 * `ρ_regularization`: regularization parameter for computing ρ.
@@ -201,7 +201,7 @@ Solve an optimization problem on the manifold `M` by iteratively minimizing
 
 $_doc_ARC_mdoel
 
-on the tangent space at the current iterate ``p_k``, where ``X ∈ $(_l_TpM("p_k"))`` and
+on the tangent space at the current iterate ``p_k``, where ``X ∈ $(_math(:TpM; p="p_k"))`` and
 ``σ_k > 0`` is a regularization parameter.
 
 Let ``Xp^{(k)}`` denote the minimizer of the model ``m_k`` and use the model improvement
@@ -253,14 +253,14 @@ the cost `f` and its gradient and Hessian might also be provided as a [`Manifold
   a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a function.
 * `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`: the problem (or a function) for the sub problem
 
-$_kw_others
+$(_note(:OtherKeywords))
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
-$_doc_remark_tutorial_debug
+$(_note(:TutorialMode))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$_doc_ARC"

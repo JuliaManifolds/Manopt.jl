@@ -311,26 +311,26 @@ where the operator is stored as a matrix. A distinction is made between the upda
 approximation of the Hessian, $_doc_QN_H_update, and the update of the approximation
 of the Hessian inverse, $_doc_QN_B_update.
 For the first case, the coordinates of the search direction ``η_k`` with respect to
-a basis ``$(_math_sequence("b", "i", "1", "n"))`` are determined by solving a linear system of equations
+a basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` are determined by solving a linear system of equations
 
 $_doc_QN_H_full_system
 
-where ``H_k`` is the matrix representing the operator with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``
+where ``H_k`` is the matrix representing the operator with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
 and ``\\widehat{$(_tex(:grad))} f(p_k)}`` represents the coordinates of the gradient of
-the objective function ``f`` in ``x_k`` with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``.
+the objective function ``f`` in ``x_k`` with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``.
 If a method is chosen where Hessian inverse is approximated, the coordinates of the search
-direction ``η_k`` with respect to a basis ``$(_math_sequence("b", "i", "1", "n"))`` are obtained simply by
+direction ``η_k`` with respect to a basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` are obtained simply by
 matrix-vector multiplication
 
 $_doc_QN_B_full_system
 
-where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``
+where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
 and `\\widehat{$(_tex(:grad))} f(p_k)}``. In the end, the search direction ``η_k`` is
-generated from the coordinates ``\\hat{eta_k}`` and the vectors of the basis ``$(_math_sequence("b", "i", "1", "n"))``
+generated from the coordinates ``\\hat{eta_k}`` and the vectors of the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
 in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
 In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}``
-and ``B_{k+1}``, and the basis ``$(_math_sequence("b", "i", "1", "n"))`` is transported into the upcoming tangent
+and ``B_{k+1}``, and the basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is transported into the upcoming tangent
 space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector transport, or generated there.
 
 # Provided functors

@@ -35,14 +35,14 @@ $(_var(:Field, :p))
         sub_problem, sub_state; kwargs...
     )
 
-construct an augmented Lagrangian method options, where $(_arg_inline_M) and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
+construct an augmented Lagrangian method options, where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
 manifold- or objective specific defaults.
 
     AugmentedLagrangianMethodState(M::AbstractManifold, co::ConstrainedManifoldObjective,
         sub_problem; evaluation=AllocatingEvaluation(), kwargs...
     )
 
-construct an augmented Lagrangian method options, where $(_arg_inline_M) and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
+construct an augmented Lagrangian method options, where the manifold `M` and the [`ConstrainedManifoldObjective`](@ref) `co` are used for
 manifold- or objective specific defaults, and `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
 
 ## Keyword arguments
@@ -233,7 +233,7 @@ The aim of the ALM is to find the solution of the constrained optimisation task
 
 $_problem(:Constrained)
 
-where `M` is a Riemannian manifold, and ``f``, ``$(_math_sequence("g", "i", "1", "n"))`` and ``$(_math_sequence("h", "j", "1", "m"))
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
  ``$(_doc_al_Cost("k"))`` is minimized on $(_tex(:Cal, "M")),
@@ -334,9 +334,9 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_alm)"

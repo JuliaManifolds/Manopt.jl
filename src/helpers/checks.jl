@@ -91,7 +91,7 @@ no plot is generated.
 # Keyword arguments
 
 * `check_vector=true`:
-  verify that ``$(_tex(:grad))f(p) ∈ $(_l_TpM())`` using `is_vector`.
+  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TpM))`` using `is_vector`.
 * `exactness_tol=1e-12`:
   if all errors are below this tolerance, the gradient is considered to be exact
 * `io=nothing`:
@@ -170,13 +170,13 @@ no plot is generated.
 # Keyword arguments
 
 * `check_grad=true`:
-  verify that ``$(_tex(:grad))f(p) ∈ $(_l_TpM())``.
+  verify that ``$(_tex(:grad))f(p) ∈ $(_math(:TpM))``.
 * `check_linearity=true`:
   verify that the Hessian is linear, see [`is_Hessian_linear`](@ref) using `a`, `b`, `X`, and `Y`
 * `check_symmetry=true`:
   verify that the Hessian is symmetric, see [`is_Hessian_symmetric`](@ref)
 * `check_vector=false`:
-  verify that `$(_tex(:Hess)) f(p)[X] ∈ $(_l_TpM())`` using `is_vector`.
+  verify that `$(_tex(:Hess)) f(p)[X] ∈ $(_math(:TpM))`` using `is_vector`.
 * `mode=:Default`:
   specify the mode for the verification; the default assumption is,
   that the retraction provided is of second order. Otherwise one can also verify the Hessian

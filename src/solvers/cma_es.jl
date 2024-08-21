@@ -368,9 +368,9 @@ setting.
 * `rng=default_rng()`: random number generator for generating new points
   on `M`
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 function cma_es(M::AbstractManifold, f; kwargs...)
     mco = ManifoldCostObjective(f)

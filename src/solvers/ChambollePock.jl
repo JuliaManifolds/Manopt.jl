@@ -191,6 +191,8 @@ function set_iterate!(apds::AbstractPrimalDualSolverState, p)
     return apds
 end
 
+_tex_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_tex(:Cal, "N")))"
+
 _doc_ChambollePock_formula = raw"""
 Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
 ```math
@@ -219,8 +221,8 @@ $(_var(:Argument, :p))
 $(_var(:Argument, :X))
 $(_var(:Argument, :p, "m"))
 $(_var(:Argument, :p, "n"; M="N"))
-* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$_l_DΛ``
-* `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^\\ast_n``
+* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
+* `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 note that depending on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
 as well as the forward operator `Λ` and the `linearized_forward_operator` can be given as
@@ -255,7 +257,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
   a vector transport ``$(_math(:vector_transport, :symbol))`` to use on $(_tex(:Cal, "N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_ChambollePock)"

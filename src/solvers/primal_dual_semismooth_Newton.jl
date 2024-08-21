@@ -4,7 +4,7 @@ Given a `cost` function ``\mathcal E: \mathcal M → \overline{ℝ}`` of the for
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where ``F: \mathcal M → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
-and ``\Lambda: \mathcal M → \mathcal N``. The remaining input parameters are
+and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
 """
 
 _doc_PDSN = """
@@ -17,9 +17,9 @@ $(_doc_PDSN_formula)
 * `p, X`:                          primal and dual start points ``p∈$(_math(:M))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
 * `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))`, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_l_TpM("m")) → T_{Λ(m)}$(_tex(:Cal, "N"))``
-* `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^\\ast_n``
-* `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^\\ast_n``
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p="m")) → $(_math(:TpM; M="N", p="Λ(m)"))``
+* `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
+* `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 
@@ -40,9 +40,9 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 * $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_PDSN)"
