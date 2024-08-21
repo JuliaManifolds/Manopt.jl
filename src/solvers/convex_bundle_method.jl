@@ -43,8 +43,8 @@ Generate the state for the [`convex_bundle_method`](@ref) on the manifold `M`
 ## Input
 
 $(_var(:Argument, :M; type=true))
-$_arg_sub_problem
-$_arg_sub_state
+$(_var(:Argument, :sub_problem))
+$(_var(:Argument, :sub_state))
 
 # Keyword arguments
 
@@ -299,7 +299,7 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$(_arg_subgrad_f)
+$(_var(:Argument, :subgrad_f, _var(:subgrad_f, :symbol)))
 $(_var(:Argument, :p))
 
 # Keyword arguments

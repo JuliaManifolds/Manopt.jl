@@ -34,8 +34,8 @@ construct an difference of convex proximal point state, where `sub_problem` is a
 ## Input
 
 $(_var(:Argument, :M; type=true))
-$_arg_sub_problem
-$_arg_sub_state
+$(_var(:Argument, :sub_problem))
+$(_var(:Argument, :sub_state))
 
 # Keyword arguments
 

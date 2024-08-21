@@ -233,7 +233,7 @@ For more details see [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$(_arg_subgrad_f)
+$(_var(:Argument, :subgrad_f, _var(:subgrad_f, :symbol)))
 $(_var(:Argument, :p))
 
 # Keyword arguments

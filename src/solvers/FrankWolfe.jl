@@ -40,8 +40,8 @@ Initialise the Frank Wolfe method state, where `sub_problem` is a closed form so
 ## Input
 
 $(_var(:Argument, :M; type=true))
-$_arg_sub_problem
-$_arg_sub_state
+$(_var(:Argument, :sub_problem))
+$(_var(:Argument, :sub_state))
 
 ## Keyword arguments
 

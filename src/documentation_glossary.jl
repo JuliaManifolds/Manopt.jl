@@ -151,14 +151,14 @@ _var(args...; kwargs...) = glossary(:Variable, args...; kwargs...)
 define!(
     :Variable,
     :Argument,
-    (s::Symbol, display="$s", t=_var(s, :type); type=false, kwargs...) ->
-        "* `$(display)$(type ? "::$(t)" : "")`: $(_var(s, :description;kwargs...))",
+    (s::Symbol, display="$s", t=""; type=false, kwargs...) ->
+        "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")`: $(_var(s, :description;kwargs...))",
 )
 define!(
     :Variable,
     :Field,
-    (s::Symbol, display="$s", t=_var(s, :type); kwargs...) ->
-        "* `$(display)::$(t)`: $(_var(s, :description; kwargs...))",
+    (s::Symbol, display="$s", t=""; kwargs...) ->
+        "* `$(display)::$(length(t) > 0 ? t : _var(s, :type))`: $(_var(s, :description; kwargs...))",
 )
 define!(
     :Variable,
@@ -166,12 +166,13 @@ define!(
     (
         s::Symbol,
         display="$s",
-        t=_var(s, :type);
+        t="";
+        default="",
         type=false,
         description::Bool=true,
         kwargs...,
     ) ->
-        "* `$(display)$(type ? "::$(t)" : "")=`$(_var(s, :default;kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")",
+        "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")=`$(length(default) > 0 ? default : _var(s, :default; kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")",
 )
 #
 # Actual variables
@@ -183,7 +184,6 @@ define!(
     (; M="M", p="p") ->
         "a cost function ``f: $(_tex(:Cal, M))→ ℝ`` implemented as `($M, $p) -> v`",
 )
-define!(:Variable, :f, :type, "Function")
 
 define!(
     :Variable,
@@ -192,7 +192,6 @@ define!(
     (; M="M", p="p") ->
         "the (Riemannian) gradient ``$(_tex(:grad))f``: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
-define!(:Variable, :grad_f, :type, "Function")
 
 define!(
     :Variable,
@@ -201,7 +200,6 @@ define!(
     (; M="M", p="p") ->
         "the (Riemannian) Hessian ``$(_tex(:Hess))f``: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
-define!(:Variable, :Hess_f, :type, "Function")
 
 define!(
     :Variable, :M, :description, (; M="M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
@@ -213,6 +211,60 @@ define!(
 )
 define!(:Variable, :p, :type, "P")
 define!(:Variable, :p, :default, (; M="M") -> _link(:rand; M=M))
+
+define!(
+    :Variable,
+    :stopping_criterion,
+    :description,
+    (; M="M") -> "a functor indicating that the stopping criterion is fulfilled.",
+)
+define!(:Variable, :stopping_criterion, :type, "StoppingCriterion")
+
+define!(
+    :Variable,
+    :sub_problem,
+    :description,
+    (; M="M") ->
+        " specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
+)
+define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
+
+define!(
+    :Variable,
+    :sub_problem,
+    :description,
+    (; M="M") ->
+        " specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
+)
+define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
+
+define!(
+    :Variable,
+    :sub_state,
+    :description,
+    (; M="M") ->
+        " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
+)
+define!(:Variable, :sub_state, :type, "Union{AbstractManoptProblem, F}")
+
+define!(:Variable, :subgrad_f, :symbol, "∂f")
+define!(
+    :Variable,
+    :subgrad_f,
+    :description,
+    (; M="M", p="p") -> """
+the subgradient ``∂f: $(_math(:M; M=M)) → $(_math(:TM; M=M))`` of f as a function `(M, p) -> X`
+or a function `(M, X, p) -> X` computing `X` in-place.
+This function should always only return one element from the subgradient.
+""",
+)
+define!(
+    :Variable,
+    :subgrad_f,
+    :description,
+    (; M="M") ->
+        " a state to specify the sub solver to use. For a closed form solution, this indicates the type of function.",
+)
 
 define!(
     :Variable,
@@ -234,8 +286,8 @@ define!(
     :Variable,
     :X,
     :description,
-    (; M="M", p="p") ->
-        "a tangent bector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``",
+    (; M="M", p="p", note="") ->
+        "a tangent bector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``. $note",
 )
 define!(:Variable, :X, :type, "X")
 define!(:Variable, :X, :default, (; M="M", p="p") -> _link(:zero_vector; M=M, p=p))
@@ -312,15 +364,6 @@ _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 
 # ---
 # Old strings
-
-# Arguments
-_arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
-_arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem`."
-_arg_subgrad_f = raw"""
-* `∂f`: the subgradient ``∂f: \mathcal M → T\mathcal M`` of f
-  as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place.
-  This function should always only return one element from the subgradient.
-"""
 
 # Fields
 _field_at_iteration = "`at_iteration`: an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case; "

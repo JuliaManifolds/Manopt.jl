@@ -68,8 +68,8 @@ are used to fill in reasonable defaults for the keywords.
 
 $(_var(:Argument, :M; type=true))
 * `cmo`:         a [`ConstrainedManifoldObjective`](@ref)
-$(_arg_sub_problem)
-$(_arg_sub_state)
+$(_var(:Argument, :sub_problem))
+$(_var(:Argument, :sub_state))
 
 # Keyword arguments
 

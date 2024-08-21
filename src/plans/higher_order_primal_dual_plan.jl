@@ -108,8 +108,7 @@ Generate a state for the [`primal_dual_semismooth_Newton`](@ref).
   $_kw_retraction_method
 * $_kw_inverse_retraction_method_default:
   $_kw_inverse_retraction_method
-* `stopping_criterion=`[`StopAfterIteration`](@ref)(50):
-  $_kw_stopping_criterion
+* $(_var(:Keyword, :stopping_criterion; default="`[`StopAfterIteration`](@ref)`(50)`"))
 * $_kw_vector_transport_method_default:
   $_kw_vector_transport_method
 

@@ -329,7 +329,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 * `sub_state=`[`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion.
   See also `sub_kwargs=`.
 
-* `stopping_criterion=$_sc_alm_default`: $_kw_stopping_criterion
+$(_var(:Keyword, :stopping_criterion; default= _sc_alm_default))
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
