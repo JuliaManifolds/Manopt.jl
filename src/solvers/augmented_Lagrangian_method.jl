@@ -269,7 +269,7 @@ where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$_arg_grad_f
+$(_var(:Argument, :grad_f))
 
 # Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
 

@@ -222,8 +222,8 @@ For more details see [AgarwalBoumalBullinsCartis:2020](@cite).
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$_arg_grad_f
-$_arg_Hess_f
+$(_var(:Argument, :grad_f))
+$(_var(:Argument, :Hess_f))
 $(_var(:Argument, :p))
 
 the cost `f` and its gradient and Hessian might also be provided as a [`ManifoldHessianObjective`](@ref)

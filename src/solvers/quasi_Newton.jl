@@ -196,7 +196,7 @@ The ``k``th iteration consists of
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$(_arg_grad_f)
+$(_var(:Argument, :grad_f))
 $(_var(:Argument, :p))
 
 # Keyword arguments

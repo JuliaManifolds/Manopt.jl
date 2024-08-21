@@ -131,7 +131,7 @@ The algorithm can be performed in-place of `p`.
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$_arg_grad_f
+$(_var(:Argument, :grad_f))
 $(_var(:Argument, :p))
 
 $(_note(:GradientObjective))

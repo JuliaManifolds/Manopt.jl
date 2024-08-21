@@ -185,7 +185,7 @@ use a retraction and its inverse.
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$_arg_grad_f
+$(_var(:Argument, :grad_f))
 $(_var(:Argument, :p))
 
 $(_note(:GradientObjective))

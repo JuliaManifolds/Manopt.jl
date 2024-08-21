@@ -143,9 +143,8 @@ define!(
 # for each variable as a symbol, we store
 # The variable name should be the symbol
 # :default – in positional or keyword arguments
-# :description – a text description of the variable (always functions)
+# :description – a text description of the variable
 # :type a type
-#
 _var(args...; kwargs...) = glossary(:Variable, args...; kwargs...)
 
 #Meta: How to format an argument, a field of a struct, and a keyword
@@ -184,7 +183,25 @@ define!(
     (; M="M", p="p") ->
         "a cost function ``f: $(_tex(:Cal, M))→ ℝ`` implemented as `($M, $p) -> v`",
 )
-define!(:Variable, :f, :type, "Any")
+define!(:Variable, :f, :type, "Function")
+
+define!(
+    :Variable,
+    :grad_f,
+    :description,
+    (; M="M", p="p") ->
+        "the (Riemannian) gradient ``$(_tex(:grad))f``: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+)
+define!(:Variable, :grad_f, :type, "Function")
+
+define!(
+    :Variable,
+    :Hess_f,
+    :description,
+    (; M="M", p="p") ->
+        "the (Riemannian) Hessian ``$(_tex(:Hess))f``: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+)
+define!(:Variable, :Hess_f, :type, "Function")
 
 define!(
     :Variable, :M, :description, (; M="M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
@@ -297,14 +314,6 @@ _sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
 # Old strings
 
 # Arguments
-_arg_grad_f = raw"""
-* `grad_f`: the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
-  as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place
-"""
-_arg_Hess_f = """
-* `Hess_f`: the Hessian ``$(_tex(:Hess))_long`` of f
-  as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place
-"""
 _arg_sub_problem = "* `sub_problem` a [`AbstractManoptProblem`](@ref) to specify a problem for a solver or a closed form solution function."
 _arg_sub_state = "* `sub_state` a [`AbstractManoptSolverState`](@ref) for the `sub_problem`."
 _arg_subgrad_f = raw"""

@@ -271,8 +271,8 @@ by default the [`truncated_conjugate_gradient_descent`](@ref) is used.
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$(_arg_grad_f)
-$(_arg_Hess_f)
+$(_var(:Argument, :grad_f))
+$(_var(:Argument, :Hess_f))
 $(_var(:Argument, :p))
 
 # Keyword arguments

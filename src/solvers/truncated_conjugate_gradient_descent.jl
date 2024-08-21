@@ -431,8 +431,8 @@ see [AbsilBakerGallivan:2006, ConnGouldToint:2000](@cite).
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-$(_arg_grad_f)
-$(_arg_Hess_f)
+$(_var(:Argument, :grad_f))
+$(_var(:Argument, :Hess_f))
 $(_var(:Argument, :p))
 $(_var(:Argument, :X))
 
