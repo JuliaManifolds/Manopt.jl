@@ -253,7 +253,7 @@ function __init__()
     #
     # Error Hints
     #
-    @static if isdefined(Base.Experimental, :register_error_hint)
+    @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
             if exc.f === convex_bundle_method_subsolver
                 print(
@@ -274,7 +274,7 @@ function __init__()
     #
     # Requires fallback for Julia < 1.9
     #
-    @static if !isdefined(Base, :get_extension)
+    @static if !isdefined(Base, :get_extension) # COV_EXCL_LINE
         @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin
             include("../ext/ManoptJuMPExt.jl")
         end

@@ -1,5 +1,3 @@
-#_doc_al_Cost() = "$(_tex(:Cal, "L"))_\\rho(p, μ, λ)"
-_doc_al_Cost(iter) = "$(_tex(:Cal, "L"))_{ρ^{($iter)}}(p, μ^{($iter)}, λ^{($iter)})"
 _doc_AL_Cost_long = raw"""
 ```math
 \mathcal L_\rho(p, μ, λ)
