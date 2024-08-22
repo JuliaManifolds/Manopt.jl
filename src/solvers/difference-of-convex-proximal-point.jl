@@ -10,9 +10,9 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 * $(_field_inv_retr)
 * $(_field_retr)
-$(_var(:Field, :p; comment=" storing the current iterate"))
-$(_var(:Field, :p, "q"; comment=" storing the gradient step"))
-$(_var(:Field, :p, "r"; comment=" storing the result of the proximal map"))
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p, "q"; add=" storing the gradient step"))
+$(_var(:Field, :p, "r"; add=" storing the result of the proximal map"))
 * $(_field_step)
 * $(_field_stop)
 * `X`, `Y`: the current gradient and descent direction, respectively
@@ -40,12 +40,12 @@ $(_var(:Argument, :sub_state))
 
 # Keyword arguments
 
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_p_default): $(_kw_p)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :retraction_method))
 * `stepsize=`[`ConstantStepsize`](@ref)`(M)`: $(_kw_stepsize)
 * `stopping_criterion=`[StopWhenChangeLess`](@ref)`(1e-8)`: $(_kw_stopping_criterion)
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 """
 mutable struct DifferenceOfConvexProximalState{
     P,
@@ -197,8 +197,8 @@ $(_var(:Keyword, :evaluation))
 * `prox_g=nothing`: specify a proximal map for the sub problem _or_ both of the following
 * `g=nothing`: specify the function `g`.
 * `grad_g=nothing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
-* $(_kw_inverse_retraction_method_default); $(_kw_inverse_retraction_method)
-* $(_kw_retraction_method_default); $(_kw_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 * `stepsize=`[`ConstantStepsize`](@ref)`(M)`): $(_kw_stepsize)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`):
   $(_kw_stopping_criterion)

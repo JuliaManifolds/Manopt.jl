@@ -21,8 +21,7 @@ no plot is generated,
 * `name="differential"`: name to display in the plot
 * `plot=false`: whether to plot the result (if `Plots.jl` is loaded).
   The plot is in log-log-scale. This is returned and can then also be saved.
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 * `slope_tol=0.1`: tolerance for the slope (global) of the approximation
 * `throw_error=false`: throw an error message if the differential is wrong
 * `window=nothing`: specify window sizes within the `log_range` that are used for
@@ -107,8 +106,7 @@ no plot is generated.
 * `plot=false`:
   whether to plot the result (if `Plots.jl` is loaded).
   The plot is in log-log-scale. This is returned and can then also be saved.
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
 * `atol`=:none`:
@@ -204,8 +202,7 @@ no plot is generated.
   number of points to use within the `log_range` default range ``[10^{-8},10^{0}]``
 * `plot=false`:
   whether to plot the resulting verification (requires `Plots.jl` to be loaded). The plot is in log-log-scale. This is returned and can then also be saved.
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
 * `error=:none`:

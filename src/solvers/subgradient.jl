@@ -5,7 +5,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `p_star`: optimal value
 * $(_field_retr)
 * $(_field_step)
@@ -20,12 +20,12 @@ Initialise the Subgradient method state
 
 # Keyword arguments
 
-* $(_kw_p_default): $(_kw_p)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :p; add=:as_Initial))
 * `stepsize=`[`default_stepsize`](@ref)`(M, SubGradientMethodState)`,
   which here defaults to [`ConstantStepsize`](@ref)`(M)`
 * `stopping_criterion=[`StopAfterIteration`](@ref)`(5000)`: $(_kw_stopping_criterion)
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 """
 mutable struct SubGradientMethodState{
     TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T
@@ -111,11 +111,11 @@ alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` c
 # Keyword arguments
 
 $(_var(:Keyword, :evaluation))
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stepsize=`[`default_stepsize`](@ref)`(M, SubGradientMethodState)`: $(_kw_stepsize)
   which here defaults to [`ConstantStepsize`](@ref)`(M)`
 * `stopping_criterion=[`StopAfterIteration`](@ref)`(5000)`: $(_kw_stopping_criterion)
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 

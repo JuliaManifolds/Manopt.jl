@@ -11,7 +11,7 @@ A general super type for all solver states.
 The following fields are assumed to be default. If you use different ones,
 adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `stop` a [`StoppingCriterion`](@ref).
 """
 abstract type AbstractManoptSolverState end

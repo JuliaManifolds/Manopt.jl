@@ -359,7 +359,7 @@ space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector tr
 ## Keyword arguments
 
 * `initial_scale=1.0`
-* $_kw_vector_transport_method_default
+$(_var(:Keyword, :vector_transport_method))
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields.
 

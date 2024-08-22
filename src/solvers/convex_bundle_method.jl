@@ -19,13 +19,13 @@ point type `P` and a tangent vector type `T``
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
 * `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
 * $(_field_retr)
 * $(_field_stop)
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
 * $(_field_vector_transp)
-* $(_field_subgradient)
+$(_var(:Field, :X; add=[:as_Subgradient]))
 * $(_field_step)
 * `ε::R`:                      convex combination of the linearization errors
 * `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
@@ -57,13 +57,13 @@ Most of the following keyword arguments set default values for the fields mentio
 * `diameter=50.0`
 * `domain=(M, p) -> isfinite(f(M, p))`
 * `k_max=0`
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref)
 * `sub_state=[`AllocatingEvaluation`](@ref)
 
@@ -313,12 +313,11 @@ $(_var(:Argument, :p))
 $(_var(:Keyword, :evaluation))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
 * `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))$(_var(:Keyword, :inverse_retraction_method))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 * `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
 * `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.
 

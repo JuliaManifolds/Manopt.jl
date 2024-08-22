@@ -14,8 +14,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
-* $_field_gradient
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :X; add=[:as_Gradient]))
 * $_field_inv_retr
 * $_field_sub_problem
 * $_field_sub_state
@@ -45,12 +45,12 @@ $(_var(:Argument, :sub_state))
 
 ## Keyword arguments
 
-* $(_kw_p_default): $(_kw_p)
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)` $_kw_stop_note
 * `stepsize=`[`default_stepsize`](@ref)`(M, FrankWolfeState)`
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 
 where the remaining fields from before are keyword arguments.
 """
@@ -193,9 +193,7 @@ $(_note(:GradientObjective))
 # Keyword arguments
 
 $(_var(:Keyword, :evaluation))
-
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 
 * `stepsize=`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`:
   $_kw_stepsize, where the default is the step size $_doc_FW_sk_default
@@ -203,8 +201,7 @@ $(_var(:Keyword, :evaluation))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)
   $_kw_stopping_criterion
 
-* $_kw_X_default:
-  $_kw_X, the evaluated gradient ``$(_tex(:grad))f`` evaluated at ``p^{(k)}``.
+$(_var(:Keyword, :X; add=:as_Gradient))
 
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_kw_used_in("sub_objective"))

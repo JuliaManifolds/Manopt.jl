@@ -81,12 +81,12 @@ $(_var(:Argument, :p))
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
 $(_var(:Keyword, :evaluation))
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stepsize=[`ArmijoLinesearch`](@ref)`(M)`: $_kw_stepsize
   via [`default_stepsize`](@ref)) passing on the `default_retraction_method`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $(_kw_stopping_criterion)
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.

@@ -35,7 +35,7 @@ set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 
 * `λ`:           the Lagrange multiplier with respect to the equality constraints
 * `μ`:           the Lagrange multiplier with respect to the inequality constraints
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `s`:           the current slack variable
 * `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the subsolver
 * `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the subsolver
@@ -75,7 +75,7 @@ $(_var(:Argument, :sub_state))
 
 Let `m` and `n` denote the number of inequality and equality constraints, respectively
 
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `μ=ones(m)`
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`
 * `Y=zero(μ)`

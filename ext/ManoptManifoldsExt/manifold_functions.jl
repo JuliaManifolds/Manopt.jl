@@ -124,10 +124,8 @@ This can also be done in place of `q`.
 
 ## Keyword arguments
 
-* $_kw_retraction_method_default
-  the retraction to use in the reflection
-* $_kw_inverse_retraction_method_default
-  the inverse retraction to use within the reflection
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :inverse_retraction_method))
 
 and for the `reflect!` additionally
 

@@ -452,7 +452,7 @@ $(_var(:Keyword, :evaluation))
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
   This disables preconditioning.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
   $(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`
   $(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`:

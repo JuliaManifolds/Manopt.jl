@@ -250,8 +250,7 @@ with keywords.
 * `candidate_point=`(`allocate_result(M, rand)`)
 * `η=-`[`get_gradient`](@ref)`(mp, get_iterate(s))`
 * `initial_stepsize=1.0`
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
 * `last_stepsize=initialstepsize`
@@ -393,8 +392,7 @@ perform a line search
 
 ## Keyword arguments
 
-* $_kw_retraction_method_default
-  $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: to avoid numerical underflow
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p) / norm(M, p, η)`) to avoid leaving the injectivity radius on a manifold
 * `stop_increasing_at_step=100`: stop the initial increase of step size after these many steps
@@ -588,7 +586,7 @@ $_doc_NM_final
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 * `stepsize_reduction=0.5`:   step size reduction factor contained in the interval (0,1)
 * `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval (0,1)
-* `vector_transport_method`:  the vector transport method to use
+$(_var(:Keyword, :vector_transport_method))
 * `candidate_point`:          to store an interim result
 
 Furthermore the following fields act as safeguards
@@ -613,7 +611,7 @@ geerate the monotone linesearch
 * `memory_size=10`
 * `bb_min_stepsize=1e-3`
 * `bb_max_stepsize=1e3`
-* $_kw_retraction_method_default
+$(_var(:Keyword, :retraction_method))
 * `strategy=direct`
 * `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``
 * `stepsize_reduction=0.5`
@@ -622,7 +620,7 @@ geerate the monotone linesearch
 * `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p)`)
 * `stop_increasing_at_step=100`
 * `stop_decreasing_at_step=1000`
-* $_kw_vector_transport_method_default
+$(_var(:Keyword, :vector_transport_method))
 
 The constructor return the functor to perform nonmonotone line search.
 """
@@ -1098,10 +1096,8 @@ $_doc_WPBL_algorithm
 ## Keyword arguments
 
 * `stop_when_stepsize_less = 0.0`: a numerical barrier when to stop due to underflow
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
-* $_kw_vector_transport_method_default:
-  $_kw_vector_transport_method
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method)):
 """
 mutable struct WolfePowellBinaryLinesearch{
     TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,F

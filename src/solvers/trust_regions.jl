@@ -10,7 +10,7 @@ Store the state of the trust-regions solver.
   that decides if the iteration is accepted or not.
 * `HX`, `HY`, `HZ`:          interim storage (to avoid allocation) of ``$(_tex(:Hess)) f(p)[⋅]` of `X`, `Y`, `Z`
 * `max_trust_region_radius`: the maximum trust-region radius
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * $(_field_stop)
@@ -21,7 +21,7 @@ $(_var(:Field, :p; comment=" storing the current iterate"))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
   This field has no effect, when `randomize` is false.
 * `trust_region_radius`: the trust-region radius
-* $(_field_X)
+$(_var(:Field, :X))
 * `Y`:                       the solution (tangent vector) of the subsolver
 * `Z`:                       the Cauchy point (only used if random is activated)
 
@@ -48,7 +48,7 @@ $(_var(:Argument, :sub_state))
 
 * `acceptance_rate=0.1`
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `project!=copyto!`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
@@ -56,7 +56,7 @@ $(_var(:Argument, :sub_state))
 * `ρ_regularization=10000.0`
 * `θ=1.0`
 * `trust_region_radius=max_trust_region_radius / 8`
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 
 # See also
 
@@ -298,7 +298,7 @@ $(_var(:Keyword, :evaluation))
 * `reduction_factor=0.25`: trust-region reduction factor
 * `reduction_threshold=0.1`: trust-region reduction threshold: if ρ is below this threshold,
   the trust region radius is reduced by `reduction_factor`.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
 * $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)

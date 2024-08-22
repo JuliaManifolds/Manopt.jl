@@ -26,7 +26,7 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 
 ## Keyword arguments
 
-* $_kw_X_default: the iterate using the manifold of the tangent space.
+$(_var(:Keyword, :X; add="as the iterate"))
 * `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`:

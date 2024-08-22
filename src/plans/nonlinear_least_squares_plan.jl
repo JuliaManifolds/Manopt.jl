@@ -138,7 +138,7 @@ Describes a Gradient based descent algorithm, with
 
 A default value is given in brackets if a parameter can be left out in initialization.
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * $_field_stop
 * $_field_retr
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
@@ -171,7 +171,7 @@ The following fields are keyword arguments
 * `η=0.2`,
 * `expect_zero_residual=false`
 * `initial_gradient=`$(_link(:zero_vector))
-* $_kw_retraction_method_default
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`
 
 # See also

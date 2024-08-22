@@ -67,7 +67,7 @@ after the description
 * `γ` the expansion parameter ``γ > 0``:
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
-$(_var(:Field, :p; comment=" storing the current best point"))
+$(_var(:Field, :p; add=" storing the current best point"))
 * $_field_retr
 * $_field_inv_retr
 
@@ -87,8 +87,8 @@ Construct a Nelder-Mead Option with a default population (if not provided) of se
 * `γ=2.0` expansion parameter ``γ``:
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-* $_kw_retraction_method_default: $_kw_retraction_method
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 * `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
 """
 mutable struct NelderMeadState{
@@ -226,8 +226,8 @@ $(_var(:Argument, :f))
 * `γ=2.0` expansion parameter ``γ``:
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-* $_kw_retraction_method_default: $_kw_retraction_method
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 
 $(_note(:OtherKeywords))
 

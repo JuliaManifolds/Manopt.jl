@@ -140,6 +140,78 @@ define!(
     :AbstractManifold,
     "[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)",
 )
+#
+#
+# Notes / Remarks
+_note(args...; kwargs...) = glossary(:Note, args...; kwargs...)
+define!(
+    :Note,
+    :ManifoldDefaultFactory,
+    (type::String) -> """
+!!! info
+    This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`]()@ref).
+    If you do not provide a manifold, the manifold `M` later provided to (usually) generate
+    the corresponding [`AbstractManoptSolverState`](@ref) will be used.
+    This affects all arguments and keyword argumentss with defaults that depend on the manifold,
+    unless provided with a value here.
+""",
+)
+define!(
+    :Note,
+    :GradientObjective,
+    (; objective="gradient_objective", f="f", grad_f="grad_f") -> """
+Alternatively to `$f` and `$grad_f` you can provide
+the corresponding [`AbstractManifoldGradientObjective`](@ref) `$objective` directly.
+""",
+)
+define!(
+    :Note,
+    :OtherKeywords,
+    "All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or [`decorate_objective!`](@ref) for objective decorators, respectively.",
+)
+define!(
+    :Note,
+    :OutputSection,
+    (; p_min="p^*") -> """
+# Output
+
+The obtained approximate minimizer ``$(p_min)``.
+To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+""",
+)
+define!(
+    :Note,
+    :TutorialMode,
+    "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings.",
+)
+define!(
+    :Problem,
+    :Constrained,
+    (; M="M", p="p") -> """
+    ```math
+\\begin{aligned}
+\\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
+$(_tex(:text, "subject to")) &g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
+\\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+\\end{aligned}
+```
+""",
+)
+define!(
+    :Problem,
+    :Default,
+    (; M="M", p="p") -> "\n```math\n$(_tex(:argmin))_{$p ∈ $(_tex(:Cal, M))} f($p)\n```\n",
+)
+_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+#
+#
+# Stopping Criteria
+define!(:StoppingCriterion, :Any, "[` | `](@ref StopWhenAny)")
+define!(:StoppingCriterion, :All, "[` & `](@ref StopWhenAll)")
+_sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
+
+#
+#
 # ---
 # Variables
 # in fields, keyword arguments, parameters
@@ -154,29 +226,46 @@ _var(args...; kwargs...) = glossary(:Variable, args...; kwargs...)
 define!(
     :Variable,
     :Argument,
-    (s::Symbol, display="$s", t=""; type=false, kwargs...) ->
-        "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")`: $(_var(s, :description;kwargs...))",
+    # for the symbol s (possibly with special type t)
+    # d is the symbol to display, for example for Argument p that in some signatures is called q
+    # t is its type (if different from the default _var(s, :type))
+    # type= determines whether to display the default or passed type
+    # add=[] adds more information from _var(s, add[i]; kwargs...) sub fields
+    function (s::Symbol, d="$s", t=""; type=false, add="", kwargs...)
+        # create type to display
+        disp_type = type ? "::$(length(t) > 0 ? t : _var(s, :type))" : ""
+        addv = !isa(add, Vector) ? [add] : add
+        disp_add = join([a isa Symbol ? _var(s, a; kwargs...) : "$a" for a in addv])
+        return "* `$(d)$(disp_type)`: $(_var(s, :description;kwargs...))$(disp_add)"
+    end,
 )
 define!(
     :Variable,
     :Field,
-    (s::Symbol, display="$s", t=""; comment="", kwargs...) ->
-        "* `$(display)::$(length(t) > 0 ? t : _var(s, :type))`: $(_var(s, :description; kwargs...))$(comment)",
+    function (s::Symbol, d="$s", t=""; type=true, add="", kwargs...)
+        disp_type = type ? "::$(length(t) > 0 ? t : _var(s, :type))" : ""
+        addv = !isa(add, Vector) ? [add] : add
+        disp_add = join([a isa Symbol ? _var(s, a; kwargs...) : "$a" for a in addv])
+        return "* `$(d)$(disp_type)`: $(_var(s, :description; kwargs...))$(disp_add)"
+    end,
 )
 define!(
     :Variable,
     :Keyword,
-    (
+    function (
         s::Symbol,
         display="$s",
         t="";
         default="",
-        comment="",
+        add="",
         type=false,
         description::Bool=true,
         kwargs...,
-    ) ->
-        "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")=`$(length(default) > 0 ? default : _var(s, :default; kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")$(comment)",
+    )
+        addv = !isa(add, Vector) ? [add] : add
+        disp_add = join([a isa Symbol ? _var(s, a; kwargs...) : "$a" for a in addv])
+        return "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")=`$(length(default) > 0 ? default : _var(s, :default; kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")$(disp_add)"
+    end,
 )
 #
 # Actual variables
@@ -208,8 +297,9 @@ define!(
     :Variable,
     :f,
     :description,
-    (; M="M", p="p") ->
-        "a cost function ``f: $(_tex(:Cal, M))→ ℝ`` implemented as `($M, $p) -> v`",
+    function (; M="M", p="p")
+        return "a cost function ``f: $(_tex(:Cal, M))→ ℝ`` implemented as `($M, $p) -> v`"
+    end,
 )
 
 define!(
@@ -229,6 +319,20 @@ define!(
 )
 
 define!(
+    :Variable,
+    :inverse_retraction_method,
+    :description,
+    "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)",
+)
+define!(:Variable, :inverse_retraction_method, :type, "AbstractInverseRetractionMethod")
+define!(
+    :Variable,
+    :inverse_retraction_method,
+    :default,
+    "[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
+)
+
+define!(
     :Variable, :M, :description, (; M="M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
 )
 define!(:Variable, :M, :type, "`$(_link(:AbstractManifold))` ")
@@ -238,6 +342,22 @@ define!(
 )
 define!(:Variable, :p, :type, "P")
 define!(:Variable, :p, :default, (; M="M") -> _link(:rand; M=M))
+define!(:Variable, :p, :as_Iterate, "storing the current iterate")
+define!(:Variable, :p, :as_Initial, "to specify the initial value")
+
+define!(
+    :Variable,
+    :retraction_method,
+    :description,
+    "a retraction ``$(_tex(:retr))`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)",
+)
+define!(:Variable, :retraction_method, :type, "AbstractRetractionMethod")
+define!(
+    :Variable,
+    :retraction_method,
+    :default,
+    "[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
+)
 
 define!(
     :Variable,
@@ -313,88 +433,19 @@ define!(
     :Variable,
     :X,
     :description,
-    (; M="M", p="p", note="") ->
-        "a tangent vector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``. $note",
+    (; M="M", p="p") ->
+        "a tangent vector at the point ``$p`` on the manifold ``$(_tex(:Cal, M))``",
 )
 define!(:Variable, :X, :type, "T")
 define!(:Variable, :X, :default, (; M="M", p="p") -> _link(:zero_vector; M=M, p=p))
-
-#
-#
-# Notes / Remarks
-_note(args...; kwargs...) = glossary(:Note, args...; kwargs...)
-define!(
-    :Note,
-    :ManifoldDefaultFactory,
-    (type::String) -> """
-!!! info
-    This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`]()@ref).
-    If you do not provide a manifold, the manifold `M` later provided to (usually) generate
-    the corresponding [`AbstractManoptSolverState`](@ref) will be used.
-    This affects all arguments and keyword argumentss with defaults that depend on the manifold,
-    unless provided with a value here.
-""",
-)
-define!(
-    :Note,
-    :GradientObjective,
-    (; objective="gradient_objective", f="f", grad_f="grad_f") -> """
-Alternatively to `$f` and `$grad_f` you can provide
-the corresponding [`AbstractManifoldGradientObjective`](@ref) `$objective` directly.
-""",
-)
-define!(
-    :Note,
-    :OtherKeywords,
-    "All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or [`decorate_objective!`](@ref) for objective decorators, respectively.",
-)
-define!(
-    :Note,
-    :OutputSection,
-    (; p_min="p^*") -> """
-# Output
-
-The obtained approximate minimizer ``$(p_min)``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
-""",
-)
-define!(
-    :Note,
-    :TutorialMode,
-    "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings.",
-)
-define!(
-    :Problem,
-    :Constrained,
-    (; M="M", p="p") -> """
-    ```math
-\\begin{aligned}
-\\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
-$(_tex(:text, "subject to")) &g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
-\\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
-\\end{aligned}
-```
-""",
-)
-define!(
-    :Problem,
-    :Default,
-    (; M="M", p="p") -> "\n```math\n$(_tex(:argmin))_{$p ∈ $(_tex(:Cal, M))} f($p)\n```\n",
-)
-_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
-#
-#
-# Stopping Criteria
-define!(:StoppingCriterion, :Any, "[` | `](@ref StopWhenAny)")
-define!(:StoppingCriterion, :All, "[` & `](@ref StopWhenAll)")
-_sc(args...; kwargs...) = glossary(:StoppingCriterion, args...; kwargs...)
+define!(:Variable, :X, :as_Gradient, "storing the gradient at the current iterate")
+define!(:Variable, :X, :as_Subgradient, "storing a subgradient at the current iterate")
+define!(:Variable, :X, :as_Memory, "to specify the representation of a tangent vector")
 
 # ---
 # Old strings
 
 # Fields
-_field_gradient = "`X`: the current gradient ``$(_tex(:grad))f(p^{(k)}) ∈ T_p$(_math(:M))``"
-_field_subgradient = "`X` : the current subgradient ``$(_tex(:subgrad))f(p^{(k)}) ∈ T_p$(_tex(:Cal, "M"))``"
 _field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_tex(:invretr))``"
 _field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$(_tex(:retr))``"
 _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
@@ -402,19 +453,10 @@ _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`A
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
 _field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$(_math(:vector_transport, :symbol))``"
-_field_X = "`X`: a tangent vector"
 
 #
 #
 # Keywords
-_kw_inverse_retraction_method_default = "`inverse_retraction_method=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_inverse_retraction_method = "an inverse retraction ``$(_tex(:invretr))`` to use, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`)."
-
-_kw_p_default = "`p=`$(Manopt._link(:rand))"
-_kw_p = raw"specify an initial value for the point `p`."
-
-_kw_retraction_method_default = raw"`retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_retraction_method = "a retraction ``$(_tex(:retr))`` to use, see [the section on retractions](@extref ManifoldsBase :doc:`retractions`)."
 
 _kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a step size"
 
@@ -428,13 +470,6 @@ _kw_sub_objective = "a shortcut to modify the objective of the subproblem used w
 function _kw_sub_objective_default_text(type::String)
     return "By default, this is initialized as a [`$type`](@ref), which can further be decorated by using the `sub_kwargs=` keyword"
 end
-
-_kw_vector_transport_method_default = "`vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(M, typeof(p))`"
-_kw_vector_transport_method = "a vector transport ``$(_math(:vector_transport, :symbol))`` to use, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`)."
-
-_kw_X_default = "`X=`$(_link(:zero_vector))"
-_kw_X = raw"specify a memory internally to store a tangent vector"
-_kw_X_init = raw"specify an initial value for the tangent vector"
 
 function _kw_used_in(s::String)
     return "This is used to define the `$s=` keyword and has hence no effect, if you set `$s` directly."

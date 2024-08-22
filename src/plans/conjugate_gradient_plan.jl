@@ -27,7 +27,7 @@ specify options for a conjugate gradient descent algorithm, that solves a
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
@@ -49,12 +49,12 @@ and `δ` is initialized to a copy of this vector.
 
 The following fields from above <re keyword arguments
 
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`
 * `stepsize=[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`)
 * `stop=[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
-* $_kw_retraction_method_default
-* $_kw_vector_transport_method_default
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
 
 # See also
 

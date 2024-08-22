@@ -2,8 +2,7 @@ module ManoptManifoldsExt
 
 using ManifoldsBase: exp, log, ParallelTransport, vector_transport_to
 using Manopt
-using Manopt:
-    _tex, _var, _kw_retraction_method_default, _kw_inverse_retraction_method_default
+using Manopt: _tex, _var
 import Manopt:
     max_stepsize,
     alternating_gradient_descent,

@@ -230,7 +230,7 @@ $_doc_ApproxHessian_formula
 * `gradient!!`:              the gradient function (either allocating or mutating, see `evaluation` parameter)
 * `step_length`:             a step length for the finite difference
 * `retraction_method`:       a retraction to use
-* `vector_transport_method`: a vector transport to use
+$(_var(:Keyword, :vector_transport_method))
 
 ## Internal temporary fields
 
@@ -246,10 +246,8 @@ $_doc_ApproxHessian_formula
 
 $(_var(:Keyword, :evaluation))
 * `steplength=`2^{-14}``: step length ``c`` to approximate the gradient evaluations
-* $_kw_retraction_method_default
-  $_kw_retraction_method
-* $_kw_vector_transport_method_default
-  $_kw_vector_transport_method
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
 """
 mutable struct ApproxHessianFiniteDifference{E,P,T,G,RTR,VTR,R<:Real} <:
                AbstractApproxHessian
@@ -320,7 +318,7 @@ A functor to approximate the Hessian by the symmetric rank one update.
 
 * `gradient!!`: the gradient function (either allocating or mutating, see `evaluation` parameter).
 * `ν`: a small real number to ensure that the denominator in the update does not become too small and thus the method does not break down.
-* `vector_transport_method`: a vector transport to use.
+$(_var(:Keyword, :vector_transport_method)).
 
 ## Internal temporary fields
 
@@ -339,7 +337,7 @@ A functor to approximate the Hessian by the symmetric rank one update.
 * `basis` (`DefaultOrthonormalBasis()`) an orthonormal basis in the tangent space of the initial iterate p.
 * `nu` (`-1`)
 $(_var(:Keyword, :evaluation))
-* `vector_transport_method` (`ParallelTransport()`) vector transport ``$(_math(:vector_transport, :symbol))`` to use.
+$(_var(:Keyword, :vector_transport_method))
 """
 mutable struct ApproxHessianSymmetricRankOne{E,P,G,T,B<:AbstractBasis{ℝ},VTR,R<:Real} <:
                AbstractApproxHessian
@@ -361,9 +359,9 @@ function ApproxHessianSymmetricRankOne(
     basis::B=DefaultOrthonormalBasis(),
     nu::R=-1.0,
     evaluation=AllocatingEvaluation(),
-    vector_transport_method::VTR=ParallelTransport(),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {
-    mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTR<:AbstractVectorTransportMethod
+    mT<:AbstractManifold,P,G,B<:AbstractBasis{ℝ},R<:Real,VTM<:AbstractVectorTransportMethod
 }
     if evaluation isa AllocatingEvaluation
         grad_tmp = gradient(M, p)
@@ -372,7 +370,7 @@ function ApproxHessianSymmetricRankOne(
         gradient(M, grad_tmp, p)
     end
 
-    return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTR,R}(
+    return ApproxHessianSymmetricRankOne{typeof(evaluation),P,G,typeof(grad_tmp),B,VTM,R}(
         p, gradient, grad_tmp, initial_operator, basis, vector_transport_method, nu
     )
 end
@@ -466,7 +464,7 @@ A functor to approximate the Hessian by the BFGS update.
 
 * `gradient!!` the gradient function (either allocating or mutating, see `evaluation` parameter).
 * `scale`
-* `vector_transport_method` a vector transport to use.
+$(_var(:Field, :vector_transport_method))
 
 ## Internal temporary fields
 

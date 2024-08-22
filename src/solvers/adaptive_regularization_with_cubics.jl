@@ -9,9 +9,9 @@ A state for the [`adaptive_regularization_with_cubics`](@ref) solver.
 * `γ1`, `γ2`:  shrinking and expansion factors for regularization parameter `σ`
 * `H`: the current Hessian evaluation
 * `s`: the current solution from the subsolver
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `q`: a point for the candidates to evaluate model and ρ
-* $_field_gradient
+$(_var(:Field, :X; add=[:as_Gradient]))
 * `s`: the tangent vector step resulting from minimizing the model
   problem in the tangent space ``$(_math(:TpM))``
 * `σ`: the current cubic regularization parameter
@@ -46,7 +46,7 @@ Construct the solver state with all fields stated as keyword arguments and the f
 * `ρ_regularization=1e3`
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :p))
-* $_kw_retraction_method_default
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
 * `sub_objective=nothing` a shortcut to provide a subobjective.
 * `sub_problem=nothing` is set to [`DefaultManoptProblem`](@ref) on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
@@ -242,10 +242,8 @@ $(_var(:Keyword, :evaluation))
 * `initial_tangent_vector=zero_vector(M, p)`: initialize any tangent vector data,
 * `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
-
-  * `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
+$(_var(:Keyword, :retraction_method)):
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
   $_kw_stopping_criterion
 * $_kw_sub_kwargs_default:
   $_kw_sub_kwargs

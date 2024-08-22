@@ -8,8 +8,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
-* $(_field_subgradient)
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :X; add=[:as_Subgradient]))
 * $(_field_sub_problem)
 * $(_field_sub_state)
 * $(_field_stop)
@@ -37,9 +37,9 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 
 ## further keyword arguments
 
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`: $(_kw_stopping_criterion)
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 """
 mutable struct DifferenceOfConvexState{
     P,T,Pr,St<:AbstractManoptSolverState,SC<:StoppingCriterion
@@ -165,7 +165,7 @@ $(_var(:Keyword, :evaluation))
   $(_kw_used_in("sub_state"))
 * `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
   $(_kw_used_in("sub_state"))
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 
 $(_note(:OtherKeywords))
 

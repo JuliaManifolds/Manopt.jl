@@ -6,7 +6,7 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `direction`:  a direction update to use
 * $(_field_stop)
 * $(_field_step)
@@ -26,12 +26,12 @@ Create a `StochasticGradientDescentState` with start point `p`.
 * `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
 * `order_type=:RandomOrder``
 * `order=Int[]`: specify how to store the order of indices for the next epoche
-* $(_kw_p_default): $(_kw_p)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :p; add=:as_Initial))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`: $(_kw_stopping_criterion)
 * `stepsize=`[`default_stepsize`[@ref)`(M, StochasticGradientDescentState)`: $(_kw_stepsize)
    This default is the [`ConstantStepsize`](@ref)`(M)`
-* $(_kw_X_default): $(_kw_X)
+$(_var(:Keyword, :X; add=:as_Memory))
 
 """
 mutable struct StochasticGradientDescentState{
@@ -170,7 +170,7 @@ $(_var(:Keyword, :evaluation))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`: $(_kw_stopping_criterion)
 * `stepsize=`[`default_stepsize`[@ref)`(M, StochasticGradientDescentState)`: $(_kw_stepsize)
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 
 $(_note(:OtherKeywords))
 

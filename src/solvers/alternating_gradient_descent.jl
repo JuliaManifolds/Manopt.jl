@@ -14,7 +14,7 @@ see also [`alternating_gradient_descent`](@ref).
 * `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
 * `stepsize`:           ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `X`:                  (`zero_vector(M,p)`) the current gradient tangent vector
 * `k`, ì`:              internal counters for the outer and inner iterations, respectively.
 
@@ -179,7 +179,7 @@ $(_var(:Keyword, :evaluation))
 * `stepsize=`[`ArmijoLinesearch`](@ref)`()`:
   $(_kw_stepsize)
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 
 # Output
 

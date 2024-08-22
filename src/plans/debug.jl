@@ -233,8 +233,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `storage=`[`StoreStateAction`](@ref)`( [:Gradient] )` storage of the previous action
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`)
 * `io=stdout`: default stream to print the debug to.
-* $_kw_inverse_retraction_method_default:
-  $_kw_inverse_retraction_method
+$(_var(:Keyword, :inverse_retraction_method))
 
 the inverse retraction
   to be used for approximating distance.

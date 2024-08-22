@@ -6,8 +6,8 @@ Describes the state of a gradient based descent algorithm.
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the current iterate"))
-* $_field_gradient
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :X; add=[:as_Gradient]))
 * $_field_stop
 * $_field_step
 * `direction::`[`DirectionUpdateRule`](@ref) : a processor to handle the obtained gradient and compute a
@@ -27,11 +27,11 @@ $(_var(:Argument, :M; type=true))
 ## Keyword arguments
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()`
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)` $_kw_stop_note
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState; retraction_method=retraction_method)`
-* $_kw_retraction_method_default
-* $_kw_X_default
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :X; add=:as_Memory))
 
 # See also
 
@@ -142,10 +142,8 @@ $(_note(:GradientObjective))
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref).
 
-$(_var(:Keyword, :evaluation; comment=_var(:evaluation, :GradientExample)))
-
-* $_kw_retraction_method_default:
-  $_kw_retraction_method
+$(_var(:Keyword, :evaluation; add=:GradientExample))
+$(_var(:Keyword, :retraction_method))
 
 * `stepsize=`[`default_stepsize`](@ref)`(M, GradientDescentState)`:
   $_kw_stepsize
@@ -153,8 +151,7 @@ $(_var(:Keyword, :evaluation; comment=_var(:evaluation, :GradientExample)))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $_kw_stopping_criterion
 
-* $_kw_X_default:
-  $_kw_X, the evaluated gradient ``$(_tex(:grad))f`` evaluated at ``p^{(k)}``.
+$(_var(:Keyword, :X; add=:as_Gradient))
 
 $(_note(:OtherKeywords))
 

@@ -20,13 +20,13 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 * `m`:                        the parameter to test the decrease of the cost
 * `μ`:                        (initial) proximal parameter for the subproblem
 * `ν`:                        the stopping parameter given by ``ν = - μ |d|^2 - c``
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `p_last_serious`:           last serious iterate
 * $(_field_retr)
 * $(_field_stop)
 * `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
 * $(_field_vector_transp)
-* $(_field_subgradient)
+$(_var(:Field, :X; add=[:as_Subgradient]))
 * $(_field_sub_problem)
 * $(_field_sub_state)
 
@@ -45,13 +45,13 @@ Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 * `ε=1e-2`
 * `μ=0.5`
 * `m=0.0125`
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_p_default): $(_kw_p)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :p; add=:as_Initial))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`
 * `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
 * `sub_state=`[`AllocatingEvaluation`](@ref)
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 """
 mutable struct ProximalBundleMethodState{
@@ -243,15 +243,15 @@ $(_var(:Argument, :p))
 * `δ=1.0`:           parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
 * `ε=1e-2`:          stepsize-like parameter related to the injectivity radius of the manifold
 $(_var(:Keyword, :evaluation))
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 * `μ=0.5`:           initial proximal parameter for the subproblem
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
 * `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
 * `sub_state=`[`AllocatingEvaluation`](@ref)
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 
 $(_note(:OtherKeywords))
 

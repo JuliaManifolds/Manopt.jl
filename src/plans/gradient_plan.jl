@@ -386,8 +386,7 @@ them to the current iterates tangent space.
 * `gradients`:               the last `n` gradient/direction updates
 * `last_iterate`:            last iterate (needed to transport the gradients)
 * `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
-* `vector_transport_method`: vector transport method to use
-
+$(_var(:Keyword, :vector_transport_method))
 
 # Constructors
 
@@ -407,7 +406,7 @@ Add average to a gradient problem, where
 * `direction`:                       is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients`:               can be pre-filled with some history
 * `last_iterate`:            stores the last iterate
-* `vector_transport_method`: determines how to transport all gradients to the current iterates tangent space before averaging
+$(_var(:Keyword, :vector_transport_method))
 """
 mutable struct AverageGradientRule{P,T,VTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
@@ -457,12 +456,12 @@ them to the current iterates tangent space.
 
 # Keyword arguments
 
-* $(_kw_p_default)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
 * `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialise the internal storage
 * `n=10` number of gradient evaluations to take the mean over
-* $(_kw_X_default)`
-* `vector_transport_method=default_vector_transport_method(M, typeof(p)),
+$(_var(:Keyword, :X))
+$(_var(:Keyword, :vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
@@ -489,11 +488,11 @@ See [`Nesterov`](@ref) for details
 
 ## Keyword arguments
 
-* $(_kw_p_default)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `γ=0.001``
 * `μ=0.9``
 * `shrinkage = k -> 0.8`
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
 
 # See also
 
@@ -570,12 +569,11 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{
 
 # Keyword arguments
 
-* $(_kw_p_default)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `γ=0.001``
 * `μ=0.9``
 * `shrinkage = k -> 0.8`
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-
+$(_var(:Keyword, :inverse_retraction_method))
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)

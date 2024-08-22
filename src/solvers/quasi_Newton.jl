@@ -10,14 +10,14 @@ all necessary fields.
 * `η`:                             the current update direction
 * `nondescent_direction_behavior`: a `Symbol` to specify how to handle direction that are not descent ones.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `p_old`:                         the last iterate
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
 * $(_field_retr)
 * $(_field_step)
 * $(_field_stop)
-* $(_field_gradient)
+$(_var(:Field, :X; add=[:as_Gradient]))
 * `X_old`:                         the last gradient
 
 
@@ -31,11 +31,11 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
 * `stopping_criterion=`[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stepsize=default_stepsize(M; QuasiNewtonState)`: $(_kw_stepsize)
   The default here is the [`WolfePowellLinesearch`](@ref) using the keywords `retraction_method` and `vector_transport_method`
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
-* $(_kw_X_default)
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :X; add=:as_Memory))
 
 # See also
 
@@ -212,7 +212,7 @@ $(_var(:Argument, :p))
   and strictly increasing at ``0``
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
-$(_var(:Keyword, :evaluation; comment=_var(:evaluation, :GradientExample)))
+$(_var(:Keyword, :evaluation; add=:GradientExample))
 * `initial_operator= initial_scale*Matrix{Float64}(I, n, n)`:
    initial matrix to use in case the Hessian (inverse) approximation is stored as a full matrix,
    that is `n=manifold_dimension(M)`. This matrix is only allocated for the full matrix case.
@@ -230,12 +230,12 @@ $(_var(:Keyword, :evaluation; comment=_var(:evaluation, :GradientExample)))
   A stored message can be displayed using [`DebugMessages`](@ref).
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stepsize=`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`:
   $(_kw_stepsize)
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 
 $(_note(:OtherKeywords))
 

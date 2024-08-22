@@ -7,7 +7,7 @@ Describes the exact penalty method, with
 
 * `ϵ`: the accuracy tolerance
 * `ϵ_min`: the lower bound for the accuracy tolerance
-$(_var(:Field, :p; comment=" storing the current iterate"))
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `ρ`: the penalty parameter
 * $(_field_sub_problem)
 * $(_field_sub_state)
@@ -40,7 +40,7 @@ construct the exact penalty state, where `sub_problem` is a closed form solution
 * `u_min=1e-6`
 * `u_exponent=1 / 100`:  a shortcut for the scaling factor ``θ_u``.
 * `θ_u=(u_min / u)^(u_exponent)`
-* $(_kw_p_default): $(_kw_p)
+$(_var(:Keyword, :p; add=:as_Initial))
 * `ρ=1.0`
 * `θ_ρ=0.3`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`

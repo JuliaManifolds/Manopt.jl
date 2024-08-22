@@ -8,7 +8,7 @@ State of covariance matrix adaptation evolution strategy.
 
 # Fields
 
-$(_var(:Field, :p; comment=" storing the best point found so far"))
+$(_var(:Field, :p; add=" storing the best point found so far"))
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -37,7 +37,7 @@ $(_var(:Field, :p; comment=" storing the best point found so far"))
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
 * `retraction_method`           an `AbstractRetractionMethod`
-* `vector_transport_method`     a vector transport to use
+$(_var(:Field, :vector_transport_method))
 * `basis`                       a real coefficient basis for covariance matrix
 * `rng`                         RNG for generating new points
 

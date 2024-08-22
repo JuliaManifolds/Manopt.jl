@@ -27,18 +27,18 @@ For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
 $(_var(:Keyword, :evaluation))
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
 * `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 * `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=[`StopAfterIteration`](@ref)`(50)`:
   $(_kw_stopping_criterion)
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
+$(_var(:Keyword, :vector_transport_method))
 
 $(_note(:OtherKeywords))
 

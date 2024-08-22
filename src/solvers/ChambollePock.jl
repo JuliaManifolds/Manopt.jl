@@ -51,17 +51,17 @@ If you activate these to be different from the default identity, you have to pro
 * `acceleration=0.0`
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
+$(_var(:Keyword, :inverse_retraction_method))
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
   an inverse retraction ``$(_tex(:invretr))`` to use on ``$(_tex(:Cal, "N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
-* $_kw_retraction_method_default: $_kw_retraction_method
+$(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`
 * `variant=:exact`: run the exact Chambolle Pock by default
 * `update_primal_base=missing`
 * `update_dual_base=missing`
-* $_kw_vector_transport_method_default: $_kw_vector_transport_method
+$(_var(:Keyword, :vector_transport_method))
 * `vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
   a vector transport ``$(_math(:vector_transport, :symbol))`` to use on ``$(_tex(:Cal, "N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
@@ -239,7 +239,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `acceleration=0.05`: acceleration parameter
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 $(_var(:Keyword, :evaluation))
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
+$(_var(:Keyword, :inverse_retraction_method))
 * `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
   an inverse retraction ``$(_tex(:invretr))`` to use on $(_tex(:Cal, "N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
@@ -252,8 +252,8 @@ $(_var(:Keyword, :evaluation))
 * `stopping_criterion=[StopAfterIteration`](@ref)`(100)`: $_kw_stopping_criterion
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
-* $_kw_retraction_method_default: $_kw_retraction_method
-* $_kw_vector_transport_method_default: $_kw_vector_transport_method
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
 * `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
   a vector transport ``$(_math(:vector_transport, :symbol))`` to use on $(_tex(:Cal, "N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
 
