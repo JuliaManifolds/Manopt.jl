@@ -16,12 +16,13 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X; add=[:as_Gradient]))
-* $_field_inv_retr
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :vector_transport_method))
 * $_field_sub_problem
 * $_field_sub_state
 * $_field_stop
 * $_field_step
-* $_field_retr
+$(_var(:Field, :retraction_method))
 
 The sub task requires a method to solve
 

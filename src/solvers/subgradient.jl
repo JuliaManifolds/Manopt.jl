@@ -7,7 +7,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_star`: optimal value
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * $(_field_step)
 * $(_field_stop)
 * `X`: the current element from the possible subgradients at `p` that was last evaluated.

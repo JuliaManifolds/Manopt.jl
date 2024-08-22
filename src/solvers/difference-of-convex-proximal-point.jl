@@ -8,8 +8,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* $(_field_inv_retr)
-* $(_field_retr)
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :retraction_method))
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :p, "q"; add=" storing the gradient step"))
 $(_var(:Field, :p, "r"; add=" storing the result of the proximal map"))

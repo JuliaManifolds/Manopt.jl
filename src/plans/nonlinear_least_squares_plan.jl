@@ -140,7 +140,7 @@ A default value is given in brackets if a parameter can be left out in initializ
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 * $_field_stop
-* $_field_retr
+$(_var(:Field, :retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp`: value of ``F`` for the current proposal point
 * `jacF`:                 the current Jacobian of ``F``

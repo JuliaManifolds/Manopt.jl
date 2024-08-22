@@ -502,7 +502,7 @@ end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
 status_summary(di::RecordCost) = ":Cost"
 
-@doc raw"""
+@doc """
     RecordChange <: RecordAction
 
 debug for the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
@@ -513,7 +513,7 @@ during the last iteration.
 * `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
   iterate to use this as the last value (to compute the change) serving as a potential cache
   shared with other components of the solver.
-* `inverse_retraction_method` : the inverse retraction to be used for approximating distance.
+$(_var(:Keyword, :inverse_retraction_method))
 * `recorded_values`           : to store the recorded values
 
 # Constructor

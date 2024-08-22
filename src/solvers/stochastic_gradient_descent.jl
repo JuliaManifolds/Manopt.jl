@@ -13,7 +13,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `evaluation_order`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
   a per cycle permuted sequence (`:Linear`) or the default, a `:Random` sequence.
 * `order`: stores the current permutation
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 
 # Constructor
 

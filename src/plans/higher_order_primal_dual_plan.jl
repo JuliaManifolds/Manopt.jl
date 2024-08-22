@@ -78,9 +78,9 @@ $(_var(:Field, :X))
 * `stop::`[`StoppingCriterion`](@ref): a [`StoppingCriterion`](@ref)
 * `update_primal_base`:        function to update the primal base
 * `update_dual_base`:          function to update the dual base
-* $_field_retr
-* $_field_inv_retr
-* $_field_vector_transp
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :retraction_method))
+$(_var(:Field, :vector_transport_method))
 
 where for the update functions a [`AbstractManoptProblem`](@ref) `amp`,
 [`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` are the arguments.

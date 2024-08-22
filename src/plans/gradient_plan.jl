@@ -479,8 +479,7 @@ See [`Nesterov`](@ref) for details
 * `γ::Real`, `μ::Real`: coefficients from the last iterate
 * `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
 * `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k``.
-* `inverse_retraction_method::AbstractInverseRetractionMethod`: the inverse retraction to use
-
+$(_var(:Keyword, :inverse_retraction_method))
 
 # Constructor
 

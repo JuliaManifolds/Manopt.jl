@@ -36,7 +36,7 @@ $(_var(:Field, :p; add=" storing the best point found so far"))
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
-* `retraction_method`           an `AbstractRetractionMethod`
+$(_var(:Field, :retraction_method))
 $(_var(:Field, :vector_transport_method))
 * `basis`                       a real coefficient basis for covariance matrix
 * `rng`                         RNG for generating new points
@@ -350,7 +350,7 @@ setting.
 * `M`:      a manifold ``$(_math(:M))``
 * `f`:      a cost function ``f: $(_math(:M))→ℝ`` to find a minimizer ``p^*`` for
 
-# Optional
+# Keyword arguments
 
 * `p_m=`$(Manopt._link(:rand)): an initial point `p`
 * `σ=1.0`: initial standard deviation
@@ -362,8 +362,8 @@ setting.
   absolute difference between subsequent point but actually computed from distribution
   parameters.
 * `stopping_criterion=default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`:
-* `retraction_method=default_retraction_method(M, typeof(p_m))`:
-* `vector_transport_method=default_vector_transport_method(M, typeof(p_m))`:
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
 * `rng=default_rng()`: random number generator for generating new points
   on `M`

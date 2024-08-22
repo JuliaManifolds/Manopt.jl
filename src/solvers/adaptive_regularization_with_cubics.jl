@@ -22,7 +22,7 @@ $(_var(:Field, :X; add=[:as_Gradient]))
 * `ρ`: the current regularized ratio of actual improvement and model improvement.
 * `ρ_denominator`: a value to store the denominator from the computation of ρ
   to allow for a warning or error when this value is non-positive.
-* $_field_retr
+$(_var(:Field, :retraction_method))
 * $_field_stop
 * $_field_sub_problem
 * $_field_sub_state

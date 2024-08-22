@@ -53,11 +53,14 @@ end
 define!(:LaTeX, :argmin, raw"\operatorname{arg\,min}")
 define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
+define!(:LaTeX, :big, raw"\big")
 define!(:LaTeX, :bigl, raw"\bigl")
 define!(:LaTeX, :bigr, raw"\bigr")
+define!(:LaTeX, :Big, raw"\Big")
 define!(:LaTeX, :Bigl, raw"\Bigl")
 define!(:LaTeX, :Bigr, raw"\Bigr")
 define!(:LaTeX, :Cal, (letter) -> raw"\mathcal " * "$letter")
+define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
 define!(:LaTeX, :grad, raw"\operatorname{grad}")
@@ -69,10 +72,13 @@ define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
 define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
+define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
+define!(:LaTeX, :vert, raw"\vert")
+define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 #
 # ---
@@ -329,7 +335,8 @@ define!(
     :Variable,
     :inverse_retraction_method,
     :default,
-    "[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
+    (; M="M", p="p") ->
+        "[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
 )
 
 define!(
@@ -446,13 +453,10 @@ define!(:Variable, :X, :as_Memory, "to specify the representation of a tangent v
 # Old strings
 
 # Fields
-_field_inv_retr = "`inverse_retraction_method::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) : an inverse retraction ``$(_tex(:invretr))``"
-_field_retr = "`retraction_method::`[`AbstractRetractionMethod`](@extref `ManifoldsBase.AbstractRetractionMethod`) : a retraction ``$(_tex(:retr))``"
 _field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
 _field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function, indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
 _field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
-_field_vector_transp = "`vector_transport_method::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`) : a vector transport ``$(_math(:vector_transport, :symbol))``"
 
 #
 #

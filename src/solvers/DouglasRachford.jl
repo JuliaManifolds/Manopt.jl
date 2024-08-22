@@ -15,7 +15,7 @@ Store all options required for the DouglasRachford algorithm,
 $(_var(:Field, :p; add=[:as_Iterate]))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
 * `reflection_evaluation`:     whether `R` works in-place or allocating
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * `s`:                         the last result of the double reflection at the proximal maps relaxed by `α`.
 * $(_field_stop)
 

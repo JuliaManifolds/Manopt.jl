@@ -229,7 +229,7 @@ $_doc_ApproxHessian_formula
 
 * `gradient!!`:              the gradient function (either allocating or mutating, see `evaluation` parameter)
 * `step_length`:             a step length for the finite difference
-* `retraction_method`:       a retraction to use
+$(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 
 ## Internal temporary fields

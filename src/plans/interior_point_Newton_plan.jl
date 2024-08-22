@@ -46,7 +46,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `ρ`:           store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem
 * `σ`:           scaling factor for the barrier parameter `β` in the sub problem
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
-* `retraction_method`: the retraction method to use on `M`.
+$(_var(:Keyword, :retraction_method))
 * `stepsize::`[`Stepsize`](@ref): the stepsize to use
 * `step_problem`: an [`AbstractManoptProblem`](@ref) storing the manifold and objective for the line search
 * `step_state`: storing iterate and search direction in a state for the line search, see [`StepsizeState`](@ref)
@@ -86,7 +86,7 @@ $(_var(:Keyword, :p; add=:as_Initial))
 * `ρ=μ's/m`
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`
-* `retraction_method=default_retraction_method(M, typeof(p))`
+$(_var(:Keyword, :retraction_method))
 * `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``

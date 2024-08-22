@@ -211,7 +211,7 @@ A functor representing Armijo line search including the last runs state string t
 
 * `candidate_point`:           to store an interim result
 * `initial_stepsize`:          and initial step size
-* `retraction_method`:         the retraction to use
+$(_var(:Keyword, :retraction_method))
 * `contraction_factor`:        exponent for line search reduction
 * `sufficient_decrease`:       gain within Armijo's rule
 * `last_stepsize`:             the last step size to start the search with
@@ -581,7 +581,7 @@ $_doc_NM_final
 * `memory_size=10`:           number of iterations after which the cost value needs to be lower than the current one
 * `bb_min_stepsize=1e-3`:     lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize=1e3`:      upper bound for the Barzilai-Borwein step size greater than min_stepsize
-* `retraction_method`:        the retraction to use
+$(_var(:Keyword, :retraction_method))
 * `strategy=direct`:          defines if the new step size is computed using the direct, indirect or alternating strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
 * `stepsize_reduction=0.5`:   step size reduction factor contained in the interval (0,1)
@@ -895,18 +895,18 @@ function show(io::IO, ps::PolyakStepsize)
     )
 end
 
-@doc raw"""
+@doc """
     WolfePowellLinesearch <: Linesearch
 
 Do a backtracking line search to find a step size ``α`` that fulfils the
-Wolfe conditions along a search direction ``η`` starting from ``x`` by
+Wolfe conditions along a search direction ``X`` starting from ``p`` by
 
 ```math
-f\bigl( \operatorname{retr}_x(αη) \bigr) ≤ f(x_k) + c_1 α_k ⟨\operatorname{grad}f(x), η⟩_x
-\quad\text{and}\quad
-\frac{\mathrm{d}}{\mathrm{d}t} f\bigr(\operatorname{retr}_x(tη)\bigr)
-\Big\vert_{t=α}
-≥ c_2 \frac{\mathrm{d}}{\mathrm{d}t} f\bigl(\operatorname{retr}_x(tη)\bigr)\Big\vert_{t=0}.
+f $(_tex(:bigl))( $(_tex(:retr))_{p}(αX) $(_tex(:bigr))) ≤ f(p) + c_1 α_k ⟨$(_tex(:grad)) f(p), η⟩_{p}
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
+$(_tex(:deriv)) f$(_tex(:bigl))($(_tex(:retr))_{p}(tX)$(_tex(:bigr)))
+$(_tex(:Big))$(_tex(:vert))_{t=α}
+≥ c_2 $(_tex(:deriv)) f$(_tex(:bigl))($(_tex(:retr))_{p}(tX)$(_tex(:bigr)))$(_tex(:Big))$(_tex(:vert))_{t=0}.
 ```
 
 # Constructors
@@ -927,10 +927,10 @@ Generate a Wolfe-Powell line search
 * `candidate_point=allocate_result(M, rand)`: memory for a candidate
 * `candidate_tangent=allocate_result(M, zero_vector, candidate_point)`: memory for a gradient
 * `candidate_direcntion=allocate_result(M, zero_vector, candidate_point)`: memory for a direction
-* `max_stepsize`:            ([`max_stepsize`](@ref)`(M, p)`) largest stepsize allowed here.
-* `retraction_method=ExponentialRetraction()`: the retraction to use
+* `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
+$(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
-* `vector_transport_method=ParallelTransport()`: the vector transport method to use
+$(_var(:Keyword, :vector_transport_method))
 """
 mutable struct WolfePowellLinesearch{
     TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,T

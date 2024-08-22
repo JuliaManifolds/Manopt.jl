@@ -15,17 +15,17 @@ stores option values for a [`proximal_bundle_method`](@ref) solver.
 * `δ`:                        parameter for updating `μ`: if ``δ < 0`` then ``μ = \\log(i + 1)``, else ``μ += δ μ``
 * `ε`:                        stepsize-like parameter related to the injectivity radius of the manifold
 * `η`:                        curvature-dependent term for updating the approximation errors
-* $(_field_inv_retr)
+$(_var(:Field, :inverse_retraction_method))
 * `λ`:                        convex coefficients that solve the subproblem
 * `m`:                        the parameter to test the decrease of the cost
 * `μ`:                        (initial) proximal parameter for the subproblem
 * `ν`:                        the stopping parameter given by ``ν = - μ |d|^2 - c``
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_last_serious`:           last serious iterate
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * $(_field_stop)
 * `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
-* $(_field_vector_transp)
+$(_var(:Field, :vector_transport_method))
 $(_var(:Field, :X; add=[:as_Subgradient]))
 * $(_field_sub_problem)
 * $(_field_sub_state)

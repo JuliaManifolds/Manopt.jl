@@ -14,7 +14,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_old`:                         the last iterate
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * $(_field_step)
 * $(_field_stop)
 $(_var(:Field, :X; add=[:as_Gradient]))

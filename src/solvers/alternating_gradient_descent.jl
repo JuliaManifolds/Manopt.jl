@@ -6,16 +6,16 @@ see also [`alternating_gradient_descent`](@ref).
 
 # Fields
 
-* `direction`:          (`AlternatingGradient(zero_vector(M, x))` a [`DirectionUpdateRule`](@ref)
-* `evaluation_order`:   (`:Linear`) whether to use a randomly permuted sequence (`:FixedRandom`),
+* `direction::`[`DirectionUpdateRule`](@ref)
+* `evaluation_order::Symbol`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle newly permuted sequence (`:Random`) or the default `:Linear` evaluation order.
-* `inner_iterations`:   (`5`) how many gradient steps to take in a component before alternating to the next
-* `order` the current permutation
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M,x,ξ)` to use.
+* `inner_iterations`: how many gradient steps to take in a component before alternating to the next
+* `order`: the current permutation
+$(_var(:Field, :retraction_method))
 * `stepsize`:           ([`ConstantStepsize`](@ref)`(M)`) a [`Stepsize`](@ref)
 * `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
 $(_var(:Field, :p; add=[:as_Iterate]))
-* `X`:                  (`zero_vector(M,p)`) the current gradient tangent vector
+$(_var(:Field, :X; add=[:as_Gradient]))
 * `k`, ì`:              internal counters for the outer and inner iterations, respectively.
 
 # Constructors

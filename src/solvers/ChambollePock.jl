@@ -7,7 +7,8 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 
 * `acceleration::R`:    acceleration factor
 * `dual_stepsize::R`:   proximal parameter of the dual prox
-* $(_field_inv_retr)
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"))
 * `inverse_retraction_method_dual::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`):
   an inverse retraction ``$(_tex(:invretr))`` on ``$(_tex(:Cal, "N"))``
 * `m::P`:               base point on ``$(_math(:M))``
@@ -19,14 +20,13 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
 * `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * `stop`:               a [`StoppingCriterion`](@ref)
 * `variant`:            whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base`: function `(pr, st, k) -> m` to update the primal base
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
-* $(_field_vector_transp)
-* `vector_transport_method_dual::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`):
-  a vector transport ``$(_math(:vector_transport, :symbol))``on ``$(_tex(:Cal, "N"))``
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :vector_transport_method, "vector_transport_method_dual"; M="N"))
 
 Here, `P` is a point type on ``$(_math(:M))``, `T` its tangent vector type, `Q` a point type on ``$(_tex(:Cal, "N"))``,
 and `R<:Real` is a real number type
@@ -62,8 +62,7 @@ $(_var(:Keyword, :retraction_method))
 * `update_primal_base=missing`
 * `update_dual_base=missing`
 $(_var(:Keyword, :vector_transport_method))
-* `vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on ``$(_tex(:Cal, "N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M="N", p="n"))
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """

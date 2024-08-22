@@ -68,8 +68,8 @@ after the description
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
 $(_var(:Field, :p; add=" storing the current best point"))
-* $_field_retr
-* $_field_inv_retr
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :retraction_method))
 
 # Constructors
 

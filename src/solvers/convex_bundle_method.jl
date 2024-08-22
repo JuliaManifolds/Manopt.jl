@@ -15,16 +15,16 @@ point type `P` and a tangent vector type `T``
 * `diameter::R`: estimate for the diameter of the level set of the objective function at the starting point
 * `domain: the domain of ``f`` as a function `(M,p) -> b`that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
 * `g::T`:                      descent direction
-* $(_field_inv_retr)
+$(_var(:Field, :inverse_retraction_method))
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
 * `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * $(_field_stop)
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
-* $(_field_vector_transp)
+$(_var(:Field, :vector_transport_method))
 $(_var(:Field, :X; add=[:as_Subgradient]))
 * $(_field_step)
 * `ε::R`:                      convex combination of the linearization errors

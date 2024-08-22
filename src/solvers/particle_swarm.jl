@@ -10,11 +10,11 @@ Describes a particle swarm optimizing algorithm, with
 
 * `cognitive_weight`: a cognitive weight factor
 * `inertia`:          the inertia of the particles
-* $(_field_inv_retr)
-* $(_field_retr)
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :retraction_method))
 * `social_weight`:    a social weight factor
 * $(_field_stop)
-* $(_field_vector_transp)
+$(_var(:Field, :vector_transport_method))
 * `velocity`:         a set of tangent vectors (of type `AbstractVector{T}`) representing the velocities of the particles
 
 # Internal and temporary fields
@@ -37,7 +37,7 @@ The `p` used in the following defaults is the type of one point from the swarm.
 
 * `cognitive_weight=1.4`
 * `inertia=0.65`
-* `inverse_retraction_method=default_inverse_retraction_method(M, eltype(swarm))`: an inverse retraction to use.
+$(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `social_weight=1.4`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-4)`

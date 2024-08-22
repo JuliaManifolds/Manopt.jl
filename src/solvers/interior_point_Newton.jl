@@ -67,8 +67,7 @@ $(_var(:Keyword, :evaluation))
 * `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
 * `λ=ones(length(h(M, p)))`: the Lagrange multiplier with respect to the equality constraints ``h``
 * `μ=ones(length(g(M, p)))`: the Lagrange multiplier with respect to the inequality constraints ``g``
-* `retraction_method=`[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`:
-  the retraction to use, defaults to the default set `M` with respect to the representation for `p` chosen.
+$(_var(:Keyword, :retraction_method))
 * `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
 * `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations

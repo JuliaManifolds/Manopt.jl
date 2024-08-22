@@ -34,8 +34,8 @@ $(_var(:Field, :X))
 * `coefficient`:             function to determine the new `β`
 * $_field_step
 * $_field_stop
-* $_field_retr
-* $_field_vector_transp
+$(_var(:Field, :retraction_method))
+$(_var(:Field, :vector_transport_method))
 
 # Constructor
 

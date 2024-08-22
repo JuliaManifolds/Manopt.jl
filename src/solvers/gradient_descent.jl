@@ -12,7 +12,7 @@ $(_var(:Field, :X; add=[:as_Gradient]))
 * $_field_step
 * `direction::`[`DirectionUpdateRule`](@ref) : a processor to handle the obtained gradient and compute a
   direction to “walk into”.
-* $_field_retr
+$(_var(:Field, :retraction_method))
 
 # Constructor
 
