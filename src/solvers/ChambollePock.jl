@@ -8,9 +8,7 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 * `acceleration::R`:    acceleration factor
 * `dual_stepsize::R`:   proximal parameter of the dual prox
 $(_var(:Field, :inverse_retraction_method))
-$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"))
-* `inverse_retraction_method_dual::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`):
-  an inverse retraction ``$(_tex(:invretr))`` on ``$(_tex(:Cal, "N"))``
+$(_var(:Field, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
 * `m::P`:               base point on ``$(_math(:M))``
 * `n::Q`:               base point on ``$(_tex(:Cal, "N"))``
 * `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:M))``
@@ -52,8 +50,7 @@ If you activate these to be different from the default identity, you have to pro
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
 $(_var(:Keyword, :inverse_retraction_method))
-* `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_tex(:invretr))`` to use on ``$(_tex(:Cal, "N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 $(_var(:Keyword, :retraction_method))
@@ -239,8 +236,7 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :inverse_retraction_method))
-* `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_tex(:invretr))`` to use on $(_tex(:Cal, "N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
@@ -253,8 +249,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
-* `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_math(:vector_transport, :symbol))`` to use on $(_tex(:Cal, "N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M="N", p="n"))
 
 $(_note(:OutputSection))
 """

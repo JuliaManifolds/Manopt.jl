@@ -234,7 +234,7 @@ Instead of a cost function `f` you can also provide an [`AbstractManifoldCostObj
 
 * `cognitive_weight=1.4`: a cognitive weight factor
 * `inertia=0.65`: the inertia of the particles
-* `inverse_retraction_method=default_inverse_retraction_method(M, eltype(swarm))`: an inverse retraction to use.
+$(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `social_weight=1.4`: a social weight factor
 * `swarm_size=100`: swarm size, if it should be generated randomly

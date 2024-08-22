@@ -24,8 +24,8 @@ $(_var(:Field, :X; add=[:as_Gradient]))
   to allow for a warning or error when this value is non-positive.
 $(_var(:Field, :retraction_method))
 * $_field_stop
-* $_field_sub_problem
-* $_field_sub_state
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 
 Furthermore the following integral fields are defined
 
@@ -48,9 +48,6 @@ $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :p))
 $(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
-* `sub_objective=nothing` a shortcut to provide a subobjective.
-* `sub_problem=nothing` is set to [`DefaultManoptProblem`](@ref) on the [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) of `p` if an `sub_objecive` is provided
-* `sub_state` is set to [`AllocatingEvaluation`](@ref) if `sub_problem` is a function and to a [`LanczosState`](@ref) on the tangent space otherwise
 $(_var(:Keyword, :X))
 """
 mutable struct AdaptiveRegularizationState{
@@ -245,13 +242,11 @@ $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method)):
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
   $_kw_stopping_criterion
-* $_kw_sub_kwargs_default:
-  $_kw_sub_kwargs
+$(_var(:Keyword, :sub_kwargs))
 * `sub_objective=nothing`: $_kw_sub_objective
-  $(_kw_sub_objective_default_text("AdaptiveRagularizationWithCubicsModelObjective"))
-* `sub_state=`[`LanczosState`](@ref)`(M, copy(M, p); maxIterLanczos=maxIterLanczos, σ=σ)`:
-  a state for the subproblem or an [`AbstractEvaluationType`](@ref) if the problem is a function.
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`: the problem (or a function) for the sub problem
+  By default, this is initialized as a [`AdaptiveRagularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
+$(_var(:Keyword, :sub_state; default="[`LanczosState`](@ref)`(M, copy(M,p))`"))
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 
 $(_note(:OtherKeywords))
 

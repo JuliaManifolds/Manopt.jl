@@ -37,8 +37,8 @@ set_gradient!(s::StepsizeState, M, p, X) = copyto!(M, s.X, p, X)
 * `μ`:           the Lagrange multiplier with respect to the inequality constraints
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `s`:           the current slack variable
-* `sub_problem`: an [`AbstractManoptProblem`](@ref) problem for the subsolver
-* `sub_state`:   an [`AbstractManoptSolverState`](@ref) for the subsolver
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 * `X`:           the current gradient with respect to `p`
 * `Y`:           the current gradient with respect to `μ`
 * `Z`:           the current gradient with respect to `λ`
@@ -47,7 +47,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `σ`:           scaling factor for the barrier parameter `β` in the sub problem
 * `stop`: a [`StoppingCriterion`](@ref) indicating when to stop.
 $(_var(:Keyword, :retraction_method))
-* `stepsize::`[`Stepsize`](@ref): the stepsize to use
+$(_var(:Field, :stepsize))
 * `step_problem`: an [`AbstractManoptProblem`](@ref) storing the manifold and objective for the line search
 * `step_state`: storing iterate and search direction in a state for the line search, see [`StepsizeState`](@ref)
 
@@ -91,8 +91,8 @@ $(_var(:Keyword, :retraction_method))
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-* `stepsize`: an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
-  additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
+$(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`", add=" with the [`InteriorPointCentralityCondition`](@ref) as
+  additional condition to accept a step"))
 
 and internally `_step_M` and `_step_p` for the manifold and point in the stepsize.
 """

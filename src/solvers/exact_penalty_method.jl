@@ -9,8 +9,8 @@ Describes the exact penalty method, with
 * `ϵ_min`: the lower bound for the accuracy tolerance
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `ρ`: the penalty parameter
-* $(_field_sub_problem)
-* $(_field_sub_state)
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 * $(_field_stop)
 * `u`: the smoothing parameter and threshold for violation of the constraints
 * `u_min`: the lower bound for the smoothing parameter and threshold for violation of the constraints
@@ -249,14 +249,14 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 * `min_stepsize=1e-10`: the minimal step size
 * `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
 * `sub_cost=`[`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`: cost to use in the sub solver
-  $(_kw_used_in("sub_problem"))
+  $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
-  $(_kw_used_in("sub_problem"))
-* * $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
+  $(_note(:KeywordUsedIn, "sub_problem"))
+* $(_var(:Keyword, :sub_kwargs))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
-  $(_kw_used_in("sub_state"))
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`: the problem for the subsolver. The objective can also be decorated with argumens from `sub_kwargs`.
-* `sub_state=`[`QuasiNewtonState`](@ref)`(...)` a solver to use for the sub problem. By default an L-BFGS is used.
+  $(_note(:KeywordUsedIn, "sub_state"))
+$(_var(:Keyword, :sub_state; default="[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add=" where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`: $(_kw_stopping_criterion)
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,

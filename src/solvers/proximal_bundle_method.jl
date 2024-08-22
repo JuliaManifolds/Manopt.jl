@@ -27,8 +27,8 @@ $(_var(:Field, :retraction_method))
 * `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
 $(_var(:Field, :vector_transport_method))
 $(_var(:Field, :X; add=[:as_Subgradient]))
-* $(_field_sub_problem)
-* $(_field_sub_state)
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 
 # Constructor
 
@@ -49,8 +49,8 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`
-* `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
-* `sub_state=`[`AllocatingEvaluation`](@ref)
+$(_var(:Keyword, :sub_problem; default="[`proximal_bundle_method_subsolver`](@ref)`"))
+$(_var(:Keyword, :sub_state; default="[`AllocatingEvaluation`](@ref)"))
 $(_var(:Keyword, :vector_transport_method))
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 """
@@ -249,8 +249,8 @@ $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
-* `sub_problem=`[`proximal_bundle_method_subsolver`](@ref)
-* `sub_state=`[`AllocatingEvaluation`](@ref)
+$(_var(:Keyword, :sub_problem; default="[`proximal_bundle_method_subsolver`](@ref)`"))
+$(_var(:Keyword, :sub_state; default="[`AllocatingEvaluation`](@ref)"))
 $(_var(:Keyword, :vector_transport_method))
 
 $(_note(:OtherKeywords))

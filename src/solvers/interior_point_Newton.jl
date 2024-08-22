@@ -75,19 +75,17 @@ $(_var(:Keyword, :retraction_method))
 * `step_problem`: the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
-* `stepsize` an [`ArmijoLinesearch`](@ref) with the [`InteriorPointCentralityCondition`](@ref) as
-  additional condition to accept a step. Note that this step size operates on its own `step_problem`and `step_state`
+$(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`", add=" with the `centrality_condtion` keyword as additional criterion to accept a step, if this is provided"))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenKKTResidualLess`](@ref)`(1e-8)`:
   a stopping criterion, by default depending on the residual of the KKT vector field or a maximal number of steps, which ever hits first.
 * `sub_kwargs=(;)`: keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
 * `sub_objective`: The [`SymmetricLinearSystemObjective`](@ref) modelling the system of equations to use in the sub solver,
   includes the [`CondensedKKTVectorFieldJacobian`](@ref) ``$(_tex(:Cal, "A"))(X)`` and the [`CondensedKKTVectorField`](@ref) ``b`` in ``$(_tex(:Cal, "A"))(X) + b = 0`` we aim to solve.
-  $(_kw_used_in("sub_problem"))
+  $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(manifold_dimension(M))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`, where ``c = $(_tex(:norm,"b"))`` from the system to solve.
-  $(_kw_used_in("sub_state"))
-* `sub_problem`: combining the `sub_objective` and the tangent space at ``(p,λ)``` on the manifold ``$(_math(:M)) × ℝ^n`` to a manopt problem.
-   This is the manifold and objective for the sub solver.
-* `sub_state=`[`ConjugateResidualState`](@ref): a state specifying the subsolver. This default is also decorated with the `sub_kwargs...`.
+  $(_note(:KeywordUsedIn, "sub_state"))
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_var(:Keyword, :sub_state; default="[`ConjugateResidualState`](@ref)"))
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `X=`[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`:
   th initial gradient with respect to `p`.

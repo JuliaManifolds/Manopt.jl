@@ -13,12 +13,12 @@ $(_var(:Field, :retraction_method))
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :p, "q"; add=" storing the gradient step"))
 $(_var(:Field, :p, "r"; add=" storing the result of the proximal map"))
-* $(_field_step)
+$(_var(:Field, :stepsize))
 * $(_field_stop)
 * `X`, `Y`: the current gradient and descent direction, respectively
   their common type is set by the keyword `X`
-* `sub_problem`:               an [`AbstractManoptProblem`](@ref) problem or a function `(M, p, X) -> q` or `(M, q, p, X)` for the a closed form solution of the sub problem
-* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver or an [`AbstractEvaluationType`](@ref) in case the sub problem is provided as a function
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 
 # Constructor
 
@@ -43,7 +43,8 @@ $(_var(:Argument, :sub_state))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :retraction_method))
-* `stepsize=`[`ConstantStepsize`](@ref)`(M)`: $(_kw_stepsize)
+
+$(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`()`"))
 * `stopping_criterion=`[StopWhenChangeLess`](@ref)`(1e-8)`: $(_kw_stopping_criterion)
 $(_var(:Keyword, :X; add=:as_Memory))
 """
@@ -199,33 +200,27 @@ $(_var(:Keyword, :evaluation))
 * `grad_g=nothing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
-* `stepsize=`[`ConstantStepsize`](@ref)`(M)`): $(_kw_stepsize)
+$(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`()`"))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`):
   $(_kw_stopping_criterion)
   A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
-  $(_kw_used_in("sub_objective"))
+  $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`ProximalDCGrad`](@ref)`(grad_g, copy(M, p), λ(1); evaluation=evaluation)`:
   gradient to be used within the default `sub_problem`, that is initialized as soon as `grad_g` is provided.
-  $(_kw_used_in("sub_objective"))
+  $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_hess`:              (a finite difference approximation using `sub_grad` by default):
    specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
-* $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
+$(_var(:Keyword, :sub_kwargs))
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
    the objective used within `sub_problem`.
-  $(_kw_used_in("sub_problem"))
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`:
-  specify a manopt problem or a function for the sub-solver runs.
-  You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state`([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian`):
-  the subsolver to be used when solving the sub problem.
-  By default this is also decorated using the `sub_kwargs`.
-  if the `sub_problem` if a function (a closed form solution), this is set to `evaluation`
-  and can be changed to the evaluation type of the closed form solution accordingly.
+  $(_note(:KeywordUsedIn, "sub_problem"))
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_var(:Keyword, :sub_state; default="([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian` is provided)"))
 * `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))`[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   a stopping criterion used withing the default `sub_state=`
-  $(_kw_used_in("sub_state"))
+  $(_note(:KeywordUsedIn, "sub_state"))
 
 $(_note(:OtherKeywords))
 

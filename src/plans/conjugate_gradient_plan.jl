@@ -32,7 +32,7 @@ $(_var(:Field, :X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
 * `coefficient`:             function to determine the new `β`
-* $_field_step
+$(_var(:Field, :stepsize))
 * $_field_stop
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :vector_transport_method))
@@ -51,7 +51,7 @@ The following fields from above <re keyword arguments
 
 $(_var(:Keyword, :p; add=:as_Initial))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`
-* `stepsize=[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`)
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
 * `stop=[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))

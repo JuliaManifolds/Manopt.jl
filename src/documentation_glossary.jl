@@ -191,6 +191,14 @@ define!(
     "If you activate tutorial mode (cf. [`is_tutorial_mode`](@ref)), this solver provides additional debug warnings.",
 )
 define!(
+    :Note,
+    :KeywordUsedIn,
+    function (kw::String)
+        return "This is used to define the `$(kw)=` keyword and has hence no effect, if you set `$(kw)` directly."
+    end,
+)
+
+define!(
     :Problem,
     :Constrained,
     (; M="M", p="p") -> """
@@ -368,6 +376,14 @@ define!(
 
 define!(
     :Variable,
+    :stepsize,
+    :description,
+    (; M="M") -> "a functor inheriting from [`Stepsize`](@ref) to determine a step size",
+)
+define!(:Variable, :stepsize, :type, "Stepsize")
+
+define!(
+    :Variable,
     :stopping_criterion,
     :description,
     (; M="M") -> "a functor indicating that the stopping criterion is fulfilled.",
@@ -379,9 +395,17 @@ define!(
     :sub_problem,
     :description,
     (; M="M") ->
-        " specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
+        "specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
 )
 define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
+
+define!(
+    :Variable,
+    :sub_kwargs,
+    :description,
+    "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.",
+)
+define!(:Variable, :sub_kwargs, :default, "`(;)`")
 
 define!(
     :Variable,
@@ -453,28 +477,9 @@ define!(:Variable, :X, :as_Memory, "to specify the representation of a tangent v
 # Old strings
 
 # Fields
-_field_sub_problem = "`sub_problem::Union{`[`AbstractManoptProblem`](@ref)`, F}`: a manopt problem or a function for a closed form solution of the sub problem"
-_field_sub_state = "`sub_state::Union{`[`AbstractManoptSolverState`](@ref)`,`[`AbstractEvaluationType`](@ref)`}`: for a sub problem state which solver to use, for the closed form solution function, indicate, whether the closed form solution function works with [`AllocatingEvaluation`](@ref)) `(M, p, X) -> q` or with an [`InplaceEvaluation`](@ref)) `(M, q, p, X) -> q`"
 _field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
-_field_step = "`stepsize::`[`Stepsize`](@ref) : a stepsize."
-
-#
-#
-# Keywords
-
-_kw_stepsize = raw"a functor inheriting from [`Stepsize`](@ref) to determine a step size"
 
 _kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
 _kw_stop_note = "is used to set the field `stop`."
 
-_kw_sub_kwargs_default = "`sub_kwargs=(;)`"
-_kw_sub_kwargs = "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself."
-
 _kw_sub_objective = "a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword"
-function _kw_sub_objective_default_text(type::String)
-    return "By default, this is initialized as a [`$type`](@ref), which can further be decorated by using the `sub_kwargs=` keyword"
-end
-
-function _kw_used_in(s::String)
-    return "This is used to define the `$s=` keyword and has hence no effect, if you set `$s` directly."
-end

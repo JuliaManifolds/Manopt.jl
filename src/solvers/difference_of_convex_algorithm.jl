@@ -10,8 +10,8 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X; add=[:as_Subgradient]))
-* $(_field_sub_problem)
-* $(_field_sub_state)
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 * $(_field_stop)
 
 The sub task consists of a method to solve
@@ -141,30 +141,24 @@ $(_var(:Keyword, :evaluation))
   $(_kw_stopping_criterion)
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
-  $(_kw_used_in("sub_objective"))
+  $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_grad=`[`LinearizedDCGrad`](@ref)`(grad_g, p, initial_vector; evaluation=evaluation)`:
   gradient to be used within the default `sub_problem`.
-  $(_kw_used_in("sub_objective"))
+  $(_note(:KeywordUsedIn, "sub_objective"))
 * `sub_hess`:              (a finite difference approximation using `sub_grad` by default):
    specify a Hessian of the `sub_cost`, which the default solver, see `sub_state=` needs.
-  $(_kw_used_in("sub_objective"))
-* $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
+  $(_note(:KeywordUsedIn, "sub_objective"))
+$(_var(:Keyword, :sub_kwargs))
 * `sub_objective`:         a gradient or Hessian objective based on `sub_cost=`, `sub_grad=`, and `sub_hess`if provided
    the objective used within `sub_problem`.
-  $(_kw_used_in("sub_problem"))
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`:
-  specify a manopt problem or a function for the sub-solver runs.
-  You can also provide a function for a closed form solution. Then `evaluation=` is taken into account for the form of this function.
-* `sub_state`([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian`):
-  the subsolver to be used when solving the sub problem.
-  By default this is also decorated using the `sub_kwargs`.
-  if the `sub_problem` if a function (a closed form solution), this is set to `evaluation`
-  and can be changed to the evaluation type of the closed form solution accordingly.
+  $(_note(:KeywordUsedIn, "sub_problem"))
+$(_var(:Keyword, :sub_state; default="([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian` is provided)"))
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`:
   a stopping criterion used withing the default `sub_state=`
-  $(_kw_used_in("sub_state"))
+  $(_note(:KeywordUsedIn, "sub_state"))
 * `sub_stepsize=`[`ArmijoLinesearch`](@ref)`(M)`) specify a step size used within the `sub_state`.
-  $(_kw_used_in("sub_state"))
+  $(_note(:KeywordUsedIn, "sub_state"))
 $(_var(:Keyword, :X; add=:as_Memory))
 
 $(_note(:OtherKeywords))

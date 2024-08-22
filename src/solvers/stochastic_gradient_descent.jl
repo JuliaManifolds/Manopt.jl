@@ -9,7 +9,7 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `direction`:  a direction update to use
 * $(_field_stop)
-* $(_field_step)
+$(_var(:Field, :stepsize))
 * `evaluation_order`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
   a per cycle permuted sequence (`:Linear`) or the default, a `:Random` sequence.
 * `order`: stores the current permutation
@@ -29,8 +29,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`: $(_kw_stopping_criterion)
-* `stepsize=`[`default_stepsize`[@ref)`(M, StochasticGradientDescentState)`: $(_kw_stepsize)
-   This default is the [`ConstantStepsize`](@ref)`(M)`
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 
 """
@@ -168,7 +167,7 @@ $(_var(:Keyword, :evaluation))
 * `order_type=:RandomOder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`: $(_kw_stopping_criterion)
-* `stepsize=`[`default_stepsize`[@ref)`(M, StochasticGradientDescentState)`: $(_kw_stepsize)
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
 * `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_var(:Keyword, :retraction_method))
 

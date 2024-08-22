@@ -15,7 +15,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
 $(_var(:Field, :retraction_method))
-* $(_field_step)
+$(_var(:Field, :stepsize))
 * $(_field_stop)
 $(_var(:Field, :X; add=[:as_Gradient]))
 * `X_old`:                         the last gradient
@@ -32,8 +32,7 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
 * `stopping_criterion=`[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`
 $(_var(:Keyword, :retraction_method))
-* `stepsize=default_stepsize(M; QuasiNewtonState)`: $(_kw_stepsize)
-  The default here is the [`WolfePowellLinesearch`](@ref) using the keywords `retraction_method` and `vector_transport_method`
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, QuasiNewtonState)`"))
 $(_var(:Keyword, :vector_transport_method))
 $(_var(:Keyword, :X; add=:as_Memory))
 
@@ -231,8 +230,7 @@ $(_var(:Keyword, :evaluation; add=:GradientExample))
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_var(:Keyword, :retraction_method))
-* `stepsize=`[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`:
-  $(_kw_stepsize)
+$(_var(:Keyword, :stepsize; default="[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`"))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
 $(_var(:Keyword, :vector_transport_method))

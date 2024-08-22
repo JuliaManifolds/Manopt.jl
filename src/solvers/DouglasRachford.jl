@@ -8,7 +8,7 @@ Store all options required for the DouglasRachford algorithm,
 * `α`:                         relaxation of the step from old to new iterate, to be precise
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double
   reflection involved in the DR algorithm
-* `inverse_retraction_method`: an inverse retraction method
+$(_var(:Field, :inverse_retraction_method))
 * `λ`:                         function to provide the value for the proximal parameter during the calls
 * `parallel`:                  indicate whether to use a parallel Douglas-Rachford or not.
 * `R`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.

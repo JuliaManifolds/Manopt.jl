@@ -82,8 +82,7 @@ $(_var(:Argument, :p))
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
-* `stepsize=[`ArmijoLinesearch`](@ref)`(M)`: $_kw_stepsize
-  via [`default_stepsize`](@ref)) passing on the `default_retraction_method`
+$(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`"))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
   $(_kw_stopping_criterion)
 $(_var(:Keyword, :vector_transport_method))

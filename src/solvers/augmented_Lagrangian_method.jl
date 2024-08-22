@@ -22,8 +22,8 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `μ`:     the Lagrange multiplier with respect to the inequality constraints
 * `μ_max`: an upper bound for the Lagrange multiplier belonging to the inequality constraints
 * `ρ`:     the penalty parameter
-* $_field_sub_problem
-* $_field_sub_state
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 * `τ`:     factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ`:   the scaling factor of the penalty parameter
 * `θ_ϵ`:   the scaling factor of the accuracy tolerance
@@ -316,19 +316,20 @@ $(_var(:Keyword, :evaluation))
 * `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`: the scaling factor of the exactness
 
 * `sub_cost=[`AugmentedLagrangianCost± (@ref)`(cmo, ρ, μ, λ):` use augmented Lagrangian cost, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
-   $(_kw_used_in("sub_problem"))
+   $(_note(:KeywordUsedIn, "sub_problem"))
 
 * `sub_grad=[`AugmentedLagrangianGrad`](@ref)`(cmo, ρ, μ, λ)`: use augmented Lagrangian gradient, based on the [`ConstrainedManifoldObjective`](@ref) build from the functions provided.
-  $(_kw_used_in("sub_problem"))
+  $(_note(:KeywordUsedIn, "sub_problem"))
 
-* $_kw_sub_kwargs_default: $_kw_sub_kwargs
-
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`:
-   problem for the subsolver
-* `sub_state=`[`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion.
-  See also `sub_kwargs=`.
+$(_var(:Keyword, :sub_kwargs))
 
 $(_var(:Keyword, :stopping_criterion; default= _sc_alm_default))
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add="as the quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used."))
+* `sub_stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
+                                              StopWhenGradientNormLess(ϵ) |
+                                              StopWhenStepsizeLess(1e-8),
+
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.

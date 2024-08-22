@@ -26,12 +26,12 @@ $(_var(:Field, :retraction_method))
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
 $(_var(:Field, :vector_transport_method))
 $(_var(:Field, :X; add=[:as_Subgradient]))
-* $(_field_step)
+$(_var(:Field, :stepsize))
 * `ε::R`:                      convex combination of the linearization errors
 * `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -\\lVert g\\rvert^2 – ε``
-* $(_field_sub_problem)
-* $(_field_sub_state)
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 
 # Constructor
 
@@ -58,15 +58,12 @@ Most of the following keyword arguments set default values for the fields mentio
 * `domain=(M, p) -> isfinite(f(M, p))`
 * `k_max=0`
 $(_var(:Keyword, :p; add=:as_Initial))
-* `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 $(_var(:Keyword, :vector_transport_method))
-* `sub_problem=`[`convex_bundle_method_subsolver`](@ref)
-* `sub_state=[`AllocatingEvaluation`](@ref)
-
 """
 mutable struct ConvexBundleMethodState{
     P,
@@ -312,14 +309,14 @@ $(_var(:Argument, :p))
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
 $(_var(:Keyword, :evaluation))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-* `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
 $(_var(:Keyword, :inverse_retraction_method))$(_var(:Keyword, :inverse_retraction_method))
 * `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`:
   $(_kw_stopping_criterion)
 * `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 $(_var(:Keyword, :vector_transport_method))
-* `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
-* `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.
+$(_var(:Keyword, :sub_state; default="[`convex_bundle_method_subsolver`](@ref)`"))
+$(_var(:Keyword, :sub_problem; default="[`AllocatingEvaluation`](@ref)"))
 
 $(_note(:OtherKeywords))
 

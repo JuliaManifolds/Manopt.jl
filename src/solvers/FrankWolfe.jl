@@ -18,10 +18,10 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X; add=[:as_Gradient]))
 $(_var(:Field, :inverse_retraction_method))
 $(_var(:Field, :vector_transport_method))
-* $_field_sub_problem
-* $_field_sub_state
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 * $_field_stop
-* $_field_step
+$(_var(:Field, :stepsize))
 $(_var(:Field, :retraction_method))
 
 The sub task requires a method to solve
@@ -50,7 +50,7 @@ $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)` $_kw_stop_note
-* `stepsize=`[`default_stepsize`](@ref)`(M, FrankWolfeState)`
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, FrankWolfeState)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 
 where the remaining fields from before are keyword arguments.
@@ -195,9 +195,7 @@ $(_note(:GradientObjective))
 
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
-
-* `stepsize=`[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`:
-  $_kw_stepsize, where the default is the step size $_doc_FW_sk_default
+$(_var(:Keyword, :stepsize; default="[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
 
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)
   $_kw_stopping_criterion
@@ -205,31 +203,21 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :X; add=:as_Gradient))
 
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
-  the cost of the Frank-Wolfe sub problem. $(_kw_used_in("sub_objective"))
+  the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 
 * `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:
-  the gradient of the Frank-Wolfe sub problem. $(_kw_used_in("sub_objective"))
+  the gradient of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 
-* $_kw_sub_kwargs_default: $_kw_sub_kwargs
+$(_var(:Keyword, :sub_kwargs))
 
 * `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
-  the objective for the Frank-Wolfe sub problem. $(_kw_used_in("sub_problem"))
+  the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
 
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, sub_objective)`): the sub problem to solve.
-  This can be given in three forms
-   1. as an [`AbstractManoptProblem`](@ref), then the `sub_state=` specifies the solver to use
-   2. as a closed form solution, as a function evaluating with new allocations `(M, p, X) -> q` that solves the sub problem on `M` given the current iterate `p` and (sub)gradient `X`.
-   3. as a closed form solution, as a function `(M, q, p, X) -> q` working in place of `q`.
-  For points 2 and 3 the `sub_state` has to be set to the corresponding [`AbstractEvaluationType`](@ref), [`AllocatingEvaluation`](@ref) and [`InplaceEvaluation`](@ref), respectively
-  This keyword takes further into account `sub_kwargs` to evejtually decorate the problem
-
-* `sub_state= if sub_problem isa Function evaluation else GradientDescentState(M; p=copy(M,p); kwargs...)`:
-
-  specify either the solver for a `sub_problem` or the kind of evaluation if the sub problem is given by a closed form solution
-  this keyword takes into account the `sub_stopping_criterion`, and the `sub_kwargs`, that are also used to potentially decorate the state.
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_var(:Keyword, :sub_state; default="[`GradientDescentState`](@ref)`(M, copy(M,p))`"))
 
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`:
-  $_kw_stopping_criterion for the sub solver. $(_kw_used_in("sub_state"))
+  $_kw_stopping_criterion for the sub solver. $(_note(:KeywordUsedIn, "sub_state"))
 
 $(_note(:OtherKeywords))
 

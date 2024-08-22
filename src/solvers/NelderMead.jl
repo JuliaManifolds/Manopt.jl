@@ -62,7 +62,7 @@ after the description
 
 * `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
   is the $(_link(:manifold_dimension; M="")) of `M`.
-* $_field_step
+$(_var(:Field, :stepsize))
 * `α`: the reflection parameter ``α > 0``:
 * `γ` the expansion parameter ``γ > 0``:
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,

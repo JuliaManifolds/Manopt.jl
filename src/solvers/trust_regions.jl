@@ -16,8 +16,8 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * $(_field_stop)
 * `randomize`:               indicate whether `X` is initialised to a random vector or not
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
-* $_field_sub_problem
-* $_field_sub_state
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 * `σ`:                       Gaussian standard deviation when creating the random initial tangent vector
   This field has no effect, when `randomize` is false.
 * `trust_region_radius`: the trust-region radius
@@ -301,13 +301,11 @@ $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
   $(_kw_stopping_criterion)
-* $(_kw_sub_kwargs_default): $(_kw_sub_kwargs)
+$(_var(:Keyword, :sub_kwargs))
 * `sub_stopping_criterion` – the default from [`truncated_conjugate_gradient_descent`](@ref):
   $(_kw_stopping_criterion)
-* `sub_problem=`[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`:
-   problem for the subsolver
-* `sub_state=`[`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion.
-  See also `sub_kwargs=`.
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`"))
+$(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add=" where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
 * `θ=1.0`:                the superlinear convergence target rate of ``1+θ`` of the tCG-method
   [`truncated_conjugate_gradient_descent`](@ref), and is used in a stopping criterion therein
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4`: the initial trust-region radius
