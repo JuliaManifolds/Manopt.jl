@@ -20,7 +20,7 @@ $(_var(:Field, :inverse_retraction_method))
 $(_var(:Field, :vector_transport_method))
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
-* $_field_stop
+$(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :stepsize))
 $(_var(:Field, :retraction_method))
 
@@ -49,7 +49,7 @@ $(_var(:Argument, :sub_state))
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)` $_kw_stop_note
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, FrankWolfeState)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 
@@ -196,18 +196,11 @@ $(_note(:GradientObjective))
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
-
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)
-  $_kw_stopping_criterion
-
-$(_var(:Keyword, :X; add=:as_Gradient))
-
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
 * `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
   the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
-
 * `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:
   the gradient of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
-
 $(_var(:Keyword, :sub_kwargs))
 
 * `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
@@ -216,8 +209,10 @@ $(_var(:Keyword, :sub_kwargs))
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 $(_var(:Keyword, :sub_state; default="[`GradientDescentState`](@ref)`(M, copy(M,p))`"))
 
-* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`:
-  $_kw_stopping_criterion for the sub solver. $(_note(:KeywordUsedIn, "sub_state"))
+$(_var(:Keyword, :X; add=:as_Gradient))
+$(_var(:Keyword, :stopping_criterion, "sub_stopping_criterion"; default="`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`"))
+  $(_note(:KeywordUsedIn, "sub_state"))
+$(_var(:Keyword, :X; add=:as_Gradient))
 
 $(_note(:OtherKeywords))
 

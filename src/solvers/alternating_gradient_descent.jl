@@ -13,7 +13,7 @@ see also [`alternating_gradient_descent`](@ref).
 * `order`: the current permutation
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :stepsize))
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
+$(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X; add=[:as_Gradient]))
 * `k`, ì`:              internal counters for the outer and inner iterations, respectively.
@@ -21,6 +21,15 @@ $(_var(:Field, :X; add=[:as_Gradient]))
 # Constructors
 
     AlternatingGradientDescentState(M; kwargs...)
+
+# Keyword arguments
+* `inner_iterations=5`
+$(_var(:Keyword, :p))
+* `order_type::Symbol=:Linear`
+* `order::Vector{<:Int}=Int[]`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`"))
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, AlternatingGradientDescentState)`"))
+$(_var(:Keyword, :X))
 
 Generate the options for point `p` and where `inner_iterations`, `order_type`, `order`,
 `retraction_method`, `stopping_criterion`, and `stepsize`` are keyword arguments
@@ -174,8 +183,7 @@ $(_var(:Keyword, :evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`),
   a per cycle permuted sequence (`:Random`) or the default `:Linear` one.
 * `inner_iterations=5`:  how many gradient steps to take in a component before alternating to the next
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`):
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`)"))
 $(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`"))
 * `order=[1:n]`:         the initial permutation, where `n` is the number of gradients in `gradF`.
 $(_var(:Keyword, :retraction_method))

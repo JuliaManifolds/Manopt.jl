@@ -38,7 +38,6 @@ $(_var(:Keyword, :evaluation))
 * `η=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `expect_zero_residual=false`: whether or not the algorithm might expect that the value of
   residual (objective) at minimum is equal to 0.
-  $(_kw_stopping_criterion)
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
 * `initial_jacobian_f`:      the initial Jacobian of the cost function `f`.
@@ -47,7 +46,7 @@ $(_var(:Keyword, :evaluation))
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_tangent_basis`:  an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) specify the basis of the tangent space for `jacobian_f`.
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`:
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
 $(_note(:OtherKeywords))
 

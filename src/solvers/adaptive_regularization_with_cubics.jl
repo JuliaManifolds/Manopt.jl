@@ -23,7 +23,7 @@ $(_var(:Field, :X; add=[:as_Gradient]))
 * `ρ_denominator`: a value to store the denominator from the computation of ρ
   to allow for a warning or error when this value is non-positive.
 $(_var(:Field, :retraction_method))
-* $_field_stop
+$(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
 
@@ -47,7 +47,7 @@ Construct the solver state with all fields stated as keyword arguments and the f
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :p))
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(100)`"))
 $(_var(:Keyword, :X))
 """
 mutable struct AdaptiveRegularizationState{
@@ -240,10 +240,9 @@ $(_var(:Keyword, :evaluation))
 * `maxIterLanczos=200`: a shortcut to set the stopping criterion in the sub solver,
 * `ρ_regularization=1e3`: a regularization to avoid dividing by zero for small values of cost and model
 $(_var(:Keyword, :retraction_method)):
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`:
-  $_kw_stopping_criterion
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(40)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-9)`$(_sc(:Any))[`StopWhenAllLanczosVectorsUsed`](@ref)`(maxIterLanczos)`"))
 $(_var(:Keyword, :sub_kwargs))
-* `sub_objective=nothing`: $_kw_sub_objective
+* `sub_objective=nothing`: a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword
   By default, this is initialized as a [`AdaptiveRagularizationWithCubicsModelObjective`](@ref), which can further be decorated by using the `sub_kwargs=` keyword.
 $(_var(:Keyword, :sub_state; default="[`LanczosState`](@ref)`(M, copy(M,p))`"))
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))

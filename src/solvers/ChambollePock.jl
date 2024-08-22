@@ -19,7 +19,7 @@ $(_var(:Field, :inverse_retraction_method, "inverse_retraction_method_dual"; M="
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
 * `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
 $(_var(:Field, :retraction_method))
-* `stop`:               a [`StoppingCriterion`](@ref)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `variant`:            whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base`: function `(pr, st, k) -> m` to update the primal base
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
@@ -54,7 +54,7 @@ $(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`"))
 * `variant=:exact`: run the exact Chambolle Pock by default
 * `update_primal_base=missing`
 * `update_dual_base=missing`
@@ -244,7 +244,7 @@ $(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:exact` if `Λ` is missing, otherwise `:linearized`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
-* `stopping_criterion=[StopAfterIteration`](@ref)`(100)`: $_kw_stopping_criterion
+$(_var(:Keyword, :stopping_criterion; default="[StopAfterIteration`](@ref)`(100)`"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_var(:Keyword, :retraction_method))

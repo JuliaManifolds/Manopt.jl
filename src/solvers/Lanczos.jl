@@ -9,8 +9,8 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 
 # Fields
 
-* `stop`:            the stopping criterion
-* `stop_newton`:     the stopping criterion for the inner Newton iteration
+$(_var(:Field, :stopping_criterion, "stop"))
+$(_var(:Field, :stopping_criterion, "stop_newton", add="used for the inner Newton iteration"))
 * `σ`:               the current regularization parameter
 * `X`:               the Iterate
 * `Lanczos_vectors`: the obtained Lanczos vectors
@@ -29,9 +29,8 @@ Solve the adaptive regularized subproblem with a Lanczos iteration
 $(_var(:Keyword, :X; add="as the iterate"))
 * `maxIterLanzcos=200`: shortcut to set the maximal number of iterations in the ` stopping_crtierion=`
 * `θ=0.5`: set the parameter in the [`StopWhenFirstOrderProgress`](@ref) within the default `stopping_criterion=`.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`:
-   the stopping criterion for the Lanczos iteration.
-* `stopping_criterion_newtown=`[`StopAfterIteration`](@ref)`(200)`: the stopping criterion for the inner Newton iteration.
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(maxIterLanczos)`$(_sc(:Any))[`StopWhenFirstOrderProgress`](@ref)`(θ)`"))
+$(_var(:Keyword, :stopping_criterion, "stopping_criterion_newton"; default="[`StopAfterIteration`](@ref)`(200)`", add=" used for the inner Newton iteration"))
 * `σ=10.0`: specify the regularization parameter
 """
 mutable struct LanczosState{T,R,SC,SCN,B,TM,C} <: AbstractManoptSolverState
@@ -53,7 +52,7 @@ function LanczosState(
     θ=0.5,
     stopping_criterion::SC=StopAfterIteration(maxIterLanczos) |
                            StopWhenFirstOrderProgress(θ),
-    stopping_criterion_newtown::SCN=StopAfterIteration(200),
+    stopping_criterion_newton::SCN=StopAfterIteration(200),
     σ::R=10.0,
 ) where {T,SC<:StoppingCriterion,SCN<:StoppingCriterion,R}
     tridig = spdiagm(maxIterLanczos, maxIterLanczos, [0.0])
@@ -63,7 +62,7 @@ function LanczosState(
         X,
         σ,
         stopping_criterion,
-        stopping_criterion_newtown,
+        stopping_criterion_newton,
         Lanczos_vectors,
         tridig,
         coeffs,

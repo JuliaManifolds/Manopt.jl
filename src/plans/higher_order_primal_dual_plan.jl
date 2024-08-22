@@ -75,7 +75,7 @@ $(_var(:Field, :X))
 * `primal_stepsize::Float64`:  proximal parameter of the primal prox
 * `dual_stepsize::Float64`:    proximal parameter of the dual prox
 * `reg_param::Float64`:        regularisation parameter for the Newton matrix
-* `stop::`[`StoppingCriterion`](@ref): a [`StoppingCriterion`](@ref)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `update_primal_base`:        function to update the primal base
 * `update_dual_base`:          function to update the dual base
 $(_var(:Field, :inverse_retraction_method))

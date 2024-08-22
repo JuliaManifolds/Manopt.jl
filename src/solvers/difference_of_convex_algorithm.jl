@@ -12,7 +12,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X; add=[:as_Subgradient]))
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 
 The sub task consists of a method to solve
 
@@ -38,7 +38,7 @@ Here the elements passed are the current iterate `p` and the subgradient `X` of 
 ## further keyword arguments
 
 $(_var(:Keyword, :p; add=:as_Initial))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`: $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 """
 mutable struct DifferenceOfConvexState{
@@ -137,8 +137,7 @@ until the stopping criterion (see the `stopping_criterion` keyword is fulfilled.
 $(_var(:Keyword, :evaluation))
 * `gradient=nothing`:        specify ``$(_tex(:grad)) f``, for debug / analysis or enhancing the `stopping_criterion=`
 * `grad_g=nothing`:          specify the gradient of `g`. If specified, a subsolver is automatically set up.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`"))
 * `g=nothing`:               specify the function `g` If specified, a subsolver is automatically set up.
 * `sub_cost=`[`LinearizedDCCost`](@ref)`(g, p, initial_vector)`: a cost to be used within the default `sub_problem`.
   $(_note(:KeywordUsedIn, "sub_objective"))

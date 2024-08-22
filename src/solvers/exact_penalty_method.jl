@@ -11,7 +11,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `ρ`: the penalty parameter
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `u`: the smoothing parameter and threshold for violation of the constraints
 * `u_min`: the lower bound for the smoothing parameter and threshold for violation of the constraints
 * `θ_ϵ`: the scaling factor of the tolerance parameter
@@ -43,7 +43,7 @@ construct the exact penalty state, where `sub_problem` is a closed form solution
 $(_var(:Keyword, :p; add=:as_Initial))
 * `ρ=1.0`
 * `θ_ρ=0.3`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`"))
   [`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )`
 
 # See also
@@ -257,7 +257,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
   $(_note(:KeywordUsedIn, "sub_state"))
 $(_var(:Keyword, :sub_state; default="[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
 $(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add=" where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`: $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`"))
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.

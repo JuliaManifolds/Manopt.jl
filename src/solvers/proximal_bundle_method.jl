@@ -23,7 +23,7 @@ $(_var(:Field, :inverse_retraction_method))
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_last_serious`:           last serious iterate
 $(_var(:Field, :retraction_method))
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `transported_subgradients`: subgradients of the bundle that are transported to `p_last_serious`
 $(_var(:Field, :vector_transport_method))
 $(_var(:Field, :X; add=[:as_Subgradient]))
@@ -48,7 +48,7 @@ Generate the state for the [`proximal_bundle_method`](@ref) on the manifold `M`
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
 $(_var(:Keyword, :sub_problem; default="[`proximal_bundle_method_subsolver`](@ref)`"))
 $(_var(:Keyword, :sub_state; default="[`AllocatingEvaluation`](@ref)"))
 $(_var(:Keyword, :vector_transport_method))
@@ -247,8 +247,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 * `m=0.0125`:        a real number that controls the decrease of the cost function
 * `μ=0.5`:           initial proximal parameter for the subproblem
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
 $(_var(:Keyword, :sub_problem; default="[`proximal_bundle_method_subsolver`](@ref)`"))
 $(_var(:Keyword, :sub_state; default="[`AllocatingEvaluation`](@ref)"))
 $(_var(:Keyword, :vector_transport_method))

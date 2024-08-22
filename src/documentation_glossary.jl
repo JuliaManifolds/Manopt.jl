@@ -386,7 +386,7 @@ define!(
     :Variable,
     :stopping_criterion,
     :description,
-    (; M="M") -> "a functor indicating that the stopping criterion is fulfilled.",
+    (; M="M") -> "a functor indicating that the stopping criterion is fulfilled",
 )
 define!(:Variable, :stopping_criterion, :type, "StoppingCriterion")
 
@@ -472,14 +472,3 @@ define!(:Variable, :X, :default, (; M="M", p="p") -> _link(:zero_vector; M=M, p=
 define!(:Variable, :X, :as_Gradient, "storing the gradient at the current iterate")
 define!(:Variable, :X, :as_Subgradient, "storing a subgradient at the current iterate")
 define!(:Variable, :X, :as_Memory, "to specify the representation of a tangent vector")
-
-# ---
-# Old strings
-
-# Fields
-_field_stop = "`stop::`[`StoppingCriterion`](@ref) : a functor indicating when to stop and whether the algorithm has stopped"
-
-_kw_stopping_criterion = raw"a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop."
-_kw_stop_note = "is used to set the field `stop`."
-
-_kw_sub_objective = "a shortcut to modify the objective of the subproblem used within in the `sub_problem=` keyword"

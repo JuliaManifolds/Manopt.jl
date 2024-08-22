@@ -37,7 +37,7 @@ $(_var(:Keyword, :evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Random`) or the default linear one.
 * `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`): $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`)"))
 
 $(_note(:OtherKeywords))
 

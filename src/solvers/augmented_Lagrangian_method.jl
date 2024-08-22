@@ -27,7 +27,7 @@ $(_var(:Field, :sub_state))
 * `τ`:     factor for the improvement of the evaluation of the penalty parameter
 * `θ_ρ`:   the scaling factor of the penalty parameter
 * `θ_ϵ`:   the scaling factor of the accuracy tolerance
-* $_field_stop
+$(_var(:Field, :stopping_criterion, "stop"))
 
 # Constructor
 

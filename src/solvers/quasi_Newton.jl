@@ -16,7 +16,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `yk`:                            the current gradient difference
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :stepsize))
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :X; add=[:as_Gradient]))
 * `X_old`:                         the last gradient
 
@@ -30,7 +30,7 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 ## Keyword arguments
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
-* `stopping_criterion=`[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, QuasiNewtonState)`"))
 $(_var(:Keyword, :vector_transport_method))
@@ -231,8 +231,7 @@ $(_var(:Keyword, :evaluation; add=:GradientExample))
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`WolfePowellLinesearch`](@ref)`(retraction_method, vector_transport_method)`"))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(max(1000, memory_size))`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
 $(_var(:Keyword, :vector_transport_method))
 
 $(_note(:OtherKeywords))

@@ -34,8 +34,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 * `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=[`StopAfterIteration`](@ref)`(50)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(50)`"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
 $(_var(:Keyword, :vector_transport_method))

@@ -40,9 +40,7 @@ Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal,
 # Keyword arguments
 
 $(_var(:Keyword, :evaluation))
-* `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,
-  where `c` is ``$(_tex(:norm,"b"))``.
-
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,  where `c` is ``$(_tex(:norm,"b"))``"))
 $(_note(:OutputSection))
 """
 

@@ -8,7 +8,7 @@ Describes the state of a gradient based descent algorithm.
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :X; add=[:as_Gradient]))
-* $_field_stop
+$(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :stepsize))
 * `direction::`[`DirectionUpdateRule`](@ref) : a processor to handle the obtained gradient and compute a
   direction to “walk into”.
@@ -28,7 +28,7 @@ $(_var(:Argument, :M; type=true))
 
 * `direction=`[`IdentityUpdateRule`](@ref)`()`
 $(_var(:Keyword, :p; add=:as_Initial))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(100)` $_kw_stop_note
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(100)`"))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, GradientDescentState; retraction_method=retraction_method)`"))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :X; add=:as_Memory))
@@ -144,12 +144,8 @@ $(_note(:GradientObjective))
 
 $(_var(:Keyword, :evaluation; add=:GradientExample))
 $(_var(:Keyword, :retraction_method))
-
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, GradientDescentState)`"))
-
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
-  $_kw_stopping_criterion
-
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :X; add=:as_Gradient))
 
 $(_note(:OtherKeywords))

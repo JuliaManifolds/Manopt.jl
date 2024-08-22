@@ -76,15 +76,14 @@ $(_var(:Argument, :p))
 
 # Keyword arguments
 
-* `coefficient::DirectionUpdateRule=[`ConjugateDescentCoefficient`](@ref)`()`:
+* `coefficient::DirectionUpdateRule=`[`ConjugateDescentCoefficient`](@ref)`()`:
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
-  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `i` is the current iterate.
+  `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`"))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :vector_transport_method))
 
 If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.

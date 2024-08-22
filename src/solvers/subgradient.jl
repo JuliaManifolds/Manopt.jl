@@ -9,7 +9,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_star`: optimal value
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :stepsize))
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `X`: the current element from the possible subgradients at `p` that was last evaluated.
 
 # Constructor
@@ -23,7 +23,7 @@ Initialise the Subgradient method state
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-* `stopping_criterion=[`StopAfterIteration`](@ref)`(5000)`: $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(5000)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 """
 mutable struct SubGradientMethodState{
@@ -112,7 +112,7 @@ alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` c
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-* `stopping_criterion=[`StopAfterIteration`](@ref)`(5000)`: $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(5000)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.

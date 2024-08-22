@@ -19,7 +19,6 @@ $(_var(:Field, :p; add=" storing the best point found so far"))
 * `c_σ`                         decay rate for the cumulation path for the step-size control
 * `c_m`                         learning rate for the mean
 * `d_σ`                         damping parameter for step-size update
-* `stop`                        stopping criteria, [`StoppingCriterion`](@ref)
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
@@ -37,6 +36,7 @@ $(_var(:Field, :p; add=" storing the best point found so far"))
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
 $(_var(:Field, :retraction_method))
+$(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :vector_transport_method))
 * `basis`                       a real coefficient basis for covariance matrix
 * `rng`                         RNG for generating new points
@@ -361,7 +361,7 @@ setting.
 * `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-* `stopping_criterion=default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`:
+$(_var(:Keyword, :stopping_criterion; default="`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in

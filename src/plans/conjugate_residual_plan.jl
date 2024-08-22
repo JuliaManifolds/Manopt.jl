@@ -185,7 +185,7 @@ A state for the [`conjugate_residual`](@ref) solver.
 * `rAr::R`: internal field for storing ``⟨ r, $(_tex(:Cal, "A"))(p)[r] ⟩``
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
-* `stop::TStop`: a [`StoppingCriterion`](@ref) for the solver
+$(_var(:Field, :stopping_criterion, "stop"))
 
 # Constructor
 
@@ -201,7 +201,7 @@ Initialise the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :X))
 
 # See also

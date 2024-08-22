@@ -15,7 +15,7 @@ Let `T` denote the type of a tangent vector and `R <: Real`.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 * `randomize`:          indicate whether `X` is initialised to a random vector or not
 * `residual::T`:                 the gradient of the model ``m(Y)``
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `θ::R`:                     the superlinear convergence target rate of ``1+θ``
 * `trust_region_radius::R`:   the trust-region radius
 * `X::T`:                     the gradient ``$(_tex(:grad))f(p)``
@@ -35,16 +35,16 @@ Initialise the TCG state.
 
 ## Keyword arguments
 
-* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
 * `κ=0.1`
 * `project!::F=copyto!`: initialise the numerical stabilisation to just copy the result
 * `randomize=false`
 * `θ=1.0`
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(base_manifold(TpM)) / 4`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
-  $(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`
-  $(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`:
-  $(_kw_stopping_criterion)
+$(_var(
+    :Keyword,
+    :stopping_criterion;
+    default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`"))
+$(_var(:Keyword, :X))
 
 # See also
 
@@ -450,13 +450,12 @@ $(_var(:Keyword, :evaluation))
 * `κ=0.1`:                the linear convergence target rate.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* `randomize=false`:      indicate whether `X` is initialised to a random vector or not.
-  This disables preconditioning.
+* `randomize=false`:      indicate whether `X` is initialised to a random vector or not. This disables preconditioning.
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`
-  $(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`
-  $(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`:
-  $(_kw_stopping_criterion)
+$(_var(
+    :Keyword,
+    :stopping_criterion;
+    default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension; M="base_manifold(Tpm)"))`)`$(_sc(:Any))[`StopWhenResidualIsReducedByFactorOrPower`](@ref)`(; κ=κ, θ=θ)`$(_sc(:Any))[`StopWhenTrustRegionIsExceeded`](@ref)`()`$(_sc(:Any))[`StopWhenCurvatureIsNegative`](@ref)`()`$(_sc(:Any))[`StopWhenModelIncreased`](@ref)`()`"))
 * `trust_region_radius=`[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M) / 4`: the initial trust-region radius
 
 $(_note(:OtherKeywords))

@@ -14,7 +14,7 @@ $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :p, "q"; add=" storing the gradient step"))
 $(_var(:Field, :p, "r"; add=" storing the result of the proximal map"))
 $(_var(:Field, :stepsize))
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `X`, `Y`: the current gradient and descent direction, respectively
   their common type is set by the keyword `X`
 $(_var(:Field, :sub_problem))
@@ -45,7 +45,7 @@ $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :retraction_method))
 
 $(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`()`"))
-* `stopping_criterion=`[StopWhenChangeLess`](@ref)`(1e-8)`: $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[StopWhenChangeLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 """
 mutable struct DifferenceOfConvexProximalState{
@@ -201,8 +201,7 @@ $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`()`"))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`):
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`)"))
   A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
   cost to be used within the default `sub_problem` that is initialized as soon as `g` is provided.
@@ -218,8 +217,7 @@ $(_var(:Keyword, :sub_kwargs))
   $(_note(:KeywordUsedIn, "sub_problem"))
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 $(_var(:Keyword, :sub_state; default="([`GradientDescentState`](@ref) or [`TrustRegionsState`](@ref) if `sub_hessian` is provided)"))
-* `sub_stopping_criterion`: ([`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))`[`StopWhenGradientNormLess`](@ref)`(1e-8)`:
-  a stopping criterion used withing the default `sub_state=`
+$(_var(:Keyword, :stopping_criterion, "sub_stopping_criterion"; default="([`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))`[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
   $(_note(:KeywordUsedIn, "sub_state"))
 
 $(_note(:OtherKeywords))

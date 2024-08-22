@@ -139,10 +139,10 @@ Describes a Gradient based descent algorithm, with
 A default value is given in brackets if a parameter can be left out in initialization.
 
 $(_var(:Field, :p; add=[:as_Iterate]))
-* $_field_stop
 $(_var(:Field, :retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp`: value of ``F`` for the current proposal point
+$(_var(:Field, :stopping_criterion, "stop"))
 * `jacF`:                 the current Jacobian of ``F``
 * `gradient`:             the current gradient of ``F``
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
@@ -172,7 +172,7 @@ The following fields are keyword arguments
 * `expect_zero_residual=false`
 * `initial_gradient=`$(_link(:zero_vector))
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-12)`"))
 
 # See also
 

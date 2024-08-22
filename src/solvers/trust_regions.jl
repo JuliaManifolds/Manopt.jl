@@ -13,7 +13,7 @@ Store the state of the trust-regions solver.
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `project!`:                for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 * `randomize`:               indicate whether `X` is initialised to a random vector or not
 * `ρ_regularization`:        regularize the model fitness ``ρ`` to avoid division by zero
 $(_var(:Field, :sub_problem))
@@ -50,8 +50,7 @@ $(_var(:Argument, :sub_state))
 * `max_trust_region_radius=sqrt(manifold_dimension(M))`
 $(_var(:Keyword, :p; add=:as_Initial))
 * `project!=copyto!`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
 * `randomize=false`
 * `ρ_regularization=10000.0`
 * `θ=1.0`
@@ -299,11 +298,9 @@ $(_var(:Keyword, :evaluation))
 * `reduction_threshold=0.1`: trust-region reduction threshold: if ρ is below this threshold,
   the trust region radius is reduced by `reduction_factor`.
 $(_var(:Keyword, :retraction_method))
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
 $(_var(:Keyword, :sub_kwargs))
-* `sub_stopping_criterion` – the default from [`truncated_conjugate_gradient_descent`](@ref):
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion, "sub_stopping_criterion"; default="( see [`truncated_conjugate_gradient_descent`](@ref))"))
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, `[`ConstrainedManifoldObjective`](@ref)`(subcost, subgrad; evaluation=evaluation))`"))
 $(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add=" where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
 * `θ=1.0`:                the superlinear convergence target rate of ``1+θ`` of the tCG-method
