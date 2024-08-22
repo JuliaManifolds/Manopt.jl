@@ -50,7 +50,7 @@ and `δ` is initialized to a copy of this vector.
 The following fields from above <re keyword arguments
 
 $(_var(:Keyword, :p; add=:as_Initial))
-* `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`
+* `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
 $(_var(:Keyword, :retraction_method))
@@ -110,7 +110,7 @@ end
 function ConjugateGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
-    coefficient::DirectionUpdateRule=ConjugateDescentCoefficientRule(),
+    coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -125,7 +125,7 @@ function ConjugateGradientDescentState(
         p,
         stopping_criterion,
         stepsize,
-        coefficient,
+        _produce_type(coefficient, M),
         retraction_method,
         vector_transport_method,
         initial_gradient,
@@ -137,34 +137,40 @@ function get_message(cgs::ConjugateGradientDescentState)
     return get_message(cgs.stepsize)
 end
 
+_doc_CG_notaion = """
+Denote the last iterate and gradient by ``p_k,X_k``,
+the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
+as well as the last update direction by ``δ_k``.
+
+Then the coefficient reads:
+"""
+
 @doc raw"""
-    ConjugateDescentCoefficient <: DirectionUpdateRule
+    ConjugateDescentCoefficientRule <: DirectionUpdateRule
 
-Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
-``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``,  based on [Fletcher:1987](@cite) adapted to manifolds:
-
-```math
-β_k =
-\frac{ \lVert X_{k+1} \rVert_{p_{k+1}}^2 }
-{\langle -\delta_k,X_k \rangle_{p_k}}.
-```
+Compute an update coefficient for the conjugate gradient method, where
 
 See also [`conjugate_gradient_descent`](@ref)
 
 # Constructor
+
     ConjugateDescentCoefficientRule()
 
 Construct the conjugate descent coefficient update rule, a new storage is created by default.
 """
 struct ConjugateDescentCoefficientRule <: DirectionUpdateRule end
 
-## TODO: continue here with the docs.
 """
     ConjugateDescentCoefficient()
 
+Compute the (classical) conjugate gradient coefficient based on [Fletcher:1987](@cite) adapted to manifolds
 
+$(_doc_CG_notaion)
+```math
+β_k = $(_tex(:frac, _tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2", "⟨-δ_k,X_k⟩_{p_k}"))
+```
+
+$(_note(:ManifoldDefaultFactory, "ConjugateDescentCoefficientRule"))
 """
 function ConjugateDescentCoefficient()
     return ManifoldDefaultsFactory(
@@ -194,48 +200,55 @@ function show(io::IO, ::ConjugateDescentCoefficientRule)
     return print(io, "ConjugateDescentCoefficientRule()")
 end
 
-@doc raw"""
+@doc """
     DaiYuanCoefficientRule <: DirectionUpdateRule
 
-Computes an update coefficient for the conjugate gradient method, where
-the [`ConjugateGradientDescentState`](@ref)` cgds` include the last iterates
-``p_k,X_k``, the current iterates ``p_{k+1},X_{k+1}`` of the iterate and the gradient, respectively,
-and the last update direction ``\delta=\delta_k``, based on [DaiYuan:1999](@cite) adapted to manifolds:
+Computes an update coefficient for the conjugate gradient method based on [DaiYuan:1999](@cite) adapted to manifolds
 
-Let ``\nu_k = X_{k+1} - P_{p_{k+1}\gets p_k}X_k``,
-where ``P_{a\gets b}(⋅)`` denotes a vector transport from the tangent space at ``a`` to ``b``.
+# Constructor
+
+    DaiYuanCoefficientRule(M::AbstractManifold; kwargs...)
+
+Construct the Dai—Yuan coefficient update rule.
+
+# Keyword arguments
+
+$(_var(:Keyword, :vector_transport_method))
+
+# See also
+[`DaiYuanCoefficient`](@ref), [`conjugate_gradient_descent`](@ref)
+"""
+struct DaiYuanCoefficientRule{VTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
+    vector_transport_method::VTM
+end
+function DaiYuanCoefficientRule(
+    M::AbstractManifold; vector_transport_method::VTM=default_vector_transport_method(M)
+) where {VTM<:AbstractVectorTransportMethod}
+    return DaiYuanCoefficientRule{VTM}(vector_transport_method)
+end
+@doc """
+    DaiYuanCoefficient()
+
+Compute the conjugate gradient update coefficient based on [DaiYuan:1999](@cite) adapted to
+Riemannian manifolds.
+
+$(_doc_CG_notaion)
+Let ``ν_k = X_{k+1} - $(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))X_k``,
+where $(_math(:vector_transport, :symbol)) denotes a vector transport.
 
 Then the coefficient reads
 
 ````math
 β_k =
-\frac{ \lVert X_{k+1} \rVert_{p_{k+1}}^2 }
-{\langle P_{p_{k+1}\gets p_k}\delta_k, \nu_k \rangle_{p_{k+1}}}.
+$(_tex(
+    :frac,
+    _tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2",
+    "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
+))
 ````
 
-See also [`conjugate_gradient_descent`](@ref)
-
-# Constructor
-    function DaiYuanCoefficientRule(
-        M::AbstractManifold=DefaultManifold(2);
-        t::AbstractVectorTransportMethod=default_vector_transport_method(M)
-    )
-
-Construct the Dai—Yuan coefficient update rule, where the parallel transport is the
-default vector transport and a new storage is created by default.
+$(_note(:ManifoldDefaultFactory, "DaiYuanCoefficientRule"))
 """
-struct DaiYuanCoefficientRule{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
-    transport_method::TVTM
-    function DaiYuanCoefficientRule(t::AbstractVectorTransportMethod)
-        return new{typeof(t)}(t)
-    end
-end
-function DaiYuanCoefficientRule(
-    M::AbstractManifold; vector_transport_method=default_vector_transport_method(M)
-)
-    return DaiYuanCoefficientRule(vector_transport_method)
-end
-## TODO: continue here with the docs.
 function DaiYuanCoefficient(args; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DaiYuanCoefficientRule, args...; kwargs...)
 end
@@ -257,17 +270,22 @@ function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
     δ_old = get_storage(u.storage, VectorStorageKey(:δ))
 
-    gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
+    gradienttr = vector_transport_to(
+        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
+    )
     ν = cgs.X - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.transport_method)
+    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
     coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, δtr, ν)
     update_storage!(u.storage, amp, cgs)
     return coef
 end
 function show(io::IO, u::DaiYuanCoefficientRule)
-    return print(io, "DaiYuanCoefficient($(u.transport_method))")
+    return print(io, "DaiYuanCoefficient($(u.vector_transport_method))")
 end
 
+#
+#
+# TODO: Continue HERE
 @doc raw"""
     FletcherReevesCoefficient <: DirectionUpdateRule
 
@@ -342,7 +360,7 @@ default vector transport and a new storage is created by default.
 """
 mutable struct HagerZhangCoefficient{TVTM<:AbstractVectorTransportMethod} <:
                DirectionUpdateRule
-    transport_method::TVTM
+    vector_transport_method::TVTM
 
     function HagerZhangCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
@@ -369,9 +387,11 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficient})(
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
     δ_old = get_storage(u.storage, VectorStorageKey(:δ))
 
-    gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
+    gradienttr = vector_transport_to(
+        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
+    )
     ν = cgs.X - gradienttr #notation y from [HZ06]
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.transport_method)
+    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
     denom = inner(M, cgs.p, δtr, ν)
     νknormsq = inner(M, cgs.p, ν, ν)
     β =
@@ -385,7 +405,7 @@ function (u::DirectionUpdateRuleStorage{<:HagerZhangCoefficient})(
     return coef
 end
 function show(io::IO, u::HagerZhangCoefficient)
-    return print(io, "HagerZhangCoefficient($(u.transport_method))")
+    return print(io, "HagerZhangCoefficient($(u.vector_transport_method))")
 end
 
 @doc raw"""
@@ -418,7 +438,7 @@ See also [`conjugate_gradient_descent`](@ref)
 """
 struct HestenesStiefelCoefficient{TVTM<:AbstractVectorTransportMethod} <:
        DirectionUpdateRule
-    transport_method::TVTM
+    vector_transport_method::TVTM
     function HestenesStiefelCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
@@ -444,15 +464,17 @@ function (u::DirectionUpdateRuleStorage{<:HestenesStiefelCoefficient})(
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
     δ_old = get_storage(u.storage, VectorStorageKey(:δ))
 
-    gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
-    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.transport_method)
+    gradienttr = vector_transport_to(
+        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
+    )
+    δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
     ν = cgs.X - gradienttr #notation from [HZ06]
     β = inner(M, cgs.p, cgs.X, ν) / inner(M, cgs.p, δtr, ν)
     update_storage!(u.storage, amp, cgs)
     return max(0, β)
 end
 function show(io::IO, u::HestenesStiefelCoefficient)
-    return print(io, "HestenesStiefelCoefficient($(u.transport_method))")
+    return print(io, "HestenesStiefelCoefficient($(u.vector_transport_method))")
 end
 
 @doc raw"""
@@ -485,7 +507,7 @@ Construct the Lui Storey coefficient update rule, where the parallel transport i
 default vector transport and a new storage is created by default.
 """
 struct LiuStoreyCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
-    transport_method::TVTM
+    vector_transport_method::TVTM
     function LiuStoreyCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
@@ -509,14 +531,16 @@ function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficient})(
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
     δ_old = get_storage(u.storage, VectorStorageKey(:δ))
-    gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
+    gradienttr = vector_transport_to(
+        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
+    )
     ν = cgs.X - gradienttr # notation y from [HZ06]
     coef = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
     update_storage!(u.storage, amp, cgs)
     return coef
 end
 function show(io::IO, u::LiuStoreyCoefficient)
-    return print(io, "LiuStoreyCoefficient($(u.transport_method))")
+    return print(io, "LiuStoreyCoefficient($(u.vector_transport_method))")
 end
 
 @doc raw"""
@@ -552,7 +576,7 @@ default vector transport and a new storage is created by default.
 See also [`conjugate_gradient_descent`](@ref)
 """
 struct PolakRibiereCoefficient{TVTM<:AbstractVectorTransportMethod} <: DirectionUpdateRule
-    transport_method::TVTM
+    vector_transport_method::TVTM
     function PolakRibiereCoefficient(t::AbstractVectorTransportMethod)
         return new{typeof(t)}(t)
     end
@@ -575,14 +599,16 @@ function (u::DirectionUpdateRuleStorage{<:PolakRibiereCoefficient})(
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
 
-    gradienttr = vector_transport_to(M, p_old, X_old, cgs.p, u.coefficient.transport_method)
+    gradienttr = vector_transport_to(
+        M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
+    )
     ν = cgs.X - gradienttr
     β = real(inner(M, cgs.p, cgs.X, ν)) / real(inner(M, p_old, X_old, X_old))
     update_storage!(u.storage, amp, cgs)
     return max(zero(β), β)
 end
 function show(io::IO, u::PolakRibiereCoefficient)
-    return print(io, "PolakRibiereCoefficient($(u.transport_method))")
+    return print(io, "PolakRibiereCoefficient($(u.vector_transport_method))")
 end
 
 @doc raw"""

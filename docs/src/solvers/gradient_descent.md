@@ -27,7 +27,8 @@ AverageGradient
 Nesterov
 ```
 
-which internally use the [`ManifoldDefaultsFactory`](@ref) and
+which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
+elements
 
 ```@docs
 Manopt.AverageGradientRule
