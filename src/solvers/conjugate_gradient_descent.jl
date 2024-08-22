@@ -35,7 +35,7 @@ p_{k+1} = \operatorname{retr}_{p_k} \bigl( s_kδ_k \bigr),
 """
 _doc_update_delta_k = raw"""
 ````math
-\delta_k=\operatorname{grad}f(p_k) + β_k \delta_{k-1}
+δ_k=\operatorname{grad}f(p_k) + β_k \delta_{k-1}
 ````
 """
 

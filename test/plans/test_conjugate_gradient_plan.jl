@@ -37,10 +37,15 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
     @testset "representation and summary of Coefficients" begin
         p = ParallelTransport()
         pt = repr(p)
+        M = Euclidean(2)
         @test repr(Manopt.ConjugateDescentCoefficientRule()) ==
             "ConjugateDescentCoefficientRule()"
-        @test repr(Manopt.DaiYuanCoefficientRule(p)) == "DaiYuanCoefficient($pt)"
-        @test repr(HagerZhangCoefficient()) == "HagerZhangCoefficient($pt)"
+        # either in the factory constructor or in the factory call we need M
+        # so lets alternate
+        @test repr(Manopt.DaiYuanCoefficient(M; vector_transport_method=p)()) ==
+            "DaiYuanCoefficient(; vector_transport_method=$pt)"
+        @test repr(HagerZhangCoefficient(; vector_transport_method=p)(M)) ==
+            "HagerZhangCoefficient(; vector_transport_method=$pt)"
         @test repr(HestenesStiefelCoefficient()) == "HestenesStiefelCoefficient($pt)"
         @test repr(PolakRibiereCoefficient()) == "PolakRibiereCoefficient($pt)"
         cgbr = Manopt.ConjugateGradientBealeRestartRule(

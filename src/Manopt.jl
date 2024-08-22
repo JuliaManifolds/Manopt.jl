@@ -458,7 +458,7 @@ export SteepestDirectionUpdateRule,
     PolakRibiereCoefficient,
     ConjugateDescentCoefficient,
     LiuStoreyCoefficient,
-    DaiYuanCoefficientRule,
+    DaiYuanCoefficient,
     HagerZhangCoefficient,
     ConjugateGradientBealeRestartRule
 #
