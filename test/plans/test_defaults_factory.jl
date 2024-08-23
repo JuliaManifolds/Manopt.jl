@@ -12,4 +12,5 @@ end
     )
     @test fdr().t == 2.0
     @test fdr(Euclidean(2)).t == 2.0
+    @test startswith(repr(fdr), "ManifoldDefaultsFactory(FactoryDummyRule)")
 end

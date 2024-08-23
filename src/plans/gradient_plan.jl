@@ -448,7 +448,8 @@ function (a::AverageGradientRule)(
 end
 
 """
-    AverageGradient()
+    AverageGradient(M; kwargs...)
+    AverageGradient(; kwargs...)
 
 Add an average of gradients to a gradient processor. A set of previous directions (from the
 inner processor) and the last iterate are stored, average is taken after vector transporting
