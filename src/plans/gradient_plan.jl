@@ -314,24 +314,26 @@ $(_var(:Keyword, :X))
 # See also
 [`MomentumGradient`](@ref)
 """
-mutable struct MomentumGradientRule{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
-               DirectionUpdateRule
+mutable struct MomentumGradientRule{
+    P,T,D<:DirectionUpdateRule,R<:Real,VTM<:AbstractVectorTransportMethod
+} <: DirectionUpdateRule
     momentum::R
     p_old::P
-    direction::DirectionUpdateRule
+    direction::D
     vector_transport_method::VTM
     X_old::T
 end
 function MomentumGradientRule(
     M::AbstractManifold;
     p::P=rand(M),
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     X::Q=zero_vector(M, p),
     momentum::F=0.2,
 ) where {P,Q,F<:Real,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradientRule{P,Q,F,VTM}(
-        momentum, p, direction, vector_transport_method, X
+    dir = _produce_type(direction, M)
+    return MomentumGradientRule{P,Q,typeof(dir),F,VTM}(
+        momentum, p, dir, vector_transport_method, X
     )
 end
 function (mg::MomentumGradientRule)(
@@ -394,7 +396,7 @@ $(_var(:Keyword, :vector_transport_method))
         M::AbstractManifold;
         p::P=rand(M);
         n::Int=10
-        direction::DirectionUpdateRule=IdentityUpdateRule();
+        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
         gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = default_vector_transport_method(M, typeof(p))
@@ -408,23 +410,25 @@ Add average to a gradient problem, where
 * `last_iterate`:            stores the last iterate
 $(_var(:Keyword, :vector_transport_method))
 """
-mutable struct AverageGradientRule{P,T,VTM<:AbstractVectorTransportMethod} <:
-               DirectionUpdateRule
+mutable struct AverageGradientRule{
+    P,T,D<:DirectionUpdateRule,VTM<:AbstractVectorTransportMethod
+} <: DirectionUpdateRule
     gradients::AbstractVector{T}
     last_iterate::P
-    direction::DirectionUpdateRule
+    direction::D
     vector_transport_method::VTM
 end
 function AverageGradientRule(
     M::AbstractManifold;
     p::P=rand(M),
     n::Int=10,
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
     gradients=[zero_vector(M, p) for _ in 1:n],
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {P,VTM}
-    return AverageGradientRule{P,eltype(gradients),VTM}(
-        gradients, copy(M, p), direction, vector_transport_method
+    dir = _produce_type(direction, M)
+    return AverageGradientRule{P,eltype(gradients),typeof(dir),VTM}(
+        gradients, copy(M, p), dir, vector_transport_method
     )
 end
 function (a::AverageGradientRule)(

@@ -57,7 +57,7 @@ The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 Alternatively to `f` and `grad_f` you can provide
 the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
 
-Available update rules are [`SteepestDirectionUpdateRule`](@ref), which yields a [`gradient_descent`](@ref),
+Available update rules are [`SteepestDescentCoefficientRule`](@ref), which yields a [`gradient_descent`](@ref),
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficientRule`](@ref), [`FletcherReevesCoefficient`](@ref),
 [`HagerZhangCoefficient`](@ref), [`HestenesStiefelCoefficient`](@ref),
 [`LiuStoreyCoefficient`](@ref), and [`PolakRibiereCoefficient`](@ref).

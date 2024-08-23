@@ -23,7 +23,7 @@ Create a `StochasticGradientDescentState` with start point `p`.
 
 # Keyword arguments
 
-* `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
+* `direction=`[`StochasticGradientRule`](@ref)`(M, $(_link(:zero_vector)))
 * `order_type=:RandomOrder``
 * `order=Int[]`: specify how to store the order of indices for the next epoche
 $(_var(:Keyword, :retraction_method))
@@ -56,7 +56,7 @@ function StochasticGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     X::T=zero_vector(M, p),
-    direction::D=StochasticGradient(zero_vector(M, p)),
+    direction::D=StochasticGradientRule(M; X=copy(M, p, X)),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
     retraction_method::RM=default_retraction_method(M, typeof(p)),
@@ -103,38 +103,68 @@ function show(io::IO, sgds::StochasticGradientDescentState)
     return print(io, s)
 end
 """
-    StochasticGradient <: AbstractGradientGroupProcessor
+    StochasticGradientRule<: AbstractGradientGroupDirectionRule
+
+Create a functor `(problem, state k) -> (s,X)` to evaluate the stochatsic gradient,
+that is chose a random index from the `state` and use the internal field for
+evaluation of the gradient in-place.
 
 The default gradient processor, which just evaluates the (stochastic) gradient or a subset thereof.
 
 # Fields
 
-* `dir::T`: a storage for a tangent vector.
+$(_var(:Field, :X))
 
 # Constructor
 
-    StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
+    StochasticGradientRule(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
 
-Initialize the stochastic Gradient processor with tangent vector type of `X`,
+Initialize the stochastic gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
+
+# See also
+[`stochastic_gradient_descent`](@ref), [`StochasticGradient`])@ref)
 """
-struct StochasticGradient{T} <: AbstractGradientGroupProcessor
-    dir::T
+struct StochasticGradientRule{T} <: AbstractGradientGroupDirectionRule
+    X::T
 end
-function StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
-    return StochasticGradient{typeof(X)}(X)
+function StochasticGradientRule(
+    M::AbstractManifold; p=rand(M), X::T=zero_vector(M, p)
+) where {T}
+    return StochasticGradientRule{T}(X)
 end
 
-function (sg::StochasticGradient)(
-    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, iter
+function (sg::StochasticGradientRule)(
+    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, k
 )
     # for each new epoch choose new order if at random order
     ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
     # the gradient to choose, either from the order or completely random
     j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
-    return sgds.stepsize(apm, sgds, iter), get_gradient!(apm, sg.dir, sgds.p, j)
+    return sgds.stepsize(apm, sgds, k), get_gradient!(apm, sg.X, sgds.p, j)
 end
 
+@doc """
+    StochasticGradient(; kwargs...)
+    StochasticGradient(M::AbstractManifold; kwargs...)
+
+# Keyword arguments
+
+$(_var(:Keyword, :X, "initial_gradient"))
+$(_var(:Keyword, :p; add=:as_Initial))
+
+$(_note(:ManifoldDefaultFactory, "StochasticGradientRule"))
+"""
+function StochasticGradient(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.StochasticGradientRule, args...; kwargs...)
+end
+
+"""
+    default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
+
+Deinfe the default step size computed for the [`StochasticGradientDescentState`](@ref),
+which is [`ConstantStepsize`](@ref)`M`.
+"""
 function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
     return ConstantStepsize(M)
 end
@@ -229,8 +259,8 @@ function stochastic_gradient_descent!(
     M::AbstractManifold,
     msgo::O,
     p;
-    direction::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=StochasticGradient(
-        zero_vector(M, p)
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=StochasticGradient(;
+        p=p
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),

@@ -13,6 +13,7 @@ stochastic_gradient_descent!
 
 ```@docs
 StochasticGradientDescentState
+Manopt.default_stepsize(::AbstractManifold, ::Type{StochasticGradientDescentState})
 ```
 
 Additionally, the options share a [`DirectionUpdateRule`](@ref),
@@ -20,8 +21,14 @@ so you can also apply [`MomentumGradient`](@ref) and [`AverageGradient`](@ref) h
 The most inner one should always be.
 
 ```@docs
-AbstractGradientGroupProcessor
 StochasticGradient
+```
+
+which internally uses
+
+```@docs
+AbstractGradientGroupDirectionRule
+StochasticGradientRule
 ```
 
 ## [Technical details](@id sec-sgd-technical-details)

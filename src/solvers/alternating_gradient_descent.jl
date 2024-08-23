@@ -68,14 +68,14 @@ function AlternatingGradientDescentState(
     return AlternatingGradientDescentState{
         P,
         T,
-        AlternatingGradient,
+        AlternatingGradientRule,
         typeof(stopping_criterion),
         typeof(stepsize),
         typeof(retraction_method),
     }(
         p,
         X,
-        AlternatingGradient(zero_vector(M, p)),
+        _produce_type(AlternatingGradient(; p=p, X=X), M),
         stopping_criterion,
         stepsize,
         order_type,
@@ -112,24 +112,62 @@ function get_message(agds::AlternatingGradientDescentState)
 end
 
 """
-    AlternatingGradient <: DirectionUpdateRule
+    AlternatingGradientRule <: AbstractGradientGroupDirectionRule
 
-The default gradient processor, which just evaluates the (alternating) gradient on one of
-the components
+Create a functor `(problem, state k) -> (s,X)` to evaluate the alternating gradient,
+that is alternating between the components of the gradient and has an field for
+partial evaluation of the gradient in-place.
+
+# Fields
+
+$(_var(:Field, :X))
+
+# Constructor
+
+    AlternatingGradientRule(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
+
+Initialize the alternating gradient processor with tangent vector type of `X`,
+where both `M` and `p` are just help variables.
+
+# See also
+[`alternating_gradient_descent`](@ref), [`AlternatingGradient`])@ref)
 """
-struct AlternatingGradient{T} <: AbstractGradientGroupProcessor
-    dir::T
+struct AlternatingGradientRule{T} <: AbstractGradientGroupDirectionRule
+    X::T
+end
+function AlternatingGradientRule(
+    M::AbstractManifold; p=rand(M), X::T=zero_vector(M, p)
+) where {T}
+    return AlternatingGradientRule{T}(X)
 end
 
-function (ag::AlternatingGradient)(
-    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, i
+function (ag::AlternatingGradientRule)(
+    amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, k
 )
     M = get_manifold(amp)
     # at begin of inner iterations reset internal vector to zero
-    (i == 1) && zero_vector!(M, ag.dir, agds.p)
+    (k == 1) && zero_vector!(M, ag.X, agds.p)
     # update order(k)th component in-place
-    get_gradient!(amp, ag.dir[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    return agds.stepsize(amp, agds, i), ag.dir # return current full gradient
+    get_gradient!(amp, ag.X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
+    return agds.stepsize(amp, agds, k), ag.X # return current full gradient
+end
+
+@doc """
+    AlternatingGradient(; kwargs...)
+    AlternatingGradient(M::AbstractManifold; kwargs...)
+
+Specify that a gradient based method should only update parts of the gradient
+in order to do a alternating gradient descent.
+
+# Keyword arguments
+
+$(_var(:Keyword, :X, "initial_gradient"))
+$(_var(:Keyword, :p; add=:as_Initial))
+
+$(_note(:ManifoldDefaultFactory, "AlternatingGradientRule"))
+"""
+function AlternatingGradient(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AlternatingGradientRule, args...; kwargs...)
 end
 
 # update Armijo to work on the kth gradient only.
@@ -197,7 +235,6 @@ usually the obtained (approximate) minimizer, see [`get_solver_return`](@ref) fo
     The input of each of the (component) gradients is still the whole vector `X`,
     just that all other then the `i`th input component are assumed to be fixed and just
     the `i`th components gradient is computed / returned.
-
 """
 
 @doc "$(_doc_AGD)"

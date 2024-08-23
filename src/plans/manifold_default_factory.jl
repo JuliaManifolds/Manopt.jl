@@ -83,6 +83,10 @@ function (mdf::ManifoldDefaultsFactory{T,<:AbstractManifold})() where {T}
         return T(mdf.args...; mdf.kwargs...)
     end
 end
+function (mdf::ManifoldDefaultsFactory{T,Nothing})() where {T}
+    (!mdf.constructor_requires_manifold) && (return T(mdf.args...; mdf.kwargs...))
+    throw(MethodError(T, mdf.args))
+end
 """
     _produce_type(t::T, M::AbstractManifold)
     _produce_type(t::ManifoldDefaultsFactory{T}, M::AbstractManifold)
@@ -93,3 +97,28 @@ just be returned.
 """
 _produce_type(t, M::AbstractManifold) = t
 _produce_type(t::ManifoldDefaultsFactory, M::AbstractManifold) = t(M)
+
+function show(io::IO, mdf::ManifoldDefaultsFactory{T,M}) where {T,M}
+    rm = mdf.constructor_requires_manifold
+    if M === Nothing
+        mline = "without a default manifold"
+    else
+        mline = "Default manifold: $(mdf.M)"
+        (!rm) && (mline = "$mline and the constructor does also not require a manifold.")
+    end
+    ar_s = length(mdf.args) == 0 ? " none" : "\n$(join(["  * $s" for s in mdf.args],"\n"))"
+    kw_s = if length(mdf.kwargs) == 0
+        " none"
+    else
+        "\n$(join(["  * $(s.first)=$(repr(s.second))" for s in mdf.kwargs],"\n"))"
+    end
+    s = """
+    ManifoldDefaultsFactory($T)
+    * $mline
+
+    * Arguments:$(ar_s)
+
+    * Keyword arguments:$(kw_s)
+    """
+    return print(io, s)
+end

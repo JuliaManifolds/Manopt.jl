@@ -28,12 +28,29 @@ In general we introduce a few factories, that avoid having to pass the manifold 
   `Nesterov` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
 * `ConjugateDescentCoefficient` is now called `ConjugateDescentCoefficientRule`.
   `ConjugateDescentCoefficient` works as before, but can now use the factory in between
+* the `ConjugateGradientBealeRestart` is now called `ConjugateGradientBealeRestartRule`.
+  For the `ConjugateGradientBealeRestart` the manifold is now a first paramaater, that is not necessary and no longer the `manifold=` keyword.
 * `DaiYuanCoefficient` is now called `DaiYuanCoefficientRule`.
-  `DaiYuanCoefficient` works as before, but the manifold as its first parameter is no longer necessary.
+  For the `DaiYuanCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
 * `FletcherReevesCoefficient` is now called `FletcherReevesCoefficientRule`.
   `FletcherReevesCoefficient` works as before, but can now use the factory in between
 * `HagerZhangCoefficient` is now called `HagerZhangCoefficientRule`.
-  `HagerZhangCoefficient` works as before, but the manifold as its first parameter is no longer necessary.
+  For the `HagerZhangCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+* `HestenesStiefelCoefficient` is now called `HestenesStiefelCoefficientRule`.
+  For the `HestenesStiefelCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+* `LiuStoreyCoefficient` is now called `LiuStoreyCoefficientRule`.
+  For the `LiuStoreyCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+* `PolakRibiereCoefficient` is now called `PolakRibiereCoefficientRule`.
+  For the `PolakRibiereCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+* the `SteepestDirectionUpdateRule` is now called `SteepestDescentCoefficientRule`.
+  The `SteepestDescentCoefficient` is equivalent, but creates the new factory interims wise.
+* `AbstractGradientGroupProcessor` is now called `AbstractGradientGroupDirectionRule`
+* the `StochasticGradient` is now called `StochasticGradientRule`.
+  The `StochasticGradient` is equivalent, but creates the new factory interims wise,
+  so that the manifold is not longer necessary.
+* the `AlternatingGradient` is now called `AlternatingGradientRule`.
+  The `AlternatingGradient` is equivalent, but creates the new factory interims wise,
+  so that the manifold is not longer necessary.
 * `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes bool, sometimes real) and was unused.
   It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldes gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
 * Unify doc strings and presentation of keyword arguments

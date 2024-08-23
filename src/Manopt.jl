@@ -452,7 +452,7 @@ export objective_cache_factory
 # Direction Update Rules
 export DirectionUpdateRule
 export Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
-export SteepestDirectionUpdateRule,
+export SteepestDescentCoefficient,
     HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
     PolakRibiereCoefficient,
@@ -460,7 +460,7 @@ export SteepestDirectionUpdateRule,
     LiuStoreyCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient,
-    ConjugateGradientBealeRestartRule
+    ConjugateGradientBealeRestart
 #
 # Solvers
 export adaptive_regularization_with_cubics,

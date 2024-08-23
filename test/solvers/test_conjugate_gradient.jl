@@ -21,7 +21,7 @@ include("../utils/example_tasks.jl")
         δ2 = [0.5, 2.0]
         diff = grad_2 - grad_1
 
-        dU = SteepestDirectionUpdateRule()
+        dU = SteepestDescentCoefficient()
         s1 = ConjugateGradientDescentState(
             M;
             p=x0,
@@ -36,7 +36,7 @@ include("../utils/example_tasks.jl")
         @test default_stepsize(M, typeof(s1)) isa ArmijoLinesearch
         @test Manopt.get_message(s1) == ""
 
-        dU = Manopt.ConjugateDescentCoefficientRule()
+        dU = Manopt.ConjugateDescentCoefficient()
         s2 = ConjugateGradientDescentState(
             M;
             p=x0,

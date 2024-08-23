@@ -9,8 +9,8 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
     @testset "Test Restart CG" begin
         M = Euclidean(2)
         du = DummyCGCoeff()
-        dur2 = ConjugateGradientBealeRestartRule(M, du; threshold=0.3)
-        dur3 = ConjugateGradientBealeRestartRule(M, du; threshold=0.1)
+        dur2 = ConjugateGradientBealeRestart(du; threshold=0.3)
+        dur3 = ConjugateGradientBealeRestart(du; threshold=0.1)
         f(M, p) = norm(M, p)^2
         grad_f(M, p) = p
         p0 = [1.0, 0.0]
@@ -38,21 +38,28 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         p = ParallelTransport()
         pt = repr(p)
         M = Euclidean(2)
-        @test repr(Manopt.ConjugateDescentCoefficientRule()) ==
-            "ConjugateDescentCoefficientRule()"
+        @test repr(Manopt.ConjugateDescentCoefficient()(M)) ==
+            "Manopt.ConjugateDescentCoefficientRule()"
+        @test repr(FletcherReevesCoefficient()()) ==
+            "Manopt.FletcherReevesCoefficientRule()"
         # either in the factory constructor or in the factory call we need M
         # so lets alternate
         @test repr(Manopt.DaiYuanCoefficient(M; vector_transport_method=p)()) ==
-            "DaiYuanCoefficient(; vector_transport_method=$pt)"
+            "Manopt.DaiYuanCoefficientRule(; vector_transport_method=$pt)"
         @test repr(HagerZhangCoefficient(; vector_transport_method=p)(M)) ==
-            "HagerZhangCoefficient(; vector_transport_method=$pt)"
-        @test repr(HestenesStiefelCoefficient()) == "HestenesStiefelCoefficient($pt)"
-        @test repr(PolakRibiereCoefficient()) == "PolakRibiereCoefficient($pt)"
+            "Manopt.HagerZhangCoefficientRule(; vector_transport_method=$pt)"
+        @test repr(HestenesStiefelCoefficient()(M)) ==
+            "Manopt.HestenesStiefelCoefficientRule(; vector_transport_method=$pt)"
+        # Requires a manifold
+        @test_throws MethodError HestenesStiefelCoefficient()()
+        @test repr(PolakRibiereCoefficient()(M)) ==
+            "Manopt.PolakRibiereCoefficientRule(; vector_transport_method=$(pt))"
         cgbr = Manopt.ConjugateGradientBealeRestartRule(
             Euclidean(), ConjugateDescentCoefficient()
         )
-        s1 = "ConjugateGradientBealeRestartRule(ConjugateDescentCoefficientRule(), 0.2, ParallelTransport())"
+        s1 = "Manopt.ConjugateGradientBealeRestartRule(Manopt.ConjugateDescentCoefficientRule(); threshold=0.2, vector_transport_method=$(pt))"
         @test repr(cgbr) == s1
-        @test repr(LiuStoreyCoefficient()) == "LiuStoreyCoefficient($pt)"
+        @test repr(LiuStoreyCoefficient(M)()) ==
+            "Manopt.LiuStoreyCoefficientRule(; vector_transport_method=$pt)"
     end
 end

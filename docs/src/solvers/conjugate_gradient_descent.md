@@ -22,13 +22,14 @@ The update rules act as [`DirectionUpdateRule`](@ref), which internally always f
 
 ```@docs
 ConjugateDescentCoefficient
+ConjugateGradientBealeRestart
 DaiYuanCoefficient
 FletcherReevesCoefficient
 HagerZhangCoefficient
 HestenesStiefelCoefficient
 LiuStoreyCoefficient
 PolakRibiereCoefficient
-SteepestDirectionUpdateRule
+SteepestDescentCoefficient
 ```
 
 ## Internal rule storages
@@ -38,6 +39,10 @@ Manopt.ConjugateGradientBealeRestartRule
 Manopt.DaiYuanCoefficientRule
 Manopt.FletcherReevesCoefficientRule
 Manopt.HagerZhangCoefficientRule
+Manopt.HestenesStiefelCoefficientRule
+Manopt.LiuStoreyCoefficientRule
+Manopt.PolakRibiereCoefficientRule
+Manopt.SteepestDescentCoefficientRule
 ```
 
 ## [Technical details](@id sec-cgd-technical-details)

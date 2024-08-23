@@ -122,7 +122,27 @@ _math(args...; kwargs...) = glossary(:Math, args...; kwargs...)
 # Links
 # Collect short forms for links, especially Interdocs ones.
 _link(args...; kwargs...) = glossary(:Link, args...; kwargs...)
+
+define!(
+    :Link,
+    :AbstractManifold,
+    "[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)",
+)
+define!(
+    :Link,
+    :manifold_dimension,
+    (; M="M") ->
+        "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$(length(M) > 0 ? "`($M)`" : "")",
+)
 define!(:Link, :Manopt, "[`Manopt.jl`](https://manoptjl.org)")
+define!(
+    :Link, :Manifolds, "[`Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/)"
+)
+define!(
+    :Link,
+    :ManifoldsBase,
+    "[`ManifoldsBase.jl`](https://juliamanifolds.github.io/ManifoldsBase.jl/)",
+)
 define!(
     :Link,
     :rand,
@@ -135,17 +155,7 @@ define!(
     (; M="M", p="p") ->
         "[`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)$(length(M) > 0 ? "`($M, $p)`" : "")",
 )
-define!(
-    :Link,
-    :manifold_dimension,
-    (; M="M") ->
-        "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$(length(M) > 0 ? "`($M)`" : "")",
-)
-define!(
-    :Link,
-    :AbstractManifold,
-    "[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)",
-)
+
 #
 #
 # Notes / Remarks
