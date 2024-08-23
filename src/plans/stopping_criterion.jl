@@ -857,7 +857,7 @@ end
 #
 
 @doc raw"""
-    StopWhenAll <: StoppingCriterion
+    StopWhenAll <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _all_ indicate to stop. The `reason` is given by the concatenation of all
@@ -939,7 +939,7 @@ function Base.:&(s1::StopWhenAll, s2::StopWhenAll)
 end
 
 @doc raw"""
-    StopWhenAny <: StoppingCriterion
+    StopWhenAny <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _any_ single one indicates to stop. The `reason` is given by the
