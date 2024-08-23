@@ -59,6 +59,8 @@ Manopt.update_rule_storage_vectors(::DummyCGCoeff) = Tuple{}
         )
         s1 = "Manopt.ConjugateGradientBealeRestartRule(Manopt.ConjugateDescentCoefficientRule(); threshold=0.2, vector_transport_method=$(pt))"
         @test repr(cgbr) == s1
+        cgbr2 = Manopt.ConjugateGradientBealeRestartRule(ConjugateDescentCoefficient())
+        @test cgbr.threshold == cgbr.threshold
         @test repr(LiuStoreyCoefficient(M)()) ==
             "Manopt.LiuStoreyCoefficientRule(; vector_transport_method=$pt)"
     end

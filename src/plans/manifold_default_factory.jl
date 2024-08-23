@@ -80,6 +80,7 @@ function (mdf::ManifoldDefaultsFactory{T,<:AbstractManifold})() where {T}
     if mdf.constructor_requires_manifold
         return T(mdf.M, mdf.args...; mdf.kwargs...)
     else
+        println("frmops $(mdf.args...)")
         return T(mdf.args...; mdf.kwargs...)
     end
 end

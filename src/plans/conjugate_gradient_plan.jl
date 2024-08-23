@@ -233,7 +233,7 @@ struct DaiYuanCoefficientRule{VTM<:AbstractVectorTransportMethod} <: DirectionUp
     vector_transport_method::VTM
 end
 function DaiYuanCoefficientRule(
-    M::AbstractManifold=ManifoldsBase.DefaultManifold();
+    M::AbstractManifold=DefaultManifold();
     vector_transport_method::VTM=default_vector_transport_method(M),
 ) where {VTM<:AbstractVectorTransportMethod}
     return DaiYuanCoefficientRule{VTM}(vector_transport_method)
@@ -394,7 +394,7 @@ mutable struct HagerZhangCoefficientRule{VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function HagerZhangCoefficientRule(
-    M::AbstractManifold=ManifoldsBase.DefaultManifold();
+    M::AbstractManifold=DefaultManifold();
     vector_transport_method::VTM=default_vector_transport_method(M),
 ) where {VTM<:AbstractVectorTransportMethod}
     return HagerZhangCoefficientRule{VTM}(vector_transport_method)
@@ -503,7 +503,7 @@ struct HestenesStiefelCoefficientRule{VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function HestenesStiefelCoefficientRule(
-    M::AbstractManifold=ManifoldsBase.DefaultManifold();
+    M::AbstractManifold=DefaultManifold();
     vector_transport_method::VTM=default_vector_transport_method(M),
 ) where {VTM<:AbstractVectorTransportMethod}
     return HestenesStiefelCoefficientRule{VTM}(vector_transport_method)
@@ -690,7 +690,7 @@ struct PolakRibiereCoefficientRule{VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function PolakRibiereCoefficientRule(
-    M::AbstractManifold=ManifoldsBase.DefaultManifold();
+    M::AbstractManifold=DefaultManifold();
     vector_transport_method::VTM=default_vector_transport_method(M),
 ) where {VTM<:AbstractVectorTransportMethod}
     return PolakRibiereCoefficientRule{VTM}(vector_transport_method)
@@ -859,9 +859,7 @@ end
 function ConjugateGradientBealeRestartRule(
     direction_update::Union{DirectionUpdateRule,ManifoldDefaultsFactory}; kwargs...
 )
-    return ConjugateGradientBealeRestartRule(
-        ManifoldsBase.DefaultManifold(), direction_update; kwargs...
-    )
+    return ConjugateGradientBealeRestartRule(DefaultManifold(), direction_update; kwargs...)
 end
 
 @inline function update_rule_storage_points(dur::ConjugateGradientBealeRestartRule)
