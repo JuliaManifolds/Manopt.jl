@@ -131,7 +131,7 @@ since both rules can also be used with the `IdentityUpdateRule` within [`gradien
 For this not-that-large-scale example we can of course also use a gradient descent with `ArmijoLinesearch`,
 
 ```{julia}
-fullGradF(M, p) = sum(grad_distance(M, q, p) for q in data)
+fullGradF(M, p) = 1/n*sum(grad_distance(M, q, p) for q in data)
 p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch())
 ```
 
@@ -141,8 +141,6 @@ but in general it is expected to be a bit slow.
 AL = ArmijoLinesearch();
 @benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)
 ```
-
-Note that all 5 runs are very close to each other.
 
 ## Technical details
 
