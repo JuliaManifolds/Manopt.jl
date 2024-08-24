@@ -1,4 +1,4 @@
-using Manopt, Manifolds, Test
+using ManifoldsBase, Manopt, Manifolds, Test
 
 @testset "Stepsize" begin
     M = ManifoldsBase.DefaultManifold(2)
@@ -119,7 +119,7 @@ using Manopt, Manifolds, Test
         p = [2.0, 2.0]
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p=p)
-        ps = Manopt.PolyakStepsize()
+        ps = Polyak()()
         @test repr(ps) ==
             "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)

@@ -991,10 +991,12 @@ where ``∂f`` denotes a nonzero-subgradient of ``f`` at the current iterate ``p
 
 initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``.
 
-$(_note(:ManifoldDefaultFactory, "NesterovRule"))
+$(_note(:ManifoldDefaultFactory, "PolyakStepsize"))
 """
 function Polyak(args...; kwargs...)
-    return ManifoldDefaultsFactory(args...; requires_manifold=false, kwargs...)
+    return ManifoldDefaultsFactory(
+        PolyakStepsize, args...; requires_manifold=false, kwargs...
+    )
 end
 
 @doc """
