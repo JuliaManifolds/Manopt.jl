@@ -197,8 +197,7 @@ y = gradient_descent(
     RegressionGradient!(data, t),
     x0;
     evaluation=InplaceEvaluation(),
-    stepsize=ArmijoLinesearch(
-        M;
+    stepsize=ArmijoLinesearch(;
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
@@ -287,8 +286,7 @@ y2 = gradient_descent(
     RegressionGradient!(data2, t2),
     x1;
     evaluation=InplaceEvaluation(),
-    stepsize=ArmijoLinesearch(
-        M;
+    stepsize=ArmijoLinesearch(;
         initial_stepsize=1.0,
         contraction_factor=0.990,
         sufficient_decrease=0.05,
@@ -458,8 +456,7 @@ y3 = alternating_gradient_descent(
     x2;
     evaluation=InplaceEvaluation(),
     debug=[:Iteration, " | ", :Cost, "\n", :Stop, 50],
-    stepsize=ArmijoLinesearch(
-        M;
+    stepsize=ArmijoLinesearch(;
         contraction_factor=0.999,
         sufficient_decrease=0.066,
         stop_when_stepsize_less=1e-11,

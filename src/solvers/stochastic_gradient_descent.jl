@@ -264,7 +264,9 @@ function stochastic_gradient_descent!(
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=default_stepsize(M, StochasticGradientDescentState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, StochasticGradientDescentState
+    ),
     order=collect(1:length(get_gradients(M, msgo, p))),
     order_type::Symbol=:Random,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
@@ -278,7 +280,7 @@ function stochastic_gradient_descent!(
         X=zero_vector(M, p),
         direction=_produce_type(direction, M),
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         order_type=order_type,
         order=order,
         retraction_method=retraction_method,

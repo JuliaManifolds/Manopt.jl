@@ -11,7 +11,7 @@ include("../utils/example_tasks.jl")
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         x0 = [0.0, 1.0]
         sC = StopAfterIteration(1)
-        s = ConstantStepsize(M)
+        s = Manopt.ConstantStepsize(M)
         retr = ExponentialRetraction()
         vtm = ParallelTransport()
 
@@ -33,7 +33,7 @@ include("../utils/example_tasks.jl")
             initial_gradient=zero_vector(M, x0),
         )
         @test s1.coefficient(dmp, s1, 1) == 0
-        @test default_stepsize(M, typeof(s1)) isa ArmijoLinesearch
+        @test default_stepsize(M, typeof(s1)) isa Manopt.ArmijoLinesearchStepsize
         @test Manopt.get_message(s1) == ""
 
         dU = Manopt.ConjugateDescentCoefficient()
@@ -175,7 +175,7 @@ include("../utils/example_tasks.jl")
             f,
             grad_f,
             p0;
-            stepsize=ArmijoLinesearch(M),
+            stepsize=ArmijoLinesearch(),
             coefficient=FletcherReevesCoefficient(),
             stopping_criterion=StopAfterIteration(15),
         )
@@ -186,7 +186,7 @@ include("../utils/example_tasks.jl")
             f,
             grad_f,
             p0;
-            stepsize=ArmijoLinesearch(M),
+            stepsize=ArmijoLinesearch(),
             coefficient=FletcherReevesCoefficient(),
             stopping_criterion=StopAfterIteration(15),
             return_state=true,
@@ -201,7 +201,7 @@ include("../utils/example_tasks.jl")
             M,
             f,
             grad_f;
-            stepsize=ArmijoLinesearch(M),
+            stepsize=ArmijoLinesearch(),
             coefficient=FletcherReevesCoefficient(),
             stopping_criterion=StopAfterIteration(15),
         )

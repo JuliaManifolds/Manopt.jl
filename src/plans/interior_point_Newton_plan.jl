@@ -155,7 +155,7 @@ mutable struct InteriorPointNewtonState{
         _step_p=rand(_step_M),
         step_state::StepSt=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
         centrality_condition::F=(N, p) -> true,
-        stepsize::S=ArmijoLinesearch(
+        stepsize::S=ArmijoLinesearchStepsize(
             get_manifold(step_problem);
             retraction_method=default_retraction_method(get_manifold(step_problem)),
             initial_stepsize=1.0,

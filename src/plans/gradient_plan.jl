@@ -578,6 +578,7 @@ $(_var(:Keyword, :p; add=:as_Initial))
 * `μ=0.9``
 * `shrinkage = k -> 0.8`
 $(_var(:Keyword, :inverse_retraction_method))
+
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
 function Nesterov(args...; kwargs...)

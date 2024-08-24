@@ -17,7 +17,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         M;
         p=copy(p),
         stopping_criterion=StopAfterIteration(10),
-        stepsize=ConstantStepsize(M),
+        stepsize=Manopt.ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)

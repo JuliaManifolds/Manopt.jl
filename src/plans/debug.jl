@@ -966,7 +966,7 @@ function (d::DebugWarnIfCostIncreases)(
                 @warn """
                 You seem to be running a `gradient_descent` with a `ConstantStepsize`.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
-                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,st,k)).
+                `ConstantLength(value)` with a `value` less than $(get_last_stepsize(p,st,k)).
                 """
             end
             if d.status === :Once

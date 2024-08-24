@@ -334,7 +334,7 @@ R3 = gradient_descent(
         RecordCount() => :Count,
         :Cost],
     ],
-    stepsize = ConstantStepsize(1.0),
+    stepsize = ConstantLength(1.0),
     stopping_criterion=StopAfterIteration(20),
     debug=[],
     return_state=true,

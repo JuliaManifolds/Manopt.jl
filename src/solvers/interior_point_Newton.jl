@@ -221,7 +221,7 @@ function interior_point_Newton!(
     step_problem=DefaultManoptProblem(_step_M, step_objective),
     _step_p=rand(_step_M),
     step_state=StepsizeState(_step_p, zero_vector(_step_M, _step_p)),
-    stepsize::Stepsize=ArmijoLinesearch(
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=ArmijoLinesearch(
         _step_M;
         retraction_method=default_retraction_method(_step_M),
         initial_guess=interior_point_initial_guess,
@@ -285,7 +285,7 @@ function interior_point_Newton!(
         retraction_method=retraction_method,
         step_problem=step_problem,
         step_state=step_state,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, _step_M),
         kwargs...,
     )
     ips = decorate_state!(ips; kwargs...)

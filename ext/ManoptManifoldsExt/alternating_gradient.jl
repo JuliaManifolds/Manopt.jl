@@ -88,7 +88,9 @@ function alternating_gradient_descent!(
     inner_iterations::Int=5,
     stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                           StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, AlternatingGradientDescentState
+    ),
     order_type::Symbol=:Linear,
     order=collect(1:length(M.manifolds)),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
@@ -101,7 +103,7 @@ function alternating_gradient_descent!(
         p=p,
         inner_iterations=inner_iterations,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         order_type=order_type,
         order=order,
         retraction_method=retraction_method,

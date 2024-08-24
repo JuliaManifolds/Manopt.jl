@@ -83,7 +83,9 @@ function default_stepsize(
     retraction_method=default_retraction_method(M),
 )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
+    return ArmijoLinesearchStepsize(
+        M; retraction_method=retraction_method, initial_stepsize=1.0
+    )
 end
 function get_message(gds::GradientDescentState)
     # for now only step size is quipped with messages
@@ -201,13 +203,14 @@ function gradient_descent!(
     mgo::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize=default_stepsize(
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, GradientDescentState; retraction_method=retraction_method
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
                                           StopWhenGradientNormLess(1e-8),
     debug=if is_tutorial_mode()
-        if (stepsize isa ConstantStepsize)
+        if (stepsize isa ManifoldDefaultsFactory{Manopt.ConstantStepsize})
+            # If you pass the step size (internal) directly, this is considered expert mode
             [DebugWarnIfCostIncreases(), DebugWarnIfGradientNormTooLarge()]
         else
             [DebugWarnIfGradientNormTooLarge()]
@@ -225,7 +228,7 @@ function gradient_descent!(
         M;
         p=p,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         direction=_produce_type(direction, M),
         retraction_method=retraction_method,
         X=X,

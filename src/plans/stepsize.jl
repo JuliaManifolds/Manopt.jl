@@ -9,6 +9,9 @@ the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`Abs
 and the current number of iterations are the arguments
 and returns a number, namely the stepsize to use.
 
+For most it is adviable to employ a [`ManifoldDefaultsFactory`](@ref). Then
+the function creating the factory should either be called `TypeOf` or if that is confusing or too generic, `TypeOfLength`
+
 # See also
 
 [`Linesearch`](@ref)
@@ -42,7 +45,7 @@ end
 """
     ConstantStepsize <: Stepsize
 
-A functor that always returns a fixed step size.
+A functor `problem, state, ...) -> s to provide a constant step size `s`.
 
 # Fields
 
@@ -56,26 +59,20 @@ A functor that always returns a fixed step size.
 
 initialize the stepsize to a constant `s` of type `t`.
 
-    ConstantStepsize(M::AbstractManifold=DefaultManifold(2);
-        stepsize=injectivity_radius(M)/2, type::Symbol=:relative
+    ConstantStepsize(
+        M::AbstractManifold=DefaultManifold(),
+        s=min(1.0, injectivity_radius(M)/2);
+        type::Symbol=:relative
     )
-
-initialize the stepsize to a constant `stepsize`, which by default is half the injectivity
-radius, unless the radius is infinity, then the default step size is `1`.
 """
-mutable struct ConstantStepsize{T} <: Stepsize
-    length::T
+mutable struct ConstantStepsize{R<:Real} <: Stepsize
+    length::R
     type::Symbol
 end
 function ConstantStepsize(
-    M::AbstractManifold=DefaultManifold(2);
-    stepsize=isinf(injectivity_radius(M)) ? 1.0 : injectivity_radius(M) / 2,
-    type=:relative,
-)
-    return ConstantStepsize{typeof(stepsize)}(stepsize, type)
-end
-function ConstantStepsize(stepsize::T) where {T<:Number}
-    return ConstantStepsize{T}(stepsize, :relative)
+    M::AbstractManifold, length::R=min(injectivity_radius(M) / 2, 1.0); type=:relative
+) where {R<:Real}
+    return ConstantStepsize{R}(length, type)
 end
 function (cs::ConstantStepsize)(
     amp::AbstractManoptProblem, ams::AbstractManoptSolverState, ::Any, args...; kwargs...
@@ -90,12 +87,37 @@ function (cs::ConstantStepsize)(
     return s
 end
 get_initial_stepsize(s::ConstantStepsize) = s.length
-show(io::IO, cs::ConstantStepsize) = print(io, "ConstantStepsize($(cs.length), $(cs.type))")
+function show(io::IO, cs::ConstantStepsize)
+    return print(io, "ConstantLength($(cs.length); type=:$(cs.type))")
+end
 
-@doc raw"""
+"""
+    ConstantLength(s; kwargs...)
+    ConstantLength(M::AbstractManifold, s; kwargs...)
+
+Specify a [`Stepsize`]  that is constant.
+
+# Input
+
+* `M` (optional)
+`s=min( injectivity_radius(M)/2, 1.0)` : the length to use.
+
+# Keyword argument
+
+* `type::Symbol=relative` specify the type of constant step size.
+  * `:relative` – scale the gradient tangent vector ``X`` to ``s*X``
+  * `:absolute` – scale the gradient to an absolute step length ``s``, that is ``$(_tex(:frac, "s", _tex(:norm, "X")))X``
+
+$(_note(:ManifoldDefaultFactory, "ConstantStepsize"))
+"""
+function ConstantLength(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.ConstantStepsize, args...; kwargs...)
+end
+
+@doc """
     DecreasingStepsize()
 
-A functor that represents several decreasing step sizes
+A functor `problem, state, ...) -> s to provide a constant step size `s`.
 
 # Fields
 
@@ -110,52 +132,43 @@ A functor that represents several decreasing step sizes
 
 In total the complete formulae reads for the ``i``th iterate as
 
-````math
-s_i = \frac{(l - i a)f^i}{(i+s)^e}
-````
+```math
+s_i = $(_tex(:frac, "(l - i a)f^i", "(i+s)^e"))
+```
 
 and hence the default simplifies to just ``s_i = \frac{l}{i}``
 
 # Constructor
 
-    DecreasingStepsize(l=1,f=1,a=0,e=1,s=0,type=:relative)
-
-Alternatively one can also use the following keyword.
-
-    DecreasingStepsize(M::AbstractManifold=DefaultManifold(3);
-        length=injectivity_radius(M)/2,
-        multiplier=1.0,
+    DecreasingStepsize(M::AbstractManifold;
+        length=min(injectivity_radius(M)/2, 1.0),
+        factor=1.0,
         subtrahend=0.0,
         exponent=1.0,
-        shift=0,
+        shift=0.0,
         type=:relative,
     )
 
 initializes all fields, where none of them is mandatory and the length is set to
 half and to ``1`` if the injectivity radius is infinite.
 """
-mutable struct DecreasingStepsize <: Stepsize
-    length::Float64
-    factor::Float64
-    subtrahend::Float64
-    exponent::Float64
-    shift::Int
+mutable struct DecreasingStepsize{R<:Real} <: Stepsize
+    length::R
+    factor::R
+    subtrahend::R
+    exponent::R
+    shift::R
     type::Symbol
-    function DecreasingStepsize(
-        l::Real, f::Real=1.0, a::Real=0.0, e::Real=1.0, s::Int=0, type::Symbol=:relative
-    )
-        return new(l, f, a, e, s, type)
-    end
 end
 function DecreasingStepsize(
-    M::AbstractManifold=DefaultManifold(3);
-    length=isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
-    factor=1.0,
-    subtrahend=0.0,
-    exponent=1.0,
-    shift=0,
+    M::AbstractManifold;
+    length::R=isinf(manifold_dimension(M)) ? 1.0 : manifold_dimension(M) / 2,
+    factor::R=1.0,
+    subtrahend::R=0.0,
+    exponent::R=1.0,
+    shift::R=0.0,
     type::Symbol=:relative,
-)
+) where {R}
     return DecreasingStepsize(length, factor, subtrahend, exponent, shift, type)
 end
 function (s::DecreasingStepsize)(
@@ -174,14 +187,38 @@ get_initial_stepsize(s::DecreasingStepsize) = s.length
 function show(io::IO, s::DecreasingStepsize)
     return print(
         io,
-        "DecreasingStepsize(; length=$(s.length),  factor=$(s.factor),  subtrahend=$(s.subtrahend),  shift=$(s.shift))",
+        "DecreasingLength(; length=$(s.length),  factor=$(s.factor),  subtrahend=$(s.subtrahend),  shift=$(s.shift), type=$(s.type))",
     )
 end
+"""
+    DecreasingLength(M; kwargs...)
+    DegreasingLength(; kwargs...)
+
+Specify a [`Stepsize`]  that is decreasing as ``s_k = $(_tex(:frac, "(l - ak)f^i", "(k+s)^e"))
+with the following
+
+# Keyword arguments
+
+* `exponent=1.0`:   the exponent ``e`` in the denominator
+* `factor=1.0`:     the factor ``f`` in the nominator
+* `length=min(injectivity_radius(M)/2, 1.0)`: the initial step size ``l``.
+* `subtrahend=0.0`: a value ``a`` that is subtracted every iteration
+* `shift=0.0`:      shift the denominator iterator ``k`` by ``s``.
+* `type::Symbol=relative` specify the type of constant step size.
+  * `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
+  * `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
+
+$(_note(:ManifoldDefaultFactory, "NesterovRule"))
+"""
+function DecreasingLength(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; kwargs...)
+end
+
 """
     Linesearch <: Stepsize
 
 An abstract functor to represent line search type step size determinations, see
-[`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearch`](@ref)
+[`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearchStepsizeStepsize`](@ref)
 functor.
 
 Compared to simple step sizes, the line search functors provide an interface of
@@ -205,7 +242,8 @@ end
 @doc """
     ArmijoLinesearch <: Linesearch
 
-A functor representing Armijo line search including the last runs state string the last stepsize.
+    A functor `problem, state, k, X) -> s to provide an Armijo line search to compute step size,
+    based on the search direction `X`
 
 # Fields
 
@@ -222,9 +260,6 @@ $(_var(:Keyword, :retraction_method))
   fulfill. The default accepts all points.
 * `additional_increase_condition`: (`(M,p) -> true`) specify a condtion that additionally to
   checking a valid increase has to be fulfilled. The default accepts all points.
-
-Furthermore the following fields act as safeguards
-
 * `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`: largest stepsize when to stop.
 * `stop_increasing_at_step`:    last step to increase the stepsize (phase 1),
@@ -234,16 +269,9 @@ Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
 # Constructor
 
-    ArmijoLinesearch(M=DefaultManifold())
+    ArmijoLinesearchStepsizeStepsize(M::AbstractManifold; kwarg...)
 
 with the fields keyword arguments and the retraction is set to the default retraction on `M`.
-
-The constructors return the functor to perform Armijo line search, where
-
-    (a::ArmijoLinesearch)(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
-
-of a [`AbstractManoptProblem`](@ref) `amp`, [`AbstractManoptSolverState`](@ref) `ams` and a current iterate `i`
-with keywords.
 
 ## Keyword arguments
 
@@ -260,7 +288,8 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`
 * `stop_decreasing_at_step=1000`
 """
-mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,I,F,IGF,DF,IF} <: Linesearch
+mutable struct ArmijoLinesearchStepsize{TRM<:AbstractRetractionMethod,P,I,F,IGF,DF,IF} <:
+               Linesearch
     candidate_point::P
     contraction_factor::F
     initial_guess::IGF
@@ -275,8 +304,8 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,I,F,IGF,DF,IF} <
     stop_decreasing_at_step::I
     additional_decrease_condition::DF
     additional_increase_condition::IF
-    function ArmijoLinesearch(
-        M::AbstractManifold=DefaultManifold();
+    function ArmijoLinesearchStepsize(
+        M::AbstractManifold;
         additional_decrease_condition::DF=(M, p) -> true,
         additional_increase_condition::IF=(M, p) -> true,
         candidate_point::P=allocate_result(M, rand),
@@ -308,7 +337,7 @@ mutable struct ArmijoLinesearch{TRM<:AbstractRetractionMethod,P,I,F,IGF,DF,IF} <
         )
     end
 end
-function (a::ArmijoLinesearch)(
+function (a::ArmijoLinesearchStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     k::Int,
@@ -319,7 +348,7 @@ function (a::ArmijoLinesearch)(
     X = get_gradient!(mp, get_gradient(s), p)
     return a(mp, p, X, η; initial_guess=a.initial_guess(mp, s, k, a.last_stepsize))
 end
-function (a::ArmijoLinesearch)(
+function (a::ArmijoLinesearchStepsize)(
     mp::AbstractManoptProblem, p, X, η; initial_guess=1.0, kwargs...
 )
     l = norm(get_manifold(mp), p, η)
@@ -343,8 +372,8 @@ function (a::ArmijoLinesearch)(
     )
     return a.last_stepsize
 end
-get_initial_stepsize(a::ArmijoLinesearch) = a.initial_stepsize
-function show(io::IO, als::ArmijoLinesearch)
+get_initial_stepsize(a::ArmijoLinesearchStepsize) = a.initial_stepsize
+function show(io::IO, als::ArmijoLinesearchStepsize)
     return print(
         io,
         """
@@ -355,23 +384,70 @@ function show(io::IO, als::ArmijoLinesearch)
           * sufficient_decrease = $(als.sufficient_decrease)""",
     )
 end
-function status_summary(als::ArmijoLinesearch)
+function status_summary(als::ArmijoLinesearchStepsize)
     return "$(als)\nand a computed last stepsize of $(als.last_stepsize)"
 end
-get_message(a::ArmijoLinesearch) = a.message
-function get_parameter(a::ArmijoLinesearch, s::Val{:DecreaseCondition}, args...)
+get_message(a::ArmijoLinesearchStepsize) = a.message
+function get_parameter(a::ArmijoLinesearchStepsize, s::Val{:DecreaseCondition}, args...)
     return get_parameter(a.additional_decrease_condition, args...)
 end
-function get_parameter(a::ArmijoLinesearch, ::Val{:IncreaseCondition}, args...)
+function get_parameter(a::ArmijoLinesearchStepsize, ::Val{:IncreaseCondition}, args...)
     return get_parameter(a.additional_increase_condition, args...)
 end
-function set_parameter!(a::ArmijoLinesearch, s::Val{:DecreaseCondition}, args...)
+function set_parameter!(a::ArmijoLinesearchStepsize, s::Val{:DecreaseCondition}, args...)
     set_parameter!(a.additional_decrease_condition, args...)
     return a
 end
-function set_parameter!(a::ArmijoLinesearch, ::Val{:IncreaseCondition}, args...)
+function set_parameter!(a::ArmijoLinesearchStepsize, ::Val{:IncreaseCondition}, args...)
     set_parameter!(a.additional_increase_condition, args...)
     return a
+end
+"""
+    ArmijoLinesearch(; kwargs...)
+    ArmijoLinesearch(M; kwargs...)
+
+Specify a step size that performs an Armijo line search. Given a Function `f:$(_math(:M))→ℝ`
+and its Riemannian Gradient ``$(_tex(:grad))f:$(_math(:M))→$(_math(:TM))`,
+the curent point ``p∈$(_math(:M))`` and a search direction `X∈$(_math(:TpM))``.
+
+Then the step size ``s`` is found by reducing the initial step size ``s`` until
+
+```math
+f($(_tex(:retr))_p(sX)) ≤ f(p) - τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
+```
+
+is fulfilled. for a sufficient decrease value ``τ ∈ (0,1)``.
+
+To be a bit more optimistic, if ``s`` already fulfils this, a first search is done,
+__increasing__ the given ``s`` until for a first time this step does not hold.
+
+Overall, we look for step size, that provides _enough decrease_, see
+[Boumal:2023; p. 58](@cite) for more information.
+
+# Keyword arguments
+
+* `additional_decrease_condition=(M, p) -> true`:
+  specify an additional criterion that has to be met to accept a step size in the decreasing loop
+* `additional_increase_condition::IF=(M, p) -> true`:
+  specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
+* `candidate_point=allocate_result(M, rand)`:
+  speciy a point to be used as memory for the candidate points.
+* `contraction_factor=0.95`: how to update ``s`` in the decrease step
+* `initial_stepsize=1.0``: specify an initial step size
+* `initial_guess=armijo_initial_guess`: instead of the initial step, start with this guess.
+$(_var(:Keyword, :retraction_method))
+* `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
+* `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
+* `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
+* `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
+* `sufficient_decrease=0.1`: the sufficient decrease parameter ``τ``
+
+For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
+
+$(_note(:ManifoldDefaultFactory, "ArmijoLinesearchStepsize"))
+"""
+function ArmijoLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.ArmijoLinesearchStepsize, args...; kwargs...)
 end
 
 @doc """
@@ -891,8 +967,15 @@ end
 function show(io::IO, ps::PolyakStepsize)
     return print(
         io,
-        "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = $(ps.best_cost_value)",
+        """
+        Polyak()
+        A stepsize with keyword parameters
+           * initial_cost_estimate = $(ps.best_cost_value)
+        """,
     )
+end
+function Polyak(args...; kwargs...)
+    return ManifoldDefaultsFactory(args...; requires_manifold=false, kwargs...)
 end
 
 @doc """
@@ -1428,7 +1511,7 @@ return the last computed stepsize from within the stepsize.
 If no last step size is stored, this returns `NaN`.
 """
 get_last_stepsize(::Stepsize, ::Any...) = NaN
-function get_last_stepsize(step::ArmijoLinesearch, ::Any...)
+function get_last_stepsize(step::ArmijoLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
 function get_last_stepsize(step::WolfePowellLinesearch, ::Any...)

@@ -44,7 +44,7 @@ $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :retraction_method))
 
-$(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`()`"))
+$(_var(:Keyword, :stepsize; default="[`ConstantLength`](@ref)`()`"))
 $(_var(:Keyword, :stopping_criterion; default="[StopWhenChangeLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :X; add=:as_Memory))
 """
@@ -200,7 +200,7 @@ $(_var(:Keyword, :evaluation))
 * `grad_g=nothing`: specify the gradient of `g`. If both `g`and `grad_g` are specified, a subsolver is automatically set up.
 $(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`()`"))
+$(_var(:Keyword, :stepsize; default="[`ConstantLength`](@ref)`()`"))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-8)`)"))
   A [`StopWhenGradientNormLess`](@ref)`(1e-8)` is added with $(_sc(:Any)), when a `gradient` is provided.
 * `sub_cost=`[`ProximalDCCost`](@ref)`(g, copy(M, p), λ(1))`):
@@ -305,7 +305,7 @@ function difference_of_convex_proximal_point!(
     inverse_retraction_method=default_inverse_retraction_method(M),
     objective_type=:Riemannian,
     retraction_method=default_retraction_method(M, typeof(p)),
-    stepsize=ConstantStepsize(M),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=ConstantLength(M),
     stopping_criterion=if isnothing(get_gradient_function(mdcpo))
         StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
@@ -401,7 +401,7 @@ function difference_of_convex_proximal_point!(
         maybe_wrap_evaluation_type(sub_state);
         p=p,
         X=X,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         stopping_criterion=stopping_criterion,
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,

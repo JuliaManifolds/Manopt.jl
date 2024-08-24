@@ -132,13 +132,13 @@ For this not-that-large-scale example we can of course also use a gradient desce
 
 ```{julia}
 fullGradF(M, p) = sum(grad_distance(M, q, p) for q in data)
-p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch(M))
+p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch())
 ```
 
 but in general it is expected to be a bit slow.
 
 ```{julia}
-AL = ArmijoLinesearch(M);
+AL = ArmijoLinesearch();
 @benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)
 ```
 

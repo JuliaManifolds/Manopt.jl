@@ -27,7 +27,7 @@ using ManifoldDiff: grad_distance
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(M, 1e-16),
-            stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
+            stepsize=ArmijoLinesearch(; contraction_factor=0.99),
             debug=d,
             record=[:Iteration, :Cost, 1],
             return_state=true,
@@ -41,7 +41,7 @@ using ManifoldDiff: grad_distance
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(M, 1e-16),
-            stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
+            stepsize=ArmijoLinesearch(; contraction_factor=0.99),
         )
         @test p == p2
         step = NonmonotoneLinesearch(
@@ -134,7 +134,7 @@ using ManifoldDiff: grad_distance
             grad_f,
             pts[1];
             direction=MomentumGradient(),
-            stepsize=ConstantStepsize(M),
+            stepsize=ConstantLength(),
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
@@ -171,7 +171,7 @@ using ManifoldDiff: grad_distance
         grad_f(M, p) = -grad_distance(M, q, p)
         @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
         @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(
-            M, f, grad_f, 1 / sqrt(2) .* [1.0, -1.0, 0.0]; stepsize=ConstantStepsize(1.0)
+            M, f, grad_f, 1 / sqrt(2) .* [1.0, -1.0, 0.0]; stepsize=ConstantLength()
         )
         grad_f2(M, p) = 20 * grad_distance(M, q, p)
         @test_logs (:warn,) (:warn,) gradient_descent(

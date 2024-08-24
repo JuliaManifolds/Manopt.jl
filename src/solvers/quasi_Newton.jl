@@ -298,7 +298,7 @@ function quasi_Newton!(
         end
     ),
     initial_scale::Real=1.0,
-    stepsize::Stepsize=default_stepsize(
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M,
         QuasiNewtonState;
         retraction_method=retraction_method,
@@ -341,7 +341,7 @@ function quasi_Newton!(
         initial_vector=get_gradient(mp, p),
         direction_update=local_dir_upd,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
     )

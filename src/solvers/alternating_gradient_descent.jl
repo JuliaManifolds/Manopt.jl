@@ -171,7 +171,7 @@ function AlternatingGradient(args...; kwargs...)
 end
 
 # update Armijo to work on the kth gradient only.
-function (a::ArmijoLinesearch)(
+function (a::ArmijoLinesearchStepsize)(
     amp::AbstractManoptProblem, agds::AlternatingGradientDescentState, ::Int
 )
     M = get_manifold(amp)
@@ -192,7 +192,7 @@ function (a::ArmijoLinesearch)(
 end
 
 function default_stepsize(M::AbstractManifold, ::Type{AlternatingGradientDescentState})
-    return ArmijoLinesearch(M)
+    return ArmijoLinesearchStepsize(M)
 end
 
 function alternating_gradient_descent end

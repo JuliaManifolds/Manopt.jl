@@ -112,8 +112,8 @@ function FrankWolfeState(
     return FrankWolfeState(M, sub_problem, cfs; kwargs...)
 end
 
-function default_stepsize(::AbstractManifold, ::Type{FrankWolfeState})
-    return DecreasingStepsize(; length=2.0, shift=2)
+function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
+    return DecreasingStepsize(M; length=2.0, shift=2.0)
 end
 get_gradient(fws::FrankWolfeState) = fws.X
 get_iterate(fws::FrankWolfeState) = fws.p
@@ -269,7 +269,7 @@ function Frank_Wolfe_method!(
     evaluation=AllocatingEvaluation(),
     objective_type=:Riemannian,
     retraction_method=default_retraction_method(M, typeof(p)),
-    stepsize::TStep=default_stepsize(M, FrankWolfeState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(M, FrankWolfeState),
     stopping_criterion::TStop=StopAfterIteration(200) |
                               StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(M, 1.0e-8),
@@ -303,7 +303,6 @@ function Frank_Wolfe_method!(
     kwargs...,
 ) where {
     TStop<:StoppingCriterion,
-    TStep<:Stepsize,
     O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective},
 }
     dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
@@ -316,7 +315,7 @@ function Frank_Wolfe_method!(
         p=p,
         X=X,
         retraction_method=retraction_method,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         stopping_criterion=stopping_criterion,
     )
     dfws = decorate_state!(fws; kwargs...)

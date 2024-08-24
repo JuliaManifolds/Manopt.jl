@@ -11,7 +11,7 @@ include("../utils/dummy_types.jl")
         M;
         p=zero(p),
         stopping_criterion=StopAfterIteration(20),
-        stepsize=ConstantStepsize(M),
+        stepsize=Manopt.ConstantStepsize(M),
     )
     set_iterate!(gst, M, p)
     @test get_iterate(gst) == p

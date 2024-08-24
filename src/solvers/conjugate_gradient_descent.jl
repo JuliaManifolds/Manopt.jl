@@ -4,7 +4,9 @@ function default_stepsize(
     retraction_method=default_retraction_method(M),
 )
     # take a default with a slightly defensive initial step size.
-    return ArmijoLinesearch(M; retraction_method=retraction_method, initial_stepsize=1.0)
+    return ArmijoLinesearchStepsize(
+        M; retraction_method=retraction_method, initial_stepsize=1.0
+    )
 end
 function show(io::IO, cgds::ConjugateGradientDescentState)
     i = get_count(cgds, :Iterations)
@@ -134,7 +136,7 @@ function conjugate_gradient_descent!(
     p;
     coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize=default_stepsize(
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
@@ -149,7 +151,7 @@ function conjugate_gradient_descent!(
         M;
         p=p,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         coefficient=_produce_type(coefficient, M),
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,

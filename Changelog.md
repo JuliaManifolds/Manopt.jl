@@ -14,51 +14,40 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 
 ## Added
 
-* A `ManifoldDefaultsFactory` that postpones the creation/allcation of manifold-specific fields in for example direction updates, stepsizes and stopping criteria.
+* A `ManifoldDefaultsFactory` that postpones the creation/allocation of manifold-specific fields in for example direction updates, step sizes and stopping criteria. As a rule of thumb, internal structures, like a solver state should store the final type. Any high-level interface, like the functions to start solvers, should accept such a factory in the appropriate places and call the internal `_produce_type(factory, M)`, for example before passing something to the state.
+* a `documentation_glossary.jl` file containing a glossary of often used variables in fields, arguments, and keywords, to print them in a unified manner. The same for usual sections, tex, and math notation that is often used within the doc-strings.
 
 ## Changed
 
-* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `ManifoldDefaultsFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory.
-  * `AverageGradient` is now called `AverageGradientRule`,
-   `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+* Any `Stepsize` now hase a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
+  * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optonal) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `DecreasingStepsize` is no longer exported, use `DecreasingLength` instead. `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `ArmijoLinesearch` is now called `ArmijoLinesearchStepsize`. `ArmijoLinesearch` works as before,just that omitting the manifold fills the one specified in the solver now.
+* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `ManifoldDefaultsFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory. The `Rule` is, however, also no longer exported.
+  * `AverageGradient` is now called `AverageGradientRule`. `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
   * The `IdentityUpdateRule` now accepts a manifold optionally for consistency, and you can use `Gradient()` for short as well as its factory. Hence `direction=Gradient()` is now available.
-* `MomentumGradient` is now called `MomentumGradientRule`.
-  `MomentumGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
-* `Nesterov` is now called `NesterovRule`.
-  `Nesterov` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
-* `ConjugateDescentCoefficient` is now called `ConjugateDescentCoefficientRule`.
-  `ConjugateDescentCoefficient` works as before, but can now use the factory in between
-* the `ConjugateGradientBealeRestart` is now called `ConjugateGradientBealeRestartRule`.
-  For the `ConjugateGradientBealeRestart` the manifold is now a first paramaater, that is not necessary and no longer the `manifold=` keyword.
-* `DaiYuanCoefficient` is now called `DaiYuanCoefficientRule`.
-  For the `DaiYuanCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
-* `FletcherReevesCoefficient` is now called `FletcherReevesCoefficientRule`.
-  `FletcherReevesCoefficient` works as before, but can now use the factory in between
-* `HagerZhangCoefficient` is now called `HagerZhangCoefficientRule`.
-  For the `HagerZhangCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
-* `HestenesStiefelCoefficient` is now called `HestenesStiefelCoefficientRule`.
-  For the `HestenesStiefelCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
-* `LiuStoreyCoefficient` is now called `LiuStoreyCoefficientRule`.
-  For the `LiuStoreyCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
-* `PolakRibiereCoefficient` is now called `PolakRibiereCoefficientRule`.
-  For the `PolakRibiereCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
-* the `SteepestDirectionUpdateRule` is now called `SteepestDescentCoefficientRule`.
-  The `SteepestDescentCoefficient` is equivalent, but creates the new factory interims wise.
-* `AbstractGradientGroupProcessor` is now called `AbstractGradientGroupDirectionRule`
-* the `StochasticGradient` is now called `StochasticGradientRule`.
-  The `StochasticGradient` is equivalent, but creates the new factory interims wise,
-  so that the manifold is not longer necessary.
-* the `AlternatingGradient` is now called `AlternatingGradientRule`.
-  The `AlternatingGradient` is equivalent, but creates the new factory interims wise,
-  so that the manifold is not longer necessary.
+  * `MomentumGradient` is now called `MomentumGradientRule`. `MomentumGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+  * `Nesterov` is now called `NesterovRule`. `Nesterov` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+  * `ConjugateDescentCoefficient` is now called `ConjugateDescentCoefficientRule`. `ConjugateDescentCoefficient` works as before, but can now use the factory in between
+  * the `ConjugateGradientBealeRestart` is now called `ConjugateGradientBealeRestartRule`. For the `ConjugateGradientBealeRestart` the manifold is now a first parameter, that is not necessary and no longer the `manifold=` keyword.
+  * `DaiYuanCoefficient` is now called `DaiYuanCoefficientRule`. For the `DaiYuanCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `FletcherReevesCoefficient` is now called `FletcherReevesCoefficientRule`. `FletcherReevesCoefficient` works as before, but can now use the factory in between
+  * `HagerZhangCoefficient` is now called `HagerZhangCoefficientRule`. For the `HagerZhangCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `HestenesStiefelCoefficient` is now called `HestenesStiefelCoefficientRule`. For the `HestenesStiefelCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `LiuStoreyCoefficient` is now called `LiuStoreyCoefficientRule`. For the `LiuStoreyCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `PolakRibiereCoefficient` is now called `PolakRibiereCoefficientRule`. For the `PolakRibiereCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * the `SteepestDirectionUpdateRule` is now called `SteepestDescentCoefficientRule`. The `SteepestDescentCoefficient` is equivalent, but creates the new factory interims wise.
+  * `AbstractGradientGroupProcessor` is now called `AbstractGradientGroupDirectionRule`
+    * the `StochasticGradient` is now called `StochasticGradientRule`. The `StochasticGradient` is equivalent, but creates the new factory interims wise, so that the manifold is not longer necessary.
+  * the `AlternatingGradient` is now called `AlternatingGradientRule`.
+  The `AlternatingGradient` is equivalent, but creates the new factory interims wise, so that the manifold is not longer necessary.
 * `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes bool, sometimes real) and was unused.
-  It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldes gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
+  It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldest gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
 * Unify doc strings and presentation of keyword arguments
   * general indexing, for example in a vector, uses `i`
   * index for inequality constraints is unified to `i` running from `1,...,m`
   * index for equality constraints is unified to `j` running from `1,...,n`
   * iterations are using now `k`
-* doc strings unified and even reusing similar docstring snippets.
 * `get_manopt_parameter` has been renamed to `get_parameter` since it is internal,
   so internally that is clear; accessing it from outside hence reads anyways `Manopt.get_parameter`
 * `set_manopt_parameter!` has been renamed to `set_parameter!` since it is internal,

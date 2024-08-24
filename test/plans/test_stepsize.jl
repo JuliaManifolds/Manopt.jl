@@ -1,15 +1,16 @@
 using Manopt, Manifolds, Test
 
 @testset "Stepsize" begin
-    @test Manopt.get_message(ConstantStepsize(1.0)) == ""
-    s = ArmijoLinesearch()
+    M = ManifoldsBase.DefaultManifold(2)
+    @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
+    s = Manopt.ArmijoLinesearchStepsize(Euclidean())
     @test startswith(repr(s), "ArmijoLinesearch() with keyword parameters\n")
     s_stat = Manopt.status_summary(s)
     @test startswith(s_stat, "ArmijoLinesearch() with keyword parameters\n")
     @test endswith(s_stat, "of 1.0")
     @test Manopt.get_message(s) == ""
 
-    s2 = NonmonotoneLinesearch(Euclidean(2))
+    s2 = NonmonotoneLinesearch(M)
     @test startswith(repr(s2), "NonmonotoneLinesearch() with keyword arguments\n")
     @test Manopt.get_message(s2) == ""
 
@@ -91,6 +92,7 @@ using Manopt, Manifolds, Test
         @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
     end
     @testset "Absolute stepsizes" begin
+        M = ManifoldsBase.DefaultManifold(2)
         # Build a dummy function and gradient
         f(M, p) = 0
         grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
@@ -99,13 +101,13 @@ using Manopt, Manifolds, Test
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         gds = GradientDescentState(M; p=p)
-        abs_dec_step = DecreasingStepsize(;
-            length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
+        abs_dec_step = Manopt.DecreasingStepsize(
+            M; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
         )
         solve!(mp, gds)
         @test abs_dec_step(mp, gds, 1) ==
             10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
-        abs_const_step = ConstantStepsize(1.0, :absolute)
+        abs_const_step = Manopt.ConstantStepsize(M, 1.0; type=:absolute)
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
@@ -117,9 +119,9 @@ using Manopt, Manifolds, Test
         p = [2.0, 2.0]
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p=p)
-        ps = PolyakStepsize()
+        ps = Manopt.PolyakStepsize()
         @test repr(ps) ==
-            "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = 0.0"
+            "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
 end

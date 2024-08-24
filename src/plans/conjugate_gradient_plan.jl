@@ -217,7 +217,7 @@ $(_var(:Field, :vector_transport_method))
 
 # Constructor
 
-    DaiYuanCoefficientRule(M::AbstractManifold=DefaultManifold(); kwargs...)
+    DaiYuanCoefficientRule(M::AbstractManifold; kwargs...)
 
 Construct the Dai—Yuan coefficient update rule.
 
@@ -233,8 +233,7 @@ struct DaiYuanCoefficientRule{VTM<:AbstractVectorTransportMethod} <: DirectionUp
     vector_transport_method::VTM
 end
 function DaiYuanCoefficientRule(
-    M::AbstractManifold=DefaultManifold();
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    M::AbstractManifold; vector_transport_method::VTM=default_vector_transport_method(M)
 ) where {VTM<:AbstractVectorTransportMethod}
     return DaiYuanCoefficientRule{VTM}(vector_transport_method)
 end
@@ -377,7 +376,7 @@ $(_var(:Field, :vector_transport_method))
 
 # Constructor
 
-    HagerZhangCoefficientRule(M::AbstractManifold=DefaultManifold(); kwargs...)
+    HagerZhangCoefficientRule(M::AbstractManifold; kwargs...)
 
 Construct the Hager-Zang coefficient update rule based on [HagerZhang:2005](@cite) adapted to manifolds.
 
@@ -394,8 +393,7 @@ mutable struct HagerZhangCoefficientRule{VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function HagerZhangCoefficientRule(
-    M::AbstractManifold=DefaultManifold();
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    M::AbstractManifold; vector_transport_method::VTM=default_vector_transport_method(M)
 ) where {VTM<:AbstractVectorTransportMethod}
     return HagerZhangCoefficientRule{VTM}(vector_transport_method)
 end
@@ -486,7 +484,7 @@ $(_var(:Field, :vector_transport_method))
 
 # Constructor
 
-    HestenesStiefelCoefficientRuleRule(M::AbstractManifold=DefaultManifold(); kwargs...)
+    HestenesStiefelCoefficientRuleRule(M::AbstractManifold; kwargs...)
 
 Construct the Hestenes-Stiefel coefficient update rule based on [HestenesStiefel:1952](@cite) adapted to manifolds.
 
@@ -503,8 +501,7 @@ struct HestenesStiefelCoefficientRule{VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function HestenesStiefelCoefficientRule(
-    M::AbstractManifold=DefaultManifold();
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    M::AbstractManifold; vector_transport_method::VTM=default_vector_transport_method(M)
 ) where {VTM<:AbstractVectorTransportMethod}
     return HestenesStiefelCoefficientRule{VTM}(vector_transport_method)
 end
@@ -586,7 +583,7 @@ $(_var(:Field, :vector_transport_method))
 
 # Constructor
 
-    LiuStoreyCoefficientRule(M::AbstractManifold=DefaultManifold(); kwargs...)
+    LiuStoreyCoefficientRule(M::AbstractManifold; kwargs...)
 
 Construct the Lui-Storey coefficient update rule based on [LiuStorey:1991](@cite) adapted to manifolds.
 
@@ -602,8 +599,7 @@ struct LiuStoreyCoefficientRule{VTM<:AbstractVectorTransportMethod} <: Direction
     vector_transport_method::VTM
 end
 function LiuStoreyCoefficientRule(
-    M::AbstractManifold=DefaultManifold();
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    M::AbstractManifold; vector_transport_method::VTM=default_vector_transport_method(M)
 ) where {VTM<:AbstractVectorTransportMethod}
     return LiuStoreyCoefficientRule{VTM}(vector_transport_method)
 end
@@ -674,7 +670,7 @@ $(_var(:Field, :vector_transport_method))
 
 # Constructor
 
-    PolakRibiereCoefficientRule(M::AbstractManifold=DefaultManifold(); kwargs...)
+    PolakRibiereCoefficientRule(M::AbstractManifold; kwargs...)
 
 Construct the Dai—Yuan coefficient update rule.
 
@@ -690,8 +686,7 @@ struct PolakRibiereCoefficientRule{VTM<:AbstractVectorTransportMethod} <:
     vector_transport_method::VTM
 end
 function PolakRibiereCoefficientRule(
-    M::AbstractManifold=DefaultManifold();
-    vector_transport_method::VTM=default_vector_transport_method(M),
+    M::AbstractManifold; vector_transport_method::VTM=default_vector_transport_method(M)
 ) where {VTM<:AbstractVectorTransportMethod}
     return PolakRibiereCoefficientRule{VTM}(vector_transport_method)
 end

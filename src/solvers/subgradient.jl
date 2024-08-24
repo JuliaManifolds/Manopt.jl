@@ -167,7 +167,9 @@ function subgradient_method!(
     sgo::O,
     p;
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize=default_stepsize(M, SubGradientMethodState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, SubGradientMethodState
+    ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
     X=zero_vector(M, p),
     kwargs...,
@@ -178,7 +180,7 @@ function subgradient_method!(
         M;
         p=p,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         retraction_method=retraction_method,
         X=X,
     )

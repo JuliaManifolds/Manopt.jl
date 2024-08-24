@@ -200,12 +200,12 @@ struct DummyStoppingCriterion <: StoppingCriterion end
             Euclidean();
             p=1.0,
             stopping_criterion=StopAfterIteration(100),
-            stepsize=ConstantStepsize(Euclidean()),
+            stepsize=Manopt.ConstantStepsize(Euclidean()),
         )
         s1 = StopWhenStepsizeLess(0.5)
         @test !s1(dmp, gds, 1)
         @test length(get_reason(s1)) == 0
-        gds.stepsize = ConstantStepsize(; stepsize=0.25)
+        gds.stepsize = Manopt.ConstantStepsize(Euclidean(), 0.25)
         @test s1(dmp, gds, 2)
         @test length(get_reason(s1)) > 0
         set_parameter!(gds, :StoppingCriterion, :MaxIteration, 200)
@@ -221,7 +221,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
             Euclidean();
             p=1.0,
             stopping_criterion=StopAfterIteration(100),
-            stepsize=ConstantStepsize(Euclidean()),
+            stepsize=Manopt.ConstantStepsize(Euclidean()),
         )
         swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1e-5)
         @test startswith(repr(swecl), "StopWhenEntryChangeLess\n")
