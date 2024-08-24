@@ -45,7 +45,7 @@ end
 """
     ConstantStepsize <: Stepsize
 
-A functor `problem, state, ...) -> s to provide a constant step size `s`.
+A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
 
 # Fields
 
@@ -117,7 +117,7 @@ end
 @doc """
     DecreasingStepsize()
 
-A functor `problem, state, ...) -> s to provide a constant step size `s`.
+A functor `(problem, state, ...) -> s` to provide a constant step size `s`.
 
 # Fields
 
@@ -218,7 +218,7 @@ end
     Linesearch <: Stepsize
 
 An abstract functor to represent line search type step size determinations, see
-[`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearchStepsizeStepsize`](@ref)
+[`Stepsize`](@ref) for details. One example is the [`ArmijoLinesearchStepsize`](@ref)
 functor.
 
 Compared to simple step sizes, the line search functors provide an interface of
@@ -240,10 +240,10 @@ function armijo_initial_guess(
 end
 
 @doc """
-    ArmijoLinesearch <: Linesearch
+    ArmijoLinesearchStepsize <: Linesearch
 
-    A functor `problem, state, k, X) -> s to provide an Armijo line search to compute step size,
-    based on the search direction `X`
+A functor `problem, state, k, X) -> s to provide an Armijo line search to compute step size,
+based on the search direction `X`
 
 # Fields
 
@@ -269,7 +269,7 @@ Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
 # Constructor
 
-    ArmijoLinesearchStepsizeStepsize(M::AbstractManifold; kwarg...)
+    ArmijoLinesearchStepsize(M::AbstractManifold; kwarg...)
 
 with the fields keyword arguments and the retraction is set to the default retraction on `M`.
 
@@ -917,7 +917,7 @@ get_message(a::NonmonotoneLinesearch) = a.message
 @doc """
     PolyakStepsize <: Stepsize
 
-A functor `problem, state, ...) -> s to provide a step size due to Polyak, cf. Section 3.2 of [Bertsekas:2015](@cite).
+A functor `(problem, state, ...) -> s` to provide a step size due to Polyak, cf. Section 3.2 of [Bertsekas:2015](@cite).
 
 # Fields
 
