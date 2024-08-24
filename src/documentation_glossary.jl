@@ -165,7 +165,7 @@ define!(
     :ManifoldDefaultFactory,
     (type::String) -> """
 !!! info
-    This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`]()@ref).
+    This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
     If you do not provide a manifold, the manifold `M` later provided to (usually) generate
     the corresponding [`AbstractManoptSolverState`](@ref) will be used.
     This affects all arguments and keyword argumentss with defaults that depend on the manifold,

@@ -547,7 +547,8 @@ function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverS
 end
 
 @doc """
-    Nesterov()
+    Nesterov(; kwargs...)
+    Nesterov(M; kwargs...)
 
 Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
 
