@@ -914,27 +914,15 @@ function show(io::IO, a::NonmonotoneLinesearch)
 end
 get_message(a::NonmonotoneLinesearch) = a.message
 
-@doc raw"""
+@doc """
     PolyakStepsize <: Stepsize
 
-
-Compute a step size
-
-````math
-α_i = \frac{f(p^{(i)}) - f_{\text{best}}+γ_i}{\lVert{ ∂f(p^{(i)})} \rVert^2},
-````
-
-where ``f_{\text{best}}`` is the best cost value seen until the current iteration,
-and ``γ_i`` is a sequence of numbers that is square summable, but not summable (the sum must diverge to infinity).
-Furthermore ``∂f`` denotes a subgradient of ``f`` at the current iterate ``p^{(i)}``.
-
-The step size is an adaption from the Dynamic step size discussed in Section 3.2 of [Bertsekas:2015](@cite),
-both to the Riemannian case and to approximate the minimum cost value.
+A functor `problem, state, ...) -> s to provide a step size due to Polyak, cf. Section 3.2 of [Bertsekas:2015](@cite).
 
 # Fields
 
-* `γ`               : a function `i -> ...` representing the sequence.
-* `best_cost_value` : storing the value `f_{\text{best}}`
+* `γ`               : a function `k -> ...` representing a seuqnce.
+* `best_cost_value` : storing the best cost value
 
 # Constructor
 
@@ -943,7 +931,10 @@ both to the Riemannian case and to approximate the minimum cost value.
         initial_cost_estimate=0.0
     )
 
-initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``
+Construct a stepsize of Polyak type.
+
+# See also
+[`Polyak`](@ref)
 """
 mutable struct PolyakStepsize{F,R} <: Stepsize
     γ::F
@@ -974,6 +965,34 @@ function show(io::IO, ps::PolyakStepsize)
         """,
     )
 end
+"""
+    Polyak(; kwargs...)
+    Polyak(M; kwargs...)
+
+Compute a step size according to a method propsed by Polyak, cf. the Dynamic step size
+discussed in Section 3.2 of [Bertsekas:2015](@cite).
+This has been generalised here to both the Riemannian case and to approximate the minimum cost value.
+
+Let ``f_{$(_tex(:text, "best"))`` be the best cost value seen until now during some iterative
+optimisation algorithm and let ``γ_k`` be a sequence of numbers that is square summable, but not summable.
+
+Then the step size computed here reads
+
+```math
+s_k = $(_tex(:frac, "f(p^{(k)}) - f_{$(_tex(:text, "best")) + γ_k", _tex(:norm, "∂f(p^{(k)})}") )),
+```
+
+where ``∂f`` denotes a nonzero-subgradient of ``f`` at the current iterate ``p^{(k)}``.
+
+
+# Constructor
+
+    Polyak(; γ = k -> 1/k, initial_cost_estimate=0.0)
+
+initialize the Polyak stepsize to a certain sequence and an initial estimate of ``f_{\text{best}}``.
+
+$(_note(:ManifoldDefaultFactory, "NesterovRule"))
+"""
 function Polyak(args...; kwargs...)
     return ManifoldDefaultsFactory(args...; requires_manifold=false, kwargs...)
 end
