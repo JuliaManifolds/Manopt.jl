@@ -182,7 +182,7 @@ Let's discuss these in the next steps.
 ```{julia}
 q1 = gradient_descent(M, f, grad_f, p0;
     retraction_method = ProjectionRetraction(),   # state, that we use the retraction from above
-    stepsize = DecreasingStepsize(M; length=1.0), # A simple step size
+    stepsize = DecreasingLength(M; length=1.0), # A simple step size
     stopping_criterion = StopAfterIteration(10),  # A simple stopping criterion
     X = zeros(d+1),                               # how we define/represent tangent vectors
 )

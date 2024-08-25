@@ -78,7 +78,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-
+  * bumped `Manifolds.jl`to version 0.10; this mainly means that any algorithm working on a productmanifold and requiring `ArrayPartition` now has to explicitly do `using RecursiveArrayTools`.
 ### Fixed
 
 * the `AverageGradientRule` filled its internal vector of gradients wrongly – or mixed it up in parallel transport. This is now fixed.

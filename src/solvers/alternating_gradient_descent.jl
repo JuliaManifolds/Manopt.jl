@@ -211,7 +211,7 @@ perform an alternating gradient descent. This can be done in-place of the start 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
 * `grad_f`: a gradient, that can be of two cases
-  * is a single function returning an `ArrayPartition` or
+  * is a single function returning an `ArrayPartition` from [`RecursiveArrayTools.jl`](https://docs.sciml.ai/RecursiveArrayTools/stable/array_types/) or
   * is a vector functions each returning a component part of the whole gradient
 $(_var(:Argument, :p))
 

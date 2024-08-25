@@ -1,4 +1,5 @@
 using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, ManoptExamples, Test
+using RecursiveArrayTools
 
 using ManoptExamples:
     forward_logs,

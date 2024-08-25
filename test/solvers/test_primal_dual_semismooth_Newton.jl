@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldsBase, Test
+using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
 using ManoptExamples:
     adjoint_differential_forward_logs, differential_forward_logs, project_collaborative_TV
 using ManifoldDiff: differential_shortest_geodesic_startpoint

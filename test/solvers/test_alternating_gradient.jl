@@ -1,4 +1,5 @@
-using Manopt, Manifolds, Test
+using Manopt, Manifolds, Test, RecursiveArrayTools
+
 @testset "Alternating Gradient Descent" begin
     # Note that this is merely an alternating gradient descent toy example
     M = Sphere(2)

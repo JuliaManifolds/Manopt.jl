@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, ManifoldsBase
+using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
 using LinearAlgebra: I
 
 using Random

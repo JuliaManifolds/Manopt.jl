@@ -23,8 +23,10 @@ using ManifoldDiff:
 
 if isdefined(Base, :get_extension)
     using Manifolds
+    using RecursiveArrayTools
 else
     using ..Manifolds
+    using ..RecursiveArrayTools
 end
 
 Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)

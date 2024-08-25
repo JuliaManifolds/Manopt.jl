@@ -74,7 +74,7 @@ end
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations, DocumenterInterLinks
-using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
+using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
 # (d) add contributing.md to docs

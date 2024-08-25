@@ -22,12 +22,10 @@ img_folder = "img/regression";
 mkpath(img_folder)
 ```
 ```{julia}
-	using Manopt, ManifoldDiff, Manifolds, Random, Colors
-	using LinearAlgebra: svd
-    using ManifoldDiff: grad_distance
-    Random.seed!(42);
-```
-```{julia}
+using Manopt, ManifoldDiff, Manifolds, Random, Colors, RecursiveArrayTools
+using LinearAlgebra: svd
+using ManifoldDiff: grad_distance
+Random.seed!(42);```{julia}
 #| echo: false
 #| code-fold: true
 #| output: false
