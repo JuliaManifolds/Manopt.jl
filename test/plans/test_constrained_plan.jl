@@ -1,4 +1,4 @@
-using LRUCache, Manopt, Manifolds, ManifoldsBase, Test
+using LRUCache, Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
 
 include("../utils/dummy_types.jl")
 

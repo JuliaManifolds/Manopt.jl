@@ -1,4 +1,4 @@
-using ManifoldsBase, Manifolds, Manopt, Test
+using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
 
 @testset "InteriorPointNewtonState" begin
     M = ManifoldsBase.DefaultManifold(3)
