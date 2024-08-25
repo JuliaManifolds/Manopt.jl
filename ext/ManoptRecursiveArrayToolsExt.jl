@@ -1,3 +1,21 @@
+module ManoptRecursiveArrayToolsExt
+using Manopt
+using ManifoldsBase
+using ManifoldsBase: submanifold_components
+import Manopt:
+    max_stepsize,
+    alternating_gradient_descent,
+    alternating_gradient_descent!,
+    get_gradient,
+    get_gradient!,
+    set_parameter!
+using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
+
+if isdefined(Base, :get_extension)
+    using RecursiveArrayTools
+else
+    using ..RecursiveArrayTools
+end
 
 @doc raw"""
     X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
@@ -111,4 +129,5 @@ function alternating_gradient_descent!(
     agds = Manopt.decorate_state!(agds; kwargs...)
     Manopt.solve!(dmp, agds)
     return Manopt.get_solver_return(get_objective(dmp), agds)
+end
 end

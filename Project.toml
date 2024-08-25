@@ -34,7 +34,8 @@ RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 ManoptJuMPExt = "JuMP"
 ManoptLRUCacheExt = "LRUCache"
 ManoptLineSearchesExt = "LineSearches"
-ManoptManifoldsExt = ["Manifolds", "RecursiveArrayTools"]
+ManoptManifoldsExt = "Manifolds"
+ManoptRecursiveArrayToolsExt = "RecursiveArrayTools"
 ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 
 [compat]

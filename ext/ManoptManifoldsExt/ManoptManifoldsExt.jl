@@ -5,8 +5,6 @@ using Manopt
 using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
 import Manopt:
     max_stepsize,
-    alternating_gradient_descent,
-    alternating_gradient_descent!,
     get_gradient,
     get_gradient!,
     set_parameter!,
@@ -23,10 +21,8 @@ using ManifoldDiff:
 
 if isdefined(Base, :get_extension)
     using Manifolds
-    using RecursiveArrayTools
 else
     using ..Manifolds
-    using ..RecursiveArrayTools
 end
 
 Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)
@@ -34,5 +30,4 @@ Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)
 const NONMUTATINGMANIFOLDS = Union{Circle,PositiveNumbers,Euclidean{Tuple{}}}
 include("manifold_functions.jl")
 include("ChambollePockManifolds.jl")
-include("alternating_gradient.jl")
 end
