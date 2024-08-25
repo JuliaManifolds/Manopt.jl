@@ -222,7 +222,7 @@ An abstract functor to represent line search type step size determinations, see
 functor.
 
 Compared to simple step sizes, the line search functors provide an interface of
-the form `(p,o,i,η) -> s` with an additional (but optional) fourth parameter to
+the form `(p,o,i,X) -> s` with an additional (but optional) fourth parameter to
 provide a search direction; this should default to something reasonable,
 most prominently the negative gradient.
 """
@@ -276,7 +276,6 @@ with the fields keyword arguments and the retraction is set to the default retra
 ## Keyword arguments
 
 * `candidate_point=`(`allocate_result(M, rand)`)
-* `η=-`[`get_gradient`](@ref)`(mp, get_iterate(s))`
 * `initial_stepsize=1.0`
 $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
@@ -1000,74 +999,66 @@ function Polyak(args...; kwargs...)
 end
 
 @doc """
-    WolfePowellLinesearch <: Linesearch
+    WolfePowellLinesearchStepsize{R<:Real} <: Linesearch
 
 Do a backtracking line search to find a step size ``α`` that fulfils the
-Wolfe conditions along a search direction ``X`` starting from ``p`` by
+Wolfe conditions along a search direction ``X`` starting from ``p``.
+See [`WolfePowellLinesearch`](@ref) for the math details
 
-```math
-f $(_tex(:bigl))( $(_tex(:retr))_{p}(αX) $(_tex(:bigr))) ≤ f(p) + c_1 α_k ⟨$(_tex(:grad)) f(p), η⟩_{p}
-$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
-$(_tex(:deriv)) f$(_tex(:bigl))($(_tex(:retr))_{p}(tX)$(_tex(:bigr)))
-$(_tex(:Big))$(_tex(:vert))_{t=α}
-≥ c_2 $(_tex(:deriv)) f$(_tex(:bigl))($(_tex(:retr))_{p}(tX)$(_tex(:bigr)))$(_tex(:Big))$(_tex(:vert))_{t=0}.
-```
+# Fields
 
-# Constructors
+* `sufficient_decrease::R`, `sufficient_curvature::R` two constants in the line search
+$(_var(:Field, :X, "candidate_direction"))
+$(_var(:Field, :p, "candidate_point"; add="as temporary storage for candidates"))
+$(_var(:Field, :X, "candidate_tangent"))
+* `last_stepsize::R`
+* `max_stepsize::R`
+$(_var(:Field, :retraction_method))
+* `stop_when_stepsize_less::R`: a safeguard to stop when the stepsize gets too small
+$(_var(:Field, :vector_transport_method))
 
-There exist two constructors, where, when provided the manifold `M` as a first (optional)
-parameter, its default retraction and vector transport are the default.
-In this case the retraction and the vector transport are also keyword arguments for ease of use.
-The other constructor is kept for backward compatibility.
-Note that the `stop_when_stepsize_less` to stop for too small stepsizes is only available in the
-new signature including `M`.
+# Keyword arguments
 
-    WolfePowellLinesearch(M, c1::Float64=10^(-4), c2::Float64=0.999; kwargs...
-
-Generate a Wolfe-Powell line search
-
-## Keyword arguments
-
-* `candidate_point=allocate_result(M, rand)`: memory for a candidate
-* `candidate_tangent=allocate_result(M, zero_vector, candidate_point)`: memory for a gradient
-* `candidate_direcntion=allocate_result(M, zero_vector, candidate_point)`: memory for a direction
+* `sufficient_decrease=10^(-4)`
+* `sufficient_curvature=0.999`
+$(_var(:Field, :p; add="as temporary storage for candidates"))
+$(_var(:Field, :X; add="as type of memory allocated for the candidates direction and tangent"))
 * `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 $(_var(:Keyword, :vector_transport_method))
 """
-mutable struct WolfePowellLinesearch{
-    TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,T
+mutable struct WolfePowellLinesearchStepsize{
+    R<:Real,TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,P,T
 } <: Linesearch
-    c1::Float64
-    c2::Float64
+    sufficient_decrease::R
+    sufficient_curvature::R
     candidate_direction::T
     candidate_point::P
     candidate_tangent::T
-    last_stepsize::Float64
-    max_stepsize::Float64
+    last_stepsize::R
+    max_stepsize::R
     retraction_method::TRM
-    stop_when_stepsize_less::Float64
+    stop_when_stepsize_less::R
     vector_transport_method::VTM
 
-    function WolfePowellLinesearch(
-        M::AbstractManifold=DefaultManifold(),
-        c1::Float64=10^(-4),
-        c2::Float64=0.999;
-        candidate_point::P=allocate_result(M, rand),
-        candidate_tangent::T=allocate_result(M, zero_vector, candidate_point),
-        candidate_direction::T=allocate_result(M, zero_vector, candidate_point),
+    function WolfePowellLinesearchStepsize(
+        M::AbstractManifold;
+        p::P=allocate_result(M, rand),
+        X::T=zero_vector(M, p),
         max_stepsize::Real=max_stepsize(M),
         retraction_method::TRM=default_retraction_method(M),
+        sufficient_decrease::R=1e-4,
+        sufficient_curvature::R=0.999,
         vector_transport_method::VTM=default_vector_transport_method(M),
-        stop_when_stepsize_less::Float64=0.0,
-    ) where {TRM,VTM,P,T}
-        return new{TRM,VTM,P,T}(
-            c1,
-            c2,
-            candidate_direction,
-            candidate_point,
-            candidate_tangent,
+        stop_when_stepsize_less::R=0.0,
+    ) where {TRM,VTM,P,T,R}
+        return new{R,TRM,VTM,P,T}(
+            sufficient_decrease,
+            sufficient_curvature,
+            X,
+            p,
+            copy(M, p, X),
             0.0,
             max_stepsize,
             retraction_method,
@@ -1076,7 +1067,7 @@ mutable struct WolfePowellLinesearch{
         )
     end
 end
-function (a::WolfePowellLinesearch)(
+function (a::WolfePowellLinesearchStepsize)(
     mp::AbstractManoptProblem,
     ams::AbstractManoptSolverState,
     ::Int,
@@ -1102,8 +1093,8 @@ function (a::WolfePowellLinesearch)(
     vector_transport_to!(
         M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
     )
-    if fNew > f0 + a.c1 * step * l
-        while (fNew > f0 + a.c1 * step * l) && (s_minus > 10^(-9)) # decrease
+    if fNew > f0 + a.sufficient_decrease * step * l
+        while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
             retract!(M, a.candidate_point, p, η, step, a.retraction_method)
@@ -1116,8 +1107,9 @@ function (a::WolfePowellLinesearch)(
         )
         get_gradient!(mp, a.candidate_tangent, a.candidate_point)
         if real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
-            a.c2 * l
-            while fNew <= f0 + a.c1 * step * l && (s_plus < max_step_increase)# increase
+            a.sufficient_curvature * l
+            while fNew <= f0 + a.sufficient_decrease * step * l &&
+                (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
                 retract!(M, a.candidate_point, p, η, step, a.retraction_method)
@@ -1132,11 +1124,11 @@ function (a::WolfePowellLinesearch)(
     )
     get_gradient!(mp, a.candidate_tangent, a.candidate_point)
     while real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
-          a.c2 * l
+          a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
         retract!(M, a.candidate_point, p, η, step, a.retraction_method)
         fNew = get_cost(mp, a.candidate_point)
-        if fNew <= f0 + a.c1 * step * l
+        if fNew <= f0 + a.sufficient_decrease * step * l
             s_minus = step
         else
             s_plus = step
@@ -1152,81 +1144,113 @@ function (a::WolfePowellLinesearch)(
     a.last_stepsize = step
     return step
 end
-function show(io::IO, a::WolfePowellLinesearch)
+function show(io::IO, a::WolfePowellLinesearchStepsize)
     return print(
         io,
         """
-        WolfePowellLinesearch(DefaultManifold(), $(a.c1), $(a.c2)) with keyword arguments
-          * retraction_method = $(a.retraction_method)
-          * vector_transport_method = $(a.vector_transport_method)""",
+        WolfePowellLinesearch(;
+            sufficient_descrease=$(a.sufficient_decrease)
+            sufficient_curvature=$(a.sufficient_curvature),
+            retraction_method = $(a.retraction_method)
+            vector_transport_method = $(a.vector_transport_method)
+            stop_when_stepsize_less = $(a.stop_when_stepsize_less)
+        )""",
     )
 end
-function status_summary(a::WolfePowellLinesearch)
+function status_summary(a::WolfePowellLinesearchStepsize)
     s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
     return "$a$s"
 end
+"""
+    WolfePowellLinesearch(; kwargs...)
+    WolfePowellLinesearch(M; kwargs...)
 
-_doc_WPBL_algorithm = raw"""Then with
+Perform a lineseach to fulfull both the Armijo-Goldstein conditions
 ```math
-A(t) = f(x_+) ≤ c1 t ⟨\operatorname{grad}f(x), η⟩_{x}
-\quad\text{and}\quad
-W(t) = ⟨\operatorname{grad}f(x_+), \text{V}_{x_+\gets x}η⟩_{x_+} ≥ c_2 ⟨η, \operatorname{grad}f(x)⟩_x,
+f$(_tex(:bigl))( $(_tex(:retr))_{p}(αX) $(_tex(:bigr))) ≤ f(p) + c_1 α_k ⟨$(_tex(:grad)) f(p), X⟩_{p}
 ```
 
-where ``x_+ = \operatorname{retr}_x(tη)`` is the current trial point, and ``\text{V}`` is a
-vector transport.
-Then the following Algorithm is performed similar to Algorithm 7 from [Huang:2014](@cite)
+as well as the Wolfe conditions
 
-1. set ``α=0``, ``β=∞`` and ``t=1``.
-2. While either ``A(t)`` does not hold or ``W(t)`` does not hold do steps 3-5.
-3. If ``A(t)`` fails, set ``β=t``.
-4. If ``A(t)`` holds but ``W(t)`` fails, set ``α=t``.
-5. If ``β<∞`` set ``t=\frac{α+β}{2}``, otherwise set ``t=2α``.
+```math
+$(_tex(:deriv)) f$(_tex(:bigl))($(_tex(:retr))_{p}(tX)$(_tex(:bigr)))
+$(_tex(:Big))$(_tex(:vert))_{t=α}
+≥ c_2 $(_tex(:deriv)) f$(_tex(:bigl))($(_tex(:retr))_{p}(tX)$(_tex(:bigr)))$(_tex(:Big))$(_tex(:vert))_{t=0}.
+```
+
+for some given sufficient decrease coefficient ``c_1`` and some sufficient curvature condition coefficient``c_2``.
+
+This is adopted from [NocedalWright:2006; Section 3.1](@cite)
+
+# Keyword arguments
+
+* `sufficient_decrease=10^(-4)`
+* `sufficient_curvature=0.999`
+$(_var(:Field, :p; add="as temporary storage for candidates"))
+$(_var(:Field, :X; add="as type of memory allocated for the candidates direction and tangent"))
+* `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
+$(_var(:Keyword, :retraction_method))
+* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+$(_var(:Keyword, :vector_transport_method))
 """
+WolfePowellLinesearch(args...; kwargs...) =
+    ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; kwargs...)
 
 @doc """
-    WolfePowellBinaryLinesearch <: Linesearch
+    WolfePowellBinaryLinesearchStepsize{R} <: Linesearch
 
-A [`Linesearch`](@ref) method that determines a step size `t` fulfilling the Wolfe conditions
+Do a backtracking line search to find a step size ``α`` that fulfils the
+Wolfe conditions along a search direction ``X`` starting from ``p``.
+See [`WolfePowellBinaryLinesearch`](@ref) for the math details.
 
-based on a binary chop. Let ``η`` be a search direction and ``c1,c_2>0`` be two constants.
+# Fields
 
-$_doc_WPBL_algorithm
+* `sufficient_decrease::R`, `sufficient_curvature::R` two constants in the line search
+* `last_stepsize::R`
+* `max_stepsize::R`
+$(_var(:Field, :retraction_method))
+* `stop_when_stepsize_less::R`: a safeguard to stop when the stepsize gets too small
+$(_var(:Field, :vector_transport_method))
 
-# Constructors
+# Keyword arguments
 
-    WolfePowellLinesearch(M=DefaultManifold(), c1=10^(-4), c2=0.999; kwargs...)
-
-## Keyword arguments
-
-* `stop_when_stepsize_less = 0.0`: a numerical barrier when to stop due to underflow
+* `sufficient_decrease=10^(-4)`
+* `sufficient_curvature=0.999`
+* `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :vector_transport_method)):
+* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+$(_var(:Keyword, :vector_transport_method))
+
 """
-mutable struct WolfePowellBinaryLinesearch{
+mutable struct WolfePowellBinaryLinesearchStepsize{
     TRM<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod,F
 } <: Linesearch
     retraction_method::TRM
     vector_transport_method::VTM
-    c1::F
-    c2::F
+    sufficient_decrease::F
+    sufficient_curvature::F
     last_stepsize::F
     stop_when_stepsize_less::F
 
-    function WolfePowellBinaryLinesearch(
-        M::AbstractManifold=DefaultManifold(),
-        c1::F=10^(-4),
-        c2::F=0.999;
+    function WolfePowellBinaryLinesearchStepsize(
+        M::AbstractManifold=DefaultManifold();
+        sufficient_decrease::F=10^(-4),
+        sufficient_curvature::F=0.999,
         retraction_method::RTM=default_retraction_method(M),
         vector_transport_method::VTM=default_vector_transport_method(M),
         stop_when_stepsize_less::F=0.0,
     ) where {VTM<:AbstractVectorTransportMethod,RTM<:AbstractRetractionMethod,F}
         return new{RTM,VTM,F}(
-            retraction_method, vector_transport_method, c1, c2, 0.0, stop_when_stepsize_less
+            retraction_method,
+            vector_transport_method,
+            sufficient_decrease,
+            sufficient_curvature,
+            0.0,
+            stop_when_stepsize_less,
         )
     end
 end
-function (a::WolfePowellBinaryLinesearch)(
+function (a::WolfePowellBinaryLinesearchStepsize)(
     amp::AbstractManoptProblem,
     ams::AbstractManoptSolverState,
     ::Int,
@@ -1242,10 +1266,13 @@ function (a::WolfePowellBinaryLinesearch)(
     fNew = get_cost(amp, xNew)
     η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(amp, xNew)
-    nAt = fNew > f0 + a.c1 * t * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+    nAt =
+        fNew >
+        f0 +
+        a.sufficient_decrease * t * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     nWt =
         real(inner(M, xNew, gradient_new, η_xNew)) <
-        a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+        a.sufficient_curvature * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     while (nAt || nWt) &&
               (t > a.stop_when_stepsize_less) &&
               ((α + β) / 2 - 1 > a.stop_when_stepsize_less)
@@ -1260,28 +1287,76 @@ function (a::WolfePowellBinaryLinesearch)(
             M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.c1 * t * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+        nAt =
+            fNew >
+            f0 +
+            a.sufficient_decrease *
+            t *
+            real(inner(M, get_iterate(ams), η, get_gradient(ams)))
         nWt =
             real(inner(M, xNew, gradient_new, η_xNew)) <
-            a.c2 * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+            a.sufficient_curvature * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     end
     a.last_stepsize = t
     return t
 end
-function show(io::IO, a::WolfePowellBinaryLinesearch)
+function show(io::IO, a::WolfePowellBinaryLinesearchStepsize)
     return print(
         io,
         """
-        WolfePowellBinaryLinesearch(DefaultManifold(), $(a.c1), $(a.c2)) with keyword arguments
-          * retraction_method = $(a.retraction_method)
-          * vector_transport_method = $(a.vector_transport_method)
-          * stop_when_stepsize_less = $(a.stop_when_stepsize_less)""",
+        WolfePowellBinaryLinesearch(;
+            sufficient_descrease=$(a.sufficient_decrease)
+            sufficient_curvature=$(a.sufficient_curvature),
+            retraction_method = $(a.retraction_method)
+            vector_transport_method = $(a.vector_transport_method)
+            stop_when_stepsize_less = $(a.stop_when_stepsize_less)
+        )""",
     )
 end
-function status_summary(a::WolfePowellBinaryLinesearch)
+function status_summary(a::WolfePowellBinaryLinesearchStepsize)
     s = (a.last_stepsize > 0) ? "\nand the last stepsize used was $(a.last_stepsize)." : ""
     return "$a$s"
 end
+
+_doc_WPBL_algorithm = """With
+```math
+A(t) = f(p_+) ≤ c_1 t ⟨$(_tex(:grad))f(p), X⟩_{x}
+$(_tex(:quad))$(_tex(:text, " and "))$(_tex(:quad))
+W(t) = ⟨$(_tex(:grad))f(x_+), $(_math(:vector_transport, :symbol, "p_+", "p"))X⟩_{p_+} ≥ c_2 ⟨X, $(_tex(:grad))f(x)⟩_x,
+```
+
+where ``p_+ =$(_tex(:retr))_p(tX)`` is the current trial point, and ``$(_math(:vector_transport, :symbol))`` denotes a
+vector transport.
+Then the following Algorithm is performed similar to Algorithm 7 from [Huang:2014](@cite)
+
+1. set ``α=0``, ``β=∞`` and ``t=1``.
+2. While either ``A(t)`` does not hold or ``W(t)`` does not hold do steps 3-5.
+3. If ``A(t)`` fails, set ``β=t``.
+4. If ``A(t)`` holds but ``W(t)`` fails, set ``α=t``.
+5. If ``β<∞`` set ``t=$(_tex(:frac, "α+β","2"))``, otherwise set ``t=2α``.
+"""
+
+"""
+    WolfePowellBinaryLinesearch(; kwargs...)
+    WolfePowellBinaryLinesearch(M; kwargs...)
+
+Perform a lineseach to fulfull both the Armijo-Goldstein conditions
+for some given sufficient decrease coefficient ``c_1`` and some sufficient curvature condition coefficient``c_2``.
+Compared to [`WolfePowellLinesearch`](@ref Manopt.WolfePowellLinesearch) which tries a simpler method, this linesearch performs the following algorithm
+
+$(_doc_WPBL_algorithm)
+
+# Keyword arguments
+
+* `sufficient_decrease=10^(-4)`
+* `sufficient_curvature=0.999`
+* `max_stepsize=`[`max_stepsize`](@ref)`(M, p)`: largest stepsize allowed here.
+$(_var(:Keyword, :retraction_method))
+* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+$(_var(:Keyword, :vector_transport_method))
+"""
+WolfePowellBinaryLinesearch(args...; kwargs...) =
+    ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
 
 _awng_cases = raw"""
 ```math
@@ -1535,9 +1610,9 @@ get_last_stepsize(::Stepsize, ::Any...) = NaN
 function get_last_stepsize(step::ArmijoLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
-function get_last_stepsize(step::WolfePowellLinesearch, ::Any...)
+function get_last_stepsize(step::WolfePowellLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
-function get_last_stepsize(step::WolfePowellBinaryLinesearch, ::Any...)
+function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end

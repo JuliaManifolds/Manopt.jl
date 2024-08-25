@@ -14,13 +14,13 @@ using ManifoldsBase, Manopt, Manifolds, Test
     @test startswith(repr(s2), "NonmonotoneLinesearch() with keyword arguments\n")
     @test Manopt.get_message(s2) == ""
 
-    s3 = WolfePowellBinaryLinesearch()
+    s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
     @test startswith(repr(s3), "WolfePowellBinaryLinesearch(DefaultManifold(), ")
     # no stepsize yet so `repr` and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
-    s4 = WolfePowellLinesearch()
-    @test startswith(repr(s4), "WolfePowellLinesearch(DefaultManifold(), ")
+    s4 = WolfePowell()(M)
+    @test startswith(repr(s4), "WolfePowell(DefaultManifold(), ")
     # no stepsize yet so `repr` and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""

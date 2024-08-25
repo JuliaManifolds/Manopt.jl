@@ -160,18 +160,8 @@ function set_gradient!(qns::QuasiNewtonState, M, p, X)
     copyto!(M, qns.X, p, X)
     return qns
 end
-function default_stepsize(
-    M::AbstractManifold,
-    ::Type{QuasiNewtonState};
-    vector_transport_method=default_vector_transport_method(M),
-    retraction_method=default_retraction_method(M),
-)
-    return WolfePowellLinesearch(
-        M;
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-        stop_when_stepsize_less=1e-10,
-    )
+function default_stepsize(M::AbstractManifold, ::Type{QuasiNewtonState}; kwargs...)
+    return Manopt.WolfePowellLinesearchStepsize(M; stop_when_stepsize_less=1e-10, kwargs...)
 end
 _doc_QN_init_scaling = raw"``\frac{s⟨s_k,y_k⟩_{p_k}}{\lVert y_k\rVert_{p_k}}``"
 _doc_QN = """
