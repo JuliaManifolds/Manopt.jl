@@ -281,6 +281,9 @@ function __init__()
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
         end
+        @require RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd" begin
+            include("../ext/ManoptManifoldsExt/ManoptMRecursiveArrayToolsExt.jl")
+        end
         @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
             include("../ext/ManoptLineSearchesExt.jl")
         end
