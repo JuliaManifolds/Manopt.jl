@@ -16,11 +16,11 @@ using ManifoldsBase, Manopt, Manifolds, Test
 
     s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
-    @test startswith(repr(s3), "WolfePowellBinaryLinesearch(DefaultManifold(), ")
+    @test startswith(repr(s3), "WolfePowellBinaryLinesearch(;")
     # no stepsize yet so `repr` and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
-    s4 = WolfePowell()(M)
-    @test startswith(repr(s4), "WolfePowell(DefaultManifold(), ")
+    s4 = WolfePowellLinesearch()(M)
+    @test startswith(repr(s4), "WolfePowellLinesearch(;")
     # no stepsize yet so `repr` and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""
