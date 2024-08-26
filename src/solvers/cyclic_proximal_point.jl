@@ -16,8 +16,8 @@ function show(io::IO, cpps::CyclicProximalPointState)
     return print(io, s)
 end
 _doc_CPPA = """
-    cyclic_proximal_point(M, f, proxes_f; kwargs...)
-    cyclic_proximal_point(M, mpo; kwargs...)
+    cyclic_proximal_point(M, f, proxes_f, p; kwargs...)
+    cyclic_proximal_point(M, mpo, p; kwargs...)
     cyclic_proximal_point!(M, f, proxes_f; kwargs...)
     cyclic_proximal_point!(M, mpo; kwargs...)
 

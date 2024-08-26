@@ -234,7 +234,7 @@ function quasi_Newton(
     M::AbstractManifold,
     f::TF,
     grad_f::TDF,
-    p;
+    p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}

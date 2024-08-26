@@ -8,13 +8,13 @@ This Julia package was started and is currently maintained by [Ronny Bergmann](h
 Thanks to the following contributors to `Manopt.jl`:
 
 * [Constantin Ahlmann-Eltze](https://const-ae.name) implemented the [gradient and differential `check` functions](helpers/checks.md)
-* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref)
+* [Renée Dornig](https://github.com/r-dornig) implemented the [particle swarm](solvers/particle_swarm.md), the [Riemannian Augmented Lagrangian Method](solvers/augmented_Lagrangian_method.md), the [Exact Penalty Method](solvers/exact_penalty_method.md), as well as the [`NonmonotoneLinesearch`](@ref). These solvers are also the first one with modular/exchangable sub solvers.
 * [Willem Diepeveen](https://www.maths.cam.ac.uk/person/wd292) implemented the [primal-dual Riemannian semismooth Newton](solvers/primal_dual_semismooth_Newton.md) solver.
-* [Hajg Jasa](https://www.ntnu.edu/employees/hajg.jasa) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md).
-* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver
-* Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver
-* [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers.
-* [Markus A. Stokkenes](https://www.linkedin.com/in/markus-a-stokkenes-b41bba17b/) contributed most of the implementation of the [Interior Point Newton Method](solvers/interior_point_Newton.md)
+* [Hajg Jasa](https://www.ntnu.edu/employees/hajg.jasa) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md) and a default subsolver each of them.
+* Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver.
+* Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver as well as ist [Lanczos](@ref arc-Lanczos) subsolver
+* [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers as well as the [truncated conjugate gradient descent](solvers/truncated_conjugate_gradient_descent.md) subsolver.
+* [Markus A. Stokkenes](https://www.linkedin.com/in/markus-a-stokkenes-b41bba17b/) contributed most of the implementation of the [Interior Point Newton Method](solvers/interior_point_Newton.md) as well as its default [Conjugate Residual](solvers/conjugate_residual.md) subsolver
 * [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs)
 
 as well as various [contributors](https://github.com/JuliaManifolds/Manopt.jl/graphs/contributors) providing small extensions, finding small bugs and mistakes and fixing them by opening [PR](https://github.com/JuliaManifolds/Manopt.jl/pulls)s. Thanks to all of you.

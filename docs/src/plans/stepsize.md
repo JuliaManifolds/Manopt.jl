@@ -20,10 +20,14 @@ on the manifold currently under consideration.
 Currently, the following step sizes are available
 
 ```@docs
+AdaptiveWNGradient
 ArmijoLinesearch
 ConstantLength
 DecreasingLength
+NonmonotoneLinesearch
 Polyak
+WolfePowellLinesearch
+WolfePowellBinaryLinesearch
 ```
 
 Some step sizes use [`max_stepsize`](@ref) function as a rough upper estimate for the trust region size.
@@ -41,7 +45,7 @@ Modules = [Manopt]
 Pages = ["plans/stepsize.jl"]
 Private = true
 Order = [:function, :type]
-Filter = t -> !(t in [Stepsize, ArmijoLinesearch, ConstantLength, DecreasingLength, Polyak])
+Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, DecreasingLength, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
 ```
 
 

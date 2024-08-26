@@ -216,7 +216,7 @@ with ``X_{q_j} ∈ ∂f(q_j)``, ``p_k`` the last serious iterate,
 sub solver, see for example the [`proximal_bundle_method_subsolver`](@ref).
 """
 _doc_PBM = """
-    proximal_bundle_method(M, f, ∂f, p, kwargs...)
+    proximal_bundle_method(M, f, ∂f, p=rand(M), kwargs...)
     proximal_bundle_method!(M, f, ∂f, p, kwargs...)
 
 perform a proximal bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-d_k)``,
@@ -259,7 +259,7 @@ $(_note(:OutputSection))
 
 @doc "$(_doc_PBM)"
 function proximal_bundle_method(
-    M::AbstractManifold, f::TF, ∂f::TdF, p; kwargs...
+    M::AbstractManifold, f::TF, ∂f::TdF, p=rand(M); kwargs...
 ) where {TF,TdF}
     p_star = copy(M, p)
     return proximal_bundle_method!(M, f, ∂f, p_star; kwargs...)
