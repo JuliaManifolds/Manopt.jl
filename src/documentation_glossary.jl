@@ -60,6 +60,14 @@ define!(:LaTeX, :Big, raw"\Big")
 define!(:LaTeX, :Bigl, raw"\Bigl")
 define!(:LaTeX, :Bigr, raw"\Bigr")
 define!(:LaTeX, :Cal, (letter) -> raw"\mathcal " * "$letter")
+define!(
+    :LaTeX,
+    :cases,
+    (c...) ->
+        raw"\begin{cases}\n" *
+        "$(join(["   $(ci)" for ci in c],"\n"))" *
+        raw"\n\end{cases}",
+)
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")

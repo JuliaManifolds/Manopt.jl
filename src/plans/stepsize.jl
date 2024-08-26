@@ -205,8 +205,8 @@ with the following
 * `subtrahend=0.0`: a value ``a`` that is subtracted every iteration
 * `shift=0.0`:      shift the denominator iterator ``k`` by ``s``.
 * `type::Symbol=relative` specify the type of constant step size.
-  * `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
-  * `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
+* `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
+* `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
 
 $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 """
@@ -451,6 +451,176 @@ function ArmijoLinesearch(args...; kwargs...)
 end
 
 @doc """
+    AdaptiveWNGradientStepsize{I<:Integer,R<:Real,F<:Function} <: Stepsize
+
+A functor `problem, state, k, X) -> s to an adaptive gradient method introduced by [GrapigliaStella:2023](@cite).
+See [`AdaptiveWNGradient`](@ref) for the mathematical details.
+
+# Fields
+
+* `count_threshold::I`: an `Integer` for ``$(_tex(:hat, "c"))``
+* `minimal_bound::R`: the value for ``b_{$(_tex(:text, "min"))}``
+* `alternate_bound::F`: how to determine ``$(_tex(:hat, "k"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
+* `gradient_reduction::R`: the gradient reduction factor threshold ``α ∈ [0,1)``
+* `gradient_bound::R`: the bound ``b_k``.
+* `weight::R`: ``ω_k`` initialised to ``ω_0 = ```norm(M, p, X)` if this is not zero, `1.0` otherwise.
+* `count::I`: ``c_k``, initialised to ``c_0 = 0``.
+
+# Constructor
+
+    AdaptiveWNGrad(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+
+* `adaptive=true`: switches the `gradient_reduction ``α`` (if `true`) to `0`.
+* `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))`
+* `count_threshold=4`
+* `gradient_reduction::R=adaptive ? 0.9 : 0.0`
+* `gradient_bound=norm(M, p, X)`
+* `minimal_bound=1e-4`
+$(_var(:Keyword, :p; add="only used to define the `gradient_bound`"))
+$(_var(:Keyword, :X; add="only used to define the `gradient_bound`"))
+"""
+mutable struct AdaptiveWNGradientStepsize{I<:Integer,R<:Real,F<:Function} <: Stepsize
+    count_threshold::I
+    minimal_bound::R
+    alternate_bound::F
+    gradient_reduction::R
+    gradient_bound::R
+    weight::R
+    count::I
+end
+function AdaptiveWNGradientStepsize(
+    M::AbstractManifold;
+    p=rand(M),
+    X=zero_vector(M, p),
+    adaptive::Bool=true,
+    count_threshold::I=4,
+    minimal_bound::R=1e-4,
+    gradient_reduction::R=adaptive ? 0.9 : 0.0,
+    gradient_bound::R=norm(M, p, X),
+    alternate_bound::F=(bk, hat_c) -> min(
+        gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))
+    ),
+    kwargs...,
+) where {I<:Integer,R<:Real,F<:Function}
+    if gradient_bound == 0
+        # If the gradient bound defaults to zero, set it to 1
+        gradient_bound = 1.0
+    end
+    return AdaptiveWNGradientStepsize{I,R,F}(
+        count_threshold,
+        minimal_bound,
+        alternate_bound,
+        gradient_reduction,
+        gradient_bound,
+        gradient_bound,
+        0,
+    )
+end
+function (awng::AdaptiveWNGradientStepsize)(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...; kwargs...
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    X = get_gradient(mp, p)
+    isnan(awng.weight) || (awng.weight = norm(M, p, X)) # init ω_0
+    if i == 0 # init fields
+        awng.weight = norm(M, p, X) # init ω_0
+        (awng.weight == 0) && (awng.weight = 1.0)
+        awng.count = 0
+        return 1 / awng.gradient_bound
+    end
+    grad_norm = norm(M, p, X)
+    if grad_norm < awng.gradient_reduction * awng.weight # grad norm < αω_{k-1}
+        if awng.count + 1 == awng.count_threshold
+            awng.gradient_bound = awng.alternate_bound(
+                awng.gradient_bound, awng.count_threshold
+            )
+            awng.weight = grad_norm
+            awng.count = 0
+        else
+            awng.gradient_bound = awng.gradient_bound + grad_norm^2 / awng.gradient_bound
+            #weight stays unchanged
+            awng.count += 1
+        end
+    else
+        awng.gradient_bound = awng.gradient_bound + grad_norm^2 / awng.gradient_bound
+        #weight stays unchanged
+        awng.count = 0
+    end
+    return 1 / awng.gradient_bound
+end
+get_initial_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
+get_last_stepsize(awng::AdaptiveWNGradientStepsize) = 1 / awng.gradient_bound
+function show(io::IO, awng::AdaptiveWNGradientStepsize)
+    s = """
+    AdaptiveWNGradient(;
+      count_threshold=$(awng.count_threshold),
+      minimal_bound=$(awng.minimal_bound),
+      alternate_bound=$(awng.alternate_bound),
+      gradient_reduction=$(awng.gradient_reduction),
+      gradient_bound=$(awng.gradient_bound)
+    )
+
+    as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
+    """
+    return print(io, s)
+end
+"""
+    AdaptiveWNGradient(; kwargs...)
+    AdaptiveWNGradient(M; kwargs...)
+
+A stepsize based on the adaptive gradient method introduced by [GrapigliaStella:2023](@cite).
+
+Given a positive threshold ``$(_tex(:hat, "c")) ∈ ℕ``,
+an minimal bound ``b_{$(_tex(:text, "min"))} > 0``,
+an initial ``b_0 ≥ b_{$(_tex(:text, "min"))}``, and a
+gradient reduction factor threshold ``α ∈ [0,1)``.
+
+Set ``c_0=0`` and use ``ω_0 = $(_tex(:norm, "$(_tex(:grad)) f(p_0)"; index="p_0"))``.
+
+For the first iterate use the initial step size ``s_0 = $(_tex(:frac, "1", "b_0"))``.
+
+Then, given the last gradient ``X_{k-1} = $(_tex(:grad)) f(x_{k-1})``,
+and a previous ``ω_{k-1}``, the values ``(b_k, ω_k, c_k)`` are computed
+using ``X_k = $(_tex(:grad)) f(p_k)`` and the following cases
+
+If ``$(_tex(:norm, "X_k"; index="p_k")) ≤ αω_{k-1}``, then let
+``$(_tex(:hat, "b"))_{k-1} ∈ [b_{$(_tex(:text, "min"))},b_{k-1}]`` and set
+
+(b_k, ω_k, c_k) = $(_tex(:cases,
+"$(_tex(:bigl))($(_tex(:hat, "b"))_{k-1}, $(_tex(:norm, "X_k"))_{p_k}, 0 $(_tex(:bigr))) & $(_tex(:text, " if ")) c_{k-1}+1 = $(_tex(:hat, "c"))",
+"$(_tex(:bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k")*"_{p_k}^2", "b_{k-1}")), ω_{k-1}, c_{k-1}+1 $(_tex(:Bigr))) & $(_tex(:text, " if ")) c_{k-1}+1<$(_tex(:hat, "c"))",
+))
+
+If ``$(_tex(:norm, "X_k"; index="p_k")) > αω_{k-1}``, the set
+
+```math
+(b_k, ω_k, c_k) = $(_tex(:Bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k"; index="p_k")*"^2", "b_{k-1}")), ω_{k-1}, 0 $(_tex(:Bigr)))
+```
+
+and return the step size ``s_k = $(_tex(:frac, "1", "b_k"))``.
+
+Note that for ``α=0`` this is the Riemannian variant of `WNGRad`.
+
+## Keyword arguments
+
+* `adaptive=true`: switches the `gradient_reduction ``α`` (if `true`) to `0`.
+* `alternate_bound = (bk, hat_c) ->  min(gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))`:
+  how to determine ``$(_tex(:hat, "k"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
+* `count_threshold=4`:  an `Integer` for ``$(_tex(:hat, "c"))``
+* `gradient_reduction::R=adaptive ? 0.9 : 0.0`: the gradient reduction factor threshold ``α ∈ [0,1)``
+* `gradient_bound=norm(M, p, X)`: the bound ``b_k``.
+* `minimal_bound=1e-4`: the value ``b_{$(_tex(:text, "min"))}``
+$(_var(:Keyword, :p; add="only used to define the `gradient_bound`"))
+$(_var(:Keyword, :X; add="only used to define the `gradient_bound`"))
+"""
+function AdaptiveWNGradient(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AdaptiveWNGradientStepsize, args...; kwargs...)
+end
+
+@doc """
     (s, msg) = linesearch_backtrack(M, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
     (s, msg) = linesearch_backtrack!(M, q, F, p, X, s, decrease, contract η = -X, f0 = f(p); kwargs...)
 
@@ -565,7 +735,7 @@ function linesearch_backtrack!(
 end
 
 @doc """
-    NonmonotoneLinesearchStepsize <: Linesearch
+    NonmonotoneLinesearchStepsize{P,T,R<:Real} <: Linesearch
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
@@ -576,10 +746,10 @@ A functor representing a nonmonotone line search using the Barzilai-Borwein step
 * `bb_min_stepsize=1e-3`:     lower bound for the Barzilai-Borwein step size greater than zero
 * `bb_max_stepsize=1e3`:      upper bound for the Barzilai-Borwein step size greater than min_stepsize
 $(_var(:Keyword, :retraction_method))
-* `strategy=direct`:          defines if the new step size is computed using the direct, indirect or alternating strategy
+* `strategy=direct`:          defines if the new step size is computed using the `:direct`, `:indirect` or `:alternating` strategy
 * `storage`:                  (for `:Iterate` and `:Gradient`) a [`StoreStateAction`](@ref)
-* `stepsize_reduction=0.5`:   step size reduction factor contained in the interval (0,1)
-* `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval (0,1)
+* `stepsize_reduction`:       step size reduction factor contained in the interval (0,1)
+* `sufficient_decrease`:     sufficient decrease parameter contained in the interval (0,1)
 $(_var(:Keyword, :vector_transport_method))
 * `candidate_point`:          to store an interim result
 * `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
@@ -610,48 +780,50 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 mutable struct NonmonotoneLinesearchStepsize{
+    P,
+    T<:AbstractVector,
+    R<:Real,
+    I<:Integer,
     TRM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
-    T<:AbstractVector,
     TSSA<:StoreStateAction,
-    P,
 } <: Linesearch
-    bb_min_stepsize::Float64
-    bb_max_stepsize::Float64
+    bb_min_stepsize::R
+    bb_max_stepsize::R
     candiate_point::P
-    initial_stepsize::Float64
+    initial_stepsize::R
     message::String
     old_costs::T
     retraction_method::TRM
-    stepsize_reduction::Float64
-    stop_decreasing_at_step::Int
-    stop_increasing_at_step::Int
-    stop_when_stepsize_exceeds::Float64
-    stop_when_stepsize_less::Float64
+    stepsize_reduction::R
+    stop_decreasing_at_step::I
+    stop_increasing_at_step::I
+    stop_when_stepsize_exceeds::R
+    stop_when_stepsize_less::R
     storage::TSSA
     strategy::Symbol
-    sufficient_decrease::Float64
+    sufficient_decrease::R
     vector_transport_method::VTM
     function NonmonotoneLinesearchStepsize(
         M::AbstractManifold;
-        bb_min_stepsize::Float64=1e-3,
-        bb_max_stepsize::Float64=1e3,
+        bb_min_stepsize::R=1e-3,
+        bb_max_stepsize::R=1e3,
         p::P=allocate_result(M, rand),
-        initial_stepsize::Float64=1.0,
-        memory_size::Int=10,
+        initial_stepsize::R=1.0,
+        memory_size::I=10,
         retraction_method::TRM=default_retraction_method(M),
-        stepsize_reduction::Float64=0.5,
-        stop_when_stepsize_less::Float64=0.0,
-        stop_when_stepsize_exceeds::Float64=max_stepsize(M),
-        stop_increasing_at_step::Int=100,
-        stop_decreasing_at_step::Int=1000,
+        stepsize_reduction::R=0.5,
+        stop_when_stepsize_less::R=0.0,
+        stop_when_stepsize_exceeds::R=max_stepsize(M),
+        stop_increasing_at_step::I=100,
+        stop_decreasing_at_step::I=1000,
         storage::Union{Nothing,StoreStateAction}=StoreStateAction(
             M; store_fields=[:Iterate, :Gradient]
         ),
         strategy::Symbol=:direct,
-        sufficient_decrease::Float64=1e-4,
+        sufficient_decrease::R=1e-4,
         vector_transport_method::VTM=default_vector_transport_method(M),
-    ) where {TRM,VTM,P}
+    ) where {TRM,VTM,P,R<:Real,I<:Integer}
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
                 "The strategy '",
@@ -679,13 +851,14 @@ mutable struct NonmonotoneLinesearchStepsize{
         if memory_size <= 0
             throw(DomainError(memory_size, "The memory_size has to be greater than zero."))
         end
-        return new{TRM,VTM,Vector{Float64},typeof(storage),P}(
+        old_costs = zeros(memory_size)
+        return new{P,typeof(old_costs),R,I,TRM,VTM,typeof(storage)}(
             bb_min_stepsize,
             bb_max_stepsize,
             p,
             initial_stepsize,
             "",
-            zeros(memory_size),
+            old_costs,
             retraction_method,
             stepsize_reduction,
             stop_decreasing_at_step,
@@ -884,19 +1057,20 @@ and ``γ ∈ (0,1)`` is the sufficient decrease parameter. Finally the step size
 # Keyword arguments
 
 $(_var(:Keyword, :p; add="to store an interim result"))
-* `initial_stepsize=1.0`
-* `memory_size=10`
-* `bb_min_stepsize=1e-3`
-* `bb_max_stepsize=1e3`
+* `p=allocate_result(M, rand)`: to store an interim result
+* `initial_stepsize=1.0`: the step size to start the search with
+* `memory_size=10`: number of iterations after which the cost value needs to be lower than the current one
+* `bb_min_stepsize=1e-3`: lower bound for the Barzilai-Borwein step size greater than zero
+* `bb_max_stepsize=1e3`: upper bound for the Barzilai-Borwein step size greater than min_stepsize
 $(_var(:Keyword, :retraction_method))
-* `strategy=direct`
-* `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``
-* `stepsize_reduction=0.5`
-* `sufficient_decrease=1e-4`
-* `stop_when_stepsize_less=0.0`
-* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p)`)
-* `stop_increasing_at_step=100`
-* `stop_decreasing_at_step=1000`
+* `strategy=direct`: defines if the new step size is computed using the `:direct`, `:indirect` or `:alternating` strategy
+* `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``: increase efficiency by using a [`StoreStateAction`](@ref) for `:Iterate` and `:Gradient`
+* `stepsize_reduction=0.5`:  step size reduction factor contained in the interval ``(0,1)``
+* `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval ``(0,1)``
+* `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p)`): largest stepsize when to stop to avoid leaving the injectivity radius
+* `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2),
 """
 NonmonotoneLinesearch(args...; kwargs...) =
     ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
@@ -1345,166 +1519,6 @@ $(_var(:Keyword, :vector_transport_method))
 """
 WolfePowellBinaryLinesearch(args...; kwargs...) =
     ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
-
-_awng_cases = raw"""
-```math
-(b_k, ω_k, c_k) = \begin{cases}
-\bigl(\hat b_{k-1}, \lVert X_k\rVert_{p_k}, 0 \bigr) & \text{ if } c_{k-1}+1 = \hat c\\
-\Bigl(b_{k-1} + \frac{\lVert X_k\rVert_{p_k}^2}{b_{k-1}}, \omega_{k-1}, c_{k-1}+1 \Bigr) & \text{ if } c_{k-1}+1<\hat c
-\end{cases}
-```
-"""
-@doc """
-    AdaptiveWNGradient <: DirectionUpdateRule
-
-Represent an adaptive gradient method introduced by [GrapigliaStella:2023](@cite).
-
-Given a positive threshold ``$(_tex(:hat, "c")) ∈ ℕ``,
-an minimal bound ``b_{$(_tex(:text, "min"))} > 0``,
-an initial ``b_0 ≥ b_{$(_tex(:text, "min"))}``, and a
-gradient reduction factor threshold ``α ∈ [0,1)``.
-
-Set ``c_0=0`` and use ``ω_0 = $(_tex(:norm, "$(_tex(:grad)) f(p_0)"; index="p_0"))``.
-
-For the first iterate use the initial step size ``s_0 = $(_tex(:frac, "1", "b_0"))``.
-
-Then, given the last gradient ``X_{k-1} = $(_tex(:grad)) f(x_{k-1})``,
-and a previous ``ω_{k-1}``, the values ``(b_k, ω_k, c_k)`` are computed
-using ``X_k = $(_tex(:grad)) f(p_k)`` and the following cases
-
-If ``$(_tex(:norm, "X_k"; index="p_k")) ≤ αω_{k-1}``, then let
-``$(_tex(:hat, "b"))_{k-1} ∈ [b_{$(_tex(:text, "min"))},b_{k-1}]`` and set
-
-$(_awng_cases)
-
-If ``$(_tex(:norm, "X_k"; index="p_k")) > αω_{k-1}``, the set
-
-```math
-(b_k, ω_k, c_k) = $(_tex(:Bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k"; index="p_k")*"^2", "b_{k-1}")), ω_{k-1}, 0 $(_tex(:Bigr)))
-```
-
-and return the step size ``s_k = $(_tex(:frac, "1", "b_k"))``.
-
-Note that for ``α=0`` this is the Riemannian variant of `WNGRad`.
-
-# Fields
-
-* `count_threshold::Int=4`: an `Integer` for ``$(_tex(:hat, "c"))``
-* `minimal_bound::Float64=1e-4`: for ``b_{$(_tex(:text, "min"))}``
-* `alternate_bound::Function=(bk, hat_c) -> min(gradient_bound, max(gradient_bound, bk/(3*hat_c)`:
-  how to determine ``$(_tex(:hat, "k"))_k`` as a function of `(bmin, bk, hat_c) -> hat_bk`
-* `gradient_reduction::Float64=0.9`:
-* `gradient_bound` `norm(M, p0, grad_f(M,p0))` the bound ``b_k``.
-
-as well as the internal fields
-
-* `weight` for ``ω_k`` initialised to ``ω_0 = ```norm(M, p0, grad_f(M,p0))` if this is not zero, `1.0` otherwise.
-* `count` for the ``c_k``, initialised to ``c_0 = 0``.
-
-# Constructor
-
-    AdaptiveWNGrad(M=DefaultManifold, grad_f=(M, p) -> zero_vector(M, rand(M)), p=rand(M); kwargs...)
-
-Where all fields with defaults are keyword arguments and additional keyword arguments are
-
-* `adaptive=true`: switches the `gradient_reduction ``α`` to `0`.
-$(_var(:Keyword, :evaluation))
-"""
-mutable struct AdaptiveWNGradient{I<:Integer,R<:Real,F<:Function} <: Stepsize
-    count_threshold::I
-    minimal_bound::R
-    alternate_bound::F
-    gradient_reduction::R
-    gradient_bound::R
-    weight::R
-    count::I
-end
-function AdaptiveWNGradient(
-    M::AbstractManifold=DefaultManifold(),
-    (grad_f!!)=(M, p) -> zero_vector(M, rand(M)),
-    p=rand(M);
-    evaluation::E=AllocatingEvaluation(),
-    adaptive::Bool=true,
-    count_threshold::I=4,
-    minimal_bound::R=1e-4,
-    gradient_reduction::R=adaptive ? 0.9 : 0.0,
-    gradient_bound::R=norm(
-        M,
-        p,
-        if evaluation == AllocatingEvaluation()
-            grad_f!!(M, p)
-        else
-            grad_f!!(M, zero_vector(M, p), p)
-        end,
-    ),
-    alternate_bound::F=(bk, hat_c) -> min(
-        gradient_bound == 0 ? 1.0 : gradient_bound, max(minimal_bound, bk / (3 * hat_c))
-    ),
-    kwargs...,
-) where {I<:Integer,R<:Real,F<:Function,E<:AbstractEvaluationType}
-    if gradient_bound == 0
-        # If the gradient bound defaults to zero, set it to 1
-        gradient_bound = 1.0
-    end
-    return AdaptiveWNGradient{I,R,F}(
-        count_threshold,
-        minimal_bound,
-        alternate_bound,
-        gradient_reduction,
-        gradient_bound,
-        gradient_bound,
-        0,
-    )
-end
-function (awng::AdaptiveWNGradient)(
-    mp::AbstractManoptProblem, s::AbstractGradientSolverState, i, args...; kwargs...
-)
-    M = get_manifold(mp)
-    p = get_iterate(s)
-    X = get_gradient(mp, p)
-    isnan(awng.weight) || (awng.weight = norm(M, p, X)) # init ω_0
-    if i == 0 # init fields
-        awng.weight = norm(M, p, X) # init ω_0
-        (awng.weight == 0) && (awng.weight = 1.0)
-        awng.count = 0
-        return 1 / awng.gradient_bound
-    end
-    grad_norm = norm(M, p, X)
-    if grad_norm < awng.gradient_reduction * awng.weight # grad norm < αω_{k-1}
-        if awng.count + 1 == awng.count_threshold
-            awng.gradient_bound = awng.alternate_bound(
-                awng.gradient_bound, awng.count_threshold
-            )
-            awng.weight = grad_norm
-            awng.count = 0
-        else
-            awng.gradient_bound = awng.gradient_bound + grad_norm^2 / awng.gradient_bound
-            #weight stays unchanged
-            awng.count += 1
-        end
-    else
-        awng.gradient_bound = awng.gradient_bound + grad_norm^2 / awng.gradient_bound
-        #weight stays unchanged
-        awng.count = 0
-    end
-    return 1 / awng.gradient_bound
-end
-get_initial_stepsize(awng::AdaptiveWNGradient) = 1 / awng.gradient_bound
-get_last_stepsize(awng::AdaptiveWNGradient) = 1 / awng.gradient_bound
-function show(io::IO, awng::AdaptiveWNGradient)
-    s = """
-    AdaptiveWNGradient(;
-      count_threshold=$(awng.count_threshold),
-      minimal_bound=$(awng.minimal_bound),
-      alternate_bound=$(awng.alternate_bound),
-      gradient_reduction=$(awng.gradient_reduction),
-      gradient_bound=$(awng.gradient_bound)
-    )
-
-    as well as internally the weight ω_k = $(awng.weight) and current count c_k = $(awng.count).
-    """
-    return print(io, s)
-end
 
 @doc raw"""
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)
