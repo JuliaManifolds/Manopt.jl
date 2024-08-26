@@ -589,10 +589,12 @@ using ``X_k = $(_tex(:grad)) f(p_k)`` and the following cases
 If ``$(_tex(:norm, "X_k"; index="p_k")) ≤ αω_{k-1}``, then let
 ``$(_tex(:hat, "b"))_{k-1} ∈ [b_{$(_tex(:text, "min"))},b_{k-1}]`` and set
 
+```math
 (b_k, ω_k, c_k) = $(_tex(:cases,
-"$(_tex(:bigl))($(_tex(:hat, "b"))_{k-1}, $(_tex(:norm, "X_k"))_{p_k}, 0 $(_tex(:bigr))) & $(_tex(:text, " if ")) c_{k-1}+1 = $(_tex(:hat, "c"))",
-"$(_tex(:bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k")*"_{p_k}^2", "b_{k-1}")), ω_{k-1}, c_{k-1}+1 $(_tex(:Bigr))) & $(_tex(:text, " if ")) c_{k-1}+1<$(_tex(:hat, "c"))",
+"$(_tex(:bigl))($(_tex(:hat, "b"))_{k-1}, $(_tex(:norm, "X_k"; index="p_k")), 0 $(_tex(:bigr))) & $(_tex(:text, " if ")) c_{k-1}+1 = $(_tex(:hat, "c"))",
+"$(_tex(:bigl))( b_{k-1} + $(_tex(:frac, _tex(:norm, "X_k"; index="p_k")*"^2", "b_{k-1}")), ω_{k-1}, c_{k-1}+1 $(_tex(:Bigr))) & $(_tex(:text, " if ")) c_{k-1}+1<$(_tex(:hat, "c"))",
 ))
+```
 
 If ``$(_tex(:norm, "X_k"; index="p_k")) > αω_{k-1}``, the set
 
@@ -1000,7 +1002,6 @@ get_message(a::NonmonotoneLinesearchStepsize) = a.message
 @doc """
     NonmonotoneLinesearch(; kwargs...)
     NonmonotoneLinesearch(M; kwargs...)
-
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 

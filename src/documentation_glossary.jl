@@ -64,9 +64,11 @@ define!(
     :LaTeX,
     :cases,
     (c...) ->
-        raw"\begin{cases}\n" *
-        "$(join(["   $(ci)" for ci in c],"\n"))" *
-        raw"\n\end{cases}",
+        raw"\begin{cases}" *
+        "\n" *
+        "$(join(["   $(ci)" for ci in c], raw"\\\\"*"\n"))" *
+        "\n" *
+        raw"\end{cases}",
 )
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
