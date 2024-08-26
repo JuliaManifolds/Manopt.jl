@@ -376,11 +376,12 @@ function show(io::IO, als::ArmijoLinesearchStepsize)
     return print(
         io,
         """
-        ArmijoLinesearch() with keyword parameters
-          * initial_stepsize    = $(als.initial_stepsize)
-          * retraction_method   = $(als.retraction_method)
-          * contraction_factor  = $(als.contraction_factor)
-          * sufficient_decrease = $(als.sufficient_decrease)""",
+        ArmijoLinesearch(;
+            initial_stepsize=$(als.initial_stepsize)
+            retraction_method=$(als.retraction_method)
+            contraction_factor=$(als.contraction_factor)
+            sufficient_decrease=$(als.sufficient_decrease)
+        )""",
     )
 end
 function status_summary(als::ArmijoLinesearchStepsize)
@@ -563,92 +564,10 @@ function linesearch_backtrack!(
     return (s, msg)
 end
 
-_doc_NM_linesearch = raw"""
-```math
-y_{k} = \operatorname{grad}F(x_{k}) - \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1}))
-```
-"""
-
-_doc_NM_linesearch2 = raw"""
-```math
-s_{k} = - α_{k-1} * \operatorname{T}_{x_{k-1} → x_k}(\operatorname{grad}F(x_{k-1})),
-```
-"""
-
-_doc_NM_BB = raw"""
-```math
-α_k^{\text{BB}} = \begin{cases}
-\min(α_{\text{max}}, \max(α_{\text{min}}, τ_{k})),  & \text{if } ⟨s_{k}, y_{k}⟩_{x_k} > 0,\\
-α_{\text{max}}, & \text{else,}
-\end{cases}
-```
-"""
-
-_doc_NM_BB_direct = raw"""
-```math
-τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},
-```
-"""
-
-_doc_NM_BB_indirect = raw"""
-```math
-τ_{k} = \frac{⟨s_{k}, s_{k}⟩_{x_k}}{⟨s_{k}, y_{k}⟩_{x_k}},
-```
-"""
-
-_doc_NM_BB_h = raw"""
-```math
-F(\operatorname{retr}_{x_k}(- σ^h α_k^{\text{BB}} \operatorname{grad}F(x_k)))
-\leq
-\max_{1 ≤ j ≤ \min(k+1,m)} F(x_{k+1-j}) - γ σ^h α_k^{\text{BB}} ⟨\operatorname{grad}F(x_k), \operatorname{grad}F(x_k)⟩_{x_k},
-```
-"""
-
-_doc_NM_final = raw"""
-```math
-α_k = σ^h α_k^{\text{BB}}.
-```
-"""
-
 @doc """
-    NonmonotoneLinesearch <: Linesearch
+    NonmonotoneLinesearchStepsize <: Linesearch
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
-Together with a gradient descent algorithm this line search represents the Riemannian Barzilai-Borwein with nonmonotone line-search (RBBNMLS) algorithm.
-The order is shifted in comparison of the algorithm steps from the paper
-by Iannazzo and Porcelli so that in each iteration this line search first finds
-
-$_doc_NM_linesearch
-
-and
-
-$_doc_NM_linesearch2
-
-where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math(:vector_transport, :symbol))`` is a vector transport.
-Then the Barzilai—Borwein step size is
-
-$_doc_NM_BB
-
-where
-
-$_doc_NM_BB_direct
-
-if the direct strategy is chosen,
-
-$_doc_NM_BB_indirect
-
-in case of the inverse strategy and an alternation between the two in case of the
-alternating strategy. Then find the smallest ``h = 0, 1, 2, …`` such that
-
-$_doc_NM_BB_h
-
-where ``σ`` is a step length reduction factor ``∈ (0,1)``, ``m`` is the number of iterations
-after which the function value has to be lower than the current one
-and ``γ`` is the sufficient decrease parameter ``∈(0,1)``.
-
-Then find the new stepsize by
-
-$_doc_NM_final
 
 # Fields
 
@@ -663,25 +582,18 @@ $(_var(:Keyword, :retraction_method))
 * `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval (0,1)
 $(_var(:Keyword, :vector_transport_method))
 * `candidate_point`:          to store an interim result
-
-Furthermore the following fields act as safeguards
-
 * `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
 * `stop_when_stepsize_exceeds`: largest stepsize when to stop.
 * `stop_increasing_at_step`:    last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2),
 
-Pass `:Messages` to a `debug=` to see `@info`s when these happen.
-
 # Constructor
 
-    NonmonotoneLinesearch(M; kwargs...)
-
-geerate the monotone linesearch
+    NonmonotoneLinesearchStepsize(M::AbstractManifold; kwargs...)
 
 ## Keyword arguments
 
-* `candidate_point=allocate_result(M, rand)`: to store an interim result
+* `p=allocate_result(M, rand)`: to store an interim result
 * `initial_stepsize=1.0`
 * `memory_size=10`
 * `bb_min_stepsize=1e-3`
@@ -696,10 +608,8 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`
 * `stop_decreasing_at_step=1000`
 $(_var(:Keyword, :vector_transport_method))
-
-The constructor return the functor to perform nonmonotone line search.
 """
-mutable struct NonmonotoneLinesearch{
+mutable struct NonmonotoneLinesearchStepsize{
     TRM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
     T<:AbstractVector,
@@ -722,11 +632,11 @@ mutable struct NonmonotoneLinesearch{
     strategy::Symbol
     sufficient_decrease::Float64
     vector_transport_method::VTM
-    function NonmonotoneLinesearch(
+    function NonmonotoneLinesearchStepsize(
         M::AbstractManifold;
         bb_min_stepsize::Float64=1e-3,
         bb_max_stepsize::Float64=1e3,
-        candidate_point::P=allocate_result(M, rand),
+        p::P=allocate_result(M, rand),
         initial_stepsize::Float64=1.0,
         memory_size::Int=10,
         retraction_method::TRM=default_retraction_method(M),
@@ -772,7 +682,7 @@ mutable struct NonmonotoneLinesearch{
         return new{TRM,VTM,Vector{Float64},typeof(storage),P}(
             bb_min_stepsize,
             bb_max_stepsize,
-            candidate_point,
+            p,
             initial_stepsize,
             "",
             zeros(memory_size),
@@ -789,7 +699,7 @@ mutable struct NonmonotoneLinesearch{
         )
     end
 end
-function (a::NonmonotoneLinesearch)(
+function (a::NonmonotoneLinesearchStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     k::Int,
@@ -817,7 +727,7 @@ function (a::NonmonotoneLinesearch)(
         k,
     )
 end
-function (a::NonmonotoneLinesearch)(
+function (a::NonmonotoneLinesearchStepsize)(
     M::mT, p, f::TF, X::T, η::T, old_p, old_X, iter::Int; kwargs...
 ) where {mT<:AbstractManifold,TF,T}
     #find the difference between the current and previous gradient after the previous gradient is transported to the current tangent space
@@ -895,23 +805,101 @@ function (a::NonmonotoneLinesearch)(
     )
     return a.initial_stepsize
 end
-function show(io::IO, a::NonmonotoneLinesearch)
+function show(io::IO, a::NonmonotoneLinesearchStepsize)
     return print(
         io,
         """
-        NonmonotoneLinesearch() with keyword arguments
-          * initial_stepsize = $(a.initial_stepsize)
-          * bb_max_stepsize = $(a.bb_max_stepsize)
-          * bb_min_stepsize = $(a.bb_min_stepsize),
-          * memory_size = $(length(a.old_costs))
-          * stepsize_reduction = $(a.stepsize_reduction)
-          * strategy = :$(a.strategy)
-          * sufficient_decrease = $(a.sufficient_decrease)
-          * retraction_method = $(a.retraction_method)
-          * vector_transport_method = $(a.vector_transport_method)""",
+        NonmonotoneLinesearch(;
+            initial_stepsize = $(a.initial_stepsize)
+            bb_max_stepsize = $(a.bb_max_stepsize)
+            bb_min_stepsize = $(a.bb_min_stepsize),
+            memory_size = $(length(a.old_costs))
+            stepsize_reduction = $(a.stepsize_reduction)
+            strategy = :$(a.strategy)
+            sufficient_decrease = $(a.sufficient_decrease)
+            retraction_method = $(a.retraction_method)
+            vector_transport_method = $(a.vector_transport_method
+        )""",
     )
 end
-get_message(a::NonmonotoneLinesearch) = a.message
+get_message(a::NonmonotoneLinesearchStepsize) = a.message
+
+@doc """
+    NonmonotoneLinesearch(; kwargs...)
+    NonmonotoneLinesearch(M; kwargs...)
+
+
+A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
+
+This method first computes
+
+(x -> p, F-> f)
+```math
+y_{k} = $(_tex(:grad))f(p_{k}) - $(_math(:vector_transport, :symbol, "p_k", "p_{k-1}"))$(_tex(:grad))f(p_{k-1})
+```
+
+and
+```math
+s_{k} = - α_{k-1} ⋅ $(_math(:vector_transport, :symbol, "p_k", "p_{k-1}"))$(_tex(:grad))f(p_{k-1}),
+```
+
+where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math(:vector_transport, :symbol))`` is a vector transport.
+Then the Barzilai—Borwein step size is
+
+```math
+α_k^{$(_tex(:text, "BB"))} = \begin{cases}
+$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,\\
+α_{$(_tex(:text, "max"))}, & \text{else,}
+\end{cases}
+```
+
+where
+
+```math
+τ_{k} = $(_tex(:frac, "⟨s_{k}, s_{k}⟩_{p_k}", "⟨s_{k}, y_{k}⟩_{p_k}")),
+```
+
+if the direct strategy is chosen, or
+
+```math
+τ_{k} =  $(_tex(:frac, "⟨s_{k}, y_{k}⟩_{p_k}", "⟨y_{k}, y_{k}⟩_{p_k}")),
+```
+
+in case of the inverse strategy or an alternation between the two in cases for
+the alternating strategy. Then find the smallest ``h = 0, 1, 2, …`` such that
+
+```math
+f($(_tex(:retr))_{p_k}(- σ^h α_k^{$(_tex(:text, "BB"))} $(_tex(:grad))f(p_k)))  ≤
+$(_tex(:max))_{1 ≤ j ≤ $(_tex(:max))(k+1,m)} f(p_{k+1-j}) - γ σ^h α_k^{$(_tex(:text, "BB"))} ⟨$(_tex(:grad))F(p_k), $(_tex(:grad))F(p_k)⟩_{p_k},
+```
+
+where ``σ ∈ (0,1)`` is a step length reduction factor , ``m`` is the number of iterations
+after which the function value has to be lower than the current one
+and ``γ ∈ (0,1)`` is the sufficient decrease parameter. Finally the step size is computed as
+
+```math
+α_k = σ^h α_k^{$(_tex(:text, "BB"))}.
+```
+
+# Keyword arguments
+
+$(_var(:Keyword, :p; add="to store an interim result"))
+* `initial_stepsize=1.0`
+* `memory_size=10`
+* `bb_min_stepsize=1e-3`
+* `bb_max_stepsize=1e3`
+$(_var(:Keyword, :retraction_method))
+* `strategy=direct`
+* `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``
+* `stepsize_reduction=0.5`
+* `sufficient_decrease=1e-4`
+* `stop_when_stepsize_less=0.0`
+* `stop_when_stepsize_exceeds=`[`max_stepsize`](@ref)`(M, p)`)
+* `stop_increasing_at_step=100`
+* `stop_decreasing_at_step=1000`
+"""
+NonmonotoneLinesearch(args...; kwargs...) =
+    ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
 
 @doc """
     PolyakStepsize <: Stepsize

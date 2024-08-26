@@ -44,8 +44,7 @@ using ManifoldDiff: grad_distance
             stepsize=ArmijoLinesearch(; contraction_factor=0.99),
         )
         @test p == p2
-        step = NonmonotoneLinesearch(
-            M;
+        step = NonmonotoneLinesearch(;
             stepsize_reduction=0.99,
             sufficient_decrease=0.1,
             memory_size=2,
@@ -64,25 +63,41 @@ using ManifoldDiff: grad_distance
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, p, p3; atol=1e-13)
-        step.strategy = :inverse
+        step2 = NonmonotoneLinesearch(;
+            stepsize_reduction=0.99,
+            sufficient_decrease=0.1,
+            memory_size=2,
+            bb_min_stepsize=1e-7,
+            bb_max_stepsize=π / 2,
+            strategy=:inverse,
+            stop_when_stepsize_exceeds=0.9 * π,
+        )
         p4 = gradient_descent(
             M,
             f,
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
-            stepsize=step,
+            stepsize=step2,
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, p, p4; atol=1e-13)
-        step.strategy = :alternating
+        step3 = NonmonotoneLinesearch(;
+            stepsize_reduction=0.99,
+            sufficient_decrease=0.1,
+            memory_size=2,
+            bb_min_stepsize=1e-7,
+            bb_max_stepsize=π / 2,
+            strategy=:alternating,
+            stop_when_stepsize_exceeds=0.9 * π,
+        )
         p5 = gradient_descent(
             M,
             f,
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
-            stepsize=step,
+            stepsize=step3,
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, p, p5; atol=1e-13)
@@ -95,18 +110,20 @@ using ManifoldDiff: grad_distance
             direction=Nesterov(M; p=copy(M, data[1])),
         )
         @test isapprox(M, p, p6; atol=1e-13)
-
+        M2 = Euclidean()
         @test_logs (
             :warn,
             string(
                 "The strategy 'indirect' is not defined. The 'direct' strategy is used instead.",
             ),
-        ) NonmonotoneLinesearch(Euclidean(); strategy=:indirect)
-        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); bb_min_stepsize=0.0)
-        @test_throws DomainError NonmonotoneLinesearch(
-            Euclidean(); bb_min_stepsize=π / 2, bb_max_stepsize=π / 4
+        ) NonmonotoneLinesearch(; strategy=:indirect)(M2)
+        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); bb_min_stepsize=0.0)(M2)
+        @test_throws DomainError NonmonotoneLinesearch(;
+            bb_min_stepsize=π / 2, bb_max_stepsize=π / 4
+        )(
+            M2
         )
-        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); memory_size=0)
+        @test_throws DomainError NonmonotoneLinesearch(; memory_size=0)(M2)
 
         rec = get_record(s)
         # after one step for local enough data -> equal to real valued data

@@ -4,14 +4,14 @@ using ManifoldsBase, Manopt, Manifolds, Test
     M = ManifoldsBase.DefaultManifold(2)
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
     s = Manopt.ArmijoLinesearchStepsize(Euclidean())
-    @test startswith(repr(s), "ArmijoLinesearch() with keyword parameters\n")
+    @test startswith(repr(s), "ArmijoLinesearch(;")
     s_stat = Manopt.status_summary(s)
-    @test startswith(s_stat, "ArmijoLinesearch() with keyword parameters\n")
+    @test startswith(s_stat, "ArmijoLinesearch(;")
     @test endswith(s_stat, "of 1.0")
     @test Manopt.get_message(s) == ""
 
-    s2 = NonmonotoneLinesearch(M)
-    @test startswith(repr(s2), "NonmonotoneLinesearch() with keyword arguments\n")
+    s2 = NonmonotoneLinesearch()(M)
+    @test startswith(repr(s2), "NonmonotoneLinesearch(;")
     @test Manopt.get_message(s2) == ""
 
     s3 = WolfePowellBinaryLinesearch()(M)
