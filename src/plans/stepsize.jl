@@ -1157,7 +1157,7 @@ $(_note(:ManifoldDefaultFactory, "PolyakStepsize"))
 """
 function Polyak(args...; kwargs...)
     return ManifoldDefaultsFactory(
-        PolyakStepsize, args...; requires_manifold=false, kwargs...
+        Manopt.PolyakStepsize, args...; requires_manifold=false, kwargs...
     )
 end
 
