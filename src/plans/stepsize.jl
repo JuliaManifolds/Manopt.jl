@@ -450,7 +450,6 @@ function ArmijoLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.ArmijoLinesearchStepsize, args...; kwargs...)
 end
 
-
 @doc """
     AdaptiveWNGradientStepsize{I<:Integer,R<:Real,F<:Function} <: Stepsize
 
