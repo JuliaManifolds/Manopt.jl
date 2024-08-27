@@ -17,7 +17,7 @@ $(_var(:Field, :retraction_method))
 
 # Constructor
 
-    StochasticGradientDescentState(M; kwargs...)
+    StochasticGradientDescentState(M::AbstractManifold; kwargs...)
 
 Create a `StochasticGradientDescentState` with start point `p`.
 

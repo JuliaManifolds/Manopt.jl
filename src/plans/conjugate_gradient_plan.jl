@@ -39,7 +39,7 @@ $(_var(:Field, :vector_transport_method))
 
 # Constructor
 
-    ConjugateGradientState(M; kwargs...)
+    ConjugateGradientState(M::AbstractManifold; kwargs...)
 
 where the last five fields can be set by their names as keyword and the
 `X` can be set to a tangent vector type using the keyword `initial_gradient` which defaults to `zero_vector(M,p)`,

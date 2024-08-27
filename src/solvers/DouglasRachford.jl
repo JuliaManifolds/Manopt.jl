@@ -21,7 +21,7 @@ $(_var(:Field, :stopping_criterion, "stop"))
 
 # Constructor
 
-    DouglasRachfordState(M; kwargs...)
+    DouglasRachfordState(M::AbstractManifold; kwargs...)
 
 # Input
 

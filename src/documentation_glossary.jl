@@ -176,10 +176,8 @@ define!(
     (type::String) -> """
 !!! info
     This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
-    If you do not provide a manifold, the manifold `M` later provided to (usually) generate
-    the corresponding [`AbstractManoptSolverState`](@ref) will be used.
-    This affects all arguments and keyword argumentss with defaults that depend on the manifold,
-    unless provided with a value here.
+    For default values, that depend on the manifold, this factory postpones the construction
+    until the manifold from for example a corresponding [`AbstractManoptSolverState`](@ref) is available.
 """,
 )
 define!(

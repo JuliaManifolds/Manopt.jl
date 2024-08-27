@@ -20,7 +20,7 @@ $(_var(:Field, :X; add=[:as_Gradient]))
 
 # Constructors
 
-    AlternatingGradientDescentState(M; kwargs...)
+    AlternatingGradientDescentState(M::AbstractManifold; kwargs...)
 
 # Keyword arguments
 * `inner_iterations=5`

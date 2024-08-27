@@ -73,7 +73,7 @@ $(_var(:Field, :retraction_method))
 
 # Constructors
 
-    NelderMeadState(M; kwargs...)
+    NelderMeadState(M::AbstractManifold; kwargs...)
 
 Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).

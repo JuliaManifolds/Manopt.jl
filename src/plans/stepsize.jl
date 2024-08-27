@@ -95,7 +95,7 @@ end
     ConstantLength(s; kwargs...)
     ConstantLength(M::AbstractManifold, s; kwargs...)
 
-Specify a [`Stepsize`]  that is constant.
+Specify a [`Stepsize`](@ref) that is constant.
 
 # Input
 
@@ -191,8 +191,8 @@ function show(io::IO, s::DecreasingStepsize)
     )
 end
 """
-    DecreasingLength(M; kwargs...)
     DegreasingLength(; kwargs...)
+    DecreasingLength(M::AbstractManifold; kwargs...)
 
 Specify a [`Stepsize`]  that is decreasing as ``s_k = $(_tex(:frac, "(l - ak)f^i", "(k+s)^e"))
 with the following
@@ -208,7 +208,7 @@ with the following
 * `:relative` – scale the gradient tangent vector ``X`` to ``s_k*X``
 * `:absolute` – scale the gradient to an absolute step length ``s_k``, that is ``$(_tex(:frac, "s_k", _tex(:norm, "X")))X``
 
-$(_note(:ManifoldDefaultFactory, "NesterovRule"))
+$(_note(:ManifoldDefaultFactory, "DecreasingStepsize"))
 """
 function DecreasingLength(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DecreasingStepsize, args...; kwargs...)
@@ -404,11 +404,11 @@ function set_parameter!(a::ArmijoLinesearchStepsize, ::Val{:IncreaseCondition}, 
 end
 """
     ArmijoLinesearch(; kwargs...)
-    ArmijoLinesearch(M; kwargs...)
+    ArmijoLinesearch(M::AbstractManifold; kwargs...)
 
-Specify a step size that performs an Armijo line search. Given a Function `f:$(_math(:M))→ℝ`
-and its Riemannian Gradient ``$(_tex(:grad))f:$(_math(:M))→$(_math(:TM))`,
-the curent point ``p∈$(_math(:M))`` and a search direction `X∈$(_math(:TpM))``.
+Specify a step size that performs an Armijo line search. Given a Function ``f:$(_math(:M))→ℝ``
+and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
+the curent point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
 
 Then the step size ``s`` is found by reducing the initial step size ``s`` until
 
@@ -449,6 +449,7 @@ $(_note(:ManifoldDefaultFactory, "ArmijoLinesearchStepsize"))
 function ArmijoLinesearch(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.ArmijoLinesearchStepsize, args...; kwargs...)
 end
+
 
 @doc """
     AdaptiveWNGradientStepsize{I<:Integer,R<:Real,F<:Function} <: Stepsize
@@ -569,7 +570,7 @@ function show(io::IO, awng::AdaptiveWNGradientStepsize)
 end
 """
     AdaptiveWNGradient(; kwargs...)
-    AdaptiveWNGradient(M; kwargs...)
+    AdaptiveWNGradient(M::AbstractManifold; kwargs...)
 
 A stepsize based on the adaptive gradient method introduced by [GrapigliaStella:2023](@cite).
 
@@ -1001,7 +1002,7 @@ get_message(a::NonmonotoneLinesearchStepsize) = a.message
 
 @doc """
     NonmonotoneLinesearch(; kwargs...)
-    NonmonotoneLinesearch(M; kwargs...)
+    NonmonotoneLinesearch(M::AbstractManifold; kwargs...)
 
 A functor representing a nonmonotone line search using the Barzilai-Borwein step size [IannazzoPorcelli:2017](@cite).
 
@@ -1021,10 +1022,10 @@ where ``α_{k-1}`` is the step size computed in the last iteration and ``$(_math
 Then the Barzilai—Borwein step size is
 
 ```math
-α_k^{$(_tex(:text, "BB"))} = \begin{cases}
-$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,\\
-α_{$(_tex(:text, "max"))}, & \text{else,}
-\end{cases}
+α_k^{$(_tex(:text, "BB"))} = $(_tex(:cases,
+"$(_tex(:min))(α_{$(_tex(:text, "max"))}, $(_tex(:max))(α_{$(_tex(:text, "min"))}, τ_{k})), & $(_tex(:text, "if")) ⟨s_{k}, y_{k}⟩_{p_k} > 0,",
+"α_{$(_tex(:text, "max"))}, & $(_tex(:text, "else,"))"
+))
 ```
 
 where
@@ -1065,7 +1066,7 @@ $(_var(:Keyword, :p; add="to store an interim result"))
 * `bb_max_stepsize=1e3`: upper bound for the Barzilai-Borwein step size greater than min_stepsize
 $(_var(:Keyword, :retraction_method))
 * `strategy=direct`: defines if the new step size is computed using the `:direct`, `:indirect` or `:alternating` strategy
-* `storage=[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])``: increase efficiency by using a [`StoreStateAction`](@ref) for `:Iterate` and `:Gradient`
+* `storage=`[`StoreStateAction`](@ref)`(M; store_fields=[:Iterate, :Gradient])`: increase efficiency by using a [`StoreStateAction`](@ref) for `:Iterate` and `:Gradient`.
 * `stepsize_reduction=0.5`:  step size reduction factor contained in the interval ``(0,1)``
 * `sufficient_decrease=1e-4`: sufficient decrease parameter contained in the interval ``(0,1)``
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
@@ -1129,7 +1130,7 @@ function show(io::IO, ps::PolyakStepsize)
 end
 """
     Polyak(; kwargs...)
-    Polyak(M; kwargs...)
+    Polyak(M::AbstractManifold; kwargs...)
 
 Compute a step size according to a method propsed by Polyak, cf. the Dynamic step size
 discussed in Section 3.2 of [Bertsekas:2015](@cite).
@@ -1326,7 +1327,7 @@ function status_summary(a::WolfePowellLinesearchStepsize)
 end
 """
     WolfePowellLinesearch(; kwargs...)
-    WolfePowellLinesearch(M; kwargs...)
+    WolfePowellLinesearch(M::AbstractManifold; kwargs...)
 
 Perform a lineseach to fulfull both the Armijo-Goldstein conditions
 ```math
@@ -1501,7 +1502,7 @@ Then the following Algorithm is performed similar to Algorithm 7 from [Huang:201
 
 """
     WolfePowellBinaryLinesearch(; kwargs...)
-    WolfePowellBinaryLinesearch(M; kwargs...)
+    WolfePowellBinaryLinesearch(M::AbstractManifold; kwargs...)
 
 Perform a lineseach to fulfull both the Armijo-Goldstein conditions
 for some given sufficient decrease coefficient ``c_1`` and some sufficient curvature condition coefficient``c_2``.

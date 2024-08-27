@@ -16,7 +16,7 @@ $(_var(:Field, :retraction_method))
 
 # Constructor
 
-    GradientDescentState(M; kwargs...)
+    GradientDescentState(M::AbstractManifold; kwargs...)
 
 Initialize the gradient descent solver state, where
 

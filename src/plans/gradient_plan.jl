@@ -448,8 +448,8 @@ function (a::AverageGradientRule)(
 end
 
 """
-    AverageGradient(M; kwargs...)
     AverageGradient(; kwargs...)
+    AverageGradient(M::AbstractManifold; kwargs...)
 
 Add an average of gradients to a gradient processor. A set of previous directions (from the
 inner processor) and the last iterate are stored, average is taken after vector transporting
@@ -548,7 +548,7 @@ end
 
 @doc """
     Nesterov(; kwargs...)
-    Nesterov(M; kwargs...)
+    Nesterov(M::AbstractManifold; kwargs...)
 
 Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
 
