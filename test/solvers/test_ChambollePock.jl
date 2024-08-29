@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldsBase, Test
+using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
 using ManoptExamples:
     forward_logs, differential_forward_logs, adjoint_differential_forward_logs
 using ManifoldDiff: prox_distance, prox_distance!

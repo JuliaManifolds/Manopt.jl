@@ -311,27 +311,27 @@ where the operator is stored as a matrix. A distinction is made between the upda
 approximation of the Hessian, $_doc_QN_H_update, and the update of the approximation
 of the Hessian inverse, $_doc_QN_B_update.
 For the first case, the coordinates of the search direction ``η_k`` with respect to
-a basis ``$(_math_sequence("b", "i", "1", "n"))`` are determined by solving a linear system of equations
+a basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` are determined by solving a linear system of equations
 
 $_doc_QN_H_full_system
 
-where ``H_k`` is the matrix representing the operator with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``
-and ``\\widehat{$_l_grad} f(p_k)}`` represents the coordinates of the gradient of
-the objective function ``f`` in ``x_k`` with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``.
+where ``H_k`` is the matrix representing the operator with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
+and ``\\widehat{$(_tex(:grad))} f(p_k)}`` represents the coordinates of the gradient of
+the objective function ``f`` in ``x_k`` with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``.
 If a method is chosen where Hessian inverse is approximated, the coordinates of the search
-direction ``η_k`` with respect to a basis ``$(_math_sequence("b", "i", "1", "n"))`` are obtained simply by
+direction ``η_k`` with respect to a basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` are obtained simply by
 matrix-vector multiplication
 
 $_doc_QN_B_full_system
 
-where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math_sequence("b", "i", "1", "n"))``
-and `\\widehat{$_l_grad} f(p_k)}``. In the end, the search direction ``η_k`` is
-generated from the coordinates ``\\hat{eta_k}`` and the vectors of the basis ``$(_math_sequence("b", "i", "1", "n"))``
+where ``B_k`` is the matrix representing the operator with respect to the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
+and `\\widehat{$(_tex(:grad))} f(p_k)}``. In the end, the search direction ``η_k`` is
+generated from the coordinates ``\\hat{eta_k}`` and the vectors of the basis ``$(_math(:Sequence, "b", "i", "1", "n"))``
 in both variants.
 The [`AbstractQuasiNewtonUpdateRule`](@ref) indicates which quasi-Newton update rule is used.
 In all of them, the Euclidean update formula is used to generate the matrix ``H_{k+1}``
-and ``B_{k+1}``, and the basis ``$(_math_sequence("b", "i", "1", "n"))`` is transported into the upcoming tangent
-space ``T_{p_{k+1}} $_l_M``, preferably with an isometric vector transport, or generated there.
+and ``B_{k+1}``, and the basis ``$(_math(:Sequence, "b", "i", "1", "n"))`` is transported into the upcoming tangent
+space ``T_{p_{k+1}} $(_tex(:Cal, "M"))``, preferably with an isometric vector transport, or generated there.
 
 # Provided functors
 
@@ -342,9 +342,9 @@ space ``T_{p_{k+1}} $_l_M``, preferably with an isometric vector transport, or g
 
 * `basis`:                  an `AbstractBasis` to use in the tangent spaces
 * `matrix`:                 the matrix which represents the approximating operator.
-* `scale`:                  (`true) indicates whether the initial matrix (= identity matrix) should be scaled before the first update.
+* `initial_scale`:          when initialising the update, a unit matrix is used as initial approximation, scaled by this factor
 * `update`:                 a [`AbstractQuasiNewtonUpdateRule`](@ref).
-* $_field_vector_transp
+$(_var(:Field, :vector_transport_method))
 
 # Constructor
 
@@ -358,8 +358,8 @@ space ``T_{p_{k+1}} $_l_M``, preferably with an isometric vector transport, or g
 
 ## Keyword arguments
 
-* `scale=true`
-* $_kw_vector_transport_method_default
+* `initial_scale=1.0`
+$(_var(:Keyword, :vector_transport_method))
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields.
 
@@ -374,19 +374,20 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     B<:AbstractBasis,
     VT<:AbstractVectorTransportMethod,
     M<:AbstractMatrix,
+    F<:Real,
 } <: AbstractQuasiNewtonDirectionUpdate
     basis::B
     matrix::M
-    scale::Bool
+    initial_scale::F
     update::NT
     vector_transport_method::VT
 end
 function status_summary(d::QuasiNewtonMatrixDirectionUpdate)
-    return "$(d.update) with initial scaling $(d.scale) and vector transport method $(d.vector_transport_method)."
+    return "$(d.update) with initial scaling $(d.initial_scale) and vector transport method $(d.vector_transport_method)."
 end
 function show(io::IO, d::QuasiNewtonMatrixDirectionUpdate)
     s = """
-        QuasiNewtonMatrixDirectionUpdate($(d.basis), $(d.matrix), $(d.scale), $(d.update), $(d.vector_transport_method))
+        QuasiNewtonMatrixDirectionUpdate($(d.basis), $(d.matrix), $(d.initial_scale), $(d.update), $(d.vector_transport_method))
         """
     return print(io, s)
 end
@@ -394,18 +395,18 @@ function QuasiNewtonMatrixDirectionUpdate(
     M::AbstractManifold,
     update::U,
     basis::B=DefaultOrthonormalBasis(),
-    m::MT=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M)),
-    ;
-    scale::Bool=true,
+    m::MT=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M));
+    initial_scale::F=1.0,
     vector_transport_method::V=default_vector_transport_method(M),
 ) where {
     U<:AbstractQuasiNewtonUpdateRule,
     MT<:AbstractMatrix,
     B<:AbstractBasis,
     V<:AbstractVectorTransportMethod,
+    F<:Real,
 }
-    return QuasiNewtonMatrixDirectionUpdate{U,B,V,MT}(
-        basis, m, scale, update, vector_transport_method
+    return QuasiNewtonMatrixDirectionUpdate{U,B,V,MT,F}(
+        basis, m, initial_scale, update, vector_transport_method
     )
 end
 function (d::QuasiNewtonMatrixDirectionUpdate)(mp, st)
@@ -435,32 +436,37 @@ function initialize_update!(d::QuasiNewtonMatrixDirectionUpdate)
     return d
 end
 
-@doc raw"""
+_doc_QN_B = raw"""
+```math
+\mathcal{B}^{(0)}_k[⋅] = \frac{g_{p_k}(s_{k-1}, y_{k-1})}{g_{p_k}(y_{k-1}, y_{k-1})} \; \mathrm{id}_{T_{p_k} \mathcal{M}}[⋅]
+```
+"""
+
+@doc """
     QuasiNewtonLimitedMemoryDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 This [`AbstractQuasiNewtonDirectionUpdate`](@ref) represents the limited-memory Riemannian BFGS update,
 where the approximating operator is represented by ``m`` stored pairs of tangent
-vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` in the ``k``-th iteration.
-For the calculation of the search direction ``η_k``, the generalisation of the two-loop recursion
+vectors ``$(_math(:Sequence, _tex(:widehat, "s"), "i", "k-m", "k-1")) and $(_math(:Sequence, _tex(:widehat, "y"), "i", "k-m", "k-1")) in the ``k``-th iteration.
+For the calculation of the search direction ``X_k``, the generalisation of the two-loop recursion
 is used (see [HuangGallivanAbsil:2015](@cite)),
-since it only requires inner products and linear combinations of tangent vectors in ``T_{x_k} \mathcal{M}``.
-For that the stored pairs of tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``,
-the gradient ``\operatorname{grad}f(x_k)`` of the objective function ``f`` in ``x_k``
+since it only requires inner products and linear combinations of tangent vectors in ``$(_math(:TpM; p="p_k"))``.
+For that the stored pairs of tangent vectors ``$( _tex(:widehat, "s"))_i,  $(_tex(:widehat, "y"))_i``,
+the gradient ``$(_tex(:grad)) f(p_k)`` of the objective function ``f`` in ``p_k``
 and the positive definite self-adjoint operator
 
-```math
-\mathcal{B}^{(0)}_k[⋅] = \frac{g_{x_k}(s_{k-1}, y_{k-1})}{g_{x_k}(y_{k-1}, y_{k-1})} \; \mathrm{id}_{T_{x_k} \mathcal{M}}[⋅]
-```
+$(_doc_QN_B)
 
 are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update
-is executed ``m`` times in a row on ``\mathcal{B}^{(0)}_k[⋅]`` using the tangent vectors ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}``, and in the same time the resulting operator ``\mathcal{B}^{LRBFGS}_k [⋅]`` is directly applied on ``\operatorname{grad}f(x_k)``.
+is executed ``m`` times in a row on ``$(_tex(:Cal, "B"))^{(0)}_k[⋅]`` using the tangent vectors ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i``,
+and in the same time the resulting operator ``$(_tex(:Cal, "B"))^{LRBFGS}_k [⋅]`` is directly applied on ``$(_tex(:grad))f(x_k)``.
 When updating there are two cases: if there is still free memory, ``k < m``, the previously
-stored vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m}^{k-1}`` have to be
-transported into the upcoming tangent space ``T_{x_{k+1}} \mathcal{M}``.
-If there is no free memory, the oldest pair ``\{ \widetilde{s}_{k−m}, \widetilde{y}_{k−m}\}``
-has to be discarded and then all the remaining vector pairs ``\{ \widetilde{s}_i, \widetilde{y}_i\}_{i=k-m+1}^{k-1}``
-are transported into the tangent space ``T_{x_{k+1}} \mathcal{M}``.
-After that the new values ``s_k = \widetilde{s}_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = \widetilde{y}_k``
+stored vector pairs ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i`` have to be
+transported into the upcoming tangent space ``$(_math(:TpM; p="p_{k+1}"))``.
+If there is no free memory, the oldest pair ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i``
+has to be discarded and then all the remaining vector pairs ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i``
+are transported into the tangent space ``$(_math(:TpM; p="p_{k+1}"))``.
+After that the new values ``s_k = $( _tex(:widehat, "s"))_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = $( _tex(:widehat, "y"))_k``
 are stored at the beginning. This process ensures that new information about the objective
 function is always included and the old, probably no longer relevant, information is discarded.
 
@@ -471,23 +477,25 @@ function is always included and the old, probably no longer relevant, informatio
 
 # Fields
 
-* `memory_s`                the set of the stored (and transported) search directions times step size ``\{ \widetilde{s}_i\}_{i=k-m}^{k-1}``.
-* `memory_y`                set of the stored gradient differences ``\{ \widetilde{y}_i\}_{i=k-m}^{k-1}``.
-* `ξ`                       a variable used in the two-loop recursion.
-* `ρ`                       a variable used in the two-loop recursion.
-* `scale`                   initial scaling of the Hessian
-* `vector_transport_method` a `AbstractVectorTransportMethod`
-* `message`                 a string containing a potential warning that might have appeared
+* `memory_s`;                the set of the stored (and transported) search directions times step size `` $(_math(:Sequence, _tex(:widehat, "s"), "i", "k-m", "k-1"))``.
+* `memory_y`:                set of the stored gradient differences ``$(_math(:Sequence, _tex(:widehat, "y"), "i", "k-m", "k-1"))``.
+* `ξ`:                       a variable used in the two-loop recursion.
+* `ρ`;                       a variable used in the two-loop recursion.
+* `initial_scale`:           initial scaling of the Hessian
+$(_var(:Field, :vector_transport_method))
+* `message`:                 a string containing a potential warning that might have appeared
+* `project!`:                a function to stabilize the update by projecting on the tangent space
 
 # Constructor
+
     QuasiNewtonLimitedMemoryDirectionUpdate(
         M::AbstractManifold,
         x,
         update::AbstractQuasiNewtonUpdateRule,
         memory_size;
         initial_vector=zero_vector(M,x),
-        scale::Real=1.0
-        project::Bool=true
+        initial_scale::Real=1.0
+        project!=copyto!
     )
 
 # See also
@@ -502,13 +510,14 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     F,
     V<:AbstractVector{F},
     VT<:AbstractVectorTransportMethod,
+    Proj,
 } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
     ξ::Vector{F}
     ρ::Vector{F}
-    scale::F
-    project::Bool
+    initial_scale::F
+    project!::Proj
     vector_transport_method::VT
     message::String
 end
@@ -518,22 +527,22 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     ::NT,
     memory_size::Int;
     initial_vector::T=zero_vector(M, p),
-    scale::Real=1.0,
-    project::Bool=true,
+    initial_scale::Real=1.0,
+    (project!)::Proj=copyto!,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod}
+) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod,Proj}
     mT = allocate_result_type(
-        M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, scale)
+        M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, initial_scale)
     )
     m1 = zeros(mT, memory_size)
     m2 = zeros(mT, memory_size)
-    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,mT,typeof(m1),VTM}(
+    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,mT,typeof(m1),VTM,Proj}(
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
         m1,
         m2,
-        convert(mT, scale),
-        project,
+        convert(mT, initial_scale),
+        project!,
         vector_transport_method,
         "",
     )
@@ -541,8 +550,8 @@ end
 get_message(d::QuasiNewtonLimitedMemoryDirectionUpdate) = d.message
 function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     s = "limited memory $T (size $(length(d.memory_s)))"
-    (d.scale != 1.0) && (s = "$(s) initial scaling $(d.scale)")
-    d.project && (s = "$(s), projections, ")
+    (d.initial_scale != 1.0) && (s = "$(s) initial scaling $(d.initial_scale)")
+    (d.project! !== copyto!) && (s = "$(s), projections, ")
     s = "$(s)and $(d.vector_transport_method) as vector transport."
     return s
 end
@@ -593,7 +602,8 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
         return r
     end
     # initial scaling guess
-    r ./= d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2
+    r .*=
+        d.initial_scale / (d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2)
     # forward pass
     for i in eachindex(d.ρ)
         if abs(d.ρ[i]) > 0
@@ -601,7 +611,8 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
             r .+= coeff .* d.memory_s[i]
         end
     end
-    d.project && embed_project!(M, r, p, r)
+    # potentially stabilize step by projecting.
+    d.project!(M, r, p, r)
     r .*= -1
     return r
 end

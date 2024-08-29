@@ -103,23 +103,26 @@ _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 """
-    set_manopt_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
+    set_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
 
 Set certain values specified by `args...` into the elements of the `recordDictionary`
 """
-function set_manopt_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
+function set_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
     for d in values(rss.recordDictionary)
-        set_manopt_parameter!(d, args...)
+        set_parameter!(d, args...)
     end
     return rss
 end
 # all other pass through
-function set_manopt_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
-    return set_manopt_parameter!(rss.state, v, args...)
+function set_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return set_parameter!(rss.state, v, args...)
+end
+function set_parameter!(rss::RecordSolverState, v::Val{:StoppingCriterion}, args...)
+    return set_parameter!(rss.state, v, args...)
 end
 # all other pass through
-function get_manopt_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
-    return get_manopt_parameter(rss.state, v, args...)
+function get_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(rss.state, v, args...)
 end
 
 @doc """
@@ -243,7 +246,7 @@ function (re::RecordEvery)(
     # Set activity to activate or deactivate subsolvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
-    set_manopt_parameter!(
+    set_parameter!(
         ams, :SubState, :Record, :Activity, !(k < 1) && (rem(k + 1, re.every) == 0)
     )
     return nothing
@@ -463,11 +466,11 @@ end
 function status_summary(rwa::RecordWhenActive)
     return repr(rwa)
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, v::Val, args...)
-    set_manopt_parameter!(rwa.record, v, args...)
+function set_parameter!(rwa::RecordWhenActive, v::Val, args...)
+    set_parameter!(rwa.record, v, args...)
     return rwa
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
+function set_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
     return rwa.active = v
 end
 get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
@@ -499,7 +502,7 @@ end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
 status_summary(di::RecordCost) = ":Cost"
 
-@doc raw"""
+@doc """
     RecordChange <: RecordAction
 
 debug for the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
@@ -510,7 +513,7 @@ during the last iteration.
 * `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
   iterate to use this as the last value (to compute the change) serving as a potential cache
   shared with other components of the solver.
-* `inverse_retraction_method` : the inverse retraction to be used for approximating distance.
+$(_var(:Keyword, :inverse_retraction_method))
 * `recorded_values`           : to store the recorded values
 
 # Constructor
@@ -532,14 +535,9 @@ mutable struct RecordChange{
     function RecordChange(
         M::AbstractManifold=DefaultManifold();
         storage::Union{Nothing,StoreStateAction}=nothing,
-        manifold::Union{Nothing,AbstractManifold}=nothing,
         inverse_retraction_method::IRT=default_inverse_retraction_method(M),
     ) where {IRT<:AbstractInverseRetractionMethod}
         irm = inverse_retraction_method
-        if !isnothing(manifold)
-            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
-            irm = default_inverse_retraction_method(manifold)
-        end
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate])

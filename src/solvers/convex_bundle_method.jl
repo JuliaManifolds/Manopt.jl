@@ -15,30 +15,36 @@ point type `P` and a tangent vector type `T``
 * `diameter::R`: estimate for the diameter of the level set of the objective function at the starting point
 * `domain: the domain of ``f`` as a function `(M,p) -> b`that evaluates to true when the current candidate is in the domain of `f`, and false otherwise,
 * `g::T`:                      descent direction
-* $(_field_inv_retr)
+$(_var(:Field, :inverse_retraction_method))
 * `k_max::R`:                  upper bound on the sectional curvature of the manifold
 * `linearization_errors<:AbstractVector{<:R}`: linearization errors at the last serious step
 * `m::R`:                      the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
-* $(_field_iterate)
+$(_var(:Field, :p; add=[:as_Iterate]))
 * `p_last_serious::P`:         last serious iterate
-* $(_field_retr)
-* $(_field_stop)
+$(_var(:Field, :retraction_method))
+$(_var(:Field, :stopping_criterion, "stop"))
 * `transported_subgradients`:  subgradients of the bundle that are transported to `p_last_serious`
-* $(_field_vector_transp)
-* $(_field_subgradient)
-* $(_field_step)
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :X; add=[:as_Subgradient]))
+$(_var(:Field, :stepsize))
 * `ε::R`:                      convex combination of the linearization errors
 * `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
 * `ξ`:                         the stopping parameter given by ``ξ = -\\lVert g\\rvert^2 – ε``
-* $(_field_sub_problem)
-* $(_field_sub_state)
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
 
 # Constructor
 
-    ConvexBundleMethodState(M::AbstractManifold, p=rand(M); kwargs...)
+    ConvexBundleMethodState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
+    ConvexBundleMethodState(M::AbstractManifold, sub_problem=convex_bundle_method_subsolver; evaluation=AllocatingEvaluation(), kwargs...)
 
 Generate the state for the [`convex_bundle_method`](@ref) on the manifold `M`
-with initial point `p`.
+
+## Input
+
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :sub_problem))
+$(_var(:Argument, :sub_state))
 
 # Keyword arguments
 
@@ -51,15 +57,13 @@ Most of the following keyword arguments set default values for the fields mentio
 * `diameter=50.0`
 * `domain=(M, p) -> isfinite(f(M, p))`
 * `k_max=0`
-* `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`
-* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
-* `sub_problem=`[`convex_bundle_method_subsolver`](@ref)
-* `sub_state=[`AllocatingEvaluation`](@ref)
-
+$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+* `X=`$(_link(:zero_vector)) specify the type of tangent vector to use.
+$(_var(:Keyword, :vector_transport_method))
 """
 mutable struct ConvexBundleMethodState{
     P,
@@ -106,7 +110,9 @@ mutable struct ConvexBundleMethodState{
     ϱ::Nothing# deprecated
     function ConvexBundleMethodState(
         M::TM,
-        p::P=rand(M);
+        sub_problem::Pr,
+        sub_state::St;
+        p::P=rand(M),
         atol_λ::R=eps(),
         atol_errors::R=eps(),
         bundle_cap::I=25,
@@ -121,17 +127,13 @@ mutable struct ConvexBundleMethodState{
                                StopAfterIteration(5000),
         X::T=zero_vector(M, p),
         vector_transport_method::VT=default_vector_transport_method(M, typeof(p)),
-        sub_problem::Pr=convex_bundle_method_subsolver,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=AllocatingEvaluation(),
-        k_size=nothing,# deprecated
-        p_estimate=nothing,# deprecated
-        ϱ=nothing,# deprecated
     ) where {
         D,
         IR<:AbstractInverseRetractionMethod,
         P,
         T,
-        Pr,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
+        St<:AbstractManoptSolverState,
         I,
         TM<:AbstractManifold,
         TR<:AbstractRetractionMethod,
@@ -140,7 +142,6 @@ mutable struct ConvexBundleMethodState{
         VT<:AbstractVectorTransportMethod,
         R<:Real,
     }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
         bundle = Vector{Tuple{P,T}}()
         g = zero_vector(M, p)
         last_stepsize = one(R)
@@ -149,13 +150,11 @@ mutable struct ConvexBundleMethodState{
         ε = zero(R)
         λ = Vector{R}()
         ξ = zero(R)
-        !all(isnothing.([k_size, p_estimate, ϱ])) &&
-            @error "Keyword arguments `k_size`, `p_estimate`, and the field `ϱ` are not used anymore. Use the field `k_max` instead."
         return new{
             P,
             T,
             Pr,
-            typeof(sub_state_storage),
+            St,
             R,
             typeof(linearization_errors),
             typeof(bundle),
@@ -192,11 +191,20 @@ mutable struct ConvexBundleMethodState{
             ξ,
             λ,
             sub_problem,
-            sub_state_storage,
-            ϱ,# deprecated
+            sub_state,
         )
     end
 end
+function ConvexBundleMethodState(
+    M::AbstractManifold,
+    sub_problem=convex_bundle_method_subsolver;
+    evaluation::E=AllocatingEvaluation(),
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return ConvexBundleMethodState(M, sub_problem, cfs; kwargs...)
+end
+
 get_iterate(bms::ConvexBundleMethodState) = bms.p_last_serious
 function set_iterate!(bms::ConvexBundleMethodState, M, p)
     copyto!(M, bms.p_last_serious, p)
@@ -272,7 +280,7 @@ _doc_convex_bundle_method = """
     convex_bundle_method(M, f, ∂f, p)
     convex_bundle_method!(M, f, ∂f, p)
 
-perform a convex bundle method ``p^{(k+1)} = $(_l_retr)_{p^{(k)}}(-g_k)`` where
+perform a convex bundle method ``p^{(k+1)} = $(_tex(:retr))_{p^{(k)}}(-g_k)`` where
 
 $(_doc_cbm_gk)
 
@@ -286,10 +294,10 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 
 # Input
 
-* $(_arg_M)
-* $(_arg_f)
-* $(_arg_subgrad_f)
-* $(_arg_p)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
+$(_var(:Argument, :subgrad_f, _var(:subgrad_f, :symbol)))
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -299,21 +307,19 @@ For more details, see [BergmannHerzogJasa:2024](@cite).
 * `m=1e-3`: : the parameter to test the decrease of the cost: ``f(q_{k+1}) ≤ f(p_k) + m ξ``.
 * `diameter=50.0`: estimate for the diameter of the level set of the objective function at the starting point.
 * `domain=(M, p) -> isfinite(f(M, p))`: a function to that evaluates to true when the current candidate is in the domain of the objective `f`, and false otherwise.
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `k_max=0`: upper bound on the sectional curvature of the manifold.
-* `stepsize=default_stepsize(M, ConvexBundleMethodState)`, which defaults to [`ConstantStepsize`](@ref)`(M)`.
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc_any)[`StopAfterIteration`](@ref)`(5000)`:
-  $(_kw_stopping_criterion)
-* `X=`$(_link_zero_vector()) specify the type of tangent vector to use.
-* $(_kw_vector_transport_method_default): $(_kw_vector_transport_method)
-* `sub_problem=`[`convex_bundle_method_subsolver`](@ref): a Manopt problem or a closed form solution as a function for the sub problem
-* `sub_state=[`AllocatingEvaluation`](@ref): specify a solver for the sub problem or how the closed form solution function is evaluated.
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
+$(_var(:Keyword, :inverse_retraction_method))$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopWhenLagrangeMultiplierLess`](@ref)`(1e-8)`$(_sc(:Any))[`StopAfterIteration`](@ref)`(5000)`"))
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :sub_state; default="[`convex_bundle_method_subsolver`](@ref)`"))
+$(_var(:Keyword, :sub_problem; default="[`AllocatingEvaluation`](@ref)"))
+$(_var(:Keyword, :X))
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_convex_bundle_method)"
@@ -337,7 +343,7 @@ function convex_bundle_method!(
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_max=0,
-    stepsize::Stepsize=DomainBackTrackingStepsize(0.5),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTrackingStepsize(0.5),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -348,10 +354,7 @@ function convex_bundle_method!(
     vector_transport_method::VTransp=default_vector_transport_method(M, typeof(p)),
     sub_problem=convex_bundle_method_subsolver,
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=evaluation,
-    k_size=nothing,# deprecated
-    p_estimate=nothing,# deprecated
-    ϱ=nothing,# deprecated
-    kwargs..., #especially may contain debug
+    kwargs...,
 ) where {R<:Real,TF,TdF,TRetr,IR,VTransp}
     sgo = ManifoldSubgradientObjective(f, ∂f!!; evaluation=evaluation)
     dsgo = decorate_objective!(M, sgo; kwargs...)
@@ -359,7 +362,9 @@ function convex_bundle_method!(
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     bms = ConvexBundleMethodState(
         M,
-        p;
+        sub_problem,
+        maybe_wrap_evaluation_type(sub_state);
+        p=p,
         atol_λ=atol_λ,
         atol_errors=atol_errors,
         bundle_cap=bundle_cap,
@@ -367,16 +372,11 @@ function convex_bundle_method!(
         domain=domain,
         m=m,
         k_max=k_max,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         inverse_retraction_method=inverse_retraction_method,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
         vector_transport_method=vector_transport_method,
-        sub_problem=sub_problem,
-        sub_state=sub_state_storage,
-        k_size=k_size,# deprecated
-        p_estimate=p_estimate,# deprecated
-        ϱ=ϱ,# deprecated
     )
     bms = decorate_state!(bms; debug=debug, kwargs...)
     return get_solver_return(solve!(mp, bms))

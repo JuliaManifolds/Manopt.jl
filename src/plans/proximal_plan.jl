@@ -3,16 +3,16 @@
 # Proximal Point Problem and State
 #
 #
-@doc raw"""
+@doc """
     ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
 
 specify a problem for solvers based on the evaluation of proximal maps.
 
 # Fields
 
-* `cost`: a function ``F:\mathcal M→ℝ`` to
+* `cost`: a function ``F:$(_tex(:Cal, "M"))→ℝ`` to
   minimize
-* `proxes`: proximal maps ``\operatorname{prox}_{λ\varphi}:\mathcal M→\mathcal M``
+* `proxes`: proximal maps ``$(_tex(:prox))_{λφ}:$(_tex(:Cal, "M")) → $(_tex(:Cal, "M"))``
   as functions `(M, λ, p) -> q`.
 * `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
@@ -139,21 +139,24 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 # Fields
 
-* $_field_p
-* $_field_stop
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :stopping_criterion, "stop"))
 * `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``ì``
 * `oder_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
   a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
 
-    CyclicProximalPointState(M, p; kwargs...)
+    CyclicProximalPointState(M; kwargs...)
 
-Generate the options with the following keyword arguments
+Generate the options
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_l_Manifold("N"))``,
+# Keyword arguments
+
 * `evaluation_order=:LinearOrder`: soecify the `order_type`
+* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
+$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(2000)`"))
 
 # See also
 
@@ -169,8 +172,8 @@ mutable struct CyclicProximalPointState{P,TStop<:StoppingCriterion,Tλ} <:
 end
 
 function CyclicProximalPointState(
-    ::AbstractManifold,
-    p::P;
+    M::AbstractManifold;
+    p::P=rand(M),
     stopping_criterion::S=StopAfterIteration(2000),
     λ::F=(i) -> 1.0 / i,
     evaluation_order::Symbol=:LinearOrder,

@@ -351,6 +351,6 @@ end
 """
     AbstractStochasticGradientDescentSolverState <: AbstractManoptSolverState
 
-A generic type for all options related to stochastic gradient descent methods
+A generic type for all options related to gradient descent methods working with parts of the total gradient
 """
-abstract type AbstractGradientGroupProcessor <: DirectionUpdateRule end
+abstract type AbstractGradientGroupDirectionRule <: DirectionUpdateRule end

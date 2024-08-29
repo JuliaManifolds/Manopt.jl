@@ -221,13 +221,6 @@ function get_subgradient!(
     return get_gradient!(M, X, agmo, p)
 end
 
-function _to_mutating_gradient(grad_f, evaluation::AllocatingEvaluation)
-    return grad_f_(M, p) = [grad_f(M, p[])]
-end
-function _to_mutating_gradient(grad_f, evaluation::InplaceEvaluation)
-    return grad_f_(M, X, p) = (X .= [grad_f(M, p[])])
-end
-
 @doc raw"""
     get_gradient(agst::AbstractGradientSolverState)
 
@@ -280,62 +273,70 @@ abstract type DirectionUpdateRule end
     IdentityUpdateRule <: DirectionUpdateRule
 
 The default gradient direction update is the identity, usually it just evaluates the gradient.
+
+You can also use `Gradient()` to create the corresponding factory, though this only delays
+this parameter-free instantiation to later.
 """
 struct IdentityUpdateRule <: DirectionUpdateRule end
+Gradient() = ManifoldDefaultsFactory(Manopt.IdentityUpdateRule; requires_manifold=false)
 
 """
-    MomentumGradient <: DirectionUpdateRule
+    MomentumGradientRule <: DirectionUpdateRule
 
-Append a momentum to a gradient processor, where the last direction and last iterate are
-stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
-where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
-last direction multiplied by momentum ``m``.
+Store the necessary information to compute the [`MomentumGradient`](@ref)
+direction update.
 
 # Fields
 
-* `p_old`:  remember the last iterate for parallel transporting the last direction
-* `momentum`: factor for momentum
+$(_var(:Field, :p, "p_old"))
+* `momentum::Real`: factor for the momentum
 * `direction`: internal [`DirectionUpdateRule`](@ref) to determine directions
   to add the momentum to.
-* `vector_transport_method`: vector transport method to use
-* `X_old`: the last gradient/direction update added as momentum
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :X, "X_old"))
 
 # Constructors
 
-Add momentum to a gradient problem, where by default just a gradient evaluation is used
 
-    MomentumGradient(
-        M::AbstractManifold;
-        p=rand(M),
-        s::DirectionUpdateRule=IdentityUpdateRule();
-        X=zero_vector(M, p),
-        momentum=0.2
-        vector_transport_method=default_vector_transport_method(M, typeof(p)),
-    )
+    MomentumGradientRule(M::AbstractManifold; kwargs...)
 
 Initialize a momentum gradient rule to `s`, where `p` and `X` are memory for interim values.
+
+## Keyword arguments
+
+$(_var(:Keyword, :p))
+* `s=`[`IdentityUpdateRule`](@ref)`()`
+* `momentum=0.2`
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :X))
+
+
+# See also
+[`MomentumGradient`](@ref)
 """
-mutable struct MomentumGradient{P,T,R<:Real,VTM<:AbstractVectorTransportMethod} <:
-               DirectionUpdateRule
+mutable struct MomentumGradientRule{
+    P,T,D<:DirectionUpdateRule,R<:Real,VTM<:AbstractVectorTransportMethod
+} <: DirectionUpdateRule
     momentum::R
     p_old::P
-    direction::DirectionUpdateRule
+    direction::D
     vector_transport_method::VTM
     X_old::T
 end
-function MomentumGradient(
-    M::AbstractManifold,
-    p::P=rand(M);
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
+function MomentumGradientRule(
+    M::AbstractManifold;
+    p::P=rand(M),
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-    X=zero_vector(M, p),
-    momentum=0.2,
-) where {P,VTM<:AbstractVectorTransportMethod}
-    return MomentumGradient{P,typeof(X),typeof(momentum),VTM}(
-        momentum, p, direction, vector_transport_method, X
+    X::Q=zero_vector(M, p),
+    momentum::F=0.2,
+) where {P,Q,F<:Real,VTM<:AbstractVectorTransportMethod}
+    dir = _produce_type(direction, M)
+    return MomentumGradientRule{P,Q,typeof(dir),F,VTM}(
+        momentum, p, dir, vector_transport_method, X
     )
 end
-function (mg::MomentumGradient)(
+function (mg::MomentumGradientRule)(
     mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
 )
     M = get_manifold(mp)
@@ -350,24 +351,52 @@ function (mg::MomentumGradient)(
 end
 
 """
-    AverageGradient <: DirectionUpdateRule
+    MomentumGradient()
+
+Append a momentum to a gradient processor, where the last direction and last iterate are
+stored and the new is composed as ``η_i = m*η_{i-1}' - s d_i``,
+where ``sd_i`` is the current (inner) direction and ``η_{i-1}'`` is the vector transported
+last direction multiplied by momentum ``m``.
+
+# Input
+
+* `M` (optional)
+
+# Keyword arguments
+
+$(_var(:Keyword, :p))
+* `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
+$(_var(:Keyword, :X))
+* `momentum=0.2` amount of momentum to use
+$(_var(:Keyword, :vector_transport_method))
+
+$(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
+"""
+MomentumGradient(args...; kwargs...) =
+    ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+
+"""
+    AverageGradientRule <: DirectionUpdateRule
 
 Add an average of gradients to a gradient processor. A set of previous directions (from the
-inner processor) and the last iterate are stored, average is taken after vector transporting
+inner processor) and the last iterate are stored. The average is taken after vector transporting
 them to the current iterates tangent space.
 
+
 # Fields
+
 * `gradients`:               the last `n` gradient/direction updates
 * `last_iterate`:            last iterate (needed to transport the gradients)
 * `direction`:               internal [`DirectionUpdateRule`](@ref) to determine directions to apply the averaging to
-* `vector_transport_method`: vector transport method to use
+$(_var(:Keyword, :vector_transport_method))
 
 # Constructors
-    AverageGradient(
-        M::AbstractManifold,
+
+    AverageGradientRule(
+        M::AbstractManifold;
         p::P=rand(M);
         n::Int=10
-        s::DirectionUpdateRule=IdentityUpdateRule();
+        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
         gradients = fill(zero_vector(p.M, o.x),n),
         last_iterate = deepcopy(x0),
         vector_transport_method = default_vector_transport_method(M, typeof(p))
@@ -376,104 +405,126 @@ them to the current iterates tangent space.
 Add average to a gradient problem, where
 
 * `n`:                       determines the size of averaging
-* `s`:                       is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
+* `direction`:                       is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients`:               can be pre-filled with some history
 * `last_iterate`:            stores the last iterate
-* `vector_transport_method`: determines how to transport all gradients to the current iterates tangent space before averaging
+$(_var(:Keyword, :vector_transport_method))
 """
-mutable struct AverageGradient{P,T,VTM<:AbstractVectorTransportMethod} <:
-               DirectionUpdateRule
+mutable struct AverageGradientRule{
+    P,T,D<:DirectionUpdateRule,VTM<:AbstractVectorTransportMethod
+} <: DirectionUpdateRule
     gradients::AbstractVector{T}
     last_iterate::P
-    direction::DirectionUpdateRule
+    direction::D
     vector_transport_method::VTM
 end
-function AverageGradient(
-    M::AbstractManifold,
-    p::P=rand(M);
+function AverageGradientRule(
+    M::AbstractManifold;
+    p::P=rand(M),
     n::Int=10,
-    direction::DirectionUpdateRule=IdentityUpdateRule(),
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
     gradients=[zero_vector(M, p) for _ in 1:n],
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {P,VTM}
-    return AverageGradient{P,eltype(gradients),VTM}(
-        gradients, p, direction, vector_transport_method
+    dir = _produce_type(direction, M)
+    return AverageGradientRule{P,eltype(gradients),typeof(dir),VTM}(
+        gradients, copy(M, p), dir, vector_transport_method
     )
 end
-function (a::AverageGradient)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, k)
+function (a::AverageGradientRule)(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
+    # remove oldest/last
     pop!(a.gradients)
     M = get_manifold(mp)
-    step, d = a.direction(mp, s, k) #get inner gradient and step
-    a.gradients = vcat([deepcopy(d)], a.gradients)
-    for i in 1:(length(a.gradients) - 1) #transport & shift in place
-        vector_transport_to!(
-            M,
-            a.gradients[i],
-            a.last_iterate,
-            a.gradients[i + 1],
-            get_iterate(s),
-            a.vector_transport_method,
-        )
+    p = get_iterate(s)
+    _, d = a.direction(mp, s, k) #get inner gradient and step
+    for g in a.gradients
+        vector_transport_to!(M, g, a.last_iterate, g, p, a.vector_transport_method)
     end
-    a.gradients[1] = deepcopy(d)
-    copyto!(M, a.last_iterate, get_iterate(s))
-    return step, 1 / length(a.gradients) .* sum(a.gradients)
+    pushfirst!(a.gradients, copy(M, p, d))
+    copyto!(M, a.last_iterate, p)
+    return 1.0, 1 / length(a.gradients) .* sum(a.gradients)
 end
 
-@doc raw"""
-    Nesterov <: DirectionUpdateRule
+"""
+    AverageGradient(; kwargs...)
+    AverageGradient(M::AbstractManifold; kwargs...)
 
-## Fields
-* `γ`
-* `μ` the strong convexity coefficient
-* `v` (=``=v_k``, ``v_0=x_0``) an interim point to compute the next gradient evaluation point `y_k`
-* `shrinkage` (`= i -> 0.8`) a function to compute the shrinkage ``β_k`` per iterate.
+Add an average of gradients to a gradient processor. A set of previous directions (from the
+inner processor) and the last iterate are stored, average is taken after vector transporting
+them to the current iterates tangent space.
 
-Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
+# Input
 
-* a step size ``h_k<\frac{1}{L}`` (from the [`GradientDescentState`](@ref)
-* a `shrinkage` parameter ``β_k``
-* and a current iterate ``x_k``
-* as well as the interim values ``γ_k`` and ``v_k`` from the previous iterate.
+* `M` (optional)
 
-This compute a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
+# Keyword arguments
 
-1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k\bigl((1-α_k)γ_k+α_k μ\bigr)``.
-2. Set ``\bar γ_k+1 = (1-α_k)γ_k + α_kμ``
-3. ``y_k = \operatorname{retr}_{x_k}\Bigl(\frac{α_kγ_k}{γ_k + α_kμ}\operatorname{retr}^{-1}_{x_k}v_k \Bigr)``
-4. ``x_{k+1} = \operatorname{retr}_{y_k}(-h_k \operatorname{grad}f(y_k))``
-5. ``v_{k+1} = `\operatorname{retr}_{y_k}\Bigl(\frac{(1-α_k)γ_k}{\barγ_k}\operatorname{retr}_{y_k}^{-1}(v_k) - \frac{α_k}{\bar γ_{k+1}}\operatorname{grad}f(y_k) \Bigr)``
-6. ``γ_{k+1} = \frac{1}{1+β_k}\bar γ_{k+1}``
+$(_var(:Keyword, :p; add=:as_Initial))
+* `direction=`[`IdentityUpdateRule`](@ref) preprocess the actual gradient before adding momentum
+* `gradients=[zero_vector(M, p) for _ in 1:n]` how to initialise the internal storage
+* `n=10` number of gradient evaluations to take the mean over
+$(_var(:Keyword, :X))
+$(_var(:Keyword, :vector_transport_method))
 
-Then the direction from ``x_k`` to ``x_k+1`` by ``d = \operatorname{retr}^{-1}_{x_k}x_{k+1}`` is returned.
+$(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
+"""
+AverageGradient(args...; kwargs...) =
+    ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+
+@doc """
+    NesterovRule <: DirectionUpdateRule
+
+Compute a Nesterov inspired direction update rule.
+See [`Nesterov`](@ref) for details
+
+# Fields
+
+* `γ::Real`, `μ::Real`: coefficients from the last iterate
+* `v::P`:      an interim point to compute the next gradient evaluation point `y_k`
+* `shrinkage`: a function `k -> ...` to compute the shrinkage ``β_k`` per iterate `k``.
+$(_var(:Keyword, :inverse_retraction_method))
 
 # Constructor
-    Nesterov(M::AbstractManifold, p::P; γ=0.001, μ=0.9, shrinkage = k -> 0.8;
-        inverse_retraction_method=LogarithmicInverseRetraction())
 
-Initialize the Nesterov acceleration, where `x0` initializes `v`.
+    NesterovRule(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+
+$(_var(:Keyword, :p; add=:as_Initial))
+* `γ=0.001``
+* `μ=0.9``
+* `shrinkage = k -> 0.8`
+$(_var(:Keyword, :inverse_retraction_method))
+
+# See also
+
+[`Nesterov`](@ref)
 """
-mutable struct Nesterov{P,R<:Real} <: DirectionUpdateRule
+mutable struct NesterovRule{P,R<:Real} <: DirectionUpdateRule
     γ::R
     μ::R
     v::P
     shrinkage::Function
     inverse_retraction_method::AbstractInverseRetractionMethod
 end
-Nesterov(M::AbstractManifold, p::Number; kwargs...) = Nesterov(M, [p]; kwargs...)
-function Nesterov(
-    M::AbstractManifold,
-    p::P;
+function NesterovRule(
+    M::AbstractManifold;
+    p::P=rand(M),
     γ::T=0.001,
     μ::T=0.9,
     shrinkage::Function=i -> 0.8,
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
-        M, P
+        M, typeof(p)
     ),
 ) where {P,T}
-    return Nesterov{P,T}(γ, μ, copy(M, p), shrinkage, inverse_retraction_method)
+    p_ = _ensure_mutating_variable(p)
+    return NesterovRule{typeof(p_),T}(
+        γ, μ, copy(M, p_), shrinkage, inverse_retraction_method
+    )
 end
-function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, k)
+function (n::NesterovRule)(mp::AbstractManoptProblem, s::AbstractGradientSolverState, k)
     M = get_manifold(mp)
     h = get_stepsize(mp, s, k)
     p = get_iterate(s)
@@ -493,6 +544,46 @@ function (n::Nesterov)(mp::AbstractManoptProblem, s::AbstractGradientSolverState
     n.v = retract(M, y, d, s.retraction_method)
     n.γ = 1 / (1 + n.shrinkage(k)) * γbar
     return h, (-1 / h) * inverse_retract(M, p, xn, n.inverse_retraction_method) # outer update
+end
+
+@doc """
+    Nesterov(; kwargs...)
+    Nesterov(M::AbstractManifold; kwargs...)
+
+Assume ``f`` is ``L``-Lipschitz and ``μ``-strongly convex. Given
+
+* a step size ``h_k<$(_tex(:frac, "1", "L"))`` (from the [`GradientDescentState`](@ref)
+* a `shrinkage` parameter ``β_k``
+* and a current iterate ``p_k``
+* as well as the interim values ``γ_k`` and ``v_k`` from the previous iterate.
+
+This compute a Nesterov type update using the following steps, see [ZhangSra:2018](@cite)
+
+1. Compute the positive root ``α_k∈(0,1)`` of ``α^2 = h_k$(_tex(:bigl))((1-α_k)γ_k+α_k μ$(_tex(:bigr)))``.
+2. Set ``$(_tex(:bar, "γ"))_k+1 = (1-α_k)γ_k + α_kμ``
+3. ``y_k = $(_tex(:retr))_{p_k}\\Bigl(\\frac{α_kγ_k}{γ_k + α_kμ}$(_tex(:retr))^{-1}_{p_k}v_k \\Bigr)``
+4. ``x_{k+1} = $(_tex(:retr))_{y_k}(-h_k $(_tex(:grad))f(y_k))``
+5. ``v_{k+1} = $(_tex(:retr))_{y_k}\\Bigl(\\frac{(1-α_k)γ_k}{$(_tex(:bar, "γ"))_k}$(_tex(:retr))_{y_k}^{-1}(v_k) - \\frac{α_k}{$(_tex(:bar, "γ"))_{k+1}}$(_tex(:grad))f(y_k) \\Bigr)``
+6. ``γ_{k+1} = \\frac{1}{1+β_k}$(_tex(:bar, "γ"))_{k+1}``
+
+Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{k+1}`` is returned.
+
+# Input
+
+* `M` (optional)
+
+# Keyword arguments
+
+$(_var(:Keyword, :p; add=:as_Initial))
+* `γ=0.001``
+* `μ=0.9``
+* `shrinkage = k -> 0.8`
+$(_var(:Keyword, :inverse_retraction_method))
+
+$(_note(:ManifoldDefaultFactory, "NesterovRule"))
+"""
+function Nesterov(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)
 end
 
 @doc raw"""

@@ -112,8 +112,8 @@ that are stored within this functor as well.
 * `Xk` a tangent vector at `pk`
 
 Both interim values can be set using
-`set_manopt_parameter!(::LinearizedDCCost, ::Val{:p}, p)`
-and `set_manopt_parameter!(::LinearizedDCCost, ::Val{:X}, X)`, respectively.
+`set_parameter!(::LinearizedDCCost, ::Val{:p}, p)`
+and `set_parameter!(::LinearizedDCCost, ::Val{:X}, X)`, respectively.
 
 # Constructor
     LinearizedDCCost(g, p, X)
@@ -125,11 +125,11 @@ mutable struct LinearizedDCCost{P,T,TG}
 end
 (F::LinearizedDCCost)(M, p) = F.g(M, p) - inner(M, F.pk, F.Xk, log(M, F.pk, p))
 
-function set_manopt_parameter!(ldc::LinearizedDCCost, ::Val{:p}, p)
+function set_parameter!(ldc::LinearizedDCCost, ::Val{:p}, p)
     ldc.pk .= p
     return ldc
 end
-function set_manopt_parameter!(ldc::LinearizedDCCost, ::Val{:X}, X)
+function set_parameter!(ldc::LinearizedDCCost, ::Val{:X}, X)
     ldc.Xk .= X
     return ldc
 end
@@ -160,8 +160,8 @@ for a point `pk` and a tangent vector `Xk` at `pk` (the outer iterates) that are
 * `Xk` a tangent vector at `pk`
 
 Both interim values can be set using
-`set_manopt_parameter!(::LinearizedDCGrad, ::Val{:p}, p)`
-and `set_manopt_parameter!(::LinearizedDCGrad, ::Val{:X}, X)`, respectively.
+`set_parameter!(::LinearizedDCGrad, ::Val{:p}, p)`
+and `set_parameter!(::LinearizedDCGrad, ::Val{:X}, X)`, respectively.
 
 # Constructor
     LinearizedDCGrad(grad_g, p, X; evaluation=AllocatingEvaluation())
@@ -199,11 +199,11 @@ function (grad_f!::LinearizedDCGrad{InplaceEvaluation})(M, p)
     return X
 end
 
-function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:p}, p)
+function set_parameter!(ldcg::LinearizedDCGrad, ::Val{:p}, p)
     ldcg.pk .= p
     return ldcg
 end
-function set_manopt_parameter!(ldcg::LinearizedDCGrad, ::Val{:X}, X)
+function set_parameter!(ldcg::LinearizedDCGrad, ::Val{:X}, X)
     ldcg.Xk .= X
     return ldcg
 end
@@ -319,8 +319,8 @@ for a point `pk` and a proximal parameter ``λ``.
 * `λ`  - the prox parameter
 
 Both interim values can be set using
-`set_manopt_parameter!(::ProximalDCCost, ::Val{:p}, p)`
-and `set_manopt_parameter!(::ProximalDCCost, ::Val{:λ}, λ)`, respectively.
+`set_parameter!(::ProximalDCCost, ::Val{:p}, p)`
+and `set_parameter!(::ProximalDCCost, ::Val{:λ}, λ)`, respectively.
 
 # Constructor
 
@@ -333,11 +333,11 @@ mutable struct ProximalDCCost{P,TG,R}
 end
 (F::ProximalDCCost)(M, p) = 1 / (2 * F.λ) * distance(M, p, F.pk)^2 + F.g(M, p)
 
-function set_manopt_parameter!(pdcc::ProximalDCCost, ::Val{:p}, p)
+function set_parameter!(pdcc::ProximalDCCost, ::Val{:p}, p)
     pdcc.pk .= p
     return pdcc
 end
-function set_manopt_parameter!(pdcc::ProximalDCCost, ::Val{:λ}, λ)
+function set_parameter!(pdcc::ProximalDCCost, ::Val{:λ}, λ)
     pdcc.λ = λ
     return pdcc
 end
@@ -367,8 +367,8 @@ for a point `pk` and a proximal parameter `λ`.
 * `λ`  - the prox parameter
 
 Both interim values can be set using
-`set_manopt_parameter!(::ProximalDCGrad, ::Val{:p}, p)`
-and `set_manopt_parameter!(::ProximalDCGrad, ::Val{:λ}, λ)`, respectively.
+`set_parameter!(::ProximalDCGrad, ::Val{:p}, p)`
+and `set_parameter!(::ProximalDCGrad, ::Val{:λ}, λ)`, respectively.
 
 
 # Constructor
@@ -405,11 +405,11 @@ function (grad_f!::ProximalDCGrad{InplaceEvaluation})(M, p)
     X .-= 1 / grad_f!.λ * log(M, p, grad_f!.pk)
     return X
 end
-function set_manopt_parameter!(pdcg::ProximalDCGrad, ::Val{:p}, p)
+function set_parameter!(pdcg::ProximalDCGrad, ::Val{:p}, p)
     pdcg.pk .= p
     return pdcg
 end
-function set_manopt_parameter!(pdcg::ProximalDCGrad, ::Val{:λ}, λ)
+function set_parameter!(pdcg::ProximalDCGrad, ::Val{:λ}, λ)
     pdcg.λ = λ
     return pdcg
 end

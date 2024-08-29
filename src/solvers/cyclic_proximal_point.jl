@@ -18,31 +18,30 @@ end
 _doc_CPPA = """
     cyclic_proximal_point(M, f, proxes_f, p; kwargs...)
     cyclic_proximal_point(M, mpo, p; kwargs...)
-    cyclic_proximal_point!(M, f, proxes_f, p; kwargs...)
-    cyclic_proximal_point!(M, mpo, p; kwargs...)
+    cyclic_proximal_point!(M, f, proxes_f; kwargs...)
+    cyclic_proximal_point!(M, mpo; kwargs...)
 
 perform a cyclic proximal point algorithm. This can be done in-place of `p`.
 
 # Input
 
-* $(_arg_M)
-* `f`:        a cost function ``f: $(_l_M) M→ℝ`` to minimize
+$(_var(:Argument, :M; type=true))
+* `f`:        a cost function ``f: $(_math(:M)) M→ℝ`` to minimize
 * `proxes_f`: an Array of proximal maps (`Function`s) `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the summands of ``f`` (see `evaluation`)
-* $(_arg_p)
 
 where `f` and the proximal maps `proxes_f` can also be given directly as a [`ManifoldProximalMapObjective`](@ref) `mpo`
 
 # Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `evaluation_order=:Linear`: whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Random`) or the default linear one.
 * `λ=iter -> 1/iter`:         a function returning the (square summable but not summable) sequence of ``λ_i``
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(5000)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-12)`): $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(5000)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`)"))
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_CPPA)"
@@ -55,27 +54,12 @@ function cyclic_proximal_point(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mpo = ManifoldProximalMapObjective(f, proxes_f; evaluation=evaluation)
-    return cyclic_proximal_point(M, mpo, p; evaluation=evaluation, kwargs...)
-end
-function cyclic_proximal_point(
-    M::AbstractManifold,
-    f,
-    proxes_f::Union{Tuple,AbstractVector},
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        proxes_f_ = [(M, λ, p) -> [pf(M, λ, p[])] for pf in proxes_f]
-    else
-        proxes_f_ = [(M, q, λ, p) -> (q .= [pf(M, λ, p[])]) for pf in proxes_f]
-    end
-    rs = cyclic_proximal_point(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
+    mpo = ManifoldProximalMapObjective(f_, proxes_f_; evaluation=evaluation)
+    rs = cyclic_proximal_point(M, mpo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function cyclic_proximal_point(
     M::AbstractManifold, mpo::O, p; kwargs...
@@ -103,14 +87,18 @@ function cyclic_proximal_point!(
     p;
     evaluation_order::Symbol=:Linear,
     stopping_criterion::StoppingCriterion=StopAfterIteration(5000) |
-                                          StopWhenChangeLess(1e-12),
+                                          StopWhenChangeLess(M, 1e-12),
     λ=i -> 1 / i,
     kwargs...,
 ) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     cpps = CyclicProximalPointState(
-        M, p; stopping_criterion=stopping_criterion, λ=λ, evaluation_order=evaluation_order
+        M;
+        p=p,
+        stopping_criterion=stopping_criterion,
+        λ=λ,
+        evaluation_order=evaluation_order,
     )
     dcpps = decorate_state!(cpps; kwargs...)
     solve!(dmp, dcpps)

@@ -36,17 +36,19 @@ import Manifolds: inner
         @test X2 == X3
         dca_sub_objective = ManifoldGradientObjective(dca_sub_cost, dca_sub_grad)
         dca_sub_problem = DefaultManoptProblem(M, dca_sub_objective)
-        dca_sub_state = GradientDescentState(M, copy(M, p0))
+        dca_sub_state = GradientDescentState(M; p=copy(M, p0))
 
-        dcs = DifferenceOfConvexState(M, copy(M, p0), dca_sub_problem, dca_sub_state)
+        dcs = DifferenceOfConvexState(M, dca_sub_problem, dca_sub_state; p=copy(M, p0))
         @test Manopt.get_message(dcs) == ""
+        dcsc = DifferenceOfConvexState(M, f)
+        @test dcsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         set_iterate!(dcs, M, p1)
         @test dcs.p == p1
         set_gradient!(dcs, M, p1, X1)
         @test dcs.X == X1
-        set_manopt_parameter!(dcs, :SubProblem, :X, X1)
-        set_manopt_parameter!(dcs, :SubState, :X, X1)
+        set_parameter!(dcs, :SubProblem, :X, X1)
+        set_parameter!(dcs, :SubState, :X, X1)
 
         dcppa_sub_cost = ProximalDCCost(g, copy(M, p0), 1.0)
         dcppa_sub_grad = ProximalDCGrad(grad_g, copy(M, p0), 1.0)
@@ -60,7 +62,7 @@ import Manifolds: inner
 
         dcppa_sub_objective = ManifoldGradientObjective(dcppa_sub_cost, dcppa_sub_grad)
         dcppa_sub_problem = DefaultManoptProblem(M, dcppa_sub_objective)
-        dcppa_sub_state = GradientDescentState(M, copy(M, p0))
+        dcppa_sub_state = GradientDescentState(M; p=copy(M, p0))
 
         dcps = DifferenceOfConvexProximalState( #Initialize with random point
             M,
@@ -71,6 +73,9 @@ import Manifolds: inner
         @test dcps.p == p1
         set_gradient!(dcps, M, p1, X1)
         @test dcps.X == X1
+        # Dummy closed form sub
+        dcpsc = DifferenceOfConvexProximalState(M, f)
+        @test dcpsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         dc_cost_a = ManifoldDifferenceOfConvexObjective(f, grad_h)
         @test_throws ErrorException difference_of_convex_algorithm(

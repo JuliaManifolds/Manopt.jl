@@ -21,7 +21,7 @@ AdaptiveRegularizationState
 
 There are several ways to approach the subsolver. The default is the first one.
 
-## Lanczos iteration
+## [Lanczos iteration](@id arc-Lanczos)
 
 ```@docs
 Manopt.LanczosState

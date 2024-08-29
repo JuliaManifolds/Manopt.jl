@@ -1,3 +1,21 @@
+module ManoptRecursiveArrayToolsExt
+using Manopt
+using ManifoldsBase
+using ManifoldsBase: submanifold_components
+import Manopt:
+    max_stepsize,
+    alternating_gradient_descent,
+    alternating_gradient_descent!,
+    get_gradient,
+    get_gradient!,
+    set_parameter!
+using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
+
+if isdefined(Base, :get_extension)
+    using RecursiveArrayTools
+else
+    using ..RecursiveArrayTools
+end
 
 @doc raw"""
     X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
@@ -88,7 +106,9 @@ function alternating_gradient_descent!(
     inner_iterations::Int=5,
     stopping_criterion::StoppingCriterion=StopAfterIteration(100) |
                                           StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=default_stepsize(M, AlternatingGradientDescentState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, AlternatingGradientDescentState
+    ),
     order_type::Symbol=:Linear,
     order=collect(1:length(M.manifolds)),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
@@ -97,11 +117,11 @@ function alternating_gradient_descent!(
     dagmo = Manopt.decorate_objective!(M, agmo; kwargs...)
     dmp = DefaultManoptProblem(M, dagmo)
     agds = AlternatingGradientDescentState(
-        M,
-        p;
+        M;
+        p=p,
         inner_iterations=inner_iterations,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         order_type=order_type,
         order=order,
         retraction_method=retraction_method,
@@ -109,4 +129,5 @@ function alternating_gradient_descent!(
     agds = Manopt.decorate_state!(agds; kwargs...)
     Manopt.solve!(dmp, agds)
     return Manopt.get_solver_return(get_objective(dmp), agds)
+end
 end

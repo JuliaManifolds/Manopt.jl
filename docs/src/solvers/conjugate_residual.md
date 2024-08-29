@@ -6,6 +6,7 @@ CurrentModule = Manopt
 
 ```@docs
 conjugate_residual
+conjugate_residual!
 ```
 
 ## State

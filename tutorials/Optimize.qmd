@@ -144,7 +144,7 @@ a little more expensive [`ArmijoLineSeach`](https://manoptjl.org/stable/plans/st
 m4 = gradient_descent(M, f, grad_f, data[1];
     debug=[:Iteration,(:Change, "|Δp|: %1.9f |"),
         (:Cost, " F(x): %1.11f | "), "\n", :Stop, 2],
-      stepsize = ArmijoLinesearch(M; contraction_factor=0.999, sufficient_decrease=0.5),
+      stepsize = ArmijoLinesearch(; contraction_factor=0.999, sufficient_decrease=0.5),
     stopping_criterion = StopWhenGradientNormLess(1e-14) | StopAfterIteration(400),
 )
 ```
@@ -163,7 +163,7 @@ It can be set using
 
 ```{julia}
 #| warning: true
-Manopt.set_manopt_parameter!(:Mode, "Tutorial")
+Manopt.set_parameter!(:Mode, "Tutorial")
 ```
 
 to activate these. Continuing from the example before, one might argue, that the
@@ -210,7 +210,7 @@ keyword, that in `Tutorial` mode contains additional warnings.
 The other option is to globally reset the `:Mode` back to
 ```{julia}
 #| warning: true
-Manopt.set_manopt_parameter!(:Mode, "")
+Manopt.set_parameter!(:Mode, "")
 ```
 
 ## Example 2: computing the median of symmetric positive definite matrices

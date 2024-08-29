@@ -1,4 +1,4 @@
-using ManifoldsBase, Manifolds, Manopt, Test
+using ManifoldsBase, Manifolds, Manopt, Test, RecursiveArrayTools
 
 @testset "InteriorPointNewtonState" begin
     M = ManifoldsBase.DefaultManifold(3)
@@ -61,7 +61,7 @@ using ManifoldsBase, Manifolds, Manopt, Test
     sub_state = ConjugateResidualState(TangentSpace(sub_M, sub_p), sub_obj)
     dmp = DefaultManoptProblem(M, coh)
     ipns = InteriorPointNewtonState(
-        M, coh, p, DefaultManoptProblem(sub_M, sub_obj), sub_state
+        M, coh, DefaultManoptProblem(sub_M, sub_obj), sub_state; p=p
     )
     # Getters & Setters
     @test length(Manopt.get_message(ipns)) == 0
@@ -83,11 +83,11 @@ using ManifoldsBase, Manifolds, Manopt, Test
     @test length(get_reason(sc)) > 0
     #
     ipcc = InteriorPointCentralityCondition(coh, 1.0)
-    @test Manopt.set_manopt_parameter!(ipcc, :τ, step_M, step_p) == ipcc
-    @test Manopt.set_manopt_parameter!(ipcc, :γ, 2.0) == ipcc
-    @test Manopt.get_manopt_parameter(ipcc, :γ) == 2.0
-    @test Manopt.get_manopt_parameter(ipcc, :τ1) == 2 / 3
-    @test Manopt.get_manopt_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1e-7
+    @test Manopt.set_parameter!(ipcc, :τ, step_M, step_p) == ipcc
+    @test Manopt.set_parameter!(ipcc, :γ, 2.0) == ipcc
+    @test Manopt.get_parameter(ipcc, :γ) == 2.0
+    @test Manopt.get_parameter(ipcc, :τ1) == 2 / 3
+    @test Manopt.get_parameter(ipcc, :τ2) ≈ 0.2809757 atol = 1e-7
     @test !ipcc(step_M, step_p)
     ipcc.τ1 = 0.01 # trick conditions so ipcc succeeds
     ipcc.τ2 = 0.01

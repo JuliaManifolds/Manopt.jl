@@ -9,7 +9,7 @@ A simplex for the Nelder-Mead algorithm.
     NelderMeadSimplex(M::AbstractManifold)
 
 Construct a  simplex using ``d+1`` random points from manifold `M`,
-where ``d`` is the $(_link_manifold_dimension("")) of `M`.
+where ``d`` is the $(_link(:manifold_dimension; M="")) of `M`.
 
     NelderMeadSimplex(
         M::AbstractManifold,
@@ -32,9 +32,6 @@ end
 function NelderMeadSimplex(M::AbstractManifold)
     return NelderMeadSimplex([rand(M) for i in 1:(manifold_dimension(M) + 1)])
 end
-function NelderMeadSimplex(M::AbstractManifold, p::Number, B::AbstractBasis; kwargs...)
-    return NelderMeadSimplex(M, [p], B; kwargs...)
-end
 function NelderMeadSimplex(
     M::AbstractManifold,
     p,
@@ -42,11 +39,12 @@ function NelderMeadSimplex(
     a::Real=0.025,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
 )
+    p_ = _ensure_mutating_variable(p)
     M_dim = manifold_dimension(M)
     vecs = [
-        get_vector(M, p, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
+        get_vector(M, p_, [ifelse(i == j, a, zero(a)) for i in 1:M_dim], B) for j in 0:M_dim
     ]
-    pts = map(X -> retract(M, p, X, retraction_method), vecs)
+    pts = map(X -> retract(M, p_, X, retraction_method), vecs)
     return NelderMeadSimplex(pts)
 end
 
@@ -63,33 +61,34 @@ of the Euclidean case. The default is given in brackets, the required value rang
 after the description
 
 * `population::`[`NelderMeadSimplex`](@ref): a population (set) of ``d+1`` points ``x_i``, ``i=1,…,n+1``, where ``d``
-  is the $(_link_manifold_dimension("")) of `M`.
-* $_field_step
+  is the $(_link(:manifold_dimension; M="")) of `M`.
+$(_var(:Field, :stepsize))
 * `α`: the reflection parameter ``α > 0``:
 * `γ` the expansion parameter ``γ > 0``:
 * `ρ`: the contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ`: the shrinkage coefficient, ``0 < σ ≤ 1``
-* `p`: a field to store the current best value (initialized to _some_ point here)
-* $_field_retr
-* $_field_inv_retr
+$(_var(:Field, :p; add=" storing the current best point"))
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :retraction_method))
 
 # Constructors
 
-    NelderMeadState(M, population::NelderMeadSimplex=NelderMeadSimplex(M)); kwargs...)
+    NelderMeadState(M::AbstractManifold; kwargs...)
 
 Construct a Nelder-Mead Option with a default population (if not provided) of set of
 `dimension(M)+1` random points stored in [`NelderMeadSimplex`](@ref).
 
 # Keyword arguments
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`$_sc_any[`StopWhenPopulationConcentrated`](@ref)`()`):
+* `population=`[`NelderMeadSimplex`](@ref)`(M)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()`)"))
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
 * `γ=2.0` expansion parameter ``γ``:
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-* $_kw_retraction_method_default: $_kw_retraction_method
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 * `p=copy(M, population.pts[1])`: initialise the storage for the best point (iterate)¨
 """
 mutable struct NelderMeadState{
@@ -113,8 +112,8 @@ mutable struct NelderMeadState{
     retraction_method::TR
     inverse_retraction_method::TI
     function NelderMeadState(
-        M::AbstractManifold,
-        population::NelderMeadSimplex{T}=NelderMeadSimplex(M);
+        M::AbstractManifold;
+        population::NelderMeadSimplex{T}=NelderMeadSimplex(M),
         stopping_criterion::StoppingCriterion=StopAfterIteration(2000) |
                                               StopWhenPopulationConcentrated(),
         α=1.0,
@@ -185,28 +184,28 @@ _doc_NelderMead = """
     NelderMead!(M::AbstractManifold, f, population)
     NelderMead!(M::AbstractManifold, mco::AbstractManifoldCostObjective, population)
 
-Solve a Nelder-Mead minimization problem for the cost function ``f:  $_l_M`` on the
+Solve a Nelder-Mead minimization problem for the cost function ``f: $(_tex(:Cal, "M")) → ℝ`` on the
 manifold `M`. If the initial [`NelderMeadSimplex`](@ref) is not provided, a random set of
 points is chosen. The compuation can be performed in-place of the `population`.
 
-The algorithm consists of the following steps. Let ``d`` denote the dimension of the manifold ``$_l_M``.
+The algorithm consists of the following steps. Let ``d`` denote the dimension of the manifold ``$(_tex(:Cal, "M"))``.
 
 1. Order the simplex vertices ``p_i, i=1,…,d+1`` by increasing cost, such that we have ``f(p_1) ≤ f(p_2) ≤ … ≤ f(p_{d+1})``.
-2. Compute the Riemannian center of mass [Karcher:1977](@cite), cf. [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}), ``p_{$(_l_txt("m"))}``
+2. Compute the Riemannian center of mass [Karcher:1977](@cite), cf. [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}), ``p_{$(_tex(:text, "m"))}``
     of the simplex vertices ``p_1,…,p_{d+1}``.
-3. Reflect the point with the worst point at the mean ``p_{$(_l_txt("r"))} = $(_l_retr)_{p_{$(_l_txt("m"))}}\\bigl( - α$(_l_retr)^{-1}_{p_{$(_l_txt("m"))}} (p_{d+1}) \\bigr)``
-    If ``f(p_1) ≤ f(p_{$(_l_txt("r"))}) ≤ f(p_{d})`` then set ``p_{d+1} = p_{$(_l_txt("r"))}`` and go to step 1.
-4. Expand the simplex if ``f(p_{$(_l_txt("r"))}) < f(p_1)`` by computing the expantion point ``p_{$(_l_txt("e"))} = $(_l_retr)_{p_{$(_l_txt("m"))}}\\bigl( - γα$(_l_retr)^{-1}_{p_{$(_l_txt("m"))}} (p_{d+1}) \\bigr)``,
+3. Reflect the point with the worst point at the mean ``p_{$(_tex(:text, "r"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - α$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``
+    If ``f(p_1) ≤ f(p_{$(_tex(:text, "r"))}) ≤ f(p_{d})`` then set ``p_{d+1} = p_{$(_tex(:text, "r"))}`` and go to step 1.
+4. Expand the simplex if ``f(p_{$(_tex(:text, "r"))}) < f(p_1)`` by computing the expantion point ``p_{$(_tex(:text, "e"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl( - γα$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} (p_{d+1}) \\bigr)``,
     which in this formulation allows to reuse the tangent vector from the inverse retraction from before.
-    If ``f(p_{$(_l_txt("e"))}) < f(p_{$(_l_txt("r"))})`` then set ``p_{d+1} = p_{$(_l_txt("e"))}`` otherwise set set ``p_{d+1} = p_{$(_l_txt("r"))}``. Then go to Step 1.
-5. Contract the simplex if ``f(p_{$(_l_txt("r"))}) ≥ f(p_d)``.
-    1. If ``f(p_{$(_l_txt("r"))}) < f(p_{d+1})`` set the step ``s = -ρ``
+    If ``f(p_{$(_tex(:text, "e"))}) < f(p_{$(_tex(:text, "r"))})`` then set ``p_{d+1} = p_{$(_tex(:text, "e"))}`` otherwise set set ``p_{d+1} = p_{$(_tex(:text, "r"))}``. Then go to Step 1.
+5. Contract the simplex if ``f(p_{$(_tex(:text, "r"))}) ≥ f(p_d)``.
+    1. If ``f(p_{$(_tex(:text, "r"))}) < f(p_{d+1})`` set the step ``s = -ρ``
     2. otherwise set ``s=ρ``.
-    Compute the contraction point ``p_{$(_l_txt("c"))} = $(_l_retr)_{p_{$(_l_txt("m"))}}\\bigl(s$(_l_retr)^{-1}_{p_{$(_l_txt("m"))}} p_{d+1} \\bigr)``.
-    1. in this case if ``f(p_{$(_l_txt("c"))}) < f(p_{$(_l_txt("r"))})`` set ``p_{d+1} = p_{$(_l_txt("c"))}`` and go to step 1
-    2. in this case if ``f(p_{$(_l_txt("c"))}) < f(p_{d+1})`` set ``p_{d+1} = p_{$(_l_txt("c"))}`` and go to step 1
+    Compute the contraction point ``p_{$(_tex(:text, "c"))} = $(_tex(:retr))_{p_{$(_tex(:text, "m"))}}\\bigl(s$(_tex(:invretr))_{p_{$(_tex(:text, "m"))}} p_{d+1} \\bigr)``.
+    1. in this case if ``f(p_{$(_tex(:text, "c"))}) < f(p_{$(_tex(:text, "r"))})`` set ``p_{d+1} = p_{$(_tex(:text, "c"))}`` and go to step 1
+    2. in this case if ``f(p_{$(_tex(:text, "c"))}) < f(p_{d+1})`` set ``p_{d+1} = p_{$(_tex(:text, "c"))}`` and go to step 1
 6. Shrink all points (closer to ``p_1``). For all ``i=2,...,d+1`` set
-    ``p_{i} = $(_l_retr)_{p_{1}}\\bigl( σ$(_l_retr)^{-1}_{p_{1}} p_{i} \\bigr).``
+    ``p_{i} = $(_tex(:retr))_{p_{1}}\\bigl( σ$(_tex(:invretr))_{p_{1}} p_{i} \\bigr).``
 
 For more details, see The Euclidean variant in the Wikipedia
 [https://en.wikipedia.org/wiki/Nelder-Mead_method](https://en.wikipedia.org/wiki/Nelder-Mead_method)
@@ -214,25 +213,25 @@ or Algorithm 4.1 in [http://www.optimization-online.org/DB_FILE/2007/08/1742.pdf
 
 # Input
 
-$_arg_M
-$_arg_f
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 * `population::`[`NelderMeadSimplex`](@ref)`=`[`NelderMeadSimplex`](@ref)`(M)`: an initial simplex of ``d+1`` points, where ``d``
-  is the $(_link_manifold_dimension("")) of `M`.
+  is the $(_link(:manifold_dimension; M="")) of `M`.
 
 # Keyword arguments
 
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(2000)`$_sc_any[`StopWhenPopulationConcentrated`](@ref)`()`):
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(2000)`$(_sc(:Any))[`StopWhenPopulationConcentrated`](@ref)`()`)"))
   a [`StoppingCriterion`](@ref)
 * `α=1.0`: reflection parameter ``α > 0``:
 * `γ=2.0` expansion parameter ``γ``:
 * `ρ=1/2`: contraction parameter, ``0 < ρ ≤ \\frac{1}{2}``,
 * `σ=1/2`: shrink coefficient, ``0 < σ ≤ 1``
-* $_kw_retraction_method_default: $_kw_retraction_method
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method`inverse_retraction_method=default_inverse_retraction_method(M, typeof(p))`: an inverse retraction to use.
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
 
-$_kw_others
+$(_note(:OtherKeywords))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_NelderMead)"
@@ -285,8 +284,8 @@ function NelderMead!(
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     s = NelderMeadState(
-        M,
-        population;
+        M;
+        population=population,
         stopping_criterion=stopping_criterion,
         α=α,
         γ=γ,

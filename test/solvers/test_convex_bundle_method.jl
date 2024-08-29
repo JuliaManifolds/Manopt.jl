@@ -8,8 +8,8 @@ using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
     diameter = floatmax()
     Ω = 0.0
     cbms = ConvexBundleMethodState(
-        M,
-        p0;
+        M;
+        p=p0,
         atol_λ=1e0,
         diameter=diameter,
         domain=(M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,

@@ -27,7 +27,7 @@ Given a vector of symbols `caches`, this function sets up the
 
 # Keyword arguments
 
-* `p=`$(Manopt._link_rand()): a point on a manifold, to both infer its type for keys and initialize caches
+* `p=`$(Manopt._link(:rand)): a point on a manifold, to both infer its type for keys and initialize caches
 * `value=0.0`:
    a value both typing and initialising number-caches, the default is for (Float) values like the cost.
 * `X=zero_vector(M, p)`:

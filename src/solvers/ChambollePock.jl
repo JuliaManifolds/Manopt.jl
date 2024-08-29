@@ -7,28 +7,26 @@ stores all options and variables within a linearized or exact Chambolle Pock.
 
 * `acceleration::R`:    acceleration factor
 * `dual_stepsize::R`:   proximal parameter of the dual prox
-* $(_field_inv_retr)
-* `inverse_retraction_method_dual::`[`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`):
-  an inverse retraction ``$(_l_retr)^{-1}`` on ``$(_l_Manifold("N"))``
-* `m::P`:               base point on ``$(_l_M)``
-* `n::Q`:               base point on ``$(_l_Manifold("N"))``
-* `p::P`:               an initial point on ``p^{(0)} ∈ $(_l_M)``
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
+* `m::P`:               base point on ``$(_math(:M))``
+* `n::Q`:               base point on ``$(_tex(:Cal, "N"))``
+* `p::P`:               an initial point on ``p^{(0)} ∈ $(_math(:M))``
 * `pbar::P`:            the relaxed iterate used in the next dual update step (when using `:primal` relaxation)
 * `primal_stepsize::R`: proximal parameter of the primal prox
-* `X::T`:               an initial tangent vector ``X^{(0)} ∈ T_{p^{(0)}}$(_l_M)``
+* `X::T`:               an initial tangent vector ``X^{(0)} ∈ T_{p^{(0)}}$(_math(:M))``
 * `Xbar::T`:            the relaxed iterate used in the next primal update step (when using `:dual` relaxation)
 * `relaxation::R`:      relaxation in the primal relaxation step (to compute `pbar`:
 * `relax::Symbol:       which variable to relax (`:primal` or `:dual`:
-* $(_field_retr)
-* `stop`:               a [`StoppingCriterion`](@ref)
+$(_var(:Field, :retraction_method))
+$(_var(:Field, :stopping_criterion, "stop"))
 * `variant`:            whether to perform an `:exact` or `:linearized` Chambolle-Pock
 * `update_primal_base`: function `(pr, st, k) -> m` to update the primal base
 * `update_dual_base`:  function `(pr, st, k) -> n` to update the dual base
-* $(_field_vector_transp)
-* `vector_transport_method_dual::`[`AbstractVectorTransportMethod`](@extref `ManifoldsBase.AbstractVectorTransportMethod`):
-  a vector transport ``$(_l_vt)``on ``$(_l_Manifold("N"))``
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :vector_transport_method, "vector_transport_method_dual"; M="N"))
 
-Here, `P` is a point type on ``$(_l_M)``, `T` its tangent vector type, `Q` a point type on ``$(_l_Manifold("N"))``,
+Here, `P` is a point type on ``$(_math(:M))``, `T` its tangent vector type, `Q` a point type on ``$(_tex(:Cal, "N"))``,
 and `R<:Real` is a real number type
 
 where for the last two the functions a [`AbstractManoptProblem`](@ref)` p`,
@@ -38,29 +36,30 @@ If you activate these to be different from the default identity, you have to pro
 
 # Constructor
 
-    ChambollePockState(M::AbstractManifold, N::AbstractManifold,
-        m::P, n::Q, p::P, X::T, primal_stepsize::R, dual_stepsize::R;
+    ChambollePockState(M::AbstractManifold, N::AbstractManifold;
         kwargs...
     ) where {P, Q, T, R <: Real}
 
 # Keyword arguments
 
+* `n=``$(Manopt._link(:rand; M="N"))
+* `p=`$(Manopt._link(:rand))
+* `m=`$(Manopt._link(:rand))
+* `X=`$(Manopt._link(:zero_vector))
 * `acceleration=0.0`
 * `dual_stepsize=1/sqrt(8)`
 * `primal_stepsize=1/sqrt(8)`
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
-* `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_l_retr)^{-1}`` to use on ``$(_l_Manifold("N"))``, see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
 * `relaxation=1.0`
 * `relax=:primal`: relax the primal variable by default
-* $_kw_retraction_method_default: $_kw_retraction_method
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`"))
 * `variant=:exact`: run the exact Chambolle Pock by default
 * `update_primal_base=missing`
 * `update_dual_base=missing`
-* $_kw_vector_transport_method_default: $_kw_vector_transport_method
-* `vector_transport_method=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$(_l_vt)`` to use on ``$(_l_Manifold("N"))``, see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M="N", p="n"))
 
 if `Manifolds.jl` is loaded, `N` is also a keyword argument and set to `TangentBundle(M)` by default.
 """
@@ -99,11 +98,11 @@ mutable struct ChambollePockState{
 end
 function Manopt.ChambollePockState(
     M::AbstractManifold,
-    N::AbstractManifold,
-    m::P,
-    n::Q,
-    p::P,
-    X::T;
+    N::AbstractManifold;
+    m::P=rand(M),
+    n::Q=rand(N),
+    p::P=rand(M),
+    X::T=zero_vector(M, p),
     primal_stepsize::R=1 / sqrt(8),
     dual_stepsize::R=1 / sqrt(8),
     acceleration::R=0.0,
@@ -188,6 +187,8 @@ function set_iterate!(apds::AbstractPrimalDualSolverState, p)
     return apds
 end
 
+_tex_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_tex(:Cal, "N")))"
+
 _doc_ChambollePock_formula = raw"""
 Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
 ```math
@@ -210,14 +211,14 @@ This can be done inplace of ``p``.
 
  # Input parameters
 
- $_arg_M
- * `N`, a manifold ``$(_l_Manifold("N"))``
-$_arg_p
-$_arg_X
-* `m`, a base point on $_l_M
-* `n`, a base point on $(_l_Manifold("N"))
-* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$_l_DΛ``
-* `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^\\ast_n``
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M, "N"; type=true))
+$(_var(:Argument, :p))
+$(_var(:Argument, :X))
+$(_var(:Argument, :p, "m"))
+$(_var(:Argument, :p, "n"; M="N"))
+* `adjoint_linearized_operator`:  the adjoint ``DΛ^*`` of the linearized operator ``$(_tex_DΛ)``
+* `prox_F, prox_G_Dual`:          the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 note that depending on the [`AbstractEvaluationType`](@ref) `evaluation` the last three parameters
 as well as the forward operator `Λ` and the `linearized_forward_operator` can be given as
@@ -233,10 +234,9 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 
 * `acceleration=0.05`: acceleration parameter
 * `dual_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
-* $_kw_evaluation_default: $_kw_evaluation
-* $_kw_inverse_retraction_method_default: $_kw_inverse_retraction_method
-* `inverse_retraction_method_dual=`[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`(N, typeof(n))`
-  an inverse retraction ``$(_l_retr)^{-1}`` to use on $(_l_Manifold("N")), see [the section on retractions and their inverses](@extref ManifoldsBase :doc:`retractions`).
+$(_var(:Keyword, :evaluation))
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :inverse_retraction_method, "inverse_retraction_method_dual"; M="N", p="n"))
 * `Λ=missing`: the (forward) operator ``Λ(⋅)`` (required for the `:exact` variant)
 * `linearized_forward_operator=missing`: its linearization ``DΛ(⋅)[⋅]`` (required for the `:linearized` variant)
 * `primal_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
@@ -244,15 +244,14 @@ For more details on the algorithm, see [BergmannHerzogSilvaLouzeiroTenbrinckVida
 * `relax=:primal`: whether to relax the primal or dual
 * `variant=:exact` if `Λ` is missing, otherwise `:linearized`: variant to use.
   Note that this changes the arguments the `forward_operator` is called with.
-* `stopping_criterion=[StopAfterIteration`](@ref)`(100)`: $_kw_stopping_criterion
+$(_var(:Keyword, :stopping_criterion; default="[StopAfterIteration`](@ref)`(100)`"))
 * `update_primal_base=missing`: function to update `m` (identity by default/missing)
 * `update_dual_base=missing`: function to update `n` (identity by default/missing)
-* $_kw_retraction_method_default: $_kw_retraction_method
-* $_kw_vector_transport_method_default: $_kw_vector_transport_method
-* `vector_transport_method_dual=`[`default_vector_transport_method`](@extref `ManifoldsBase.default_vector_transport_method-Tuple{AbstractManifold}`)`(N, typeof(n))`:
-  a vector transport ``$_l_vt`` to use on $(_l_Manifold("N")), see [the section on vector transports](@extref ManifoldsBase :doc:`vector_transports`).
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :vector_transport_method, "vector_transport_method_dual"; M="N", p="n"))
 
-$_doc_sec_output
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_ChambollePock)"
@@ -340,11 +339,11 @@ function ChambollePock!(
     tmp = TwoManifoldProblem(M, N, dpdmo)
     cps = ChambollePockState(
         M,
-        m,
-        n,
-        p,
-        X;
-        N=N,
+        N;
+        m=m,
+        n=n,
+        p=p,
+        X=X,
         primal_stepsize=primal_stepsize,
         dual_stepsize=dual_stepsize,
         acceleration=acceleration,

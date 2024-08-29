@@ -27,10 +27,10 @@ include("../utils/example_tasks.jl")
         TpM = TangentSpace(M, copy(M, p))
         mho = ManifoldHessianObjective(f, rgrad, rhess)
         sub_problem = DefaultManoptProblem(TpM, TrustRegionModelObjective(mho))
-        sub_state = TruncatedConjugateGradientState(TpM, get_gradient(M, mho, p))
+        sub_state = TruncatedConjugateGradientState(TpM; X=get_gradient(M, mho, p))
         trs1 = TrustRegionsState(M, sub_problem)
         trs2 = TrustRegionsState(M, sub_problem, sub_state)
-        trs3 = TrustRegionsState(M, p, sub_problem)
+        trs3 = TrustRegionsState(M, sub_problem; p=p)
     end
     @testset "Objective accessors" begin
         mho = ManifoldHessianObjective(f, rgrad, rhess)
@@ -93,49 +93,24 @@ include("../utils/example_tasks.jl")
             M, f, rgrad, rhess, p, X; trust_region_radius=0.5
         )
         @test Y != X
-        Y2 = truncated_conjugate_gradient_descent( # with approximate Hessian
-            M,
-            f,
-            rgrad,
-            p,
-            X;
-            trust_region_radius=0.5,
-        )
-        @test_broken isapprox(M, p, Y, Y2)
         # random point -> different result
-        Y3 = truncated_conjugate_gradient_descent( #random point and vector
+        Y2 = truncated_conjugate_gradient_descent( #random point and vector
             M,
             f,
             rgrad,
             rhess;
             trust_region_radius=0.5,
         )
+        @test Y2 != X
+        Y3 = truncated_conjugate_gradient_descent(
+            M, f, rgrad, rhess, p, X; trust_region_radius=0.5
+        )
         @test Y3 != X
-        Y4 = truncated_conjugate_gradient_descent( # 2 & 3
-            M,
-            f,
-            rgrad;
-            trust_region_radius=0.5,
+        Y4 = copy(M, p, X)
+        truncated_conjugate_gradient_descent!(
+            M, f, rgrad, rhess, p, Y4; trust_region_radius=0.5
         )
         @test Y4 != X
-        Y5 = truncated_conjugate_gradient_descent( # 2 & 3
-            M,
-            f,
-            rgrad,
-            rhess,
-            p,
-            X;
-            trust_region_radius=0.5,
-        )
-        @test Y5 != X
-        Y6 = copy(M, p, X)
-        truncated_conjugate_gradient_descent!(
-            M, f, rgrad, rhess, p, Y6; trust_region_radius=0.5
-        )
-        @test Y6 != X
-        Y7 = copy(M, p, X)
-        truncated_conjugate_gradient_descent!(M, f, rgrad, p, Y7; trust_region_radius=0.5)
-        @test Y7 != X
     end
     @testset "Mutating" begin
         g = RGrad(M, A)
@@ -358,21 +333,8 @@ include("../utils/example_tasks.jl")
         @test distance(Mc, pc_star, q[]) < 1e-2
         q2 = trust_regions(Mc, fc, grad_fc, hess_fc)
         @test distance(Mc, pc_star, q[]) < 1e-2
-        q2 = trust_regions(Mc, fc, grad_fc, hess_fc, 0.1; evaluation=InplaceEvaluation())
-        @test distance(Mc, pc_star, q[]) < 1e-2
         Y1 = truncated_conjugate_gradient_descent(
             Mc, fc, grad_fc, hess_fc, 0.1, 0.0; trust_region_radius=0.5
-        )
-        @test abs(Y1) ≈ 0.5
-        Y1 = truncated_conjugate_gradient_descent(
-            Mc,
-            fc,
-            grad_fc,
-            hess_fc,
-            0.1,
-            0.0;
-            evaluation=InplaceEvaluation(),
-            trust_region_radius=0.5,
         )
         @test abs(Y1) ≈ 0.5
     end

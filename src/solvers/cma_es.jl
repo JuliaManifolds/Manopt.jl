@@ -1,14 +1,14 @@
 #
 # State
 #
-@doc raw"""
+@doc """
     CMAESState{P,T} <: AbstractManoptSolverState
 
 State of covariance matrix adaptation evolution strategy.
 
 # Fields
 
-* `p`                           the best point found so far
+$(_var(:Field, :p; add=" storing the best point found so far"))
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -19,7 +19,6 @@ State of covariance matrix adaptation evolution strategy.
 * `c_σ`                         decay rate for the cumulation path for the step-size control
 * `c_m`                         learning rate for the mean
 * `d_σ`                         damping parameter for step-size update
-* `stop`                        stopping criteria, [`StoppingCriterion`](@ref)
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
@@ -30,14 +29,15 @@ State of covariance matrix adaptation evolution strategy.
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
 * `p_m`                         point around which the search for new candidates is done
 * `σ`                           step size
-* `p_σ`                         coordinates of a vector in ``T_{p_m} \mathcal M``
-* `p_c`                         coordinates of a vector in ``T_{p_m} \mathcal M``
+* `p_σ`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
+* `p_c`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
 * `deviations`                  standard deviations of coordinate RNG
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
-* `retraction_method`           an `AbstractRetractionMethod`
-* `vector_transport_method`     a vector transport to use
+$(_var(:Field, :retraction_method))
+$(_var(:Field, :stopping_criterion, "stop"))
+$(_var(:Field, :vector_transport_method))
 * `basis`                       a real coefficient basis for covariance matrix
 * `rng`                         RNG for generating new points
 
@@ -347,12 +347,12 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``$(_l_M) M``
-* `f`:      a cost function ``f: $(_l_M)→ℝ`` to find a minimizer ``p^*`` for
+* `M`:      a manifold ``$(_math(:M))``
+* `f`:      a cost function ``f: $(_math(:M))→ℝ`` to find a minimizer ``p^*`` for
 
-# Optional
+# Keyword arguments
 
-* `p_m=`$(_link_rand()): an initial point `p`
+* `p_m=`$(Manopt._link(:rand)): an initial point `p`
 * `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)
@@ -361,16 +361,16 @@ setting.
 * `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-* `stopping_criterion=default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`:
-* `retraction_method=default_retraction_method(M, typeof(p_m))`:
-* `vector_transport_method=default_vector_transport_method(M, typeof(p_m))`:
+$(_var(:Keyword, :stopping_criterion; default="`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
 * `rng=default_rng()`: random number generator for generating new points
   on `M`
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 function cma_es(M::AbstractManifold, f; kwargs...)
     mco = ManifoldCostObjective(f)

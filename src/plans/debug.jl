@@ -67,23 +67,26 @@ function DebugSolverState(
 end
 
 """
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
+    set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
 
 Set certain values specified by `args...` into the elements of the `debugDictionary`
 """
-function set_manopt_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
+function set_parameter!(dss::DebugSolverState, ::Val{:Debug}, args...)
     for d in values(dss.debugDictionary)
-        set_manopt_parameter!(d, args...)
+        set_parameter!(d, args...)
     end
     return dss
 end
 # all other pass through
-function set_manopt_parameter!(dss::DebugSolverState, v::Val{T}, args...) where {T}
-    return set_manopt_parameter!(dss.state, v, args...)
+function set_parameter!(dss::DebugSolverState, v::Val{T}, args...) where {T}
+    return set_parameter!(dss.state, v, args...)
+end
+function set_parameter!(dss::DebugSolverState, v::Val{:StoppingCriterion}, args...)
+    return set_parameter!(dss.state, v, args...)
 end
 # all other pass through
-function get_manopt_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
-    return get_manopt_parameter(dss.state, v, args...)
+function get_parameter(dss::DebugSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(dss.state, v, args...)
 end
 
 function status_summary(dst::DebugSolverState)
@@ -136,14 +139,14 @@ function show(io::IO, dg::DebugGroup)
     s = join(["$(di)" for di in dg.group], ", ")
     return print(io, "DebugGroup([$s])")
 end
-function set_manopt_parameter!(dg::DebugGroup, v::Val, args...)
+function set_parameter!(dg::DebugGroup, v::Val, args...)
     for di in dg.group
-        set_manopt_parameter!(di, v, args...)
+        set_parameter!(di, v, args...)
     end
     return dg
 end
-function set_manopt_parameter!(dg::DebugGroup, e::Symbol, args...)
-    set_manopt_parameter!(dg, Val(e), args...)
+function set_parameter!(dg::DebugGroup, e::Symbol, args...)
+    set_parameter!(dg, Val(e), args...)
     return dg
 end
 
@@ -183,7 +186,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
         d.debug(p, st, -1)
     end
     # set activity for this iterate in subsolvers
-    set_manopt_parameter!(
+    set_parameter!(
         st,
         :SubState,
         :Debug,
@@ -207,12 +210,12 @@ function status_summary(de::DebugEvery)
     end
     return "[$s, $(de.every)]"
 end
-function set_manopt_parameter!(de::DebugEvery, e::Symbol, args...)
-    set_manopt_parameter!(de, Val(e), args...)
+function set_parameter!(de::DebugEvery, e::Symbol, args...)
+    set_parameter!(de, Val(e), args...)
     return de
 end
-function set_manopt_parameter!(de::DebugEvery, args...)
-    set_manopt_parameter!(de.debug, args...)
+function set_parameter!(de::DebugEvery, args...)
+    set_parameter!(de.debug, args...)
     return de
 end
 
@@ -230,8 +233,7 @@ during the last iteration. See [`DebugEntryChange`](@ref) for the general case
 * `storage=`[`StoreStateAction`](@ref)`( [:Gradient] )` storage of the previous action
 * `prefix="Last Change:"`: prefix of the debug output (ignored if you set `format`)
 * `io=stdout`: default stream to print the debug to.
-* $_kw_inverse_retraction_method_default:
-  $_kw_inverse_retraction_method
+$(_var(:Keyword, :inverse_retraction_method))
 
 the inverse retraction
   to be used for approximating distance.
@@ -247,22 +249,12 @@ mutable struct DebugChange{IR<:AbstractInverseRetractionMethod} <: DebugAction
         io::IO=stdout,
         prefix::String="Last Change: ",
         format::String="$(prefix)%f",
-        manifold::Union{Nothing,AbstractManifold}=nothing,
-        invretr::Union{Nothing,AbstractInverseRetractionMethod}=nothing,
         inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
             M
         ),
     )
         irm = inverse_retraction_method
         # Deprecated, remove in Manopt 0.5
-        if !isnothing(manifold)
-            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
-            irm = default_inverse_retraction_method(manifold)
-        end
-        if !isnothing(invretr)
-            @warn "invretr keyword is deprecated, use `inverse_retraction_method`, which this one overrides for now."
-            irm = invretr
-        end
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate])
@@ -844,11 +836,11 @@ end
 function status_summary(dwa::DebugWhenActive)
     return repr(dwa)
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, v::Val, args...)
-    set_manopt_parameter!(dwa.debug, v, args...)
+function set_parameter!(dwa::DebugWhenActive, v::Val, args...)
+    set_parameter!(dwa.debug, v, args...)
     return dwa
 end
-function set_manopt_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
+function set_parameter!(dwa::DebugWhenActive, ::Val{:Activity}, v)
     return dwa.active = v
 end
 
@@ -974,7 +966,7 @@ function (d::DebugWarnIfCostIncreases)(
                 @warn """
                 You seem to be running a `gradient_descent` with a `ConstantStepsize`.
                 Maybe consider to use `ArmijoLinesearch` (if applicable) or use
-                `ConstantStepsize(value)` with a `value` less than $(get_last_stepsize(p,st,k)).
+                `ConstantLength(value)` with a `value` less than $(get_last_stepsize(p,st,k)).
                 """
             end
             if d.status === :Once
@@ -1171,20 +1163,26 @@ one are called with an `i=0` for reset.
 
 1. Providing a simple vector of symbols, numbers and strings like
 
-    [:Iterate, " | ", :Cost, :Stop, 10]
+   ```
+   [:Iterate, " | ", :Cost, :Stop, 10]
+   ```
 
-Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
-as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
-It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorhtm` entry of the dictionary.
+   Adds a group to :Iteration of three actions ([`DebugIteration`](@ref), [`DebugDivider`](@ref)`(" | "),  and[`DebugCost`](@ref))
+   as a [`DebugGroup`](@ref) inside an [`DebugEvery`](@ref) to only be executed every 10th iteration.
+   It also adds the [`DebugStoppingCriterion`](@ref) to the `:EndAlgorithm` entry of the dictionary.
 
 2. The same can also be written a bit more precise as
 
-    DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
+   ```
+   DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
+   ```
 
 3. We can even make the stoping criterion concrete and pass Actions directly,
-  for example explicitly Making the stop more concrete, we get
+   for example explicitly Making the stop more concrete, we get
 
-    DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
+   ```
+   DebugFactory([:Iteration => [:Iterate, " | ", DebugCost(), 10], :Stop => [:Stop]])
+   ```
 """
 function DebugFactory(a::Vector{<:Any})
     entries = filter(x -> !isa(x, Pair) && (x ∉ [:Stop, :WhenActive]) && !isa(x, Int), a)
@@ -1225,14 +1223,14 @@ function DebugFactory(a::Vector{<:Any})
 end
 
 @doc raw"""
-   DebugGroupFactory(a::Vector)
+    DebugGroupFactory(a::Vector)
 
-Generate a [`DebugGroup`] of [`DebugAction`](@ref)s. The following rules are used
+Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules are used
 
 1. Any `Symbol` is passed to [`DebugActionFactory`](@ref DebugActionFactory(::Symbol))
-2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=``,
-  see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
-3. Any `String` is passed to `DebugActionFactory(d::String)`](@ref)`
+2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
+   see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
+3. Any `String` is passed to [`DebugActionFactory`](@ref DebugActionFactory(d::String))
 4. Any [`DebugAction`](@ref) is included as is.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.

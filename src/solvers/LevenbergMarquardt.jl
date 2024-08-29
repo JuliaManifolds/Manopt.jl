@@ -11,19 +11,19 @@ Solve an optimization problem of the form
 
 $(_doc_LM_formula)
 
-where ``f: $(_l_M) → ℝ^d`` is a continuously differentiable function,
+where ``f: $(_math(:M)) → ℝ^d`` is a continuously differentiable function,
 using the Riemannian Levenberg-Marquardt algorithm [Peeters:1993](@cite).
 The implementation follows Algorithm 1 [AdachiOkunoTakeda:2022](@cite).
 The second signature performs the optimization in-place of `p`.
 
 # Input
 
-$(_arg_M)
-* `f`:              a cost function ``f: $(_l_M) M→ℝ^d``
+$(_var(:Argument, :M; type=true))
+* `f`:              a cost function ``f: $(_math(:M)) M→ℝ^d``
 * `jacobian_f`:     the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
-$(_arg_p)
+$(_var(:Argument, :p))
 * `num_components`: length of the vector returned by the cost function (`d`).
   By default its value is -1 which means that it is determined automatically by
   calling `f` one additional time. This is only possible when `evaluation` is `AllocatingEvaluation`,
@@ -34,11 +34,10 @@ then the keyword `jacobian_tangent_basis` below is ignored
 
 # Keyword arguments
 
-* $(_kw_evaluation_default): $(_kw_evaluation)
+$(_var(:Keyword, :evaluation))
 * `η=0.2`:                   scaling factor for the sufficient cost decrease threshold required to accept new proposal points. Allowed range: `0 < η < 1`.
 * `expect_zero_residual=false`: whether or not the algorithm might expect that the value of
   residual (objective) at minimum is equal to 0.
-  $(_kw_stopping_criterion)
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
 * `initial_jacobian_f`:      the initial Jacobian of the cost function `f`.
@@ -46,12 +45,12 @@ then the keyword `jacobian_tangent_basis` below is ignored
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_tangent_basis`:  an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) specify the basis of the tangent space for `jacobian_f`.
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-12)`:
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_LM)"
@@ -75,16 +74,9 @@ function LevenbergMarquardt(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB=nothing,
-    jacobian_tangent_basis::AbstractBasis=if isnothing(jacB)
-        DefaultOrthonormalBasis()
-    else
-        jacB
-    end,
+    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
     kwargs...,
 )
-    !isnothing(jacB) &&
-        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
@@ -121,16 +113,9 @@ function LevenbergMarquardt!(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacB=nothing,
-    jacobian_tangent_basis::AbstractBasis=if isnothing(jacB)
-        DefaultOrthonormalBasis()
-    else
-        jacB
-    end,
+    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
     kwargs...,
 )
-    !isnothing(jacB) &&
-        (@warn "The keyword `jacB` is deprecated, use `jacobian_tangent_basis` instead.")
     if num_components == -1
         if evaluation === AllocatingEvaluation()
             num_components = length(f(M, p))
@@ -175,9 +160,9 @@ function LevenbergMarquardt!(
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
         M,
-        p,
         initial_residual_values,
         initial_jacobian_f;
+        p=p,
         β,
         η,
         damping_term_min,

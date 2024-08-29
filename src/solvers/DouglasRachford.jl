@@ -8,38 +8,38 @@ Store all options required for the DouglasRachford algorithm,
 * `α`:                         relaxation of the step from old to new iterate, to be precise
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double
   reflection involved in the DR algorithm
-* `inverse_retraction_method`: an inverse retraction method
+$(_var(:Field, :inverse_retraction_method))
 * `λ`:                         function to provide the value for the proximal parameter during the calls
 * `parallel`:                  indicate whether to use a parallel Douglas-Rachford or not.
 * `R`:                          method employed in the iteration to perform the reflection of `x` at the prox `p`.
-* $(_field_iterate)
+$(_var(:Field, :p; add=[:as_Iterate]))
   For the parallel Douglas-Rachford, this is not a value from the `PowerManifold` manifold but the mean.
 * `reflection_evaluation`:     whether `R` works in-place or allocating
-* $(_field_retr)
+$(_var(:Field, :retraction_method))
 * `s`:                         the last result of the double reflection at the proximal maps relaxed by `α`.
-* $(_field_stop)
+$(_var(:Field, :stopping_criterion, "stop"))
 
 # Constructor
 
-    DouglasRachfordState(M, p; kwargs...)
+    DouglasRachfordState(M::AbstractManifold; kwargs...)
 
 # Input
 
-* $(_arg_M)
-* $(_arg_p)
+$(_var(:Argument, :M; type=true))
 
 # Keyword arguments
 
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``x^{(k+1)} = g(α(k); x^{(k)}, t^{(k)})``, where ``t^{(k)}`` is the result of the double reflection involved in the DR algorithm
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+$(_var(:Keyword, :inverse_retraction_method))
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter
   during the calls
+$(_var(:Keyword, :p; add=:as_Initial))
 * `R=`[`reflect`](@ref)`(!)`: method employed in the iteration to perform the reflection of `p` at
   the prox of `p`, which function is used depends on `reflection_evaluation`.
 * `reflection_evaluation=`[`AllocatingEvaluation`](@ref)`()`) specify whether the reflection works in-place or allocating (default)
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(300)`: $(_kw_stopping_criterion)
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 """
 mutable struct DouglasRachfordState{
@@ -65,8 +65,8 @@ mutable struct DouglasRachfordState{
     stop::S
     parallel::Bool
     function DouglasRachfordState(
-        M::AbstractManifold,
-        p::P;
+        M::AbstractManifold;
+        p::P=rand(M),
         λ::Fλ=i -> 1.0,
         α::Fα=i -> 0.9,
         reflection_evaluation::E=AllocatingEvaluation(),
@@ -147,11 +147,11 @@ _doc_Douglas_Rachford = """
     DouglasRachford!(M, f, proxes_f, p)
     DouglasRachford!(M, mpo, p)
 
-Compute the Douglas-Rachford algorithm on the manifold ``$(_l_M)``, starting from `p``
+Compute the Douglas-Rachford algorithm on the manifold ``$(_math(:M))``, starting from `p``
 given the (two) proximal maps `proxes_f`, see [ BergmannPerschSteidl:2016](@cite).
 
 For ``k>2`` proximal maps, the problem is reformulated using the parallel Douglas Rachford:
-a vectorial proximal map on the power manifold ``$(_l_M)^k`` is introduced as the first
+a vectorial proximal map on the power manifold ``$(_math(:M))^k`` is introduced as the first
 proximal map and the second proximal map of the is set to the [`mean`](@extref Statistics.mean-Tuple{AbstractManifold, Vararg{Any}}) (Riemannian center of mass).
 This hence also boils down to two proximal maps, though each evaluates proximal maps in parallel,
 that is, component wise in a vector.
@@ -166,36 +166,35 @@ If you provide a [`ManifoldProximalMapObjective`](@ref) `mpo` instead, the proxi
 
 # Input
 
-* $(_arg_M)
-* $(_arg_f)
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
 * `proxes_f`: functions of the form `(M, λ, p)-> q` performing a proximal maps,
   where `⁠λ` denotes the proximal parameter, for each of the summands of `F`.
   These can also be given in the [`InplaceEvaluation`](@ref) variants `(M, q, λ p) -> q`
   computing in place of `q`.
-* $(_arg_p)
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
 * `α= k -> 0.9`: relaxation of the step from old to new iterate, to be precise
   ``p^{(k+1)} = g(α_k; p^{(k)}, q^{(k)})``, where ``q^{(k)}`` is the result of the double reflection
   involved in the DR algorithm and ``g`` is a curve induced by the retraction and its inverse.
-* $(_kw_evaluation_default): $(_kw_evaluation)
-* $(_kw_inverse_retraction_method_default): $(_kw_inverse_retraction_method)
+$(_var(:Keyword, :evaluation))
+$(_var(:Keyword, :inverse_retraction_method))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
 * `λ= k -> 1.0`: function to provide the value for the proximal parameter ``λ_k``
 * `R=reflect(!)`:           method employed in the iteration to perform the reflection of `p` at the prox of `p`.
   This uses by default [`reflect`](@ref) or `reflect!` depending on `reflection_evaluation` and
   the retraction and inverse retraction specified by `retraction_method` and `inverse_retraction_method`, respectively.
 * `reflection_evaluation`: ([`AllocatingEvaluation`](@ref) whether `R` works in-place or allocating
-* $(_kw_retraction_method_default): $(_kw_retraction_method)
+$(_var(:Keyword, :retraction_method))
   This is used both in the relaxation step as well as in the reflection, unless you set `R` yourself.
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc_any)[`StopWhenChangeLess`](@ref)`(1e-5)`:
-  $(_kw_stopping_criterion)
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-5)`"))
 * `parallel=false`: indicate whether to use a parallel Douglas-Rachford or not.
 
-$(_kw_others)
+$(_note(:OtherKeywords))
 
-$(_doc_sec_output)
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_Douglas_Rachford)"
@@ -209,30 +208,15 @@ function DouglasRachford(
     parallel=0,
     kwargs...,
 ) where {TF}
-    N, f_, (prox1, prox2), parallel_, p0 = parallel_to_alternating_DR(
-        M, f, proxes_f, p, parallel, evaluation
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    proxes_f_ = [_ensure_mutating_prox(prox_f, p, evaluation) for prox_f in proxes_f]
+    N, f__, (prox1, prox2), parallel_, q = parallel_to_alternating_DR(
+        M, f_, proxes_f_, p_, parallel, evaluation
     )
-    mpo = ManifoldProximalMapObjective(f_, (prox1, prox2); evaluation=evaluation)
-    return DouglasRachford(N, mpo, p0; evaluation=evaluation, parallel=parallel_, kwargs...)
-end
-function DouglasRachford(
-    M::AbstractManifold,
-    f::TF,
-    proxes_f::Vector{<:Any},
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TF}
-    q = [p]
-    f_(M, p) = f(M, p[])
-    if evaluation isa AllocatingEvaluation
-        proxes_f_ = [(M, λ, p) -> [pf(M, λ, p[])] for pf in proxes_f]
-    else
-        proxes_f_ = [(M, q, λ, p) -> (q .= [pf(M, λ, p[])]) for pf in proxes_f]
-    end
-    rs = DouglasRachford(M, f_, proxes_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    mpo = ManifoldProximalMapObjective(f__, (prox1, prox2); evaluation=evaluation)
+    rs = DouglasRachford(N, mpo, q; evaluation=evaluation, parallel=parallel_, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function DouglasRachford(
     M::AbstractManifold, mpo::O, p; kwargs...
@@ -292,7 +276,7 @@ function DouglasRachford!(
     end,
     parallel::Int=0,
     stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
-                                          StopWhenChangeLess(1e-5),
+                                          StopWhenChangeLess(M, 1e-5),
     kwargs..., #especially may contain decorator options
 ) where {
     Tλ,
@@ -304,8 +288,8 @@ function DouglasRachford!(
     dmpo = decorate_objective!(M, mpo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpo)
     drs = DouglasRachfordState(
-        M,
-        p;
+        M;
+        p=p,
         λ=λ,
         α=α,
         R=R,

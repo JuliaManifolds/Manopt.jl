@@ -123,8 +123,8 @@ We first generate the problem and the state, to also illustrate the low-level wo
 ```{julia}
 p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
 s = GradientDescentState(
-    M,
-    copy(data[1]);
+    M;
+    p=copy(data[1]),
     stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
 )
 ```
@@ -334,7 +334,7 @@ R3 = gradient_descent(
         RecordCount() => :Count,
         :Cost],
     ],
-    stepsize = ConstantStepsize(1.0),
+    stepsize = ConstantLength(1.0),
     stopping_criterion=StopAfterIteration(20),
     debug=[],
     return_state=true,

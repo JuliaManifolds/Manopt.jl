@@ -3,7 +3,7 @@
 # Objective.
 _doc_CR_cost = """
 ```math
-f(X) = $(_l_frac(1,2)) $(_l_norm(_l_cal("A")*"[X] + b","p"))^2,\\qquad X ∈ $(_l_TpM()),
+f(X) = $(_tex(:frac, 1,2)) $(_tex(:norm, _tex(:Cal, "A")*"[X] + b"; index="p"))^2,\\qquad X ∈ $(_math(:TpM)),
 ```
 """
 @doc """
@@ -13,9 +13,9 @@ Model the objective
 
 $(_doc_CR_cost)
 
-defined on the tangent space ``$(_l_TpM)`` at ``p`` on the manifold ``$(_l_M)``.
+defined on the tangent space ``$(_math(:TpM))`` at ``p`` on the manifold ``$(_math(:M))``.
 
-In other words this is an objective to solve ``$(_l_cal("A")) = -b(p)``
+In other words this is an objective to solve ``$(_tex(:Cal, "A")) = -b(p)``
 for some linear symmetric operator and a vector function.
 Note the minus on the right hand side, which makes this objective especially tailored
 for (iteratively) solving Newton-like equations.
@@ -47,9 +47,9 @@ function SymmetricLinearSystemObjective(
     return SymmetricLinearSystemObjective{E,TA,T}(A, b)
 end
 
-function set_manopt_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
-    set_manopt_parameter!(slso.A!!, symbol, value)
-    set_manopt_parameter!(slso.b!!, symbol, value)
+function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
+    set_parameter!(slso.A!!, symbol, value)
+    set_parameter!(slso.b!!, symbol, value)
     return slso
 end
 
@@ -84,7 +84,7 @@ end
 @doc """
     get_b(TpM::TangentSpace, slso::SymmetricLinearSystemObjective)
 
-evaluate the stored value for computing the right hand side ``b`` in ``$(_l_cal("A"))=-b``.
+evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``.
 """
 function get_b(
     TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
@@ -106,7 +106,7 @@ evaluate the gradient of
 
 $(_doc_CR_cost)
 
-Which is ``$(_l_grad) f(X) = $(_l_cal("A"))[X]+b``. This can be computed in-place of `Y`.
+Which is ``$(_tex(:grad)) f(X) = $(_tex(:Cal, "A"))[X]+b``. This can be computed in-place of `Y`.
 """
 function get_gradient(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
     p = base_point(TpM)
@@ -141,7 +141,7 @@ evaluate the Hessian of
 
 $(_doc_CR_cost)
 
-Which is ``$(_l_Hess) f(X)[Y] = $(_l_cal("A"))[V]``. This can be computed in-place of `W`.
+Which is ``$(_tex(:Hess)) f(X)[Y] = $(_tex(:Cal, "A"))[V]``. This can be computed in-place of `W`.
 """
 function get_hessian(
     TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
@@ -179,32 +179,30 @@ A state for the [`conjugate_residual`](@ref) solver.
 # Fields
 
 * `X::T`: the iterate
-* `r::T`: the residual ``r = -b(p) - $(_l_cal("A"))(p)[X]``
+* `r::T`: the residual ``r = -b(p) - $(_tex(:Cal, "A"))(p)[X]``
 * `d::T`: the conjugate direction
-* `Ar::T`, `Ad::T`: storages for ``$(_l_cal("A"))(p)[d]``, ``$(_l_cal("A"))(p)[r]``
-* `rAr::R`: internal field for storing ``⟨ r, $(_l_cal("A"))(p)[r] ⟩``
+* `Ar::T`, `Ad::T`: storages for ``$(_tex(:Cal, "A"))(p)[d]``, ``$(_tex(:Cal, "A"))(p)[r]``
+* `rAr::R`: internal field for storing ``⟨ r, $(_tex(:Cal, "A"))(p)[r] ⟩``
 * `α::R`: a step length
 * `β::R`: the conjugate coefficient
-* `stop::TStop`: a [`StoppingCriterion`](@ref) for the solver
+$(_var(:Field, :stopping_criterion, "stop"))
 
 # Constructor
 
-    function ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective;
-        kwargs...
-    )
+    ConjugateResidualState(TpM::TangentSpace,slso::SymmetricLinearSystemObjective; kwargs...)
 
 Initialise the state with default values.
 
 ## Keyword arguments
 
-* `X``$(_link_rand("TpM"))`
-* `r=-get_gradient(TpM, slso, X)`
+* `r=-`[`get_gradient`](@ref)`(TpM, slso, X)`
 * `d=copy(TpM, r)`
-* `Ar=get_hessian(TpM, slso, X, r)`
+* `Ar=`[`get_hessian`](@ref)`(TpM, slso, X, r)`
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-* `stopping_criterion=`[`StopAfterIteration`](@ref)`($(_link_manifold_dimension()))`$(_sc_any)[`StopWhenGradientNormLess`](@ref)`(1e-8)`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
+$(_var(:Keyword, :X))
 
 # See also
 
@@ -292,15 +290,15 @@ Stop when re relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_l_ds)$(_l_frac(_l_norm("r^{(k)"),"c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)"),"c")) ≤ ε,
 ```
 
-where ``c = $(_l_norm("b"))`` of the initial vector from the vector field in ``$(_l_cal("A"))(p)[X] + b(p) = 0_p``,
+where ``c = $(_tex(:norm, "b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,
 from the [`conjugate_residual`](@ref)
 
 # Fields
 
-$(_field_at_iteration)
+$(_var(:Field, :at_iteration))
 * `c`: the initial norm
 * `ε`: the threshold
 * `norm_rk`: the last computed norm of the residual
@@ -313,7 +311,7 @@ Initialise the stopping criterion.
 
 !!! note
 
-    The initial norm of the vector field ``c = $(_l_norm("b"))``
+    The initial norm of the vector field ``c = $(_tex(:norm, "b"))``
     that is stored internally is updated on initialisation, that is,
     if this stopping criterion is called with `k<=0`.
 """

@@ -8,19 +8,22 @@ include("../utils/example_tasks.jl")
     p0 = [5.0, 2.0]
     q0 = [10.0, 5.0]
     sgs = SubGradientMethodState(
-        M, p0; stopping_criterion=StopAfterIteration(200), stepsize=ConstantStepsize(M)
+        M;
+        p=p0,
+        stopping_criterion=StopAfterIteration(200),
+        stepsize=Manopt.ConstantStepsize(M),
     )
     sgs_ac = SubGradientMethodState(
-        M,
-        q0;
+        M;
+        p=q0,
         stopping_criterion=StopAfterIteration(200),
-        stepsize=ConstantStepsize(1.0, :absolute),
+        stepsize=Manopt.ConstantStepsize(M, 1.0; type=:absolute),
     )
     sgs_ad = SubGradientMethodState(
-        M,
-        q0;
+        M;
+        p=q0,
         stopping_criterion=StopAfterIteration(200),
-        stepsize=DecreasingStepsize(1, 1, 0, 1, 0, :absolute),
+        stepsize=Manopt.DecreasingStepsize(M; length=1.0, type=:absolute),
     )
     @test startswith(repr(sgs), "# Solver state for `Manopt.jl`s Subgradient Method\n")
     @test get_iterate(sgs) == p0
@@ -102,6 +105,10 @@ include("../utils/example_tasks.jl")
         Random.seed!(23)
         q4 = subgradient_method(M, f, ∂f!; evaluation=InplaceEvaluation())
         @test isapprox(M, q4, p; atol=0.5) # random point -> not that close
+        # in-place
+        q5 = copy(M, p0)
+        subgradient_method!(M, f, ∂f!, q5; evaluation=InplaceEvaluation())
+        @test isapprox(M, q3, q5)
         # Check Fallbacks of Problem
         @test get_cost(mp, q1) == 0.0
         @test norm(M, q1, get_subgradient(mp, q1)) == 0

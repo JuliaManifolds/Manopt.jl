@@ -1,4 +1,4 @@
-using LRUCache, Manopt, Manifolds, ManifoldsBase, Test
+using LRUCache, Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
 
 include("../utils/dummy_types.jl")
 
@@ -421,20 +421,20 @@ include("../utils/dummy_types.jl")
             Lh(M, LX, p, X)
             @test LX == Lh(M, p, X)
             # Get & Set
-            @test Manopt.set_manopt_parameter!(Lc, :μ, [2.0, 2.0]) == Lc
-            @test Manopt.get_manopt_parameter(Lc, :μ) == [2.0, 2.0]
-            @test Manopt.set_manopt_parameter!(Lc, :λ, [2.0]) == Lc
-            @test Manopt.get_manopt_parameter(Lc, :λ) == [2.0]
+            @test Manopt.set_parameter!(Lc, :μ, [2.0, 2.0]) == Lc
+            @test Manopt.get_parameter(Lc, :μ) == [2.0, 2.0]
+            @test Manopt.set_parameter!(Lc, :λ, [2.0]) == Lc
+            @test Manopt.get_parameter(Lc, :λ) == [2.0]
 
-            @test Manopt.set_manopt_parameter!(Lg, :μ, [2.0, 2.0]) == Lg
-            @test Manopt.get_manopt_parameter(Lg, :μ) == [2.0, 2.0]
-            @test Manopt.set_manopt_parameter!(Lg, :λ, [2.0]) == Lg
-            @test Manopt.get_manopt_parameter(Lg, :λ) == [2.0]
+            @test Manopt.set_parameter!(Lg, :μ, [2.0, 2.0]) == Lg
+            @test Manopt.get_parameter(Lg, :μ) == [2.0, 2.0]
+            @test Manopt.set_parameter!(Lg, :λ, [2.0]) == Lg
+            @test Manopt.get_parameter(Lg, :λ) == [2.0]
 
-            @test Manopt.set_manopt_parameter!(Lh, :μ, [2.0, 2.0]) == Lh
-            @test Manopt.get_manopt_parameter(Lh, :μ) == [2.0, 2.0]
-            @test Manopt.set_manopt_parameter!(Lh, :λ, [2.0]) == Lh
-            @test Manopt.get_manopt_parameter(Lh, :λ) == [2.0]
+            @test Manopt.set_parameter!(Lh, :μ, [2.0, 2.0]) == Lh
+            @test Manopt.get_parameter(Lh, :μ) == [2.0, 2.0]
+            @test Manopt.set_parameter!(Lh, :λ, [2.0]) == Lh
+            @test Manopt.get_parameter(Lh, :λ) == [2.0]
         end
         @testset "Full KKT and its norm" begin
             # Full KKT Vector field
@@ -531,12 +531,12 @@ include("../utils/dummy_types.jl")
             @test Wc == W
             # get & set
             for ck in [CKKTvf, CKKTVfJ]
-                @test Manopt.set_manopt_parameter!(ck, :μ, [2.0, 2.0]) == ck
-                @test Manopt.get_manopt_parameter(ck, :μ) == [2.0, 2.0]
-                @test Manopt.set_manopt_parameter!(ck, :s, [2.0, 2.0]) == ck
-                @test Manopt.get_manopt_parameter(ck, :s) == [2.0, 2.0]
-                @test Manopt.set_manopt_parameter!(ck, :β, 2.0) == ck
-                @test Manopt.get_manopt_parameter(ck, :β) == 2.0
+                @test Manopt.set_parameter!(ck, :μ, [2.0, 2.0]) == ck
+                @test Manopt.get_parameter(ck, :μ) == [2.0, 2.0]
+                @test Manopt.set_parameter!(ck, :s, [2.0, 2.0]) == ck
+                @test Manopt.get_parameter(ck, :s) == [2.0, 2.0]
+                @test Manopt.set_parameter!(ck, :β, 2.0) == ck
+                @test Manopt.get_parameter(ck, :β) == 2.0
             end
         end
     end
@@ -559,10 +559,10 @@ include("../utils/dummy_types.jl")
                 @test gALC(M, p) ≈ ag
                 gALC(M, X, p)
                 @test gALC(M, X, p) ≈ ag
-                @test Manopt.set_manopt_parameter!(ALC, :ρ, 2 * ρ) == ALC
-                @test Manopt.get_manopt_parameter(ALC, :ρ) == 2 * ρ
-                @test Manopt.set_manopt_parameter!(gALC, :ρ, 2 * ρ) == gALC
-                @test Manopt.get_manopt_parameter(gALC, :ρ) == 2 * ρ
+                @test Manopt.set_parameter!(ALC, :ρ, 2 * ρ) == ALC
+                @test Manopt.get_parameter(ALC, :ρ) == 2 * ρ
+                @test Manopt.set_parameter!(gALC, :ρ, 2 * ρ) == gALC
+                @test Manopt.get_parameter(gALC, :ρ) == 2 * ρ
             end
         end
     end

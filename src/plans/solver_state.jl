@@ -1,7 +1,7 @@
 
 @inline _extract_val(::Val{T}) where {T} = T
 
-@doc raw"""
+@doc """
     AbstractManoptSolverState
 
 A general super type for all solver states.
@@ -9,10 +9,10 @@ A general super type for all solver states.
 # Fields
 
 The following fields are assumed to be default. If you use different ones,
-provide the access functions accordingly
+adapt the the access functions [`get_iterate`](@ref) and [`get_stopping_criterion`](@ref) accordingly
 
-* `p` a point on a manifold with the current iterate
-* `stop` a [`StoppingCriterion`](@ref).
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :stopping_criterion, "stop"))
 """
 abstract type AbstractManoptSolverState end
 
@@ -384,7 +384,7 @@ is necessity for the construction.
 as vectors of symbols each referring to fields of the state (lower case symbols)
 or semantic ones (upper case).
 
-* `p_init` (`rand(M)`)
+* `p_init` (`rand(M)`) but making sure this is not a number but a (mutatable) array
 * `X_init` (`zero_vector(M, p_init)`)
 
 are used to initialize the point and vector storage, change these if you use other
@@ -442,7 +442,7 @@ end
     store_fields::Vector{Symbol}=Symbol[],
     store_points::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
     store_vectors::Union{Type{<:Tuple},Vector{Symbol}}=Tuple{},
-    p_init=rand(M),
+    p_init=_ensure_mutating_variable(rand(M)),
     X_init=zero_vector(M, p_init),
     once=true,
 )
@@ -583,7 +583,7 @@ function update_storage!(
         elseif key === :Gradient
             a.values[key] = deepcopy(get_gradient(s))
         elseif key === :Population
-            swarm = get_manopt_parameter(s, key)
+            swarm = get_parameter(s, key)
             if !isnothing(swarm)
                 a.values[key] = deepcopy.(swarm)
             end

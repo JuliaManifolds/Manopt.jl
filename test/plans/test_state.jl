@@ -12,15 +12,16 @@ struct NoIterateState <: AbstractManoptSolverState end
         s = DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
         @test Manopt.status_summary(Manopt.ReturnSolverState(s)) == "DummyState(Float64[])"
-        a = ArmijoLinesearch(M; initial_stepsize=1.0)
+        a = ArmijoLinesearch(; initial_stepsize=1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
-        set_manopt_parameter!(s, :Dummy, 1)
+        set_parameter!(s, :Dummy, 1)
     end
 
     @testset "Decreasing Stepsize" begin
-        dec_step = DecreasingStepsize(;
-            length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0
+        M = Euclidean(3)
+        dec_step = DecreasingLength(; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0)(
+            M
         )
         @test get_initial_stepsize(dec_step) == 10.0
         M = Euclidean(3)
@@ -71,6 +72,7 @@ struct NoIterateState <: AbstractManoptSolverState end
         s2 = NoIterateState()
         @test_throws ErrorException get_iterate(s2)
     end
+
     @testset "Iteration and Gradient setters" begin
         M = Euclidean(3)
         s1 = NelderMeadState(M)
@@ -89,10 +91,12 @@ struct NoIterateState <: AbstractManoptSolverState end
         @test d2.state.X == ones(3)
         @test get_stopping_criterion(d2) === s2.stop
     end
+
     @testset "Closed Form State" begin
         @test Manopt.ClosedFormSubSolverState() isa
             Manopt.ClosedFormSubSolverState{AllocatingEvaluation}
     end
+
     @testset "Generic Objective and State solver returns" begin
         f(M, p) = 1
         o = ManifoldCostObjective(f)

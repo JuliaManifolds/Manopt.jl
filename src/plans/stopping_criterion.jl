@@ -119,11 +119,11 @@ function show(io::IO, c::StopAfter)
 end
 
 """
-    update_stopping_criterion!(c::StopAfter, :MaxTime, v::Period)
+    set_parameter!(c::StopAfter, :MaxTime, v::Period)
 
 Update the time period after which an algorithm shall stop.
 """
-function update_stopping_criterion!(c::StopAfter, ::Val{:MaxTime}, v::Period)
+function set_parameter!(c::StopAfter, ::Val{:MaxTime}, v::Period)
     (value(v) < 0) && error("You must provide a positive time period")
     c.threshold = v
     return c
@@ -179,11 +179,11 @@ function show(io::IO, c::StopAfterIteration)
 end
 
 """
-    update_stopping_criterion!(c::StopAfterIteration, :;MaxIteration, v::Int)
+    set_parameter!(c::StopAfterIteration, :;MaxIteration, v::Int)
 
 Update the number of iterations after which the algorithm should stop.
 """
-function update_stopping_criterion!(c::StopAfterIteration, ::Val{:MaxIteration}, v::Int)
+function set_parameter!(c::StopAfterIteration, ::Val{:MaxIteration}, v::Int)
     c.max_iterations = v
     return c
 end
@@ -228,18 +228,8 @@ function StopWhenChangeLess(
         ε, zero(ε), storage, inverse_retraction_method, -1
     )
 end
-function StopWhenChangeLess(
-    ε::F;
-    storage::StoreStateAction=StoreStateAction([:Iterate]),
-    manifold::AbstractManifold=DefaultManifold(),
-    inverse_retraction_method::IRT=default_inverse_retraction_method(manifold),
-) where {F,IRT<:AbstractInverseRetractionMethod}
-    if !(manifold isa DefaultManifold)
-        @warn "The `manifold` keyword is deprecated, use the first positional argument `M` instead."
-    end
-    return StopWhenChangeLess{F,IRT,typeof(storage)}(
-        ε, zero(ε), storage, inverse_retraction_method, -1
-    )
+function StopWhenChangeLess(ε::R; kwargs...) where {R<:Real}
+    return StopWhenChangeLess(DefaultManifold(), ε; kwargs...)
 end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     if k == 0 # reset on init
@@ -271,15 +261,17 @@ function status_summary(c::StopWhenChangeLess)
 end
 indicates_convergence(c::StopWhenChangeLess) = true
 function show(io::IO, c::StopWhenChangeLess)
-    return print(io, "StopWhenChangeLess($(c.threshold))\n    $(status_summary(c))")
+    return print(
+        io, "StopWhenChangeLess with threshold $(c.threshold)\n    $(status_summary(c))"
+    )
 end
 
 """
-    update_stopping_criterion!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
+    set_parameter!(c::StopWhenChangeLess, :MinIterateChange, v::Int)
 
 Update the minimal change below which an algorithm shall stop.
 """
-function update_stopping_criterion!(c::StopWhenChangeLess, ::Val{:MinIterateChange}, v)
+function set_parameter!(c::StopWhenChangeLess, ::Val{:MinIterateChange}, v)
     c.threshold = v
     return c
 end
@@ -333,11 +325,11 @@ function show(io::IO, c::StopWhenCostLess)
 end
 
 """
-    update_stopping_criterion!(c::StopWhenCostLess, :MinCost, v)
+    set_parameter!(c::StopWhenCostLess, :MinCost, v)
 
 Update the minimal cost below which the algorithm shall stop
 """
-function update_stopping_criterion!(c::StopWhenCostLess, ::Val{:MinCost}, v)
+function set_parameter!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     c.threshold = v
     return c
 end
@@ -419,11 +411,11 @@ function status_summary(sc::StopWhenEntryChangeLess)
 end
 
 """
-    update_stopping_criterion!(c::StopWhenEntryChangeLess, :Threshold, v)
+    set_parameter!(c::StopWhenEntryChangeLess, :Threshold, v)
 
 Update the minimal cost below which the algorithm shall stop
 """
-function update_stopping_criterion!(c::StopWhenEntryChangeLess, ::Val{:Threshold}, v)
+function set_parameter!(c::StopWhenEntryChangeLess, ::Val{:Threshold}, v)
     c.threshold = v
     return c
 end
@@ -522,13 +514,11 @@ function show(io::IO, c::StopWhenGradientChangeLess)
 end
 
 """
-    update_stopping_criterion!(c::StopWhenGradientChangeLess, :MinGradientChange, v)
+    set_parameter!(c::StopWhenGradientChangeLess, :MinGradientChange, v)
 
 Update the minimal change below which an algorithm shall stop.
 """
-function update_stopping_criterion!(
-    c::StopWhenGradientChangeLess, ::Val{:MinGradientChange}, v
-)
+function set_parameter!(c::StopWhenGradientChangeLess, ::Val{:MinGradientChange}, v)
     c.threshold = v
     return c
 end
@@ -599,13 +589,11 @@ function show(io::IO, c::StopWhenGradientNormLess)
 end
 
 """
-    update_stopping_criterion!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
+    set_parameter!(c::StopWhenGradientNormLess, :MinGradNorm, v::Float64)
 
 Update the minimal gradient norm when an algorithm shall stop
 """
-function update_stopping_criterion!(
-    c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v::Float64
-)
+function set_parameter!(c::StopWhenGradientNormLess, ::Val{:MinGradNorm}, v::Float64)
     c.threshold = v
     return c
 end
@@ -658,11 +646,11 @@ function show(io::IO, c::StopWhenStepsizeLess)
     return print(io, "StopWhenStepsizeLess($(c.threshold))\n    $(status_summary(c))")
 end
 """
-    update_stopping_criterion!(c::StopWhenStepsizeLess, :MinStepsize, v)
+    set_parameter!(c::StopWhenStepsizeLess, :MinStepsize, v)
 
 Update the minimal step size below which the algorithm shall stop
 """
-function update_stopping_criterion!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}, v)
+function set_parameter!(c::StopWhenStepsizeLess, ::Val{:MinStepsize}, v)
     c.threshold = v
     return c
 end
@@ -855,13 +843,11 @@ function show(io::IO, c::StopWhenSubgradientNormLess)
     )
 end
 """
-    update_stopping_criterion!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
+    set_parameter!(c::StopWhenSubgradientNormLess, :MinSubgradNorm, v::Float64)
 
 Update the minimal subgradient norm when an algorithm shall stop
 """
-function update_stopping_criterion!(
-    c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64
-)
+function set_parameter!(c::StopWhenSubgradientNormLess, ::Val{:MinSubgradNorm}, v::Float64)
     c.threshold = v
     return c
 end
@@ -871,7 +857,7 @@ end
 #
 
 @doc raw"""
-    StopWhenAll <: StoppingCriterion
+    StopWhenAll <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _all_ indicate to stop. The `reason` is given by the concatenation of all
@@ -931,13 +917,13 @@ If either `s1` (or `s2`) is already an [`StopWhenAll`](@ref), then `s2` (or `s1`
 appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`).
 
 # Example
-    a = StopAfterIteration(200) & StopWhenChangeLess(1e-6)
+    a = StopAfterIteration(200) & StopWhenChangeLess(M, 1e-6)
     b = a & StopWhenGradientNormLess(1e-6)
 
 Is the same as
 
-    a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6))
-    b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+    a = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6))
+    b = StopWhenAll(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6), StopWhenGradientNormLess(1e-6))
 """
 function Base.:&(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
     return StopWhenAll(s1, s2)
@@ -953,7 +939,7 @@ function Base.:&(s1::StopWhenAll, s2::StopWhenAll)
 end
 
 @doc raw"""
-    StopWhenAny <: StoppingCriterion
+    StopWhenAny <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
 when _any_ single one indicates to stop. The `reason` is given by the
@@ -1026,13 +1012,13 @@ If either `s1` (or `s2`) is already an [`StopWhenAny`](@ref), then `s2` (or `s1`
 appended to the list of [`StoppingCriterion`](@ref) within `s1` (or `s2`)
 
 # Example
-    a = StopAfterIteration(200) | StopWhenChangeLess(1e-6)
+    a = StopAfterIteration(200) | StopWhenChangeLess(M, 1e-6)
     b = a | StopWhenGradientNormLess(1e-6)
 
 Is the same as
 
-    a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6))
-    b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(1e-6), StopWhenGradientNormLess(1e-6))
+    a = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6))
+    b = StopWhenAny(StopAfterIteration(200), StopWhenChangeLess(M, 1e-6), StopWhenGradientNormLess(1e-6))
 """
 function Base.:|(s1::S, s2::T) where {S<:StoppingCriterion,T<:StoppingCriterion}
     return StopWhenAny(s1, s2)
@@ -1085,43 +1071,20 @@ end
 get_stopping_criteria(c::StopWhenAll) = c.criteria
 get_stopping_criteria(c::StopWhenAny) = c.criteria
 
-@doc raw"""
-    update_stopping_criterion!(c::Stoppingcriterion, s::Symbol, v::value)
-    update_stopping_criterion!(s::AbstractManoptSolverState, symbol::Symbol, v::value)
-    update_stopping_criterion!(c::Stoppingcriterion, ::Val{Symbol}, v::value)
-
-Update a value within a stopping criterion, specified by the symbol `s`, to `v`.
-If a criterion does not have a value assigned that corresponds to `s`, the update is ignored.
-
-For the second signature, the stopping criterion within the [`AbstractManoptSolverState`](@ref) `o` is updated.
-
-To see which symbol updates which value, see the specific stopping criteria. They should
-use dispatch per symbol value (the third signature).
-"""
-update_stopping_criterion!(c, s, v)
-
-function update_stopping_criterion!(s::AbstractManoptSolverState, symbol::Symbol, v)
-    update_stopping_criterion!(s.stop, symbol, v)
+function set_parameter!(s::AbstractManoptSolverState, ::Val{:StoppingCriterion}, args...)
+    set_parameter!(s.stop, args...)
     return s
 end
-function update_stopping_criterion!(c::StopWhenAll, s::Symbol, v)
+function set_parameter!(c::StopWhenAll, s::Symbol, v)
     for d in c.criteria
-        update_stopping_criterion!(d, s, v)
+        set_parameter!(d, s, v)
     end
     return c
 end
-function update_stopping_criterion!(c::StopWhenAny, s::Symbol, v)
+function set_parameter!(c::StopWhenAny, s::Symbol, v)
     for d in c.criteria
-        update_stopping_criterion!(d, s, v)
+        set_parameter!(d, s, v)
     end
-    return c
-end
-function update_stopping_criterion!(c::StoppingCriterion, s::Symbol, v::Any)
-    update_stopping_criterion!(c, Val(s), v)
-    return c
-end
-# fallback: do nothing
-function update_stopping_criterion!(c::StoppingCriterion, ::Val, v)
     return c
 end
 
