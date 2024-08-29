@@ -25,7 +25,7 @@ to clone/fork the repository or open an issue.
 
 ## Work using Manopt.jl
 
-* [ExponentialFamilyProjection.jl](https://github.com/ReactiveBayes/ExponentialFamilyProjection.jl) projects distributions
+* [ExponentialFamilyProjection.jl](https://github.com/ReactiveBayes/ExponentialFamilyProjection.jl) package uses `Manopt.jl` to project arbitrary functions onto the closest exponential family distributions. The package also integrates with [`RxInfer.jl`](https://github.com/ReactiveBayes/RxInfer.jl) to enable Bayesian inference in a larger set of probabilistic models.
 * [Caesar.jl](https://github.com/JuliaRobotics/Caesar.jl) within non-Gaussian factor graph inference algorithms
 
 Is a package missing? [Open an issue](https://github.com/JuliaManifolds/Manopt.jl/issues/new)!
