@@ -14,9 +14,11 @@ Given the minimization problem
 ```math
 $(_tex(:argmin))_{p∈$(_tex(:Cal, "M"))} f(p),
 $(_tex(:quad)) $(_tex(:text, " where ")) $(_tex(:quad)) f(p) = g(p) + h(p).
+```
 
 this method performs the (intrinsic) proximal gradient method
 alhgorithm.
+
 Let ``λ_k ≥ 0`` be a sequence of (proximal) parameters, initialise
 ``p^{(0)} = p``,
 and ``k=0``

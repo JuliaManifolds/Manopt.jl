@@ -252,6 +252,7 @@ Compute an acceleration step
 ```math
 a^{(k)} = $(_tex(:retr))_{p^{(k)}}$(_tex(:bigl))(
   -β_k$(_tex(:invretr))_{p^{(k)}}(p)
+$(_tex(:bigr)))
 ```
 
 where `p^{(k)}`` is the current iterate from the [`ProximalGradientMethodState`](@ref)s
