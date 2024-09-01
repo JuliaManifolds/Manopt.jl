@@ -1,4 +1,4 @@
-using Manifolds, Manopt, Test, ManifoldsBase
+using Manifolds, Manopt, Test, ManifoldsBase, RecursiveArrayTools
 using LinearAlgebra: I
 
 using Random
@@ -62,7 +62,6 @@ Random.seed!(42)
         # Without being too far away -> classical mid point
         @test mid_point(M, 0, 0.1, π / 2) == mid_point(M, 0, 0.1)
     end
-
     @testset "max_stepsize" begin
         M = Sphere(2)
         TM = TangentBundle(M)
@@ -98,5 +97,13 @@ Random.seed!(42)
             ],
         )
         @test Manopt.max_stepsize(Mfr, pfr) == manifold_dimension(Mfr)
+
+        M = Hyperrectangle([-3, -1.5], [3, 1.5])
+        @test Manopt.max_stepsize(M) ≈ 6.0
+        @test Manopt.max_stepsize(M, [-1, 0.5]) ≈ 4.0
+    end
+    @testset "Vector space default" begin
+        @test Manopt.Rn(Val(:Manopt), 3) isa ManifoldsBase.DefaultManifold
+        @test Manopt.Rn(Val(:Manifolds), 3) isa Euclidean
     end
 end

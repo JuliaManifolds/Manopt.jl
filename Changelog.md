@@ -5,7 +5,135 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.67] – unreleased
+# [0.5.0] – August 29, 2024
+
+This breaking update is mainly concerned with improving a unified experience through all solvers
+and some usability improvements, such that for example the different gradient update rules are easier to specify.
+
+In general we introduce a few factories, that avoid having to pass the manifold to keyword arguments
+
+## Added
+
+* A `ManifoldDefaultsFactory` that postpones the creation/allocation of manifold-specific fields in for example direction updates, step sizes and stopping criteria. As a rule of thumb, internal structures, like a solver state should store the final type. Any high-level interface, like the functions to start solvers, should accept such a factory in the appropriate places and call the internal `_produce_type(factory, M)`, for example before passing something to the state.
+* a `documentation_glossary.jl` file containing a glossary of often used variables in fields, arguments, and keywords, to print them in a unified manner. The same for usual sections, tex, and math notation that is often used within the doc-strings.
+
+## Changed
+
+* Any `Stepsize` now hase a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
+  * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optonal) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `DecreasingStepsize` is no longer exported, use `DecreasingLength` instead. `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `ArmijoLinesearch` is now called `ArmijoLinesearchStepsize`. `ArmijoLinesearch` works as before,just that omitting the manifold fills the one specified in the solver now.
+  * `WolfePowellLinesearch` is now called `WolfePowellLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
+  * `WolfePowellBinaryLinesearch` is now called `WolfePowellBinaryLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellBinaryLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
+  * `NonmonotoneLinesearch` is now called `NonmonotoneLinesearchStepsize`. `NonmonotoneLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
+  * `AdaptiveWNGradient` is now called `AdaptiveWNGradientStepsize`. Its second positional argument, the gradient function was only evaluated once for the `gradient_bound` default, so it has been replaced by the keyword `X=` accepting a tangent vector. The last positional argument `p` has also been moved to a keyword argument. Besides that, `AdaptiveWNGradient` works as before, just that omitting the manifold fills the one specified in the solver now.
+* Any `DirectionUpdateRule` now has the `Rule` in its name, since the original name is used to create the `ManifoldDefaultsFactory` instead. The original constructor now no longer requires the manifold as a parameter, that is later done in the factory. The `Rule` is, however, also no longer exported.
+  * `AverageGradient` is now called `AverageGradientRule`. `AverageGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+  * The `IdentityUpdateRule` now accepts a manifold optionally for consistency, and you can use `Gradient()` for short as well as its factory. Hence `direction=Gradient()` is now available.
+  * `MomentumGradient` is now called `MomentumGradientRule`. `MomentumGradient` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+  * `Nesterov` is now called `NesterovRule`. `Nesterov` works as before, but the manifold as its first parameter is no longer necessary and `p` is now a keyword argument.
+  * `ConjugateDescentCoefficient` is now called `ConjugateDescentCoefficientRule`. `ConjugateDescentCoefficient` works as before, but can now use the factory in between
+  * the `ConjugateGradientBealeRestart` is now called `ConjugateGradientBealeRestartRule`. For the `ConjugateGradientBealeRestart` the manifold is now a first parameter, that is not necessary and no longer the `manifold=` keyword.
+  * `DaiYuanCoefficient` is now called `DaiYuanCoefficientRule`. For the `DaiYuanCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `FletcherReevesCoefficient` is now called `FletcherReevesCoefficientRule`. `FletcherReevesCoefficient` works as before, but can now use the factory in between
+  * `HagerZhangCoefficient` is now called `HagerZhangCoefficientRule`. For the `HagerZhangCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `HestenesStiefelCoefficient` is now called `HestenesStiefelCoefficientRule`. For the `HestenesStiefelCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `LiuStoreyCoefficient` is now called `LiuStoreyCoefficientRule`. For the `LiuStoreyCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * `PolakRibiereCoefficient` is now called `PolakRibiereCoefficientRule`. For the `PolakRibiereCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
+  * the `SteepestDirectionUpdateRule` is now called `SteepestDescentCoefficientRule`. The `SteepestDescentCoefficient` is equivalent, but creates the new factory interims wise.
+  * `AbstractGradientGroupProcessor` is now called `AbstractGradientGroupDirectionRule`
+    * the `StochasticGradient` is now called `StochasticGradientRule`. The `StochasticGradient` is equivalent, but creates the new factory interims wise, so that the manifold is not longer necessary.
+  * the `AlternatingGradient` is now called `AlternatingGradientRule`.
+  The `AlternatingGradient` is equivalent, but creates the new factory interims wise, so that the manifold is not longer necessary.
+* `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes bool, sometimes real) and was unused.
+  It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldest gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
+* Unify doc strings and presentation of keyword arguments
+  * general indexing, for example in a vector, uses `i`
+  * index for inequality constraints is unified to `i` running from `1,...,m`
+  * index for equality constraints is unified to `j` running from `1,...,n`
+  * iterations are using now `k`
+* `get_manopt_parameter` has been renamed to `get_parameter` since it is internal,
+  so internally that is clear; accessing it from outside hence reads anyways `Manopt.get_parameter`
+* `set_manopt_parameter!` has been renamed to `set_parameter!` since it is internal,
+  so internally that is clear; accessing it from outside hence reads `Manopt.set_parameter!`
+* changed the `stabilize::Bool=` keyword in `quasi_Newton` to the more flexible `project!=`
+  keyword, this is also more in line with the other solvers. Internally the same is done
+  within the `QuasiNewtonLimitedMemoryDirectionUpdate`. To adapt,
+  * the previous `stabilize=true` is now set with `(project!)=embed_project!` in general,
+    and if the manifold is represented by points in the embedding, like the sphere, `(project!)=project!` suffices
+  * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
+* the positional argument `p` (usually the last or the third to last if subsolvers existed) has been moved to a keyword argument `p=` in all State constructors
+* in `NelderMeadState` the `population` moved from positional to keyword argument as well,
+* the way to initialise sub solvers in the solver states has been unified In the new variant
+  * the `sub_problem` is always a positional argument; namely the last one
+  * if the `sub_state` is given as a optional positional argument after the problem, it has to be a manopt solver state
+  * you can provide the new `ClosedFormSolverState(e::AbstractEvaluationType)` for the state
+    to indicate that the `sub_problem` is a closed form solution (function call) and how it
+    has to be called
+  * if you do not provide the `sub_state` as positional, the keyword `evaluation=` is used
+    to generate the state `ClosedFormSolverState`.
+  * when previously `p` and eventually `X` where positional arguments, they are now moved
+    to keyword arguments of the same name for start point and tangent vector.
+  * in detail
+    * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
+      the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
+    * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
+    * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+  * bumped `Manifolds.jl`to version 0.10; this mainly means that any algorithm working on a productmanifold and requiring `ArrayPartition` now has to explicitly do `using RecursiveArrayTools`.
+### Fixed
+
+* the `AverageGradientRule` filled its internal vector of gradients wrongly – or mixed it up in parallel transport. This is now fixed.
+
+### Removed
+
+* the `convex_bundle_method` and its `ConvexBundleMethodState` no longer accept the keywords `k_size`, `p_estimate` nor `ϱ`, they are superseded by just providing `k_max`.
+* the `truncated_conjugate_gradient_descent(M, f, grad_f, hess_f)` has the Hessian now
+   a mandatory argument. To use the old variant,
+   provide `ApproxHessianFiniteDifference(M, copy(M, p), grad_f)` to `hess_f` directly.
+* all deprecated keyword arguments and a few function signatures were removed:
+  * `get_equality_constraints`, `get_equality_constraints!`, `get_inequality_constraints`, `get_inequality_constraints!` are removed. Use their singular forms and set the index to `:` instead.
+  * `StopWhenChangeLess(ε)` is removed, use ``StopWhenChangeLess(M, ε)` instead to fill for example the retraction properly used to determine the change
+ * In the `WolfePowellLinesearch` and  `WolfeBinaryLinesearch`the `linesearch_stopsize=` keyword is replaced by `stop_when_stepsize_less=`
+ * `DebugChange` and `RecordChange` had a `manifold=` and a `invretr` keyword that were replaced by the first positional argument `M` and `inverse_retraction_method=`, respectively
+ * in the `NonlinearLeastSquaresObjective` and `LevenbergMarquardt` the `jacB=` keyword is now called `jacobian_tangent_basis=`
+ * in `particle_swarm` the `n=` keyword is replaced by `swarm_size=`.
+ * `update_stopping_criterion!` has been removed and unified with `set_parameter!`. The code adaptions are
+   * to set a parameter of a stopping criterion, just replace `update_stopping_criterion!(sc, :Val, v)` with `set_parameter!(sc, :Val, v)`
+   * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
+
+
+## [0.4.69] – August 3, 2024
+
+### Changed
+
+* Improved performance of Interior Point Newton Method.
+
+## [0.4.68] – August 2, 2024
+
+### Added
+
+* an Interior Point Newton Method, the `interior_point_newton`
+* a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
+* `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
+* add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation employing the new `is_feasible` function
+* add a `InteriorPointCentralityCondition` check that can be added for step candidates within the line search of `interior_point_newton`
+* Add Several new functors
+  * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the hessian objective of its Lagrangian
+  * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system within `interior_point_newton`
+  * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and ``KKTVectorFieldAdjointJacobian`
+  * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_newton`
+* New stopping criteria
+  * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
+  * A `StopWhenKKTResidualLess` for the `interior_point_newton`
+
+## [0.4.67] – July 25, 2024
+
+### Added
+
+* `max_stepsize` methods for `Hyperrectangle`.
 
 ### Added
 * Adds the `proximal_gradient_method`.
@@ -13,6 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * a few typos in the documentation
+* `WolfePowellLinesearch` no longer uses `max_stepsize` with invalid point by default.
+
 
 ## [0.4.66] June 27, 2024
 

@@ -200,9 +200,9 @@ end
     x0 = [4.0, 2.0]
     o_r2 = LevenbergMarquardtState(
         M,
-        x0,
         similar(x0, length(ts_r2)),
         similar(x0, 2 * length(ts_r2), 2);
+        p=x0,
         stopping_criterion=StopAfterIteration(20),
     )
     p_r2 = DefaultManoptProblem(
@@ -234,27 +234,27 @@ end
     @testset "errors" begin
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
-            x0,
             similar(x0, length(ts_r2)),
             similar(x0, 2 * length(ts_r2), 2);
+            p=x0,
             stopping_criterion=StopAfterIteration(20),
             η=2,
         )
 
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
-            x0,
             similar(x0, length(ts_r2)),
             similar(x0, 2 * length(ts_r2), 2);
+            p=x0,
             stopping_criterion=StopAfterIteration(20),
             damping_term_min=-1,
         )
 
         @test_throws ArgumentError LevenbergMarquardtState(
             M,
-            x0,
             similar(x0, length(ts_r2)),
             similar(x0, 2 * length(ts_r2), 2);
+            p=x0,
             stopping_criterion=StopAfterIteration(20),
             β=0.5,
         )

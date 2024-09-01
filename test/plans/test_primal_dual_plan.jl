@@ -1,4 +1,5 @@
 using Manopt, Manifolds, ManifoldsBase, ManifoldDiff, ManoptExamples, Test
+using RecursiveArrayTools
 
 using ManoptExamples:
     forward_logs,
@@ -78,8 +79,8 @@ include("../utils/dummy_types.jl")
         f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
     )
     p_linearized = TwoManifoldProblem(M, N, pdmol)
-    s_exact = ChambollePockState(M, m, n, zero.(p0), X0; variant=:exact)
-    s_linearized = ChambollePockState(M, m, n, p0, X0; variant=:linearized)
+    s_exact = ChambollePockState(M; m=m, n=n, p=zero.(p0), X=X0, variant=:exact)
+    s_linearized = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:linearized)
     n_old = ArrayPartition(n[N, :point], n[N, :vector])
     p_old = copy(p0)
     ξ_old = ArrayPartition(X0[N, :point], X0[N, :vector])
@@ -88,11 +89,11 @@ include("../utils/dummy_types.jl")
     @test all(get_iterate(s_exact) .== p0)
 
     osm = PrimalDualSemismoothNewtonState(
-        M,
-        m,
-        n,
-        zero.(p0),
-        X0;
+        M;
+        m=m,
+        n=n,
+        p=zero.(p0),
+        X=X0,
         primal_stepsize=0.0,
         dual_stepsize=0.0,
         regularization_parameter=0.0,
@@ -168,8 +169,8 @@ include("../utils/dummy_types.jl")
             f, prox_f, prox_g_dual, adjoint_DΛ; linearized_forward_operator=DΛ
         )
         p_linearized = TwoManifoldProblem(M, N, pmdol)
-        s_exact = ChambollePockState(M, m, n, p0, X0; variant=:exact)
-        s_linearized = ChambollePockState(M, m, n, p0, X0; variant=:linearized)
+        s_exact = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:exact)
+        s_linearized = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:linearized)
         @test primal_residual(p_exact, s_exact, p_old, ξ_old, n_old) ≈ 0 atol = 1e-16
         @test primal_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) ≈ 0 atol =
             1e-16
@@ -184,7 +185,7 @@ include("../utils/dummy_types.jl")
         @test dual_residual(p_exact, s_exact, p_old, ξ_old, n_old) > 4.0
         @test dual_residual(p_linearized, s_linearized, p_old, ξ_old, n_old) > 0
 
-        o_err = ChambollePockState(M, m, n, p0, X0; variant=:err)
+        o_err = ChambollePockState(M; m=m, n=n, p=p0, X=X0, variant=:err)
         @test_throws DomainError dual_residual(p_exact, o_err, p_old, ξ_old, n_old)
     end
     @testset "Debug prints" begin

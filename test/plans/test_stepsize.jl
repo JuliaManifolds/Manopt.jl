@@ -1,31 +1,36 @@
-using Manopt, Manifolds, Test
+using ManifoldsBase, Manopt, Manifolds, Test
 
 @testset "Stepsize" begin
-    @test Manopt.get_message(ConstantStepsize(1.0)) == ""
-    s = ArmijoLinesearch()
-    @test startswith(repr(s), "ArmijoLinesearch() with keyword parameters\n")
+    M = ManifoldsBase.DefaultManifold(2)
+    @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
+    s = Manopt.ArmijoLinesearchStepsize(Euclidean())
+    @test startswith(repr(s), "ArmijoLinesearch(;")
     s_stat = Manopt.status_summary(s)
-    @test startswith(s_stat, "ArmijoLinesearch() with keyword parameters\n")
+    @test startswith(s_stat, "ArmijoLinesearch(;")
     @test endswith(s_stat, "of 1.0")
     @test Manopt.get_message(s) == ""
 
-    s2 = NonmonotoneLinesearch()
-    @test startswith(repr(s2), "NonmonotoneLinesearch() with keyword arguments\n")
+    s2 = NonmonotoneLinesearch()(M)
+    @test startswith(repr(s2), "NonmonotoneLinesearch(;")
     @test Manopt.get_message(s2) == ""
 
-    s2b = NonmonotoneLinesearch(Euclidean(2)) # with manifold -> faster storage
-    @test startswith(repr(s2b), "NonmonotoneLinesearch() with keyword arguments\n")
-
-    s3 = WolfePowellBinaryLinesearch()
+    s3 = WolfePowellBinaryLinesearch()(M)
     @test Manopt.get_message(s3) == ""
-    @test startswith(repr(s3), "WolfePowellBinaryLinesearch(DefaultManifold(), ")
+    @test startswith(repr(s3), "WolfePowellBinaryLinesearch(;")
     # no stepsize yet so `repr` and summary are the same
     @test repr(s3) == Manopt.status_summary(s3)
-    s4 = WolfePowellLinesearch()
-    @test startswith(repr(s4), "WolfePowellLinesearch(DefaultManifold(), ")
+    s4 = WolfePowellLinesearch()(M)
+    @test startswith(repr(s4), "WolfePowellLinesearch(;")
     # no stepsize yet so `repr` and summary are the same
     @test repr(s4) == Manopt.status_summary(s4)
     @test Manopt.get_message(s4) == ""
+    @testset "Armijo setter / getters" begin
+        # Check that the passdowns work, though; since the defaults are functions, they return nothing
+        @test isnothing(Manopt.get_parameter(s, :IncreaseCondition, :Dummy))
+        @test isnothing(Manopt.get_parameter(s, :DecreaseCondition, :Dummy))
+        @test Manopt.set_parameter!(s, :IncreaseCondition, :Dummy, 1) == s #setters return s
+        @test Manopt.set_parameter!(s, :DecreaseCondition, :Dummy, 1) == s
+    end
     @testset "Linesearch safeguards" begin
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
@@ -69,8 +74,8 @@ using Manopt, Manifolds, Test
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
-        s = AdaptiveWNGradient(; gradient_reduction=0.5, count_threshold=2)
-        gds = GradientDescentState(M, p)
+        s = AdaptiveWNGradient(; gradient_reduction=0.5, count_threshold=2)(M)
+        gds = GradientDescentState(M; p=p)
         @test get_initial_stepsize(s) == 1.0
         @test get_last_stepsize(s) == 1.0
         @test s(mp, gds, 0) == 1.0
@@ -87,6 +92,7 @@ using Manopt, Manifolds, Test
         @test startswith(repr(s), "AdaptiveWNGradient(;\n  ")
     end
     @testset "Absolute stepsizes" begin
+        M = ManifoldsBase.DefaultManifold(2)
         # Build a dummy function and gradient
         f(M, p) = 0
         grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
@@ -94,14 +100,14 @@ using Manopt, Manifolds, Test
         p = [1.0, 0.0, 0.0]
         mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
-        gds = GradientDescentState(M, p)
-        abs_dec_step = DecreasingStepsize(;
-            length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
+        gds = GradientDescentState(M; p=p)
+        abs_dec_step = Manopt.DecreasingStepsize(
+            M; length=10.0, factor=1.0, subtrahend=0.0, exponent=1.0, type=:absolute
         )
         solve!(mp, gds)
         @test abs_dec_step(mp, gds, 1) ==
             10.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
-        abs_const_step = ConstantStepsize(1.0, :absolute)
+        abs_const_step = Manopt.ConstantStepsize(M, 1.0; type=:absolute)
         @test abs_const_step(mp, gds, 1) ==
             1.0 / norm(get_manifold(mp), get_iterate(gds), get_gradient(gds))
     end
@@ -112,10 +118,10 @@ using Manopt, Manifolds, Test
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
-        sgs = SubGradientMethodState(M, p)
-        ps = PolyakStepsize()
+        sgs = SubGradientMethodState(M; p=p)
+        ps = Polyak()()
         @test repr(ps) ==
-            "PolyakStepsize() with keyword parameters\n  * initial_cost_estimate = 0.0"
+            "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
 end

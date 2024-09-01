@@ -10,20 +10,20 @@ It might also be more verbose in explaining, or hide internal information.
 status_summary(e) = "$(e)"
 
 """
-    set_manopt_parameter!(f, element::Symbol , args...)
+    set_parameter!(f, element::Symbol , args...)
 
 For any `f` and a `Symbol` `e`, dispatch on its value so by default, to
 set some `args...` in `f` or one of uts sub elements.
 """
-function set_manopt_parameter!(f, e::Symbol, args...)
-    return set_manopt_parameter!(f, Val(e), args...)
+function set_parameter!(f, e::Symbol, args...)
+    return set_parameter!(f, Val(e), args...)
 end
-function set_manopt_parameter!(f, args...)
+function set_parameter!(f, args...)
     return f
 end
 
 """
-    get_manopt_parameter(f, element::Symbol, args...)
+    get_parameter(f, element::Symbol, args...)
 
 Access arbitrary parameters from `f` addressed by a symbol `element`.
 
@@ -32,13 +32,13 @@ get some element from `f` potentially further qualified by `args...`.
 
 This functions returns `nothing` if `f` does not have the property `element`
 """
-function get_manopt_parameter(f, e::Symbol, args...)
-    return get_manopt_parameter(f, Val(e), args...)
+function get_parameter(f, e::Symbol, args...)
+    return get_parameter(f, Val(e), args...)
 end
-get_manopt_parameter(f, args...) = nothing
+get_parameter(f, args...) = nothing
 
 """
-    get_manopt_parameter(element::Symbol; default=nothing)
+    get_parameter(element::Symbol; default=nothing)
 
 Access global [`Manopt`](@ref) parameters addressed by a symbol `element`.
 This first dispatches on the value of `element`.
@@ -56,21 +56,19 @@ the optimisation on manifolds is different from the usual “experience” in
 (classical, Euclidean) optimization.
 Any other value has the same effect as not setting it.
 """
-function get_manopt_parameter(
-    e::Symbol, args...; default=get_manopt_parameter(Val(e), Val(:default))
-)
+function get_parameter(e::Symbol, args...; default=get_parameter(Val(e), Val(:default)))
     return @load_preference("$(e)", default)
 end
-function get_manopt_parameter(
-    e::Symbol, s::Symbol, args...; default=get_manopt_parameter(Val(e), Val(:default))
+function get_parameter(
+    e::Symbol, s::Symbol, args...; default=get_parameter(Val(e), Val(:default))
 )
     return @load_preference("$(e)", default)
 end# Handle empty defaults
-get_manopt_parameter(::Symbol, ::Val{:default}) = nothing
-get_manopt_parameter(::Val{:Mode}, v::Val{:default}) = nothing
+get_parameter(::Symbol, ::Val{:default}) = nothing
+get_parameter(::Val{:Mode}, v::Val{:default}) = nothing
 
 """
-    set_manopt_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
+    set_parameter!(element::Symbol, value::Union{String,Bool,<:Number})
 
 Set global [`Manopt`](@ref) parameters addressed by a symbol `element`.
 W
@@ -81,10 +79,10 @@ The parameters are stored to the global settings using [`Preferences.jl`](https:
 Passing a `value` of `""` deletes the corresponding entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
 """
-function set_manopt_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
+function set_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
     if length(value) == 0
         @delete_preferences!(string(e))
-        v = get_manopt_parameter(e, Val(:default))
+        v = get_parameter(e, Val(:default))
         default = isnothing(v) ? "" : ((v isa String) ? " \"$v\"" : " ($v)")
         @info("Resetting the `Manopt.jl` parameter :$(e) to default$(default).")
     else
@@ -98,11 +96,12 @@ end
 
 A small internal helper to indicate whether tutorial mode is active.
 
-You can set the mode by calling `set_manopt_parameter!(:Mode, "Tutorial")` or deactivate it
-by `set_manopt_parameter!(:Mode, "")`.
+You can set the mode by calling `set_parameter!(:Mode, "Tutorial")` or deactivate it
+by `set_parameter!(:Mode, "")`.
 """
-is_tutorial_mode() = (get_manopt_parameter(:Mode) == "Tutorial")
+is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 
+include("manifold_default_factory.jl")
 include("objective.jl")
 include("problem.jl")
 include("solver_state.jl")
@@ -129,8 +128,10 @@ include("adabtive_regularization_with_cubics_plan.jl")
 include("alternating_gradient_plan.jl")
 include("augmented_lagrangian_plan.jl")
 include("conjugate_gradient_plan.jl")
+include("conjugate_residual_plan.jl")
 include("exact_penalty_method_plan.jl")
 include("frank_wolfe_plan.jl")
+include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
 include("nonlinear_least_squares_plan.jl")
 include("difference_of_convex_plan.jl")

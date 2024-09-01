@@ -26,8 +26,8 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
-            stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
+            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(M, 1e-16),
+            stepsize=ArmijoLinesearch(; contraction_factor=0.99),
             debug=d,
             record=[:Iteration, :Cost, 1],
             return_state=true,
@@ -40,12 +40,11 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(1e-16),
-            stepsize=ArmijoLinesearch(M; contraction_factor=0.99),
+            stopping_criterion=StopAfterIteration(200) | StopWhenChangeLess(M, 1e-16),
+            stepsize=ArmijoLinesearch(; contraction_factor=0.99),
         )
         @test p == p2
-        step = NonmonotoneLinesearch(
-            M;
+        step = NonmonotoneLinesearch(;
             stepsize_reduction=0.99,
             sufficient_decrease=0.1,
             memory_size=2,
@@ -59,30 +58,46 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
             stepsize=step,
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, p, p3; atol=1e-13)
-        step.strategy = :inverse
+        step2 = NonmonotoneLinesearch(;
+            stepsize_reduction=0.99,
+            sufficient_decrease=0.1,
+            memory_size=2,
+            bb_min_stepsize=1e-7,
+            bb_max_stepsize=π / 2,
+            strategy=:inverse,
+            stop_when_stepsize_exceeds=0.9 * π,
+        )
         p4 = gradient_descent(
             M,
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
-            stepsize=step,
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
+            stepsize=step2,
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, p, p4; atol=1e-13)
-        step.strategy = :alternating
+        step3 = NonmonotoneLinesearch(;
+            stepsize_reduction=0.99,
+            sufficient_decrease=0.1,
+            memory_size=2,
+            bb_min_stepsize=1e-7,
+            bb_max_stepsize=π / 2,
+            strategy=:alternating,
+            stop_when_stepsize_exceeds=0.9 * π,
+        )
         p5 = gradient_descent(
             M,
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
-            stepsize=step,
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
+            stepsize=step3,
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, p, p5; atol=1e-13)
@@ -91,22 +106,24 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             data[1];
-            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(1e-16),
-            direction=Nesterov(M, data[1]),
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
+            direction=Nesterov(M; p=copy(M, data[1])),
         )
         @test isapprox(M, p, p6; atol=1e-13)
-
+        M2 = Euclidean()
         @test_logs (
             :warn,
             string(
                 "The strategy 'indirect' is not defined. The 'direct' strategy is used instead.",
             ),
-        ) NonmonotoneLinesearch(Euclidean(); strategy=:indirect)
-        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); bb_min_stepsize=0.0)
-        @test_throws DomainError NonmonotoneLinesearch(
-            Euclidean(); bb_min_stepsize=π / 2, bb_max_stepsize=π / 4
+        ) NonmonotoneLinesearch(; strategy=:indirect)(M2)
+        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); bb_min_stepsize=0.0)(M2)
+        @test_throws DomainError NonmonotoneLinesearch(;
+            bb_min_stepsize=π / 2, bb_max_stepsize=π / 4
+        )(
+            M2
         )
-        @test_throws DomainError NonmonotoneLinesearch(Euclidean(); memory_size=0)
+        @test_throws DomainError NonmonotoneLinesearch(; memory_size=0)(M2)
 
         rec = get_record(s)
         # after one step for local enough data -> equal to real valued data
@@ -133,13 +150,18 @@ using ManifoldDiff: grad_distance
             f,
             grad_f,
             pts[1];
-            direction=MomentumGradient(M, copy(M, pts[1])),
-            stepsize=ConstantStepsize(M),
+            direction=MomentumGradient(),
+            stepsize=ConstantLength(),
             debug=[], # do not warn about increasing step here
         )
         @test isapprox(M, north, n3)
         n4 = gradient_descent(
-            M, f, grad_f, pts[1]; direction=AverageGradient(M, copy(M, pts[1]); n=5)
+            M,
+            f,
+            grad_f,
+            pts[1];
+            direction=AverageGradient(M; n=5),
+            stopping_criterion=StopAfterIteration(800),
         )
         @test isapprox(M, north, n4; atol=1e-7)
         n5 = copy(M, pts[1])
@@ -164,14 +186,14 @@ using ManifoldDiff: grad_distance
         f(M, p) = distance(M, p, q) .^ 2
         # choose a wrong gradient such that ConstantStepsize yields an increase
         grad_f(M, p) = -grad_distance(M, q, p)
-        @test_logs (:info,) set_manopt_parameter!(:Mode, "Tutorial")
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
         @test_logs (:warn,) (:warn,) (:warn,) gradient_descent(
-            M, f, grad_f, 1 / sqrt(2) .* [1.0, -1.0, 0.0]; stepsize=ConstantStepsize(1.0)
+            M, f, grad_f, 1 / sqrt(2) .* [1.0, -1.0, 0.0]; stepsize=ConstantLength()
         )
         grad_f2(M, p) = 20 * grad_distance(M, q, p)
         @test_logs (:warn,) (:warn,) gradient_descent(
             M, f, grad_f2, 1 / sqrt(2) .* [1.0, -1.0, 0.0];
         )
-        @test_logs (:info,) set_manopt_parameter!(:Mode, "")
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
     end
 end

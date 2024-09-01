@@ -21,7 +21,7 @@ AdaptiveRegularizationState
 
 There are several ways to approach the subsolver. The default is the first one.
 
-## Lanczos iteration
+## [Lanczos iteration](@id arc-Lanczos)
 
 ```@docs
 Manopt.LanczosState
@@ -64,7 +64,7 @@ of a manifolds to be available
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 * [`inner`](@extref `ManifoldsBase.inner-Tuple{AbstractManifold, Any, Any, Any}`)`(M, p, X, Y)` is used within the algorithm step
 
-Furthermore, within the Lanczos subsolver, generating a random vector (at `p`) using [`rand!`](@extref Base.rand-Tuple{AbstractManifold})(M, X; vector_at=p)` in place of `X` is required
+Furthermore, within the Lanczos subsolver, generating a random vector (at `p`) using [`rand!`](@extref Base.rand-Tuple{AbstractManifold})`(M, X; vector_at=p)` in place of `X` is required
 
 ## Literature
 

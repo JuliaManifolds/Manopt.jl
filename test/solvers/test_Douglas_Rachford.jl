@@ -1,5 +1,5 @@
 using Manifolds, Manopt, Test
-using ManifoldDiff: prox_distance
+using ManifoldDiff: prox_distance, prox_distance!
 
 @testset "DouglasRachford" begin
     # Though this seems a strange way, it is a way to compute the mid point
@@ -38,7 +38,7 @@ using ManifoldDiff: prox_distance
     @test isapprox(M, q4, p_star_2; atol=1e-14)
 
     #test getter/set
-    s = DouglasRachfordState(M, d1)
+    s = DouglasRachfordState(M; p=d1)
     sr = "# Solver state for `Manopt.jl`s  Douglas Rachford Algorithm\n"
     @test startswith(repr(s), sr)
     set_iterate!(s, d2)

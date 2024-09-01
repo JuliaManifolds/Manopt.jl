@@ -47,6 +47,8 @@ if "--quarto" ∈ ARGS
         tutorials_folder = (@__DIR__) * "/../tutorials"
         # instantiate the tutorials environment if necessary
         Pkg.activate(tutorials_folder)
+        # For a breaking release -> also set the tutorials folder to the most recent version
+        Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
         Pkg.resolve()
         Pkg.instantiate()
         Pkg.build("IJulia") # build `IJulia` to the right version.
@@ -72,7 +74,7 @@ end
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations, DocumenterInterLinks
-using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
+using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
 # (d) add contributing.md to docs
@@ -168,6 +170,7 @@ makedocs(;
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "CMA-ES" => "solvers/cma_es.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
+            "Conjugate Residual" => "solvers/conjugate_residual.md",
             "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
@@ -175,6 +178,7 @@ makedocs(;
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
+            "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",

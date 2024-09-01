@@ -4,9 +4,9 @@
 A `RecordAction` is a small functor to record values.
 The usual call is given by
 
-    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i) -> s
+    (amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k) -> s
 
-that performs the record for the current problem and solver combination, and where `i` is
+that performs the record for the current problem and solver combination, and where `k` is
 the current iteration.
 
 By convention `i=0` is interpreted as "For Initialization only," so only
@@ -103,23 +103,26 @@ _has_record(s::AbstractManoptSolverState, ::Val{true}) = has_record(s.state)
 _has_record(::AbstractManoptSolverState, ::Val{false}) = false
 
 """
-    set_manopt_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
+    set_parameter!(ams::RecordSolverState, ::Val{:Record}, args...)
 
 Set certain values specified by `args...` into the elements of the `recordDictionary`
 """
-function set_manopt_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
+function set_parameter!(rss::RecordSolverState, ::Val{:Record}, args...)
     for d in values(rss.recordDictionary)
-        set_manopt_parameter!(d, args...)
+        set_parameter!(d, args...)
     end
     return rss
 end
 # all other pass through
-function set_manopt_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
-    return set_manopt_parameter!(rss.state, v, args...)
+function set_parameter!(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return set_parameter!(rss.state, v, args...)
+end
+function set_parameter!(rss::RecordSolverState, v::Val{:StoppingCriterion}, args...)
+    return set_parameter!(rss.state, v, args...)
 end
 # all other pass through
-function get_manopt_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
-    return get_manopt_parameter(rss.state, v, args...)
+function get_parameter(rss::RecordSolverState, v::Val{T}, args...) where {T}
+    return get_parameter(rss.state, v, args...)
 end
 
 @doc """
@@ -178,7 +181,7 @@ end
 return the recorded values stored within a [`RecordAction`](@ref) `r`.
 """
 get_record(r::RecordAction) = r.recorded_values
-get_record(r::RecordAction, i) = r.recorded_values
+get_record(r::RecordAction, k) = r.recorded_values
 
 """
     get_index(rs::RecordSolverState, s::Symbol)
@@ -195,16 +198,16 @@ getindex(rs::RecordSolverState, s::Symbol) = get_record(rs, s)
 getindex(rs::RecordSolverState, s::Symbol, i...) = get_record_action(rs, s)[i...]
 
 """
-    record_or_reset!(r,v,i)
+    record_or_reset!(r, v, k)
 
-either record (`i>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
-or reset (`i<0`) the internal storage, where `v` has to match the internal
+either record (`k>0` and not `Inf`) the value `v` within the [`RecordAction`](@ref) `r`
+or reset (`k<0`) the internal storage, where `v` has to match the internal
 value type of the corresponding [`RecordAction`](@ref).
 """
-function record_or_reset!(r::RecordAction, v, i::Int)
-    if i > 0
+function record_or_reset!(r::RecordAction, v, k::Int)
+    if k > 0
         push!(r.recorded_values, deepcopy(v))
-    elseif i < 0 # reset if negative
+    elseif k < 0 # reset if negative
         r.recorded_values = empty(r.recorded_values) # Reset to empty
     end
 end
@@ -216,7 +219,7 @@ end
 @doc raw"""
     RecordEvery <: RecordAction
 
-record only every $i$th iteration.
+record only every ``k``th iteration.
 Otherwise (optionally, but activated by default) just update internal tracking
 values.
 
@@ -231,20 +234,20 @@ mutable struct RecordEvery <: RecordAction
     end
 end
 function (re::RecordEvery)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
 )
-    if i <= 0
-        re.record(amp, ams, i)
-    elseif (rem(i, re.every) == 0)
-        re.record(amp, ams, i)
+    if k <= 0
+        re.record(amp, ams, k)
+    elseif (rem(k, re.every) == 0)
+        re.record(amp, ams, k)
     elseif re.always_update
         re.record(amp, ams, 0)
     end
     # Set activity to activate or deactivate subsolvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
-    set_manopt_parameter!(
-        ams, :SubState, :Record, :Activity, !(i < 1) && (rem(i + 1, re.every) == 0)
+    set_parameter!(
+        ams, :SubState, :Record, :Activity, !(k < 1) && (rem(k + 1, re.every) == 0)
     )
     return nothing
 end
@@ -261,8 +264,8 @@ function status_summary(re::RecordEvery)
     return "[$s, $(re.every)]"
 end
 get_record(r::RecordEvery) = get_record(r.record)
-get_record(r::RecordEvery, i) = get_record(r.record, i)
-getindex(r::RecordEvery, i) = get_record(r, i)
+get_record(r::RecordEvery, k) = get_record(r.record, k)
+getindex(r::RecordEvery, k) = get_record(r, k)
 
 """
     RecordGroup <: RecordAction
@@ -330,9 +333,9 @@ mutable struct RecordGroup <: RecordAction
     end
     RecordGroup() = new(Array{RecordAction,1}(), Dict{Symbol,Int}())
 end
-function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+function (d::RecordGroup)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     for ri in d.group
-        ri(p, s, i)
+        ri(p, s, k)
     end
 end
 function status_summary(rg::RecordGroup)
@@ -348,7 +351,7 @@ end
 
 return an array of tuples, where each tuple is a recorded set per iteration or record call.
 
-    get_record(r::RecordGruop, i::Int)
+    get_record(r::RecordGruop, k::Int)
 
 return an array of values corresponding to the `i`th entry in this record group
 
@@ -409,9 +412,9 @@ function RecordSubsolver(;
     return RecordSubsolver{record_type}(record_type[], r)
 end
 function (rsr::RecordSubsolver)(
-    ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
 )
-    record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), i)
+    record_or_reset!(rsr, get_record(get_sub_state(ams), rsr.record...), k)
     return nothing
 end
 function show(io::IO, rsr::RecordSubsolver{R}) where {R}
@@ -449,12 +452,12 @@ mutable struct RecordWhenActive{R<:RecordAction} <: RecordAction
 end
 
 function (rwa::RecordWhenActive)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
 )
     if rwa.active
-        rwa.record(amp, ams, i)
-    elseif (rwa.always_update) && (i <= 0)
-        rwa.record(amp, ams, i)
+        rwa.record(amp, ams, k)
+    elseif (rwa.always_update) && (k <= 0)
+        rwa.record(amp, ams, k)
     end
 end
 function show(io::IO, rwa::RecordWhenActive)
@@ -463,11 +466,11 @@ end
 function status_summary(rwa::RecordWhenActive)
     return repr(rwa)
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, v::Val, args...)
-    set_manopt_parameter!(rwa.record, v, args...)
+function set_parameter!(rwa::RecordWhenActive, v::Val, args...)
+    set_parameter!(rwa.record, v, args...)
     return rwa
 end
-function set_manopt_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
+function set_parameter!(rwa::RecordWhenActive, ::Val{:Activity}, v)
     return rwa.active = v
 end
 get_record(r::RecordWhenActive, args...) = get_record(r.record, args...)
@@ -493,13 +496,13 @@ mutable struct RecordCost <: RecordAction
     recorded_values::Array{Float64,1}
     RecordCost() = new(Array{Float64,1}())
 end
-function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
-    return record_or_reset!(r, get_cost(amp, get_iterate(s)), i)
+function (r::RecordCost)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
+    return record_or_reset!(r, get_cost(amp, get_iterate(s)), k)
 end
 show(io::IO, ::RecordCost) = print(io, "RecordCost()")
 status_summary(di::RecordCost) = ":Cost"
 
-@doc raw"""
+@doc """
     RecordChange <: RecordAction
 
 debug for the amount of change of the iterate (see [`get_iterate`](@ref)`(s)` of the [`AbstractManoptSolverState`](@ref))
@@ -510,7 +513,7 @@ during the last iteration.
 * `storage`                   : a [`StoreStateAction`](@ref) to store (at least) the last
   iterate to use this as the last value (to compute the change) serving as a potential cache
   shared with other components of the solver.
-* `inverse_retraction_method` : the inverse retraction to be used for approximating distance.
+$(_var(:Keyword, :inverse_retraction_method))
 * `recorded_values`           : to store the recorded values
 
 # Constructor
@@ -532,14 +535,9 @@ mutable struct RecordChange{
     function RecordChange(
         M::AbstractManifold=DefaultManifold();
         storage::Union{Nothing,StoreStateAction}=nothing,
-        manifold::Union{Nothing,AbstractManifold}=nothing,
         inverse_retraction_method::IRT=default_inverse_retraction_method(M),
     ) where {IRT<:AbstractInverseRetractionMethod}
         irm = inverse_retraction_method
-        if !isnothing(manifold)
-            @warn "The `manifold` keyword is deprecated, use the first positional argument `M`. This keyword for now sets `inverse_retracion_method`."
-            irm = default_inverse_retraction_method(manifold)
-        end
         if isnothing(storage)
             if M isa DefaultManifold
                 storage = StoreStateAction(M; store_fields=[:Iterate])
@@ -561,7 +559,7 @@ mutable struct RecordChange{
         return new{IRT,typeof(a)}(Vector{Float64}(), a, inverse_retraction_method)
     end
 end
-function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     M = get_manifold(amp)
     record_or_reset!(
         r,
@@ -575,9 +573,9 @@ function (r::RecordChange)(amp::AbstractManoptProblem, s::AbstractManoptSolverSt
         else
             0.0
         end,
-        i,
+        k,
     )
-    r.storage(amp, s, i)
+    r.storage(amp, s, k)
     return r.recorded_values
 end
 function show(io::IO, rc::RecordChange)
@@ -651,7 +649,7 @@ mutable struct RecordEntryChange{TStorage<:StoreStateAction} <: RecordAction
     end
 end
 function (r::RecordEntryChange)(
-    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+    amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
 )
     value = 0.0
     if has_storage(r.storage, r.field)
@@ -659,8 +657,8 @@ function (r::RecordEntryChange)(
             amp, ams, getfield(ams, r.field), get_storage(r.storage, r.field)
         )
     end
-    r.storage(amp, ams, i)
-    return record_or_reset!(r, value, i)
+    r.storage(amp, ams, k)
+    return record_or_reset!(r, value, k)
 end
 function show(io::IO, rec::RecordEntryChange)
     return print(io, "RecordEntryChange(:$(rec.field), $(rec.distance))")
@@ -709,8 +707,8 @@ mutable struct RecordIteration <: RecordAction
     recorded_values::Array{Int,1}
     RecordIteration() = new(Array{Int,1}())
 end
-function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, i::Int)
-    return record_or_reset!(r, i, i)
+function (r::RecordIteration)(::AbstractManoptProblem, ::AbstractManoptSolverState, k::Int)
+    return record_or_reset!(r, k, k)
 end
 show(io::IO, ::RecordIteration) = print(io, "RecordIteration()")
 status_summary(::RecordIteration) = ":Iteration"
@@ -725,10 +723,10 @@ mutable struct RecordStoppingReason <: RecordAction
 end
 RecordStoppingReason() = RecordStoppingReason(String[])
 function (rsr::RecordStoppingReason)(
-    ::AbstractManoptProblem, ams::AbstractManoptSolverState, i::Int
+    ::AbstractManoptProblem, ams::AbstractManoptSolverState, k::Int
 )
     s = get_reason(get_stopping_criterion(ams))
-    return (length(s) > 0) && record_or_reset!(rsr, s, i)
+    return (length(s) > 0) && record_or_reset!(rsr, s, k)
 end
 show(io::IO, ::RecordStoppingReason) = print(io, "RecordStoppingReason()")
 status_summary(di::RecordStoppingReason) = ":Stop"
@@ -757,16 +755,16 @@ mutable struct RecordTime <: RecordAction
         return new(Array{Nanosecond,1}(), Nanosecond(time_ns()), mode)
     end
 end
-function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, i::Int)
+function (r::RecordTime)(p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int)
     # At iteration zero also reset start
-    (i == 0) && (r.start = Nanosecond(time_ns()))
+    (k == 0) && (r.start = Nanosecond(time_ns()))
     t = Nanosecond(time_ns()) - r.start
     (r.mode == :iterative) && (r.start = Nanosecond(time_ns()))
     if r.mode == :total
         # only record at end (if `stop_solver` returns true)
-        return record_or_reset!(r, t, (i > 0 && stop_solver!(p, s, i)) ? i : 0)
+        return record_or_reset!(r, t, (k > 0 && stop_solver!(p, s, k)) ? k : 0)
     else
-        return record_or_reset!(r, t, i)
+        return record_or_reset!(r, t, k)
     end
 end
 function show(io::IO, ri::RecordTime)

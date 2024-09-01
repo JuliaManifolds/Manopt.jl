@@ -19,11 +19,41 @@ on the manifold currently under consideration.
 
 Currently, the following step sizes are available
 
+```@docs
+AdaptiveWNGradient
+ArmijoLinesearch
+ConstantLength
+DecreasingLength
+NonmonotoneLinesearch
+Polyak
+WolfePowellLinesearch
+WolfePowellBinaryLinesearch
+```
+
+Some step sizes use [`max_stepsize`](@ref) function as a rough upper estimate for the trust region size.
+It is by default equal to injectivity radius of the exponential map but in some cases a different value is used.
+For the `FixedRankMatrices` manifold an estimate from Manopt is used.
+Tangent bundle with the Sasaki metric has 0 injectivity radius, so the maximum stepsize of the underlying manifold is used instead.
+`Hyperrectangle` also has 0 injectivity radius and an estimate based on maximum of dimensions along each index is used instead.
+For manifolds with corners, however, a line search capable of handling break points along the projected search direction should be used, and such algorithms do not call `max_stepsize`.
+
+Internally the step size functions above create a [`ManifoldDefaultsFactory`](@ref).
+Internally these use
+
 ```@autodocs
 Modules = [Manopt]
 Pages = ["plans/stepsize.jl"]
-Order = [:type,:function]
-Filter = t -> t != Stepsize
+Private = true
+Order = [:function, :type]
+Filter = t -> !(t in [Stepsize, AdaptiveWNGradient, ArmijoLinesearch, ConstantLength, DecreasingLength, NonmonotoneLinesearch, Polyak, WolfePowellLinesearch, WolfePowellBinaryLinesearch ])
+```
+
+
+Some solvers have a different iterate from the one used for the line search.
+Then the following state can be used to wrap these locally
+
+```@docs
+StepsizeState
 ```
 
 ## Literature

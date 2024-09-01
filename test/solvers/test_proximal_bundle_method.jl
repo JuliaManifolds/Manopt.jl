@@ -5,7 +5,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
     M = Hyperbolic(4)
     p = [0.0, 0.0, 0.0, 0.0, 1.0]
     p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
-    pbms = ProximalBundleMethodState(M, p0; stopping_criterion=StopAfterIteration(200))
+    pbms = ProximalBundleMethodState(M; p=p0, stopping_criterion=StopAfterIteration(200))
     @test get_iterate(pbms) == p0
 
     pbms.X = [1.0, 0.0, 0.0, 0.0, 0.0]

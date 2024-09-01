@@ -122,7 +122,7 @@ Now as a first method we can just call the [Augmented Lagrangian Method](https:/
    	M, f, grad_f, p0; g=g, grad_g=grad_g,
     debug=[:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
     stopping_criterion = StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(1e-8)
+        StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(M, 1e-8)
     )
 );
 ```
@@ -166,7 +166,7 @@ We obtain
     	M, f, grad_f!, p0; g=g2, grad_g=grad_g2!, evaluation=InplaceEvaluation(),
     	debug=[:Iteration, :Cost, :Stop, " | ", (:Change, "Δp : %1.5e"), 20, "\n"],
 		stopping_criterion = StopAfterIteration(300) | (
-          StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(1e-8)
+          StopWhenSmallerOrEqual(:ϵ, 1e-5) & StopWhenChangeLess(M, 1e-8)
 		)
 	);
 ```

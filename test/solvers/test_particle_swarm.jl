@@ -46,8 +46,8 @@ using Random
         p = DefaultManoptProblem(M, ManifoldCostObjective(f))
         o = ParticleSwarmState(M, zero.(p_start), X_start)
         # test `set_iterate``
-        Manopt.set_manopt_parameter!(o, :Population, p_start)
-        @test sum(norm.(Manopt.get_manopt_parameter(o, :Population) .- p_start)) == 0
+        Manopt.set_parameter!(o, :Population, p_start)
+        @test sum(norm.(Manopt.get_parameter(o, :Population) .- p_start)) == 0
         initialize_solver!(p, o)
         step_solver!(p, o, 1)
         for (p, v) in zip(o.swarm, o.velocity)

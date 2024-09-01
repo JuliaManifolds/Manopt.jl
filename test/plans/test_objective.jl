@@ -23,10 +23,10 @@ include("../utils/dummy_types.jl")
         r2 = Manopt.ReturnManifoldObjective(d)
         @test repr(r) == "ManifoldCostObjective{AllocatingEvaluation}"
     end
-    @testset "set_manopt_parameter!" begin
+    @testset "set_parameter!" begin
         o = ManifoldCostObjective(x -> x)
         mp = DefaultManoptProblem(ManifoldsBase.DefaultManifold(2), o)
-        set_manopt_parameter!(mp, :Objective, :Dummy, 1)
+        set_parameter!(mp, :Objective, :Dummy, 1)
     end
     @testset "functions" begin
         M = ManifoldsBase.DefaultManifold(2)
