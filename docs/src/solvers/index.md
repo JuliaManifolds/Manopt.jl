@@ -72,6 +72,7 @@ If the gradient does not exist everywhere, that is if the splitting yields summa
 * [Difference of Convex Proximal Point](@ref solver-difference-of-convex-proximal-point) uses a splitting of the (non-convex) function ``f = g - h`` into a difference of two functions; provided the proximal map of ``g`` and the subgradient of ``h``, the next iterate is computed. Compared to DCA, the corresponding sub problem is here written in a form that yields the proximal map.
 * [Douglas—Rachford](DouglasRachford.md) uses a splitting ``f(p) = F(x) + G(x)`` and their proximal maps to compute a minimizer of ``f``, which can be non-smooth.
 * [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) extends Chambolle-Pock and requires the differentials of the proximal maps additionally.
+* The [Proximal Point](proximal_point.md) uses the proximal map of ``f`` iteratively.
 
 ## Constrained
 
@@ -120,6 +121,7 @@ For these you can use
 | [Particle Swarm](particle_swarm.md) | [`particle_swarm`](@ref) | [`ParticleSwarmState`](@ref) |
 [Primal-dual Riemannian semismooth Newton Algorithm](@ref solver-pdrssn) | [`primal_dual_semismooth_Newton`](@ref) | [`PrimalDualSemismoothNewtonState`](@ref) |
 | [Proximal Bundle Method](proximal_bundle_method.md) | [`proximal_bundle_method`](@ref) | [`ProximalBundleMethodState`](@ref) |
+| [Proximal Point](proximal_point.md) | [`proximal_point`](@ref) |  [`ProximalPointState`](@ref) |
 | [Quasi-Newton Method](quasi_Newton.md) | [`quasi_Newton`](@ref) | [`QuasiNewtonState`](@ref) |
 | [Steihaug-Toint Truncated Conjugate-Gradient Method](@ref tCG) | [`truncated_conjugate_gradient_descent`](@ref) | [`TruncatedConjugateGradientState`](@ref) |
 | [Subgradient Method](subgradient.md) | [`subgradient_method`](@ref) | [`SubGradientMethodState`](@ref) |

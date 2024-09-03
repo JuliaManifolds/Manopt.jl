@@ -19,7 +19,7 @@ The second signature performs the optimization in-place of `p`.
 # Input
 
 $(_var(:Argument, :M; type=true))
-* `f`:              a cost function ``f: $(_math(:M)) M→ℝ^d``
+* `f`:              a cost function ``f: $(_math(:M))→ℝ^d``
 * `jacobian_f`:     the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.

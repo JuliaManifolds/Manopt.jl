@@ -154,15 +154,19 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :stopping_criterion, "stop"))
-* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``ì``
+* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
 * `oder_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
   a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
 
-    CyclicProximalPointState(M; kwargs...)
+    CyclicProximalPointState(M::AbstractManifold; kwargs...)
 
 Generate the options
+
+## Input
+
+$(_var(:Argument, :M; type=true))
 
 # Keyword arguments
 
