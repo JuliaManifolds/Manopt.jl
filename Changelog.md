@@ -5,6 +5,12 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [0.5.1] – unreleased
+
+## Added
+
+* the `proximal_point` method.
+
 # [0.5.0] – August 29, 2024
 
 This breaking update is mainly concerned with improving a unified experience through all solvers
