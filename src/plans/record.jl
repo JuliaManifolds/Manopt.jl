@@ -523,7 +523,7 @@ $(_var(:Keyword, :inverse_retraction_method))
         storage                   = StoreStateAction(M; store_points=Tuple{:Iterate})
     )
 
-with the preceding fields as keywords. For the `DefaultManifold` only the field storage is used.
+with the previous fields as keywords. For the `DefaultManifold` only the field storage is used.
 Providing the actual manifold moves the default storage to the efficient point storage.
 """
 mutable struct RecordChange{

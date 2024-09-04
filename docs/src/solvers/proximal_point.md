@@ -1,4 +1,4 @@
-# Proximal Point Method
+# Proximal point method
 
 ```@meta
 CurrentModule = Manopt
