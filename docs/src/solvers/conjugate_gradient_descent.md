@@ -32,7 +32,7 @@ PolakRibiereCoefficient
 SteepestDescentCoefficient
 ```
 
-## Internal rule storages
+## Internal rules for coefficients
 
 ```@docs
 Manopt.ConjugateGradientBealeRestartRule

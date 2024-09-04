@@ -6,14 +6,15 @@
 @doc """
     ManifoldProximalMapObjective{E<:AbstractEvaluationType, TC, TP, V <: Vector{<:Integer}} <: AbstractManifoldCostObjective{E, TC}
 
-specify a problem for solvers based on the evaluation of proximal maps.
+specify a problem for solvers based on the evaluation of proximal maps,
+which represents proximal maps ``$(_tex(:prox))_{λf_i}`` for summands ``f = f_1 + f_2+ … + f_N`` of the cost function ``f``.
 
 # Fields
 
-* `cost`: a function ``F:$(_tex(:Cal, "M"))→ℝ`` to
+* `cost`: a function ``f:$(_tex(:Cal, "M"))→ℝ`` to
   minimize
-* `proxes`: proximal maps ``$(_tex(:prox))_{λφ}:$(_tex(:Cal, "M")) → $(_tex(:Cal, "M"))``
-  as functions `(M, λ, p) -> q`.
+* `proxes`: proximal maps ``$(_tex(:prox))_{λf_i}:$(_tex(:Cal, "M")) → $(_tex(:Cal, "M"))``
+  as functions `(M, λ, p) -> q` or in-place `(M, q, λ, p)`.
 * `number_of_proxes`: number of proximal maps per function,
   to specify when one of the maps is a combined one such that the proximal maps
   functions return more than one entry per function, you have to adapt this value.
@@ -21,9 +22,15 @@ specify a problem for solvers based on the evaluation of proximal maps.
 
 # Constructor
 
-    ManifoldProximalMapObjective(cost, proxes, numer_of_proxes=onex(length(proxes));
+    ManifoldProximalMapObjective(f, proxes_f::Union{Tuple,AbstractVector}, numer_of_proxes=onex(length(proxes));
        evaluation=Allocating)
 
+Generate a proximal problem with a tuple or vector of funtions, where by default every function computes a single prox
+of one component of ``f``.
+
+    ManifoldProximalMapObjective(f, prox_f); evaluation=Allocating)
+
+Generate a proximal objective for ``f`` and its proxial map ``$(_tex(:prox))_{λf}``
 
 # See also
 
@@ -60,10 +67,12 @@ mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <
             new{E,F,typeof(proxes_f),typeof(nOP)}(f, proxes_f, nOP)
         end
     end
-end
-function check_prox_number(n, i)
-    (i > n) && throw(ErrorException("the $(i)th entry does not exists, only $n available."))
-    return true
+    function ManifoldProximalMapObjective(
+        f::F, prox_f::PF; evaluation::E=AllocatingEvaluation()
+    ) where {E<:AbstractEvaluationType,F,PF}
+        i = 1
+        return new{E,F,PF,typeof(i)}(f, prox_f, i)
+    end
 end
 @doc raw"""
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p)
@@ -88,43 +97,93 @@ function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p)
     return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p)
 end
 
+function check_prox_number(pf::Union{Tuple,Vector}, i)
+    n = length(pf)
+    (i > n) && throw(ErrorException("the $(i)th entry does not exists, only $n available."))
+    return true
+end
+
 function get_proximal_map(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    mpo::ManifoldProximalMapObjective{AllocatingEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     return mpo.proximal_maps!![i](M, λ, p)
 end
 function get_proximal_map(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, λ, p, i
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
 )
-    return get_proximal_map(M, get_objective(admo, false), λ, p, i)
+    return get_proximal_map(M, get_objective(admo, false), args...)
 end
-
 function get_proximal_map!(
-    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    q,
+    mpo::ManifoldProximalMapObjective{AllocatingEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     copyto!(M, q, mpo.proximal_maps!![i](M, λ, p))
     return q
 end
 function get_proximal_map!(
-    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, λ, p, i
+    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, args...
 )
-    return get_proximal_map!(M, q, get_objective(admo, false), λ, p, i)
+    return get_proximal_map!(M, q, get_objective(admo, false), args...)
 end
 function get_proximal_map(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    mpo::ManifoldProximalMapObjective{InplaceEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     q = allocate_result(M, get_proximal_map, p)
     mpo.proximal_maps!![i](M, q, λ, p)
     return q
 end
 function get_proximal_map!(
-    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    q,
+    mpo::ManifoldProximalMapObjective{InplaceEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     mpo.proximal_maps!![i](M, q, λ, p)
+    return q
+end
+#
+#
+# Single function accessors
+function get_proximal_map(
+    M::AbstractManifold, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p
+)
+    return mpo.proximal_maps!!(M, λ, p)
+end
+function get_proximal_map!(
+    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p
+)
+    copyto!(M, q, mpo.proximal_maps!!(M, λ, p))
+    return q
+end
+function get_proximal_map(
+    M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p
+)
+    q = allocate_result(M, get_proximal_map, p)
+    mpo.proximal_maps!!(M, q, λ, p)
+    return q
+end
+function get_proximal_map!(
+    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p
+)
+    mpo.proximal_maps!!(M, q, λ, p)
     return q
 end
 #
@@ -141,15 +200,19 @@ stores options for the [`cyclic_proximal_point`](@ref) algorithm. These are the
 
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :stopping_criterion, "stop"))
-* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``ì``
+* `λ`:         a function for the values of ``λ_k`` per iteration(cycle ``k``
 * `oder_type`: whether to use a randomly permuted sequence (`:FixedRandomOrder`),
   a per cycle permuted sequence (`:RandomOrder`) or the default linear one.
 
 # Constructor
 
-    CyclicProximalPointState(M; kwargs...)
+    CyclicProximalPointState(M::AbstractManifold; kwargs...)
 
 Generate the options
+
+## Input
+
+$(_var(:Argument, :M; type=true))
 
 # Keyword arguments
 
