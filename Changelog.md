@@ -5,29 +5,29 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [0.5.1] – September 4, 2024
+## [0.5.1] – September 4, 2024
 
-## Changed
+### Changed
 
 * slightly improves the test for the ` ExponentialFamilyProjection` text on the about page.
 
-## Added
+### Added
 
 * the `proximal_point` method.
 
-# [0.5.0] – August 29, 2024
+## [0.5.0] – August 29, 2024
 
 This breaking update is mainly concerned with improving a unified experience through all solvers
 and some usability improvements, such that for example the different gradient update rules are easier to specify.
 
 In general we introduce a few factories, that avoid having to pass the manifold to keyword arguments
 
-## Added
+### Added
 
 * A `ManifoldDefaultsFactory` that postpones the creation/allocation of manifold-specific fields in for example direction updates, step sizes and stopping criteria. As a rule of thumb, internal structures, like a solver state should store the final type. Any high-level interface, like the functions to start solvers, should accept such a factory in the appropriate places and call the internal `_produce_type(factory, M)`, for example before passing something to the state.
 * a `documentation_glossary.jl` file containing a glossary of often used variables in fields, arguments, and keywords, to print them in a unified manner. The same for usual sections, tex, and math notation that is often used within the doc-strings.
 
-## Changed
+### Changed
 
 * Any `Stepsize` now hase a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
   * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optonal) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
