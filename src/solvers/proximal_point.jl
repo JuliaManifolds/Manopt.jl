@@ -22,7 +22,7 @@ $(_var(:Argument, :M; type=true))
 
 ## Keyword arguments
 
-* `λ=i -> 1.0 / i` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
+* `λ=k -> 1.0` a function to compute the ``λ_k, k ∈ $(_tex(:Cal, "N"))``,
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(100)`"))
 
@@ -38,7 +38,7 @@ mutable struct ProximalPointState{P,Tλ,TStop<:StoppingCriterion} <:
 end
 function ProximalPointState(
     M::AbstractManifold;
-    λ::F=(i) -> 1.0 / i,
+    λ::F=k -> 1.0,
     p::P=rand(M),
     stopping_criterion::SC=StopAfterIteration(200),
 ) where {P,F,SC<:StoppingCriterion}
@@ -49,7 +49,7 @@ function show(io::IO, gds::ProximalPointState)
     Iter = (i > 0) ? "After $i iterations\n" : ""
     Conv = indicates_convergence(gds.stop) ? "Yes" : "No"
     s = """
-    # Solver state for `Manopt.jl`s Proximal POint Method
+    # Solver state for `Manopt.jl`s Proximal Point Method
     $Iter
 
     ## Stopping criterion
@@ -82,7 +82,7 @@ $(_var(:Argument, :M; type=true))
 
 $(_var(:Keyword, :evaluation))
 * `f=nothing`: a cost function ``f: $(_math(:M))→ℝ`` to minimize. For running the algorithm, ``f`` is not required, but for example when recording the cost or using a stopping criterion that requires a cost function.
-* `λ=iter -> 1/iter`: a function returning the (square summable but not summable) sequence of ``λ_i``
+* `λ= k -> 1.0`: a function returning the (square summable but not summable) sequence of ``λ_i``
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-12)`)"))
 
 $(_note(:OtherKeywords))
@@ -102,7 +102,7 @@ function proximal_point(
 )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
-    prox_f_ = _ensure_mutating_proc(prox_f, p, evaluation)
+    prox_f_ = _ensure_mutating_prox(prox_f, p, evaluation)
     mpo = ManifoldProximalMapObjective(f_, prox_f_; evaluation=evaluation)
     rs = proximal_point(M, mpo, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
@@ -131,9 +131,9 @@ function proximal_point!(
     M::AbstractManifold,
     mpo::O,
     p;
-    stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
+    stopping_criterion::StoppingCriterion=StopAfterIteration(1000) |
                                           StopWhenChangeLess(M, 1e-12),
-    λ=i -> 1 / i,
+    λ=k -> 1,
     kwargs...,
 ) where {O<:Union{ManifoldProximalMapObjective,AbstractDecoratedManifoldObjective}}
     dmpo = decorate_objective!(M, mpo; kwargs...)
@@ -147,6 +147,6 @@ function initialize_solver!(::AbstractManoptProblem, pps::ProximalPointState)
     return pps
 end
 function step_solver!(amp::AbstractManoptProblem, pps::ProximalPointState, k)
-    get_proximal_map!(amp, pps.p, pps.λ(k), pps.p, 1)
+    get_proximal_map!(amp, pps.p, pps.λ(k), pps.p)
     return pps
 end

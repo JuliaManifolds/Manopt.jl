@@ -40,8 +40,8 @@ include("../utils/dummy_types.jl")
         @test get_count(cppo, :ProximalMap, 1) == 2
         # the single ones have to be tricked a bit
         cppo2 = ManifoldCountObjective(M, ppo, Dict([:ProximalMap => 0]))
-        @test q == get_proximal_map(M, cppo2, 0.1, p)
-        get_proximal_map!(M, q2, cppo2, 0.1, p)
+        @test q == get_proximal_map(M, cppo2, 0.1, p, 1)
+        get_proximal_map!(M, q2, cppo2, 0.1, p, 1)
         @test q2 == q
         @test get_count(cppo2, :ProximalMap) == 2
     end

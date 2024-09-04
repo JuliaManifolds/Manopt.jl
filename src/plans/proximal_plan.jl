@@ -74,10 +74,6 @@ mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <
         return new{E,F,PF,typeof(i)}(f, prox_f, i)
     end
 end
-function check_prox_number(n, i)
-    (i > n) && throw(ErrorException("the $(i)th entry does not exists, only $n available."))
-    return true
-end
 @doc raw"""
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p)
@@ -101,43 +97,93 @@ function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p)
     return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p)
 end
 
+function check_prox_number(pf::Union{Tuple,Vector}, i)
+    n = length(pf)
+    (i > n) && throw(ErrorException("the $(i)th entry does not exists, only $n available."))
+    return true
+end
+
 function get_proximal_map(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    mpo::ManifoldProximalMapObjective{AllocatingEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     return mpo.proximal_maps!![i](M, λ, p)
 end
 function get_proximal_map(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, λ, p, i
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, args...
 )
-    return get_proximal_map(M, get_objective(admo, false), λ, p, i)
+    return get_proximal_map(M, get_objective(admo, false), args...)
 end
-
 function get_proximal_map!(
-    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    q,
+    mpo::ManifoldProximalMapObjective{AllocatingEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     copyto!(M, q, mpo.proximal_maps!![i](M, λ, p))
     return q
 end
 function get_proximal_map!(
-    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, λ, p, i
+    M::AbstractManifold, q, admo::AbstractDecoratedManifoldObjective, args...
 )
-    return get_proximal_map!(M, q, get_objective(admo, false), λ, p, i)
+    return get_proximal_map!(M, q, get_objective(admo, false), args...)
 end
 function get_proximal_map(
-    M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    mpo::ManifoldProximalMapObjective{InplaceEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     q = allocate_result(M, get_proximal_map, p)
     mpo.proximal_maps!![i](M, q, λ, p)
     return q
 end
 function get_proximal_map!(
-    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p, i
-)
-    check_prox_number(length(mpo.proximal_maps!!), i)
+    M::AbstractManifold,
+    q,
+    mpo::ManifoldProximalMapObjective{InplaceEvaluation,F,<:Union{<:Tuple,<:Vector}},
+    λ,
+    p,
+    i,
+) where {F}
+    check_prox_number(mpo.proximal_maps!!, i)
     mpo.proximal_maps!![i](M, q, λ, p)
+    return q
+end
+#
+#
+# Single function accessors
+function get_proximal_map(
+    M::AbstractManifold, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p
+)
+    return mpo.proximal_maps!!(M, λ, p)
+end
+function get_proximal_map!(
+    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{AllocatingEvaluation}, λ, p
+)
+    copyto!(M, q, mpo.proximal_maps!!(M, λ, p))
+    return q
+end
+function get_proximal_map(
+    M::AbstractManifold, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p
+)
+    q = allocate_result(M, get_proximal_map, p)
+    mpo.proximal_maps!!(M, q, λ, p)
+    return q
+end
+function get_proximal_map!(
+    M::AbstractManifold, q, mpo::ManifoldProximalMapObjective{InplaceEvaluation}, λ, p
+)
+    mpo.proximal_maps!!(M, q, λ, p)
     return q
 end
 #
