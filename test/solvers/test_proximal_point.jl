@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldDiff
+using Manopt, Manifolds, ManifoldDiff, Test
 using ManifoldDiff: prox_distance, prox_distance!
 
 @testset "Proximal Point" begin
@@ -12,8 +12,13 @@ using ManifoldDiff: prox_distance, prox_distance!
     p0 = [0.0, 0.0, 1.0]
     q1 = proximal_point(M, prox_f, p0)
     @test distance(M, q, q1) < 1e-12
-    q2 = proximal_point(M, prox_f!, p0; evaluation=InplaceEvaluation())
-    @test distance(M, q1, q2) == 0
+    q2 = copy(M, p0)
+    os2 = proximal_point!(
+        M, prox_f!, q2; evaluation=InplaceEvaluation(), return_objective=true
+    )
+    @test isapprox(M, q1, q2)
+    q2a = get_proximal_map(M, os2[1], 1.0, q2)
+    @test isapprox(M, q2, q2a)
     os3 = proximal_point(M, prox_f, p0; return_state=true, return_objective=true)
     obj = os3[1]
     # test with get_prox map that these are fix points
