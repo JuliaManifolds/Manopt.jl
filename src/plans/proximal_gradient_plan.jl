@@ -281,6 +281,7 @@ $(_var(:Argument, :M; type=true))
 # Keyword arguments
 
 * `β = k -> (k-1)/(k+1)`
+$(_var(:Keyword, :inverse_retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :X; add=:as_Memory))
 """
