@@ -36,7 +36,7 @@ computing the gradient step.
 
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f))
-* `grad_g`:           a gradient `(M,λ,p) -> X` or `(M, X, λ, p) -> X` of the smooth part ``g`` of the problem
+* `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
 * `prox_h`:           a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the nonsmoooth part ``h`` of ``f``
 $(_var(:Argument, :p))
 
@@ -44,7 +44,7 @@ $(_var(:Argument, :p))
 
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step
 $(_var(:Keyword, :evaluation))
-* `λ = `i -> 0.25` ) a function returning the sequence of proximal parameters ``λ_k``
+* `λ = k -> 0.25`: a function returning the sequence of proximal parameters ``λ_k``
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(100)`"))
 $(_var(:Keyword, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F, Nothing}"; default="nothing", add="or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))
