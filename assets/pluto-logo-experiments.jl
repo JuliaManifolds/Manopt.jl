@@ -5,10 +5,13 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 3a989574-6c57-11ef-2dac-03dab319c7c8
-using LinearAlgebra, Manifolds, ManifoldDiffEq, Manopt
+using LinearAlgebra, Manifolds, ManifoldDiff, ManifoldDiffEq, Manopt
 
 # ╔═╡ ba90bbaa-1cb5-4bb5-af29-2ff7066bc68b
 using Colors, Makie, WGLMakie
+
+# ╔═╡ 0109fc6e-eacb-4fc8-b56b-c5a8fad473e6
+using ForwardDiff, ReverseDiff
 
 # ╔═╡ da1dae6a-0133-4d06-aa33-b85e8a08abc2
 md""" # Manopt.jl
@@ -114,7 +117,7 @@ surface!(lscene, sx, sy, sz;
 	#colormap=:gist_earth,
     color=sc, colorrange=range_sc,
 	transparency=true, alpha=0.75,
-	)
+)
 	scatter!(lscene, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =13)
 	lines!(lscene, π1.(geo), π2.(geo), π3.(geo); color=:black, linewidth=3)
 	# used arrow instead of
@@ -125,23 +128,105 @@ surface!(lscene, sx, sy, sz;
 	fig
 end
 
+# ╔═╡ 46a7793e-58e4-4591-acea-3bab55f4f37e
+function orth_tangent_vect(M::Manifolds.Sphere, p, X)
+    a = get_coordinates(M, p, X, DefaultOrthonormalBasis())
+	Q = [0.0 -1.0; 1.0 0.0]
+    return get_vector(M, p, Q*a, DefaultOrthonormalBasis())
+end
+
+# ╔═╡ f19d74c4-a915-42b1-a7e4-175cc1fa4af8
+
+function solve_level_set_ODE(M::Manifolds.Sphere, f, grad_f, u0, T, dt; sign=one(eltype(u0)), tol=1.0e-9,)	
+    tspan = (zero(eltype(u0)), T)
+    N_F(u) = sign*orth_tangent_vect(M, u, grad_f(M, u))
+    norm_N_F(u) = ( Y = N_F(u); Y./(norm(M, u, Y)) )
+
+    A_frozen = ManifoldDiffEq.FrozenManifoldDiffEqOperator{eltype(u0)}() do u, p, t
+        return norm_N_F(u)
+    end
+    frozen_ode_problem = ManifoldDiffEq.ManifoldODEProblem(A_frozen, u0, tspan, M)
+
+    # Callback: Stop integration if ||F(u)||_u < grad_norm_tol.
+    function grad_norm_condition(u, t, integrator)
+        ∇F_act = N_F(u)
+        return norm(M, u, ∇F_act) < tol
+    end
+
+	alg_manifold_euler = ManifoldDiffEq.ManifoldEuler(M, ExponentialRetraction())
+    sol = ManifoldDiffEq.solve(frozen_ode_problem, alg_manifold_euler, dt=dt)
+    #alg_cg2 = ManifoldDiffEq.CG2(M, ExponentialRetraction())
+    #sol = ManifoldDiffEq.solve(frozen_ode_problem, alg_cg2, dt=dt, callback=cb)
+    return sol
+end
+
+# ╔═╡ b7e11382-8598-4338-ad60-1e85f25514e8
+function level_set_line(M, f, grad_f, u0; T = π/2, dt = 1/100)
+    forward_separating_line_sol = solve_level_set_ODE(M, f, grad_f, u0, T, dt;
+                                        sign=one(eltype(u0)))
+    backward_separating_line_sol = solve_level_set_ODE(M, f, grad_f, u0, T, dt;
+                                        sign=-one(eltype(u0)))
+    level_set_line = cat(
+        [u for u in reverse(backward_separating_line_sol.u[2:end])],
+        [u for u in forward_separating_line_sol.u];
+        dims=1)
+    return level_set_line
+end
+
+# ╔═╡ 66177596-bf32-4b19-8a46-1ab036c8c986
+pts2 = [
+	1/sqrt(2) .* [0.0, 1.0, -1.0]
+]
+
+# ╔═╡ f62ceac9-0473-4821-8665-514178964cab
+eigvals(A)
+
+# ╔═╡ 0cd8ce43-f779-4677-9d1b-b293e02ced30
+eigvecs(A)
+
+# ╔═╡ e1b72a76-f1c9-4e58-9346-9dbb7c1ec457
+l1 = level_set_line(M, f, grad_f, pts2[1]; T=3.0, dt=1/100)
+
+# ╔═╡ dabe0d50-1e44-499c-bf52-b48124286967
+begin
+fig2 = Figure()
+lscene2 = LScene(fig2[1, 1], show_axis=false,
+#  scenekw = (lights = [AmbientLight(RGBf(1.0, 1.0, 1.0))],)
+)
+cam3d!(lscene2)
+surface!(lscene2, sx, sy, sz;
+	colormap=manopt_cmap,
+	#colormap=:gist_earth,
+    color=sc, colorrange=range_sc,
+	transparency=true, alpha=0.75,
+)
+scatter!(lscene2, π1.(l1),π2.(l1),π3.(l1), color=:black)
+fig2
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 ManifoldDiffEq = "1143c485-9b25-4e23-a65f-701df382ec90"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
 
 [compat]
 Colors = "~0.12.11"
+ForwardDiff = "~0.10.36"
 Makie = "~0.21.9"
+ManifoldDiff = "~0.3.12"
 ManifoldDiffEq = "~0.2.0"
 Manifolds = "~0.10.1"
 Manopt = "~0.5.1"
+ReverseDiff = "~1.15.3"
 WGLMakie = "~0.10.9"
 """
 
@@ -151,7 +236,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "cf2ed8c37d27f93af63ca66aa0a44079673215f4"
+project_hash = "854b1510b1daa7be4a28331f2445e97dfb2395e3"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "99a6f5d0ce1c7c6afdb759daa30226f71c54f6b0"
@@ -1546,12 +1631,10 @@ deps = ["Adapt", "ArrayInterface", "ForwardDiff"]
 git-tree-sha1 = "6c62ce45f268f3f958821a1e5192cf91c75ae89c"
 uuid = "d236fae5-4411-538c-8e31-a6e3d9e00b46"
 version = "0.4.24"
+weakdeps = ["ReverseDiff"]
 
     [deps.PreallocationTools.extensions]
     PreallocationToolsReverseDiffExt = "ReverseDiff"
-
-    [deps.PreallocationTools.weakdeps]
-    ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -1675,6 +1758,12 @@ deps = ["UUIDs"]
 git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
+
+[[deps.ReverseDiff]]
+deps = ["ChainRulesCore", "DiffResults", "DiffRules", "ForwardDiff", "FunctionWrappers", "LinearAlgebra", "LogExpFunctions", "MacroTools", "NaNMath", "Random", "SpecialFunctions", "StaticArrays", "Statistics"]
+git-tree-sha1 = "cc6cd622481ea366bb9067859446a8b01d92b468"
+uuid = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+version = "1.15.3"
 
 [[deps.Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -2213,6 +2302,7 @@ version = "3.5.0+0"
 # ╔═╡ Cell order:
 # ╠═3a989574-6c57-11ef-2dac-03dab319c7c8
 # ╠═ba90bbaa-1cb5-4bb5-af29-2ff7066bc68b
+# ╠═0109fc6e-eacb-4fc8-b56b-c5a8fad473e6
 # ╟─da1dae6a-0133-4d06-aa33-b85e8a08abc2
 # ╠═d2a6d563-5187-46fb-af5e-4f264b914cf2
 # ╠═b4085ed3-b0e6-4226-bf4f-2b25c460a00b
@@ -2231,5 +2321,13 @@ version = "3.5.0+0"
 # ╠═c062e4b1-b228-456c-ae19-998d179a0477
 # ╠═04d07f8f-f89a-4c26-b26a-0ac12616f603
 # ╠═2b83dad5-8e67-4d03-8e87-2048bef0de08
+# ╠═46a7793e-58e4-4591-acea-3bab55f4f37e
+# ╠═f19d74c4-a915-42b1-a7e4-175cc1fa4af8
+# ╠═b7e11382-8598-4338-ad60-1e85f25514e8
+# ╠═66177596-bf32-4b19-8a46-1ab036c8c986
+# ╠═f62ceac9-0473-4821-8665-514178964cab
+# ╠═0cd8ce43-f779-4677-9d1b-b293e02ced30
+# ╠═e1b72a76-f1c9-4e58-9346-9dbb7c1ec457
+# ╠═dabe0d50-1e44-499c-bf52-b48124286967
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
