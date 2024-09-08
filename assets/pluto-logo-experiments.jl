@@ -130,9 +130,7 @@ end
 
 # ╔═╡ 46a7793e-58e4-4591-acea-3bab55f4f37e
 function orth_tangent_vect(M::Manifolds.Sphere, p, X)
-    a = get_coordinates(M, p, X, DefaultOrthonormalBasis())
-	Q = [0.0 -1.0; 1.0 0.0]
-    return get_vector(M, p, Q*a, DefaultOrthonormalBasis())
+	return cross(p,X)
 end
 
 # ╔═╡ f19d74c4-a915-42b1-a7e4-175cc1fa4af8
@@ -182,10 +180,38 @@ pts2 = [
 eigvals(A)
 
 # ╔═╡ 0cd8ce43-f779-4677-9d1b-b293e02ced30
-eigvecs(A)
+V = eigvecs(A)
+
+# ╔═╡ 0c625797-1008-4359-9bcb-0f8fe662df39
+begin
+	N = 5 # lines to other eigenvector
+	s1 = V[:, 1]
+	s2 = V[:, 2]
+	s3 = V[:, 3]
+	l_pts = Vector{Float64}[]
+	for t ∈ range(0.0, 1.0, N+2)[2:end-1]
+		push!(l_pts, shortest_geodesic(M, s1, s2, t))
+	end
+	for t ∈ range(0.0, 1.0, N+2)[2:end-1]
+		push!(l_pts, shortest_geodesic(M, s2, s3, t))
+	end
+	Ts = ones(length(l_pts))
+	# First and last very short for N=5
+	Ts[1] = 0.72; Ts[2*N] = 0.72
+	Ts[2] = 1.375; Ts[2N-1] = 1.375
+	Ts[3] = 2.0; Ts[2N-2] = 2.0
+	Ts[4] = 2.45; Ts[2N-3] = 2.45
+	Ts[5] = 2.85; Ts[2N-4] = 2.85
+end
+
+# ╔═╡ 0204d5ef-7795-4dfa-acd2-c4fcab00e624
+Ts
 
 # ╔═╡ e1b72a76-f1c9-4e58-9346-9dbb7c1ec457
-l1 = level_set_line(M, f, grad_f, pts2[1]; T=3.0, dt=1/100)
+level_lines = [
+	level_set_line(M, f, grad_f, l_pts[i]; T=Ts[i], dt=1/400)
+	for i in 1:length(l_pts)
+]
 
 # ╔═╡ dabe0d50-1e44-499c-bf52-b48124286967
 begin
@@ -198,10 +224,20 @@ surface!(lscene2, sx, sy, sz;
 	colormap=manopt_cmap,
 	#colormap=:gist_earth,
     color=sc, colorrange=range_sc,
-	transparency=true, alpha=0.75,
+	#transparency=true, alpha=0.95,
 )
-scatter!(lscene2, π1.(l1),π2.(l1),π3.(l1), color=:black)
-fig2
+	for ll in level_lines
+		lines!(lscene2, π1.(ll),π2.(ll),π3.(ll), color=:black)
+		lines!(lscene2, π1.(-ll),π2.(-ll),π3.(-ll), color=:black)
+	end
+		scatter!(lscene2, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =13)
+	lines!(lscene2, π1.(geo), π2.(geo), π3.(geo); color=:black, linewidth=3)
+	# used arrow instead of
+	# lines!(lscene, π1.(vec), π2.(vec), π3.(vec); color=:black)
+	arrows!(lscene2, π1.(vec_base), π2.(vec_base), π3.(vec_base),π1.(vec_point), π2.(vec_point), π3.(vec_point);
+	lengthscale = 1.0, linewidth = 0.025, arrowsize = Vec3f(0.1, 0.1, 0.125)
+	)
+	fig2
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2327,6 +2363,8 @@ version = "3.5.0+0"
 # ╠═66177596-bf32-4b19-8a46-1ab036c8c986
 # ╠═f62ceac9-0473-4821-8665-514178964cab
 # ╠═0cd8ce43-f779-4677-9d1b-b293e02ced30
+# ╠═0c625797-1008-4359-9bcb-0f8fe662df39
+# ╠═0204d5ef-7795-4dfa-acd2-c4fcab00e624
 # ╠═e1b72a76-f1c9-4e58-9346-9dbb7c1ec457
 # ╠═dabe0d50-1e44-499c-bf52-b48124286967
 # ╟─00000000-0000-0000-0000-000000000001
