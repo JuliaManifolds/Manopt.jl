@@ -216,10 +216,10 @@ for ll in level_lines
 	lines!(lscene, π1.(ll),π2.(ll),π3.(ll), color=RGBA(0.5, 0.5, 0.5, 0.5))
 	lines!(lscene, π1.(-ll),π2.(-ll),π3.(-ll), color=:gray)
 end
-scatter!(lscene, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =13)
-lines!(lscene, π1.(geo), π2.(geo), π3.(geo); color=:black, linewidth=3)
+scatter!(lscene, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =17)
+lines!(lscene, π1.(geo), π2.(geo), π3.(geo); color=:black, linewidth=5)
 # Step 2 to minimizer
-lines!(lscene, π1.(geo2), π2.(geo2), π3.(geo2); color=:black, linewidth=2, linestyle=(:dot, :dense))
+#lines!(lscene, π1.(geo2), π2.(geo2), π3.(geo2); color=:black, linewidth=2, linestyle=(:dot, :dense))
 # Step 1 Tvec
 arrows!(lscene,
 	π1.(vec_base), π2.(vec_base), π3.(vec_base),
@@ -261,10 +261,10 @@ with_theme(theme_black()) do
 	lines!(lscened, π1.(ll),π2.(ll),π3.(ll), color=RGBA(0.5, 0.5, 0.5, 0.5))
 	lines!(lscened, π1.(-ll),π2.(-ll),π3.(-ll), color=RGBA(0.5, 0.5, 0.5, 0.5))
   end
-  scatter!(lscened, π1.(pts), π2.(pts), π3.(pts); color=:white, markersize =13)
-  lines!(lscened, π1.(geo), π2.(geo), π3.(geo); color=:white, linewidth=3)
+  scatter!(lscened, π1.(pts), π2.(pts), π3.(pts); color=:white, markersize =17)
+  lines!(lscened, π1.(geo), π2.(geo), π3.(geo); color=:white, linewidth=5)
   # Step 2 to minimizer
-  lines!(lscened, π1.(geo2), π2.(geo2), π3.(geo2); color=:white, linewidth=2, linestyle=(:dot, :dense))
+  # lines!(lscened, π1.(geo2), π2.(geo2), π3.(geo2); color=:white, linewidth=2, linestyle=(:dot, :dense))
   # Step 1 Tvec
   arrows!(lscened,
 	π1.(vec_base), π2.(vec_base), π3.(vec_base),
@@ -279,13 +279,13 @@ end
 
 # ╔═╡ f61b96ac-9a93-4ee6-9fdc-81ed2c18a584
 begin
-	zoom!(lscene.scene, 0.58)
+	zoom!(lscene.scene, 0.66)
 	save("logo.png", fig; update=false)
 end
 
 # ╔═╡ eaa45677-bf8e-4cd9-a520-3121dc65d81f
 begin
-	zoom!(lscened.scene, 0.58)
+	zoom!(lscened.scene, 0.66)
     save("logo_dark.png", figd; update=false)
 end
 
