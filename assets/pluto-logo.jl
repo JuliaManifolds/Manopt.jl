@@ -26,7 +26,7 @@ begin
 	#A = symA ./ opnorm(symA)
 	#
 	# A simpler variant -> mninimizer at north pole
-	A = diagm([1.0, 1/3, -1/3])
+	A = diagm([1/3, 1.0, -1/3])
 end
 
 # ╔═╡ b4085ed3-b0e6-4226-bf4f-2b25c460a00b
@@ -48,14 +48,14 @@ M = Manifolds.Sphere(2)
 begin# goal of step: best step length to a point on the 1/5th line
 m = [0.0, 0.0, 1.0] # Min
 s = [0.0, 1.0, 0.0] # saddle
-q = geodesic(M, m, s, 1.05/4) # tweak to get on line
-Z = -grad_f(M, q) # - grad f -> points to north
-Xm = cross(q, Z) #orth to this 
+q = geodesic(M, m, -s, 1.05/4) # tweak to get on line
+Z = grad_f(M, q) # - grad f -> points to north
+Xm = cross(q, Z) #orth to this
 end
 
 # ╔═╡ cacbcea6-486f-4d8d-ac32-e021a6d19a28
 # find start by doing a step “back”
-p = exp(M, q, 1.2/norm(M, q, Xm)*Xm)
+p = exp(M, q, 0.8/norm(M, q, Xm)*Xm)
 
 # ╔═╡ f74aff93-2f56-4f00-8102-33859f0ba93b
 X = log(M, p, q)
@@ -109,7 +109,8 @@ begin
     sphere_color = colorant"rgb(223,186,105)"
 	plane_color = colorant"rgb(255,254,223)"
 	[sphere_color,plane_color]
-	manopt_cmap = range(sphere_color,plane_color,100)
+	# manopt_cmap = range(sphere_color,plane_color,100)
+	manopt_cmap = range(plane_color,sphere_color, 100)
 end
 
 # ╔═╡ 46a7793e-58e4-4591-acea-3bab55f4f37e
@@ -119,7 +120,7 @@ end
 
 # ╔═╡ f19d74c4-a915-42b1-a7e4-175cc1fa4af8
 
-function solve_level_set_ODE(M::Manifolds.Sphere, f, grad_f, u0, T, dt; sign=one(eltype(u0)), tol=1.0e-9,)	
+function solve_level_set_ODE(M::Manifolds.Sphere, f, grad_f, u0, T, dt; sign=one(eltype(u0)), tol=1.0e-9,)
     tspan = (zero(eltype(u0)), T)
     N_F(u) = sign*orth_tangent_vect(M, u, grad_f(M, u))
     norm_N_F(u) = ( Y = N_F(u); Y./(norm(M, u, Y)) )
@@ -201,7 +202,7 @@ level_lines = [
 # ╔═╡ dabe0d50-1e44-499c-bf52-b48124286967
 begin
 fig = Figure()
-lscene = LScene(fig[1, 1], show_axis=false, 
+lscene = LScene(fig[1, 1], show_axis=false,
 #  scenekw = (lights = [AmbientLight(RGBf(1.0, 1.0, 1.0))],)
 )
 surface!(lscene, sx, sy, sz;
@@ -212,7 +213,7 @@ surface!(lscene, sx, sy, sz;
 	shading=NoShading,
 )
 for ll in level_lines
-	lines!(lscene, π1.(ll),π2.(ll),π3.(ll), color=:gray)
+	lines!(lscene, π1.(ll),π2.(ll),π3.(ll), color=RGBA(0.5, 0.5, 0.5, 0.5))
 	lines!(lscene, π1.(-ll),π2.(-ll),π3.(-ll), color=:gray)
 end
 scatter!(lscene, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =13)
@@ -225,9 +226,69 @@ arrows!(lscene,
 	π1.(vec_point), π2.(vec_point), π3.(vec_point);
 		lengthscale = 1.0, linewidth = 0.025, arrowsize = Vec3f(0.1, 0.1, 0.125)
 )
-cam3d!(lscene; lookat = Vec3(0, 0, 0), eyeposition = Vec3(1,1.5,1.5) )
+cam3d!(lscene; lookat = Vec3(0, 0, 0), updirection = Vec3(-.6,-.6,.5), eyeposition = Vec3(1.5, 1.5, 4) )
 fig
 end
+
+# ╔═╡ e5c70466-ce9a-4c7a-9ae5-6c97891eeccd
+md"read off good values after moving from the next fields"
+
+# ╔═╡ 6613bdd5-54ed-455b-8619-db9e773ba27f
+lscene.scene.camera_controls.eyeposition[]
+
+# ╔═╡ 8f244e52-815c-486b-b370-fbe956bb2122
+lscene.scene.camera_controls.lookat[]
+
+# ╔═╡ fe20a9d7-faa8-43bc-8b68-33a89c572646
+lscene.scene.camera_controls.upvector[]
+
+# ╔═╡ aea3fe87-e8e0-447b-8c8e-d71a8b16e60d
+# A dark mode one:  inverted colormap
+begin
+	pc_inv = RGB(1-plane_color.r, 1-plane_color.g, 1-plane_color.b)
+	sc_inv = RGB(1-sphere_color.r, 1-sphere_color.g, 1-sphere_color.b)
+    manopt_cmap_dark = range(pc_inv,sc_inv, 100)
+end
+
+# ╔═╡ 1b9bdd2a-45df-4cb6-a601-865577fa1be9
+with_theme(theme_black()) do
+  global figd = Figure()
+  global lscened = LScene(figd[1, 1], show_axis=false)
+  surface!(lscened, sx, sy, sz;
+	colormap=manopt_cmap_dark, color=sc, colorrange=range_sc, shading=NoShading,
+  )
+  for ll in level_lines
+	lines!(lscened, π1.(ll),π2.(ll),π3.(ll), color=RGBA(0.5, 0.5, 0.5, 0.5))
+	lines!(lscened, π1.(-ll),π2.(-ll),π3.(-ll), color=RGBA(0.5, 0.5, 0.5, 0.5))
+  end
+  scatter!(lscened, π1.(pts), π2.(pts), π3.(pts); color=:white, markersize =13)
+  lines!(lscened, π1.(geo), π2.(geo), π3.(geo); color=:white, linewidth=3)
+  # Step 2 to minimizer
+  lines!(lscened, π1.(geo2), π2.(geo2), π3.(geo2); color=:white, linewidth=2, linestyle=(:dot, :dense))
+  # Step 1 Tvec
+  arrows!(lscened,
+	π1.(vec_base), π2.(vec_base), π3.(vec_base),
+	π1.(vec_point), π2.(vec_point), π3.(vec_point);
+		lengthscale = 1.0, linewidth = 0.025, arrowsize = Vec3f(0.1, 0.1, 0.125),
+	  color=:white
+  )
+  cam3d!(lscened; lookat = Vec3(0, 0, 0), updirection = Vec3(-.6,-.6,.5), eyeposition = Vec3(1.5, 1.5, 4) )
+	figd
+end
+
+
+# ╔═╡ f61b96ac-9a93-4ee6-9fdc-81ed2c18a584
+begin
+	zoom!(lscene.scene, 0.58)
+	save("logo.png", fig; update=false)
+end
+
+# ╔═╡ eaa45677-bf8e-4cd9-a520-3121dc65d81f
+begin
+	zoom!(lscened.scene, 0.58)
+    save("logo_dark.png", figd; update=false)
+end
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2356,5 +2417,13 @@ version = "3.5.0+0"
 # ╠═0204d5ef-7795-4dfa-acd2-c4fcab00e624
 # ╠═e1b72a76-f1c9-4e58-9346-9dbb7c1ec457
 # ╠═dabe0d50-1e44-499c-bf52-b48124286967
+# ╠═e5c70466-ce9a-4c7a-9ae5-6c97891eeccd
+# ╠═6613bdd5-54ed-455b-8619-db9e773ba27f
+# ╠═8f244e52-815c-486b-b370-fbe956bb2122
+# ╠═fe20a9d7-faa8-43bc-8b68-33a89c572646
+# ╠═aea3fe87-e8e0-447b-8c8e-d71a8b16e60d
+# ╠═1b9bdd2a-45df-4cb6-a601-865577fa1be9
+# ╠═f61b96ac-9a93-4ee6-9fdc-81ed2c18a584
+# ╠═eaa45677-bf8e-4cd9-a520-3121dc65d81f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
