@@ -21,9 +21,12 @@ A Julia variant of the logo from Manopt
 # ╔═╡ d2a6d563-5187-46fb-af5e-4f264b914cf2
 begin
     # magic(3) in Matlab produces
-	preA = [8.0 1.0 6.0; 3.0 5.0 7.0; 4.0 9.0 2.0]
-	symA = (preA+preA')
-	A = symA ./ opnorm(symA)
+	#preA = [8.0 1.0 6.0; 3.0 5.0 7.0; 4.0 9.0 2.0]
+	#symA = (preA+preA')
+	#A = symA ./ opnorm(symA)
+	#
+	# A simpler variant -> mninimizer at north pole
+	A = diagm([1.0, 1/3, -1/3])
 end
 
 # ╔═╡ b4085ed3-b0e6-4226-bf4f-2b25c460a00b
@@ -41,20 +44,30 @@ With the values of ``f`` as colormap
 # ╔═╡ 73dc8ea1-fc09-439a-bc98-85e14963681a
 M = Manifolds.Sphere(2)
 
-# ╔═╡ a3dcafea-2f09-4967-a3cf-477d48a3323a
-p = [1.0, 0.0, 0.0]
+# ╔═╡ 1154b493-dcf4-40dd-bf56-dc554f22f017
+begin# goal of step: best step length to a point on the 1/5th line
+m = [0.0, 0.0, 1.0] # Min
+s = [0.0, 1.0, 0.0] # saddle
+q = geodesic(M, m, s, 1.05/4) # tweak to get on line
+Z = -grad_f(M, q) # - grad f -> points to north
+Xm = cross(q, Z) #orth to this 
+end
+
+# ╔═╡ cacbcea6-486f-4d8d-ac32-e021a6d19a28
+# find start by doing a step “back”
+p = exp(M, q, 1.2/norm(M, q, Xm)*Xm)
 
 # ╔═╡ f74aff93-2f56-4f00-8102-33859f0ba93b
-X = 0.8*[0.0, 1.0, 1.0]
-
-# ╔═╡ eecb85c2-d852-43b8-8039-49e69d3e5dca
-q = exp(M, p, X)
+X = log(M, p, q)
 
 # ╔═╡ 5a7e06f1-e180-46c9-9b48-faa1f3945edc
 pts = [p,q]
 
 # ╔═╡ 2d99e9bf-4905-478c-aba4-745429e42e78
 geo = [shortest_geodesic(M, p, q, t) for t ∈ range(0.0, 1.0, 2000) ];
+
+# ╔═╡ 59aeddee-2892-4649-9ff6-fb248ad34419
+geo2 = [shortest_geodesic(M, q, m, t) for t in range(0.0, 1.0, 2000)];
 
 # ╔═╡ 83fd51a6-ef4a-4fd7-b38c-9d2ff64d8883
 vec = [p, p+X];
@@ -187,29 +200,33 @@ level_lines = [
 
 # ╔═╡ dabe0d50-1e44-499c-bf52-b48124286967
 begin
-fig2 = Figure()
-lscene2 = LScene(fig2[1, 1], show_axis=false, 
+fig = Figure()
+lscene = LScene(fig[1, 1], show_axis=false, 
 #  scenekw = (lights = [AmbientLight(RGBf(1.0, 1.0, 1.0))],)
 )
-cam3d!(lscene2)
-surface!(lscene2, sx, sy, sz;
+surface!(lscene, sx, sy, sz;
 	colormap=manopt_cmap,
 	#colormap=:gist_earth,
     color=sc, colorrange=range_sc,
 	#transparency=true, alpha=0.95,
+	shading=NoShading,
 )
-	for ll in level_lines
-		lines!(lscene2, π1.(ll),π2.(ll),π3.(ll), color=:black)
-		lines!(lscene2, π1.(-ll),π2.(-ll),π3.(-ll), color=:black)
-	end
-		scatter!(lscene2, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =13)
-	lines!(lscene2, π1.(geo), π2.(geo), π3.(geo); color=:black, linewidth=3)
-	# used arrow instead of
-	# lines!(lscene, π1.(vec), π2.(vec), π3.(vec); color=:black)
-	arrows!(lscene2, π1.(vec_base), π2.(vec_base), π3.(vec_base),π1.(vec_point), π2.(vec_point), π3.(vec_point);
-	lengthscale = 1.0, linewidth = 0.025, arrowsize = Vec3f(0.1, 0.1, 0.125)
-	)
-	fig2
+for ll in level_lines
+	lines!(lscene, π1.(ll),π2.(ll),π3.(ll), color=:gray)
+	lines!(lscene, π1.(-ll),π2.(-ll),π3.(-ll), color=:gray)
+end
+scatter!(lscene, π1.(pts), π2.(pts), π3.(pts); color=:black, markersize =13)
+lines!(lscene, π1.(geo), π2.(geo), π3.(geo); color=:black, linewidth=3)
+# Step 2 to minimizer
+lines!(lscene, π1.(geo2), π2.(geo2), π3.(geo2); color=:black, linewidth=2, linestyle=(:dot, :dense))
+# Step 1 Tvec
+arrows!(lscene,
+	π1.(vec_base), π2.(vec_base), π3.(vec_base),
+	π1.(vec_point), π2.(vec_point), π3.(vec_point);
+		lengthscale = 1.0, linewidth = 0.025, arrowsize = Vec3f(0.1, 0.1, 0.125)
+)
+cam3d!(lscene; lookat = Vec3(0, 0, 0), eyeposition = Vec3(1,1.5,1.5) )
+fig
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2317,11 +2334,12 @@ version = "3.5.0+0"
 # ╠═fd468fb0-1e21-4d35-a5fd-e5d2d65239e8
 # ╠═41aea70f-6fb4-4e71-b930-89423a78ce08
 # ╠═73dc8ea1-fc09-439a-bc98-85e14963681a
-# ╠═a3dcafea-2f09-4967-a3cf-477d48a3323a
+# ╠═1154b493-dcf4-40dd-bf56-dc554f22f017
+# ╠═cacbcea6-486f-4d8d-ac32-e021a6d19a28
 # ╠═f74aff93-2f56-4f00-8102-33859f0ba93b
-# ╠═eecb85c2-d852-43b8-8039-49e69d3e5dca
 # ╠═5a7e06f1-e180-46c9-9b48-faa1f3945edc
 # ╠═2d99e9bf-4905-478c-aba4-745429e42e78
+# ╠═59aeddee-2892-4649-9ff6-fb248ad34419
 # ╠═83fd51a6-ef4a-4fd7-b38c-9d2ff64d8883
 # ╠═8d39dee2-9499-4313-95e9-66936afd1182
 # ╠═05c4e8cf-fb5a-4959-8b08-ae048bdf016c
