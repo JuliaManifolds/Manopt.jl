@@ -35,6 +35,7 @@ Is state for the vectorbundle Newton method
 #sub_problem und sub_state dokumentieren?
 mutable struct VectorbundleNewtonState{
     P,
+    #P2,
     T,
     Pr,
     St,
@@ -44,6 +45,7 @@ mutable struct VectorbundleNewtonState{
     TVM<:AbstractVectorTransportMethod,
 } <: AbstractGradientSolverState
     p::P
+    p_trial::P
     X::T
     sub_problem::Pr
     sub_state::St
@@ -51,6 +53,7 @@ mutable struct VectorbundleNewtonState{
     stepsize::TStep
     retraction_method::TRTM
     vector_transport_method::TVM
+    is_same::Bool
 end
 
 function VectorbundleNewtonState(
@@ -58,6 +61,8 @@ function VectorbundleNewtonState(
     E::AbstractManifold,
     F, #bundle_map
     p::P,
+   # p_trial::P2,
+   # same_point::Bool,
     sub_problem::Pr,
     sub_state::Op;
     X::T=zero_vector(M, p),
@@ -67,6 +72,7 @@ function VectorbundleNewtonState(
     vector_transport_method::VTM=default_vector_transport_method(E, typeof(F(M, p))),
 ) where {
     P,
+   # P2,
     T,
     Pr,
     Op,
@@ -77,6 +83,7 @@ function VectorbundleNewtonState(
 }
     return VectorbundleNewtonState{P,T,Pr,Op,SC,S,RM,VTM}(
         p,
+        copy(p),
         X,
         sub_problem,
         sub_state,
@@ -84,11 +91,70 @@ function VectorbundleNewtonState(
         stepsize,
         retraction_method,
         vector_transport_method,
+        true
     )
 end
 
+mutable struct AffineCovariantStepsize{T} <: Stepsize
+    alpha::T
+    #type::Symbol
+    theta::Float64
+    theta_des::Float64
+    theta_acc::Float64
+    #newton_direction::Vector{Float64}
+end
+function AffineCovariantStepsize(
+    M::AbstractManifold=DefaultManifold(2);
+    stepsize=1.0,
+    theta=1.0,
+    #type=:relative,
+    theta_des=0.5,
+    theta_acc=1.1*theta_des
+)
+    return AffineCovariantStepsize{typeof(stepsize)}(1.0, 1.3, theta_des, theta_acc)
+end
+function AffineCovariantStepsize(stepsize::T) where {T<:Number}
+    return AffineCovariantStepsize{T}(1.0, 1.3, theta_des, theta_acc)
+end
+function (acs::AffineCovariantStepsize)(
+    amp::AbstractManoptProblem, ams::VectorbundleNewtonState, ::Any, args...; kwargs...
+)
+    acs.alpha = 1.0
+    acs.theta = 1.3
+    alpha_new = 1.0
+    #acs.theta_des = 0.5
+    while acs.theta > acs.theta_acc
+        acs.alpha = copy(alpha_new)
+        X_alpha = acs.alpha * ams.X
+        println("differenz vorher=", norm(ams.p_trial - ams.p))
+        retract!(get_manifold(amp), ams.p_trial, ams.p, X_alpha, ams.retraction_method)
+        println("differenz nachher=", norm(ams.p_trial - ams.p))
+        ams.is_same = false
+        #set_manopt_parameter!(ams.sub_problem, :Manifold, :Basepoint, ams.p)
+
+        #set_iterate!(ams.sub_state, get_manifold(amp), zero_vector(get_manifold(amp), ams.p))
+        #solve!(ams.sub_problem, ams.sub_state)
+
+        simplified_newton = ams.sub_problem(amp, ams, 1)
+        acs.theta = norm(simplified_newton)/norm(ams.X)
+        println("theta!!!=", acs.theta)
+        alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
+        println("alpha!!!=", acs.alpha)
+        #if acs.alpha < 1e-15
+        #    println("Newton's method failed")
+        #    return
+        #end
+    end
+    #println("Hallo")
+    println("alpha_end = ", acs.alpha)
+    #acs.alpha = 1.0
+    ams.is_same=true
+    return acs.alpha
+end
+get_initial_stepsize(s::AffineCovariantStepsize) = 1.0
+
 function default_stepsize(M::AbstractManifold, ::Type{VectorbundleNewtonState})
-    return ConstantStepsize(1.0)
+    return AffineCovariantStepsize(M)
 end
 
 function show(io::IO, vbns::VectorbundleNewtonState)
@@ -299,6 +365,8 @@ function vectorbundle_newton!(
     F_prime,
     Q,
     p;
+    #p_trial,
+    #same_point;
     evaluation=AllocatingEvaluation(),
     kwargs...,
 )
@@ -310,6 +378,8 @@ function vectorbundle_newton!(
     E::AbstractManifold,
     vbo::O,
     p::P;
+    #p_trial::P2,
+   # same_point::Bool;
     evaluation=AllocatingEvaluation(),
     sub_problem::Pr=nothing, #TODO: find/implement good default solver
     sub_state::Op=nothing, #TODO: find/implement good default solver
@@ -323,6 +393,7 @@ function vectorbundle_newton!(
     kwargs...,
 ) where {
     P,
+    #P2,
     T,
     Pr,
     O<:Union{AbstractDecoratedManifoldObjective,VectorbundleObjective},
@@ -342,6 +413,8 @@ function vectorbundle_newton!(
         E,
         get_objective(vbo).bundle_map!!, #This is a bit of a too concrete access, maybe improve
         p,
+        #p_trial,
+       # same_point,
         sub_problem,
         sub_state;
         X=X,
@@ -361,19 +434,26 @@ end
 
 function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState, k)
     # compute Newton direction
+    println("Hallo 1")
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
 
     # TODO: pass parameters to sub_state
     # set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(N, q)) Set start point x0
+    #s.is_same = true
     set_manopt_parameter!(s.sub_problem, :Manifold, :Basepoint, s.p)
 
     set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(get_manifold(s.sub_problem), s.p))
+    #set_iterate!(s.sub_state, get_manifold(mp), zero_vector(get_manifold(mp), s.p))
     solve!(s.sub_problem, s.sub_state)
-    s.X = get_solver_result(s.sub_state)
+    s.X = get_solver_result(s.sub_state) 
+    #s.is_same = false
+    step = s.stepsize(mp, s, k)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize(mp, s, k), s.retraction_method)
+    retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
+    s.p_trial = copy(s.p)
+    #s.is_same = true
     return s
 end
 
@@ -383,24 +463,41 @@ function step_solver!(
     k,
 ) where {P,T,PR}
     # compute Newton direction
+    #println("Hallo 2")
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
+    s.is_same = true
     s.X = s.sub_problem(mp, s, k)
+    s.is_same= false
+   # println(s.p)
+    step = s.stepsize(mp, s, k)
+    s.is_same = true
+    #println(s.p)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize(mp, s, k), s.retraction_method)
+    println("norm Newton direction=", norm(s.X))
+    println("stepsize=", step)
+    retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
+    s.p_trial = copy(s.p)
+    s.is_same = true
     return s
 end
 
 function step_solver!(
     mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
 ) where {P,T,PR}
+println("HAllo 3")
     # compute Newton direction
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
+    #s.is_same = true
     s.sub_problem(mp, s.X, s, k)
+    #s.is_same = false
+    step = s.stepsize(mp, s, k)
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, s.stepsize(mp, s, k), s.retraction_method)
+    retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
+    s.p_trial = copy(s.p)
+    #s.is_same = true
     return s
 end
