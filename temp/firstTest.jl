@@ -102,10 +102,19 @@ function solve(mp, s, k)
     #ptilde = vcat(s.p, 0)
     ptilde = vcat(submersion_derivative', 0)
     newton_matrix = hcat(newton_matrix, ptilde)
-    rhs = -1.0 * F_p[E, :vector]'
-    rhs = vcat(rhs, 0)
-    deltaxlambda = newton_matrix \ rhs
 
+	#println("is_same = ", s.is_same)
+	if (s.is_same == true)
+   	 	rhs = -1.0 * F_p[E, :vector]'
+    	rhs = vcat(rhs, 0)
+    	deltaxlambda = newton_matrix \ rhs
+		#println("Hallo")
+	else
+		rhs = ((1-s.stepsize.alpha)*F_p[E, :vector]' - vector_transport_to(M, s.p, get_bundle_map(M, E, o, s.p_trial)[E, :vector]', s.p_trial,  ProjectionTransport()))
+    	rhs = vcat(rhs, 0)
+    	deltaxlambda = newton_matrix \ rhs
+		#println("Hallo")
+	end
     return deltaxlambda[1:n]
 end
 
@@ -123,6 +132,7 @@ begin
 #p = [zeros(n - 1)..., 1]
 Random.seed!(40)
 p=rand(M)
+p_trial = p
 println(p)
 end;
 
@@ -147,8 +157,9 @@ Instead of creating objective, problem, and state manually, we now also have a h
 p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, p;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=StopAfterIteration(15),
+	stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(1e-13)),
 	retraction_method=ProjectionRetraction(),
+	vector_transport_method=ProjectionTransport(),
 	debug=[:Iteration, :Change, 1, "\n", :Stop]
 )
 
