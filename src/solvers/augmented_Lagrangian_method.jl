@@ -231,9 +231,9 @@ This method can work in-place of `p`.
 
 The aim of the ALM is to find the solution of the constrained optimisation task
 
-$_problem(:Constrained)
+$(_problem(:Constrained))
 
-where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
 are twice continuously differentiable functions from `M` to ℝ.
 In every step ``k`` of the algorithm, the [`AugmentedLagrangianCost`](@ref)
  ``$(_doc_AL_Cost("k"))`` is minimized on $(_tex(:Cal, "M")),

@@ -216,6 +216,9 @@ define!(
     end,
 )
 
+#
+#
+# Problems
 define!(
     :Problem,
     :Constrained,
@@ -223,7 +226,7 @@ define!(
     ```math
 \\begin{aligned}
 \\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
-$(_tex(:text, "subject to")) &g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
+$(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
 \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
 \\end{aligned}
 ```
@@ -299,8 +302,11 @@ define!(
         return "* `$(display)$(type ? "::$(length(t) > 0 ? t : _var(s, :type))" : "")=`$(length(default) > 0 ? default : _var(s, :default; kwargs...))$(description ? ": $(_var(s, :description; kwargs...))" : "")$(disp_add)"
     end,
 )
+
 #
-# Actual variables
+#
+#
+# variables / Names used in Arguments, Fields, and Keywords
 
 define!(
     :Variable,
