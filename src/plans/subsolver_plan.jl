@@ -106,40 +106,36 @@ By default this returns `ams.sub_state`.
 get_sub_state(ams::AbstractSubProblemSolverState) = ams.sub_state
 
 """
-    set_manopt_parameter!(ams::AbstractManoptSolverState, element::Symbol, args...)
+    set_parameter!(ams::AbstractManoptSolverState, element::Symbol, args...)
 
 Set a certain field or semantic element from the [`AbstractManoptSolverState`](@ref) `ams` to `value`.
 This function passes to `Val(element)` and specific setters should dispatch on `Val{element}`.
 
 By default, this function just does nothing.
 """
-function set_manopt_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
-    return set_manopt_parameter!(ams, Val(e), args...)
+function set_parameter!(ams::AbstractManoptSolverState, e::Symbol, args...)
+    return set_parameter!(ams, Val(e), args...)
 end
 # Default: do nothing
-function set_manopt_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
+function set_parameter!(ams::AbstractManoptSolverState, ::Val, args...)
     return ams
 end
 
 """
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:SubProblem}, args...)
+    set_parameter!(ams::DebugSolverState, ::Val{:SubProblem}, args...)
 
 Set certain values specified by `args...` to the sub problem.
 """
-function set_manopt_parameter!(
-    ams::AbstractSubProblemSolverState, ::Val{:SubProblem}, args...
-)
-    set_manopt_parameter!(get_sub_problem(ams), args...)
+function set_parameter!(ams::AbstractSubProblemSolverState, ::Val{:SubProblem}, args...)
+    set_parameter!(get_sub_problem(ams), args...)
     return ams
 end
 """
-    set_manopt_parameter!(ams::DebugSolverState, ::Val{:SubState}, args...)
+    set_parameter!(ams::DebugSolverState, ::Val{:SubState}, args...)
 
 Set certain values specified by `args...` to the sub state.
 """
-function set_manopt_parameter!(
-    ams::AbstractSubProblemSolverState, ::Val{:SubState}, args...
-)
-    set_manopt_parameter!(get_sub_state(ams), args...)
+function set_parameter!(ams::AbstractSubProblemSolverState, ::Val{:SubState}, args...)
+    set_parameter!(get_sub_state(ams), args...)
     return ams
 end

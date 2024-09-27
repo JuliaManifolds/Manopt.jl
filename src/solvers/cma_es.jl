@@ -1,14 +1,14 @@
 #
 # State
 #
-@doc raw"""
+@doc """
     CMAESState{P,T} <: AbstractManoptSolverState
 
 State of covariance matrix adaptation evolution strategy.
 
 # Fields
 
-* `p`                           the best point found so far
+$(_var(:Field, :p; add=" storing the best point found so far"))
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -19,25 +19,25 @@ State of covariance matrix adaptation evolution strategy.
 * `c_σ`                         decay rate for the cumulation path for the step-size control
 * `c_m`                         learning rate for the mean
 * `d_σ`                         damping parameter for step-size update
-* `stop`                        stopping criteria, [`StoppingCriterion`](@ref)
 * `population`                  population of the current generation
 * `ys_c`                        coordinates of random vectors for the current generation
 * `covariance_matrix`           coordinates of the covariance matrix
-* `covariance_matrix_eigen`     eigendecomposition of `covariance_matrix`
-* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigendecomposition
+* `covariance_matrix_eigen`     eigen decomposition of `covariance_matrix`
+* `covariance_matrix_cond`      condition number of `covariance_matrix`, updated after eigen decomposition
 * `best_fitness_current_gen`    best fitness value of individuals in the current generation
 * `median_fitness_current_gen`  median fitness value of individuals in the current generation
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
 * `p_m`                         point around which the search for new candidates is done
 * `σ`                           step size
-* `p_σ`                         coordinates of a vector in ``T_{p_m} \mathcal M``
-* `p_c`                         coordinates of a vector in ``T_{p_m} \mathcal M``
+* `p_σ`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
+* `p_c`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
 * `deviations`                  standard deviations of coordinate RNG
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
 * `recombination_weights`       recombination weights used for updating covariance matrix
-* `retraction_method`           an `AbstractRetractionMethod`
-* `vector_transport_method`     a vector transport to use
+$(_var(:Field, :retraction_method))
+$(_var(:Field, :stopping_criterion, "stop"))
+$(_var(:Field, :vector_transport_method))
 * `basis`                       a real coefficient basis for covariance matrix
 * `rng`                         RNG for generating new points
 
@@ -335,7 +335,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     return s
 end
 
-@doc raw"""
+@doc """
     cma_es(M, f, p_m=rand(M); σ::Real=1.0, kwargs...)
 
 Perform covariance matrix adaptation evolutionary strategy search for global gradient-free
@@ -347,31 +347,30 @@ setting.
 
 # Input
 
-* `M`:      a manifold ``\mathcal M``
-* `f`:      a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
+* `M`:      a manifold ``$(_math(:M))``
+* `f`:      a cost function ``f: $(_math(:M))→ℝ`` to find a minimizer ``p^*`` for
 
-# Optional
+# Keyword arguments
 
-* `p_m`:                (`rand(M)`) an initial point `p`
-* `σ`:                  (`1.0`) initial standard deviation
+* `p_m=`$(Manopt._link(:rand)): an initial point `p`
+* `σ=1.0`: initial standard deviation
 * `λ`:                  (`4 + Int(floor(3 * log(manifold_dimension(M))))`population size (can be
   increased for a more thorough global search but decreasing is not recommended)
-* `tol_fun`:            (`1e-12`) tolerance for the `StopWhenPopulationCostConcentrated`, similar to
+* `tol_fun=1e-12`: tolerance for the `StopWhenPopulationCostConcentrated`, similar to
   absolute difference between function values at subsequent points
-* `tol_x`:              (`1e-12`) tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
+* `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-* `stopping_criterion`: (`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`)
-* `retraction_method`:  (`default_retraction_method(M, typeof(p_m))`)
-* `vector_transport_method`: (`default_vector_transport_method(M, typeof(p_m))`)
+$(_var(:Keyword, :stopping_criterion; default="`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
-* `rng`:                (`default_rng()`) random number generator for generating new points
+* `rng=default_rng()`: random number generator for generating new points
   on `M`
 
-# Output
+$(_note(:OtherKeywords))
 
-the obtained (approximate) minimizer ``p^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
+$(_note(:OutputSection))
 """
 function cma_es(M::AbstractManifold, f; kwargs...)
     mco = ManifoldCostObjective(f)
@@ -491,7 +490,7 @@ end
         vtm::AbstractVectorTransportMethod,
     )
 
-Transport the matrix with `matrix_eig` eigendecomposition when expanded in `basis` from
+Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
 `(p, matrix_eig)` belongs to the fiber bundle of ``B = \mathcal M × SPD(n)``, where `n`
@@ -537,15 +536,15 @@ end
 indicates_convergence(c::StopWhenCovarianceIllConditioned) = false
 is_active_stopping_criterion(c::StopWhenCovarianceIllConditioned) = c.at_iteration > 0
 function (c::StopWhenCovarianceIllConditioned)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
     c.last_cond = s.covariance_matrix_cond
-    if i > 0 && c.last_cond > c.threshold
-        c.at_iteration = i
+    if k > 0 && c.last_cond > c.threshold
+        c.at_iteration = k
         return true
     end
     return false
@@ -593,15 +592,15 @@ function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
     return c.iterations_since_change >= c.iteration_range
 end
 function (c::StopWhenBestCostInGenerationConstant)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         c.best_objective_at_last_change = Inf
         return false
     end
     if c.iterations_since_change >= c.iteration_range
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     else
         if c.best_objective_at_last_change != s.best_fitness_current_gen
@@ -620,7 +619,7 @@ function status_summary(c::StopWhenBestCostInGenerationConstant)
 end
 function get_reason(c::StopWhenBestCostInGenerationConstant)
     if c.at_iteration >= 0
-        return "At iteration $(c.at_iteration): for the last $(c.iterations_since_change) generatiosn the best objective value in each generation was equal to $(c.best_objective_at_last_change).\n"
+        return "At iteration $(c.at_iteration): for the last $(c.iterations_since_change) generations the best objective value in each generation was equal to $(c.best_objective_at_last_change).\n"
     end
     return ""
 end
@@ -676,15 +675,15 @@ function is_active_stopping_criterion(c::StopWhenEvolutionStagnates)
         median(c.median_history[1:thr_low]) <= median(c.median_history[thr_high:end])
     return best_stagnant && median_stagnant
 end
-function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, i::Int)
-    if i == 0 # reset on init
+function (c::StopWhenEvolutionStagnates)(::AbstractManoptProblem, s::CMAESState, k::Int)
+    if k == 0 # reset on init
         empty!(c.best_history)
         empty!(c.median_history)
         c.at_iteration = -1
         return false
     end
     if is_active_stopping_criterion(c)
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     else
         push!(c.best_history, s.best_fitness_current_gen)
@@ -729,7 +728,7 @@ norm of `σ * p_c` is smaller than `tol`. This corresponds to `TolX` condition f
 
 # Fields
 
-* `tol` the tolerance to check against
+* `tol` the tolerance to verify against
 * `at_iteration` an internal field to indicate at with iteration ``i \geq 0`` the tolerance was met.
 
 # Constructor
@@ -750,16 +749,16 @@ function is_active_stopping_criterion(c::StopWhenPopulationStronglyConcentrated)
     return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationStronglyConcentrated)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
     norm_inf_dev = norm(s.deviations, Inf)
     norm_inf_p_c = norm(s.p_c, Inf)
     if norm_inf_dev < c.tol && s.σ * norm_inf_p_c < c.tol
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     return false
@@ -801,14 +800,14 @@ indicates_convergence(c::StopWhenPopulationDiverges) = false
 function is_active_stopping_criterion(c::StopWhenPopulationDiverges)
     return c.at_iteration >= 0
 end
-function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, i::Int)
-    if i == 0 # reset on init
+function (c::StopWhenPopulationDiverges)(::AbstractManoptProblem, s::CMAESState, k::Int)
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
     cur_σ_times_maxstddev = s.σ * maximum(s.deviations)
     if cur_σ_times_maxstddev / c.last_σ_times_maxstddev > c.tol
-        c.at_iteration = i
+        c.at_iteration = k
         return true
     end
     return false
@@ -856,9 +855,9 @@ function is_active_stopping_criterion(c::StopWhenPopulationCostConcentrated)
     return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationCostConcentrated)(
-    ::AbstractManoptProblem, s::CMAESState, i::Int
+    ::AbstractManoptProblem, s::CMAESState, k::Int
 )
-    if i == 0 # reset on init
+    if k == 0 # reset on init
         c.at_iteration = -1
         return false
     end
@@ -867,7 +866,7 @@ function (c::StopWhenPopulationCostConcentrated)(
         min_hist, max_hist = extrema(c.best_value_history)
         if max_hist - min_hist < c.tol &&
             s.best_fitness_current_gen - s.worst_fitness_current_gen < c.tol
-            c.at_iteration = i
+            c.at_iteration = k
             return true
         end
     end
@@ -880,7 +879,7 @@ function status_summary(c::StopWhenPopulationCostConcentrated)
 end
 function get_reason(c::StopWhenPopulationCostConcentrated)
     if c.at_iteration >= 0
-        return "Range of best objective function values in the last $(length(c.best_value_history)) gnerations and all values in the current generation is below $(c.tol)\n"
+        return "Range of best objective function values in the last $(length(c.best_value_history)) generations and all values in the current generation is below $(c.tol)\n"
     end
     return ""
 end

@@ -26,8 +26,8 @@ using Manopt, Manifolds, Test
     end for x in pts]
 
     @testset "Constructors" begin
-        sg = StochasticGradient(M; p=p)
-        @test sg.dir == zero_vector(M, p)
+        sg = StochasticGradient(M; p=p)()
+        @test sg.X == zero_vector(M, p)
 
         msgo1 = ManifoldStochasticGradientObjective(sgrad_f1)
         dmp1 = DefaultManoptProblem(M, msgo1)
@@ -77,7 +77,7 @@ using Manopt, Manifolds, Test
         @test_throws ErrorException get_gradients(dmp1i, p)
         @test_throws ErrorException get_gradient!(dmp1i, Z4, p, 1)
         sgds = StochasticGradientDescentState(
-            M, deepcopy(p), zero_vector(M, p); direction=StochasticGradient(deepcopy(p))
+            M; p=deepcopy(p), X=zero_vector(M, p), direction=StochasticGradient(; p=p)(M)
         )
         sgds.order = collect(1:5)
         sgds.order_type = :Linear
@@ -109,9 +109,7 @@ using Manopt, Manifolds, Test
             sgrad_f1,
             p;
             order_type=:Random,
-            direction=AverageGradient(
-                M, p; n=10, direction=StochasticGradient(zero_vector(M, p))
-            ),
+            direction=AverageGradient(M; p=p, n=10, direction=StochasticGradient()),
         )
         @test is_point(M, q5, true)
         q6 = stochastic_gradient_descent(
@@ -119,9 +117,7 @@ using Manopt, Manifolds, Test
             sgrad_f1,
             p;
             order_type=:Random,
-            direction=MomentumGradient(
-                M, p; direction=StochasticGradient(zero_vector(M, p))
-            ),
+            direction=MomentumGradient(; p=p, direction=StochasticGradient()),
         )
         @test is_point(M, q6, true)
     end

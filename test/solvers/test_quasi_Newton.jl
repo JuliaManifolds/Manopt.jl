@@ -33,8 +33,8 @@ end
         qnu = InverseBFGS()
         d = QuasiNewtonMatrixDirectionUpdate(M, qnu)
         @test Manopt.status_summary(d) ==
-            "$(qnu) with initial scaling true and vector transport method ParallelTransport()."
-        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], true, InverseBFGS(), ParallelTransport())\n"
+            "$(qnu) with initial scaling 1.0 and vector transport method ParallelTransport()."
+        s = "QuasiNewtonMatrixDirectionUpdate(DefaultOrthonormalBasis(ℝ), [1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0], 1.0, InverseBFGS(), ParallelTransport())\n"
         @test repr(d) == s
         @test Manopt.get_message(d) == ""
     end
@@ -363,9 +363,9 @@ end
         fc(::Euclidean, p) = real(p' * A * p)
         grad_fc(::Euclidean, p) = 2 * A * p
         p0 = [2.0, 1 + im]
-        @test_logs (:info,) Manopt.set_manopt_parameter!(:Mode, "Tutorial")
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
         p4 = quasi_Newton(M, fc, grad_fc, p0; stopoing_criterion=StopAfterIteration(3))
-        @test_logs (:info,) Manopt.set_manopt_parameter!(:Mode, "")
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
         @test fc(M, p4) ≤ fc(M, p0)
     end
 
@@ -376,7 +376,7 @@ end
         grad_f(M, p) = 2 * sum(p)
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
-        qns = QuasiNewtonState(M, p)
+        qns = QuasiNewtonState(M; p=p)
         # push zeros to memory
         push!(qns.direction_update.memory_s, copy(p))
         push!(qns.direction_update.memory_s, copy(p))
@@ -396,8 +396,8 @@ end
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:step_towards_negative_gradient,
         )
@@ -411,8 +411,8 @@ end
         ) solve!(mp, dqns)
 
         qns = QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:step_towards_negative_gradient,
         )
@@ -421,8 +421,8 @@ end
         @test qns.direction_update.num_times_init == 1
 
         qns = QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             direction_update=QuasiNewtonGradientDirectionUpdate(ParallelTransport()),
             nondescent_direction_behavior=:reinitialize_direction_update,
         )

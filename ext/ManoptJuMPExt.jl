@@ -353,7 +353,7 @@ function MOI.optimize!(model::Optimizer)
     kws = Dict{Symbol,Any}(
         Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
     )
-    s = descent_state_type(model.manifold, reshaped_start; kws...)
+    s = descent_state_type(model.manifold; p=reshaped_start, kws...)
     model.state = decorate_state!(s)
     solve!(model.problem, model.state)
     return nothing

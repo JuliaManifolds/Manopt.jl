@@ -24,6 +24,6 @@ automatically available, as explained in the [`gradient_descent`](@ref) solver.
 
 ```@docs
 initialize_solver!(amp::AbstractManoptProblem, dss::DebugSolverState)
-step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i)
-stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, i::Int)
+step_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k)
+stop_solver!(amp::AbstractManoptProblem, dss::DebugSolverState, k::Int)
 ```

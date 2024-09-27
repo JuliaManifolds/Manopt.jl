@@ -42,7 +42,7 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 * `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           (`fordward_operator`) the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
@@ -96,14 +96,14 @@ function PrimalDualManifoldObjective(
     )
 end
 
-@doc raw"""
+@doc """
     q = get_primal_prox(M::AbstractManifold, p::AbstractPrimalDualManifoldObjective, σ, p)
     get_primal_prox!(M::AbstractManifold, p::AbstractPrimalDualManifoldObjective, q, σ, p)
 
 Evaluate the proximal map of ``F`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-\operatorname{prox}_{σF}(x)
+$(_tex(:prox))_{σF}(x)
 ```
 
 which can also be computed in place of `y`.
@@ -164,14 +164,14 @@ function get_primal_prox!(
     return get_primal_prox!(M, q, get_objective(admo, false), σ, p)
 end
 
-@doc raw"""
+@doc """
     Y = get_dual_prox(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, n, τ, X)
     get_dual_prox!(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, Y, n, τ, X)
 
 Evaluate the proximal map of ``g_n^*`` stored within [`AbstractPrimalDualManifoldObjective`](@ref)
 
 ```math
-  Y = \operatorname{prox}_{τG_n^*}(X)
+  Y = $(_tex(:prox))}_{τG_n^*}(X)
 ```
 
 which can also be computed in place of `Y`.
@@ -695,12 +695,13 @@ The constructor accepts a printing function and some (shared) storage, which
 should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
-DebugDualResidual()
+DebugDualResidual(; kwargs...)
 
-with the keywords
-* `io` (`stdout`) - stream to perform the debug to
-* format (`"$prefix%s"`) format to print the dual residual, using the
-* `prefix` (`"Dual Residual: "`) short form to just set the prefix
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="$prefix%s"`: format to print the dual residual, using the
+* `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugDualResidual <: DebugAction
@@ -729,12 +730,12 @@ mutable struct DebugDualResidual <: DebugAction
     end
 end
 function (d::DebugDualResidual)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -745,7 +746,7 @@ function (d::DebugDualResidual)(
             dual_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 @doc raw"""
     DebugPrimalResidual <: DebugAction
@@ -756,12 +757,13 @@ should at least record `:Iterate`, `:X` and `:n`.
 
 # Constructor
 
-    DebugPrimalResidual()
+    DebugPrimalResidual(; kwargs...)
 
-with the keywords
-* `io` (`stdout`) - stream to perform the debug to
-* format (`"$prefix%s"`) format to print the dual residual, using the
-* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="$prefix%s"`: format to print the dual residual, using the
+* `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalResidual <: DebugAction
@@ -788,12 +790,12 @@ mutable struct DebugPrimalResidual <: DebugAction
     end
 end
 function (d::DebugPrimalResidual)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -804,7 +806,7 @@ function (d::DebugPrimalResidual)(
             primal_residual(M, N, apdmo, apds, p_old, X_old, n_old),
         )
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 @doc raw"""
     DebugPrimalDualResidual <: DebugAction
@@ -818,9 +820,12 @@ should at least record `:Iterate`, `:X` and `:n`.
     DebugPrimalDualResidual()
 
 with the keywords
-* `io` (`stdout`) - stream to perform the debug to
-* format (`"$prefix%s"`) format to print the dual residual, using the
-* `prefix` (`"Primal Residual: "`) short form to just set the prefix
+
+# Keyword warguments
+
+* `io=`stdout`: stream to perform the debug to
+* `format="$prefix%s"`: format to print the dual residual, using the
+* `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
 mutable struct DebugPrimalDualResidual <: DebugAction
@@ -847,12 +852,12 @@ mutable struct DebugPrimalDualResidual <: DebugAction
     end
 end
 function (d::DebugPrimalDualResidual)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     M = get_manifold(tmp, 1)
     N = get_manifold(tmp, 2)
     apdmo = get_objective(tmp)
-    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:Iterate, :X, :n])) && k > 0 # all values stored
         #fetch
         p_old = get_storage(d.storage, :Iterate)
         X_old = get_storage(d.storage, :X)
@@ -862,7 +867,7 @@ function (d::DebugPrimalDualResidual)(
             dual_residual(tmp, apds, p_old, X_old, n_old)
         Printf.format(d.io, Printf.Format(d.format), v / manifold_dimension(M))
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 
 #
@@ -932,10 +937,10 @@ mutable struct DebugDualChange <: DebugAction
     end
 end
 function (d::DebugDualChange)(
-    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, i::Int
+    tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, k::Int
 )
     N = get_manifold(tmp, 2)
-    if all(has_storage.(Ref(d.storage), [:X, :n])) && i > 0 # all values stored
+    if all(has_storage.(Ref(d.storage), [:X, :n])) && k > 0 # all values stored
         #fetch
         X_old = get_storage(d.storage, :X)
         n_old = get_storage(d.storage, :n)
@@ -948,7 +953,7 @@ function (d::DebugDualChange)(
         )
         Printf.format(d.io, Printf.Format(d.format), v)
     end
-    return d.storage(tmp, apds, i)
+    return d.storage(tmp, apds, k)
 end
 
 """

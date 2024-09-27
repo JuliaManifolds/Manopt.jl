@@ -82,7 +82,7 @@ evaluate the cost function `f` defined on `M` stored within the [`AbstractManifo
 get_cost(::AbstractManifold, ::AbstractManifoldObjective, p)
 
 """
-    set_manopt_parameter!(ams::AbstractManoptProblem, element::Symbol, field::Symbol , value)
+    set_parameter!(ams::AbstractManoptProblem, element::Symbol, field::Symbol , value)
 
 Set a certain field/element from the [`AbstractManoptProblem`](@ref) `ams` to `value`.
 This function usually dispatches on `Val(element)`.
@@ -91,17 +91,17 @@ encapsulated parts of the problem.
 
 Main values for `element` are `:Manifold` and `:Objective`.
 """
-set_manopt_parameter!(amp::AbstractManoptProblem, e::Symbol, args...)
+set_parameter!(amp::AbstractManoptProblem, e::Symbol, args...)
 
-function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, args...)
-    set_manopt_parameter!(get_manifold(amp), args...)
+function set_parameter!(amp::AbstractManoptProblem, ::Val{:Manifold}, args...)
+    set_parameter!(get_manifold(amp), args...)
     return amp
 end
-function set_manopt_parameter!(TpM::TangentSpace, ::Union{Val{:Basepoint},Val{:p}}, p)
+function set_parameter!(TpM::TangentSpace, ::Union{Val{:Basepoint},Val{:p}}, p)
     copyto!(TpM.manifold, TpM.point, p)
     return TpM
 end
-function set_manopt_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, args...)
-    set_manopt_parameter!(get_objective(amp), args...)
+function set_parameter!(amp::AbstractManoptProblem, ::Val{:Objective}, args...)
+    set_parameter!(get_objective(amp), args...)
     return amp
 end

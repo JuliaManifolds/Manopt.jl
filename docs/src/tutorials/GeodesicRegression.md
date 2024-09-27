@@ -154,7 +154,7 @@ t = map(d -> inner(S, m, pca1, log(S, m, d)), data)
      -0.2259012492666664
 
 And we can call the gradient descent. Note that since `gradF!` works in place of `Y`, we have to set the
-`evalutation` type accordingly.
+`evaluation` type accordingly.
 
 ``` julia
 y = gradient_descent(

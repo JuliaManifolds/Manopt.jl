@@ -1,4 +1,4 @@
-using LRUCache, Manopt, Manifolds, ManifoldsBase, Test
+using LRUCache, Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
 
 include("../utils/dummy_types.jl")
 
@@ -54,6 +54,19 @@ include("../utils/dummy_types.jl")
     grad_h1!(M, X, p) = (X .= [0.0, 0.0, 2.0])
     hess_h1(M, p, X) = [0.0, 0.0, 0.0]
     hess_h1!(M, Y, p, X) = (Y .= [0.0, 0.0, 0.0])
+
+    #A set of values for an example point and tangent
+    p = [1.0, 2.0, 3.0]
+    c = [[0.0, -3.0], [5.0]]
+    fp = 14.0
+    gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
+    gh = [[0.0, 0.0, 2.0]]
+    gf = 2 * p
+    X = [1.0, 0.0, 0.0]
+    hf = [2.0, 2.0, 2.0]
+    hg = [X, -X]
+    hh = [[0.0, 0.0, 0.0]]
+
     cofa = ConstrainedManifoldObjective(
         f, grad_f, g, grad_g, h, grad_h; inequality_constraints=2, equality_constraints=1
     )
@@ -183,16 +196,6 @@ include("../utils/dummy_types.jl")
         gradient_equality_range=ArrayPowerRepresentation(),
         gradient_inequality_range=ArrayPowerRepresentation(),
     )
-
-    p = [1.0, 2.0, 3.0]
-    c = [[0.0, -3.0], [5.0]]
-    gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
-    gh = [[0.0, 0.0, 2.0]]
-    gf = 2 * p
-    X = [1.0, 0.0, 0.0]
-    hf = [2.0, 2.0, 2.0]
-    hg = [X, -X]
-    hh = [[0.0, 0.0, 0.0]]
 
     @testset "ConstrainedManoptProblem special cases" begin
         Y = zero_vector(M, p)
@@ -351,7 +354,192 @@ include("../utils/dummy_types.jl")
             end
         end
     end
+    @testset "is_feasible & DebugFeasibility" begin
+        coh = ConstrainedManifoldObjective(
+            f,
+            grad_f;
+            hess_f=hess_f,
+            g=g,
+            grad_g=grad_g,
+            hess_g=hess_g,
+            h=h,
+            grad_h=grad_h,
+            hess_h=hess_h,
+            M=M,
+        )
+        @test is_feasible(M, coh, [-2.0, 3.0, 0.5]; error=:info)
+        @test_throws ErrorException is_feasible(M, coh, p; error=:error)
+        @test_logs (:info,) !is_feasible(M, coh, p; error=:info)
+        @test_logs (:warn,) !is_feasible(M, coh, p; error=:warn)
+        # Dummy state
+        st = Manopt.StepsizeState(p, X)
+        mp = DefaultManoptProblem(M, coh)
+        io = IOBuffer()
+        df = DebugFeasibility(; io=io)
+        @test repr(df) === "DebugFeasibility([\"feasible: \", :Feasible]; atol=1.0e-13)"
+        # short form:
+        @test Manopt.status_summary(df) === "(:Feasibility, [\"feasible: \", :Feasible])"
+        df(mp, st, 1)
+        @test String(take!(io)) == "feasible: No"
+    end
+    @testset "Lagrangians" begin
+        μ = [1.0, 1.0]
+        λ = [1.0]
+        β = 7.0
+        s = [1.0, 2.0]
+        N = M × ℝ^2 × ℝ^1 × ℝ^2
+        q = rand(N)
+        q[N, 1] = p
+        q[N, 2] = μ
+        q[N, 3] = λ
+        q[N, 4] = s
+        coh = ConstrainedManifoldObjective(
+            f,
+            grad_f;
+            hess_f=hess_f,
+            g=g,
+            grad_g=grad_g,
+            hess_g=hess_g,
+            h=h,
+            grad_h=grad_h,
+            hess_h=hess_h,
+            M=M,
+        )
+        @testset "Lagrangian Cost, Grad and Hessian" begin
+            Lc = LagrangianCost(coh, μ, λ)
+            @test startswith(repr(Lc), "LagrangianCost")
+            Lg = LagrangianGradient(coh, μ, λ)
+            @test startswith(repr(Lg), "LagrangianGradient")
+            Lh = LagrangianHessian(coh, μ, λ)
+            @test startswith(repr(Lh), "LagrangianHessian")
+            @test Lc(M, p) == f(M, p) + g(M, p)'μ + h(M, p)'λ
+            @test Lg(M, p) == gf + sum(gg .* μ) + sum(gh .* λ)
+            LX = zero_vector(M, p)
+            Lg(M, LX, p)
+            @test LX == Lg(M, p)
+            @test Lh(M, p, X) == hf + sum(hg .* μ) + sum(hh .* λ)
+            Lh(M, LX, p, X)
+            @test LX == Lh(M, p, X)
+            # Get & Set
+            @test Manopt.set_parameter!(Lc, :μ, [2.0, 2.0]) == Lc
+            @test Manopt.get_parameter(Lc, :μ) == [2.0, 2.0]
+            @test Manopt.set_parameter!(Lc, :λ, [2.0]) == Lc
+            @test Manopt.get_parameter(Lc, :λ) == [2.0]
 
+            @test Manopt.set_parameter!(Lg, :μ, [2.0, 2.0]) == Lg
+            @test Manopt.get_parameter(Lg, :μ) == [2.0, 2.0]
+            @test Manopt.set_parameter!(Lg, :λ, [2.0]) == Lg
+            @test Manopt.get_parameter(Lg, :λ) == [2.0]
+
+            @test Manopt.set_parameter!(Lh, :μ, [2.0, 2.0]) == Lh
+            @test Manopt.get_parameter(Lh, :μ) == [2.0, 2.0]
+            @test Manopt.set_parameter!(Lh, :λ, [2.0]) == Lh
+            @test Manopt.get_parameter(Lh, :λ) == [2.0]
+        end
+        @testset "Full KKT and its norm" begin
+            # Full KKT Vector field
+            KKTvf = KKTVectorField(coh)
+            @test startswith(repr(KKTvf), "KKTVectorField\n")
+            Xp = LagrangianGradient(coh, μ, λ)(M, p) #Xμ = g + s; Xλ = h, Xs = μ .* s
+            Y = KKTvf(N, q)
+            @test Y[N, 1] == Xp
+            @test Y[N, 2] == c[1] .+ s
+            @test Y[N, 3] == c[2]
+            @test Y[N, 4] == μ .* s
+            KKTvfJ = KKTVectorFieldJacobian(coh)
+            @test startswith(repr(KKTvfJ), "KKTVectorFieldJacobian\n")
+            #
+            Xp =
+                LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
+                sum(Y[N, 2] .* gg) +
+                sum(Y[N, 3] .* gh)
+            Xμ = [inner(M, p, gg[i], Y[N, 1]) + Y[N, 4][i] for i in 1:length(gg)]
+            Xλ = [inner(M, p, gh[j], Y[N, 1]) for j in 1:length(gh)]
+            Z = KKTvfJ(N, q, Y)
+            @test Z[N, 1] == Xp
+            @test Z[N, 2] == Xμ
+            @test Z[N, 3] == Xλ
+            @test Z[N, 4] == μ .* Y[N, 4] + s .* Y[N, 2]
+
+            KKTvfAdJ = KKTVectorFieldAdjointJacobian(coh)
+            @test startswith(repr(KKTvfAdJ), "KKTVectorFieldAdjointJacobian\n")
+            Xp2 =
+                LagrangianHessian(coh, μ, λ)(M, p, Y[N, 1]) +
+                sum(Y[N, 2] .* gg) +
+                sum(Y[N, 3] .* gh)
+            Xμ2 = [inner(M, p, gg[i], Y[N, 1]) + s[i] * Y[N, 4][i] for i in 1:length(gg)]
+            Xλ2 = [inner(M, p, gh[j], Y[N, 1]) for j in 1:length(gh)]
+            Z2 = KKTvfAdJ(N, q, Y)
+            @test Z2[N, 1] == Xp2
+            @test Z2[N, 2] == Xμ2
+            @test Z2[N, 3] == Xλ2
+            @test Z2[N, 4] == μ .* Y[N, 4] + Y[N, 2]
+
+            # Full KKT Vector field norm – the Merit function
+            KKTvfN = KKTVectorFieldNormSq(coh)
+            @test startswith(repr(KKTvfN), "KKTVectorFieldNormSq\n")
+            vfn = KKTvfN(N, q)
+            @test vfn == norm(N, q, Y)^2
+            KKTvfNG = KKTVectorFieldNormSqGradient(coh)
+            @test startswith(repr(KKTvfNG), "KKTVectorFieldNormSqGradient\n")
+            Zg1 = KKTvf(N, q)
+            Zg2 = 2.0 * KKTvfAdJ(N, q, Zg1)
+            W = KKTvfNG(N, q)
+            @test W == Zg2
+        end
+        @testset "Condensed KKT, Jacobian" begin
+            CKKTvf = CondensedKKTVectorField(coh, μ, s, β)
+            @test startswith(repr(CKKTvf), "CondensedKKTVectorField\n")
+            b1 =
+                gf +
+                sum(λ .* gh) +
+                sum(μ .* gg) +
+                sum(((μ ./ s) .* (μ .* (c[1] .+ s) .+ β .- μ .* s)) .* gg)
+            b2 = c[2]
+            Nc = M × ℝ^1 # (p,λ)
+            qc = rand(Nc)
+            qc[Nc, 1] = p
+            qc[Nc, 2] = λ
+            V = CKKTvf(Nc, qc)
+            @test V[Nc, 1] == b1
+            @test V[Nc, 2] == b2
+            V2 = copy(Nc, qc, V)
+            CKKTvf(Nc, V2, qc)
+            @test V2 == V
+            CKKTVfJ = CondensedKKTVectorFieldJacobian(coh, μ, s, β)
+            @test startswith(repr(CKKTVfJ), "CondensedKKTVectorFieldJacobian\n")
+            Yc = zero_vector(Nc, qc)
+            Yc[Nc, 1] = [1.0, 3.0, 5.0]
+            Yc[Nc, 2] = [7.0]
+            # Compute by hand – somehow the formula is still missing a Y
+            Wc = zero_vector(Nc, qc)
+            # (1) Hess L + The g sum + the grad g sum
+            Wc[N, 1] = hf + sum(hg .* μ) + sum(hh .* Yc[2])
+            # (2) grad g terms
+            Wc[N, 1] += sum(
+                (μ ./ s) .*
+                [inner(Nc[1], qc[N, 1], gg[i], Yc[Nc, 1]) for i in 1:length(gg)] .* gg,
+            )
+            # (3) grad h terms (note the Y_2 component)
+            Wc[N, 1] += sum(Yc[N, 2] .* gh)
+            # Second component, just h terms
+            Wc[N, 2] = [inner(Nc[1], qc[N, 1], gh[j], Yc[Nc, 1]) for j in 1:length(gh)]
+            W = CKKTVfJ(Nc, qc, Yc)
+            W2 = copy(Nc, qc, Yc)
+            CKKTVfJ(Nc, W2, qc, Yc)
+            @test W2 == W
+            @test Wc == W
+            # get & set
+            for ck in [CKKTvf, CKKTVfJ]
+                @test Manopt.set_parameter!(ck, :μ, [2.0, 2.0]) == ck
+                @test Manopt.get_parameter(ck, :μ) == [2.0, 2.0]
+                @test Manopt.set_parameter!(ck, :s, [2.0, 2.0]) == ck
+                @test Manopt.get_parameter(ck, :s) == [2.0, 2.0]
+                @test Manopt.set_parameter!(ck, :β, 2.0) == ck
+                @test Manopt.get_parameter(ck, :β) == 2.0
+            end
+        end
+    end
     @testset "Augmented Lagrangian Cost & Grad" begin
         μ = [1.0, 1.0]
         λ = [1.0]
@@ -371,6 +559,10 @@ include("../utils/dummy_types.jl")
                 @test gALC(M, p) ≈ ag
                 gALC(M, X, p)
                 @test gALC(M, X, p) ≈ ag
+                @test Manopt.set_parameter!(ALC, :ρ, 2 * ρ) == ALC
+                @test Manopt.get_parameter(ALC, :ρ) == 2 * ρ
+                @test Manopt.set_parameter!(gALC, :ρ, 2 * ρ) == gALC
+                @test Manopt.get_parameter(gALC, :ρ) == 2 * ρ
             end
         end
     end

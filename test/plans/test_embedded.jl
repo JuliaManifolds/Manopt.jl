@@ -91,7 +91,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
         e_obj = EmbeddedManifoldObjective(obj)
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(e_obj, true)
-        # otherise different
+        # otherwise different
         f1 = Manopt.get_cost_function(e_obj)
         @test f1 != f
         @test f1(M, p) == f(M, p)

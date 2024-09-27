@@ -85,7 +85,7 @@ end
 
 Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `p` (in place of `X`).
 
-If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient) can not be determined.
 """
 function get_gradients(
@@ -180,7 +180,7 @@ end
 
 Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
 
-If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
@@ -272,7 +272,7 @@ end
 
 Evaluate the complete gradient ``\operatorname{grad} f = \displaystyle\sum_{i=1}^n \operatorname{grad} f_i(p)`` at `p` (in place of `X`).
 
-If you use a single function for the stochastic gradient, that works in-place, then `get_gradient` is not available,
+If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
 """
 function get_gradient(
@@ -351,6 +351,6 @@ end
 """
     AbstractStochasticGradientDescentSolverState <: AbstractManoptSolverState
 
-A generic type for all options related to stochastic gradient descent methods
+A generic type for all options related to gradient descent methods working with parts of the total gradient
 """
-abstract type AbstractGradientGroupProcessor <: DirectionUpdateRule end
+abstract type AbstractGradientGroupDirectionRule <: DirectionUpdateRule end

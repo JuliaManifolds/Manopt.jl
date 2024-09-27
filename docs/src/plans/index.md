@@ -16,8 +16,8 @@ By splitting these two parts, one problem can be define an then be solved  using
 Still there might be the need to set certain parameters within any of these structures. For that there is
 
 ```@docs
-set_manopt_parameter!
-get_manopt_parameter
+set_parameter!
+get_parameter
 Manopt.status_summary
 ```
 
@@ -26,7 +26,7 @@ The following symbols are used.
 | Symbol       | Used in  | Description                                                |
 | :----------- | :------ | :--------------------------------------------------------- |
 | `:Activity` | [`DebugWhenActive`](@ref) | activity of the debug action stored within |
-| `:Basepoint` | [`TangentSpace`]() | the point the tangent space is at |
+| `:Basepoint` | [`TangentSpace`](@extref ManifoldsBase `ManifoldsBase.TangentSpace`) | the point the tangent space is at |
 | `:Cost` | generic |the cost function (within an objective, as pass down) |
 | `:Debug` | [`DebugSolverState`](@ref) | the stored `debugDictionary` |
 | `:Gradient` | generic | the gradient function (within an objective, as pass down) |
@@ -52,8 +52,17 @@ often also with `:p` and similarly the gradient with `:X`.
 This is discouraged for both readability as well as to stay more generic, and it is recommended
 to use `:Iterate` and `:Gradient` instead in generic settings.
 
-You can further activate a “Tutorial” mode by `set_manopt_parameter!(:Mode, "Tutorial")`. Internally, the following convenience function is available.
+You can further activate a “Tutorial” mode by `set_parameter!(:Mode, "Tutorial")`. Internally, the following convenience function is available.
 
 ```@docs
 Manopt.is_tutorial_mode
+```
+
+# A factory for providing manifold defaults
+
+In several cases a manifold might not yet be known at the time a (keyword) argument should be provided. Therefore, any type with a manifold default can be wrapped into a factory.
+
+```@docs
+Manopt.ManifoldDefaultsFactory
+Manopt._produce_type
 ```

@@ -35,7 +35,7 @@ using LinearAlgebra: I, tr
         # dummy ALM problem
         sp = DefaultManoptProblem(M, ManifoldCostObjective(f))
         ss = NelderMeadState(M)
-        alms = AugmentedLagrangianMethodState(M, co, p0, sp, ss)
+        alms = AugmentedLagrangianMethodState(M, co, sp, ss; p=p0)
         set_iterate!(alms, M, 2 .* p0)
         @test Manopt.get_message(alms) == ""
         @test get_iterate(alms) == 2 .* p0
@@ -44,6 +44,9 @@ using LinearAlgebra: I, tr
         )
         @test Manopt.get_sub_problem(alms) === sp
         @test Manopt.get_sub_state(alms) === ss
+        # With dummy closed form solution
+        almsc = AugmentedLagrangianMethodState(M, co, f)
+        @test almsc.sub_state isa Manopt.ClosedFormSubSolverState
     end
     @testset "Numbers" begin
         M = Euclidean()

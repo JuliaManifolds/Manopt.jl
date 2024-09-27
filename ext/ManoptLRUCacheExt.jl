@@ -27,11 +27,15 @@ Given a vector of symbols `caches`, this function sets up the
 
 # Keyword arguments
 
-* `p`:           (`rand(M)`) a point on a manifold, to both infer its type for keys and initialize caches
-* `value`:       (`0.0`) a value both typing and initialising number-caches, the default is for (Float) values like the cost.
-* `X`:           (`zero_vector(M, p)` a tangent vector at `p` to both type and initialize tangent vector caches
-* `cache_size`:  (`10`)  a default cache size to use
-* `cache_sizes`: (`Dict{Symbol,Int}()`) a dictionary of sizes for the `caches` to specify different (non-default) sizes
+* `p=`$(Manopt._link(:rand)): a point on a manifold, to both infer its type for keys and initialize caches
+* `value=0.0`:
+   a value both typing and initialising number-caches, the default is for (Float) values like the cost.
+* `X=zero_vector(M, p)`:
+  a tangent vector at `p` to both type and initialize tangent vector caches
+* `cache_size=10`:
+  a default cache size to use
+* `cache_sizes=Dict{Symbol,Int}()`:
+  a dictionary of sizes for the `caches` to specify different (non-default) sizes
 """
 function Manopt.init_caches(
     M::AbstractManifold,
