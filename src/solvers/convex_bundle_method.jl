@@ -168,6 +168,7 @@ mutable struct ConvexBundleMethodState{
     k_max::R
     k_min::R
     last_stepsize::R
+    null_stepsize::R
     linearization_errors::A
     m::R
     p::P
@@ -224,6 +225,7 @@ mutable struct ConvexBundleMethodState{
         bundle = Vector{Tuple{P,T}}()
         g = zero_vector(M, p)
         last_stepsize = one(R)
+        null_stepsize = one(R) 
         linearization_errors = Vector{R}()
         transported_subgradients = Vector{T}()
         ε = zero(R)
@@ -272,6 +274,7 @@ mutable struct ConvexBundleMethodState{
             k_max,
             k_min,
             last_stepsize,
+            null_stepsize,
             linearization_errors,
             m,
             p,
@@ -348,21 +351,54 @@ mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
     β::Float64
 end
 function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem,
-    cbms::ConvexBundleMethodState,
-    ::Any,
-    args...;
-    tol=0.0,
-    kwargs...,
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; tol=0.0, kwargs...
 )
     M = get_manifold(amp)
     t = 1.0
     q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     l = norm(M, cbms.p_last_serious, cbms.g)
-    while (
-        !cbms.domain(M, q) ||
-        (cbms.k_max > 0 && distance(M, cbms.p_last_serious, q) + tol < t * l)
-    ) #&& t > cbms.m
+    while (!cbms.domain(M, q) || (distance(M, cbms.p_last_serious, q) + tol < t * l))
+        t *= dbt.β
+        retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    end
+    return t
+end
+function (dbt::DomainBackTrackingStepsize)(
+    amp::AbstractManoptProblem,
+    cbms::ConvexBundleMethodState,
+    ::Int,
+    ::Symbol;
+    tol=0.0,
+    kwargs...,
+)
+    M = get_manifold(amp)
+    t = cbms.last_stepsize
+    q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    get_subgradient!(amp, cbms.X, q)
+    l = norm(M, cbms.p_last_serious, cbms.g)
+    while inner(
+            M,
+            cbms.p_last_serious,
+            vector_transport_to(M, q, cbms.X, cbms.p_last_serious, cbms.vector_transport_method),
+            cbms.g,
+        ) ≥ -cbms.m * cbms.ξ - (
+            get_cost(amp, cbms.p_last_serious) - get_cost(amp, q) - (inner(
+                M,
+                q,
+                cbms.X,
+                inverse_retract(M, q, cbms.p_last_serious, cbms.inverse_retraction_method),
+            )) + (
+                cbms.ϱ *
+                norm(M, q, cbms.X) *
+                norm(
+                    M,
+                    q,
+                    inverse_retract(
+                        M, q, cbms.p_last_serious, cbms.inverse_retraction_method
+                    ),
+                )
+            )
+        )
         t *= dbt.β
         retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     end
@@ -524,10 +560,15 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     step = get_stepsize(mp, bms, k)
     retract!(M, bms.p, bms.p_last_serious, -step * bms.g, bms.retraction_method)
     bms.last_stepsize = step
-    get_subgradient!(mp, bms.X, bms.p)
+    bms.null_stepsize = step
     if get_cost(mp, bms.p) ≤ (get_cost(mp, bms.p_last_serious) + bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
+    else
+        # Condition for null-steps
+        bms.null_stepsize = get_stepsize(mp, bms, k, :nullstep)
+        retract!(M, bms.p, bms.p_last_serious, -bms.null_stepsize * bms.g, bms.retraction_method)
     end
+    get_subgradient!(mp, bms.X, bms.p)
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
         deleteat!(bms.bundle, v)
@@ -570,27 +611,12 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
                     ),
                 )
             )
-        # v = if bms.k_max ≤ 0
-        #     get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (inner(
-        #         M,
-        #         qj,
-        #         Xj,
-        #         inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        #     ))
-        # else
-        #     get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) +
-        #     norm(M, qj, Xj) * norm(
-        #         M,
-        #         qj,
-        #         inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        #     )
-        # end
-        bms.linearization_errors[j] = v#(0 ≥ v ≥ -bms.atol_errors) ? 0 : v
+        bms.linearization_errors[j] = (0 ≥ v ≥ -bms.atol_errors) ? 0 : v
     end
     return bms
 end
 get_solver_result(bms::ConvexBundleMethodState) = bms.p_last_serious
-function get_last_stepsize(::AbstractManoptProblem, bms::ConvexBundleMethodState, kw)
+function get_last_stepsize(::AbstractManoptProblem, bms::ConvexBundleMethodState, k)
     return bms.last_stepsize
 end
 
@@ -654,8 +680,8 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             At iteration #$k the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
             Consider decreasing either the `diameter` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as
-            `k_max` in the `convex_bundle_method` call.
-            of the parameters involved in the estimation of the sectional curvature, such as `k_max` in the `convex_bundle_method` call.
+            `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
+            of the parameters involved in the estimation of the sectional curvature, such as `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
             """
             if d.status === :Once
                 @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
@@ -666,8 +692,8 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             At iteration #$k the negative of the Lagrange multiplier, -ξ, became negative.\n
             Consider increasing either the `diameter` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as
-            `k_max` in the `convex_bundle_method` call.
-            one of the parameters involved in the estimation of the sectional curvature, such as `k_max` in the `convex_bundle_method` call.
+            `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
+            one of the parameters involved in the estimation of the sectional curvature, such as `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
             """
         else
             d.old_value = min(d.old_value, new_value)
@@ -677,7 +703,7 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
 end
 
 function (d::DebugStepsize)(
-    dmp::P, bms::ConvexBundleMethodState, k::Int
+    dmp::P, bms::ConvexBundleMethodState, k::Int,
 ) where {P<:AbstractManoptProblem}
     (k < 1) && return nothing
     Printf.format(d.io, Printf.Format(d.format), get_last_stepsize(dmp, bms, k))
