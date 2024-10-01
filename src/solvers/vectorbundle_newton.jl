@@ -83,7 +83,7 @@ function VectorbundleNewtonState(
 }
     return VectorbundleNewtonState{P,T,Pr,Op,SC,S,RM,VTM}(
         p,
-        copy(p),
+        copy(M, p),
         X,
         sub_problem,
         sub_state,
@@ -126,9 +126,9 @@ function (acs::AffineCovariantStepsize)(
     while acs.theta > acs.theta_acc
         acs.alpha = copy(alpha_new)
         X_alpha = acs.alpha * ams.X
-        println("differenz vorher=", norm(ams.p_trial - ams.p))
+        #println("differenz vorher=", norm(ams.p_trial - ams.p))
         retract!(get_manifold(amp), ams.p_trial, ams.p, X_alpha, ams.retraction_method)
-        println("differenz nachher=", norm(ams.p_trial - ams.p))
+        #println("differenz nachher=", norm(ams.p_trial - ams.p))
         ams.is_same = false
         #set_manopt_parameter!(ams.sub_problem, :Manifold, :Basepoint, ams.p)
 
@@ -137,9 +137,9 @@ function (acs::AffineCovariantStepsize)(
 
         simplified_newton = ams.sub_problem(amp, ams, 1)
         acs.theta = norm(simplified_newton)/norm(ams.X)
-        println("theta!!!=", acs.theta)
+        #println("theta!!!=", acs.theta)
         alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
-        println("alpha!!!=", acs.alpha)
+        #println("alpha!!!=", acs.alpha)
         #if acs.alpha < 1e-15
         #    println("Newton's method failed")
         #    return
@@ -434,7 +434,7 @@ end
 
 function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState, k)
     # compute Newton direction
-    println("Hallo 1")
+    #println("Hallo 1")
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
@@ -475,10 +475,10 @@ function step_solver!(
     s.is_same = true
     #println(s.p)
     # retract
-    println("norm Newton direction=", norm(s.X))
-    println("stepsize=", step)
+    #println("norm Newton direction=", norm(s.X))
+    #println("stepsize=", step)
     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
-    s.p_trial = copy(s.p)
+    s.p_trial = copy(get_manifold(mp),s.p)
     s.is_same = true
     return s
 end
@@ -486,7 +486,7 @@ end
 function step_solver!(
     mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
 ) where {P,T,PR}
-println("HAllo 3")
+#println("HAllo 3")
     # compute Newton direction
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
