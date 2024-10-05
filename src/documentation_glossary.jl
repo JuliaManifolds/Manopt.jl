@@ -251,7 +251,7 @@ define!(
     :NonLinearLeastSquares,
     (; M="M", p="p") -> """
 ```math
-$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2))$(_tex(:sum))_{i=1}^n ρ_i$(_tex(:bigl))( $(_tex(:norm, "f_i($p)"))^2 $(_tex(:bigr)))
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2))$(_tex(:sum))_{i=1}^n ρ_i$(_tex(:bigl))( $(_tex(:abs, "f_i($p)"))^2 $(_tex(:bigr)))
 ```
 
 where ``f: $(_math(:M; M=M)) → ℝ^n`` is written with component functions ``f_i: $(_math(:M; M=M)) \to ℝ``,
