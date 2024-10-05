@@ -35,7 +35,7 @@ default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to limit the
 distance an algorithm is trying to move in a single step.
 
-By default, this returns [`injectivity_radius`](@extref)`(M)`.
+By default, this returns [`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M)`.
 """
 function max_stepsize(M::AbstractManifold, p)
     return max_stepsize(M)
