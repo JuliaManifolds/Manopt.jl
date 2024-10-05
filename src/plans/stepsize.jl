@@ -34,6 +34,8 @@ default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 
 Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to limit the
 distance an algorithm is trying to move in a single step.
+
+By default, this returns [`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M)`.
 """
 function max_stepsize(M::AbstractManifold, p)
     return max_stepsize(M)
@@ -228,6 +230,27 @@ most prominently the negative gradient.
 """
 abstract type Linesearch <: Stepsize end
 
+"""
+    armijo_initial_guess(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k, l)
+
+# Input
+
+* `mp`: the [`AbstractManoptProblem`](@ref) we are aiminig to minimize
+* `s`:  the [`AbstractManoptSolverState`](@ref) for the current solver
+* `k`:  the current iteration
+* `l`:  the last step size computed in the previous iteration.
+
+Return an initial guess for the [`ArmijoLinesearchStepsize`](@ref).
+
+The default provided is based on the [`max_stepsize`](@ref)`(M)`, which we denote by ``m``.
+Let further ``X`` be the current descent direction with norm ``n=$(_tex(:norm, "X"; index="p"))`` its length.
+Then this (default) initial guess returns
+
+* ``l`` if ``m`` is not finite
+* ``$(_tex(:min))(l, $(_tex(:frac,"m","n")))`` otherwise
+
+This ensures that the initial guess does not yield to large (initial) steps.
+"""
 function armijo_initial_guess(
     mp::AbstractManoptProblem, s::AbstractManoptSolverState, ::Int, l::Real
 )
@@ -247,23 +270,24 @@ based on the search direction `X`
 
 # Fields
 
-* `candidate_point`:           to store an interim result
-* `initial_stepsize`:          and initial step size
+* `candidate_point`:               to store an interim result
+* `initial_stepsize`:              and initial step size
 $(_var(:Keyword, :retraction_method))
-* `contraction_factor`:        exponent for line search reduction
-* `sufficient_decrease`:       gain within Armijo's rule
-* `last_stepsize`:             the last step size to start the search with
-* `initial_guess`:             based on a [`AbstractManoptProblem`](@ref) `p`,
-  [`AbstractManoptSolverState`](@ref) `s` and a current iterate `i` and a last step size `l`,
-  this returns an initial guess. The default uses the last obtained stepsize
-* `additional_decrease_condition`: (`(M,p) -> true`) specify a condition a new point has to additionally
+* `contraction_factor`:            exponent for line search reduction
+* `sufficient_decrease`:           gain within Armijo's rule
+* `last_stepsize`:                 the last step size to start the search with
+* `initial_guess`:                 a function to provide an initial guess for the step size,
+  it maps `(m,p,k,l) -> α` based on a [`AbstractManoptProblem`](@ref) `p`,
+  [`AbstractManoptSolverState`](@ref) `s`, the current iterate `k` and a last step size `l`.
+  It returns the initial guess `α`.
+* `additional_decrease_condition`: specify a condition a new point has to additionally
   fulfill. The default accepts all points.
-* `additional_increase_condition`: (`(M,p) -> true`) specify a condtion that additionally to
+* `additional_increase_condition`: specify a condtion that additionally to
   checking a valid increase has to be fulfilled. The default accepts all points.
-* `stop_when_stepsize_less`:    smallest stepsize when to stop (the last one before is taken)
-* `stop_when_stepsize_exceeds`: largest stepsize when to stop.
-* `stop_increasing_at_step`:    last step to increase the stepsize (phase 1),
-* `stop_decreasing_at_step`:    last step size to decrease the stepsize (phase 2),
+* `stop_when_stepsize_less`:       smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_exceeds`:    largest stepsize when to stop.
+* `stop_increasing_at_step`:       last step to increase the stepsize (phase 1),
+* `stop_decreasing_at_step`:       last step size to decrease the stepsize (phase 2),
 
 Pass `:Messages` to a `debug=` to see `@info`s when these happen.
 
@@ -281,7 +305,7 @@ $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
 * `last_stepsize=initialstepsize`
-* `initial_guess=(p,s,i,l) -> l`
+* `initial_guess=[`armijo_initial_guess`](@ref) – (p,s,i,l) -> l`
 * `stop_when_stepsize_less=0.0`
 * `stop_when_stepsize_exceeds`
 * `stop_increasing_at_step=100`
@@ -434,7 +458,11 @@ Overall, we look for step size, that provides _enough decrease_, see
   speciy a point to be used as memory for the candidate points.
 * `contraction_factor=0.95`: how to update ``s`` in the decrease step
 * `initial_stepsize=1.0``: specify an initial step size
-* `initial_guess=armijo_initial_guess`: instead of the initial step, start with this guess.
+* `initial_guess=`[`armijo_initial_guess`](@ref): Compute the initial step size of
+  a line search based on this function.
+  The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
+  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
+  the current iterate `k` and a last step size `l`.
 $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
 * `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
