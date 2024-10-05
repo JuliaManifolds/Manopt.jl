@@ -50,6 +50,7 @@ end
 # ---
 # LaTeX
 
+define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
 define!(:LaTeX, :argmin, raw"\operatorname{arg\,min}")
 define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
@@ -86,6 +87,7 @@ define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :subgrad, raw"∂")
+define!(:LaTeX, :sum, raw"\sum")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
@@ -98,6 +100,7 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Manifold, :symbol, (; M="M") -> _tex(:Cal, M))
 define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Iterate, (; p="p", k="k") -> "$(p)^{($(k))}")
 define!(
     :Math,
@@ -219,13 +222,15 @@ define!(
 #
 #
 # Problems
+_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+
 define!(
     :Problem,
     :Constrained,
     (; M="M", p="p") -> """
     ```math
 \\begin{aligned}
-\\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
 $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
 \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
 \\end{aligned}
@@ -235,9 +240,29 @@ $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " 
 define!(
     :Problem,
     :Default,
-    (; M="M", p="p") -> "\n```math\n$(_tex(:argmin))_{$p ∈ $(_tex(:Cal, M))} f($p)\n```\n",
+    (; M="M", p="p") -> """
+```math
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} f($p)
+```
+""",
 )
-_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+define!(
+    :Problem,
+    :NonLinearLeastSquares,
+    (; M="M", p="p") -> """
+```math
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2))$(_tex(:sum))_{i=1}^n ρ_i$(_tex(:bigl))( $(_tex(:norm, "f_i($p)"))^2 $(_tex(:bigr)))
+```
+
+where ``f: $(_math(:M; M=M)) → ℝ^n`` is written with component functions ``f_i: $(_math(:M; M=M)) \to ℝ``,
+and each component function is continuously differentiable.
+The functions ``ρ_i: ℝ → ℝ`` can be seen as regularisers of the single least squares terms
+and are twice continuously differentiable.
+
+For the case ``ρ_i(x) = x`` this yields the Nonlinear Least Squares objective
+""",
+)
+
 #
 #
 # Stopping Criteria

@@ -7,20 +7,18 @@ _doc_LM = """
     LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1)
     LevenbergMarquardt!(M, f, jacobian_f, p, num_components=-1; kwargs...)
 
-Solve an optimization problem of the form
+compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022](@cite)
+to solve
 
-$(_doc_LM_formula)
+$(_problem(:NonLinearLeastSquares))
 
-where ``f: $(_math(:M)) → ℝ^d`` is a continuously differentiable function,
-using the Riemannian Levenberg-Marquardt algorithm [Peeters:1993](@cite).
-The implementation follows Algorithm 1 [AdachiOkunoTakeda:2022](@cite).
 The second signature performs the optimization in-place of `p`.
 
 # Input
 
 $(_var(:Argument, :M; type=true))
-* `f`:              a cost function ``f: $(_math(:M))→ℝ^d``
-* `jacobian_f`:     the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
+* `f`:        a cost function ``f: $(_math(:M))→ℝ^d``
+* `grad_f`:   the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
   `basis_domain` which specifies basis of the tangent space at a given point in which the
   Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
 $(_var(:Argument, :p))

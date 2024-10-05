@@ -5,6 +5,16 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - unreleased
+
+### Added
+
+* (planned) a robust variant of Levenberg Marquard
+
+### Changed
+
+* (planned) Levenberg-Marquardt now internally uses a `VectorGradientFunction` and hence also accepts a “gradient matrix” and a vector of gradient functions instead of a Jacobian (in a basis of the tangent vectors).
+
 ## [0.5.2] – October 5, 2024
 
 ### Added

@@ -2,8 +2,9 @@
 @doc """
     NonlinearLeastSquaresObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
-A type for nonlinear least squares problems.
-`T` is a [`AbstractEvaluationType`](@ref) for the `F` and Jacobian functions.
+An objective to model the nonlinear least squares problem
+
+$(_problem(:NonLinearLeastSquares))
 
 Specify a nonlinear least squares problem
 
