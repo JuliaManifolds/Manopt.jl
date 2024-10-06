@@ -254,7 +254,7 @@ define!(
 $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2))$(_tex(:sum))_{i=1}^n ρ_i$(_tex(:bigl))( $(_tex(:abs, "f_i($p)"))^2 $(_tex(:bigr)))
 ```
 
-where ``f: $(_math(:M; M=M)) → ℝ^n`` is written with component functions ``f_i: $(_math(:M; M=M)) \to ℝ``,
+where ``f: $(_math(:M; M=M)) → ℝ^n`` is written with component functions ``f_i: $(_math(:M; M=M)) → ℝ``,
 and each component function is continuously differentiable.
 The functions ``ρ_i: ℝ → ℝ`` can be seen as regularisers of the single least squares terms
 and are twice continuously differentiable.
