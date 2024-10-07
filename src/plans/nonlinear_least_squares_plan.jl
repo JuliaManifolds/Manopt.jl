@@ -1,6 +1,6 @@
 
 @doc """
-    NonlinearLeastSquaresObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
+    NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
 An objective to model the nonlinear least squares problem
 
@@ -9,57 +9,89 @@ $(_problem(:NonLinearLeastSquares))
 Specify a nonlinear least squares problem
 
 # Fields
-* `f`                      a function ``f: $(_math(:M)) → ℝ^d`` to minimize
-* `jacobian!!`             Jacobian of the function ``f``
-* `jacobian_tangent_basis` the basis of tangent space used for computing the Jacobian.
-* `num_components`         number of values returned by `f` (equal to `d`).
 
-Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to be provided:
+* `objective`: aa [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of cost functions ``f_i`` as well as their gradients ``$(_tex(:grad)) f_i```
+* `smoothing`: a single [`ManifoldHessianObjective`](@ref) ``ρ`` or a [`VectorHessianFunction`](@ref)`{T}` containing one smoothing function ``ρ_i``,
+  as well as their first and second derivative(s) ``ρ'`` and ``ρ''``.
 
-* as a functions `(M::AbstractManifold, p) -> v` that allocates memory for `v` itself for
-  an [`AllocatingEvaluation`](@ref),
-* as a function `(M::AbstractManifold, v, p) -> v` that works in place of `v` for a
-  [`InplaceEvaluation`](@ref).
+This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
+as the (inner) `objective.
+The smoothing is expected to be  the smoothing is expected to be [`AllocatingEvaluation`](@ref),
+since it works on a one-dimensional vector space ``ℝ`` only anyways.
 
-Also the Jacobian ``jacF!!`` is required:
-
-* as a functions `(M::AbstractManifold, p; basis_domain::AbstractBasis) -> v` that allocates
-  memory for `v` itself for an [`AllocatingEvaluation`](@ref),
-* as a function `(M::AbstractManifold, v, p; basis_domain::AbstractBasis) -> v` that works
-  in place of `v` for an [`InplaceEvaluation`](@ref).
 
 # Constructors
 
-    NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=AllocatingEvaluation(), jacobian_tangent_basis=DefaultOrthonormalBasis())
+    NonlinearLeastSquaresObjective(f_i, grad_f_i, ρ::F, ρ_prime::F, ρ_prime_prime::F) where {F<:Function}
+    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, ρ::Union{ManifoldHessianObjective, VectorHessianFunction})
 
 # See also
 
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
-struct NonlinearLeastSquaresObjective{E<:AbstractEvaluationType,TC,TJ,TB<:AbstractBasis} <:
-       AbstractManifoldGradientObjective{E,TC,TJ}
-    f::TC
-    jacobian!!::TJ
-    jacobian_tangent_basis::TB
-    num_components::Int
-end
-function NonlinearLeastSquaresObjective(
-    f::TF,
-    jacobian_f::TJ,
-    num_components::Int;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::TB=DefaultOrthonormalBasis(),
-) where {TF,TJ,TB<:AbstractBasis}
-    return NonlinearLeastSquaresObjective{typeof(evaluation),TF,TJ,TB}(
-        f, jacobian_f, jacobian_tangent_basis, num_components
-    )
+struct NonlinearLeastSquaresObjective{
+    E<:AbstractEvaluationType,
+    F<:AbstractVectorGradientFunction{E},
+    R<:Union{AbstractManifoldHessianObjective,VectorHessianFunction},
+} <: AbstractManifoldGradientObjective{E,F,F}
+    objective::F
+    smoothing::R
 end
 
+# TODO: Write the ease-of-use constructor.
+
+# Cost
+# (a) single ρ
 function get_cost(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
-)
-    return 1//2 * norm(nlso.f(M, p))^2
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,
+        AbstractVectorFunction{E,<:FunctionVectorialType},
+        <:AbstractManifoldHessianObjective,
+    },
+    p;
+    vector_space=Rn,
+) where {E<:AbstractEvaluationType}
+    ρ = x -> get_cost(vector_space(1), nlso.smoothing, x) # Maybe introduce new type instead?
+    return 1//2 * sum(x -> ρ(abs(x)^2), get_value(nlso.objective, p) .^ 2)
 end
+function get_cost(
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,
+        AbstractVectorFunction{E,<:ComponentVectorialType},
+        <:AbstractManifoldHessianObjective,
+    },
+    p;
+    vector_space=Rn,
+) where {E<:AbstractEvaluationType}
+    ρ = x -> get_cost(vector_space(1), nlso.smoothing, x) # Maybe introduce new type instead?
+    v = ρ(abs(get_value(M, nlso.objective, p, 1))^2)
+    for i in 2:length(nlso.objective)
+        v += ρ(abs(get_value(M, nlso.objective, p, i))^2)
+    end
+    return 1//2 * v
+end
+# (b) ρ_i
+function get_cost(
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:ComponentVectorialType},<:VectorHessianFunction
+    },
+    p;
+    vector_space=Rn,
+) where {E<:AbstractEvaluationType}
+    v = get_value(
+        vector_space(1), nlso.smoothing, abs(get_value(M, nlso.objective, p, 1))^2, 1
+    )
+    for i in 2:length(nlso.objective)
+        v += get_value(
+            vector_space(1), nlso.smoothing, abs(get_value(M, nlso.objective, p, i))^2, i
+        )
+    end
+    return 1//2 * v
+end
+
 function get_cost(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
 )
@@ -67,6 +99,8 @@ function get_cost(
     nlso.f(M, residual_values, p)
     return 1//2 * norm(residual_values)^2
 end
+
+# TODO: Continue here
 
 """
     get_gradient_from_Jacobian!(

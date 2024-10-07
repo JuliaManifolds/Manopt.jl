@@ -51,7 +51,7 @@ end
 # LaTeX
 
 define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
-define!(:LaTeX, :argmin, raw"\operatorname{arg\,min}")
+define!(:LaTeX, :argmin, raw"\operatorname*{arg\,min}")
 define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
 define!(:LaTeX, :big, raw"\big")
@@ -237,15 +237,11 @@ $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " 
 ```
 """,
 )
-define!(
-    :Problem,
-    :Default,
-    (; M="M", p="p") -> """
-```math
-$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} f($p)
-```
-""",
-)
+define!(:Problem, :Default, (; M="M", p="p") -> """
+                        ```math
+                        $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} f($p)
+                        ```
+                        """)
 define!(
     :Problem,
     :NonLinearLeastSquares,

@@ -1,8 +1,8 @@
-@doc raw"""
+@doc """
     AbstractVectorialType
 
 An abstract type for different representations of a vectorial function
-    ``f: \mathcal M → \mathbb R^m`` and its (component-wise) gradient/Jacobian
+    ``f: $(_math(:M)) → ℝ`` and its (component-wise) gradient/Jacobian
 """
 abstract type AbstractVectorialType end
 
