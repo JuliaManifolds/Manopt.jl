@@ -191,19 +191,20 @@ specify an objective containing a vector bundle map, its derivative, and a conne
     VectorbundleObjective(bundle_map, derivative, connection_map; evaluation=AllocatingEvaluation())
 
 """
-struct VectorbundleObjective{T<:AbstractEvaluationType,C,G,F} <:
+mutable struct VectorbundleObjective{T<:AbstractEvaluationType,C,G,F} <:
        AbstractManifoldGradientObjective{T,C,G}
     bundle_map!!::C
     derivative!!::G
     connection_map!!::F
+    scaling::Number
 end
 # TODO: Eventuell zweiter Parameter (a) Tensor/Matrix darstellung vs (b) action Darstellung
 # oder über einen letzten parameter (a) ohne (b) mit
 
 function VectorbundleObjective(
     bundle_map::C, derivative::G, connection_map::F; evaluation::E=AllocatingEvaluation()
-) where {C,G,F,E<:AbstractEvaluationType}
-    return VectorbundleObjective{E,C,G,F}(bundle_map, derivative, connection_map)
+) where {C,G,F,E<:AbstractEvaluationType, T}
+    return VectorbundleObjective{E,C,G,F}(bundle_map, derivative, connection_map, 1.0)
 end
 
 raw"""
@@ -446,14 +447,17 @@ function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState,
 
     set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(get_manifold(s.sub_problem), s.p))
     #set_iterate!(s.sub_state, get_manifold(mp), zero_vector(get_manifold(mp), s.p))
+    s.is_same = true
     solve!(s.sub_problem, s.sub_state)
     s.X = get_solver_result(s.sub_state) 
-    #s.is_same = false
+    s.is_same= false
+
     step = s.stepsize(mp, s, k)
+    s.is_same = true
     # retract
     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
-    s.p_trial = copy(s.p)
-    #s.is_same = true
+    s.p_trial = copy(get_manifold(mp),s.p)
+    s.is_same = true
     return s
 end
 
