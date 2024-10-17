@@ -72,15 +72,15 @@ discretized_y = [y(Ωi) for Ωi in Omega];
 begin
 	# force
 	function f(M, p)
-		#return project(M, p, [0.0, -1.0, 0.0])
-		return [0.0, -3.0, 0.0]
+		#return project(M, p, [0.0, -2.0, 0.0])
+		return [0.0, -2.0, 0.0]
 	end
 end;
 
 # ╔═╡ dfb46586-a6df-4abf-b719-9d882c1ad6a6
 function proj_prime(S, p, X, Y) # S_i*(Y)
-	return project(S, p, (- X*p' - p*X')*Y) 
-	#return (- X*p' - p*X')*Y
+	#return project(S, p, (- X*p' - p*X')*Y) 
+	return (- X*p' - p*X')*Y
 end
 
 # ╔═╡ 4cd9e4c6-50b9-440e-b48f-923ceda898c2
@@ -149,13 +149,17 @@ function solve_linear_system(M, A, b, p)
 	n = manifold_dimension(M)
 	Ac = zeros(n,n);
 	bc = zeros(n)
-    for (i,basis_vector) in enumerate(base)
+	e = enumerate(base)
+    for (i,basis_vector) in e
       G = A(M, p, basis_vector)
 	  Ac[:,i] = get_coordinates(M, p, G, B)
 	  # Ac[i,:] = get_coordinates(M, p, G, B)'
+		#for (j, bv) in e
+			#Ac[i,j] = bv' * G
+		#end
       bc[i] = b(M, p)'*basis_vector
 	end
-	# bc = get_coordinates(M, p, b(M, p), B)
+	#bc = get_coordinates(M, p, b(M, p), B)
 	#diag_A = Diagonal([abs(Ac[i,i]) < 1e-12 ? 1.0 : 1.0/Ac[i,i] for i in 1:n])
 	#println(Ac)
 	#println(bc)
@@ -174,7 +178,7 @@ solve(problem, newtonstate, k) = solve_linear_system(problem.manifold, A, b, new
 begin
 	Random.seed!(42)
 	p = rand(power)
-	#y_0 = [project(S, (discretized_y[i]+0.01*p[power,i])) for i in 1:N]
+	#y_0 = [project(S, (discretized_y[i]+0.02*p[power,i])) for i in 1:N]
 	y_0 = discretized_y
 end;
 
@@ -182,7 +186,7 @@ end;
 st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(1e-13)),
+	stopping_criterion=(StopAfterIteration(25)|StopWhenChangeLess(1e-13)),
 	stepsize=ConstantStepsize(1.0),
 	#retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop],
@@ -240,14 +244,14 @@ end
 begin
 M=power
 b0 = b(M, y_0)
-i = 7
-ch = 1e-8
+i = 5
+ch = 1e-12
 B = get_basis(M, y_0, DefaultOrthonormalBasis())
 base = get_vectors(M, y_0, B)
 y_1 = exp(M, y_0, ch*base[i])
 b1 = b(M, y_1)
-checkA = (b1 - b0)
-A0 = A(M, y_0, ch*base[M,i])
+checkA = 1/ch * (b1 - b0)
+A0 = A(M, y_0, base[M,i])
 end
 
 # ╔═╡ dc242752-1def-4f30-94e0-8b356eeaa2e3
