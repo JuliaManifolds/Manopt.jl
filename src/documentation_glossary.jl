@@ -140,6 +140,11 @@ define!(
 )
 define!(
     :Link,
+    :injectivity_radius,
+    "[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)",
+)
+define!(
+    :Link,
     :manifold_dimension,
     (; M="M") ->
         "[`manifold_dimension`](@extref `ManifoldsBase.manifold_dimension-Tuple{AbstractManifold}`)$(length(M) > 0 ? "`($M)`" : "")",
