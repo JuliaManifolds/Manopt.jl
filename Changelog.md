@@ -5,6 +5,14 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] – October 18, 2024
+
+### Changed
+
+* stabilize `max_Stepzise` to also work when `injectivity_radius` dos not exist.
+  It however would warn new users, that activate tutorial mode.
+* Start a `ManoptTestSuite` subpackage to store dummy types and common test helpers in.
+
 ## [0.5.2] – October 5, 2024
 
 ### Added

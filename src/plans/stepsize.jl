@@ -35,13 +35,28 @@ default_stepsize(M::AbstractManifold, sT::Type{<:AbstractManoptSolverState})
 Get the maximum stepsize (at point `p`) on manifold `M`. It should be used to limit the
 distance an algorithm is trying to move in a single step.
 
-By default, this returns [`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)`(M)`.
+By default, this returns $(_link(:injectivity_radius))`(M)`, if this exists.
+If this is not available on the the method returns `Inf`.
 """
 function max_stepsize(M::AbstractManifold, p)
-    return max_stepsize(M)
+    s = try
+        injectivity_radius(M, p)
+    catch
+        is_tutorial_mode() &&
+            @warn "`max_stepsize was called, but there seems to not be an `injectivity_raidus` available on $M."
+        Inf
+    end
+    return s
 end
 function max_stepsize(M::AbstractManifold)
-    return injectivity_radius(M)
+    s = try
+        injectivity_radius(M)
+    catch
+        is_tutorial_mode() &&
+            @warn "`max_stepsize was called, but there seems to not be an `injectivity_raidus` available on $M."
+        Inf
+    end
+    return s
 end
 
 """
@@ -305,11 +320,11 @@ $(_var(:Keyword, :retraction_method))
 * `contraction_factor=0.95`
 * `sufficient_decrease=0.1`
 * `last_stepsize=initialstepsize`
-* `initial_guess=[`armijo_initial_guess`](@ref) – (p,s,i,l) -> l`
-* `stop_when_stepsize_less=0.0`
-* `stop_when_stepsize_exceeds`
-* `stop_increasing_at_step=100`
-* `stop_decreasing_at_step=1000`
+* `initial_guess=`[`armijo_initial_guess`](@ref)` – (p,s,i,l) -> l`
+* `stop_when_stepsize_less=0.0`: stop when the stepsize decreased below this version.
+* `stop_when_stepsize_exceeds=[`max_step`](@ref)`(M)`: provide an absolute maximal step size.
+* `stop_increasing_at_step=100`: for the initial increase test, stop after these many steps
+* `stop_decreasing_at_step=1000`: in the backtrack, stop after these many steps
 """
 mutable struct ArmijoLinesearchStepsize{TRM<:AbstractRetractionMethod,P,I,F,IGF,DF,IF} <:
                Linesearch
