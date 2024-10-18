@@ -107,7 +107,7 @@ flat_example(::AbstractManifold, p) = 0.0
             flat_example,
             [10.0, 10.0];
             σ=10.0,
-            stopping_criterion=StopAfterIteration(500) |
+            stopping_criterion=StopAfterIteration(1000) |
                                StopWhenPopulationStronglyConcentrated(1e-5),
             rng=MersenneTwister(12),
             return_state=true,
