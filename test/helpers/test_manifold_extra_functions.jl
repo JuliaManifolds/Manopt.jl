@@ -72,7 +72,7 @@ Random.seed!(42)
         p = [0.0, 1.0, 0.0]
         X = [0.0, 0.0, 0.0]
 
-        @test Manopt.max_stepsize(TM) == π
+        @test Manopt.max_stepsize(M) == π
         @test Manopt.max_stepsize(M, p) == π
         @test Manopt.max_stepsize(TM) == π
         @test Manopt.max_stepsize(TM, ArrayPartition(p, X)) == π
