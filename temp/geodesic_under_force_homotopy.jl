@@ -49,7 +49,7 @@ end
 
 # ╔═╡ 7b3e1aa5-db29-4519-9860-09f6cc933c07
 begin
-	N=25
+	N=100
 	h = 1/(N+2)*π/2
 	st = 0.5
 	#halt = pi - st
@@ -270,11 +270,13 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 
 	add = 1/10.0
 
-	for i in range(1,32)
+	for i in range(1,28)
 		obj.scaling = obj.scaling + add
 		println(obj.scaling)
-		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(10)|StopWhenChangeLess(1e-14)), retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
+		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(1e-14)), retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
 		st_res = solve!(problem, state)
+		println(Manopt.indicates_convergence(st_res.stop)) 
+		println(Manopt.get_reason(st_res)) 
 		y_res = get_solver_result(st_res)
 		scatter!(ax, π1.(y_res), π2.(y_res), π3.(y_res); markersize =8, color=:orange)
 	end

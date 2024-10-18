@@ -86,7 +86,7 @@ end;
 discretized_y = [y(Ωi) for Ωi in Omega];
 
 # ╔═╡ e70f0be7-e768-472f-af8f-3df37d1de880
-c = 0.8
+c = 4.0
 
 # ╔═╡ 968036d4-d75e-4456-a2f3-6747042f7389
 begin
@@ -280,7 +280,7 @@ function solve_linear_system(M, A, b, p, state)
 	#diag_A = Diagonal([abs(Ac[i,i]) < 1e-12 ? 1.0 : 1.0/Ac[i,i] for i in 1:n])
 	#println(Ac)
 	#println("")
-	println(norm(Ac-Ac'))
+	#println(norm(Ac-Ac'))
 	#println(bc)
 	Xc = (Ac) \ (bc)
 	res_c = get_vector(M, p, Xc, B)
@@ -307,7 +307,7 @@ st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, 
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(1e-13)),
 	retraction_method=ProjectionRetraction(),
-stepsize=ConstantStepsize(1.0),
+#stepsize=ConstantStepsize(1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
 	record=[:Iterate, :Change],
 	return_state=true
