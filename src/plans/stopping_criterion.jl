@@ -226,7 +226,7 @@ $(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distan
 ```
 
 where the sum turns into a maximum for the case ``r=∞``.
-The `outer_norm` has no effect on manifols, that do not consist of components.
+The `outer_norm` has no effect on manifolds that do not consist of components.
 
 
 If the manifold does not have components, the outer norm is ignored.
@@ -239,7 +239,7 @@ If the manifold does not have components, the outer norm is ignored.
         threshold::Float64;
         storage::StoreStateAction=StoreStateAction([:Iterate]),
         inverse_retraction_method::IRT=default_inverse_retraction_method(M)
-        outer_norm=missing
+        outer_norm::Union{Missing,Real}=missing
     )
 
 initialize the stopping criterion to a threshold `ε` using the
