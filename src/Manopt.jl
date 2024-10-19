@@ -103,6 +103,7 @@ using ManifoldsBase:
     get_vector,
     get_vector!,
     get_vectors,
+    has_components,
     injectivity_radius,
     inner,
     inverse_retract,
