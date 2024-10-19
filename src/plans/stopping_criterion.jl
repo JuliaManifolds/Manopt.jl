@@ -216,7 +216,7 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an [`AbstractPowerManifold`](@extref) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
 any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
 Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
 is given by
@@ -486,7 +486,7 @@ $(_var(:Field, :storage))
 
 # Example
 
-On an [`AbstractPowerManifold`](@extref) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
 any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
 Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:M))``
 is given by
@@ -615,7 +615,7 @@ A stopping criterion based on the current gradient norm.
 
 # Example
 
-On an [`AbstractPowerManifold`](@extref) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
 any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
 Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:M))``
 is given by

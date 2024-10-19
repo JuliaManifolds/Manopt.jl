@@ -142,6 +142,11 @@ define!(
 )
 define!(
     :Link,
+    :AbstractPowerManifold,
+    "[`AbstractPowerManifold`](@extref `ManifoldsBase.AbstractPowerManifold`)",
+)
+define!(
+    :Link,
     :injectivity_radius,
     "[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)",
 )
