@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Record values · Manopt.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="Manopt.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Manopt.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../about/">About</a></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../Optimize!/">Get started: Optimize!</a></li><li><a class="tocitem" href="../AutomaticDifferentiation/">Use AD in Manopt</a></li><li class="is-active"><a class="tocitem" href>Record values</a><ul class="internal"><li><a class="tocitem" href="#Plain-examples"><span>Plain examples</span></a></li><li><a class="tocitem" href="#A-more-complex-example"><span>A more complex example</span></a></li></ul></li><li><a class="tocitem" href="../GeodesicRegression/">Do Geodesic regression</a></li><li><a class="tocitem" href="../Bezier/">Use Bezier Curves</a></li><li><a class="tocitem" href="../SecondOrderDifference/">Compute a second order difference</a></li><li><a class="tocitem" href="../StochasticGradientDescent/">Do stochastic gradient descent</a></li><li><a class="tocitem" href="../Benchmark/">speed up! using <code>gradF!</code></a></li><li><a class="tocitem" href="../JacobiFields/">Illustrate Jacobi Fields</a></li></ul></li><li><span class="tocitem">Solvers</span><ul><li><a class="tocitem" href="../../solvers/">Introduction</a></li><li><a class="tocitem" href="../../solvers/alternating_gradient_descent/">Alternating Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/ChambollePock/">Chambolle-Pock</a></li><li><a class="tocitem" href="../../solvers/conjugate_gradient_descent/">Conjugate gradient descent</a></li><li><a class="tocitem" href="../../solvers/cyclic_proximal_point/">Cyclic Proximal Point</a></li><li><a class="tocitem" href="../../solvers/DouglasRachford/">Douglas–Rachford</a></li><li><a class="tocitem" href="../../solvers/gradient_descent/">Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/NelderMead/">Nelder–Mead</a></li><li><a class="tocitem" href="../../solvers/particle_swarm/">Particle Swarm Optimization</a></li><li><a class="tocitem" href="../../solvers/primal_dual_semismooth_Newton/">Primal-dual Riemannian semismooth Newton</a></li><li><a class="tocitem" href="../../solvers/quasi_Newton/">Quasi-Newton</a></li><li><a class="tocitem" href="../../solvers/stochastic_gradient_descent/">Stochastic Gradient Descent</a></li><li><a class="tocitem" href="../../solvers/subgradient/">Subgradient method</a></li><li><a class="tocitem" href="../../solvers/truncated_conjugate_gradient_descent/">Steihaug-Toint TCG Method</a></li><li><a class="tocitem" href="../../solvers/trust_regions/">Trust-Regions Solver</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../../examples/robustPCA/">Robust PCA</a></li><li><a class="tocitem" href="../../examples/smallestEigenvalue/">Rayleigh quotient</a></li></ul></li><li><span class="tocitem">Plans</span><ul><li><a class="tocitem" href="../../plans/">Specify a Solver</a></li><li><a class="tocitem" href="../../plans/problem/">Problem</a></li><li><a class="tocitem" href="../../plans/options/">Options</a></li><li><a class="tocitem" href="../../plans/stepsize/">Stepsize</a></li><li><a class="tocitem" href="../../plans/stopping_criteria/">Stopping Criteria</a></li><li><a class="tocitem" href="../../plans/debug/">Debug Output</a></li><li><a class="tocitem" href="../../plans/record/">Recording values</a></li></ul></li><li><span class="tocitem">Functions</span><ul><li><a class="tocitem" href="../../functions/">Introduction</a></li><li><a class="tocitem" href="../../functions/bezier/">Bézier curves</a></li><li><a class="tocitem" href="../../functions/costs/">Cost functions</a></li><li><a class="tocitem" href="../../functions/differentials/">Differentials</a></li><li><a class="tocitem" href="../../functions/adjointdifferentials/">Adjoint Differentials</a></li><li><a class="tocitem" href="../../functions/gradients/">Gradients</a></li><li><a class="tocitem" href="../../functions/Jacobi_fields/">Jacobi Fields</a></li><li><a class="tocitem" href="../../functions/proximal_maps/">Proximal Maps</a></li><li><a class="tocitem" href="../../functions/manifold/">Specific Manifold Functions</a></li></ul></li><li><span class="tocitem">Helpers</span><ul><li><a class="tocitem" href="../../helpers/checks/">Checks</a></li><li><a class="tocitem" href="../../helpers/data/">Data</a></li><li><a class="tocitem" href="../../helpers/errorMeasures/">Error Measures</a></li><li><a class="tocitem" href="../../helpers/exports/">Exports</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contributing to Manopt.jl</a></li><li><a class="tocitem" href="../../notation/">Notation</a></li><li><a class="tocitem" href="../../list/">Function Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href>Record values</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Record values</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaManifolds/Manopt.jl/blob/main/nothing" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><style>
+    table {
+        display: table !important;
+        margin: 2rem auto !important;
+        border-top: 2pt solid rgba(0,0,0,0.2);
+        border-bottom: 2pt solid rgba(0,0,0,0.2);
+    }
+
+    pre, div {
+        margin-top: 1.4rem !important;
+        margin-bottom: 1.4rem !important;
+    }
+
+    .code-output {
+        padding: 0.7rem 0.5rem !important;
+    }
+
+    .admonition-body {
+        padding: 0em 1.25em !important;
+    }
+</style>
+
+<!-- PlutoStaticHTML.Begin -->
+<!--
+    # This information is used for caching.
+    [PlutoStaticHTML.State]
+    input_sha = "127940bd3a397e8b150bbb880061a0fdd2a21b7a1a391cdd4f3782026fb28e25"
+    julia_version = "1.7.3"
+-->
+
+<div class="markdown"><h1>How to Record Data during the Iterations</h1>
+<p>The recording and debug possiblities make it possible to record nearly any data during the iterations. This tutorial illustrates how to</p>
+<ul>
+<li><p>record one value during the iterations</p>
+</li>
+<li><p>record multiple values during the iterations and access them afterwards</p>
+</li>
+<li><p>define an own <code>RecordAction</code> to perform individual recordings.</p>
+</li>
+</ul>
+<p>Several predefined recordings exist, for example <code>RecordCost&#40;&#41;</code> or <code>RecordGradient&#40;&#41;</code>, depending on the solver used. For fields of the <code>Options</code> this can be directly done using the &#91;<code>RecordEntry&#40;:field&#41; For other recordings, for example more advanced computations before storing a value, an own</code>RecordAction&#96; can be defined.</p>
+<p>We illustrate these using the gradient descent from the mean computation tutorial.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>using Manopt, Manifolds, Random</code></pre>
+
+
+<pre class='language-julia'><code class='language-julia'>begin
+    Random.seed!(42)
+    m = 30
+    M = Sphere(m)
+    n = 800
+    σ = π / 8
+    x = zeros(Float64, m + 1)
+    x[2] = 1.0
+    data = [exp(M, x, random_tangent(M, x, Val(:Gaussian), σ)) for i in 1:n]
+end</code></pre>
+<pre id='var-m' class='code-output documenter-example-output'>800-element Vector{Vector{Float64}}:
+ [-0.054658825167894595, -0.5592077846510423, -0.04738273828111257, -0.04682080720921302, 0.12279468849667038, 0.07171438895366239, -0.12930045409417057, -0.22102081626380404, -0.31805333254577767, 0.0065859500152017645  …  -0.21999168261518043, 0.19570142227077295, 0.340909965798364, -0.0310802190082894, -0.04674431076254687, -0.006088297671169996, 0.01576037011323387, -0.14523596850249543, 0.14526158060820338, 0.1972125856685378]
+ [-0.08192376929745249, -0.5097715132187676, -0.008339904915541005, 0.07289741328038676, 0.11422036270613797, -0.11546739299835748, 0.2296996932628472, 0.1490467170835958, -0.11124820565850364, -0.11790721606521781  …  -0.16421249630470344, -0.2450575844467715, -0.07570080850379841, -0.07426218324072491, -0.026520181327346338, 0.11555341205250205, -0.0292955762365121, -0.09012096853677576, -0.23470556634911574, -0.026214242996704013]
+ [-0.22951484264859257, -0.6083825348640186, 0.14273766477054015, -0.11947823367023377, 0.05984293499234536, 0.058820835498203126, 0.07577331705863266, 0.1632847202946857, 0.20244385489915745, 0.04389826920203656  …  0.3222365119325929, 0.009728730325524067, -0.12094785371632395, -0.36322323926212824, -0.0689253407939657, 0.23356953371702974, 0.23489531397909744, 0.078303336494718, -0.14272984135578806, 0.07844539956202407]
+ [-0.0012588500237817606, -0.29958740415089763, 0.036738459489123514, 0.20567651907595125, -0.1131046432541904, -0.06032435985370224, 0.3366633723165895, -0.1694687746143405, -0.001987171245125281, 0.04933779858684409  …  -0.2399584473006256, 0.19889267065775063, 0.22468755918787048, 0.1780090580180643, 0.023703860700539356, -0.10212737517121755, 0.03807004103115319, -0.20569120952458983, -0.03257704254233959, 0.06925473452536687]
+ [-0.035534309946938375, -0.06645560787329002, 0.14823972268208874, -0.23913346587232426, 0.038347027875883496, 0.10453333143286662, 0.050933995140290705, -0.12319549375687473, 0.12956684644537844, -0.23540367869989412  …  -0.41471772859912864, -0.1418984610380257, 0.0038321446836859334, 0.23655566917750157, -0.17500681300994742, -0.039189751036839374, -0.08687860620942896, -0.11509948162959047, 0.11378233994840942, 0.38739450723013735]
+ [-0.3122539912469438, -0.3101935557860296, 0.1733113629107006, 0.08968593616209351, -0.1836344261367962, -0.06480023695256802, 0.18165070013886545, 0.19618275767992124, -0.07956460275570058, 0.0325997354656551  …  0.2845492418767769, 0.17406455870721682, -0.053101230371568706, -0.1382082812981627, 0.005830071475508364, 0.16739264037923055, 0.034365814374995335, 0.09107702398753297, -0.1877250428700409, 0.05116494897806923]
+ [-0.04159442361185588, -0.7768029783272633, 0.06303616666722486, 0.08070518925253539, -0.07396265237309446, -0.06008109299719321, 0.07977141629715745, 0.019511027129056415, 0.08629917589924847, -0.11156298867318722  …  0.0792587504128044, -0.016444383900170008, -0.181746064577005, -0.01888129512990984, -0.13523922089388968, 0.11358102175659832, 0.07929049608459493, 0.1689565359083833, 0.07673657951723721, -0.1128480905648813]
+ ⋮
+ [-0.19830349374441875, -0.6086693423968884, 0.08552341811170468, 0.35781519334042255, 0.15790663648524367, 0.02712571268324985, 0.09855601327331667, -0.05840653973421127, -0.09546429767790429, -0.13414717696055448  …  -0.0430935804718714, 0.2678584478951765, 0.08780994289014614, 0.01613469379498457, 0.0516187906322884, -0.07383067566731401, -0.1481272738354552, -0.010532317187265649, 0.06555344745952187, -0.1506167863762911]
+ [-0.04347524125197773, -0.6327981074196994, -0.221116680035191, 0.0282207467940456, -0.0855024881522933, 0.12821801740178346, 0.1779499563280024, -0.10247384887512365, 0.0396432464100116, -0.0582580338112627  …  0.1253893207083573, 0.09628202269764763, 0.3165295473947355, -0.14915034201394833, -0.1376727867817772, -0.004153096613530293, 0.09277957650773738, 0.05917264554031624, -0.12230262590034507, -0.19655728521529914]
+ [-0.10173946348675116, -0.6475660153977272, 0.1260284619729566, -0.11933160462857616, -0.04774310633937567, 0.09093928358804217, 0.041662676324043114, -0.1264739543938265, 0.09605293126911392, -0.16790474428001648  …  -0.04056684573478108, 0.09351665120940456, 0.15259195558799882, 0.0009949298312580497, 0.09461980828206303, 0.3067004514287283, 0.16129258773733715, -0.18893664085007542, -0.1806865244492513, 0.029319680436405825]
+ [-0.251780954320053, -0.39147463259941456, -0.24359579328578626, 0.30179309757665723, 0.21658893985206484, 0.12304585275893232, 0.28281133086451704, 0.029187615341955325, 0.03616243507191924, 0.029375588909979152  …  -0.08071746662465404, -0.2176101928258658, 0.20944684921170825, 0.043033273425352715, -0.040505542460853576, 0.17935596149079197, -0.08454569418519972, 0.0545941597033932, 0.12471741052450099, -0.24314124407858329]
+ [0.28156471341150974, -0.6708572780452595, -0.1410302363738465, -0.08322589397277698, -0.022772599832907418, -0.04447265789199677, -0.016448068022011157, -0.07490911512503738, 0.2778432295769144, -0.10191899088372378  …  -0.057272155080983836, 0.12817478092201395, 0.04623814480781884, -0.12184190164369117, 0.1987855635987229, -0.14533603246124993, -0.16334072868597016, -0.052369977381939437, 0.014904286931394959, -0.2440882678882144]
+ [0.12108727495744157, -0.714787344982596, 0.01632521838262752, 0.04437570556908449, -0.041199280304144284, 0.052984488452616, 0.03796520200156107, 0.2791785910964288, 0.11530429924056099, 0.12178223160398421  …  -0.07621847481721669, 0.18353870423743013, -0.19066653731436745, -0.09423224997242206, 0.14596847781388494, -0.09747986927777111, 0.16041150122587072, -0.02296513951256738, 0.06786878373578588, 0.15296635978447756]</pre>
+
+<pre class='language-julia'><code class='language-julia'>F(M, y) = sum(1 / (2 * n) * distance.(Ref(M), Ref(y), data) .^ 2)</code></pre>
+<pre id='var-F' class='code-output documenter-example-output'>F (generic function with 1 method)</pre>
+
+<pre class='language-julia'><code class='language-julia'>gradF(M, y) = sum(1 / n * grad_distance.(Ref(M), data, Ref(y)))</code></pre>
+<pre id='var-gradF' class='code-output documenter-example-output'>gradF (generic function with 1 method)</pre>
+
+<h2 id="Plain-examples"><a class="docs-heading-anchor" href="#Plain-examples">Plain examples</a><a id="Plain-examples-1"></a><a class="docs-heading-anchor-permalink" href="#Plain-examples" title="Permalink"></a></h2><div class="markdown">
+
+<p>For the high level interfaces of the solvers, like <a href="https://manoptjl.org/stable/solvers/gradient_descent.html"><code>gradient_descent</code></a> we have to set <code>return_options</code> to <code>true</code> to obtain the whole options structure and not only the resulting minimizer.</p>
+<p>Then we can easily use the <code>record&#61;</code> option to add recorded values. This kesword accepts <code>RecordAction</code>s as well as several Symbols as shortcuts, for example <code>:Cost</code> to record the cost or if your options have a field <code>f</code> <code>:f</code> would record that entry.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>R = gradient_descent(M, F, gradF, data[1]; record=:Cost, return_options=true)</code></pre>
+<pre id='var-R' class='code-output documenter-example-output'>RecordOptions{DebugOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}}, NamedTuple{(:Iteration,), Tuple{RecordCost}}}(DebugOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}([0.0033485640745845695, -0.9989177042553862, 0.012603956508767276, 3.724197572811732e-5, 0.0034768865026168693, 0.00739331278409239, 0.001513138638228347, -0.02095796519560987, 0.01486272516667112, -0.007213435090434026  …  -0.00334140512549145, 0.004841935449164266, -0.010592700164882455, -0.013017126496751092, 0.0033263346529508082, -0.004530004394986143, 0.003007799686838193, -0.015610320484373687, -0.0016794415617269005, -0.0025375720454376477], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, ""), StopWhenGradientNormLess(1.0e-8, "The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.124221392360485e-9) is less than 1.0e-8.\n")), "The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.124221392360485e-9) is less than 1.0e-8.\n"), ConstantStepsize{Float64}(1.5707963267948966), [-1.367112036369713e-10, 6.462872073717974e-12, -7.622632884969518e-11, 4.4911467977199436e-11, 4.20937629438717e-11, 5.201076879292679e-11, -9.267081125776322e-11, -1.8272699732436656e-10, -3.065679494659336e-10, -5.03131596715084e-12  …  -6.598303338174044e-11, 1.7403962201522488e-10, 5.369744969854762e-10, -1.1733961287970114e-10, -5.650580285794515e-11, 3.218762742777069e-11, 1.6751895850304274e-11, -1.8880139744220084e-10, 5.099352668911598e-11, 3.865808058595762e-10], ExponentialRetraction()), Dict{Symbol, DebugGroup}(:All => DebugGroup(DebugAction[DebugWarnIfCostIncreases(:Once, 0.5322977905736684, 1.0e-13)]))), (Iteration = RecordCost([0.5338138923660324, 0.532299080075227, 0.5322977917333718, 0.5322977905747528, 0.5322977905736697, 0.5322977905736684, 0.5322977905736685]),))</pre>
+
+
+<div class="markdown"><p>From the returned options, we see that the <code>Options</code> are encapsulated &#40;decorated&#41; with  <code>RecordOptions</code>.</p>
+<p>You can attach different recorders to some operations &#40;<code>:Start</code>. <code>:Stop</code>, <code>:Iteration</code> at time of  writing&#41;, where <code>:Iteration</code> is the default, so the following is the same as <code>get_record&#40;R, :Iteation&#41;</code>. We get</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record(R)</code></pre>
+<pre id='var-hash525965' class='code-output documenter-example-output'>7-element Vector{Float64}:
+ 0.5338138923660324
+ 0.532299080075227
+ 0.5322977917333718
+ 0.5322977905747528
+ 0.5322977905736697
+ 0.5322977905736684
+ 0.5322977905736685</pre>
+
+
+<div class="markdown"><p>To record more than one value, you can pass a array of a mix of symbols and <code>RecordAction</code> which formally introduces <code>RecordGroup</code>. Such a Group records a tuple of values in every iteration.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>R2 = gradient_descent(M, F, gradF, data[1]; record=[:Iteration, :Cost], return_options=true)</code></pre>
+<pre id='var-R2' class='code-output documenter-example-output'>RecordOptions{DebugOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}}, NamedTuple{(:Iteration,), Tuple{RecordGroup}}}(DebugOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}([0.0033485640745845695, -0.9989177042553862, 0.012603956508767276, 3.724197572811732e-5, 0.0034768865026168693, 0.00739331278409239, 0.001513138638228347, -0.02095796519560987, 0.01486272516667112, -0.007213435090434026  …  -0.00334140512549145, 0.004841935449164266, -0.010592700164882455, -0.013017126496751092, 0.0033263346529508082, -0.004530004394986143, 0.003007799686838193, -0.015610320484373687, -0.0016794415617269005, -0.0025375720454376477], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, ""), StopWhenGradientNormLess(1.0e-8, "The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.124221392360485e-9) is less than 1.0e-8.\n")), "The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.124221392360485e-9) is less than 1.0e-8.\n"), ConstantStepsize{Float64}(1.5707963267948966), [-1.367112036369713e-10, 6.462872073717974e-12, -7.622632884969518e-11, 4.4911467977199436e-11, 4.20937629438717e-11, 5.201076879292679e-11, -9.267081125776322e-11, -1.8272699732436656e-10, -3.065679494659336e-10, -5.03131596715084e-12  …  -6.598303338174044e-11, 1.7403962201522488e-10, 5.369744969854762e-10, -1.1733961287970114e-10, -5.650580285794515e-11, 3.218762742777069e-11, 1.6751895850304274e-11, -1.8880139744220084e-10, 5.099352668911598e-11, 3.865808058595762e-10], ExponentialRetraction()), Dict{Symbol, DebugGroup}(:All => DebugGroup(DebugAction[DebugWarnIfCostIncreases(:Once, 0.5322977905736684, 1.0e-13)]))), (Iteration = RecordGroup(RecordAction[RecordIteration([1, 2, 3, 4, 5, 6, 7]), RecordCost([0.5338138923660324, 0.532299080075227, 0.5322977917333718, 0.5322977905747528, 0.5322977905736697, 0.5322977905736684, 0.5322977905736685])], Dict(:Iteration => 1, :Cost => 2)),))</pre>
+
+
+<div class="markdown"><p>Here, the Symbol <code>:Cost</code> is mapped to using the <code>RecordCost</code> action. The same holds for <code>:Iteration</code> and <code>:Iterate</code> and any member field of the current <code>Options</code>. To access these you can first extract the group of records &#40;that is where the <code>:Iteration</code>s are recorded – note the Pluraö&#41; and then access the <code>:Cost</code></p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record_action(R2, :Iteration)</code></pre>
+<pre id='var-hash886786' class='code-output documenter-example-output'>RecordGroup(RecordAction[RecordIteration([1, 2, 3, 4, 5, 6, 7]), RecordCost([0.5338138923660324, 0.532299080075227, 0.5322977917333718, 0.5322977905747528, 0.5322977905736697, 0.5322977905736684, 0.5322977905736685])], Dict(:Iteration => 1, :Cost => 2))</pre>
+
+
+<div class="markdown"><p><code>:Iteration</code> is the default here, i.e. something recorded through the iterations – and we can access the recorded data the same way as we specify them in the <code>record&#61;</code> keyword, that is, using the indexing operation.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record_action(R2)[:Cost]</code></pre>
+<pre id='var-hash178669' class='code-output documenter-example-output'>7-element Vector{Float64}:
+ 0.5338138923660324
+ 0.532299080075227
+ 0.5322977917333718
+ 0.5322977905747528
+ 0.5322977905736697
+ 0.5322977905736684
+ 0.5322977905736685</pre>
+
+
+<div class="markdown"><p>This can be also done by using a the high level interface <code>get_record</code>.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record(R2, :Iteration, :Cost)</code></pre>
+<pre id='var-hash112217' class='code-output documenter-example-output'>7-element Vector{Float64}:
+ 0.5338138923660324
+ 0.532299080075227
+ 0.5322977917333718
+ 0.5322977905747528
+ 0.5322977905736697
+ 0.5322977905736684
+ 0.5322977905736685</pre>
+
+
+<div class="markdown"><p>Note that the first symbol again refers to the point where we record &#40;not to the thing we record&#41;. We can also pass a Tuple as second argument to have our own order &#40;not that now the second <code>:Iteration</code> refers to the recorded iteratons&#41;</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record(R2, :Iteration, (:Iteration, :Cost))</code></pre>
+<pre id='var-hash123816' class='code-output documenter-example-output'>7-element Vector{Tuple{Int64, Float64}}:
+ (1, 0.5338138923660324)
+ (2, 0.532299080075227)
+ (3, 0.5322977917333718)
+ (4, 0.5322977905747528)
+ (5, 0.5322977905736697)
+ (6, 0.5322977905736684)
+ (7, 0.5322977905736685)</pre>
+
+<h2 id="A-more-complex-example"><a class="docs-heading-anchor" href="#A-more-complex-example">A more complex example</a><a id="A-more-complex-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-more-complex-example" title="Permalink"></a></h2><div class="markdown">
+
+<p>To illustrate a complicated example let&#39;s record</p>
+<ul>
+<li><p>the iteration number, cost and gradient field, but only every sixth iteration</p>
+</li>
+<li><p>the iteration at which we stop</p>
+</li>
+</ul>
+<p>We first generate the problem and the options, to also illustrate the low-level works when not using <code>gradient_descent</code>.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>p = GradientProblem(M, F, gradF)</code></pre>
+<pre id='var-p' class='code-output documenter-example-output'>GradientProblem{AllocatingEvaluation, Sphere{30, ℝ}, typeof(F), typeof(gradF)}(Sphere(30, ℝ), Main.workspace#13.F, Main.workspace#13.gradF)</pre>
+
+<pre class='language-julia'><code class='language-julia'>o = GradientDescentOptions(
+    M,
+    copy(data[1]);
+    stopping_criterion=StopAfterIteration(200) | StopWhenGradientNormLess(10.0^-9),
+)</code></pre>
+<pre id='var-o' class='code-output documenter-example-output'>GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}([-0.054658825167894595, -0.5592077846510423, -0.04738273828111257, -0.04682080720921302, 0.12279468849667038, 0.07171438895366239, -0.12930045409417057, -0.22102081626380404, -0.31805333254577767, 0.0065859500152017645  …  -0.21999168261518043, 0.19570142227077295, 0.340909965798364, -0.0310802190082894, -0.04674431076254687, -0.006088297671169996, 0.01576037011323387, -0.14523596850249543, 0.14526158060820338, 0.1972125856685378], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, ""), StopWhenGradientNormLess(1.0e-9, "")), #undef), ConstantStepsize{Float64}(1.0), [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], ExponentialRetraction())</pre>
+
+
+<div class="markdown"><p>We first build a <code>RecordGroup</code> to group the three entries we want to record per iteration. We then put this into a <code>RecordEvery</code> to only record this every 6th iteration</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>rI = RecordEvery(
+    RecordGroup([
+        :Iteration =&gt; RecordIteration(),
+        :Cost =&gt; RecordCost(),
+        :Gradient =&gt; RecordEntry(similar(data[1]), :gradient),
+    ]),
+    6,
+)</code></pre>
+<pre id='var-rI' class='code-output documenter-example-output'>RecordEvery(RecordGroup(RecordAction[RecordIteration(Int64[]), RecordCost(Float64[]), RecordEntry{Vector{Float64}}(Vector{Float64}[], :gradient)], Dict(:Iteration => 1, :Gradient => 3, :Cost => 2)), 6, true)</pre>
+
+
+<div class="markdown"><p>and a small option to record iterations</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>sI = RecordIteration()</code></pre>
+<pre id='var-sI' class='code-output documenter-example-output'>RecordIteration(Int64[])</pre>
+
+
+<div class="markdown"><p>We now combine both into the <code>RecordOptions</code> decorator. It acts completely the same as an <code>Option</code> but records something in every iteration additionslly. This is stored in a dictionary of <code>RecordActions</code>, where <code>:Iteration</code> is the action &#40;here the only every 6th iteration group&#41; and the <code>sI</code> which is executed at stop.</p>
+<p>Note that the keyword <code>record&#61;</code> &#40;in the high level interface <code>gradient_descent</code> only would fill the <code>:Iteration</code> symbol&#41;.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>r = RecordOptions(o, Dict(:Iteration =&gt; rI, :Stop =&gt; sI))</code></pre>
+<pre id='var-r' class='code-output documenter-example-output'>RecordOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}, NamedTuple{(:Iteration, :Stop), Tuple{RecordEvery, RecordIteration}}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}([-0.054658825167894595, -0.5592077846510423, -0.04738273828111257, -0.04682080720921302, 0.12279468849667038, 0.07171438895366239, -0.12930045409417057, -0.22102081626380404, -0.31805333254577767, 0.0065859500152017645  …  -0.21999168261518043, 0.19570142227077295, 0.340909965798364, -0.0310802190082894, -0.04674431076254687, -0.006088297671169996, 0.01576037011323387, -0.14523596850249543, 0.14526158060820338, 0.1972125856685378], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, ""), StopWhenGradientNormLess(1.0e-9, "")), #undef), ConstantStepsize{Float64}(1.0), [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], ExponentialRetraction()), (Iteration = RecordEvery(RecordGroup(RecordAction[RecordIteration(Int64[]), RecordCost(Float64[]), RecordEntry{Vector{Float64}}(Vector{Float64}[], :gradient)], Dict(:Iteration => 1, :Gradient => 3, :Cost => 2)), 6, true), Stop = RecordIteration(Int64[])))</pre>
+
+
+<div class="markdown"><p>We now call the solver</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>res = solve(p, r)</code></pre>
+<pre id='var-res' class='code-output documenter-example-output'>RecordOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}, NamedTuple{(:Iteration, :Stop), Tuple{RecordEvery, RecordIteration}}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}([0.0033485640598485585, -0.9989177042539491, 0.012603956493466075, 3.7241967444742066e-5, 0.0034768865349409698, 0.007393312802598416, 0.0015131386077148776, -0.020957965245003006, 0.01486272508600493, -0.007213435086688201  …  -0.003341405180698117, 0.004841935496011182, -0.010592700080354565, -0.013017126499757142, 0.003326334644726626, -0.004530004393003028, 0.0030077996912374542, -0.01561032051609556, -0.0016794415289985546, -0.002537571995100811], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, ""), StopWhenGradientNormLess(1.0e-9, "The algorithm reached approximately critical point after 23 iterations; the gradient norm (4.1219635299623006e-10) is less than 1.0e-9.\n")), "The algorithm reached approximately critical point after 23 iterations; the gradient norm (4.1219635299623006e-10) is less than 1.0e-9.\n"), ConstantStepsize{Float64}(1.0), [-3.504430954952807e-11, 2.877183618274265e-12, -3.048456991260875e-11, -1.0315281127101089e-11, 5.39745646316531e-11, 3.3226529749688476e-11, -5.709966433188477e-11, -9.534787141687179e-11, -1.542209220029532e-10, 4.771792742842493e-12  …  -9.270955165130608e-11, 8.98254224907663e-11, 1.8128432826072793e-10, -1.5916518699820442e-11, -1.9069035711366186e-11, 5.184064332322547e-12, 8.188573652695777e-12, -6.746130612684045e-11, 5.7583408270074805e-11, 1.1318273290708385e-10], ExponentialRetraction()), (Iteration = RecordEvery(RecordGroup(RecordAction[RecordIteration([6, 12, 18]), RecordCost([0.5323010518577256, 0.5322977906049865, 0.5322977905736688]), RecordEntry{Vector{Float64}}([[-0.0003815871897816937, 8.243775455566598e-5, -0.00035809247332053745, -0.00025905876141471865, 0.0007619214859574266, 0.00042771503965278074, -0.0008076042524146102, -0.0013010056736616092, -0.002067096714886252, 6.9559103789487e-5  …  -0.001350435368679887, 0.0012094473304958189, 0.0022429819303820967, -0.00016380134227963073, -0.0002994016292140071, -7.1423605242064295e-6, 9.124917577359908e-5, -0.0008577966654541952, 0.0008956067961453898, 0.001312415103285737], [-1.2578098855363796e-6, 1.1618307377742436e-7, -1.1492279085906428e-6, -6.524413245178711e-7, 2.287734329179109e-6, 1.3267058701920705e-6, -2.4124385063502935e-6, -3.939382844498837e-6, -6.2980044995446574e-6, 2.0690731769310911e-7  …  -4.00515241078141e-6, 3.678794834010093e-6, 7.0274413921118245e-6, -5.445300753678634e-7, -8.555011713710773e-7, 6.735388962566375e-8, 2.9994829264381e-7, -2.660651049511267e-6, 2.5913354877722634e-6, 4.218349473223695e-6], [-4.128322533353485e-9, 3.5608960937613405e-10, -3.673569348536067e-9, -1.5970797755842422e-9, 6.85323382025989e-9, 4.105108627864857e-9, -7.2250211674522035e-9, -1.1944745391954167e-8, -1.9223517719497984e-8, 6.141461668374409e-10  …  -1.1867770366113498e-8, 1.1209332633648796e-8, 2.2064372827402222e-8, -1.8248808993331748e-9, -2.4702197751495444e-9, 4.557867582162013e-10, 9.752551396395148e-10, -8.271971120599344e-9, 7.503390022213594e-9, 1.3546235657063005e-8]], :gradient)], Dict(:Iteration => 1, :Gradient => 3, :Cost => 2)), 6, true), Stop = RecordIteration([23])))</pre>
+
+
+<div class="markdown"><p>And we can check the recorded value at <code>:Stop</code> to see how many iterations were performed</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record(res, :Stop)</code></pre>
+<pre id='var-hash654462' class='code-output documenter-example-output'>1-element Vector{Int64}:
+ 23</pre>
+
+
+<div class="markdown"><p>and the other values during the iterations are</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record(res, :Iteration, (:Iteration, :Cost))</code></pre>
+<pre id='var-hash619888' class='code-output documenter-example-output'>3-element Vector{Tuple{Int64, Float64}}:
+ (6, 0.5323010518577256)
+ (12, 0.5322977906049865)
+ (18, 0.5322977905736688)</pre>
+
+
+<div class="markdown"><h2>Writing an own <code>RecordAction</code>s</h2>
+<p>Let&#39;s investigate where we want to count the number of function evaluations, again just to illustrate, since for the gradient this is just one evaluation per iteration. We first define a cost, that counts it&#39;s own calls.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    mutable struct MyCost{T}
+        data::T
+        count::Int
+    end
+    MyCost(data::T) where {T} = MyCost{T}(data, 0)
+    function (c::MyCost)(M, x)
+        c.count += 1
+        return sum(1 / (2 * length(c.data)) * distance.(Ref(M), Ref(x), c.data) .^ 2)
+    end
+end</code></pre>
+
+
+
+<div class="markdown"><p>and we define the following RecordAction, which is a Functor, i.e. a struct that is also a function. The function we have to implement is similar to a single solver step in signature, since it might get called every iteration: </p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>begin
+    mutable struct RecordCount &lt;: RecordAction
+        recorded_values::Vector{Int}
+        RecordCount() = new(Vector{Int}())
+    end
+    function (r::RecordCount)(p::Problem, ::Options, i)
+        if i &gt; 0
+            push!(r.recorded_values, p.cost.count)
+        elseif i &lt; 0 # reset if negative
+            r.recorded_values = Vector{Int}()
+        end
+    end
+end</code></pre>
+
+
+
+<div class="markdown"><p>Now we can initialize the new cost and call the gradient descent. Note that this illustrates also the last use case – you can pass symbol-Action pairs into the <code>record&#61;</code>array.</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>F2 = MyCost(data)</code></pre>
+<pre id='var-F2' class='code-output documenter-example-output'>MyCost{Vector{Vector{Float64}}}([[-0.054658825167894595, -0.5592077846510423, -0.04738273828111257, -0.04682080720921302, 0.12279468849667038, 0.07171438895366239, -0.12930045409417057, -0.22102081626380404, -0.31805333254577767, 0.0065859500152017645  …  -0.21999168261518043, 0.19570142227077295, 0.340909965798364, -0.0310802190082894, -0.04674431076254687, -0.006088297671169996, 0.01576037011323387, -0.14523596850249543, 0.14526158060820338, 0.1972125856685378], [-0.08192376929745249, -0.5097715132187676, -0.008339904915541005, 0.07289741328038676, 0.11422036270613797, -0.11546739299835748, 0.2296996932628472, 0.1490467170835958, -0.11124820565850364, -0.11790721606521781  …  -0.16421249630470344, -0.2450575844467715, -0.07570080850379841, -0.07426218324072491, -0.026520181327346338, 0.11555341205250205, -0.0292955762365121, -0.09012096853677576, -0.23470556634911574, -0.026214242996704013], [-0.22951484264859257, -0.6083825348640186, 0.14273766477054015, -0.11947823367023377, 0.05984293499234536, 0.058820835498203126, 0.07577331705863266, 0.1632847202946857, 0.20244385489915745, 0.04389826920203656  …  0.3222365119325929, 0.009728730325524067, -0.12094785371632395, -0.36322323926212824, -0.0689253407939657, 0.23356953371702974, 0.23489531397909744, 0.078303336494718, -0.14272984135578806, 0.07844539956202407], [-0.0012588500237817606, -0.29958740415089763, 0.036738459489123514, 0.20567651907595125, -0.1131046432541904, -0.06032435985370224, 0.3366633723165895, -0.1694687746143405, -0.001987171245125281, 0.04933779858684409  …  -0.2399584473006256, 0.19889267065775063, 0.22468755918787048, 0.1780090580180643, 0.023703860700539356, -0.10212737517121755, 0.03807004103115319, -0.20569120952458983, -0.03257704254233959, 0.06925473452536687], [-0.035534309946938375, -0.06645560787329002, 0.14823972268208874, -0.23913346587232426, 0.038347027875883496, 0.10453333143286662, 0.050933995140290705, -0.12319549375687473, 0.12956684644537844, -0.23540367869989412  …  -0.41471772859912864, -0.1418984610380257, 0.0038321446836859334, 0.23655566917750157, -0.17500681300994742, -0.039189751036839374, -0.08687860620942896, -0.11509948162959047, 0.11378233994840942, 0.38739450723013735], [-0.3122539912469438, -0.3101935557860296, 0.1733113629107006, 0.08968593616209351, -0.1836344261367962, -0.06480023695256802, 0.18165070013886545, 0.19618275767992124, -0.07956460275570058, 0.0325997354656551  …  0.2845492418767769, 0.17406455870721682, -0.053101230371568706, -0.1382082812981627, 0.005830071475508364, 0.16739264037923055, 0.034365814374995335, 0.09107702398753297, -0.1877250428700409, 0.05116494897806923], [-0.04159442361185588, -0.7768029783272633, 0.06303616666722486, 0.08070518925253539, -0.07396265237309446, -0.06008109299719321, 0.07977141629715745, 0.019511027129056415, 0.08629917589924847, -0.11156298867318722  …  0.0792587504128044, -0.016444383900170008, -0.181746064577005, -0.01888129512990984, -0.13523922089388968, 0.11358102175659832, 0.07929049608459493, 0.1689565359083833, 0.07673657951723721, -0.1128480905648813], [-0.21221814304651335, -0.5031823821503253, 0.010326342133992458, -0.12438192100961257, 0.04004758695231872, 0.2280527500843805, -0.2096243232022162, -0.16564828762420294, -0.28325749481138984, 0.17033534605245823  …  -0.13599096505924074, 0.28437770540525625, 0.08424426798544583, -0.1266207606984139, 0.04917635557603396, -0.00012608938533809706, -0.04283220254770056, -0.08771365647566572, 0.14750169103093985, 0.11601120086036351], [0.10683290707435536, -0.17680836277740156, 0.23767458301899405, 0.12011180867097299, -0.029404774462600154, 0.11522028383799933, -0.3318174480974519, -0.17859266746938374, 0.04352373642537759, 0.2530382802667988  …  0.08879861736692073, -0.004412506987801729, 0.19786810509925895, -0.1397104682727044, 0.09482328498485094, 0.05108149065160893, -0.14578343506951633, 0.3167479772660438, 0.10422673169182732, 0.21573150015891313], [-0.024895624707466164, -0.7473912016432697, -0.1392537238944721, -0.14948896791465557, -0.09765393283580377, 0.04413059403279867, -0.13865379004720355, -0.071032040283992, 0.15604054722246585, -0.10744260463413555  …  -0.14748067081342833, -0.14743635071251024, 0.0643591937981352, 0.16138827697852615, -0.12656652133603935, -0.06463635704869083, 0.14329582429103488, -0.01113113793821713, 0.29295387893749997, 0.06774523575259782]  …  [0.011874845316569967, -0.6910596618389588, 0.21275741439477827, -0.014042545524367437, -0.07883613103495014, -0.0021900966696246776, -0.033836430464220496, 0.2925813113264835, -0.04718187201980008, 0.03949680289730036  …  0.0867736586603294, 0.0404682510051544, -0.24779813848587257, -0.28631514602877145, -0.07211767532456789, -0.15072898498180473, 0.017855923621826746, -0.09795357710255254, -0.14755229203084924, 0.1305005778855436], [0.013457629515450426, -0.3750353654626534, 0.12349883726772073, 0.3521803555005319, 0.2475921439420274, 0.006088649842999206, 0.31203183112392907, -0.036869203979483754, -0.07475746464056504, -0.029297797064479717  …  0.16867368684091563, -0.09450564983271922, -0.0587273302122711, -0.1326667940553803, -0.25530237980444614, 0.37556905374043376, 0.04922612067677609, 0.2605362549983866, -0.21871556587505667, -0.22915883767386164], [0.03295085436260177, -0.971861604433394, 0.034748713521512035, -0.0494065013245799, -0.01767479281403355, 0.0465459739459587, 0.007470494722096038, 0.003227960072276129, 0.0058328596338402365, -0.037591237446692356  …  0.03205152122876297, 0.11331109854742015, 0.03044900529526686, 0.017971704993311105, -0.009329252062960229, -0.02939354719650879, 0.022088835776251863, -0.02546111553658854, -0.0026257225461427582, 0.005702111697172774], [0.06968243992532257, -0.7119502191435176, -0.18136614593117445, -0.1695926215673451, 0.01725015359973796, -0.00694164951158388, -0.34621134287344574, 0.024709256792651912, -0.1632255805999673, -0.2158226433583082  …  -0.14153772108081458, -0.11256850346909901, 0.045109821764180706, -0.1162754336222613, -0.13221711766357983, 0.005365354776191061, 0.012750671705879105, -0.018208207549835407, 0.12458753932455452, -0.31843587960340897], [-0.19830349374441875, -0.6086693423968884, 0.08552341811170468, 0.35781519334042255, 0.15790663648524367, 0.02712571268324985, 0.09855601327331667, -0.05840653973421127, -0.09546429767790429, -0.13414717696055448  …  -0.0430935804718714, 0.2678584478951765, 0.08780994289014614, 0.01613469379498457, 0.0516187906322884, -0.07383067566731401, -0.1481272738354552, -0.010532317187265649, 0.06555344745952187, -0.1506167863762911], [-0.04347524125197773, -0.6327981074196994, -0.221116680035191, 0.0282207467940456, -0.0855024881522933, 0.12821801740178346, 0.1779499563280024, -0.10247384887512365, 0.0396432464100116, -0.0582580338112627  …  0.1253893207083573, 0.09628202269764763, 0.3165295473947355, -0.14915034201394833, -0.1376727867817772, -0.004153096613530293, 0.09277957650773738, 0.05917264554031624, -0.12230262590034507, -0.19655728521529914], [-0.10173946348675116, -0.6475660153977272, 0.1260284619729566, -0.11933160462857616, -0.04774310633937567, 0.09093928358804217, 0.041662676324043114, -0.1264739543938265, 0.09605293126911392, -0.16790474428001648  …  -0.04056684573478108, 0.09351665120940456, 0.15259195558799882, 0.0009949298312580497, 0.09461980828206303, 0.3067004514287283, 0.16129258773733715, -0.18893664085007542, -0.1806865244492513, 0.029319680436405825], [-0.251780954320053, -0.39147463259941456, -0.24359579328578626, 0.30179309757665723, 0.21658893985206484, 0.12304585275893232, 0.28281133086451704, 0.029187615341955325, 0.03616243507191924, 0.029375588909979152  …  -0.08071746662465404, -0.2176101928258658, 0.20944684921170825, 0.043033273425352715, -0.040505542460853576, 0.17935596149079197, -0.08454569418519972, 0.0545941597033932, 0.12471741052450099, -0.24314124407858329], [0.28156471341150974, -0.6708572780452595, -0.1410302363738465, -0.08322589397277698, -0.022772599832907418, -0.04447265789199677, -0.016448068022011157, -0.07490911512503738, 0.2778432295769144, -0.10191899088372378  …  -0.057272155080983836, 0.12817478092201395, 0.04623814480781884, -0.12184190164369117, 0.1987855635987229, -0.14533603246124993, -0.16334072868597016, -0.052369977381939437, 0.014904286931394959, -0.2440882678882144], [0.12108727495744157, -0.714787344982596, 0.01632521838262752, 0.04437570556908449, -0.041199280304144284, 0.052984488452616, 0.03796520200156107, 0.2791785910964288, 0.11530429924056099, 0.12178223160398421  …  -0.07621847481721669, 0.18353870423743013, -0.19066653731436745, -0.09423224997242206, 0.14596847781388494, -0.09747986927777111, 0.16041150122587072, -0.02296513951256738, 0.06786878373578588, 0.15296635978447756]], 0)</pre>
+
+<pre class='language-julia'><code class='language-julia'>R3 = gradient_descent(
+    M,
+    F2,
+    gradF,
+    data[1];
+    record=[:Iteration, :Count =&gt; RecordCount(), :Cost],
+    return_options=true,
+)</code></pre>
+<pre id='var-R3' class='code-output documenter-example-output'>RecordOptions{DebugOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}}, NamedTuple{(:Iteration,), Tuple{RecordGroup}}}(DebugOptions{GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}}(GradientDescentOptions{Vector{Float64}, Vector{Float64}, StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}, ConstantStepsize{Float64}, ExponentialRetraction}([0.0033485640745845695, -0.9989177042553862, 0.012603956508767276, 3.724197572811732e-5, 0.0034768865026168693, 0.00739331278409239, 0.001513138638228347, -0.02095796519560987, 0.01486272516667112, -0.007213435090434026  …  -0.00334140512549145, 0.004841935449164266, -0.010592700164882455, -0.013017126496751092, 0.0033263346529508082, -0.004530004394986143, 0.003007799686838193, -0.015610320484373687, -0.0016794415617269005, -0.0025375720454376477], IdentityUpdateRule(), StopWhenAny{Tuple{StopAfterIteration, StopWhenGradientNormLess}}((StopAfterIteration(200, ""), StopWhenGradientNormLess(1.0e-8, "The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.124221392360485e-9) is less than 1.0e-8.\n")), "The algorithm reached approximately critical point after 7 iterations; the gradient norm (1.124221392360485e-9) is less than 1.0e-8.\n"), ConstantStepsize{Float64}(1.5707963267948966), [-1.367112036369713e-10, 6.462872073717974e-12, -7.622632884969518e-11, 4.4911467977199436e-11, 4.20937629438717e-11, 5.201076879292679e-11, -9.267081125776322e-11, -1.8272699732436656e-10, -3.065679494659336e-10, -5.03131596715084e-12  …  -6.598303338174044e-11, 1.7403962201522488e-10, 5.369744969854762e-10, -1.1733961287970114e-10, -5.650580285794515e-11, 3.218762742777069e-11, 1.6751895850304274e-11, -1.8880139744220084e-10, 5.099352668911598e-11, 3.865808058595762e-10], ExponentialRetraction()), Dict{Symbol, DebugGroup}(:All => DebugGroup(DebugAction[DebugWarnIfCostIncreases(:Once, 0.5322977905736684, 1.0e-13)]))), (Iteration = RecordGroup(RecordAction[RecordIteration([1, 2, 3, 4, 5, 6, 7]), RecordCount([2, 4, 6, 8, 10, 12, 14]), RecordCost([0.5338138923660324, 0.532299080075227, 0.5322977917333718, 0.5322977905747528, 0.5322977905736697, 0.5322977905736684, 0.5322977905736685])], Dict(:Iteration => 1, :Count => 2, :Cost => 3)),))</pre>
+
+
+<div class="markdown"><p>For <code>:Cost</code> we already learned how to access them, the <code>:Count &#61;&gt;</code> introduces the following action to obtain the <code>:Count</code>. We can again access the whole sets of records</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>get_record(R3)</code></pre>
+<pre id='var-hash558608' class='code-output documenter-example-output'>7-element Vector{Tuple{Int64, Int64, Float64}}:
+ (1, 2, 0.5338138923660324)
+ (2, 4, 0.532299080075227)
+ (3, 6, 0.5322977917333718)
+ (4, 8, 0.5322977905747528)
+ (5, 10, 0.5322977905736697)
+ (6, 12, 0.5322977905736684)
+ (7, 14, 0.5322977905736685)</pre>
+
+
+<div class="markdown"><p>this is equivalent to calling <code>R&#91;:Iteration&#93;</code>. Note that since we introduced <code>:Count</code> we can also access a single recorded value using</p>
+</div>
+
+<pre class='language-julia'><code class='language-julia'>R3[:Iteration, :Count]</code></pre>
+<pre id='var-hash917209' class='code-output documenter-example-output'>7-element Vector{Int64}:
+  2
+  4
+  6
+  8
+ 10
+ 12
+ 14</pre>
+
+
+<div class="markdown"><p>And we see that the cost function is called once per iteration.</p>
+</div>
+
+<!-- PlutoStaticHTML.End --></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../AutomaticDifferentiation/">« Use AD in Manopt</a><a class="docs-footer-nextpage" href="../GeodesicRegression/">Do Geodesic regression »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Wednesday 27 July 2022 20:00">Wednesday 27 July 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
