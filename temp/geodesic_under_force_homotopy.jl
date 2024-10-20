@@ -15,8 +15,6 @@ begin
 	using OffsetArrays, RecursiveArrayTools
 	using Random
     using WGLMakie, Makie, GeometryTypes, Colors
-	#using CairoMakie
-	#using FileIO
 end;
 
 # ╔═╡ 1c476b4a-3ee6-4e5b-b903-abfc4d557569
@@ -47,9 +45,15 @@ begin
 end
 end
 
+# ╔═╡ fb6a6239-d154-4d4b-ac70-16777dc54726
+begin
+	export_video = false
+	video_file = "geodesic_under_force_animation.mp4"
+end
+
 # ╔═╡ 7b3e1aa5-db29-4519-9860-09f6cc933c07
 begin
-	N=100
+	N=30
 	h = 1/(N+2)*π/2
 	st = 0.5
 	#halt = pi - st
@@ -229,71 +233,101 @@ begin
 	y_0 = copy(power, discretized_y)
 end;
 
-# ╔═╡ 0cadffa2-dc8e-432e-b198-2e519e128576
+# ╔═╡ 04853afe-7032-43ef-b7b9-9836ee144073
 begin
-n = 45
-u = range(0,stop=2*π,length=n);
-v = range(0,stop=π,length=n);
-
-it_back = 0
-
-#ws = [-1.0*w(Manifolds.Sphere(2), p) for p in discretized_y]
-#ws_res = [-1.0*w(Manifolds.Sphere(2), p) for p in iterates[length(change)-it_back]]
-
-sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
-for i in 1:n
-    for j in 1:n
-        sx[i,j] = cos.(u[i]) * sin(v[j]);
-        sy[i,j] = sin.(u[i]) * sin(v[j]);
-        sz[i,j] = cos(v[j]);
-    end
-end
-
-fig, ax, plt = meshscatter(
-  sx,sy,sz,
-  color = fill(RGBA(1.,1.,1.,0.75), n, n),
-  shading = Makie.automatic,
-  transparency=true
-)
-	ax.show_axis = false
-
-wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
-    π1(x) = 1.02*x[1]
+	π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
-	scatter!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y); markersize =8, color=:blue)
-	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
+end;
+
+# ╔═╡ 0c9163c1-e8a3-408c-9ffe-550923a8c4e2
+function empty_sphere_plot(n)
+	u = range(0,stop=2*π,length=n);
+	v = range(0,stop=π,length=n);
+	sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
+	for i in 1:n
+    	for j in 1:n
+        	sx[i,j] = cos.(u[i]) * sin(v[j]);
+        	sy[i,j] = sin.(u[i]) * sin(v[j]);
+        	sz[i,j] = cos(v[j]);
+    	end
+	end
+
+	fig, ax, plt = meshscatter(
+  		sx,sy,sz,
+		color = fill(RGBA(1.,1.,1.,0.75), n, n),
+  		shading = Makie.automatic,
+  		transparency=true
+	)
+	ax.show_axis = false
+
+	wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
+	return fig, ax, plt
+end
+	
+
+# ╔═╡ 0cadffa2-dc8e-432e-b198-2e519e128576
+begin
+	it_back = 0
+#ws = [-1.0*w(Manifolds.Sphere(2), p) for p in discretized_y]
+#ws_res = [-1.0*w(Manifolds.Sphere(2), p) for p in iterates[length(change)-it_back]]
 	E = TangentBundle(power)
 	obj = VectorbundleObjective(b, A, connection_map)
 	obj.scaling = 1.0
 	problem = VectorbundleManoptProblem(power, E, obj)
-
 	add = 1/10.0
 
-	for i in range(1,28)
+	y_results = []
+	for i in range(1,35)
 		obj.scaling = obj.scaling + add
 		println(obj.scaling)
 		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(), stepsize=Manopt.ConstantStepsize(power,1.0)) #stepsize= now always needs the manifold first if you use the “old” ones. They are also no longer exported.
 		st_res = solve!(problem, state)
 		println(Manopt.indicates_convergence(st_res.stop))
 		println(Manopt.get_reason(st_res))
-		y_res = get_solver_result(st_res)
-		scatter!(ax, π1.(y_res), π2.(y_res), π3.(y_res); markersize =8, color=:orange)
+		push!(y_results, get_solver_result(st_res))
 	end
+end
 
-
-	#st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0; sub_problem=solve, sub_state=AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(47)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(),
-#stepsize=ConstantStepsize(1.0),
-	#debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop], record=[:Iterate, :Change], return_state=true)
-	#start_geodesic = deepcopy(get_solver_result(st_res))
-
-
+# ╔═╡ f9862529-3af6-4c38-b6f0-01bda45e97c3
+begin
+	n = 45
+	fig, ax, plt = empty_sphere_plot(n)
+	scatter!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y); markersize =8, color=:blue)
+	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
+	for (i,y) in enumerate(y_results)
+		scatter!(ax, π1.(y), π2.(y), π3.(y); markersize =8, color=i, colorrange=1:length(y_results))
+	end
 	fig
 end
+
+# ╔═╡ 3439120b-bf39-4a26-a5fb-cc4eebb13550
+begin
+	# In principle this should work but there seems to be a problem on my machine
+	# with WGLMakie and saving the video.
+	fig_r, ax_r, plt_r = empty_sphere_plot(n)
+	plot_data_x = Observable(π1.(first(y_results)))
+	plot_data_y = Observable(π2.(first(y_results)))
+	plot_data_z = Observable(π3.(first(y_results)))
+	color_index = Observable(1)
+	scatter!(ax_r, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y); markersize =8, color=:blue)
+	scatter!(ax_r, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
+	scatter!(ax_r, plot_data_x, plot_data_y, plot_data_z; markersize =8, color=color_index, colorrange=1:length(y_results))
+	#= #Does not yet work, can't get it to work to record for now
+	ecord(fig_r, video_file, 1:length(y_results), framerate = 10) do i
+        plot_data_x[] = π1.(y_results[i])
+        plot_data_y[] = π2.(y_results[i])
+        plot_data_z[] = π3.(y_results[i])
+		color_index[] = i
+		yield()
+    end
+	=#
+end;
 
 # ╔═╡ Cell order:
 # ╠═0783b732-8574-11ef-017d-3939cfc57442
 # ╠═b7f09653-9692-4f92-98e3-f988ed0c3d2d
+# ╠═fb6a6239-d154-4d4b-ac70-16777dc54726
 # ╠═1c476b4a-3ee6-4e5b-b903-abfc4d557569
 # ╠═7b3e1aa5-db29-4519-9860-09f6cc933c07
 # ╠═aa325d08-1990-4ef3-8205-78be6d06c711
@@ -309,4 +343,8 @@ end
 # ╠═48e8395e-df79-4600-bcf9-50e318c49d58
 # ╠═0d741410-f182-4f5b-abe4-7719e627e2dc
 # ╠═00e47eab-e088-4b55-9798-8b9f28a6efe5
+# ╠═04853afe-7032-43ef-b7b9-9836ee144073
+# ╠═0c9163c1-e8a3-408c-9ffe-550923a8c4e2
 # ╠═0cadffa2-dc8e-432e-b198-2e519e128576
+# ╠═f9862529-3af6-4c38-b6f0-01bda45e97c3
+# ╠═3439120b-bf39-4a26-a5fb-cc4eebb13550
