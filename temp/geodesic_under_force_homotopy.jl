@@ -273,7 +273,7 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	for i in range(1,28)
 		obj.scaling = obj.scaling + add
 		println(obj.scaling)
-		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
+		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(), stepsize=Manopt.ConstantStepsize(power,1.0)) #stepsize= now always needs the manifold first if you use the “old” ones. They are also no longer exported.
 		st_res = solve!(problem, state)
 		println(Manopt.indicates_convergence(st_res.stop))
 		println(Manopt.get_reason(st_res))
