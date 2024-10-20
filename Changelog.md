@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.3] – October 18, 2024
 
+### Added
+
+* `StopWhenChangeLess`, `StopWhenGradientChangeLess` and `StopWhenGradientLess` can now use the new idea (ManifoldsBase.jl 0.15.18) of different outer norms on manifolds with components like power and product manifolds and all others that support this from the `Manifolds.jl` Library, like `Euclidean`
+
 ### Changed
 
 * stabilize `max_Stepzise` to also work when `injectivity_radius` dos not exist.
