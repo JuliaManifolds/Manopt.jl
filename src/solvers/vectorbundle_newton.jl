@@ -387,7 +387,9 @@ function vectorbundle_newton!(
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
-    stepsize::S=default_stepsize(M, VectorbundleNewtonState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, VectorbundleNewtonState
+    ),
     vector_transport_method::VTM=default_vector_transport_method(
         E, typeof(get_bundle_map(M, E, vbo, p)),
     ),

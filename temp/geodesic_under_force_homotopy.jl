@@ -12,7 +12,7 @@ begin
 	using LinearAlgebra
 	using Manopt
 	using Manifolds
-	using OffsetArrays
+	using OffsetArrays, RecursiveArrayTools
 	using Random
     using WGLMakie, Makie, GeometryTypes, Colors
 	#using CairoMakie
