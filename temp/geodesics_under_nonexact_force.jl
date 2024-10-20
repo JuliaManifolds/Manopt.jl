@@ -56,10 +56,10 @@ begin
 	halt = pi/2
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
 	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
-	
+
 	y0 = [sin(st),0,cos(st)] # startpoint of geodesic
 	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic
-	
+
 	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
 	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
 
@@ -93,7 +93,7 @@ begin
 		#return [3.0*p[1]+p[2], -p[1], p[3]]
 		#return c*[p[1]^2-p[2], p[1], p[3]]
 		#return [0.0,3.0,0.0]
-		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0]
 	end
 end;
 
@@ -109,7 +109,7 @@ end;
 
 # ╔═╡ 13f350e2-ba3d-4652-9358-4bc2f08d9001
 function proj_prime(S, p, X, Y) # S_i*(Y)
-	#return project(S, p, (- X*p' - p*X')*Y) 
+	#return project(S, p, (- X*p' - p*X')*Y)
 	return (- X*p' - p*X')*Y
 end
 
@@ -124,11 +124,11 @@ function A(M, y, X)
 		y_next = Oy[M, i+1]
 		y_pre = Oy[M, i-1]
 		X_i = X[M,i]
-		
+
 		Z[M,i] = 1/h * (2*y_i - y_next - y_pre) .+ h * w(S, y_i)
 
 		Z[M,i] = proj_prime(S, y_i, X_i, Z[M,i])
-		
+
 		Z[M,i] = Z[M, i] - h * proj_prime(S, y_i, X_i, Z[M,i])
 		if i > 1
 			Z[M,i] = Z[M,i] - 1/h * X[M,i-1]
@@ -220,7 +220,7 @@ end;
 st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(47)|StopWhenChangeLess(1e-14)),
+	stopping_criterion=(StopAfterIteration(47)|StopWhenChangeLess(power,1e-14)),
 	retraction_method=ProjectionRetraction(),
 #stepsize=ConstantStepsize(1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
@@ -241,9 +241,9 @@ iterates = get_record(st_res, :Iteration, :Iterate)
 # ╔═╡ 96566bcd-2805-4868-a783-965d08606bd5
 begin
 	f = Figure(;)
-	
+
     row, col = fldmod1(1, 2)
-	
+
 	Axis(f[row, col], yscale = log10, title = string("Semilogarithmic Plot of the norms of the Newton direction"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
     scatterlines!(change, color = :blue)
 	f
@@ -274,7 +274,7 @@ it_back = 0
 
 ws = [-1.0*w(Manifolds.Sphere(2), p) for p in discretized_y]
 ws_res = [-1.0*w(Manifolds.Sphere(2), p) for p in iterates[length(change)-it_back]]
-	
+
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
 for i in 1:n
     for j in 1:n
@@ -283,7 +283,7 @@ for i in 1:n
         sz[i,j] = cos(v[j]);
     end
 end
-	
+
 fig, ax, plt = meshscatter(
   sx,sy,sz,
   color = fill(RGBA(1.,1.,1.,0.75), n, n),
@@ -317,7 +317,7 @@ end
 begin
 	for i in range(1000)
 		C = C+i/1000.0
-		
+
 	end
 end
 

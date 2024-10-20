@@ -157,7 +157,7 @@ Instead of creating objective, problem, and state manually, we now also have a h
 p_res = vectorbundle_newton(M, E, f_prime, f_second_derivative, connection_map, p;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(1e-13)),
+	stopping_criterion=(StopAfterIteration(15)|StopWhenChangeLess(M,1e-13)),
 	retraction_method=ProjectionRetraction(),
 	vector_transport_method=ProjectionTransport(),
 	debug=[:Iteration, :Change, 1, "\n", :Stop]

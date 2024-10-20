@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.0
 
 using Markdown
 using InteractiveUtils
@@ -12,7 +12,7 @@ begin
 	using LinearAlgebra
 	using Manopt
 	using Manifolds
-	using OffsetArrays
+	using OffsetArrays, RecursiveArrayTools
 	using Random
     using WGLMakie, Makie, GeometryTypes, Colors
 end;
@@ -204,7 +204,7 @@ p_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=StopAfterIteration(20),
-	stepsize=ConstantStepsize(1.0),
+	stepsize=ConstantLength(1.0),
 	#retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop]
 )

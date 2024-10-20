@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.0
 
 using Markdown
 using InteractiveUtils
@@ -56,10 +56,10 @@ begin
 	halt = pi/2
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
 	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
-	
+
 	y0 = [sin(st),0,cos(st)] # startpoint of geodesic
 	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic
-	
+
 	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
 	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
 
@@ -90,7 +90,7 @@ begin
 		#return [3.0*p[1]+p[2], -p[1], p[3]]
 		#return c*[p[1]^2-p[2], p[1], p[3]]
 		#return [0.0,3.0,0.0]
-		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0]
 	end
 end;
 
@@ -106,7 +106,7 @@ end;
 
 # ╔═╡ 56dce4f9-83a9-4a50-8b91-007e4ddfeacc
 function proj_prime(S, p, X, Y) # S_i*(Y)
-	#return project(S, p, (- X*p' - p*X')*Y) 
+	#return project(S, p, (- X*p' - p*X')*Y)
 	return (- X*p' - p*X')*Y
 end
 
@@ -121,11 +121,11 @@ function A(M, y, X, constant)
 		y_next = Oy[M, i+1]
 		y_pre = Oy[M, i-1]
 		X_i = X[M,i]
-		
+
 		Z[M,i] = 1/h * (2*y_i - y_next - y_pre) .+ h * w(S, y_i, constant)
 
 		Z[M,i] = proj_prime(S, y_i, X_i, Z[M,i])
-		
+
 		Z[M,i] = Z[M, i] - h * proj_prime(S, y_i, X_i, Z[M,i])
 		if i > 1
 			Z[M,i] = Z[M,i] - 1/h * X[M,i-1]
@@ -239,7 +239,7 @@ it_back = 0
 
 #ws = [-1.0*w(Manifolds.Sphere(2), p) for p in discretized_y]
 #ws_res = [-1.0*w(Manifolds.Sphere(2), p) for p in iterates[length(change)-it_back]]
-	
+
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
 for i in 1:n
     for j in 1:n
@@ -248,7 +248,7 @@ for i in 1:n
         sz[i,j] = cos(v[j]);
     end
 end
-	
+
 fig, ax, plt = meshscatter(
   sx,sy,sz,
   color = fill(RGBA(1.,1.,1.,0.75), n, n),
@@ -273,22 +273,22 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	for i in range(1,28)
 		obj.scaling = obj.scaling + add
 		println(obj.scaling)
-		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(1e-14)), retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
+		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
 		st_res = solve!(problem, state)
-		println(Manopt.indicates_convergence(st_res.stop)) 
-		println(Manopt.get_reason(st_res)) 
+		println(Manopt.indicates_convergence(st_res.stop))
+		println(Manopt.get_reason(st_res))
 		y_res = get_solver_result(st_res)
 		scatter!(ax, π1.(y_res), π2.(y_res), π3.(y_res); markersize =8, color=:orange)
 	end
 
-	
-	#st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0; sub_problem=solve, sub_state=AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(47)|StopWhenChangeLess(1e-14)), retraction_method=ProjectionRetraction(),
-#stepsize=ConstantStepsize(1.0), 
+
+	#st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0; sub_problem=solve, sub_state=AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(47)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(),
+#stepsize=ConstantStepsize(1.0),
 	#debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop], record=[:Iterate, :Change], return_state=true)
 	#start_geodesic = deepcopy(get_solver_result(st_res))
 
 
-	fig	
+	fig
 end
 
 # ╔═╡ Cell order:

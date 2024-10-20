@@ -79,7 +79,7 @@ end;
 
 # ╔═╡ dfb46586-a6df-4abf-b719-9d882c1ad6a6
 function proj_prime(S, p, X, Y) # S_i*(Y)
-	#return project(S, p, (- X*p' - p*X')*Y) 
+	#return project(S, p, (- X*p' - p*X')*Y)
 	return (- X*p' - p*X')*Y
 end
 
@@ -103,7 +103,7 @@ function A(M, y, X)
 		y_next = Oy[M, i+1]
 		y_pre = Oy[M, i-1]
 		X_i = X[M,i]
-		
+
 		#Z[M,i] = -1/h * (log(S, y_i, y_next) + log(S, y_i, y_pre)) .- h * f(S, y_i)
 		Z[M,i] = 1/h * (2*y_i - y_next - y_pre) .- h * f(S, y_i)
 
@@ -186,7 +186,7 @@ end;
 st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(25)|StopWhenChangeLess(1e-13)),
+	stopping_criterion=(StopAfterIteration(25)|StopWhenChangeLess(power,1e-13)),
 	stepsize=ConstantStepsize(1.0),
 	#retraction_method=ProjectionRetraction(),
 	debug=[:Iteration, (:Change, "Change: %1.8e")," | ", :Stepsize, 1, "\n", :Stop],

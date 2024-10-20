@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.0
 
 using Markdown
 using InteractiveUtils
@@ -12,7 +12,7 @@ begin
 	using LinearAlgebra
 	using Manopt
 	using Manifolds
-	using OffsetArrays
+	using OffsetArrays, RecursiveArrayTools
 	using Random
     using WGLMakie, Makie, GeometryTypes, Colors
 end;
@@ -305,7 +305,7 @@ end;
 st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, y_0;
 	sub_problem=solve,
 	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(1e-13)),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
 #stepsize=ConstantStepsize(1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
@@ -391,6 +391,9 @@ coordA = zeros(2*N,2*N)
 	coordA
 end
 
+# ╔═╡ f5f99ecc-894e-4150-ac9f-124d4bdb5f1b
+typeof(StopWhenChangeLess(M,1e-13))
+
 # ╔═╡ d59841d1-0ba6-4737-b170-be0b19f13269
 A0
 
@@ -422,6 +425,7 @@ checkA
 # ╠═a34bb2e1-3d43-4cf3-ba82-dee9f9d59348
 # ╠═914e11d3-145d-46a9-a59b-9245d34e1f08
 # ╠═0d5ce271-e0ac-4c75-a011-7fcb1372d973
+# ╠═f5f99ecc-894e-4150-ac9f-124d4bdb5f1b
 # ╠═1b024dc2-ba46-4091-b178-c7ac96ef16fe
 # ╠═ecd2835c-d0e8-4369-b310-3d6ae4dce914
 # ╠═07386cfa-2d54-429d-b808-7a2d220337c9

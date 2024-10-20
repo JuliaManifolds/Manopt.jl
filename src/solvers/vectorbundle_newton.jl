@@ -421,7 +421,7 @@ function vectorbundle_newton!(
         X=X,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         vector_transport_method=vector_transport_method,
     )
     dvbs = decorate_state!(vbs; kwargs...)
@@ -449,7 +449,7 @@ function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState,
     #set_iterate!(s.sub_state, get_manifold(mp), zero_vector(get_manifold(mp), s.p))
     s.is_same = true
     solve!(s.sub_problem, s.sub_state)
-    s.X = get_solver_result(s.sub_state) 
+    s.X = get_solver_result(s.sub_state)
     s.is_same= false
 
     step = s.stepsize(mp, s, k)
