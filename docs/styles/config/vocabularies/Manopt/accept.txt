@@ -1,3 +1,10 @@
+_field_.*\b
+_arg_.*\b
+_kw_.*\b
+_l_.*\b
+_math_.*\b
+_problem_.*\b
+_doc_.*\b
 Absil
 Adagrad
 [A|a]djoint
@@ -62,6 +69,7 @@ Lui
 Manifolds.jl
 ManifoldsBase.jl
 [Mm]anopt(:?.org|.jl)?
+Markus
 Marquardt
 Moakher
 Munkvold
@@ -90,6 +98,7 @@ Riemer
 Riemopt
 Riesz
 Rosenbrock
+Sasaki
 semicontinuous
 Steihaug
 Stiefel
@@ -98,6 +107,7 @@ Souza
 Steidl
 Stephansen
 [Ss]tepsize
+Stokkenes
 [Ss]ubdifferential
 [Ss]ubgradient
 subsampled

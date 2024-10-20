@@ -1,4 +1,3 @@
-
 """
     StochasticGradientDescentState <: AbstractGradientDescentSolverState
 
@@ -7,21 +6,32 @@ see also [`ManifoldStochasticGradientObjective`](@ref) and [`stochastic_gradient
 
 # Fields
 
-* `p`:                  the current iterate
-* `direction`:          ([`StochasticGradient`](@ref)) a direction update to use
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
-* `stepsize`:           ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `evaluation_order`:   (`:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`),
-  a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
-* `order`:              the current permutation
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a `retraction(M, p, X)` to use.
+$(_var(:Field, :p; add=[:as_Iterate]))
+* `direction`:  a direction update to use
+$(_var(:Field, :stopping_criterion, "stop"))
+$(_var(:Field, :stepsize))
+* `evaluation_order`: specify whether to use a randomly permuted sequence (`:FixedRandom`:),
+  a per cycle permuted sequence (`:Linear`) or the default, a `:Random` sequence.
+* `order`: stores the current permutation
+$(_var(:Field, :retraction_method))
 
 # Constructor
 
-    StochasticGradientDescentState(M, p)
+    StochasticGradientDescentState(M::AbstractManifold; kwargs...)
 
 Create a `StochasticGradientDescentState` with start point `p`.
-all other fields are optional keyword arguments, and the defaults are taken from `M`.
+
+# Keyword arguments
+
+* `direction=`[`StochasticGradientRule`](@ref)`(M, $(_link(:zero_vector)))
+* `order_type=:RandomOrder``
+* `order=Int[]`: specify how to store the order of indices for the next epoche
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`"))
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+$(_var(:Keyword, :X; add=:as_Memory))
+
 """
 mutable struct StochasticGradientDescentState{
     TX,
@@ -43,10 +53,10 @@ mutable struct StochasticGradientDescentState{
 end
 
 function StochasticGradientDescentState(
-    M::AbstractManifold,
-    p::P,
-    X::Q;
-    direction::D=StochasticGradient(zero_vector(M, p)),
+    M::AbstractManifold;
+    p::P=rand(M),
+    X::T=zero_vector(M, p),
+    direction::D=StochasticGradientRule(M; X=copy(M, p, X)),
     order_type::Symbol=:RandomOrder,
     order::Vector{<:Int}=Int[],
     retraction_method::RM=default_retraction_method(M, typeof(p)),
@@ -54,13 +64,13 @@ function StochasticGradientDescentState(
     stepsize::S=default_stepsize(M, StochasticGradientDescentState),
 ) where {
     P,
-    Q,
+    T,
     D<:DirectionUpdateRule,
     RM<:AbstractRetractionMethod,
     SC<:StoppingCriterion,
     S<:Stepsize,
 }
-    return StochasticGradientDescentState{P,Q,D,SC,S,RM}(
+    return StochasticGradientDescentState{P,T,D,SC,S,RM}(
         p,
         X,
         direction,
@@ -93,71 +103,110 @@ function show(io::IO, sgds::StochasticGradientDescentState)
     return print(io, s)
 end
 """
-    StochasticGradient <: AbstractGradientGroupProcessor
+    StochasticGradientRule<: AbstractGradientGroupDirectionRule
+
+Create a functor `(problem, state k) -> (s,X)` to evaluate the stochatsic gradient,
+that is chose a random index from the `state` and use the internal field for
+evaluation of the gradient in-place.
 
 The default gradient processor, which just evaluates the (stochastic) gradient or a subset thereof.
 
+# Fields
+
+$(_var(:Field, :X))
+
 # Constructor
 
-    StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
+    StochasticGradientRule(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
 
-Initialize the stochastic Gradient processor with tangent vector type of `X`,
+Initialize the stochastic gradient processor with tangent vector type of `X`,
 where both `M` and `p` are just help variables.
+
+# See also
+[`stochastic_gradient_descent`](@ref), [`StochasticGradient`])@ref)
 """
-struct StochasticGradient{T} <: AbstractGradientGroupProcessor
-    dir::T
+struct StochasticGradientRule{T} <: AbstractGradientGroupDirectionRule
+    X::T
 end
-function StochasticGradient(M::AbstractManifold; p=rand(M), X=zero_vector(M, p))
-    return StochasticGradient{typeof(X)}(X)
+function StochasticGradientRule(
+    M::AbstractManifold; p=rand(M), X::T=zero_vector(M, p)
+) where {T}
+    return StochasticGradientRule{T}(X)
 end
 
-function (sg::StochasticGradient)(
-    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, iter
+function (sg::StochasticGradientRule)(
+    apm::AbstractManoptProblem, sgds::StochasticGradientDescentState, k
 )
     # for each new epoch choose new order if at random order
     ((sgds.k == 1) && (sgds.order_type == :Random)) && shuffle!(sgds.order)
     # the gradient to choose, either from the order or completely random
     j = sgds.order_type == :Random ? rand(1:length(sgds.order)) : sgds.order[sgds.k]
-    return sgds.stepsize(apm, sgds, iter), get_gradient!(apm, sg.dir, sgds.p, j)
+    return sgds.stepsize(apm, sgds, k), get_gradient!(apm, sg.X, sgds.p, j)
 end
 
+@doc """
+    StochasticGradient(; kwargs...)
+    StochasticGradient(M::AbstractManifold; kwargs...)
+
+# Keyword arguments
+
+$(_var(:Keyword, :X, "initial_gradient"))
+$(_var(:Keyword, :p; add=:as_Initial))
+
+$(_note(:ManifoldDefaultFactory, "StochasticGradientRule"))
+"""
+function StochasticGradient(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.StochasticGradientRule, args...; kwargs...)
+end
+
+"""
+    default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
+
+Deinfe the default step size computed for the [`StochasticGradientDescentState`](@ref),
+which is [`ConstantStepsize`](@ref)`M`.
+"""
 function default_stepsize(M::AbstractManifold, ::Type{StochasticGradientDescentState})
     return ConstantStepsize(M)
 end
 
-@doc raw"""
-    stochastic_gradient_descent(M, grad_f, p; kwargs...)
-    stochastic_gradient_descent(M, msgo, p; kwargs...)
+_doc_SGD = """
+    stochastic_gradient_descent(M, grad_f, p=rand(M); kwargs...)
+    stochastic_gradient_descent(M, msgo; kwargs...)
+    stochastic_gradient_descent!(M, grad_f, p; kwargs...)
+    stochastic_gradient_descent!(M, msgo, p; kwargs...)
 
-perform a stochastic gradient descent
+perform a stochastic gradient descent. This can be perfomed in-place of `p`.
 
 # Input
 
-* `M`:      a manifold ``\mathcal M``
-* `grad_f`: a gradient function, that either returns a vector of the subgradients
-  or is a vector of gradients
-* `p`:      an initial value ``x ∈ \mathcal M``
+$(_var(:Argument, :M; type=true))
+* `grad_f`: a gradient function, that either returns a vector of the gradients
+  or is a vector of gradient functions
+$(_var(:Argument, :p))
 
 alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
 then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
 
-# Optional
-* `cost`:               (`missing`) you can provide a cost function for example to track the function value
-* `evaluation`:         ([`AllocatingEvaluation`](@ref)) specify whether the gradients works by
-   allocation (default) form `gradF(M, x)` or [`InplaceEvaluation`](@ref) in place of the form `gradF!(M, X, x)` (elementwise).
-* `evaluation_order`:   (`:Random`) specify whether to use a randomly permuted sequence (`:FixedRandom`),
+# Keyword arguments
+
+* `cost=missing`: you can provide a cost function for example to track the function value
+* `direction=`[`StochasticGradient`](@ref)`($(_link(:zero_vector)))
+$(_var(:Keyword, :evaluation))
+* `evaluation_order=:Random`: specify whether to use a randomly permuted sequence (`:FixedRandom`:,
   a per cycle permuted sequence (`:Linear`) or the default `:Random` one.
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(1000)`) a [`StoppingCriterion`](@ref)
-* `stepsize`:           ([`ConstantStepsize`](@ref)`(1.0)`) a [`Stepsize`](@ref)
-* `order_type`:         (`:RandomOder`) a type of ordering of gradient evaluations.
+* `order_type=:RandomOder`: a type of ordering of gradient evaluations.
   Possible values are `:RandomOrder`, a `:FixedPermutation`, `:LinearOrder`
-* `order`:              (`[1:n]`) the initial permutation, where `n` is the number of gradients in `gradF`.
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a retraction to use.
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(1000)`"))
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, StochasticGradientDescentState)`"))
+* `order=[1:n]`: the initial permutation, where `n` is the number of gradients in `gradF`.
+$(_var(:Keyword, :retraction_method))
 
-# Output
+$(_note(:OtherKeywords))
 
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
+
+@doc "$(_doc_SGD)"
 stochastic_gradient_descent(M::AbstractManifold, args...; kwargs...)
 function stochastic_gradient_descent(M::AbstractManifold, grad_f; kwargs...)
     return stochastic_gradient_descent(M, grad_f, rand(M); kwargs...)
@@ -170,34 +219,21 @@ function stochastic_gradient_descent(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    msgo = ManifoldStochasticGradientObjective(grad_f; cost=cost, evaluation=evaluation)
-    return stochastic_gradient_descent(M, msgo, p; evaluation=evaluation, kwargs...)
-end
-function stochastic_gradient_descent(
-    M::AbstractManifold,
-    grad_f,
-    p::Number;
-    cost=Missing(),
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_ = ismissing(cost) ? cost : (M, p) -> cost(M, p[])
-    if grad_f isa Function
-        n = grad_f(M, p) isa Number
-        grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
-    else
-        if evaluation isa AllocatingEvaluation
-            grad_f_ = [(M, p) -> [f(M, p[])] for f in grad_f]
+    p_ = _ensure_mutating_variable(p)
+    cost_ = _ensure_mutating_cost(cost, p)
+    if p isa Number
+        if grad_f isa Function
+            n = grad_f(M, p) isa Number
+            grad_f_ = (M, p) -> [[X] for X in (n ? [grad_f(M, p[])] : grad_f(M, p[]))]
         else
-            grad_f_ = [(M, X, p) -> (X .= [f(M, p[])]) for f in grad_f]
+            grad_f_ = [_ensure_mutating_gradient(f, p, evaluation) for f in grad_f]
         end
+    else
+        grad_f_ = grad_f
     end
-    rs = stochastic_gradient_descent(
-        M, grad_f_, q; cost=f_, evaluation=evaluation, kwargs...
-    )
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    msgo = ManifoldStochasticGradientObjective(grad_f_; cost=cost_, evaluation=evaluation)
+    rs = stochastic_gradient_descent(M, msgo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function stochastic_gradient_descent(
     M::AbstractManifold, msgo::O, p; kwargs...
@@ -206,24 +242,7 @@ function stochastic_gradient_descent(
     return stochastic_gradient_descent!(M, msgo, q; kwargs...)
 end
 
-@doc raw"""
-    stochastic_gradient_descent!(M, grad_f, p)
-    stochastic_gradient_descent!(M, msgo, p)
-
-perform a stochastic gradient descent in place of `p`.
-
-# Input
-
-* `M`:      a manifold ``\mathcal M``
-* `grad_f`: a gradient function, that either returns a vector of the subgradients
-  or is a vector of gradients
-* `p`:      an initial value ``p ∈ \mathcal M``
-
-Alternatively to the gradient you can provide an [`ManifoldStochasticGradientObjective`](@ref) `msgo`,
-then using the `cost=` keyword does not have any effect since if so, the cost is already within the objective.
-
-for all optional parameters, see [`stochastic_gradient_descent`](@ref).
-"""
+@doc "$(_doc_SGD)"
 stochastic_gradient_descent!(::AbstractManifold, args...; kwargs...)
 function stochastic_gradient_descent!(
     M::AbstractManifold,
@@ -240,10 +259,14 @@ function stochastic_gradient_descent!(
     M::AbstractManifold,
     msgo::O,
     p;
-    direction::DirectionUpdateRule=StochasticGradient(zero_vector(M, p)),
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=StochasticGradient(;
+        p=p
+    ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(10000) |
                                           StopWhenGradientNormLess(1e-9),
-    stepsize::Stepsize=default_stepsize(M, StochasticGradientDescentState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, StochasticGradientDescentState
+    ),
     order=collect(1:length(get_gradients(M, msgo, p))),
     order_type::Symbol=:Random,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
@@ -252,12 +275,12 @@ function stochastic_gradient_descent!(
     dmsgo = decorate_objective!(M, msgo; kwargs...)
     mp = DefaultManoptProblem(M, dmsgo)
     sgds = StochasticGradientDescentState(
-        M,
-        p,
-        zero_vector(M, p);
-        direction=direction,
+        M;
+        p=p,
+        X=zero_vector(M, p),
+        direction=_produce_type(direction, M),
         stopping_criterion=stopping_criterion,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         order_type=order_type,
         order=order,
         retraction_method=retraction_method,

@@ -9,7 +9,9 @@ on a tangent bundle might be.
 function max_stepsize(M::TangentBundle, p)
     return max_stepsize(M.manifold, p[M, :point])
 end
-
+function max_stepsize(M::TangentBundle)
+    return max_stepsize(M.manifold)
+end
 """
     max_stepsize(M::FixedRankMatrices, p)
 
@@ -108,28 +110,29 @@ function reflect!(M::AbstractManifold, q, pr::Function, x; kwargs...)
     return reflect!(M, q, pr(x), x; kwargs...)
 end
 
-@doc raw"""
+@doc """
     reflect(M, p, x, kwargs...)
     reflect!(M, q, p, x, kwargs...)
 
 Reflect the point `x` from the manifold `M` at point `p`, given by
 
-````math
-    \operatorname{refl}_p(x) = \operatorname{retr}_p(-\operatorname{retr}^{-1}_p x).
-````
+```math
+$(_tex(:reflect))
+```
 
-where ``\operatorname{retr}`` and ``\operatorname{retr}^{-1}`` denote a retraction and an inverse
+where ``$(_tex(:retr))`` and ``$(_tex(:invretr))`` denote a retraction and an inverse
 retraction, respectively.
 This can also be done in place of `q`.
 
 ## Keyword arguments
 
-* `retraction_method`:         (`default_retraction_metiod(M, typeof(p))`) the retraction to use in the reflection
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) the inverse retraction to use within the reflection
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :inverse_retraction_method))
 
 and for the `reflect!` additionally
 
-* `X`:                         (`zero_vector(M,p)`) a temporary memory to compute the inverse retraction in place.
+$(_var(:Keyword, :X))
+  as temporary memory to compute the inverse retraction in place.
   otherwise this is the memory that would be allocated anyways.
 """
 function reflect(
@@ -149,7 +152,7 @@ function reflect!(
     q,
     p,
     x;
-    retraction_method=default_retraction_method(M),
+    retraction_method=default_retraction_method(M, typeof(p)),
     inverse_retraction_method=default_inverse_retraction_method(M),
     X=zero_vector(M, p),
 )

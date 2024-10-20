@@ -7,14 +7,14 @@ decorate the [`AbstractManoptSolverState`](@ref)` s` with specific decorators.
 
 optional arguments provide necessary details on the decorators.
 
-* `debug`:         (`Array{Union{Symbol,DebugAction,String,Int},1}()`) a set of symbols
+* `debug=Array{Union{Symbol,DebugAction,String,Int},1}()`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
   [`DebugSolverState`](@ref) decorator dictionary. Only exception is `:Stop` that is passed to `:Stop`.
-* `record`:        (`Array{Union{Symbol,RecordAction,Int},1}()`) specify recordings
+* `record=Array{Union{Symbol,RecordAction,Int},1}()`: specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.
   An integer can again be used for only recording every ``i``th iteration.
-* `return_state`:  (`false`) indicate whether to wrap the options in a [`ReturnSolverState`](@ref),
+* `return_state=false`: indicate whether to wrap the options in a [`ReturnSolverState`](@ref),
   indicating that the solver should return options and not (only) the minimizer.
 
 other keywords are ignored.
@@ -64,13 +64,13 @@ decorate the [`AbstractManifoldObjective`](@ref)` o` with specific decorators.
 optional arguments provide necessary details on the decorators.
 A specific one is used to activate certain decorators.
 
-* `cache`:           (`missing`) specify a cache. Currently `:Simple` is supported and `:LRU` if you
+* `cache=missing`: specify a cache. Currently `:Simple` is supported and `:LRU` if you
   load [`LRUCache.jl`](https://github.com/JuliaCollections/LRUCache.jl).
   For this case a tuple specifying what to cache and how many can be provided, has to be specified.
   For example `(:LRU, [:Cost, :Gradient], 10)` states that the last 10 used cost function
   evaluations and gradient evaluations should be stored. See [`objective_cache_factory`](@ref) for details.
-* `count`:           (`missing`) specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
-* `objective_type`:  (`:Riemannian`) specify that an objective is `:Riemannian` or `:Euclidean`.
+* `count=missing`: specify calls to the objective to be called, see [`ManifoldCountObjective`](@ref) for the full list
+* `objective_type=:Riemannian`: specify that an objective is `:Riemannian` or `:Euclidean`.
   The `:Euclidean` symbol is equivalent to specifying it as `:Embedded`, since in the end,
   both refer to converting an objective from the embedding (whether its Euclidean or not)
   to the Riemannian one.
@@ -140,27 +140,27 @@ function solve!(p::AbstractManoptProblem, s::AbstractManoptSolverState)
 end
 
 """
-    step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
+    step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
 
 Do one iteration step (the `i`th) for an [`AbstractManoptProblem`](@ref)` p` by modifying
 the values in the [`AbstractManoptSolverState`](@ref) `ams`.
 """
-step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
-function step_solver!(p::AbstractManoptProblem, s::ReturnSolverState, i)
-    return step_solver!(p, s.state, i)
+step_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
+function step_solver!(p::AbstractManoptProblem, s::ReturnSolverState, k)
+    return step_solver!(p, s.state, k)
 end
 
 """
-    stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
+    stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
 
 depending on the current [`AbstractManoptProblem`](@ref) `amp`, the current state of the solver
 stored in [`AbstractManoptSolverState`](@ref) `ams` and the current iterate `i` this function
 determines whether to stop the solver, which by default means to call
 the internal [`StoppingCriterion`](@ref). `ams.stop`
 """
-function stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, i)
-    return ams.stop(amp, ams, i)
+function stop_solver!(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, k)
+    return ams.stop(amp, ams, k)
 end
-function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, i)
-    return stop_solver!(p, s.state, i)
+function stop_solver!(p::AbstractManoptProblem, s::ReturnSolverState, k)
+    return stop_solver!(p, s.state, k)
 end

@@ -1,53 +1,50 @@
-@doc raw"""
-    conjugate_residual(TpM::TangentSpace, A, b, p=rand(TpM))
-    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p=rand(TpM))
-    conjugate_residual!(TpM::TangentSpace, A, b, p)
-    conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, p)
+_doc_conjugate_residual = """
+    conjugate_residual(TpM::TangentSpace, A, b, X=zero_vector(TpM))
+    conjugate_residual(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X=zero_vector(TpM))
+    conjugate_residual!(TpM::TangentSpace, A, b, X)
+    conjugate_residual!(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X)
 
-Compute the solution of ``\mathcal A(p)[X] + b(p) = 0_p ``, where
+Compute the solution of ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p ``, where
 
-* ``\mathcal A`` is a linear, symmetric operator on ``T_p\mathcal M``
+* ``$(_tex(:Cal, "A"))`` is a linear, symmetric operator on ``$(_math(:TpM))``
 * ``b`` is a vector field on the manifold
-* ``X ∈ T_p\mathcal M`` is a tangent vector
-* ``0_p`` is the zero vector ``T_p\mathcal M``.
+* ``X ∈ $(_math(:TpM))`` is a tangent vector
+* ``0_p`` is the zero vector ``$(_math(:TpM))``.
 
 This implementation follows Algorithm 3 in [LaiYoshise:2024](@cite) and
 is initalised with ``X^{(0)}`` as the zero vector and
 
-* the initial residual ``r^{(0)} = -b(p) - \mathcal A(p)[X^{(0)}]``
+* the initial residual ``r^{(0)} = -b(p) - $(_tex(:Cal, "A"))(p)[X^{(0)}]``
 * the initial conjugate direction ``d^{(0)} = r^{(0)}``
-* initialize ``Y^{(0)} = \mathcal A(p)[X^{(0)}]``
+* initialize ``Y^{(0)} = $(_tex(:Cal, "A"))(p)[X^{(0)}]``
 
 performed the following steps at iteration ``k=0,…`` until the `stopping_criterion` is fulfilled.
 
-1. compute a step size ``α_k = \displaystyle\frac{\langle r^{(k)}, \mathcal A(p)[r^{(k)}] \rangle_p}{\langle \mathcal A(p)[d^{(k)}], \mathcal A(p)[d^{(k)}] \rangle_p}``
+1. compute a step size ``α_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p","⟨ $(_tex(:Cal, "A"))(p)[d^{(k)}], $(_tex(:Cal, "A"))(p)[d^{(k)}] ⟩_p"))``
 2. do a step ``X^{(k+1)} = X^{(k)} + α_kd^{(k)}``
 2. update the residual ``r^{(k+1)} = r^{(k)} + α_k Y^{(k)}``
-4. compute ``Z = \mathcal A(p)[r^{(k+1)}]``
-5. Update the conjugate coefficient ``β_k = \displaystyle\frac{\langle r^{(k+1)}, \mathcal A(p)[r^{(k+1)}] \rangle_p}{\langle r^{(k)}, \mathcal A(p)[r^{(k)}] \rangle_p}``
+4. compute ``Z = $(_tex(:Cal, "A"))(p)[r^{(k+1)}]``
+5. Update the conjugate coefficient ``β_k = $(_tex(:displaystyle))$(_tex(:frac, "⟨ r^{(k+1)}, $(_tex(:Cal, "A"))(p)[r^{(k+1)}] ⟩_p", "⟨ r^{(k)}, $(_tex(:Cal, "A"))(p)[r^{(k)}] ⟩_p"))``
 6. Update the conjugate direction ``d^{(k+1)} = r^{(k+1)} + β_kd^{(k)}``
 7. Update  ``Y^{(k+1)} = -Z + β_k Y^{(k)}``
 
-Note that the right hand side of Step 7 is the same as evaluating ``\mathcal A[d^{(k+1)]``, but avoids the actual evaluation
+Note that the right hand side of Step 7 is the same as evaluating ``$(_tex(:Cal, "A"))[d^{(k+1)}]``, but avoids the actual evaluation
 
 # Input
 
 * `TpM` the [`TangentSpace`](@extref `ManifoldsBase.TangentSpace`) as the domain
 * `A` a symmetric linear operator on the tangent space `(M, p, X) -> Y`
 * `b` a vector field on the tangent space `(M, p) -> X`
-
+* `X` the initial tangent vector
 
 # Keyword arguments
 
-* `evaluation=`[`AllocatingEvaluation`](@ref) specify whether `A` and `b` are implemented allocating or in-place
-* `stopping_criterion::`[`StoppingCriterion`](@ref)`=`[`StopAfterIteration`](@ref)`(`[`manifold_dimension`](@extref ManifoldsBase.manifold_dimension-Tuple{AbstractManifold})`(TpM))`[` | `](@ref StopWhenAny)[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,
-  where `c` is the norm of ``\lVert b \rVert``.
-
-# Output
-
-the obtained (approximate) minimizer ``X^*``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details.
+$(_var(:Keyword, :evaluation))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))$(_sc(:Any))[`StopWhenRelativeResidualLess`](@ref)`(c,1e-8)`,  where `c` is ``$(_tex(:norm,"b"))``"))
+$(_note(:OutputSection))
 """
+
+@doc "$_doc_conjugate_residual"
 conjugate_residual(TpM::TangentSpace, args...; kwargs...)
 
 function conjugate_residual(
@@ -68,13 +65,16 @@ function conjugate_residual(
     return conjugate_residual!(TpM, slso, Y; kwargs...)
 end
 
+@doc "$_doc_conjugate_residual"
+conjugate_residual!(TpM::TangentSpace, args...; kwargs...)
+
 function conjugate_residual!(
     TpM::TangentSpace,
     slso::SymmetricLinearSystemObjective,
     X;
     stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
                            StopWhenRelativeResidualLess(
-        norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso, X)), 1e-8
+        norm(base_manifold(TpM), base_point(TpM), get_b(TpM, slso)), 1e-8
     ),
     kwargs...,
 ) where {SC<:StoppingCriterion}
@@ -94,7 +94,7 @@ function initialize_solver!(
     TpM = get_manifold(amp)
     get_hessian!(TpM, crs.r, get_objective(amp), base_point(TpM), crs.X)
     crs.r .*= -1
-    crs.r .-= get_b(TpM, get_objective(amp), crs.X)
+    crs.r .-= get_b(TpM, get_objective(amp))
     copyto!(TpM, crs.d, crs.r)
     get_hessian!(amp, crs.Ar, crs.X, crs.r)
     copyto!(TpM, crs.Ad, crs.Ar)

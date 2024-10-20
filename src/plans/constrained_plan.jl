@@ -9,20 +9,16 @@ constraintsnof type `T`.
 """
 abstract type AbstractConstrainedFunctor{T} end
 
-function set_manopt_parameter!(
-    acf::AbstractConstrainedFunctor{T}, ::Val{:μ}, μ::T
-) where {T}
+function set_parameter!(acf::AbstractConstrainedFunctor{T}, ::Val{:μ}, μ::T) where {T}
     acf.μ = μ
     return acf
 end
-get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
-function set_manopt_parameter!(
-    acf::AbstractConstrainedFunctor{T}, ::Val{:λ}, λ::T
-) where {T}
+get_parameter(acf::AbstractConstrainedFunctor, ::Val{:μ}) = acf.μ
+function set_parameter!(acf::AbstractConstrainedFunctor{T}, ::Val{:λ}, λ::T) where {T}
     acf.λ = λ
     return acf
 end
-get_manopt_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
+get_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
 
 """
     AbstractConstrainedSlackFunctor{T,R}
@@ -37,27 +33,23 @@ which is also of typee `T`.
 """
 abstract type AbstractConstrainedSlackFunctor{T,R} end
 
-function set_manopt_parameter!(
-    acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:s}, s::T
-) where {T}
+function set_parameter!(acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:s}, s::T) where {T}
     acsf.s = s
     return acsf
 end
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
-function set_manopt_parameter!(
-    acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:μ}, μ::T
-) where {T}
+get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:s}) = acsf.s
+function set_parameter!(acsf::AbstractConstrainedSlackFunctor{T}, ::Val{:μ}, μ::T) where {T}
     acsf.μ = μ
     return acsf
 end
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:μ}) = acsf.μ
-function set_manopt_parameter!(
+get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:μ}) = acsf.μ
+function set_parameter!(
     acsf::AbstractConstrainedSlackFunctor{T,R}, ::Val{:β}, β::R
 ) where {T,R}
     acsf.β = β
     return acsf
 end
-get_manopt_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
+get_parameter(acsf::AbstractConstrainedSlackFunctor, ::Val{:β}) = acsf.β
 
 @doc raw"""
     ConstrainedManifoldObjective{T<:AbstractEvaluationType, C<:ConstraintType} <: AbstractManifoldObjective{T}
@@ -357,7 +349,7 @@ problem is for.
         hessian_inequality_range=range
     )
 
-Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation`](@extref ManifoldsBase.AbstractPowerRepresentation)
+Creates a constrained Manopt problem specifying an [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`)
 for both the `gradient_equality_range` and the `gradient_inequality_range`, respectively.
 """
 struct ConstrainedManoptProblem{
@@ -579,46 +571,12 @@ within the [`ConstrainedManifoldObjective`](@ref).
 """
 get_unconstrained_objective(co::ConstrainedManifoldObjective) = co.objective
 
-function get_constraints(mp::AbstractManoptProblem, p)
-    Base.depwarn(
-        "get_constraints will be removed in a future release, use `get_equality_constraint($mp, $p, :)` and `get_inequality_constraint($mp, $p, :)`, respectively",
-        :get_constraints,
-    )
-    return [
-        get_inequality_constraint(get_manifold(mp), get_objective(mp), p, :),
-        get_equality_constraint(get_manifold(mp), get_objective(mp), p, :),
-    ]
-end
-function get_constraints(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
-    Base.depwarn(
-        "get_constraints will be removed in a future release, use `get_equality_constraint($M, $co, $p, :)` and `get_inequality_constraint($M, $co, $p, :)`, respectively",
-        :get_constraints,
-    )
-    return [get_inequality_constraint(M, co, p, :), get_equality_constraint(M, co, p, :)]
-end
-
 function get_cost(M::AbstractManifold, co::ConstrainedManifoldObjective, p)
     return get_cost(M, co.objective, p)
 end
 function get_cost_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_cost_function(co.objective, recursive)
 end
-
-Base.@deprecate get_equality_constraints(amp::AbstractManoptProblem, p) get_equality_constraint(
-    amp, p, :,
-)
-
-Base.@deprecate get_equality_constraints!(amp::AbstractManoptProblem, X, p) get_equality_constraint!(
-    amp, X, p, :,
-)
-
-Base.@deprecate get_equality_constraints(
-    M::AbstractManifold, co::AbstractManifoldObjective, p
-) get_equality_constraint(M, co, p, :)
-
-Base.@deprecate get_equality_constraints!(
-    M::AbstractManifold, X, co::AbstractManifoldObjective, p
-) get_equality_constraint!(M, X, co, p, :)
 
 @doc raw"""
     get_equality_constraint(amp::AbstractManoptProblem, p, j=:)
@@ -658,13 +616,6 @@ end
 function get_gradient_function(co::ConstrainedManifoldObjective, recursive=false)
     return get_gradient_function(co.objective, recursive)
 end
-
-Base.@deprecate get_inequality_constraints(amp::AbstractManoptProblem, p) get_inequality_constraint(
-    amp, p, :,
-)
-Base.@deprecate get_inequality_constraints(
-    M::AbstractManifold, co::AbstractManifoldObjective, p
-) get_inequality_constraint(M, co, p, :)
 
 @doc raw"""
     get_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
@@ -772,20 +723,6 @@ function get_grad_equality_constraint!(
     return get_gradient!(M, X, co.equality_constraints, p, j, range)
 end
 
-# Deprecate plurals
-Base.@deprecate get_grad_equality_constraints(mp::AbstractManoptProblem, p) get_grad_equality_constraint(
-    mp, p, :,
-)
-Base.@deprecate get_grad_equality_constraints(
-    M::AbstractManifold, co::AbstractManifoldObjective, p
-) get_grad_equality_constraint(M, co, p, :)
-Base.@deprecate get_grad_equality_constraints!(mp::AbstractManoptProblem, X, p) get_grad_equality_constraint!(
-    mp, X, p, :,
-)
-Base.@deprecate get_grad_equality_constraints!(
-    M::AbstractManifold, X, co::AbstractManifoldObjective, p
-) get_grad_equality_constraint!(M, X, co, p, :)
-
 @doc raw"""
     get_grad_inequality_constraint(amp::AbstractManoptProblem, p, j=:)
     get_grad_inequality_constraint(M::AbstractManifold, co::ConstrainedManifoldObjective, p, j=:, range=NestedPowerRepresentation())
@@ -858,20 +795,6 @@ function get_grad_inequality_constraint!(
     isnothing(co.inequality_constraints) && (return X)
     return get_gradient!(M, X, co.inequality_constraints, p, j, range)
 end
-
-#Deprecate plurals
-Base.@deprecate get_grad_inequality_constraints(mp::AbstractManoptProblem, p) get_grad_inequality_constraint(
-    mp, p, :,
-)
-Base.@deprecate get_grad_inequality_constraints(
-    M::AbstractManifold, co::AbstractManifoldObjective, p
-) get_grad_inequality_constraint(M, co, p, :)
-Base.@deprecate get_grad_inequality_constraints!(mp::AbstractManoptProblem, X, p) get_grad_inequality_constraint!(
-    mp, X, p, :,
-)
-Base.@deprecate get_grad_inequality_constraints!(
-    M::AbstractManifold, X, co::AbstractManifoldObjective, p
-) get_grad_inequality_constraint!(M, X, co, p, :)
 
 function get_hessian(M::AbstractManifold, co::ConstrainedManifoldObjective, p, X)
     return get_hessian(M, co.objective, p, X)

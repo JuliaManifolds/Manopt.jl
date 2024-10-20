@@ -22,7 +22,7 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
             N, f, proxes, q3; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
         )
         cpps = CyclicProximalPointState(
-            N, f; stopping_criterion=StopAfterIteration(1), λ=i -> π / (2 * i)
+            N; p=q, stopping_criterion=StopAfterIteration(1), λ=i -> π / (2 * i)
         )
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
         p = DefaultManoptProblem(N, mpo)
@@ -120,7 +120,7 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
     @testset "State access functions" begin
         M = Euclidean(3)
         p = ones(3)
-        O = CyclicProximalPointState(M, zeros(3))
+        O = CyclicProximalPointState(M; p=zeros(3))
         set_iterate!(O, p)
         @test get_iterate(O) == p
     end
@@ -128,14 +128,14 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
         io = IOBuffer()
         M = Euclidean(3)
         p = ones(3)
-        O = CyclicProximalPointState(M, p)
+        O = CyclicProximalPointState(M; p=p)
         f(M, p) = L2_Total_Variation(M, q, 0.5, p)
         proxes = (
             (M, λ, p) -> prox_distance(M, λ, q, p),
             (M, λ, p) -> prox_Total_Variation(M, 0.5 * λ, p),
         )
         s = CyclicProximalPointState(
-            M, f; stopping_criterion=StopAfterIteration(1), λ=i -> i
+            M; p=p, stopping_criterion=StopAfterIteration(1), λ=i -> i
         )
         mpo = ManifoldProximalMapObjective(f, proxes, [1, 2])
         dmp = DefaultManoptProblem(M, mpo)

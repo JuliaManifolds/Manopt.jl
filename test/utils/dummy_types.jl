@@ -1,5 +1,5 @@
 using Manopt, ManifoldsBase
-import Manopt: get_iterate, set_manopt_parameter!
+import Manopt: get_iterate, set_parameter!
 s = @isdefined _dummy_types_includeed
 if !s
     _dummy_types_includeed = true
@@ -19,5 +19,5 @@ if !s
     end
     DummyState() = DummyState([])
     get_iterate(::DummyState) = NaN
-    set_manopt_parameter!(s::DummyState, ::Val, v) = s
+    set_parameter!(s::DummyState, ::Val, v) = s
 end

@@ -1,4 +1,11 @@
-@doc raw"""
+
+_doc_FW_sub = raw"""
+```math
+   \operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩.
+```
+"""
+
+@doc """
     FrankWolfeState <: AbstractManoptSolverState
 
 A struct to store the current state of the [`Frank_Wolfe_method`](@ref)
@@ -7,24 +14,44 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 
 # Fields
 
-* `p`:                         the current iterate, a point on the manifold
-* `X`:                         the current gradient ``\operatorname{grad} F(p)``, a tangent vector to `p`.
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction method to use within Frank Wolfe.
-* `sub_problem`:               an [`AbstractManoptProblem`](@ref) problem or a function `(M, p, X) -> q` or `(M, q, p, X)` for the a closed form solution of the sub problem
-* `sub_state`:                 an [`AbstractManoptSolverState`](@ref) for the subsolver or an [`AbstractEvaluationType`](@ref) in case the sub problem is provided as a function
-* `stop`:                      ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a [`StoppingCriterion`](@ref)
-* `stepsize`:                  ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`) ``s_k`` which by default is set to ``s_k = \frac{2}{k+2}``.
-* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) a retraction to use within Frank-Wolfe
+$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :X; add=[:as_Gradient]))
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
+$(_var(:Field, :stopping_criterion, "stop"))
+$(_var(:Field, :stepsize))
+$(_var(:Field, :retraction_method))
 
 The sub task requires a method to solve
 
-```math
-   \operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩.
-```
+$_doc_FW_sub
 
 # Constructor
 
-    FrankWolfeState(M, p, X, sub_problem, sub_state)
+    FrankWolfeState(M, sub_problem, sub_state; kwargs...)
+
+Initialise the Frank Wolfe method state.
+
+FrankWolfeState(M, sub_problem; evaluation=AllocatingEvaluation(), kwargs...)
+
+Initialise the Frank Wolfe method state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+
+## Input
+
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :sub_problem))
+$(_var(:Argument, :sub_state))
+
+## Keyword arguments
+
+$(_var(:Keyword, :p; add=:as_Initial))
+$(_var(:Keyword, :inverse_retraction_method))
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, FrankWolfeState)`"))
+$(_var(:Keyword, :X; add=:as_Memory))
 
 where the remaining fields from before are keyword arguments.
 """
@@ -48,30 +75,29 @@ mutable struct FrankWolfeState{
     inverse_retraction_method::ITM
     function FrankWolfeState(
         M::AbstractManifold,
-        p::P,
         sub_problem::Pr,
-        sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState};
-        initial_vector::T=zero_vector(M, p),
-        stopping_criterion::TStop=StopAfterIteration(200) |
-                                  StopWhenGradientNormLess(1.0e-6),
+        sub_state::St;
+        p::P=rand(M),
+        X::T=zero_vector(M, p),
+        stopping_criterion::TStop=StopAfterIteration(200) | StopWhenGradientNormLess(1e-6),
         stepsize::TStep=default_stepsize(M, FrankWolfeState),
         retraction_method::TM=default_retraction_method(M, typeof(p)),
         inverse_retraction_method::ITM=default_inverse_retraction_method(M, typeof(p)),
     ) where {
         P,
-        Pr,
         T,
+        Pr<:Union{AbstractManoptProblem,F} where {F},
+        St<:AbstractManoptSolverState,
         TStop<:StoppingCriterion,
         TStep<:Stepsize,
         TM<:AbstractRetractionMethod,
         ITM<:AbstractInverseRetractionMethod,
     }
-        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
-        return new{P,T,Pr,typeof(sub_state_storage),TStep,TStop,TM,ITM}(
+        return new{P,T,Pr,St,TStep,TStop,TM,ITM}(
             p,
-            initial_vector,
+            X,
             sub_problem,
-            sub_state_storage,
+            sub_state,
             stopping_criterion,
             stepsize,
             retraction_method,
@@ -79,8 +105,15 @@ mutable struct FrankWolfeState{
         )
     end
 end
-function default_stepsize(::AbstractManifold, ::Type{FrankWolfeState})
-    return DecreasingStepsize(; length=2.0, shift=2)
+function FrankWolfeState(
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return FrankWolfeState(M, sub_problem, cfs; kwargs...)
+end
+
+function default_stepsize(M::AbstractManifold, ::Type{FrankWolfeState})
+    return DecreasingStepsize(M; length=2.0, shift=2.0)
 end
 get_gradient(fws::FrankWolfeState) = fws.X
 get_iterate(fws::FrankWolfeState) = fws.p
@@ -118,24 +151,31 @@ function show(io::IO, fws::FrankWolfeState)
     return print(io, s)
 end
 
-@doc raw"""
-    Frank_Wolfe_method(M, f, grad_f, p)
-    Frank_Wolfe_method(M, gradient_objective, p; kwargs...)
-
-Perform the Frank-Wolfe algorithm to compute for ``\mathcal C \subset \mathcal M``
-
+_doc_FW_problem = raw"""
 ```math
     \operatorname*{arg\,min}_{p∈\mathcal C} f(p),
 ```
+"""
+_doc_FW_sk_default = raw"``s_k = \frac{2}{k+2}``"
+_doc_Frank_Wolfe_method = """
+    Frank_Wolfe_method(M, f, grad_f, p=rand(M))
+    Frank_Wolfe_method(M, gradient_objective, p=rand(M); kwargs...)
+    Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
+    Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
+
+Perform the Frank-Wolfe algorithm to compute for ``$(_tex(:Cal, "C")) ⊂ $(_tex(:Cal, "M"))``
+the constrained problem
+
+$_doc_FW_problem
 
 where the main step is a constrained optimisation is within the algorithm,
 that is the sub problem (Oracle)
 
-```math
-    q_k = \operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩.
-```
+$_doc_FW_sub
 
-for every iterate ``p_k`` together with a stepsize ``s_k≤1``, by default ``s_k = \frac{2}{k+2}``.
+for every iterate ``p_k`` together with a stepsize ``s_k≤1``.
+The algorhtm can be performed in-place of `p`.
+
 This algorithm is inspired by but slightly more general than [WeberSra:2022](@cite).
 
 The next iterate is then given by ``p_{k+1} = γ_{p_k,q_k}(s_k)``,
@@ -144,91 +184,71 @@ use a retraction and its inverse.
 
 # Input
 
-* `M`:      a manifold ``\mathcal M``
-* `f`:      a cost function ``f: \mathcal M→ℝ`` to find a minimizer ``p^*`` for
-* `grad_f`: the gradient ``\operatorname{grad}f: \mathcal M → T\mathcal M`` of f
-* `p`:      an initial value ``p ∈ \mathcal C``, note that it really has to be a feasible point
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
+$(_var(:Argument, :grad_f))
+$(_var(:Argument, :p))
 
-Alternatively to `f` and `grad_f` you can provide
-the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+$(_note(:GradientObjective))
 
 # Keyword arguments
 
-* `evaluation`:         ([`AllocatingEvaluation`](@ref)) whether `grad_f` is an in-place or allocating (default) function
-* `initial_vector`:     (`zero_vectoir(M,p)`) how to initialize the inner gradient tangent vector
-* `stopping_criterion`: ([`StopAfterIteration`](@ref)`(500) | `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`) a stopping criterion
-* `retraction_method`:  (`default_retraction_method(M, typeof(p))`) a type of retraction
-* `stepsize`:           ([`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)` a [`Stepsize`](@ref) to use;
-  it has to be always less than 1. The default is the one proposed by Frank & Wolfe: ``s_k = \frac{2}{k+2}``.
-* `sub_cost`:           ([`FrankWolfeCost`](@ref)`(p, initiel_vector)`) the cost of the Frank-Wolfe sub problem
-  which by default uses the current iterate and (sub)gradient of the current iteration to define a default cost,
-  this is used to define the default `sub_objective`. It is ignored, if you set that or the `sub_problem` directly
-* `sub_grad`:           ([`FrankWolfeGradient`](@ref)`(p, initial_vector)`) the gradient of the Frank-Wolfe sub problem
-  which by default uses the current iterate and (sub)gradient of the current iteration to define a default gradient
-  this is used to define the default `sub_objective`. It is ignored, if you set that or the `sub_problem` directly
-* `sub_objective`:      ([`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`) the objective for the Frank-Wolfe sub problem
-  this is used to define the default `sub_problem`. It is ignored, if you set the `sub_problem` manually
-* `sub_problem`:        ([`DefaultManoptProblem`](@ref)`(M, sub_objective)`) the Frank-Wolfe sub problem to solve.
-  This can be given in three forms
-   1. as an [`AbstractManoptProblem`](@ref), then the `sub_state` specifies the solver to use
-   2. as a closed form solution, as a function evaluating with new allocations `(M, p, X) -> q` that solves the sub problem on `M` given the current iterate `p` and (sub)gradient `X`.
-   3. as a closed form solution, as a function `(M, q, p, X) -> q` working in place of `q`.
-  For points 2 and 3 the `sub_state` has to be set to the corresponding [`AbstractEvaluationType`](@ref), [`AllocatingEvaluation`](@ref) and [`InplaceEvaluation`](@ref), respectively
-* `sub_state`:          (`evaluation` if `sub_problem` is a function, a decorated [`GradientDescentState`](@ref) otherwise)
-  for a function, the evaluation is inherited from the Frank-Wolfe `evaluation` keyword.
-* `sub_kwargs`:         (`(;)`) keyword arguments to decorate the `sub_state` default state in case the `sub_problem` is not a function
+$(_var(:Keyword, :evaluation))
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stepsize; default="[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
+* `sub_cost=`[`FrankWolfeCost`](@ref)`(p, X)`:
+  the cost of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
+* `sub_grad=`[`FrankWolfeGradient`](@ref)`(p, X)`:
+  the gradient of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
+$(_var(:Keyword, :sub_kwargs))
 
-All other keyword arguments are passed to [`decorate_state!`](@ref) for decorators or
-[`decorate_objective!`](@ref), respectively.
-If you provide the [`ManifoldGradientObjective`](@ref) directly, these decorations can still be specified
+* `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
+  the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
+
+$(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
+$(_var(:Keyword, :sub_state; default="[`GradientDescentState`](@ref)`(M, copy(M,p))`"))
+
+$(_var(:Keyword, :X; add=:as_Gradient))
+$(_var(:Keyword, :stopping_criterion, "sub_stopping_criterion"; default="`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`"))
+  $(_note(:KeywordUsedIn, "sub_state"))
+$(_var(:Keyword, :X; add=:as_Gradient))
+
+$(_note(:OtherKeywords))
+
+If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+The decorations are still applied to the objective.
 
 # Output
 
 the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
 """
+
+@doc "$_doc_Frank_Wolfe_method"
 Frank_Wolfe_method(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method(
     M::AbstractManifold,
     f,
     grad_f,
-    p;
+    p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
-    return Frank_Wolfe_method(M, mgo, p; evaluation=evaluation, kwargs...)
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    rs = Frank_Wolfe_method(M, mgo, p_; evaluation=evaluation, kwargs...)
+    return _ensure_matching_output(p, rs)
 end
 function Frank_Wolfe_method(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p::Number;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    # redefine initial point
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    rs = Frank_Wolfe_method(M, f_, grad_f_, q; evaluation=evaluation, kwargs...)
-    #return just a number if  the return type is the same as the type of q
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
-end
-function Frank_Wolfe_method(
-    M::AbstractManifold, mgo::O, p; kwargs...
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return Frank_Wolfe_method!(M, mgo, q; kwargs...)
 end
 
-@doc raw"""
-    Frank_Wolfe_method!(M, f, grad_f, p; kwargs...)
-    Frank_Wolfe_method!(M, gradient_objective, p; kwargs...)
-
-Perform the Frank Wolfe method in place of `p`.
-
-For all options and keyword arguments, see [`Frank_Wolfe_method`](@ref).
-"""
+@doc "$_doc_Frank_Wolfe_method"
 Frank_Wolfe_method!(M::AbstractManifold, args...; kwargs...)
 function Frank_Wolfe_method!(
     M::AbstractManifold,
@@ -245,16 +265,16 @@ function Frank_Wolfe_method!(
     M::AbstractManifold,
     mgo::O,
     p;
-    initial_vector=zero_vector(M, p),
+    X=zero_vector(M, p),
     evaluation=AllocatingEvaluation(),
     objective_type=:Riemannian,
     retraction_method=default_retraction_method(M, typeof(p)),
-    stepsize::TStep=default_stepsize(M, FrankWolfeState),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(M, FrankWolfeState),
     stopping_criterion::TStop=StopAfterIteration(200) |
                               StopWhenGradientNormLess(1.0e-8) |
-                              StopWhenChangeLess(1.0e-8),
-    sub_cost=FrankWolfeCost(p, initial_vector),
-    sub_grad=FrankWolfeGradient(p, initial_vector),
+                              StopWhenChangeLess(M, 1.0e-8),
+    sub_cost=FrankWolfeCost(p, X),
+    sub_grad=FrankWolfeGradient(p, X),
     sub_kwargs=(;),
     sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
     sub_problem=DefaultManoptProblem(
@@ -268,8 +288,8 @@ function Frank_Wolfe_method!(
     else
         decorate_state!(
             GradientDescentState(
-                M,
-                copy(M, p);
+                M;
+                p=copy(M, p),
                 stopping_criterion=sub_stopping_criterion,
                 stepsize=default_stepsize(
                     M, GradientDescentState; retraction_method=retraction_method
@@ -283,7 +303,6 @@ function Frank_Wolfe_method!(
     kwargs...,
 ) where {
     TStop<:StoppingCriterion,
-    TStep<:Stepsize,
     O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective},
 }
     dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
@@ -291,12 +310,12 @@ function Frank_Wolfe_method!(
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     fws = FrankWolfeState(
         M,
-        p,
         sub_problem,
         sub_state_storage;
-        initial_vector=initial_vector,
+        p=p,
+        X=X,
         retraction_method=retraction_method,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         stopping_criterion=stopping_criterion,
     )
     dfws = decorate_state!(fws; kwargs...)
@@ -307,14 +326,14 @@ function initialize_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState)
     get_gradient!(amp, fws.X, fws.p)
     return fws
 end
-function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, i)
+function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, k)
     M = get_manifold(amp)
     # update gradient
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F(p), store the result in O.X
     # solve sub task
     solve!(fws.sub_problem, fws.sub_state) # call the subsolver
     q = get_solver_result(fws.sub_state)
-    s = fws.stepsize(amp, fws, i)
+    s = fws.stepsize(amp, fws, k)
     # step along the geodesic
     retract!(
         M,
@@ -331,13 +350,13 @@ end
 function step_solver!(
     amp::AbstractManoptProblem,
     fws::FrankWolfeState{P,T,F,ClosedFormSubSolverState{InplaceEvaluation}},
-    i,
+    k,
 ) where {P,T,F}
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = copy(M, fws.p)
     fws.sub_problem(M, q, fws.p, fws.X) # evaluate the closed form solution and store the result in q
-    s = fws.stepsize(amp, fws, i)
+    s = fws.stepsize(amp, fws, k)
     # step along the geodesic
     retract!(
         M,
@@ -354,13 +373,13 @@ end
 function step_solver!(
     amp::AbstractManoptProblem,
     fws::FrankWolfeState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}},
-    i,
+    k,
 ) where {P,T,F}
     M = get_manifold(amp)
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = fws.sub_problem(M, fws.p, fws.X) # evaluate the closed form solution and store the result in O.p
     # step along the geodesic
-    s = fws.stepsize(amp, fws, i)
+    s = fws.stepsize(amp, fws, k)
     # step along the geodesic
     retract!(
         M,

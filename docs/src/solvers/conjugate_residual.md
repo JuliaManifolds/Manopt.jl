@@ -1,4 +1,4 @@
-# Conjugate Residual Solver in a Tangent space
+# Conjugate residual solver in a Tangent space
 
 ```@meta
 CurrentModule = Manopt
@@ -6,6 +6,7 @@ CurrentModule = Manopt
 
 ```@docs
 conjugate_residual
+conjugate_residual!
 ```
 
 ## State
@@ -14,7 +15,7 @@ conjugate_residual
 ConjugateResidualState
 ```
 
-## Objetive
+## Objective
 
 ```@docs
 SymmetricLinearSystemObjective
@@ -24,6 +25,12 @@ SymmetricLinearSystemObjective
 
 ```@docs
 StopWhenRelativeResidualLess
+```
+
+## Internal functions
+
+```@docs
+Manopt.get_b
 ```
 
 ## Literature

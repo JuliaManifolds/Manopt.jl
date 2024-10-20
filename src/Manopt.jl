@@ -103,6 +103,7 @@ using ManifoldsBase:
     get_vector,
     get_vector!,
     get_vectors,
+    has_components,
     injectivity_radius,
     inner,
     inverse_retract,
@@ -148,6 +149,8 @@ using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
 using Requires
 using SparseArrays
 using Statistics
+
+include("documentation_glossary.jl")
 
 """
     Rn(args; kwargs...)
@@ -199,6 +202,7 @@ include("solvers/LevenbergMarquardt.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/proximal_bundle_method.jl")
+include("solvers/proximal_point.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
 include("solvers/trust_regions.jl")
@@ -252,7 +256,7 @@ function __init__()
     #
     # Error Hints
     #
-    @static if isdefined(Base.Experimental, :register_error_hint)
+    @static if isdefined(Base.Experimental, :register_error_hint) # COV_EXCL_LINE
         Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
             if exc.f === convex_bundle_method_subsolver
                 print(
@@ -273,12 +277,15 @@ function __init__()
     #
     # Requires fallback for Julia < 1.9
     #
-    @static if !isdefined(Base, :get_extension)
+    @static if !isdefined(Base, :get_extension) # COV_EXCL_LINE
         @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin
             include("../ext/ManoptJuMPExt.jl")
         end
         @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
             include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
+        end
+        @require RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd" begin
+            include("../ext/ManoptRecursiveArrayToolsExt.jl")
         end
         @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
             include("../ext/ManoptLineSearchesExt.jl")
@@ -453,10 +460,9 @@ export has_storage, get_storage, update_storage!
 export objective_cache_factory
 #
 # Direction Update Rules
-export DirectionUpdateRule,
-    IdentityUpdateRule, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
-export DirectionUpdateRule,
-    SteepestDirectionUpdateRule,
+export DirectionUpdateRule
+export Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+export SteepestDescentCoefficient,
     HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
     PolakRibiereCoefficient,
@@ -508,6 +514,8 @@ export adaptive_regularization_with_cubics,
     primal_dual_semismooth_Newton,
     proximal_bundle_method,
     proximal_bundle_method!,
+    proximal_point,
+    proximal_point!,
     quasi_Newton,
     quasi_Newton!,
     stochastic_gradient_descent,
@@ -534,7 +542,7 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 #
 # Stepsize
 export Stepsize
-export AdaptiveWNGradient, ConstantStepsize, DecreasingStepsize, PolyakStepsize
+export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
@@ -574,7 +582,6 @@ export StopAfter,
     StopWhenTrustRegionIsExceeded
 export get_active_stopping_criteria,
     get_stopping_criteria, get_reason, get_stopping_criterion
-export update_stopping_criterion!
 #
 # Exports
 export asymptote_export_S2_signals, asymptote_export_S2_data, asymptote_export_SPD

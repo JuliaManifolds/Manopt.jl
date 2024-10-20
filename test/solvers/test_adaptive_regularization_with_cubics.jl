@@ -29,7 +29,7 @@ include("../utils/example_tasks.jl")
         Manopt.get_objective_gradient!(M, X0, arcmo, p0)
         isapprox(M, p0, X0, get_gradient(M, mho, p0))
 
-        g = get_gradient_function(arcmo)
+        g = Manopt.get_gradient_function(arcmo)
         isapprox(M, p0, g(M2, p0), get_gradient(M, mho, p0))
         X0 = zero_vector(M, p0)
         X1 = similar(X0)
@@ -38,14 +38,11 @@ include("../utils/example_tasks.jl")
     end
 
     @testset "State and repr" begin
-        # neither provided a problem nor an objective yields an error
-        @test_throws ErrorException AdaptiveRegularizationState(ℝ^2)
-
         arcs = AdaptiveRegularizationState(
             M,
-            p0;
-            sub_problem=DefaultManoptProblem(M2, arcmo),
-            sub_state=GradientDescentState(M2, zero_vector(M, p0)),
+            DefaultManoptProblem(M2, arcmo),
+            GradientDescentState(M2; p=zero_vector(M, p0));
+            p=p0,
         )
         @test startswith(
             repr(arcs),
@@ -59,9 +56,9 @@ include("../utils/example_tasks.jl")
         @test arcs.X == X1
         arcs2 = AdaptiveRegularizationState(
             M,
-            p0;
-            sub_objective=arcmo,
-            sub_state=LanczosState(M2; maxIterLanczos=1),
+            DefaultManoptProblem(M2, arcmo),
+            LanczosState(M2; maxIterLanczos=1);
+            p=p0,
             stopping_criterion=StopWhenAllLanczosVectorsUsed(1),
         )
         #add a fake Lanczos
@@ -71,7 +68,7 @@ include("../utils/example_tasks.jl")
         @test stop_solver!(arcs2.sub_problem, arcs2, 1)
 
         arcs3 = AdaptiveRegularizationState(
-            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos=2); p=p0
         )
         #add a fake Lanczos
         initialize_solver!(arcs3.sub_problem, arcs3.sub_state)
@@ -90,7 +87,7 @@ include("../utils/example_tasks.jl")
         )
         # a second that copies
         arcs4 = AdaptiveRegularizationState(
-            M, p0; sub_objective=arcmo, sub_state=LanczosState(M2; maxIterLanczos=2)
+            M, DefaultManoptProblem(M2, arcmo), LanczosState(M2; maxIterLanczos=2); p=p0
         )
         #add a fake Lanczos
         push!(arcs4.sub_state.Lanczos_vectors, copy(M, p1, X1))
@@ -142,7 +139,7 @@ include("../utils/example_tasks.jl")
         )
         @test r == p0
         # Dummy construction with a function for the `sub_problem`
-        arcs4 = AdaptiveRegularizationState(M, p0; sub_problem=f1)
+        arcs4 = AdaptiveRegularizationState(M, f1; p=p0)
         @test arcs4.sub_state isa Manopt.ClosedFormSubSolverState
     end
 
@@ -203,8 +200,8 @@ include("../utils/example_tasks.jl")
 
         sub_problem = DefaultManoptProblem(M2, arcmo)
         sub_state = GradientDescentState(
-            M2,
-            zero_vector(M, p0);
+            M2;
+            p=zero_vector(M, p0),
             stopping_criterion=StopAfterIteration(500) |
                                StopWhenGradientNormLess(1e-11) |
                                StopWhenFirstOrderProgress(0.1),
@@ -224,7 +221,8 @@ include("../utils/example_tasks.jl")
         )
         @test isapprox(M, p_min, q3)
 
-        # test that we do not het nan if we start at the minimizer
+        # test that this still returns the minimizer, that is when starting
+        # at the minimizer
         r1 = adaptive_regularization_with_cubics(M, f, grad_f, Hess_f, p_min)
     end
 
@@ -242,11 +240,13 @@ include("../utils/example_tasks.jl")
         @test fc(Mc, p0) > fc(Mc, p2)
     end
 
-    @testset "Start at a point with _exactly_ gradient zero" begin
+    @testset "Start at a point with _exactly_ gradient zero - In Tutorial mode" begin
         p0 = zeros(2)
         M = Euclidean(2)
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "Tutorial")
         f2(M, p) = 0
         grad_f2(M, p) = [0.0, 0.0]
         @test adaptive_regularization_with_cubics(M, f2, grad_f2, p0) == p0
+        @test_logs (:info,) Manopt.set_parameter!(:Mode, "")
     end
 end

@@ -36,7 +36,7 @@ function AdaptiveRagularizationWithCubicsModelObjective(
 }
     return AdaptiveRagularizationWithCubicsModelObjective{E,O,R}(mho, σ)
 end
-function set_manopt_parameter!(
+function set_parameter!(
     f::AdaptiveRagularizationWithCubicsModelObjective,
     ::Union{Val{:σ},Val{:RegularizationParameter}},
     σ,

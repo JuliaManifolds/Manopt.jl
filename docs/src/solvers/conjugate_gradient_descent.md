@@ -21,15 +21,28 @@ ConjugateGradientDescentState
 The update rules act as [`DirectionUpdateRule`](@ref), which internally always first evaluate the gradient itself.
 
 ```@docs
-ConjugateGradientBealeRestart
 ConjugateDescentCoefficient
+ConjugateGradientBealeRestart
 DaiYuanCoefficient
 FletcherReevesCoefficient
 HagerZhangCoefficient
 HestenesStiefelCoefficient
 LiuStoreyCoefficient
 PolakRibiereCoefficient
-SteepestDirectionUpdateRule
+SteepestDescentCoefficient
+```
+
+## Internal rules for coefficients
+
+```@docs
+Manopt.ConjugateGradientBealeRestartRule
+Manopt.DaiYuanCoefficientRule
+Manopt.FletcherReevesCoefficientRule
+Manopt.HagerZhangCoefficientRule
+Manopt.HestenesStiefelCoefficientRule
+Manopt.LiuStoreyCoefficientRule
+Manopt.PolakRibiereCoefficientRule
+Manopt.SteepestDescentCoefficientRule
 ```
 
 ## [Technical details](@id sec-cgd-technical-details)

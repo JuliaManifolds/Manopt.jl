@@ -1,4 +1,4 @@
-# Interior Point Newton method
+# Interior point Newton method
 
 ```@meta
 CurrentModule = Manopt

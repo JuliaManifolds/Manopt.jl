@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldsBase, Test
+using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
 using ManoptExamples:
     forward_logs, differential_forward_logs, adjoint_differential_forward_logs
 using ManifoldDiff: prox_distance, prox_distance!
@@ -84,7 +84,7 @@ using ManifoldDiff: prox_distance, prox_distance!
             linearized_forward_operator=DΛ,
             relax=:dual,
             variant=:linearized,
-            update_dual_base=(p, o, i) -> o.n,
+            update_dual_base=(p, o, k) -> o.n,
         )
         @test o2a ≈ o3
     end

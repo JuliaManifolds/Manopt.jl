@@ -1,6 +1,13 @@
 using Manifolds, Manopt, LinearAlgebra, Random, Test
 
 @testset "Interior Point Newton Solver" begin
+    @testset "StepsizeState" begin
+        M = Manifolds.Sphere(2)
+        a = StepsizeState(M)
+        b = StepsizeState(a.p, a.X)
+        @test a.p === b.p
+        @test a.X === b.X
+    end
     @testset "A solver run on the Sphere" begin
         # We can take a look at debug prints of one run and plot the result
         # on CI and when running with ] test Manopt, both have to be set to false.
@@ -16,6 +23,12 @@ using Manifolds, Manopt, LinearAlgebra, Random, Test
         grad_g(M, p) = [(p * p' - I)[:, i] for i in 1:3]
         Hess_g(M, p, X) = [(X * p')[:, i] for i in 1:3]
         M = Manifolds.Sphere(2)
+
+        # With dummy closed form solution
+        ipnsc = InteriorPointNewtonState(
+            M, ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, M=M), f
+        )
+        @test ipnsc.sub_state isa Manopt.ClosedFormSubSolverState
 
         p_0 = (1.0 / (sqrt(3.0))) .* [1.0, 1.0, 1.0]
         # p_0 = 1.0 / sqrt(2) .* [0.0, 1.0, 1.0]
