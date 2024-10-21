@@ -41,7 +41,7 @@ ManoptRipQPQuadraticModelsExt = ["RipQP", "QuadraticModels"]
 [compat]
 Aqua = "0.8"
 ColorSchemes = "3.5.0"
-ColorTypes = "0.9.1, 0.10, 0.11"
+ColorTypes = "0.9.1, 0.10, 0.11, 0.12"
 Colors = "0.11.2, 0.12"
 DataStructures = "0.17, 0.18"
 Dates = "1.6"
