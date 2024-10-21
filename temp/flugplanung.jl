@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.0
+# v0.19.45
 
 using Markdown
 using InteractiveUtils
@@ -47,7 +47,7 @@ end
 
 # ╔═╡ e59af672-f337-4b27-87d8-4675ffcb6f72
 begin
-	N = 100
+	N = 50
 	h = 1/(N+2)*π/2
 	st = 0.2
 	#halt = pi - st
@@ -55,11 +55,11 @@ begin
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
 	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
 	
-	y0 = [sin(st),0,cos(st)] # startpoint of geodesic: nordpol
-	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic: suedpol
+	#y0 = [sin(st),0,cos(st)] # startpoint of geodesic: nordpol
+	#yT = [sin(halt),0,cos(halt)] # endpoint of geodesic: aequator
 	
-	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
-	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
+	yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
+	y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
 
 	#y0 = [cos(st),sin(st),0] # startpoint of geodesic: aequator
 	#yT = [cos(halt),sin(halt),0] # endpoint of geodesic: aequator
@@ -76,8 +76,8 @@ end;
 
 # ╔═╡ 8249e92d-b611-4683-803f-591519a753fa
 function y(t)
-	return [sin(t), 0, cos(t)]
-	#return [sin(halt+st-t), 0, cos(halt+st-t)]
+	#return [sin(t), 0, cos(t)]
+	return [sin(halt+st-t), 0, cos(halt+st-t)]
 	#return [cos(t), sin(t), 0]
 	#return [cos(halt+st - t), sin(halt+st - t), 0]
 end;
@@ -86,7 +86,7 @@ end;
 discretized_y = [y(Ωi) for Ωi in Omega];
 
 # ╔═╡ e70f0be7-e768-472f-af8f-3df37d1de880
-c = 4.0
+c = 2.0
 
 # ╔═╡ 968036d4-d75e-4456-a2f3-6747042f7389
 begin
@@ -124,12 +124,6 @@ begin
 		#return [0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0]
 	end
 end;
-
-# ╔═╡ 60d10fe3-a28c-487c-9dbb-0239a2fda3ca
-(-w_prime(S, [1.0, 1.0, 1.0]) + w_prime(S, [1.0, 1.0, 1.0] + 0.00001*[0.0, 1.0, 0.0]))/0.00001
-
-# ╔═╡ 86874a60-4e58-4d45-b4f7-538374eafc85
-w_doubleprime(S, [1.0, 1.0, 1.0], [0.0, 1.0, 0.0])
 
 # ╔═╡ 63a634a4-e944-455a-9d35-d07dd0dfd8da
 function proj(S, p, v)
@@ -204,43 +198,6 @@ function b(M, y)
 		return X
 end;
 
-# ╔═╡ 756a00e8-a34e-4318-9df8-5fed5e828418
-function b2(M, y, v)
-		# Include boundary points
-		Oy = OffsetArray([y0, y..., yT], 0:(length(Omega)+1))
-		S = M.manifold
-		X = zero_vector(M,y)
-		rhs = zero_vector(M,y)
-		ps = zero_vector(M,y)
-		for i in 1:length(Omega)
-			y_i = Oy[M, i]
-			y_next = Oy[M, i+1]
-			y_pre = Oy[M, i-1]
-			rhs[i] = 1/h * (2.0*y_i - y_next - y_pre - h*w(S, y_i) + h*w(S, y_next))
-			#X[M,i] = inner(S, y_i, B, v[i])
-			ps[i] = -1.0*proj_prime(S, y_i, v[i], w(S, y_i)) #- w_prime(S, y_i)
-		end
-		X = inner(M, y, rhs, v)
-		X = X + inner(M, y, ps, v)
-		return X
-end;
-
-# ╔═╡ 966f3ebf-45c1-4b44-b13a-7740a2cdd679
-begin
-	B = get_basis(power, discretized_y, DefaultOrthonormalBasis())
-	base = get_vectors(power, discretized_y, B)
-	dim = manifold_dimension(power)
-	bc = zeros(dim)
-	bc2 = zeros(dim)
-	e = enumerate(base)
-   	for (i,basis_vector) in e
-		#println(basis_vector)
-		#println("")
-      	bc[i] = b(power, discretized_y)'*basis_vector
-		bc2[i] = b2(power, discretized_y, basis_vector)
-	end
-end;
-
 # ╔═╡ bf7d2ced-72d9-464f-b20b-d3540def9c1d
 function connection_map(E, q)
     return q
@@ -307,7 +264,7 @@ st_res = vectorbundle_newton(power, TangentBundle(power), b, A, connection_map, 
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-#stepsize=ConstantStepsize(1.0),
+#stepsize=ConstantLength(1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
 	record=[:Iterate, :Change],
 	return_state=true
@@ -334,6 +291,33 @@ end
 # ╔═╡ 07386cfa-2d54-429d-b808-7a2d220337c9
 p_res = get_solver_result(st_res);
 
+# ╔═╡ d60ef083-1289-4181-8bbb-04705a2ffb24
+begin
+		Oy = OffsetArray([y0, p_res..., yT], 0:(length(Omega)+1))
+		normen = zeros(N)
+		normenw = zeros(N)
+		normeny = zeros(N)
+		sum = 0
+		for i in 1:N
+			y_i = Oy[power, i]
+			y_next = Oy[power, i+1]
+			normen[i] = norm(S, y_i, ((y_next-y_i)/h - w(S, y_next)))
+			sum += sum + normen[i]
+			normenw[i] = norm(w(S, y_next))
+			normeny[i] = norm(S, y_i, ((y_next-y_i)/h))
+		end
+		#println(normen)
+	plot = Figure(;)
+	
+    rows, cols = fldmod1(1, 2)
+	
+	Axis(plot[rows, cols], title = string("Plot of the air speed"), xminorgridvisible = true, xticks = (1:length(normen)), xlabel = "Iteration", ylabel = "‖v‖")
+    scatterlines!(normen, color = :blue)
+	scatterlines!(normenw, color = :red)
+	scatterlines!(normeny, color = :orange)
+	plot
+end
+
 # ╔═╡ aec51445-dc82-427a-9150-e97e6809efe2
 begin
 n = 45
@@ -341,7 +325,7 @@ u = range(0,stop=2*π,length=n);
 v = range(0,stop=π,length=n);
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
 
-ws = [-1.0*w(Manifolds.Sphere(2), p) for p in p_res]
+ws = [1.0*w(Manifolds.Sphere(2), p) for p in p_res]
 for i in 1:n
     for j in 1:n
         sx[i,j] = cos.(u[i]) * sin(v[j]);
@@ -367,39 +351,6 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	fig
 end
 
-# ╔═╡ 791c5c10-6d05-4021-bf2a-f58c262d7001
-begin
-M=power
-b0 = b(M, y_0)
-i = 2
-ch = 1e-6
-B3 = get_basis(M, y_0, DefaultOrthonormalBasis())
-basis = get_vectors(M, y_0, B3)
-y_1 = exp(M, y_0, ch*basis[i])
-b1 = b(M, y_1)
-checkA = 1/ch * (b1 - b0)
-A0 = A(M, y_0, base[M,i])
-#checkA = zeros(15,15)
-
-coordA = zeros(2*N,2*N)
-	en = enumerate(basis)
-   	for (i,basis_vector) in en
-      	G = A(M, y_0, basis_vector)
-	  	#Ac[:,i] = get_coordinates(M, p, G, B)
-		coordA[i,:] = get_coordinates(M, y_0, G, B3)'
-	end
-	coordA
-end
-
-# ╔═╡ f5f99ecc-894e-4150-ac9f-124d4bdb5f1b
-typeof(StopWhenChangeLess(M,1e-13))
-
-# ╔═╡ d59841d1-0ba6-4737-b170-be0b19f13269
-A0
-
-# ╔═╡ 08d78bb9-5a09-48e2-9d75-a244bd11fed1
-checkA
-
 # ╔═╡ Cell order:
 # ╠═14ef9e32-7986-11ef-18c9-c7c6957859f0
 # ╠═80420787-a807-49c9-9855-4b7001402cab
@@ -412,24 +363,17 @@ checkA
 # ╠═968036d4-d75e-4456-a2f3-6747042f7389
 # ╠═21150026-495a-4ff5-bfb1-a3d6362f7305
 # ╠═1fef7f5f-73b2-4cbe-9330-3213719af9e1
-# ╠═60d10fe3-a28c-487c-9dbb-0239a2fda3ca
-# ╠═86874a60-4e58-4d45-b4f7-538374eafc85
 # ╠═63a634a4-e944-455a-9d35-d07dd0dfd8da
 # ╠═b18bb496-3445-43f3-9c98-0e3f7c073a43
 # ╠═4cec1238-369a-4fc0-ac6e-b9463e2314ac
 # ╠═655daf7e-e9de-4fa6-827d-5617c5ebea7f
-# ╠═756a00e8-a34e-4318-9df8-5fed5e828418
-# ╠═966f3ebf-45c1-4b44-b13a-7740a2cdd679
 # ╠═bf7d2ced-72d9-464f-b20b-d3540def9c1d
 # ╠═91014dd8-a16f-4e8d-8dd9-504bc5bcd278
 # ╠═a34bb2e1-3d43-4cf3-ba82-dee9f9d59348
 # ╠═914e11d3-145d-46a9-a59b-9245d34e1f08
 # ╠═0d5ce271-e0ac-4c75-a011-7fcb1372d973
-# ╠═f5f99ecc-894e-4150-ac9f-124d4bdb5f1b
 # ╠═1b024dc2-ba46-4091-b178-c7ac96ef16fe
 # ╠═ecd2835c-d0e8-4369-b310-3d6ae4dce914
 # ╠═07386cfa-2d54-429d-b808-7a2d220337c9
+# ╠═d60ef083-1289-4181-8bbb-04705a2ffb24
 # ╠═aec51445-dc82-427a-9150-e97e6809efe2
-# ╠═791c5c10-6d05-4021-bf2a-f58c262d7001
-# ╠═d59841d1-0ba6-4737-b170-be0b19f13269
-# ╠═08d78bb9-5a09-48e2-9d75-a244bd11fed1
