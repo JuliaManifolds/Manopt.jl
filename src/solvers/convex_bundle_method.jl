@@ -345,9 +345,10 @@ end
 
 function null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
     return (
-        inner(M, p_last_serious, vector_transport_to(M, q, X, p_last_serious, VT), g) ≥
-        -m * ξ - (
-            get_cost(amp, p_last_serious) - get_cost(amp, q) - inner(M, q, X, inverse_retract(M, q, p_last_serious, IRT)) -
+        inner(M, p_last_serious, vector_transport_to(M, q, X, p_last_serious, VT), t * g) ≥
+        -m * t * ξ - (
+            get_cost(amp, p_last_serious) - get_cost(amp, q) -
+            inner(M, q, X, inverse_retract(M, q, p_last_serious, IRT)) -
             ϱ * norm(M, q, X) * norm(M, q, inverse_retract(M, q, p_last_serious, IRT))
         )
     )
@@ -410,11 +411,7 @@ function (dbt::DomainBackTrackingStepsize)(
                 cbms.ϱ,
             )
             t *= dbt.β
-            if t < cbms.last_stepsize
-                println("Fail")
-                break
-            end
-            t < stepsize_tol && break
+            (t < stepsize_tol) && break
             retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
         end
         if !(
@@ -434,8 +431,6 @@ function (dbt::DomainBackTrackingStepsize)(
                 cbms.ϱ,
             )
         )
-            # retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
-            # println("    Condition satisfied")
             return t
         end
         @warn "Resampling subgradient for the $j-th time."
