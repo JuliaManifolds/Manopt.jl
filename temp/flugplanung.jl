@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.1
 
 using Markdown
 using InteractiveUtils
@@ -55,11 +55,11 @@ begin
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
 	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
 	
-	#y0 = [sin(st),0,cos(st)] # startpoint of geodesic: nordpol
-	#yT = [sin(halt),0,cos(halt)] # endpoint of geodesic: aequator
+	y0 = [sin(st),0,cos(st)] # startpoint of geodesic: nordpol
+	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic: aequator
 	
-	yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
-	y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
+	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
+	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
 
 	#y0 = [cos(st),sin(st),0] # startpoint of geodesic: aequator
 	#yT = [cos(halt),sin(halt),0] # endpoint of geodesic: aequator
@@ -76,8 +76,8 @@ end;
 
 # ╔═╡ 8249e92d-b611-4683-803f-591519a753fa
 function y(t)
-	#return [sin(t), 0, cos(t)]
-	return [sin(halt+st-t), 0, cos(halt+st-t)]
+	return [sin(t), 0, cos(t)]
+	#return [sin(halt+st-t), 0, cos(halt+st-t)]
 	#return [cos(t), sin(t), 0]
 	#return [cos(halt+st - t), sin(halt+st - t), 0]
 end;
@@ -311,10 +311,12 @@ begin
 	
     rows, cols = fldmod1(1, 2)
 	
-	Axis(plot[rows, cols], title = string("Plot of the air speed"), xminorgridvisible = true, xticks = (1:length(normen)), xlabel = "Iteration", ylabel = "‖v‖")
-    scatterlines!(normen, color = :blue)
-	scatterlines!(normenw, color = :red)
-	scatterlines!(normeny, color = :orange)
+	axs = Axis(plot[rows, cols], xminorgridvisible = true, xticks = (1:length(normen)), xlabel = "time step", ylabel = "‖⋅‖")
+    scatterlines!(normen, color = :blue, label="air speed")
+	scatterlines!(normenw, color = :red, label="wind field")
+	scatterlines!(normeny, color = :orange, label="ground speed")
+
+	plot[1, 2] = Legend(plot, axs, "Plot of norms of the ... ", framevisible = false)
 	plot
 end
 
