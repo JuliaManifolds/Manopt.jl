@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.1
 
 using Markdown
 using InteractiveUtils
@@ -107,6 +107,12 @@ begin
 	end
 end;
 
+# ╔═╡ 486de3dd-76fc-4428-a82e-52dae1e2d301
+function w_primealt(M, p)
+	nenner = p[1]^2+p[2]^2
+		return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
+end
+
 # ╔═╡ 13f350e2-ba3d-4652-9358-4bc2f08d9001
 function proj_prime(S, p, X, Y) # S_i*(Y)
 	#return project(S, p, (- X*p' - p*X')*Y)
@@ -129,11 +135,11 @@ function A(M, y, X)
 
 		Z[M,i] = proj_prime(S, y_i, X_i, Z[M,i])
 
-		Z[M,i] = Z[M, i] - h * proj_prime(S, y_i, X_i, Z[M,i])
+		#Z[M,i] = Z[M, i] - h * proj_prime(S, y_i, X_i, Z[M,i])
 		if i > 1
 			Z[M,i] = Z[M,i] - 1/h * X[M,i-1]
 		end
-		Z[M,i] = Z[M,i] + 2/h * (X[M,i]) + h*X[M, i]' * w_prime(S, y_i)
+		Z[M,i] = Z[M,i] + 2/h * (X[M,i]) + h * w_primealt(S, y_i)'*X_i
 		if i < N
 			Z[M,i] = Z[M,i] - 1/h * X[M,i+1]
 		end
@@ -310,17 +316,6 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	fig
 end
 
-# ╔═╡ e5247033-d496-449f-b83d-8b20f9f8cd45
-# homotopy
-
-# ╔═╡ 404fafb8-8514-4f6e-ab74-9ea047fb558f
-begin
-	for i in range(1000)
-		C = C+i/1000.0
-
-	end
-end
-
 # ╔═╡ Cell order:
 # ╠═11863d90-6f62-11ef-06a1-611d44587188
 # ╠═282efd2f-2019-4bb5-a9ff-0ba7a18b2b58
@@ -332,6 +327,7 @@ end
 # ╠═6e66d021-38f4-4037-8d63-c8cc75978485
 # ╠═d887274f-e198-4af7-a897-a88fd94f04e2
 # ╠═1d4ee847-f09d-4423-91ea-aa6d60f8d1b5
+# ╠═486de3dd-76fc-4428-a82e-52dae1e2d301
 # ╠═13f350e2-ba3d-4652-9358-4bc2f08d9001
 # ╠═e8abf32a-5923-48b0-b739-78e527d1a4f9
 # ╠═4dcf87c7-8084-4b19-90da-53bca0d97124
@@ -349,5 +345,3 @@ end
 # ╠═43c8df22-3b57-4916-9391-b19d80efc88c
 # ╠═54d68b41-9a6f-4c4c-bfde-7db41939d30c
 # ╠═33f91dbc-fed1-4b0a-9c1b-ba2a2f54ea64
-# ╠═e5247033-d496-449f-b83d-8b20f9f8cd45
-# ╠═404fafb8-8514-4f6e-ab74-9ea047fb558f

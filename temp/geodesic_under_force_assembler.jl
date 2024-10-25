@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.0
+# v0.20.1
 
 using Markdown
 using InteractiveUtils
@@ -49,7 +49,7 @@ end
 
 # ╔═╡ 7b3e1aa5-db29-4519-9860-09f6cc933c07
 begin
-	N=3
+	N=25
 	h = 1/(N+2)*π/2
 	st = 0.5
 	#halt = pi - st
@@ -441,11 +441,10 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
     y_start = copy(power,discretized_y)
     y_current = copy(power,y_start)
     y_last = copy(power,y_start)
-	for i in range(1,4)
+	for i in range(1,1)
 		println(obj.scaling)
 		copyto!(power,y_last,y_current)
-		state = VectorbundleNewtonState(power, E, bundlemap, y_current, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(50)|StopWhenChangeLess(1e-10)), retraction_method=ProjectionRetraction(),
-			stepsize=ConstantStepsize(1.0))
+		state = VectorbundleNewtonState(power, E, bundlemap, y_current, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(50)|StopWhenChangeLess(power, 1e-10)), retraction_method=ProjectionRetraction(), stepsize=Manopt.ConstantStepsize(power,1.0))
 		#retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
 		st_res = solve!(problem, state)
 		println("Norm:", norm(y_last-y_current))
