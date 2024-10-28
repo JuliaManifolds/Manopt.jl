@@ -50,7 +50,7 @@ end
 
 # ╔═╡ 7b3e1aa5-db29-4519-9860-09f6cc933c07
 begin
-	N=1000
+	N=20000
 	st = 0.5
 	halt = pi-0.5
 	h = (halt-st)/(N+1)
@@ -141,7 +141,7 @@ end;
 
 # ╔═╡ 68016dd2-6389-45bf-a40a-f5afcf6d4dab
 """
-All that follows, until "solve" should be transferred outsied the Pluto-Notebook
+All that follows, until "solve" should be transferred outside the Pluto-Notebook
 """
 
 # ╔═╡ 2ec88231-ec90-4e6a-a8f1-6e7c6ef0c894
@@ -210,11 +210,11 @@ function assemble_local_Jac!(A, i, yl, yr, Bl,Br,integrand, transport)
         if idxl>=0
 		   # linker Quadraturpunkt
 		   # Ableitung in der Einbettung	
-		   tmp  = integrand.derivative(integrand,yl,ydot,Bl[j],Bdotlj,Bl[k],Bdotlk)
+         tmp=integrand.derivative(integrand,yl,ydot,Bl[j],Bdotlj,Bl[k],Bdotlk)
 		   # Modifikation für Kovariante Ableitung	
 		   tmp += integrand.value(integrand,yl,ydot,Pprimel,Pprimedotl)
 		   # rechter Quadraturpunkt (siehe oben)
-		   tmp += integrand.derivative(integrand,yr,ydot,0.0*Bl[j],Bdotlj,0.0*Bl[k],Bdotlk)
+	  tmp+=integrand.derivative(integrand,yr,ydot,0.0*Bl[j],Bdotlj,0.0*Bl[k],Bdotlk)
 		   tmp += integrand.value(integrand,yr,ydot,0.0*Pprimel,Pprimedotl)
            # Update des Matrixeintrags
 		   A[idxl+k,idxl+j]+=quadwght*tmp
@@ -224,19 +224,19 @@ function assemble_local_Jac!(A, i, yl, yr, Bl,Br,integrand, transport)
 		if idxl>=0 && idxr<nA
 		   # linker Quadraturpunkt
 		   # Ableitung in der Einbettung	
-			tmp  = integrand.derivative(integrand, yl,ydot,0.0*Br[j],Bdotrj,Bl[k],Bdotlk)	
+			tmp=integrand.derivative(integrand, yl,ydot,0.0*Br[j],Bdotrj,Bl[k],Bdotlk)	
 		   # Modifikation für Kovariante Ableitung fällt hier weg, da Terme = 0
 		   # rechter Quadraturpunkt
-			tmp += integrand.derivative(integrand, yr,ydot,Br[j],Bdotrj,0.0*Bl[k],Bdotlk)	
+			tmp+=integrand.derivative(integrand, yr,ydot,Br[j],Bdotrj,0.0*Bl[k],Bdotlk)	
            # Symmetrisches Update der Matrixeinträge
 			A[idxl+k,idxr+j] += quadwght*tmp
 			A[idxr+j,idxl+k] += quadwght*tmp
 		 end	
 		# rechte x rechte Testfunktion (siehe oben)
 		 if idxr < nA
-		   tmp  = integrand.derivative(integrand, yl,ydot,0.0*Br[j],Bdotrj,0.0*Br[k],Bdotrk)
+		   tmp=integrand.derivative(integrand, yl,ydot,0.0*Br[j],Bdotrj,0.0*Br[k],Bdotrk)
 		   tmp += integrand.value(integrand, yl,ydot,0.0*Pprimer,Pprimedotr)
-		   tmp += integrand.derivative(integrand, yr,ydot,Br[j],Bdotrj,Br[k],Bdotrk)
+		   tmp+=integrand.derivative(integrand, yr,ydot,Br[j],Bdotrj,Br[k],Bdotrk)
 		   tmp += integrand.value(integrand, yr,ydot,Pprimer,Pprimedotr)
 			 
 		   A[idxr+k,idxr+j]+=quadwght*tmp
@@ -313,27 +313,26 @@ end
 # ╔═╡ 0d741410-f182-4f5b-abe4-7719e627e2dc
 function solve_linear_system(M, p, state, prob)
 	obj = get_objective(prob)
-	B = get_basis(M, p, DefaultOrthonormalBasis())
-	base = get_vectors(M, p, B)
 	n = manifold_dimension(M)
-	Ac=zeros(n,n)
+	Ac::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
 	bc = zeros(n)
 	bcsys=zeros(n)
 	bctrial=zeros(n)
 	Oy = OffsetArray([y0, p..., yT], 0:(length(Omega)+1))
 	Oytrial = OffsetArray([y0, state.p_trial..., yT], 0:(length(Omega)+1))
 	S = M.manifold
-    get_rhs_Jac!(bc,Ac,p,integrand,transport)
+	println("Assemble:")
+    @time get_rhs_Jac!(bc,Ac,p,integrand,transport)
 	if state.is_same == true
 		bcsys=bc
 	else
-		get_rhs_simplified!(bctrial,state.p,state.p_trial,integrand,transport)
+		@time get_rhs_simplified!(bctrial,state.p,state.p_trial,integrand,transport)
     	bcsys=bctrial-(1.0 - state.stepsize.alpha)*bc
 	end
-	Asparse = sparse(Ac)
-	#println(nnz(Asparse))
-	#println("As:", Asparse)
-	Xc = (Asparse) \ (-bcsys)
+	#Asparse = sparse(Ac)
+	println("Solve:")
+	@time Xc = (Ac) \ (-bcsys)
+	B = get_basis(M, p, DefaultOrthonormalBasis())
 	res_c = get_vector(M, p, Xc, B)
 	return res_c
 end
@@ -356,6 +355,7 @@ n = 45
 u = range(0,stop=2*π,length=n);
 v = range(0,stop=π,length=n);
 
+	
 it_back = 0
 
 #ws = [-1.0*w(Manifolds.Sphere(2), p) for p in discretized_y]
@@ -382,13 +382,12 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
     π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
-	scatter!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y); markersize =8, color=:blue)
-	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
+	#scatter!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y); markersize =8, color=:blue)
+	#scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
 	E = TangentBundle(power)
 	obj = VectorbundleObjective(connection_map, connection_map, connection_map)
 	#integrand.scaling = 1.0
 	problem = VectorbundleManoptProblem(power, E, obj)
-
 	increment = 0.1
     y_start = copy(power,discretized_y)
     y_current = copy(power,y_start)
@@ -403,13 +402,13 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 		println("Norm:", norm(y_last-y_current))
 		if Manopt.indicates_convergence(st_res.stop)
 			#integrand.scaling = integrand.scaling + increment
-			scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:orange)
+			#scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:orange)
 		else
 			factor=0.5
 			#integrand.scaling = integrand.scaling - increment
 			global increment=increment*factor
 			#integrand.scaling = integrand.scaling +increment
-			scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:red)
+			#scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:red)
 			copyto!(power,y_current,y_last)
 		end
 		println(Manopt.indicates_convergence(st_res.stop)) 
