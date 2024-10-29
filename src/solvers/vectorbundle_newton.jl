@@ -123,7 +123,7 @@ function (acs::AffineCovariantStepsize)(
     acs.theta = 1.3
     alpha_new = 1.0
     #acs.theta_des = 0.5
-    while acs.theta > acs.theta_acc
+    while acs.theta > acs.theta_acc && acs.alpha > 1e-10
         acs.alpha = copy(alpha_new)
         X_alpha = acs.alpha * ams.X
         #println("differenz vorher=", norm(ams.p_trial - ams.p))
@@ -137,7 +137,7 @@ function (acs::AffineCovariantStepsize)(
 
         simplified_newton = ams.sub_problem(amp, ams, 1)
         acs.theta = norm(simplified_newton)/norm(ams.X)
-        #println("theta!!!=", acs.theta)
+        println("theta=", acs.theta)
         alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
         #println("alpha!!!=", acs.alpha)
         #if acs.alpha < 1e-15
