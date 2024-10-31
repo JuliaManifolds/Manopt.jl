@@ -16,7 +16,7 @@ begin
 	using ManoptExamples
 	using OffsetArrays
 	using Random
-    using WGLMakie, Makie, GeometryTypes, Colors
+    using WGLMakie, Makie, GeometryTypes, Colors, NamedColors
 	#using CairoMakie
 	#using FileIO
 end;
@@ -122,7 +122,10 @@ Definition of a vector transport and its derivative given by the orthogonal proj
 transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
 
 # ╔═╡ be436d8c-dbc4-4d70-ae69-7e604ca76c83
-ex = 50 # exponent used in the energy functional
+ex = 2 # exponent used in the energy functional
+
+# ╔═╡ 6a1c4cce-8ec8-4193-8ee3-2ca7b1208dcc
+scale = 3.0 # Integrand scaling
 
 # ╔═╡ a789119e-04b9-4456-acba-ec8e8702c231
 """
@@ -175,7 +178,7 @@ end
 """
 	Definition of an integrand and its derivative for the simplified flight planning problem
 """
-integrand=DifferentiableMapping(S,F_at,F_prime_at,1.0)
+integrand=DifferentiableMapping(S,F_at,F_prime_at,scale)
 
 # ╔═╡ 5c13ce80-209c-4901-913a-3283339a11cc
 """ 
@@ -332,6 +335,37 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	fig
 end
 
+# ╔═╡ 812157bc-6de5-4817-a770-9d86cce8d59b
+begin
+	asy_export=false
+	if asy_export
+		file_name="flugplanung_hoch_p_$(ex)_scale$(scale)_N$(N)"
+		paul_tol = load_paul_tol()
+		# We have to trick with the colors a bit because the export is a bit too restrictive.
+		indigo = RGBA(paul_tol["mutedindigo"])
+		green = RGBA(paul_tol["mutedgreen"])
+		sand = RGBA(paul_tol["mutedsand"])
+		teal = RGBA{Float64}(paul_tol["mutedteal"])
+		grey = RGBA(paul_tol["mutedgrey"])
+		
+		asymptote_export_S2_signals(file_name*".asy";
+		points= [ [y0,yT] ],
+		curves = [y_0, p_res],
+		tangent_vectors = [ 
+			[ Tuple(a) for a in zip(p_res, 1/4 .* ws)]
+		],
+		dot_sizes = [2.0,],
+		colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
+			:points => [teal],
+			:curves => [indigo, sand],
+			:tvectors => [green],
+		),
+		camera_position=(1.0, 0.0, 0.0),
+		);
+		render_asymptote(file_name)
+	end
+end
+
 # ╔═╡ Cell order:
 # ╠═85e76846-912a-11ef-294a-c717389928e4
 # ╠═48950604-c2c2-4310-8de5-f89db905668b
@@ -345,6 +379,7 @@ end
 # ╠═d47accca-ebf3-4085-9d20-2e0ee6e88ef5
 # ╠═28143183-eccb-4166-9f79-6baaa8f3f5c2
 # ╠═be436d8c-dbc4-4d70-ae69-7e604ca76c83
+# ╠═6a1c4cce-8ec8-4193-8ee3-2ca7b1208dcc
 # ╠═0e5275a1-52d0-45b2-8d1c-5940b50afde8
 # ╠═8c726811-c87e-4924-9ebe-bc56e26855a9
 # ╠═7f9448c8-0f0c-40de-861f-16427fd335ad
@@ -362,3 +397,4 @@ end
 # ╠═48e0d10c-23c4-48c4-91fa-b2a5ae443005
 # ╠═9a9d6392-94f6-4306-9add-f802e2eb70f2
 # ╠═88c316c6-4463-4e42-abc8-d83fc117e56f
+# ╠═812157bc-6de5-4817-a770-9d86cce8d59b
