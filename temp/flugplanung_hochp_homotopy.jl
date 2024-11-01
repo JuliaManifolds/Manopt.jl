@@ -55,7 +55,7 @@ md"""
 
 # ╔═╡ bb8b3dfe-cc36-4949-b33a-4c77436a8416
 begin
-	N=300 # Number of sample values for the discretisation
+	N=500 # Number of sample values for the discretisation
 	ex = 2 # exponent used in the energy functional
 	scale = 6.5 # Integrand scaling
 	scale_range = range(0.0, scale; length=300)
@@ -317,11 +317,11 @@ begin
 		points= [ [y0,yT] ],
 		curves = [y_0, solutions[i]],
 		tangent_vectors = [
-			[ Tuple(a) for a in zip(solutions[i], 1/16 .* ws_local)]
+			[ Tuple(a) for a in zip(solutions[i], 1/10 .* ws_local)]
 		],
-		dot_sizes = [4.0,],
-		line_widths = [1.0, 1.5, .5], #2 curves, tangent vectors
-		arrow_head_size = 3.,
+		dot_sizes = [3.0,],
+		line_widths = [0.8, 1., .25], #2 curves, tangent vectors
+		arrow_head_size = 1.5,
 		colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
 			:points => [teal],
 			:curves => [teal, curve_colors[i]],
@@ -335,11 +335,11 @@ end
 
 # ╔═╡ 5a69cd05-f687-4201-a861-43df6fc96a29
 render && begin
-	imgnames &= defilter(
-		x->onccursin(file_name_prefix,x)&&occursin(".png",x),
+	imgnames = filter(
+		x->occursin(file_name_prefix,x)&&occursin(".png",x),
 		readdir(temp_folder)
 	) # Populate list of all .pngs
-	intstrings  r= map(x->split(split(x,".")[1],"-")[end], imgnames) # Extract index from filenames
+	intstrings = map(x->split(split(x,".")[1],"-")[end], imgnames) # Extract index from filenames
 	p = sortperm(parse.(Int, intstrings)) #sort files numerically
 	imgnames = imgnames[p]
 	
@@ -361,7 +361,7 @@ begin
 	asymptote_export_S2_signals(file_name_s*".asy";
 		points= [ [y0,yT] ],
 		curves = [solutions...],
-		dot_sizes = [4.0,],
+		dot_sizes = [3.0,],
 		line_width = 1.0,
 		colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
 			:points => [teal],
