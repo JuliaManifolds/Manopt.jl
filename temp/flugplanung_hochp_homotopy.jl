@@ -210,7 +210,7 @@ function solve_linear_system(M, p, state, prob)
 	Oytrial = OffsetArray([y0, state.p_trial..., yT], 0:(length(Omega)+1))
 	S = M.manifold
 
-	println("Assemble:")
+	# println("Assemble:")
 	#@time
 	ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,integrand,transport)
 	if state.is_same == true
@@ -312,12 +312,12 @@ begin
 	render && @progress "Rendering images" for (i,s) in enumerate(scale_range)
 		file_name = joinpath(temp_folder, file_name_prefix*"-$(lpad(string(i), 6,"0"))")
 		#local force field
-		ws = [1.0*w(Manifolds.Sphere(2), p, scale) for p in solutions[i]]		
+		ws_local = [1.0*w(Manifolds.Sphere(2), p, s) for p in solutions[i]]		
 		asymptote_export_S2_signals(file_name*".asy";
 		points= [ [y0,yT] ],
 		curves = [y_0, solutions[i]],
 		tangent_vectors = [
-			[ Tuple(a) for a in zip(solutions[i], 1/16 .* ws)]
+			[ Tuple(a) for a in zip(solutions[i], 1/16 .* ws_local)]
 		],
 		dot_sizes = [4.0,],
 		line_widths = [1.0, 1.5, .5], #2 curves, tangent vectors

@@ -137,7 +137,7 @@ function (acs::AffineCovariantStepsize)(
 
         simplified_newton = ams.sub_problem(amp, ams, 1)
         acs.theta = norm(simplified_newton)/norm(ams.X)
-        println("theta=", acs.theta)
+        # println("theta=", acs.theta)
         alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
         #println("alpha!!!=", acs.alpha)
         #if acs.alpha < 1e-15
@@ -146,7 +146,7 @@ function (acs::AffineCovariantStepsize)(
         #end
     end
     #println("Hallo")
-    println("alpha_end = ", acs.alpha)
+    # println("alpha_end = ", acs.alpha)
     #acs.alpha = 1.0
     ams.is_same=true
     return acs.alpha
