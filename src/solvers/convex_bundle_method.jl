@@ -413,6 +413,7 @@ function (dbt::DomainBackTrackingStepsize)(
             t *= dbt.β
             (t < stepsize_tol) && break
             retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+            get_subgradient!(amp, cbms.X, q)
         end
         if !(
             domain_condition(M, q, cbms.p_last_serious, t, tol, l, cbms.domain) &&
