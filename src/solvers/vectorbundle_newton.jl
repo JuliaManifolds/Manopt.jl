@@ -203,7 +203,7 @@ end
 
 function VectorbundleObjective(
     bundle_map::C, derivative::G, connection_map::F; evaluation::E=AllocatingEvaluation()
-) where {C,G,F,E<:AbstractEvaluationType, T}
+) where {C,G,F,E<:AbstractEvaluationType}
     return VectorbundleObjective{E,C,G,F}(bundle_map, derivative, connection_map, 1.0)
 end
 
@@ -403,7 +403,6 @@ function vectorbundle_newton!(
     Op,
     RM<:AbstractRetractionMethod,
     SC<:StoppingCriterion,
-    S<:Stepsize,
     VTM<:AbstractVectorTransportMethod,
 }
     # Once we have proper defaults, these checks should be removed

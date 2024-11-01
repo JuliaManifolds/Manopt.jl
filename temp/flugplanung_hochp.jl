@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.1
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
@@ -51,7 +51,7 @@ end
 
 # ╔═╡ 6b1bca0b-f209-445e-8f41-b19372c9fffc
 begin
-	N=100
+	N=200
 	st = 0.5
 	halt = pi-0.5
 	h = (halt-st)/(N+1)
@@ -125,7 +125,7 @@ transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,noth
 ex = 2 # exponent used in the energy functional
 
 # ╔═╡ 6a1c4cce-8ec8-4193-8ee3-2ca7b1208dcc
-scale = 3.0 # Integrand scaling
+scale = 5.0 # Integrand scaling
 
 # ╔═╡ a789119e-04b9-4456-acba-ec8e8702c231
 """
@@ -248,7 +248,7 @@ st_res = vectorbundle_newton(power, TangentBundle(power), bundlemap, bundlemap, 
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-stepsize=ConstantLength(1.0),
+	#stepsize=ConstantLength(1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
 	record=[:Iterate, :Change],
 	return_state=true
@@ -337,9 +337,10 @@ end
 
 # ╔═╡ 812157bc-6de5-4817-a770-9d86cce8d59b
 begin
-	asy_export=false
+	asy_export=true
 	if asy_export
-		file_name="flugplanung_hoch_p_$(ex)_scale$(scale)_N$(N)"
+		file_name=replace("flugplanung_hoch_p_$(ex)_scale$(scale)_N$(N)", "."=>"_")
+		println(file_name)
 		paul_tol = load_paul_tol()
 		# We have to trick with the colors a bit because the export is a bit too restrictive.
 		indigo = RGBA(paul_tol["mutedindigo"])
@@ -354,15 +355,16 @@ begin
 		tangent_vectors = [ 
 			[ Tuple(a) for a in zip(p_res, 1/4 .* ws)]
 		],
-		dot_sizes = [2.0,],
+		dot_sizes = [4.0,],
+		line_widths = [2.0, 3.0, 1.5], #2 curves, tangent vectors
 		colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
 			:points => [teal],
 			:curves => [indigo, sand],
 			:tvectors => [green],
 		),
-		camera_position=(1.0, 0.0, 0.0),
+		camera_position=(2.0, 1.0, 1.5),
 		);
-		render_asymptote(file_name)
+		render_asymptote(file_name*".asy")
 	end
 end
 
