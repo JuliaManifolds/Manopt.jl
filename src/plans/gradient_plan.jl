@@ -711,7 +711,7 @@ mutable struct RecordGradient{T} <: RecordAction
     recorded_values::Array{T,1}
     RecordGradient{T}() where {T} = new(Array{T,1}())
 end
-RecordGradient(ξ::T) where {T} = RecordGradient{T}()
+RecordGradient(::T) where {T} = RecordGradient{T}()
 function (r::RecordGradient{T})(
     ::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
 ) where {T}

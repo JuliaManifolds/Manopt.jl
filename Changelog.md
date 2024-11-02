@@ -5,11 +5,28 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.2] – unreleased
+## [0.5.3] – October 18, 2024
+
+### Added
+
+* `StopWhenChangeLess`, `StopWhenGradientChangeLess` and `StopWhenGradientLess` can now use the new idea (ManifoldsBase.jl 0.15.18) of different outer norms on manifolds with components like power and product manifolds and all others that support this from the `Manifolds.jl` Library, like `Euclidean`
 
 ### Changed
 
-* fix a few typos in the docstrings.
+* stabilize `max_Stepzise` to also work when `injectivity_radius` dos not exist.
+  It however would warn new users, that activate tutorial mode.
+* Start a `ManoptTestSuite` subpackage to store dummy types and common test helpers in.
+
+## [0.5.2] – October 5, 2024
+
+### Added
+
+* three new symbols to easier state to record the `:Gradient`, the `:GradientNorm`, and the `:Stepsize`.
+
+### Changed
+
+* fix a few typos in the documentation
+* improved the documentation for the initial guess of [`ArmijoLinesearchStepsize`](https://manoptjl.org/stable/plans/stepsize/#Manopt.ArmijoLinesearch).
 
 ## [0.5.1] – September 4, 2024
 

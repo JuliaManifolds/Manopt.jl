@@ -897,10 +897,14 @@ create a [`RecordAction`](@ref) where
 
 * a [`RecordAction`](@ref) is passed through
 * a [`Symbol`] creates
-  * `:Change`        to record the change of the iterates in `o.x``
+  * `:Change`        to record the change of the iterates, see [`RecordChange`](@ref)
+  * `:Gradient`      to record the gradient, see [`RecordGradient`](@ref)
+  * `:GradientNorm   to record the norm of the gradient, see [`RecordGradientNorm`](@ref)
   * `:Iterate`       to record the iterate
   * `:Iteration`     to record the current iteration number
+  * `IterativeTime`  to record the time iteratively
   * `:Cost`          to record the current cost function value
+  * `:Stepsize`      to record the current step size
   * `:Time`          to record the total time taken after every iteration
   * `:IterativeTime` to record the times taken for each iteration.
 
@@ -912,9 +916,12 @@ RecordActionFactory(::AbstractManoptSolverState, sa::Pair{<:RecordAction,Symbol}
 function RecordActionFactory(s::AbstractManoptSolverState, symbol::Symbol)
     (symbol == :Change) && return RecordChange()
     (symbol == :Cost) && return RecordCost()
+    (symbol == :Gradient) && return RecordGradient(get_gradient(s))
+    (symbol == :GradientNorm) && return RecordGradientNorm()
     (symbol == :Iterate) && return RecordIterate(get_iterate(s))
     (symbol == :Iteration) && return RecordIteration()
     (symbol == :IterativeTime) && return RecordTime(; mode=:iterative)
+    (symbol == :Stepsize) && return RecordStepsize()
     (symbol == :Stop) && return RecordStoppingReason()
     (symbol == :Subsolver) && return RecordSubsolver()
     (symbol == :Time) && return RecordTime(; mode=:cumulative)
