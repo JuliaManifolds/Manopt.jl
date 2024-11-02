@@ -594,14 +594,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     retract!(
         M, bms.p, bms.p_last_serious, -bms.last_stepsize * bms.g, bms.retraction_method
     )
-    # r = bms.ϱ * norm(M, bms.p, bms.X) *
-    #             norm(
-    #                 M,
-    #                 bms.p,
-    #                 inverse_retract(
-    #                     M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
-    #                 ),
-    #             )
     if get_cost(mp, bms.p) ≤
         (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
