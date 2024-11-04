@@ -51,7 +51,7 @@ end
 
 # ╔═╡ 6b1bca0b-f209-445e-8f41-b19372c9fffc
 begin
-	N=100
+	N=1000
 	st = 0.5
 	halt = pi-0.5
 	h = (halt-st)/(N+1)
@@ -75,12 +75,17 @@ S = Manifolds.Sphere(2)
 power = PowerManifold(S, NestedPowerRepresentation(), N);
 end
 
+# ╔═╡ 425c114b-7537-4d30-9d82-17d255af1bdd
+k=4
+
 # ╔═╡ 449e9782-5bed-4642-a068-f8c9106bbe86
 function y(t)
-	return [sin(t), 0, cos(t)]
+	#return [sin(t), 0, cos(t)]
 	#return [sin(halt+st-t), 0, cos(halt+st-t)]
 	#return [cos(t), sin(t), 0]
 	#return [cos(halt+st - t), sin(halt+st - t), 0]
+	s = (t-st)/(halt-st)*pi
+	return [sin(t)*cos(k*s), sin(t)*sin(k*s), cos(t)]
 end;
 
 # ╔═╡ 4ea7c8f7-80f9-482a-b535-229d2671fb4d
@@ -122,14 +127,15 @@ Definition of a vector transport and its derivative given by the orthogonal proj
 transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
 
 # ╔═╡ be436d8c-dbc4-4d70-ae69-7e604ca76c83
-ex = 50 # exponent used in the energy functional
+ex = 2 # exponent used in the energy functional
 
 # ╔═╡ a789119e-04b9-4456-acba-ec8e8702c231
 """
 	Evaluates the wind field at a point p on the sphere (here: winding field scaled by the third component)
 """
 	function w(M, p, c)
-		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+		#return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+		return c*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
 	end
 
 # ╔═╡ a5811f04-59f8-4ea2-8616-efad7872830a
@@ -138,7 +144,8 @@ ex = 50 # exponent used in the energy functional
 """
 function w_prime(M, p, c)
 	nenner = p[1]^2+p[2]^2
-		return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
+	#return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
+	return c*[2*p[1]*p[2]/nenner^2 (-1.0/(nenner)+2.0*p[2]^2/nenner^2) 0.0; (1.0/nenner-2.0*p[1]^2/(nenner^2)) (-2.0*p[1]*p[2]/(nenner^2)) 0.0; 0.0 0.0 0.0]
 end
 
 # ╔═╡ 0e5275a1-52d0-45b2-8d1c-5940b50afde8
@@ -155,11 +162,19 @@ end
 """
 function w_doubleprime(M, p, v, c)
 	nenner = (p[1]^2+p[2]^2)
+	#=
 	w1 = 1/(nenner^2)*[(2*p[2]*p[3]*nenner-8*p[1]^2*p[2]*p[3])/nenner -p[3]*(2*p[1]*nenner^2-4*p[1]*(p[1]^4-p[2]^4))/nenner^2 2*p[1]*p[2]; (-2*p[1]*p[3]*nenner^2-4*p[1]*p[3]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[2]*p[3]*nenner+8*p[1]^2*p[2]*p[3])/nenner (p[2]^2-p[1]^2); 0.0 0.0 0.0]
 		
 	w2 = 1/(nenner^2)*[(2*p[1]*p[3]*nenner-8*p[1]*p[2]^2*p[3])/nenner -p[3]*(-2*p[2]*nenner^2-4*p[2]*(p[1]^4-p[2]^4))/nenner^2 p[2]^2-p[1]^2; (2*p[2]*p[3]*nenner^2-4*p[2]*p[3]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[1]*p[3]*nenner+8*p[1]*p[2]^2*p[3])/nenner -2*p[1]*p[2]; 0.0 0.0 0.0]
 		
 	w3 = 1/(nenner^2)*[2*p[1]*p[2] -p[1]^2+p[2]^2 0.0; p[2]^2-p[1]^2 -2*p[1]*p[2] 0.0; 0.0 0.0 0.0]
+	return c*(v[1]*w1 + v[2]*w2 + v[3]*w3)
+	=#
+	w1 = 1/(nenner^2)*[(2*p[2]*nenner-8*p[1]^2*p[2])/nenner -(2*p[1]*nenner^2-4*p[1]*(p[1]^4-p[2]^4))/nenner^2 0.0; (-2*p[1]*nenner^2-4*p[1]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[2]*nenner+8*p[1]^2*p[2])/nenner 0.0; 0.0 0.0 0.0]
+		
+	w2 = 1/(nenner^2)*[(2*p[1]*nenner-8*p[1]*p[2]^2)/nenner -(-2*p[2]*nenner^2-4*p[2]*(p[1]^4-p[2]^4))/nenner^2 0.0; (2*p[2]*nenner^2-4*p[2]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[1]*nenner+8*p[1]*p[2]^2)/nenner 0.0; 0.0 0.0 0.0]
+		
+	w3 = [0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0]
 	return c*(v[1]*w1 + v[2]*w2 + v[3]*w3)
 end
 
@@ -175,7 +190,7 @@ end
 """
 	Definition of an integrand and its derivative for the simplified flight planning problem
 """
-integrand=DifferentiableMapping(S,F_at,F_prime_at,1.0)
+integrand=DifferentiableMapping(S,F_at,F_prime_at,10.0)
 
 # ╔═╡ 5c13ce80-209c-4901-913a-3283339a11cc
 """ 
@@ -245,7 +260,7 @@ st_res = vectorbundle_newton(power, TangentBundle(power), bundlemap, bundlemap, 
 	sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-stepsize=ConstantLength(1.0),
+#stepsize=ConstantLength(1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
 	record=[:Iterate, :Change],
 	return_state=true
@@ -338,6 +353,7 @@ end
 # ╠═fe0c1524-b5f4-4afc-aee7-bd2de9d482b6
 # ╠═6b1bca0b-f209-445e-8f41-b19372c9fffc
 # ╠═bd50d1db-7c55-4279-abe0-89f2fe986cc6
+# ╠═425c114b-7537-4d30-9d82-17d255af1bdd
 # ╠═449e9782-5bed-4642-a068-f8c9106bbe86
 # ╠═4ea7c8f7-80f9-482a-b535-229d2671fb4d
 # ╠═f08571fe-2e5d-417c-8330-9251233af25d
