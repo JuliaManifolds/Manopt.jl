@@ -400,7 +400,7 @@ function render_asymptote(
     filename;
     render::Union{Int,Nothing}=4,
     format="png",
-    export_folder=string(filename[1:([findlast(".", filename)...][1])], format),
+    export_folder=string(filename[1:([findlast(".", filename)...][1]-1)]),
 )
     if isnothing(render)
         renderCmd = `asy -f $(format) -globalwrite  -o "$(relpath(export_folder))" $(filename)`

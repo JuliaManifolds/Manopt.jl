@@ -16,9 +16,8 @@ begin
 	using ManoptExamples
 	using OffsetArrays
 	using Random
-    using WGLMakie, Makie, GeometryTypes, Colors, NamedColors
-	#using CairoMakie
-	#using FileIO
+    using WGLMakie, Makie, GeometryTypes, Colors, NamedColors, ColorSchemes
+	using FileIO, VideoIO, ProgressLogging
 end;
 
 # ╔═╡ fe0c1524-b5f4-4afc-aee7-bd2de9d482b6
@@ -49,24 +48,31 @@ begin
 end
 end
 
+# ╔═╡ f96fcfed-cfa4-44b1-9034-5c3aedc75aa1
+md"""
+# Parameters
+"""
+
+# ╔═╡ bb8b3dfe-cc36-4949-b33a-4c77436a8416
+begin
+	N=500 # Number of sample values for the discretisation
+	ex = 2 # exponent used in the energy functional
+	scale = 6.5 # Integrand scaling
+	scale_range = range(0.0, scale; length=300)
+	file_name_prefix = "flugplanung_N$(N)_p$(ex)"
+	temp_folder = "frames"
+	!isdir(temp_folder) && mkdir(temp_folder)
+end;
+
 # ╔═╡ 6b1bca0b-f209-445e-8f41-b19372c9fffc
 begin
-	N=200
 	st = 0.5
 	halt = pi-0.5
 	h = (halt-st)/(N+1)
 	#halt = pi - st
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
-	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
-	
 	y0 = [sin(st),0,cos(st)] # startpoint of geodesic
 	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic
-
-	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
-	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
-
-	#y0 = [cos(st),sin(st),0] # startpoint of geodesic: aequator
-	#yT = [cos(halt),sin(halt),0] # endpoint of geodesic: aequator
 end;
 
 # ╔═╡ bd50d1db-7c55-4279-abe0-89f2fe986cc6
@@ -75,18 +81,8 @@ S = Manifolds.Sphere(2)
 power = PowerManifold(S, NestedPowerRepresentation(), N);
 end
 
-# ╔═╡ 425c114b-7537-4d30-9d82-17d255af1bdd
-k=4
-
 # ╔═╡ 449e9782-5bed-4642-a068-f8c9106bbe86
-function y(t)
-	#return [sin(t), 0, cos(t)]
-	#return [sin(halt+st-t), 0, cos(halt+st-t)]
-	#return [cos(t), sin(t), 0]
-	#return [cos(halt+st - t), sin(halt+st - t), 0]
-	s = (t-st)/(halt-st)*pi
-	return [sin(t)*cos(k*s), sin(t)*sin(k*s), cos(t)]
-end;
+y(t) = [sin(t), 0, cos(t)]
 
 # ╔═╡ 4ea7c8f7-80f9-482a-b535-229d2671fb4d
 discretized_y = [y(Ωi) for Ωi in Omega];
@@ -126,19 +122,12 @@ Definition of a vector transport and its derivative given by the orthogonal proj
 """
 transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
 
-# ╔═╡ be436d8c-dbc4-4d70-ae69-7e604ca76c83
-ex = 2 # exponent used in the energy functional
-
-# ╔═╡ 6a1c4cce-8ec8-4193-8ee3-2ca7b1208dcc
-scale = 5.0 # Integrand scaling
-
 # ╔═╡ a789119e-04b9-4456-acba-ec8e8702c231
 """
 	Evaluates the wind field at a point p on the sphere (here: winding field scaled by the third component)
 """
 	function w(M, p, c)
-		#return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
-		return c*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0]
 	end
 
 # ╔═╡ a5811f04-59f8-4ea2-8616-efad7872830a
@@ -147,8 +136,7 @@ scale = 5.0 # Integrand scaling
 """
 function w_prime(M, p, c)
 	nenner = p[1]^2+p[2]^2
-	#return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
-	return c*[2*p[1]*p[2]/nenner^2 (-1.0/(nenner)+2.0*p[2]^2/nenner^2) 0.0; (1.0/nenner-2.0*p[1]^2/(nenner^2)) (-2.0*p[1]*p[2]/(nenner^2)) 0.0; 0.0 0.0 0.0]
+		return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
 end
 
 # ╔═╡ 0e5275a1-52d0-45b2-8d1c-5940b50afde8
@@ -165,19 +153,11 @@ end
 """
 function w_doubleprime(M, p, v, c)
 	nenner = (p[1]^2+p[2]^2)
-	#=
 	w1 = 1/(nenner^2)*[(2*p[2]*p[3]*nenner-8*p[1]^2*p[2]*p[3])/nenner -p[3]*(2*p[1]*nenner^2-4*p[1]*(p[1]^4-p[2]^4))/nenner^2 2*p[1]*p[2]; (-2*p[1]*p[3]*nenner^2-4*p[1]*p[3]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[2]*p[3]*nenner+8*p[1]^2*p[2]*p[3])/nenner (p[2]^2-p[1]^2); 0.0 0.0 0.0]
-		
+
 	w2 = 1/(nenner^2)*[(2*p[1]*p[3]*nenner-8*p[1]*p[2]^2*p[3])/nenner -p[3]*(-2*p[2]*nenner^2-4*p[2]*(p[1]^4-p[2]^4))/nenner^2 p[2]^2-p[1]^2; (2*p[2]*p[3]*nenner^2-4*p[2]*p[3]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[1]*p[3]*nenner+8*p[1]*p[2]^2*p[3])/nenner -2*p[1]*p[2]; 0.0 0.0 0.0]
-		
+
 	w3 = 1/(nenner^2)*[2*p[1]*p[2] -p[1]^2+p[2]^2 0.0; p[2]^2-p[1]^2 -2*p[1]*p[2] 0.0; 0.0 0.0 0.0]
-	return c*(v[1]*w1 + v[2]*w2 + v[3]*w3)
-	=#
-	w1 = 1/(nenner^2)*[(2*p[2]*nenner-8*p[1]^2*p[2])/nenner -(2*p[1]*nenner^2-4*p[1]*(p[1]^4-p[2]^4))/nenner^2 0.0; (-2*p[1]*nenner^2-4*p[1]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[2]*nenner+8*p[1]^2*p[2])/nenner 0.0; 0.0 0.0 0.0]
-		
-	w2 = 1/(nenner^2)*[(2*p[1]*nenner-8*p[1]*p[2]^2)/nenner -(-2*p[2]*nenner^2-4*p[2]*(p[1]^4-p[2]^4))/nenner^2 0.0; (2*p[2]*nenner^2-4*p[2]*(p[2]^4-p[1]^4))/nenner^2 (-2*p[1]*nenner+8*p[1]*p[2]^2)/nenner 0.0; 0.0 0.0 0.0]
-		
-	w3 = [0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0]
 	return c*(v[1]*w1 + v[2]*w2 + v[3]*w3)
 end
 
@@ -196,7 +176,7 @@ end
 integrand=DifferentiableMapping(S,F_at,F_prime_at,scale)
 
 # ╔═╡ 5c13ce80-209c-4901-913a-3283339a11cc
-""" 
+"""
 	Dummy, necessary for calling vectorbundle_newton
 """
 function bundlemap(M, y)
@@ -204,7 +184,7 @@ function bundlemap(M, y)
 end
 
 # ╔═╡ 86a649c8-43f8-43a0-a652-24735d28c05e
-""" 
+"""
 	Dummy, necessary for calling vectorbundle_newton
 """
 function connection_map(E, q)
@@ -213,7 +193,7 @@ end
 
 # ╔═╡ fbf47501-4a41-4f89-940c-9c68aca26b4b
 """
-	Method for solving the Newton equation 
+	Method for solving the Newton equation
 		* assembling the Newton matrix and the right hand side (using ManoptExamples.jl)
 		* using a direct solver for computing the solution in base representation
 	Returns the Newton direction in vector representation
@@ -230,16 +210,19 @@ function solve_linear_system(M, p, state, prob)
 	Oytrial = OffsetArray([y0, state.p_trial..., yT], 0:(length(Omega)+1))
 	S = M.manifold
 
-	println("Assemble:")
-	@time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,integrand,transport)
+	# println("Assemble:")
+	#@time
+	ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,integrand,transport)
 	if state.is_same == true
 		bcsys=bc
 	else
-		@time ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,integrand,transport)
+		#@time
+		ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,integrand,transport)
     	bcsys=bctrial-(1.0 - state.stepsize.alpha)*bc
 	end
-	println("Solve:")
-	@time Xc = (Ac) \ (-bcsys)
+	#println("Solve:")
+	#@time
+	Xc = (Ac) \ (-bcsys)
 	B = get_basis(M, p, DefaultOrthonormalBasis())
 	res_c = get_vector(M, p, Xc, B)
 	return res_c
@@ -257,65 +240,26 @@ solve(problem, newtonstate, k) = solve_linear_system(problem.manifold, newtonsta
 """
 y_0 = copy(power, discretized_y)
 
+# ╔═╡ 7a56880f-7ecc-4cc7-a407-97d0f842de3e
+solutions = [copy(power, y_0) for s in scale_range];
+
 # ╔═╡ dcf6174d-0b6f-48da-b0d8-f057b2992e0b
-st_res = vectorbundle_newton(power, TangentBundle(power), bundlemap, bundlemap, connection_map, y_0;
-	sub_problem=solve,
-	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
-	retraction_method=ProjectionRetraction(),
-	#stepsize=ConstantLength(1.0),
-	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
-	record=[:Iterate, :Change],
-	return_state=true
-)
-# Dass hier zweimal bundlemap übergeben werden muss, sollte noch raus. Das sind in dem Fall ja eh nur Dummies. Normalerweise sollten da F und F' übergeben werden (in welcher Art auch immer)
-
-# ╔═╡ 40e63e0a-fa25-4d9d-b685-383a7957c513
-change = get_record(st_res, :Iteration, :Change)[2:end];
-
-# ╔═╡ 1f575073-92cf-4fc7-b8bd-995e17e14b69
-begin
-	f = Figure(;)
-	
-    row, col = fldmod1(1, 2)
-	
-	Axis(f[row, col], yscale = log10, title = string("Semilogarithmic Plot of the norms of the Newton direction"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
-    scatterlines!(change, color = :blue)
-	f
+@progress "Increasing wind" for (i,s) in enumerate(scale_range)
+	# that integrand is taken from global scope is not yet optimal here.
+	integrand.scaling = s
+	# compute in-place
+	vectorbundle_newton!(
+		power, TangentBundle(power), bundlemap, bundlemap, connection_map,
+		solutions[i];
+		sub_problem=solve,
+		sub_state=AllocatingEvaluation(),
+		stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
+		retraction_method=ProjectionRetraction(),
+	)
 end
 
 # ╔═╡ 48e0d10c-23c4-48c4-91fa-b2a5ae443005
-p_res = get_solver_result(st_res);
-
-# ╔═╡ 9a9d6392-94f6-4306-9add-f802e2eb70f2
-begin
-		Oy = OffsetArray([y0, p_res..., yT], 0:(length(Omega)+1))
-		normen = zeros(N)
-		normenw = zeros(N)
-		normeny = zeros(N)
-		s = 0
-		c = integrand.scaling
-		for i in 1:N
-			y_i = Oy[power, i]
-			y_next = Oy[power, i+1]
-			normen[i] = norm(S, y_i, ((y_next-y_i)/h - w(S, y_next, c)))
-			s += + normen[i]
-			normenw[i] = norm(w(S, y_next, c))
-			normeny[i] = norm(S, y_i, ((y_next-y_i)/h))
-		end
-		#println(normen)
-	plot = Figure(;)
-	
-    rows, cols = fldmod1(1, 2)
-	
-	axs = Axis(plot[rows, cols], xminorgridvisible = true, xticks = (1:length(normen)), xlabel = "time step", ylabel = "‖⋅‖")
-    scatterlines!(normen, color = :blue, label="air speed")
-	scatterlines!(normenw, color = :red, label="wind field")
-	scatterlines!(normeny, color = :orange, label="ground speed")
-
-	plot[1, 2] = Legend(plot, axs, "Plot of norms of the ... ", framevisible = false)
-	plot
-end
+p_res = solutions[17]
 
 # ╔═╡ 88c316c6-4463-4e42-abc8-d83fc117e56f
 begin
@@ -324,7 +268,7 @@ u = range(0,stop=2*π,length=n);
 v = range(0,stop=π,length=n);
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
 
-ws = [1.0*w(Manifolds.Sphere(2), p, c) for p in p_res]
+ws = [1.0*w(Manifolds.Sphere(2), p, scale) for p in p_res]
 for i in 1:n
     for j in 1:n
         sx[i,j] = cos.(u[i]) * sin(v[j]);
@@ -350,31 +294,37 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
 	fig
 end
 
+# ╔═╡ 76ecbb61-431d-45b6-a114-134d20d71a55
+begin
+	paul_tol = load_paul_tol()
+	# We have to trick with the colors a bit because the export is a bit too restrictive.
+	indigo = RGBA(paul_tol["mutedindigo"])
+	green = RGBA(paul_tol["mutedgreen"])
+	sand = RGBA(paul_tol["mutedsand"])
+	teal = RGBA{Float64}(paul_tol["mutedteal"])
+	grey = RGBA(paul_tol["mutedgrey"])
+	curve_colors = get(ColorSchemes.viridis, range(0.0, 1.0, length=length(scale_range)))
+end
+
 # ╔═╡ 812157bc-6de5-4817-a770-9d86cce8d59b
 begin
-	asy_export=true
-	if asy_export
-		file_name=replace("flugplanung_hoch_p_$(ex)_scale$(scale)_N$(N)", "."=>"_")
-		println(file_name)
-		paul_tol = load_paul_tol()
-		# We have to trick with the colors a bit because the export is a bit too restrictive.
-		indigo = RGBA(paul_tol["mutedindigo"])
-		green = RGBA(paul_tol["mutedgreen"])
-		sand = RGBA(paul_tol["mutedsand"])
-		teal = RGBA{Float64}(paul_tol["mutedteal"])
-		grey = RGBA(paul_tol["mutedgrey"])
-		
+	render = true
+	render && @progress "Rendering images" for (i,s) in enumerate(scale_range)
+		file_name = joinpath(temp_folder, file_name_prefix*"-$(lpad(string(i), 6,"0"))")
+		#local force field
+		ws_local = [1.0*w(Manifolds.Sphere(2), p, s) for p in solutions[i]]		
 		asymptote_export_S2_signals(file_name*".asy";
 		points= [ [y0,yT] ],
-		curves = [y_0, p_res],
-		tangent_vectors = [ 
-			[ Tuple(a) for a in zip(p_res, 1/4 .* ws)]
+		curves = [y_0, solutions[i]],
+		tangent_vectors = [
+			[ Tuple(a) for a in zip(solutions[i], 1/10 .* ws_local)]
 		],
-		dot_sizes = [4.0,],
-		line_widths = [2.0, 3.0, 1.5], #2 curves, tangent vectors
+		dot_sizes = [3.0,],
+		line_widths = [0.8, 1., .25], #2 curves, tangent vectors
+		arrow_head_size = 1.5,
 		colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
 			:points => [teal],
-			:curves => [indigo, sand],
+			:curves => [teal, curve_colors[i]],
 			:tvectors => [green],
 		),
 		camera_position=(2.0, 1.0, 1.5),
@@ -383,21 +333,59 @@ begin
 	end
 end
 
+# ╔═╡ 5a69cd05-f687-4201-a861-43df6fc96a29
+render && begin
+	imgnames = filter(
+		x->occursin(file_name_prefix,x)&&occursin(".png",x),
+		readdir(temp_folder)
+	) # Populate list of all .pngs
+	intstrings = map(x->split(split(x,".")[1],"-")[end], imgnames) # Extract index from filenames
+	p = sortperm(parse.(Int, intstrings)) #sort files numerically
+	imgnames = imgnames[p]
+	
+	encoder_options = (crf=23, preset="medium")
+	
+	firstimg = load(joinpath(temp_folder, imgnames[1]))
+	open_video_out(file_name_prefix*"video.mp4", firstimg, framerate=24, encoder_options=encoder_options) do writer
+	    @progress "Encoding video frames.." for i in eachindex(imgnames)
+	        img = load(joinpath(temp_folder, imgnames[i]))
+	        write(writer, img)
+	    end
+	end
+end
+
+# ╔═╡ 1a9409fe-9e0a-4856-9365-b2d444a2fcfb
+begin
+	file_name_s = file_name_prefix*"-summary"
+	println(file_name_s)
+	asymptote_export_S2_signals(file_name_s*".asy";
+		points= [ [y0,yT] ],
+		curves = [solutions...],
+		dot_sizes = [3.0,],
+		line_width = 1.0,
+		colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
+			:points => [teal],
+			:curves => [curve_colors...],
+		),
+		camera_position=(2.0, 1.0, 1.5),
+	);
+	render_asymptote(file_name_s*".asy")
+end
+
 # ╔═╡ Cell order:
 # ╠═85e76846-912a-11ef-294a-c717389928e4
 # ╠═48950604-c2c2-4310-8de5-f89db905668b
 # ╠═fe0c1524-b5f4-4afc-aee7-bd2de9d482b6
+# ╟─f96fcfed-cfa4-44b1-9034-5c3aedc75aa1
+# ╠═bb8b3dfe-cc36-4949-b33a-4c77436a8416
 # ╠═6b1bca0b-f209-445e-8f41-b19372c9fffc
 # ╠═bd50d1db-7c55-4279-abe0-89f2fe986cc6
-# ╠═425c114b-7537-4d30-9d82-17d255af1bdd
 # ╠═449e9782-5bed-4642-a068-f8c9106bbe86
 # ╠═4ea7c8f7-80f9-482a-b535-229d2671fb4d
 # ╠═f08571fe-2e5d-417c-8330-9251233af25d
 # ╠═1918a11e-88b9-43b9-b52d-026163580b5f
 # ╠═d47accca-ebf3-4085-9d20-2e0ee6e88ef5
 # ╠═28143183-eccb-4166-9f79-6baaa8f3f5c2
-# ╠═be436d8c-dbc4-4d70-ae69-7e604ca76c83
-# ╠═6a1c4cce-8ec8-4193-8ee3-2ca7b1208dcc
 # ╠═0e5275a1-52d0-45b2-8d1c-5940b50afde8
 # ╠═8c726811-c87e-4924-9ebe-bc56e26855a9
 # ╠═7f9448c8-0f0c-40de-861f-16427fd335ad
@@ -409,10 +397,11 @@ end
 # ╠═b2d6b477-28d1-421c-958e-ebcfe845a6bb
 # ╠═fbf47501-4a41-4f89-940c-9c68aca26b4b
 # ╠═25cdf23f-c2ff-44be-9a34-bb565c36775e
+# ╠═7a56880f-7ecc-4cc7-a407-97d0f842de3e
 # ╠═dcf6174d-0b6f-48da-b0d8-f057b2992e0b
-# ╠═40e63e0a-fa25-4d9d-b685-383a7957c513
-# ╠═1f575073-92cf-4fc7-b8bd-995e17e14b69
 # ╠═48e0d10c-23c4-48c4-91fa-b2a5ae443005
-# ╠═9a9d6392-94f6-4306-9add-f802e2eb70f2
 # ╠═88c316c6-4463-4e42-abc8-d83fc117e56f
+# ╠═76ecbb61-431d-45b6-a114-134d20d71a55
 # ╠═812157bc-6de5-4817-a770-9d86cce8d59b
+# ╠═5a69cd05-f687-4201-a861-43df6fc96a29
+# ╠═1a9409fe-9e0a-4856-9365-b2d444a2fcfb
