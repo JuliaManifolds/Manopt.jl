@@ -57,8 +57,8 @@ md"""
 begin
 	N=500 # Number of sample values for the discretisation
 	ex = 2 # exponent used in the energy functional
-	scale = 6.5 # Integrand scaling
-	scale_range = range(0.0, scale; length=300)
+	scale = 12.0 # Integrand scaling
+	scale_range = range(0.0, scale; length=500)
 	file_name_prefix = "flugplanung_N$(N)_p$(ex)"
 	temp_folder = "frames"
 	!isdir(temp_folder) && mkdir(temp_folder)
@@ -247,6 +247,10 @@ solutions = [copy(power, y_0) for s in scale_range];
 @progress "Increasing wind" for (i,s) in enumerate(scale_range)
 	# that integrand is taken from global scope is not yet optimal here.
 	integrand.scaling = s
+	# Take last result as start
+	if i > 1
+		copyto!(power, solutions[i], solutions[i-1])
+	end
 	# compute in-place
 	vectorbundle_newton!(
 		power, TangentBundle(power), bundlemap, bundlemap, connection_map,
@@ -317,7 +321,7 @@ begin
 		points= [ [y0,yT] ],
 		curves = [y_0, solutions[i]],
 		tangent_vectors = [
-			[ Tuple(a) for a in zip(solutions[i], 1/10 .* ws_local)]
+			[ Tuple(a) for a in zip(solutions[i], 1/50 .* ws_local)]
 		],
 		dot_sizes = [3.0,],
 		line_widths = [0.8, 1., .25], #2 curves, tangent vectors
