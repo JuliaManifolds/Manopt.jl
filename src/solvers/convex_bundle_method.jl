@@ -422,6 +422,7 @@ function (dbt::DomainBackTrackingStepsize)(
             dbt.retraction_method,
         )
     end
+    # println(dbt.candidate_point)
     return dbt.last_stepsize
 end
 get_initial_stepsize(dbt::DomainBackTrackingStepsize) = dbt.initial_stepsize
@@ -440,14 +441,12 @@ function status_summary(dbt::DomainBackTrackingStepsize)
     return "$(dbt)\nand a computed last stepsize of $(dbt.last_stepsize)"
 end
 get_message(dbt::DomainBackTrackingStepsize) = dbt.message
-get_iterate(dbt::DomainBackTrackingStepsize) = dbt.candidate_point
-# function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate}, args...)
-#     return get_parameter(dbt.candidate_point, args...)
-# end
+function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate})
+    return dbt.candidate_point
+end
 # function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:ContractionFactor}, args...)
 #     return get_parameter(dbt.contraction_factor, args...)
 # end
-get_iterate(dbt::DomainBackTrackingStepsize) = dbt.candidate_point
 
 """
 #! UPDATE DOCS
@@ -522,7 +521,7 @@ mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,
         contraction_factor::F=0.95,
         initial_stepsize::F=1.0,
         retraction_method::TRM=default_retraction_method(M),
-        X::T=zero_vector(M, p),
+        X::T=zero_vector(M, candidate_point),
         stop_when_stepsize_less::F=0.0,
         stop_when_stepsize_exceeds=max_stepsize(M),
         stop_increasing_at_step::I=100,
@@ -549,7 +548,7 @@ function (nsbt::NullStepBackTrackingStepsize)(
     amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int, kwargs...
 )
     M = get_manifold(amp)
-    nsbt.last_stepsize .= cbms.last_stepsize
+    nsbt.last_stepsize = cbms.last_stepsize
     for j in 1:(nsbt.stop_decreasing_at_step)
         retract!(
             M,
@@ -584,20 +583,6 @@ function (nsbt::NullStepBackTrackingStepsize)(
             )
             get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
         end
-        # if !null_condition(
-        #         amp,
-        #         M,
-        #         nsbt.candidate_point,
-        #         cbms.p_last_serious,
-        #         nsbt.X,
-        #         cbms.g,
-        #         cbms.vector_transport_method,
-        #         cbms.inverse_retraction_method,
-        #         cbms.m,
-        #         nsbt.last_stepsize,
-        #         cbms.ξ,
-        #         cbms.ϱ,
-        #     )
         return nsbt.last_stepsize
         # end
         @warn "Resampling subgradient for the $j-th time."
@@ -607,16 +592,16 @@ function (nsbt::NullStepBackTrackingStepsize)(
     end
 end
 get_initial_stepsize(nsbt::NullStepBackTrackingStepsize) = nsbt.initial_stepsize
-function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Iterate}, args...)
-    return get_parameter(nsbt.candidate_point, args...)
+function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Iterate})
+    return nsbt.candidate_point
 end
-function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient}, args...)
-    return get_parameter(nsbt.X, args...)
+function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient})
+    return nsbt.X
 end
-function set_parameter!(nsbt::NullStepBackTrackingStepsize, s::Val{:Stepsize}, args...)
-    set_parameter!(nsbt.initial_stepsize, args...)
-    return nsbt
-end
+# function set_parameter!(nsbt::NullStepBackTrackingStepsize, s::Val{:Stepsize}, args...)
+#     set_parameter!(nsbt.initial_stepsize, args...)
+#     return nsbt
+# end
 function show(io::IO, nsbt::NullStepBackTrackingStepsize)
     return print(
         io,
@@ -789,15 +774,14 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     bms.last_stepsize = get_stepsize(mp, bms, k)
-    copyto!(M, bms.p, get_iterate(bms.stepsize))
+    copyto!(M, bms.p, get_parameter(bms.stepsize, :Iterate))
     if get_cost(mp, bms.p) ≤
         (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
         get_subgradient!(mp, bms.X, bms.p)
     else
         # Condition for null-steps
-        nsbt = NullStepBackTrackingStepsize(M; contraction_factor=bms.stepsize.contraction_factor)
-        set_parameter!(nsbt, :Stepsize, bms.last_stepsize)
+        nsbt = NullStepBackTrackingStepsize(M; contraction_factor=bms.stepsize.contraction_factor, initial_stepsize=bms.last_stepsize)
         bms.null_stepsize = nsbt(mp, bms, k)
         copyto!(M, bms.p, get_parameter(nsbt, :Iterate))
         copyto!(M, bms.X, get_parameter(nsbt, :Subgradient))
