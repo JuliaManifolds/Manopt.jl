@@ -339,8 +339,8 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     return print(io, s)
 end
 
-function domain_condition(M, q, p, t, tol, length, domain)
-    return (!domain(M, q) || (distance(M, p, q) + tol < t * length))
+function domain_condition(M, q, p, t, length, domain)
+    return (!domain(M, q) || (distance(M, p, q) < t * length))
 end
 
 function null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
@@ -410,7 +410,6 @@ function (dbt::DomainBackTrackingStepsize)(
         dbt.candidate_point,
         cbms.p_last_serious,
         dbt.last_stepsize,
-        tol,
         norm(M, cbms.p_last_serious, cbms.g),
         cbms.domain,
     )
@@ -441,10 +440,67 @@ function status_summary(dbt::DomainBackTrackingStepsize)
     return "$(dbt)\nand a computed last stepsize of $(dbt.last_stepsize)"
 end
 get_message(dbt::DomainBackTrackingStepsize) = dbt.message
-function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate}, args...)
-    return get_parameter(dbt.candidate_point, args...)
-end
 get_iterate(dbt::DomainBackTrackingStepsize) = dbt.candidate_point
+# function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate}, args...)
+#     return get_parameter(dbt.candidate_point, args...)
+# end
+# function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:ContractionFactor}, args...)
+#     return get_parameter(dbt.contraction_factor, args...)
+# end
+get_iterate(dbt::DomainBackTrackingStepsize) = dbt.candidate_point
+
+"""
+#! UPDATE DOCS
+    DomainBackTracking(; kwargs...)
+    DomainBackTracking(M::AbstractManifold; kwargs...)
+
+Specify a step size that performs a backtracking to the interior of the domain.
+Given a Function ``f:$(_math(:M))→ℝ`` and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
+the current point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
+
+Then the step size ``s`` is found by reducing the initial step size ``s`` until
+
+```math
+f($(_tex(:retr))_p(sX)) ≤ f(p) - τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
+```
+
+is fulfilled. for a sufficient decrease value ``τ ∈ (0,1)``.
+
+To be a bit more optimistic, if ``s`` already fulfils this, a first search is done,
+__increasing__ the given ``s`` until for a first time this step does not hold.
+
+Overall, we look for step size, that provides _enough decrease_, see
+[Boumal:2023; p. 58](@cite) for more information.
+
+# Keyword arguments
+
+* `additional_decrease_condition=(M, p) -> true`:
+  specify an additional criterion that has to be met to accept a step size in the decreasing loop
+* `additional_increase_condition::IF=(M, p) -> true`:
+  specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
+* `candidate_point=allocate_result(M, rand)`:
+  speciy a point to be used as memory for the candidate points.
+* `contraction_factor=0.95`: how to update ``s`` in the decrease step
+* `initial_stepsize=1.0``: specify an initial step size
+* `initial_guess=`[`armijo_initial_guess`](@ref): Compute the initial step size of
+  a line search based on this function.
+  The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
+  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
+  the current iterate `k` and a last step size `l`.
+$(_var(:Keyword, :retraction_method))
+* `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
+* `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
+* `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
+* `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
+* `sufficient_decrease=0.1`: the sufficient decrease parameter ``τ``
+
+For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
+
+$(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
+"""
+function DomainBackTracking(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
+end
 
 mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,T} <:
                Linesearch
@@ -465,7 +521,6 @@ mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,
         candidate_point::P=allocate_result(M, rand),
         contraction_factor::F=0.95,
         initial_stepsize::F=1.0,
-        # initial_guess::IGF=armijo_initial_guess,
         retraction_method::TRM=default_retraction_method(M),
         X::T=zero_vector(M, p),
         stop_when_stepsize_less::F=0.0,
@@ -551,9 +606,13 @@ function (nsbt::NullStepBackTrackingStepsize)(
         return nsbt.last_stepsize
     end
 end
-get_iterate(nsbt::NullStepBackTrackingStepsize) = nsbt.candidate_point
-get_subgradient(nsbt::NullStepBackTrackingStepsize) = nsbt.X
 get_initial_stepsize(nsbt::NullStepBackTrackingStepsize) = nsbt.initial_stepsize
+function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Iterate}, args...)
+    return get_parameter(nsbt.candidate_point, args...)
+end
+function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient}, args...)
+    return get_parameter(nsbt.X, args...)
+end
 function set_parameter!(nsbt::NullStepBackTrackingStepsize, s::Val{:Stepsize}, args...)
     set_parameter!(nsbt.initial_stepsize, args...)
     return nsbt
@@ -643,14 +702,15 @@ function convex_bundle_method!(
     atol_λ::R=sqrt(eps()),
     atol_errors::R=sqrt(eps()),
     bundle_cap::Int=25,
+    contraction_factor=0.99,
     diameter::R=π / 3,# was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_max=0,
     k_min=0,
     p_estimate=p,
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTrackingStepsize(;
-        contraction_factor=0.99
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTracking(
+        contraction_factor=contraction_factor
     ),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
@@ -729,19 +789,18 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     bms.last_stepsize = get_stepsize(mp, bms, k)
-    copyto!(M, bms.p, get_parameter(bms.stepsize, :CandidatePoint))
+    copyto!(M, bms.p, get_iterate(bms.stepsize))
     if get_cost(mp, bms.p) ≤
         (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
         get_subgradient!(mp, bms.X, bms.p)
     else
         # Condition for null-steps
-        set_parameter!(NullStepBackTrackingStepsize)
-        bms.null_stepsize = NullStepBackTrackingStepsize(M, mp, bms, k)
-        copyto!(M, bms.p, get_parameter(bms.stepsize, :CandidatePoint))
-        # retract!(
-        #     M, bms.p, bms.p_last_serious, -bms.null_stepsize * bms.g, bms.retraction_method
-        # )
+        nsbt = NullStepBackTrackingStepsize(M; contraction_factor=bms.stepsize.contraction_factor)
+        set_parameter!(nsbt, :Stepsize, bms.last_stepsize)
+        bms.null_stepsize = nsbt(mp, bms, k)
+        copyto!(M, bms.p, get_parameter(nsbt, :Iterate))
+        copyto!(M, bms.X, get_parameter(nsbt, :Subgradient))
     end
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
@@ -768,23 +827,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         push!(bms.transported_subgradients, zero_vector(M, bms.p))
     end
     for (j, (qj, Xj)) in enumerate(bms.bundle)
-        # v =
-        #     get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (inner(
-        #         M,
-        #         qj,
-        #         Xj,
-        #         inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-        #     )) + (
-        #         bms.ϱ *
-        #         norm(M, qj, Xj) *
-        #         norm(
-        #             M,
-        #             qj,
-        #             inverse_retract(
-        #                 M, qj, bms.p_last_serious, bms.inverse_retraction_method
-        #             ),
-        #         )
-        #     )
         bms.linearization_errors[j] =
             get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (inner(
                 M,
@@ -802,7 +844,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
                     ),
                 )
             )
-        # (0 ≥ v ≥ -bms.atol_errors) ? 0 : v
     end
     return bms
 end
