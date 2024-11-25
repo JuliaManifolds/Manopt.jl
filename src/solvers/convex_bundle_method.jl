@@ -339,8 +339,8 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     return print(io, s)
 end
 
-function domain_condition(M, q, p, t, length, domain)
-    return (!domain(M, q) || (distance(M, p, q) < t * length))
+function domain_condition(M, q, p, t, tol, length, domain)
+    return (!domain(M, q) || (distance(M, p, q) + tol < t * length))
 end
 
 function null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
@@ -362,262 +362,83 @@ yields a point closer to ``p`` than ``\lVert X \rVert_p`` or
 ``q`` is not on the domain.
 For the domain this step size requires a `ConvexBundleMethodState`
 """
-# mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
-#     β::Float64
-# end
-mutable struct DomainBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
-    candidate_point::P
-    contraction_factor::F
-    initial_stepsize::F
-    last_stepsize::F
-    message::String
-    retraction_method::TRM
-    function DomainBackTrackingStepsize(
-        M::AbstractManifold;
-        candidate_point::P=allocate_result(M, rand),
-        contraction_factor::F=0.95,
-        initial_stepsize::F=1.0,
-        retraction_method::TRM=default_retraction_method(M),
-    ) where {TRM,P,F}
-        return new{TRM,P,F}(
-            candidate_point,
-            contraction_factor,
-            initial_stepsize,
-            initial_stepsize,
-            "", # initialize an empty message
-            retraction_method,
-        )
-    end
+mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
+    β::Float64
 end
 function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; tol=0.0, kwargs...
 )
     M = get_manifold(amp)
-    dbt.last_stepsize = if dbt.last_stepsize < dbt.contraction_factor
-        1 / dbt.contraction_factor * dbt.last_stepsize
+    t = if cbms.last_stepsize < dbt.β
+        1 / dbt.β * cbms.last_stepsize
     else
-        dbt.initial_stepsize
+        1.0
     end
-    retract!(
-        M,
-        dbt.candidate_point,
-        cbms.p_last_serious,
-        -dbt.last_stepsize * cbms.g,
-        dbt.retraction_method,
-    )
-    while domain_condition(
-        M,
-        dbt.candidate_point,
-        cbms.p_last_serious,
-        dbt.last_stepsize,
-        norm(M, cbms.p_last_serious, cbms.g),
-        cbms.domain,
-    )
-        dbt.last_stepsize *= dbt.contraction_factor
-        retract!(
-            M,
-            dbt.candidate_point,
-            cbms.p_last_serious,
-            -dbt.last_stepsize * cbms.g,
-            dbt.retraction_method,
-        )
+    q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    l = norm(M, cbms.p_last_serious, cbms.g)
+    while domain_condition(M, q, cbms.p_last_serious, t, tol, l, cbms.domain)
+        t *= dbt.β
+        retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     end
-    # println(dbt.candidate_point)
-    return dbt.last_stepsize
+    return t
 end
-get_initial_stepsize(dbt::DomainBackTrackingStepsize) = dbt.initial_stepsize
-function show(io::IO, dbt::DomainBackTrackingStepsize)
-    return print(
-        io,
-        """
-        DomainBackTracking(;
-            initial_stepsize=$(dbt.initial_stepsize)
-            retraction_method=$(dbt.retraction_method)
-            contraction_factor=$(dbt.contraction_factor)
-        )""",
-    )
-end
-function status_summary(dbt::DomainBackTrackingStepsize)
-    return "$(dbt)\nand a computed last stepsize of $(dbt.last_stepsize)"
-end
-get_message(dbt::DomainBackTrackingStepsize) = dbt.message
-function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate})
-    return dbt.candidate_point
-end
-# function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:ContractionFactor}, args...)
-#     return get_parameter(dbt.contraction_factor, args...)
-# end
-
-"""
-#! UPDATE DOCS
-    DomainBackTracking(; kwargs...)
-    DomainBackTracking(M::AbstractManifold; kwargs...)
-
-Specify a step size that performs a backtracking to the interior of the domain.
-Given a Function ``f:$(_math(:M))→ℝ`` and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
-the current point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
-
-Then the step size ``s`` is found by reducing the initial step size ``s`` until
-
-```math
-f($(_tex(:retr))_p(sX)) ≤ f(p) - τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
-```
-
-is fulfilled. for a sufficient decrease value ``τ ∈ (0,1)``.
-
-To be a bit more optimistic, if ``s`` already fulfils this, a first search is done,
-__increasing__ the given ``s`` until for a first time this step does not hold.
-
-Overall, we look for step size, that provides _enough decrease_, see
-[Boumal:2023; p. 58](@cite) for more information.
-
-# Keyword arguments
-
-* `additional_decrease_condition=(M, p) -> true`:
-  specify an additional criterion that has to be met to accept a step size in the decreasing loop
-* `additional_increase_condition::IF=(M, p) -> true`:
-  specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
-* `candidate_point=allocate_result(M, rand)`:
-  speciy a point to be used as memory for the candidate points.
-* `contraction_factor=0.95`: how to update ``s`` in the decrease step
-* `initial_stepsize=1.0``: specify an initial step size
-* `initial_guess=`[`armijo_initial_guess`](@ref): Compute the initial step size of
-  a line search based on this function.
-  The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
-  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
-  the current iterate `k` and a last step size `l`.
-$(_var(:Keyword, :retraction_method))
-* `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
-* `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
-* `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
-* `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
-* `sufficient_decrease=0.1`: the sufficient decrease parameter ``τ``
-
-For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
-
-$(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
-"""
-function DomainBackTracking(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
-end
-
-mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,T} <:
-               Linesearch
-    candidate_point::P
-    contraction_factor::F
-    initial_stepsize::F
-    last_stepsize::F
-    message::String
-    retraction_method::TRM
-    sufficient_decrease::F
-    stop_when_stepsize_less::F
-    stop_when_stepsize_exceeds::F
-    stop_increasing_at_step::I
-    stop_decreasing_at_step::I
-    X::T
-    function NullStepBackTrackingStepsize(
-        M::AbstractManifold;
-        candidate_point::P=allocate_result(M, rand),
-        contraction_factor::F=0.95,
-        initial_stepsize::F=1.0,
-        retraction_method::TRM=default_retraction_method(M),
-        X::T=zero_vector(M, candidate_point),
-        stop_when_stepsize_less::F=0.0,
-        stop_when_stepsize_exceeds=max_stepsize(M),
-        stop_increasing_at_step::I=100,
-        stop_decreasing_at_step::I=1000,
-        sufficient_decrease=0.1,
-    ) where {TRM,P,I,F,T}
-        return new{TRM,P,I,F,T}(
-            candidate_point,
-            contraction_factor,
-            initial_stepsize,
-            initial_stepsize,
-            "", # initialize an empty message
-            retraction_method,
-            sufficient_decrease,
-            stop_when_stepsize_less,
-            stop_when_stepsize_exceeds,
-            stop_increasing_at_step,
-            stop_decreasing_at_step,
-            X,
-        )
-    end
-end
-function (nsbt::NullStepBackTrackingStepsize)(
-    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int, kwargs...
+function (dbt::DomainBackTrackingStepsize)(
+    amp::AbstractManoptProblem,
+    cbms::ConvexBundleMethodState,
+    ::Int,
+    ::Symbol;
+    tol=0.0,
+    stepsize_tol=1e-8,
+    max_samples=10,
+    kwargs...,
 )
     M = get_manifold(amp)
-    nsbt.last_stepsize = cbms.last_stepsize
-    for j in 1:(nsbt.stop_decreasing_at_step)
-        retract!(
-            M,
-            nsbt.candidate_point,
-            cbms.p_last_serious,
-            -nsbt.last_stepsize * cbms.g,
-            nsbt.retraction_method,
-        )
-        get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
-        while null_condition(
-            amp,
-            M,
-            nsbt.candidate_point,
-            cbms.p_last_serious,
-            nsbt.X,
-            cbms.g,
-            cbms.vector_transport_method,
-            cbms.inverse_retraction_method,
-            cbms.m,
-            nsbt.last_stepsize,
-            cbms.ξ,
-            cbms.ϱ,
-        )
-            nsbt.last_stepsize *= nsbt.contraction_factor
-            (nsbt.last_stepsize < nsbt.stop_when_stepsize_less) && break
-            retract!(
+    for j in 1:max_samples
+        # println("Null step")
+        t = cbms.last_stepsize
+        q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+        get_subgradient!(amp, cbms.X, q)
+        l = norm(M, cbms.p_last_serious, cbms.g)
+        while domain_condition(M, q, cbms.p_last_serious, t, tol, l, cbms.domain) &&
+            null_condition(
+                amp,
                 M,
-                nsbt.candidate_point,
+                q,
                 cbms.p_last_serious,
-                -nsbt.last_stepsize * cbms.g,
-                nsbt.retraction_method,
+                cbms.X,
+                cbms.g,
+                cbms.vector_transport_method,
+                cbms.inverse_retraction_method,
+                cbms.m,
+                t,
+                cbms.ξ,
+                cbms.ϱ,
             )
-            get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
+            t *= dbt.β
+            (t < stepsize_tol) && break
+            retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+            get_subgradient!(amp, cbms.X, q)
         end
-        return nsbt.last_stepsize
-        # end
+        if !null_condition(
+                amp,
+                M,
+                q,
+                cbms.p_last_serious,
+                cbms.X,
+                cbms.g,
+                cbms.vector_transport_method,
+                cbms.inverse_retraction_method,
+                cbms.m,
+                t,
+                cbms.ξ,
+                cbms.ϱ,
+            )
+            return t
+        end
         @warn "Resampling subgradient for the $j-th time."
-        (j == stop_decreasing_at_step) &&
-            (@warn "The maximal number of subgradient samples was reached.")
-        return nsbt.last_stepsize
+        j == max_samples && @warn "The maximal number of subgradient samples was reached."
     end
 end
-get_initial_stepsize(nsbt::NullStepBackTrackingStepsize) = nsbt.initial_stepsize
-function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Iterate})
-    return nsbt.candidate_point
-end
-function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient})
-    return nsbt.X
-end
-# function set_parameter!(nsbt::NullStepBackTrackingStepsize, s::Val{:Stepsize}, args...)
-#     set_parameter!(nsbt.initial_stepsize, args...)
-#     return nsbt
-# end
-function show(io::IO, nsbt::NullStepBackTrackingStepsize)
-    return print(
-        io,
-        """
-        NullStepBackTracking(;
-            initial_stepsize=$(nsbt.initial_stepsize)
-            retraction_method=$(nsbt.retraction_method)
-            contraction_factor=$(nsbt.contraction_factor)
-            sufficient_decrease=$(nsbt.sufficient_decrease)
-        )""",
-    )
-end
-function status_summary(nsbt::NullStepBackTrackingStepsize)
-    return "$(nsbt)\nand a computed last stepsize of $(nsbt.last_stepsize)"
-end
-get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 
 _doc_cbm_gk = raw"""
 ```math
@@ -684,19 +505,16 @@ function convex_bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    atol_λ::R=sqrt(eps()),
-    atol_errors::R=sqrt(eps()),
+    atol_λ::R=eps(),
+    atol_errors::R=eps(),
     bundle_cap::Int=25,
-    contraction_factor=0.99,
     diameter::R=π / 3,# was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
     k_max=0,
     k_min=0,
     p_estimate=p,
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTracking(
-        contraction_factor=contraction_factor
-    ),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTrackingStepsize(0.5),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -774,17 +592,27 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     bms.last_stepsize = get_stepsize(mp, bms, k)
-    copyto!(M, bms.p, get_parameter(bms.stepsize, :Iterate))
+    retract!(
+        M, bms.p, bms.p_last_serious, -bms.last_stepsize * bms.g, bms.retraction_method
+    )
+    # r = bms.ϱ * norm(M, bms.p, bms.X) *
+    #             norm(
+    #                 M,
+    #                 bms.p,
+    #                 inverse_retract(
+    #                     M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
+    #                 ),
+    #             )
     if get_cost(mp, bms.p) ≤
         (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
         get_subgradient!(mp, bms.X, bms.p)
     else
         # Condition for null-steps
-        nsbt = NullStepBackTrackingStepsize(M; contraction_factor=bms.stepsize.contraction_factor, initial_stepsize=bms.last_stepsize)
-        bms.null_stepsize = nsbt(mp, bms, k)
-        copyto!(M, bms.p, get_parameter(nsbt, :Iterate))
-        copyto!(M, bms.X, get_parameter(nsbt, :Subgradient))
+        bms.null_stepsize = get_stepsize(mp, bms, k, :nullstep)
+        retract!(
+            M, bms.p, bms.p_last_serious, -bms.null_stepsize * bms.g, bms.retraction_method
+        )
     end
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
@@ -811,7 +639,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         push!(bms.transported_subgradients, zero_vector(M, bms.p))
     end
     for (j, (qj, Xj)) in enumerate(bms.bundle)
-        bms.linearization_errors[j] =
+        v =
             get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (inner(
                 M,
                 qj,
@@ -828,6 +656,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
                     ),
                 )
             )
+        bms.linearization_errors[j] = (0 ≥ v ≥ -bms.atol_errors) ? 0 : v
     end
     return bms
 end
