@@ -366,19 +366,19 @@ mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
     β::Float64
 end
 function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; tol=0.0, kwargs...
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; tol=1e-8, kwargs...
 )
     M = get_manifold(amp)
-    t = if cbms.last_stepsize < dbt.β
-        1 / dbt.β * cbms.last_stepsize
+    t = if cbms.last_stepsize < dbt.β && cbms.last_stepsize > tol
+        1/dbt.β * cbms.last_stepsize
     else
         1.0
     end
-    q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     l = norm(M, cbms.p_last_serious, cbms.g)
-    while domain_condition(M, q, cbms.p_last_serious, t, tol, l, cbms.domain)
+    while domain_condition(M, cbms.p, cbms.p_last_serious, t, 0.0, l, cbms.domain)
         t *= dbt.β
-        retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+        retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
     end
     return t
 end
@@ -396,14 +396,14 @@ function (dbt::DomainBackTrackingStepsize)(
     for j in 1:max_samples
         # println("Null step")
         t = cbms.last_stepsize
-        q = retract(M, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
-        get_subgradient!(amp, cbms.X, q)
+        retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+        get_subgradient!(amp, cbms.X, cbms.p)
         l = norm(M, cbms.p_last_serious, cbms.g)
-        while domain_condition(M, q, cbms.p_last_serious, t, tol, l, cbms.domain) &&
+        while domain_condition(M, cbms.p, cbms.p_last_serious, t, tol, l, cbms.domain) &&
             null_condition(
                 amp,
                 M,
-                q,
+                cbms.p,
                 cbms.p_last_serious,
                 cbms.X,
                 cbms.g,
@@ -416,13 +416,13 @@ function (dbt::DomainBackTrackingStepsize)(
             )
             t *= dbt.β
             (t < stepsize_tol) && break
-            retract!(M, q, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
-            get_subgradient!(amp, cbms.X, q)
+            retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+            get_subgradient!(amp, cbms.X, cbms.p)
         end
         if !null_condition(
                 amp,
                 M,
-                q,
+                cbms.p,
                 cbms.p_last_serious,
                 cbms.X,
                 cbms.g,
@@ -592,17 +592,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     bms.last_stepsize = get_stepsize(mp, bms, k)
-    retract!(
-        M, bms.p, bms.p_last_serious, -bms.last_stepsize * bms.g, bms.retraction_method
-    )
-    # r = bms.ϱ * norm(M, bms.p, bms.X) *
-    #             norm(
-    #                 M,
-    #                 bms.p,
-    #                 inverse_retract(
-    #                     M, bms.p, bms.p_last_serious, bms.inverse_retraction_method
-    #                 ),
-    #             )
     if get_cost(mp, bms.p) ≤
         (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
@@ -610,9 +599,6 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     else
         # Condition for null-steps
         bms.null_stepsize = get_stepsize(mp, bms, k, :nullstep)
-        retract!(
-            M, bms.p, bms.p_last_serious, -bms.null_stepsize * bms.g, bms.retraction_method
-        )
     end
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
@@ -638,25 +624,23 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         push!(bms.λ, 0.0)
         push!(bms.transported_subgradients, zero_vector(M, bms.p))
     end
-    for (j, (qj, Xj)) in enumerate(bms.bundle)
-        v =
-            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (inner(
-                M,
-                qj,
-                Xj,
-                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-            )) + (
-                bms.ϱ *
-                norm(M, qj, Xj) *
-                norm(
-                    M,
-                    qj,
-                    inverse_retract(
-                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
-                    ),
-                )
-            )
-        bms.linearization_errors[j] = (0 ≥ v ≥ -bms.atol_errors) ? 0 : v
+    for (j, (qj, Xj)) in enumerate(bms.bundle)  
+        bms.linearization_errors[j] = get_cost(mp, bms.p_last_serious) - get_cost(mp,   qj) - (inner(
+        M,
+        qj,
+        Xj,
+        inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+    )) + (
+        bms.ϱ *
+        norm(M, qj, Xj) *
+        norm(
+            M,
+            qj,
+            inverse_retract(
+                M, qj, bms.p_last_serious, bms.inverse_retraction_method
+            ),
+        )
+    )
     end
     return bms
 end
