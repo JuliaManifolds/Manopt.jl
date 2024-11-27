@@ -339,8 +339,8 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     return print(io, s)
 end
 
-function domain_condition(M, q, p, t, tol, length, domain)
-    return (!domain(M, q) || (distance(M, p, q) + tol < t * length))
+function domain_condition(M, q, p, t, length, domain)
+    return (!domain(M, q) || (distance(M, p, q) < t * length))
 end
 
 function null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
@@ -387,7 +387,7 @@ mutable struct DomainBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F} <: 
     end
 end
 function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; tol=1e-8, kwargs...
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
 )
     M = get_manifold(amp)
     dbt.last_stepsize = 1.0
@@ -501,7 +501,10 @@ mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,
     last_stepsize::F
     message::String
     retraction_method::TRM
+    sufficient_decrease::F
     stop_when_stepsize_less::F
+    stop_when_stepsize_exceeds::F
+    stop_increasing_at_step::I
     stop_decreasing_at_step::I
     X::T
     function NullStepBackTrackingStepsize(
@@ -512,7 +515,10 @@ mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,
         retraction_method::TRM=default_retraction_method(M),
         X::T=zero_vector(M, candidate_point),
         stop_when_stepsize_less::F=0.0,
+        stop_when_stepsize_exceeds=max_stepsize(M),
+        stop_increasing_at_step::I=100,
         stop_decreasing_at_step::I=1000,
+        sufficient_decrease=0.1,
     ) where {TRM,P,I,F,T}
         return new{TRM,P,I,F,T}(
             candidate_point,
@@ -521,7 +527,10 @@ mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,
             initial_stepsize,
             "", # initialize an empty message
             retraction_method,
+            sufficient_decrease,
             stop_when_stepsize_less,
+            stop_when_stepsize_exceeds,
+            stop_increasing_at_step,
             stop_decreasing_at_step,
             X,
         )
@@ -558,43 +567,47 @@ function (nsbt::NullStepBackTrackingStepsize)(
             nsbt.last_stepsize *= nsbt.contraction_factor
             retract!(
                 M,
-                cbms.p,
+                nsbt.candidate_point,
                 cbms.p_last_serious,
-                cbms.X,
-                cbms.g,
-                cbms.vector_transport_method,
-                cbms.inverse_retraction_method,
-                cbms.m,
-                t,
-                cbms.ξ,
-                cbms.ϱ,
+                -nsbt.last_stepsize * cbms.g,
+                nsbt.retraction_method,
             )
-            t *= dbt.β
-            (t < stepsize_tol) && break
-            retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
-            get_subgradient!(amp, cbms.X, cbms.p)
-        end
-        if !null_condition(
-                amp,
-                M,
-                cbms.p,
-                cbms.p_last_serious,
-                cbms.X,
-                cbms.g,
-                cbms.vector_transport_method,
-                cbms.inverse_retraction_method,
-                cbms.m,
-                t,
-                cbms.ξ,
-                cbms.ϱ,
-            )
-            return t
+            get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
         end
         return nsbt.last_stepsize
         @warn "Resampling subgradient for the $j-th time."
-        j == max_samples && @warn "The maximal number of subgradient samples was reached."
+        (j == stop_decreasing_at_step) &&
+            (@warn "The maximal number of subgradient samples was reached.")
+        return nsbt.last_stepsize
     end
 end
+get_initial_stepsize(nsbt::NullStepBackTrackingStepsize) = nsbt.initial_stepsize
+function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Iterate})
+    return nsbt.candidate_point
+end
+function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient})
+    return nsbt.X
+end
+# function set_parameter!(nsbt::NullStepBackTrackingStepsize, s::Val{:Stepsize}, args...)
+#     set_parameter!(nsbt.initial_stepsize, args...)
+#     return nsbt
+# end
+function show(io::IO, nsbt::NullStepBackTrackingStepsize)
+    return print(
+        io,
+        """
+        NullStepBackTracking(;
+            initial_stepsize=$(nsbt.initial_stepsize)
+            retraction_method=$(nsbt.retraction_method)
+            contraction_factor=$(nsbt.contraction_factor)
+            sufficient_decrease=$(nsbt.sufficient_decrease)
+        )""",
+    )
+end
+function status_summary(nsbt::NullStepBackTrackingStepsize)
+    return "$(nsbt)\nand a computed last stepsize of $(nsbt.last_stepsize)"
+end
+get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 
 _doc_cbm_gk = raw"""
 ```math
@@ -661,8 +674,8 @@ function convex_bundle_method!(
     f::TF,
     ∂f!!::TdF,
     p;
-    atol_λ::R=eps(),
-    atol_errors::R=eps(),
+    atol_λ::R=sqrt(eps()),
+    atol_errors::R=sqrt(eps()),
     bundle_cap::Int=25,
     contraction_factor=0.975,
     diameter::R=π / 3,# was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
@@ -671,7 +684,9 @@ function convex_bundle_method!(
     k_max=0,
     k_min=0,
     p_estimate=p,
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTrackingStepsize(0.5),
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTracking(
+        contraction_factor=contraction_factor
+    ),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     inverse_retraction_method::IR=default_inverse_retraction_method(M, typeof(p)),
@@ -749,13 +764,17 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
     bms.ε = sum(bms.λ .* bms.linearization_errors)
     bms.ξ = (-norm(M, bms.p_last_serious, bms.g)^2) - (bms.ε)
     bms.last_stepsize = get_stepsize(mp, bms, k)
+    copyto!(M, bms.p, get_parameter(bms.stepsize, :Iterate))
     if get_cost(mp, bms.p) ≤
         (get_cost(mp, bms.p_last_serious) + bms.last_stepsize * bms.m * bms.ξ)
         copyto!(M, bms.p_last_serious, bms.p)
         get_subgradient!(mp, bms.X, bms.p)
     else
         # Condition for null-steps
-        bms.null_stepsize = get_stepsize(mp, bms, k, :nullstep)
+        nsbt = NullStepBackTrackingStepsize(M; contraction_factor=bms.stepsize.contraction_factor, initial_stepsize=bms.last_stepsize)
+        bms.null_stepsize = nsbt(mp, bms, k)
+        copyto!(M, bms.p, get_parameter(nsbt, :Iterate))
+        copyto!(M, bms.X, get_parameter(nsbt, :Subgradient))
     end
     v = findall(λj -> λj ≤ bms.atol_λ, bms.λ)
     if !isempty(v)
@@ -781,23 +800,24 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         push!(bms.λ, 0.0)
         push!(bms.transported_subgradients, zero_vector(M, bms.p))
     end
-    for (j, (qj, Xj)) in enumerate(bms.bundle)  
-        bms.linearization_errors[j] = get_cost(mp, bms.p_last_serious) - get_cost(mp,   qj) - (inner(
-        M,
-        qj,
-        Xj,
-        inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
-    )) + (
-        bms.ϱ *
-        norm(M, qj, Xj) *
-        norm(
-            M,
-            qj,
-            inverse_retract(
-                M, qj, bms.p_last_serious, bms.inverse_retraction_method
-            ),
-        )
-    )
+    for (j, (qj, Xj)) in enumerate(bms.bundle)
+        bms.linearization_errors[j] =
+            get_cost(mp, bms.p_last_serious) - get_cost(mp, qj) - (inner(
+                M,
+                qj,
+                Xj,
+                inverse_retract(M, qj, bms.p_last_serious, bms.inverse_retraction_method),
+            )) + (
+                bms.ϱ *
+                norm(M, qj, Xj) *
+                norm(
+                    M,
+                    qj,
+                    inverse_retract(
+                        M, qj, bms.p_last_serious, bms.inverse_retraction_method
+                    ),
+                )
+            )
     end
     return bms
 end
