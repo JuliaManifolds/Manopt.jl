@@ -369,39 +369,173 @@ function (dbt::DomainBackTrackingStepsize)(
     amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; tol=1e-8, kwargs...
 )
     M = get_manifold(amp)
-    t = if cbms.last_stepsize < dbt.β && cbms.last_stepsize > tol
-        1/dbt.β * cbms.last_stepsize
-    else
-        1.0
-    end
-    retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
-    l = norm(M, cbms.p_last_serious, cbms.g)
-    while domain_condition(M, cbms.p, cbms.p_last_serious, t, 0.0, l, cbms.domain)
-        t *= dbt.β
-        retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
+    dbt.last_stepsize = 1.0
+    retract!(
+        M,
+        dbt.candidate_point,
+        cbms.p_last_serious,
+        -dbt.last_stepsize * cbms.g,
+        dbt.retraction_method,
+    )
+    while domain_condition(
+        M,
+        dbt.candidate_point,
+        cbms.p_last_serious,
+        dbt.last_stepsize,
+        norm(M, cbms.p_last_serious, cbms.g),
+        cbms.domain,
+    )
+        dbt.last_stepsize *= dbt.contraction_factor
+        retract!(
+            M,
+            dbt.candidate_point,
+            cbms.p_last_serious,
+            -dbt.last_stepsize * cbms.g,
+            dbt.retraction_method,
+        )
     end
     return t
 end
-function (dbt::DomainBackTrackingStepsize)(
-    amp::AbstractManoptProblem,
-    cbms::ConvexBundleMethodState,
-    ::Int,
-    ::Symbol;
-    tol=0.0,
-    stepsize_tol=1e-8,
-    max_samples=10,
-    kwargs...,
+get_initial_stepsize(dbt::DomainBackTrackingStepsize) = dbt.initial_stepsize
+function show(io::IO, dbt::DomainBackTrackingStepsize)
+    return print(
+        io,
+        """
+        DomainBackTracking(;
+            initial_stepsize=$(dbt.initial_stepsize)
+            retraction_method=$(dbt.retraction_method)
+            contraction_factor=$(dbt.contraction_factor)
+        )""",
+    )
+end
+function status_summary(dbt::DomainBackTrackingStepsize)
+    return "$(dbt)\nand a computed last stepsize of $(dbt.last_stepsize)"
+end
+get_message(dbt::DomainBackTrackingStepsize) = dbt.message
+function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate})
+    return dbt.candidate_point
+end
+# function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:ContractionFactor}, args...)
+#     return get_parameter(dbt.contraction_factor, args...)
+# end
+
+"""
+#! UPDATE DOCS
+    DomainBackTracking(; kwargs...)
+    DomainBackTracking(M::AbstractManifold; kwargs...)
+
+Specify a step size that performs a backtracking to the interior of the domain.
+Given a Function ``f:$(_math(:M))→ℝ`` and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
+the current point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
+
+Then the step size ``s`` is found by reducing the initial step size ``s`` until
+
+```math
+f($(_tex(:retr))_p(sX)) ≤ f(p) - τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
+```
+
+is fulfilled. for a sufficient decrease value ``τ ∈ (0,1)``.
+
+To be a bit more optimistic, if ``s`` already fulfils this, a first search is done,
+__increasing__ the given ``s`` until for a first time this step does not hold.
+
+Overall, we look for step size, that provides _enough decrease_, see
+[Boumal:2023; p. 58](@cite) for more information.
+
+# Keyword arguments
+
+* `additional_decrease_condition=(M, p) -> true`:
+  specify an additional criterion that has to be met to accept a step size in the decreasing loop
+* `additional_increase_condition::IF=(M, p) -> true`:
+  specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
+* `candidate_point=allocate_result(M, rand)`:
+  speciy a point to be used as memory for the candidate points.
+* `contraction_factor=0.95`: how to update ``s`` in the decrease step
+* `initial_stepsize=1.0``: specify an initial step size
+* `initial_guess=`[`armijo_initial_guess`](@ref): Compute the initial step size of
+  a line search based on this function.
+  The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
+  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
+  the current iterate `k` and a last step size `l`.
+$(_var(:Keyword, :retraction_method))
+* `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
+* `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
+* `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
+* `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
+* `sufficient_decrease=0.1`: the sufficient decrease parameter ``τ``
+
+For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
+
+$(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
+"""
+function DomainBackTracking(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
+end
+
+mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,T} <:
+               Linesearch
+    candidate_point::P
+    contraction_factor::F
+    initial_stepsize::F
+    last_stepsize::F
+    message::String
+    retraction_method::TRM
+    stop_when_stepsize_less::F
+    stop_decreasing_at_step::I
+    X::T
+    function NullStepBackTrackingStepsize(
+        M::AbstractManifold;
+        candidate_point::P=allocate_result(M, rand),
+        contraction_factor::F=0.95,
+        initial_stepsize::F=1.0,
+        retraction_method::TRM=default_retraction_method(M),
+        X::T=zero_vector(M, candidate_point),
+        stop_when_stepsize_less::F=0.0,
+        stop_decreasing_at_step::I=1000,
+    ) where {TRM,P,I,F,T}
+        return new{TRM,P,I,F,T}(
+            candidate_point,
+            contraction_factor,
+            initial_stepsize,
+            initial_stepsize,
+            "", # initialize an empty message
+            retraction_method,
+            stop_when_stepsize_less,
+            stop_decreasing_at_step,
+            X,
+        )
+    end
+end
+function (nsbt::NullStepBackTrackingStepsize)(
+    amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int, kwargs...
 )
     M = get_manifold(amp)
-    for j in 1:max_samples
-        # println("Null step")
-        t = cbms.last_stepsize
-        retract!(M, cbms.p, cbms.p_last_serious, -t * cbms.g, cbms.retraction_method)
-        get_subgradient!(amp, cbms.X, cbms.p)
-        l = norm(M, cbms.p_last_serious, cbms.g)
-        while domain_condition(M, cbms.p, cbms.p_last_serious, t, tol, l, cbms.domain) &&
-            null_condition(
-                amp,
+    nsbt.last_stepsize = cbms.last_stepsize
+    for j in 1:(nsbt.stop_decreasing_at_step)
+        retract!(
+            M,
+            nsbt.candidate_point,
+            cbms.p_last_serious,
+            -nsbt.last_stepsize * cbms.g,
+            nsbt.retraction_method,
+        )
+        get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
+        while null_condition(
+            amp,
+            M,
+            nsbt.candidate_point,
+            cbms.p_last_serious,
+            nsbt.X,
+            cbms.g,
+            cbms.vector_transport_method,
+            cbms.inverse_retraction_method,
+            cbms.m,
+            nsbt.last_stepsize,
+            cbms.ξ,
+            cbms.ϱ,
+        )
+            nsbt.last_stepsize *= nsbt.contraction_factor
+            retract!(
                 M,
                 cbms.p,
                 cbms.p_last_serious,
@@ -435,6 +569,7 @@ function (dbt::DomainBackTrackingStepsize)(
             )
             return t
         end
+        return nsbt.last_stepsize
         @warn "Resampling subgradient for the $j-th time."
         j == max_samples && @warn "The maximal number of subgradient samples was reached."
     end
@@ -508,6 +643,7 @@ function convex_bundle_method!(
     atol_λ::R=eps(),
     atol_errors::R=eps(),
     bundle_cap::Int=25,
+    contraction_factor=0.975,
     diameter::R=π / 3,# was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
