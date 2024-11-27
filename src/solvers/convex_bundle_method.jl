@@ -362,9 +362,6 @@ yields a point closer to ``p`` than ``\lVert X \rVert_p`` or
 ``q`` is not on the domain.
 For the domain this step size requires a `ConvexBundleMethodState`
 """
-# mutable struct DomainBackTrackingStepsize <: Manopt.Stepsize
-#     β::Float64
-# end
 mutable struct DomainBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F} <: Linesearch
     candidate_point::P
     contraction_factor::F
@@ -393,11 +390,7 @@ function (dbt::DomainBackTrackingStepsize)(
     amp::AbstractManoptProblem, cbms::ConvexBundleMethodState, ::Int; kwargs...
 )
     M = get_manifold(amp)
-    dbt.last_stepsize = if dbt.last_stepsize < dbt.contraction_factor
-        1 / dbt.contraction_factor * dbt.last_stepsize
-    else
-        dbt.initial_stepsize
-    end
+    dbt.last_stepsize = 1.0
     retract!(
         M,
         dbt.candidate_point,
@@ -422,7 +415,6 @@ function (dbt::DomainBackTrackingStepsize)(
             dbt.retraction_method,
         )
     end
-    # println(dbt.candidate_point)
     return dbt.last_stepsize
 end
 get_initial_stepsize(dbt::DomainBackTrackingStepsize) = dbt.initial_stepsize
@@ -573,7 +565,6 @@ function (nsbt::NullStepBackTrackingStepsize)(
             cbms.ϱ,
         )
             nsbt.last_stepsize *= nsbt.contraction_factor
-            (nsbt.last_stepsize < nsbt.stop_when_stepsize_less) && break
             retract!(
                 M,
                 nsbt.candidate_point,
@@ -584,7 +575,6 @@ function (nsbt::NullStepBackTrackingStepsize)(
             get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
         end
         return nsbt.last_stepsize
-        # end
         @warn "Resampling subgradient for the $j-th time."
         (j == stop_decreasing_at_step) &&
             (@warn "The maximal number of subgradient samples was reached.")
@@ -687,7 +677,7 @@ function convex_bundle_method!(
     atol_λ::R=sqrt(eps()),
     atol_errors::R=sqrt(eps()),
     bundle_cap::Int=25,
-    contraction_factor=0.99,
+    contraction_factor=0.975,
     diameter::R=π / 3,# was `k_max -> k_max === nothing ? π/2 : (k_max ≤ zero(R) ? typemax(R) : π/3)`,
     domain=(M, p) -> isfinite(f(M, p)),
     m::R=1e-3,
