@@ -785,7 +785,7 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         deleteat!(bms.transported_subgradients, v)
     end
     l = length(bms.bundle)
-    if l == bms.bundle_cap
+    if l == bms.bundle_cap && bms.bundle[1][1] ≠ bms.p_last_serious
         #
         deleteat!(bms.bundle, 1)
         deleteat!(bms.λ, 1)
