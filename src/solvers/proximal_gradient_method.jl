@@ -11,10 +11,11 @@ stores options for the [`proximal_gradient_method`](@ref) solver
 * `stopping_criterion`:        a [`StoppingCriterion`](@ref)
 * `λ`:                         a function for the values of ``λ_i`` per iteration ``ì``
 * `retraction_method`:         a retraction to use
+* `inverse_retraction_method`: an inverse retraction to use
 
 # Constructor
 
-    AlteratingDirectionMethodOfMultipliersState(M, p=rand(M); kwargs...)
+    ProximalGradientMethodState(M, p=rand(M); kwargs...)
 
 Generate the state for a given manifold `M` with initial iterate `p`.
 
@@ -26,9 +27,10 @@ All fields from above are keyword arguments with the following defaults.
 * `stopping_criterion = `[`StopAfterIteration`](@ref)`(100)` a stopping criterion
 * `X = zero_vector(M, p)`
 * `retraction_method = `[`default_retraction_method`](@ref)`(M, typeof(p))`
+* `inverse_retraction_method = `[`default_inverse_retraction_method`](@ref)`(M, typeof(p))`
 """
 mutable struct ProximalGradientMethodState{
-    P,T,S<:StoppingCriterion,F,RM<:AbstractRetractionMethod
+    P,T,S<:StoppingCriterion,F,RM<:AbstractRetractionMethod,IRM<:AbstractInverseRetractionMethod
 } <: AbstractManoptSolverState
     λ::F
     p::P
@@ -36,6 +38,7 @@ mutable struct ProximalGradientMethodState{
     stop::S
     X::T
     retraction_method::RM
+    inverse_retraction_method::IRM
 end
 function ProximalGradientMethodState(
     M::AbstractManifold,
@@ -44,9 +47,10 @@ function ProximalGradientMethodState(
     λ::F=i -> 0.25,
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
-) where {P,T,S,F,RM<:AbstractRetractionMethod}
-    return ProximalGradientMethodState{P,T,S,F,RM}(
-        λ, p, copy(M, p), stopping_criterion, X, retraction_method
+    inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
+) where {P,T,S,F,RM<:AbstractRetractionMethod,IRM<:AbstractInverseRetractionMethod}
+    return ProximalGradientMethodState{P,T,S,F,RM,IRM}(
+        λ, p, copy(M, p), stopping_criterion, X, retraction_method, inverse_retraction_method
     )
 end
 get_iterate(pgms::ProximalGradientMethodState) = pgms.p
@@ -63,6 +67,8 @@ function show(io::IO, pgms::ProximalGradientMethodState)
     $Iter
 
     ## Parameters
+
+    * λ:                              $(pgms.λ)
 
     * retraction_method:              $(pgms.retraction_method)
 
@@ -116,9 +122,10 @@ p^{(k+1)} = prox_{λ_kh}\Bigl(
 * `evaluation = `[`AllocatingEvaluation`](@ref)) specify whether the proximal maps work by allocation (default) form `prox(M, λ, x)`
   or [`InplaceEvaluation`](@ref) in place of form `prox!(M, y, λ, x)`.
 * `λ = `i -> 0.25` ) a function returning the sequence of proximal parameters ``λ_k``
-* `stopping_criterion = `[`StopAfterIteration`](@ref)`(100) | `[`StopWhenChangeLess`](@ref)`(M, 1e.9)` a stopping criterion
+* `stopping_criterion = `[`StopWhenGradientMappingNormLess(1e-2)`](@ref)` | `[`StopAfterIteration`](@ref)`(5000) | `[`StopWhenChangeLess`](@ref)`(M, 1e.9)` a stopping criterion
 * `X = zero_vector(M, p)`
 * `retraction_method = `[`default_retraction_method`](@ref)`(M, typeof(p))` the retraction ``\operatorname{retr}``
+* `inverse_retraction_method = `[`default_inverse_retraction_method`](@ref)`(M, typeof(p))` the inverse retraction ``\operatorname{retr}^{-1}``
 
 All other keyword arguments are passed to [`decorate_state!`](@ref) for state decorators or
 [`decorate_objective!`](@ref) for objective, respectively.
@@ -154,9 +161,10 @@ function proximal_gradient_method!(
     mpgo::O,
     p;
     λ=i -> 1.0,
-    stopping_criterion=StopAfterIteration(100) | StopWhenChangeLess(M, 1e-9),
+    stopping_criterion=StopWhenGradientMappingNormLess(1e-2) | StopAfterIteration(5000) | StopWhenChangeLess(M, 1e-9),
     X=zero_vector(M, p),
     retraction_method=default_retraction_method(M, typeof(p)),
+    inverse_retraction_method=default_inverse_retraction_method(M, typeof(p)),
     kwargs...,
 ) where {O<:Union{ManifoldProximalGradientObjective,AbstractDecoratedManifoldObjective}}
     dmpgo = decorate_objective!(M, mpgo; kwargs...)
@@ -183,10 +191,83 @@ end
 function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, i)
     M = get_manifold(amp)
     get_gradient!(amp, pgms.X, pgms.p)
-    # Maybe one could omit the q and do both steps in place of p
-    # (a) gradient step
-    retract!(M, pgms.q, pgms.p, -pgms.λ(i) * pgms.X, pgms.retraction_method)
-    # (b) prox
-    get_proximal_map!(amp, pgms.p, pgms.λ(i), pgms.q)
+    copyto!(M, pgms.q, pgms.p)
+    # (a) + (b) gradient and prox steps
+    get_proximal_map!(amp, pgms.p, pgms.λ(i), retract!(M, pgms.p, pgms.p, -pgms.λ(i) * pgms.X, pgms.retraction_method))
     return pgms
+end
+
+"""
+    StopWhenGradientMappingNormLess <: StoppingCriterion
+
+A stopping criterion based on the current gradient norm.
+
+# Fields
+
+* `threshold`: the threshold to indicate to stop when the distance is below this value
+
+# Internal fields
+
+* `last_change` store the last change
+* `at_iteration` store the iteration at which the stop indication happened
+
+# Constructor
+
+    StopWhenGradientMappingNormLess(ε)
+
+Create a stopping criterion with threshold `ε` for the gradient mapping for the [`proximal_gradient_method`](@ref).
+That is, this criterion indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
+where the norm to use can be specified in the `norm=` keyword.
+"""
+mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
+    threshold::TF
+    last_change::TF
+    at_iteration::Int
+    function StopWhenGradientMappingNormLess(ε::TF) where {TF}
+        return new{TF}(ε, zero(ε), -1)
+    end
+end
+
+function (sc::StopWhenGradientMappingNormLess)(
+    mp::AbstractManoptProblem, s::ProximalGradientMethodState, i::Int
+)
+    M = get_manifold(mp)
+    if i == 0 # reset on init
+        sc.at_iteration = -1
+    end
+    if (i > 0)
+        sc.last_change = 1/s.λ(i) * norm(M, s.q, inverse_retract(M, s.q, get_iterate(s), s.inverse_retraction_method))
+        if sc.last_change < sc.threshold
+            sc.at_iteration = i
+            return true
+        end
+    end
+    return false
+end
+function get_reason(c::StopWhenGradientMappingNormLess)
+    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
+        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient mapping norm ($(c.last_change)) is less than $(c.threshold).\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenGradientMappingNormLess)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "|G| < $(c.threshold): $s"
+end
+indicates_convergence(c::StopWhenGradientMappingNormLess) = true
+function show(io::IO, c::StopWhenGradientMappingNormLess)
+    return print(io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))")
+end
+
+"""
+    update_stopping_criterion!(c::StopWhenGradientMappingNormLess, :MinGradNorm, v::Float64)
+
+Update the minimal gradient norm when an algorithm shall stop
+"""
+function update_stopping_criterion!(
+    c::StopWhenGradientMappingNormLess, ::Val{:MinGradNorm}, v::Float64
+)
+    c.threshold = v
+    return c
 end
