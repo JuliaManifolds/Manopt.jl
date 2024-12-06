@@ -357,7 +357,7 @@ define!(
     :grad_f,
     :description,
     (; M="M", p="p") ->
-        "the (Riemannian) gradient ``$(_tex(:grad))f``: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+        "the (Riemannian) gradient ``$(_tex(:grad))f: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p))`` of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
 define!(
@@ -365,7 +365,7 @@ define!(
     :Hess_f,
     :description,
     (; M="M", p="p") ->
-        "the (Riemannian) Hessian ``$(_tex(:Hess))f``: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+        "the (Riemannian) Hessian ``$(_tex(:Hess))f: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p))`` of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
 define!(
