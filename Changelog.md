@@ -5,6 +5,12 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - unreleased
+
+### Added
+
+* icons upfront external links when they link to another package or wikipedia.
+
 ## [0.5.4] - November 27, 2024
 
 ### Added
