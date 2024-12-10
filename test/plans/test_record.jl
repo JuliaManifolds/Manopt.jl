@@ -3,10 +3,10 @@ using Manopt: RecordFactory, RecordGroupFactory, RecordActionFactory
 mutable struct TestRecordParameterState <: AbstractManoptSolverState
     value::Int
 end
-function Manopt.set_manopt_parameter!(d::TestRecordParameterState, ::Val{:value}, v)
+function Manopt.set_parameter!(d::TestRecordParameterState, ::Val{:value}, v)
     (d.value = v; return d)
 end
-Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
+Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
 
 @testset "Record State" begin
     # helper to get debug as string
@@ -14,7 +14,10 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     M = ManifoldsBase.DefaultManifold(2)
     p = [4.0, 2.0]
     gds = GradientDescentState(
-        M, copy(p); stopping_criterion=StopAfterIteration(20), stepsize=ConstantStepsize(M)
+        M;
+        p=copy(p),
+        stopping_criterion=StopAfterIteration(10),
+        stepsize=Manopt.ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
@@ -24,11 +27,13 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @test Manopt.status_summary(a) == ":Iteration"
     # constructors
     rs = RecordSolverState(gds, a)
-    Manopt.set_manopt_parameter!(rs, :Record, RecordCost())
+    Manopt.set_parameter!(rs, :Record, RecordCost())
     @test Manopt.dispatch_state_decorator(rs) === Val{true}()
     @test get_state(gds) == gds
     @test get_state(rs) == gds
     @test_throws MethodError get_state(dmp)
+    Manopt.set_parameter!(rs, :StoppingCriterion, :MaxIteration, 20)
+    @test rs.state.stop.max_iterations == 20 #Maybe turn into a getter?
     #
     @test get_initial_stepsize(dmp, rs) == 1.0
     @test get_stepsize(dmp, rs, 1) == 1.0
@@ -194,7 +199,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rss = RecordSubsolver()
         @test repr(rss) == "RecordSubsolver(; record=[:Iteration], record_type=Any)"
         @test Manopt.status_summary(rss) == ":Subsolver"
-        epms = ExactPenaltyMethodState(M, rand(M), dmp, rs)
+        epms = ExactPenaltyMethodState(M, dmp, rs)
         rss(dmp, epms, 1)
     end
     @testset "RecordWhenActive" begin
@@ -207,9 +212,9 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
         rwa(dmp, gds, -1) # Reset
         @test length(get_record(rwa)) == 0
         rwa(dmp, gds, 1)
-        set_manopt_parameter!(rwa, :Activity, false)
+        set_parameter!(rwa, :Activity, false)
         # passthrough to inner
-        set_manopt_parameter!(rwa, :test, 1)
+        set_parameter!(rwa, :test, 1)
         @test !rwa.active
         # test inactive
         rwa(dmp, gds, 2)
@@ -304,7 +309,7 @@ Manopt.get_manopt_parameter(d::TestRecordParameterState, ::Val{:value}) = d.valu
     @testset "Record and parameter passthrough" begin
         s = TestRecordParameterState(0)
         r = RecordSolverState(s, RecordIteration())
-        Manopt.set_manopt_parameter!(r, :value, 1)
-        @test Manopt.get_manopt_parameter(r, :value) == 1
+        Manopt.set_parameter!(r, :value, 1)
+        @test Manopt.get_parameter(r, :value) == 1
     end
 end

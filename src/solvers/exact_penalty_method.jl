@@ -1,34 +1,62 @@
-@doc raw"""
+@doc """
     ExactPenaltyMethodState{P,T} <: AbstractManoptSolverState
 
 Describes the exact penalty method, with
 
 # Fields
-a default value is given in brackets if a parameter can be left out in initialization.
 
-* `p`:                   a set point on a manifold as starting point
-* `sub_problem`:         an [`AbstractManoptProblem`](@ref) problem for the subsolver
-* `sub_state`:           an [`AbstractManoptSolverState`](@ref) for the subsolver
-* `ϵ`:                   (`1e–3`) the accuracy tolerance
-* `ϵ_min`:               (`1e-6`) the lower bound for the accuracy tolerance
-* `u`:                   (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_min`:               (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ`:                   (`1.0`) the penalty parameter
-* `θ_ρ`:                 (`0.3`) the scaling factor of the penalty parameter
-* `stopping_criterion`:  ([`StopAfterIteration`](@ref)`(300) | (`[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min) & `[`StopWhenChangeLess`](@ref)`(min_stepsize))`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `ϵ`: the accuracy tolerance
+* `ϵ_min`: the lower bound for the accuracy tolerance
+$(_var(:Field, :p; add=[:as_Iterate]))
+* `ρ`: the penalty parameter
+$(_var(:Field, :sub_problem))
+$(_var(:Field, :sub_state))
+$(_var(:Field, :stopping_criterion, "stop"))
+* `u`: the smoothing parameter and threshold for violation of the constraints
+* `u_min`: the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `θ_ϵ`: the scaling factor of the tolerance parameter
+* `θ_ρ`: the scaling factor of the penalty parameter
+* `θ_u`: the scaling factor of the smoothing parameter
 
 # Constructor
 
-    ExactPenaltyMethodState(M::AbstractManifold, p, sub_problem, sub_state; kwargs...)
+    ExactPenaltyMethodState(M::AbstractManifold, sub_problem, sub_state; kwargs...)
 
-construct an exact penalty options with the remaining previously mentioned fields as keywords using their provided defaults.
+construct the exact penalty state.
+
+    ExactPenaltyMethodState(M::AbstractManifold, sub_problem;
+        evaluation=AllocatingEvaluation(), kwargs...
+)
+
+construct the exact penalty state, where `sub_problem` is a closed form solution with `evaluation` as type of evaluation.
+
+# Keyword arguments
+
+* `ϵ=1e-3`
+* `ϵ_min=1e-6`
+* `ϵ_exponent=1 / 100`: a shortcut for the scaling factor ``θ_ϵ``
+* `θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent)`
+* `u=1e-1`
+* `u_min=1e-6`
+* `u_exponent=1 / 100`:  a shortcut for the scaling factor ``θ_u``.
+* `θ_u=(u_min / u)^(u_exponent)`
+$(_var(:Keyword, :p; add=:as_Initial))
+* `ρ=1.0`
+* `θ_ρ=0.3`
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` (`"))
+  [`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`(1e-10) )`
 
 # See also
 
 [`exact_penalty_method`](@ref)
 """
-mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriterion} <:
-               AbstractSubProblemSolverState
+mutable struct ExactPenaltyMethodState{
+    P,
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+    St<:AbstractManoptSolverState,
+    R<:Real,
+    TStopping<:StoppingCriterion,
+} <: AbstractSubProblemSolverState
     p::P
     sub_problem::Pr
     sub_state::St
@@ -42,10 +70,10 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
     θ_ϵ::R
     stop::TStopping
     function ExactPenaltyMethodState(
-        ::AbstractManifold,
-        p::P,
+        M::AbstractManifold,
         sub_problem::Pr,
         sub_state::St;
+        p::P=rand(M),
         ϵ::R=1e-3,
         ϵ_min::R=1e-6,
         ϵ_exponent=1 / 100,
@@ -57,19 +85,20 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         ρ::R=1.0,
         θ_ρ::R=0.3,
         stopping_criterion::SC=StopAfterIteration(300) | (
-            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(1e-10)
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) | StopWhenChangeLess(M, 1e-10)
         ),
     ) where {
         P,
-        Pr<:AbstractManoptProblem,
+        Pr<:Union{F,AbstractManoptProblem} where {F},
         St<:AbstractManoptSolverState,
         R<:Real,
         SC<:StoppingCriterion,
     }
-        epms = new{P,Pr,St,R,SC}()
+        sub_state_storage = maybe_wrap_evaluation_type(sub_state)
+        epms = new{P,Pr,typeof(sub_state_storage),R,SC}()
         epms.p = p
         epms.sub_problem = sub_problem
-        epms.sub_state = sub_state
+        epms.sub_state = sub_state_storage
         epms.ϵ = ϵ
         epms.ϵ_min = ϵ_min
         epms.u = u
@@ -82,6 +111,13 @@ mutable struct ExactPenaltyMethodState{P,Pr,St,R<:Real,TStopping<:StoppingCriter
         return epms
     end
 end
+function ExactPenaltyMethodState(
+    M::AbstractManifold, sub_problem; evaluation::E=AllocatingEvaluation(), kwargs...
+) where {E<:AbstractEvaluationType}
+    cfs = ClosedFormSubSolverState(; evaluation=evaluation)
+    return ExactPenaltyMethodState(M, sub_problem, cfs; kwargs...)
+end
+
 get_iterate(epms::ExactPenaltyMethodState) = epms.p
 function get_message(epms::ExactPenaltyMethodState)
     # for now only the sub solver might have messages
@@ -110,51 +146,22 @@ function show(io::IO, epms::ExactPenaltyMethodState)
     return print(io, s)
 end
 
-@doc raw"""
-    exact_penalty_method(M, F, gradF, p=rand(M); kwargs...)
-    exact_penalty_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
-
-perform the exact penalty method (EPM) [LiuBoumal:2019](@cite)
-The aim of the EPM is to find a solution of the constrained optimisation task
-
-```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad  \text{ for } j=1,…,n,
-\end{aligned}
-```
-
-where `M` is a Riemannian manifold, and ``f``, ``\{g_i\}_{i=1}^m`` and ``\{h_j\}_{j=1}^n``
-are twice continuously differentiable functions from `M` to ℝ.
-For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
-
+_doc_EPM_penalty = raw"""
 ```math
 f(x) + ρ\biggl( \sum_{i=1}^m \max\bigl\{0, g_i(x)\bigr\} + \sum_{j=1}^n \vert h_j(x)\vert\biggr),
 ```
-
 where ``ρ>0`` is the penalty parameter.
-Since this is non-smooth, a [`SmoothingTechnique`](@ref) with parameter `u` is applied,
-see the [`ExactPenaltyCost`](@ref).
+"""
 
-In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all
-``x ∈\mathcal{M}``.
-Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
-
+_doc_EMP_ϵ_update = raw"""
 ```math
 ϵ^{(k)}=\max\{ϵ_{\min}, θ_ϵ ϵ^{(k-1)}\},
 ```
 
 where ``ϵ_{\min}`` is the lowest value ``ϵ`` is allowed to become and ``θ_ϵ ∈ (0,1)`` is constant scaling factor, and
+"""
 
-```math
-u^{(k)} = \max \{u_{\min}, \theta_u u^{(k-1)} \},
-```
-
-where ``u_{\min}`` is the lowest value ``u`` is allowed to become and ``θ_u ∈ (0,1)`` is constant scaling factor.
-
-Finally, the penalty parameter ``ρ`` is updated as
-
+_doc_EMP_ρ_update = raw"""
 ```math
 ρ^{(k)} = \begin{cases}
 ρ^{(k-1)}/θ_ρ,  & \text{if } \displaystyle \max_{j ∈ \mathcal{E},i ∈ \mathcal{I}} \Bigl\{ \vert h_j(x^{(k)}) \vert, g_i(x^{(k)})\Bigr\} \geq u^{(k-1)} \Bigr) ,\\
@@ -163,58 +170,104 @@ Finally, the penalty parameter ``ρ`` is updated as
 ```
 
 where ``θ_ρ ∈ (0,1)`` is a constant scaling factor.
+"""
+_doc_EMP_u_update = raw"""
+```math
+u^{(k)} = \max \{u_{\min}, \theta_u u^{(k-1)} \},
+```
+
+where ``u_{\min}`` is the lowest value ``u`` is allowed to become and ``θ_u ∈ (0,1)`` is constant scaling factor.
+"""
+
+_doc_EPM = """
+    exact_penalty_method(M, f, grad_f, p=rand(M); kwargs...)
+    exact_penalty_method(M, cmo::ConstrainedManifoldObjective, p=rand(M); kwargs...)
+    exact_penalty_method!(M, f, grad_f, p; kwargs...)
+    exact_penalty_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
+
+perform the exact penalty method (EPM) [LiuBoumal:2019](@cite)
+The aim of the EPM is to find a solution of the constrained optimisation task
+
+$(_problem(:Constrained))
+
+where `M` is a Riemannian manifold, and ``f``, ``$(_math(:Sequence, "g", "i", "1", "n"))`` and ``$(_math(:Sequence, "h", "j", "1", "m"))``
+are twice continuously differentiable functions from `M` to ℝ.
+For that a weighted ``L_1``-penalty term for the violation of the constraints is added to the objective
+
+$(_doc_EPM_penalty)
+
+Since this is non-smooth, a [`SmoothingTechnique`](@ref) with parameter `u` is applied,
+see the [`ExactPenaltyCost`](@ref).
+
+In every step ``k`` of the exact penalty method, the smoothed objective is then minimized over all ``p ∈$(_math(:M))``.
+Then, the accuracy tolerance ``ϵ`` and the smoothing parameter ``u`` are updated by setting
+
+$(_doc_EMP_ϵ_update)
+
+$(_doc_EMP_u_update)
+
+Finally, the penalty parameter ``ρ`` is updated as
+
+$(_doc_EMP_ρ_update)
 
 # Input
 
-* `M`      a manifold ``\mathcal M``
-* `f`      a cost function ``f:\mathcal M→ℝ`` to minimize
-* `grad_f` the gradient of the cost function
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
+$(_var(:Argument, :grad_f))
+$(_var(:Argument, :p))
 
-# Optional (if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`)
+# Keyword arguments
+ if not called with the [`ConstrainedManifoldObjective`](@ref) `cmo`
 
-* `g`:      (`nothing`) the inequality constraints
-* `h`:      (`nothing`) the equality constraints
-* `grad_g`: (`nothing`) the gradient of the inequality constraints
-* `grad_h`: (`nothing`) the gradient of the equality constraints
+* `g=nothing`: the inequality constraints
+* `h=nothing`: the equality constraints
+* `grad_g=nothing`: the gradient of the inequality constraints
+* `grad_h=nothing`: the gradient of the equality constraints
 
 Note that one of the pairs (`g`, `grad_g`) or (`h`, `grad_h`) has to be provided.
-Otherwise the problem is not constrained and you should consider using unconstrained solvers like [`quasi_Newton`](@ref).
+Otherwise the problem is not constrained and a better solver would be for example [`quasi_Newton`](@ref).
 
-# Optional
+# Further keyword arguments
 
-* `smoothing`:                 ([`LogarithmicSumOfExponentials`](@ref)) [`SmoothingTechnique`](@ref) to use
-* `ϵ`:                         (`1e–3`) the accuracy tolerance
-* `ϵ_exponent`:                (`1/100`) exponent of the ϵ update factor;
-* `ϵ_min`:                     (`1e-6`) the lower bound for the accuracy tolerance
-* `u`:                         (`1e–1`) the smoothing parameter and threshold for violation of the constraints
-* `u_exponent`:                (`1/100`) exponent of the u update factor;
-* `u_min`:                     (`1e-6`) the lower bound for the smoothing parameter and threshold for violation of the constraints
-* `ρ`:                         (`1.0`) the penalty parameter
-* `equality_constraints`:      (`nothing`) the number ``n`` of equality constraints.
-* `gradient_range`             (`nothing`, equivalent to [`NestedPowerRepresentation`](@extref) specify how gradients are represented
-* `gradient_equality_range`:   (`gradient_range`) specify how the gradients of the equality constraints are represented
-* `gradient_inequality_range`: (`gradient_range`) specify how the gradients of the inequality constraints are represented
-* `inequality_constraints`:    (`nothing`) the number ``m`` of inequality constraints.
-* `min_stepsize`:              (`1e-10`) the minimal step size
-* `sub_cost`:                  ([`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty cost, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_grad`:                  ([`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`) use this exact penalty gradient, especially with the same numbers `ρ,u` as in the options for the sub problem
-* `sub_kwargs`:                (`(;)`) keyword arguments to decorate the sub options, for example debug, that automatically respects the main solvers debug options (like sub-sampling) as well
-* `sub_stopping_criterion`:    ([`StopAfterIteration`](@ref)`(200) | `[`StopWhenGradientNormLess`](@ref)`(ϵ) | `[`StopWhenStepsizeLess`](@ref)`(1e-10)`) specify a stopping criterion for the subsolver.
-* `sub_problem`:               ([`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)`, provide a problem for the subsolver
-* `sub_state`:                 ([`QuasiNewtonState`](@ref)) using [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) and `sub_stopping_criterion` as a stopping criterion. See also `sub_kwargs`.
-* `stopping_criterion`:        ([`StopAfterIteration`](@ref)`(300)` | ([`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)` & [`StopWhenChangeLess`](@ref)`(1e-10)`) a functor inheriting from [`StoppingCriterion`](@ref) indicating when to stop.
+* `ϵ=1e–3`: the accuracy tolerance
+* `ϵ_exponent=1/100`: exponent of the ϵ update factor;
+* `ϵ_min=1e-6`: the lower bound for the accuracy tolerance
+* `u=1e–1`: the smoothing parameter and threshold for violation of the constraints
+* `u_exponent=1/100`: exponent of the u update factor;
+* `u_min=1e-6`: the lower bound for the smoothing parameter and threshold for violation of the constraints
+* `ρ=1.0`: the penalty parameter
+* `equality_constraints=nothing`: the number ``n`` of equality constraints.
+  If not provided, a call to the gradient of `g` is performed to estimate these.
+* `gradient_range=nothing`: specify how both gradients of the constraints are represented
+* `gradient_equality_range=gradient_range`:
+   specify how gradients of the equality constraints are represented, see [`VectorGradientFunction`](@ref).
+* `gradient_inequality_range=gradient_range`:
+   specify how gradients of the inequality constraints are represented, see [`VectorGradientFunction`](@ref).
+* `inequality_constraints=nothing`: the number ``m`` of inequality constraints.
+   If not provided, a call to the gradient of `g` is performed to estimate these.
+* `min_stepsize=1e-10`: the minimal step size
+* `smoothing=`[`LogarithmicSumOfExponentials`](@ref): a [`SmoothingTechnique`](@ref) to use
+* `sub_cost=`[`ExactPenaltyCost`](@ref)`(problem, ρ, u; smoothing=smoothing)`: cost to use in the sub solver
+  $(_note(:KeywordUsedIn, "sub_problem"))
+* `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
+  $(_note(:KeywordUsedIn, "sub_problem"))
+* $(_var(:Keyword, :sub_kwargs))
+* `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
+  $(_note(:KeywordUsedIn, "sub_state"))
+$(_var(:Keyword, :sub_state; default="[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add=" where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`"))
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
 mainly the [`ArrayPowerRepresentation`](@extref Manifolds :jl:type:`Manifolds.ArrayPowerRepresentation`) can be used if the gradients can be computed more efficiently in that representation.
 
-With `equality_constraints` and `inequality_constraints` you have to provide the dimension
-of the ranges of `h` and `g`, respectively. If not provided, together with `M` and the start point `p0`,
-a call to either of these is performed to try to infer these.
+$(_note(:OtherKeywords))
 
-# Output
-
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
+
+@doc "$(_doc_EPM)"
 exact_penalty_method(M::AbstractManifold, args...; kwargs...)
 function exact_penalty_method(M::AbstractManifold, f, grad_f; kwargs...)
     return exact_penalty_method(M, f, grad_f, rand(M); kwargs...)
@@ -229,67 +282,40 @@ function exact_penalty_method(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains::Union{Integer,Nothing}=nothing,
-    equality_constrains::Union{Nothing,Integer}=nothing,
+    inequality_constraints::Union{Integer,Nothing}=nothing,
+    equality_constraints::Union{Nothing,Integer}=nothing,
     kwargs...,
 ) where {TF,TGF}
-    num_eq = if isnothing(equality_constrains)
-        _number_of_constraints(h, grad_h; M=M, p=p)
-    else
-        inequality_constrains
-    end
-    num_ineq = if isnothing(inequality_constrains)
-        _number_of_constraints(g, grad_g; M=M, p=p)
-    else
-        inequality_constrains
-    end
+    p_ = _ensure_mutating_variable(p)
+    f_ = _ensure_mutating_cost(f, p)
+    grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
+    g_ = _ensure_mutating_cost(g, p)
+    grad_g_ = _ensure_mutating_gradient(grad_g, p, evaluation)
+    h_ = _ensure_mutating_cost(h, p)
+    grad_h_ = _ensure_mutating_gradient(grad_h, p, evaluation)
     cmo = ConstrainedManifoldObjective(
-        f,
-        grad_f,
-        g,
-        grad_g,
-        h,
-        grad_h;
+        f_,
+        grad_f_,
+        g_,
+        grad_g_,
+        h_,
+        grad_h_;
         evaluation=evaluation,
-        equality_constrains=num_eq,
-        inequality_constrains=num_ineq,
+        equality_constraints=equality_constraints,
+        inequality_constraints=equality_constraints,
         M=M,
-        p=p,
+        p=p_,
     )
-    return exact_penalty_method(
+    rs = exact_penalty_method(
         M,
         cmo,
-        p;
+        p_;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         kwargs...,
     )
-end
-function exact_penalty_method(
-    M::AbstractManifold,
-    f,
-    grad_f,
-    p::Number;
-    g=nothing,
-    h=nothing,
-    grad_g=nothing,
-    grad_h=nothing,
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    q = [p]
-    f_(M, p) = f(M, p[])
-    grad_f_ = _to_mutating_gradient(grad_f, evaluation)
-    g_ = isnothing(g) ? nothing : (M, p) -> g(M, p[])
-    grad_g_ = isnothing(grad_g) ? nothing : _to_mutating_gradient(grad_g, evaluation)
-    h_ = isnothing(h) ? nothing : (M, p) -> h(M, p[])
-    grad_h_ = isnothing(grad_h) ? nothing : _to_mutating_gradient(grad_h, evaluation)
-    cmo = ConstrainedManifoldObjective(
-        f_, grad_f_, g_, grad_g_, h_, grad_h_; evaluation=evaluation, M=M, p=p
-    )
-    rs = exact_penalty_method(M, cmo, q; evaluation=evaluation, kwargs...)
-    return (typeof(q) == typeof(rs)) ? rs[] : rs
+    return _ensure_matching_output(p, rs)
 end
 function exact_penalty_method(
     M::AbstractManifold, cmo::O, p=rand(M); kwargs...
@@ -298,14 +324,7 @@ function exact_penalty_method(
     return exact_penalty_method!(M, cmo, q; kwargs...)
 end
 
-@doc raw"""
-    exact_penalty_method!(M, f, grad_f, p; kwargs...)
-    exact_penalty_method!(M, cmo::ConstrainedManifoldObjective, p; kwargs...)
-
-perform the exact penalty method (EPM) performed in place of `p`.
-
-For all options, see [`exact_penalty_method`](@ref).
-"""
+@doc "$(_doc_EPM)"
 exact_penalty_method!(M::AbstractManifold, args...; kwargs...)
 function exact_penalty_method!(
     M::AbstractManifold,
@@ -317,15 +336,15 @@ function exact_penalty_method!(
     grad_g=nothing,
     grad_h=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    inequality_constrains=nothing,
-    equality_constrains=nothing,
+    inequality_constraints=nothing,
+    equality_constraints=nothing,
     kwargs...,
 )
-    if isnothing(inequality_constrains)
-        inequality_constrains = _number_of_constraints(g, grad_g; M=M, p=p)
+    if isnothing(inequality_constraints)
+        inequality_constraints = _number_of_constraints(g, grad_g; M=M, p=p)
     end
-    if isnothing(equality_constrains)
-        equality_constrains = _number_of_constraints(h, grad_h; M=M, p=p)
+    if isnothing(equality_constraints)
+        equality_constraints = _number_of_constraints(h, grad_h; M=M, p=p)
     end
     cmo = ConstrainedManifoldObjective(
         f,
@@ -335,8 +354,8 @@ function exact_penalty_method!(
         h,
         grad_h;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         M=M,
         p=p,
     )
@@ -345,8 +364,8 @@ function exact_penalty_method!(
         cmo,
         p;
         evaluation=evaluation,
-        equality_constrains=equality_constrains,
-        inequality_constrains=inequality_constrains,
+        equality_constraints=equality_constraints,
+        inequality_constraints=inequality_constraints,
         kwargs...,
     )
 end
@@ -373,7 +392,7 @@ function exact_penalty_method!(
     sub_cost=ExactPenaltyCost(cmo, ρ, u; smoothing=smoothing),
     sub_grad=ExactPenaltyGrad(cmo, ρ, u; smoothing=smoothing),
     sub_kwargs=(;),
-    sub_problem::AbstractManoptProblem=DefaultManoptProblem(
+    sub_problem::Pr=DefaultManoptProblem(
         M,
         decorate_objective!(
             M,
@@ -385,10 +404,10 @@ function exact_penalty_method!(
     sub_stopping_criterion=StopAfterIteration(300) |
                            StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
-    sub_state::AbstractManoptSolverState=decorate_state!(
+    sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         QuasiNewtonState(
-            M,
-            copy(M, p);
+            M;
+            p=copy(M, p),
             initial_vector=zero_vector(M, p),
             direction_update=QuasiNewtonLimitedMemoryDirectionUpdate(
                 M, copy(M, p), InverseBFGS(), 30
@@ -400,15 +419,19 @@ function exact_penalty_method!(
         sub_kwargs...,
     ),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
-        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(1e-10)
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1e-10)
     ),
     kwargs...,
-) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
+) where {
+    O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective},
+    Pr<:Union{F,AbstractManoptProblem} where {F},
+}
+    sub_state_storage = maybe_wrap_evaluation_type(sub_state)
     emps = ExactPenaltyMethodState(
         M,
-        p,
         sub_problem,
-        sub_state;
+        sub_state_storage;
+        p=p,
         ϵ=ϵ,
         ϵ_min=ϵ_min,
         u=u,
@@ -445,12 +468,12 @@ function step_solver!(
 ) where {P}
     M = get_manifold(amp)
     # use subsolver to minimize the smoothed penalized function
-    set_manopt_parameter!(epms.sub_problem, :Objective, :Cost, :ρ, epms.ρ)
-    set_manopt_parameter!(epms.sub_problem, :Objective, :Cost, :u, epms.u)
-    set_manopt_parameter!(epms.sub_problem, :Objective, :Gradient, :ρ, epms.ρ)
-    set_manopt_parameter!(epms.sub_problem, :Objective, :Gradient, :u, epms.u)
+    set_parameter!(epms.sub_problem, :Objective, :Cost, :ρ, epms.ρ)
+    set_parameter!(epms.sub_problem, :Objective, :Cost, :u, epms.u)
+    set_parameter!(epms.sub_problem, :Objective, :Gradient, :ρ, epms.ρ)
+    set_parameter!(epms.sub_problem, :Objective, :Gradient, :u, epms.u)
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
-    update_stopping_criterion!(epms, :MinIterateChange, epms.ϵ)
+    set_parameter!(epms, :StoppingCriterion, :MinIterateChange, epms.ϵ)
 
     epms.p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
 

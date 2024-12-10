@@ -1,4 +1,3 @@
 ignore:
-  - "src/examples/.*"
-  - "src/tutorials/.*"
   - "src/helpers/exports/.*" # exclude exports, since there are no CI tests for Asy-exports
+  - "src/documentation_glossary.jl" # exclude this since it is just use to create the docs and code cov goes bogus on this.

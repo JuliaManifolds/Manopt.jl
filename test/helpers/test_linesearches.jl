@@ -59,7 +59,7 @@ using Test
         rosenbrock_throw, rosenbrock_grad!; evaluation=InplaceEvaluation()
     )
     mp_throw = DefaultManoptProblem(M, mgo_throw)
-    st_qn = QuasiNewtonState(M, x0)
+    st_qn = QuasiNewtonState(M; p=x0)
     initialize_solver!(mp, st_qn)
     ls_mt = Manopt.LineSearchesStepsize(M, LineSearches.MoreThuente())
     @test_throws ErrorException ls_mt(mp_throw, st_qn, 1; fp=rosenbrock(M, x0))

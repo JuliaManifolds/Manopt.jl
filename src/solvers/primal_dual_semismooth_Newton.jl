@@ -1,43 +1,50 @@
-@doc raw"""
-    primal_dual_semismooth_Newton(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
-
-Perform the Primal-Dual Riemannian semismooth Newton algorithm.
-
+_doc_PDSN_formula = raw"""
 Given a `cost` function ``\mathcal E: \mathcal M → \overline{ℝ}`` of the form
 ```math
 \mathcal E(p) = F(p) + G( Λ(p) ),
 ```
 where ``F: \mathcal M → \overline{ℝ}``, ``G: \mathcal N → \overline{ℝ}``,
-and ``\Lambda: \mathcal M → \mathcal N``. The remaining input parameters are
+and ``Λ: \mathcal M → \mathcal N``. The remaining input parameters are
+"""
 
-* `p, X`:                          primal and dual start points ``p∈\mathcal M`` and ``X ∈ T_n\mathcal N``
-* `m,n`:                           base points on ``\mathcal M`` and ``\mathcal N``, respectively.
+_doc_PDSN = """
+    primal_dual_semismooth_Newton(M, N, cost, p, X, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_dual_G, linearized_operator, adjoint_linearized_operator)
+
+Perform the Primal-Dual Riemannian semismooth Newton algorithm.
+
+$(_doc_PDSN_formula)
+
+* `p, X`:                          primal and dual start points ``p∈$(_math(:M))`` and ``X ∈ T_n$(_tex(:Cal, "N"))``
+* `m,n`:                           base points on ``$(_math(:M))`` and ``$(_tex(:Cal, "N"))`, respectively.
 * `linearized_forward_operator`:   the linearization ``DΛ(⋅)[⋅]`` of the operator ``Λ(⋅)``.
-* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  T_{m}\mathcal M → T_{Λ(m)}\mathcal N``
-* `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^\ast_n``
-* `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^\ast_n``
+* `adjoint_linearized_operator`:   the adjoint ``DΛ^*`` of the linearized operator ``DΛ(m):  $(_math(:TpM; p="m")) → $(_math(:TpM; M="N", p="Λ(m)"))``
+* `prox_F, prox_G_Dual`:           the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
+* `diff_prox_F, diff_prox_dual_G`: the (Clarke Generalized) differentials of the proximal maps of ``F`` and ``G^$(_tex(:ast))_n``
 
 For more details on the algorithm, see [DiepeveenLellmann:2021](@cite).
 
-# Optional parameters
+# Keyword arguments
 
-* `primal_stepsize`:           (`1/sqrt(8)`) proximal parameter of the primal prox
-* `Λ`:                         (`missing`) the exact operator, that is required if `Λ(m)=n` does not hold;
+* `dual_stepsize=1/sqrt(8)`: proximal parameter of the dual prox
+$(_var(:Keyword, :evaluation))
+$(_var(:Keyword, :inverse_retraction_method))
+* `Λ=missing`: the exact operator, that is required if `Λ(m)=n` does not hold;
   `missing` indicates, that the forward operator is exact.
-* `dual_stepsize`:             (`1/sqrt(8)`) proximal parameter of the dual prox
-* `reg_param`:                 (`1e-5`) regularisation parameter for the Newton matrix
+* `primal_stepsize=1/sqrt(8)`: proximal parameter of the primal prox
+* `reg_param=1e-5`: regularisation parameter for the Newton matrix
   Note that this changes the arguments the `forward_operator` is called.
-* `stopping_criterion`:        (`stopAtIteration(50)`) a [`StoppingCriterion`](@ref)
-* `update_primal_base`:        (`missing`) function to update `m` (identity by default/missing)
-* `update_dual_base`:          (`missing`) function to update `n` (identity by default/missing)
-* `retraction_method`:         (`default_retraction_method(M, typeof(p))`) the retraction to use
-* `inverse_retraction_method`: (`default_inverse_retraction_method(M, typeof(p))`) an inverse retraction to use.
-* `vector_transport_method`:   (`default_vector_transport_method(M, typeof(p))`) a vector transport to use
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(50)`"))
+* `update_primal_base=missing`: function to update `m` (identity by default/missing)
+* `update_dual_base=missing`: function to update `n` (identity by default/missing)
+$(_var(:Keyword, :vector_transport_method))
 
-# Output
+$(_note(:OtherKeywords))
 
-the obtained (approximate) minimizer ``p^*``, see [`get_solver_return`](@ref) for details
+$(_note(:OutputSection))
 """
+
+@doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton(
     M::AbstractManifold,
     N::AbstractManifold,
@@ -77,12 +84,8 @@ function primal_dual_semismooth_Newton(
         kwargs...,
     )
 end
-@doc raw"""
-    primal_dual_semismooth_Newton(M, N, cost, x0, ξ0, m, n, prox_F, diff_prox_F, prox_G_dual, diff_prox_G_dual, linearized_forward_operator, adjoint_linearized_operator)
 
-Perform the Riemannian Primal-dual Riemannian semismooth Newton algorithm in place of `x`, `ξ`, and potentially `m`,
-`n` if they are not fixed. See [`primal_dual_semismooth_Newton`](@ref) for details and optional parameters.
-"""
+@doc "$(_doc_PDSN)"
 function primal_dual_semismooth_Newton!(
     M::mT,
     N::nT,
@@ -133,11 +136,11 @@ function primal_dual_semismooth_Newton!(
     dpdmsno = decorate_objective!(M, pdmsno; kwargs...)
     tmp = TwoManifoldProblem(M, N, dpdmsno)
     pdsn = PrimalDualSemismoothNewtonState(
-        M,
-        m,
-        n,
-        p,
-        X;
+        M;
+        m=m,
+        n=n,
+        p=p,
+        X=X,
         primal_stepsize=primal_stepsize,
         dual_stepsize=dual_stepsize,
         regularization_parameter=reg_param,

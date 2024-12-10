@@ -113,4 +113,3 @@ function get_proximal_map!(
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
-

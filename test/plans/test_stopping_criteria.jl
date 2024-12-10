@@ -9,7 +9,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
     @testset "Generic Tests" begin
         @test_throws ErrorException get_stopping_criteria(myStoppingCriteriaSet())
 
-        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(0.1))
+        s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
         @test startswith(repr(s), "StopWhenAll with the")
         @test get_reason(s) === ""
@@ -17,7 +17,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s.criteria[2].last_change = 0.05
         s.criteria[2].at_iteration = 3
         @test length(get_reason(s.criteria[2])) > 0
-        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(0.1)])
+        s2 = StopWhenAll([StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1)])
         @test get_stopping_criteria(s)[1].max_iterations ==
             get_stopping_criteria(s2)[1].max_iterations
 
@@ -25,7 +25,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         p = DefaultManoptProblem(
             Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         )
-        s = GradientDescentState(Euclidean(), 1.0)
+        s = GradientDescentState(Euclidean(); p=1.0)
         @test !s3(p, s, 1)
         @test length(get_reason(s3)) == 0
         s.p = 0.3
@@ -57,7 +57,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         an = get_reason(sm)
         m = match(r"^((.*)\n)+", an)
         @test length(m.captures) == 2 # both have to be active
-        update_stopping_criterion!(s3, :MinCost, 1e-2)
+        set_parameter!(s3, :MinCost, 1e-2)
         @test s3.threshold == 1e-2
         # Dummy without iterations has a reasonable fallback
         @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
@@ -80,15 +80,15 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s(p, o, 2) == true
         @test length(get_reason(s)) > 0
         @test_throws ErrorException StopAfter(Second(-1))
-        @test_throws ErrorException update_stopping_criterion!(s, :MaxTime, Second(-1))
-        update_stopping_criterion!(s, :MaxTime, Second(2))
+        @test_throws ErrorException set_parameter!(s, :MaxTime, Second(-1))
+        set_parameter!(s, :MaxTime, Second(2))
         @test s.threshold == Second(2)
     end
 
     @testset "Stopping Criterion &/| operators" begin
         a = StopAfterIteration(200)
-        b = StopWhenChangeLess(1e-6)
-        sb = "StopWhenChangeLess(1.0e-6)\n    $(Manopt.status_summary(b))"
+        b = StopWhenChangeLess(Euclidean(), 1e-6)
+        sb = "StopWhenChangeLess with threshold 1.0e-6.\n    $(Manopt.status_summary(b))"
         @test repr(b) == sb
         @test get_reason(b) == ""
         b2 = StopWhenChangeLess(Euclidean(), 1e-6) # second constructor
@@ -108,14 +108,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test typeof(d) === typeof(a & b & c)
         @test typeof(d) === typeof(a & (b & c))
         @test typeof(d) === typeof((a & b) & c)
-        update_stopping_criterion!(d, :MinIterateChange, 1e-8)
+        set_parameter!(d, :MinIterateChange, 1e-8)
         @test d.criteria[2].threshold == 1e-8
         @test length((d & d).criteria) == 6
         e = a | b | c
         @test typeof(e) === typeof(a | b | c)
         @test typeof(e) === typeof(a | (b | c))
         @test typeof(e) === typeof((a | b) | c)
-        update_stopping_criterion!(e, :MinGradNorm, 1e-9)
+        set_parameter!(e, :MinGradNorm, 1e-9)
         @test e.criteria[3].threshold == 1e-9
         @test length((e | e).criteria) == 6
     end
@@ -158,7 +158,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
             @test endswith(Manopt.status_summary(swgcl), "reached")
             @test length(get_reason(swgcl)) > 0
         end
-        update_stopping_criterion!(swgcl2, :MinGradientChange, 1e-9)
+        set_parameter!(swgcl2, :MinGradientChange, 1e-9)
         @test swgcl2.threshold == 1e-9
     end
 
@@ -167,7 +167,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         ho = ManifoldHessianObjective(x -> x, (M, x) -> x, (M, x) -> x, x -> x)
         hp = DefaultManoptProblem(Euclidean(), ho)
         tcgs = TruncatedConjugateGradientState(
-            TangentSpace(Euclidean(), 1.0), 0.0; trust_region_radius=2.0, randomize=false
+            TangentSpace(Euclidean(), 1.0); X=0.0, trust_region_radius=2.0, randomize=false
         )
         tcgs.model_value = 1.0
         s = StopWhenModelIncreased()
@@ -183,9 +183,9 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s2(hp, tcgs, 1)
         @test length(get_reason(s2)) > 0
         s3 = StopWhenResidualIsReducedByFactorOrPower()
-        update_stopping_criterion!(s3, :ResidualFactor, 0.5)
+        set_parameter!(s3, :ResidualFactor, 0.5)
         @test s3.κ == 0.5
-        update_stopping_criterion!(s3, :ResidualPower, 0.5)
+        set_parameter!(s3, :ResidualPower, 0.5)
         @test s3.θ == 0.5
         @test get_reason(s3) == ""
         # Trigger manually
@@ -197,20 +197,20 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
-            Euclidean(),
-            1.0;
+            Euclidean();
+            p=1.0,
             stopping_criterion=StopAfterIteration(100),
-            stepsize=ConstantStepsize(Euclidean()),
+            stepsize=Manopt.ConstantStepsize(Euclidean()),
         )
         s1 = StopWhenStepsizeLess(0.5)
         @test !s1(dmp, gds, 1)
         @test length(get_reason(s1)) == 0
-        gds.stepsize = ConstantStepsize(; stepsize=0.25)
+        gds.stepsize = Manopt.ConstantStepsize(Euclidean(), 0.25)
         @test s1(dmp, gds, 2)
         @test length(get_reason(s1)) > 0
-        update_stopping_criterion!(gds, :MaxIteration, 200)
+        set_parameter!(gds, :StoppingCriterion, :MaxIteration, 200)
         @test gds.stop.max_iterations == 200
-        update_stopping_criterion!(s1, :MinStepsize, 1e-1)
+        set_parameter!(s1, :MinStepsize, 1e-1)
         @test s1.threshold == 1e-1
     end
 
@@ -218,14 +218,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
-            Euclidean(),
-            1.0;
+            Euclidean();
+            p=1.0,
             stopping_criterion=StopAfterIteration(100),
-            stepsize=ConstantStepsize(Euclidean()),
+            stepsize=Manopt.ConstantStepsize(Euclidean()),
         )
         swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1e-5)
         @test startswith(repr(swecl), "StopWhenEntryChangeLess\n")
-        update_stopping_criterion!(swecl, :Threshold, 1e-4)
+        set_parameter!(swecl, :Threshold, 1e-4)
         @test swecl.threshold == 1e-4
         @test !swecl(dmp, gds, 1) #First call stores
         @test length(get_reason(swecl)) == 0
@@ -249,7 +249,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         c2 = StopWhenSubgradientNormLess(1e-6)
         sc2 = "StopWhenSubgradientNormLess(1.0e-6)\n    $(Manopt.status_summary(c2))"
         @test repr(c2) == sc2
-        st = SubGradientMethodState(M, p; stopping_criterion=c2)
+        st = SubGradientMethodState(M; p=p, stopping_criterion=c2)
         st.X = ∂f(M, 2p)
         @test !c2(mp, st, 1)
         st.X = ∂f(M, p)
@@ -258,7 +258,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         c2(mp, st, 0) # verify that reset works
         @test length(get_reason(c2)) == 0
         @test Manopt.indicates_convergence(c2)
-        update_stopping_criterion!(c2, :MinSubgradNorm, 1e-8)
+        set_parameter!(c2, :MinSubgradNorm, 1e-8)
         @test c2.threshold == 1e-8
     end
 
@@ -274,7 +274,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         s.p = p
         @test sc1(mp, s, 1) #always returns true since `f` is always NaN
         s.p = [0.0, 0.1]
-        @test !sc1(mp, s, 0) # test reset – triggers again
+        @test !sc1(mp, s, 0) # test reset. triggers again
         @test length(get_reason(sc1)) == 0
         @test sc1.at_iteration == -1
         # Trigger manually
@@ -287,7 +287,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test sc2(mp, s, 1) #always returns true since p was now set to NaN
         @test length(get_reason(sc2)) > 0
         s.p = p
-        @test !sc2(mp, s, 0) # test reset, though this als already triggers
+        @test !sc2(mp, s, 0) # test reset, though this already again triggers
         @test length(get_reason(sc2)) == 0 # verify reset
         @test sc2.at_iteration == -1
         # Trigger manually

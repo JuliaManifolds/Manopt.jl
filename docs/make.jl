@@ -11,25 +11,74 @@ Render the `Manopt.jl` documentation with optional arguments
 
 Arguments
 * `--exclude-tutorials` - exclude the tutorials from the menu of Documenter,
-  this can be used if you do not have Quarto installed to still be able to render the docs
-  locally on this machine. This option should not be set on CI.
+  This can be used if not all tutorials are rendered and you want to therefore exclude links
+  to these, especially the corresponding menu. This option should not be set on CI.
+  Locally this is also set if `--quarto` is not set and not all tutorials are rendered.
 * `--help`              - print this help and exit without rendering the documentation
-* `--prettyurls`        – toggle the prettyurls part to true (which is otherwise only true on CI)
-* `--quarto`            – run the Quarto notebooks from the `tutorials/` folder before generating the documentation
-  this has to be run locally at least once for the `tutorials/*.md` files to exist that are included in
-  the documentation (see `--exclude-tutorials`) for the alternative.
-  If they are generated once they are cached accordingly.
+* `--prettyurls`        – toggle the pretty urls part to true, which is always set on CI
+* `--quarto`            – (re)run the Quarto notebooks from the `tutorials/` folder before
+  generating the documentation. If they are generated once they are cached accordingly.
   Then you can spare time in the rendering by not passing this argument.
   If quarto is not run, some tutorials are generated as empty files, since they
-  are referenced from within the documentation. These are currently
-  `Optimize.md` and `ImplementOwnManifold.md`.
-""",
+  are referenced from within the documentation.
+  These are currently `Optimize.md` and `ImplementOwnManifold.md`.
+"""
     )
     exit(0)
 end
 
+run_quarto = "--quarto" in ARGS
+run_on_CI = (get(ENV, "CI", nothing) == "true")
+tutorials_in_menu = !("--exclude-tutorials" ∈ ARGS)
 #
-# (a) if docs is not the current active environment, switch to it
+#
+# (a) setup the tutorials menu – check whether all files exist
+tutorials_menu =
+    "How to..." => [
+        "🏔️ Get started: optimize." => "tutorials/Optimize.md",
+        "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
+        "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
+        "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
+        "Count and use a cache" => "tutorials/CountAndCache.md",
+        "Print debug output" => "tutorials/HowToDebug.md",
+        "Record values" => "tutorials/HowToRecord.md",
+        "Implement a solver" => "tutorials/ImplementASolver.md",
+        "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
+        "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
+        "Do geodesic regression" => "tutorials/GeodesicRegression.md",
+    ]
+# Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
+all_tutorials_exist = true
+for (name, file) in tutorials_menu.second
+    fn = joinpath(@__DIR__, "src/", file)
+    if !isfile(fn) || filesize(fn) == 0 # nonexistent or empty file
+        global all_tutorials_exist = false
+        if !run_quarto
+            @warn "Tutorial $name does not exist at $fn."
+            if (!isfile(fn)) &&
+                (endswith(file, "Optimize.md") || endswith(file, "ImplementOwnManifold.md"))
+                @warn "Generating empty file, since this tutorial is linked to from the documentation."
+                touch(fn)
+            end
+        end
+    end
+end
+if !all_tutorials_exist && !run_quarto && !run_on_CI
+    @warn """
+        Not all tutorials exist. Run `make.jl --quarto` to generate them. For this run they are excluded from the menu.
+    """
+    tutorials_in_menu = false
+end
+if !tutorials_in_menu
+    @warn """
+    You are either explicitly or implicitly excluding the tutorials from the documentation.
+    You will not be able to see their menu entries nor their rendered pages.
+    """
+    run_on_CI &&
+        (@error "On CI, the tutorials have to be either rendered with Quarto or be cached.")
+end
+#
+# (b) if docs is not the current active environment, switch to it
 # (from https://github.com/JuliaIO/HDF5.jl/pull/1020/) 
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     using Pkg
@@ -39,40 +88,28 @@ if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     Pkg.instantiate()
 end
 
-# (b) Did someone say render?
-if "--quarto" ∈ ARGS
+# (b) If quarto is set, or we are on CI, run quarto
+if run_quarto || run_on_CI
     using CondaPkg
     CondaPkg.withenv() do
         @info "Rendering Quarto"
         tutorials_folder = (@__DIR__) * "/../tutorials"
         # instantiate the tutorials environment if necessary
         Pkg.activate(tutorials_folder)
+        # For a breaking release -> also set the tutorials folder to the most recent version
+        Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
         Pkg.resolve()
         Pkg.instantiate()
         Pkg.build("IJulia") # build `IJulia` to the right version.
         Pkg.activate(@__DIR__) # but return to the docs one before
         run(`quarto render $(tutorials_folder)`)
     end
-else # fallback to at least create empty files for Optimize and Implement
-    touch(joinpath(@__DIR__, "src/tutorials/Optimize.md"))
-    touch(joinpath(@__DIR__, "src/tutorials/ImplementOwnManifold.md"))
-end
-
-tutorials_in_menu = true
-if "--exclude-tutorials" ∈ ARGS
-    @warn """
-    You are excluding the tutorials from the Menu,
-    which might be done if you can not render them locally.
-
-    Remember that this should never be done on CI for the full documentation.
-    """
-    tutorials_in_menu = false
 end
 
 # (c) load necessary packages for the docs
 using Documenter
 using DocumenterCitations, DocumenterInterLinks
-using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots
+using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
 # (d) add contributing.md to docs
@@ -99,20 +136,6 @@ for (md_file, doc_file) in
 end
 
 ## Build tutorials menu
-tutorials_menu =
-    "How to..." => [
-        "🏔️ Get started: optimize." => "tutorials/Optimize.md",
-        "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
-        "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
-        "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
-        "Count and use a cache" => "tutorials/CountAndCache.md",
-        "Print debug output" => "tutorials/HowToDebug.md",
-        "Record values" => "tutorials/HowToRecord.md",
-        "Implement a solver" => "tutorials/ImplementASolver.md",
-        "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
-        "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
-        "Do geodesic regression" => "tutorials/GeodesicRegression.md",
-    ]
 # (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 links = InterLinks(
@@ -121,8 +144,8 @@ links = InterLinks(
 )
 makedocs(;
     format=Documenter.HTML(;
-        prettyurls=(get(ENV, "CI", nothing) == "true") || ("--prettyurls" ∈ ARGS),
-        assets=["assets/favicon.ico", "assets/citations.css"],
+        prettyurls=run_on_CI || ("--prettyurls" ∈ ARGS),
+        assets=["assets/favicon.ico", "assets/citations.css", "assets/link-icons.css"],
         size_threshold_warn=200 * 2^10, # raise slightly from 100 to 200 KiB
         size_threshold=300 * 2^10,      # raise slightly 200 to to 300 KiB
     ),
@@ -168,6 +191,7 @@ makedocs(;
             "Chambolle-Pock" => "solvers/ChambollePock.md",
             "CMA-ES" => "solvers/cma_es.md",
             "Conjugate gradient descent" => "solvers/conjugate_gradient_descent.md",
+            "Conjugate Residual" => "solvers/conjugate_residual.md",
             "Convex bundle method" => "solvers/convex_bundle_method.md",
             "Cyclic Proximal Point" => "solvers/cyclic_proximal_point.md",
             "Difference of Convex" => "solvers/difference_of_convex.md",
@@ -175,6 +199,7 @@ makedocs(;
             "Exact Penalty Method" => "solvers/exact_penalty_method.md",
             "Frank-Wolfe" => "solvers/FrankWolfe.md",
             "Gradient Descent" => "solvers/gradient_descent.md",
+            "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",

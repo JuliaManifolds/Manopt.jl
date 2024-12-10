@@ -5,8 +5,8 @@ CurrentModule = Manopt
 ```
 
 ```@docs
-  gradient_descent
-  gradient_descent!
+gradient_descent
+gradient_descent!
 ```
 
 ## State
@@ -20,11 +20,21 @@ GradientDescentState
 A field of the options is the `direction`, a [`DirectionUpdateRule`](@ref), which by default [`IdentityUpdateRule`](@ref) just evaluates the gradient but can be enhanced for example to
 
 ```@docs
+AverageGradient
 DirectionUpdateRule
 IdentityUpdateRule
 MomentumGradient
-AverageGradient
 Nesterov
+```
+
+which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
+elements
+
+```@docs
+Manopt.AverageGradientRule
+Manopt.ConjugateDescentCoefficientRule
+Manopt.MomentumGradientRule
+Manopt.NesterovRule
 ```
 
 ## Debug actions

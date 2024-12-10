@@ -30,7 +30,12 @@ All fields from above are keyword arguments with the following defaults.
 * `inverse_retraction_method = `[`default_inverse_retraction_method`](@ref)`(M, typeof(p))`
 """
 mutable struct ProximalGradientMethodState{
-    P,T,S<:StoppingCriterion,F,RM<:AbstractRetractionMethod,IRM<:AbstractInverseRetractionMethod
+    P,
+    T,
+    S<:StoppingCriterion,
+    F,
+    RM<:AbstractRetractionMethod,
+    IRM<:AbstractInverseRetractionMethod,
 } <: AbstractManoptSolverState
     λ::F
     p::P
@@ -50,7 +55,13 @@ function ProximalGradientMethodState(
     inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
 ) where {P,T,S,F,RM<:AbstractRetractionMethod,IRM<:AbstractInverseRetractionMethod}
     return ProximalGradientMethodState{P,T,S,F,RM,IRM}(
-        λ, p, copy(M, p), stopping_criterion, X, retraction_method, inverse_retraction_method
+        λ,
+        p,
+        copy(M, p),
+        stopping_criterion,
+        X,
+        retraction_method,
+        inverse_retraction_method,
     )
 end
 get_iterate(pgms::ProximalGradientMethodState) = pgms.p
@@ -161,7 +172,9 @@ function proximal_gradient_method!(
     mpgo::O,
     p;
     λ=i -> 1.0,
-    stopping_criterion=StopWhenGradientMappingNormLess(1e-2) | StopAfterIteration(5000) | StopWhenChangeLess(M, 1e-9),
+    stopping_criterion=StopWhenGradientMappingNormLess(1e-2) |
+                       StopAfterIteration(5000) |
+                       StopWhenChangeLess(M, 1e-9),
     X=zero_vector(M, p),
     retraction_method=default_retraction_method(M, typeof(p)),
     inverse_retraction_method=default_inverse_retraction_method(M, typeof(p)),
@@ -193,7 +206,12 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodSt
     get_gradient!(amp, pgms.X, pgms.p)
     copyto!(M, pgms.q, pgms.p)
     # (a) + (b) gradient and prox steps
-    get_proximal_map!(amp, pgms.p, pgms.λ(i), retract!(M, pgms.p, pgms.p, -pgms.λ(i) * pgms.X, pgms.retraction_method))
+    get_proximal_map!(
+        amp,
+        pgms.p,
+        pgms.λ(i),
+        retract!(M, pgms.p, pgms.p, -pgms.λ(i) * pgms.X, pgms.retraction_method),
+    )
     return pgms
 end
 
@@ -236,7 +254,10 @@ function (sc::StopWhenGradientMappingNormLess)(
         sc.at_iteration = -1
     end
     if (i > 0)
-        sc.last_change = 1/s.λ(i) * norm(M, s.q, inverse_retract(M, s.q, get_iterate(s), s.inverse_retraction_method))
+        sc.last_change =
+            1 / s.λ(i) * norm(
+                M, s.q, inverse_retract(M, s.q, get_iterate(s), s.inverse_retraction_method)
+            )
         if sc.last_change < sc.threshold
             sc.at_iteration = i
             return true
@@ -257,7 +278,9 @@ function status_summary(c::StopWhenGradientMappingNormLess)
 end
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
 function show(io::IO, c::StopWhenGradientMappingNormLess)
-    return print(io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))")
+    return print(
+        io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
+    )
 end
 
 """

@@ -1,6 +1,11 @@
-# Manopt.jl
+<div align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme-dark.png">
+      <img alt="Manifolds.jl logo with text on the side" src="https://raw.githubusercontent.com/JuliaManifolds/Manopt.jl/master/docs/src/assets/logo-text-readme.png">
+    </picture>
+</div>
 
-Optimization Algorithm on Riemannian Manifolds.
+## Optimization Algorithm on Riemannian Manifolds.
 
 [![](https://img.shields.io/badge/docs-stable-blue?logo=Julia&logoColor=white)](https://manoptjl.org/stable)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
