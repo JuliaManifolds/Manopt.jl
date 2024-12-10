@@ -5,15 +5,36 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.3] - unreleased
+## [0.5.6] - unreleased
 
 ### Added
 
 * (planned) a robust variant of Levenberg Marquard
+* icons upfront external links when they link to another package or wikipedia.
 
 ### Changed
 
 * (planned) Levenberg-Marquardt now internally uses a `VectorGradientFunction` and hence also accepts a “gradient matrix” and a vector of gradient functions instead of a Jacobian (in a basis of the tangent vectors).
+
+## [0.5.4] - November 27, 2024
+
+### Added
+
+* An automated detection whether the tutorials are present
+   if not an also no quarto run is done, an automated `--exlcude-tutorials` option is added.
+* Support for ManifoldDiff 0.4
+
+## [0.5.3] – October 18, 2024
+
+### Added
+
+* `StopWhenChangeLess`, `StopWhenGradientChangeLess` and `StopWhenGradientLess` can now use the new idea (ManifoldsBase.jl 0.15.18) of different outer norms on manifolds with components like power and product manifolds and all others that support this from the `Manifolds.jl` Library, like `Euclidean`
+
+### Changed
+
+* stabilize `max_Stepzise` to also work when `injectivity_radius` dos not exist.
+  It however would warn new users, that activate tutorial mode.
+* Start a `ManoptTestSuite` subpackage to store dummy types and common test helpers in.
 
 ## [0.5.2] – October 5, 2024
 
