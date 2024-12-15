@@ -99,7 +99,7 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 define!(:Math, :distance, raw"\mathrm{d}")
 define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Manifold, :symbol, (; M="M") -> _tex(:Cal, M))
-define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :Manifold, :description, "the Riemannian manifold")
 define!(:Math, :Iterate, (; p="p", k="k") -> "$(p)^{($(k))}")
 define!(
     :Math,
