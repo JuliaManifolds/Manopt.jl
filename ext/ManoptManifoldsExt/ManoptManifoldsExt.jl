@@ -19,11 +19,7 @@ using ManifoldDiff:
     adjoint_differential_shortest_geodesic_startpoint,
     adjoint_differential_shortest_geodesic_endpoint
 
-if isdefined(Base, :get_extension)
-    using Manifolds
-else
-    using ..Manifolds
-end
+using Manifolds
 
 Rn(::Val{:Manifolds}, args...; kwargs...) = Euclidean(args...; kwargs...)
 

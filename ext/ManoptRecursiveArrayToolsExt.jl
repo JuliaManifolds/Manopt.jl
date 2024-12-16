@@ -11,11 +11,7 @@ import Manopt:
     set_parameter!
 using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
 
-if isdefined(Base, :get_extension)
-    using RecursiveArrayTools
-else
-    using ..RecursiveArrayTools
-end
+using RecursiveArrayTools
 
 @doc raw"""
     X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)

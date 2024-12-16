@@ -3,14 +3,7 @@ module ManoptLineSearchesExt
 using Manopt
 import Manopt: LineSearchesStepsize
 using ManifoldsBase
-
-if isdefined(Base, :get_extension)
-    using LineSearches
-else
-    # imports need to be relative for Requires.jl-based workflows:
-    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
-    using ..LineSearches
-end
+using LineSearches
 
 function (cs::Manopt.LineSearchesStepsize)(
     mp::AbstractManoptProblem,

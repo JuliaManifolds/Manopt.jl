@@ -10,15 +10,8 @@ using ManifoldsBase
 using LinearAlgebra: tril
 using SparseArrays: sparse
 
-if isdefined(Base, :get_extension)
-    using QuadraticModels: QuadraticModel
-    using RipQP: ripqp
-else
-    # imports need to be relative for Requires.jl-based workflows:
-    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
-    using ..QuadraticModels: QuadraticModel
-    using ..RipQP: ripqp
-end
+using QuadraticModels: QuadraticModel
+using RipQP: ripqp
 
 function convex_bundle_method_subsolver(
     M::A, p_last_serious, linearization_errors, transported_subgradients

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.5] unreleased
 
+### Changed
+
+* Minimum Julia version is now 1.10 (the LTS which replaced 1.6)
+
 ### Removed
 
 * The geodesic regression example, first because it is not correct, second because it should become part of ManoptExamples.jl once it is correct.
