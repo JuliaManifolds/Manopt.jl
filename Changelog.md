@@ -5,24 +5,27 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.6] - unreleased
+## [0.5.5] unreleased
 
 ### Added
 
-* (planned) a robust variant of Levenberg Marquard
-* icons upfront external links when they link to another package or wikipedia.
+* the Levenberg-Marquardt algorithm internally uses a `VectorGradientFunction`,
+which males a “gradient matrix” and a vector of gradient functions available additionally to
+a Jacobian, that requires bases for tangent spaces
 
-### Changed
 
-* (planned) Levenberg-Marquardt now internally uses a `VectorGradientFunction` and hence also accepts a “gradient matrix” and a vector of gradient functions instead of a Jacobian (in a basis of the tangent vectors).
+### Removed
 
-## [0.5.4] - November 27, 2024
+* The geodesic regression example, first because it is not correct, second because it should become part of ManoptExamples.jl once it is correct.
+
+## [0.5.4] - December 11, 2024
 
 ### Added
 
 * An automated detection whether the tutorials are present
    if not an also no quarto run is done, an automated `--exlcude-tutorials` option is added.
 * Support for ManifoldDiff 0.4
+* icons upfront external links when they link to another package or wikipedia.
 
 ## [0.5.3] – October 18, 2024
 

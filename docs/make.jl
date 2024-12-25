@@ -45,7 +45,6 @@ tutorials_menu =
         "Implement a solver" => "tutorials/ImplementASolver.md",
         "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
         "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
-        "Do geodesic regression" => "tutorials/GeodesicRegression.md",
     ]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true
