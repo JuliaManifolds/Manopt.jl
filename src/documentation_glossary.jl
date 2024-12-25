@@ -71,6 +71,8 @@ define!(
         "\n" *
         raw"\end{cases}",
 )
+define!(:LaTeX, :cdots, raw"\cdots")
+define!(:LaTeX, :ddots, raw"\ddots")
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
@@ -82,13 +84,21 @@ define!(:LaTeX, :log, raw"\log")
 define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
 define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
+define!(
+    :LaTeX,
+    :pmatrix,
+    (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
+)
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :sum, raw"\sum")
+define!(:LaTeX, :transp, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
+define!(:LaTeX, :transp, raw"\mathrm{T}")
+define!(:LaTeX, :vdots, raw"\vdots")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
@@ -258,15 +268,13 @@ define!(
     :NonLinearLeastSquares,
     (; M="M", p="p") -> """
 ```math
-$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2))$(_tex(:sum))_{i=1}^n ρ_i$(_tex(:bigl))( $(_tex(:abs, "f_i($p)"))^2 $(_tex(:bigr)))
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2)) ρ$(_tex(:bigl))( $(_tex(:sum))_{i=1}^n $(_tex(:abs, "f_i($p)"))^2 $(_tex(:bigr)))
 ```
 
 where ``f: $(_math(:M; M=M)) → ℝ^n`` is written with component functions ``f_i: $(_math(:M; M=M)) → ℝ``,
 and each component function is continuously differentiable.
-The functions ``ρ_i: ℝ → ℝ`` can be seen as regularisers of the single least squares terms
-and are twice continuously differentiable.
-
-For the case ``ρ_i(x) = x`` this yields the Nonlinear Least Squares objective
+The function ``ρ: ℝ → ℝ`` can be seen as smoothing or regularisation  of the least squares term.
+It is assumed to be twice continuously differentiable and its default is ``ρ(x) = x``.
 """,
 )
 

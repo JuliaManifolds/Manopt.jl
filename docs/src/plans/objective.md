@@ -129,12 +129,6 @@ and internally
 get_gradient_function
 ```
 
-#### Internal helpers
-
-```@docs
-get_gradient_from_Jacobian!
-```
-
 ### Subgradient objective
 
 ```@docs
@@ -262,6 +256,7 @@ Manopt.FunctionVectorialType
 #### Access functions
 
 ```@docs
+Manopt.get_jacobian
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)

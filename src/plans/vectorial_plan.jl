@@ -68,9 +68,10 @@ format ``f`` is implemented as.
 
 There are three different representations of ``f``, which might be beneficial in one or
 the other situation:
-* the [`FunctionVectorialType`](@ref),
-* the [`ComponentVectorialType`](@ref),
-* the [`CoordinateVectorialType`](@ref) with respect to a specific basis of the tangent space.
+* the [`FunctionVectorialType`](@ref) storing a single function ``f`` that returns a vector,
+* the [`ComponentVectorialType`](@ref) storing a vector of functions ``f_i`` that return a single value each,
+* the [`CoordinateVectorialType`](@ref) storing functions with respect to a specific basis of the tangent space for gradients and Hessians.
+  Gradients of this type are usually referred to as Jacobians.
 
 For the [`ComponentVectorialType`](@ref) imagine that ``f`` could also be written
 using its component functions,
@@ -89,9 +90,6 @@ For the  [`FunctionVectorialType`](@ref) ``f`` is implemented as a single functi
 `f(M, p)`, that returns an `AbstractArray`.
 And advantage here is, that this is a single function. A disadvantage might be,
 that if this is expensive even to compute a single component, all of `f` has to be evaluated
-
-For the [`ComponentVectorialType`](@ref) of `f`, each of the component functions
-is a (classical) objective.
 """
 abstract type AbstractVectorFunction{E<:AbstractEvaluationType,FT<:AbstractVectorialType} <:
               Function end
@@ -109,29 +107,29 @@ abstract type AbstractVectorGradientFunction{
     E<:AbstractEvaluationType,FT<:AbstractVectorialType,JT<:AbstractVectorialType
 } <: AbstractVectorFunction{E,FT} end
 
-@doc raw"""
+@doc """
     VectorGradientFunction{E, FT, JT, F, J, I} <: AbstractVectorGradientFunction{E, FT, JT}
 
-Represent a function ``f:\mathcal M → ℝ^n`` including it first derivative,
+Represent a function ``f:$(_math(:M)) → ℝ^n`` including it first derivative,
 either as a vector of gradients of a Jacobian
 
-And hence has a gradient ``\oepratorname{grad} f_i(p) ∈ T_p\mathcal M``.
+And hence has a gradient ``$(_tex(:grad)) f_i(p) ∈ $(_math(:TpM))`.
 Putting these gradients into a vector the same way as the functions, yields a
 [`ComponentVectorialType`](@ref)
 
 ```math
-\operatorname{grad} f(p) = \Bigl( \operatorname{grad} f_1(p), \operatorname{grad} f_2(p), …, \operatorname{grad} f_n(p) \Bigr)^{\mathrm{T}}
-∈ (T_p\mathcal M)^n
+$(_tex(:grad)) f(p) = $(_tex(:Bigl))( $(_tex(:grad)) f_1(p), $(_tex(:grad)) f_2(p), …, $(_tex(:grad)) f_n(p) $(_tex(:Bigr)))^$(_tex(:transp))
+∈ ($(_math(:TpM)))^n
 ```
 
 And advantage here is, that again the single components can be evaluated individually
 
 # Fields
 
-* `value!!`:          the cost function ``f``, which can take different formats
-* `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!`:     the Jacobian of ``f``
-* `jacobian_type`: indicating / storing data for the type of ``J_f``
+* `value!!::F`:          the cost function ``f``, which can take different formats
+* `cost_type::`[`AbstractVectorialType`](@ref):     indicating / string data for the type of `f`
+* `jacobian!!::G`:     the Jacobian of ``f``
+* `jacobian_type::`[`AbstractVectorialType`](@ref): indicating / storing data for the type of ``J_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
 # Constructor
@@ -195,24 +193,24 @@ or a single tangent space of the power manifold of lenth `n`.
 
 # Fields
 
-* `value!!`:          the cost function ``f``, which can take different formats
-* `cost_type`:     indicating / string data for the type of `f`
-* `jacobian!!`:     the Jacobian of ``f``
-* `jacobian_type`: indicating / storing data for the type of ``J_f``
-* `hessians!!`:     the Hessians of ``f`` (in a component wise sense)
-* `hessian_type`:  indicating / storing data for the type of ``H_f``
+* `value!!::F`:          the cost function ``f``, which can take different formats
+* `cost_type::`[`AbstractVectorialType`](@ref):     indicating / string data for the type of `f`
+* `jacobian!!::G`:     the Jacobian of ``f``
+* `jacobian_type::`[`AbstractVectorialType`](@ref): indicating / storing data for the type of ``J_f``
+* `hessians!!::H`:     the Hessians of ``f`` (in a component wise sense)
+* `hessian_type::`[`AbstractVectorialType`](@ref):  indicating / storing data for the type of ``H_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
 
 # Constructor
 
-    VectorGradientFunction(f, Jf, Hess_f, range_dimension;
+    VectorHessianFunction(f, Jf, Hess_f, range_dimension;
         evaluation::AbstractEvaluationType=AllocatingEvaluation(),
         function_type::AbstractVectorialType=FunctionVectorialType(),
         jacobian_type::AbstractVectorialType=FunctionVectorialType(),
         hessian_type::AbstractVectorialType=FunctionVectorialType(),
     )
 
-Create a `VectorGradientFunction` of `f`  and its Jacobian (vector of gradients) `Jf`
+Create a `VectorHessianFunction` of `f`  and its Jacobian (vector of gradients) `Jf`
 and (vector of) Hessians, where `f` maps into the Euclidean space of dimension `range_dimension`.
 Their types are specified by the `function_type`, and `jacobian_type`, and `hessian_type`,
 respectively. The Jacobian and Hessian can further be given as an allocating variant or an
@@ -816,6 +814,46 @@ function get_hessian!(
 end
 
 get_hessian_function(vgf::VectorHessianFunction, recursive::Bool=false) = vgf.hessians!!
+
+get_jacobian_basis(vgf::AbstractVectorGradientFunction) = DefaultBasis()
+function get_jacobian_basis(
+    vgf::AbstractVectorGradientFunction{F,G,<:CoordinateVectorialType}
+) where {F,G}
+    return vgf.jacobian_type.basis
+end
+
+_doc_get_jacobian = """
+    get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p; basis = get_javobian_basis(vgf) )
+    get_jacobian!(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; basis = get_javobian_basis(vgf) )
+
+Evaluate the Jacobian of the vector function `vgf` on the manifold `M` at `p`.
+Let ``n`` be the manifold dimension of `M`.
+Representing every gradient ``$(_tex(:grad)) f_i(p) ∈ $(_math(:TpM))` as a vector of coefficients
+``c_i = (c_{i,j})_{j=0}^n`` with respect to some basis, the Jacobian is given by
+
+```math
+ J_f = $(_tex(:pmatrix,
+    "c_{1,1} & $(_tex(:cdots)) & c_{1,n}",
+    "$(_tex(:vdots)) & $(_tex(:ddots)) & $(_tex(:vdots))",
+    "c_{n,1} & $(_tex(:cdots)) & c_{n,n}"
+    )) ∈ ℝ^{n×n},
+```
+
+in other words, the Jacobian consists of the gradients in coordinates stored row-wise.
+
+For the [`ComponentVectorialType`](@ref) and the [`FunctionVectorialType`](@ref),
+this is done in the tangent space basis provided by `basis=` directly.
+For the [`CoordinateVectorialType`](@ref) the Jacobian is compiuted in the basis of this type,
+if the basis does not agree with the `basis=`, a change of basis is performed.
+"""
+
+function get_jacobian end
+@doc "$(_doc_get_jacobian)"
+get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p)
+
+function get_jacobian! end
+
+# TODO: Implement a get_jacobian function that works with respect to a certain basis
 
 @doc raw"""
     length(vgf::AbstractVectorFunction)
