@@ -16,76 +16,76 @@ p0 = 1 / sqrt(3) * [1.0, 1.0, 1.0]</code></pre><pre><code class="nohighlight hlj
  -0.4124602512237471
   0.7450900936719854
   0.38494647999455556</code></pre><pre><code class="language-julia hljs">@benchmark stochastic_gradient_descent($M, $gradF, $p0)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 1 sample with 1 evaluation.
- Single result which took 6.183 s (7.61% GC) to evaluate,
+ Single result which took 6.279 s (7.16% GC) to evaluate,
  with a memory estimate of 7.83 GiB, over 200213003 allocations.</code></pre><pre><code class="language-julia hljs">p_opt2 = stochastic_gradient_descent(M, gradf, p0)</code></pre><pre><code class="nohighlight hljs">3-element Vector{Float64}:
  0.6828818855405705
  0.17545293717581142
- 0.7091463863243863</code></pre><pre><code class="language-julia hljs">@benchmark stochastic_gradient_descent($M, $gradf, $p0)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 2644 samples with 1 evaluation.
- Range (min … max):  617.917 μs … 13.066 ms  ┊ GC (min … max): 0.00% … 72.71%
- Time  (median):       1.563 ms              ┊ GC (median):    0.00%
- Time  (mean ± σ):     1.889 ms ±  1.091 ms  ┊ GC (mean ± σ):  5.90% ± 11.76%
+ 0.7091463863243863</code></pre><pre><code class="language-julia hljs">@benchmark stochastic_gradient_descent($M, $gradf, $p0)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 2647 samples with 1 evaluation.
+ Range (min … max):  621.944 μs … 12.979 ms  ┊ GC (min … max): 0.00% … 71.44%
+ Time  (median):       1.578 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):     1.886 ms ±  1.059 ms  ┊ GC (mean ± σ):  5.72% ± 11.78%
 
-  ▄▄▃▁▄▂▁▂▁▂                      ▄█                            
-  ██████████▇▇▇▇▆▇▅▆▆▅▅▄▅▄▅▄▄▄▄▄▅▄██▃▂▂▂▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂▂▂ ▄
-  618 μs          Histogram: frequency by time         5.42 ms &lt;
+  ▃▅▃▂▃▄▁▁▂▁▃                        █▆                         
+  █████████████▇▇▇▇▅▅▅▆▆▄▅▆▄▅▅▅▄▄▄▄▅▄██▃▂▂▂▂▂▂▂▂▃▂▂▁▂▂▂▂▂▂▃▂▂▂ ▄
+  622 μs          Histogram: frequency by time         4.99 ms &lt;
 
  Memory estimate: 861.16 KiB, allocs estimate: 20050.</code></pre><p>This result is reasonably close. But we can improve it by using a <code>DirectionUpdateRule</code>, namely:</p><p>On the one hand <a href="../../solvers/gradient_descent/#Manopt.MomentumGradient"><code>MomentumGradient</code></a>, which requires both the manifold and the initial value, to keep track of the iterate and parallel transport the last direction to the current iterate. The necessary <code>vector_transport_method</code> keyword is set to a suitable default on every manifold, see <a href="https://juliamanifolds.github.io/ManifoldsBase.jl/stable/vector_transports/#ManifoldsBase.default_vector_transport_method-Tuple%7BAbstractManifold%7D"><code>default_vector_transport_method</code></a>. We get ““”</p><pre><code class="language-julia hljs">p_opt3 = stochastic_gradient_descent(
     M, gradf, p0; direction=MomentumGradient(; direction=StochasticGradient())
 )</code></pre><pre><code class="nohighlight hljs">3-element Vector{Float64}:
- 0.639951267660624
- 0.3169579111721651
- 0.700000041117812</code></pre><pre><code class="language-julia hljs">MG = MomentumGradient(; direction=StochasticGradient());
-@benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$MG)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 859 samples with 1 evaluation.
- Range (min … max):  5.079 ms … 18.962 ms  ┊ GC (min … max): 0.00% … 57.09%
- Time  (median):     5.240 ms              ┊ GC (median):    0.00%
- Time  (mean ± σ):   5.821 ms ±  1.353 ms  ┊ GC (mean ± σ):  8.50% ± 12.85%
+  0.518544995986556
+ -0.5507122567077674
+  0.6540849313729382</code></pre><pre><code class="language-julia hljs">MG = MomentumGradient(; direction=StochasticGradient());
+@benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$MG)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 824 samples with 1 evaluation.
+ Range (min … max):  5.330 ms … 18.955 ms  ┊ GC (min … max): 0.00% … 54.51%
+ Time  (median):     5.467 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   6.068 ms ±  1.308 ms  ┊ GC (mean ± σ):  8.46% ± 12.43%
 
-  ▅██▅▂                             ▂▂▄ ▂                     
-  █████▇▅▁▁▁▁▁▁▁▄▁▁▁▁▁▁▁▁▁▄▁▁▁▁▁▅▁▁▇██████▆▆▆▅▄▁▁▄▁▅▅▅▄▅▁▁▄▄ █
-  5.08 ms      Histogram: log(frequency) by time     9.25 ms &lt;
+  ▇█▇▄                             ▁▃▂▁▂▁                     
+  █████▄▁▁▁▄▁▁▁▄▁▄▁▄▁▁▁▁▁▁▄▁▁▁▄▁▁▆█████████▆▅▆▄▁▁▁▁▇▅▆▅▁▄▁▁▅ █
+  5.33 ms      Histogram: log(frequency) by time     9.35 ms &lt;
 
  Memory estimate: 7.71 MiB, allocs estimate: 200052.</code></pre><p>And on the other hand the <a href="https://manoptjl.org/stable/solvers/gradient_descent.html#Manopt.AverageGradient"><code>AverageGradient</code></a> computes an average of the last <code>n</code> gradients. This is done by</p><pre><code class="language-julia hljs">p_opt4 = stochastic_gradient_descent(
     M, gradf, p0; direction=AverageGradient(; n=10, direction=StochasticGradient()), debug=[],
 )</code></pre><pre><code class="nohighlight hljs">3-element Vector{Float64}:
-  0.970678939650389
-  0.09058721780740758
- -0.2226574770563733</code></pre><pre><code class="language-julia hljs">AG = AverageGradient(; n=10, direction=StochasticGradient(M));
+ 0.8612545985814577
+ 0.35236998963958355
+ 0.3661637704957883</code></pre><pre><code class="language-julia hljs">AG = AverageGradient(; n=10, direction=StochasticGradient(M));
 @benchmark stochastic_gradient_descent($M, $gradf, p=$p0; direction=$AG, debug=[])</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 245 samples with 1 evaluation.
- Range (min … max):  18.399 ms … 36.406 ms  ┊ GC (min … max): 0.00% … 32.20%
- Time  (median):     18.770 ms              ┊ GC (median):    0.00%
- Time  (mean ± σ):   20.440 ms ±  2.497 ms  ┊ GC (mean ± σ):  7.37% ±  7.81%
+ Range (min … max):  18.538 ms … 30.809 ms  ┊ GC (min … max):  0.00% … 28.66%
+ Time  (median):     21.210 ms              ┊ GC (median):    11.80%
+ Time  (mean ± σ):   20.438 ms ±  1.939 ms  ┊ GC (mean ± σ):   7.05% ±  6.76%
 
-  █▆             ▅▅▂▁                                          
-  ██▇▆▁▁▁▁▁▁▁▁▁▄█████▇▄▄▁▄▁▁▄▄▄▁▄▁▄▁▁▁▁▁▁▁▁▁▄▄▁▁▁▁▁▅▁▁▁▁▁▁▁▁▄ ▅
-  18.4 ms      Histogram: log(frequency) by time      30.9 ms &lt;
+  ▆█▂            ▆▆▄▁▁                                         
+  ███▄▆▆▄▁▁▁▄▁▁▁██████▆▄▄▁▆▄▁▁▁▁▁▁▁▄▁▁▁▄▁▄▁▁▁▁▁▁▁▁▁▄▁▁▄▁▁▁▁▁▄ ▆
+  18.5 ms      Histogram: log(frequency) by time      29.1 ms &lt;
 
  Memory estimate: 21.90 MiB, allocs estimate: 600077.</code></pre><p>Note that the default <code>StoppingCriterion</code> is a fixed number of iterations which helps the comparison here.</p><p>For both update rules we have to internally specify that we are still in the stochastic setting, since both rules can also be used with the <code>IdentityUpdateRule</code> within <a href="file:///Users/ronny/Repositories/Julia/Manopt.jl/docs/build/solvers/gradient_descent.html"><code>gradient_descent</code></a>.</p><p>For this not-that-large-scale example we can of course also use a gradient descent with <code>ArmijoLinesearch</code>,</p><pre><code class="language-julia hljs">fullGradF(M, p) = 1/n*sum(grad_distance(M, q, p) for q in data)
 p_opt5 = gradient_descent(M, F, fullGradF, p0; stepsize=ArmijoLinesearch())</code></pre><pre><code class="nohighlight hljs">3-element Vector{Float64}:
   0.7050420977039097
  -0.006374163035874202
   0.7091368066253959</code></pre><p>but in general it is expected to be a bit slow.</p><pre><code class="language-julia hljs">AL = ArmijoLinesearch();
-@benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 26 samples with 1 evaluation.
- Range (min … max):  193.608 ms … 222.279 ms  ┊ GC (min … max): 6.08% … 9.63%
- Time  (median):     197.021 ms               ┊ GC (median):    7.73%
- Time  (mean ± σ):   198.572 ms ±   5.616 ms  ┊ GC (mean ± σ):  7.82% ± 1.37%
+@benchmark gradient_descent($M, $F, $fullGradF, $p0; stepsize=$AL)</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 25 samples with 1 evaluation.
+ Range (min … max):  198.501 ms … 229.320 ms  ┊ GC (min … max): 3.78% … 7.32%
+ Time  (median):     201.798 ms               ┊ GC (median):    7.13%
+ Time  (mean ± σ):   204.300 ms ±   7.277 ms  ┊ GC (mean ± σ):  7.14% ± 0.85%
 
-     ▁▄█▁  ▄▄                                                    
-  ▆▁▆████▆▆██▁▁▁▆▁▁▆▁▁▆▁▁▁▁▁▁▁▆▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▆ ▁
-  194 ms           Histogram: frequency by time          222 ms &lt;
+    ▅ ▂ █                                                        
+  ▅▁█▅████▅▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▅▁▁▅▁▁▁▁▁▁▁▁▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅ ▁
+  199 ms           Histogram: frequency by time          229 ms &lt;
 
  Memory estimate: 230.56 MiB, allocs estimate: 6338502.</code></pre><h2 id="Technical-details"><a class="docs-heading-anchor" href="#Technical-details">Technical details</a><a id="Technical-details-1"></a><a class="docs-heading-anchor-permalink" href="#Technical-details" title="Permalink"></a></h2><p>This tutorial is cached. It was last run on the following package versions.</p><pre><code class="language-julia hljs">using Pkg
 Pkg.status()</code></pre><pre><code class="nohighlight hljs">Status `~/work/Manopt.jl/Manopt.jl/tutorials/Project.toml`
   [6e4b80f9] BenchmarkTools v1.5.0
 ⌃ [5ae59095] Colors v0.12.11
-  [31c24e10] Distributions v0.25.113
+  [31c24e10] Distributions v0.25.115
   [26cc04aa] FiniteDifferences v0.12.32
   [7073ff75] IJulia v1.26.0
   [8ac3fa9e] LRUCache v1.6.1
 ⌅ [af67fdf4] ManifoldDiff v0.3.13
 ⌃ [1cead3c2] Manifolds v0.10.7
-  [3362f125] ManifoldsBase v0.15.22
-  [0fc0a36d] Manopt v0.5.4 `..`
+  [3362f125] ManifoldsBase v0.15.23
+  [0fc0a36d] Manopt v0.5.5 `..`
   [91a5bcdd] Plots v1.40.9
   [731186ca] RecursiveArrayTools v3.27.4
 Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading. To see why use `status --outdated`</code></pre><pre><code class="language-julia hljs">using Dates
-now()</code></pre><pre><code class="nohighlight hljs">2024-12-06T11:54:45.573</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Monday 16 December 2024 05:23">Monday 16 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+now()</code></pre><pre><code class="nohighlight hljs">2024-12-25T14:15:39.737</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Wednesday 25 December 2024 14:16">Wednesday 25 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
