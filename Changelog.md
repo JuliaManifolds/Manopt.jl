@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 which males a “gradient matrix” and a vector of gradient functions available additionally to
 a Jacobian, that requires bases for tangent spaces
 
+### Changed
+
+* Minimum Julia version is now 1.10 (the LTS which replaced 1.6)
 
 ### Removed
 
