@@ -30,7 +30,7 @@ $(_var(:Argument, :M; type=true))
   The Jacobian can be provided in three different ways
   * as a single function returning a vector of gradient vectors ``$(_tex(:grad)) f_i(p)``
   * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``
-  * as a single function returning a (coefficient) matrix with respect to an [`AbstractBasis`](@extref AbstractBasis)
+  * as a single function returning a (coefficient) matrix with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
     of the trangent space at `p`.
   The type is determined by the `jacobian_type=` keyword argument.
 $(_var(:Argument, :p))

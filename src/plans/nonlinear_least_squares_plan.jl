@@ -252,7 +252,7 @@ All generated objectives are [`AllocatingEvaluation`](@ref).
 # Currently available smoothing functions
 
 | `Symbol` | ``ρ(s)`` | ``ρ'(s)`` | ``ρ''(s)[X]`` | Comment |
-| -------- | ----- | ------ | ------- | ------- |
+|:-------- |:-----:|:------:|:-------:|:------- |
 | `:Identity` | ``s`` | ``1`` | ``0`` | No smoothing, the default |
 """
 function smoothing_factory(s) end
