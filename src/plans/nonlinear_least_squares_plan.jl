@@ -243,7 +243,9 @@ mutable struct LevenbergMarquardtState{
 end
 
 """
-    smoothing_factory(s::Union{Symbol, ManifoldHessianObjective}=:Identity, evaluation=AllocatingEvaluation())
+    smoothing_factory(s::Symbol)
+    smoothing_factory((s,α)::Tuple{Symbol,<:Real})
+    smoothing_factory(o::ManifoldHessianObjective)
 
 Create a smoothing function from a symbol `s`.
 If the smoothing is already a [`ManifoldHessianObjective`](@ref), this is returned unchanged.
@@ -254,6 +256,11 @@ All generated objectives are [`AllocatingEvaluation`](@ref).
 | `Symbol` | ``ρ(s)`` | ``ρ'(s)`` | ``ρ''(s)[X]`` | Comment |
 |:-------- |:-----:|:------:|:-------:|:------- |
 | `:Identity` | ``s`` | ``1`` | ``0`` | No smoothing, the default |
+
+As well as a scaled variant for any ``ρ`` as ``ρ_α(s) = α^2 ρ$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))``.
+which yields ``ρ_α'(s) = ρ'$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))`` and ``ρ_α''(s)[X] = $(_tex(:bigl))($(_tex(:frac, "1", "α^2"))$(_tex(:bigr)))ρ''$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))[X]``.
+
+Scaling is activated by calling `smoothing_factory((symbol, α))` or `smoothing_factory((o, α))`.
 """
 function smoothing_factory(s) end
 
@@ -262,6 +269,17 @@ smoothing_factiory(s::ManifoldHessianObjective) = s
 smoothing_factory(s::Symbol) = smoothing_factory(Val(s))
 function smoothing_factory(::Val{:Identity})
     return ManifoldHessianObjective((E, x) -> x, (E, x) -> one(x), (E, x, X) -> zero(X))
+end
+function smoothing_factory((s, α)::Tuple{Symbol,<:Real})
+    o = smoothing_factory(s)
+    return smoothing_factory((o, α))
+end
+function smoothing_factory((o, α)::Tuple{ManifoldHessianObjective,<:Real})
+    return ManifoldHessianObjective(
+        (E, x) -> α^2 * get_cost(E, o, x / α^2),
+        (E, x) -> get_gradient(E, o, x / α^2),
+        (E, x, X) -> get_hessian(E, o, x / α^2, X) / α^2,
+    )
 end
 
 function show(io::IO, lms::LevenbergMarquardtState)
