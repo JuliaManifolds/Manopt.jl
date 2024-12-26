@@ -219,6 +219,7 @@ function initialize_solver!(
 ) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
     get_objective(dmp).f(M, lms.residual_values, lms.p)
+    # TODO: Replace with a call to the Jacobian
     get_gradient_from_Jacobian!(M, lms.X, get_objective(dmp), lms.p, lms.jacF)
     return lms
 end
@@ -231,25 +232,8 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
     end
 end
 
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    jacF,
-    p,
-    basis_domain::AbstractBasis,
-) where {mT}
-    nlso = get_objective(dmp)
-    return copyto!(jacF, nlso.jacobian!!(get_manifold(dmp), p; basis_domain=basis_domain))
-end
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    jacF,
-    p,
-    basis_domain::AbstractBasis,
-) where {mT}
-    nlso = get_objective(dmp)
-    return nlso.jacobian!!(get_manifold(dmp), jacF, p; basis_domain=basis_domain)
-end
-
+# TODO: Adapt to vectorial function call instead of .f - maybe even skip or rename?
+# TODO: It will just ne “get_value” of the vgf.
 function get_residuals!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     residuals,
@@ -268,15 +252,16 @@ end
 function step_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
-    k::Integer,
+    ::Integer,
 ) where {mT<:AbstractManifold}
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
+    # TODO: Replace with obtaining a basis from the vectorial function
     basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
     # a new Jacobian is only  needed if the last step was successful
     if lms.last_step_successful
-        get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+        get_jacobian!(dmp, lms.jacF, lms.p)
     end
     λk = lms.damping_term * norm(lms.residual_values)^2
 

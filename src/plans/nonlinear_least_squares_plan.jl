@@ -61,6 +61,26 @@ function get_cost(
     return 1//2 * norm(residual_values)^2
 end
 
+
+function get_jacobian!(
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    J,
+    p,
+    basis_domain::AbstractBasis,
+) where {mT}
+    nlso = get_objective(dmp)
+    return copyto!(J, nlso.jacobian!!(get_manifold(dmp), p; basis_domain=basis_domain))
+end
+function get_jacobian!(
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    J,
+    p,
+    basis_domain::AbstractBasis,
+) where {mT}
+    nlso = get_objective(dmp)
+    return nlso.jacobian!!(get_manifold(dmp), J, p; basis_domain=basis_domain)
+end
+
 # TODO: Replace once we have the Jacobian implemented
 function get_gradient_from_Jacobian!(
     M::AbstractManifold,
@@ -250,6 +270,8 @@ end
 Create a smoothing function from a symbol `s`.
 If the smoothing is already a [`ManifoldHessianObjective`](@ref), this is returned unchanged.
 All generated objectives are [`AllocatingEvaluation`](@ref).
+
+
 
 # Currently available smoothing functions
 
