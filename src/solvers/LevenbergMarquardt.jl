@@ -4,8 +4,12 @@ _doc_LM_formula = raw"""
 ```
 """
 _doc_LM = """
-    LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1)
+    LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
+    LevenbergMarquardt(M, vgf, p; kwargs...)
+    LevenbergMarquardt(M, nlso, p; kwargs...)
     LevenbergMarquardt!(M, f, jacobian_f, p, num_components=-1; kwargs...)
+    LevenbergMarquardt!(M, vgf, p, num_components=-1; kwargs...)
+    LevenbergMarquardt!(M, nlso, p, num_components=-1; kwargs...)
 
 compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022](@cite)
 to solve
@@ -17,18 +21,27 @@ The second signature performs the optimization in-place of `p`.
 # Input
 
 $(_var(:Argument, :M; type=true))
-* `f`:        a cost function ``f: $(_math(:M))→ℝ^d``
-* `grad_f`:   the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
-  `basis_domain` which specifies basis of the tangent space at a given point in which the
-  Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
+* `f`: a cost function ``f: $(_math(:M))→ℝ^d``.
+  The cost function can be provided in two different ways
+    * as a single function returning a vector ``f(p)) ∈ ℝ^d``
+    * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``
+  The type is determined by the `function_type=` keyword argument.
+* `jacobian_f`:   the Jacobian of ``f``.
+  The Jacobian can be provided in three different ways
+  * as a single function returning a vector of gradient vectors ``$(_tex(:grad)) f_i(p)``
+  * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``
+  * as a single function returning a (coefficient) matrix with respect to an [`AbstractBasis`](@extref AbstractBasis)
+    of the trangent space at `p`.
+  The type is determined by the `jacobian_type=` keyword argument.
 $(_var(:Argument, :p))
 * `num_components`: length of the vector returned by the cost function (`d`).
   By default its value is -1 which means that it is determined automatically by
-  calling `f` one additional time. This is only possible when `evaluation` is `AllocatingEvaluation`,
+  calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
   for mutating evaluation this value must be explicitly specified.
 
-These can also be passed as a [`NonlinearLeastSquaresObjective`](@ref),
-then the keyword `jacobian_tangent_basis` below is ignored
+You can also provide the cost and its Jacobian already as a[`VectorGradientFunction`](@ref) `vgf`,
+Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`,
+then both the keyword `jacobian_tangent_basis` and the `smoothing` are ignored.
 
 # Keyword arguments
 
@@ -38,11 +51,13 @@ $(_var(:Keyword, :evaluation))
   residual (objective) at minimum is equal to 0.
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
+* `function_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `initial_jacobian_f`:      the initial Jacobian of the cost function `f`.
   By default this is a matrix of size `num_components` times the manifold dimension of similar type as `p`.
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
-* `jacobian_tangent_basis`:  an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) specify the basis of the tangent space for `jacobian_f`.
+* `jacobian_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `smoothing`: specify the function ``ρ`` as an [`ManifoldHessianObjective`](@ref) object.
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
@@ -72,7 +87,8 @@ function LevenbergMarquardt(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    function_type::AbstractVectorialType=FunctionVectorialType(),
+    jacobian_type::AbstractVectorialType=FunctionVectorialType(),
     kwargs...,
 )
     if num_components == -1
@@ -86,13 +102,26 @@ function LevenbergMarquardt(
             )
         end
     end
-    nlso = NonlinearLeastSquaresObjective(
+    vgf = VectorGradientFunction(
         f,
         jacobian_f,
         num_components;
         evaluation=evaluation,
-        jacobian_tangent_basis=jacobian_tangent_basis,
+        function_type=function_type,
+        jacobian_type=jacobian_type,
     )
+    return LevenbergMarquardt(M, vgf, p; evaluation=evaluation, kwargs...)
+end
+function LevenbergMarquardt(
+    M::AbstractManifold,
+    vgf::VectorGradientFunction,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    smoothing=:Idenity,
+    kwargs...,
+)
+    _smoothing = smoothing_factory(smoothing)
+    nlso = NonlinearLeastSquaresObjective(vgf, _smoothing; evaluation=evaluation)
     return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
 end
 function LevenbergMarquardt(

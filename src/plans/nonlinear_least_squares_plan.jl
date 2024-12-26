@@ -242,6 +242,28 @@ mutable struct LevenbergMarquardtState{
     end
 end
 
+"""
+    smoothing_factory(s::Union{Symbol, ManifoldHessianObjective}=:Identity, evaluation=AllocatingEvaluation())
+
+Create a smoothing function from a symbol `s`.
+If the smoothing is already a [`ManifoldHessianObjective`](@ref), this is returned unchanged.
+All generated objectives are [`AllocatingEvaluation`](@ref).
+
+# Currently available smoothing functions
+
+| `Symbol` | ``ρ(s)`` | ``ρ'(s)`` | ``ρ''(s)[X]`` | Comment |
+| -------- | ----- | ------ | ------- | ------- |
+| `:Identity` | ``s`` | ``1`` | ``0`` | No smoothing, the default |
+"""
+function smoothing_factory(s) end
+
+smoothing_factory() = smoothing_factory(:Identity)
+smoothing_factiory(s::ManifoldHessianObjective) = s
+smoothing_factory(s::Symbol) = smoothing_factory(Val(s))
+function smoothing_factory(::Val{:Identity})
+    return ManifoldHessianObjective((E, x) -> x, (E, x) -> one(x), (E, x, X) -> zero(X))
+end
+
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
