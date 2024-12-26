@@ -233,7 +233,7 @@ function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
 end
 
 # TODO: Adapt to vectorial function call instead of .f - maybe even skip or rename?
-# TODO: It will just ne “get_value” of the vgf.
+# TODO: It will just ne “get_value” of the vgf - adapted by smoothing?.
 function get_residuals!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     residuals,

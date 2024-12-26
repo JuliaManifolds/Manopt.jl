@@ -61,7 +61,6 @@ function get_cost(
     return 1//2 * norm(residual_values)^2
 end
 
-
 function get_jacobian!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
     J,

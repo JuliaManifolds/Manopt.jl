@@ -10,8 +10,8 @@ abstract type AbstractVectorialType end
     CoordinateVectorialType{B<:AbstractBasis} <: AbstractVectorialType
 
 A type to indicate that gradient of the constraints is implemented as a
-Jacobian matrix with respect to a certain basis, that is if the constraints are
-given as ``g: \mathcal M → ℝ^m`` with respect to a basis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
+Jacobian matrix with respect to a certain basis, that is if the vectfor function
+are is ``f: \mathcal M → ℝ^m`` with and we have a asis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
 This can be written as ``J_g(p) = (c_1^{\mathrm{T}},…,c_m^{\mathrm{T}})^{\mathrm{T}} \in ℝ^{m,d}``, that is,
 every row ``c_i`` of this matrix is a set of coefficients such that
 `get_coefficients(M, p, c, B)` is the tangent vector ``\oepratorname{grad} g_i(p)``
@@ -54,8 +54,13 @@ struct ComponentVectorialType <: AbstractVectorialType end
 
  A type to indicate that constraints are implemented one whole functions,
 for example ``g(p) ∈ ℝ^m`` or ``\operatorname{grad} g(p) ∈ (T_p\mathcal M)^m``.
+
+This type internally stores the [`AbstractPowerRepresentation`](@ref),
+when it makes sense, especially for Hessian and gradient functions.
 """
 struct FunctionVectorialType <: AbstractVectorialType end
+
+# TODO store range type in this type instead of having a keyword argument in so many function.
 
 @doc raw"""
     AbstractVectorFunction{E, FT} <: Function
@@ -181,10 +186,10 @@ function VectorGradientFunction(
     )
 end
 
-@doc raw"""
+_doc_vhf = """
     VectorHessianFunction{E, FT, JT, HT, F, J, H, I} <: AbstractVectorGradientFunction{E, FT, JT}
 
-Represent a function ``f:\mathcal M → ℝ^n`` including it first derivative,
+Represent a function ``f:$(_math(:M)) M → ℝ^n`` including it first derivative,
 either as a vector of gradients of a Jacobian, and the Hessian,
 as a vector of Hessians of the component functions.
 
@@ -195,11 +200,11 @@ or a single tangent space of the power manifold of lenth `n`.
 
 * `value!!::F`:          the cost function ``f``, which can take different formats
 * `cost_type::`[`AbstractVectorialType`](@ref):     indicating / string data for the type of `f`
-* `jacobian!!::G`:     the Jacobian of ``f``
+* `jacobian!!::G`:     the Jacobian ``J_f`` of ``f``
 * `jacobian_type::`[`AbstractVectorialType`](@ref): indicating / storing data for the type of ``J_f``
 * `hessians!!::H`:     the Hessians of ``f`` (in a component wise sense)
 * `hessian_type::`[`AbstractVectorialType`](@ref):  indicating / storing data for the type of ``H_f``
-* `parameters`:    the number `n` from, the size of the vector ``f`` returns.
+* `range_dimension`:    the number `n` from, the size of the vector ``f`` returns.
 
 # Constructor
 
@@ -216,6 +221,8 @@ Their types are specified by the `function_type`, and `jacobian_type`, and `hess
 respectively. The Jacobian and Hessian can further be given as an allocating variant or an
 inplace-variant, specified by the `evaluation=` keyword.
 """
+
+@doc "$(_doc_vhf)"
 struct VectorHessianFunction{
     E<:AbstractEvaluationType,
     FT<:AbstractVectorialType,
@@ -259,54 +266,505 @@ function VectorHessianFunction(
     )
 end
 
+_vgf_index_to_length(b::BitVector, n) = sum(b)
+_vgf_index_to_length(::Colon, n) = n
+_vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
+_vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
+
+#
+#
+# ---- Hessian
 @doc raw"""
-    get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p[, i=:])
+    get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i)
+    get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range)
+    get_hessian!(M::AbstractManifold, X, vgf::VectorHessianFunction, p, X, i)
+    get_hessian!(M::AbstractManifold, X, vgf::VectorHessianFunction, p, X, i, range)
 
-Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at `p`.
-The `range` can be used to specify a potential range, but is currently only present for consistency.
+Evaluate the Hessians of the vector function `vgf` on the manifold `M` at `p` in direction `X`
+and the values given in `range`, specifying the representation of the gradients.
 
-The `i` can be a linear index, you can provide
-
+Since `i` is assumed to be a linear index, you can provide
 * a single integer
 * a `UnitRange` to specify a range to be returned like `1:3`
 * a `BitVector` specifying a selection
 * a `AbstractVector{<:Integer}` to specify indices
-* `:` to return the vector of all gradients, which is also the default
-
+* `:` to return the vector of all gradients
 """
-get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
-function get_value(
-    M::AbstractManifold, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
-) where {E<:AbstractEvaluationType}
-    c = vgf.value!!(M, p)
-    if isa(c, Number)
-        return c
-    else
-        return c[i]
-    end
-end
-function get_value(
+get_hessian(
     M::AbstractManifold,
-    vgf::AbstractVectorFunction{E,<:ComponentVectorialType},
+    vgf::VectorHessianFunction,
     p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+)
+
+# Generic case, allocate (a) a single tangent vector
+function get_hessian(
+    M::AbstractManifold,
+    vhf::VectorHessianFunction,
+    p,
+    X,
     i::Integer,
-) where {E<:AbstractEvaluationType}
-    return vgf.value!![i](M, p)
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+)
+    Y = zero_vector(M, p)
+    return get_hessian!(M, Y, vhf, p, X, i, range)
 end
-function get_value(
-    M::AbstractManifold, vgf::AbstractVectorFunction{E,<:ComponentVectorialType}, p, i=:
-) where {E<:AbstractEvaluationType}
-    return [f(M, p) for f in vgf.value!![i]]
+# (b) UnitRange and AbstractVector allow to use length for BitVector its sum
+function get_hessian(
+    M::AbstractManifold,
+    vhf::VectorHessianFunction,
+    p,
+    X,
+    i=:, # as long as the length can be found it should work, see _vgf_index_to_length
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+)
+    n = _vgf_index_to_length(i, vhf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    P = fill(p, pM)
+    Y = zero_vector(pM, P)
+    return get_hessian!(M, Y, vhf, p, X, i, range)
 end
 
-@doc raw"""
-    get_value_function(vgf::VectorGradientFunction, recursive=false)
+#
+#
+# Part I: allocation
+# I (a) a vector of functions
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
+    p,
+    X,
+    i::Integer,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
+) where {FT,JT}
+    return copyto!(M, Y, p, vhf.hessians!![i](M, p, X))
+end
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
+    p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    n = _vgf_index_to_length(i, vhf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    # In the resulting `X` the indices  are linear,
+    # in `jacobian[i]` the functions f are ordered in a linear sense
+    for (j, f) in zip(1:n, vhf.hessians!![i])
+        copyto!(M, _write(pM, rep_size, Y, (j,)), f(M, p, X))
+    end
+    return Y
+end
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vgf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
+    p,
+    X,
+    i::Colon,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    n = _vgf_index_to_length(i, vgf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    for (j, f) in enumerate(vgf.hessians!!)
+        copyto!(M, _write(pM, rep_size, Y, (j,)), p, f(M, p, X))
+    end
+    return Y
+end
+# Part I(c) A single gradient function
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:FunctionVectorialType},
+    p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    n = _vgf_index_to_length(i, vhf.range_dimension)
+    mP = PowerManifold(M, range, n)
+    copyto!(mP, Y, vhf.hessians!!(M, p, X)[mP, i])
+    return Y
+end
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:FunctionVectorialType},
+    p,
+    X,
+    i::Integer,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    mP = PowerManifold(M, range, vhf.range_dimension)
+    copyto!(M, Y, p, vhf.hessians!!(M, p, X)[mP, i])
+    return Y
+end
+#
+#
+# Part II: in-place evaluations
+# (a) a vector of functions
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:ComponentVectorialType},
+    p,
+    X,
+    i::Integer,
+    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
+) where {FT,JT}
+    return vhf.hessians!![i](M, Y, p, X)
+end
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:ComponentVectorialType},
+    p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    n = _vgf_index_to_length(i, vhf.range_dimension)
+    pM = PowerManifold(M, range, n)
+    rep_size = representation_size(M)
+    # In the resulting X the indices are linear,
+    # in jacobian[i] have the functions f are also given n a linear sense
+    for (j, f) in zip(1:n, vhf.hessians!![i])
+        f(M, _write(pM, rep_size, Y, (j,)), p, X)
+    end
+    return Y
+end
+# II(b) a single function
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:FunctionVectorialType},
+    p,
+    X,
+    i::Integer,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    pM = PowerManifold(M, range, vhf.range_dimension...)
+    P = fill(p, pM)
+    y = zero_vector(pM, P)
+    vhf.hessians!!(M, y, p, X)
+    copyto!(M, Y, p, y[pM, i])
+    return Y
+end
+function get_hessian!(
+    M::AbstractManifold,
+    Y,
+    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:FunctionVectorialType},
+    p,
+    X,
+    i,
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,JT}
+    #Single access for function is a bit expensive
+    n = _vgf_index_to_length(i, vhf.range_dimension)
+    pM_out = PowerManifold(M, range, n)
+    pM_temp = PowerManifold(M, range, vhf.range_dimension)
+    P = fill(p, pM_temp)
+    y = zero_vector(pM_temp, P)
+    vhf.hessians!!(M, y, p, X)
+    # Luckily all documented access functions work directly on `x[pM_temp,...]`
+    copyto!(pM_out, Y, P[pM_temp, i], y[pM_temp, i])
+    return Y
+end
 
-return the internally stored function computing [`get_value`](@ref).
+get_hessian_function(vgf::VectorHessianFunction, recursive::Bool=false) = vgf.hessians!!
+
+#
+#
+# ---- Jacobian
+_doc_get_jacobian = """
+    get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p; basis = get_javobian_basis(vgf) )
+    get_jacobian!(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; basis = get_javobian_basis(vgf) )
+
+Evaluate the Jacobian of the vector function `vgf` on the manifold `M` at `p`.
+Let ``n`` be the manifold dimension of `M`.
+Representing every gradient ``$(_tex(:grad)) f_i(p) ∈ $(_math(:TpM))` as a vector of coefficients
+``c_i = (c_{i,j})_{j=0}^n`` with respect to some basis, the Jacobian is given by
+
+```math
+ J_f = $(_tex(:pmatrix,
+    "c_{1,1} & $(_tex(:cdots)) & c_{1,n}",
+    "$(_tex(:vdots)) & $(_tex(:ddots)) & $(_tex(:vdots))",
+    "c_{n,1} & $(_tex(:cdots)) & c_{n,n}"
+    )) ∈ ℝ^{n×n},
+```
+
+in other words, the Jacobian consists of the gradients in coordinates stored row-wise.
+
+For the [`ComponentVectorialType`](@ref) and the [`FunctionVectorialType`](@ref),
+this is done in the tangent space basis provided by `basis=` directly.
+For the [`CoordinateVectorialType`](@ref) the Jacobian is computed in the basis of this type,
+if the basis does not agree with the `basis=`, a change of basis is performed
+
+# Keyword Arguments
+* `basis` basis with respect to which the Jacobian is computed.
+* `range` for the [`FunctionVectorialType`](@ref) specify the range type of the resulting gradient,
+  that is, the [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`) the resulting power manifold has.
 """
-function get_value_function(vgf::VectorGradientFunction, recursive=false)
-    return vgf.value!!
+
+function get_jacobian end
+@doc "$(_doc_get_jacobian)"
+get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p)
+
+# A small helper function to change the basis of a Jacobian
+"""
+    _change_basis!(M::AbstractManifold, p, JF, from_basis::B1, to_basis::B; X=zero_vector(M,p))
+
+Given a jacobian matrix `JF` on a manifold `M` at `p` with respect to the `from_basis`
+in the tangent space of `p` on `M`. Change the basis of the Jacobian to `to_basis` in place of `JF`.
+
+# Keyword Arguments
+* `X` a temporary vector to store a generated vector, before decomposing it again with respect to the new basis
+"""
+function _change_basis!(
+    M, p, JF, from_basis::B1, to_basis::B2; X=zero_vector(M, p)
+) where {B1<:AbstractBasis,B2<:AbstractBasis}
+    # change every row to new basis
+    for i in 1:size(JF, 1) # every row
+        get_vector!(M, X, p, JF[i, :], from_basis)
+        get_coordinates!(M, JF[i, :], p, X, to_basis)
+    end
+    return JF
 end
+# case we have the same basis: nothing to do, just return JF
+_change_basis!(M, p, JF, from_basis::B, to_basis_new) where {B<:AbstractBasis} = JF
+
+# Part I: allocating vgf – allocating jacobian
+# (a) We have a single gradient function
+function get_jacobian(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
+    p;
+    basis::B=DefaultOrthonormalBasis(),
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,B<:AbstractBasis}
+    n = vgf.range_dimension
+    d = manifold_dimension(M, p)
+    gradients = vgf.jacobian!!(M, p)
+    mP = PowerManifold(M, range, vgf.range_dimension)
+    # generate the first row to get an eltype
+    c1 = get_coordinates(M, p, gradients[mP, 1], basis)
+    JF = zeros(eltype(c1), n, d)
+    JF[1, :] .= c1
+    for i in 2:n
+        JF[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
+    end
+    return JF
+end
+# (b) We have a vector of gradient functions
+function get_jacobian(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
+    p;
+    basis=get_jacobian_basis(vgf),
+    kwargs...,
+) where {FT}
+    n = vgf.range_dimension
+    d = manifold_dimension(M, p)
+    # generate the first row to get an eltype
+    c1 = get_coordinates(M, p, vgf.jacobian!![1](M, p), basis)
+    JF = zeros(eltype(c1), n, d)
+    JF[1, :] .= c1
+    for i in 2:n
+        JF[i, :] .= get_coordinates(M, p, vgf.jacobian!![i](M, p), basis)
+    end
+    return JF
+end
+# (c) We have a Jacobian function
+function get_jacobian(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction{
+        <:AllocatingEvaluation,FT,<:CoordinateVectorialType
+    },
+    p;
+    basis=get_jacobian_basis(vgf),
+    kwargs...,
+) where {FT}
+    JF = vgf.jacobian!!(M, p)
+    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    return JF
+end
+
+# Part II: mutating vgf – allocating jacobian
+# (a) We have a single gradient function
+function get_jacobian(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
+    p;
+    basis::B=DefaultOrthonormalBasis(),
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,B<:AbstractBasis}
+    n = vgf.range_dimension
+    d = manifold_dimension(M, p)
+    mP = PowerManifold(M, range, vgf.range_dimension)
+    gradients = zero_vector(mP, fill(p, pM))
+    vgf.jacobian!!(M, gradients, p)
+    # generate the first row to get an eltype
+    c1 = get_coordinates(M, p, gradients[mP, 1], basis)
+    JF = zeros(eltype(c1), n, d)
+    JF[1, :] .= c1
+    for i in 2:n
+        JF[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
+    end
+    return JF
+end
+# (b) We have a vector of gradient functions
+function get_jacobian(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
+    p;
+    basis=get_jacobian_basis(vgf),
+) where {FT}
+    n = vgf.range_dimension
+    d = manifold_dimension(M, p)
+    # generate the first row to get an eltype
+    X = zero_vector(M, p)
+    vgf.jacobian!![1](M, X, p)
+    c1 = get_coordinates(M, p, X, basis)
+    JF = zeros(eltype(c1), n, d)
+    JF[1, :] .= c1
+    for i in 2:n
+        vgf.jacobian!![i](M, X, p)
+        JF[i, :] .= get_coordinates(M, p, X, basis)
+    end
+    return JF
+    JF = vgf.jacobian!!(M, p)
+    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    return JF
+end
+# (c) We have a Jacobian function
+function get_jacobian(
+    M::AbstractManifold,
+    vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:CoordinateVectorialType},
+    p;
+    basis=get_jacobian_basis(vgf),
+) where {FT}
+    c = get_coordinats(M, p, zero_vector(M, p))
+    JF = zeros(eltype(c), vgf.range_dimension, manifold_dimension(M, p))
+    vgf.jacobian!!(M, JF, p)
+    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    return JF
+end
+
+function get_jacobian! end
+@doc "$(_doc_get_jacobian)"
+get_jacobian!(M::AbstractManifold, JF, vgf::AbstractVectorGradientFunction, p)
+
+# Part I: allocating vgf – inplace jacobian
+# (a) We have a single gradient function
+function get_jacobian!(
+    M::AbstractManifold,
+    JF,
+    vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
+    p;
+    basis::B=DefaultOrthonormalBasis(),
+    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+) where {FT,B<:AbstractBasis}
+    n = vgf.range_dimension
+    d = manifold_dimension(M, p)
+    gradients = vgf.jacobian!!(M, p)
+    mP = PowerManifold(M, range, vgf.range_dimension)
+    for i in 1:n
+        JF[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
+    end
+    return JF
+end
+# (b) We have a vector of gradient functions
+function get_jacobian!(
+    M::AbstractManifold,
+    JF,
+    vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
+    p;
+    basis=get_jacobian_basis(vgf),
+) where {FT}
+    for i in 1:(vgf.range_dimension)
+        JF[i, :] .= get_coordinates(M, p, vgf.jacobian!![i](M, p), basis)
+    end
+    return JF
+end
+# (c) We have a Jacobian function
+function get_jacobian!(
+    M::AbstractManifold,
+    JF,
+    vgf::AbstractVectorGradientFunction{
+        <:AllocatingEvaluation,FT,<:CoordinateVectorialType
+    },
+    p;
+    basis=get_jacobian_basis(vgf),
+) where {FT}
+    JF .= vgf.jacobian!!(M, p)
+    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    return JF
+end
+
+# Part II: mutating vgf – allocating jacobian
+# (a) We have a single gradient function
+function get_jacobian!(
+    M::AbstractManifold,
+    JF,
+    vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
+    p;
+    basis::B=DefaultOrthonormalBasis(),
+) where {FT,B<:AbstractBasis}
+    gradients = zero_vector(mP, fill(p, pM))
+    vgf.jacobian!!(M, gradients, p)
+    for i in 1:n
+        JF[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
+    end
+    return JF
+end
+# (b) We have a vector of gradient functions
+function get_jacobian!(
+    M::AbstractManifold,
+    JF,
+    vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
+    p;
+    basis=get_jacobian_basis(vgf),
+    X=zero_vector(M, p),
+) where {FT}
+    for i in 1:n
+        vgf.jacobian!![i](M, X, p)
+        JF[i, :] .= get_coordinates(M, p, X, basis)
+    end
+    return JF
+    JF = vgf.jacobian!!(M, p)
+    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    return JF
+end
+# (c) We have a Jacobian function
+function get_jacobian!(
+    M::AbstractManifold,
+    JF,
+    vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:CoordinateVectorialType},
+    p;
+    basis=get_jacobian_basis(vgf),
+) where {FT}
+    vgf.jacobian!!(M, JF, p)
+    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    return JF
+end
+
+get_jacobian_basis(vgf::AbstractVectorGradientFunction) = DefaultBasis()
+function get_jacobian_basis(
+    vgf::AbstractVectorGradientFunction{F,G,<:CoordinateVectorialType}
+) where {F,G}
+    return vgf.jacobian_type.basis
+end
+
+#
+#
+# ---- Gradient
 @doc raw"""
     get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i)
     get_gradient(M::AbstractManifold, vgf::VectorGradientFunction, p, i, range)
@@ -330,11 +788,6 @@ get_gradient(
     i,
     range::Union{AbstractPowerRepresentation,Nothing}=nothing,
 )
-
-_vgf_index_to_length(b::BitVector, n) = sum(b)
-_vgf_index_to_length(::Colon, n) = n
-_vgf_index_to_length(i::AbstractArray{<:Integer}, n) = length(i)
-_vgf_index_to_length(r::UnitRange{<:Integer}, n) = length(r)
 
 # Generic case, allocate (a) a single tangent vector
 function get_gradient(
@@ -608,252 +1061,54 @@ get_gradient_function(vgf::VectorGradientFunction, recursive=false) = vgf.jacobi
 
 #
 #
-# ---- Hessian
+# ---- Value
 @doc raw"""
-    get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i)
-    get_hessian(M::AbstractManifold, vgf::VectorHessianFunction, p, X, i, range)
-    get_hessian!(M::AbstractManifold, X, vgf::VectorHessianFunction, p, X, i)
-    get_hessian!(M::AbstractManifold, X, vgf::VectorHessianFunction, p, X, i, range)
+    get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p[, i=:])
 
-Evaluate the Hessians of the vector function `vgf` on the manifold `M` at `p` in direction `X`
-and the values given in `range`, specifying the representation of the gradients.
+Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at `p`.
+The `range` can be used to specify a potential range, but is currently only present for consistency.
 
-Since `i` is assumed to be a linear index, you can provide
+The `i` can be a linear index, you can provide
+
 * a single integer
 * a `UnitRange` to specify a range to be returned like `1:3`
 * a `BitVector` specifying a selection
 * a `AbstractVector{<:Integer}` to specify indices
-* `:` to return the vector of all gradients
+* `:` to return the vector of all gradients, which is also the default
 """
-get_hessian(
-    M::AbstractManifold,
-    vgf::VectorHessianFunction,
-    p,
-    X,
-    i,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
-)
-
-# Generic case, allocate (a) a single tangent vector
-function get_hessian(
-    M::AbstractManifold,
-    vhf::VectorHessianFunction,
-    p,
-    X,
-    i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-)
-    Y = zero_vector(M, p)
-    return get_hessian!(M, Y, vhf, p, X, i, range)
-end
-# (b) UnitRange and AbstractVector allow to use length for BitVector its sum
-function get_hessian(
-    M::AbstractManifold,
-    vhf::VectorHessianFunction,
-    p,
-    X,
-    i=:, # as long as the length can be found it should work, see _vgf_index_to_length
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-)
-    n = _vgf_index_to_length(i, vhf.range_dimension)
-    pM = PowerManifold(M, range, n)
-    P = fill(p, pM)
-    Y = zero_vector(pM, P)
-    return get_hessian!(M, Y, vhf, p, X, i, range)
-end
-
-#
-#
-# Part I: allocation
-# I (a) a vector of functions
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i::Integer,
-    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT,JT}
-    return copyto!(M, Y, p, vhf.hessians!![i](M, p, X))
-end
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    n = _vgf_index_to_length(i, vhf.range_dimension)
-    pM = PowerManifold(M, range, n)
-    rep_size = representation_size(M)
-    # In the resulting `X` the indices  are linear,
-    # in `jacobian[i]` the functions f are ordered in a linear sense
-    for (j, f) in zip(1:n, vhf.hessians!![i])
-        copyto!(M, _write(pM, rep_size, Y, (j,)), f(M, p, X))
+get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
+function get_value(
+    M::AbstractManifold, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
+) where {E<:AbstractEvaluationType}
+    c = vgf.value!!(M, p)
+    if isa(c, Number)
+        return c
+    else
+        return c[i]
     end
-    return Y
 end
-function get_hessian!(
+function get_value(
     M::AbstractManifold,
-    Y,
-    vgf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:ComponentVectorialType},
+    vgf::AbstractVectorFunction{E,<:ComponentVectorialType},
     p,
-    X,
-    i::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    n = _vgf_index_to_length(i, vgf.range_dimension)
-    pM = PowerManifold(M, range, n)
-    rep_size = representation_size(M)
-    for (j, f) in enumerate(vgf.hessians!!)
-        copyto!(M, _write(pM, rep_size, Y, (j,)), p, f(M, p, X))
-    end
-    return Y
-end
-# Part I(c) A single gradient function
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:FunctionVectorialType},
-    p,
-    X,
-    i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    n = _vgf_index_to_length(i, vhf.range_dimension)
-    mP = PowerManifold(M, range, n)
-    copyto!(mP, Y, vhf.hessians!!(M, p, X)[mP, i])
-    return Y
-end
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:AllocatingEvaluation,FT,JT,<:FunctionVectorialType},
-    p,
-    X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    mP = PowerManifold(M, range, vhf.range_dimension)
-    copyto!(M, Y, p, vhf.hessians!!(M, p, X)[mP, i])
-    return Y
+) where {E<:AbstractEvaluationType}
+    return vgf.value!![i](M, p)
 end
-#
-#
-# Part II: in-place evaluations
-# (a) a vector of functions
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i::Integer,
-    ::Union{AbstractPowerRepresentation,Nothing}=nothing,
-) where {FT,JT}
-    return vhf.hessians!![i](M, Y, p, X)
-end
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:ComponentVectorialType},
-    p,
-    X,
-    i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    n = _vgf_index_to_length(i, vhf.range_dimension)
-    pM = PowerManifold(M, range, n)
-    rep_size = representation_size(M)
-    # In the resulting X the indices are linear,
-    # in jacobian[i] have the functions f are also given n a linear sense
-    for (j, f) in zip(1:n, vhf.hessians!![i])
-        f(M, _write(pM, rep_size, Y, (j,)), p, X)
-    end
-    return Y
-end
-# II(b) a single function
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:FunctionVectorialType},
-    p,
-    X,
-    i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    pM = PowerManifold(M, range, vhf.range_dimension...)
-    P = fill(p, pM)
-    y = zero_vector(pM, P)
-    vhf.hessians!!(M, y, p, X)
-    copyto!(M, Y, p, y[pM, i])
-    return Y
-end
-function get_hessian!(
-    M::AbstractManifold,
-    Y,
-    vhf::VectorHessianFunction{<:InplaceEvaluation,FT,JT,<:FunctionVectorialType},
-    p,
-    X,
-    i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
-) where {FT,JT}
-    #Single access for function is a bit expensive
-    n = _vgf_index_to_length(i, vhf.range_dimension)
-    pM_out = PowerManifold(M, range, n)
-    pM_temp = PowerManifold(M, range, vhf.range_dimension)
-    P = fill(p, pM_temp)
-    y = zero_vector(pM_temp, P)
-    vhf.hessians!!(M, y, p, X)
-    # Luckily all documented access functions work directly on `x[pM_temp,...]`
-    copyto!(pM_out, Y, P[pM_temp, i], y[pM_temp, i])
-    return Y
+function get_value(
+    M::AbstractManifold, vgf::AbstractVectorFunction{E,<:ComponentVectorialType}, p, i=:
+) where {E<:AbstractEvaluationType}
+    return [f(M, p) for f in vgf.value!![i]]
 end
 
-get_hessian_function(vgf::VectorHessianFunction, recursive::Bool=false) = vgf.hessians!!
+@doc raw"""
+    get_value_function(vgf::VectorGradientFunction, recursive=false)
 
-get_jacobian_basis(vgf::AbstractVectorGradientFunction) = DefaultBasis()
-function get_jacobian_basis(
-    vgf::AbstractVectorGradientFunction{F,G,<:CoordinateVectorialType}
-) where {F,G}
-    return vgf.jacobian_type.basis
-end
-
-_doc_get_jacobian = """
-    get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p; basis = get_javobian_basis(vgf) )
-    get_jacobian!(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; basis = get_javobian_basis(vgf) )
-
-Evaluate the Jacobian of the vector function `vgf` on the manifold `M` at `p`.
-Let ``n`` be the manifold dimension of `M`.
-Representing every gradient ``$(_tex(:grad)) f_i(p) ∈ $(_math(:TpM))` as a vector of coefficients
-``c_i = (c_{i,j})_{j=0}^n`` with respect to some basis, the Jacobian is given by
-
-```math
- J_f = $(_tex(:pmatrix,
-    "c_{1,1} & $(_tex(:cdots)) & c_{1,n}",
-    "$(_tex(:vdots)) & $(_tex(:ddots)) & $(_tex(:vdots))",
-    "c_{n,1} & $(_tex(:cdots)) & c_{n,n}"
-    )) ∈ ℝ^{n×n},
-```
-
-in other words, the Jacobian consists of the gradients in coordinates stored row-wise.
-
-For the [`ComponentVectorialType`](@ref) and the [`FunctionVectorialType`](@ref),
-this is done in the tangent space basis provided by `basis=` directly.
-For the [`CoordinateVectorialType`](@ref) the Jacobian is compiuted in the basis of this type,
-if the basis does not agree with the `basis=`, a change of basis is performed.
+return the internally stored function computing [`get_value`](@ref).
 """
-
-function get_jacobian end
-@doc "$(_doc_get_jacobian)"
-get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p)
-
-function get_jacobian! end
-
-# TODO: Implement a get_jacobian function that works with respect to a certain basis
+function get_value_function(vgf::VectorGradientFunction, recursive=false)
+    return vgf.value!!
+end
 
 @doc raw"""
     length(vgf::AbstractVectorFunction)
