@@ -1,8 +1,3 @@
-_doc_LM_formula = raw"""
-```math
-\operatorname*{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert f(p) \rVert^2,
-```
-"""
 _doc_LM = """
     LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
     LevenbergMarquardt(M, vgf, p; kwargs...)
@@ -23,7 +18,7 @@ The second signature performs the optimization in-place of `p`.
 $(_var(:Argument, :M; type=true))
 * `f`: a cost function ``f: $(_math(:M))→ℝ^d``.
   The cost function can be provided in two different ways
-    * as a single function returning a vector ``f(p)) ∈ ℝ^d``
+    * as a single function returning a vector ``f(p) ∈ ℝ^d``
     * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``
   The type is determined by the `function_type=` keyword argument.
 * `jacobian_f`:   the Jacobian of ``f``.
@@ -57,8 +52,8 @@ $(_var(:Keyword, :evaluation))
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
-* `smoothing`: specify the function ``ρ`` as an [`ManifoldHessianObjective`](@ref) object.
 $(_var(:Keyword, :retraction_method))
+* `smoothing`: specify a smoothing function ``s`` for all ``s_i=s`` as an [`ManifoldHessianObjective`](@ref) or a vector of smoothing functions ``(s_1,…s_n)`` together as a [`VectorHessianFunction`](@ref).
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
 $(_note(:OtherKeywords))

@@ -278,7 +278,7 @@ All generated objectives are [`AllocatingEvaluation`](@ref).
 |:-------- |:-----:|:------:|:-------:|:------- |
 | `:Identity` | ``s`` | ``1`` | ``0`` | No smoothing, the default |
 
-As well as a scaled variant for any ``ρ`` as ``ρ_α(s) = α^2 ρ$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))``.
+As well as a scaled variant for any ``ρ`` as ``ρ_α(s) = α ρ$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))``.
 which yields ``ρ_α'(s) = ρ'$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))`` and ``ρ_α''(s)[X] = $(_tex(:bigl))($(_tex(:frac, "1", "α^2"))$(_tex(:bigr)))ρ''$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))[X]``.
 
 Scaling is activated by calling `smoothing_factory((symbol, α))` or `smoothing_factory((o, α))`.

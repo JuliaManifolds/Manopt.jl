@@ -257,6 +257,7 @@ Manopt.FunctionVectorialType
 
 ```@docs
 Manopt.get_jacobian
+Manopt.get_jacobian!
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)
@@ -266,6 +267,7 @@ Base.length(::VectorGradientFunction)
 
 ```@docs
 Manopt._to_iterable_indices
+Manopt._change_basis!
 ```
 
 ### Subproblem objective
