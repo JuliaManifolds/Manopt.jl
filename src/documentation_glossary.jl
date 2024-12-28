@@ -66,9 +66,7 @@ define!(
     :cases,
     (c...) ->
         raw"\begin{cases}" *
-        "\n" *
-        "$(join(["   $(ci)" for ci in c], raw"\\\\"*"\n"))" *
-        "\n" *
+        "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
         raw"\end{cases}",
 )
 define!(:LaTeX, :cdots, raw"\cdots")
@@ -93,6 +91,7 @@ define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
+define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :sum, raw"\sum")
 define!(:LaTeX, :transp, (letter) -> raw"\text{" * "$letter" * "}")

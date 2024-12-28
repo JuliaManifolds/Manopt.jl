@@ -262,47 +262,159 @@ mutable struct LevenbergMarquardtState{
 end
 
 """
-    smoothing_factory(s::Symbol)
-    smoothing_factory((s,α)::Tuple{Symbol,<:Real})
+    smoothing_factory(s::Symbol=:Identity)
+    smoothing_factory((s,α)::Tuple{Union{Symbol, ManifoldHessianObjective,<:Real})
+    smoothing_factory((s,k)::Tuple{Union{Symbol, ManifoldHessianObjective,<:Int})
+    smoothing_factory(S::NTuple{n, <:Union{Symbol, Tuple{S, Int} S<: Tuple{Symbol, <:Real}}} where n)
     smoothing_factory(o::ManifoldHessianObjective)
 
 Create a smoothing function from a symbol `s`.
-If the smoothing is already a [`ManifoldHessianObjective`](@ref), this is returned unchanged.
-All generated objectives are [`AllocatingEvaluation`](@ref).
 
+For a single symbol `s`, the corresponding smoothing function is returned as a [`ManifoldHessianObjective`](@ref)
+If the argument already is a [`ManifoldHessianObjective`](@ref), it is returned unchanged.
 
+For a tuple `(s, α)`, the smoothing function is scaled by `α` as ``s_α(x) = α s$(_tex(:bigl))($(_tex(:frac, "x", "α^2"))$(_tex(:bigr)))``,
+which yields ``s_α'(x) = s'$(_tex(:bigl))($(_tex(:frac, "x", "α^2"))$(_tex(:bigr)))`` and ``s_α''(x)[X] = $(_tex(:bigl))($(_tex(:frac, "1", "α^2"))$(_tex(:bigr)))s''$(_tex(:bigl))($(_tex(:frac, "x", "α^2"))$(_tex(:bigr)))[X]``.
+
+For a tuple `(s, k)`, a [`VectorHessianFunction`](@ref) is returned, where every component is the smooting function indicated by `s`
+
+Finally for a tuple containing the above four cases, a [`VectorHessianFunction`](@ref) is returned,
+containing all smoothing functions with their repetitions mentioned
+
+# Examples
+
+* `smoothing_factory(:Identity)`: returns the identity function as a single smoothing function
+* `smoothing_factory(:Identity, 2)`: returns a `VectorHessianFunction` with two identity functions
+* `smoothing_factory(mho, 0.5)`: returns a `ManifoldHessianObjective` with the scaled variant of the given `mho`, for example the one returned in the first example
+* `smoothing_factory( ( (:Identity, 2), (:Huber, 3) ))`: returns a `VectorHessianFunction` with 5 components, the first 2 `:Identity` the last 3 `:Huber`
 
 # Currently available smoothing functions
 
-| `Symbol` | ``ρ(s)`` | ``ρ'(s)`` | ``ρ''(s)[X]`` | Comment |
+| `Symbol` | ``s(x)`` | ``s'(x)`` | ``s''(x)`` | Comment |
 |:-------- |:-----:|:------:|:-------:|:------- |
-| `:Identity` | ``s`` | ``1`` | ``0`` | No smoothing, the default |
+| `:Identity` | ``x`` | ``1`` | ``0`` | No smoothing, the default |
+| `:Huber` | ``$(_tex(:cases, "x & $(_tex(:text, " for ")) x ≤ 1", "2$(_tex(:sqrt, "x")) - 1 & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "1 & $(_tex(:text, " for ")) x ≤ 1", "$(_tex(:frac, "1", _tex(:sqrt, "x"))) & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "0 & $(_tex(:text, " for ")) x ≤ 1", "-$(_tex(:frac, "1", "x^{3/2}")) & $(_tex(:text, " for ")) x > 1"))`` | |
+| `:Tukey` | ``$(_tex(:cases, "$(_tex(:frac, "1", "3")) (1-(1-x)^3) & $(_tex(:text, " for ")) x ≤ 1", "$(_tex(:frac, "1", "3")) & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "(1-s)^2 & $(_tex(:text, " for ")) x ≤ 1", "0 & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "s-2 & $(_tex(:text, " for ")) x ≤ 1", "0 & $(_tex(:text, " for ")) x > 1"))`` | |
 
-As well as a scaled variant for any ``ρ`` as ``ρ_α(s) = α ρ$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))``.
-which yields ``ρ_α'(s) = ρ'$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))`` and ``ρ_α''(s)[X] = $(_tex(:bigl))($(_tex(:frac, "1", "α^2"))$(_tex(:bigr)))ρ''$(_tex(:bigl))($(_tex(:frac, "s", "α^2"))$(_tex(:bigr)))[X]``.
-
-Scaling is activated by calling `smoothing_factory((symbol, α))` or `smoothing_factory((o, α))`.
+Note that in the implementation the second derivative follows the general scheme of hessians
+and actually implements s''(x)[X] = s''(x)X``.
 """
 function smoothing_factory(s) end
 
 smoothing_factory() = smoothing_factory(:Identity)
-smoothing_factiory(s::ManifoldHessianObjective) = s
-smoothing_factory(s::Symbol) = smoothing_factory(Val(s))
-function smoothing_factory(::Val{:Identity})
-    return ManifoldHessianObjective((E, x) -> x, (E, x) -> one(x), (E, x, X) -> zero(X))
+smoothing_factory(o::ManifoldHessianObjective) = o
+smoothing_factory(o::VectorHessianFunction) = o
+function smoothing_factory(s::Symbol)
+    return ManifoldHessianObjective(_smoothing_factory(Val(s))...)
 end
 function smoothing_factory((s, α)::Tuple{Symbol,<:Real})
-    o = smoothing_factory(s)
-    return smoothing_factory((o, α))
+    s, s_p, s_pp = _smoothing_factory(s, α)
+    return ManifoldHessianObjective(s, s_p, s_pp)
 end
 function smoothing_factory((o, α)::Tuple{ManifoldHessianObjective,<:Real})
-    return ManifoldHessianObjective(
-        (E, x) -> α^2 * get_cost(E, o, x / α^2),
-        (E, x) -> get_gradient(E, o, x / α^2),
-        (E, x, X) -> get_hessian(E, o, x / α^2, X) / α^2,
+    s, s_p, s_pp = _smoothing_factory(o, α)
+    return ManifoldHessianObjective(s, s_p, s_pp)
+end
+function smoothing_factory((s, k)::Tuple{Symbol,<:Int})
+    s, s_p, s_pp = _smoothing_factory(s, k)
+    return VectorHessianFunction(
+        s,
+        s_p,
+        s_pp,
+        k;
+        function_type=ComponentVectorialType(),
+        jacobian_type=ComponentVectorialType(),
+        hessian_type=ComponentVectorialType(),
     )
 end
+function smoothing_factory((o, k)::Tuple{ManifoldHessianObjective,<:Int})
+    s, s_p, s_pp = _smoothing_factory(o, k)
+    return VectorHessianFunction(
+        s,
+        s_p,
+        s_pp,
+        k;
+        function_type=ComponentVectorialType(),
+        jacobian_type=ComponentVectorialType(),
+        hessian_type=ComponentVectorialType(),
+    )
+end
+function smoothing_factory(
+    S::NTuple{
+        n,
+        <:Union{
+            Symbol,
+            ManifoldHessianObjective,
+            Tuple{Symbol,<:Int},
+            Tuple{Symbol,<:Real},
+            Tuple{ManifoldHessianObjective,<:Int},
+            Tuple{ManifoldHessianObjective,<:Real},
+        },
+    } where {n},
+)
+    s = Function[]
+    s_p = Function[]
+    s_pp = Function[]
+    # collect all functions including their copies into a large vector
+    for t in S
+        _s, _s_p, _s_pp = _smoothing_factory(t...)
+        push!(s, _s...)
+        push!(s_p, _s_p...)
+        push!(s_pp, _s_pp...)
+    end
+    k = length(s)
+    return VectorHessianFunction(
+        s,
+        s_p,
+        s_pp,
+        k;
+        function_type=ComponentVectorialType(),
+        jacobian_type=ComponentVectorialType(),
+        hessian_type=ComponentVectorialType(),
+    )
+end
+# Inner functions that split any smoothing function into its  ρ, ρ' and  ρ'' parts
+function _smoothing_factory(o::ManifoldHessianObjective)
+    return (E, x) -> get_cost(E, o, x),
+    (E, x) -> get_gradient(E, o, x),
+    (E, x, X) -> get_hessian(E, o, x, X)
+end
+function _smoothing_factory(o::ManifoldHessianObjective, α::Real)
+    return (E, x) -> α^2 * get_cost(E, o, x / α^2),
+    (E, x) -> get_gradient(E, o, x / α^2),
+    (E, x, X) -> get_hessian(E, o, x / α^2, X) / α^2
+end
+function _smoothing_factory(s::Symbol, α::Real)
+    s, s_p, s_pp = _smoothing_factory(Val(s))
+    return (E, x) -> α^2 * s(E, x / α^2),
+    (E, x) -> s_p(E, x / α^2),
+    (E, x, X) -> s_pp(E, x / α^2, X) / α^2
+end
+function _smoothing_factory(o::ManifoldHessianObjective, k::Int)
+    return fill((E, x) -> get_cost(E, o, x), k),
+    fill((E, x) -> get_gradient(E, o, x), k),
+    fill((E, x, X) -> get_hessian(E, o, x, X), k)
+end
+function _smoothing_factory(s::Symbol, k::Int)
+    s, s_p, s_pp = _smoothing_factory(Val(s))
+    return fill(s, k), fill(s_p, k), fill(s_pp, k)
+end
+# Library
+function _smoothing_factory(::Val{:Identity})
+    return (E, x) -> x, (E, x) -> one(x), (E, x, X) -> zero(X)
+end
+function _smoothing_factory(::Val{:Huber})
+    return (E, x) -> x <= 1 ? x : 2 * sqrt(x) - 1,
+    (E, x) -> x <= 1 ? 1 : 1 / sqrt(x),
+    (E, x, X) -> (x <= 1 ? 0 : -1 / (2x^(3 / 2))) * X
+end
+function _smoothing_factory(::Val{:Tukey})
+    return (E, x) -> x <= 1 ? 1 / 3 * (1 - (1 - x)^3) : 1 / 3,
+    (E, x) -> x <= 1 ? (1 - s)^2 : 0,
+    (E, x, X) -> (x <= 1 ? x - 2 : 0) * X
+end
 
+# TODO: Vectorial cases: (symbol, int)
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
