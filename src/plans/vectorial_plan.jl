@@ -50,7 +50,7 @@ for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal
 struct ComponentVectorialType <: AbstractVectorialType end
 
 @doc raw"""
-    FunctionVectorialType <: AbstractVectorialType
+    FunctionVectorialType{P<:AbstractPowerRepresentation} <: AbstractVectorialType
 
  A type to indicate that constraints are implemented one whole functions,
 for example ``g(p) ∈ ℝ^m`` or ``\operatorname{grad} g(p) ∈ (T_p\mathcal M)^m``.
@@ -58,9 +58,14 @@ for example ``g(p) ∈ ℝ^m`` or ``\operatorname{grad} g(p) ∈ (T_p\mathcal M)
 This type internally stores the [`AbstractPowerRepresentation`](@ref),
 when it makes sense, especially for Hessian and gradient functions.
 """
-struct FunctionVectorialType <: AbstractVectorialType end
+struct FunctionVectorialType{P<:AbstractPowerRepresentation} <: AbstractVectorialType
+    range::P
+end
 
-# TODO store range type in this type instead of having a keyword argument in so many function.
+get_range(vt::FunctionVectorialType) = vt.range
+get_range(::AbstractVectorialType) = NestedPowerRepresentation()
+
+FunctionVectorialType() = FunctionVectorialType(NestedPowerRepresentation())
 
 @doc raw"""
     AbstractVectorFunction{E, FT} <: Function
@@ -306,7 +311,7 @@ function get_hessian(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 )
     Y = zero_vector(M, p)
     return get_hessian!(M, Y, vhf, p, X, i, range)
@@ -318,7 +323,7 @@ function get_hessian(
     p,
     X,
     i=:, # as long as the length can be found it should work, see _vgf_index_to_length
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 )
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -349,7 +354,7 @@ function get_hessian!(
     p,
     X,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -368,7 +373,7 @@ function get_hessian!(
     p,
     X,
     i::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -386,7 +391,7 @@ function get_hessian!(
     p,
     X,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     n = _vgf_index_to_length(i, vhf.range_dimension)
     mP = PowerManifold(M, range, n)
@@ -400,7 +405,7 @@ function get_hessian!(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     mP = PowerManifold(M, range, vhf.range_dimension)
     copyto!(M, Y, p, vhf.hessians!!(M, p, X)[mP, i])
@@ -428,7 +433,7 @@ function get_hessian!(
     p,
     X,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     n = _vgf_index_to_length(i, vhf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -448,7 +453,7 @@ function get_hessian!(
     p,
     X,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     pM = PowerManifold(M, range, vhf.range_dimension...)
     P = fill(p, pM)
@@ -464,7 +469,7 @@ function get_hessian!(
     p,
     X,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.hessian_type),
 ) where {FT,JT}
     #Single access for function is a bit expensive
     n = _vgf_index_to_length(i, vhf.range_dimension)
@@ -547,7 +552,7 @@ function get_jacobian(
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
     p;
     basis::B=DefaultOrthonormalBasis(),
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vhf.jacobian_type),
 ) where {FT,B<:AbstractBasis}
     n = vgf.range_dimension
     d = manifold_dimension(M, p)
@@ -603,7 +608,7 @@ function get_jacobian(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
     p;
     basis::B=DefaultOrthonormalBasis(),
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT,B<:AbstractBasis}
     n = vgf.range_dimension
     d = manifold_dimension(M, p)
@@ -665,20 +670,19 @@ get_jacobian!(M::AbstractManifold, JF, vgf::AbstractVectorGradientFunction, p)
 # (a) We have a single gradient function
 function get_jacobian!(
     M::AbstractManifold,
-    JF,
+    J,
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
     p;
-    basis::B=DefaultOrthonormalBasis(),
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    basis::B=get_jacobian_basis(vgf),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT,B<:AbstractBasis}
     n = vgf.range_dimension
-    d = manifold_dimension(M, p)
     gradients = vgf.jacobian!!(M, p)
     mP = PowerManifold(M, range, vgf.range_dimension)
     for i in 1:n
-        JF[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
+        J[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
     end
-    return JF
+    return J
 end
 # (b) We have a vector of gradient functions
 function get_jacobian!(
@@ -755,7 +759,7 @@ function get_jacobian!(
     return JF
 end
 
-get_jacobian_basis(vgf::AbstractVectorGradientFunction) = DefaultBasis()
+get_jacobian_basis(vgf::AbstractVectorGradientFunction) = DefaultOrthonormalBasis()
 function get_jacobian_basis(
     vgf::AbstractVectorGradientFunction{F,G,<:CoordinateVectorialType}
 ) where {F,G}
@@ -795,7 +799,7 @@ function get_gradient(
     vgf::AbstractVectorGradientFunction,
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 )
     X = zero_vector(M, p)
     return get_gradient!(M, X, vgf, p, i, range)
@@ -806,7 +810,7 @@ function get_gradient(
     vgf::AbstractVectorGradientFunction,
     p,
     i=:, # as long as the length can be found it should work, see _vgf_index_to_length
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 )
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -847,7 +851,7 @@ function get_gradient!(
     },
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     JF = vgf.jacobian!!(M, p)
     get_vector!(M, X, p, JF[i, :], vgf.jacobian_type.basis) #convert rows to gradients
@@ -861,7 +865,7 @@ function get_gradient!(
     },
     p,
     i=:,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -889,7 +893,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -907,7 +911,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
     p,
     i::Colon,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -924,7 +928,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     mP = PowerManifold(M, range, n)
@@ -937,7 +941,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     mP = PowerManifold(M, range, vgf.range_dimension)
     copyto!(M, X, p, vgf.jacobian!!(M, p)[mP, i])
@@ -953,7 +957,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:CoordinateVectorialType},
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
@@ -974,7 +978,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:CoordinateVectorialType},
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
@@ -999,7 +1003,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=nothing,
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     return vgf.jacobian!![i](M, X, p)
 end
@@ -1009,7 +1013,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType},
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
@@ -1028,7 +1032,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
     p,
     i::Integer,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     pM = PowerManifold(M, range, vgf.range_dimension...)
     P = fill(p, pM)
@@ -1043,7 +1047,7 @@ function get_gradient!(
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
     p,
     i,
-    range::Union{AbstractPowerRepresentation,Nothing}=NestedPowerRepresentation(),
+    range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT<:AbstractVectorialType}
     #Single access for function is a bit expensive
     n = _vgf_index_to_length(i, vgf.range_dimension)
@@ -1064,6 +1068,7 @@ get_gradient_function(vgf::VectorGradientFunction, recursive=false) = vgf.jacobi
 # ---- Value
 @doc raw"""
     get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p[, i=:])
+    get_value!(M::AbstractManifold, V, vgf::AbstractVectorFunction, p[, i=:])
 
 Evaluate the vector function [`VectorGradientFunction`](@ref) `vgf` at `p`.
 The `range` can be used to specify a potential range, but is currently only present for consistency.
@@ -1075,6 +1080,8 @@ The `i` can be a linear index, you can provide
 * a `BitVector` specifying a selection
 * a `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients, which is also the default
+
+This function can perform the evalutation inplace of `V`.
 """
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
@@ -1100,7 +1107,17 @@ function get_value(
 ) where {E<:AbstractEvaluationType}
     return [f(M, p) for f in vgf.value!![i]]
 end
-
+function get_value!(
+    M::AbstractManifold, V, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
+) where {E<:AbstractEvaluationType}
+    c = vgf.value!!(M, p)
+    if isa(c, Number)
+        V .= c
+    else
+        V .= c[i]
+    end
+    return V
+end
 @doc raw"""
     get_value_function(vgf::VectorGradientFunction, recursive=false)
 

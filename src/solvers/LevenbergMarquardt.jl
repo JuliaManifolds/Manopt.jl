@@ -112,11 +112,10 @@ function LevenbergMarquardt(
     vgf::VectorGradientFunction,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    smoothing=:Idenity,
+    smoothing=:Identity,
     kwargs...,
 )
-    _smoothing = smoothing_factory(smoothing)
-    nlso = NonlinearLeastSquaresObjective(vgf, _smoothing; evaluation=evaluation)
+    nlso = NonlinearLeastSquaresObjective(vgf; smoothing=smoothing)
     return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
 end
 function LevenbergMarquardt(
@@ -171,9 +170,9 @@ function LevenbergMarquardt!(
     β::Real=5.0,
     η::Real=0.2,
     damping_term_min::Real=0.1,
-    initial_residual_values=similar(p, get_objective(nlso).num_components),
+    initial_residual_values=similar(p, length(get_objective(nlso).objective)),
     initial_jacobian_f=similar(
-        p, get_objective(nlso).num_components, manifold_dimension(M)
+        p, length(get_objective(nlso).objective), manifold_dimension(M)
     ),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
@@ -204,7 +203,7 @@ function initialize_solver!(
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
-    lms.residual_values = get_objective(dmp).f(M, lms.p)
+    lms.residual_values = get_value(M, get_objective(dmp).objective, lms.p)
     lms.X = get_gradient(dmp, lms.p)
     return lms
 end
@@ -213,35 +212,11 @@ function initialize_solver!(
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
-    get_objective(dmp).f(M, lms.residual_values, lms.p)
-    # TODO: Replace with a call to the Jacobian
-    get_gradient_from_Jacobian!(M, lms.X, get_objective(dmp), lms.p, lms.jacF)
+    nlso = get_objective(dmp)
+    get_residuals!(M, lms.residual_values, nlso, lms.p)
+    get_jacobian!(M, lms.jacobian, nlso, lms.p)
+    get_gradient!(M, lms.X, nlso, lms.p; jacobian_cache=lms.jacobian)
     return lms
-end
-
-function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
-    if requires_caching(B)
-        return get_basis(M, p, B)
-    else
-        return B
-    end
-end
-
-# TODO: Adapt to vectorial function call instead of .f - maybe even skip or rename?
-# TODO: It will just ne “get_value” of the vgf - adapted by smoothing?.
-function get_residuals!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    residuals,
-    p,
-) where {mT}
-    return copyto!(residuals, get_objective(dmp).f(get_manifold(dmp), p))
-end
-function get_residuals!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    residuals,
-    p,
-) where {mT}
-    return get_objective(dmp).f(get_manifold(dmp), residuals, p)
 end
 
 function step_solver!(
@@ -252,18 +227,16 @@ function step_solver!(
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
-    # TODO: Replace with obtaining a basis from the vectorial function
-    basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
     # a new Jacobian is only  needed if the last step was successful
     if lms.last_step_successful
-        get_jacobian!(dmp, lms.jacF, lms.p)
+        get_jacobian!(dmp, lms.jacobian, lms.p)
     end
     λk = lms.damping_term * norm(lms.residual_values)^2
 
-    JJ = transpose(lms.jacF) * lms.jacF + λk * I
+    JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(lms.jacF) * lms.residual_values
+    grad_f_c = transpose(lms.jacobian) * lms.residual_values
     sk = cholesky(JJ) \ -grad_f_c
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
@@ -272,11 +245,11 @@ function step_solver!(
     temp_x = retract(M, lms.p, lms.step_vector, lms.retraction_method)
 
     normFk2 = norm(lms.residual_values)^2
-    get_residuals!(dmp, lms.candidate_residual_values, temp_x)
+    get_value!(M, lms.candidate_residual_values, nlso.objective, temp_x)
 
     ρk =
         (normFk2 - norm(lms.candidate_residual_values)^2) / (
-            -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacF * sk)^2 -
+            -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacobian * sk)^2 -
             λk * norm(sk)^2
         )
     if ρk >= lms.η

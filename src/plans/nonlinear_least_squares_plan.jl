@@ -11,7 +11,7 @@ Specify a nonlinear least squares problem
 # Fields
 
 * `objective`: a [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of cost functions ``f_i`` as well as their gradients ``$(_tex(:grad)) f_i```
-* `smoothing`: a [`ManifoldHessianObjective`](@ref) of a smoothing function ``ρ: ℝ → ℝ``, hence including its first and second derivatives ``ρ'`` and ``ρ''``.
+* `smoothing`: a [`ManifoldHessianObjective`](@ref) or a [`Vector of a smoothing function ``ρ: ℝ → ℝ``, hence including its first and second derivatives ``ρ'`` and ``ρ''``.
 
 This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
 as the (inner) `objective.
@@ -36,99 +36,219 @@ struct NonlinearLeastSquaresObjective{
     smoothing::R
 end
 
-# TODO: Write the ease-of-use constructor.
+function NonlinearLeastSquaresObjective(
+    vgf::F; smoothing=:Identity
+) where {F<:AbstractVectorGradientFunction}
+    s = smoothing_factory(smoothing)
+    return NonlinearLeastSquaresObjective(vgf, s)
+end
 
 # Cost
-# (a) with ρ
+# (a) with for a single smoothing function
 function get_cost(
     M::AbstractManifold,
     nlso::NonlinearLeastSquaresObjective{
-        E,
-        AbstractVectorFunction{E,<:FunctionVectorialType},
-        <:AbstractManifoldHessianObjective,
+        E,AbstractVectorFunction{E,<:ComponentVectorialType},H
     },
     p;
     vector_space=Rn,
-) where {E<:AbstractEvaluationType}
-    return get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p)^2)
+    kwargs...,
+) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
+    v = 0.0
+    for i in 1:length(nlso.objective)
+        v += get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2)
+    end
+    return v
 end
-# (b) without ρ
 function get_cost(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:FunctionVectorialType},H
+    },
+    p;
+    vector_space=Rn,
+    value_cache=get_value(M, nlso.objective, p),
+) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
+    return sum(
+        get_cost(vector_space(1), nlso.smoothing, value_cache[i]) for
+        i in 1:length(value_cache)
+    )
+end
+# (b) vectorial ρ
+function get_cost(
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
+    },
+    p;
+    vector_space=Rn,
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    v = 0.0
+    for i in 1:length(nlso.objective)
+        v += get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2, i)
+    end
+    return v
+end
+function get_cost(
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
+    },
+    p;
+    vector_space=Rn,
+    value_cache=get_value(M, nlso.objective, p),
+) where {E<:AbstractEvaluationType}
+    return sum(
+        get_cost(vector_space(1), nlso.smoothing, value_cache[i], i) for
+        i in 1:length(value_cache)
+    )
+end
+
+function get_jacobian(
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective}, p; kwargs...
+) where {mT}
+    nlso = get_objective(dmp)
+    M = get_manifold(dmp)
+    J = zeros(length(nlso.objective), manifold_dimension(M))
+    get_jacobian!(M, J, nlso, p; kwargs...)
+    return J
+end
+function get_jacobian!(
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective}, J, p; kwargs...
+) where {mT}
+    nlso = get_objective(dmp)
+    M = get_manifold(dmp)
+    get_jacobian!(M, J, nlso, p; kwargs...)
+    return J
+end
+
+function get_jacobian(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
 )
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    return 1//2 * norm(residual_values)^2
+    J = zeros(length(nlso.objective), manifold_dimension(M))
+    get_jacobian!(M, J, nlso, p; kwargs...)
+    return J
+end
+# Cases: (a) single smoothing function
+function get_jacobian!(
+    M::AbstractManifold,
+    J,
+    nlso::NonlinearLeastSquaresObjective{E,AHVF,<:AbstractManifoldGradientObjective},
+    p;
+    value_cache=get_value(M, nlso.objective, p),
+    kwargs...,
+) where {E,AHVF}
+    get_jacobian!(M, J, nlso.objective, p; kwargs...)
+    for i in 1:length(nlso.objective) # s'(f_i(p)) * f_i'(p)
+        J[i, :] .*= get_gradient(vector_space(1), nlso.smoothing, value_cache[i])
+    end
+    return J
+end
+# Cases: (b) vectorial smoothing function
+function get_jacobian!(
+    M::AbstractManifold,
+    J,
+    nlso::NonlinearLeastSquaresObjective{E,AHVF,<:AbstractVectorGradientFunction},
+    p;
+    basis::AbstractBasis=get_jacobian_basis(nlso.objective),
+    value_cache=get_value(M, nlso.objective, p),
+) where {E,AHVF}
+    get_jacobian!(M, J, nlso.objective, p; basis=basis)
+    for i in 1:length(nlso.objective) # s_i'(f_i(p)) * f_i'(p)
+        J[i, :] .*= get_gradient(vector_space(1), nlso.smoothing, value_cache[i], i)
+    end
+    return J
 end
 
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    J,
-    p,
-    basis_domain::AbstractBasis,
-) where {mT}
-    nlso = get_objective(dmp)
-    return copyto!(J, nlso.jacobian!!(get_manifold(dmp), p; basis_domain=basis_domain))
+function get_gradient(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+)
+    X = zero_vector(M, p)
+    return get_gradient!(M, X, nlso, p; kwargs...)
 end
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    J,
-    p,
-    basis_domain::AbstractBasis,
-) where {mT}
-    nlso = get_objective(dmp)
-    return nlso.jacobian!!(get_manifold(dmp), J, p; basis_domain=basis_domain)
-end
-
-# TODO: Replace once we have the Jacobian implemented
-function get_gradient_from_Jacobian!(
+function get_gradient!(
     M::AbstractManifold,
     X,
-    nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
-    p,
-    Jval=zeros(nlso.num_components, manifold_dimension(M)),
+    nlso::NonlinearLeastSquaresObjective,
+    p;
+    basis=get_jacobian_basis(nlso.objective),
+    jacobian_cache=get_jacobian(M, nlso, p; basis=basis),
+    value_cache=get_residuals(M, nlso, p),
 )
-    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
-    return X
+    return get_vector!(M, X, p, transpose(jacobian_cache) * value_cache, basis)
 end
 
-function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
+# Residuals
+# (a) with for a single smoothing function
+function get_residuals(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
 )
-    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
-    residual_values = nlso.f(M, p)
-    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
+    V = zeros(length(nlso.objective))
+    return get_residuals!(M, V, nlso, p; kwargs...)
 end
-function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
-)
-    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = zeros(nlso.num_components, manifold_dimension(M))
-    nlso.jacobian!!(M, Jval, p; basis_domain=basis_x)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
+function get_residuals!(
+    M::AbstractManifold,
+    V,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:ComponentVectorialType},H
+    },
+    p;
+    vector_space=Rn,
+    kwargs...,
+) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
+    for i in 1:length(nlso.objective)
+        V[i] = get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2)
+    end
+    return V
 end
-
-function get_gradient!(
-    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
-)
-    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
-    residual_values = nlso.f(M, p)
-    return get_vector!(M, X, p, transpose(Jval) * residual_values, basis_x)
+function get_residuals!(
+    M::AbstractManifold,
+    V,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:FunctionVectorialType},H
+    },
+    p;
+    vector_space=Rn,
+    value_cache=get_value(M, nlso.objective, p),
+) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
+    for i in 1:length(value_cache)
+        V[i] = get_cost(vector_space(1), nlso.smoothing, value_cache[i])
+    end
+    return V
 end
-
-function get_gradient!(
-    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
-)
-    get_gradient_from_Jacobian!(M, X, nlso, p)
-    return X
+# (b) vectorial ρ
+function get_residuals!(
+    M::AbstractManifold,
+    V,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
+    },
+    p;
+    vector_space=Rn,
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    for i in 1:length(nlso.objective)
+        V[i] = get_cost(
+            vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2, i
+        )
+    end
+    return V
+end
+function get_residuals!(
+    M::AbstractManifold,
+    V,
+    nlso::NonlinearLeastSquaresObjective{
+        E,AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
+    },
+    p;
+    vector_space=Rn,
+    value_cache=get_value(M, nlso.objective, p),
+) where {E<:AbstractEvaluationType}
+    for i in 1:length(value_cache)
+        V[i] = get_cost(vector_space(1), nlso.smoothing, value_cache[i], i)
+    end
+    return V
 end
 
 @doc """
@@ -145,7 +265,7 @@ $(_var(:Field, :retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp`: value of ``F`` for the current proposal point
 $(_var(:Field, :stopping_criterion, "stop"))
-* `jacF`:                 the current Jacobian of ``F``
+* `jacobian`:                 the current Jacobian of ``F``
 * `gradient`:             the current gradient of ``F``
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
 * `last_stepsize`:        length of `step_vector`
@@ -160,7 +280,7 @@ $(_var(:Field, :stopping_criterion, "stop"))
 
 # Constructor
 
-    LevenbergMarquardtState(M, initial_residual_values, initial_jacF; kwargs...)
+    LevenbergMarquardtState(M, initial_residual_values, initial_jacobian; kwargs...)
 
 Generate the Levenberg-Marquardt solver state.
 
@@ -194,7 +314,7 @@ mutable struct LevenbergMarquardtState{
     retraction_method::TRTM
     residual_values::Tresidual_values
     candidate_residual_values::Tresidual_values
-    jacF::TJac
+    jacobian::TJac
     X::TGrad
     step_vector::TGrad
     last_stepsize::Tparams
@@ -207,7 +327,7 @@ mutable struct LevenbergMarquardtState{
     function LevenbergMarquardtState(
         M::AbstractManifold,
         initial_residual_values::Tresidual_values,
-        initial_jacF::TJac;
+        initial_jacobian::TJac;
         p::P=rand(M),
         X::TGrad=zero_vector(M, p),
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -247,7 +367,7 @@ mutable struct LevenbergMarquardtState{
             retraction_method,
             initial_residual_values,
             copy(initial_residual_values),
-            initial_jacF,
+            initial_jacobian,
             X,
             allocate(M, X),
             zero(Tparams),
@@ -277,6 +397,7 @@ For a tuple `(s, α)`, the smoothing function is scaled by `α` as ``s_α(x) = �
 which yields ``s_α'(x) = s'$(_tex(:bigl))($(_tex(:frac, "x", "α^2"))$(_tex(:bigr)))`` and ``s_α''(x)[X] = $(_tex(:bigl))($(_tex(:frac, "1", "α^2"))$(_tex(:bigr)))s''$(_tex(:bigl))($(_tex(:frac, "x", "α^2"))$(_tex(:bigr)))[X]``.
 
 For a tuple `(s, k)`, a [`VectorHessianFunction`](@ref) is returned, where every component is the smooting function indicated by `s`
+If the argument already is a [`VectorHessianFunction`](@ref), it is returned unchanged.
 
 Finally for a tuple containing the above four cases, a [`VectorHessianFunction`](@ref) is returned,
 containing all smoothing functions with their repetitions mentioned
@@ -284,9 +405,9 @@ containing all smoothing functions with their repetitions mentioned
 # Examples
 
 * `smoothing_factory(:Identity)`: returns the identity function as a single smoothing function
-* `smoothing_factory(:Identity, 2)`: returns a `VectorHessianFunction` with two identity functions
-* `smoothing_factory(mho, 0.5)`: returns a `ManifoldHessianObjective` with the scaled variant of the given `mho`, for example the one returned in the first example
-* `smoothing_factory( ( (:Identity, 2), (:Huber, 3) ))`: returns a `VectorHessianFunction` with 5 components, the first 2 `:Identity` the last 3 `:Huber`
+* `smoothing_factory(:Identity, 2)`: returns a [`VectorHessianFunction`](@ref) with two identity functions
+* `smoothing_factory(mho, 0.5)`: returns a [`ManifoldHessianObjective`](@ref) with the scaled variant of the given `mho`, for example the one returned in the first example
+* `smoothing_factory( ( (:Identity, 2), (:Huber, 3) ))`: returns a [`VectorHessianFunction`](@ref) with 5 components, the first 2 `:Identity` the last 3 `:Huber`
 
 # Currently available smoothing functions
 
