@@ -199,16 +199,7 @@ end
 # Solver functions
 #
 function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    lms::LevenbergMarquardtState,
-) where {mT<:AbstractManifold}
-    M = get_manifold(dmp)
-    lms.residual_values = get_value(M, get_objective(dmp).objective, lms.p)
-    lms.X = get_gradient(dmp, lms.p)
-    return lms
-end
-function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
@@ -229,10 +220,10 @@ function step_solver!(
     nlso = get_objective(dmp)
     # a new Jacobian is only  needed if the last step was successful
     if lms.last_step_successful
-        get_jacobian!(dmp, lms.jacobian, lms.p)
+        get_jacobian!(M, lms.jacobian, nlso, lms.p)
     end
     λk = lms.damping_term * norm(lms.residual_values)^2
-
+    basis_ox = get_jacobian_basis(nlso.objective)
     JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
