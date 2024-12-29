@@ -121,6 +121,8 @@ ManifoldCostGradientObjective
 ```@docs
 get_gradient
 get_gradients
+get_residuals
+get_residuals!
 ```
 
 and internally
@@ -268,6 +270,8 @@ Base.length(::VectorGradientFunction)
 ```@docs
 Manopt._to_iterable_indices
 Manopt._change_basis!
+Manopt.get_basis
+Manopt.get_range
 ```
 
 ### Subproblem objective

@@ -34,7 +34,7 @@ Return a basis that fits a vector function representation.
 For the case, where some vectorial data is stored with respect to a basis,
 this function returns the corresponding basis, most prominently for the [`CoordinateVectorialType`](@ref).
 
-If a type is not with respect to a certain basis, the [`DefaultOrthonormalBasis`](@ref) is returned
+If a type is not with respect to a certain basis, the [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) is returned
 """
 get_basis(::AbstractVectorialType) = DefaultOrthonormalBasis()
 get_basis(cvt::CoordinateVectorialType) = cvt.basis
@@ -68,7 +68,7 @@ struct ComponentVectorialType <: AbstractVectorialType end
  A type to indicate that constraints are implemented one whole functions,
 for example ``g(p) ∈ ℝ^m`` or ``\operatorname{grad} g(p) ∈ (T_p\mathcal M)^m``.
 
-This type internally stores the [`AbstractPowerRepresentation`](@ref),
+This type internally stores the [`AbstractPowerRepresentation`](@extref `ManifoldsBase.AbstractPowerRepresentation`),
 when it makes sense, especially for Hessian and gradient functions.
 """
 struct FunctionVectorialType{P<:AbstractPowerRepresentation} <: AbstractVectorialType
@@ -81,7 +81,7 @@ end
 Return an abstract power manifold representation that fits a vector function's range.
 Most prominently a [`FunctionVectorialType`](@ref) returns its internal range.
 
-Otherwise the default [`NestedPowerRepresentation`](@ref) is used to work on
+Otherwise the default [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`)`()` is used to work on
 a vector of data.
 """
 get_range(vt::FunctionVectorialType) = vt.range
@@ -542,7 +542,7 @@ Compute the Jacobian ``J_F ∈ ℝ^{m×n}`` of the [`AbstractVectorGradientFunct
 
 There are two interpretations of the Jacobian of a vectorial function ``F: $(_math(:M)) → ℝ^m`` on a manifold.
 Both depend on choosing a basis on the tangent space ``$(_math(:TpM))`` which we denote by
-``Y_1,…,Y_n``, where `n` is the [`manifold_dimension`](@extref) of `M`.
+``Y_1,…,Y_n``, where `n` is the $(_link(:manifold_dimension))`(M)`.
 We can write any tangent vector ``X = $(_tex(:displaystyle))$(_tex(:sum))_i c_iY_i``
 
 1. The Jacobian ``J_F`` is the matrix with respect to the basis ``Y_1,…,Y_n`` such that
