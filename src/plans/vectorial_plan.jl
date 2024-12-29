@@ -788,7 +788,7 @@ function get_jacobian!(
     FT,VGF<:AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:CoordinateVectorialType}
 }
     vgf.jacobian!!(M, JF, p)
-    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    _change_basis!(M, p, JF, vgf.jacobian_type.basis, basis)
     return JF
 end
 
@@ -1119,7 +1119,7 @@ This function can perform the evalutation inplace of `V`.
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
     M::AbstractManifold, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
-) where {E<:AbstractEvaluationType}
+) where {E<:AllocatingEvaluation}
     c = vgf.value!!(M, p)
     if isa(c, Number)
         return c
@@ -1140,9 +1140,25 @@ function get_value(
 ) where {E<:AbstractEvaluationType}
     return [f(M, p) for f in vgf.value!![i]]
 end
+function get_value(
+    M::AbstractManifold,
+    vgf::AbstractVectorFunction{E,<:FunctionVectorialType},
+    p,
+    i=:;
+    value_cache=zeros(vgf.range_dimension),
+) where {E<:InplaceEvaluation}
+    vgf.value!!(M, value_cache, p)
+    return value_cache[i]
+end
+# A ComponentVectorialType Inplace does that make sense, since those would be real - valued functions
+
 function get_value!(
-    M::AbstractManifold, V, vgf::AbstractVectorFunction{E,<:FunctionVectorialType}, p, i=:
-) where {E<:AbstractEvaluationType}
+    M::AbstractManifold,
+    V,
+    vgf::AbstractVectorFunction{AllocatingEvaluation,<:FunctionVectorialType},
+    p,
+    i=:,
+)
     c = vgf.value!!(M, p)
     if isa(c, Number)
         V .= c
@@ -1151,6 +1167,20 @@ function get_value!(
     end
     return V
 end
+
+function get_value!(
+    M::AbstractManifold,
+    V,
+    vgf::AbstractVectorFunction{InplaceEvaluation,<:FunctionVectorialType},
+    p,
+    i=:;
+    value_cache=zeros(vgf.range_dimension),
+)
+    vgf.value!!(M, value_cache, p)
+    V .= value_cache[i]
+    return V
+end
+
 @doc raw"""
     get_value_function(vgf::VectorGradientFunction, recursive=false)
 

@@ -3,6 +3,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
 @testset "VectorialGradientCost" begin
     M = ManifoldsBase.DefaultManifold(3)
     g(M, p) = [p[1] - 1, -p[2] - 1]
+    g!(M, V, p) = (V .= [p[1] - 1, -p[2] - 1])
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     hess_g(M, p, X) = [copy(X), -copy(X)]
@@ -37,7 +38,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
         function_type=ComponentVectorialType(),
         jacobian_type=ComponentVectorialType(),
     )
-    vgf_fi = VectorGradientFunction(g, grad_g!, 2; evaluation=InplaceEvaluation())
+    vgf_fi = VectorGradientFunction(g!, grad_g!, 2; evaluation=InplaceEvaluation())
     vgf_vi = VectorGradientFunction(
         [g1, g2],
         [grad_g1!, grad_g2!],
@@ -50,7 +51,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
         g, jac_g, 2; jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis())
     )
     vgf_ji = VectorGradientFunction(
-        g,
+        g!,
         jac_g!,
         2;
         jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis()),
@@ -71,7 +72,7 @@ using Manopt: get_value, get_value_function, get_gradient_function
         jacobian_type=ComponentVectorialType(),
         hessian_type=ComponentVectorialType(),
     )
-    vhf_fi = VectorHessianFunction(g, grad_g!, hess_g!, 2; evaluation=InplaceEvaluation())
+    vhf_fi = VectorHessianFunction(g!, grad_g!, hess_g!, 2; evaluation=InplaceEvaluation())
     vhf_vi = VectorHessianFunction(
         [g1, g2],
         [grad_g1!, grad_g2!],
