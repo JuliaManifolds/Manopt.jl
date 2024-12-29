@@ -36,6 +36,28 @@ struct NonlinearLeastSquaresObjective{
     smoothing::R
 end
 
+# TODO document
+function NonlinearLeastSquaresObjective(
+    f,
+    jacobian,
+    range_dimension;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
+    function_type=FunctionVectorialType(),
+    kwargs...,
+)
+    vgf = VectorGradientFunction(
+        f,
+        jacobian,
+        range_dimension;
+        evaluation=evaluation,
+        jacobian_type=jacobian_type,
+        function_type=function_type,
+    )
+    return NonlinearLeastSquaresObjective(vgf; kwargs...)
+end
+
 function NonlinearLeastSquaresObjective(
     vgf::F; smoothing=:Identity
 ) where {F<:AbstractVectorGradientFunction}
@@ -48,7 +70,7 @@ end
 function get_cost(
     M::AbstractManifold,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:ComponentVectorialType},H
+        E,<:AbstractVectorFunction{E,<:ComponentVectorialType},H
     },
     p;
     vector_space=Rn,
@@ -63,7 +85,7 @@ end
 function get_cost(
     M::AbstractManifold,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:FunctionVectorialType},H
+        E,<:AbstractVectorFunction{E,<:FunctionVectorialType},H
     },
     p;
     vector_space=Rn,
@@ -78,7 +100,7 @@ end
 function get_cost(
     M::AbstractManifold,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
+        E,<:AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
     },
     p;
     vector_space=Rn,
@@ -93,7 +115,7 @@ end
 function get_cost(
     M::AbstractManifold,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
+        E,<:AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
     },
     p;
     vector_space=Rn,
@@ -136,6 +158,7 @@ function get_jacobian!(
     J,
     nlso::NonlinearLeastSquaresObjective{E,AHVF,<:AbstractManifoldGradientObjective},
     p;
+    vector_space=Rn,
     value_cache=get_value(M, nlso.objective, p),
     kwargs...,
 ) where {E,AHVF}
@@ -151,7 +174,7 @@ function get_jacobian!(
     J,
     nlso::NonlinearLeastSquaresObjective{E,AHVF,<:AbstractVectorGradientFunction},
     p;
-    basis::AbstractBasis=get_jacobian_basis(nlso.objective),
+    basis::AbstractBasis=get_basis(nlso.objective.jacobian_type),
     value_cache=get_value(M, nlso.objective, p),
 ) where {E,AHVF}
     get_jacobian!(M, J, nlso.objective, p; basis=basis)
@@ -172,14 +195,34 @@ function get_gradient!(
     X,
     nlso::NonlinearLeastSquaresObjective,
     p;
-    basis=get_jacobian_basis(nlso.objective),
+    basis=get_basis(nlso.objective.jacobian_type),
     jacobian_cache=get_jacobian(M, nlso, p; basis=basis),
     value_cache=get_residuals(M, nlso, p),
 )
     return get_vector!(M, X, p, transpose(jacobian_cache) * value_cache, basis)
 end
 
-# Residuals
+#
+#
+# --- Residuals
+_doc_get_residuals_nlso = """
+    get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
+    get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p)
+
+Compute the vector of residuals ``s_i(f_i(p))``, ``i=1,…,n`` given the manifold `M`,
+the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
+
+# Keyword arguments
+
+* `vector_space=`[`Rn`](@ref)`: a vector space to use for evaluating the single
+  smoothing functions ``s_i`` on.
+* `value_cache=`[`get_value`](@ref)`(M, nlso.objective, p)`: a cache to provide the
+  function evaltuation vector of the ``f_i(p)``, ``i=1,…,n`` in.
+"""
+
+@doc "$(_doc_get_residuals_nlso)"
+get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+
 # (a) with for a single smoothing function
 function get_residuals(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
@@ -187,11 +230,15 @@ function get_residuals(
     V = zeros(length(nlso.objective))
     return get_residuals!(M, V, nlso, p; kwargs...)
 end
+
+@doc "$(_doc_get_residuals_nlso)"
+get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+
 function get_residuals!(
     M::AbstractManifold,
     V,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:ComponentVectorialType},H
+        E,<:AbstractVectorFunction{E,<:ComponentVectorialType},H
     },
     p;
     vector_space=Rn,
@@ -206,7 +253,7 @@ function get_residuals!(
     M::AbstractManifold,
     V,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:FunctionVectorialType},H
+        E,<:AbstractVectorFunction{E,<:FunctionVectorialType},H
     },
     p;
     vector_space=Rn,
@@ -222,7 +269,7 @@ function get_residuals!(
     M::AbstractManifold,
     V,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
+        E,<:AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
     },
     p;
     vector_space=Rn,
@@ -239,7 +286,7 @@ function get_residuals!(
     M::AbstractManifold,
     V,
     nlso::NonlinearLeastSquaresObjective{
-        E,AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
+        E,<:AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
     },
     p;
     vector_space=Rn,

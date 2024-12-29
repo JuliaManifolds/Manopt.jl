@@ -83,7 +83,7 @@ function LevenbergMarquardt(
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     function_type::AbstractVectorialType=FunctionVectorialType(),
-    jacobian_type::AbstractVectorialType=FunctionVectorialType(),
+    jacobian_type::AbstractVectorialType=CoordinateVectorialType(DefaultOrthonormalBasis()),
     kwargs...,
 )
     if num_components == -1
@@ -135,6 +135,8 @@ function LevenbergMarquardt!(
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
+    function_type=FunctionVectorialType(),
     kwargs...,
 )
     if num_components == -1
@@ -153,7 +155,8 @@ function LevenbergMarquardt!(
         jacobian_f,
         num_components;
         evaluation=evaluation,
-        jacobian_tangent_basis=jacobian_tangent_basis,
+        jacobian_type=jacobian_type,
+        function_type=function_type,
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation=evaluation, kwargs...)
 end
@@ -223,7 +226,7 @@ function step_solver!(
         get_jacobian!(M, lms.jacobian, nlso, lms.p)
     end
     λk = lms.damping_term * norm(lms.residual_values)^2
-    basis_ox = get_jacobian_basis(nlso.objective)
+    basis_ox = get_basis(nlso.objective.jacobian_type)
     JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
