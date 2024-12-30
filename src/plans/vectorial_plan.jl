@@ -1164,11 +1164,7 @@ function get_value!(
     i=:,
 )
     c = vgf.value!!(M, p)
-    if isa(c, Number)
-        V .= c
-    else
-        V .= c[i]
-    end
+    V .= c[i]
     return V
 end
 

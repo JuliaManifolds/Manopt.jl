@@ -57,6 +57,8 @@ using Manopt: get_value, get_value_function, get_gradient_function
         jacobian_type=CoordinateVectorialType(DefaultOrthonormalBasis()),
         evaluation=InplaceEvaluation(),
     )
+    @test Manopt.get_jacobian_basis(vgf_ji) == vgf_ji.jacobian_type.basis
+    @test Manopt.get_jacobian_basis(vgf_vi) == DefaultOrthonormalBasis()
     p = [1.0, 2.0, 3.0]
     c = [0.0, -3.0]
     gg = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
