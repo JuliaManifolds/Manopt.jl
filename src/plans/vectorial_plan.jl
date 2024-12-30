@@ -21,11 +21,14 @@ for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal
 # Fields
 
 * `basis` an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) to indicate the default representation.
+
+# Constructor
+    CoordinateVectorialType(basis=DefaultOrthonormalBasis())
 """
 struct CoordinateVectorialType{B<:AbstractBasis} <: AbstractVectorialType
     basis::B
 end
-
+CoordinateVectorialType() = CoordinateVectorialType(DefaultOrthonormalBasis())
 """
     get_basis(::AbstractVectorialType)
 
@@ -641,7 +644,7 @@ function get_jacobian(
     n = vgf.range_dimension
     d = manifold_dimension(M, p)
     mP = PowerManifold(M, range, vgf.range_dimension)
-    gradients = zero_vector(mP, fill(p, pM))
+    gradients = zero_vector(mP, fill(p, mP))
     vgf.jacobian!!(M, gradients, p)
     # generate the first row to get an eltype
     c1 = get_coordinates(M, p, gradients[mP, 1], basis)
@@ -711,10 +714,8 @@ function get_jacobian!(
     n = vgf.range_dimension
     gradients = vgf.jacobian!!(M, p)
     mP = PowerManifold(M, range, vgf.range_dimension)
-    println("range ", range, "mP", mP)
     for i in 1:n
         c = @view J[i, :]
-        println("G ", gradients)
         get_coordinates!(M, c, p, gradients[mP, i], basis)
     end
     return J
@@ -748,15 +749,21 @@ end
 # Part II: mutating vgf – allocating jacobian
 # (a) We have a single gradient function
 function get_jacobian!(
-    M::AbstractManifold, JF, vgf::VGF, p; basis::B=DefaultOrthonormalBasis()
+    M::AbstractManifold,
+    JF,
+    vgf::VGF,
+    p;
+    basis::B=DefaultOrthonormalBasis(),
+    range::AbstractPowerRepresentation=get_range(vgf.jacobian_type),
 ) where {
     FT,
     VGF<:AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
     B<:AbstractBasis,
 }
-    gradients = zero_vector(mP, fill(p, pM))
+    mP = PowerManifold(M, range, vgf.range_dimension)
+    gradients = zero_vector(mP, fill(p, mP))
     vgf.jacobian!!(M, gradients, p)
-    for i in 1:n
+    for i in 1:(vgf.range_dimension)
         JF[i, :] .= get_coordinates(M, p, gradients[mP, i], basis)
     end
     return JF
@@ -772,7 +779,7 @@ function get_jacobian!(
 ) where {
     FT,VGF<:AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:ComponentVectorialType}
 }
-    for i in 1:n
+    for i in 1:(vgf.range_dimension)
         vgf.jacobian!![i](M, X, p)
         JF[i, :] .= get_coordinates(M, p, X, basis)
     end
@@ -847,8 +854,7 @@ function get_gradient(
 )
     n = _vgf_index_to_length(i, vgf.range_dimension)
     pM = PowerManifold(M, range, n)
-    P = fill(p, pM)
-    X = zero_vector(pM, P)
+    X = zero_vector(pM, fill(p, pM))
     return get_gradient!(M, X, vgf, p, i, range)
 end
 # (c) Special cases where allocations can be skipped
@@ -994,8 +1000,7 @@ function get_gradient!(
 ) where {FT<:AbstractVectorialType}
     # a type wise safe way to allocate what usually should yield a n-times-d matrix
     pM = PowerManifold(M, range, vgf.range_dimension...)
-    P = fill(p, pM)
-    Y = zero_vector(pM, P)
+    Y = zero_vector(pM, fill(p, pM))
     JF = reshape(
         get_coordinates(pM, fill(p, pM), Y, vgf.jacobian_type.basis),
         power_dimensions(pM)...,

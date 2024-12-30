@@ -95,8 +95,11 @@ function get_cost(
 ) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
     v = 0.0
     for i in 1:length(nlso.objective)
-        v += get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2)
+        v += get_cost(
+            vector_space(1), nlso.smoothing, abs(get_value(M, nlso.objective, p, i))^2
+        )
     end
+    v *= 0.5
     return v
 end
 function get_cost(
@@ -108,8 +111,8 @@ function get_cost(
     vector_space=Rn,
     value_cache=get_value(M, nlso.objective, p),
 ) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
-    return sum(
-        get_cost(vector_space(1), nlso.smoothing, value_cache[i]) for
+    return 0.5 * sum(
+        get_cost(vector_space(1), nlso.smoothing, abs(value_cache[i])^2) for
         i in 1:length(value_cache)
     )
 end
@@ -125,8 +128,11 @@ function get_cost(
 ) where {E<:AbstractEvaluationType}
     v = 0.0
     for i in 1:length(nlso.objective)
-        v += get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2, i)
+        v += get_value(
+            vector_space(1), nlso.smoothing, abs(get_value(M, nlso.objective, p, i))^2, i
+        )
     end
+    v *= 0.5
     return v
 end
 function get_cost(
@@ -138,8 +144,8 @@ function get_cost(
     vector_space=Rn,
     value_cache=get_value(M, nlso.objective, p),
 ) where {E<:AbstractEvaluationType}
-    return sum(
-        get_cost(vector_space(1), nlso.smoothing, value_cache[i], i) for
+    return 0.5 * sum(
+        get_value(vector_space(1), nlso.smoothing, abs(value_cache[i])^2, i) for
         i in 1:length(value_cache)
     )
 end
@@ -191,6 +197,7 @@ function get_jacobian!(
     J,
     nlso::NonlinearLeastSquaresObjective{E,AHVF,<:AbstractVectorGradientFunction},
     p;
+    vector_space=Rn,
     basis::AbstractBasis=get_basis(nlso.objective.jacobian_type),
     value_cache=get_value(M, nlso.objective, p),
 ) where {E,AHVF}
@@ -226,7 +233,7 @@ _doc_get_residuals_nlso = """
     get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
     get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p)
 
-Compute the vector of residuals ``s_i(f_i(p))``, ``i=1,…,n`` given the manifold `M`,
+Compute the vector of residuals ``f_i(p)``, ``i=1,…,n`` given the manifold `M`,
 the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
 
 # Keyword arguments
@@ -258,11 +265,10 @@ function get_residuals!(
         E,<:AbstractVectorFunction{E,<:ComponentVectorialType},H
     },
     p;
-    vector_space=Rn,
     kwargs...,
 ) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
     for i in 1:length(nlso.objective)
-        V[i] = get_cost(vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2)
+        V[i] = get_value(M, nlso.objective, p, i)
     end
     return V
 end
@@ -273,11 +279,10 @@ function get_residuals!(
         E,<:AbstractVectorFunction{E,<:FunctionVectorialType},H
     },
     p;
-    vector_space=Rn,
     value_cache=get_value(M, nlso.objective, p),
 ) where {E<:AbstractEvaluationType,H<:AbstractManifoldHessianObjective}
     for i in 1:length(value_cache)
-        V[i] = get_cost(vector_space(1), nlso.smoothing, value_cache[i])
+        V[i] = value_cache[i]
     end
     return V
 end
@@ -289,13 +294,10 @@ function get_residuals!(
         E,<:AbstractVectorFunction{E,<:ComponentVectorialType},<:AbstractVectorFunction
     },
     p;
-    vector_space=Rn,
     kwargs...,
 ) where {E<:AbstractEvaluationType}
     for i in 1:length(nlso.objective)
-        V[i] = get_cost(
-            vector_space(1), nlso.smoothing, get_value(nlso.objective, p, i)^2, i
-        )
+        V[i] = get_value(M, nlso.objective, p, i)
     end
     return V
 end
@@ -306,11 +308,10 @@ function get_residuals!(
         E,<:AbstractVectorFunction{E,<:FunctionVectorialType},<:AbstractVectorFunction
     },
     p;
-    vector_space=Rn,
     value_cache=get_value(M, nlso.objective, p),
 ) where {E<:AbstractEvaluationType}
     for i in 1:length(value_cache)
-        V[i] = get_cost(vector_space(1), nlso.smoothing, value_cache[i], i)
+        V[i] = value_cache[i]
     end
     return V
 end
