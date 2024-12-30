@@ -151,24 +151,6 @@ function get_cost(
 end
 
 function get_jacobian(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective}, p; kwargs...
-) where {mT}
-    nlso = get_objective(dmp)
-    M = get_manifold(dmp)
-    J = zeros(length(nlso.objective), manifold_dimension(M))
-    get_jacobian!(M, J, nlso, p; kwargs...)
-    return J
-end
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective}, J, p; kwargs...
-) where {mT}
-    nlso = get_objective(dmp)
-    M = get_manifold(dmp)
-    get_jacobian!(M, J, nlso, p; kwargs...)
-    return J
-end
-
-function get_jacobian(
     M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
 )
     J = zeros(length(nlso.objective), manifold_dimension(M))
@@ -446,6 +428,7 @@ mutable struct LevenbergMarquardtState{
     end
 end
 
+function smoothing_factory end
 """
     smoothing_factory(s::Symbol=:Identity)
     smoothing_factory((s,α)::Tuple{Union{Symbol, ManifoldHessianObjective,<:Real})
@@ -489,13 +472,16 @@ containing all smoothing functions with their repetitions mentioned
 Note that in the implementation the second derivative follows the general scheme of hessians
 and actually implements s''(x)[X] = s''(x)X``.
 """
-function smoothing_factory(s) end
+smoothing_factory(s)
 
 smoothing_factory() = smoothing_factory(:Identity)
 smoothing_factory(o::ManifoldHessianObjective) = o
 smoothing_factory(o::VectorHessianFunction) = o
 function smoothing_factory(s::Symbol)
     return ManifoldHessianObjective(_smoothing_factory(Val(s))...)
+end
+function _smoothing_factory(s::Symbol)
+    return _smoothing_factory(Val(s))
 end
 function smoothing_factory((s, α)::Tuple{Symbol,<:Real})
     s, s_p, s_pp = _smoothing_factory(s, α)
@@ -529,28 +515,22 @@ function smoothing_factory((o, k)::Tuple{ManifoldHessianObjective,<:Int})
         hessian_type=ComponentVectorialType(),
     )
 end
-function smoothing_factory(
-    S::NTuple{
-        n,
-        <:Union{
-            Symbol,
-            ManifoldHessianObjective,
-            Tuple{Symbol,<:Int},
-            Tuple{Symbol,<:Real},
-            Tuple{ManifoldHessianObjective,<:Int},
-            Tuple{ManifoldHessianObjective,<:Real},
-        },
-    } where {n},
-)
+function smoothing_factory(S...)
     s = Function[]
     s_p = Function[]
     s_pp = Function[]
     # collect all functions including their copies into a large vector
     for t in S
-        _s, _s_p, _s_pp = _smoothing_factory(t...)
-        push!(s, _s...)
-        push!(s_p, _s_p...)
-        push!(s_pp, _s_pp...)
+        _s, _s_p, _s_pp = t isa Tuple ? _smoothing_factory(t...) : _smoothing_factory(t)
+        if _s isa Array
+            push!(s, _s...)
+            push!(s_p, _s_p...)
+            push!(s_pp, _s_pp...)
+        else
+            push!(s, _s)
+            push!(s_p, _s_p)
+            push!(s_pp, _s_pp)
+        end
     end
     k = length(s)
     return VectorHessianFunction(
@@ -569,6 +549,10 @@ function _smoothing_factory(o::ManifoldHessianObjective)
     (E, x) -> get_gradient(E, o, x),
     (E, x, X) -> get_hessian(E, o, x, X)
 end
+function _smoothing_factory(o::VectorHessianFunction)
+    return o.value!!, o.jacobian!!, o.hessians!!
+end
+
 function _smoothing_factory(o::ManifoldHessianObjective, α::Real)
     return (E, x) -> α^2 * get_cost(E, o, x / α^2),
     (E, x) -> get_gradient(E, o, x / α^2),

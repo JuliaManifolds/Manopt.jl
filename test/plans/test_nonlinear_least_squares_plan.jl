@@ -129,8 +129,14 @@ using Manifolds, Manopt, Test
         end
     end
     @testset "Smootthing factory" begin
-        s1 = Manopt.smoothing_factory(:Identity)
+        s1 = Manopt.smoothing_factory()
         @test s1 isa ManifoldHessianObjective
+        s1s = Manopt.smoothing_factory((s1, 2.0))
+        @test s1s isa ManifoldHessianObjective
+        s1v = Manopt.smoothing_factory((s1, 3))
+        @test s1v isa VectorHessianFunction
+        @test length(s1v) == 3
+
         @test Manopt.smoothing_factory(s1) === s1 # Passthrough for mhos
         s2 = Manopt.smoothing_factory((:Identity, 2))
         @test s2 isa VectorHessianFunction
@@ -145,8 +151,9 @@ using Manifolds, Manopt, Test
             @test s4 isa ManifoldHessianObjective
         end
 
-        s5 = Manopt.smoothing_factory(((:Identity, 2), (:Huber, 3)))
+        # Combine all different types
+        s5 = Manopt.smoothing_factory((:Identity, 2), (:Huber, 3), s1, :Tukey, s2)
         @test s5 isa VectorHessianFunction
-        @test length(s5) == 5
+        @test length(s5) == 9
     end
 end
