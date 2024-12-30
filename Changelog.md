@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* the Levenberg-Marquardt algorithm internally uses a `VectorGradientFunction`,
-which males a “gradient matrix” and a vector of gradient functions available additionally to
-a Jacobian, that requires bases for tangent spaces
+* the Levenberg-Marquardt algorithm internally uses a `VectorGradientFunction`, which allows
+ to use a vector of gradients of a function returning all gradients as wel for the algorithm
+* smoothing is now available for the Levenberg-Marquardt algorithm
+
 
 ### Changed
 
 * Minimum Julia version is now 1.10 (the LTS which replaced 1.6)
+* The vectorial functions had a bug where the original vector function for the mutating case
+  was not always treated as mutating.
 
 ### Removed
 
