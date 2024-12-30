@@ -433,8 +433,9 @@ function smoothing_factory end
     smoothing_factory(s::Symbol=:Identity)
     smoothing_factory((s,α)::Tuple{Union{Symbol, ManifoldHessianObjective,<:Real})
     smoothing_factory((s,k)::Tuple{Union{Symbol, ManifoldHessianObjective,<:Int})
-    smoothing_factory(S::NTuple{n, <:Union{Symbol, Tuple{S, Int} S<: Tuple{Symbol, <:Real}}} where n)
     smoothing_factory(o::ManifoldHessianObjective)
+    smoothing_factory(o::VectorHessianFunction)
+    smoothing_factory(s...)
 
 Create a smoothing function from a symbol `s`.
 
@@ -447,8 +448,8 @@ which yields ``s_α'(x) = s'$(_tex(:bigl))($(_tex(:frac, "x", "α^2"))$(_tex(:bi
 For a tuple `(s, k)`, a [`VectorHessianFunction`](@ref) is returned, where every component is the smooting function indicated by `s`
 If the argument already is a [`VectorHessianFunction`](@ref), it is returned unchanged.
 
-Finally for a tuple containing the above four cases, a [`VectorHessianFunction`](@ref) is returned,
-containing all smoothing functions with their repetitions mentioned
+Finally passing a sequence of these different cases as `s...`, a [`VectorHessianFunction`](@ref) is returned,
+containing all smoothing functions with their repetitions mentioned as a vectorial function.
 
 # Examples
 

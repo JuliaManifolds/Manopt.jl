@@ -87,8 +87,12 @@ using Manifolds, Manopt, Test
             smoothing=s2,
         )
 
-        nlsoJas = NonlinearLeastSquaresObjective(f, J, 2; smoothing=s1)
-        nlsoJav = NonlinearLeastSquaresObjective(f, J, 2; smoothing=s2)
+        nlsoJas = NonlinearLeastSquaresObjective(
+            f, J, 2; jacobian_type=CoordinateVectorialType(), smoothing=s1
+        )
+        nlsoJav = NonlinearLeastSquaresObjective(
+            f, J, 2; jacobian_type=CoordinateVectorialType(), smoothing=s2
+        )
         nlsoJis = NonlinearLeastSquaresObjective(
             f!, J!, 2; evaluation=InplaceEvaluation(), smoothing=s1
         )
@@ -126,7 +130,22 @@ using Manifolds, Manopt, Test
             get_jacobian!(M, G, nlso, p)
             @test G == get_jacobian(M, nlso, p)
             @test G == Gt
+            # since s1/s2 are the identity we can also always check agains the allocating
+            # jacobian of the objective
+            G2 = get_jacobian(M, nlso.objective, p)
+            @test G2 == Gt
         end
+    end
+    @testset "Test Change of basis" begin
+        J = ones(2, 2)
+        Jt = ones(2, 2)
+        M = Euclidean(2)
+        p = [0.5, 0.5]
+        B1 = DefaultBasis()
+        B2 = DefaultOrthonormalBasis()
+        Manopt._change_basis!(M, J, p, B1, B2)
+        # In practice both are the same basis in coordinates, so Jtt stays as iss
+        @test J == Jt
     end
     @testset "Smootthing factory" begin
         s1 = Manopt.smoothing_factory()

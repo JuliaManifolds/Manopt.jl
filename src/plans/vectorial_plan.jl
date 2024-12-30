@@ -516,7 +516,7 @@ get_hessian_function(vgf::VectorHessianFunction, recursive::Bool=false) = vgf.he
 
 # A small helper function to change the basis of a Jacobian
 """
-    _change_basis!(M::AbstractManifold, p, JF, from_basis::B1, to_basis::B; X=zero_vector(M,p))
+    _change_basis!(M::AbstractManifold, JF, p, from_basis::B1, to_basis::B; X=zero_vector(M,p))
 
 Given a jacobian matrix `JF` on a manifold `M` at `p` with respect to the `from_basis`
 in the tangent space of `p` on `M`. Change the basis of the Jacobian to `to_basis` in place of `JF`.
@@ -525,7 +525,7 @@ in the tangent space of `p` on `M`. Change the basis of the Jacobian to `to_basi
 * `X` a temporary vector to store a generated vector, before decomposing it again with respect to the new basis
 """
 function _change_basis!(
-    M, p, JF, from_basis::B1, to_basis::B2; X=zero_vector(M, p)
+    M, JF, p, from_basis::B1, to_basis::B2; X=zero_vector(M, p)
 ) where {B1<:AbstractBasis,B2<:AbstractBasis}
     # change every row to new basis
     for i in 1:size(JF, 1) # every row
@@ -535,8 +535,11 @@ function _change_basis!(
     return JF
 end
 # case we have the same basis: nothing to do, just return JF
-_change_basis!(M, p, JF, from_basis::B, to_basis_new) where {B<:AbstractBasis} = JF
-
+function _change_basis!(
+    M, JF, p, from_basis::B, to_basis_new::B; kwargs...
+) where {B<:AbstractBasis}
+    return JF
+end
 _doc_get_jacobian_vgf = """
     get_jacobian(M::AbstractManifold, vgf::AbstractVectorGradientFunction, p; kwargs...)
     get_jacobian(M::AbstractManifold, J, vgf::AbstractVectorGradientFunction, p; kwargs...)
@@ -580,13 +583,17 @@ get_jacobian(::AbstractManifold, ::AbstractVectorGradientFunction, p; kwargs...)
 # (a) We have a single gradient function
 function get_jacobian(
     M::AbstractManifold,
-    vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
+    vgf::VGF,
     p;
     basis::B=get_basis(vgf.jacobian_type),
     range::AbstractPowerRepresentation=get_range(vgf.jacobian_type),
-) where {FT,B<:AbstractBasis}
+) where {
+    FT,
+    VGF<:AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:FunctionVectorialType},
+    B<:AbstractBasis,
+}
     n = vgf.range_dimension
-    d = manifold_dimension(M, p)
+    d = manifold_dimension(M)
     gradients = vgf.jacobian!!(M, p)
     mP = PowerManifold(M, range, vgf.range_dimension)
     # generate the first row to get an eltype
@@ -600,14 +607,13 @@ function get_jacobian(
 end
 # (b) We have a vector of gradient functions
 function get_jacobian(
-    M::AbstractManifold,
-    vgf::AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
-    p;
-    basis=get_basis(vgf.jacobian_type),
-    kwargs...,
-) where {FT}
+    M::AbstractManifold, vgf::VGF, p; basis=get_basis(vgf.jacobian_type), kwargs...
+) where {
+    FT,
+    VGF<:AbstractVectorGradientFunction{<:AllocatingEvaluation,FT,<:ComponentVectorialType},
+}
     n = vgf.range_dimension
-    d = manifold_dimension(M, p)
+    d = manifold_dimension(M)
     # generate the first row to get an eltype
     c1 = get_coordinates(M, p, vgf.jacobian!![1](M, p), basis)
     JF = zeros(eltype(c1), n, d)
@@ -619,16 +625,15 @@ function get_jacobian(
 end
 # (c) We have a Jacobian function
 function get_jacobian(
-    M::AbstractManifold,
-    vgf::AbstractVectorGradientFunction{
+    M::AbstractManifold, vgf::VGF, p; basis=get_basis(vgf.jacobian_type), kwargs...
+) where {
+    FT,
+    VGF<:AbstractVectorGradientFunction{
         <:AllocatingEvaluation,FT,<:CoordinateVectorialType
     },
-    p;
-    basis=get_basis(vgf.jacobian_type),
-    kwargs...,
-) where {FT}
+}
     JF = vgf.jacobian!!(M, p)
-    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    _change_basis!(M, p, JF, vgf.jacobian_type.basis, basis)
     return JF
 end
 
@@ -642,7 +647,7 @@ function get_jacobian(
     range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT,B<:AbstractBasis}
     n = vgf.range_dimension
-    d = manifold_dimension(M, p)
+    d = manifold_dimension(M)
     mP = PowerManifold(M, range, vgf.range_dimension)
     gradients = zero_vector(mP, fill(p, mP))
     vgf.jacobian!!(M, gradients, p)
@@ -663,7 +668,7 @@ function get_jacobian(
     basis=get_basis(vgf.jacobian_type),
 ) where {FT}
     n = vgf.range_dimension
-    d = manifold_dimension(M, p)
+    d = manifold_dimension(M)
     # generate the first row to get an eltype
     X = zero_vector(M, p)
     vgf.jacobian!![1](M, X, p)
@@ -675,9 +680,6 @@ function get_jacobian(
         JF[i, :] .= get_coordinates(M, p, X, basis)
     end
     return JF
-    JF = vgf.jacobian!!(M, p)
-    _change_basis!(JF, vgf.jacobian_type.basis, basis)
-    return JF
 end
 # (c) We have a Jacobian function
 function get_jacobian(
@@ -686,10 +688,10 @@ function get_jacobian(
     p;
     basis=get_basis(vgf.jacobian_type),
 ) where {FT}
-    c = get_coordinats(M, p, zero_vector(M, p))
-    JF = zeros(eltype(c), vgf.range_dimension, manifold_dimension(M, p))
+    c = get_coordinates(M, p, zero_vector(M, p))
+    JF = zeros(eltype(c), vgf.range_dimension, manifold_dimension(M))
     vgf.jacobian!!(M, JF, p)
-    _change_basis!(JF, vgf.jacobian_type.basis, basis)
+    _change_basis!(M, JF, p, vgf.jacobian_type.basis, basis)
     return JF
 end
 
@@ -742,7 +744,7 @@ function get_jacobian!(
     },
 }
     JF .= vgf.jacobian!!(M, p)
-    _change_basis!(M, p, JF, vgf.jacobian_type.basis, basis)
+    _change_basis!(M, JF, p, vgf.jacobian_type.basis, basis)
     return JF
 end
 
@@ -784,9 +786,6 @@ function get_jacobian!(
         JF[i, :] .= get_coordinates(M, p, X, basis)
     end
     return JF
-    JF = vgf.jacobian!!(M, p)
-    _change_basis!(JF, vgf.jacobian_type.basis, basis)
-    return JF
 end
 # (c) We have a Jacobian function
 function get_jacobian!(
@@ -795,7 +794,7 @@ function get_jacobian!(
     FT,VGF<:AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:CoordinateVectorialType}
 }
     vgf.jacobian!!(M, JF, p)
-    _change_basis!(M, p, JF, vgf.jacobian_type.basis, basis)
+    _change_basis!(M, JF, p, vgf.jacobian_type.basis, basis)
     return JF
 end
 
