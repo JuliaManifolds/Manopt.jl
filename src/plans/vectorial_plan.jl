@@ -798,12 +798,11 @@ function get_jacobian!(
     return JF
 end
 
-get_jacobian_basis(vgf::AbstractVectorGradientFunction) = DefaultOrthonormalBasis()
-function get_jacobian_basis(
-    vgf::AbstractVectorGradientFunction{F,G,<:CoordinateVectorialType}
-) where {F,G}
-    return vgf.jacobian_type.basis
+function get_jacobian_basis(vgf::AbstractVectorGradientFunction)
+    return _get_jacobian_basis(vgf.jacobian_type)
 end
+_get_jacobian_basis(jt::AbstractVectorialType) = DefaultOrthonormalBasis()
+_get_jacobian_basis(jt::CoordinateVectorialType) = jt.basis
 
 #
 #
