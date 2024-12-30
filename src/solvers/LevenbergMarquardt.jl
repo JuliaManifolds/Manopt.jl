@@ -53,7 +53,8 @@ $(_var(:Keyword, :evaluation))
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 $(_var(:Keyword, :retraction_method))
-* `smoothing`: specify a smoothing function ``s`` for all ``s_i=s`` as an [`ManifoldHessianObjective`](@ref) or a vector of smoothing functions ``(s_1,…s_n)`` together as a [`VectorHessianFunction`](@ref).
+* `smoothing=:Identity`: specify a smoothing function ``s`` for all ``s_i=s`` as an [`ManifoldHessianObjective`](@ref) or a vector of smoothing functions ``(s_1,…s_n)`` together as a [`VectorHessianFunction`](@ref).
+  You can also generate them using certain symbols and parameters. For all available options see the [`smoothing_factory`](@ref).
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
 $(_note(:OtherKeywords))

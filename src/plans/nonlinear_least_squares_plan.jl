@@ -11,17 +11,35 @@ Specify a nonlinear least squares problem
 # Fields
 
 * `objective`: a [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of cost functions ``f_i`` as well as their gradients ``$(_tex(:grad)) f_i```
-* `smoothing`: a [`ManifoldHessianObjective`](@ref) or a [`Vector of a smoothing function ``ρ: ℝ → ℝ``, hence including its first and second derivatives ``ρ'`` and ``ρ''``.
+* `smoothing`: a [`ManifoldHessianObjective`](@ref) or a [`Vector of a smoothing function ``s: ℝ → ℝ``, hence including its first and second derivatives ``s'`` and ``s''``.
 
 This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
-as the (inner) `objective.
-The smoothing is expected to be  the smoothing is expected to be [`AllocatingEvaluation`](@ref),
-since it works on a one-dimensional vector space ``ℝ`` only anyways.
+as the (inner) `objective`.
+The smoothing is expected to be be of [`AllocatingEvaluation`](@ref) type,
+since it works on a one-dimensional vector space ``ℝ`` or each of its components does.
 
 # Constructors
 
-    NonlinearLeastSquaresObjective(f_i, grad_f_i, ρ::F, ρ_prime::G, ρ_prime_prime::H) where {F<:Function}
-    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, ρ::Union{ManifoldHessianObjective, VectorHessianFunction})
+    NonlinearLeastSquaresObjective(f, jacobian, range_dimension; kwargs...)
+    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction, smoothing = :Identity)
+
+# Arguments
+
+* `f` the vectorial cost function ``f: $(_math(:M)) → ℝ^m``
+* `jacobian` the Jacobian, might also be a vector of gradients of the component functions of `f`
+* `range_dimension` the number of dimensions `m` the function `f` maps into
+
+These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf` already.
+For this second constructor, the `smoothing=` keyword is the second positional argument.
+
+# Keyword arguments
+
+$(_var(:Keyword, :evaluation))
+* `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: format the
+* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify the basis the Jacobian matrix is build with.
+* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoordinateVectorialType`](@ref)`(jacobian_tangent_basis)`: specify the format the Jacobian is given in. By default a matrix of the differential with respect to a certain basis of the tangent space.
+* `smoothing::Union{`[`ManifoldHessianObjective`](@ref),[`VectorHessianFunction`](@ref)`,Symbol}=:Identity`: specify the type of smoothing,
+  either applied to all components, a vector for each component or a symbol passed to the [`smoothing_factory`](@ref) of predefined smoothing types.
 
 # See also
 
@@ -36,15 +54,14 @@ struct NonlinearLeastSquaresObjective{
     smoothing::R
 end
 
-# TODO document
 function NonlinearLeastSquaresObjective(
     f,
     jacobian,
     range_dimension;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
-    jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
-    function_type=FunctionVectorialType(),
+    jacobian_type::AbstractVectorialType=CoordinateVectorialType(jacobian_tangent_basis),
+    function_type::AbstractVectorialType=FunctionVectorialType(),
     kwargs...,
 )
     vgf = VectorGradientFunction(
@@ -453,16 +470,20 @@ containing all smoothing functions with their repetitions mentioned
 
 * `smoothing_factory(:Identity)`: returns the identity function as a single smoothing function
 * `smoothing_factory(:Identity, 2)`: returns a [`VectorHessianFunction`](@ref) with two identity functions
+* `smoothing_factory(:Identity, 2.0)`: returns a [`VectorHessianFunction`](@ref) with the identity ``s(x) = x`` function scaled to ``s_2(x)`` as described above
 * `smoothing_factory(mho, 0.5)`: returns a [`ManifoldHessianObjective`](@ref) with the scaled variant of the given `mho`, for example the one returned in the first example
 * `smoothing_factory( ( (:Identity, 2), (:Huber, 3) ))`: returns a [`VectorHessianFunction`](@ref) with 5 components, the first 2 `:Identity` the last 3 `:Huber`
 
 # Currently available smoothing functions
 
 | `Symbol` | ``s(x)`` | ``s'(x)`` | ``s''(x)`` | Comment |
-|:-------- |:-----:|:------:|:-------:|:------- |
-| `:Identity` | ``x`` | ``1`` | ``0`` | No smoothing, the default |
-| `:Huber` | ``$(_tex(:cases, "x & $(_tex(:text, " for ")) x ≤ 1", "2$(_tex(:sqrt, "x")) - 1 & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "1 & $(_tex(:text, " for ")) x ≤ 1", "$(_tex(:frac, "1", _tex(:sqrt, "x"))) & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "0 & $(_tex(:text, " for ")) x ≤ 1", "-$(_tex(:frac, "1", "x^{3/2}")) & $(_tex(:text, " for ")) x > 1"))`` | |
-| `:Tukey` | ``$(_tex(:cases, "$(_tex(:frac, "1", "3")) (1-(1-x)^3) & $(_tex(:text, " for ")) x ≤ 1", "$(_tex(:frac, "1", "3")) & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "(1-s)^2 & $(_tex(:text, " for ")) x ≤ 1", "0 & $(_tex(:text, " for ")) x > 1"))`` | ``$(_tex(:cases, "s-2 & $(_tex(:text, " for ")) x ≤ 1", "0 & $(_tex(:text, " for ")) x > 1"))`` | |
+|:------ |:-----:|:-----:|:-----:|:--------- |
+| `:Arctan` | ``$(_tex(:rm, "arctan"))(x)`` | ``$(_tex(:displaystyle))$(_tex(:frac, "1", "x^2+1"))`` | ``-$(_tex(:displaystyle))$(_tex(:frac, "2x", "(x^2+1)^2"))`` | |
+| `:Cauchy` | ``$(_tex(:log))(1+x)`` | ``$(_tex(:displaystyle))$(_tex(:frac, "1", "1+x"))`` | ``-$(_tex(:displaystyle))$(_tex(:frac, "1", "(1+x)^2"))`` | |
+| `:Huber` | ``$(_tex(:cases, "x, &  x ≤ 1,", "2$(_tex(:sqrt, "x")) - 1, &  x > 1."))`` | ``$(_tex(:cases, "1, &  x ≤ 1,", "$(_tex(:frac, "1", _tex(:sqrt, "x"))), &  x > 1."))`` | ``$(_tex(:cases, "0, &  x ≤ 1,", "-$(_tex(:frac, "1", "x^{3/2}")), &  x > 1."))`` | |
+| `:Identity` | ``x`` | ``1`` | ``0`` | default (no smoothing) |
+| `:SoftL1` | ``2$(_tex(:sqrt, "1+x")) - 1`` | ``$(_tex(:displaystyle))$(_tex(:frac, "1", _tex(:sqrt, "1+x")))`` | ``-$(_tex(:displaystyle))$(_tex(:frac, "1", "2(1+x)^{3/2}"))`` | |
+| `:Tukey` | ``$(_tex(:cases, "$(_tex(:frac, "1", "3"))-$(_tex(:frac, "1", "3"))(1-x)^3, &  x ≤ 1,", "$(_tex(:frac, "1", "3")), &  x > 1."))`` | ``$(_tex(:cases, "(1-x)^2, &  x ≤ 1,", "0, &  x > 1."))`` | ``$(_tex(:cases, "x-2, &  x ≤ 1,", "0, &  x > 1."))`` | |
 
 Note that in the implementation the second derivative follows the general scheme of hessians
 and actually implements s''(x)[X] = s''(x)X``.
@@ -568,13 +589,27 @@ function _smoothing_factory(s::Symbol, k::Int)
     return fill(s, k), fill(s_p, k), fill(s_pp, k)
 end
 # Library
-function _smoothing_factory(::Val{:Identity})
-    return (E, x) -> x, (E, x) -> one(x), (E, x, X) -> zero(X)
+function _smoothing_factory(::Val{:Arctan})
+    return (E, x) -> arctan(x),
+    (E, x) -> x <= 1 / (x^2 + 1),
+    (E, x, X) -> 2 * x / (x^2 + 1)^2
+end
+function _smoothing_factory(::Val{:Cauchy})
+    return (E, x) -> log(1 + x), (E, x) -> x <= 1 / (1 + x), (E, x, X) -> -1 / (1 + x)^2
 end
 function _smoothing_factory(::Val{:Huber})
     return (E, x) -> x <= 1 ? x : 2 * sqrt(x) - 1,
     (E, x) -> x <= 1 ? 1 : 1 / sqrt(x),
     (E, x, X) -> (x <= 1 ? 0 : -1 / (2x^(3 / 2))) * X
+end
+# Default
+function _smoothing_factory(::Val{:Identity})
+    return (E, x) -> x, (E, x) -> one(x), (E, x, X) -> zero(X)
+end
+function _smoothing_factory(::Val{:SoftL1})
+    return (E, x) -> 2 * sqrt(1 + x) - 1,
+    (E, x) -> x <= 1 / sqrt(1 + x),
+    (E, x, X) -> -1 / (2 * (1 + x)^(3 / 2))
 end
 function _smoothing_factory(::Val{:Tukey})
     return (E, x) -> x <= 1 ? 1 / 3 * (1 - (1 - x)^3) : 1 / 3,
@@ -582,7 +617,6 @@ function _smoothing_factory(::Val{:Tukey})
     (E, x, X) -> (x <= 1 ? x - 2 : 0) * X
 end
 
-# TODO: Vectorial cases: (symbol, int)
 function show(io::IO, lms::LevenbergMarquardtState)
     i = get_count(lms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
