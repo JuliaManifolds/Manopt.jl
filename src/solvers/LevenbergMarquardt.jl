@@ -11,7 +11,7 @@ to solve
 
 $(_problem(:NonLinearLeastSquares))
 
-The second signature performs the optimization in-place of `p`.
+The second block of signatures perform the optimization in-place of `p`.
 
 # Input
 
@@ -35,8 +35,7 @@ $(_var(:Argument, :p))
   for mutating evaluation this value must be explicitly specified.
 
 You can also provide the cost and its Jacobian already as a[`VectorGradientFunction`](@ref) `vgf`,
-Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`,
-then both the keyword `jacobian_tangent_basis` and the `smoothing` are ignored.
+Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
 
 # Keyword arguments
 
@@ -53,9 +52,6 @@ $(_var(:Keyword, :evaluation))
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 $(_var(:Keyword, :retraction_method))
-* `smoothing=:Identity`: specify a smoothing function ``s`` for all ``s_i=s`` as an [`ManifoldHessianObjective`](@ref) or a vector of smoothing functions ``(s_1,…s_n)`` together as a [`VectorHessianFunction`](@ref).
-  You can also generate them using certain symbols and parameters. For all available options see the [`smoothing_factory`](@ref).
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
 $(_note(:OtherKeywords))
 
@@ -113,10 +109,9 @@ function LevenbergMarquardt(
     vgf::VectorGradientFunction,
     p;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    smoothing=:Identity,
     kwargs...,
 )
-    nlso = NonlinearLeastSquaresObjective(vgf; smoothing=smoothing)
+    nlso = NonlinearLeastSquaresObjective(vgf)
     return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
 end
 function LevenbergMarquardt(
@@ -180,7 +175,6 @@ function LevenbergMarquardt!(
     ),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
-    i_nlso = get_objective(nlso) # un-decorate for safety
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(

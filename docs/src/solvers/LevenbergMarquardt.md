@@ -15,12 +15,6 @@ LevenbergMarquardt!
 LevenbergMarquardtState
 ```
 
-## Available smoothing functions
-
-```@docs
-Manopt.smoothing_factory
-```
-
 ## [Technical details](@id sec-lm-technical-details)
 
 The [`LevenbergMarquardt`](@ref) solver requires the following functions of a manifold to be available

@@ -11,8 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * the Levenberg-Marquardt algorithm internally uses a `VectorGradientFunction`, which allows
  to use a vector of gradients of a function returning all gradients as wel for the algorithm
-* smoothing is now available for the Levenberg-Marquardt algorithm
-
+* The `VectorGradientFunction` now also have a `get_jacobian` function
 
 ### Changed
 

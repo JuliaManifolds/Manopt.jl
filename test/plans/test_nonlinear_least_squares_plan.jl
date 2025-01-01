@@ -1,7 +1,7 @@
 using Manifolds, Manopt, Test
 
 @testset "Nonlinear lest squares plan" begin
-    @testset "Test cost/residual/jacobian cases with smoothing" begin
+    @testset "Test cost/residual/jacobian cases" begin
         # a simple nlso objetive on R2
         M = Euclidean(2)
         d1 = [1, 0]
@@ -22,103 +22,46 @@ using Manifolds, Manopt, Test
         J(M, x) = cat(j1(M, x), j2(M, x); dims=2)
         J!(M, J, x) = (J .= cat(j1(M, x), j2(M, x); dims=2))
         # Smoothing types
-        s1 = Manopt.smoothing_factory(:Identity)
-        s2 = Manopt.smoothing_factory((:Identity, 2))
 
         # Test all (new) possible combinations of vectorial cost and Jacobian
         # (1) [F]unction (Gradient), [C]omponent (Gradients), [J] Coordinate (Jacobian in Basis)
         # (2) [a]llocating [i] inplace
-        # (3) [s] single smoothing [v] vector smoothing
-        nlsoFas = NonlinearLeastSquaresObjective(
-            f, JF, 2; jacobian_type=FunctionVectorialType(), smoothing=s1
+        nlsoFa = NonlinearLeastSquaresObjective(
+            f, JF, 2; jacobian_type=FunctionVectorialType()
         )
-        nlsoFav = NonlinearLeastSquaresObjective(
-            f, JF, 2; jacobian_type=FunctionVectorialType(), smoothing=s2
-        )
-        nlsoFis = NonlinearLeastSquaresObjective(
+        nlsoFi = NonlinearLeastSquaresObjective(
             f!,
             JF!,
             2;
             evaluation=InplaceEvaluation(),
             jacobian_type=FunctionVectorialType(),
-            smoothing=s1,
         )
-        nlsoFiv = NonlinearLeastSquaresObjective(
-            f!,
-            JF!,
-            2;
-            evaluation=InplaceEvaluation(),
-            jacobian_type=FunctionVectorialType(),
-            smoothing=s2,
-        )
-
-        nlsoCas = NonlinearLeastSquaresObjective(
+        nlsoCa = NonlinearLeastSquaresObjective(
             [f1, f2],
             [j1, j2],
             2;
             function_type=ComponentVectorialType(),
             jacobian_type=ComponentVectorialType(),
-            smoothing=s1,
         )
-        nlsoCav = NonlinearLeastSquaresObjective(
-            [f1, f2],
-            [j1, j2],
-            2;
-            function_type=ComponentVectorialType(),
-            jacobian_type=ComponentVectorialType(),
-            smoothing=s2,
-        )
-        nlsoCis = NonlinearLeastSquaresObjective(
+        nlsoCi = NonlinearLeastSquaresObjective(
             [f1, f2],
             [j1!, j2!],
             2;
             function_type=ComponentVectorialType(),
             jacobian_type=ComponentVectorialType(),
             evaluation=InplaceEvaluation(),
-            smoothing=s1,
         )
-        nlsoCiv = NonlinearLeastSquaresObjective(
-            [f1, f2],
-            [j1!, j2!],
-            2;
-            function_type=ComponentVectorialType(),
-            jacobian_type=ComponentVectorialType(),
-            evaluation=InplaceEvaluation(),
-            smoothing=s2,
+        nlsoJa = NonlinearLeastSquaresObjective(
+            f, J, 2; jacobian_type=CoordinateVectorialType()
         )
-
-        nlsoJas = NonlinearLeastSquaresObjective(
-            f, J, 2; jacobian_type=CoordinateVectorialType(), smoothing=s1
-        )
-        nlsoJav = NonlinearLeastSquaresObjective(
-            f, J, 2; jacobian_type=CoordinateVectorialType(), smoothing=s2
-        )
-        nlsoJis = NonlinearLeastSquaresObjective(
-            f!, J!, 2; evaluation=InplaceEvaluation(), smoothing=s1
-        )
-        nlsoJiv = NonlinearLeastSquaresObjective(
-            f!, J!, 2; evaluation=InplaceEvaluation(), smoothing=s2
-        )
+        nlsoJi = NonlinearLeastSquaresObjective(f!, J!, 2; evaluation=InplaceEvaluation())
 
         p = [0.5, 0.5]
         V = [0.0, 0.0]
         Vt = [1 / sqrt(2), 1 / sqrt(2)]
         G = zeros(2, 2)
         Gt = 1 / sqrt(2) .* [-1.0 1.0; 1.0 -1.0]
-        for nlso in [
-            nlsoFas,
-            nlsoFav,
-            nlsoFis,
-            nlsoFiv,
-            nlsoCas,
-            nlsoCav,
-            nlsoCis,
-            nlsoCiv,
-            nlsoJas,
-            nlsoJav,
-            nlsoJis,
-            nlsoJiv,
-        ]
+        for nlso in [nlsoFa, nlsoFi, nlsoCa, nlsoCi, nlsoJa, nlsoJi]
             c = get_cost(M, nlso, p)
             @test c ≈ 0.5
             fill!(V, 0.0)
@@ -146,33 +89,5 @@ using Manifolds, Manopt, Test
         Manopt._change_basis!(M, J, p, B1, B2)
         # In practice both are the same basis in coordinates, so Jtt stays as iss
         @test J == Jt
-    end
-    @testset "Smootthing factory" begin
-        s1 = Manopt.smoothing_factory()
-        @test s1 isa ManifoldHessianObjective
-        s1s = Manopt.smoothing_factory((s1, 2.0))
-        @test s1s isa ManifoldHessianObjective
-        s1v = Manopt.smoothing_factory((s1, 3))
-        @test s1v isa VectorHessianFunction
-        @test length(s1v) == 3
-
-        @test Manopt.smoothing_factory(s1) === s1 # Passthrough for mhos
-        s2 = Manopt.smoothing_factory((:Identity, 2))
-        @test s2 isa VectorHessianFunction
-        @test length(s2) == 2
-        @test Manopt.smoothing_factory(s2) === s2 # Passthrough for vhfs
-
-        s3 = Manopt.smoothing_factory((:Identity, 3.0))
-        @test s3 isa ManifoldHessianObjective
-
-        for s in [:Arctan, :Cauchy, :Huber, :SoftL1, :Tukey]
-            s4 = Manopt.smoothing_factory(s)
-            @test s4 isa ManifoldHessianObjective
-        end
-
-        # Combine all different types
-        s5 = Manopt.smoothing_factory((:Identity, 2), (:Huber, 3), s1, :Tukey, s2)
-        @test s5 isa VectorHessianFunction
-        @test length(s5) == 9
     end
 end

@@ -391,7 +391,6 @@ export get_state,
     forward_operator!,
     get_objective,
     get_unconstrained_objective
-export smoothing_factory
 export get_hessian, get_hessian!
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator

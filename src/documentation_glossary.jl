@@ -268,13 +268,11 @@ define!(
     :NonLinearLeastSquares,
     (; M="M", p="p") -> """
 ```math
-$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2)) $(_tex(:sum))_{i=1}^n s_i$(_tex(:bigl))($(_tex(:bigl))( $(_tex(:abs, "f_i($p)"))^2 $(_tex(:bigr)))
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2)) $(_tex(:sum))_{i=1}^n $(_tex(:abs, "f_i($p)"))^2
 ```
 
 where ``f: $(_math(:M; M=M)) → ℝ^n`` is written with component functions ``f_i: $(_math(:M; M=M)) → ℝ``,
 and each component function is continuously differentiable.
-The function ``s_i: ℝ → ℝ`` can be seen as smoothing or regularisation  of the least squares term.
-It is assumed to be twice continuously differentiable and its default is ``s_i(x) = x`` for all ``i=1,…n``.
 """,
 )
 
