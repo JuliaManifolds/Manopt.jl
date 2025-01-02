@@ -35,3 +35,6 @@ mutable struct MeshAdaptiveSearchState{P,F<:Real,M,PT,ST,TStop<:StoppingCriterio
     poll::PT
     search::ST
 end
+
+# TODO: Stopping critertion based on poll_size
+# TODO: Show for state

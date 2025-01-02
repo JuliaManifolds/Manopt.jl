@@ -65,7 +65,7 @@ function LowerTriangularAdaptivePoll(
     )
 end
 function get_poll_success(poll!::LowerTriangularAdaptivePoll)
-    return nothing
+    return poll!.last_poll_improved
 end
 function (poll!::LowerTriangularAdaptivePoll)(amp::AbstractManoptProblem, stepsize)
     return M = get_manifold(amp)
@@ -81,13 +81,20 @@ end
 * `last_seach_improved::Bool` indicate whether the last search was succesfull, i.e. improved the cost.
 * `retraction_method` – a method to perform the retractiom
 """
-mutable struct DefaultSearch{P,T} <: AbstractMeshSearchFunction
+mutable struct DefaultMeshAdaptiveDirectSearch{P,T} <: AbstractMeshSearchFunction
     q::P
     X::T
     last_seach_improved::Bool
 end
-
-function (seach!::DefaultSearch)(amp::AbstractManoptProblem, mesh_size)
+function get_search_success(search!::DefaultMeshAdaptiveDirectSearch)
+    return search!.last_seach_improved
+end
+function (search!::DefaultMeshAdaptiveDirectSearch)(amp::AbstractManoptProblem, mesh_size)
     return M = get_manifold(amp)
     # Implement the code from Dreisigmeyer p. 17 about search generation
 end
+
+# TODO: lower_triangular_mesh_adaptive_direct_search highlevel interface
+
+# TODO: Init solver: Do a first poll already? Probably good idea.
+# TODO: step_solver to call search, poll and update both sizes.
