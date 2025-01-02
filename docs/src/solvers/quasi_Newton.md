@@ -129,7 +129,7 @@ The [`quasi_Newton`](@ref) solver requires the following functions of a manifold
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points and similarly `copy(M, p, X)` for tangent vectors.
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 
-Most Hessian approximations further require [`get_coordinates`](@extref `ManifoldsBase.get_coordinates-Tuple{AbstractManifold, Any, Any, ManifoldsBase.AbstractBasis}`)`(M, p, X, b)` with respect to the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `b` provided, which is [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) by default from the `basis=` keyword.
+Most Hessian approximations further require [`get_coordinates`](@extref `ManifoldsBase.get_coordinates`)`(M, p, X, b)` with respect to the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `b` provided, which is [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) by default from the `basis=` keyword.
 
 
 

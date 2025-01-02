@@ -9,7 +9,9 @@ on a tangent bundle might be.
 function max_stepsize(M::TangentBundle, p)
     return max_stepsize(M.manifold, p[M, :point])
 end
-
+function max_stepsize(M::TangentBundle)
+    return max_stepsize(M.manifold)
+end
 """
     max_stepsize(M::FixedRankMatrices, p)
 

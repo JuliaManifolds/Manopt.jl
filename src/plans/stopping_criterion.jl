@@ -192,16 +192,54 @@ end
     StopWhenChangeLess <: StoppingCriterion
 
 stores a threshold when to stop looking at the norm of the change of the
-optimization variable from within a [`AbstractManoptSolverState`](@ref), i.e `get_iterate(o)`.
-For the storage a [`StoreStateAction`](@ref) is used
+optimization variable from within a [`AbstractManoptSolverState`](@ref) `s`.
+That ism by accessing `get_iterate(s)` and comparing successive iterates.
+For the storage a [`StoreStateAction`](@ref) is used.
+
+# Fields
+
+
+$(_var(:Field, :at_iteration))
+$(_var(:Field, :last_change))
+$(_var(:Field, :inverse_retraction_method))
+$(_var(:Field, :storage))
+* `at_iteration::Int`: indicate at which iteration this stopping criterion was last active.
+* `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@ref) that can be passed
+  to approximate the distance by this inverse retraction and a norm on the tangent space.
+  This can be used if neither the distance nor the logarithmic map are availannle on `M`.
+* `last_change`: store the last change
+* `storage`: A [`StoreStateAction`](@ref) to access the previous iterate.
+* `threshold`: the threshold for the change to check (run under to stop)
+* `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
+  that is used to compute the overall distance based on the element-wise distance.
+  You can deactivate this, but setting this value to `missing`.
+
+# Example
+
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
+Then, denoting the `outer_norm` by ``r``, the distance of two points ``p,q ∈ $(_math(:M))``
+is given by
+
+```
+$(_math(:distance))(p,q) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_math(:distance))(p_k,q_k)^r $(_tex(:Bigr)))^{$(_tex(:frac, "1","r"))},
+```
+
+where the sum turns into a maximum for the case ``r=∞``.
+The `outer_norm` has no effect on manifolds that do not consist of components.
+
+
+If the manifold does not have components, the outer norm is ignored.
+
 
 # Constructor
 
     StopWhenChangeLess(
         M::AbstractManifold,
-        ε::Float64;
+        threshold::Float64;
         storage::StoreStateAction=StoreStateAction([:Iterate]),
-        inverse_retraction_method::IRT=default_inverse_retraction_method(manifold)
+        inverse_retraction_method::IRT=default_inverse_retraction_method(M)
+        outer_norm::Union{Missing,Real}=missing
     )
 
 initialize the stopping criterion to a threshold `ε` using the
@@ -210,22 +248,24 @@ default. You can also provide an inverse_retraction_method for the `distance` or
 to use its default inverse retraction.
 """
 mutable struct StopWhenChangeLess{
-    F,IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction
+    F,IRT<:AbstractInverseRetractionMethod,TSSA<:StoreStateAction,N<:Union{Missing,Real}
 } <: StoppingCriterion
     threshold::F
     last_change::F
     storage::TSSA
-    inverse_retraction::IRT
+    inverse_retraction_method::IRT
     at_iteration::Int
+    outer_norm::N
 end
 function StopWhenChangeLess(
     M::AbstractManifold,
     ε::F;
     storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
     inverse_retraction_method::IRT=default_inverse_retraction_method(M),
-) where {F<:Real,IRT<:AbstractInverseRetractionMethod}
-    return StopWhenChangeLess{F,IRT,typeof(storage)}(
-        ε, zero(ε), storage, inverse_retraction_method, -1
+    outer_norm::N=missing,
+) where {F,N<:Union{Missing,Real},IRT<:AbstractInverseRetractionMethod}
+    return StopWhenChangeLess{F,IRT,typeof(storage),N}(
+        ε, zero(ε), storage, inverse_retraction_method, -1, outer_norm
     )
 end
 function StopWhenChangeLess(ε::R; kwargs...) where {R<:Real}
@@ -238,7 +278,10 @@ function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSol
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
         p_old = get_storage(c.storage, PointStorageKey(:Iterate))
-        c.last_change = distance(M, get_iterate(s), p_old, c.inverse_retraction)
+        r = (has_components(M) && !ismissing(c.outer_norm)) ? (c.outer_norm,) : ()
+        c.last_change = distance(
+            M, get_iterate(s), p_old, c.inverse_retraction_method, r...
+        )
         if c.last_change < c.threshold && k > 0
             c.at_iteration = k
             c.storage(mp, s, k)
@@ -261,8 +304,10 @@ function status_summary(c::StopWhenChangeLess)
 end
 indicates_convergence(c::StopWhenChangeLess) = true
 function show(io::IO, c::StopWhenChangeLess)
+    s = ismissing(c.outer_norm) ? "" : "and outer norm $(c.outer_norm)"
     return print(
-        io, "StopWhenChangeLess with threshold $(c.threshold)\n    $(status_summary(c))"
+        io,
+        "StopWhenChangeLess with threshold $(c.threshold)$(s).\n    $(status_summary(c))",
     )
 end
 
@@ -423,14 +468,35 @@ function show(io::IO, c::StopWhenEntryChangeLess)
     return print(io, "StopWhenEntryChangeLess\n    $(status_summary(c))")
 end
 
-@doc raw"""
+@doc """
     StopWhenGradientChangeLess <: StoppingCriterion
 
-A stopping criterion based on the change of the gradient
+A stopping criterion based on the change of the gradient.
+
+# Fields
+
+$(_var(:Field, :at_iteration))
+$(_var(:Field, :last_change))
+$(_var(:Field, :vector_transport_method))
+$(_var(:Field, :storage))
+* `threshold`: the threshold for the change to check (run under to stop)
+* `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
+  that is used to compute the overall distance based on the element-wise distance.
+  You can deactivate this, but setting this value to `missing`.
+
+# Example
+
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of the difference of tangent vectors like the last and current gradien ``X,Y ∈ $(_math(:M))``
+is given by
 
 ```
-\lVert \mathcal T_{p^{(k)}\gets p^{(k-1)} \operatorname{grad} f(p^{(k-1)}) -  \operatorname{grad} f(p^{(k-1)}) \rVert < ε
+$(_tex(:norm, "X-Y"; index="p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k-Y_k"; index="p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1","r"))},
 ```
+
+where the sum turns into a maximum for the case ``r=∞``.
+The `outer_norm` has no effect on manifols, that do not consist of components.
 
 # Constructor
 
@@ -439,20 +505,22 @@ A stopping criterion based on the change of the gradient
         ε::Float64;
         storage::StoreStateAction=StoreStateAction([:Iterate]),
         vector_transport_method::IRT=default_vector_transport_method(M),
+        outer_norm::N=missing
     )
 
 Create a stopping criterion with threshold `ε` for the change gradient, that is, this criterion
 indicates to stop when [`get_gradient`](@ref) is in (norm of) its change less than `ε`, where
-`vector_transport_method` denotes the vector transport ``\mathcal T`` used.
+`vector_transport_method` denotes the vector transport ``$(_tex(:Cal,"T"))`` used.
 """
 mutable struct StopWhenGradientChangeLess{
-    F,VTM<:AbstractVectorTransportMethod,TSSA<:StoreStateAction
+    F,VTM<:AbstractVectorTransportMethod,TSSA<:StoreStateAction,N<:Union{Missing,Real}
 } <: StoppingCriterion
     threshold::F
     last_change::F
     storage::TSSA
     vector_transport_method::VTM
     at_iteration::Int
+    outer_norm::N
 end
 function StopWhenGradientChangeLess(
     M::AbstractManifold,
@@ -461,9 +529,10 @@ function StopWhenGradientChangeLess(
         M; store_points=Tuple{:Iterate}, store_vectors=Tuple{:Gradient}
     ),
     vector_transport_method::VTM=default_vector_transport_method(M),
-) where {F,VTM<:AbstractVectorTransportMethod}
-    return StopWhenGradientChangeLess{F,VTM,typeof(storage)}(
-        ε, zero(ε), storage, vector_transport_method, -1
+    outer_norm::N=missing,
+) where {F,N<:Union{Missing,Real},VTM<:AbstractVectorTransportMethod}
+    return StopWhenGradientChangeLess{F,VTM,typeof(storage),N}(
+        ε, zero(ε), storage, vector_transport_method, -1, outer_norm
     )
 end
 function StopWhenGradientChangeLess(
@@ -485,7 +554,8 @@ function (c::StopWhenGradientChangeLess)(
         X_old = get_storage(c.storage, VectorStorageKey(:Gradient))
         p = get_iterate(s)
         Xt = vector_transport_to(M, p_old, X_old, p, c.vector_transport_method)
-        c.last_change = norm(M, p, Xt - get_gradient(s))
+        r = (has_components(M) && !ismissing(c.outer_norm)) ? (c.outer_norm,) : ()
+        c.last_change = norm(M, p, Xt - get_gradient(s), r...)
         if c.last_change < c.threshold && k > 0
             c.at_iteration = k
             c.storage(mp, s, k)
@@ -507,9 +577,10 @@ function status_summary(c::StopWhenGradientChangeLess)
     return "|Δgrad f| < $(c.threshold): $s"
 end
 function show(io::IO, c::StopWhenGradientChangeLess)
+    s = ismissing(c.outer_norm) ? "" : "outer_norm=$(c.outer_norm), "
     return print(
         io,
-        "StopWhenGradientChangeLess($(c.threshold); vector_transport_method=$(c.vector_transport_method))\n    $(status_summary(c))",
+        "StopWhenGradientChangeLess with threshold $(c.threshold); $(s)vector_transport_method=$(c.vector_transport_method))\n    $(status_summary(c))",
     )
 end
 
@@ -530,29 +601,53 @@ A stopping criterion based on the current gradient norm.
 
 # Fields
 
-* `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm of the gradient `X` in the tangent space at `p` on `M``
+* `norm`:      a function `(M::AbstractManifold, p, X) -> ℝ` that computes a norm
+  of the gradient `X` in the tangent space at `p` on `M``.
+  For manifolds with components provide `(M::AbstractManifold, p, X, r) -> ℝ`.
 * `threshold`: the threshold to indicate to stop when the distance is below this value
+* `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm,
+  that is used to compute the overall distance based on the element-wise distance.
 
 # Internal fields
 
 * `last_change` store the last change
 * `at_iteration` store the iteration at which the stop indication happened
 
+# Example
+
+On an $(_link(:AbstractPowerManifold)) like ``$(_math(:M)) = $(_math(:M; M="N"))^n``
+any point ``p = (p_1,…,p_n) ∈ $(_math(:M))`` is a vector of length ``n`` with of points ``p_i ∈ $(_math(:M; M="N"))``.
+Then, denoting the `outer_norm` by ``r``, the norm of a tangent vector like the current gradient ``X ∈ $(_math(:M))``
+is given by
+
+```
+$(_tex(:norm, "X"; index="p")) = $(_tex(:Bigl))( $(_tex(:sum))_{k=1}^n $(_tex(:norm, "X_k"; index="p_k"))^r $(_tex(:Bigr)))^{$(_tex(:frac, "1","r"))},
+```
+
+where the sum turns into a maximum for the case ``r=∞``.
+The `outer_norm` has no effect on manifolds that do not consist of components.
+
+If you pass in your individual norm, this can be deactivated on such manifolds
+by passing `missing` to `outer_norm`.
+
 # Constructor
 
-    StopWhenGradientNormLess(ε; norm=(M,p,X) -> norm(M,p,X))
+    StopWhenGradientNormLess(ε; norm=ManifoldsBase.norm, outer_norm=missing)
 
 Create a stopping criterion with threshold `ε` for the gradient, that is, this criterion
 indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
 where the norm to use can be specified in the `norm=` keyword.
 """
-mutable struct StopWhenGradientNormLess{F,TF} <: StoppingCriterion
+mutable struct StopWhenGradientNormLess{F,TF,N<:Union{Missing,Real}} <: StoppingCriterion
     norm::F
     threshold::TF
     last_change::TF
     at_iteration::Int
-    function StopWhenGradientNormLess(ε::TF; norm::F=norm) where {F,TF}
-        return new{F,TF}(norm, ε, zero(ε), -1)
+    outer_norm::N
+    function StopWhenGradientNormLess(
+        ε::TF; norm::F=norm, outer_norm::N=missing
+    ) where {F,TF,N<:Union{Missing,Real}}
+        return new{F,TF,N}(norm, ε, zero(ε), -1, outer_norm)
     end
 end
 
@@ -564,7 +659,8 @@ function (sc::StopWhenGradientNormLess)(
         sc.at_iteration = -1
     end
     if (k > 0)
-        sc.last_change = sc.norm(M, get_iterate(s), get_gradient(s))
+        r = (has_components(M) && !ismissing(sc.outer_norm)) ? (sc.outer_norm,) : ()
+        sc.last_change = sc.norm(M, get_iterate(s), get_gradient(s), r...)
         if sc.last_change < sc.threshold
             sc.at_iteration = k
             return true

@@ -86,6 +86,7 @@ define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :subgrad, raw"∂")
+define!(:LaTeX, :sum, raw"\sum")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
@@ -95,9 +96,10 @@ _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
 # Mathematics and semantic symbols
 # :symbol the symbol,
 # :description the description
+define!(:Math, :distance, raw"\mathrm{d}")
 define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Manifold, :symbol, (; M="M") -> _tex(:Cal, M))
-define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :Manifold, :description, "the Riemannian manifold")
 define!(:Math, :Iterate, (; p="p", k="k") -> "$(p)^{($(k))}")
 define!(
     :Math,
@@ -137,6 +139,16 @@ define!(
     :Link,
     :AbstractManifold,
     "[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`)",
+)
+define!(
+    :Link,
+    :AbstractPowerManifold,
+    "[`AbstractPowerManifold`](@extref `ManifoldsBase.AbstractPowerManifold`)",
+)
+define!(
+    :Link,
+    :injectivity_radius,
+    "[`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`)",
 )
 define!(
     :Link,
@@ -345,7 +357,7 @@ define!(
     :grad_f,
     :description,
     (; M="M", p="p") ->
-        "the (Riemannian) gradient ``$(_tex(:grad))f``: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+        "the (Riemannian) gradient ``$(_tex(:grad))f: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p))`` of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
 define!(
@@ -353,7 +365,7 @@ define!(
     :Hess_f,
     :description,
     (; M="M", p="p") ->
-        "the (Riemannian) Hessian ``$(_tex(:Hess))f``: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+        "the (Riemannian) Hessian ``$(_tex(:Hess))f: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p))`` of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
 define!(
@@ -370,6 +382,13 @@ define!(
     (; M="M", p="p") ->
         "[`default_inverse_retraction_method`](@extref `ManifoldsBase.default_inverse_retraction_method-Tuple{AbstractManifold}`)`($M, typeof($p))`",
 )
+define!(
+    :Variable,
+    :last_change,
+    :description,
+    "the last change recorded in this stopping criterion",
+)
+define!(:Variable, :last_change, :type, "Real")
 
 define!(
     :Variable, :M, :description, (; M="M") -> "a Riemannian manifold ``$(_tex(:Cal, M))``"
@@ -398,6 +417,13 @@ define!(
     "[`default_retraction_method`](@extref `ManifoldsBase.default_retraction_method-Tuple{AbstractManifold}`)`(M, typeof(p))`",
 )
 
+define!(
+    :Variable,
+    :storage,
+    :description,
+    (; M="M") -> "a storage to access the previous iterate",
+)
+define!(:Variable, :storage, :type, "StoreStateAction")
 define!(
     :Variable,
     :stepsize,

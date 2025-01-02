@@ -103,6 +103,7 @@ using ManifoldsBase:
     get_vector,
     get_vector!,
     get_vectors,
+    has_components,
     injectivity_radius,
     inner,
     inverse_retract,
@@ -145,7 +146,6 @@ using Preferences:
     @load_preference, @set_preferences!, @has_preference, @delete_preferences!
 using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
-using Requires
 using SparseArrays
 using Statistics
 
@@ -273,32 +273,6 @@ function __init__()
             end
         end
     end
-    #
-    # Requires fallback for Julia < 1.9
-    #
-    @static if !isdefined(Base, :get_extension) # COV_EXCL_LINE
-        @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin
-            include("../ext/ManoptJuMPExt.jl")
-        end
-        @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
-            include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
-        end
-        @require RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd" begin
-            include("../ext/ManoptRecursiveArrayToolsExt.jl")
-        end
-        @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
-            include("../ext/ManoptLineSearchesExt.jl")
-        end
-        @require LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637" begin
-            include("../ext/ManoptLRUCacheExt.jl")
-        end
-        @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
-            @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
-                include("../ext/ManoptRipQPQuadraticModelsExt.jl")
-            end
-        end
-    end
-
     return nothing
 end
 #

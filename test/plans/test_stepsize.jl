@@ -1,5 +1,9 @@
 using ManifoldsBase, Manopt, Manifolds, Test
 
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+using ManoptTestSuite
+
 @testset "Stepsize" begin
     M = ManifoldsBase.DefaultManifold(2)
     @test Manopt.get_message(Manopt.ConstantStepsize(M, 1.0)) == ""
@@ -123,5 +127,10 @@ using ManifoldsBase, Manopt, Manifolds, Test
         @test repr(ps) ==
             "Polyak()\nA stepsize with keyword parameters\n   * initial_cost_estimate = 0.0\n"
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
+    end
+    @testset "max_stepsize fallbacks" begin
+        M = ManoptTestSuite.DummyManifold()
+        @test isinf(Manopt.max_stepsize(M))
+        @test isinf(Manopt.max_stepsize(M, :NoPoint))
     end
 end
