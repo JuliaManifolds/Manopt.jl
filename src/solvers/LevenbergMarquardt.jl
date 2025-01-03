@@ -26,7 +26,7 @@ $(_var(:Argument, :M; type=true))
   * as a single function returning a vector of gradient vectors ``$(_tex(:grad)) f_i(p)``
   * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``
   * as a single function returning a (coefficient) matrix with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
-    of the trangent space at `p`.
+    of the tangent space at `p`.
   The type is determined by the `jacobian_type=` keyword argument.
 $(_var(:Argument, :p))
 * `num_components`: length of the vector returned by the cost function (`d`).
@@ -45,12 +45,12 @@ $(_var(:Keyword, :evaluation))
   residual (objective) at minimum is equal to 0.
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
-* `function_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
+* `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `initial_jacobian_f`:      the initial Jacobian of the cost function `f`.
   By default this is a matrix of size `num_components` times the manifold dimension of similar type as `p`.
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
-* `jacobian_type=`[`FunctionVectorialType`](@ref)`: an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
 $(_var(:Keyword, :retraction_method))
 
 $(_note(:OtherKeywords))
