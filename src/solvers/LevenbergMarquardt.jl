@@ -16,20 +16,20 @@ The second block of signatures perform the optimization in-place of `p`.
 # Input
 
 $(_var(:Argument, :M; type=true))
-* `f`: a cost function ``f: $(_math(:M))→ℝ^d``.
+* `f`: a cost function ``f: $(_math(:M))→ℝ^m``.
   The cost function can be provided in two different ways
-    * as a single function returning a vector ``f(p) ∈ ℝ^d``
+    * as a single function returning a vector ``f(p) ∈ ℝ^m``
     * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``
   The type is determined by the `function_type=` keyword argument.
 * `jacobian_f`:   the Jacobian of ``f``.
   The Jacobian can be provided in three different ways
-  * as a single function returning a vector of gradient vectors ``$(_tex(:grad)) f_i(p)``
-  * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``
-  * as a single function returning a (coefficient) matrix with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`)
-    of the tangent space at `p`.
+  * as a single function returning a vector of gradient vectors ``$(_tex(:bigl))($(_tex(:grad)) f_i(p)$(_tex(:bigr)))_{i=1}^m
+  * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``, , ``i=1,…m``
+  * as a single function returning a (coefficient) matrix ``J ∈ ℝ^{m×d}``, where ``d`` is the dimension of the manifold.
+  These coefficients are given with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) of the tangent space at `p`.
   The type is determined by the `jacobian_type=` keyword argument.
 $(_var(:Argument, :p))
-* `num_components`: length of the vector returned by the cost function (`d`).
+* `num_components`: length ``m`` of the vector returned by the cost function.
   By default its value is -1 which means that it is determined automatically by
   calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
   for mutating evaluation this value must be explicitly specified.

@@ -138,7 +138,7 @@ _doc_get_residuals_nlso = """
     get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
     get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p)
 
-Compute the vector of residuals ``f_i(p)``, ``i=1,…,n`` given the manifold `M`,
+Compute the vector of residuals ``f_i(p)``, ``i=1,…,m`` given the manifold `M`,
 the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
 """
 
