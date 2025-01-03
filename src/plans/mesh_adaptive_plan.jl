@@ -42,6 +42,7 @@ mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,M,PT,ST,TStop<:StoppingCr
     mesh_size::F
     scale_mesh::F
     max_stepsize::F
+    poll_size::F
     stop::TStop
     poll::PT
     search::ST
