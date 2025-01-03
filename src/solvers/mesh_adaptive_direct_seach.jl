@@ -1,7 +1,9 @@
 """
-    LowerTriangularAdaptivePoll <: AbstractMesh
+    LowerTriangularAdaptivePoll <: AbstractMeshPollFunction
 
-Generate a mesh based on Section 6 and 7 of [Deisigmeyer:2007](@ref)
+Generate a mesh (poll step) based on Section 6 and 7 of [Deisigmeyer:2007](@ref)
+
+
 
 # Fields
 * `p::P`: a point on the manifold, where the mesh is build in the tangent space
