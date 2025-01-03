@@ -121,18 +121,14 @@ ManifoldCostGradientObjective
 ```@docs
 get_gradient
 get_gradients
+get_residuals
+get_residuals!
 ```
 
 and internally
 
 ```@docs
 get_gradient_function
-```
-
-#### Internal helpers
-
-```@docs
-get_gradient_from_Jacobian!
 ```
 
 ### Subgradient objective
@@ -262,6 +258,8 @@ Manopt.FunctionVectorialType
 #### Access functions
 
 ```@docs
+Manopt.get_jacobian
+Manopt.get_jacobian!
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)
@@ -271,6 +269,9 @@ Base.length(::VectorGradientFunction)
 
 ```@docs
 Manopt._to_iterable_indices
+Manopt._change_basis!
+Manopt.get_basis
+Manopt.get_range
 ```
 
 ### Subproblem objective

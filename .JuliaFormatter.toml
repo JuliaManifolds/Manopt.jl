@@ -1,2 +1,2 @@
 style = "blue"
-ignore = ["tutorials"]
+ignore = ["tutorials", ".git"]

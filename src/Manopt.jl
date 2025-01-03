@@ -11,7 +11,7 @@ module Manopt
 import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
-import ManifoldsBase: base_manifold, base_point
+import ManifoldsBase: base_manifold, base_point, get_basis
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -364,6 +364,8 @@ export get_proximal_map, get_proximal_map!
 export get_state,
     get_initial_stepsize,
     get_iterate,
+    get_jacobian,
+    get_jacobian!,
     get_gradients,
     get_gradients!,
     get_manifold,
@@ -379,6 +381,8 @@ export get_state,
     get_differential_dual_prox!,
     set_gradient!,
     set_iterate!,
+    get_residuals,
+    get_residuals!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
