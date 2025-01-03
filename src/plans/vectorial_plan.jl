@@ -2,7 +2,7 @@
     AbstractVectorialType
 
 An abstract type for different representations of a vectorial function
-    ``f: $(_math(:M)) → ℝ`` and its (component-wise) gradient/Jacobian
+``f: $(_math(:M)) → ℝ^m`` and its (component-wise) gradient/Jacobian
 """
 abstract type AbstractVectorialType end
 
@@ -10,8 +10,8 @@ abstract type AbstractVectorialType end
     CoordinateVectorialType{B<:AbstractBasis} <: AbstractVectorialType
 
 A type to indicate that gradient of the constraints is implemented as a
-Jacobian matrix with respect to a certain basis, that is if the vectfor function
-are is ``f: \mathcal M → ℝ^m`` with and we have a asis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
+Jacobian matrix with respect to a certain basis, that is if the vector function
+is ``f: \mathcal M → ℝ^m`` and we have a basis ``\mathcal B`` of ``T_p\mathcal M``, at ``p∈ \mathcal M``
 This can be written as ``J_g(p) = (c_1^{\mathrm{T}},…,c_m^{\mathrm{T}})^{\mathrm{T}} \in ℝ^{m,d}``, that is,
 every row ``c_i`` of this matrix is a set of coefficients such that
 `get_coefficients(M, p, c, B)` is the tangent vector ``\oepratorname{grad} g_i(p)``
@@ -20,9 +20,11 @@ for example ``g_i(p) ∈ ℝ^m`` or ``\operatorname{grad} g_i(p) ∈ T_p\mathcal
 
 # Fields
 
-* `basis` an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) to indicate the default representation.
+* `basis` an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) to indicate the basis
+  in which Jacobian is expressed.
 
 # Constructor
+
     CoordinateVectorialType(basis=DefaultOrthonormalBasis())
 """
 struct CoordinateVectorialType{B<:AbstractBasis} <: AbstractVectorialType
@@ -37,7 +39,8 @@ Return a basis that fits a vector function representation.
 For the case, where some vectorial data is stored with respect to a basis,
 this function returns the corresponding basis, most prominently for the [`CoordinateVectorialType`](@ref).
 
-If a type is not with respect to a certain basis, the [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) is returned
+If a type is not with respect to a certain basis, the [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)
+is returned.
 """
 get_basis(::AbstractVectorialType) = DefaultOrthonormalBasis()
 get_basis(cvt::CoordinateVectorialType) = cvt.basis
@@ -162,7 +165,7 @@ And advantage here is, that again the single components can be evaluated individ
 # Fields
 
 * `value!!::F`:          the cost function ``f``, which can take different formats
-* `cost_type::`[`AbstractVectorialType`](@ref):     indicating / string data for the type of `f`
+* `cost_type::`[`AbstractVectorialType`](@ref):     indicating / storing data for the type of `f`
 * `jacobian!!::G`:     the Jacobian of ``f``
 * `jacobian_type::`[`AbstractVectorialType`](@ref): indicating / storing data for the type of ``J_f``
 * `parameters`:    the number `n` from, the size of the vector ``f`` returns.
@@ -224,7 +227,7 @@ either as a vector of gradients of a Jacobian, and the Hessian,
 as a vector of Hessians of the component functions.
 
 Both the Jacobian and the Hessian can map into either a sequence of tangent spaces
-or a single tangent space of the power manifold of lenth `n`.
+or a single tangent space of the power manifold of length `n`.
 
 # Fields
 
@@ -1117,7 +1120,7 @@ The `i` can be a linear index, you can provide
 * a `AbstractVector{<:Integer}` to specify indices
 * `:` to return the vector of all gradients, which is also the default
 
-This function can perform the evalutation inplace of `V`.
+This function can perform the evaluation inplace of `V`.
 """
 get_value(M::AbstractManifold, vgf::AbstractVectorFunction, p, i)
 function get_value(
