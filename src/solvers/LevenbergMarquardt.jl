@@ -23,8 +23,8 @@ $(_var(:Argument, :M; type=true))
   The type is determined by the `function_type=` keyword argument.
 * `jacobian_f`:   the Jacobian of ``f``.
   The Jacobian can be provided in three different ways
-  * as a single function returning a vector of gradient vectors ``$(_tex(:bigl))($(_tex(:grad)) f_i(p)$(_tex(:bigr)))_{i=1}^m
-  * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``, , ``i=1,…m``
+  * as a single function returning a vector of gradient vectors ``$(_tex(:bigl))($(_tex(:grad)) f_i(p)$(_tex(:bigr)))_{i=1}^m``
+  * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``, ``i=1,…,m``
   * as a single function returning a (coefficient) matrix ``J ∈ ℝ^{m×d}``, where ``d`` is the dimension of the manifold.
   These coefficients are given with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) of the tangent space at `p`.
   The type is determined by the `jacobian_type=` keyword argument.
