@@ -321,7 +321,7 @@ Since `i` is assumed to be a linear index, you can provide
 * a `UnitRange` to specify a range to be returned like `1:3`
 * a `BitVector` specifying a selection
 * a `AbstractVector{<:Integer}` to specify indices
-* `:` to return the vector of all gradients
+* `:` to return the vector of all Hessian evaluations
 """
 get_hessian(
     M::AbstractManifold,
