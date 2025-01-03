@@ -10,30 +10,36 @@ Specify a nonlinear least squares problem
 
 # Fields
 
-* `objective`: a [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of cost functions ``f_i`` as well as their gradients ``$(_tex(:grad)) f_i```
+* `objective`: a [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of
+  cost functions ``f_i`` (or a function returning a vector of costs) as well as their
+  gradients ``$(_tex(:grad)) f_i`` (or Jacobian of the vector-valued function).
 
 This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
 as the (inner) `objective`.
 
 # Constructors
 
-    NonlinearLeastSquaresObjective(f, jacobian, range_dimension; kwargs...)
+    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer; kwargs...)
     NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction)
 
 # Arguments
 
 * `f` the vectorial cost function ``f: $(_math(:M)) → ℝ^m``
 * `jacobian` the Jacobian, might also be a vector of gradients of the component functions of `f`
-* `range_dimension` the number of dimensions `m` the function `f` maps into
+* `range_dimension::Integer` the number of dimensions `m` the function `f` maps into
 
 These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf` already.
 
 # Keyword arguments
 
 $(_var(:Keyword, :evaluation))
-* `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: format the
-* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify the basis the Jacobian matrix is build with.
-* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoordinateVectorialType`](@ref)`(jacobian_tangent_basis)`: specify the format the Jacobian is given in. By default a matrix of the differential with respect to a certain basis of the tangent space.
+* `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
+  the format the residuals are given in. By default a function returning a vector.
+* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify
+  the basis the Jacobian matrix is build with.
+* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoordinateVectorialType`](@ref)`(jacobian_tangent_basis)`:
+  specify the format the Jacobian is given in. By default a matrix of the differential with
+  respect to a certain basis of the tangent space.
 
 # See also
 
@@ -48,7 +54,7 @@ end
 function NonlinearLeastSquaresObjective(
     f,
     jacobian,
-    range_dimension;
+    range_dimension::Integer;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
     jacobian_type::AbstractVectorialType=CoordinateVectorialType(jacobian_tangent_basis),
@@ -79,7 +85,7 @@ function get_cost(
     for i in 1:length(nlso.objective)
         v += abs(get_value(M, nlso.objective, p, i))^2
     end
-    v *= 0.5
+    v /= 2
     return v
 end
 function get_cost(
@@ -90,7 +96,7 @@ function get_cost(
     p;
     value_cache=get_value(M, nlso.objective, p),
 ) where {E<:AbstractEvaluationType}
-    return 0.5 * sum(abs(value_cache[i])^2 for i in 1:length(value_cache))
+    return sum(abs2, value_cache) / 2
 end
 
 function get_jacobian(
