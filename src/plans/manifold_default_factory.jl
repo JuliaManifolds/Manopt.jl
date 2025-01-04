@@ -7,9 +7,9 @@ decission on which manifold to use to a later point
 
 For now this is established for
 
-* [`DirectionUpdateRule`](@ref)s (TODO: WIP)
-* [`Stepsize`](@ref) (TODO: WIP)
-* [`StoppingCriterion`](@ref) (TODO:WIP)
+* [`DirectionUpdateRule`](@ref)s
+* [`Stepsize`](@ref)
+* [`StoppingCriterion`](@ref)
 
 This factory stores necessary and optional parameters as well as
 keyword arguments provided by the user to later produce the type this factory is for.

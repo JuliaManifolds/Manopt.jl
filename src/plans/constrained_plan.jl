@@ -332,7 +332,7 @@ components gradients, for example
 
 In another interpretation, this can be considered a point on the tangent space
 at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``\mathcal M^m``.
-The case where this is a [`NestedPowerRepresentation`](@extref) this agrees with the
+The case where this is a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 
 To then access the elements, the range has to be specified. That is what this
