@@ -200,6 +200,7 @@ makedocs(;
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
+            "MADS" => "solvers/mesh_adaptive_direct_seach.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",

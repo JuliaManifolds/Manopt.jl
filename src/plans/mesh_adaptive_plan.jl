@@ -55,7 +55,7 @@ end
 """
     LowerTriangularAdaptivePoll <: AbstractMeshPollFunction
 
-Generate a mesh (poll step) based on Section 6 and 7 of [Deisigmeyer:2007](@ref),
+Generate a mesh (poll step) based on Section 6 and 7 of [Dreisigmeyer:2007](@cite),
 with two small modifications:
 * The mesh can be scaled globally so instead of ``Δ_0^m=1`` a certain different scale is used
 * Any poll direction can be rescaled if it is too long. This is to not exceed the inhectivity radius for example.
