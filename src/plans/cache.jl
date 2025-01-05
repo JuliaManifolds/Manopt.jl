@@ -250,8 +250,6 @@ which function evaluations to cache.
   number of (least recently used) calls to cache
 * `cache_sizes=Dict{Symbol,Int}()`:
   a named tuple or dictionary specifying the sizes individually for each cache.
-
-
 """
 struct ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTuple{}} <:
        AbstractDecoratedManifoldObjective{E,P}

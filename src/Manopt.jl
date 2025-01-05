@@ -431,6 +431,8 @@ export WolfePowellLinesearch, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
+export AbstractMeshPollFunction, LowerTriangularAdaptivePoll
+export AbstractMeshSearchFunction, DefaultMeshAdaptiveDirectSearch
 #
 # Direction Update Rules
 export DirectionUpdateRule
@@ -480,6 +482,8 @@ export adaptive_regularization_with_cubics,
     interior_point_Newton!,
     LevenbergMarquardt,
     LevenbergMarquardt!,
+    mesh_adaptive_direct_search,
+    mesh_adaptive_direct_search!,
     NelderMead,
     NelderMead!,
     particle_swarm,
@@ -541,6 +545,7 @@ export StopAfter,
     StopWhenKKTResidualLess,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
+    StopWhenPollSizeLess,
     StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
     StopWhenPopulationDiverges,
