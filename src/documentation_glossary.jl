@@ -83,6 +83,7 @@ define!(:LaTeX, :min, raw"\min")
 define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
+define!(:LaTeX, :qquad, raw"\qquad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :subgrad, raw"∂")
@@ -400,8 +401,8 @@ define!(
 )
 define!(:Variable, :p, :type, "P")
 define!(:Variable, :p, :default, (; M="M") -> _link(:rand; M=M))
-define!(:Variable, :p, :as_Iterate, "storing the current iterate")
-define!(:Variable, :p, :as_Initial, "to specify the initial value")
+define!(:Variable, :p, :as_Iterate, " storing the current iterate")
+define!(:Variable, :p, :as_Initial, " to specify the initial value")
 
 define!(
     :Variable,
@@ -439,15 +440,6 @@ define!(
     (; M="M") -> "a functor indicating that the stopping criterion is fulfilled",
 )
 define!(:Variable, :stopping_criterion, :type, "StoppingCriterion")
-
-define!(
-    :Variable,
-    :sub_problem,
-    :description,
-    (; M="M") ->
-        "specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
-)
-define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
 
 define!(
     :Variable,
