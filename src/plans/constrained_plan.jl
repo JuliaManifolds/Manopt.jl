@@ -27,9 +27,9 @@ A common supertype for fucntors that model constraint functions with slack.
 
 This supertype additionally provides access for the fields
 * `μ::T` the dual for the inequality constraints
-* `s::T` the slack parametyer, and
+* `s::T` the slack parameter, and
 * `β::R` the  the barrier parameter
-which is also of typee `T`.
+which is also of type `T`.
 """
 abstract type AbstractConstrainedSlackFunctor{T,R} end
 
