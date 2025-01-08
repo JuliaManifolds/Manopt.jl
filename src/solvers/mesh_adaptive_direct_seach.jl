@@ -39,7 +39,7 @@ function mesh_adaptive_direct_search!(
     max_stepsize=injectivity_radius(M),
     poll_size=manifold_dimension(M) * sqrt(mesh_size),
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenPollSizeLess(1e-7),
+                                          StopWhenPollSizeLess(1e-12),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(p)),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, eltype(p)
@@ -86,7 +86,7 @@ function initialize_solver!(
     )
 end
 function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearchState, k)
-    M = get_manifolds(amp)
+    M = get_manifold(amp)
     n = manifold_dimension(M)
     copyto!(M, madss.q, madss.p) # copy p to store previous q
     # search
@@ -99,7 +99,7 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
         max_stepsize=madss.max_stepsize,
     )
     # For succesful search, copy over iterate - skip poll
-    if get_search_success(madss.seachr)
+    if get_search_success(madss.search)
         copyto!(M, madss.p, get_search_point(madss.search))
     else #search was not sucessful: poll
         update_poll_basepoint!(M, madss.poll, madss.p)
@@ -111,7 +111,7 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
         )
         # For succesfull poll, copy over iterate
         if get_poll_success(madss.poll)
-            copyto!(M, madss.p, get_poll_basepoint(madss.search))
+            copyto!(M, madss.p, get_poll_basepoint(madss.poll))
         end
     end
     # If neither found a better candidate -> reduce step size, we might be close already!

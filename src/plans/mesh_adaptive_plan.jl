@@ -113,10 +113,9 @@ function LowerTriangularAdaptivePoll(
     b_l = zeros(d)
     D_k = zeros(d, d + 1)
     X = zero_vector(M, p)
-    return LowerTriangularAdaptiveMesh(
+    return LowerTriangularAdaptivePoll(
         p,
         copy(M, p),
-        0,
         b_l,
         0,
         D_k,
@@ -165,7 +164,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
     end
     # Shift to construct n × n matrix B
     # (bottom left)
-    ltap.mesh[(ltap.random_index + 1):n, (1:n)] = poll.mesh[
+    ltap.mesh[(ltap.random_index + 1):n, (1:n)] = ltap.mesh[
         (ltap.random_index):(n - 1), (1:n)
     ]
     # zero row above
@@ -185,8 +184,8 @@ function (ltap::LowerTriangularAdaptivePoll)(
         # get vector – scale mesh
         get_vector!(M, ltap.X, ltap.p, scale_mesh .* ltap.mesh[:, i], ltap.basis)
         # shorten if necessary
-        if norm(M, ltap, ltap.p, ltap.X) > max_stepsize
-            ltap.X = max_stepsize & norm(M, ltap, ltap.p, ltap.X) * ltap.X
+        if norm(M, ltap.p, ltap.X) > max_stepsize
+            ltap.X = max_stepsize / norm(M, ltap.p, ltap.X) * ltap.X
         end
         retract!(M, ltap.q, ltap.p, ltap.X, ltap.retraction_method)
         if get_cost(amp, ltap.q) < c
@@ -196,7 +195,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
         end
     end
     # clear temp vector if we did not improve.
-    !(ltap.last_poll_improved) && (zero_vector!(M, ltap.X, p))
+    !(ltap.last_poll_improved) && (zero_vector!(M, ltap.X, ltap.p))
     return ltap
 end
 
@@ -257,8 +256,10 @@ function (dmads::DefaultMeshAdaptiveDirectSearch)(
         dmads.X = max_stepsize / norm(M, dmads.p, dmads.X) * dmads.X
     end
     retract!(M, dmads.p, p, dmads.X, dmads.retraction_method)
-    dmads.last_search_improved = get_cost(amp, dmads.q) < get_cost(amp, p)
-    # Implement the code from Dreisigmeyer p. 17 about search generation
+    dmads.last_search_improved = get_cost(amp, dmads.p) < get_cost(amp, p)
+    if dmads.last_search_improved
+        copyto!(M, dmads.p, p)
+    end
     return dmads
 end
 
@@ -269,7 +270,7 @@ end
 * `q`: temp (old) iterate
 
 """
-mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,M,PT,ST,TStop<:StoppingCriterion} <:
+mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,PT,ST,SC<:StoppingCriterion} <:
                AbstractManoptSolverState
     p::P
     q::P
@@ -277,18 +278,18 @@ mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,M,PT,ST,TStop<:StoppingCr
     scale_mesh::F
     max_stepsize::F
     poll_size::F
-    stop::TStop
+    stop::SC
     poll::PT
     search::ST
 end
 function MeshAdaptiveDirectSearchState(
     M::AbstractManifold,
-    p=rand(M);
+    p::P=rand(M);
     mesh_basis::B=DefaultOrthonormalBasis(),
-    mesh_size=injectivity_radius(M) / 4,
-    scale_mesh=1.0,
-    max_stepsize=injectivity_radius(M),
-    poll_size=manifold_dimension(M) * sqrt(mesh_size),
+    mesh_size::F=injectivity_radius(M) / 4,
+    scale_mesh::F=1.0,
+    max_stepsize::F=injectivity_radius(M),
+    poll_size::F=manifold_dimension(M) * sqrt(mesh_size),
     stopping_criterion::SC=StopAfterIteration(500) | StopWhenPollSizeLess(1e-7),
     retraction_method=default_retraction_method(M, typeof(p)),
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
@@ -303,12 +304,14 @@ function MeshAdaptiveDirectSearchState(
         M, copy(M, p); retraction_method=retraction_method
     ),
 ) where {
+    P,
+    F,
     PT<:AbstractMeshPollFunction,
     ST<:AbstractMeshSearchFunction,
     SC<:StoppingCriterion,
     B<:AbstractBasis,
 }
-    return MeshAdaptiveDirectSearchState(
+    return MeshAdaptiveDirectSearchState{P,F,PT,ST,SC}(
         p,
         copy(p),
         mesh_size,
@@ -320,6 +323,7 @@ function MeshAdaptiveDirectSearchState(
         search,
     )
 end
+get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
 
 function show(io::IO, mads::MeshAdaptiveDirectSearchState)
     i = get_count(mads, :Iterations)
@@ -338,8 +342,7 @@ function show(io::IO, mads::MeshAdaptiveDirectSearchState)
 
     ## Stopping criterion
     $(status_summary(mads.stop))
-
-    This indicates convergence: $Conv"""
+    """
     return print(io, s)
 end
 
