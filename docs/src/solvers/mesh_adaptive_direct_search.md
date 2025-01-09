@@ -23,11 +23,28 @@ CurrentModule = Manopt
     LowerTriangularAdaptivePoll
 ```
 
+as well as the internal functions
+
+```@docs
+Manopt.get_descent_direction(::LowerTriangularAdaptivePoll)
+Manopt.is_successful(::LowerTriangularAdaptivePoll)
+Manopt.get_candidate(::LowerTriangularAdaptivePoll)
+Manopt.get_basepoint(::LowerTriangularAdaptivePoll)
+Manopt.update_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) where {P}
+```
+
 ## Search
 
 ```@docs
     AbstractMeshSearchFunction
     DefaultMeshAdaptiveDirectSearch
+```
+
+as well as the internal functions
+
+```@docs
+Manopt.is_successful(::DefaultMeshAdaptiveDirectSearch)
+Manopt.get_candidate(::DefaultMeshAdaptiveDirectSearch)
 ```
 
 ## Additional stopping criteria
