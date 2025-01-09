@@ -350,12 +350,12 @@ function show(io::IO, mads::MeshAdaptiveDirectSearchState)
     $Iter
 
     ## Parameters
-    * `mesh_size = ` $(mads.mesh_size)
-    * `scale_mesh = ` $(mads.scale_mesh)
-    * `max_stepsize = ` $(mads.max_stepsize)
-    * `poll_size = ` $(mads.poll_size)
-    * `poll:` $(repr(mads.poll))`
-    * `search:` $(repr(mads.poll))`
+    * mesh_size: $(mads.mesh_size)
+    * scale_mesh: $(mads.scale_mesh)
+    * max_stepsize: $(mads.max_stepsize)
+    * poll_size: $(mads.poll_size)
+    * poll: $(repr(mads.poll))
+    * search: $(repr(mads.search))
 
     ## Stopping criterion
     $(status_summary(mads.stop))
