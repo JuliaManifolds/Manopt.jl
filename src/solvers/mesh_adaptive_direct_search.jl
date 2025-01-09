@@ -88,8 +88,8 @@ function initialize_solver!(
     madss.poll(
         amp, madss.mesh_size; scale_mesh=madss.scale_mesh, max_stepsize=madss.max_stepsize
     )
-    if get_poll_success(madss.poll)
-        copyto!(M, madss.p, get_poll_best_candidate(madss.poll))
+    if is_successful(madss.poll)
+        copyto!(M, madss.p, get_candidate(madss.poll))
     end
     return madss
 end
@@ -97,22 +97,22 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
     M = get_manifold(amp)
     n = manifold_dimension(M)
     # search if the last poll or last search was sucessful
-    if get_search_success(madss.search) || get_poll_success(madss.poll)
+    if is_successful(madss.search) || is_successful(madss.poll)
         madss.search(
             amp,
             madss.mesh_size,
-            get_poll_best_candidate(madss.poll),
-            get_poll_direction(madss.poll);
+            get_candidate(madss.poll),
+            get_descent_direction(madss.poll);
             scale_mesh=madss.scale_mesh,
             max_stepsize=madss.max_stepsize,
         )
     end
     # For succesful search, copy over iterate - skip poll, but update base
-    if get_search_success(madss.search)
-        copyto!(M, madss.p, get_search_point(madss.search))
-        update_poll_basepoint!(M, madss.poll, madss.p)
+    if is_successful(madss.search)
+        copyto!(M, madss.p, get_candidate(madss.search))
+        update_basepoint!(M, madss.poll, madss.p)
     else #search was not sucessful: poll
-        update_poll_basepoint!(M, madss.poll, madss.p)
+        update_basepoint!(M, madss.poll, madss.p)
         madss.poll(
             amp,
             madss.mesh_size;
@@ -120,12 +120,12 @@ function step_solver!(amp::AbstractManoptProblem, madss::MeshAdaptiveDirectSearc
             max_stepsize=madss.max_stepsize,
         )
         # For succesfull poll, copy over iterate
-        if get_poll_success(madss.poll)
-            copyto!(M, madss.p, get_poll_best_candidate(madss.poll))
+        if is_successful(madss.poll)
+            copyto!(M, madss.p, get_candidate(madss.poll))
         end
     end
     # If neither found a better candidate -> reduce step size, we might be close already!
-    if !(get_poll_success(madss.poll)) && !(get_search_success(madss.search))
+    if !(is_successful(madss.poll)) && !(is_successful(madss.search))
         madss.mesh_size /= 4
     elseif madss.mesh_size < 0.25 # else
         madss.mesh_size *= 4  # Coarsen the mesh but not beyond 1

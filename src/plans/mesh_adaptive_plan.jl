@@ -9,7 +9,7 @@ A subtype of this The functor has to fulfil
 
 as well as
 
-* provide a `get_poll_success(poll!)` function that indicates whether the last poll was successful in finding a new candidate,
+* provide a `is_successful(poll!)` function that indicates whether the last poll was successful in finding a new candidate,
 this returns the last successful mesh vector used.
 
 The `kwargs...` could include
@@ -135,19 +135,47 @@ function LowerTriangularAdaptivePoll(
         vector_transport_method,
     )
 end
-function get_poll_success(ltap::LowerTriangularAdaptivePoll)
+"""
+    is_successful(ltap::LowerTriangularAdaptivePoll)
+
+Return whether the last [`LowerTriangularAdaptivePoll`](@ref) step was successful
+"""
+function is_successful(ltap::LowerTriangularAdaptivePoll)
     return ltap.last_poll_improved
 end
-function get_poll_direction(ltap::LowerTriangularAdaptivePoll)
+"""
+    get_descent_direction(ltap::LowerTriangularAdaptivePoll)
+
+Return the direction of the last [`LowerTriangularAdaptivePoll`](@ref) that yields a descent of the cost.
+If the poll was not successful, the zero vector is returned
+"""
+function get_descent_direction(ltap::LowerTriangularAdaptivePoll)
     return ltap.X
 end
-function get_poll_basepoint(ltap::LowerTriangularAdaptivePoll)
+"""
+    get_basepoint(ltap::LowerTriangularAdaptivePoll)
+
+Return the base point of the tangent space, where the mash for the [`LowerTriangularAdaptivePoll`](@ref) is build in.
+"""
+function get_basepoint(ltap::LowerTriangularAdaptivePoll)
     return ltap.base_point
 end
-function get_poll_best_candidate(ltap::LowerTriangularAdaptivePoll)
+"""
+    get_candidate(ltap::LowerTriangularAdaptivePoll)
+
+Return the candidate of the last successful [`LowerTriangularAdaptivePoll`](@ref).
+If the poll was unsuccessful, the base point is returned.
+"""
+function get_candidate(ltap::LowerTriangularAdaptivePoll)
     return ltap.candidate
 end
-function update_poll_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) where {P}
+"""
+    update_basepoint!(M, ltap::LowerTriangularAdaptivePoll, p)
+
+Update the base point of the [`LowerTriangularAdaptivePoll`](@ref).
+This especially also updates the basis, that is used to build a (new) mesh.
+"""
+function update_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) where {P}
     vector_transport_to!(
         M, ltap.X, ltap.base_point, ltap.X, p, ltap.vector_transport_method
     )
@@ -157,7 +185,7 @@ function update_poll_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) w
     return ltap
 end
 function show(io::IO, ltap::LowerTriangularAdaptivePoll)
-    s = "LowerTriangularAdaptivePoll using `basis=`$(ltap.basis), `retraction_method=`$(ltap.retraction_method), and `vector_transport_method=`$(ltap.vector_transport_method)"
+    s = "LowerTriangularAdaptivePoll on a basis $(ltap.basis), the retraction_method $(ltap.retraction_method), and the vector_transport_method $(ltap.vector_transport_method)"
     return print(io, s)
 end
 function (ltap::LowerTriangularAdaptivePoll)(
@@ -270,10 +298,20 @@ function DefaultMeshAdaptiveDirectSearch(
 )
     return DefaultMeshAdaptiveDirectSearch(p, copy(M, p), X, false, retraction_method)
 end
-function get_search_success(dmads::DefaultMeshAdaptiveDirectSearch)
+"""
+    is_successful(dmads::DefaultMeshAdaptiveDirectSearch)
+
+Return whether the last [`DefaultMeshAdaptiveDirectSearch`](@ref) was succesful.
+"""
+function is_successful(dmads::DefaultMeshAdaptiveDirectSearch)
     return dmads.last_search_improved
 end
-function get_search_point(dmads::DefaultMeshAdaptiveDirectSearch)
+"""
+    get_candidate(dmads::DefaultMeshAdaptiveDirectSearch)
+
+Return the last candidate a [`DefaultMeshAdaptiveDirectSearch`](@ref) found
+"""
+function get_candidate(dmads::DefaultMeshAdaptiveDirectSearch)
     return dmads.p
 end
 function show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
@@ -299,8 +337,16 @@ end
 """
     MeshAdaptiveDirectSearchState <: AbstractManoptSolverState
 
-* `p`: current iterate
-* `q`: temp (old) iterate
+# Fields
+
+$(_var(:Field, :p; add=[:as_Iterate]))
+* `mesh_size`: the current (internal) mesh size
+* `scale_mesh`: the current scaling of the internal mesh size, yields the actual mesh size used
+* `max_stepsize`: an upper bound for the longest step taken in looking for a candidate in either poll or search
+* `poll_size`
+$(_var(:Field, :stopping_criterion, "stop"))
+* `poll::`[`AbstractMeshPollFunction`]: a poll step (functor) to perform
+* `search::`[`AbstractMeshSearchFunction`}(@ref) a search step (functor) to perform
 
 """
 mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,PT,ST,SC<:StoppingCriterion} <:
