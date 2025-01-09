@@ -92,6 +92,7 @@ mutable struct LowerTriangularAdaptivePoll{
 } <: AbstractMeshPollFunction
     p::P
     q::P
+    poll_counter::I
     random_vector::V
     random_index::I
     mesh::M
@@ -116,6 +117,7 @@ function LowerTriangularAdaptivePoll(
     return LowerTriangularAdaptivePoll(
         p,
         copy(M, p),
+        0,
         b_l,
         0,
         D_k,
@@ -150,25 +152,30 @@ function (ltap::LowerTriangularAdaptivePoll)(
     n = manifold_dimension(M)
     l = -log(4, mesh_size)
     S = (-2^l + 1):(2^l - 1)
-    # A random index ι
-    ltap.random_index = rand(1:n)
-    # generate a random b_l vector
-    for i in 1:n
-        ltap.random_vector[i] = rand(i == ltap.random_index ? [-2^l, 2^l] : S)
-    end
+    if ltap.poll_counter <= l # we did not yet generate a b_l on this scale
+        ltap.poll_counter += 1
+        # A random index ι
+        ltap.random_index = rand(1:n)
+        # generate a random b_l vector
+        for i in 1:n
+            ltap.random_vector[i] = rand(i == ltap.random_index ? [-2^l, 2^l] : S)
+        end
+    end #otherwise we already created ltap.randomvector for this mesh size
     # Generate L lower triangular, (n-1)x(n-1) in M
     for i in 1:(n - 1)
-        for j in (n - 1)
+        for j in 1:(n - 1)
             ltap.mesh[i, j] = (j > i) ? 0.0 : rand((i == j) ? [-2^l, 2^l] : S)
         end
     end
     # Shift to construct n × n matrix B
     # (bottom left)
-    ltap.mesh[(ltap.random_index + 1):n, (1:n)] = ltap.mesh[
-        (ltap.random_index):(n - 1), (1:n)
-    ]
-    # zero row above
-    ltap.mesh[ltap.random_index, (1:n)] .= 0
+    if n > 1
+        ltap.mesh[(ltap.random_index + 1):n, (1:n)] = ltap.mesh[
+            (ltap.random_index):(n - 1), (1:n)
+        ]
+        # zero row above
+        ltap.mesh[ltap.random_index, (1:n)] .= 0
+    end
     # left column: random vector
     ltap.mesh[:, n] .= ltap.random_vector
     # set last column to minus the sum.
