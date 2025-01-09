@@ -64,8 +64,6 @@ with two small modifications:
 
     (p::LowerTriangularAdaptivePoll)(problem, mesh_size; scale_mesh=1.0, max_stepsize=inf)
 
-
-
 # Fields
 
 * `base_point::P`: a point on the manifold, where the mesh is build in the tangent space
@@ -78,6 +76,15 @@ with two small modifications:
   initialised to the zero vector and reset to the zero vector after moving to a new tangent space.
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :vector_transport_method))
+
+# Constructor
+
+    LowerTriangularAdaptivePoll(M, p=rand(M); kwargs...)
+
+* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :X))
 """
 mutable struct LowerTriangularAdaptivePoll{
     P,
@@ -109,11 +116,11 @@ function LowerTriangularAdaptivePoll(
     basis=DefaultOrthonormalBasis(),
     retraction_method=default_retraction_method(M),
     vector_transport_method=default_vector_transport_method(M),
+    X=zero_vector(M, p),
 )
     d = manifold_dimension(M)
     b_l = zeros(d)
     D_k = zeros(d, d + 1)
-    X = zero_vector(M, p)
     return LowerTriangularAdaptivePoll(
         p,
         copy(M, p),
@@ -311,10 +318,8 @@ function MeshAdaptiveDirectSearchState(
     M::AbstractManifold,
     p::P=rand(M);
     mesh_basis::B=DefaultOrthonormalBasis(),
-    mesh_size::F=injectivity_radius(M) / 4,
-    scale_mesh::F=1.0,
-    max_stepsize::F=injectivity_radius(M),
-    poll_size::F=manifold_dimension(M) * sqrt(mesh_size),
+    scale_mesh::F=injectivity_radius(M) / 2,
+    max_stepsize=injectivity_radius(M),
     stopping_criterion::SC=StopAfterIteration(500) | StopWhenPollSizeLess(1e-7),
     retraction_method=default_retraction_method(M, typeof(p)),
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
@@ -336,8 +341,9 @@ function MeshAdaptiveDirectSearchState(
     SC<:StoppingCriterion,
     B<:AbstractBasis,
 }
+    poll_s = manifold_dimension(M) * 1.0
     return MeshAdaptiveDirectSearchState{P,F,PT,ST,SC}(
-        p, mesh_size, scale_mesh, max_stepsize, poll_size, stopping_criterion, poll, search
+        p, 1.0, scale_mesh, max_stepsize, poll_s, stopping_criterion, poll, search
     )
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p

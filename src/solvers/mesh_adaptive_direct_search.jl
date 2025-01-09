@@ -4,6 +4,13 @@ _doc_mads = """
     mesh_adaptive_direct_search(M, f, p=rand(M); kwargs...)
     mesh_adaptive_direct_search!(M, f, p; kwargs...)
 
+
+# Keyword arguments
+
+* `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)
+$(_var(:Keyword, :retraction_method))
+$(_var(:Keyword, :vector_transport_method))
+$(_var(:Keyword, :X))
 """
 
 @doc "$(_doc_mads)"
@@ -34,10 +41,8 @@ function mesh_adaptive_direct_search!(
     mco::AbstractManifoldCostObjective,
     p;
     mesh_basis::B=DefaultOrthonormalBasis(),
-    mesh_size=1.0,
-    scale_mesh=1.0,
+    scale_mesh=injectivity_radius(M) / 2,
     max_stepsize=injectivity_radius(M),
-    poll_size=manifold_dimension(M) * mesh_size,
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
                                           StopWhenPollSizeLess(1e-10),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, eltype(p)),
@@ -61,10 +66,8 @@ function mesh_adaptive_direct_search!(
     madss = MeshAdaptiveDirectSearchState(
         M;
         mesh_basis=mesh_basis,
-        mesh_size=mesh_size,
         scale_mesh=scale_mesh,
         max_stepsize=max_stepsize,
-        poll_size=poll_size,
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
