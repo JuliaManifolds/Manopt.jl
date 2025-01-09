@@ -12,6 +12,7 @@ using Manifolds, Manopt, Test, LinearAlgebra
         M,
         f,
         p0;
-        debug=[:Iteration, :Cost, " ", :poll_size, " ", :mesh_size, " ", :Stop, "\n"],
+        # debug=[:Iteration, :Cost, " ", :poll_size, " ", :mesh_size, " ", :Stop, "\n"],
     )
+    @test distance(M, p_s, W) < 1e-9
 end

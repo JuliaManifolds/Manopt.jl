@@ -3,7 +3,7 @@
 
 An abstract type for common “poll” strategies in the [`mesh_adaptive_direct_search`](@ref)
 solver.
-A subtype of this The functor has to fulllfil
+A subtype of this The functor has to fulfil
 
 * be callable as `poll!(problem, mesh_size; kwargs...)` and modify the state
 
@@ -24,7 +24,7 @@ abstract type AbstractMeshPollFunction end
 
 Should be callable as search!(problem, mesh_size, p, X; kwargs...)
 
-where `X` is the last succesful poll direction from the tangent space at `p``
+where `X` is the last successful poll direction from the tangent space at `p``
 if that exists and the zero vector otherwise.
 """
 abstract type AbstractMeshSearchFunction end
@@ -58,7 +58,7 @@ end
 Generate a mesh (poll step) based on Section 6 and 7 of [Dreisigmeyer:2007](@cite),
 with two small modifications:
 * The mesh can be scaled globally so instead of ``Δ_0^m=1`` a certain different scale is used
-* Any poll direction can be rescaled if it is too long. This is to not exceed the inhectivity radius for example.
+* Any poll direction can be rescaled if it is too long. This is to not exceed the injectivity radius for example.
 
 # Functor
 
@@ -68,8 +68,8 @@ with two small modifications:
 
 # Fields
 
-* `p::P`: a point on the manifold, where the mesh is build in the tangent space
-* `q::P`: a memory for a new point/candidate
+* `base_point::P`: a point on the manifold, where the mesh is build in the tangent space
+* `candidate::P`: a memory for a new point/candidate
 * `random_vector`: a ``d``-dimensional random vector ``b_l```
 * `random_index`: a random index ``ι``
 * `mesh`: a vector of tangent vectors storing the mesh.
@@ -90,8 +90,8 @@ mutable struct LowerTriangularAdaptivePoll{
     VTM<:AbstractVectorTransportMethod,
     RM<:AbstractRetractionMethod,
 } <: AbstractMeshPollFunction
-    p::P
-    q::P
+    base_point::P
+    candidate::P
     poll_counter::I
     random_vector::V
     random_index::I
@@ -135,11 +135,19 @@ function get_poll_direction(ltap::LowerTriangularAdaptivePoll)
     return ltap.X
 end
 function get_poll_basepoint(ltap::LowerTriangularAdaptivePoll)
-    return ltap.p
+    return ltap.base_point
+end
+function get_poll_best_candidate(ltap::LowerTriangularAdaptivePoll)
+    return ltap.candidate
 end
 function update_poll_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) where {P}
-    vector_transport_to!(M, ltap.X, ltap.p, ltap.X, p, ltap.vector_transport_method)
-    return copyto!(M, ltap.p, p)
+    vector_transport_to!(
+        M, ltap.X, ltap.base_point, ltap.X, p, ltap.vector_transport_method
+    )
+    copyto!(M, ltap.base_point, p)
+    # reset candidate as well
+    copyto!(M, ltap.candidate, ltap.base_point)
+    return ltap
 end
 function show(io::IO, ltap::LowerTriangularAdaptivePoll)
     s = "LowerTriangularAdaptivePoll using `basis=`$(ltap.basis), `retraction_method=`$(ltap.retraction_method), and `vector_transport_method=`$(ltap.vector_transport_method)"
@@ -176,7 +184,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
         # zero row above
         ltap.mesh[ltap.random_index, (1:n)] .= 0
     end
-    # left column: random vector
+    # second to last column: random vector
     ltap.mesh[:, n] .= ltap.random_vector
     # set last column to minus the sum.
     ltap.mesh[:, n + 1] .= -1 .* sum(ltap.mesh[:, 1:n]; dims=2)
@@ -185,24 +193,34 @@ function (ltap::LowerTriangularAdaptivePoll)(
     # look for best
     ltap.last_poll_improved = false
     i = 0
-    c = get_cost(amp, ltap.p)
+    c = get_cost(amp, ltap.base_point)
     while (i < (n + 1)) && !(ltap.last_poll_improved)
         i = i + 1 # runs for the last time for i=n+1 and hence the sum.
         # get vector – scale mesh
-        get_vector!(M, ltap.X, ltap.p, scale_mesh .* ltap.mesh[:, i], ltap.basis)
+        get_vector!(
+            M,
+            ltap.X,
+            ltap.base_point,
+            mesh_size * scale_mesh .* ltap.mesh[:, i],
+            ltap.basis,
+        )
         # shorten if necessary
-        if norm(M, ltap.p, ltap.X) > max_stepsize
-            ltap.X = max_stepsize / norm(M, ltap.p, ltap.X) * ltap.X
+        if norm(M, ltap.base_point, ltap.X) > max_stepsize
+            ltap.X = max_stepsize / norm(M, ltap.base_point, ltap.X) * ltap.X
         end
-        retract!(M, ltap.q, ltap.p, ltap.X, ltap.retraction_method)
-        if get_cost(amp, ltap.q) < c
-            copyto!(M, ltap.p, ltap.q)
+        retract!(M, ltap.candidate, ltap.base_point, ltap.X, ltap.retraction_method)
+        if get_cost(amp, ltap.candidate) < c
+            # Keep old point and search direction, since the update will come later only
+            # copyto!(M, ltap.base_point, ltap.candidate)
             ltap.last_poll_improved = true
             # this also breaks while
         end
     end
-    # clear temp vector if we did not improve.
-    !(ltap.last_poll_improved) && (zero_vector!(M, ltap.X, ltap.p))
+    # clear temp vector if we did not improve – set to zero vector and “clear” candidate.
+    if !(ltap.last_poll_improved)
+        zero_vector!(M, ltap.X, ltap.base_point)
+        copyto!(M, ltap.candidate, ltap.base_point)
+    end
     return ltap
 end
 
@@ -228,13 +246,14 @@ $(_var(:Field, :retraction_method))
 
     DefaultMeshAdaptiveDirectSearch(M::AbstractManifold, p=rand(M); kwargs...)
 
-## Keyword awrguments
+## Keyword arguments
 
 * `X::T=zero_vector(M,p)
 $(_var(:Keyword, :retraction_method))
 """
 mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM} <: AbstractMeshSearchFunction
     p::P
+    q::P
     X::T
     last_search_improved::Bool
     retraction_method::RM
@@ -242,13 +261,13 @@ end
 function DefaultMeshAdaptiveDirectSearch(
     M, p=rand(M); X=zero_vector(M, p), retraction_method=default_retaction_method(M)
 )
-    return DefaultMeshAdaptiveDirectSearch(p, X, false, retraction_method)
+    return DefaultMeshAdaptiveDirectSearch(p, copy(M, p), X, false, retraction_method)
 end
-function get_search_success(search!::DefaultMeshAdaptiveDirectSearch)
-    return search!.last_search_improved
+function get_search_success(dmads::DefaultMeshAdaptiveDirectSearch)
+    return dmads.last_search_improved
 end
-function get_search_point(search!::DefaultMeshAdaptiveDirectSearch)
-    return search!.last_search_improved
+function get_search_point(dmads::DefaultMeshAdaptiveDirectSearch)
+    return dmads.p
 end
 function show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
     s = "DefaultMeshAdaptiveDirectSearch using `retraction_method=`$(dmads.retraction_method)"
@@ -262,10 +281,10 @@ function (dmads::DefaultMeshAdaptiveDirectSearch)(
     if norm(M, p, dmads.X) > max_stepsize
         dmads.X = max_stepsize / norm(M, dmads.p, dmads.X) * dmads.X
     end
-    retract!(M, dmads.p, p, dmads.X, dmads.retraction_method)
-    dmads.last_search_improved = get_cost(amp, dmads.p) < get_cost(amp, p)
+    retract!(M, dmads.q, p, dmads.X, dmads.retraction_method)
+    dmads.last_search_improved = get_cost(amp, dmads.q) < get_cost(amp, p)
     if dmads.last_search_improved
-        copyto!(M, dmads.p, p)
+        copyto!(M, dmads.p, dmads.q)
     end
     return dmads
 end
@@ -280,7 +299,6 @@ end
 mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,PT,ST,SC<:StoppingCriterion} <:
                AbstractManoptSolverState
     p::P
-    q::P
     mesh_size::F
     scale_mesh::F
     max_stepsize::F
@@ -319,15 +337,7 @@ function MeshAdaptiveDirectSearchState(
     B<:AbstractBasis,
 }
     return MeshAdaptiveDirectSearchState{P,F,PT,ST,SC}(
-        p,
-        copy(p),
-        mesh_size,
-        scale_mesh,
-        max_stepsize,
-        poll_size,
-        stopping_criterion,
-        poll,
-        search,
+        p, mesh_size, scale_mesh, max_stepsize, poll_size, stopping_criterion, poll, search
     )
 end
 get_iterate(mads::MeshAdaptiveDirectSearchState) = mads.p
