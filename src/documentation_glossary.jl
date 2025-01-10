@@ -23,7 +23,7 @@ _manopt_glossary = _MANOPT_DOC_TYPE()
     glossary(g::Dict, s::Symbol, args...; kwargs...)
 
 Access an entry in the glossary at `Symbol` s
-if that entrs is
+if that entry is
 * a string, this is returned
 * a function, it is called with `args...` and `kwargs...` passed
 * a dictionary, then the arguments and keyword arguments are passed to this dictionary, assuming `args[1]` is a symbol
@@ -87,6 +87,7 @@ define!(
     :pmatrix,
     (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
 )
+define!(:LaTeX, :proj, raw"\operatorname{proj}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
@@ -253,6 +254,18 @@ define!(
 $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
 $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
 \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+\\end{aligned}
+```
+""",
+)
+define!(
+    :Problem,
+    :SetConstrained,
+    (; M="M", p="p") -> """
+    ```math
+\\begin{aligned}
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
+$(_tex(:text, "subject to"))$(_tex(:quad))& p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:M; M=M))
 \\end{aligned}
 ```
 """,

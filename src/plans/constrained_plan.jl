@@ -109,11 +109,11 @@ If any of the three parts provides a Hessian, the corresponding object, that is 
 respectively, is created.
 """
 struct ConstrainedManifoldObjective{
-    T<:AbstractEvaluationType,
+    E<:AbstractEvaluationType,
     MO<:AbstractManifoldObjective,
     EMO<:Union{AbstractVectorGradientFunction,Nothing},
     IMO<:Union{AbstractVectorGradientFunction,Nothing},
-} <: AbstractManifoldObjective{T}
+} <: AbstractManifoldObjective{E}
     objective::MO
     equality_constraints::EMO
     inequality_constraints::IMO
