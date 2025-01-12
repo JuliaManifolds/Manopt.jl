@@ -66,7 +66,8 @@ function ProjectedGradientMethodState(
 end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
-# TODO: show
+# TODO: Write a show method.
+
 _doc_pgm = """
     projected_gradient_method(M, f, grad_f, proj, p=rand(M); kwargs...)
     projected_gradient_method(M, obj::ConstrainedSetObjective, p=rand(M); kwargs...)
@@ -138,7 +139,7 @@ function projected_gradient_method!(
     M,
     obj::ConstrainedSetObjective,
     p;
-    backtrack::Stepsize=ArmijoLinesearchStepsize(M),
+    backtrack::Stepsize=ArmijoLinesearchStepsize(M; stop_increasing_at_step=0),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     inverse_retraction_method::AbstractInverseRetractionMethod=default_inverse_retraction_method(
         M, typeof(p)
@@ -160,7 +161,7 @@ function projected_gradient_method!(
         stopping_criterion=stopping_criterion,
         X=X,
     )
-    dpgms = decorate_state!(dpgms; kwargs...)
+    dpgms = decorate_state!(pgms; kwargs...)
     solve!(dmp, dpgms)
     return get_solver_return(get_objective(dmp), dpgms)
 end
@@ -174,14 +175,19 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodS
     M = get_manifold(amp)
     # Step 1 candidate & project
     get_gradient!(amp, pgms.X, pgms.p)
-    retract!(M, pgms.q, get_stepsize(amp, pgms, k) * pgms.X, pgms.retraction_method)
-    project!(amp, pgms.q) # TODO: Implement in the ConstrainedSet plan
+    # println("X:", pgms.X, " (step: ", get_stepsize(amp, pgms, k), ")")
+    retract!(M, pgms.q, pgms.p, get_stepsize(amp, pgms, k) * pgms.X, pgms.retraction_method)
+    # println("q:", pgms.q)
+    get_projection!(amp, pgms.q, pgms.q)
+    # println("q (proj):", pgms.q)
     # Determine search direction
     inverse_retract!(M, pgms.η, pgms.p, pgms.q, pgms.inverse_retraction_method)
+    # println("η:", pgms.η)
     # Maybe currently a bit too fixed on Armijo
     # In the manuscript; β is the contraction factor, ρ is the sufficient decrease, θ?
     # Now this should also work for NM, WolfePowell, WPBinary, Constant (just not AWN I think)
     τ = pgms.backtrack(amp, pgms, k, pgms.η)
+    # println("τ:", τ)
     # Compute new iterate
     retract!(M, pgms.p, pgms.p, τ * pgms.η, pgms.retraction_method)
     return pgms

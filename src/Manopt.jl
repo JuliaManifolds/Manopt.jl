@@ -12,6 +12,7 @@ import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
+import ManifoldsBase: project, project!
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -375,6 +376,8 @@ export get_state,
     get_preconditioner!,
     get_primal_prox,
     get_primal_prox!,
+    get_projection,
+    get_projection!,
     get_differential_primal_prox,
     get_differential_primal_prox!,
     get_dual_prox,

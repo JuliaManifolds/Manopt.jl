@@ -61,3 +61,51 @@ function ConstrainedSetObjective(
         obj, project, indicator
     )
 end
+
+function get_cost(M::AbstractManifold, cso::ConstrainedSetObjective, p)
+    return get_cost(M, cso.objective, p)
+end
+function get_cost_function(cso::ConstrainedSetObjective, recursive=false)
+    return get_cost_function(cso.objective)
+end
+function get_gradient_function(cso::ConstrainedSetObjective, recursive=false)
+    return get_gradient_function(cso.objective)
+end
+function get_gradient(M::AbstractManifold, cso::ConstrainedSetObjective, p)
+    return get_gradient(M, cso.objective, p)
+end
+function get_gradient!(M::AbstractManifold, X, cso::ConstrainedSetObjective, p)
+    return get_gradient!(M, X, cso.objective, p)
+end
+# TODO: Document
+function get_projection(amp::AbstractManoptProblem, p)
+    return get_projection(get_manifold(amp), get_objective(amp), p)
+end
+function get_projection!(amp::AbstractManoptProblem, q, p)
+    return get_projection!(get_manifold(amp), q, get_objective(amp), p)
+end
+
+function get_projection(
+    M::AbstractManifold, cso::ConstrainedSetObjective{AllocatingEvaluation}, p
+)
+    return cso.project(M, p)
+end
+function get_projection(
+    M::AbstractManifold, cso::ConstrainedSetObjective{InplaceEvaluation}, p
+)
+    q = copy(M, p)
+    cso.project(M, q, p)
+    return q
+end
+function get_projection!(
+    M::AbstractManifold, q, cso::ConstrainedSetObjective{AllocatingEvaluation}, p
+)
+    copyto!(M, q, cso.project(M, p))
+    return q
+end
+function get_projection!(
+    M::AbstractManifold, q, cso::ConstrainedSetObjective{InplaceEvaluation}, p
+)
+    cso.project(M, q, p)
+    return q
+end
