@@ -684,7 +684,7 @@ function convex_bundle_method!(
     k_max=0,
     k_min=0,
     p_estimate=p,
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTracking(
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=DomainBackTracking(;
         contraction_factor=contraction_factor
     ),
     debug=[DebugWarnIfLagrangeMultiplierIncreases()],
@@ -771,7 +771,11 @@ function step_solver!(mp::AbstractManoptProblem, bms::ConvexBundleMethodState, k
         get_subgradient!(mp, bms.X, bms.p)
     else
         # Condition for null-steps
-        nsbt = NullStepBackTrackingStepsize(M; contraction_factor=bms.stepsize.contraction_factor, initial_stepsize=bms.last_stepsize)
+        nsbt = NullStepBackTrackingStepsize(
+            M;
+            contraction_factor=bms.stepsize.contraction_factor,
+            initial_stepsize=bms.last_stepsize,
+        )
         bms.null_stepsize = nsbt(mp, bms, k)
         copyto!(M, bms.p, get_parameter(nsbt, :Iterate))
         copyto!(M, bms.X, get_parameter(nsbt, :Subgradient))

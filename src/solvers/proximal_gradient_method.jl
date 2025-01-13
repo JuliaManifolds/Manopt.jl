@@ -88,6 +88,7 @@ function proximal_gradient_method!(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
+    backtracking_plan=nothing,
     λ=i -> 1.0,
     stopping_criterion=StopWhenGradientMappingNormLess(1e-2) |
                        StopAfterIteration(5000) |
@@ -95,7 +96,7 @@ function proximal_gradient_method!(
     X=zero_vector(M, p),
     retraction_method=default_retraction_method(M, typeof(p)),
     inverse_retraction_method=default_inverse_retraction_method(M, typeof(p)),
-	sub_problem=nothing,
+    sub_problem=nothing,
     sub_state=AllocatingEvaluation(),
     kwargs...,
 ) where {
@@ -108,6 +109,7 @@ function proximal_gradient_method!(
         M;
         p=p,
         acceleration=acceleration,
+        backtracking_plan=backtracking_plan,
         λ=λ,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
@@ -126,121 +128,75 @@ function initialize_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMe
     zero_vector!(M, pgms.X, pgms.p)
     return pgms
 end
-# (I) Problem is nothing -> use prox from
+
 function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, k)
     M = get_manifold(amp)
-    # acceleration?
+    # acceleration
     pgms.acceleration(amp, pgms, k)
     # evaluate the gradient at a
     get_gradient!(amp, pgms.X, pgms.a)
-    # (a) gradient step
-    retract!(M, pgms.q, pgms.a, -pgms.λ(k) * pgms.X, pgms.retraction_method)
-    # (b) proximal step
-    _pgm_proximal_step(amp, pgms, k)
+
+    if isnothing(pgms.backtracking_plan)
+        # Regular step with fixed λ
+        λ_k = pgms.λ(k)
+    else
+        # Backtracking case
+        # # Initial gradient step with s
+        # retract!(M, pgms.q, pgms.a, -pgms.backtracking_plan.s * pgms.X, pgms.retraction_method)
+        # Compute step size using backtracking
+        λ_k = backtracking_step_size(
+            M,
+            amp,
+            pgms.a,
+            pgms.X,
+            pgms.retraction_method,
+            pgms.inverse_retraction_method;
+            pgmb=ProximalGradientMethodBacktracking(
+                M,
+                pgms.q;
+                s=pgms.backtracking_plan.s,
+                η=pgms.backtracking_plan.η,
+                γ=pgms.backtracking_plan.γ,
+            ),
+        )
+    end
+
+    # Gradient step with chosen λ_k
+    retract!(M, pgms.q, pgms.a, -λ_k * pgms.X, pgms.retraction_method)
+    # Proximal step
+    _pgm_proximal_step(amp, pgms, λ_k)
+
     return pgms
 end
-# (I) Problem is nothing -> use prox from
+
+# (I) Problem is nothing -> use prox from objective
 function _pgm_proximal_step(
-    amp::AbstractManoptProblem, pgms::ProximalGradientMethodState{P,T,Nothing}, k
+    amp::AbstractManoptProblem, pgms::ProximalGradientMethodState{P,T,Nothing}, λ::Real
 ) where {P,T}
-    get_proximal_map!(amp, pgms.p, pgms.λ(k), pgms.q)
+    get_proximal_map!(amp, pgms.p, λ, pgms.q)
     return pgms
 end
+
 # (II) Problem is a subsolver -> solve
 function _pgm_proximal_step(
     amp::AbstractManoptProblem,
     pgms::ProximalGradientMethodState{
         P,T,<:AbstractManoptProblem,<:AbstractManoptSolverState
     },
-    k,
+    λ::Real,
 ) where {P,T}
     M = get_manifold(amp)
     # set lambda
-    set_parameter!(pgms.sub_problem, :λ, dcps.λ(k))
-    # aet start value to a
-    set_iterate!(pgms.sub_state, M, copy(M, dcps.q))
-    solve!(pgms.sub_problem, dcps.sub_state)
-    copyto!(M, pgms.p, get_solver_result(dcps.sub_state))
-    get_proximal_map!(amp, pgms.p, pgms.λ(k), pgms.q)
+    set_parameter!(pgms.sub_problem, :λ, λ)
+    # set start value to q
+    set_iterate!(pgms.sub_state, M, copy(M, pgms.q))
+    solve!(pgms.sub_problem, pgms.sub_state)
+    copyto!(M, pgms.p, get_solver_result(pgms.sub_state))
     return pgms
 end
 
-"""
-    StopWhenGradientMappingNormLess <: StoppingCriterion
-
-A stopping criterion based on the current gradient norm.
-
-# Fields
-
-* `threshold`: the threshold to indicate to stop when the distance is below this value
-
-# Internal fields
-
-* `last_change` store the last change
-* `at_iteration` store the iteration at which the stop indication happened
-
-# Constructor
-
-    StopWhenGradientMappingNormLess(ε)
-
-Create a stopping criterion with threshold `ε` for the gradient mapping for the [`proximal_gradient_method`](@ref).
-That is, this criterion indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
-where the norm to use can be specified in the `norm=` keyword.
-"""
-mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
-    threshold::TF
-    last_change::TF
-    at_iteration::Int
-    function StopWhenGradientMappingNormLess(ε::TF) where {TF}
-        return new{TF}(ε, zero(ε), -1)
-    end
-end
-
-function (sc::StopWhenGradientMappingNormLess)(
-    mp::AbstractManoptProblem, s::ProximalGradientMethodState, i::Int
-)
-    M = get_manifold(mp)
-    if i == 0 # reset on init
-        sc.at_iteration = -1
-    end
-    if (i > 0)
-        sc.last_change =
-            1 / s.λ(i) * norm(
-                M, s.q, inverse_retract(M, s.q, get_iterate(s), s.inverse_retraction_method)
-            )
-        if sc.last_change < sc.threshold
-            sc.at_iteration = i
-            return true
-        end
-    end
-    return false
-end
-function get_reason(c::StopWhenGradientMappingNormLess)
-    if (c.last_change < c.threshold) && (c.at_iteration >= 0)
-        return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient mapping norm ($(c.last_change)) is less than $(c.threshold).\n"
-    end
-    return ""
-end
-function status_summary(c::StopWhenGradientMappingNormLess)
-    has_stopped = (c.at_iteration >= 0)
-    s = has_stopped ? "reached" : "not reached"
-    return "|G| < $(c.threshold): $s"
-end
-indicates_convergence(c::StopWhenGradientMappingNormLess) = true
-function show(io::IO, c::StopWhenGradientMappingNormLess)
-    return print(
-        io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
-    )
-end
-
-"""
-    update_stopping_criterion!(c::StopWhenGradientMappingNormLess, :MinGradNorm, v::Float64)
-
-Update the minimal gradient norm when an algorithm shall stop
-"""
-function update_stopping_criterion!(
-    c::StopWhenGradientMappingNormLess, ::Val{:MinGradNorm}, v::Float64
-)
-    c.threshold = v
-    return c
+# (III) Solver for the backtracking case
+function _pgm_proximal_step_backtracking!(amp::AbstractManoptProblem, p, q, λ)
+    get_proximal_map!(amp, p, λ, q)
+    return p
 end

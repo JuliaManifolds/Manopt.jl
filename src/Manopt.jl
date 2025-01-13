@@ -541,9 +541,11 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 # Stepsize
 export Stepsize
 export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
+export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
+export backtracking_step_size
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
@@ -562,6 +564,7 @@ export StopAfter,
     StopWhenEntryChangeLess,
     StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess,
+    StopWhenGradientMappingNormLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
