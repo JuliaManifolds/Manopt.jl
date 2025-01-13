@@ -5,19 +5,32 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.5] - unreleased
+## [0.5.5] Januaey 4, 2025
 
 ### Added
 
-* icons upfront external links when they link to another package or wikipedia.
+* the Levenberg-Marquardt algorithm internally uses a `VectorGradientFunction`, which allows
+ to use a vector of gradients of a function returning all gradients as well for the algorithm
+* The `VectorGradientFunction` now also have a `get_jacobian` function
 
-## [0.5.4] - November 27, 2024
+### Changed
+
+* Minimum Julia version is now 1.10 (the LTS which replaced 1.6)
+* The vectorial functions had a bug where the original vector function for the mutating case
+  was not always treated as mutating.
+
+### Removed
+
+* The geodesic regression example, first because it is not correct, second because it should become part of ManoptExamples.jl once it is correct.
+
+## [0.5.4] - December 11, 2024
 
 ### Added
 
 * An automated detection whether the tutorials are present
-   if not an also no quarto run is done, an automated `--exlcude-tutorials` option is added.
+   if not an also no quarto run is done, an automated `--exclude-tutorials` option is added.
 * Support for ManifoldDiff 0.4
+* icons upfront external links when they link to another package or wikipedia.
 
 ## [0.5.3] – October 18, 2024
 
@@ -27,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* stabilize `max_Stepzise` to also work when `injectivity_radius` dos not exist.
+* stabilize `max_stepsize` to also work when `injectivity_radius` dos not exist.
   It however would warn new users, that activate tutorial mode.
 * Start a `ManoptTestSuite` subpackage to store dummy types and common test helpers in.
 
@@ -66,8 +79,8 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 
 ### Changed
 
-* Any `Stepsize` now hase a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
-  * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optonal) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
+* Any `Stepsize` now has a `Stepsize` struct used internally as the original `struct`s before. The newly exported terms aim to fit `stepsize=...` in naming and create a `ManifoldDefaultsFactory` instead, so that any stepsize can be created without explicitly specifying the manifold.
+  * `ConstantStepsize` is no longer exported, use `ConstantLength` instead. The length parameter is now a positional argument following the (optional) manifold. Besides that `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
   * `DecreasingStepsize` is no longer exported, use `DecreasingLength` instead. `ConstantLength` works as before,just that omitting the manifold fills the one specified in the solver now.
   * `ArmijoLinesearch` is now called `ArmijoLinesearchStepsize`. `ArmijoLinesearch` works as before,just that omitting the manifold fills the one specified in the solver now.
   * `WolfePowellLinesearch` is now called `WolfePowellLinesearchStepsize`, its constant `c_1` is now unified with Armijo and called `sufficient_decrease`, `c_2` was renamed to `sufficient_curvature`. Besides that, `WolfePowellLinesearch` works as before, just that omitting the manifold fills the one specified in the solver now.
@@ -129,7 +142,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
-  * bumped `Manifolds.jl`to version 0.10; this mainly means that any algorithm working on a productmanifold and requiring `ArrayPartition` now has to explicitly do `using RecursiveArrayTools`.
+  * bumped `Manifolds.jl`to version 0.10; this mainly means that any algorithm working on a product manifold and requiring `ArrayPartition` now has to explicitly do `using RecursiveArrayTools`.
 ### Fixed
 
 * the `AverageGradientRule` filled its internal vector of gradients wrongly – or mixed it up in parallel transport. This is now fixed.

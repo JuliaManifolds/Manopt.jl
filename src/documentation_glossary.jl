@@ -50,7 +50,8 @@ end
 # ---
 # LaTeX
 
-define!(:LaTeX, :argmin, raw"\operatorname{arg\,min}")
+define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
+define!(:LaTeX, :argmin, raw"\operatorname*{arg\,min}")
 define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
 define!(:LaTeX, :big, raw"\big")
@@ -65,11 +66,11 @@ define!(
     :cases,
     (c...) ->
         raw"\begin{cases}" *
-        "\n" *
-        "$(join(["   $(ci)" for ci in c], raw"\\\\"*"\n"))" *
-        "\n" *
+        "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
         raw"\end{cases}",
 )
+define!(:LaTeX, :cdots, raw"\cdots")
+define!(:LaTeX, :ddots, raw"\ddots")
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
@@ -81,14 +82,23 @@ define!(:LaTeX, :log, raw"\log")
 define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
 define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
+define!(
+    :LaTeX,
+    :pmatrix,
+    (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
+)
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :qquad, raw"\qquad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
+define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
+define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
 define!(:LaTeX, :sum, raw"\sum")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
+define!(:LaTeX, :transp, raw"\mathrm{T}")
+define!(:LaTeX, :vdots, raw"\vdots")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
@@ -101,6 +111,7 @@ define!(:Math, :distance, raw"\mathrm{d}")
 define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Manifold, :symbol, (; M="M") -> _tex(:Cal, M))
 define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Iterate, (; p="p", k="k") -> "$(p)^{($(k))}")
 define!(
     :Math,
@@ -232,25 +243,39 @@ define!(
 #
 #
 # Problems
+_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+
 define!(
     :Problem,
     :Constrained,
     (; M="M", p="p") -> """
     ```math
 \\begin{aligned}
-\\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
 $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
 \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
 \\end{aligned}
 ```
 """,
 )
+define!(:Problem, :Default, (; M="M", p="p") -> """
+                        ```math
+                        $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} f($p)
+                        ```
+                        """)
 define!(
     :Problem,
-    :Default,
-    (; M="M", p="p") -> "\n```math\n$(_tex(:argmin))_{$p ∈ $(_tex(:Cal, M))} f($p)\n```\n",
+    :NonLinearLeastSquares,
+    (; M="M", p="p") -> """
+```math
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2)) $(_tex(:sum))_{i=1}^m $(_tex(:abs, "f_i($p)"))^2
+```
+
+where ``f: $(_math(:M; M=M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:M; M=M)) → ℝ``, ``i=1,…,m``,
+and each component function is continuously differentiable.
+""",
 )
-_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+
 #
 #
 # Stopping Criteria

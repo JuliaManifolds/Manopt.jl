@@ -12,6 +12,7 @@ include("../utils/dummy_types.jl")
     hess_f!(M, Y, p, X) = (Y .= [2.0, 2.0, 2.0])
     # Inequality constraints
     g(M, p) = [p[1] - 1, -p[2] - 1]
+    g!(M, V, p) = (V .= [p[1] - 1, -p[2] - 1])
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     grad_gA(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]
@@ -41,6 +42,7 @@ include("../utils/dummy_types.jl")
     ) == 2
     # Equality Constraints
     h(M, p) = [2 * p[3] - 1]
+    h!(M, V, p) = (V .= [2 * p[3] - 1])
     h1(M, p) = 2 * p[3] - 1
     grad_h(M, p) = [[0.0, 0.0, 2.0]]
     grad_hA(M, p) = [[0.0, 0.0, 2.0];;]
@@ -83,9 +85,9 @@ include("../utils/dummy_types.jl")
     cofm = ConstrainedManifoldObjective(
         f,
         grad_f!,
-        g,
+        g!,
         grad_g!,
-        h,
+        h!,
         grad_h!;
         evaluation=InplaceEvaluation(),
         inequality_constraints=2,
@@ -149,9 +151,9 @@ include("../utils/dummy_types.jl")
     cofhm = ConstrainedManifoldObjective(
         f,
         grad_f!,
-        g,
+        g!,
         grad_g!,
-        h,
+        h!,
         grad_h!;
         hess_f=hess_f!,
         hess_g=hess_g!,
