@@ -130,7 +130,9 @@ function LowerTriangularAdaptivePoll(
     p=rand(M);
     basis::AbstractBasis=DefaultOrthonormalBasis(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
-    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M),
+    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
+        M
+    ),
     X=zero_vector(M, p),
 )
     d = manifold_dimension(M)
@@ -209,7 +211,10 @@ function show(io::IO, ltap::LowerTriangularAdaptivePoll)
     return print(io, s)
 end
 function (ltap::LowerTriangularAdaptivePoll)(
-    amp::AbstractManoptProblem, mesh_size::Real; scale_mesh::Real=1.0, max_stepsize::Real=Inf
+    amp::AbstractManoptProblem,
+    mesh_size::Real;
+    scale_mesh::Real=1.0,
+    max_stepsize::Real=Inf,
 )
     M = get_manifold(amp)
     n = manifold_dimension(M)
@@ -380,8 +385,13 @@ $(_var(:Field, :stopping_criterion, "stop"))
 * `search::`[`AbstractMeshSearchFunction`}(@ref) a search step (functor) to perform
 
 """
-mutable struct MeshAdaptiveDirectSearchState{P,F<:Real,PT<:AbstractMeshPollFunction,ST<:AbstractMeshSearchFunction,SC<:StoppingCriterion} <:
-               AbstractManoptSolverState
+mutable struct MeshAdaptiveDirectSearchState{
+    P,
+    F<:Real,
+    PT<:AbstractMeshPollFunction,
+    ST<:AbstractMeshSearchFunction,
+    SC<:StoppingCriterion,
+} <: AbstractManoptSolverState
     p::P
     mesh_size::F
     scale_mesh::F
@@ -399,7 +409,9 @@ function MeshAdaptiveDirectSearchState(
     max_stepsize::F=injectivity_radius(M),
     stopping_criterion::SC=StopAfterIteration(500) | StopWhenPollSizeLess(1e-7),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(M, typeof(p)),
+    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
+        M, typeof(p)
+    ),
     poll::PT=LowerTriangularAdaptivePoll(
         M,
         copy(M, p);
