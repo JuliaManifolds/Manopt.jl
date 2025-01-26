@@ -16,6 +16,7 @@ as well as to provide functions
 * `update_basepoint!(M, poll!, p)` that updates the base point to `p` and all necessary internal data to a new point to build a mesh at
 
 The `kwargs...` could include
+
 * `scale_mesh=1.0`: to rescale the mesh globally
 * `max_stepsize=Inf`: avoid exceeding a step size beyon this, e.g. injectivity radius.
   any vector longer than this should be shortened to the provided max stepsize.
@@ -76,19 +77,21 @@ with two small modifications:
 # Fields
 
 * `base_point::P`: a point on the manifold, where the mesh is build in the tangent space
+* `basis`: a basis of the current tangent space with respect to which the mesh is stored
 * `candidate::P`: a memory for a new point/candidate
+* `mesh`: a vector of tangent vectors storing the mesh.
 * `random_vector`: a ``d``-dimensional random vector ``b_l```
 * `random_index`: a random index ``ι``
-* `mesh`: a vector of tangent vectors storing the mesh.
-* `basis`: a basis of the current tangent space with respect to which the mesh is stored
-* `X::T` the last successful poll direction stored as a tangent vector.
-  initialised to the zero vector and reset to the zero vector after moving to a new tangent space.
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :vector_transport_method))
+* `X::T` the last successful poll direction stored as a tangent vector.
+  initialised to the zero vector and reset to the zero vector after moving to a new tangent space.
 
 # Constructor
 
     LowerTriangularAdaptivePoll(M, p=rand(M); kwargs...)
+
+## Keyword arguments
 
 * `basis=`[`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`)
 $(_var(:Keyword, :retraction_method))
@@ -194,11 +197,16 @@ function update_basepoint!(M, ltap::LowerTriangularAdaptivePoll{P}, p::P) where 
     return ltap
 end
 function show(io::IO, ltap::LowerTriangularAdaptivePoll)
-    s = "LowerTriangularAdaptivePoll on a basis $(ltap.basis), the retraction_method $(ltap.retraction_method), and the vector_transport_method $(ltap.vector_transport_method)"
+    s = """LowerTriangularAdaptivePoll
+      with
+      * basis on the tangent space: $(ltap.basis)
+      * retraction_method:          $(ltap.retraction_method)
+      * vector_transport_method:    $(ltap.vector_transport_method)
+      """
     return print(io, s)
 end
 function (ltap::LowerTriangularAdaptivePoll)(
-    amp::AbstractManoptProblem, mesh_size; scale_mesh=1.0, max_stepsize=inf
+    amp::AbstractManoptProblem, mesh_size; scale_mesh=1.0, max_stepsize=Inf
 )
     M = get_manifold(amp)
     n = manifold_dimension(M)
@@ -303,7 +311,7 @@ mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM} <: AbstractMeshSearchFunc
     retraction_method::RM
 end
 function DefaultMeshAdaptiveDirectSearch(
-    M, p=rand(M); X=zero_vector(M, p), retraction_method=default_retaction_method(M)
+    M, p=rand(M); X=zero_vector(M, p), retraction_method=default_retraction_method(M)
 )
     return DefaultMeshAdaptiveDirectSearch(p, copy(M, p), X, false, retraction_method)
 end
@@ -324,11 +332,14 @@ function get_candidate(dmads::DefaultMeshAdaptiveDirectSearch)
     return dmads.p
 end
 function show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
-    s = "DefaultMeshAdaptiveDirectSearch using `retraction_method=`$(dmads.retraction_method)"
+    s = """DefaultMeshAdaptiveDirectSearch
+      with
+      * retraction_method: $(dmads.retraction_method)
+    """
     return print(io, s)
 end
 function (dmads::DefaultMeshAdaptiveDirectSearch)(
-    amp::AbstractManoptProblem, mesh_size, p, X; scale_mesh=1.0, max_stepsize=inf
+    amp::AbstractManoptProblem, mesh_size, p, X; scale_mesh=1.0, max_stepsize=Inf
 )
     M = get_manifold(amp)
     dmads.X = 4 * mesh_size * scale_mesh * X
@@ -415,8 +426,8 @@ function show(io::IO, mads::MeshAdaptiveDirectSearchState)
     * scale_mesh: $(mads.scale_mesh)
     * max_stepsize: $(mads.max_stepsize)
     * poll_size: $(mads.poll_size)
-    * poll: $(repr(mads.poll))
-    * search: $(repr(mads.search))
+    * poll:\n  $(replace(repr(mads.poll), "\n" => "\n  ")[1:end-3])
+    * search:\n  $(replace(repr(mads.search), "\n" => "\n  ")[1:end-3])
 
     ## Stopping criterion
     $(status_summary(mads.stop))

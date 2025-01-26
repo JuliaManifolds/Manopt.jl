@@ -64,7 +64,8 @@ function mesh_adaptive_direct_search!(
     dmco = decorate_objective!(M, mco; kwargs...)
     dmp = DefaultManoptProblem(M, dmco)
     madss = MeshAdaptiveDirectSearchState(
-        M;
+        M,
+        p;
         mesh_basis=mesh_basis,
         scale_mesh=scale_mesh,
         max_stepsize=max_stepsize,
