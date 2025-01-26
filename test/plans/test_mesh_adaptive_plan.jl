@@ -1,4 +1,4 @@
-using ManifoldsBase, Manifolds, Manopt, Test
+using ManifoldsBase, Manifolds, Manopt, Test, Random
 
 @testset "Test Mesh Adaptive Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
