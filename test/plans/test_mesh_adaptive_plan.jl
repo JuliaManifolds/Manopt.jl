@@ -54,6 +54,7 @@ using ManifoldsBase, Manifolds, Manopt, Test
 
     @testset "Stopping Criteria" begin
         sps = StopWhenPollSizeLess(1.0)
+        @test get_reason(sps) === ""
         @test startswith(repr(sps), "StopWhenPollSizeLess(1.0)")
     end
 end
