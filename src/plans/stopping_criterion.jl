@@ -165,7 +165,7 @@ function (c::StopAfterIteration)(
 end
 function get_reason(c::StopAfterIteration)
     if c.at_iteration >= c.max_iterations
-        return "The algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
+        return "At iteration $(c.at_iteration) the algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
     end
     return ""
 end

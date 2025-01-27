@@ -68,6 +68,49 @@ get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 # TODO: Write a show method.
 
+#
+#
+# New Stopping Criterion
+"""
+    StopWhenProjectionChangeLess <: StoppingCriterion
+
+"""
+mutable struct StopWhenProjectionChangeLess{F} <: StoppingCriterion
+    threshold::F
+    last_change::F
+    at_iteration::Int
+end
+function StopWhenProjectionChangeLess(ε::F) where {F<:Real}
+    return StopWhenProjectionChangeLess{F}(ε, zero(ε), -1)
+end
+function (c::StopWhenProjectionChangeLess)(
+    mp::AbstractManoptProblem, pgms::ProjectedGradientMethodState, k::Int
+)
+    if k == 0 # reset on init
+        c.at_iteration = -1
+        c.last_change = 0.0
+    else
+        M = get_manifold(mp)
+        c.last_change = distance(M, pgms.p, pgms.q)
+        if c.last_change < c.threshold && k > 0
+            c.at_iteration = k
+            return true
+        end
+    end
+    return false
+end
+function get_reason(c::StopWhenProjectionChangeLess)
+    if (c.at_iteration >= 0)
+        return "At iteration $(c.at_iteration) algorithm performed a step after projection with a small step size ($(c.last_change)) less than $(c.threshold).\n"
+    end
+    return ""
+end
+function status_summary(c::StopWhenProjectionChangeLess)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "stopped after $(c.threshold):\t$s"
+end
+
 _doc_pgm = """
     projected_gradient_method(M, f, grad_f, proj, p=rand(M); kwargs...)
     projected_gradient_method(M, obj::ConstrainedSetObjective, p=rand(M); kwargs...)
@@ -145,8 +188,9 @@ function projected_gradient_method!(
         M, typeof(p)
     ),
     stepsize::Stepsize=ConstantStepsize(M),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300), # TODO: Improve?
-    X=zero_vector(M, p),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
+                                          StopWhenProjectionChangeLess(1e-7),
+    X=zero_vector(M,p),
     kwargs...,
 )
     dobj = decorate_objective!(M, obj; kwargs...)
