@@ -227,7 +227,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
         # generate a random b_l vector
         rand!(ltap.random_vector, S)
         ltap.random_vector[ltap.random_index] = rand((-2^l, 2^l))
-    end #otherwise we already created ltap.randomvector for this mesh size
+    end #otherwise we already created ltap.random_vector for this mesh size
     # Generate L lower triangular, (n-1)x(n-1) in M
     for i in 1:(n - 1)
         for j in 1:(n - 1)
@@ -305,7 +305,7 @@ end
 
 * `q`: a temporary memory for a point on the manifold
 * `X`: information to perform the search, e.g. the last direction found by poll.
-* `last_seach_improved::Bool` indicate whether the last search was successful, i.e. improved the cost.
+* `last_search_improved::Bool` indicate whether the last search was successful, i.e. improved the cost.
 $(_var(:Field, :retraction_method))
 
 # Constructor
@@ -314,10 +314,11 @@ $(_var(:Field, :retraction_method))
 
 ## Keyword arguments
 
-* `X::T=zero_vector(M,p)
+* `X::T=zero_vector(M, p)
 $(_var(:Keyword, :retraction_method))
 """
-mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM} <: AbstractMeshSearchFunction
+mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM<:AbstractRetractionMethod} <:
+               AbstractMeshSearchFunction
     p::P
     q::P
     X::T
@@ -325,14 +326,17 @@ mutable struct DefaultMeshAdaptiveDirectSearch{P,T,RM} <: AbstractMeshSearchFunc
     retraction_method::RM
 end
 function DefaultMeshAdaptiveDirectSearch(
-    M, p=rand(M); X=zero_vector(M, p), retraction_method=default_retraction_method(M)
+    M::AbstractManifold,
+    p=rand(M);
+    X=zero_vector(M, p),
+    retraction_method::AbstractRetractionMethod=default_retraction_method(M),
 )
     return DefaultMeshAdaptiveDirectSearch(p, copy(M, p), X, false, retraction_method)
 end
 """
     is_successful(dmads::DefaultMeshAdaptiveDirectSearch)
 
-Return whether the last [`DefaultMeshAdaptiveDirectSearch`](@ref) was succesful.
+Return whether the last [`DefaultMeshAdaptiveDirectSearch`](@ref) was successful.
 """
 function is_successful(dmads::DefaultMeshAdaptiveDirectSearch)
     return dmads.last_search_improved
@@ -353,7 +357,12 @@ function show(io::IO, dmads::DefaultMeshAdaptiveDirectSearch)
     return print(io, s)
 end
 function (dmads::DefaultMeshAdaptiveDirectSearch)(
-    amp::AbstractManoptProblem, mesh_size, p, X; scale_mesh=1.0, max_stepsize=Inf
+    amp::AbstractManoptProblem,
+    mesh_size::Real,
+    p,
+    X;
+    scale_mesh::Real=1.0,
+    max_stepsize::Real=Inf,
 )
     M = get_manifold(amp)
     dmads.X .= (4 * mesh_size * scale_mesh) .* X
