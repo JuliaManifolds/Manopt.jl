@@ -181,7 +181,7 @@ distance(M, q1, q2)
 
 
 This conversion also works for the gradients of constraints, and is passed down to
-subsolvers by default when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
+sub solvers by default when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
 
 ## Summary
 

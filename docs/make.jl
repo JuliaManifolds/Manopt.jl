@@ -35,7 +35,7 @@ tutorials_in_menu = !("--exclude-tutorials" ∈ ARGS)
 # (a) setup the tutorials menu – check whether all files exist
 tutorials_menu =
     "How to..." => [
-        "🏔️ Get started: optimize." => "tutorials/Optimize.md",
+        "🏔️ Get started with Manopt.jl." => "tutorials/Optimize.md",
         "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
         "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
         "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",

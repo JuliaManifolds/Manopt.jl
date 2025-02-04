@@ -23,6 +23,7 @@ Cartis
 canonicalization
 canonicalized
 Constantin
+[Cc]ubics
 Dai
 deactivatable
 Diepeveen
