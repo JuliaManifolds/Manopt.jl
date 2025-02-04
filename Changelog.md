@@ -128,7 +128,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
   * the previous `stabilize=true` is now set with `(project!)=embed_project!` in general,
     and if the manifold is represented by points in the embedding, like the sphere, `(project!)=project!` suffices
   * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
-* the positional argument `p` (usually the last or the third to last if subsolvers existed) has been moved to a keyword argument `p=` in all State constructors
+* the positional argument `p` (usually the last or the third to last if sub solvers existed) has been moved to a keyword argument `p=` in all State constructors
 * in `NelderMeadState` the `population` moved from positional to keyword argument as well,
 * the way to initialise sub solvers in the solver states has been unified In the new variant
   * the `sub_problem` is always a positional argument; namely the last one

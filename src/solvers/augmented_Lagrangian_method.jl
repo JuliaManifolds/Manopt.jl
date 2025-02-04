@@ -473,7 +473,7 @@ function augmented_Lagrangian_method!(
     ),
     sub_problem::AbstractManoptProblem=DefaultManoptProblem(
         M,
-        # pass down objective type to subsolvers
+        # pass down objective type to sub solvers
         decorate_objective!(
             M,
             ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation);
