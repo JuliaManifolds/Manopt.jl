@@ -77,9 +77,11 @@ Munkvold
 [Mm]ead
 [Nn]elder
 Nesterov
+Nesterovs
 Newton
 nonmonotone
 nonpositive
+[Nn]onsmooth
 [Pp]arametrising
 Parametrising
 [Pp]ock
@@ -111,9 +113,11 @@ Stephansen
 Stokkenes
 [Ss]ubdifferential
 [Ss]ubgradient
+[Ss]ubgradients
 subsampled
 [Ss]ubsolver
 summand
+summands
 superlinear
 supertype
 th

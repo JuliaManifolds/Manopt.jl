@@ -98,7 +98,7 @@ For these you can use
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](truncated_conjugate_gradient_descent.md) a solver for a constrained problem defined on a tangent space.
 
 
-## Alphabetical list List of algorithms
+## Alphabetical list of algorithms
 
 | Solver   | Function        | State   |
 |:---------|:----------------|:---------|
