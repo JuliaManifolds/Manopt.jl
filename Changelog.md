@@ -29,16 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * The geodesic regression example, first because it is not correct, second because it should become part of ManoptExamples.jl once it is correct.
 
-## [0.5.4] - December 11, 2024
+## [0.5.4] December 11, 2024
 
 ### Added
 
 * An automated detection whether the tutorials are present
    if not an also no quarto run is done, an automated `--exclude-tutorials` option is added.
 * Support for ManifoldDiff 0.4
-* icons upfront external links when they link to another package or wikipedia.
+* icons upfront external links when they link to another package or Wikipedia.
 
-## [0.5.3] – October 18, 2024
+## [0.5.3] October 18, 2024
 
 ### Added
 
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It however would warn new users, that activate tutorial mode.
 * Start a `ManoptTestSuite` subpackage to store dummy types and common test helpers in.
 
-## [0.5.2] – October 5, 2024
+## [0.5.2] October 5, 2024
 
 ### Added
 
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * fix a few typos in the documentation
 * improved the documentation for the initial guess of [`ArmijoLinesearchStepsize`](https://manoptjl.org/stable/plans/stepsize/#Manopt.ArmijoLinesearch).
 
-## [0.5.1] – September 4, 2024
+## [0.5.1] September 4, 2024
 
 ### Changed
 
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * the `proximal_point` method.
 
-## [0.5.0] – August 29, 2024
+## [0.5.0] August 29, 2024
 
 This breaking update is mainly concerned with improving a unified experience through all solvers
 and some usability improvements, such that for example the different gradient update rules are easier to specify.
@@ -151,7 +151,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
   * bumped `Manifolds.jl`to version 0.10; this mainly means that any algorithm working on a product manifold and requiring `ArrayPartition` now has to explicitly do `using RecursiveArrayTools`.
 ### Fixed
 
-* the `AverageGradientRule` filled its internal vector of gradients wrongly – or mixed it up in parallel transport. This is now fixed.
+* the `AverageGradientRule` filled its internal vector of gradients wrongly or mixed it up in parallel transport. This is now fixed.
 
 ### Removed
 
@@ -171,13 +171,13 @@ In general we introduce a few factories, that avoid having to pass the manifold 
    * to update a stopping criterion in a solver state, replace the old `update_stopping_criterion!(state, :Val, v)` tat passed down to the stopping criterion by the explicit pass down with `set_parameter!(state, :StoppingCriterion, :Val, v)`
 
 
-## [0.4.69] – August 3, 2024
+## [0.4.69] August 3, 2024
 
 ### Changed
 
 * Improved performance of Interior Point Newton Method.
 
-## [0.4.68] – August 2, 2024
+## [0.4.68] August 2, 2024
 
 ### Added
 
@@ -195,7 +195,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
   * A `StopWhenRelativeResidualLess` for the `conjugate_residual`
   * A `StopWhenKKTResidualLess` for the `interior_point_newton`
 
-## [0.4.67] – July 25, 2024
+## [0.4.67] July 25, 2024
 
 ### Added
 
