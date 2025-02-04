@@ -1,11 +1,12 @@
 # Changelog
 
-All notable Changes to the Julia package `Manopt.jl` will be documented in this file. The file was started with Version `0.4`.
+All notable Changes to the Julia package `Manopt.jl` are documented in this file.
+The file was started with Version `0.4`.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.6] unreleased
+## [0.5.6] February 10, 20265
 
 ### Added
 
@@ -48,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * stabilize `max_stepsize` to also work when `injectivity_radius` dos not exist.
   It however would warn new users, that activate tutorial mode.
-* Start a `ManoptTestSuite` subpackage to store dummy types and common test helpers in.
+* Start a `ManoptTestSuite` sub package to store dummy types and common test helpers in.
 
 ## [0.5.2] October 5, 2024
 
@@ -76,12 +77,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This breaking update is mainly concerned with improving a unified experience through all solvers
 and some usability improvements, such that for example the different gradient update rules are easier to specify.
 
-In general we introduce a few factories, that avoid having to pass the manifold to keyword arguments
+In general this introduces a few factories, that avoid having to pass the manifold to keyword arguments
 
 ### Added
 
 * A `ManifoldDefaultsFactory` that postpones the creation/allocation of manifold-specific fields in for example direction updates, step sizes and stopping criteria. As a rule of thumb, internal structures, like a solver state should store the final type. Any high-level interface, like the functions to start solvers, should accept such a factory in the appropriate places and call the internal `_produce_type(factory, M)`, for example before passing something to the state.
-* a `documentation_glossary.jl` file containing a glossary of often used variables in fields, arguments, and keywords, to print them in a unified manner. The same for usual sections, tex, and math notation that is often used within the doc-strings.
+* a `documentation_glossary.jl` file containing a glossary of often used variables in fields, arguments, and keywords, to print them in a unified manner. The same for usual sections, text, and math notation that is often used within the doc-strings.
 
 ### Changed
 
@@ -106,12 +107,12 @@ In general we introduce a few factories, that avoid having to pass the manifold 
   * `HestenesStiefelCoefficient` is now called `HestenesStiefelCoefficientRule`. For the `HestenesStiefelCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
   * `LiuStoreyCoefficient` is now called `LiuStoreyCoefficientRule`. For the `LiuStoreyCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
   * `PolakRibiereCoefficient` is now called `PolakRibiereCoefficientRule`. For the `PolakRibiereCoefficient` the manifold as its first parameter is no longer necessary and the vector transport has been unified/moved to the `vector_transport_method=` keyword.
-  * the `SteepestDirectionUpdateRule` is now called `SteepestDescentCoefficientRule`. The `SteepestDescentCoefficient` is equivalent, but creates the new factory interims wise.
+  * the `SteepestDirectionUpdateRule` is now called `SteepestDescentCoefficientRule`. The `SteepestDescentCoefficient` is equivalent, but creates the new factory temporarily.
   * `AbstractGradientGroupProcessor` is now called `AbstractGradientGroupDirectionRule`
-    * the `StochasticGradient` is now called `StochasticGradientRule`. The `StochasticGradient` is equivalent, but creates the new factory interims wise, so that the manifold is not longer necessary.
+    * the `StochasticGradient` is now called `StochasticGradientRule`. The `StochasticGradient` is equivalent, but creates the new factory temporarily, so that the manifold is not longer necessary.
   * the `AlternatingGradient` is now called `AlternatingGradientRule`.
-  The `AlternatingGradient` is equivalent, but creates the new factory interims wise, so that the manifold is not longer necessary.
-* `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes bool, sometimes real) and was unused.
+  The `AlternatingGradient` is equivalent, but creates the new factory temporarily, so that the manifold is not longer necessary.
+* `quasi_Newton` had a keyword `scale_initial_operator=` that was inconsistently declared (sometimes boolean, sometimes real) and was unused.
   It is now called `initial_scale=1.0` and scales the initial (diagonal, unit) matrix within the approximation of the Hessian additionally to the $\frac{1}{\lVert g_k\rVert}$ scaling with the norm of the oldest gradient for the limited memory variant. For the full matrix variant the initial identity matrix is now scaled with this parameter.
 * Unify doc strings and presentation of keyword arguments
   * general indexing, for example in a vector, uses `i`
@@ -144,7 +145,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
     * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
       the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
     * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
-    * ``AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
+    * `AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `DifferenceOfConvexProximalState(M, sub_problem; evaluation=...)` was added and `DifferenceOfConvexProximalState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
@@ -185,9 +186,9 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 * a `conjugate_residual` Algorithm to solve a linear system on a tangent space.
 * `ArmijoLinesearch` now allows for additional `additional_decrease_condition` and `additional_increase_condition` keywords to add further conditions to accept additional conditions when to accept an decreasing or increase of the stepsize.
 * add a `DebugFeasibility` to have a debug print about feasibility of points in constrained optimisation employing the new `is_feasible` function
-* add a `InteriorPointCentralityCondition` check that can be added for step candidates within the line search of `interior_point_newton`
+* add a `InteriorPointCentralityCondition` that can be added for step candidates within the line search of `interior_point_newton`
 * Add Several new functors
-  * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the hessian objective of its Lagrangian
+  * the `LagrangianCost`, `LagrangianGradient`, `LagrangianHessian`, that based on a constrained objective allow to construct the Hessian objective of its Lagrangian
   * the `CondensedKKTVectorField` and its `CondensedKKTVectorFieldJacobian`, that are being used to solve a linear system within `interior_point_newton`
   * the `KKTVectorField` as well as its `KKTVectorFieldJacobian` and ``KKTVectorFieldAdjointJacobian`
   * the `KKTVectorFieldNormSq` and its `KKTVectorFieldNormSqGradient` used within the Armijo line search of `interior_point_newton`
@@ -241,7 +242,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
 * Remodel `ConstrainedManifoldObjective` to store an `AbstractManifoldObjective`
   internally instead of directly `f` and `grad_f`, allowing also Hessian objectives
   therein and implementing access to this Hessian
-* Fixed a bug that Lanczos produced NaNs when started exactly in a minimizer, since we divide by the gradient norm.
+* Fixed a bug that Lanczos produced NaNs when started exactly in a minimizer, since the algorithm initially divides by the gradient norm.
 
 ### Deprecated
 
