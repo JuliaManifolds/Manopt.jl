@@ -260,7 +260,9 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
         s.buffer .*= s.deviations # Eqs. (38) and (39)
         mul!(s.ys_c[i], B, s.buffer) # Eqs. (38) and (39)
         get_vector!(M, Y_m, s.p_m, s.ys_c[i], s.basis) # Eqs. (38) and (39)
-        ManifoldsBase.retract_fused!(M, s.population[i], s.p_m, Y_m, s.σ, s.retraction_method) # Eq. (40)
+        ManifoldsBase.retract_fused!(
+            M, s.population[i], s.p_m, Y_m, s.σ, s.retraction_method
+        ) # Eq. (40)
     end
     fitness_vals = map(p -> get_cost(mp, p), s.population)
     s.best_fitness_current_gen, s.worst_fitness_current_gen = extrema(fitness_vals)

@@ -1303,7 +1303,9 @@ function (a::WolfePowellLinesearchStepsize)(
         while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
-            ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
+            ManifoldsBase.retract_fused!(
+                M, a.candidate_point, p, η, step, a.retraction_method
+            )
             fNew = get_cost(mp, a.candidate_point)
         end
         s_plus = 2.0 * s_minus
@@ -1472,9 +1474,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     β = Inf
     t = 1.0
     f0 = get_cost(amp, get_iterate(ams))
-    xNew = ManifoldsBase.retract_fused(
-        M, get_iterate(ams), η, t, a.retraction_method
-    )
+    xNew = ManifoldsBase.retract_fused(M, get_iterate(ams), η, t, a.retraction_method)
     fNew = get_cost(amp, xNew)
     η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(amp, xNew)

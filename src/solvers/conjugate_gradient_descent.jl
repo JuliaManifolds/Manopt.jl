@@ -173,7 +173,9 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     M = get_manifold(amp)
     copyto!(M, cgs.p_old, cgs.p)
     current_stepsize = get_stepsize(amp, cgs, k, cgs.δ)
-    ManifoldsBase.retract_fused!(M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method)
+    ManifoldsBase.retract_fused!(
+        M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method
+    )
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, k)
     vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
