@@ -1,5 +1,5 @@
 ---
-title: "🏔️ Get started with Manopt.jl."
+title: "🏔️ Get started with Manopt.jl"
 author: Ronny Bergmann
 ---
 
