@@ -300,7 +300,7 @@ now()
 
 ````{=commonmark}
 ```@bibliography
-Pages = ["Optimize.md"]
+Pages = ["getstarted.md"]
 Canonical=false
 ```
 ````
