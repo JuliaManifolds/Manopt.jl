@@ -5,7 +5,13 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.5] Januaey 4, 2025
+## [0.5.6] February 10, 2025
+
+### Changed
+
+* bump dependencies of all JuliaManifolds ecosystem packages to be consistent with ManifoldsBase 1.0
+
+## [0.5.5] January 4, 2025
 
 ### Added
 
