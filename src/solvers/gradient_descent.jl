@@ -179,7 +179,7 @@ function gradient_descent(
     return _ensure_matching_output(p, rs)
 end
 function gradient_descent(
-    M::AbstractManifold, mgo::O, p; kwargs...
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
 ) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)

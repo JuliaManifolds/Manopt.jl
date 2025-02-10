@@ -2,8 +2,16 @@
 _doc_mads = """
 
     mesh_adaptive_direct_search(M, f, p=rand(M); kwargs...)
+    mesh_adaptive_direct_search(M, mco::AbstractManifoldCostObjective, p=rand(M); kwargs..)
     mesh_adaptive_direct_search!(M, f, p; kwargs...)
+    mesh_adaptive_direct_search!(M, mco::AbstractManifoldCostObjective, p; kwargs..)
 
+
+# Input
+
+$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :f))
+$(_var(:Argument, :p))
 
 # Keyword arguments
 
@@ -24,7 +32,7 @@ function mesh_adaptive_direct_search(M::AbstractManifold, f, p; kwargs...)
     return mesh_adaptive_direct_search(M, mco; kwargs...)
 end
 function mesh_adaptive_direct_search(
-    M::AbstractManifold, mco::AbstractManifoldCostObjective, p; kwargs...
+    M::AbstractManifold, mco::AbstractManifoldCostObjective, p=rand(M); kwargs...
 )
     q = copy(M, p)
     return mesh_adaptive_direct_search!(M, mco, q; kwargs...)
