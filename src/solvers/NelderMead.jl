@@ -349,7 +349,7 @@ function step_solver!(mp::AbstractManoptProblem, s::NelderMeadState, ::Any)
     # --- Shrink ---
     if continue_steps
         for i in 2:length(ind)
-            retract!(
+            ManifoldsBase.retract_fused!(
                 M,
                 s.population.pts[i],
                 s.population.pts[1],

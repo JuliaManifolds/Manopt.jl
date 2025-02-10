@@ -21,7 +21,7 @@ Arguments
   Then you can spare time in the rendering by not passing this argument.
   If quarto is not run, some tutorials are generated as empty files, since they
   are referenced from within the documentation.
-  These are currently `Optimize.md` and `ImplementOwnManifold.md`.
+  These are currently `getstarted.md` and `ImplementOwnManifold.md`.
 """
     )
     exit(0)
@@ -35,7 +35,7 @@ tutorials_in_menu = !("--exclude-tutorials" ∈ ARGS)
 # (a) setup the tutorials menu – check whether all files exist
 tutorials_menu =
     "How to..." => [
-        "🏔️ Get started: optimize." => "tutorials/Optimize.md",
+        "🏔️ Get started with Manopt.jl" => "tutorials/getstarted.md",
         "Speedup using in-place computations" => "tutorials/InplaceGradient.md",
         "Use automatic differentiation" => "tutorials/AutomaticDifferentiation.md",
         "Define objectives in the embedding" => "tutorials/EmbeddingObjectives.md",
@@ -54,8 +54,9 @@ for (name, file) in tutorials_menu.second
         global all_tutorials_exist = false
         if !run_quarto
             @warn "Tutorial $name does not exist at $fn."
-            if (!isfile(fn)) &&
-                (endswith(file, "Optimize.md") || endswith(file, "ImplementOwnManifold.md"))
+            if (!isfile(fn)) && (
+                endswith(file, "getstarted.md") || endswith(file, "ImplementOwnManifold.md")
+            )
                 @warn "Generating empty file, since this tutorial is linked to from the documentation."
                 touch(fn)
             end

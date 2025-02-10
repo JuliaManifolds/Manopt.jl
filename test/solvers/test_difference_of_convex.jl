@@ -192,7 +192,7 @@ import Manifolds: inner
         )
     end
     @testset "Running the closed form solution solvers" begin
-        # make them a bit by providing subsolvers as functions
+        # make them a bit by providing sub solvers as functions
         function dca_sub(M, p, X)
             q = copy(M, p)
             lin_s = LinearizedDCCost(g, copy(M, p), copy(M, p, X))
@@ -216,7 +216,7 @@ import Manifolds: inner
         @test isapprox(M, p11, p12)
         @test f(M, p11) ≈ 0.0 atol = 1e-15
 
-        # fake them a bit by providing subsolvers as functions
+        # fake them a bit by providing sub solvers as functions
         function prox_g(M, λ, p)
             q = copy(M, p)
             prox = ProximalDCCost(g, copy(M, p), λ)

@@ -53,6 +53,7 @@ using ManifoldDiff:
     riemannian_gradient!,
     riemannian_Hessian,
     riemannian_Hessian!
+using ManifoldsBase
 using ManifoldsBase:
     AbstractBasis,
     AbstractDecoratorManifold,

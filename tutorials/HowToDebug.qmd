@@ -106,7 +106,7 @@ Note that the number (`25`) yields that all but `:Start` and `:Stop` are only di
 
 ## Subsolver debug
 
-Subsolvers have a `sub_kwargs` keyword, such that you can pass keywords to the sub solver as well. This works well if you do not plan to change the subsolver. If you do you can wrap your own `solver_state=` argument in a [`decorate_state!`](@ref) and pass a `debug=` password to this function call.
+Sub solvers have a `sub_kwargs` keyword, such that you can pass keywords to the sub solver as well. This works well if you do not plan to change the subsolver. If you do you can wrap your own `solver_state=` argument in a [`decorate_state!`](@ref) and pass a `debug=` password to this function call.
 Keywords in a keyword have to be passed as pairs (`:debug => [...]`).
 
 For most debugs, there further exists a longer form to specify the format to print.
@@ -123,10 +123,10 @@ p3 = exact_penalty_method(
 );
 ```
 
-The different lengths of the dotted lines come from the fact that ---at least in the beginning--- the subsolver performs a few steps and each subsolvers step prints a dot.
+The different lengths of the dotted lines come from the fact that ---at least in the beginning--- the subsolver performs a few steps and each sub solvers step prints a dot.
 
-For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:WhenActive`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, or inother words [`DebugEvery`](@ref) is active itself.
-Furthermore, we want to print the iteration number _before_ printing the subsolvers steps, so we put this into a `Pair`, but we can leave the remaining ones as single
+For this issue, there is the next symbol (similar to the `:Stop`) to indicate that a debug set is a subsolver set `:WhenActive`, which introduces a [`DebugWhenActive`](@ref) that is only activated when the outer debug is actually active, or another words [`DebugEvery`](@ref) is active itself.
+Furthermore, we want to print the iteration number _before_ printing the sub solvers steps, so we put this into a `Pair`, but we can leave the remaining ones as single
 entries.
 Finally we also prefix `:Stop` with `" | "` and print the iteration number at the time we stop. We get
 
