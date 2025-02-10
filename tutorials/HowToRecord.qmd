@@ -11,11 +11,11 @@ This tutorial illustrates how to:
 * record within a subsolver
 * define an own `RecordAction` to perform individual recordings.
 
-Several predefined recordings exist, for example [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
-For fields of the `State` the recording can also be done [`RecordEntry`](https://manoptjl.org/stable/plans/record/#Manopt.RecordEvery).
+Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
+For fields of the `State` the recording can also be done [`RecordEntry`](@ref).
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
-We illustrate these using the gradient descent from the [Get started: optimize](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We illustrate these using the gradient descent from the [Get started: optimize](getstarted.md) tutorial.
 
 Here the focus is put on ways to investigate the behaviour during iterations by using Recording techniques.
 

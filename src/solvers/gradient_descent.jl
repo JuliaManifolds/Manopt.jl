@@ -246,6 +246,6 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)
     step, s.X = s.direction(p, s, k)
-    retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
+    ManifoldsBase.retract_fused!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end
