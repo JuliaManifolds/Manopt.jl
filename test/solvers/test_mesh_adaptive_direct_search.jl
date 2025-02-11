@@ -8,6 +8,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     M = Rotations(2)
     p0 = [1.0 0.0; 0.0 1.0]
     f(M, p) = opnorm(B - A * p)
+    Random.seed!(42)
     s = mesh_adaptive_direct_search(
         M,
         f,

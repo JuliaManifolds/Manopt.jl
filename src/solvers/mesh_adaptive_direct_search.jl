@@ -24,10 +24,7 @@ $(_var(:Keyword, :X))
 @doc "$(_doc_mads)"
 mesh_adaptive_direct_search(M::AbstractManifold, args...; kwargs...)
 
-function mesh_adaptive_direct_search(M::AbstractManifold, f; kwargs...)
-    return mesh_adaptive_direct_search(M, f, rand(M); kwargs...)
-end
-function mesh_adaptive_direct_search(M::AbstractManifold, f, p; kwargs...)
+function mesh_adaptive_direct_search(M::AbstractManifold, f, p=rand(M); kwargs...)
     mco = ManifoldCostObjective(f)
     return mesh_adaptive_direct_search(M, mco; kwargs...)
 end
