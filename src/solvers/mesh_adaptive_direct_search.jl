@@ -19,6 +19,10 @@ $(_var(:Argument, :p))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 $(_var(:Keyword, :X))
+
+$(_note(:OtherKeywords))
+
+$(_note(:OutputSection))
 """
 
 @doc "$(_doc_mads)"
