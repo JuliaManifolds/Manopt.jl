@@ -31,18 +31,20 @@ begin
 
 	st2 = pi/2
 	halt2 = pi-0.5
-		
+
+	scale_couple=-8
+	
 	h = (halt1-st1)/(N+1)
 	#halt = pi - st
 	Omega1 = range(; start=st1, stop = halt1, length=N+2)[2:end-1]
-	Omega2 = range(; start=st2, stop = halt2, length=N+2)[2:end-1]
+	Omega2 = range(; start=st1, stop = halt1, length=N+2)[2:end-1]
 	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
 	
-	y01 = [sin(st1),0,cos(st1)] # startpoint of geodesic
-	yT1 = [sin(halt1),0,cos(halt1)] # endpoint of geodesic
+	y01 = [sin(st1)*cos(0),0*sin(0),cos(st1)] # startpoint of geodesic
+	yT1 = [sin(halt1)*cos(0),0*sin(0),cos(halt1)] # endpoint of geodesic
 
-	y02 = [sin(st2),0,cos(st2)] # startpoint of geodesic
-	yT2 = [sin(halt2),0,cos(halt2)] # endpoint of geodesic
+	y02 = [sin(st1)*cos(pi/4),sin(st1)*sin(pi/4),cos(st1)] # startpoint of geodesic
+	yT2 = [sin(halt1)*cos(pi/4),sin(halt1)*sin(pi/4),cos(halt1)] # endpoint of geodesic
 
 	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
 	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
@@ -52,17 +54,24 @@ begin
 end;
 
 # ╔═╡ 29043ca3-afe0-4280-a76a-7c160a117fdf
-function y(t)
-	return [sin(t), 0, cos(t)]
+function y1(t)
+	return [sin(t)*cos(0), sin(t)*sin(0), cos(t)]
+	#return [sin(halt+st-t), 0, cos(halt+st-t)]
+	#return [cos(t), sin(t), 0]
+end;
+
+# ╔═╡ 7f6c588b-e64d-471f-9259-f3e3aeeb193a
+function y2(t)
+	return [sin(t)*cos(pi/4), sin(t)*sin(pi/4), cos(t)]
 	#return [sin(halt+st-t), 0, cos(halt+st-t)]
 	#return [cos(t), sin(t), 0]
 end;
 
 # ╔═╡ 5c0980c5-284e-4406-bab8-9b9aff9391ba
-discretized_y1 = [y(Ωi) for Ωi in Omega1];
+discretized_y1 = [y1(Ωi) for Ωi in Omega1];
 
 # ╔═╡ 8cc3124c-dbb8-4286-aee3-3984d87868c1
-discretized_y2 = [y(Ωi) for Ωi in Omega2];
+discretized_y2 = [y2(Ωi) for Ωi in Omega2];
 
 # ╔═╡ ba3051a0-078a-49ff-85b9-441eef4cb9fc
 disc_y = ArrayPartition(discretized_y1, discretized_y2)
@@ -76,8 +85,9 @@ Such a structure has to be filled for two purposes:
 * Definition of an integrand and its derivative
 * Definition of a vector transport and its derivative
 """
-mutable struct DifferentiableMapping{M<:AbstractManifold,F1<:Function,F2<:Function,T}
+mutable struct DifferentiableMapping{M<:AbstractManifold, N<:AbstractManifold,F1<:Function,F2<:Function,T}
 	domain::M
+	precodomain::N
 	value::F1
 	derivative::F2
 	scaling::T
@@ -97,8 +107,18 @@ function transport_by_proj_prime(S, p, X, dq)
 	return (- dq*p' - p*dq')*X
 end
 
+# ╔═╡ 86fc6357-1106-48f9-8efe-fda152caf990
+function F_prime12_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+	return scale_couple*B1'*B2
+end
+
+# ╔═╡ b28a1cdc-50ad-4289-8ee9-ee4ccf4d653e
+function F_prime21_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+	return scale_couple*B2'*B1
+end
+
 # ╔═╡ 2260abfa-86c1-48ea-acdf-b641cad0433a
-function assemble_local_rhs!(b, h, i, yl, yr, Bl, Br,integrand)
+function assemble_local_rhs!(b,component_idx, h, i, yl, yr, Bl, Br,integrand)
 	dim = manifold_dimension(integrand.domain)
     idxl=dim*(i-2)
     idxr=dim*(i-1)
@@ -128,6 +148,22 @@ function assemble_local_rhs!(b, h, i, yl, yr, Bl, Br,integrand)
 end
 
 
+# ╔═╡ 7ee0ea56-6d68-41ae-bc10-9d1f650b3257
+function get_rhs_component!(b,component_idx,h,y,integrand,transport)
+	N = integrand.precodomain
+	# Schleife über Intervalle
+	for i in 1:length(y.x[1])-1
+	    yl=ArrayPartition(y.x[1][i-1],y.x[2][i-1])
+		yr=ArrayPartition(y.x[1][i],y.x[2][i])
+
+		Bcl=get_basis(N,yl.x[component_idx],DefaultOrthonormalBasis())
+	    Bl = get_vectors(N, yl.x[component_idx], Bcl)
+		Bcr=get_basis(N,yr.x[component_idx],DefaultOrthonormalBasis())
+	    Br = get_vectors(N, yr.x[component_idx], Bcr)
+        assemble_local_rhs!(b,component_idx, h, i, yl, yr, Bl, Br, integrand)		
+	end
+end
+
 # ╔═╡ ae6c02fd-00b1-4e15-8f26-ffeca9a91ec0
 function get_rhs_simplified!(b,h,y,y_trial,integrand,transport)
 	S = integrand.domain
@@ -152,7 +188,7 @@ function get_rhs_simplified!(b,h,y,y_trial,integrand,transport)
 end
 
 # ╔═╡ 86e2a93f-68a7-4b60-bcc0-a4a7cd6278f6
-function assemble_local_Jac!(A, h, i, yl, yr, Bl,Br,integrand, transport)
+function assemble_local_Jac_with_connection!(A,rowidx, colidx, h, i, yl, yr, BlM, BrM, BlN, BrN,integrand, transport)
  dim = manifold_dimension(integrand.domain)
  idxl=dim*(i-2)
  idxr=dim*(i-1)
@@ -161,17 +197,17 @@ function assemble_local_Jac!(A, h, i, yl, yr, Bl,Br,integrand, transport)
 	nA=size(A,1)
  #	Schleife über Testfunktionen
  for k in 1:dim
-	Bdotlk=-Bl[k]/h
-	Bdotrk=Br[k]/h
+	Bdotlk=(0-1)*BlM[k]/h
+	Bdotrk=(1-0)*BrM[k]/h
     # Schleife über Testfunktionen
 	for j in 1:dim
 		# Zeit-Ableitungen der Testfunktionen (=0 am jeweils anderen Rand)
-		Bdotlj=(0-1)*Bl[j]/h
-		Bdotrj=(1-0)*Br[j]/h
+		Bdotlj=(0-1)*BlN[j]/h
+		Bdotrj=(1-0)*BrN[j]/h
 
 		# y-Ableitungen der Projektionen
-		Pprimel=transport.derivative(integrand.domain,yl,Bl[j],Bl[k])
-		Pprimer=transport.derivative(integrand.domain,yr,Br[j],Br[k])
+		Pprimel=transport.derivative(integrand.domain,yl.x[rowidx],BlM[j],BlN[k])
+		Pprimer=transport.derivative(integrand.domain,yr.x[colidx],BrM[j],BrN[k])
 
 		# Zeit- und y-Ableitungen der Projektionen
 		Pprimedotl=(0-1)*Pprimel/h
@@ -181,11 +217,11 @@ function assemble_local_Jac!(A, h, i, yl, yr, Bl,Br,integrand, transport)
         if idxl>=0
 		   # linker Quadraturpunkt
 		   # Ableitung in der Einbettung	
-         tmp=integrand.derivative(integrand,yl,ydot,Bl[j],Bdotlj,Bl[k],Bdotlk)
+         tmp=integrand.derivative(integrand,yl,ydot,BlM[j],Bdotlj,BlN[k],Bdotlk)
 		   # Modifikation für Kovariante Ableitung	
 		   tmp += integrand.value(integrand,yl,ydot,Pprimel,Pprimedotl)
 		   # rechter Quadraturpunkt (siehe oben)
-	  tmp+=integrand.derivative(integrand,yr,ydot,0.0*Bl[j],Bdotlj,0.0*Bl[k],Bdotlk)
+	  tmp+=integrand.derivative(integrand,yr,ydot,0.0*BlM[j],Bdotlj,0.0*BlN[k],Bdotlk)
 		   tmp += integrand.value(integrand,yr,ydot,0.0*Pprimel,Pprimedotl)
            # Update des Matrixeintrags
 		   A[idxl+k,idxl+j]+=quadwght*tmp
@@ -195,19 +231,19 @@ function assemble_local_Jac!(A, h, i, yl, yr, Bl,Br,integrand, transport)
 		if idxl>=0 && idxr<nA
 		   # linker Quadraturpunkt
 		   # Ableitung in der Einbettung	
-			tmp=integrand.derivative(integrand, yl,ydot,0.0*Br[j],Bdotrj,Bl[k],Bdotlk)	
+			tmp=integrand.derivative(integrand, yl,ydot,0.0*BrM[j],Bdotrj,BlN[k],Bdotlk)	
 		   # Modifikation für Kovariante Ableitung fällt hier weg, da Terme = 0
 		   # rechter Quadraturpunkt
-			tmp+=integrand.derivative(integrand, yr,ydot,Br[j],Bdotrj,0.0*Bl[k],Bdotlk)	
+			tmp+=integrand.derivative(integrand, yr,ydot,BrM[j],Bdotrj,0.0*BlN[k],Bdotlk)	
            # Symmetrisches Update der Matrixeinträge
 			A[idxl+k,idxr+j] += quadwght*tmp
 			A[idxr+j,idxl+k] += quadwght*tmp
 		 end	
 		# rechte x rechte Testfunktion (siehe oben)
 		 if idxr < nA
-		   tmp=integrand.derivative(integrand, yl,ydot,0.0*Br[j],Bdotrj,0.0*Br[k],Bdotrk)
+		   tmp=integrand.derivative(integrand, yl,ydot,0.0*BrM[j],Bdotrj,0.0*BrN[k],Bdotrk)
 		   tmp += integrand.value(integrand, yl,ydot,0.0*Pprimer,Pprimedotr)
-		   tmp+=integrand.derivative(integrand, yr,ydot,Br[j],Bdotrj,Br[k],Bdotrk)
+		   tmp+=integrand.derivative(integrand, yr,ydot,BrM[j],Bdotrj,BrN[k],Bdotrk)
 		   tmp += integrand.value(integrand, yr,ydot,Pprimer,Pprimedotr)
 			 
 		   A[idxr+k,idxr+j]+=quadwght*tmp
@@ -218,18 +254,100 @@ function assemble_local_Jac!(A, h, i, yl, yr, Bl,Br,integrand, transport)
 end
 
 # ╔═╡ 53d912a5-8280-4bd3-980e-a49f3e9809e5
-function get_rhs_Jac!(b,A,h,y,integrand,transport)
-	S = integrand.domain
+function get_Jac!(A,rowidx,colidx,h,y,integrand,transport)
+	M = integrand.domain
+	N = integrand.precodomain
 	# Schleife über Intervalle
-	for i in 1:length(y)-1
-		yl=y[i-1]
-		yr=y[i]
-		Bcl=get_basis(S,yl,DefaultOrthonormalBasis())
-	    Bl = get_vectors(S, yl, Bcl)
-		Bcr=get_basis(S,yr,DefaultOrthonormalBasis())
-	    Br = get_vectors(S, yr, Bcr)
-        assemble_local_rhs!(b, h, i, yl, yr, Bl, Br, integrand)		
-        assemble_local_Jac!(A, h, i, yl, yr, Bl, Br, integrand, transport)		
+	for i in 1:length(y.x[1])-1
+		yl=ArrayPartition(y.x[1][i-1],y.x[2][i-1])
+		yr=ArrayPartition(y.x[1][i],y.x[2][i])
+		Bcl=get_basis(M,yl.x[colidx],DefaultOrthonormalBasis())
+	    BlM = get_vectors(M,yl.x[colidx], Bcl)
+		Bcr=get_basis(M,yr.x[colidx],DefaultOrthonormalBasis())
+	    BrM = get_vectors(M,yr.x[colidx], Bcr)
+
+		Bcl=get_basis(N,yl.x[rowidx],DefaultOrthonormalBasis())
+	    BlN = get_vectors(N,yl.x[rowidx], Bcl)
+		Bcr=get_basis(N,yr.x[rowidx],DefaultOrthonormalBasis())
+	    BrN = get_vectors(N,yr.x[rowidx], Bcr)
+
+        #assemble_local_rhs!(b, h, i, yl, yr, Bl, Br, integrand)		
+        assemble_local_Jac_with_connection!(A, rowidx,colidx, h, i, yl, yr, BlM, BrM, BlN, BrN , integrand, transport)		
+	end
+end
+
+# ╔═╡ 3fad1794-90b0-4e04-8eef-52d011beabd2
+function assemble_local_Jac_plain!(A, row_idx, col_idx, h, i, yl, yr, BlM, BrM, BlN, BrN,integrand)
+ dim = manifold_dimension(integrand.domain)
+ idxl=dim*(i-2)
+ idxr=dim*(i-1)
+ ydot=(yr-yl)/h
+ quadwght=0.5*h
+	nA=size(A,1)
+ #	Schleife über Testfunktionen
+ for k in 1:dim
+	Bdotlk=(0-1)*BlM[k]/h
+	Bdotrk=(1-0)*BrM[k]/h
+    # Schleife über Testfunktionen
+	for j in 1:dim
+		# Zeit-Ableitungen der Testfunktionen (=0 am jeweils anderen Rand)
+		Bdotlj=(0-1)*BlN[j]/h
+		Bdotrj=(1-0)*BrN[j]/h
+
+		# linke x linke Testfunktion
+        if idxl>=0
+		   # linker Quadraturpunkt
+		   # Ableitung in der Einbettung	
+         tmp=integrand.derivative(integrand,yl,ydot,BlM[j],Bdotlj,BlN[k],Bdotlk)
+		   # rechter Quadraturpunkt (siehe oben)
+	  tmp+=integrand.derivative(integrand,yr,ydot,0.0*BlM[j],Bdotlj,0.0*BlN[k],Bdotlk)
+           # Update des Matrixeintrags
+		   A[idxl+k,idxl+j]+=quadwght*tmp
+		   # TODO: Stimmt das auch bei nicht-symmetrischen Matrizen? j <-> k?
+		end
+		# linke x rechte Testfunktion
+		if idxl>=0 && idxr<nA
+		   # linker Quadraturpunkt
+		   # Ableitung in der Einbettung	
+			tmp=integrand.derivative(integrand, yl,ydot,0.0*BrM[j],Bdotrj,BlN[k],Bdotlk)	
+		   # Modifikation für Kovariante Ableitung fällt hier weg, da Terme = 0
+		   # rechter Quadraturpunkt
+			tmp+=integrand.derivative(integrand, yr,ydot,BrM[j],Bdotrj,0.0*BlN[k],Bdotlk)	
+           # Symmetrisches Update der Matrixeinträge
+			A[idxl+k,idxr+j] += quadwght*tmp
+			A[idxr+j,idxl+k] += quadwght*tmp
+		 end	
+		# rechte x rechte Testfunktion (siehe oben)
+		 if idxr < nA
+		   tmp=integrand.derivative(integrand, yl,ydot,0.0*BrM[j],Bdotrj,0.0*BrN[k],Bdotrk)
+		   tmp+=integrand.derivative(integrand, yr,ydot,BrM[j],Bdotrj,BrN[k],Bdotrk)
+			 
+		   A[idxr+k,idxr+j]+=quadwght*tmp
+			 # TODO: Stimmt das auch bei nicht-symmetrischen Matrizen?  j <-> k?
+		 end
+	end
+ end
+end
+
+# ╔═╡ 47c59dae-8990-448d-b0ab-7e84bfbbeb4e
+function get_Jac_plain!(A,row_idx,col_idx,h,y,integrand)
+	M = integrand.domain
+	N = integrand.precodomain
+	# Schleife über Intervalle
+	for i in 1:length(y.x[1])-1
+		yl=ArrayPartition(y.x[1][i-1],y.x[2][i-1])
+		yr=ArrayPartition(y.x[1][i],y.x[2][i])
+		Bcl=get_basis(M,yl.x[col_idx],DefaultOrthonormalBasis())
+	    BlM = get_vectors(M,yl.x[col_idx], Bcl)
+		Bcr=get_basis(M,yr.x[col_idx],DefaultOrthonormalBasis())
+	    BrM = get_vectors(M,yr.x[col_idx], Bcr)
+
+		Bcl=get_basis(N,yl.x[row_idx],DefaultOrthonormalBasis())
+	    BlN = get_vectors(N,yl.x[row_idx], Bcl)
+		Bcr=get_basis(N,yr.x[row_idx],DefaultOrthonormalBasis())
+	    BrN = get_vectors(N,yr.x[row_idx], Bcr)
+
+        assemble_local_Jac_plain!(A , row_idx, col_idx, h, i, yl, yr, BlM, BrM, BlN, BrN, integrand)		
 	end
 end
 
@@ -246,8 +364,13 @@ end
 """
 The following two routines define the integrand and its ordinary derivative. They use a vector field w, wich is defined, below. A scaling parameter is also employed.
 """
-function F_at(Integrand, y, ydot, B, Bdot)
-	  return ydot'*Bdot+w(y,Integrand.scaling)'*B
+function F1_at(Integrand, y, ydot, B, Bdot)
+	  return ydot.x[1]'*Bdot+w(y.x[1],Integrand.scaling)'*B+scale_couple*(y.x[2]-y.x[1])'*B
+end
+
+# ╔═╡ 229fa902-e125-429a-852d-0668f64c7640
+function F2_at(Integrand, y, ydot, B, Bdot)
+	  return ydot.x[2]'*Bdot+w(y.x[2],Integrand.scaling)'*B+scale_couple*(y.x[1]-y.x[2])'*B
 end
 
 # ╔═╡ 288b9637-0500-40b8-a1f9-90cb9591402b
@@ -258,8 +381,13 @@ function w_prime(p, c)
 end
 
 # ╔═╡ ac04e6ec-61c2-475f-bb2f-83755c04bd72
-function F_prime_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
-	return B1dot'*B2dot+(w_prime(y,Integrand.scaling)*B1)'*B2
+function F_prime11_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+	return B1dot'*B2dot+(w_prime(y.x[1],Integrand.scaling)*B1)'*B2-scale_couple*B1'*B2
+end
+
+# ╔═╡ 1c284f9d-f34e-435b-976d-61aaa0975fe5
+function F_prime22_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+	return B1dot'*B2dot+(w_prime(y.x[2],Integrand.scaling)*B1)'*B2-scale_couple*B1'*B2
 end
 
 # ╔═╡ 684508bd-4525-418b-b89a-85d56c01b188
@@ -267,8 +395,11 @@ begin
 S = Manifolds.Sphere(2)
 power = PowerManifold(S, NestedPowerRepresentation(), N)
 product = ProductManifold(power, power)
-integrand=DifferentiableMapping(S,F_at,F_prime_at,1.0)
-transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
+integrand1=DifferentiableMapping(S,S,F1_at,F_prime11_at,0.0)
+integrand2=DifferentiableMapping(S,S,F2_at,F_prime22_at,0.0)
+integrand12=DifferentiableMapping(S,S,F1_at,F_prime12_at,0.0)
+integrand21=DifferentiableMapping(S,S,F2_at,F_prime21_at,0.0)
+transport=DifferentiableMapping(S,S,transport_by_proj,transport_by_proj_prime,nothing)
 end;
 
 # ╔═╡ 98a334b1-5aa9-4e3a-a03d-f6859e77f1dc
@@ -291,8 +422,10 @@ end
 function solve_linear_system(M, p, state, prob)
 	obj = get_objective(prob)
 	n = Int(manifold_dimension(M)/2)
-	Ac1::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
-	Ac2::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
+	Ac11::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
+	Ac21::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
+	Ac12::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
+	Ac22::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
 	
 	bc1 = zeros(n)
 	bc2 = zeros(n)
@@ -302,22 +435,27 @@ function solve_linear_system(M, p, state, prob)
 	
 	Oy1 = OffsetArray([y01, p[M, 1]..., yT1], 0:(length(Omega1)+1))
 	Oy2 = OffsetArray([y02, p[M, 2]..., yT2], 0:(length(Omega2)+1))
+    Oy = ArrayPartition(Oy1,Oy2);
 	
 	Oytrial1 = OffsetArray([y01, state.p_trial[M,1]..., yT1], 0:(length(Omega1)+1))
 	Oytrial2 = OffsetArray([y02, state.p_trial[M,2]..., yT2], 0:(length(Omega2)+1))
 	#S = M.manifold
 	println("Assemble:")
-    get_rhs_Jac!(bc1,Ac1,h,Oy1,integrand,transport)
-	get_rhs_Jac!(bc2,Ac2,h,Oy2,integrand,transport)
+    get_Jac!(Ac11,1,1,h,Oy,integrand1,transport)
+	get_Jac!(Ac22,2,2,h,Oy,integrand2,transport)
+    get_Jac_plain!(Ac21,2,1,h,Oy,integrand12)
+	get_Jac_plain!(Ac12,1,2,h,Oy,integrand21)
+    get_rhs_component!(bc1,1,h,Oy,integrand1,transport)
+	get_rhs_component!(bc2,2,h,Oy,integrand2,transport)
 
-	Ac = hcat(Ac1, spzeros(n,n))
-	temp = hcat(spzeros(n,n), Ac2)
+	Ac = hcat(Ac11, Ac12)
+	temp = hcat(Ac21, Ac22)
 	Ac = vcat(Ac, temp)
 		
 	if state.is_same == true
 		bcsys = vcat(bc1, bc2)
 	else
-		get_rhs_simplified!(bctrial,h,Oy,Oytrial,integrand,transport)
+		get_rhs_simplified!(bctrial,h,Oy,Oytrial,integrand1,transport)
     	bcsys=bctrial-(1.0 - state.stepsize.alpha)*bc
 	end
 	#Asparse = sparse(Ac)
@@ -381,8 +519,8 @@ u = range(0,stop=2*π,length=n);
 v = range(0,stop=π,length=n);
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
 
-ws1 = [-w(p, integrand.scaling) for p in p_res[product, 1]]
-ws2 = [-w(p, integrand.scaling) for p in p_res[product, 2]]
+ws1 = [-w(p, integrand1.scaling) for p in p_res[product, 1]]
+ws2 = [-w(p, integrand1.scaling) for p in p_res[product, 2]]
 	
 for i in 1:n
     for j in 1:n
@@ -416,6 +554,7 @@ end
 # ╠═9fb54416-3909-49c4-b1bf-cc868e580652
 # ╠═12e32b83-ae65-406c-be51-3f21935eaae5
 # ╠═29043ca3-afe0-4280-a76a-7c160a117fdf
+# ╠═7f6c588b-e64d-471f-9259-f3e3aeeb193a
 # ╠═5c0980c5-284e-4406-bab8-9b9aff9391ba
 # ╠═8cc3124c-dbb8-4286-aee3-3984d87868c1
 # ╠═ba3051a0-078a-49ff-85b9-441eef4cb9fc
@@ -424,11 +563,18 @@ end
 # ╠═50a51e47-b6b1-4e43-b4b9-aad23f6ec390
 # ╠═9cdd4289-c49d-4733-8487-f471e38fc402
 # ╠═56ae7f53-061e-4414-90ad-85c7a12d51e2
+# ╠═229fa902-e125-429a-852d-0668f64c7640
 # ╠═ac04e6ec-61c2-475f-bb2f-83755c04bd72
+# ╠═1c284f9d-f34e-435b-976d-61aaa0975fe5
+# ╠═86fc6357-1106-48f9-8efe-fda152caf990
+# ╠═b28a1cdc-50ad-4289-8ee9-ee4ccf4d653e
 # ╠═53d912a5-8280-4bd3-980e-a49f3e9809e5
+# ╠═7ee0ea56-6d68-41ae-bc10-9d1f650b3257
+# ╠═47c59dae-8990-448d-b0ab-7e84bfbbeb4e
 # ╠═ae6c02fd-00b1-4e15-8f26-ffeca9a91ec0
 # ╠═2260abfa-86c1-48ea-acdf-b641cad0433a
 # ╠═86e2a93f-68a7-4b60-bcc0-a4a7cd6278f6
+# ╠═3fad1794-90b0-4e04-8eef-52d011beabd2
 # ╠═684508bd-4525-418b-b89a-85d56c01b188
 # ╠═808db8aa-64f7-4b36-8c6c-929ba4fa22db
 # ╠═288b9637-0500-40b8-a1f9-90cb9591402b
