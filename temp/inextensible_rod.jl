@@ -24,7 +24,7 @@ end;
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
-	N=200
+	N=100
 	
 	st1 = 0.0
 	halt1 = 1.0
@@ -153,7 +153,7 @@ end
 if bfr == 1
 	idx=dim*(i-1)
 else 
-	idx=dimc*(i-2)
+	idx=dim*(i-2)
 end
 
  ydot=(yr-yl)/h
@@ -172,25 +172,24 @@ end
 		Bdot=(bfr-bfl)*B[j]/h
 
 
-		# linker Quadraturpunkt
-
-		# Ableitung in der Einbettung:	
-        tmp=integrand.derivative(integrand,yl,ydot,bfl*B[j],Bdot,tfl*T[k],Tdot)
+    	# Ableitung in der Einbettung am rechten und linken Quadraturpunkt
+        tmp=integrand.derivative(integrand,yl,ydot,bfl*B[j],Bdot,tfl*T[k],Tdot)	
+			
+		tmp+=integrand.derivative(integrand,yr,ydot,bfr*B[j],Bdot,tfr*T[k],Tdot)	
+			
 		# Modifikation für Kovariante Ableitung:	
-		# y-Ableitungen der Projektionen
+		# y-Ableitungen der Projektionen am linken Punkt
 		Pprime=transport.derivative(integrand.domain,yl.x[row_idx],bfl*B[j],tfl*T[k])
 		# Zeit- und y-Ableitungen der Projektionen
 		Pprimedot=(bfr-bfl)*Pprime/h
-		# Einsetzen in die rechte Seite
+		# Einsetzen in die rechte Seite am rechten und linken Quadraturpunkt
 		tmp+=integrand.value(integrand,yl,ydot,bfl*Pprime,Pprimedot)
+		tmp+=integrand.value(integrand,yr,ydot,bfr*Pprime,Pprimedot)
 			
-		# rechter Quadraturpunkt (analog zum linken)
-			
-		# Ableitung in der Einbettung:	
- 	    tmp+=integrand.derivative(integrand,yr,ydot,bfr*B[j],Bdot,tfr*T[k],Tdot)	
-		# Modifikation für Kovariante Ableitung:	
+		# y-Ableitungen der Projektionen am rechten Punkt
 		Pprime=transport.derivative(integrand.domain,yr.x[row_idx],bfr*B[j],tfr*T[k])
 		Pprimedot=(bfr-bfl)*Pprime/h			
+		tmp+=integrand.value(integrand,yl,ydot,bfl*Pprime,Pprimedot)
 		tmp+=integrand.value(integrand,yr,ydot,bfr*Pprime,Pprimedot)
 			
         # Update des Matrixeintrags
@@ -346,9 +345,6 @@ function w(p, c)
 end
 
 # ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
-"""
-The following two routines define the integrand and its ordinary derivative. They use a vector field w, wich is defined, below. A scaling parameter is also employed.
-"""
 function F1_at(Integrand, y, ydot, T, Tdot)
 	  return w(y.x[1],Integrand.scaling)'*T+Tdot'*y.x[3]
 end
@@ -418,12 +414,12 @@ function solve_linear_system(M, p, state, prob)
 	n2 = Int(manifold_dimension(submanifold(M, 2)))
 	n3 = Int(manifold_dimension(submanifold(M, 3)))
 	
-	Ac11::SparseMatrixCSC{Float64,Int32} =0.0*sparse(I,n1,n1)
+	Ac11::SparseMatrixCSC{Float64,Int32} =spzeros(n1,n1)
 	Ac12::SparseMatrixCSC{Float64,Int32} =spzeros(n1,n2)
-	Ac22::SparseMatrixCSC{Float64,Int32} =0.0*sparse(I,n2,n2)
+	Ac22::SparseMatrixCSC{Float64,Int32} =spzeros(n2,n2)
 	Ac13::SparseMatrixCSC{Float64,Int32} =spzeros(n1,n3)
 	Ac23::SparseMatrixCSC{Float64,Int32} =spzeros(n2,n3)
-	Ac33::SparseMatrixCSC{Float64,Int32} =-0.00*sparse(I,n3,n3)
+	Ac33::SparseMatrixCSC{Float64,Int32} =spzeros(n3,n3)
 	
 	bc1 = zeros(n1)
 	bc2 = zeros(n2)
@@ -436,8 +432,7 @@ function solve_linear_system(M, p, state, prob)
 	Oy1 = OffsetArray([y01, p[M, 1]..., yT1], 0:(length(Omega1)+1))
 	Oy2 = OffsetArray([y02, p[M, 2]..., yT2], 0:(length(Omega2)+1))
 	Oy3 = OffsetArray(p[M, 3], 1:length(Omega3))
-	#Oy3 = OffsetArray(p[M, 3], 0:(length(Omega3)-1))
-    Oy = ArrayPartition(Oy1,Oy2,Oy3);
+	Oy = ArrayPartition(Oy1,Oy2,Oy3);
 
     println("Iter: ",norm(Oy))
 	
@@ -454,11 +449,10 @@ function solve_linear_system(M, p, state, prob)
     get_Jac!(Ac13,1,1, 3,0 ,h,nCells,Oy,integrand13)
 	get_Jac!(Ac23,2,1, 3,0 ,h,nCells,Oy,integrand23)
 	# Ac12 = 0, Ac33 = 0 
-	
     get_rhs_row!(bc1,1,1,h,nCells,Oy,integrand1)
 	get_rhs_row!(bc2,2,1,h,nCells,Oy,integrand2)
 	get_rhs_row!(bc3,3,0,h,nCells,Oy,integrand3)
-
+	Ac22_2::SparseMatrixCSC{Float64,Int32} =spzeros(n2,n2)
 
 	Ac = vcat(hcat(Ac11 , Ac12 , Ac13), 
 			  hcat(Ac12', Ac22 , Ac23), 
