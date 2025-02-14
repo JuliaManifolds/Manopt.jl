@@ -24,7 +24,7 @@ end;
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
-	N=50
+	N=2
 	
 	st1 = 0.5
 	halt1 = pi/2
@@ -32,7 +32,7 @@ begin
 	st2 = pi/2
 	halt2 = pi-0.5
 
-	scale_couple=5
+	scale_couple=1
 	
 	h = (halt1-st1)/(N+1)
 	#halt = pi - st
@@ -112,6 +112,19 @@ function zerodummy(S, p, X, dq)
 	return 0.0*X
 end
 
+# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
+"""
+The following two routines define the integrand and its ordinary derivative. They use a vector field w, wich is defined, below. A scaling parameter is also employed.
+"""
+function F1_at(Integrand, y, ydot, B, Bdot)
+	  return ydot.x[1]'*Bdot+w(y.x[1],Integrand.scaling)'*B+scale_couple*(y.x[2]-y.x[1])'*B
+end
+
+# ╔═╡ 229fa902-e125-429a-852d-0668f64c7640
+function F2_at(Integrand, y, ydot, B, Bdot)
+	  return ydot.x[2]'*Bdot+w(y.x[2],Integrand.scaling)'*B+scale_couple*(y.x[1]-y.x[2])'*B
+end
+
 # ╔═╡ 86fc6357-1106-48f9-8efe-fda152caf990
 function F_prime12_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
 	return scale_couple*B1'*B2
@@ -120,6 +133,14 @@ end
 # ╔═╡ b28a1cdc-50ad-4289-8ee9-ee4ccf4d653e
 function F_prime21_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
 	return scale_couple*B2'*B1
+end
+
+# ╔═╡ e2f48dcc-5c23-453d-8ff3-eb425b7b67af
+"""
+If no vector transport is needed, leave it away, then a zero dummy transport is used
+"""
+function get_Jac!(A,row_idx,col_idx,h,y,integrand)
+	get_Jac!(A,row_idx,col_idx,h,y,integrand,zerotransport)
 end
 
 # ╔═╡ 2260abfa-86c1-48ea-acdf-b641cad0433a
@@ -195,71 +216,8 @@ function get_rhs_simplified!(b,component_idx,h,y,y_trial,integrand,transport)
 	end
 end
 
-# ╔═╡ 808db8aa-64f7-4b36-8c6c-929ba4fa22db
-"""
-Force field w and its derivative. A scaling parameter is also employed.
-"""
-function w(p, c)
-	#return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
-	return c*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
-end
-
-# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
-"""
-The following two routines define the integrand and its ordinary derivative. They use a vector field w, wich is defined, below. A scaling parameter is also employed.
-"""
-function F1_at(Integrand, y, ydot, B, Bdot)
-	  return ydot.x[1]'*Bdot+w(y.x[1],Integrand.scaling)'*B+scale_couple*(y.x[2]-y.x[1])'*B
-end
-
-# ╔═╡ 229fa902-e125-429a-852d-0668f64c7640
-function F2_at(Integrand, y, ydot, B, Bdot)
-	  return ydot.x[2]'*Bdot+w(y.x[2],Integrand.scaling)'*B+scale_couple*(y.x[1]-y.x[2])'*B
-end
-
-# ╔═╡ 288b9637-0500-40b8-a1f9-90cb9591402b
-function w_prime(p, c)
-	nenner = p[1]^2+p[2]^2
-	#return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
-	return c*[2*p[1]*p[2]/nenner^2 (-1.0/(nenner)+2.0*p[2]^2/nenner^2) 0.0; (1.0/nenner-2.0*p[1]^2/(nenner^2)) (-2.0*p[1]*p[2]/(nenner^2)) 0.0; 0.0 0.0 0.0]
-end
-
-# ╔═╡ ac04e6ec-61c2-475f-bb2f-83755c04bd72
-function F_prime11_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
-	return B1dot'*B2dot+(w_prime(y.x[1],Integrand.scaling)*B1)'*B2-scale_couple*B1'*B2
-end
-
-# ╔═╡ 1c284f9d-f34e-435b-976d-61aaa0975fe5
-function F_prime22_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
-	return B1dot'*B2dot+(w_prime(y.x[2],Integrand.scaling)*B1)'*B2-scale_couple*B1'*B2
-end
-
-# ╔═╡ 684508bd-4525-418b-b89a-85d56c01b188
-begin
-S = Manifolds.Sphere(2)
-power = PowerManifold(S, NestedPowerRepresentation(), N)
-product = ProductManifold(power, power)
-integrand1=DifferentiableMapping(S,S,F1_at,F_prime11_at,0.0)
-integrand2=DifferentiableMapping(S,S,F2_at,F_prime22_at,0.0)
-integrand12=DifferentiableMapping(S,S,F1_at,F_prime12_at,0.0)
-integrand21=DifferentiableMapping(S,S,F2_at,F_prime21_at,0.0)
-transport=DifferentiableMapping(S,S,transport_by_proj,transport_by_proj_prime,nothing)
-end;
-
-# ╔═╡ 14d42ecb-6563-4d62-94ce-a36b73ed9a78
-zerotransport=DifferentiableMapping(S,S,zerodummy,zerodummy,nothing)
-
-
-# ╔═╡ e2f48dcc-5c23-453d-8ff3-eb425b7b67af
-"""
-If no vector transport is needed, leave it away, then a zero dummy transport is used
-"""
-function get_Jac!(A,row_idx,col_idx,h,y,integrand)
-	get_Jac!(A,row_idx,col_idx,h,y,integrand,zerotransport)
-end
-
 # ╔═╡ 86e2a93f-68a7-4b60-bcc0-a4a7cd6278f6
-function assemble_local_Jac_with_connection!(A,rowidx, colidx, h, i, yl, yr, BlM, BrM, BlN, BrN,integrand, transport=zerotransport)
+function assemble_local_Jac_with_connection!(A,rowidx, colidx, h, i, yl, yr, BlM, BrM, BlN, BrN,integrand, transport)
  dim = manifold_dimension(integrand.domain)
  idxl=dim*(i-2)
  idxr=dim*(i-1)
@@ -347,6 +305,48 @@ function get_Jac!(A,row_idx,col_idx,h,y,integrand,transport)
 	end
 end
 
+# ╔═╡ 808db8aa-64f7-4b36-8c6c-929ba4fa22db
+"""
+Force field w and its derivative. A scaling parameter is also employed.
+"""
+function w(p, c)
+	#return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+	return c*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+end
+
+# ╔═╡ 288b9637-0500-40b8-a1f9-90cb9591402b
+function w_prime(p, c)
+	nenner = p[1]^2+p[2]^2
+	#return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
+	return c*[2*p[1]*p[2]/nenner^2 (-1.0/(nenner)+2.0*p[2]^2/nenner^2) 0.0; (1.0/nenner-2.0*p[1]^2/(nenner^2)) (-2.0*p[1]*p[2]/(nenner^2)) 0.0; 0.0 0.0 0.0]
+end
+
+# ╔═╡ ac04e6ec-61c2-475f-bb2f-83755c04bd72
+function F_prime11_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+	return B1dot'*B2dot+(w_prime(y.x[1],Integrand.scaling)*B1)'*B2-scale_couple*B1'*B2
+end
+
+# ╔═╡ 1c284f9d-f34e-435b-976d-61aaa0975fe5
+function F_prime22_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+	return B1dot'*B2dot+(w_prime(y.x[2],Integrand.scaling)*B1)'*B2-scale_couple*B1'*B2
+end
+
+# ╔═╡ 684508bd-4525-418b-b89a-85d56c01b188
+begin
+S = Manifolds.Sphere(2)
+power = PowerManifold(S, NestedPowerRepresentation(), N)
+product = ProductManifold(power, power)
+integrand1=DifferentiableMapping(S,S,F1_at,F_prime11_at,0.0)
+integrand2=DifferentiableMapping(S,S,F2_at,F_prime22_at,0.0)
+integrand12=DifferentiableMapping(S,S,F1_at,F_prime12_at,0.0)
+integrand21=DifferentiableMapping(S,S,F2_at,F_prime21_at,0.0)
+transport=DifferentiableMapping(S,S,transport_by_proj,transport_by_proj_prime,nothing)
+end;
+
+# ╔═╡ 14d42ecb-6563-4d62-94ce-a36b73ed9a78
+zerotransport=DifferentiableMapping(S,S,zerodummy,zerodummy,nothing)
+
+
 # ╔═╡ 98a334b1-5aa9-4e3a-a03d-f6859e77f1dc
 """
 Dummy
@@ -398,7 +398,8 @@ function solve_linear_system(M, p, state, prob)
 	#Ac = hcat(Ac11, Ac12)
 	#temp = hcat(Ac21, Ac22)
 	Ac = vcat(hcat(Ac11, Ac12), hcat(Ac21, Ac22))
-		
+
+	println(Matrix(Ac))
 	if state.is_same == true
 		bcsys = vcat(bc1, bc2)
 	else
