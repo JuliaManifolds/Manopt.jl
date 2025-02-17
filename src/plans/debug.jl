@@ -158,7 +158,7 @@ Whether internal variables are updates is determined by `always_update`.
 
 This method does not perform any print itself but relies on it's children's print.
 
-It also sets the subsolvers active parameter, see |`DebugWhenActive`}(#ref).
+It also sets the sub solvers active parameter, see |`DebugWhenActive`}(#ref).
 Here, the `activattion_offset` can be used to specify whether it refers to _this_ iteration,
 the `i`th, when this call is _before_ the iteration, then the offset should be 0,
 for the _next_ iteration, that is if this is called _after_ an iteration, it has to be set to 1.
@@ -185,7 +185,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     elseif d.always_update
         d.debug(p, st, -1)
     end
-    # set activity for this iterate in subsolvers
+    # set activity for this iterate in sub solvers
     set_parameter!(
         st,
         :SubState,

@@ -5,12 +5,18 @@ All notable Changes to the Julia package `Manopt.jl` will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.6] unreleased
+## [0.5.7] unreleased
 
 * Introduce a `ConstrainedSetObjective`
 * Introduce a `projected_gradient_method`
 
-## [0.5.5] Januaey 4, 2025
+## [0.5.6] February 10, 2025
+
+### Changed
+
+* bump dependencies of all JuliaManifolds ecosystem packages to be consistent with ManifoldsBase 1.0
+
+## [0.5.5] January 4, 2025
 
 ### Added
 
@@ -127,7 +133,7 @@ In general we introduce a few factories, that avoid having to pass the manifold 
   * the previous `stabilize=true` is now set with `(project!)=embed_project!` in general,
     and if the manifold is represented by points in the embedding, like the sphere, `(project!)=project!` suffices
   * the new default is `(project!)=copyto!`, so by default no projection/stabilization is performed.
-* the positional argument `p` (usually the last or the third to last if subsolvers existed) has been moved to a keyword argument `p=` in all State constructors
+* the positional argument `p` (usually the last or the third to last if sub solvers existed) has been moved to a keyword argument `p=` in all State constructors
 * in `NelderMeadState` the `population` moved from positional to keyword argument as well,
 * the way to initialise sub solvers in the solver states has been unified In the new variant
   * the `sub_problem` is always a positional argument; namely the last one

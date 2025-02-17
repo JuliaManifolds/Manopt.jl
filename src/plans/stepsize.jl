@@ -730,7 +730,7 @@ function linesearch_backtrack!(
     stop_decreasing_at_step=1000,
 ) where {TF,T}
     msg = ""
-    retract!(M, q, p, η, s, retraction_method)
+    ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
     f_q = f(M, q)
     search_dir_inner = real(inner(M, p, η, X))
     if search_dir_inner >= 0
@@ -742,7 +742,7 @@ function linesearch_backtrack!(
         (stop_increasing_at_step == 0) && break
         i = i + 1
         s = s / contract
-        retract!(M, q, p, η, s, retraction_method)
+        ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_increasing_at_step
             (length(msg) > 0) && (msg = "$msg\n")
@@ -762,7 +762,7 @@ function linesearch_backtrack!(
         (!additional_decrease_condition(M, q))
         i = i + 1
         s = contract * s
-        retract!(M, q, p, η, s, retraction_method)
+        ManifoldsBase.retract_fused!(M, q, p, η, s, retraction_method)
         f_q = f(M, q)
         if i == stop_decreasing_at_step
             (length(msg) > 0) && (msg = "$msg\n")
@@ -1294,7 +1294,7 @@ function (a::WolfePowellLinesearchStepsize)(
     s_minus = step
 
     f0 = get_cost(mp, p)
-    retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+    ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
     fNew = get_cost(mp, a.candidate_point)
     vector_transport_to!(
         M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
@@ -1303,7 +1303,9 @@ function (a::WolfePowellLinesearchStepsize)(
         while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
             step = s_minus
-            retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+            ManifoldsBase.retract_fused!(
+                M, a.candidate_point, p, η, step, a.retraction_method
+            )
             fNew = get_cost(mp, a.candidate_point)
         end
         s_plus = 2.0 * s_minus
@@ -1318,13 +1320,15 @@ function (a::WolfePowellLinesearchStepsize)(
                 (s_plus < max_step_increase)# increase
                 s_plus = s_plus * 2.0
                 step = s_plus
-                retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+                ManifoldsBase.retract_fused!(
+                    M, a.candidate_point, p, η, step, a.retraction_method
+                )
                 fNew = get_cost(mp, a.candidate_point)
             end
             s_minus = s_plus / 2.0
         end
     end
-    retract!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
+    ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
     vector_transport_to!(
         M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
     )
@@ -1332,7 +1336,7 @@ function (a::WolfePowellLinesearchStepsize)(
     while real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
           a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
-        retract!(M, a.candidate_point, p, η, step, a.retraction_method)
+        ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
         fNew = get_cost(mp, a.candidate_point)
         if fNew <= f0 + a.sufficient_decrease * step * l
             s_minus = step
@@ -1340,7 +1344,9 @@ function (a::WolfePowellLinesearchStepsize)(
             s_plus = step
         end
         abs(s_plus - s_minus) <= a.stop_when_stepsize_less && break
-        retract!(M, a.candidate_point, p, η, s_minus, a.retraction_method)
+        ManifoldsBase.retract_fused!(
+            M, a.candidate_point, p, η, s_minus, a.retraction_method
+        )
         vector_transport_to!(
             M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
         )
@@ -1468,7 +1474,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     β = Inf
     t = 1.0
     f0 = get_cost(amp, get_iterate(ams))
-    xNew = retract(M, get_iterate(ams), η, t, a.retraction_method)
+    xNew = ManifoldsBase.retract_fused(M, get_iterate(ams), η, t, a.retraction_method)
     fNew = get_cost(amp, xNew)
     η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
     gradient_new = get_gradient(amp, xNew)
@@ -1486,7 +1492,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
         (!nAt && nWt) && (α = t)  # A(t) holds but W(t) fails
         t = isinf(β) ? 2 * α : (α + β) / 2
         # Update trial point
-        retract!(M, xNew, get_iterate(ams), η, t, a.retraction_method)
+        ManifoldsBase.retract_fused!(M, xNew, get_iterate(ams), η, t, a.retraction_method)
         fNew = get_cost(amp, xNew)
         gradient_new = get_gradient(amp, xNew)
         vector_transport_to!(

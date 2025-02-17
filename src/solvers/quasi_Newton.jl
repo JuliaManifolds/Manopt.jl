@@ -366,7 +366,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     end
     α = qns.stepsize(mp, qns, k, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))
-    retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
+    ManifoldsBase.retract_fused!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
     # qns.yk update fails if α is equal to 0 because then β is NaN
     β = ifelse(
