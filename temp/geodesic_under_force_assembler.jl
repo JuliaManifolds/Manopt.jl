@@ -51,7 +51,7 @@ end
 
 # ╔═╡ 7b3e1aa5-db29-4519-9860-09f6cc933c07
 begin
-	N=2000
+	N=100
 	st = 0.5
 	halt = pi-0.5
 	h = (halt-st)/(N+1)
@@ -108,11 +108,6 @@ function transport_by_proj_prime(S, p, X, dq)
 	return (- dq*p' - p*dq')*X
 end
 
-# ╔═╡ c16c6bf0-16bd-4863-a3e3-a9f014711222
-function w(p, c)
-		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
-	end
-
 # ╔═╡ 764987fc-b909-47c6-a3fb-fa33865f838d
 """
 The following two routines define the integrand and its ordinary derivative. They use a vector field w, wich is defined, below. A scaling parameter is also employed.
@@ -120,6 +115,11 @@ The following two routines define the integrand and its ordinary derivative. The
 function F_at(Integrand, y, ydot, B, Bdot)
 	  return ydot'*Bdot+w(y,Integrand.scaling)'*B
 end
+
+# ╔═╡ c16c6bf0-16bd-4863-a3e3-a9f014711222
+function w(p, c)
+		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+	end
 
 # ╔═╡ 7c6fd969-dabc-4901-a430-d9b6a22bee24
 function w_prime(p, c)
@@ -136,7 +136,7 @@ end
 begin
 S = Manifolds.Sphere(2)
 power = PowerManifold(S, NestedPowerRepresentation(), N);
-integrand=DifferentiableMapping(S,F_at,F_prime_at,1.0)
+integrand=DifferentiableMapping(S,F_at,F_prime_at,10.0)
 transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
 end;
 
@@ -205,7 +205,7 @@ v = range(0,stop=π,length=n);
 it_back = 0
 
 #ws = [-1.0*w(Manifolds.Sphere(2), p) for p in discretized_y]
-#ws_res = [-1.0*w(Manifolds.Sphere(2), p) for p in iterates[length(change)-it_back]]
+
 	
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
 for i in 1:n
@@ -238,23 +238,27 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
     y_start = copy(power,discretized_y)
     y_current = copy(power,y_start)
     y_last = copy(power,y_start)
+	
+	scatter!(ax, π1.(y_start), π2.(y_start), π3.(y_start); markersize =8, color=:blue)
 	for i in range(1,1)
 		#println(integrand.scaling)
 		copyto!(power,y_last,y_current)
-		state = VectorbundleNewtonState(power, E, bundlemap, y_current, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(50)|StopWhenChangeLess(power, 1e-8)), retraction_method=ProjectionRetraction(), #stepsize=Manopt.ConstantStepsize(power,1.0))
-		stepsize=Manopt.AffineCovariantStepsize(power))
+		state = VectorbundleNewtonState(power, E, bundlemap, y_current, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(50)|StopWhenChangeLess(power, 1e-8)), retraction_method=ProjectionRetraction(), stepsize=Manopt.ConstantStepsize(power,1.0))
+		#stepsize=Manopt.AffineCovariantStepsize(power))
 		#retraction_method=ProjectionRetraction(), stepsize=ConstantStepsize(1.0))
 		st_res = solve!(problem, state)
 		println("Norm:", norm(y_last-y_current))
 		if Manopt.indicates_convergence(st_res.stop)
 			#integrand.scaling = integrand.scaling + increment
-			#scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:orange)
+			scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:orange)
+			ws_res = [-1.0*w(p, integrand.scaling) for p in y_current]
+			arrows!(ax, π1.(y_current), π2.(y_current), π3.(y_current), π1.(ws_res), π2.(ws_res), π3.(ws_res); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.13), transparency=true, lengthscale=0.15)
 		else
 			factor=0.5
 			#integrand.scaling = integrand.scaling - increment
 			global increment=increment*factor
 			#integrand.scaling = integrand.scaling +increment
-			#scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:red)
+			scatter!(ax, π1.(y_current), π2.(y_current), π3.(y_current); markersize =8, color=:red)
 			copyto!(power,y_current,y_last)
 		end
 		println(Manopt.indicates_convergence(st_res.stop)) 
