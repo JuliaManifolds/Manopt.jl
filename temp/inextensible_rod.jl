@@ -142,6 +142,26 @@ function F_prime23_at(Integrand,y,ydot,B,Bdot,T,Tdot)
 end
 
 # ╔═╡ ef0edc46-0b33-42f5-821a-373edd4cdd84
+"""
+ A:      Matrix to be written into\\
+row_idx: row index of block inside system\\
+col_idx: column index of block inside system\\
+
+h:       length of interval\\
+i:       index of interval\\
+
+yl:      left value of iterate\\
+yr:      right value of iterate\\
+
+B:       basis vector for basis function\\
+bfl:     0/1 scaling factor at left boundary\\
+bfr:     0/1 scaling factor at right boundary \\
+
+T:       basis vector for test function\\
+tfl:     0/1 scaling factor at left boundary\\
+tfr:     0/1 scaling factor at right boundary \\
+...
+"""
 function assemble_local_Jac_with_connection!(A,row_idx, col_idx, h, i, yl, yr, B, bfl, bfr, T, tfl, tfr, integrand, transport)
  dim = manifold_dimension(integrand.domain)
  dimc = manifold_dimension(integrand.precodomain)
@@ -179,6 +199,7 @@ end
 			
 		# Modifikation für Kovariante Ableitung:	
 		# y-Ableitungen der Projektionen am linken Punkt
+		# P'(yl)bfl*B[j] (tfl*T(k))
 		Pprime=transport.derivative(integrand.domain,yl.x[row_idx],bfl*B[j],tfl*T[k])
 		# Zeit- und y-Ableitungen der Projektionen
 		Pprimedot=(bfr-bfl)*Pprime/h
@@ -243,11 +264,24 @@ function evaluate(y, i, tloc)
 end
 
 # ╔═╡ 22d7dbf4-b548-4246-9942-356571b398d0
+"""
+ A:      Matrix to be written into\\
+row_idx: row index of block inside system\\
+detT:    degree of test function: 1: linear, 0: constant\\
+col_idx: column index of block inside system\\
+detB:    degree of basis function: 1: linear, 0: constant\\
+h:       length of interval\\
+nCell:    total number of intervals\\
+y:       iterate\\
+...
+"""
 function get_Jac!(A,row_idx,degT,col_idx,degB,h, nCells,y,integrand,transport)
 	M = integrand.domain
 	N = integrand.precodomain
 	# Schleife über Intervalle
 	for i in 1:nCells
+
+		# Evaluation of the current iterate. This routine has to be provided from outside, because Knowledge about the basis functions is needed
 		yl=evaluate(y,i,0.0)
 		yr=evaluate(y,i,1.0)
 
@@ -264,16 +298,21 @@ function get_Jac!(A,row_idx,degT,col_idx,degB,h, nCells,y,integrand,transport)
 		Tcr=get_basis(N,yr.x[row_idx],DefaultOrthonormalBasis())
 	    Tr = get_vectors(N,yr.x[row_idx], Tcr)
 
+        # In the following, all combinations of test and basis functions have to be considered.
+		
+		# The case, where both test and basis functions are linear. We have 2x2=4 combinations, since there are two test/basis functions on each interval
 		if degT==1 && degB == 1
     	    assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  			Tl,1,0, integrand, transport)		
 			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tl,1,0, integrand, transport)		
 			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  Tr,0,1, integrand, transport)		
 			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tr,0,1, integrand, transport)		
 		end
+		# The case, where both test functions are linear and basis functions are piecewies constant. We have 1x2=2 combinations, since there are are two test functions and 1 basis function on each interval
 		if degT==1 && degB == 0
 			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,1,1,  Tl,1,0, integrand, transport)		
 			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,1,1,  Tr,0,1, integrand, transport)		
 		end
+		# Other cases could be added here. I did not need them, thus I havent implented them
 	end
 end
 
@@ -302,7 +341,7 @@ function get_rhs_row!(b,row_idx,degT,h,nCells,y,integrand)
 end
 
 # ╔═╡ ae6c02fd-00b1-4e15-8f26-ffeca9a91ec0
-function get_rhs_simplified!(b,row_idx,h,nCells,y,y_trial,integrand,transport)
+function get_rhs_simplified!(b,row_idx,degT,h,nCells,y,y_trial,integrand,transport)
 	S = integrand.precodomain
 	# Schleife über Intervalle
 	for i in 1:nCells
@@ -330,8 +369,13 @@ function get_rhs_simplified!(b,row_idx,h,nCells,y,y_trial,integrand,transport)
 				Tl[k]=transport.value(S,yl.x[row_idx],Tl[k],yl_trial.x[row_idx])
 				Tr[k]=transport.value(S,yr.x[row_idx],Tr[k],yr_trial.x[row_idx])
 			end
-        	assemble_local_rhs!(b,row_idx,h,i,yl_trial,yr_trial,Tl,1,0,integrand)	
-		    assemble_local_rhs!(b,row_idx,h,i,yl_trial,yr_trial,Tr,0,1,integrand)		
+			if degT == 1
+			assemble_local_rhs!(b,row_idx, h, i, yl_trial, yr_trial, Tl, 1, 0, integrand)		
+        	assemble_local_rhs!(b,row_idx, h, i, yl_trial, yr_trial, Tr, 0, 1, integrand)		
+			end
+			if degT == 0
+        	assemble_local_rhs!(b,row_idx, h, i, yl_trial, yr_trial, Tr, 1, 1, integrand)		
+			end
 	end
 end
 
@@ -452,8 +496,7 @@ function solve_linear_system(M, p, state, prob)
     get_rhs_row!(bc1,1,1,h,nCells,Oy,integrand1)
 	get_rhs_row!(bc2,2,1,h,nCells,Oy,integrand2)
 	get_rhs_row!(bc3,3,0,h,nCells,Oy,integrand3)
-	Ac22_2::SparseMatrixCSC{Float64,Int32} =spzeros(n2,n2)
-
+	
 	Ac = vcat(hcat(Ac11 , Ac12 , Ac13), 
 			  hcat(Ac12', Ac22 , Ac23), 
 			  hcat(Ac13', Ac23', Ac33))
@@ -462,9 +505,9 @@ function solve_linear_system(M, p, state, prob)
 		bcsys = vcat(bc1, bc2, bc3)
 		#println("rhs", bcsys)
 	else
-		get_rhs_simplified!(bctrial1,1,h,nCells,Oy,Oytrial,integrand1)
-		get_rhs_simplified!(bctrial2,2,h,nCells,Oy,Oytrial,integrand2,transport)
-		get_rhs_simplified!(bctrial3,3,h,nCells,Oy,Oytrial,integrand3)
+		get_rhs_simplified!(bctrial1,1,1,h,nCells,Oy,Oytrial,integrand1)
+		get_rhs_simplified!(bctrial2,2,1,h,nCells,Oy,Oytrial,integrand2,transport)
+		get_rhs_simplified!(bctrial3,3,0,h,nCells,Oy,Oytrial,integrand3)
 		bctrial = vcat(bctrial1,bctrial2, bctrail3)
     	bcsys=bctrial-(1.0 - state.stepsize.alpha)*vcat(bc1, bc2,bc3)
 		println("alpha: ", state.stepsize.alpha)
