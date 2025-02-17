@@ -21,39 +21,12 @@ begin
 	#using FileIO
 end;
 
-# ╔═╡ 2e33a74e-a0d6-4f5d-aa03-317598454555
-begin
-	# Hack fix.
-	using ManifoldsBase
-	using ManifoldsBase: PowerManifoldNested, get_iterator, _access_nested, _read, _write
-	import ManifoldsBase: _get_vectors
-	function _get_vectors(
-    M::PowerManifoldNested,
-    p,
-    B::CachedBasis{𝔽,<:AbstractBasis{𝔽},<:PowerBasisData},
-) where {𝔽}
-    zero_tv = zero_vector(M, p)
-    rep_size = representation_size(M.manifold)
-    vs = typeof(zero_tv)[]
-    for i in get_iterator(M)
-        b_i = _access_nested(M, B.data.bases, i)
-        p_i = _read(M, rep_size, p, i)
-        # println(get_vectors(M.manifold, p_i, b_i))
-        for v in get_vectors(M.manifold, p_i, b_i) #b_i.data
-            new_v = copy(M, p, zero_tv)
-            copyto!(M.manifold, _write(M, rep_size, new_v, i), p_i, v)
-            push!(vs, new_v)
-        end
-    end
-    return vs
-end
-end
-
 # ╔═╡ acc549ff-feac-4236-b4c6-743328391275
 begin
-	N=1000
+	N=100
 	st = 0.5
-	halt = pi-0.5
+	#halt = pi-0.5
+	halt = pi/2
 	h = (halt-st)/(N+1)
 	#halt = pi - st
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
@@ -172,7 +145,7 @@ end
 """
 	Definition of an integrand and its derivative for the simplified flight planning problem
 """
-integrand=DifferentiableMapping(S,F_at,F_prime_at,1.0)
+integrand=DifferentiableMapping(S,F_at,F_prime_at,2.0)
 
 # ╔═╡ 212e3bb5-7bb9-4828-9a89-a24411e802ef
 """ 
@@ -332,7 +305,6 @@ end
 # ╔═╡ Cell order:
 # ╠═78895b59-4591-485c-a50d-11925f734921
 # ╠═293d0824-906e-11ef-2b7f-834616d0ede2
-# ╠═2e33a74e-a0d6-4f5d-aa03-317598454555
 # ╠═acc549ff-feac-4236-b4c6-743328391275
 # ╠═5b4ced2b-66bc-4b23-8e19-b5eedadd93d7
 # ╠═708ad6f4-f8a2-437c-b75e-52031d116e06
