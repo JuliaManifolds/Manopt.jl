@@ -24,7 +24,7 @@ end;
 
 # ╔═╡ aeceb735-da1b-4db5-9964-538b316441c2
 begin
-	N=10
+	N=2
 	
 	st1 = 0.0
 	halt1 = 1.0
@@ -41,8 +41,8 @@ begin
 	y01 = [sin(st),0,cos(st)] # startpoint of geodesic
 	yT1 = [sin(halt),0,cos(halt)] # endpoint of geodesic
 
-	y02 = [1,0,0] # start u
-	yT2 = [1,0,0] # end u
+	y02 = [0,0,0] # start u
+	yT2 = [0,0,0] # end u
 
 	y03 = [0,0,0] # start lambda
 	yT3 = [0,0,0] # end lambda
@@ -57,12 +57,12 @@ end;
 # ╔═╡ bb07fd2d-df5f-4e4a-bd5f-c58bf2f1990f
 function u(t)
 	#return [sin(t*pi/2+pi/4), cos(t*pi/2+pi/4), 0]
-	return [1.0, 0, 0]
+	return [0.0, 0, 0]
 end;
 
 # ╔═╡ 930ead70-8331-4e78-b15a-f67cc6042acb
 function λ(t)
-	return [0.1, 0.1, 0.1]
+	return [0.0, 0.0, 0.0]
 end;
 
 # ╔═╡ ee844858-db04-4a3f-947b-18130e3bf160
@@ -133,6 +133,11 @@ function state_equation_at(Integrand, y, ydot, T, Tdot)
 	return ydot.x[1]'*Tdot + y.x[2]'*T
 end
 
+# ╔═╡ c1fff015-1387-499e-95c3-9db97c36504a
+function state_equation_at_with_dummyB(Integrand, y, ydot, B, Bdot, T, Tdot)
+	return ydot.x[1]'*Tdot + y.x[2]'*T
+end
+
 # ╔═╡ ded804d7-792b-42c1-8283-237b3ec3faac
 function state_prime_lambda_at(Integrand, y, ydot, B, Bdot, T, Tdot)
 	return Bdot'*Tdot
@@ -156,7 +161,7 @@ end
 
 # ╔═╡ 50fc9f8e-6ab6-43c7-9762-7393ddca8827
 function stationary_prime_u_at(Integrand, y, ydot, B, Bdot, T, Tdot)
-	return α*Bdot'*Tdot
+	return α*B'*T
 end
 
 # ╔═╡ 312cb447-a613-4180-a1bf-0a844c07fa82
@@ -166,20 +171,20 @@ for $$L_{u\lambda}$$ (using zerotransport):
 
 # ╔═╡ 2037b581-7e46-4bce-ac57-5081951f2661
 function stationary_prime_lambda_at(Integrand, y, ydot, B, Bdot, T, Tdot)
-	return - T'*B
+	return T'*B
 end
 
 # ╔═╡ a5145e5e-78ad-4493-954f-9fd6b5c6fc5d
 md"""
 Derivative of the Adjoint equation\
-$$∫_\Omega ⟨y-y_d, δy⟩ + ⟨δẏ, λ̇⟩ dt + (A(y) - f(y)u)(P'(y)δyλ) = 0 \;∀δy$$\
+$$∫_\Omega ⟨y-y_d, δy⟩ + ⟨δẏ, \dot{\lambda}⟩ dt + (A(y) - f(y)u)(P'(y)δyλ) = 0 \;∀δy$$\
 w.r.t. u $$\rightsquigarrow L_{yu}$$ using zerotransport\
-$$-\int_\Omega \langle\delta u_2, P'(y)\delta y_1\lambda\rangle \; dt$$
+$$\int_\Omega \langle\delta u_2, P'(y)\delta y_1\lambda\rangle \; dt$$
 """
 
 # ╔═╡ 1973b655-4368-4310-a218-be7b5be9f64e
 function adjoint_prime_at(Integrand, y, ydot, B, Bdot, T, Tdot)
-	return -B'* transport_by_proj_prime(Integrand.domain, y.x[1], T, y.x[3])
+	return B'* transport_by_proj_prime(Integrand.domain, y.x[1], T, y.x[3])
 end
 
 # ╔═╡ 79a1738b-450b-4cfa-822f-1811eb5a5905
@@ -198,8 +203,23 @@ function L_prime_at(Integrand, y, ydot, T, Tdot)
 	  return (y.x[1] - yd[1])'*T + Tdot'*ydot.x[3]
 end
 
+# ╔═╡ b5f23abc-aa89-4659-b9f0-4d7b933fcc3b
+function L_prime_at_helper(Integrand,y,ydot,B,Bdot,T,Tdot)
+	return (y.x[1] - yd[1])'*T + Tdot'*Bdot
+end
+
 # ╔═╡ dbb9fbbd-38d5-45da-bc8c-770b9a91b675
 function L_doubleprime_at(Integrand,y,ydot,B,Bdot,T,Tdot)
+	return B'*T
+end
+
+# ╔═╡ 53b242b6-745c-43fd-95cd-a05ca3e10a2f
+function J1_prime_at(Integrand, y, ydot, T, Tdot)
+	return (y.x[1] - yd[1])'*T
+end
+
+# ╔═╡ a8d6c6d0-2b12-493a-9827-48a9706a20a2
+function J1_doubleprime_at(Integrand,y,ydot,B,Bdot,T,Tdot)
 	return B'*T
 end
 
@@ -219,11 +239,22 @@ TS = TangentBundle(S)
 powerS = PowerManifold(S, NestedPowerRepresentation(), N) #y
 powerR3 = PowerManifold(R3, NestedPowerRepresentation(), N) #u
 powerR3lambda = PowerManifold(R3, NestedPowerRepresentation(), N) #λ
+# wir brauchen für λ am Ende dann einen Vektortransport (Projektion) in der Retraktion
 product = ProductManifold(powerS, powerR3, powerR3lambda)
 end;
 
 # ╔═╡ c1ae6bcf-fab5-4456-8a11-7f36f125fffa
 zerotransport=DifferentiableMapping(R3,R3,identitytrans,zerotrans_prime)
+
+# ╔═╡ 259c5f1b-5447-4690-a706-5dcc4c9fa5bb
+function P_prime_test_lambda(Integrand,y,B,T)
+	return transport_by_proj_prime(S, y.x[1], y.x[3], T)
+end
+
+# ╔═╡ a80c462e-b999-4f69-b6d5-536e94e7f536
+function P_doubleprime_et_al(Integrand,y,B,T)
+	return transport_by_proj_doubleprime(S, y.x[1], y.x[3], B, T) + transport_by_proj_prime(S, y.x[1], y.x[3], transport_by_proj_prime(S, y.x[1], B, T))
+end
 
 # ╔═╡ 8552ff47-9c4c-4028-b6cd-635f144ae522
 md"""
@@ -232,12 +263,16 @@ Integranden
 
 # ╔═╡ 4d79c53a-06ee-4c42-8fdf-678ca6a8c7e8
 begin
-integrand_adjoint_equation=DifferentiableMapping(S,S,state_equation_at,L_prime_at)
+integrand_adjoint_equation=DifferentiableMapping(S,R3,state_equation_at,L_prime_at_helper)
 integrand_L_prime = DifferentiableMapping(S,S, L_prime_at, L_doubleprime_at)
 integrand_Lyu = DifferentiableMapping(S, R3, state_equation_at, adjoint_prime_at) # state_equation_at wird nicht gebraucht, bei Assemblierung zerotransport verwenden!
 integrand_Luλ = DifferentiableMapping(R3, S, stationary_equation_at, stationary_prime_lambda_at) # stationary_equation_at wird nicht gebraucht, bei Assemblierung zerotransport verwenden!
 integrand_Lλy = DifferentiableMapping(S,S, state_equation_at, state_prime_lambda_at)
 integrand_Luu = DifferentiableMapping(R3,R3, stationary_equation_at, stationary_prime_u_at)
+integrandJ1 = DifferentiableMapping(S,S,J1_prime_at, J1_doubleprime_at)
+
+integrand_Lyy_1 = DifferentiableMapping(S,S,state_equation_at,state_prime_lambda_at)
+integrand_Lyy_2 = DifferentiableMapping(S,S,state_equation_at,state_equation_at_with_dummyB)
 end;
 
 # ╔═╡ db5d5c75-d4f6-4737-b5dc-a839a81395ac
@@ -246,6 +281,12 @@ Vektortransport"""
 
 # ╔═╡ 7d6721b5-df0e-4d58-bd6f-aa7dc4634c41
 transport=DifferentiableMapping(S,S,transport_by_proj,transport_by_proj_prime)
+
+# ╔═╡ 5dcfb047-bafa-4d5d-9d42-b996ae0659ea
+transport_Lyy_1 = DifferentiableMapping(S,S,transport_by_proj,P_prime_test_lambda)
+
+# ╔═╡ f66e22c4-e75c-456e-8509-81f68029f2c9
+transport_Lyy_2 = DifferentiableMapping(S,S,transport_by_proj,P_doubleprime_et_al)
 
 # ╔═╡ 75cc0c62-293c-4e21-bdf4-7156244a9d68
 md"""
@@ -373,6 +414,80 @@ function assemble_local_rhs!(b,row_idx, h, i, yl, yr, T, tlf, trf, integrand)
 end
 
 
+# ╔═╡ afc8df19-7226-4a37-b59a-236400d37cff
+"""
+ A:      Matrix to be written into\\
+row_idx: row index of block inside system\\
+col_idx: column index of block inside system\\
+
+h:       length of interval\\
+i:       index of interval\\
+
+yl:      left value of iterate\\
+yr:      right value of iterate\\
+
+B:       basis vector for basis function\\
+bfl:     0/1 scaling factor at left boundary\\
+bfr:     0/1 scaling factor at right boundary \\
+
+T:       basis vector for test function\\
+tfl:     0/1 scaling factor at left boundary\\
+tfr:     0/1 scaling factor at right boundary \\
+...
+"""
+function assemble_local_Jac_Lyy!(A,row_idx, col_idx, h, i, yl, yr, B, bfl, bfr, T, tfl, tfr, integrand, transport)
+ dim = manifold_dimension(integrand.domain)
+ dimc = manifold_dimension(integrand.precodomain)
+if tfr == 1
+	idxc=dimc*(i-1)
+else 
+	idxc=dimc*(i-2)
+end
+if bfr == 1
+	idx=dim*(i-1)
+else 
+	idx=dim*(i-2)
+end
+
+ ydot=(yr-yl)/h
+ quadwght=0.5*h
+ nA1=size(A,1)
+ nA2=size(A,2)
+ #	Schleife über Komponenten der Testfunktion
+ for k in 1:dimc
+    # Schleife über Komponenten der Basisfunktion
+	for j in 1:dim
+		# Sicherstellen, dass wir in Indexgrenzen der Matrix bleiben
+        if idx+j >= 1 && idxc+k >= 1 && idx+j <= nA2 && idxc+k <= nA1
+
+		# Zeit-Ableitungen der Basis- und Testfunktionen (=0 am jeweils anderen Rand)
+     	Tdot=(tfr-tfl)*T[k]/h
+		Bdot=(bfr-bfl)*B[j]/h
+			
+		# Modifikation für Kovariante Ableitung:	
+		# y-Ableitungen der Projektionen am linken Punkt
+		# P'(yl)bfl*B[j] (tfl*T(k))
+		Pprime=transport.derivative(integrand.domain,yl,bfl*B[j],tfl*T[k])
+		# Zeit- und y-Ableitungen der Projektionen
+		Pprimedot=(bfr-bfl)*Pprime/h
+		# Einsetzen in die rechte Seite am rechten und linken Quadraturpunkt
+		tmp = integrand.derivative(integrand,yl,ydot,bfl*Pprime,Pprimedot,bfl*B[j], Bdot)
+		tmp+=integrand.derivative(integrand,yr,ydot,bfr*Pprime,Pprimedot,bfr*B[j],Bdot)
+			
+		# y-Ableitungen der Projektionen am rechten Punkt
+		Pprime=transport.derivative(integrand.domain,yr,bfr*B[j],tfr*T[k])
+		Pprimedot=(bfr-bfl)*Pprime/h			
+		tmp+=integrand.derivative(integrand,yl,ydot,bfl*Pprime,Pprimedot,bfl*B[j], Bdot)
+		tmp+=integrand.derivative(integrand,yr,ydot,bfr*Pprime,Pprimedot,bfr*B[j],Bdot)
+			
+        # Update des Matrixeintrags
+			
+		A[idxc+k,idx+j]+=quadwght*tmp
+		end
+	end
+ end
+end
+
 # ╔═╡ 707d23d1-f7b4-49cb-b0ff-11ec536939fa
 function evaluate(y, i, tloc)
 	return ArrayPartition(
@@ -498,6 +613,51 @@ function get_rhs_simplified!(b,row_idx,degT,h,nCells,y,y_trial,integrand,transpo
 	end
 end
 
+# ╔═╡ d098fbc7-2407-45f7-99bd-21a77705bc16
+"""
+ A:      Matrix to be written into\\
+row_idx: row index of block inside system\\
+detT:    degree of test function: 1: linear, 0: constant\\
+col_idx: column index of block inside system\\
+detB:    degree of basis function: 1: linear, 0: constant\\
+h:       length of interval\\
+nCell:    total number of intervals\\
+y:       iterate\\
+...
+"""
+function get_Jac_Lyy!(A,row_idx,degT,col_idx,degB,h, nCells,y,integrand,transport)
+	M = integrand.domain
+	N = integrand.precodomain
+	# Schleife über Intervalle
+	for i in 1:nCells
+
+		# Evaluation of the current iterate. This routine has to be provided from outside, because Knowledge about the basis functions is needed
+		yl=evaluate(y,i,0.0)
+		yr=evaluate(y,i,1.0)
+
+		#yl=ArrayPartition(getindex.(y.x, (i-1...,)))
+		#yr=ArrayPartition(getindex.(y.x, (i...,)))
+
+		Bcl=get_basis(M,yl.x[col_idx],DefaultOrthonormalBasis())
+	    Bl = get_vectors(M,yl.x[col_idx], Bcl)
+		Bcr=get_basis(M,yr.x[col_idx],DefaultOrthonormalBasis())
+	    Br = get_vectors(M,yr.x[col_idx], Bcr)
+
+		Tcl=get_basis(N,yl.x[row_idx],DefaultOrthonormalBasis())
+	    Tl = get_vectors(N,yl.x[row_idx], Tcl)
+		Tcr=get_basis(N,yr.x[row_idx],DefaultOrthonormalBasis())
+	    Tr = get_vectors(N,yr.x[row_idx], Tcr)
+
+        # In the following, all combinations of test and basis functions have to be considered.
+		
+        assemble_local_Jac_Lyy!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  			Tl,1,0, integrand, transport)		
+		assemble_local_Jac_Lyy!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tl,1,0, integrand, transport)		
+		assemble_local_Jac_Lyy!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  Tr,0,1, integrand, transport)		
+		assemble_local_Jac_Lyy!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tr,0,1, integrand, transport)		
+
+	end
+end
+
 # ╔═╡ bd557dde-2dcc-42fc-9394-803b8d5af9b3
 md"""
 Für Aufruf Newton
@@ -526,12 +686,13 @@ function solve_linear_system(M, p, state, prob)
 	n2 = Int(manifold_dimension(submanifold(M, 2)))
 	n3 = Int(manifold_dimension(submanifold(M, 3)))
 	
-	Ac11::SparseMatrixCSC{Float64,Int32} =spzeros(n1,n1)
-	Ac12::SparseMatrixCSC{Float64,Int32} =spzeros(n1,n2) #Ac21 = Ac12'
-	Ac13::SparseMatrixCSC{Float64,Int32} =spzeros(n1,n3) #Ac31 = Ac13'
-	Ac22::SparseMatrixCSC{Float64,Int32} =spzeros(n2,n2)
-	Ac23::SparseMatrixCSC{Float64,Int32} =spzeros(n2,n3) #Ac32 = Ac23'
-	Ac33::SparseMatrixCSC{Float64,Int32} =spzeros(n3,n3)
+	Ac11::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n1)
+	Ac11_helper::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n1)
+	Ac12::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n2) #Ac21 = Ac12'
+	Ac13::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n3) #Ac31 = Ac13'
+	Ac22::SparseMatrixCSC{Float64,Int32} = spzeros(n2,n2)
+	Ac23::SparseMatrixCSC{Float64,Int32} = spzeros(n2,n3) #Ac32 = Ac23'
+	Ac33::SparseMatrixCSC{Float64,Int32} = spzeros(n3,n3)
 	
 	bc1 = zeros(n1)
 	bc2 = zeros(n2)
@@ -558,15 +719,22 @@ function solve_linear_system(M, p, state, prob)
 	nCells = length(Omega3)
 
 	get_Jac!(Ac11,1,1,1,1,h,nCells,Oy,integrand_L_prime,transport)
+	get_Jac_Lyy!(Ac11_helper,1,1,1,1,h,nCells,Oy,integrand_Lyy_1,transport_Lyy_1)
+	Ac11 +=Ac11_helper + Ac11_helper'
+	get_Jac_Lyy!(Ac11,1,1,1,1,h,nCells,Oy,integrand_Lyy_2,transport_Lyy_2)
 	
 	get_Jac!(Ac12,1,1,2,1,h,nCells,Oy, integrand_Lyu)
-	get_Jac!(Ac23,2,1,3,1,h,nCells,Oy,integrand_Luλ)
+	get_Jac!(Ac23,2,1,3,1,h,nCells,Oy, integrand_Luλ)
 	get_Jac!(Ac13,1,1,3,1,h,nCells,Oy,integrand_Lλy,transport)
 	get_Jac!(Ac22,2,1,2,1,h,nCells,Oy,integrand_Luu)
+
+	lambda_helper = get_coordinates(powerR3, p[M,1], p[M, 3], DefaultOrthogonalBasis())
+	bc1 = Ac13 * lambda_helper
 	
-	#get_rhs_row!(bc1,1,1,h,nCells,Oy,integrand1)
-	get_rhs_row!(bc2,2,1,h,nCells,Oy,integrand_Lyu)
-	get_rhs_row!(bc3,3,1,h,nCells,Oy,integrand_Luλ)
+	get_rhs_row!(bc1,1,1,h,nCells,Oy,integrandJ1)
+	get_rhs_row!(bc2,2,1,h,nCells,Oy,integrand_Luλ)
+	get_rhs_row!(bc3,3,1,h,nCells,Oy,integrand_Lyu)
+
 	
 	Ac = vcat(hcat(Ac11 , Ac12 , Ac13), 
 			  hcat(Ac12', Ac22 , Ac23), 
@@ -584,6 +752,7 @@ function solve_linear_system(M, p, state, prob)
 		println("alpha: ", state.stepsize.alpha)
 	end
     #println(bcsys)
+	#println(Matrix(Ac))
 	println("Solve:")
 	Xc = (Ac) \ (-bcsys)
 	B = get_basis(M, p, DefaultOrthonormalBasis())
@@ -633,6 +802,7 @@ stepsize=ConstantLength(1.0),
 # ╠═c1ae6bcf-fab5-4456-8a11-7f36f125fffa
 # ╟─a3a135f0-c5e8-4825-8653-cbd68bbe795e
 # ╠═423eadae-bc19-48a7-a468-3506e20a784c
+# ╠═c1fff015-1387-499e-95c3-9db97c36504a
 # ╠═ded804d7-792b-42c1-8283-237b3ec3faac
 # ╟─acea974a-d978-469a-86e2-7c50a91696e7
 # ╠═d1ae1ab8-9815-44f5-8478-14ac21d9b15f
@@ -645,13 +815,20 @@ stepsize=ConstantLength(1.0),
 # ╟─79a1738b-450b-4cfa-822f-1811eb5a5905
 # ╠═953e02ea-4c40-4b5a-a4ec-102ae84a8627
 # ╠═ff8d7450-5c29-4030-9d70-8b149cc27837
+# ╠═b5f23abc-aa89-4659-b9f0-4d7b933fcc3b
 # ╠═dbb9fbbd-38d5-45da-bc8c-770b9a91b675
+# ╠═53b242b6-745c-43fd-95cd-a05ca3e10a2f
+# ╠═a8d6c6d0-2b12-493a-9827-48a9706a20a2
+# ╠═259c5f1b-5447-4690-a706-5dcc4c9fa5bb
+# ╠═a80c462e-b999-4f69-b6d5-536e94e7f536
 # ╟─208bcc35-4258-4aa4-9302-df0b44999f5f
 # ╠═06d1f25c-80d8-4a07-8b53-3cabc90e70a9
 # ╟─8552ff47-9c4c-4028-b6cd-635f144ae522
 # ╠═4d79c53a-06ee-4c42-8fdf-678ca6a8c7e8
 # ╟─db5d5c75-d4f6-4737-b5dc-a839a81395ac
 # ╠═7d6721b5-df0e-4d58-bd6f-aa7dc4634c41
+# ╠═5dcfb047-bafa-4d5d-9d42-b996ae0659ea
+# ╠═f66e22c4-e75c-456e-8509-81f68029f2c9
 # ╟─75cc0c62-293c-4e21-bdf4-7156244a9d68
 # ╠═697c0fbc-3717-4158-8d95-06893c143276
 # ╠═cd866f05-b106-4cb7-a520-03f0bf8c4402
@@ -659,6 +836,8 @@ stepsize=ConstantLength(1.0),
 # ╠═6354afbc-28a1-4b33-a2ba-5878eb9d7d03
 # ╠═b8880b9b-047d-4a84-8494-c99f6b25d151
 # ╠═9fbe80b4-6371-41d3-b381-7fcd9dd9ece9
+# ╠═d098fbc7-2407-45f7-99bd-21a77705bc16
+# ╠═afc8df19-7226-4a37-b59a-236400d37cff
 # ╠═707d23d1-f7b4-49cb-b0ff-11ec536939fa
 # ╟─bd557dde-2dcc-42fc-9394-803b8d5af9b3
 # ╠═e0b255cc-7ccd-4171-8550-e04191e77bf3
