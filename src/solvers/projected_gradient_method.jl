@@ -166,7 +166,7 @@ function projected_gradient_method(
 end
 function projected_gradient_method(M, obj::ConstrainedSetObjective, p; kwargs...)
     q = copy(M, p)
-    return projected_gradient_method!(M, obj, p; kwargs...)
+    return projected_gradient_method!(M, obj, q; kwargs...)
 end
 
 @doc "$(_doc_pgm)"

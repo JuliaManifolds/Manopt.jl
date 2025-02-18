@@ -2,7 +2,7 @@
 # State
 #
 
-_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))([`StopWhenSmallerOrEqual](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )$(_sc(:Any))[`StopWhenChangeLess`](@ref)`"
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))([`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -326,9 +326,7 @@ $(_var(:Keyword, :sub_kwargs))
 $(_var(:Keyword, :stopping_criterion; default= _sc_alm_default))
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 $(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add="as the quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used."))
-* `sub_stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
-                                              StopWhenGradientNormLess(ϵ) |
-                                              StopWhenStepsizeLess(1e-8),
+* `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
