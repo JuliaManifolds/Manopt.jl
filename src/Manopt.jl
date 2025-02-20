@@ -199,6 +199,7 @@ include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/interior_point_Newton.jl")
 include("solvers/LevenbergMarquardt.jl")
+include("solvers/mesh_adaptive_direct_search.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/proximal_bundle_method.jl")
@@ -341,6 +342,7 @@ export AbstractGradientSolverState,
     InteriorPointNewtonState,
     LanczosState,
     LevenbergMarquardtState,
+    MeshAdaptiveDirectSearchState,
     NelderMeadState,
     ParticleSwarmState,
     PrimalDualSemismoothNewtonState,
@@ -431,6 +433,8 @@ export WolfePowellLinesearch, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
+export AbstractMeshPollFunction, LowerTriangularAdaptivePoll
+export AbstractMeshSearchFunction, DefaultMeshAdaptiveDirectSearch
 #
 # Direction Update Rules
 export DirectionUpdateRule
@@ -480,6 +484,8 @@ export adaptive_regularization_with_cubics,
     interior_point_Newton!,
     LevenbergMarquardt,
     LevenbergMarquardt!,
+    mesh_adaptive_direct_search,
+    mesh_adaptive_direct_search!,
     NelderMead,
     NelderMead!,
     particle_swarm,
@@ -541,6 +547,7 @@ export StopAfter,
     StopWhenKKTResidualLess,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
+    StopWhenPollSizeLess,
     StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
     StopWhenPopulationDiverges,

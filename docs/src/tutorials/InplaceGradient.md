@@ -63,7 +63,7 @@ We can also benchmark this as
      Time  (median):     55.145 ms               ┊ GC (median):    9.99%
      Time  (mean ± σ):   56.391 ms ±   6.102 ms  ┊ GC (mean ± σ):  9.92% ± 1.43%
 
-        ▅██▅▃▁                                                      
+        ▅██▅▃▁
       ▅███████▁▅▇▅▁▅▁▁▅▅▁▁▁▅▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅ ▁
       53 ms         Histogram: log(frequency) by time      81.7 ms <
 
@@ -121,7 +121,7 @@ We can again benchmark this
      Time  (median):     37.559 ms              ┊ GC (median):    0.00%
      Time  (mean ± σ):   38.658 ms ±  3.904 ms  ┊ GC (mean ± σ):  0.73% ± 2.68%
 
-      ██▅▅▄▂▁ ▂                                                    
+      ██▅▅▄▂▁ ▂
       ███████▁██▁▅▁▁▁▅▁▁▁▁▅▅▅▁▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▁▁▁▁▁▁▁▁▁▅ ▅
       36.6 ms      Histogram: log(frequency) by time        61 ms <
 

@@ -1,5 +1,5 @@
 ---
-title: "Using Automatic Differentiation in Manopt.jl"
+title: "Using automatic differentiation in Manopt.jl"
 ---
 
 Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
@@ -122,7 +122,7 @@ norm(M, p, X1 - X2)
 
 We obtain quite a good approximation of the gradient.
 
-``## [2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold](@id EmbeddedGradient)``{=commonmark}
+``## [2. Conversion of a Euclidean gradient in the embedding to a Riemannian Gradient of a (not Necessarily Isometrically) embedded manifold](@id EmbeddedGradient)``{=commonmark}
 
 Let $\tilde f: ℝ^m → ℝ$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset ℝ^m$and let $f:  \mathcal M → ℝ$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
 

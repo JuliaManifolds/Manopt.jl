@@ -80,7 +80,7 @@ struct ScaledSphere <: AbstractManifold{ℝ}
 end
 ```
 
-We would like to compute a mean and/or median similar to [🏔️ Get started with Manopt.jl!](https://manoptjl.org/stable/tutorials/getstarted.html).
+We would like to compute a mean and/or median similar to [🏔️ Get started with Manopt.jl!](getstarted.md).
 For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math

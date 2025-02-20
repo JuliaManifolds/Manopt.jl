@@ -34,6 +34,7 @@ eigen
 eigendecomposition
 elementwise
 Ehresmann
+Engen
 Fenchel
 Ferreira
 Frank
@@ -82,6 +83,7 @@ Newton
 nonmonotone
 nonpositive
 [Nn]onsmooth
+Oddsen
 [Pp]arametrising
 Parametrising
 [Pp]ock
