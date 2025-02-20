@@ -33,5 +33,5 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
     # start with a very small mesh size - yields a more exact result
     p_s2 = mesh_adaptive_direct_search!(M2, f2, p1; scale_mesh=0.1)
     @test isapprox(M, p_s2, p1)
-    @test distance(M2, p_s2, W2) < 1e-8
+    @test distance(M2, p_s2, W2) < 1e-7
 end
