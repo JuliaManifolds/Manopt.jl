@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] unreleased
+
+### Fixed
+
+* fixed a small bug in the `NonmonotoneLinesearchStepsize` hwn the injectivity radius is an irrational number.
+* fixed a small bug in `check_gradient` where `eps` might have been called on complex types.
+
 ## [0.5.7] February 20, 20265
 
 ### Added
