@@ -6,7 +6,7 @@ default(; show=false, reuse=true)
     @testset "Test Gradient checks" begin
         n = 10
         M = Sphere(n)
-        q = zeros(n+1)
+        q = zeros(n + 1)
         q[1] = 1.0
         p = zeros(11)
         p[1:4] .= 1 / sqrt(4)
@@ -29,7 +29,7 @@ default(; show=false, reuse=true)
             zeros(2), zeros(2), [2, 20]
         )
         #Check complex Sphere as well
-        M2 = Sphere(n,ℂ)
+        M2 = Sphere(n, ℂ)
         check_gradient(M2, f, grad_f, p, X)
         # Linear Euclidean function -> exact
         M2 = Euclidean(1)
