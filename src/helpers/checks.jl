@@ -132,7 +132,7 @@ function check_gradient(
     check_vector::Bool=false,
     error::Symbol=:none,
     atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(eltype(p))),
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
     kwargs...,
 )
     check_vector &&
@@ -242,7 +242,7 @@ function check_Hessian(
     log_range=range(limits[1], limits[2]; length=N),
     plot=false,
     retraction_method=default_retraction_method(M, typeof(p)),
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(eltype(p))),
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
     slope_tol=0.1,
     error=:none,
     window=nothing,
@@ -395,7 +395,7 @@ function is_Hessian_symmetric(
     error=:none,
     io=nothing,
     atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(number_eltype(p))),
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
     kwargs...,
 )
     a = inner(M, p, Hess_f(M, p, X), Y)
