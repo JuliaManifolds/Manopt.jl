@@ -14,7 +14,7 @@ no plot is generated,
 * `exactness_tol=1e-12`: if all errors are below this tolerance,
   the differential is considered to be exact
 * `io=nothing`: provide an `IO` to print the result to
-* `limits=(1e-8,1)`: specify the limits in the `log_range`
+* `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`: specify the range of points
   (in log scale) to sample the differential line
 * `N=101`: number of points to verify within the `log_range` default range ``[10^{-8},10^{0}]``
@@ -97,8 +97,7 @@ no plot is generated.
   provide an `IO` to print the result to
 * `gradient=grad_f(M, p)`:
   instead of the gradient function you can also provide the gradient at `p` directly
-* `limits=(1e-8,1)`:
-  specify the limits in the `log_range`
+* `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
   - specify the range of points (in log scale) to sample the gradient line
 * `N=101`:
@@ -194,8 +193,7 @@ no plot is generated.
 * `Hessian=Hess_f(M, p, X)`:
   instead of the Hessian function you can provide the result of ``$(_tex(:Hess)) f(p)[X]`` directly.
   Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry and/or when using `:CriticalPoint` mode.
-* `limits=(1e-8,1)`:
-  specify the limits in the `log_range`
+* `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
   specify the range of points (in log scale) to sample the Hessian line
 * `N=101`:
