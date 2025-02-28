@@ -108,9 +108,8 @@ no plot is generated.
 $(_var(:Keyword, :retraction_method))
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
-* `atol`=:none`:
- aults as=nothing`:
- hat are passed down to `is_vector` if `check_vector` is set to `true`
+* `atol`, `rtol`:
+  (same defaults as `isapprox`) tolerances that are passed down to `is_vector` if `check_vector` is set to `true`
 * `error=:none`:
   how to handle errors, possible values: `:error`, `:info`, `:warn`
 * `window=nothing`:
