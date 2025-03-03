@@ -247,7 +247,7 @@ function quasi_Newton(
 end
 function quasi_Newton(
     M::AbstractManifold, mgo::O, p; kwargs...
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
@@ -297,7 +297,7 @@ function quasi_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
     kwargs...,
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,

@@ -859,7 +859,7 @@ mutable struct NonmonotoneLinesearchStepsize{
         retraction_method::TRM=default_retraction_method(M),
         stepsize_reduction::R=0.5,
         stop_when_stepsize_less::R=0.0,
-        stop_when_stepsize_exceeds::R=max_stepsize(M),
+        stop_when_stepsize_exceeds=real(max_stepsize(M)),
         stop_increasing_at_step::I=100,
         stop_decreasing_at_step::I=1000,
         storage::Union{Nothing,StoreStateAction}=StoreStateAction(
@@ -869,6 +869,7 @@ mutable struct NonmonotoneLinesearchStepsize{
         sufficient_decrease::R=1e-4,
         vector_transport_method::VTM=default_vector_transport_method(M),
     ) where {TRM,VTM,P,R<:Real,I<:Integer}
+        stop_when_stepsize_exceeds = R(stop_when_stepsize_exceeds)
         if strategy ∉ [:direct, :inverse, :alternating]
             @warn string(
                 "The strategy '",
