@@ -39,6 +39,7 @@ struct ProjectedGradientMethodState{P,T,S,S2,SC,RM,IRM} <: AbstractManoptSolverS
     retraction_method::RM
     stepsize::S # α_k
     X::T
+    old_p::P # last iterate – temporarily here to check an idea
 end
 function ProjectedGradientMethodState(
     M::AbstractManifold,
@@ -62,6 +63,7 @@ function ProjectedGradientMethodState(
         retraction_method,
         stepsize,
         X,
+        copy(M, p)
     )
 end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
@@ -72,40 +74,44 @@ get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
 #
 # New Stopping Criterion
 """
-    StopWhenProjectionChangeLess <: StoppingCriterion
+    StopWhenProjectedGradientCritical <: StoppingCriterion
+
+Stop when the step taken by the projection is  (before linesearch)
+exactly the opposite of the
 
 """
-mutable struct StopWhenProjectionChangeLess{F} <: StoppingCriterion
+mutable struct StopWhenProjectedGradientCritical{F} <: StoppingCriterion
     threshold::F
-    last_change::F
+    last_norm::F
     at_iteration::Int
 end
-function StopWhenProjectionChangeLess(ε::F) where {F<:Real}
-    return StopWhenProjectionChangeLess{F}(ε, zero(ε), -1)
+function StopWhenProjectedGradientCritical(ε::F) where {F<:Real}
+    return StopWhenProjectedGradientCritical{F}(ε, zero(ε), -1)
 end
-function (c::StopWhenProjectionChangeLess)(
+function (c::StopWhenProjectedGradientCritical)(
     mp::AbstractManoptProblem, pgms::ProjectedGradientMethodState, k::Int
 )
     if k == 0 # reset on init
         c.at_iteration = -1
-        c.last_change = 0.0
+        c.last_norm = 0.0
     else
         M = get_manifold(mp)
-        c.last_change = distance(M, pgms.p, pgms.q)
-        if c.last_change < c.threshold && k > 0
+        c.last_norm = norm(M, pgms.old_p, pgms.X+pgms.η)
+        println("Last norm: ", c.last_norm)
+        if c.last_norm < c.threshold && k > 0
             c.at_iteration = k
             return true
         end
     end
     return false
 end
-function get_reason(c::StopWhenProjectionChangeLess)
+function get_reason(c::StopWhenProjectedGradientCritical)
     if (c.at_iteration >= 0)
-        return "At iteration $(c.at_iteration) algorithm performed a step after projection with a small step size ($(c.last_change)) less than $(c.threshold).\n"
+        return "At iteration $(c.at_iteration) algorithm performed a step after projection with a small step size ($(c.last_norm)) less than $(c.threshold).\n"
     end
     return ""
 end
-function status_summary(c::StopWhenProjectionChangeLess)
+function status_summary(c::StopWhenProjectedGradientCritical)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "stopped after $(c.threshold):\t$s"
@@ -189,7 +195,7 @@ function projected_gradient_method!(
     ),
     stepsize::Stepsize=ConstantStepsize(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
-                                          StopWhenProjectionChangeLess(1e-7),
+                                          StopWhenProjectedGradientCritical(1e-7),
     X=zero_vector(M,p),
     kwargs...,
 )
@@ -217,16 +223,13 @@ end
 
 function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodState, k)
     M = get_manifold(amp)
-    # Step 1 candidate & project
+    # Step 1: gradient step
     get_gradient!(amp, pgms.X, pgms.p)
-    # println("X:", pgms.X, " (step: ", get_stepsize(amp, pgms, k), ")")
-    retract!(M, pgms.q, pgms.p, get_stepsize(amp, pgms, k) * pgms.X, pgms.retraction_method)
-    # println("q:", pgms.q)
+    copyto!(M, pgms.old_p, pgms.p)
+    retract!(M, pgms.q, pgms.p, - get_stepsize(amp, pgms, k) * pgms.X, pgms.retraction_method)
     get_projection!(amp, pgms.q, pgms.q)
-    # println("q (proj):", pgms.q)
     # Determine search direction
     inverse_retract!(M, pgms.η, pgms.p, pgms.q, pgms.inverse_retraction_method)
-    # println("η:", pgms.η)
     # Maybe currently a bit too fixed on Armijo
     # In the manuscript; β is the contraction factor, ρ is the sufficient decrease, θ?
     # Now this should also work for NM, WolfePowell, WPBinary, Constant (just not AWN I think)
@@ -234,5 +237,10 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodS
     # println("τ:", τ)
     # Compute new iterate
     retract!(M, pgms.p, pgms.p, τ * pgms.η, pgms.retraction_method)
+    # now we have
+    # * X the gradient at the current iterate
+    # * q the projection
+    # * η the log_pq
+    # so we _could_ stop if X = -η but we have to store the old point a but for that (temporarily)
     return pgms
 end
