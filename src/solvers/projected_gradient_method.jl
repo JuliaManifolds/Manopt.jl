@@ -97,7 +97,6 @@ function (c::StopWhenProjectedGradientCritical)(
     else
         M = get_manifold(mp)
         c.last_norm = norm(M, pgms.old_p, pgms.X+pgms.η)
-        println("Last norm: ", c.last_norm)
         if c.last_norm < c.threshold && k > 0
             c.at_iteration = k
             return true
