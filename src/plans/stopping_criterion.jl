@@ -989,7 +989,7 @@ function status_summary(c::StopWhenAll)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r    $(status_summary(cs))\n"
+        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
@@ -1083,7 +1083,7 @@ function status_summary(c::StopWhenAny)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r    $(status_summary(cs))\n"
+        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end

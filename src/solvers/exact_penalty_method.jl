@@ -252,7 +252,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
   $(_note(:KeywordUsedIn, "sub_problem"))
 * `sub_grad=`[`ExactPenaltyGrad`](@ref)`(problem, ρ, u; smoothing=smoothing)`: gradient to use in the sub solver
   $(_note(:KeywordUsedIn, "sub_problem"))
-* $(_var(:Keyword, :sub_kwargs))
+$(_var(:Keyword, :sub_kwargs))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
 $(_var(:Keyword, :sub_state; default="[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
