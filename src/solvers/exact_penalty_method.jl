@@ -475,7 +475,8 @@ function step_solver!(
     set_iterate!(epms.sub_state, M, copy(M, epms.p))
     set_parameter!(epms, :StoppingCriterion, :MinIterateChange, epms.ϵ)
 
-    epms.p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
+    new_p = get_solver_result(solve!(epms.sub_problem, epms.sub_state))
+    copyto!(M, epms.p, new_p)
 
     # get new evaluation of penalty
     cost_ineq = get_inequality_constraint(amp, epms.p, :)

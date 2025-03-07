@@ -40,7 +40,6 @@ struct ProjectedGradientMethodState{P,T,S,S2,SC,RM,IRM} <: AbstractManoptSolverS
     retraction_method::RM
     stepsize::S # α_k
     X::T
-    old_p::P # last iterate – temporarily here to check an idea
 end
 function ProjectedGradientMethodState(
     M::AbstractManifold,
@@ -64,38 +63,60 @@ function ProjectedGradientMethodState(
         retraction_method,
         stepsize,
         X,
-        copy(M, p),
     )
 end
 get_iterate(pgms::ProjectedGradientMethodState) = pgms.p
 get_gradient(pgms::ProjectedGradientMethodState) = pgms.X
-# TODO: Write a show method.
+
+function show(io::IO, pgms::ProjectedGradientMethodState)
+    i = get_count(pgms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Projected Gradient Method
+    $Iter
+    ## Parameters
+    * inverse retraction method: $(pgms.inverse_retraction_method)
+    * retraction method: $(pgms.retraction_method)
+
+    ## Stepsize for the gradient step
+    $(pgms.stepsize)
+
+    ## Stepsize for the complete step
+    $(pgms.backtrack)
+
+    ## Stopping criterion
+
+    $(status_summary(pgms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
 
 #
 #
 # New Stopping Criterion
 """
-    StopWhenProjectedGradienStationary <: StoppingCriterion
+    StopWhenProjectedGradientStationary <: StoppingCriterion
 
 Stop when the step taken by the projection is  (before linesearch)
 exactly the opposite of the
 
 """
-mutable struct StopWhenProjectedGradienStationary{F,TSSA<:StoreStateAction} <:
+mutable struct StopWhenProjectedGradientStationary{F,TSSA<:StoreStateAction} <:
                StoppingCriterion
     threshold::F
     last_change::F
     storage::TSSA
     at_iteration::Int
 end
-function StopWhenProjectedGradienStationary(
+function StopWhenProjectedGradientStationary(
     M::AbstractManifold,
     ε::F;
     storage::StoreStateAction=StoreStateAction(M; store_points=Tuple{:Iterate}),
 ) where {F<:Real}
-    return StopWhenProjectedGradienStationary{F,typeof(storage)}(ε, zero(ε), storage, -1)
+    return StopWhenProjectedGradientStationary{F,typeof(storage)}(ε, zero(ε), storage, -1)
 end
-function (c::StopWhenProjectedGradienStationary)(
+function (c::StopWhenProjectedGradientStationary)(
     mp::AbstractManoptProblem, pgms::ProjectedGradientMethodState, k::Int
 )
     if k == 0 # reset on init
@@ -115,13 +136,13 @@ function (c::StopWhenProjectedGradienStationary)(
     c.storage(mp, pgms, k)
     return false
 end
-function get_reason(c::StopWhenProjectedGradienStationary)
+function get_reason(c::StopWhenProjectedGradientStationary)
     if (c.at_iteration >= 0)
         return "At iteration $(c.at_iteration) algorithm has reached a stationary point, since the distance from the last iterate to the projected gradient ($(c.last_change)) less than $(c.threshold).\n"
     end
     return ""
 end
-function status_summary(c::StopWhenProjectedGradienStationary)
+function status_summary(c::StopWhenProjectedGradientStationary)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "stopped after $(c.threshold):\t$s"
@@ -208,7 +229,7 @@ function projected_gradient_method!(
     ),
     stepsize::Stepsize=ConstantStepsize(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
-                                          StopWhenProjectedGradienStationary(M, 1e-7),
+                                          StopWhenProjectedGradientStationary(M, 1e-7),
     X=zero_vector(M, p),
     kwargs...,
 )
@@ -238,7 +259,6 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodS
     M = get_manifold(amp)
     # Step 1: gradient step
     get_gradient!(amp, pgms.X, pgms.p)
-    copyto!(M, pgms.old_p, pgms.p)
     # Gradient step in q
     retract!(
         M, pgms.q, pgms.p, -get_stepsize(amp, pgms, k) * pgms.X, pgms.retraction_method
