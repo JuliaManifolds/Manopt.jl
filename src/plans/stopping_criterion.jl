@@ -274,6 +274,7 @@ end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     if k == 0 # reset on init
         c.at_iteration = -1
+        c.last_change = Inf
     end
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
