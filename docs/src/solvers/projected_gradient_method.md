@@ -16,3 +16,9 @@ projected_gradient_method!
 ```@docs
 ProjectedGradientMethodState
 ```
+
+## Stopping criteria
+
+```@docs
+StopWhenProjectedGradientStationary
+```
