@@ -48,6 +48,7 @@ end
         x_solution = mean(ABC)
         f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
         grad_f(::Euclidean, x) = -A - B - C + 3 * x
+        costgrad(M, p) = (f(M, p), grad_f(M, p))
         M = Euclidean(4, 4)
         p = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
@@ -100,6 +101,14 @@ end
             memory_size=-1,
         )
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
+
+        # with Costgrad
+        mcgo = ManifoldCostGradientObjective(costgrad)
+
+        x_lrbfgs_costgrad = quasi_Newton(
+            M, mcgo, p; stopping_criterion=StopWhenGradientNormLess(10^(-6)), debug=[]
+        )
+        @test isapprox(M, x_lrbfgs_costgrad, x_lrbfgs; atol=1e-5)
 
         clrbfgs_s = quasi_Newton(
             M,

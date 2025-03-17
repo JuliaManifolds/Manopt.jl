@@ -20,7 +20,7 @@ or in other words: find the point ``p`` on the manifold, where ``f`` reaches its
 It belongs to the “Manopt family”, which includes [Manopt](https://manopt.org) (Matlab) and [pymanopt.org](https://www.pymanopt.org/) (Python).
 
 If you want to delve right into `Manopt.jl` read the
-[🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial.
+[🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial.
 
 `Manopt.jl` makes it easy to use an algorithm for your favourite
 manifold as well as a manifold for your favourite algorithm. It already provides
@@ -94,7 +94,7 @@ The notation in the documentation aims to follow the same [notation](https://jul
 ### Visualization
 
 To visualize and interpret results, `Manopt.jl` aims to provide both easy plot functions as well as [exports](helpers/exports.md). Furthermore a system to get [debug](plans/debug.md) during the iterations of an algorithms as well as [record](plans/record.md) capabilities, for example to record a specified tuple of values per iteration, most prominently [`RecordCost`](@ref) and
-[`RecordIterate`](@ref). Take a look at the [🏔️ Get started: optimize.](tutorials/Optimize.md) tutorial on how to easily activate this.
+[`RecordIterate`](@ref). Take a look at the [🏔️ Get started with Manopt.jl](tutorials/getstarted.md) tutorial on how to easily activate this.
 
 ## Literature
 

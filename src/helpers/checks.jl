@@ -14,7 +14,7 @@ no plot is generated,
 * `exactness_tol=1e-12`: if all errors are below this tolerance,
   the differential is considered to be exact
 * `io=nothing`: provide an `IO` to print the result to
-* `limits=(1e-8,1)`: specify the limits in the `log_range`
+* `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`: specify the range of points
   (in log scale) to sample the differential line
 * `N=101`: number of points to verify within the `log_range` default range ``[10^{-8},10^{0}]``
@@ -50,7 +50,7 @@ function check_differential(
     #
     T = exp10.(log_range)
     # points `p_i` to evaluate the error function at
-    points = map(t -> retract(M, p, Xn, t, retraction_method), T)
+    points = map(t -> ManifoldsBase.retract_fused(M, p, Xn, t, retraction_method), T)
     costs = [F(M, pi) for pi in points]
     # linearized
     linearized = map(t -> F(M, p) + t * dF(M, p, Xn), T)
@@ -97,8 +97,7 @@ no plot is generated.
   provide an `IO` to print the result to
 * `gradient=grad_f(M, p)`:
   instead of the gradient function you can also provide the gradient at `p` directly
-* `limits=(1e-8,1)`:
-  specify the limits in the `log_range`
+* `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
   - specify the range of points (in log scale) to sample the gradient line
 * `N=101`:
@@ -109,9 +108,8 @@ no plot is generated.
 $(_var(:Keyword, :retraction_method))
 * `slope_tol=0.1`:
   tolerance for the slope (global) of the approximation
-* `atol`=:none`:
- aults as=nothing`:
- hat are passed down to `is_vector` if `check_vector` is set to `true`
+* `atol`, `rtol`:
+  (same defaults as `isapprox`) tolerances that are passed down to `is_vector` if `check_vector` is set to `true`
 * `error=:none`:
   how to handle errors, possible values: `:error`, `:info`, `:warn`
 * `window=nothing`:
@@ -132,7 +130,7 @@ function check_gradient(
     check_vector::Bool=false,
     error::Symbol=:none,
     atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(eltype(p))),
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
     kwargs...,
 )
     check_vector &&
@@ -194,8 +192,7 @@ no plot is generated.
 * `Hessian=Hess_f(M, p, X)`:
   instead of the Hessian function you can provide the result of ``$(_tex(:Hess)) f(p)[X]`` directly.
   Note that evaluations of the Hessian might still be necessary for checking linearity and symmetry and/or when using `:CriticalPoint` mode.
-* `limits=(1e-8,1)`:
-  specify the limits in the `log_range`
+* `limits=(-8.0, 0.0)`: specify the limits in the `log_range`
 * `log_range=range(limits[1], limits[2]; length=N)`:
   specify the range of points (in log scale) to sample the Hessian line
 * `N=101`:
@@ -242,7 +239,7 @@ function check_Hessian(
     log_range=range(limits[1], limits[2]; length=N),
     plot=false,
     retraction_method=default_retraction_method(M, typeof(p)),
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(eltype(p))),
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
     slope_tol=0.1,
     error=:none,
     window=nothing,
@@ -297,7 +294,7 @@ function check_Hessian(
     #
     T = exp10.(log_range)
     # points `p_i` to evaluate error function at
-    points = map(t -> retract(M, p, X_n, t, retraction_method), T)
+    points = map(t -> ManifoldsBase.retract_fused(M, p, X_n, t, retraction_method), T)
     # corresponding costs
     costs = [f(M, pi) for pi in points]
     # linearized
@@ -395,7 +392,7 @@ function is_Hessian_symmetric(
     error=:none,
     io=nothing,
     atol::Real=0,
-    rtol::Real=atol > 0 ? 0 : sqrt(eps(number_eltype(p))),
+    rtol::Real=atol > 0 ? 0 : sqrt(eps(real(eltype(p)))),
     kwargs...,
 )
     a = inner(M, p, Hess_f(M, p, X), Y)

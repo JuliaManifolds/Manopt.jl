@@ -1,5 +1,5 @@
 ---
-title: "Using Automatic Differentiation in Manopt.jl"
+title: "Using automatic differentiation in Manopt.jl"
 ---
 
 Since [Manifolds.jl](https://juliamanifolds.github.io/Manifolds.jl/latest/) 0.7, the support of automatic differentiation support has been extended.
@@ -28,7 +28,7 @@ First, load all necessary packages
 
 ```{julia}
 using Manopt, Manifolds, Random, LinearAlgebra
-using FiniteDifferences, ManifoldDiff
+using FiniteDifferences, ManifoldDiff, ADTypes
 Random.seed!(42);
 ```
 
@@ -109,7 +109,7 @@ Manifolds provides a finite difference scheme in tangent spaces, that you can in
 
 ```{julia}
 r_backend = ManifoldDiff.TangentDiffBackend(
-    ManifoldDiff.FiniteDifferencesBackend()
+    AutoFiniteDifferences(central_fdm(5, 1))
 )
 gradf1_FD(p) = ManifoldDiff.gradient(M, f1, p, r_backend)
 
@@ -122,7 +122,7 @@ norm(M, p, X1 - X2)
 
 We obtain quite a good approximation of the gradient.
 
-``## [2. Conversion of a Euclidean Gradient in the Embedding to a Riemannian Gradient of a (not Necessarily Isometrically) Embedded Manifold](@id EmbeddedGradient)``{=commonmark}
+``## [2. Conversion of a Euclidean gradient in the embedding to a Riemannian Gradient of a (not Necessarily Isometrically) embedded manifold](@id EmbeddedGradient)``{=commonmark}
 
 Let $\tilde f: ℝ^m → ℝ$ be a function on the embedding of an $n$-dimensional manifold $\mathcal M \subset ℝ^m$and let $f:  \mathcal M → ℝ$ denote the restriction of $\tilde f$ to the manifold $\mathcal M$.
 
@@ -161,9 +161,8 @@ The gradient is now computed combining our gradient scheme with FiniteDifference
 
 ```{julia}
 function grad_f2_AD(M, p)
-    return Manifolds.gradient(
-        M, F, p, Manifolds.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
-    )
+    b = Manifolds.RiemannianProjectionBackend(AutoFiniteDifferences(central_fdm(5, 1)))
+    return Manifolds.gradient(M, F, p, b)
 end
 X3 = grad_f2_AD(M, p)
 norm(M, p, X1 - X3)
@@ -212,7 +211,10 @@ We define this here again as a function `grad_G_FD` that could be used in the `M
 ```{julia}
 function grad_G_FD(N, q)
     return Manifolds.gradient(
-        N, G, q, ManifoldDiff.RiemannianProjectionBackend(ManifoldDiff.FiniteDifferencesBackend())
+        N,
+        G,
+        q,
+        ManifoldDiff.RiemannianProjectionBackend(AutoFiniteDifferences(central_fdm(5, 1))),
     )
 end
 G1 = grad_G_FD(N, q)

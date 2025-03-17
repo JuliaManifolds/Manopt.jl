@@ -247,7 +247,7 @@ function quasi_Newton(
 end
 function quasi_Newton(
     M::AbstractManifold, mgo::O, p; kwargs...
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
@@ -297,7 +297,7 @@ function quasi_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
     kwargs...,
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
@@ -366,7 +366,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     end
     α = qns.stepsize(mp, qns, k, qns.η)
     copyto!(M, qns.p_old, get_iterate(qns))
-    retract!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
+    ManifoldsBase.retract_fused!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
     # qns.yk update fails if α is equal to 0 because then β is NaN
     β = ifelse(
