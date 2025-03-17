@@ -1,59 +1,86 @@
 @doc raw"""
-    ManifoldProximalGradientObjective{E,<:AbstractEvaluationType, TC, TG, TP} <: AbstractManifoldObjective{E,TC,TG}
+    ManifoldProximalGradientObjective{E,<:AbstractEvaluationType, TC, TG, TH, TGG, TP} <: AbstractManifoldObjective{E,TC,TGG}
 
 Model an objective of the form
 ```math
     f(p) = g(p) + h(p),\qquad p \in \mathcal M,
 ```
-where ``g: \mathcal M → \bar{ℝ}`` is differentiable
-and ``h: → \bar{ℝ}`` is convex, lower semicontinous, and proper.
+where ``g: \mathcal M → \bar{ℝ}`` is a differentiable function
+and ``h: → \bar{ℝ}`` is a convex, lower semicontinous, and proper function.
 
-This objective also provides ``\operatorname{grad} g`` and ``\operatorname{prox}_{λ} h``.
+This objective provides the total cost ``f``, its components ``g`` and ``h``,
+as well as ``\operatorname{grad} g`` and ``\operatorname{prox}_{λ} h``.
 
 # Fields
 
-* `cost`: the overall cost ``f```
-* `gradient_g`: the ``\operatorname{grad} g``
-* `proximal_map_h` and ``\operatorname{prox}_{λ} h``
+* `cost`: the overall cost ``f = g + h``
+* `cost_g`: the smooth cost component ``g``
+* `cost_h`: the nonsmooth cost component ``h``
+* `gradient_g!!`: the gradient ``\operatorname{grad} g``
+* `proximal_map_h!!`: the proximal map ``\operatorname{prox}_{λ} h``
 
 # Constructor
-    ManifoldProximalGradientObjective(f, prox_g, prox_h;
+    ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h;
         evalauation=[`AllocatingEvaluation`](@ref)
     )
 
-Generate the proximal gradient objective given the cost `f`, the gradient of the smooth
-component `grad_g`, and the proximal map of the nonsmooth component `prox_h`.
+Generate the proximal gradient objective given the total cost `f`, smooth cost `g`, 
+nonsmooth cost `h`, the gradient of the smooth component `grad_g`, and the 
+proximal map of the nonsmooth component `prox_h`.
 
 ## Keyword arguments
 
 * `evaluation=`[`AllocatingEvaluation`](@ref): whether the gradient and proximal map
   is given as an allocation function or an in-place ([`InplaceEvaluation`](@ref)).
 """
-struct ManifoldProximalGradientObjective{E<:AbstractEvaluationType,TC,TG,TP} <:
+struct ManifoldProximalGradientObjective{E<:AbstractEvaluationType,TC,TG,TGG,TP} <:
        AbstractManifoldCostObjective{E,TC}
-    cost::TC
-    gradient_g!!::TG
+    cost::TC # f = g + h
+    cost_g::TG # smooth part
+    # cost_h::TH # nonsmooth part
+    gradient_g!!::TGG
     proximal_map_h!!::TP
     function ManifoldProximalGradientObjective(
-        f::TF, grad_g::TG, prox_h::TP; evaluation::E=AllocatingEvaluation()
-    ) where {TF,TG,TP,E<:AbstractEvaluationType}
-        return new{E,TF,TG,TP}(f, grad_g, prox_h)
+        f::TC, 
+        g::TG, 
+        # h::TH, 
+        grad_g::TGG, 
+        prox_h::TP; 
+        evaluation::E=AllocatingEvaluation()
+    ) where {TC,TG,TGG,TP,E<:AbstractEvaluationType}
+        # f = g + h
+        return new{E,TC,TG,TGG,TP}(
+            f, 
+            g, 
+            # h, 
+            grad_g, 
+            prox_h
+        )
     end
+end
+
+# For backward compatibility
+function ManifoldProximalGradientObjective(
+    f::TF, grad_g::TG, prox_h::TP; evaluation::E=AllocatingEvaluation()
+) where {TF,TG,TP,E<:AbstractEvaluationType}
+    # Define dummy g and h that don't compute values separately
+    g = (M, p) -> get_cost(M, f, p)  # Fallback to total cost
+    h = (M, p) -> zero(number_eltype(p))  # Fallback to zero
+    return ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
 end
 
 """
     get_gradient(M::AbstractManifold, mgo::ManifoldProximalGradientObjective, p)
     get_gradient!(M::AbstractManifold, X, mgo::ManifoldProximalGradientObjective, p)
 
-evaluate the gradient of the smooth part of a [`ManifoldProximalGradientObjective`](@ref) `mgo` at `p`.
+Evaluate the gradient of the smooth part of a [`ManifoldProximalGradientObjective`](@ref) `mgo` at `p`.
 """
-get_gradient(M::AbstractManifold, mgo::ManifoldProximalGradientObjective, p)
-
 function get_gradient(
     M::AbstractManifold, mpgo::ManifoldProximalGradientObjective{AllocatingEvaluation}, p
 )
     return mpgo.gradient_g!!(M, p)
 end
+
 function get_gradient(
     M::AbstractManifold, mpgo::ManifoldProximalGradientObjective{InplaceEvaluation}, p
 )
@@ -68,6 +95,7 @@ function get_gradient!(
     copyto!(M, X, p, mpgo.gradient_g!!(M, p))
     return X
 end
+
 function get_gradient!(
     M::AbstractManifold, X, mpgo::ManifoldProximalGradientObjective{InplaceEvaluation}, p
 )
@@ -75,20 +103,52 @@ function get_gradient!(
     return X
 end
 
+"""
+    get_cost_g(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, p)
+
+Evaluate the smooth part `g` of the cost function at point `p`.
+"""
+function get_cost_g(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, p)
+    return mpgo.cost_g(M, p)
+end
+
+"""
+    get_cost_h(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, p)
+
+Evaluate the nonsmooth part `h` of the cost function at point `p`.
+"""
+function get_cost_h(M::AbstractManifold, mpgo::ManifoldProximalGradientObjective, p)
+    return mpgo.cost_h(M, p)
+end
+
+"""
+    get_cost_g(M::AbstractManifold, objective, p)
+
+Helper function to extract the smooth part g of a proximal gradient objective.
+Falls back to normal cost function if the objective doesn't have a separate g component.
+"""
+function get_cost_g(M::AbstractManifold, objective, p)
+    if hasfield(typeof(objective), :cost_g)
+        return objective.cost_g(M, p)
+    else
+        # Fallback: use the regular cost function
+        return get_cost(M, objective, p)
+    end
+end
+
 @doc raw"""
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalGradientObjective, λ, p)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalGradientObjective, λ, p)
 
-evaluate proximal map of the nonsmooth component ``h`` of the [`ManifoldProximalGradientObjective`](@ref)` mpo`
+Evaluate proximal map of the nonsmooth component ``h`` of the [`ManifoldProximalGradientObjective`](@ref)` mpo`
 at the point `p` on `M` with parameter ``λ>0``.
 """
-get_proximal_map(::AbstractManifold, ::ManifoldProximalGradientObjective, ::Any...)
-
 function get_proximal_map(
     M::AbstractManifold, mpgo::ManifoldProximalGradientObjective{AllocatingEvaluation}, λ, p
 )
     return mpgo.proximal_map_h!!(M, λ, p)
 end
+
 function get_proximal_map!(
     M::AbstractManifold,
     q,
@@ -107,115 +167,33 @@ function get_proximal_map(
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
+
 function get_proximal_map!(
     M::AbstractManifold, q, mpgo::ManifoldProximalGradientObjective{InplaceEvaluation}, λ, p
 )
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
-# 
-# 
-# Stepsize
-@doc raw"""
-    ProximalGradientMethodBacktracking{P, T}
 
-Backtracking line search for the proximal gradient method.
-
-# Fields
-* `candidate_point::P` - candidate point for the next iteration
-* `s::T` - initial step size guess
-* `γ::T` - sufficient decrease parameter (default: 0.5)
-* `η::T` - step size reduction factor (default: 0.5)
-
-# Constructor
-    ProximalGradientMethodBacktracking(M::AbstractManifold, p; s=1.0, γ=0.5, η=0.5)
-"""
-struct ProximalGradientMethodBacktracking{P,T}
-    candidate_point::P
-    s::T
-    γ::T
-    η::T
-    function ProximalGradientMethodBacktracking(
-        M::AbstractManifold, p::Nothing=nothing; s::T=1.0, γ::T=0.5, η::T=0.5
-    ) where {T}
-        0 < γ < 1 || throw(DomainError(γ, "γ must be in (0, 1)"))
-        0 < η < 1 || throw(DomainError(η, "η must be in (0, 1)"))
-        s > 0 || throw(DomainError(s, "s must be strictly positive"))
-        q = rand(M)
-        return new{typeof(q),T}(q, s, γ, η)
-    end
-    function ProximalGradientMethodBacktracking(
-        M::AbstractManifold, p::P; s::T=1.0, γ::T=0.5, η::T=0.5
-    ) where {P,T}
-        0 < γ < 1 || throw(DomainError(γ, "γ must be in (0, 1)"))
-        0 < η < 1 || throw(DomainError(η, "η must be in (0, 1)"))
-        s > 0 || throw(DomainError(s, "s must be strictly positive"))
-        return new{P,T}(p, s, γ, η)
-    end
-end
-
-"""
-    backtracking_step_size(M, mpgo, p, X; pgmb=ProximalGradientMethodBacktracking())
-
-Compute step size using backtracking line search for proximal gradient method.
-
-Returns the step size λ that satisfies the descent condition.
-"""
-function backtracking_step_size(
-    M::AbstractManifold,
-    amp::AbstractManoptProblem,
-    p,
-    X,
-    retraction_method::AbstractRetractionMethod,
-    inverse_retraction_method::AbstractInverseRetractionMethod;
-    pgmb::ProximalGradientMethodBacktracking,# =ProximalGradientMethodBacktracking(M, p; s=1.0, γ=0.5, η=0.5)
-)
-    λ = pgmb.s
-    f_p = get_cost(amp, p)
-
-    while true
-        # println("Entered backtracking")
-        # (a) gradient step
-        retract!(M, pgmb.candidate_point, p, -λ * X, retraction_method)
-
-        # (b) proximal step
-        _pgm_proximal_step_backtracking!(amp, pgmb.candidate_point, pgmb.candidate_point, λ)
-
-        # Check descent condition
-        f_next = get_cost(amp, pgmb.candidate_point)
-        if f_p - f_next ≥
-            pgmb.γ * 1 / λ *
-           norm(
-            M, p, inverse_retract(M, p, pgmb.candidate_point, inverse_retraction_method)
-        )^2
-            return λ
-        end
-
-        # Reduce step size
-        λ *= pgmb.η
-    end
-end
-#
-#
-# Solver State
 @doc """
     ProximalGradientMethodState <: AbstractManoptSolverState
 
-stores options for the [`proximal_gradient_method`](@ref) solver
+State for the [`proximal_gradient_method`](@ref) solver.
 
 # Fields
 
 $(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :p, "a"; add=" storing the acceleration step"))
+* `a` - point after acceleration step
 $(_var(:Field, :p; add=[:as_Iterate]))
-$(_var(:Field, :p, "q"; add=" storing the gradient step"))
+* `q` - point for storing gradient step
 $(_var(:Field, :retraction_method))
-$(_var(:Field, :X))
+* `X` - tangent vector for storing gradient
 $(_var(:Field, :stopping_criterion, "stop"))
-* `acceleration`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step
+* `acceleration` - a function `(problem, state, k) -> state` to compute an acceleration before the gradient step
+* `stepsize` - a function or [`ProximalStepsize`](@ref) object to compute the stepsize
+* `last_stepsize` - stores the last computed stepsize
 $(_var(:Field, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F}"; add="or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))
 $(_var(:Field, :sub_state; add="This field is ignored, if the `sub_problem` is `Nothing`"))
-* `λ`:                         a function for the values of ``λ_i`` per iteration ``ì``
 
 # Constructor
 
@@ -229,7 +207,7 @@ $(_var(:Argument, :M; type=true))
 
 # Keyword arguments
 
-* `λ = k -> 0.5`
+* `stepsize=default_stepsize(M, ProximalGradientMethodState)`
 $(_var(:Field, :inverse_retraction_method))
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :retraction_method))
@@ -246,15 +224,15 @@ mutable struct ProximalGradientMethodState{
     St<:AbstractManoptSolverState,
     A,
     S<:StoppingCriterion,
-    Λ,
+    Λ<:Union{Function,Stepsize},
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
-    BT,
+    R,
 } <: AbstractManoptSolverState
     a::P
     acceleration::A
-    backtracking_plan::BT
-    λ::Λ
+    stepsize::Λ
+    last_stepsize::R
     p::P
     q::P
     stop::S
@@ -264,16 +242,18 @@ mutable struct ProximalGradientMethodState{
     sub_problem::Pr
     sub_state::St
 end
+
 function ProximalGradientMethodState(
     M::AbstractManifold;
     p::P=rand(M),
     acceleration::A=function (pr, st, k)
-        copyto!(get_manifold(pr), s.a, s.p)
+        copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
-    backtracking_plan::BT=nothing,
-    stopping_criterion::S=StopAfterIteration(100),
-    λ::Λ=i -> 0.25,
+    stepsize::Union{Function,Stepsize,Nothing}=nothing,
+    stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
+                          StopAfterIteration(5000) |
+                          StopWhenChangeLess(M, 1e-9),
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
@@ -284,23 +264,41 @@ function ProximalGradientMethodState(
     T,
     S<:StoppingCriterion,
     A,
-    Λ,
     Pr<:Union{<:AbstractManoptProblem,F,Nothing} where {F},
     St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType},
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
-    BT,
 }
     _sub_state = if sub_state isa AbstractEvaluationType
         ClosedFormSubSolverState(; evaluation=sub_state)
     else
         sub_state
     end
-    return ProximalGradientMethodState{P,T,Pr,typeof(_sub_state),A,S,Λ,RM,IRM,BT}(
+
+    _stepsize = if isnothing(stepsize)
+        default_stepsize(M, ProximalGradientMethodState)
+    elseif stepsize isa Function
+        # Convert function to a ConstantProximalStepsize if it's a constant function
+        # or wrap it in a suitable structure
+        if applicable(stepsize, 1) && applicable(stepsize, 2)
+            # Create a function-based stepsize
+            WrappedProximalStepsize(stepsize)
+        else
+            # It's not a suitable function, use default
+            default_stepsize(M, ProximalGradientMethodState)
+        end
+    else
+        stepsize
+    end
+
+    last_stepsize = zero(number_eltype(p))
+    return ProximalGradientMethodState{
+        P,T,Pr,typeof(_sub_state),A,S,typeof(_stepsize),RM,IRM,typeof(last_stepsize)
+    }(
         copy(M, p),
         acceleration,
-        backtracking_plan,
-        λ,
+        _stepsize,
+        last_stepsize,
         p,
         copy(M, p),
         stopping_criterion,
@@ -311,11 +309,205 @@ function ProximalGradientMethodState(
         _sub_state,
     )
 end
+
+"""
+    ProximalStepsize <: Stepsize
+
+An abstract type for stepsizes used in proximal gradient methods.
+"""
+abstract type ProximalStepsize <: Stepsize end
+
+"""
+    ConstantProximalStepsize <: ProximalStepsize
+
+A functor that returns a fixed stepsize for proximal gradient methods.
+
+# Fields
+* `length` – constant value for the step size.
+
+# Constructors
+    ConstantProximalStepsize(s::Real)
+
+Initialize the stepsize to a constant `s`.
+"""
+struct ConstantProximalStepsize{T} <: ProximalStepsize
+    length::T
+end
+
+function (cs::ConstantProximalStepsize)(
+    ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Any, args...; kwargs...
+)
+    return cs.length
+end
+
+get_initial_stepsize(s::ConstantProximalStepsize) = s.length
+
+@doc raw"""
+    BacktrackingProximalStepsize <: ProximalStepsize
+
+A functor for backtracking line search in proximal gradient methods.
+
+# Fields
+* `initial_stepsize::T` - initial step size guess
+* `γ::T` - sufficient decrease parameter (default: 0.5)
+* `η::T` - step size reduction factor (default: 0.5) 
+* `strategy::Symbol` - `:nonconvex` or `:convex` (default: `:convex`)
+* `work_point::P` - a working point used during backtracking
+* `last_stepsize::T` - the last computed stepsize
+
+# Constructor
+    BacktrackingProximalStepsize(M::AbstractManifold; kwargs...)
+
+## Keyword arguments
+* `initial_stepsize=1.0` - initial stepsize to try
+* `γ=0.5` - sufficient decrease parameter
+* `η=0.5` - step size reduction factor
+* `strategy=:convex` - backtracking strategy, either `:convex` or `:nonconvex`
+"""
+mutable struct BacktrackingProximalStepsize{P,T} <: ProximalStepsize
+    initial_stepsize::T
+    γ::T
+    η::T
+    strategy::Symbol
+    work_point::P
+    last_stepsize::T
+
+    function BacktrackingProximalStepsize(
+        M::AbstractManifold;
+        initial_stepsize::T=1.0,
+        γ::T=0.5,
+        η::T=0.5,
+        strategy::Symbol=:convex,
+    ) where {T}
+        0 < γ < 1 || throw(DomainError(γ, "γ must be in (0, 1)"))
+        0 < η < 1 || throw(DomainError(η, "η must be in (0, 1)"))
+        initial_stepsize > 0 ||
+            throw(DomainError(initial_stepsize, "initial_stepsize must be positive"))
+        strategy in [:convex, :nonconvex] ||
+            throw(DomainError(strategy, "strategy must be either :convex or :nonconvex"))
+
+        p = rand(M)
+        return new{typeof(p),T}(initial_stepsize, γ, η, strategy, p, initial_stepsize)
+    end
+end
+
+get_initial_stepsize(s::BacktrackingProximalStepsize) = s.initial_stepsize
+
+@doc raw"""
+    (s::BacktrackingProximalStepsize)(mp, st, i)
+
+Compute a stepsize for the proximal gradient method using backtracking line search.
+
+For the nonconvex case (lines 309-314 in manuscript), the condition is:
+```math
+f(p) - f(T_{λ}(p)) ≥ γλ\\|G_{λ}(p)\\|^2
+```
+where `G_{λ}(p) = (1/λ) * log_p(T_{λ}(p))` is the gradient mapping.
+
+For the convex case (lines 568-574 in manuscript), the condition is:
+```math
+g(T_{λ}(p)) ≤ g(p) + ⟨\\operatorname{grad} g(p), \\operatorname{log}_p T_{λ}(p)⟩ + \\frac{1}{2λ} \\operatorname{dist}^2(p, T_{λ}(p))
+```
+
+Returns a stepsize λ that satisfies the specified condition.
+"""
+function (s::BacktrackingProximalStepsize)(
+    mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
+)
+    # Initialization
+    M = get_manifold(mp)
+    p = st.a  # Current point (post-acceleration)
+    X = st.X  # Current gradient
+
+    # For convex case, start with the last stepsize (warm start)
+    # For nonconvex case, reset to initial stepsize
+    λ = if s.strategy === :convex && i > 1
+        s.last_stepsize
+    else
+        s.initial_stepsize
+    end
+
+    # Get the objective and temporary state
+    objective = get_objective(mp)
+
+    # Temporary state for backtracking that doesn't affect the main state
+    pgm_temp = ProximalGradientMethodState(
+        M;
+        p=copy(M, p),  # Start from current accelerated point
+        X=zero_vector(M, p),
+        sub_problem=st.sub_problem,
+        sub_state=st.sub_state,
+        retraction_method=st.retraction_method,
+        inverse_retraction_method=st.inverse_retraction_method,
+    )
+
+    while true
+        # Perform gradient step with current λ
+        retract!(M, pgm_temp.a, p, -λ * X, st.retraction_method)
+
+        # Perform proximal step with current λ
+        _pgm_proximal_step(mp, pgm_temp, λ)
+        candidate_point = pgm_temp.p
+
+        # Compute log_p(candidate_point) and its squared norm for the conditions
+        log_p_q = inverse_retract(M, p, candidate_point, st.inverse_retraction_method)
+        log_p_q_norm_squared = norm(M, p, log_p_q)^2
+
+        if s.strategy === :nonconvex
+            # Check nonconvex descent condition (manuscript line 312)
+            # f(p) - f(T_λ(p)) ≥ γλ||G_λ(p)||^2
+            # With G_λ(p) = (1/λ) * log_p(T_λ(p)), the condition becomes:
+            # f(p) - f(T_λ(p)) ≥ (γ/λ) * ||log_p(T_λ(p))||^2
+            if get_cost(mp, p) - get_cost(mp, candidate_point) >=
+                (s.γ / λ) * log_p_q_norm_squared
+                s.last_stepsize = λ
+                return λ
+            end
+        else  # convex condition (manuscript line 571-572)
+            # Use g(p) directly instead of f(p)
+            g_p = get_cost_g(M, objective, p)
+            g_q = get_cost_g(M, objective, candidate_point)
+
+            # Check the convex descent condition:
+            # g(T_λ(p)) ≤ g(p) + ⟨grad g(p), log_p(T_λ(p))⟩ + (1/2λ) * dist²(p, T_λ(p))
+            if g_q <= g_p + inner(M, p, X, log_p_q) + (1 / (2 * λ)) * log_p_q_norm_squared
+                s.last_stepsize = λ
+                return λ
+            end
+        end
+
+        # Reduce step size
+        λ *= s.η
+    end
+end
+
+"""
+    default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
+
+Returns the default proximal stepsize, which is a constant stepsize of 0.25.
+"""
+function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
+    return ConstantProximalStepsize(0.25)
+end
+
+# Wrapper for function-based stepsizes
+struct WrappedProximalStepsize{F} <: ProximalStepsize
+    func::F
+end
+
+function (s::WrappedProximalStepsize)(mp, st, i, args...; kwargs...)
+    return s.func(i)
+end
+
+get_initial_stepsize(s::WrappedProximalStepsize) = s.func(1)
+
 get_iterate(pgms::ProximalGradientMethodState) = pgms.p
+
 function set_iterate!(pgms::ProximalGradientMethodState, p)
     pgms.p = p
     return p
 end
+
 function show(io::IO, pgms::ProximalGradientMethodState)
     i = get_count(pgms, :Iterations)
     Iter = (i > 0) ? "After $i iterations\n" : ""
@@ -327,6 +519,8 @@ function show(io::IO, pgms::ProximalGradientMethodState)
     ## Parameters
 
     * retraction_method:              $(pgms.retraction_method)
+    * stepsize:                       $(typeof(pgms.stepsize))
+    * acceleration:                   $(typeof(pgms.acceleration))
 
     ## Stopping criterion
 
@@ -335,9 +529,7 @@ function show(io::IO, pgms::ProximalGradientMethodState)
     return print(io, s)
 end
 
-#
-#
-# Accelerations
+# Acceleration
 @doc """
     ProxGradAcceleration{P, T, F}
 
@@ -349,18 +541,17 @@ a^{(k)} = $(_tex(:retr))_{p^{(k)}}$(_tex(:bigl))(
 $(_tex(:bigr)))
 ```
 
-where `p^{(k)}`` is the current iterate from the [`ProximalGradientMethodState`](@ref)s
-field `p` and the result is stored in `state.a`
-`p` is the internal field of this struct and stored the last iterate.
+where `p^{(k)}` is the current iterate from the [`ProximalGradientMethodState`](@ref)s
+field `p` and the result is stored in `state.a`. The field `p` in this struct stores the last iterate.
 
-The retraction and its inverse are also taken from the state
+The retraction and its inverse are taken from the state.
 
 # Fields
 
-$(_var(:Field, :p; add="the last iterate"))
-* `β::F`
-$(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :X))
+* `p` - the last iterate
+* `β` - acceleration parameter function or value
+* `inverse_retraction_method` - method for inverse retraction
+* `X` - tangent vector for computations
 
 # Constructor
 
@@ -374,17 +565,18 @@ $(_var(:Argument, :M; type=true))
 
 # Keyword arguments
 
-* `β = k -> (k-1)/(k+1)`
-$(_var(:Keyword, :inverse_retraction_method))
-$(_var(:Keyword, :p; add=:as_Initial))
-$(_var(:Keyword, :X; add=:as_Memory))
+* `β = k -> (k-1)/(k+2)` - acceleration parameter function or value
+* `inverse_retraction_method` - method for inverse retraction
+* `p` - initial point
+* `X` - initial tangent vector
 """
-struct ProxGradAcceleration{P,T,F,ITR}
+mutable struct ProxGradAcceleration{P,T,F,ITR}
     β::F
     inverse_retraction_method::ITR
     p::P
     X::T
 end
+
 function ProxGradAcceleration(
     M::AbstractManifold;
     p::P=rand(M),
@@ -394,42 +586,40 @@ function ProxGradAcceleration(
 ) where {P,T,F,I<:AbstractInverseRetractionMethod}
     return ProxGradAcceleration{P,T,F,I}(β, inverse_retraction_method, p, X)
 end
+
 function (pga::ProxGradAcceleration)(
     amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, k
 )
     # compute the step
     M = get_manifold(amp)
+    # inverse retract and store in X
     inverse_retract!(M, pga.X, pgms.p, pga.p)
     # retract with step and store in a
     retract!(M, pgms.a, pgms.p, -pga.β(k) * pga.X)
-    # save current p for nect time as last iterate
+    # save current p for next time as last iterate
     copyto!(M, pga.p, pgms.p)
     return pgms
 end
-#
-#
-# Stopping Criterion
+
+# Stopping criterion
 """
     StopWhenGradientMappingNormLess <: StoppingCriterion
 
-A stopping criterion based on the current gradient norm.
+A stopping criterion based on the gradient mapping norm for proximal gradient methods.
 
 # Fields
 
-* `threshold`: the threshold to indicate to stop when the distance is below this value
-
-# Internal fields
-
-* `last_change` store the last change
-* `at_iteration` store the iteration at which the stop indication happened
+$(_var(:Field, :at_iteration))
+$(_var(:Field, :last_change))
+* `threshold`: the threshold for the change to check (run under to stop)
 
 # Constructor
 
     StopWhenGradientMappingNormLess(ε)
 
 Create a stopping criterion with threshold `ε` for the gradient mapping for the [`proximal_gradient_method`](@ref).
-That is, this criterion indicates to stop when [`get_gradient`](@ref) returns a gradient vector of norm less than `ε`,
-where the norm to use can be specified in the `norm=` keyword.
+That is, this criterion indicates to stop when the gradient mapping has a norm less than `ε`.
+The gradient mapping G_λ(p) is defined as -(1/λ) * log_p(T_λ(p)), where T_λ(p) is the proximal mapping prox_λ f(exp_p(-λ * grad f(p))).
 """
 mutable struct StopWhenGradientMappingNormLess{TF} <: StoppingCriterion
     threshold::TF
@@ -449,7 +639,7 @@ function (sc::StopWhenGradientMappingNormLess)(
     end
     if (i > 0)
         sc.last_change =
-            1 / s.λ(i) * norm(
+            1 / s.last_stepsize * norm(
                 M, s.q, inverse_retract(M, s.q, get_iterate(s), s.inverse_retraction_method)
             )
         if sc.last_change < sc.threshold
@@ -459,32 +649,24 @@ function (sc::StopWhenGradientMappingNormLess)(
     end
     return false
 end
+
 function get_reason(c::StopWhenGradientMappingNormLess)
     if (c.last_change < c.threshold) && (c.at_iteration >= 0)
         return "The algorithm reached approximately critical point after $(c.at_iteration) iterations; the gradient mapping norm ($(c.last_change)) is less than $(c.threshold).\n"
     end
     return ""
 end
+
 function status_summary(c::StopWhenGradientMappingNormLess)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
     return "|G| < $(c.threshold): $s"
 end
+
 indicates_convergence(c::StopWhenGradientMappingNormLess) = true
+
 function show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(
         io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
     )
-end
-
-"""
-    update_stopping_criterion!(c::StopWhenGradientMappingNormLess, :MinGradNorm, v::Float64)
-
-Update the minimal gradient norm when an algorithm shall stop
-"""
-function update_stopping_criterion!(
-    c::StopWhenGradientMappingNormLess, ::Val{:MinGradNorm}, v::Float64
-)
-    c.threshold = v
-    return c
 end

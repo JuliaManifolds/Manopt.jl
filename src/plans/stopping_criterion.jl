@@ -594,6 +594,7 @@ function set_parameter!(c::StopWhenGradientChangeLess, ::Val{:MinGradientChange}
     return c
 end
 
+
 """
     StopWhenGradientNormLess <: StoppingCriterion
 

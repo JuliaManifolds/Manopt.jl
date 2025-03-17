@@ -529,7 +529,7 @@ export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
-export backtracking_step_size
+export BacktrackingProximalStepsize
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
