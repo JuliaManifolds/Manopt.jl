@@ -190,7 +190,7 @@ $(_var(:Field, :retraction_method))
 * `X` - tangent vector for storing gradient
 $(_var(:Field, :stopping_criterion, "stop"))
 * `acceleration` - a function `(problem, state, k) -> state` to compute an acceleration before the gradient step
-* `stepsize` - a function or [`ProximalStepsize`](@ref) object to compute the stepsize
+* `stepsize` - a function or [`Stepsize`](@ref) object to compute the stepsize
 * `last_stepsize` - stores the last computed stepsize
 $(_var(:Field, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F}"; add="or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))
 $(_var(:Field, :sub_state; add="This field is ignored, if the `sub_problem` is `Nothing`"))
@@ -224,7 +224,7 @@ mutable struct ProximalGradientMethodState{
     St<:AbstractManoptSolverState,
     A,
     S<:StoppingCriterion,
-    Λ<:Union{Function,Stepsize},
+    Λ,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
     R,
@@ -250,7 +250,7 @@ function ProximalGradientMethodState(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
-    stepsize::Union{Function,Stepsize,Nothing}=nothing,
+    stepsize::Union{Function,Number,Nothing}=nothing,
     stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
                           StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),
@@ -288,10 +288,11 @@ function ProximalGradientMethodState(
             default_stepsize(M, ProximalGradientMethodState)
         end
     else
-        stepsize
+        ConstantProximalStepsize(stepsize)
     end
 
     last_stepsize = zero(number_eltype(p))
+
     return ProximalGradientMethodState{
         P,T,Pr,typeof(_sub_state),A,S,typeof(_stepsize),RM,IRM,typeof(last_stepsize)
     }(
@@ -311,14 +312,7 @@ function ProximalGradientMethodState(
 end
 
 """
-    ProximalStepsize <: Stepsize
-
-An abstract type for stepsizes used in proximal gradient methods.
-"""
-abstract type ProximalStepsize <: Stepsize end
-
-"""
-    ConstantProximalStepsize <: ProximalStepsize
+    ConstantProximalStepsize <: Stepsize
 
 A functor that returns a fixed stepsize for proximal gradient methods.
 
@@ -330,7 +324,7 @@ A functor that returns a fixed stepsize for proximal gradient methods.
 
 Initialize the stepsize to a constant `s`.
 """
-struct ConstantProximalStepsize{T} <: ProximalStepsize
+struct ConstantProximalStepsize{T} <: Stepsize
     length::T
 end
 
@@ -343,7 +337,7 @@ end
 get_initial_stepsize(s::ConstantProximalStepsize) = s.length
 
 @doc raw"""
-    BacktrackingProximalStepsize <: ProximalStepsize
+    BacktrackingProximalStepsize <: Stepsize
 
 A functor for backtracking line search in proximal gradient methods.
 
@@ -364,7 +358,7 @@ A functor for backtracking line search in proximal gradient methods.
 * `η=0.5` - step size reduction factor
 * `strategy=:convex` - backtracking strategy, either `:convex` or `:nonconvex`
 """
-mutable struct BacktrackingProximalStepsize{P,T} <: ProximalStepsize
+mutable struct BacktrackingProximalStepsize{P,T} <: Stepsize
     initial_stepsize::T
     γ::T
     η::T
@@ -484,22 +478,11 @@ end
 """
     default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
 
-Returns the default proximal stepsize, which is a constant stepsize of 0.25.
+Returns the default proximal stepsize, which is set to a constant stepsize of 1e-1.
 """
 function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
-    return ConstantProximalStepsize(0.25)
+    return ConstantProximalStepsize(1e-1)
 end
-
-# Wrapper for function-based stepsizes
-struct WrappedProximalStepsize{F} <: ProximalStepsize
-    func::F
-end
-
-function (s::WrappedProximalStepsize)(mp, st, i, args...; kwargs...)
-    return s.func(i)
-end
-
-get_initial_stepsize(s::WrappedProximalStepsize) = s.func(1)
 
 get_iterate(pgms::ProximalGradientMethodState) = pgms.p
 
