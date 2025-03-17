@@ -478,7 +478,6 @@ function step_solver!(
     #println("norm Newton direction=", norm(s.X))
     #println("stepsize=", step)
     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
-    println("Ciao")
     s.p_trial = copy(get_manifold(mp),s.p)
     s.is_same = true
     return s
