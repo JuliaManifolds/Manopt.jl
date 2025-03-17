@@ -33,6 +33,7 @@ computing the gradient step.
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f; add="total cost function `f = g + h`"))
 * `g`:              the smooth part of the cost function
+* `h`:              the nonsmooth part of the cost function
 * `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
 * `prox_h`:           a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the nonsmoooth part ``h`` of ``f``
 $(_var(:Argument, :p))
@@ -66,6 +67,23 @@ function proximal_gradient_method(
     return proximal_gradient_method(M, mpgo, p; evaluation=evaluation, kwargs...)
 end
 
+# For backward compatibility
+# function proximal_gradient_method(
+#     M::AbstractManifold,
+#     f,
+#     grad_g,
+#     prox_h,
+#     p=rand(M);
+#     evaluation=AllocatingEvaluation(),
+#     kwargs...,
+# )
+#     # Define dummy g and h that don't compute values separately
+#     g = (M, p) -> get_cost(M, f, p)  # Fallback to total cost
+#     h = (M, p) -> zero(number_eltype(p))  # Fallback to zero
+#     mpgo = ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
+#     return proximal_gradient_method(M, mpgo, p; evaluation=evaluation, kwargs...)
+# end
+
 function proximal_gradient_method(
     M::AbstractManifold, mpgo::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldProximalGradientObjective,AbstractDecoratedManifoldObjective}}
@@ -86,6 +104,17 @@ function proximal_gradient_method!(
     mpgo = ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
     return proximal_gradient_method!(M, mpgo, p; evaluation=evaluation, kwargs...)
 end
+
+# For backward compatibility
+# function proximal_gradient_method!(
+#     M::AbstractManifold, f, grad_g, prox_h, p; evaluation=AllocatingEvaluation(), kwargs...
+# )
+#     # Define dummy g and h that don't compute values separately
+#     g = (M, p) -> get_cost(M, f, p)  # Fallback to total cost
+#     h = (M, p) -> zero(number_eltype(p))  # Fallback to zero
+#     mpgo = ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
+#     return proximal_gradient_method!(M, mpgo, p; evaluation=evaluation, kwargs...)
+# end
 
 function proximal_gradient_method!(
     M::AbstractManifold,
