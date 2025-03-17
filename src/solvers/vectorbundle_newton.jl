@@ -101,7 +101,7 @@ mutable struct AffineCovariantStepsize{T} <: Stepsize
     theta::Float64
     theta_des::Float64
     theta_acc::Float64
-    #newton_direction::Vector{Float64}
+    last_stepsize::Float64
 end
 function AffineCovariantStepsize(
     M::AbstractManifold=DefaultManifold(2);
@@ -109,12 +109,13 @@ function AffineCovariantStepsize(
     theta=1.0,
     #type=:relative,
     theta_des=0.5,
-    theta_acc=1.1*theta_des
+    theta_acc=1.1*theta_des,
+    last_stepsize = 1.0
 )
-    return AffineCovariantStepsize{typeof(stepsize)}(1.0, 1.3, theta_des, theta_acc)
+    return AffineCovariantStepsize{typeof(stepsize)}(1.0, 1.3, theta_des, theta_acc, 1.0)
 end
 function AffineCovariantStepsize(stepsize::T) where {T<:Number}
-    return AffineCovariantStepsize{T}(1.0, 1.3, theta_des, theta_acc)
+    return AffineCovariantStepsize{T}(1.0, 1.3, theta_des, theta_acc, 1.0)
 end
 function (acs::AffineCovariantStepsize)(
     amp::AbstractManoptProblem, ams::VectorbundleNewtonState, ::Any, args...; kwargs...
@@ -126,32 +127,26 @@ function (acs::AffineCovariantStepsize)(
     while acs.theta > acs.theta_acc && acs.alpha > 1e-10
         acs.alpha = copy(alpha_new)
         X_alpha = acs.alpha * ams.X
-        #println("differenz vorher=", norm(ams.p_trial - ams.p))
         retract!(get_manifold(amp), ams.p_trial, ams.p, X_alpha, ams.retraction_method)
-        #println("differenz nachher=", norm(ams.p_trial - ams.p))
         ams.is_same = false
-        #set_manopt_parameter!(ams.sub_problem, :Manifold, :Basepoint, ams.p)
-
-        #set_iterate!(ams.sub_state, get_manifold(amp), zero_vector(get_manifold(amp), ams.p))
-        #solve!(ams.sub_problem, ams.sub_state)
 
         simplified_newton = ams.sub_problem(amp, ams, 1)
         acs.theta = norm(simplified_newton)/norm(ams.X)
-        # println("theta=", acs.theta)
         alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
-        #println("alpha!!!=", acs.alpha)
-        #if acs.alpha < 1e-15
-        #    println("Newton's method failed")
-        #    return
-        #end
+        if acs.alpha < 1e-15
+            println("Newton's method failed")
+            return
+        end
     end
-    #println("Hallo")
-    # println("alpha_end = ", acs.alpha)
-    #acs.alpha = 1.0
     ams.is_same=true
+    acs.last_stepsize = acs.alpha
     return acs.alpha
 end
 get_initial_stepsize(s::AffineCovariantStepsize) = 1.0
+
+function get_last_stepsize(step::AffineCovariantStepsize, ::Any...)
+    return step.last_stepsize
+end
 
 function default_stepsize(M::AbstractManifold, ::Type{VectorbundleNewtonState})
     return AffineCovariantStepsize(M)
@@ -483,6 +478,7 @@ function step_solver!(
     #println("norm Newton direction=", norm(s.X))
     #println("stepsize=", step)
     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
+    println("Ciao")
     s.p_trial = copy(get_manifold(mp),s.p)
     s.is_same = true
     return s
@@ -491,7 +487,7 @@ end
 function step_solver!(
     mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
 ) where {P,T,PR}
-#println("HAllo 3")
+    #println("Hallo 3")
     # compute Newton direction
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     o = get_objective(mp)
