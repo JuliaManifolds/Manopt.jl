@@ -67,23 +67,6 @@ function proximal_gradient_method(
     return proximal_gradient_method(M, mpgo, p; evaluation=evaluation, kwargs...)
 end
 
-# For backward compatibility
-# function proximal_gradient_method(
-#     M::AbstractManifold,
-#     f,
-#     grad_g,
-#     prox_h,
-#     p=rand(M);
-#     evaluation=AllocatingEvaluation(),
-#     kwargs...,
-# )
-#     # Define dummy g and h that don't compute values separately
-#     g = (M, p) -> get_cost(M, f, p)  # Fallback to total cost
-#     h = (M, p) -> zero(number_eltype(p))  # Fallback to zero
-#     mpgo = ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
-#     return proximal_gradient_method(M, mpgo, p; evaluation=evaluation, kwargs...)
-# end
-
 function proximal_gradient_method(
     M::AbstractManifold, mpgo::O, p=rand(M); kwargs...
 ) where {O<:Union{ManifoldProximalGradientObjective,AbstractDecoratedManifoldObjective}}
@@ -101,20 +84,9 @@ function proximal_gradient_method!(
     evaluation=AllocatingEvaluation(),
     kwargs...,
 )
-    mpgo = ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
+    mpgo = ManifoldProximalGradientObjective(f, g, grad_g, prox_h; evaluation=evaluation)
     return proximal_gradient_method!(M, mpgo, p; evaluation=evaluation, kwargs...)
 end
-
-# For backward compatibility
-# function proximal_gradient_method!(
-#     M::AbstractManifold, f, grad_g, prox_h, p; evaluation=AllocatingEvaluation(), kwargs...
-# )
-#     # Define dummy g and h that don't compute values separately
-#     g = (M, p) -> get_cost(M, f, p)  # Fallback to total cost
-#     h = (M, p) -> zero(number_eltype(p))  # Fallback to zero
-#     mpgo = ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
-#     return proximal_gradient_method!(M, mpgo, p; evaluation=evaluation, kwargs...)
-# end
 
 function proximal_gradient_method!(
     M::AbstractManifold,
@@ -124,7 +96,9 @@ function proximal_gradient_method!(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
-    stepsize=nothing,
+    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
+        M, ProximalGradientMethodState
+    ),
     stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
                           StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),

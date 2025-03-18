@@ -37,36 +37,13 @@ struct ManifoldProximalGradientObjective{E<:AbstractEvaluationType,TC,TG,TGG,TP}
        AbstractManifoldCostObjective{E,TC}
     cost::TC # f = g + h
     cost_g::TG # smooth part
-    # cost_h::TH # nonsmooth part
     gradient_g!!::TGG
     proximal_map_h!!::TP
     function ManifoldProximalGradientObjective(
-        f::TC, 
-        g::TG, 
-        # h::TH, 
-        grad_g::TGG, 
-        prox_h::TP; 
-        evaluation::E=AllocatingEvaluation()
+        f::TC, g::TG, grad_g::TGG, prox_h::TP; evaluation::E=AllocatingEvaluation()
     ) where {TC,TG,TGG,TP,E<:AbstractEvaluationType}
-        # f = g + h
-        return new{E,TC,TG,TGG,TP}(
-            f, 
-            g, 
-            # h, 
-            grad_g, 
-            prox_h
-        )
+        return new{E,TC,TG,TGG,TP}(f, g, grad_g, prox_h)
     end
-end
-
-# For backward compatibility
-function ManifoldProximalGradientObjective(
-    f::TF, grad_g::TG, prox_h::TP; evaluation::E=AllocatingEvaluation()
-) where {TF,TG,TP,E<:AbstractEvaluationType}
-    # Define dummy g and h that don't compute values separately
-    g = (M, p) -> get_cost(M, f, p)  # Fallback to total cost
-    h = (M, p) -> zero(number_eltype(p))  # Fallback to zero
-    return ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h; evaluation=evaluation)
 end
 
 """
@@ -190,7 +167,7 @@ $(_var(:Field, :retraction_method))
 * `X` - tangent vector for storing gradient
 $(_var(:Field, :stopping_criterion, "stop"))
 * `acceleration` - a function `(problem, state, k) -> state` to compute an acceleration before the gradient step
-* `stepsize` - a function or [`ProximalStepsize`](@ref) object to compute the stepsize
+* `stepsize` - a function or [`Stepsize`](@ref) object to compute the stepsize
 * `last_stepsize` - stores the last computed stepsize
 $(_var(:Field, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F}"; add="or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))
 $(_var(:Field, :sub_state; add="This field is ignored, if the `sub_problem` is `Nothing`"))
@@ -224,14 +201,14 @@ mutable struct ProximalGradientMethodState{
     St<:AbstractManoptSolverState,
     A,
     S<:StoppingCriterion,
-    Λ<:Union{Function,Stepsize},
+    TStepsize<:Stepsize,
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
     R,
 } <: AbstractManoptSolverState
     a::P
     acceleration::A
-    stepsize::Λ
+    stepsize::TStepsize
     last_stepsize::R
     p::P
     q::P
@@ -250,7 +227,7 @@ function ProximalGradientMethodState(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
-    stepsize::Union{Function,Stepsize,Nothing}=nothing,
+    stepsize::TStepsize=default_stepsize(M, ProximalGradientMethodState),
     stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
                           StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),
@@ -268,6 +245,7 @@ function ProximalGradientMethodState(
     St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType},
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
+    TStepsize<:Stepsize,
 }
     _sub_state = if sub_state isa AbstractEvaluationType
         ClosedFormSubSolverState(; evaluation=sub_state)
@@ -275,29 +253,13 @@ function ProximalGradientMethodState(
         sub_state
     end
 
-    _stepsize = if isnothing(stepsize)
-        default_stepsize(M, ProximalGradientMethodState)
-    elseif stepsize isa Function
-        # Convert function to a ConstantProximalStepsize if it's a constant function
-        # or wrap it in a suitable structure
-        if applicable(stepsize, 1) && applicable(stepsize, 2)
-            # Create a function-based stepsize
-            WrappedProximalStepsize(stepsize)
-        else
-            # It's not a suitable function, use default
-            default_stepsize(M, ProximalGradientMethodState)
-        end
-    else
-        stepsize
-    end
-
     last_stepsize = zero(number_eltype(p))
     return ProximalGradientMethodState{
-        P,T,Pr,typeof(_sub_state),A,S,typeof(_stepsize),RM,IRM,typeof(last_stepsize)
+        P,T,Pr,typeof(_sub_state),A,S,TStepsize,RM,IRM,typeof(last_stepsize)
     }(
         copy(M, p),
         acceleration,
-        _stepsize,
+        stepsize,
         last_stepsize,
         p,
         copy(M, p),
@@ -310,108 +272,85 @@ function ProximalGradientMethodState(
     )
 end
 
-"""
-    ProximalStepsize <: Stepsize
-
-An abstract type for stepsizes used in proximal gradient methods.
-"""
-abstract type ProximalStepsize <: Stepsize end
-
-"""
-    ConstantProximalStepsize <: ProximalStepsize
-
-A functor that returns a fixed stepsize for proximal gradient methods.
-
-# Fields
-* `length` – constant value for the step size.
-
-# Constructors
-    ConstantProximalStepsize(s::Real)
-
-Initialize the stepsize to a constant `s`.
-"""
-struct ConstantProximalStepsize{T} <: ProximalStepsize
-    length::T
-end
-
-function (cs::ConstantProximalStepsize)(
-    ::AbstractManoptProblem, ::AbstractManoptSolverState, ::Any, args...; kwargs...
-)
-    return cs.length
-end
-
-get_initial_stepsize(s::ConstantProximalStepsize) = s.length
-
 @doc raw"""
-    BacktrackingProximalStepsize <: ProximalStepsize
+    ProxGradBacktrackingStepsize <: Stepsize
 
 A functor for backtracking line search in proximal gradient methods.
 
 # Fields
 * `initial_stepsize::T` - initial step size guess
-* `γ::T` - sufficient decrease parameter (default: 0.5)
-* `η::T` - step size reduction factor (default: 0.5) 
+* `sufficient_decrease::T` - sufficient decrease parameter (default: 0.5)
+* `contraction_factor::T` - step size reduction factor (default: 0.5) 
 * `strategy::Symbol` - `:nonconvex` or `:convex` (default: `:convex`)
-* `work_point::P` - a working point used during backtracking
+* `candidate_point::P` - a working point used during backtracking
 * `last_stepsize::T` - the last computed stepsize
 
 # Constructor
-    BacktrackingProximalStepsize(M::AbstractManifold; kwargs...)
+    ProxGradBacktrackingStepsize(M::AbstractManifold; kwargs...)
 
 ## Keyword arguments
 * `initial_stepsize=1.0` - initial stepsize to try
-* `γ=0.5` - sufficient decrease parameter
-* `η=0.5` - step size reduction factor
-* `strategy=:convex` - backtracking strategy, either `:convex` or `:nonconvex`
+* `sufficient_decrease=0.5` - sufficient decrease parameter
+* `contraction_factor=0.5` - step size reduction factor
+* `strategy=:nonconvex` - backtracking strategy, either `:convex` or `:nonconvex`
 """
-mutable struct BacktrackingProximalStepsize{P,T} <: ProximalStepsize
+mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
     initial_stepsize::T
-    γ::T
-    η::T
+    sufficient_decrease::T
+    contraction_factor::T
     strategy::Symbol
-    work_point::P
+    candidate_point::P
     last_stepsize::T
 
-    function BacktrackingProximalStepsize(
+    function ProxGradBacktrackingStepsize(
         M::AbstractManifold;
         initial_stepsize::T=1.0,
-        γ::T=0.5,
-        η::T=0.5,
-        strategy::Symbol=:convex,
+        sufficient_decrease::T=0.5,
+        contraction_factor::T=0.5,
+        strategy::Symbol=:nonconvex,
     ) where {T}
-        0 < γ < 1 || throw(DomainError(γ, "γ must be in (0, 1)"))
-        0 < η < 1 || throw(DomainError(η, "η must be in (0, 1)"))
+        0 < sufficient_decrease < 1 ||
+            throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
+        0 < contraction_factor < 1 ||
+            throw(DomainError(contraction_factor, "contraction_factor must be in (0, 1)"))
         initial_stepsize > 0 ||
             throw(DomainError(initial_stepsize, "initial_stepsize must be positive"))
         strategy in [:convex, :nonconvex] ||
             throw(DomainError(strategy, "strategy must be either :convex or :nonconvex"))
 
         p = rand(M)
-        return new{typeof(p),T}(initial_stepsize, γ, η, strategy, p, initial_stepsize)
+        return new{typeof(p),T}(
+            initial_stepsize,
+            sufficient_decrease,
+            contraction_factor,
+            strategy,
+            p,
+            initial_stepsize,
+        )
     end
 end
 
-get_initial_stepsize(s::BacktrackingProximalStepsize) = s.initial_stepsize
+get_initial_stepsize(s::ProxGradBacktrackingStepsize) = s.initial_stepsize
 
 @doc raw"""
-    (s::BacktrackingProximalStepsize)(mp, st, i)
+    (s::ProxGradBacktrackingStepsize)(mp, st, i)
 
-Compute a stepsize for the proximal gradient method using backtracking line search.
+Compute a stepsize for the proximal gradient method using a backtracking line search.
 
-For the nonconvex case (lines 309-314 in manuscript), the condition is:
+For the nonconvex case, the condition is:
 ```math
 f(p) - f(T_{λ}(p)) ≥ γλ\\|G_{λ}(p)\\|^2
 ```
 where `G_{λ}(p) = (1/λ) * log_p(T_{λ}(p))` is the gradient mapping.
 
-For the convex case (lines 568-574 in manuscript), the condition is:
+For the convex case, the condition is:
 ```math
 g(T_{λ}(p)) ≤ g(p) + ⟨\\operatorname{grad} g(p), \\operatorname{log}_p T_{λ}(p)⟩ + \\frac{1}{2λ} \\operatorname{dist}^2(p, T_{λ}(p))
 ```
 
 Returns a stepsize λ that satisfies the specified condition.
 """
-function (s::BacktrackingProximalStepsize)(
+function (s::ProxGradBacktrackingStepsize)(
     mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
 )
     # Initialization
@@ -454,52 +393,40 @@ function (s::BacktrackingProximalStepsize)(
         log_p_q_norm_squared = norm(M, p, log_p_q)^2
 
         if s.strategy === :nonconvex
-            # Check nonconvex descent condition (manuscript line 312)
-            # f(p) - f(T_λ(p)) ≥ γλ||G_λ(p)||^2
-            # With G_λ(p) = (1/λ) * log_p(T_λ(p)), the condition becomes:
-            # f(p) - f(T_λ(p)) ≥ (γ/λ) * ||log_p(T_λ(p))||^2
+            # Nonconvex descent condition
             if get_cost(mp, p) - get_cost(mp, candidate_point) >=
-                (s.γ / λ) * log_p_q_norm_squared
+                (s.sufficient_decrease / λ) * log_p_q_norm_squared
                 s.last_stepsize = λ
                 return λ
             end
-        else  # convex condition (manuscript line 571-572)
-            # Use g(p) directly instead of f(p)
+        else
             g_p = get_cost_g(M, objective, p)
             g_q = get_cost_g(M, objective, candidate_point)
 
-            # Check the convex descent condition:
-            # g(T_λ(p)) ≤ g(p) + ⟨grad g(p), log_p(T_λ(p))⟩ + (1/2λ) * dist²(p, T_λ(p))
-            if g_q <= g_p + inner(M, p, X, log_p_q) + (1 / (2 * λ)) * log_p_q_norm_squared
+            # Convex descent condition
+            if g_q <= g_p + inner(M, p, X, log_p_q) + (1 / 2λ) * log_p_q_norm_squared
                 s.last_stepsize = λ
                 return λ
             end
         end
 
         # Reduce step size
-        λ *= s.η
+        λ *= s.contraction_factor
     end
+end
+
+function ProxGradBacktracking(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.ProxGradBacktrackingStepsize, args...; kwargs...)
 end
 
 """
     default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
 
-Returns the default proximal stepsize, which is a constant stepsize of 0.25.
+Returns the default proximal stepsize, which is a nonconvex backtracking strategy.
 """
 function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
-    return ConstantProximalStepsize(0.25)
+    return ProxGradBacktrackingStepsize(M; strategy=:nonconvex)
 end
-
-# Wrapper for function-based stepsizes
-struct WrappedProximalStepsize{F} <: ProximalStepsize
-    func::F
-end
-
-function (s::WrappedProximalStepsize)(mp, st, i, args...; kwargs...)
-    return s.func(i)
-end
-
-get_initial_stepsize(s::WrappedProximalStepsize) = s.func(1)
 
 get_iterate(pgms::ProximalGradientMethodState) = pgms.p
 
