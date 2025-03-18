@@ -118,7 +118,7 @@ function proximal_gradient_method!(
         M;
         p=p,
         acceleration=acceleration,
-        stepsize=stepsize,
+        stepsize=_produce_type(stepsize, M),
         retraction_method=retraction_method,
         inverse_retraction_method=inverse_retraction_method,
         stopping_criterion=stopping_criterion,
@@ -143,19 +143,19 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProximalGradientMethodSt
     # Store previous iterate
     copyto!(M, pgms.q, pgms.p)
 
-    # Acceleration
+    # (Possible) Acceleration
     pgms.acceleration(amp, pgms, k)
 
-    # Evaluate the gradient at accelerated point
+    # Evaluate the gradient at (possibly) accelerated point
     get_gradient!(amp, pgms.X, pgms.a)
 
-    # Compute stepsize using the provided stepsize object or function
+    # Compute stepsize using the provided stepsize object
     pgms.last_stepsize = get_stepsize(amp, pgms, k)
 
     # Gradient step with chosen stepsize
     retract!(M, pgms.a, pgms.a, -pgms.last_stepsize * pgms.X, pgms.retraction_method)
 
-    # Proximal step
+    # Proximal step with chosen stepsize
     _pgm_proximal_step(amp, pgms, pgms.last_stepsize)
 
     return pgms

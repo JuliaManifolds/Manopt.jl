@@ -1,5 +1,5 @@
 @doc raw"""
-    ManifoldProximalGradientObjective{E,<:AbstractEvaluationType, TC, TG, TH, TGG, TP} <: AbstractManifoldObjective{E,TC,TGG}
+    ManifoldProximalGradientObjective{E,<:AbstractEvaluationType, TC, TG, TGG, TP} <: AbstractManifoldObjective{E,TC,TGG}
 
 Model an objective of the form
 ```math
@@ -15,18 +15,15 @@ as well as ``\operatorname{grad} g`` and ``\operatorname{prox}_{λ} h``.
 
 * `cost`: the overall cost ``f = g + h``
 * `cost_g`: the smooth cost component ``g``
-* `cost_h`: the nonsmooth cost component ``h``
 * `gradient_g!!`: the gradient ``\operatorname{grad} g``
 * `proximal_map_h!!`: the proximal map ``\operatorname{prox}_{λ} h``
 
 # Constructor
-    ManifoldProximalGradientObjective(f, g, h, grad_g, prox_h;
+    ManifoldProximalGradientObjective(f, g, grad_g, prox_h;
         evalauation=[`AllocatingEvaluation`](@ref)
     )
 
-Generate the proximal gradient objective given the total cost `f`, smooth cost `g`, 
-nonsmooth cost `h`, the gradient of the smooth component `grad_g`, and the 
-proximal map of the nonsmooth component `prox_h`.
+Generate the proximal gradient objective given the total cost `f = g + h`, smooth cost `g`, the gradient of the smooth component `grad_g`, and the proximal map of the nonsmooth component `prox_h`.
 
 ## Keyword arguments
 
@@ -151,7 +148,8 @@ function get_proximal_map!(
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
-
+# 
+# Method State
 @doc """
     ProximalGradientMethodState <: AbstractManoptSolverState
 
@@ -227,7 +225,7 @@ function ProximalGradientMethodState(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
-    stepsize::TStepsize=default_stepsize(M, ProximalGradientMethodState),
+    stepsize::TS=default_stepsize(M, ProximalGradientMethodState),
     stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
                           StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),
@@ -245,7 +243,7 @@ function ProximalGradientMethodState(
     St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType},
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
-    TStepsize<:Stepsize,
+    TS<:Stepsize,
 }
     _sub_state = if sub_state isa AbstractEvaluationType
         ClosedFormSubSolverState(; evaluation=sub_state)
@@ -255,7 +253,7 @@ function ProximalGradientMethodState(
 
     last_stepsize = zero(number_eltype(p))
     return ProximalGradientMethodState{
-        P,T,Pr,typeof(_sub_state),A,S,TStepsize,RM,IRM,typeof(last_stepsize)
+        P,T,Pr,typeof(_sub_state),A,S,TS,RM,IRM,typeof(last_stepsize)
     }(
         copy(M, p),
         acceleration,
@@ -272,6 +270,35 @@ function ProximalGradientMethodState(
     )
 end
 
+get_iterate(pgms::ProximalGradientMethodState) = pgms.p
+
+function set_iterate!(pgms::ProximalGradientMethodState, p)
+    pgms.p = p
+    return p
+end
+
+function show(io::IO, pgms::ProximalGradientMethodState)
+    i = get_count(pgms, :Iterations)
+    Iter = (i > 0) ? "After $i iterations\n" : ""
+    Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
+    s = """
+    # Solver state for `Manopt.jl`s Proximal Gradient Method
+    $Iter
+
+    ## Parameters
+
+    * retraction_method:              $(pgms.retraction_method)
+    * stepsize:                       $(typeof(pgms.stepsize))
+    * acceleration:                   $(typeof(pgms.acceleration))
+
+    ## Stopping criterion
+
+    $(status_summary(pgms.stop))
+    This indicates convergence: $Conv"""
+    return print(io, s)
+end
+# 
+# Stepsize
 @doc raw"""
     ProxGradBacktrackingStepsize <: Stepsize
 
@@ -425,35 +452,7 @@ end
 Returns the default proximal stepsize, which is a nonconvex backtracking strategy.
 """
 function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
-    return ProxGradBacktrackingStepsize(M; strategy=:nonconvex)
-end
-
-get_iterate(pgms::ProximalGradientMethodState) = pgms.p
-
-function set_iterate!(pgms::ProximalGradientMethodState, p)
-    pgms.p = p
-    return p
-end
-
-function show(io::IO, pgms::ProximalGradientMethodState)
-    i = get_count(pgms, :Iterations)
-    Iter = (i > 0) ? "After $i iterations\n" : ""
-    Conv = indicates_convergence(pgms.stop) ? "Yes" : "No"
-    s = """
-    # Solver state for `Manopt.jl`s Proximal Gradient Method
-    $Iter
-
-    ## Parameters
-
-    * retraction_method:              $(pgms.retraction_method)
-    * stepsize:                       $(typeof(pgms.stepsize))
-    * acceleration:                   $(typeof(pgms.acceleration))
-
-    ## Stopping criterion
-
-    $(status_summary(pgms.stop))
-    This indicates convergence: $Conv"""
-    return print(io, s)
+    return ProxGradBacktrackingStepsize(M; initial_stepsize=1.5, strategy=:nonconvex)
 end
 
 # Acceleration
