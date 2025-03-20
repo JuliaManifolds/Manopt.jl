@@ -97,7 +97,7 @@ end</code></pre><pre><code class="nohighlight hljs">g_grad_g! (generic function 
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
     return_objective=true,
-)</code></pre><pre><code class="nohighlight hljs">  1.332518 seconds (2.40 M allocations: 121.225 MiB, 1.27% gc time, 99.66% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  1.310490 seconds (2.40 M allocations: 121.383 MiB, 1.34% gc time, 99.67% compilation time)
 
 ## Cache
   * :Cost     : 25/25 entries of type Float64 used
@@ -113,7 +113,7 @@ To access the solver result, call `get_solver_result` on this variable.</code></
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
     return_objective=true,
-)</code></pre><pre><code class="nohighlight hljs">  0.743505 seconds (1.15 M allocations: 66.645 MiB, 99.09% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  0.724495 seconds (1.15 M allocations: 66.598 MiB, 99.10% compilation time)
 
 ## Cache
   * :Cost     : 25/25 entries of type Float64 used
@@ -160,7 +160,7 @@ grad_g3!(M, X, p) = storage_g(Val(:Gradient), M, X, p)
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 2),
     return_objective=true#, return_state=true
-)</code></pre><pre><code class="nohighlight hljs">  0.571156 seconds (562.51 k allocations: 29.818 MiB, 2.73% gc time, 99.26% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  0.549988 seconds (562.51 k allocations: 29.814 MiB, 3.02% gc time, 99.26% compilation time)
 
 ## Cache
   * :Cost     : 2/2 entries of type Float64 used
@@ -199,7 +199,7 @@ grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
     count=[:Cost, :Gradient],
     cache=(:LRU, [:Cost, :Gradient], 25),
     return_objective=true,
-)</code></pre><pre><code class="nohighlight hljs">  0.475716 seconds (520.08 k allocations: 27.934 MiB, 98.91% compilation time)
+)</code></pre><pre><code class="nohighlight hljs">  0.472327 seconds (520.09 k allocations: 27.933 MiB, 98.93% compilation time)
 
 ## Cache
   * :Cost     : 25/25 entries of type Float64 used
@@ -212,18 +212,18 @@ grad_g4!(M, X, p) = cache_g(Val(:Gradient), M, X, p)
 To access the solver result, call `get_solver_result` on this variable.</code></pre><p>and for safety let’s verify that we are reasonably close</p><pre><code class="language-julia hljs">p4 = get_solver_result(s4)
 g(N, p4) - f_star</code></pre><pre><code class="nohighlight hljs">1.6049384043981263e-11</code></pre><p>For this example, or maybe even <a href="../../solvers/gradient_descent/#Manopt.gradient_descent"><code>gradient_descent</code></a> in general it seems, this additional (second, inner) cache does not improve the result further, it is about the same effort both time and allocation-wise.</p><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>While the second approach of <a href="../../plans/objective/#Manopt.ManifoldCostGradientObjective"><code>ManifoldCostGradientObjective</code></a> is very easy to implement, both the storage and the (local) cache approach are more efficient. All three are an improvement over the first implementation without sharing interim results. The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.</p><h2 id="Technical-details"><a class="docs-heading-anchor" href="#Technical-details">Technical details</a><a id="Technical-details-1"></a><a class="docs-heading-anchor-permalink" href="#Technical-details" title="Permalink"></a></h2><p>This tutorial is cached. It was last run on the following package versions.</p><pre><code class="language-julia hljs">using Pkg
 Pkg.status()</code></pre><pre><code class="nohighlight hljs">Status `~/work/Manopt.jl/Manopt.jl/tutorials/Project.toml`
-  [47edcb42] ADTypes v1.13.0
+  [47edcb42] ADTypes v1.14.0
   [6e4b80f9] BenchmarkTools v1.6.0
 ⌃ [5ae59095] Colors v0.12.11
-  [31c24e10] Distributions v0.25.117
+  [31c24e10] Distributions v0.25.118
   [26cc04aa] FiniteDifferences v0.12.32
   [7073ff75] IJulia v1.26.0
-  [8ac3fa9e] LRUCache v1.6.1
+  [8ac3fa9e] LRUCache v1.6.2
   [af67fdf4] ManifoldDiff v0.4.2
   [1cead3c2] Manifolds v0.10.14
   [3362f125] ManifoldsBase v1.0.1
-  [0fc0a36d] Manopt v0.5.7 `~/work/Manopt.jl/Manopt.jl`
-  [91a5bcdd] Plots v1.40.9
-  [731186ca] RecursiveArrayTools v3.31.0
+  [0fc0a36d] Manopt v0.5.8 `~/work/Manopt.jl/Manopt.jl`
+  [91a5bcdd] Plots v1.40.11
+  [731186ca] RecursiveArrayTools v3.31.1
 Info Packages marked with ⌃ have new versions available and may be upgradable.</code></pre><pre><code class="language-julia hljs">using Dates
-now()</code></pre><pre><code class="nohighlight hljs">2025-02-27T16:11:19.401</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../EmbeddingObjectives/">« Define objectives in the embedding</a><a class="docs-footer-nextpage" href="../HowToDebug/">Print debug output »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.1 on <span class="colophon-date" title="Friday 28 February 2025 21:02">Friday 28 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+now()</code></pre><pre><code class="nohighlight hljs">2025-03-20T12:44:46.229</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../EmbeddingObjectives/">« Define objectives in the embedding</a><a class="docs-footer-nextpage" href="../HowToDebug/">Print debug output »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Thursday 20 March 2025 12:50">Thursday 20 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
