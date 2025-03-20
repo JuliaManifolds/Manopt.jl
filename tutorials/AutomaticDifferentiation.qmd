@@ -204,7 +204,7 @@ We could first just compute the gradient using `FiniteDifferences.jl`, but this 
 FiniteDifferences.grad(central_fdm(5, 1), G, q)
 ```
 
-Instead, we use the ``[`RiemannianProjectedBackend`](@extref `ManifoldDiff.RiemannianProjectionBackend`)``{=commonmark} of ``[`Manifolds.jl`](@extref Manifolds :std:doc:`index`)``{=commonmark}, which in this case internally uses `FiniteDifferences.jl` to compute a Euclidean gradient but then uses the conversion explained before to derive the Riemannian gradient.
+Instead, we use the ``[`RiemannianProjectedBackend`](@extref `ManifoldDiff.RiemannianProjectionBackend`)``{=commonmark} of ``[`ManifoldDiff.jl`](@extref ManifoldDiff :std:doc:`index`)``{=commonmark}, which in this case internally uses `FiniteDifferences.jl` to compute a Euclidean gradient but then uses the conversion explained before to derive the Riemannian gradient.
 
 We define this here again as a function `grad_G_FD` that could be used in the `Manopt.jl` framework within a gradient based optimization.
 
@@ -243,11 +243,14 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
 ```
