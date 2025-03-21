@@ -665,6 +665,9 @@ as a linear invertible map ``P: $(_math(:TpM)) → $(_math(:TpM))`` that usually
 The gradient is then preconditioned as ``P(X)``, where ``X`` is either the
 gradient of the objective or the result of a previous (internally stored) gradient processor.
 
+For example if you provide as the preconditioner the inverse of the Hessian ``$(_tex(:Hess))^{-1} f``,
+you turn a gradient descent into a Newton method.
+
 # Arguments
 
 $(_var(:Argument, :M; type=true)) (optional)
