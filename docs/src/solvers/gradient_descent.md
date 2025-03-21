@@ -25,7 +25,7 @@ DirectionUpdateRule
 IdentityUpdateRule
 MomentumGradient
 Nesterov
-PreconditionedGradient
+PreconditionedDirection
 ```
 
 which internally use the [`ManifoldDefaultsFactory`](@ref) and produce the internal
@@ -36,7 +36,7 @@ Manopt.AverageGradientRule
 Manopt.ConjugateDescentCoefficientRule
 Manopt.MomentumGradientRule
 Manopt.NesterovRule
-Manopt.PreconditionedGradientRule
+Manopt.PreconditionedDirectionRule
 ```
 
 ## Debug actions

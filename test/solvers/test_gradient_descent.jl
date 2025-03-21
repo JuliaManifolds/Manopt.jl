@@ -117,7 +117,7 @@ using ManifoldDiff: grad_distance
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
-            direction=PreconditionedGradient((M, p, X) -> 0.5 .* X),
+            direction=PreconditionedDirection((M, p, X) -> 0.5 .* X),
         )
         @test isapprox(M, p, p7; atol=1e-13)
         # Precon in simple scale down by 2 – inplace
@@ -127,7 +127,7 @@ using ManifoldDiff: grad_distance
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
-            direction=PreconditionedGradient(
+            direction=PreconditionedDirection(
                 (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation=InplaceEvaluation()
             ),
         )

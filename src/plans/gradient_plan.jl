@@ -587,9 +587,9 @@ function Nesterov(args...; kwargs...)
 end
 
 """
-    PreconditionedGradientRule{E<:AbstractEvaluationType} <: DirectionUpdateRule
+    PreconditionedDirectionRule{E<:AbstractEvaluationType} <: DirectionUpdateRule
 
-Add a preconditioning as gradient processor, see [`PreconditionedGradient`](@ref)
+Add a preconditioning as gradient processor, see [`PreconditionedDirection`](@ref)
 for more mathematical background.
 
 # Fields
@@ -599,7 +599,7 @@ for more mathematical background.
 
 # Constructors
 
-    PreconditionedGradientRule(
+    PreconditionedDirectionRule(
         M::AbstractManifold,
         preconditioner;
         direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
@@ -618,22 +618,22 @@ $(_var(:Argument, :M; type=true))
 $(_var(:Keyword, :evaluation))
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 """
-mutable struct PreconditionedGradientRule{
+mutable struct PreconditionedDirectionRule{
     E<:AbstractEvaluationType,D<:DirectionUpdateRule,F
 } <: DirectionUpdateRule
     preconditioner::F
     direction::D
 end
-function PreconditionedGradientRule(
+function PreconditionedDirectionRule(
     M::AbstractManifold,
     preconditioner::F;
     direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
     evaluation::E=AllocatingEvaluation(),
 ) where {E<:AbstractEvaluationType,F}
     dir = _produce_type(direction, M)
-    return PreconditionedGradientRule{E,typeof(dir),F}(preconditioner, dir)
+    return PreconditionedDirectionRule{E,typeof(dir),F}(preconditioner, dir)
 end
-function (pg::PreconditionedGradientRule{AllocatingEvaluation})(
+function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
     mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
 )
     M = get_manifold(mp)
@@ -642,7 +642,7 @@ function (pg::PreconditionedGradientRule{AllocatingEvaluation})(
     step, dir = pg.direction(mp, s, k)
     return step, pg.preconditioner(M, p, dir)
 end
-function (pg::PreconditionedGradientRule{InplaceEvaluation})(
+function (pg::PreconditionedDirectionRule{InplaceEvaluation})(
     mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
 )
     M = get_manifold(mp)
@@ -653,8 +653,8 @@ function (pg::PreconditionedGradientRule{InplaceEvaluation})(
 end
 
 """
-    PreconditionedGradient(preconditioner; kwargs...)
-    PreconditionedGradient(M::AbstractManifold, preconditioner; kwargs...)
+    PreconditionedDirection(preconditioner; kwargs...)
+    PreconditionedDirection(M::AbstractManifold, preconditioner; kwargs...)
 
 Add a preconditioner to a gradient processor following the [motivation for optimization](https://en.wikipedia.org/wiki/Preconditioner#Preconditioning_in_optimization),
 as a linear invertible map ``P: $(_math(:TpM)) → $(_math(:TpM))`` that usually should be
@@ -678,10 +678,10 @@ $(_var(:Argument, :M; type=true)) (optional)
 * `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
 $(_var(:Keyword, :evaluation))
 
-$(_note(:ManifoldDefaultFactory, "PreconditionedGradientRule"))
+$(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
 """
-PreconditionedGradient(args...; kwargs...) =
-    ManifoldDefaultsFactory(Manopt.PreconditionedGradientRule, args...; kwargs...)
+PreconditionedDirection(args...; kwargs...) =
+    ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
 
 @doc raw"""
     DebugGradient <: DebugAction
