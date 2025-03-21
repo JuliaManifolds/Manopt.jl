@@ -438,7 +438,8 @@ export AbstractMeshSearchFunction, DefaultMeshAdaptiveDirectSearch
 #
 # Direction Update Rules
 export DirectionUpdateRule
-export Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+export Gradient, StochasticGradient
+export AverageGradient, MomentumGradient, Nesterov, PreconditionedGradient
 export SteepestDescentCoefficient,
     HestenesStiefelCoefficient,
     FletcherReevesCoefficient,

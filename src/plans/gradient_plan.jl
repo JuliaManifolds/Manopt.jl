@@ -405,7 +405,7 @@ $(_var(:Keyword, :vector_transport_method))
 Add average to a gradient problem, where
 
 * `n`:                       determines the size of averaging
-* `direction`:                       is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
+* `direction`:               is the internal [`DirectionUpdateRule`](@ref) to determine the gradients to store
 * `gradients`:               can be pre-filled with some history
 * `last_iterate`:            stores the last iterate
 $(_var(:Keyword, :vector_transport_method))
@@ -457,7 +457,7 @@ them to the current iterates tangent space.
 
 # Input
 
-* `M` (optional)
+$(_var(:Argument, :M; type=true)) (optional)
 
 # Keyword arguments
 
@@ -570,13 +570,13 @@ Then the direction from ``p_k`` to ``p_k+1`` by ``d = $(_tex(:invretr))_{p_k}p_{
 
 # Input
 
-* `M` (optional)
+$(_var(:Argument, :M; type=true)) (optional)
 
 # Keyword arguments
 
 $(_var(:Keyword, :p; add=:as_Initial))
-* `γ=0.001``
-* `μ=0.9``
+* `γ=0.001`
+* `μ=0.9`
 * `shrinkage = k -> 0.8`
 $(_var(:Keyword, :inverse_retraction_method))
 
@@ -585,6 +585,100 @@ $(_note(:ManifoldDefaultFactory, "NesterovRule"))
 function Nesterov(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.NesterovRule, args...; kwargs...)
 end
+
+"""
+    PreconditionedGradientRule{E<:AbstractEvaluationType} <: DirectionUpdateRule
+
+Add a preconditioning as gradient processor, see [`PreconditionedGradient`](@ref)
+for more mathematical background.
+
+# Fields
+
+* `direction`:      internal [`DirectionUpdateRule`](@ref) to determine directions to apply the preconditioning to
+* `preconditioner`: the preconditioner function
+
+# Constructors
+
+    PreconditionedGradientRule(
+        M::AbstractManifold,
+        preconditioner;
+        direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
+        evaluation::AbstractEvaluationType=AllocatingEvaluation()        n::Int=10
+    )
+
+Add preconditioning to a gradient problem.
+
+# Input
+
+$(_var(:Argument, :M; type=true))
+* `preconditioner`:   preconditioner function, either as a `(M, p, X)` -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
+
+# Keyword arguments
+
+$(_var(:Keyword, :evaluation))
+* `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
+"""
+mutable struct PreconditionedGradientRule{
+    E<:AbstractEvaluationType,D<:DirectionUpdateRule,F
+} <: DirectionUpdateRule
+    preconditioner::F
+    direction::D
+end
+function PreconditionedGradientRule(
+    M::AbstractManifold,
+    preconditioner::F;
+    direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=Gradient(),
+    evaluation::E=AllocatingEvaluation(),
+) where {E<:AbstractEvaluationType,F}
+    dir = _produce_type(direction, M)
+    return PreconditionedGradientRule{E,typeof(dir),F}(preconditioner, dir)
+end
+function (pg::PreconditionedGradientRule{AllocatingEvaluation})(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    # get inner direction and step size
+    step, dir = pg.direction(mp, s, k)
+    return step, pg.preconditioner(M, p, dir)
+end
+function (pg::PreconditionedGradientRule{InplaceEvaluation})(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    step, dir = pg.direction(mp, s, k) # get inner direction and step size
+    pg.preconditioner(M, dir, p, dir)
+    return step, dir
+end
+
+"""
+    PreconditionedGradient(preconditioner; kwargs...)
+    PreconditionedGradient(M::AbstractManifold, preconditioner; kwargs...)
+
+Add a preconditioner to a gradient processor following the [motivation for optimization](https://en.wikipedia.org/wiki/Preconditioner#Preconditioning_in_optimization),
+as a linear invertible map ``P: $(_math(:TpM)) → $(_math(:TpM))`` that usually should be
+
+* symmetric: ``⟨X, P(Y)⟩ = ⟨P(X), Y⟩``
+* positive definite ``⟨X, P(X)⟩ > 0`` for ``X`` not the zero-vector
+
+The gradient is then preconditioned as ``P(X)``, where ``X`` is either the
+gradient of the objective or the result of a previous (internally stored) gradient processor.
+
+# Arguments
+
+$(_var(:Argument, :M; type=true)) (optional)
+* `preconditioner`:   preconditioner function, either as a `(M, p, X) -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
+
+# Keyword arguments
+
+* `direction=`[`IdentityUpdateRule`](@ref) internal [`DirectionUpdateRule`](@ref) to determine the gradients to store or a [`ManifoldDefaultsFactory`](@ref) generating one
+$(_var(:Keyword, :evaluation))
+
+$(_note(:ManifoldDefaultFactory, "PreconditionedGradientRule"))
+"""
+PreconditionedGradient(args...; kwargs...) =
+    ManifoldDefaultsFactory(Manopt.PreconditionedGradientRule, args...; kwargs...)
 
 @doc raw"""
     DebugGradient <: DebugAction
