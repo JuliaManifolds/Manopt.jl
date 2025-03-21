@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.9] unreleased
 
+### Added
+
+* add a `PreconditionedGradient` variant to the `direction` gradient processor
+  keyword argument and its corresponding [`PreconditionedGradientRule`](@ref).
+
 ### Fixed
 
 * the links in the AD tutorial are fixed and moved to using `extref`
