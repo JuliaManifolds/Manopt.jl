@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * add a `PreconditionedGradient` variant to the `direction` gradient processor
-  keyword argument and its corresponding [`PreconditionedGradientRule`](@ref).
+  keyword argument and its corresponding `PreconditionedGradientRule`
 
 ### Fixed
 
