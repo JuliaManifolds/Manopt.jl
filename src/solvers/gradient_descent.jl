@@ -74,7 +74,9 @@ function GradientDescentState(
         p, X, direction, stepsize, stopping_criterion, retraction_method
     )
 end
-function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, k)
+function (r::IdentityUpdateRule)(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
     return get_stepsize(mp, s, k), get_gradient!(mp, s.X, s.p)
 end
 function default_stepsize(
