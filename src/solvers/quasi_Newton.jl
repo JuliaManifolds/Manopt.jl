@@ -12,6 +12,7 @@ all necessary fields.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_old`:                         the last iterate
+* `preconditioner`                 an [`DirectionUpdateRule`](@ref) to either store the [`IdentityUpdateRule`](@ref) or a [`PreconditionedDirectionRule`](@ref)
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
 $(_var(:Field, :retraction_method))
@@ -31,6 +32,7 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 
 * `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
+* `preconditioner::Union{`[`PreconditionedDirectionRule`](@ref)`, Nothing}` specify a preconditioner
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, QuasiNewtonState)`"))
 $(_var(:Keyword, :vector_transport_method))
@@ -49,6 +51,7 @@ mutable struct QuasiNewtonState{
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
     R,
+    TPrecon<:DirectionUpdateRule,
 } <: AbstractGradientSolverState
     p::P
     p_old::P
@@ -57,6 +60,7 @@ mutable struct QuasiNewtonState{
     sk::T
     yk::T
     direction_update::D
+    preconditioner::TPrecon
     retraction_method::RTR
     stepsize::S
     stop::SC
@@ -74,6 +78,7 @@ function QuasiNewtonState(
     direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
         M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method
     ),
+    preconditioner::Union{PreconditionedDirectionRule,ManifoldDefaultsFactory,Nothing}=nothing,
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stepsize::S=default_stepsize(
@@ -93,7 +98,9 @@ function QuasiNewtonState(
     RM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    return QuasiNewtonState{P,T,D,SC,S,RM,VTM,Float64}(
+    n = isnothing(preconditioner)
+    precon = n ? IdentityUpdateRule() : _produce_type(preconditioner, M)
+    return QuasiNewtonState{P,T,D,SC,S,RM,VTM,Float64,typeof(precon)}(
         p,
         copy(M, p),
         copy(M, p, X),
@@ -101,6 +108,7 @@ function QuasiNewtonState(
         copy(M, p, X),
         copy(M, p, X),
         direction_update,
+        precon,
         retraction_method,
         stepsize,
         stopping_criterion,
@@ -217,6 +225,10 @@ $(_var(:Keyword, :evaluation; add=:GradientExample))
   * `:reinitialize_direction_update`: discards operator state stored in direction update rules.
   * any other value performs the verification, keeps the direction but stores a message.
   A stored message can be displayed using [`DebugMessages`](@ref).
+* `preconditioner=nothing` specify a preconditioner, either
+  * the default `nothing` does not activate a preconditioning
+  * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
+  * a [`PreconditionedDirection`](@ref). See also their docs for mor details on the preconditioner.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_var(:Keyword, :retraction_method))
@@ -288,6 +300,7 @@ function quasi_Newton!(
         end
     ),
     initial_scale::Real=1.0,
+    preconditioner=nothing,
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M,
         QuasiNewtonState;
@@ -297,7 +310,10 @@ function quasi_Newton!(
     stopping_criterion::StoppingCriterion=StopAfterIteration(max(1000, memory_size)) |
                                           StopWhenGradientNormLess(1e-6),
     kwargs...,
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {
+    E<:AbstractEvaluationType,
+    O<:Union{AbstractManifoldGradientObjective{E},AbstractDecoratedManifoldObjective{E}},
+}
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
             M,
@@ -331,6 +347,11 @@ function quasi_Newton!(
         initial_vector=get_gradient(mp, p),
         direction_update=local_dir_upd,
         stopping_criterion=stopping_criterion,
+        preconditioner=if preconditioner isa Function
+            PreconditionedDirectionRule(M, preconditioner; evaluation=E())
+        else
+            preconditioner
+        end,
         stepsize=_produce_type(stepsize, M),
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
@@ -349,7 +370,8 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     M = get_manifold(mp)
-    get_gradient!(mp, qns.X, qns.p)
+    # get gradient – eventually via preconditioning.
+    qns.preconditioner(mp, qns, k)
     qns.direction_update(qns.η, mp, qns)
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))

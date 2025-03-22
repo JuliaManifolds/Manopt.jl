@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * add a `PreconditionedDirection` variant to the `direction` gradient processor
   keyword argument and its corresponding `PreconditionedDirectionRule`
+* make the preconditioner available in quasi Newton.
+* in `gradient_descent` and `conjugate_gradient_descent` the rule can be added anyways.
 
 ### Fixed
 

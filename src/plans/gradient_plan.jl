@@ -640,7 +640,9 @@ function (pg::PreconditionedDirectionRule{AllocatingEvaluation})(
     p = get_iterate(s)
     # get inner direction and step size
     step, dir = pg.direction(mp, s, k)
-    return step, pg.preconditioner(M, p, dir)
+    # precondition and set as gradient
+    set_gradient!(s, M, p, pg.preconditioner(M, p, dir))
+    return step, get_gradient(s)
 end
 function (pg::PreconditionedDirectionRule{InplaceEvaluation})(
     mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
