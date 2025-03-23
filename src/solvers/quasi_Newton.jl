@@ -229,7 +229,7 @@ $(_var(:Keyword, :evaluation; add=:GradientExample))
   * the default `nothing` does not activate a preconditioning
   * a function of the form `(M, p, X) -> Y` or mutating `(M, Y, p, X) -> Y` depending on the `evaluation`
   * a [`PreconditionedDirection`](@ref). See also their docs for mor details on the preconditioner.
-  Note that the preconditioner is applied to the gradient, i.e. the right hand side _before_ solving the linear systen
+  Note that the preconditioner is applied to the gradient, i.e. the right hand side _before_ solving the linear system.
 * `project!=copyto!`: for numerical stability it is possible to project onto the tangent space after every iteration.
   the function has to work inplace of `Y`, that is `(M, Y, p, X) -> Y`, where `X` and `Y` can be the same memory.
 $(_var(:Keyword, :retraction_method))
