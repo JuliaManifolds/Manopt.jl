@@ -603,7 +603,7 @@ for more mathematical background.
         M::AbstractManifold,
         preconditioner;
         direction::Union{<:DirectionUpdateRule,ManifoldDefaultsFactory}=IdentityUpdateRule(),
-        evaluation::AbstractEvaluationType=AllocatingEvaluation()        n::Int=10
+        evaluation::AbstractEvaluationType=AllocatingEvaluation()
     )
 
 Add preconditioning to a gradient problem.
