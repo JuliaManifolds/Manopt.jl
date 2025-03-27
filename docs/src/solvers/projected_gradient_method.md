@@ -1,6 +1,4 @@
-# Gradient projection method
-
-
+# Projected gradient method
 
 ```@meta
 CurrentModule = Manopt

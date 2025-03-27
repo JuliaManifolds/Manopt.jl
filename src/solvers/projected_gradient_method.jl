@@ -7,7 +7,7 @@
 
 # Fields
 
-$(_var(:Field, :stepsize, "backtracking")) to determine a step size from ``p_k`` to the candidate ``q_k``
+$(_var(:Field, :stepsize, "backtracking"; type=true)) to determine the step size ``β_k`` step size from ``p_k`` to the candidate ``q_k``
 $(_var(:Field, :inverse_retraction_method))
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `q` an interims point for the projected gradient step
@@ -181,11 +181,12 @@ $(_var(:Argument, :p))
 
 # Keyword arguments
 
-$(_var(:Keyword, :stepsize, "backtrack"; default="A")) to perform the backtracking
+$(_var(:Keyword, :stepsize, "backtrack"; default="[`ArmijoLinesearchStepsize`](@ref)`(M; stop_increasing_at_step=0)`")) to perform the backtracking to determine the ``β_k``.
+  Note that the method requires ``β_k ≤ 1``, otherwise the projection step no longer provides points within the constraints
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`ConstantStepsize`](@ref)`(injectivity_radius(M)/2)`")) to perform the candidate projected step.
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
+$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500) `$(_sc(:Any))` `[`StopWhenGradientNormLess`](@ref)`(1.0e-6)`)"))
 
 $(_note(:OtherKeywords))
 

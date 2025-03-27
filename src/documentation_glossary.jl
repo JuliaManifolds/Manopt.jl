@@ -328,7 +328,7 @@ define!(
     :Variable,
     :Field,
     function (s::Symbol, d="$s", t=""; type=true, add="", kwargs...)
-        disp_type = type ? "::$(length(t) > 0 ? t : _var(s, :type))" : ""
+        disp_type = type ? "::$(length(t) > 0 ? "$(t)" : _var(s, :type))" : ""
         addv = !isa(add, Vector) ? [add] : add
         disp_add = join([a isa Symbol ? _var(s, a; kwargs...) : "$a" for a in addv])
         return "* `$(d)$(disp_type)`: $(_var(s, :description; kwargs...))$(disp_add)"
