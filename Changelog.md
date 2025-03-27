@@ -6,10 +6,25 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.9] unreleased
+## [0.5.10] unreleased
+
+## Added
 
 * Introduce a `ConstrainedSetObjective`
 * Introduce a `projected_gradient_method`
+
+## [0.5.9] March 24, 2025
+
+### Added
+
+* add a `PreconditionedDirection` variant to the `direction` gradient processor
+  keyword argument and its corresponding `PreconditionedDirectionRule`
+* make the preconditioner available in quasi Newton.
+* in `gradient_descent` and `conjugate_gradient_descent` the rule can be added anyways.
+
+### Fixed
+
+* the links in the AD tutorial are fixed and moved to using `extref`
 
 ## [0.5.8] February 28, 2025
 

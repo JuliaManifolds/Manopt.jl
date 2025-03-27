@@ -204,7 +204,7 @@ $(_var(:Field, :last_change))
 $(_var(:Field, :inverse_retraction_method))
 $(_var(:Field, :storage))
 * `at_iteration::Int`: indicate at which iteration this stopping criterion was last active.
-* `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@ref) that can be passed
+* `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) that can be passed
   to approximate the distance by this inverse retraction and a norm on the tangent space.
   This can be used if neither the distance nor the logarithmic map are availannle on `M`.
 * `last_change`: store the last change
