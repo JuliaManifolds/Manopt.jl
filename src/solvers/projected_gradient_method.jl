@@ -167,7 +167,9 @@ by performing the following steps
 2. Compute a backtracking stepsize ``β_k ≤ 1`` along ``Y_k = $(_tex(:retr))_{p_k}^{-1}q_k``
 3. Compute the new iterate ``p_{k+1} = $(_tex(:retr))_{p_k}( β_k $(_tex(:retr))_{p_k}^{-1}q_k )``
 
-until the `stopping_criterion=` is fulfilled
+until the `stopping_criterion=` is fulfilled.
+
+For more information see [BergmannFerreiraNemethZhu:2025](@cite).
 
 # Input
 
