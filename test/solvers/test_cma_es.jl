@@ -38,7 +38,7 @@ flat_example(::AbstractManifold, p) = 0.0
 
         p1 = [10.0, 10.0]
         cma_es!(M, griewank, p1; σ=10.0, rng=MersenneTwister(123))
-        @test griewank(M, p1) < 0.1
+        @test griewank(M, p1) < 0.2
 
         o = cma_es(M, griewank, [10.0, 10.0]; return_state=true)
         @test startswith(

@@ -188,9 +188,22 @@ end
         )
         @test isapprox(M, x_lrbfgs2, x_lrbfgs)
 
-        # A simple precon
+        # A simple preconditioner
         x_lrbfgs = quasi_Newton(
             M, f, grad_f, x; memory_size=-1, preconditioner=(M, p, X) -> 0.5 .* X
+        )
+        @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
+
+        # An in-place preconditioner
+        x_lrbfgs = quasi_Newton(
+            M,
+            f,
+            grad_f,
+            x;
+            memory_size=-1,
+            preconditioner=QuasiNewtonPreconditioner(
+                (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation=InplaceEvaluation()
+            ),
         )
         @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
 
