@@ -303,6 +303,60 @@ _doc_QN_B_full_system = raw"""
 ```
 """
 
+"""
+    QuasiNewtonPreconditioner{E<:AbstractEvaluationType, F}
+
+Add a preconditioning
+
+# Fields
+
+* `preconditioner::F`: the preconditioner function
+
+# Constructors
+
+    QuasiNewtonPreconditioner(
+        preconditioner;
+        evaluation::AbstractEvaluationType=AllocatingEvaluation()
+    )
+
+Add preconditioning to a gradient problem.
+
+# Input
+
+* `preconditioner`:   preconditioner function, either as a `(M, p, X)` -> Y` allocating or `(M, Y, p, X) -> Y` mutating function
+
+# Keyword arguments
+
+$(_var(:Keyword, :evaluation))
+"""
+struct QuasiNewtonPreconditioner{E<:AbstractEvaluationType,F}
+    preconditioner::F
+end
+function QuasiNewtonPreconditioner(
+    preconditioner::F; evaluation::E=AllocatingEvaluation()
+) where {E<:AbstractEvaluationType,F}
+    return QuasiNewtonPreconditioner{E,F}(preconditioner)
+end
+#
+#
+# Internally this always works in-place of X
+function (qnp::QuasiNewtonPreconditioner{AllocatingEvaluation})(
+    X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    copyto!(M, X, p, qnp.preconditioner(M, p, X))
+    return X
+end
+function (pg::QuasiNewtonPreconditioner{InplaceEvaluation})(
+    X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    pg.preconditioner(M, X, p, X)
+    return X
+end
+
 @doc """
     QuasiNewtonMatrixDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
@@ -358,7 +412,7 @@ $(_var(:Field, :vector_transport_method))
 
 ## Keyword arguments
 
-* `initial_scale=1.0`
+* `initial_scale=1.0` – this can also be deactivated by passing `nothing`.
 $(_var(:Keyword, :vector_transport_method))
 
 Generate the Update rule with defaults from a manifold and the names corresponding to the fields.
@@ -374,7 +428,7 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     B<:AbstractBasis,
     VT<:AbstractVectorTransportMethod,
     M<:AbstractMatrix,
-    F<:Real,
+    F<:Union{<:Real,Nothing},
 } <: AbstractQuasiNewtonDirectionUpdate
     basis::B
     matrix::M
@@ -383,7 +437,7 @@ mutable struct QuasiNewtonMatrixDirectionUpdate{
     vector_transport_method::VT
 end
 function status_summary(d::QuasiNewtonMatrixDirectionUpdate)
-    return "$(d.update) with initial scaling $(d.initial_scale) and vector transport method $(d.vector_transport_method)."
+    return "$(d.update) with $(!isnothing(d.initial_scale) ? "initial scaling $(d.initial_scale) and" : "") vector transport method $(d.vector_transport_method)."
 end
 function show(io::IO, d::QuasiNewtonMatrixDirectionUpdate)
     s = """
@@ -403,7 +457,7 @@ function QuasiNewtonMatrixDirectionUpdate(
     MT<:AbstractMatrix,
     B<:AbstractBasis,
     V<:AbstractVectorTransportMethod,
-    F<:Real,
+    F<:Union{<:Real,Nothing},
 }
     return QuasiNewtonMatrixDirectionUpdate{U,B,V,MT,F}(
         basis, m, initial_scale, update, vector_transport_method
@@ -419,7 +473,9 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
-    get_vector!(M, r, p, -d.matrix * get_coordinates(M, p, X, d.basis), d.basis)
+    copyto!(M, r, p, X)
+    st.preconditioner(r, mp, st)
+    get_vector!(M, r, p, -d.matrix * get_coordinates(M, p, r, d.basis), d.basis)
     return r
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
@@ -481,7 +537,7 @@ function is always included and the old, probably no longer relevant, informatio
 * `memory_y`:                set of the stored gradient differences ``$(_math(:Sequence, _tex(:widehat, "y"), "i", "k-m", "k-1"))``.
 * `ξ`:                       a variable used in the two-loop recursion.
 * `ρ`;                       a variable used in the two-loop recursion.
-* `initial_scale`:           initial scaling of the Hessian
+* `initial_scale`:           initial scaling of the Hessian, deactivate (e.g. when using a preconditioner) by passing `nothing`
 $(_var(:Field, :vector_transport_method))
 * `message`:                 a string containing a potential warning that might have appeared
 * `project!`:                a function to stabilize the update by projecting on the tangent space
@@ -509,6 +565,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     T,
     F,
     V<:AbstractVector{F},
+    G<:Union{F,Nothing},
     VT<:AbstractVectorTransportMethod,
     Proj,
 } <: AbstractQuasiNewtonDirectionUpdate
@@ -516,7 +573,7 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     memory_y::CircularBuffer{T}
     ξ::Vector{F}
     ρ::Vector{F}
-    initial_scale::F
+    initial_scale::G
     project!::Proj
     vector_transport_method::VT
     message::String
@@ -527,21 +584,30 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     ::NT,
     memory_size::Int;
     initial_vector::T=zero_vector(M, p),
-    initial_scale::Real=1.0,
+    initial_scale::G=1.0,
     (project!)::Proj=copyto!,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {NT<:AbstractQuasiNewtonUpdateRule,T,VTM<:AbstractVectorTransportMethod,Proj}
+) where {
+    NT<:AbstractQuasiNewtonUpdateRule,
+    T,
+    VTM<:AbstractVectorTransportMethod,
+    Proj,
+    G<:Union{<:Real,Nothing},
+}
     mT = allocate_result_type(
         M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, initial_scale)
     )
     m1 = zeros(mT, memory_size)
     m2 = zeros(mT, memory_size)
-    return QuasiNewtonLimitedMemoryDirectionUpdate{NT,T,mT,typeof(m1),VTM,Proj}(
+    _initial_state = !isnothing(initial_scale) ? convert(mT, initial_scale) : initial_scale
+    return QuasiNewtonLimitedMemoryDirectionUpdate{
+        NT,T,mT,typeof(m1),typeof(_initial_state),VTM,Proj
+    }(
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
         m1,
         m2,
-        convert(mT, initial_scale),
+        _initial_state,
         project!,
         vector_transport_method,
         "",
@@ -550,7 +616,7 @@ end
 get_message(d::QuasiNewtonLimitedMemoryDirectionUpdate) = d.message
 function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     s = "limited memory $T (size $(length(d.memory_s)))"
-    (d.initial_scale != 1.0) && (s = "$(s) initial scaling $(d.initial_scale)")
+    !isnothing(d.initial_scale) && (s = "$(s) initial scaling $(d.initial_scale)")
     (d.project! !== copyto!) && (s = "$(s), projections, ")
     s = "$(s)and $(d.vector_transport_method) as vector transport."
     return s
@@ -602,8 +668,14 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(r, mp, st)
         return r
     end
     # initial scaling guess
-    r .*=
-        d.initial_scale / (d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2)
+    if !isnothing(d.initial_scale)
+        r .*=
+            d.initial_scale /
+            (d.ρ[last_safe_index] * norm(M, p, d.memory_y[last_safe_index])^2)
+    end
+    # precon
+    st.preconditioner(r, mp, st)
+    #
     # forward pass
     for i in eachindex(d.ρ)
         if abs(d.ρ[i]) > 0

@@ -12,7 +12,7 @@ all necessary fields.
 * `nondescent_direction_value`:    the value from the last inner product from checking for descent directions
 $(_var(:Field, :p; add=[:as_Iterate]))
 * `p_old`:                         the last iterate
-* `preconditioner`                 an [`DirectionUpdateRule`](@ref) to either store the [`IdentityUpdateRule`](@ref) or a [`PreconditionedDirectionRule`](@ref)
+* `preconditioner`                 an [`QuasiNewtonPreconditioner`](@ref)
 * `sk`:                            the current step
 * `yk`:                            the current gradient difference
 $(_var(:Field, :retraction_method))
@@ -30,9 +30,11 @@ Generate the Quasi Newton state on the manifold `M` with start point `p`.
 
 ## Keyword arguments
 
-* `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method)`
+* `direction_update=`[`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)`(M, p, InverseBFGS(), memory_size; vector_transport_method=vector_transport_method)`
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`9(@ref)`(1000)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-6)`"))
-* `preconditioner::Union{`[`PreconditionedDirectionRule`](@ref)`, Nothing}` specify a preconditioner
+* `initial_scale=1.0`: a realtive initial scale. By default deactivated when using a preconditioner.
+* `memory_size=20`: a shortcut to set the memory in the default direction update
+* `preconditioner::Union{`[`QuasiNewtonPreconditioner`](@ref)`, Nothing} = nothing` specify a preconditioner or deactivate by passing `nothing`.
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, QuasiNewtonState)`"))
 $(_var(:Keyword, :vector_transport_method))
@@ -51,7 +53,7 @@ mutable struct QuasiNewtonState{
     RTR<:AbstractRetractionMethod,
     VT<:AbstractVectorTransportMethod,
     R,
-    TPrecon<:DirectionUpdateRule,
+    TPrecon<:QuasiNewtonPreconditioner,
 } <: AbstractGradientSolverState
     p::P
     p_old::P
@@ -75,10 +77,17 @@ function QuasiNewtonState(
     initial_vector::T=zero_vector(M, p), # deprecated
     X::T=initial_vector,
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
+    preconditioner::Union{QuasiNewtonPreconditioner,Nothing}=nothing,
+    initial_scale::Union{<:Real,Nothing}=isnothing(preconditioner) ? 1.0 : nothing,
+    memory_size::Int=20,
     direction_update::D=QuasiNewtonLimitedMemoryDirectionUpdate(
-        M, p, InverseBFGS(), 20; vector_transport_method=vector_transport_method
+        M,
+        p,
+        InverseBFGS(),
+        memory_size;
+        vector_transport_method=vector_transport_method,
+        initial_scale=initial_scale,
     ),
-    preconditioner::Union{PreconditionedDirectionRule,ManifoldDefaultsFactory,Nothing}=nothing,
     stopping_criterion::SC=StopAfterIteration(1000) | StopWhenGradientNormLess(1e-6),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stepsize::S=default_stepsize(
@@ -98,8 +107,11 @@ function QuasiNewtonState(
     RM<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
 }
-    n = isnothing(preconditioner)
-    precon = n ? IdentityUpdateRule() : _produce_type(preconditioner, M)
+    precon = if isnothing(preconditioner)
+        QuasiNewtonPreconditioner((M, p, X) -> X)
+    else
+        preconditioner
+    end
     return QuasiNewtonState{P,T,D,SC,S,RM,VTM,Float64,typeof(precon)}(
         p,
         copy(M, p),
@@ -300,8 +312,8 @@ function quasi_Newton!(
             Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M))
         end
     ),
-    initial_scale::Real=1.0,
     preconditioner=nothing,
+    initial_scale::Union{<:Real,Nothing}=isnothing(preconditioner) ? 1.0 : nothing,
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M,
         QuasiNewtonState;
@@ -349,7 +361,7 @@ function quasi_Newton!(
         direction_update=local_dir_upd,
         stopping_criterion=stopping_criterion,
         preconditioner=if preconditioner isa Function
-            PreconditionedDirectionRule(M, preconditioner; evaluation=E())
+            QuasiNewtonPreconditioner(preconditioner; evaluation=E())
         else
             preconditioner
         end,
@@ -371,8 +383,7 @@ function initialize_solver!(amp::AbstractManoptProblem, qns::QuasiNewtonState)
 end
 function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
     M = get_manifold(mp)
-    # get gradient – eventually via preconditioning.
-    qns.preconditioner(mp, qns, k)
+    get_gradient!(mp, qns.X, qns.p)
     qns.direction_update(qns.η, mp, qns)
     if !(qns.nondescent_direction_behavior === :ignore)
         qns.nondescent_direction_value = real(inner(M, qns.p, qns.η, qns.X))
@@ -448,8 +459,9 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
+    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
     if iter == 1
-        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
+        d.matrix = s * skyk_c / inner(M, p, st.yk, st.yk) * d.matrix
     end
     d.matrix =
         (I - sk_c * yk_c' / skyk_c) * d.matrix * (I - yk_c * sk_c' / skyk_c) +
@@ -467,8 +479,9 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
+    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
     if iter == 1
-        d.matrix = d.initial_scale * inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
+        d.matrix = s * inner(M, p, st.yk, st.yk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + yk_c * yk_c' / skyk_c -
@@ -490,8 +503,9 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
+    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
     if iter == 1
-        d.matrix = d.initial_scale * inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
+        d.matrix = s * inner(M, p, st.sk, st.sk) / skyk_c * d.matrix
     end
     d.matrix =
         d.matrix + sk_c * sk_c' / skyk_c -
@@ -513,8 +527,9 @@ function update_hessian!(
     yk_c = get_coordinates(M, p, st.yk, d.basis)
     sk_c = get_coordinates(M, p, st.sk, d.basis)
     skyk_c = inner(M, p, st.sk, st.yk)
+    s = isnothing(d.initial_scale) ? 1.0 : d.initial_scale
     if iter == 1
-        d.matrix = d.initial_scale * skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
+        d.matrix = s * skyk_c / inner(M, p, st.sk, st.sk) * d.matrix
     end
     d.matrix =
         (I - yk_c * sk_c' / skyk_c) * d.matrix * (I - sk_c * yk_c' / skyk_c) +

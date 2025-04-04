@@ -425,6 +425,7 @@ export SymmetricLinearSystemObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
+export QuasiNewtonPreconditioner
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
