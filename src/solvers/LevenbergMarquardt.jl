@@ -208,6 +208,19 @@ function initialize_solver!(
     return lms
 end
 
+function default_lm_lin_solve!(sk, JJ, grad_f_c)
+    try
+        sk .= cholesky(JJ) \ -grad_f_c
+    catch e
+        if e isa PosDefException
+            sk .= JJ \ -grad_f_c
+        else
+            rethrow()
+        end
+    end
+    return sk
+end
+
 function step_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
@@ -226,7 +239,8 @@ function step_solver!(
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
     grad_f_c = transpose(lms.jacobian) * lms.residual_values
-    sk = cholesky(JJ) \ -grad_f_c
+    sk = similar(grad_f_c)
+    lms.linear_subsolver!(sk, JJ, grad_f_c)
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
     get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)

@@ -207,6 +207,8 @@ $(_var(:Field, :stopping_criterion, "stop"))
   new point is rejected
 * `expect_zero_residual`: if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
+* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
+  linear subproblem `sk .= JJ \\ (-grad_f_c)`. Default value is `default_lm_lin_solve!`.
 
 # Constructor
 
@@ -238,6 +240,7 @@ mutable struct LevenbergMarquardtState{
     TJac,
     TGrad,
     Tparams<:Real,
+    TLS,
 } <: AbstractGradientSolverState
     p::P
     stop::TStop
@@ -254,6 +257,7 @@ mutable struct LevenbergMarquardtState{
     β::Tparams
     expect_zero_residual::Bool
     last_step_successful::Bool
+    linear_subsolver!::TLS
     function LevenbergMarquardtState(
         M::AbstractManifold,
         initial_residual_values::Tresidual_values,
@@ -268,7 +272,8 @@ mutable struct LevenbergMarquardtState{
         damping_term_min::Real=0.1,
         β::Real=5.0,
         expect_zero_residual::Bool=false,
-    ) where {P,Tresidual_values,TJac,TGrad}
+        linear_subsolver!::TLS=default_lm_lin_solve!,
+    ) where {P,Tresidual_values,TJac,TGrad,TLS}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -291,6 +296,7 @@ mutable struct LevenbergMarquardtState{
             TJac,
             TGrad,
             Tparams,
+            TLS,
         }(
             p,
             stopping_criterion,
@@ -307,6 +313,7 @@ mutable struct LevenbergMarquardtState{
             β,
             expect_zero_residual,
             true,
+            linear_subsolver!,
         )
     end
 end

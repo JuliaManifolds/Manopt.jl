@@ -22,6 +22,7 @@ using LinearAlgebra:
     Diagonal,
     I,
     Eigen,
+    PosDefException,
     eigen,
     eigen!,
     eigvals,
