@@ -465,4 +465,7 @@ function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableInd
     return solution[vi.value]
 end
 
+# Add a way to model Manopt objectives in JuMP
+include("manifold_objective.jl")
+
 end # module
