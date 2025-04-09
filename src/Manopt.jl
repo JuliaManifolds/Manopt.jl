@@ -26,6 +26,7 @@ using LinearAlgebra:
     eigen,
     eigen!,
     eigvals,
+    ldiv!,
     tril,
     Symmetric,
     dot,

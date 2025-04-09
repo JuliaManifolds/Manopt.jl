@@ -210,14 +210,15 @@ end
 
 function default_lm_lin_solve!(sk, JJ, grad_f_c)
     try
-        sk .= cholesky(JJ) \ -grad_f_c
+        ldiv!(sk, cholesky(JJ), grad_f_c)
     catch e
         if e isa PosDefException
-            sk .= JJ \ -grad_f_c
+            sk .= Symmetric(JJ) \ grad_f_c
         else
             rethrow()
         end
     end
+    sk .*= -1
     return sk
 end
 
