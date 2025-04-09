@@ -208,7 +208,8 @@ $(_var(:Field, :stopping_criterion, "stop"))
 * `expect_zero_residual`: if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
 * `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
-  linear subproblem `sk .= JJ \\ (-grad_f_c)`. Default value is `default_lm_lin_solve!`.
+  linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
+  symmetric positive definite matrix. Default value is `default_lm_lin_solve!`.
 
 # Constructor
 

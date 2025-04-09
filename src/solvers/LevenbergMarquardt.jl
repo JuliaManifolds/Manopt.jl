@@ -218,7 +218,6 @@ function default_lm_lin_solve!(sk, JJ, grad_f_c)
             rethrow()
         end
     end
-    sk .*= -1
     return sk
 end
 
@@ -242,6 +241,7 @@ function step_solver!(
     grad_f_c = transpose(lms.jacobian) * lms.residual_values
     sk = similar(grad_f_c)
     lms.linear_subsolver!(sk, JJ, grad_f_c)
+    sk .*= -1
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
     get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)
