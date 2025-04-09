@@ -208,6 +208,14 @@ function initialize_solver!(
     return lms
 end
 
+"""
+    default_lm_lin_solve!(sk, JJ, grad_f_c)
+
+Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
+definite matrix and save the result to `sk`. In case of numerical errors the
+`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
+is used.
+"""
 function default_lm_lin_solve!(sk, JJ, grad_f_c)
     try
         ldiv!(sk, cholesky(JJ), grad_f_c)
