@@ -215,6 +215,8 @@ Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric posit
 definite matrix and save the result to `sk`. In case of numerical errors the
 `PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
 is used.
+
+The function is intended to be used with [`LevenbergMarquardt`](@ref).
 """
 function default_lm_lin_solve!(sk, JJ, grad_f_c)
     try
