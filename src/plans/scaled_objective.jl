@@ -27,41 +27,42 @@ Generate a scaled manifold objective based on `objective` with `scale` being `1`
 in the first, `scale=-1` in the second case. The multiplication from the left with a scalar
 is also overloaded.
 """
-struct ScaledManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E},F} <:
-       AbstractDecoratedManifoldObjective{E,O2}
+struct ScaledManifoldObjective{
+    E<:AbstractEvaluationType,O2,O1<:AbstractManifoldObjective{E},F
+} <: AbstractDecoratedManifoldObjective{E,O2}
     objective::O1
     scale::F
 end
 function ScaledManifoldObjective(
     objective::O, scale::F=1
-) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E},F}
+) where {E<:AbstractEvaluationType,O<:AbstractManifoldObjective{E},F<:Real}
     return ScaledManifoldObjective{E,O,O,F}(objective, scale)
 end
 function ScaledManifoldObjective(
     objective::O1, scale::F=1
 ) where {
-    F,
+    F<:Real,
     E<:AbstractEvaluationType,
     O2<:AbstractManifoldObjective,
     O1<:AbstractDecoratedManifoldObjective{E,O2},
 }
     return ScaledManifoldObjective{E,O2,O1,F}(objective, scale)
 end
-Base.:-(objective::AbstractManifoldObjective) = ScaledManifoldObjective(objective, -1.0)
-function Base.:*(scale::F, objective::AbstractManifoldObjective) where {F}
+Base.:-(objective::AbstractManifoldObjective) = ScaledManifoldObjective(objective, -1)
+function Base.:*(scale::Real, objective::AbstractManifoldObjective)
     return ScaledManifoldObjective(objective, scale)
 end
 
 @doc """
     get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
 
-Evaluated the scaled objective. ``s*f(p)``
+Evaluate the scaled objective. ``s*f(p)``
 """
 function get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
     return scaled_objective.scale * get_cost(M, scaled_objective.objective, p)
 end
 
-function get_cost_function(scaled_objective::ScaledManifoldObjective, recursive=false)
+function get_cost_function(scaled_objective::ScaledManifoldObjective, recursive::Bool=false)
     recursive && (return get_cost_function(scaled_objective.objective, recursive))
     return (M, p) -> scaled_objective.scale * get_cost(M, scaled_objective, p)
 end
@@ -69,25 +70,25 @@ end
     get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
     get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
 
-Evaluated the scaled gradient. ``s*$(_tex(:grad))f(p)``
+Evaluate the scaled gradient. ``s*$(_tex(:grad))f(p)``
 """
 function get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)
     return scaled_objective.scale * get_gradient(M, scaled_objective.objective, p)
 end
 function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
     get_gradient!(M, X, scaled_objective.objective, p)
-    X .= scaled_objective.scale * X
+    X .= scaled_objective.scale .* X
     return X
 end
 
 function get_gradient_function(
-    scaled_objective::ScaledManifoldObjective{AllocatingEvaluation}, recursive=false
+    scaled_objective::ScaledManifoldObjective{AllocatingEvaluation}, recursive::Bool=false
 )
     recursive && (return get_gradient_function(scaled_objective.objective, recursive))
     return (M, p) -> get_gradient(M, scaled_objective, p)
 end
 function get_gradient_function(
-    scaled_objective::ScaledManifoldObjective{InplaceEvaluation}, recursive=false
+    scaled_objective::ScaledManifoldObjective{InplaceEvaluation}, recursive::Bool=false
 )
     recursive && (return get_gradient_function(scaled_objective.objective, recursive))
     return (M, X, p) -> get_gradient!(M, X, scaled_objective, p)
@@ -99,7 +100,7 @@ end
     get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
     get_hessian!(M::AbstractManifold, Y, scaled_objective::ScaledManifoldObjective, p, X)
 
-Evaluated the scaled Hessian ``s*$(_tex(:Hess))f(p)``
+Evaluate the scaled Hessian ``s*$(_tex(:Hess))f(p)``
 """
 function get_hessian(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p, X)
     return scaled_objective.scale * get_hessian(M, scaled_objective.objective, p, X)
@@ -108,7 +109,7 @@ function get_hessian!(
     M::AbstractManifold, Y, scaled_objective::ScaledManifoldObjective, p, X
 )
     get_hessian!(M, Y, scaled_objective.objective, p, X)
-    Y .= scaled_objective.scale * Y
+    Y .= scaled_objective.scale .* Y
     return Y
 end
 

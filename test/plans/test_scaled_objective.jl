@@ -16,16 +16,16 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
     obj! = ManifoldHessianObjective(f, ∇f!, ∇²f!; evaluation=InplaceEvaluation())
     neg_obj = -obj
     @test neg_obj isa ScaledManifoldObjective
-    s = "ScaledManifoldObjective based on a $(obj) with scale -1.0"
+    s = "ScaledManifoldObjective based on a $(obj) with scale -1"
     @test repr(neg_obj) == s
-    scaled_obj = -1.0 * obj
+    scaled_obj = -1 * obj
     @test scaled_obj == neg_obj
     scaled_obj! = -1.0 * obj!
     # just verify that this also works for double decorated ones.
     deco_obj = ScaledManifoldObjective(ManifoldCountObjective(M, obj, [:Cost]), 0.5)
 
     #
-    # Test and comare all accessors
+    # Test and compare all accessors
     #
     for (s, o) in zip([scaled_obj, scaled_obj!], [obj, obj!])
         @test get_cost(M, s, p) == -f(M, p)

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* a `ScaledManifoldObjective` to esier built scaled versions of objectives,
+* a `ScaledManifoldObjective` to easier build scaled versions of objectives,
   especially turn maximisation problems into minimisation ones using a scaling of `-1`.
 
 ## [0.5.11] April 8, 2025
