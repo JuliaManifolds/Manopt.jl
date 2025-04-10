@@ -62,10 +62,7 @@ function get_cost(M::AbstractManifold, scaled_objective::ScaledManifoldObjective
 end
 
 function get_cost_function(scaled_objective::ScaledManifoldObjective, recursive=false)
-    recursive && (
-        return scaled_objective.scale *
-               get_cost_function(scaled_objective.objective, recursive)
-    )
+    recursive && (return get_cost_function(scaled_objective.objective, recursive))
     return (M, p) -> scaled_objective.scale * get_cost(M, scaled_objective, p)
 end
 @doc """
@@ -78,8 +75,8 @@ function get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjec
     return scaled_objective.scale * get_gradient(M, scaled_objective.objective, p)
 end
 function get_gradient!(M::AbstractManifold, X, scaled_objective::ScaledManifoldObjective, p)
-    get_gradient(M, scaled_objective.objective, p)
-    X .*= scaled_objective.scale * X
+    get_gradient!(M, X, scaled_objective.objective, p)
+    X .= scaled_objective.scale * X
     return X
 end
 
@@ -131,6 +128,6 @@ end
 function show(io::IO, scaled_objective::ScaledManifoldObjective{P,T}) where {P,T}
     return print(
         io,
-        "ScaledManifoldObjective($(scaled_objective.objective), $(scaled_objective.scale)",
+        "ScaledManifoldObjective based on a $(scaled_objective.objective) with scale $(scaled_objective.scale)",
     )
 end
