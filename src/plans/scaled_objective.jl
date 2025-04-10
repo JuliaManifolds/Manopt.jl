@@ -19,7 +19,7 @@ For now the functions rescaled are
 
 # Constructors
 
-    ScaledManifoldObjective(objective, scale=1)
+    ScaledManifoldObjective(objective, scale::Real=1)
     -objective
     scale*objective
 
