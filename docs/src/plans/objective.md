@@ -36,6 +36,12 @@ decorate_objective!
 EmbeddedManifoldObjective
 ```
 
+### [Scaled objectives](@id subsection-scaled-objectives)
+
+```@docs
+ScaledManifoldObjective
+```
+
 ### [Cache objective](@id subsection-cache-objective)
 
 Since single function calls, for example to the cost or the gradient, might be expensive,
