@@ -208,6 +208,29 @@ function initialize_solver!(
     return lms
 end
 
+"""
+    default_lm_lin_solve!(sk, JJ, grad_f_c)
+
+Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
+definite matrix and save the result to `sk`. In case of numerical errors the
+`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
+is used.
+
+The function is intended to be used with [`LevenbergMarquardt`](@ref).
+"""
+function default_lm_lin_solve!(sk, JJ, grad_f_c)
+    try
+        ldiv!(sk, cholesky(JJ), grad_f_c)
+    catch e
+        if e isa PosDefException
+            sk .= Symmetric(JJ) \ grad_f_c
+        else
+            rethrow()
+        end
+    end
+    return sk
+end
+
 function step_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
@@ -226,7 +249,9 @@ function step_solver!(
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
     grad_f_c = transpose(lms.jacobian) * lms.residual_values
-    sk = cholesky(JJ) \ -grad_f_c
+    sk = similar(grad_f_c)
+    lms.linear_subsolver!(sk, JJ, grad_f_c)
+    sk .*= -1
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
     get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)

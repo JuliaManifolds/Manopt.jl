@@ -23,9 +23,11 @@ using LinearAlgebra:
     Diagonal,
     I,
     Eigen,
+    PosDefException,
     eigen,
     eigen!,
     eigvals,
+    ldiv!,
     tril,
     Symmetric,
     dot,
@@ -296,6 +298,7 @@ export AbstractDecoratedManifoldObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
     EmbeddedManifoldObjective,
+    ScaledManifoldObjective,
     ManifoldCountObjective,
     NonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
@@ -430,6 +433,7 @@ export SymmetricLinearSystemObjective
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
+export QuasiNewtonPreconditioner
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
