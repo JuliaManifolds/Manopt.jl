@@ -12,6 +12,7 @@ import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
+import ManifoldsBase: project, project!
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -195,6 +196,7 @@ include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference-of-convex-proximal-point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
+include("solvers/projected_gradient_method.jl")
 include("solvers/Lanczos.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
@@ -295,6 +297,7 @@ export AbstractDecoratedManifoldObjective,
     AbstractManifoldSubObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
+    ManifoldConstrainedSetObjective,
     EmbeddedManifoldObjective,
     ScaledManifoldObjective,
     ManifoldCountObjective,
@@ -349,6 +352,7 @@ export AbstractGradientSolverState,
     NelderMeadState,
     ParticleSwarmState,
     PrimalDualSemismoothNewtonState,
+    ProjectedGradientMethodState,
     ProximalBundleMethodState,
     RecordSolverState,
     StepsizeState,
@@ -379,6 +383,8 @@ export get_state,
     get_preconditioner!,
     get_primal_prox,
     get_primal_prox!,
+    get_projected_point,
+    get_projected_point!,
     get_differential_primal_prox,
     get_differential_primal_prox!,
     get_dual_prox,
@@ -496,6 +502,8 @@ export adaptive_regularization_with_cubics,
     particle_swarm,
     particle_swarm!,
     primal_dual_semismooth_Newton,
+    projected_gradient_method,
+    projected_gradient_method!,
     proximal_bundle_method,
     proximal_bundle_method!,
     proximal_point,
@@ -557,6 +565,7 @@ export StopAfter,
     StopWhenPopulationConcentrated,
     StopWhenPopulationDiverges,
     StopWhenPopulationStronglyConcentrated,
+    StopWhenProjectedGradientStationary,
     StopWhenRelativeResidualLess,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,

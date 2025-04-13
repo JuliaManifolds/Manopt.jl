@@ -165,7 +165,7 @@ function (c::StopAfterIteration)(
 end
 function get_reason(c::StopAfterIteration)
     if c.at_iteration >= c.max_iterations
-        return "The algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
+        return "At iteration $(c.at_iteration) the algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
     end
     return ""
 end
@@ -274,6 +274,7 @@ end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     if k == 0 # reset on init
         c.at_iteration = -1
+        c.last_change = Inf
     end
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
@@ -989,7 +990,7 @@ function status_summary(c::StopWhenAll)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r    $(status_summary(cs))\n"
+        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
@@ -1083,7 +1084,7 @@ function status_summary(c::StopWhenAny)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r    $(status_summary(cs))\n"
+        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end

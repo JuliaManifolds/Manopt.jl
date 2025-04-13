@@ -121,6 +121,7 @@ include("vectorial_plan.jl")
 
 include("subsolver_plan.jl")
 include("constrained_plan.jl")
+include("constrained_set_plan.jl")
 include("trust_regions_plan.jl")
 
 include("adabtive_regularization_with_cubics_plan.jl")

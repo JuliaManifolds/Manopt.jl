@@ -92,8 +92,10 @@ function ManifoldCostGradientObjective(
     return ManifoldCostGradientObjective{typeof(evaluation),CG}(costgrad)
 end
 
-get_cost_function(cgo::ManifoldCostGradientObjective) = (M, p) -> get_cost(M, cgo, p)
-function get_gradient_function(cgo::ManifoldCostGradientObjective)
+function get_cost_function(cgo::ManifoldCostGradientObjective, recursive=false)
+    return (M, p) -> get_cost(M, cgo, p)
+end
+function get_gradient_function(cgo::ManifoldCostGradientObjective, recursive=false)
     return (M, p) -> get_gradient(M, cgo, p)
 end
 
