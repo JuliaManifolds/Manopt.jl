@@ -88,4 +88,5 @@ using Manifolds, Manopt, Random, Test
         "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))\n    $(Manopt.status_summary(
         stop_when_stationary))"
     @test length(get_reason(stop_when_stationary)) > 0
+    @test length(get_reason(StopWhenProjectedGradientStationary(M, 1e-7))) == 0
 end
