@@ -57,16 +57,35 @@ using Manifolds, Manopt, Random, Test
         stopping_criterion=StopAfterIteration(150) |
                            StopWhenProjectedGradientStationary(M, 1e-7),
     )
-    mean_pg_2 = copy(M, c)
-    projected_gradient_method!(
+    Random.seed!(42)
+    mean_pg_2 = projected_gradient_method(
         M,
         f,
-        grad_f!,
-        project_C!,
-        mean_pg_2;
-        evaluation=InplaceEvaluation(),
+        grad_f,
+        project_C;
         stopping_criterion=StopAfterIteration(150) |
                            StopWhenProjectedGradientStationary(M, 1e-7),
     )
     @test isapprox(M, mean_pg_1, mean_pg_2)
+    mean_pg_3 = copy(M, c)
+    st = projected_gradient_method!(
+        M,
+        f,
+        grad_f!,
+        project_C!,
+        mean_pg_3;
+        evaluation=InplaceEvaluation(),
+        stopping_criterion=StopAfterIteration(150) |
+                           StopWhenProjectedGradientStationary(M, 1e-7),
+        return_state=true,
+    )
+    @test isapprox(M, mean_pg_1, mean_pg_3)
+    @test startswith(
+        repr(st), "# Solver state for `Manopt.jl`s Projected Gradient Method\n"
+    )
+    stop_when_stationary = st.stop.criteria[2]
+    @test repr(stop_when_stationary) ==
+        "StopWhenProjectedGradientStationary($(stop_when_stationary.threshold))\n    $(Manopt.status_summary(
+        stop_when_stationary))"
+    @test length(get_reason(stop_when_stationary)) > 0
 end

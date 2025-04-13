@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a `ScaledManifoldObjective` to easier build scaled versions of objectives,
   especially turn maximisation problems into minimisation ones using a scaling of `-1`.
-* Introduce a `ConstrainedSetObjective`
+* Introduce a `ManifoldConstrainedSetObjective`
 * Introduce a `projected_gradient_method`
 
 

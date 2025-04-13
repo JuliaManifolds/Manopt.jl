@@ -205,7 +205,7 @@ linearized_forward_operator
 
 ```@docs
 ConstrainedManifoldObjective
-ConstrainedSetObjective
+ManifoldConstrainedSetObjective
 ```
 
 It might be beneficial to use the adapted problem to specify different ranges for the gradients of the constraints

@@ -142,20 +142,25 @@ function get_reason(c::StopWhenProjectedGradientStationary)
     end
     return ""
 end
+indicates_convergence(c::StopWhenProjectedGradientStationary) = true
+function show(io::IO, c::StopWhenProjectedGradientStationary)
+    return print(
+        io, "StopWhenProjectedGradientStationary($(c.threshold))\n    $(status_summary(c))"
+    )
+end
 function status_summary(c::StopWhenProjectedGradientStationary)
     has_stopped = (c.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "stopped after $(c.threshold):\t$s"
+    return "projected gradient stationary (<$(c.threshold)): \t$s"
 end
-
 #
 #
 # The solver
 _doc_pgm = """
     projected_gradient_method(M, f, grad_f, proj, p=rand(M); kwargs...)
-    projected_gradient_method(M, obj::ConstrainedSetObjective, p=rand(M); kwargs...)
+    projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p=rand(M); kwargs...)
     projected_gradient_method!(M, f, grad_f, proj, p; kwargs...)
-    projected_gradient_method!(M, obj::ConstrainedSetObjective, p; kwargs...)
+    projected_gradient_method!(M, obj::ManifoldConstrainedSetObjective, p; kwargs...)
 
 Compute the projected gradient method for the constrained problem
 
@@ -202,12 +207,12 @@ end
 function projected_gradient_method(
     M, f, grad_f, proj, p; indicator=nothing, evaluation=AllocatingEvaluation(), kwargs...
 )
-    cs_obj = ConstrainedSetObjective(
+    cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation=evaluation, indicator=indicator
     )
     return projected_gradient_method(M, cs_obj, p; kwargs...)
 end
-function projected_gradient_method(M, obj::ConstrainedSetObjective, p; kwargs...)
+function projected_gradient_method(M, obj::ManifoldConstrainedSetObjective, p; kwargs...)
     q = copy(M, p)
     return projected_gradient_method!(M, obj, q; kwargs...)
 end
@@ -216,14 +221,14 @@ end
 function projected_gradient_method!(
     M, f, grad_f, proj, p; indicator=nothing, evaluation=AllocatingEvaluation(), kwargs...
 )
-    cs_obj = ConstrainedSetObjective(
+    cs_obj = ManifoldConstrainedSetObjective(
         f, grad_f, proj; evaluation=evaluation, indicator=indicator
     )
     return projected_gradient_method!(M, cs_obj, p; kwargs...)
 end
 function projected_gradient_method!(
     M,
-    obj::ConstrainedSetObjective,
+    obj::ManifoldConstrainedSetObjective,
     p;
     backtrack::Stepsize=ArmijoLinesearchStepsize(M; stop_increasing_at_step=0),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
