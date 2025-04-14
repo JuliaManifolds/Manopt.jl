@@ -153,7 +153,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         st.stop(mp, st, 20)
         DebugStoppingCriterion(; io=io)(mp, st, 20)
         @test String(take!(io)) ==
-            "The algorithm reached its maximal number of iterations (20).\n"
+            "At iteration 20 the algorithm reached its maximal number of iterations (20).\n"
         @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
         @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
         # Status for multiple dictionaries

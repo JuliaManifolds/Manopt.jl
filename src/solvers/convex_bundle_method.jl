@@ -828,7 +828,7 @@ end
 
 #
 #
-# Dispatching on different types of subsolvers
+# Dispatching on different types of sub solvers
 # (a) closed form allocating
 function _convex_bundle_subsolver!(
     M, bms::ConvexBundleMethodState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}}

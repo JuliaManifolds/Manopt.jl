@@ -121,6 +121,7 @@ include("vectorial_plan.jl")
 
 include("subsolver_plan.jl")
 include("constrained_plan.jl")
+include("constrained_set_plan.jl")
 include("trust_regions_plan.jl")
 
 include("adabtive_regularization_with_cubics_plan.jl")
@@ -132,6 +133,7 @@ include("exact_penalty_method_plan.jl")
 include("frank_wolfe_plan.jl")
 include("interior_point_Newton_plan.jl")
 include("quasi_newton_plan.jl")
+include("mesh_adaptive_plan.jl")
 include("nonlinear_least_squares_plan.jl")
 include("difference_of_convex_plan.jl")
 include("Douglas_Rachford_plan.jl")
@@ -142,6 +144,7 @@ include("higher_order_primal_dual_plan.jl")
 include("stochastic_gradient_plan.jl")
 
 include("embedded_objective.jl")
+include("scaled_objective.jl")
 
 include("cache.jl")
 include("count.jl")

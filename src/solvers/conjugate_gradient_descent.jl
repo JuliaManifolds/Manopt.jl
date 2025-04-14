@@ -111,7 +111,7 @@ function conjugate_gradient_descent(
 end
 function conjugate_gradient_descent(
     M::AbstractManifold, mgo::O, p=rand(M); kwargs...
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -144,7 +144,7 @@ function conjugate_gradient_descent!(
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
     initial_gradient=zero_vector(M, p),
     kwargs...,
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
@@ -173,7 +173,9 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     M = get_manifold(amp)
     copyto!(M, cgs.p_old, cgs.p)
     current_stepsize = get_stepsize(amp, cgs, k, cgs.δ)
-    retract!(M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method)
+    ManifoldsBase.retract_fused!(
+        M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method
+    )
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, k)
     vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)

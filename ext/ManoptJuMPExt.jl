@@ -2,28 +2,15 @@ module ManoptJuMPExt
 
 using Manopt
 using LinearAlgebra
-if isdefined(Base, :get_extension)
-    using JuMP: JuMP
-else
-    # imports need to be relative for Requires.jl-based workflows:
-    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
-    using ..JuMP: JuMP
-end
-const MOI = JuMP.MOI
+using JuMP: JuMP
 using ManifoldsBase
 using ManifoldDiff
+const MOI = JuMP.MOI
 
 function __init__()
-    # So that the user can use the convenient `Manopt.JuMP_Optimizer`
-    if isdefined(Base, :setglobal!)
-        setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
-        setglobal!(Manopt, :JuMP_VectorizedManifold, VectorizedManifold)
-        setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
-    else
-        Manopt.eval(:(const JuMP_Optimizer = $Optimizer))
-        Manopt.eval(:(const JuMP_VectorizedManifold = $VectorizedManifold))
-        Manopt.eval(:(const JuMP_ArrayShape = $ArrayShape))
-    end
+    setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
+    setglobal!(Manopt, :JuMP_VectorizedManifold, VectorizedManifold)
+    setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
     return nothing
 end
 

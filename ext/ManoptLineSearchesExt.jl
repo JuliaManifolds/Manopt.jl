@@ -3,14 +3,7 @@ module ManoptLineSearchesExt
 using Manopt
 import Manopt: LineSearchesStepsize
 using ManifoldsBase
-
-if isdefined(Base, :get_extension)
-    using LineSearches
-else
-    # imports need to be relative for Requires.jl-based workflows:
-    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
-    using ..LineSearches
-end
+using LineSearches
 
 function (cs::Manopt.LineSearchesStepsize)(
     mp::AbstractManoptProblem,
@@ -46,7 +39,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     end
     function ϕdϕ(α)
         # TODO: optimize?
-        retract!(M, p_tmp, p, η, α, cs.retraction_method)
+        ManifoldsBase.retract_fused!(M, p_tmp, p, η, α, cs.retraction_method)
         get_gradient!(mp, X_tmp, p_tmp)
         vector_transport_to!(M, Y_tmp, p, η, p_tmp, cs.vector_transport_method)
         phi = f(M, p_tmp)

@@ -74,7 +74,9 @@ function GradientDescentState(
         p, X, direction, stepsize, stopping_criterion, retraction_method
     )
 end
-function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, k)
+function (r::IdentityUpdateRule)(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
     return get_stepsize(mp, s, k), get_gradient!(mp, s.X, s.p)
 end
 function default_stepsize(
@@ -179,7 +181,7 @@ function gradient_descent(
     return _ensure_matching_output(p, rs)
 end
 function gradient_descent(
-    M::AbstractManifold, mgo::O, p; kwargs...
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
 ) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
@@ -246,6 +248,6 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)
     step, s.X = s.direction(p, s, k)
-    retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
+    ManifoldsBase.retract_fused!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end

@@ -36,6 +36,12 @@ decorate_objective!
 EmbeddedManifoldObjective
 ```
 
+### [Scaled objectives](@id subsection-scaled-objectives)
+
+```@docs
+ScaledManifoldObjective
+```
+
 ### [Cache objective](@id subsection-cache-objective)
 
 Since single function calls, for example to the cost or the gradient, might be expensive,
@@ -121,18 +127,14 @@ ManifoldCostGradientObjective
 ```@docs
 get_gradient
 get_gradients
+get_residuals
+get_residuals!
 ```
 
 and internally
 
 ```@docs
 get_gradient_function
-```
-
-#### Internal helpers
-
-```@docs
-get_gradient_from_Jacobian!
 ```
 
 ### Subgradient objective
@@ -203,6 +205,7 @@ linearized_forward_operator
 
 ```@docs
 ConstrainedManifoldObjective
+ManifoldConstrainedSetObjective
 ```
 
 It might be beneficial to use the adapted problem to specify different ranges for the gradients of the constraints
@@ -226,13 +229,15 @@ LagrangianHessian
 ```@docs
 equality_constraints_length
 inequality_constraints_length
-get_unconstrained_objective
 get_equality_constraint
-get_inequality_constraint
 get_grad_equality_constraint
 get_grad_inequality_constraint
 get_hess_equality_constraint
 get_hess_inequality_constraint
+get_inequality_constraint
+get_projected_point
+get_projected_point!
+get_unconstrained_objective
 is_feasible
 ```
 
@@ -262,6 +267,8 @@ Manopt.FunctionVectorialType
 #### Access functions
 
 ```@docs
+Manopt.get_jacobian
+Manopt.get_jacobian!
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)
@@ -271,6 +278,9 @@ Base.length(::VectorGradientFunction)
 
 ```@docs
 Manopt._to_iterable_indices
+Manopt._change_basis!
+Manopt.get_basis
+Manopt.get_range
 ```
 
 ### Subproblem objective

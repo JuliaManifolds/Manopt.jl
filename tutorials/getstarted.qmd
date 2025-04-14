@@ -1,5 +1,5 @@
 ---
-title: "🏔️ Get started: optimize."
+title: "🏔️ Get started with Manopt.jl"
 author: Ronny Bergmann
 ---
 
@@ -20,7 +20,7 @@ This can also be written as
 ```
 
 where the aim is to compute the minimizer $p^*$ numerically.
-As an example, consider the generalisation of the [(arithemtic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+As an example, consider the generalisation of the [(arithmetic) mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
 In the Euclidean case with $d∈\mathbb N$, that is for $n∈\mathbb N$ data points $y_1,\ldots,y_n ∈ ℝ^d$ the mean
 
 ```math
@@ -300,7 +300,7 @@ now()
 
 ````{=commonmark}
 ```@bibliography
-Pages = ["Optimize.md"]
+Pages = ["getstarted.md"]
 Canonical=false
 ```
 ````

@@ -48,6 +48,7 @@ end
         x_solution = mean(ABC)
         f(::Euclidean, x) = 0.5 * norm(A - x)^2 + 0.5 * norm(B - x)^2 + 0.5 * norm(C - x)^2
         grad_f(::Euclidean, x) = -A - B - C + 3 * x
+        costgrad(M, p) = (f(M, p), grad_f(M, p))
         M = Euclidean(4, 4)
         p = zeros(Float64, 4, 4)
         x_lrbfgs = quasi_Newton(
@@ -100,6 +101,14 @@ end
             memory_size=-1,
         )
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
+
+        # with Costgrad
+        mcgo = ManifoldCostGradientObjective(costgrad)
+
+        x_lrbfgs_costgrad = quasi_Newton(
+            M, mcgo, p; stopping_criterion=StopWhenGradientNormLess(10^(-6)), debug=[]
+        )
+        @test isapprox(M, x_lrbfgs_costgrad, x_lrbfgs; atol=1e-5)
 
         clrbfgs_s = quasi_Newton(
             M,
@@ -178,6 +187,25 @@ end
             M, f, grad_f!, x_lrbfgs2; evaluation=InplaceEvaluation(), memory_size=-1
         )
         @test isapprox(M, x_lrbfgs2, x_lrbfgs)
+
+        # A simple preconditioner
+        x_lrbfgs = quasi_Newton(
+            M, f, grad_f, x; memory_size=-1, preconditioner=(M, p, X) -> 0.5 .* X
+        )
+        @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
+
+        # An in-place preconditioner
+        x_lrbfgs = quasi_Newton(
+            M,
+            f,
+            grad_f,
+            x;
+            memory_size=-1,
+            preconditioner=QuasiNewtonPreconditioner(
+                (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation=InplaceEvaluation()
+            ),
+        )
+        @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
 
         x_clrbfgs = quasi_Newton(M, f, grad_f, x; cautious_update=true)
         @test isapprox(M, x_clrbfgs, x_solution; atol=rayleigh_atol)
@@ -392,7 +420,8 @@ end
         M = Euclidean(2)
         p = [0.0, 1.0]
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 * sum(p)
+        # A wrong gradient
+        grad_f(M, p) = -2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(

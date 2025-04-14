@@ -22,6 +22,7 @@ For derivative free only function evaluations of ``f`` are used.
 
 * [Nelder-Mead](NelderMead.md) a simplex based variant, that is using ``d+1`` points, where ``d`` is the dimension of the manifold.
 * [Particle Swarm](particle_swarm.md) 🫏 use the evolution of a set of points, called swarm, to explore the domain of the cost and find a minimizer.
+* [Mesh adaptive direct search](mesh_adaptive_direct_search.md) performs a mesh based exploration (poll) and search.
 * [CMA-ES](cma_es.md) uses a stochastic evolutionary strategy to perform minimization robust to local minima of the objective.
 
 ## First order
@@ -91,14 +92,14 @@ For these you can use
 * The [Exact Penalty Method](exact_penalty_method.md) (EPM) uses a penalty term instead of augmentation, but has the same interface as ALM.
 * The [Interior Point Newton Method](interior_point_Newton.md) (IPM) rephrases the KKT system of a constrained problem into an Newton iteration being performed in every iteration.
 * [Frank-Wolfe algorithm](FrankWolfe.md), where besides the gradient of ``f`` either a closed form solution or a (maybe even automatically generated) sub problem solver for ``\operatorname*{arg\,min}_{q ∈ C} ⟨\operatorname{grad} f(p_k), \log_{p_k}q⟩`` is required, where ``p_k`` is a fixed point on the manifold (changed in every iteration).
-
+* [Gradient Projection Method](projected_gradient_method.md)
 ## On the tangent space
 
 * [Conjugate Residual](conjugate_residual.md) a solver for a linear system ``\mathcal A[X] + b = 0`` on a tangent space.
 * [Steihaug-Toint Truncated Conjugate-Gradient Method](truncated_conjugate_gradient_descent.md) a solver for a constrained problem defined on a tangent space.
 
 
-## Alphabetical list List of algorithms
+## Alphabetical list of algorithms
 
 | Solver   | Function        | State   |
 |:---------|:----------------|:---------|
@@ -202,7 +203,7 @@ also use the third (lowest level) and just call
 solve!(problem, state)
 ```
 
-### Closed-form subsolvers
+### Closed-form sub solvers
 
 If a subsolver solution is available in closed form, `ClosedFormSubSolverState` is used to indicate that.
 
