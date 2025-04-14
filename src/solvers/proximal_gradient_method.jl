@@ -1,8 +1,8 @@
 # Solver
 @doc """
-    proximal_gradient_method(M, f, g, h, grad_g, prox_h, p=rand(M); kwargs...)
+    proximal_gradient_method(M, f, g, grad_g, prox_h, p=rand(M); kwargs...)
     proximal_gradient_method(M, mpgo::ManifoldProximalGradientObjective, p=rand(M); kwargs...)
-    proximal_gradient_method!(M, f, g, h, grad_g, prox_h, p; kwargs...)
+    proximal_gradient_method!(M, f, g, grad_g, prox_h, p; kwargs...)
     proximal_gradient_method!(M, mpgo::ManifoldProximalGradientObjective, p; kwargs...)
 
 Perform the proximal gradient method
