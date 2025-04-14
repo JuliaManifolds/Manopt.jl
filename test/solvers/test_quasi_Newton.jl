@@ -188,6 +188,25 @@ end
         )
         @test isapprox(M, x_lrbfgs2, x_lrbfgs)
 
+        # A simple preconditioner
+        x_lrbfgs = quasi_Newton(
+            M, f, grad_f, x; memory_size=-1, preconditioner=(M, p, X) -> 0.5 .* X
+        )
+        @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
+
+        # An in-place preconditioner
+        x_lrbfgs = quasi_Newton(
+            M,
+            f,
+            grad_f,
+            x;
+            memory_size=-1,
+            preconditioner=QuasiNewtonPreconditioner(
+                (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation=InplaceEvaluation()
+            ),
+        )
+        @test isapprox(M, x_lrbfgs, x_solution; atol=rayleigh_atol)
+
         x_clrbfgs = quasi_Newton(M, f, grad_f, x; cautious_update=true)
         @test isapprox(M, x_clrbfgs, x_solution; atol=rayleigh_atol)
 
@@ -401,7 +420,8 @@ end
         M = Euclidean(2)
         p = [0.0, 1.0]
         f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = 2 * sum(p)
+        # A wrong gradient
+        grad_f(M, p) = -2 .* p
         gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(

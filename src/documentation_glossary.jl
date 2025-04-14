@@ -23,7 +23,7 @@ _manopt_glossary = _MANOPT_DOC_TYPE()
     glossary(g::Dict, s::Symbol, args...; kwargs...)
 
 Access an entry in the glossary at `Symbol` s
-if that entrs is
+if that entry is
 * a string, this is returned
 * a function, it is called with `args...` and `kwargs...` passed
 * a dictionary, then the arguments and keyword arguments are passed to this dictionary, assuming `args[1]` is a symbol
@@ -87,6 +87,7 @@ define!(
     :pmatrix,
     (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
 )
+define!(:LaTeX, :proj, raw"\operatorname{proj}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
 define!(:LaTeX, :qquad, raw"\qquad")
@@ -258,6 +259,18 @@ $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " 
 ```
 """,
 )
+define!(
+    :Problem,
+    :SetConstrained,
+    (; M="M", p="p") -> """
+    ```math
+\\begin{aligned}
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
+$(_tex(:text, "subject to"))$(_tex(:quad))& p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:M; M=M))
+\\end{aligned}
+```
+""",
+)
 define!(:Problem, :Default, (; M="M", p="p") -> """
                         ```math
                         $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} f($p)
@@ -316,7 +329,7 @@ define!(
     :Variable,
     :Field,
     function (s::Symbol, d="$s", t=""; type=true, add="", kwargs...)
-        disp_type = type ? "::$(length(t) > 0 ? t : _var(s, :type))" : ""
+        disp_type = type ? "::$(length(t) > 0 ? "$(t)" : _var(s, :type))" : ""
         addv = !isa(add, Vector) ? [add] : add
         disp_add = join([a isa Symbol ? _var(s, a; kwargs...) : "$a" for a in addv])
         return "* `$(d)$(disp_type)`: $(_var(s, :description; kwargs...))$(disp_add)"

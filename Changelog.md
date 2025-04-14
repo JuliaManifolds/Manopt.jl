@@ -6,6 +6,43 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.12] April 13, 2025
+
+### Added
+
+* a `ScaledManifoldObjective` to easier build scaled versions of objectives,
+  especially turn maximisation problems into minimisation ones using a scaling of `-1`.
+* Introduce a `ManifoldConstrainedSetObjective`
+* Introduce a `projected_gradient_method`
+
+
+## [0.5.11] April 8, 2025
+
+### Added
+
+* Configurable subsolver for the linear subproblem in Levenberg-Marquardt. The default subsolver is now also robust to numerical issues that may cause Cholesky decomposition to fail.
+
+## [0.5.10] April 4, 2025
+
+### Fixed
+
+* a proper implementation of the preconditioning for `quasi_Newton`, that can be used instead
+  of or in combination with the initial scaling.
+>>>>>>> master
+
+## [0.5.9] March 24, 2025
+
+### Added
+
+* add a `PreconditionedDirection` variant to the `direction` gradient processor
+  keyword argument and its corresponding `PreconditionedDirectionRule`
+* make the preconditioner available in quasi Newton.
+* in `gradient_descent` and `conjugate_gradient_descent` the rule can be added anyways.
+
+### Fixed
+
+* the links in the AD tutorial are fixed and moved to using `extref`
+
 ## [0.5.8] February 28, 2025
 
 ### Fixed

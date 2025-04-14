@@ -122,6 +122,7 @@ include("vectorial_plan.jl")
 
 include("subsolver_plan.jl")
 include("constrained_plan.jl")
+include("constrained_set_plan.jl")
 include("trust_regions_plan.jl")
 
 include("adabtive_regularization_with_cubics_plan.jl")
@@ -144,6 +145,7 @@ include("higher_order_primal_dual_plan.jl")
 include("stochastic_gradient_plan.jl")
 
 include("embedded_objective.jl")
+include("scaled_objective.jl")
 
 include("cache.jl")
 include("count.jl")
