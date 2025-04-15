@@ -6,6 +6,16 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] April 15, 2025
+
+This breaking update is mainly concerned with updating the Convex Bundle Method.
+
+### Added
+
+* Added back functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`
+* Add back some fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState`
+
+
 ## [0.5.12] April 13, 2025
 
 ### Added
