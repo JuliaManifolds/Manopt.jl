@@ -347,11 +347,11 @@ function show(io::IO, cbms::ConvexBundleMethodState)
     return print(io, s)
 end
 
-function domain_condition(M, q, p, t, length, domain)
+function _domain_condition(M, q, p, t, length, domain)
     return (!domain(M, q) || (distance(M, p, q) < t * length))
 end
 
-function null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
+function _null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
     return (
         inner(M, p_last_serious, vector_transport_to(M, q, X, p_last_serious, VT), t * g) ≥
         -m * t * ξ - (
@@ -368,7 +368,7 @@ end
 Implement a backtrack as long as we are ``q = \operatorname{retr}_p(X)``
 yields a point closer to ``p`` than ``\lVert X \rVert_p`` or
 ``q`` is not on the domain.
-For the domain this step size requires a `ConvexBundleMethodState`
+For the domain this step size requires a `ConvexBundleMethodState`.
 """
 mutable struct DomainBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F} <: Stepsize
     candidate_point::P
@@ -406,7 +406,7 @@ function (dbt::DomainBackTrackingStepsize)(
         -dbt.last_stepsize * cbms.g,
         dbt.retraction_method,
     )
-    while domain_condition(
+    while _domain_condition(
         M,
         dbt.candidate_point,
         cbms.p_last_serious,
@@ -444,56 +444,20 @@ get_message(dbt::DomainBackTrackingStepsize) = dbt.message
 function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:Iterate})
     return dbt.candidate_point
 end
-# function get_parameter(dbt::DomainBackTrackingStepsize, s::Val{:ContractionFactor}, args...)
-#     return get_parameter(dbt.contraction_factor, args...)
-# end
 
 """
-#! UPDATE DOCS
     DomainBackTracking(; kwargs...)
     DomainBackTracking(M::AbstractManifold; kwargs...)
 
-Specify a step size that performs a backtracking to the interior of the domain.
-Given a Function ``f:$(_math(:M))→ℝ`` and its Riemannian Gradient ``$(_tex(:grad))f: $(_math(:M))→$(_math(:TM))``,
-the current point ``p∈$(_math(:M))`` and a search direction ``X∈$(_math(:TpM))``.
-
-Then the step size ``s`` is found by reducing the initial step size ``s`` until
-
-```math
-f($(_tex(:retr))_p(sX)) ≤ f(p) - τs ⟨ X, $(_tex(:grad))f(p) ⟩_p
-```
-
-is fulfilled. for a sufficient decrease value ``τ ∈ (0,1)``.
-
-To be a bit more optimistic, if ``s`` already fulfils this, a first search is done,
-__increasing__ the given ``s`` until for a first time this step does not hold.
-
-Overall, we look for step size, that provides _enough decrease_, see
-[Boumal:2023; p. 58](@cite) for more information.
+Specify a step size that performs a backtracking to the interior of the domain of the objective function.
 
 # Keyword arguments
 
-* `additional_decrease_condition=(M, p) -> true`:
-  specify an additional criterion that has to be met to accept a step size in the decreasing loop
-* `additional_increase_condition::IF=(M, p) -> true`:
-  specify an additional criterion that has to be met to accept a step size in the (initial) increase loop
 * `candidate_point=allocate_result(M, rand)`:
   speciy a point to be used as memory for the candidate points.
-* `contraction_factor=0.95`: how to update ``s`` in the decrease step
-* `initial_stepsize=1.0``: specify an initial step size
-* `initial_guess=`[`armijo_initial_guess`](@ref): Compute the initial step size of
-  a line search based on this function.
-  The funtion required is `(p,s,k,l) -> α` and computes the initial step size ``α``
-  based on a [`AbstractManoptProblem`](@ref) `p`, [`AbstractManoptSolverState`](@ref) `s`,
-  the current iterate `k` and a last step size `l`.
+* `contraction_factor`: how to update ``s`` in the decrease step
+* `initial_stepsize``: specify an initial step size
 $(_var(:Keyword, :retraction_method))
-* `stop_when_stepsize_less=0.0`: a safeguard, stop when the decreasing step is below this (nonnegative) bound.
-* `stop_when_stepsize_exceeds=max_stepsize(M)`: a safeguard to not choose a too long step size when initially increasing
-* `stop_increasing_at_step=100`: stop the initial increasing loop after this amount of steps. Set to `0` to never increase in the beginning
-* `stop_decreasing_at_step=1000`: maximal number of Armijo decreases / tests to perform
-* `sufficient_decrease=0.1`: the sufficient decrease parameter ``τ``
-
-For the stop safe guards you can pass `:Messages` to a `debug=` to see `@info` messages when these happen.
 
 $(_note(:ManifoldDefaultFactory, "DomainBackTrackingStepsize"))
 """
@@ -501,19 +465,19 @@ function DomainBackTracking(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
 end
 
-mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,T} <:
-               Linesearch
+@doc raw"""
+    NullStepBackTrackingStepsize <: Stepsize
+
+Implement a backtracking with a geometric condition in the case of a null step.
+For the domain this step size requires a `ConvexBundleMethodState`.
+"""
+mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F,T} <: Stepsize
     candidate_point::P
     contraction_factor::F
     initial_stepsize::F
     last_stepsize::F
     message::String
     retraction_method::TRM
-    sufficient_decrease::F
-    stop_when_stepsize_less::F
-    stop_when_stepsize_exceeds::F
-    stop_increasing_at_step::I
-    stop_decreasing_at_step::I
     X::T
     function NullStepBackTrackingStepsize(
         M::AbstractManifold;
@@ -522,24 +486,14 @@ mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,I,F,
         initial_stepsize::F=1.0,
         retraction_method::TRM=default_retraction_method(M),
         X::T=zero_vector(M, candidate_point),
-        stop_when_stepsize_less::F=0.0,
-        stop_when_stepsize_exceeds=max_stepsize(M),
-        stop_increasing_at_step::I=100,
-        stop_decreasing_at_step::I=1000,
-        sufficient_decrease=0.1,
-    ) where {TRM,P,I,F,T}
-        return new{TRM,P,I,F,T}(
+    ) where {TRM,P,F,T}
+        return new{TRM,P,F,T}(
             candidate_point,
             contraction_factor,
             initial_stepsize,
             initial_stepsize,
             "", # initialize an empty message
             retraction_method,
-            sufficient_decrease,
-            stop_when_stepsize_less,
-            stop_when_stepsize_exceeds,
-            stop_increasing_at_step,
-            stop_decreasing_at_step,
             X,
         )
     end
@@ -557,7 +511,7 @@ function (nsbt::NullStepBackTrackingStepsize)(
         nsbt.retraction_method,
     )
     get_subgradient!(amp, nsbt.X, nsbt.candidate_point)
-    while null_condition(
+    while _null_condition(
         amp,
         M,
         nsbt.candidate_point,
@@ -590,10 +544,6 @@ end
 function get_parameter(nsbt::NullStepBackTrackingStepsize, s::Val{:Subgradient})
     return nsbt.X
 end
-# function set_parameter!(nsbt::NullStepBackTrackingStepsize, s::Val{:Stepsize}, args...)
-#     set_parameter!(nsbt.initial_stepsize, args...)
-#     return nsbt
-# end
 function show(io::IO, nsbt::NullStepBackTrackingStepsize)
     return print(
         io,
@@ -602,7 +552,9 @@ function show(io::IO, nsbt::NullStepBackTrackingStepsize)
             initial_stepsize=$(nsbt.initial_stepsize)
             retraction_method=$(nsbt.retraction_method)
             contraction_factor=$(nsbt.contraction_factor)
-            sufficient_decrease=$(nsbt.sufficient_decrease)
+            candidate_point=$(nsbt.candidate_point)
+            X=$(nsbt.X)
+            last_stepsize=$(nsbt.last_stepsize)
         )""",
     )
 end

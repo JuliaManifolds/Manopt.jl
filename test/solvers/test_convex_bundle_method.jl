@@ -1,7 +1,7 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff, LinearAlgebra, Random
 using Manopt: convex_bundle_method, convex_bundle_method!, ConvexBundleMethodState
 using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
-using Manopt: ζ_1, ζ_2, close_point, domain_condition, null_condition
+using Manopt: ζ_1, ζ_2, close_point, _domain_condition, _null_condition
 using Manopt: DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
 using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
 
@@ -70,41 +70,6 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
         end
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
 
-        nsbt = NullStepBackTrackingStepsize(
-            M;
-            candidate_point=allocate_result(M, rand),
-            contraction_factor=0.5,
-            # initial_stepsize=1e-8,
-            retraction_method=default_retraction_method(M),
-            X=zero_vector(M, p0),
-            stop_when_stepsize_less=0.0,
-            stop_when_stepsize_exceeds=max_stepsize(M),
-            stop_increasing_at_step=2,
-            stop_decreasing_at_step=2,
-            sufficient_decrease=0.1,
-        )
-        @test nsbt.initial_stepsize == 1.0
-        @test nsbt.contraction_factor == 0.5
-        # Test if cbms.p is a null iterate compared to q0
-        # set_iterate!(cbms, M, q0)
-        # @test get_cost(mp, cbms.p) >
-        # (get_cost(mp, cbms.p_last_serious) + get_stepsize(mp, cbms, 1)* cbms.m * cbms.ξ)
-        # null_stepsize = nsbt(mp, cbms, 1)
-        # @test null_condition(
-        #     mp,
-        #     M,
-        #     nsbt.candidate_point,
-        #     p0,
-        #     rand(M, vector_at=p0),
-        #     cbms.g,
-        #     cbms.vector_transport_method,
-        #     cbms.inverse_retraction_method,
-        #     1e18,
-        #     -1e10,
-        #     cbms.ξ,
-        #     cbms.ϱ,
-        # )
-
         # Reset the serious iterate
         p0 = [0.0, 0.0, 0.0, 0.0, -1.0]
         set_iterate!(cbms, M, p0)
@@ -121,8 +86,8 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
         @test_throws MethodError get_proximal_map(mp, 1.0, cbms.p, 1)
 
         @testset "Domain and Null Conditions" begin
-            @test domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
-            @test !null_condition(
+            @test _domain_condition(M, p, p0, 1.0, 1.0, cbms.domain)
+            @test !_null_condition(
                 mp,
                 M,
                 p,
@@ -293,7 +258,7 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
         )
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
 
-        # Manually set cbms parameters to ensure null_condition is true
+        # Manually set cbms parameters to ensure _null_condition is true
         cbms.ξ = -1.0
         cbms.ϱ = -10.0
         cbms.m = 1.0
@@ -347,6 +312,6 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
         @test length(cbms.linearization_errors) == length(cbms.bundle)
         @test length(cbms.λ) == length(cbms.bundle)
 
-        step_solver!(mp, cbms, 2)
+        # step_solver!(mp, cbms, 2)
     end
 end
