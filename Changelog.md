@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   especially turn maximisation problems into minimisation ones using a scaling of `-1`.
 * Introduce a `ManifoldConstrainedSetObjective`
 * Introduce a `projected_gradient_method`
+* Allow setting `AbstractManifoldObjective` through JuMP
 
 
 ## [0.5.11] April 8, 2025
