@@ -109,7 +109,7 @@ MOI.get(model::Manopt.JuMP_Optimizer, ::MOI.NumberOfVariables)
 MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
 MOI.set(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
 MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveFunction{F}, ::F) where {F}
+MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
 MOI.supports(::Manopt.JuMP_Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
 JuMP.build_variable(::Function, ::Any, ::Manopt.AbstractManifold)
 MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ResultCount)
