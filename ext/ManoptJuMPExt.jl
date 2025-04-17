@@ -328,7 +328,16 @@ function MOI.optimize!(model::Optimizer)
         end for i in eachindex(model.variable_primal_start)
     ]
     objective = model.objective
-    if model.sense == MOI.MAX_SENSE
+    if model.sense == MOI.FEASIBILITY_SENSE
+        eval_f_cb(_, _) = 0.0
+        function eval_grad_f_cb(M, X)
+            x = JuMP.vectorize(X, _shape(model.manifold))
+            grad_f = zeros(length(x))
+            reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
+            return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
+        end
+        objective = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+    elseif model.sense == MOI.MAX_SENSE
         objective = -objective
     end
     dmgo = decorate_objective!(model.manifold, objective)
