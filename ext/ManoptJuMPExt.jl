@@ -332,9 +332,7 @@ function MOI.optimize!(model::Optimizer)
     ]
     objective = model.objective
     if model.sense == MOI.FEASIBILITY_SENSE
-        eval_f_cb(_, _) = 0.0
-        eval_grad_f_cb(M, X) = zero(X)
-        objective = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+        objective = Manopt.ManifoldGradientObjective((_, _) -> 0.0, (_, X) -> zero(X))
     elseif model.sense == MOI.MAX_SENSE
         objective = -objective
     end
