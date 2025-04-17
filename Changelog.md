@@ -28,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a proper implementation of the preconditioning for `quasi_Newton`, that can be used instead
   of or in combination with the initial scaling.
->>>>>>> master
 
 ## [0.5.9] March 24, 2025
 
