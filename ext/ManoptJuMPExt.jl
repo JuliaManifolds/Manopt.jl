@@ -328,7 +328,7 @@ function MOI.optimize!(model::Optimizer)
         end for i in eachindex(model.variable_primal_start)
     ]
     objective = model.objective
-    if model.sense == MOI.FEASIBILITY_SENSE
+    if isnothing(objective) || model.sense == MOI.FEASIBILITY_SENSE
         eval_f_cb(_, _) = 0.0
         function eval_grad_f_cb(M, X)
             x = JuMP.vectorize(X, _shape(model.manifold))
