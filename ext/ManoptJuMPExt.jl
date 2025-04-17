@@ -287,14 +287,13 @@ MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 Set the objective function as `func` for `model`.
 """
 function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::RiemannianFunction)
-    nl = convert(MOI.ScalarNonlinearFunction, func)
-    MOI.Nonlinear.set_objective(model.nlp_model, nl)
+    model.objective = func
     model.problem = nothing
     model.state = nothing
     return nothing
 end
 
-function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
+function MOI.set(model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
     nlp_model = MOI.Nonlinear.Model()
@@ -310,7 +309,9 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractSc
         reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
-    return Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+    objective = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+    MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
+    return nothing
 end
 
 # Name of the attribute for the type of the descent state to be used as follows:
