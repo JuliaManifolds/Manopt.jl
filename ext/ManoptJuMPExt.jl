@@ -45,7 +45,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     # Sense of the optimization, that is whether it is for example min, max or no objective
     sense::MOI.OptimizationSense
     # Objective function of the optimization
-    objective::Manopt.AbstractManifoldObjective
+    objective::Union{Nothing,Manopt.AbstractManifoldObjective}
     # Solver parameters set with `MOI.RawOptimizerAttribute`
     options::Dict{String,Any}
     function Optimizer()
