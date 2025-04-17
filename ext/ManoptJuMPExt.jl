@@ -29,7 +29,7 @@ function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
-struct RiemannianFunction{MO<:ManifoldsBase.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
+struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
     func::MO
 end
 
@@ -45,7 +45,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     # Sense of the optimization, that is whether it is for example min, max or no objective
     sense::MOI.OptimizationSense
     # Objective function of the optimization
-    objective::ManifoldsBase.AbstractManifoldObjective
+    objective::Manopt.AbstractManifoldObjective
     # Solver parameters set with `MOI.RawOptimizerAttribute`
     options::Dict{String,Any}
     function Optimizer()
