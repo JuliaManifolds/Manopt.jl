@@ -286,14 +286,7 @@ MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 
 Set the objective function as `func` for `model`.
 """
-function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::RiemannianFunction)
-    model.objective = func
-    model.problem = nothing
-    model.state = nothing
-    return nothing
-end
-
-function MOI.set(model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
+function MOI.set(model::Optimizer, attr::MOI.ObjectiveFunction{F}, func::F) where {F<:MOI.AbstractScalarFunction}
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
     nlp_model = MOI.Nonlinear.Model()
@@ -309,8 +302,15 @@ function MOI.set(model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.Abstra
         reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
-    objective = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+    objective = RiemannianFunction(Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb))
     MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
+    return nothing
+end
+
+function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::RiemannianFunction)
+    model.objective = func.func
+    model.problem = nothing
+    model.state = nothing
     return nothing
 end
 
