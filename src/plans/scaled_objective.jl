@@ -64,7 +64,7 @@ end
 
 function get_cost_function(scaled_objective::ScaledManifoldObjective, recursive::Bool=false)
     recursive && (return get_cost_function(scaled_objective.objective, recursive))
-    return (M, p) -> scaled_objective.scale * get_cost(M, scaled_objective, p)
+    return (M, p) -> get_cost(M, scaled_objective, p)
 end
 @doc """
     get_gradient(M::AbstractManifold, scaled_objective::ScaledManifoldObjective, p)

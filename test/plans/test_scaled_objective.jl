@@ -41,7 +41,7 @@ using LinearAlgebra, Manifolds, Manopt, Test, Random
         @test Manopt.get_cost_function(o) === Manopt.get_cost_function(s, true)
         f2 = Manopt.get_cost_function(s)
         @test f2 != f
-        @test f2(M, p) == f(M, p)
+        @test f2(M, p) == -f(M, p)
         # The same for gradient
         @test Manopt.get_gradient_function(o) === Manopt.get_gradient_function(s, true)
     end
