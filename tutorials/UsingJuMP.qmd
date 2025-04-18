@@ -38,7 +38,7 @@ Next we add a [JuMP variable](https://jump.dev/JuMP.jl/stable/manual/variables/)
 where we specify the manifold using the `in` keyword, `start=` cares for the initialisation
 
 ```{julia}
-@variable(model, p[1:3] in M, start=p[i])
+@variable(model, p[i=1:3] in M, start=p[i])
 ```
 
 For now this is restricted to array-type-representations.
