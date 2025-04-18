@@ -1,0 +1,60 @@
+---
+title: "Using Manopt.jl from within JuMP"
+author: Ronny Bergmann
+---
+
+In this tutorial we aim to illustrate how to use manifolds and the algorithms from [`Manopt.jl`](https://manoptjl.org) within the [JuMP](https://jump.dev) framework by implementing the [get started](getstarted.md) tutorial again using JuMP combining it with for example their [get started](https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_JuMP/#Getting-started-with-JuMP) tutorial.
+
+```{julia}
+#| echo: false
+#| code-fold: true
+#| output: false
+using Pkg;
+cd(@__DIR__)
+Pkg.activate("."); # for reproducibility use the local tutorial environment.
+```
+
+```{julia}
+using JuMP, Manopt, Manifolds
+```
+
+First we generate the same data for the [Riemannian center of mass]() as before
+
+```{julia}
+n = 100
+σ = π / 8
+M = Sphere(2)
+p = 1 / sqrt(2) * [1.0, 0.0, 1.0]
+data = [exp(M, p,  σ * rand(M; vector_at=p)) for i in 1:n];
+```
+
+and we start by stating that our [JuMP model](https://jump.dev/JuMP.jl/stable/manual/models/) is
+
+```{julia}
+model = Model(Manopt.JuMP_Optimizer)
+```
+
+Next we add a [JuMP variable](https://jump.dev/JuMP.jl/stable/manual/variables/),
+where we specify the manifold using the `in` keyword, `start=` cares for the initialisation
+
+```{julia}
+@variable(model, p[1:3] in M, start=p[i])
+```
+
+For now this is restricted to array-type-representations.
+
+The [objective](https://jump.dev/JuMP.jl/stable/manual/objective/) is set for example using out [Objectives](objective.md).
+
+```{julia}
+f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
+grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
+# ToDo: Does not yet work, but I thought it should by now?
+@objective(model, Min, Manopt.ManifoldGradientObjective(f, grad_f))
+```
+
+```{julia}
+# ToDo understand and write about
+#set_attribute("descent_state_type", GradientDescentState)
+#optimize!(model)
+#solution_summary(model)
+```
