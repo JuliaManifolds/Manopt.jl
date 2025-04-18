@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Allow setting `AbstractManifoldObjective` through JuMP
 
+### Fixed
+
+* a scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
+
 ## [0.5.12] April 13, 2025
 
 ### Added
