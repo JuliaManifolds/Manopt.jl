@@ -33,14 +33,13 @@ computing the gradient step.
 $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f; add="total cost function `f = g + h`"))
 * `g`:              the smooth part of the cost function
-* `h`:              the nonsmooth part of the cost function
 * `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
 * `prox_h`:           a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the nonsmoooth part ``h`` of ``f``
 $(_var(:Argument, :p))
 
 # Keyword Arguments
 
-* `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step
+* `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_var(:Keyword, :evaluation))
 * `stepsize=default_stepsize(M, ProximalGradientMethodState)`: a [`ProximalStepsize`](@ref) or function to compute the stepsize
 $(_var(:Keyword, :retraction_method))
