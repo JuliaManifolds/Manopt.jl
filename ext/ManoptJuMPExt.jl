@@ -34,6 +34,18 @@ struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
     func::MO
 end
 
+# We we don't support `MOI.modify` and `RiemannianFunction` is not mutable, no need to copy anything
+Base.copy(func::RiemannianFunction) = func
+
+# This is called for instance when the user does `@objective(model, Min, func)`.
+# JuMP only accepts subtypes of `MOI.AbstractFunction` as objective so we wrap `func`.
+# It will then be allowed to go through all the MOI layers because it is of the right type
+# We will then receive it in `MOI.set(::Optimizer, ::MOI.ObjectiveFunction, RiemannianFunction)`
+# where we will unwrap it and recover `func`.
+function JuMP.set_objective_function(model::JuMP.Model, func::Manopt.AbstractManifoldObjective)
+    return JuMP.set_objective_function(model, RiemannianFunction(func))
+end
+
 mutable struct Optimizer <: MOI.AbstractOptimizer
     # Manifold in which all the decision variables leave
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
