@@ -295,19 +295,12 @@ function MOI.set(model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.Abstra
     evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
     MOI.initialize(evaluator, [:Grad])
     function eval_f_cb(M, x)
-        val = MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
-        if model.sense == MOI.MAX_SENSE
-            val = -val
-        end
-        return val
+        return MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
     end
     function eval_grad_f_cb(M, X)
         x = JuMP.vectorize(X, _shape(model.manifold))
         grad_f = zeros(length(x))
         MOI.eval_objective_gradient(evaluator, grad_f, x)
-        if model.sense == MOI.MAX_SENSE
-            LinearAlgebra.rmul!(grad_f, -1)
-        end
         reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
@@ -340,6 +333,8 @@ function MOI.optimize!(model::Optimizer)
     objective = model.objective
     if model.sense == MOI.FEASIBILITY_SENSE
         objective = Manopt.ManifoldGradientObjective((_, _) -> 0.0, ManifoldsBase.zero_vector)
+    elseif model.sense == MOI.MAX_SENSE
+        objective = -objective
     end
     dmgo = decorate_objective!(model.manifold, objective)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
