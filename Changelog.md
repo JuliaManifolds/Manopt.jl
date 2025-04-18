@@ -6,6 +6,16 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.13] unreleased
+
+### Added
+
+* Allow setting `AbstractManifoldObjective` through JuMP
+
+### Fixed
+
+* a scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
+
 ## [0.5.12] April 13, 2025
 
 ### Added
@@ -28,7 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a proper implementation of the preconditioning for `quasi_Newton`, that can be used instead
   of or in combination with the initial scaling.
->>>>>>> master
 
 ## [0.5.9] March 24, 2025
 
