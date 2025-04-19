@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* a scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
+* A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
+* Documentation issues for quasi-Newton solvers.
 
 ## [0.5.12] April 13, 2025
 
