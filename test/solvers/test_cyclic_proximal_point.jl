@@ -1,17 +1,19 @@
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
 using Manifolds, Manopt, Test, Dates, LRUCache
 using ManifoldDiff: prox_distance, prox_distance!
-using ManoptExamples: prox_Total_Variation, prox_Total_Variation!, L2_Total_Variation
-using ManoptExamples: artificial_S1_signal, Lemniscate
+using ManoptTestSuite
 
 @testset "Cyclic Proximal Point" begin
     @testset "Allocating" begin
         n = 100
         N = PowerManifold(Circle(), n)
-        q = artificial_S1_signal(n)
-        f(M, p) = L2_Total_Variation(M, q, 0.5, p)
+        q = [exp(Circle(), 0, X) for X in range(0, 3π; length=n)]
+        f(M, p) = ManoptTestSuite.L2_Total_Variation(M, q, 0.5, p)
         proxes = (
             (N, λ, p) -> prox_distance(N, λ, q, p),
-            (N, λ, p) -> prox_Total_Variation(N, 0.5 * λ, p),
+            (N, λ, p) -> ManoptTestSuite.prox_Total_Variation(N, 0.5 * λ, p),
         )
         q2 = cyclic_proximal_point(
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
@@ -47,15 +49,22 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        q = [Lemniscate(t) for t in range(0, 2π; length=n)]
-        f(N, p) = L2_Total_Variation(N, q, 0.5, p)
+        q = [ #Adapted Lemniscate
+            exp(
+                M,
+                [0.0, 0.0, 1.0],
+                π / 2.0 * (cos(t) / (sin(t)^2 + 1.0)) * [1.0, 0.0, 0.0] +
+                π / 2.0 * (cos(t) * sin(t) / (sin(t)^2 + 1.0)) * [0.0, 1.0, 0.0],
+            ) for t in range(0, 2π; length=n)
+        ]
+        f(N, p) = ManoptTestSuite.L2_Total_Variation(N, q, 0.5, p)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
-            (N, q, λ, p) -> prox_Total_Variation!(N, q, 0.5 * λ, p),
+            (N, q, λ, p) -> ManoptTestSuite.prox_Total_Variation!(N, q, 0.5 * λ, p),
         )
         proxes = (
             (N, λ, p) -> prox_distance(N, λ, q, p),
-            (N, λ, p) -> prox_Total_Variation(N, 0.5 * λ, p),
+            (N, λ, p) -> ManoptTestSuite.prox_Total_Variation(N, 0.5 * λ, p),
         )
         s1 = cyclic_proximal_point(
             N, f, proxes, q; λ=i -> π / (2 * i), stopping_criterion=StopAfterIteration(100)
@@ -94,15 +103,22 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
         n = 3
         M = Sphere(2)
         N = PowerManifold(M, NestedPowerRepresentation(), n)
-        q = [Lemniscate(t) for t in range(0, 2π; length=n)]
-        f(N, x) = L2_Total_Variation(N, q, 0.5, x)
+        q = [ #Adapted Lemniscate
+            exp(
+                M,
+                [0.0, 0.0, 1.0],
+                π / 2.0 * (cos(t) / (sin(t)^2 + 1.0)) * [1.0, 0.0, 0.0] +
+                π / 2.0 * (cos(t) * sin(t) / (sin(t)^2 + 1.0)) * [0.0, 1.0, 0.0],
+            ) for t in range(0, 2π; length=n)
+        ]
+        f(N, x) = ManoptTestSuite.L2_Total_Variation(N, q, 0.5, x)
         proxes! = (
             (N, qr, λ, p) -> prox_distance!(N, qr, λ, q, p),
-            (N, q, λ, p) -> prox_Total_Variation!(N, q, 0.5 * λ, p),
+            (N, q, λ, p) -> ManoptTestSuite.prox_Total_Variation!(N, q, 0.5 * λ, p),
         )
         proxes = (
             (N, λ, p) -> prox_distance(N, λ, q, p),
-            (N, λ, p) -> prox_Total_Variation(N, 0.5 * λ, p),
+            (N, λ, p) -> ManoptTestSuite.prox_Total_Variation(N, 0.5 * λ, p),
         )
         for i in 1:2
             mpo1 = ManifoldProximalMapObjective(f, proxes)
@@ -129,10 +145,10 @@ using ManoptExamples: artificial_S1_signal, Lemniscate
         M = Euclidean(3)
         p = ones(3)
         O = CyclicProximalPointState(M; p=p)
-        f(M, p) = L2_Total_Variation(M, q, 0.5, p)
+        f(M, p) = ManoptTestSuite.L2_Total_Variation(M, q, 0.5, p)
         proxes = (
             (M, λ, p) -> prox_distance(M, λ, q, p),
-            (M, λ, p) -> prox_Total_Variation(M, 0.5 * λ, p),
+            (M, λ, p) -> ManoptTestSuite.prox_Total_Variation(M, 0.5 * λ, p),
         )
         s = CyclicProximalPointState(
             M; p=p, stopping_criterion=StopAfterIteration(1), λ=i -> i

@@ -1,15 +1,8 @@
-using LRUCache, Manopt, Manifolds, Test
-import Manopt: get_proximal_map, get_proximal_map!
-using ManifoldDiff: prox_distance, adjoint_differential_log_basepoint
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-function get_proximal_map(M, o::ManifoldProximalMapObjective, λ, p)
-    return get_proximal_map(M, o, λ, p, 1)
-end
-function get_proximal_map!(M, q, o::ManifoldProximalMapObjective, λ, p)
-    return get_proximal_map!(M, q, o, λ, p, 1)
-end
-
-include("../utils/dummy_types.jl")
+using LRUCache, Manifolds, ManifoldDiff, Manopt, ManoptTestSuite, Test
+using ManifoldDiff: prox_distance
 
 @testset "Proximal Plan" begin
     M = Euclidean(2)
@@ -21,7 +14,7 @@ include("../utils/dummy_types.jl")
     ppo = ManifoldProximalMapObjective(f, proxes_f)
     ppo2 = ManifoldProximalMapObjective(f2, proxes_f[1])
     @testset "Objective Decorator passthrough" begin
-        dppo = DummyDecoratedObjective(ppo)
+        dppo = ManoptTestSuite.DummyDecoratedObjective(ppo)
         for i in 1:2
             @test get_proximal_map(M, ppo, 0.1, p, i) ==
                 get_proximal_map(M, dppo, 0.1, p, i)

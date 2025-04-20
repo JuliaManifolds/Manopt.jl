@@ -1,7 +1,7 @@
-using Manopt, ManifoldsBase, Test
-using Manopt: get_cost_function, get_gradient_function
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/dummy_types.jl")
+using ManifoldsBase, Manopt, ManoptTestSuite, Test
 
 @testset "Gradient Plan" begin
     io = IOBuffer()
@@ -71,10 +71,10 @@ include("../utils/dummy_types.jl")
     @testset "CostGradObjective" begin
         costgrad(M, p) = (f(M, p), grad_f(M, p))
         mcgo = ManifoldCostGradientObjective(costgrad)
-        f2 = get_cost_function(mcgo)
+        f2 = Manopt.get_cost_function(mcgo)
         @test f(M, p) == f2(M, p)
         @test f(M, p) == get_cost(M, mcgo, p)
-        grad_f2 = get_gradient_function(mcgo)
+        grad_f2 = Manopt.get_gradient_function(mcgo)
         X = grad_f(M, p)
         @test isapprox(M, p, X, grad_f2(M, p))
         @test isapprox(M, p, X, get_gradient(M, mcgo, p))
@@ -98,7 +98,7 @@ include("../utils/dummy_types.jl")
         @test get_count(cmcgo, :Cost) == 3
     end
     @testset "Objective Decorator passthrough" begin
-        ddo = DummyDecoratedObjective(mgo)
+        ddo = ManoptTestSuite.DummyDecoratedObjective(mgo)
         @test get_cost(M, mgo, p) == get_cost(M, ddo, p)
         @test get_gradient(M, mgo, p) == get_gradient(M, ddo, p)
         X = zero_vector(M, p)
@@ -106,7 +106,7 @@ include("../utils/dummy_types.jl")
         get_gradient!(M, X, ddo, p)
         get_gradient!(M, Y, ddo, p)
         @test X == Y
-        @test get_gradient_function(ddo) == get_gradient_function(mgo)
-        @test get_cost_function(ddo) == get_cost_function(mgo)
+        @test Manopt.get_gradient_function(ddo) == Manopt.get_gradient_function(mgo)
+        @test Manopt.get_cost_function(ddo) == Manopt.get_cost_function(mgo)
     end
 end
