@@ -83,7 +83,7 @@ model2 = Model(Manopt.JuMP_Optimizer)
 @variable(model2, p[i=1:3] in M, start = p[i])
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
-# ToDo: Does not yet work, but I thought it should by now?
+# TODO: Does not yet work, but I thought it should by now?
 @objective(model2, Min, Manopt.ManifoldGradientObjective(f, grad_f))
 set_attribute("descent_state_type", GradientDescentState)
 ```
