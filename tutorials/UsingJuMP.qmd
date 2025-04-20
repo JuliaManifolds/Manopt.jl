@@ -41,20 +41,61 @@ where we specify the manifold using the `in` keyword, `start=` cares for the ini
 @variable(model, p[i=1:3] in M, start=p[i])
 ```
 
-For now this is restricted to array-type-representations.
+For now this is restricted to array-type-representations of points and tangent vectors.
 
-The [objective](https://jump.dev/JuMP.jl/stable/manual/objective/) is set for example using out [Objectives](objective.md).
+## Variant I: Specify the
+
+One can specify a cost in the embedding and get an approximate gradient in the embedding that is “converted” into a Riemannian one, see [AD](AutomaticDifferentiation.md).
 
 ```{julia}
+f(p) = sum(1 / (2 * n) * norm.(Ref(p) - data) .^ 2)
+grad_f(p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
+# TODO: how to set the objective to an implemented function ?
+# TODO 100% unsure how to set a gradient since that seems to be nowhere documented ?!
+@objective(model, f)
+```
+
+We set the solver to use to be [gradient descent](gradient_descent.md)
+
+```{julia}
+set_attribute("descent_state_type", GradientDescentState)
+```
+
+Then we can call the solver
+
+```{julia}
+optimize!(model)
+```
+
+and look at the solution
+
+```{julia}
+solution_summary(model)
+```
+
+
+## Vriant II: Specify the objective directly
+
+The [objective](https://jump.dev/JuMP.jl/stable/manual/objective/) is set for example using our [Objectives](objective.md).
+
+```{julia}
+model2 = Model(Manopt.JuMP_Optimizer)
+@variable(model2, p[i=1:3] in M, start = p[i])
 f(M, p) = sum(1 / (2 * n) * distance.(Ref(M), Ref(p), data) .^ 2)
 grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
 # ToDo: Does not yet work, but I thought it should by now?
-@objective(model, Min, Manopt.ManifoldGradientObjective(f, grad_f))
+@objective(model2, Min, Manopt.ManifoldGradientObjective(f, grad_f))
+set_attribute("descent_state_type", GradientDescentState)
 ```
 
+And we issue again the optimization
+
 ```{julia}
-# ToDo understand and write about
-#set_attribute("descent_state_type", GradientDescentState)
-#optimize!(model)
-#solution_summary(model)
+optimize!(model2)
+```
+
+and look at the solution
+
+```{julia}
+solution_summary(model2)
 ```
