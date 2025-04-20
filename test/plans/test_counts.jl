@@ -1,8 +1,9 @@
-using Manifolds, Manopt, Test, Random
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using Manifolds, Manopt, ManoptTestSuite, Test, Random
 using Manopt: get_cost_function, get_gradient_function
 using LinearAlgebra: Symmetric
-
-include("../utils/dummy_types.jl")
 
 @testset "Counting Objective test" begin
     @testset "Basics" begin
@@ -29,7 +30,7 @@ include("../utils/dummy_types.jl")
         # others do not affect the counter
         @test get_count(c_obj, :Gradient) == 2
         # also decorated objects can be wrapped to be counted
-        ro = DummyDecoratedObjective(obj)
+        ro = ManoptTestSuite.DummyDecoratedObjective(obj)
         c_obj2 = ManifoldCountObjective(M, ro, [:Gradient])
         get_gradient(M, c_obj2, p)
         @test get_count(c_obj2, :Gradient) == 1
@@ -42,7 +43,7 @@ include("../utils/dummy_types.jl")
         @test startswith(repr((c_obj, p)), "## Statistics")
         # but this also includes the hint, how to access the result
         @test endswith(repr((c_obj, p)), "on this variable.")
-        rc_obj = DummyDecoratedObjective(c_obj)
+        rc_obj = ManoptTestSuite.DummyDecoratedObjective(c_obj)
         @test get_count(rc_obj, :Gradient) == 2 #still works if count is encapsulated
         @test_throws ErrorException get_count(obj, :Gradient) # no count objective
         @test get_count(rc_obj, :Gradient, 1) == 2 #still works if count is encapsulated

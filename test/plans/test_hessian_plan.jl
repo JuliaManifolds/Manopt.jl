@@ -1,5 +1,7 @@
-using LRUCache, Manopt, Manifolds, Test
-include("../utils/dummy_types.jl")
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
 
 @testset "Hessian access functions" begin
     M = Euclidean(2)
@@ -39,7 +41,7 @@ include("../utils/dummy_types.jl")
         Y1 = zero_vector(M, p)
         Y2 = zero_vector(M, p)
         for obj in [mho1, mho2, mho3, mho4]
-            ddo = DummyDecoratedObjective(obj)
+            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
             @test get_hessian(M, obj, p, X) == get_hessian(M, ddo, p, X)
             get_hessian!(M, Y1, obj, p, X)
             get_hessian!(M, Y2, ddo, p, X)
@@ -56,7 +58,7 @@ include("../utils/dummy_types.jl")
         Y2 = zero_vector(M, p)
         for obj in [mho1, mho2, mho3, mho4]
             cobj = Manopt.objective_count_factory(M, obj, [:Hessian, :Preconditioner])
-            ddo = DummyDecoratedObjective(obj)
+            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
             @test get_hessian(M, obj, p, X) == get_hessian(M, cobj, p, X)
             get_hessian!(M, Y1, obj, p, X)
             get_hessian!(M, Y2, cobj, p, X)
