@@ -23,26 +23,23 @@ function test_sphere()
     start = normalize(1:3)
     @variable(model, x[i=1:3] in Sphere(2), start = start[i])
 
-    @objective(model, Min, sum(x))
-    _test_sphere_sum(model, 1)
-
-    @objective(model, Max, sum(x))
-    _test_sphere_sum(model, -1)
-
     function eval_sum_cb(M, x)
         return sum(x)
     end
     function eval_grad_sum_cb(M, X)
         grad_f = ones(length(X))
-        return Manopt.riemannian_gradient(manifold, X, grad_f)
+        return Manopt.riemannian_gradient(M, X, grad_f)
     end
+
     objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
 
-    @objective(model, Min, objective)
-    _test_sphere_sum(model, 1)
+    @testset "$obj_sense" for (obj_sense, obj_sign) in [(MOI.MIN_SENSE, 1), (MOI.MAX_SENSE, -1)]
+        @objective(model, obj_sense, sum(x))
+        _test_sphere_sum(model, obj_sign)
 
-    @objective(model, Max, objective)
-    _test_sphere_sum(model, -1)
+        @objective(model, obj_sense, objective)
+        _test_sphere_sum(model, obj_sign)
+    end
 
     @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)

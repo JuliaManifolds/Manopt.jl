@@ -34,6 +34,8 @@ struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
     func::MO
 end
 
+MOI.Utilities.map_indices(::Function, func::RiemannianFunction) = func
+
 # We we don't support `MOI.modify` and `RiemannianFunction` is not mutable, no need to copy anything
 Base.copy(func::RiemannianFunction) = func
 
