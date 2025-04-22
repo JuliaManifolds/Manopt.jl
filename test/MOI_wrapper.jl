@@ -33,12 +33,16 @@ function test_sphere()
 
     objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
 
-    @testset "$obj_sense" for (obj_sense, obj_sign) in [(MOI.MIN_SENSE, 1), (MOI.MAX_SENSE, -1)]
-        @objective(model, obj_sense, sum(x))
-        _test_sphere_sum(model, obj_sign)
+    @testset "$obj_sense" for (obj_sense, obj_sign) in [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
+        @testset "JuMP objective" begin
+            @objective(model, obj_sense, sum(x))
+            _test_sphere_sum(model, obj_sign)
+        end
 
-        @objective(model, obj_sense, objective)
-        _test_sphere_sum(model, obj_sign)
+        @testset "Manopt objective" begin
+            @objective(model, obj_sense, objective)
+            _test_sphere_sum(model, obj_sign)
+        end
     end
 
     @objective(model, Min, sum(xi^4 for xi in x))
