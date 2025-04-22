@@ -472,7 +472,11 @@ Return the value of the objective function evaluated at the solution.
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
     solution = Manopt.get_solver_return(model.state)
-    return get_cost(model.problem, solution)
+    value = get_cost(model.problem, solution)
+    if model.sense == MOI.MAX_SENSE
+        value = -value
+    end
+    return value
 end
 
 """
