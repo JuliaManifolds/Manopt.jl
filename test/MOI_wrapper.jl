@@ -4,7 +4,7 @@ using Manifolds
 using Manopt
 using JuMP
 
-function _test_sphere_sum(obj_sign)
+function _test_sphere_sum(model, obj_sign)
     @test MOI.get(unsafe_backend(model), MOI.ResultCount()) == 0
     optimize!(model)
     @test MOI.get(unsafe_backend(model), MOI.NumberOfVariables()) == 3
@@ -13,7 +13,7 @@ function _test_sphere_sum(obj_sign)
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test dual_status(model) == MOI.NO_SOLUTION
     @test objective_value(model) ≈ obj_sign * √3
-    @test value.(x) ≈ obj_sign * inv(√3) * ones(3) rtol = 1e-2
+    @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
 end
@@ -24,10 +24,10 @@ function test_sphere()
     @variable(model, x[i=1:3] in Sphere(2), start = start[i])
 
     @objective(model, Min, sum(x))
-    _test_sphere_sum(1)
+    _test_sphere_sum(model, 1)
 
     @objective(model, Max, sum(x))
-    _test_sphere_sum(-1)
+    _test_sphere_sum(model, -1)
 
     function eval_sum_cb(M, x)
         return sum(x)
@@ -39,10 +39,10 @@ function test_sphere()
     objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
 
     @objective(model, Min, objective)
-    _test_sphere_sum(1)
+    _test_sphere_sum(model, 1)
 
     @objective(model, Max, objective)
-    _test_sphere_sum(-1)
+    _test_sphere_sum(model, -1)
 
     @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)
