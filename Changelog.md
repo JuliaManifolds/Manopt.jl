@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Allow setting `AbstractManifoldObjective` through JuMP
 
+### Changed
+
+* Remove dependency on `ManoptExamples.jl` which yielded a circular dependency, though only through extras
+* Unify dummy types and several test functions into the `ManoptTestSuite` subpackage.
+
+### Fixed
+
+* A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
+* Documentation issues for quasi-Newton solvers.
+
 ## [0.5.12] April 13, 2025
 
 ### Added

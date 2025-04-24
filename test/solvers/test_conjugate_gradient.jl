@@ -1,7 +1,8 @@
-using Manopt, Manifolds, ManifoldsBase, Test, Random
-using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/example_tasks.jl")
+using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, Random
+using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
 @testset "Conjugate Gradient Descent" begin
     @testset "Conjugate Gradient coefficient rules" begin
@@ -269,7 +270,7 @@ include("../utils/example_tasks.jl")
     end
 
     @testset "CG on the Circle" begin
-        M, f, grad_f, p0, p_star = Circle_mean_task()
+        M, f, grad_f, p0, p_star = ManoptTestSuite.Circle_mean_task()
         s = conjugate_gradient_descent(
             M, f, grad_f, p0; evaluation=InplaceEvaluation(), return_state=true
         )
