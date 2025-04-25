@@ -44,7 +44,9 @@ Base.copy(func::RiemannianFunction) = func
 # It will then be allowed to go through all the MOI layers because it is of the right type
 # We will then receive it in `MOI.set(::Optimizer, ::MOI.ObjectiveFunction, RiemannianFunction)`
 # where we will unwrap it and recover `func`.
-function JuMP.set_objective_function(model::JuMP.Model, func::Manopt.AbstractManifoldObjective)
+function JuMP.set_objective_function(
+    model::JuMP.Model, func::Manopt.AbstractManifoldObjective
+)
     return JuMP.set_objective_function(model, RiemannianFunction(func))
 end
 
