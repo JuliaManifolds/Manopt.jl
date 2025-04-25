@@ -292,8 +292,10 @@ Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
 ```
 
 ## Literature
