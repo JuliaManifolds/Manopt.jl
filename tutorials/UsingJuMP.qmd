@@ -61,7 +61,7 @@ using the [`ManifoldGradientObjective`](@ref).
 @objective(model, Min, ManifoldGradientObjective(f, grad_f))
 ```
 
-We set the solver to use to be [gradient descent](gradient_descent.md)
+We set the solver to use to be [gradient descent](../solvers/gradient_descent.md)
 
 ```{julia}
 #| output: false
@@ -83,7 +83,7 @@ solution_summary(model)
 
 ## Vriant II: Specify cost and gradient in the embedding
 
-The [objective](https://jump.dev/JuMP.jl/stable/manual/objective/) is set for example using our [Objectives](objective.md).
+The [objective](https://jump.dev/JuMP.jl/stable/manual/objective/) is set for example using our [Objectives](../plans/objective.md).
 
 ```{julia}
 model2 = Model(Manopt.JuMP_Optimizer)
