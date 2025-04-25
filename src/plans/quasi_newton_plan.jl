@@ -594,8 +594,15 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     Proj,
     G<:Union{<:Real,Nothing},
 }
+    println(p, initial_vector, initial_scale)
     mT = allocate_result_type(
-        M, QuasiNewtonLimitedMemoryDirectionUpdate, (p, initial_vector, initial_scale)
+        M,
+        QuasiNewtonLimitedMemoryDirectionUpdate,
+        if isnothing(initial_scale)
+            (p, initial_vector)
+        else
+            (p, initial_vector, initial_scale)
+        end,
     )
     m1 = zeros(mT, memory_size)
     m2 = zeros(mT, memory_size)
