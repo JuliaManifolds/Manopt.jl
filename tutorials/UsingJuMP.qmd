@@ -15,10 +15,12 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
 ```{julia}
-using JuMP, Manopt, Manifolds
+using JuMP, Manopt, Manifolds, Random
+using ManifoldDiff: grad_distance, prox_distance
+Random.seed!(42);
 ```
 
-First we generate the same data for the [Riemannian center of mass]() as before
+First we generate the same data for the [Riemannian center of mass](getstarted.md) as before
 
 ```{julia}
 n = 100
@@ -43,22 +45,26 @@ where we specify the manifold using the `in` keyword, `start=` cares for the ini
 
 For now this is restricted to array-type-representations of points and tangent vectors.
 
-## Variant I: Specify the
-
-One can specify a cost in the embedding and get an approximate gradient in the embedding that is “converted” into a Riemannian one, see [AD](AutomaticDifferentiation.md).
+Our cost and gradient are defined as
 
 ```{julia}
-f(p) = sum(1 / (2 * n) * norm.(Ref(p) - data) .^ 2)
-grad_f(p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
-# TODO: how to set the objective to an implemented function ?
-# TODO 100% unsure how to set a gradient since that seems to be nowhere documented ?!
-@objective(model, f)
+f(M,p) = sum(1 / (2 * n) * norm.(Ref(p) - data) .^ 2)
+grad_f(M, p) = sum(1 / n * grad_distance.(Ref(M), data, Ref(p)));
+```
+
+## Variant I: Specify the Riemannian Objective
+
+As the first variant, we can set the objective to an already implemented Riemannian function,
+using the [`ManifoldGradientObjective`](@ref).
+
+```{julia}
+@objective(model, Min, ManifoldGradientObjective(f, grad_f))
 ```
 
 We set the solver to use to be [gradient descent](gradient_descent.md)
 
 ```{julia}
-set_attribute("descent_state_type", GradientDescentState)
+set_start_value.(p, data[1])
 ```
 
 Then we can call the solver
