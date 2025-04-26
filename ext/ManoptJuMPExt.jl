@@ -34,6 +34,14 @@ struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
     func::MO
 end
 
+function JuMP.jump_function_type(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
+    return F
+end
+
+JuMP.jump_function(::JuMP.AbstractModel, f::RiemannianFunction) = f
+
+JuMP.function_string(mime::MIME, f::RiemannianFunction) = string(f.func)
+
 MOI.Utilities.map_indices(::Function, func::RiemannianFunction) = func
 
 # We we don't support `MOI.modify` and `RiemannianFunction` is not mutable, no need to copy anything
@@ -384,8 +392,19 @@ function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
     return reshape(vector, shape.size)
 end
 
+function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
+    return set.manifold
+end
+
 function _shape(m::ManifoldsBase.AbstractManifold)
     return ArrayShape(ManifoldsBase.representation_size(m))
+end
+
+_in(mime::MIME"text/plain") = "in"
+_in(mime::MIME"text/latex") = "\\in"
+
+function JuMP.in_set_string(mime, set::ManifoldsBase.AbstractManifold)
+    return _in(mime) * " " * string(set)
 end
 
 """

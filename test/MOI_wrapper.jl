@@ -45,6 +45,9 @@ function test_sphere()
             _test_sphere_sum(model, obj_sign)
         end
     end
+    @test contains(sprint(show, model), "Vector{VariableRef} in ManoptJuMPExt.VectorizedManifold{Sphere{ManifoldsBase.TypeParameter{Tuple{2}}, ℝ}}: 1")
+    @test contains(sprint(print, model), "[x[1], x[2], x[3]] in Sphere(2, ℝ)")
+    @test contains(JuMP.model_string(MIME("text/latex"), model), "[x_{1}, x_{2}, x_{3}] \\in Sphere(2, ℝ)")
 
     @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)
