@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
 * Documentation issues for quasi-Newton solvers.
 * fixes a scaling error in quasi newton
+* Fixes printing of JuMP models containg Manopt solver.
 
 
 ## [0.5.12] April 13, 2025
