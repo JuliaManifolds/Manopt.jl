@@ -130,7 +130,7 @@ function LevenbergMarquardt!(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    jacobian_tangent_basis::AbstractBasis=default_basis(M, typeof(p)),
     jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
     function_type=FunctionVectorialType(),
     kwargs...,

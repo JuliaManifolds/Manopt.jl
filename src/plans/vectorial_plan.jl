@@ -646,7 +646,7 @@ function get_jacobian(
     M::AbstractManifold,
     vgf::AbstractVectorGradientFunction{<:InplaceEvaluation,FT,<:FunctionVectorialType},
     p;
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M, typeof(p)),
     range::Union{AbstractPowerRepresentation,Nothing}=get_range(vgf.jacobian_type),
 ) where {FT,B<:AbstractBasis}
     n = vgf.range_dimension
@@ -758,7 +758,7 @@ function get_jacobian!(
     JF,
     vgf::VGF,
     p;
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M, typeof(p)),
     range::AbstractPowerRepresentation=get_range(vgf.jacobian_type),
 ) where {
     FT,

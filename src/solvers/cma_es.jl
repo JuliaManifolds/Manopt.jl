@@ -61,7 +61,7 @@ $(_var(:Field, :vector_transport_method))
         recombination_weights::Vector{TParams};
         retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
         vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
-        basis::TB=DefaultOrthonormalBasis(),
+        basis::TB=default_basis(M, typeof(p_m)),
         rng::TRng=default_rng(),
     ) where {
         P,
@@ -138,7 +138,7 @@ function CMAESState(
     recombination_weights::Vector{TParams};
     retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
     vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
-    basis::TB=DefaultOrthonormalBasis(),
+    basis::TB=default_basis(M, P),
     rng::TRng=default_rng(),
 ) where {
     P,
@@ -421,7 +421,7 @@ function cma_es!(
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p_m)
     ),
-    basis::AbstractBasis=DefaultOrthonormalBasis(),
+    basis::AbstractBasis=default_basis(M, typeof(p_m)),
     rng::AbstractRNG=default_rng(),
     kwargs..., #collect rest
 ) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}

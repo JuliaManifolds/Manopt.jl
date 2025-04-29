@@ -356,7 +356,7 @@ function ApproxHessianSymmetricRankOne(
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M, typeof(p)),
     nu::R=-1.0,
     evaluation=AllocatingEvaluation(),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
@@ -502,7 +502,7 @@ function ApproxHessianBFGS(
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M, typeof(p)),
     scale::Bool=true,
     evaluation=AllocatingEvaluation(),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),

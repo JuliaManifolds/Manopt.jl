@@ -405,7 +405,7 @@ $(_var(:Field, :vector_transport_method))
     QuasiNewtonMatrixDirectionUpdate(
         M::AbstractManifold,
         update,
-        basis::B=DefaultOrthonormalBasis(),
+        basis::B=default_basis(M),
         m=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M));
         kwargs...
     )
@@ -448,7 +448,7 @@ end
 function QuasiNewtonMatrixDirectionUpdate(
     M::AbstractManifold,
     update::U,
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M),
     m::MT=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M));
     initial_scale::F=1.0,
     vector_transport_method::V=default_vector_transport_method(M),
