@@ -108,6 +108,11 @@ function jacF_reg_r2!(
     return J
 end
 
+function test_lm_lin_solve!(sk, JJ, grad_f_c)
+    ldiv!(sk, qr(JJ), grad_f_c)
+    return sk
+end
+
 @testset "LevenbergMarquardt" begin
     # testing on rotations
     M = Rotations(3)
@@ -167,7 +172,7 @@ end
     )
     @test isapprox(M, p_star, p3; atol=p_atol)
 
-    # allocating R2 regression, zero residual
+    # allocating R2 regression, zero residual, custom subsolver
     M = Euclidean(2)
     ds = LevenbergMarquardt(
         M,
@@ -176,8 +181,10 @@ end
         p0;
         return_state=true,
         expect_zero_residual=true,
+        (linear_subsolver!)=test_lm_lin_solve!,
     )
     lms = get_state(ds)
+    @test lms.linear_subsolver! === test_lm_lin_solve!
     @test isapprox(M, p_star, lms.p; atol=p_atol)
 
     p1 = copy(M, p0)
