@@ -15,7 +15,7 @@ Pkg.activate("."); # for reproducibility use the local tutorial environment.
 ```
 
 ```{julia}
-using JuMP, Manopt, Manifolds, Random
+using JuMP, Manopt, Manifolds, ManifoldsBase, Random
 using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
@@ -83,6 +83,10 @@ solution_summary(model)
 
 ## Vriant II: Specify cost in the embedding
 
+As a second variant, we define the objective in the embedding, so here the $\mathbb R^3$,
+since then we can leave both the gradient computation and conversion from the Euclidean
+to Riemannian gradient to JuMP.
+
 ```{julia}
 model2 = Model(Manopt.JuMP_Optimizer)
 @variable(model2, p[i=1:3] in M, start = p0[i])
@@ -90,6 +94,14 @@ model2 = Model(Manopt.JuMP_Optimizer)
 
 ```{julia}
 @objective(model2, Min, sum(sum((p - d).^2) for d in data)) / (2 * n)
+```
+
+One disadvantage of this formulation and leaving the AD to JuMP is, that the
+exponential map computations accumulate an error over time. We use a stabilized version
+to compensate for that by setting
+
+```{julia}
+set_attribute(model2, "retraction_method", ManifoldsBase.StabilizedRetraction(ExponentialRetraction()))
 ```
 
 ```{julia}
