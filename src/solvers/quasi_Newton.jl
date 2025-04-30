@@ -301,7 +301,7 @@ function quasi_Newton!(
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p)
     ),
-    basis::AbstractBasis=DefaultOrthonormalBasis(),
+    basis::AbstractBasis=default_basis(M, typeof(p)),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     memory_size::Int=min(manifold_dimension(M), 20),
     (project!)=copyto!,

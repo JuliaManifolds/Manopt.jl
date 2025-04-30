@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `linear_subsolver!` is added as a keyword argument to the Levenberg-Marquardt interface.
 
+### Changed
+
+* adapt to using `default_basis` where appropriate.
+
 ## [0.5.13] 2025-04-25
 
 ### Added
