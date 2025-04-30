@@ -66,7 +66,6 @@ We set the start point and look at the overall model to see that the solver that
 ```{julia}
 #| output: false
 set_start_value.(p, p0)
-model
 ```
 
 Then we can call the solver
@@ -82,7 +81,7 @@ solution_summary(model)
 ```
 
 ```{julia}
-value.(p)
+q1 = value.(p)
 ```
 
 ## Variant II: Specify cost in the embedding
@@ -96,8 +95,11 @@ model2 = Model(Manopt.JuMP_Optimizer)
 @variable(model2, p[i=1:3] in M, start = p0[i])
 ```
 
+TODO: Text
+
 ```{julia}
-@objective(model2, Min, sum(sum((p - d).^2) for d in data) / (2 * n))
+#| output: false
+@objective(model2, Min, sum(sum((p - d) .^ 2) for d in data) / (2 * n))
 ```
 
 One disadvantage of this formulation and leaving the AD to JuMP is, that the
@@ -124,7 +126,11 @@ solution_summary(model2)
 The resulting value is not exactly the one from the first run, but quite close.
 
 ```{julia}
-value.(p)
+q2 = value.(p)
+```
+
+```{julia}
+distance(Sphere(2), q1, q2)
 ```
 
 ## Technical details
@@ -141,5 +147,5 @@ Pkg.status()
 #| echo: false
 #| output: asis
 using Dates
-println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```
