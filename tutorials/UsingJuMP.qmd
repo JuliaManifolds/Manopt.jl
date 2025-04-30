@@ -81,7 +81,11 @@ and look at the solution
 solution_summary(model)
 ```
 
-## Vriant II: Specify cost in the embedding
+```{julia}
+value.(p)
+```
+
+## Variant II: Specify cost in the embedding
 
 As a second variant, we define the objective in the embedding, so here the $\mathbb R^3$,
 since then we can leave both the gradient computation and conversion from the Euclidean
@@ -102,7 +106,10 @@ to compensate for that by setting
 
 ```{julia}
 set_attribute(model2, "retraction_method", ManifoldsBase.StabilizedRetraction(ExponentialRetraction()))
+set_start_value.(p, p0)
+model2
 ```
+
 
 ```{julia}
 optimize!(model2)
@@ -112,6 +119,12 @@ and look at the solution
 
 ```{julia}
 solution_summary(model2)
+```
+
+The resulting value is not exactly the one from the first run, but quite close.
+
+```{julia}
+value.(p)
 ```
 
 ## Technical details
