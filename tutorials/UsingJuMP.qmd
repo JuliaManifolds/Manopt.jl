@@ -93,7 +93,7 @@ model2 = Model(Manopt.JuMP_Optimizer)
 ```
 
 ```{julia}
-@objective(model2, Min, sum(sum((p - d).^2) for d in data)) / (2 * n)
+@objective(model2, Min, sum(sum((p - d).^2) for d in data) / (2 * n))
 ```
 
 One disadvantage of this formulation and leaving the AD to JuMP is, that the
