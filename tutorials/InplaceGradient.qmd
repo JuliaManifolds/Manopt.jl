@@ -7,7 +7,7 @@ When it comes to time critical operations, a main ingredient in Julia is given b
 mutating functions, that is those that compute in place without additional memory
 allocations. In the following, we illustrate how to do this with `Manopt.jl`.
 
-Let's start with the same function as in [🏔️ Get started with Manopt.jl](tutorials/getstarted.md)
+Let's start with the same function as in [🏔️ Get started with Manopt.jl](getstarted.md)
 and compute the mean of some points, only that here we use the sphere $\mathbb S^{30}$
 and $n=800$ points.
 
@@ -126,11 +126,14 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```
