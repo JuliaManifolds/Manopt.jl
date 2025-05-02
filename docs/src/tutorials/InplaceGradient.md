@@ -151,7 +151,7 @@ This tutorial is cached. It was last run on the following package versions.
       [af67fdf4] ManifoldDiff v0.4.2
       [1cead3c2] Manifolds v0.10.17
       [3362f125] ManifoldsBase v1.1.0
-      [0fc0a36d] Manopt v0.5.14 `~/Repositories/Julia/Manopt.jl`
+      [0fc0a36d] Manopt v0.5.14 `..`
       [91a5bcdd] Plots v1.40.13
       [731186ca] RecursiveArrayTools v3.33.0
 
