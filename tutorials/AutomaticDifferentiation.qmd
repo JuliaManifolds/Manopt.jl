@@ -252,5 +252,5 @@ Pkg.status()
 #| echo: false
 #| output: asis
 using Dates
-println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, H:M:S")).");
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```
