@@ -3,7 +3,7 @@ project:
   output-dir: ../docs/src/tutorials
   render:
     - "*.qmd"
-#    - "!InplaceGradient.qmd"
+    - "!InplaceGradient.qmd"
 
 crossref:
   fig-prefix: Figure
