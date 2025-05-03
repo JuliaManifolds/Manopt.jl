@@ -392,6 +392,7 @@ function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
     return reshape(vector, shape.size)
 end
 
+# This is maybe obsolete? We would work on all manifolds anyways?
 function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
     return set.manifold
 end
@@ -513,5 +514,111 @@ function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableInd
     solution = Manopt.get_solver_return(get_objective(model.problem), model.state)
     return solution[vi.value]
 end
+
+#
+#
+# Point and Tangent vector conversions
+# Every representation has to implement
+# * JuMP.vectorize(p::PointType, ::??)
+# * JuMP.reshape_vector(vector::Vector, p::PointType)
+# * (maybe available generically?) JuMP.reshape_set(manifold, ::POintType)
+
+# Maybe we need a dummy type? Do we need one or two?
+# Probably two We have to distinguish points and vectors somehow! Maybe something like this?
+struct ManifoldPoint{P<:ManifoldsBase.AbstractManifoldPoint} <: JuMP.AbstractShape end
+struct TangentSpaceVector{T<:ManifoldsBase.AbstractTangentVector} <: JuMP.AbstractShape end
+
+# (a) generic definitions and errors
+JuMP.reshape_set(M::AbstractManifold, ::ManifoldPoint) = M
+JuMP.reshape_set(M::AbstractManifold, ::TangentSpaceVector) = M
+
+function JuMP.vectorize(
+    p::P, mp::ManifoldPoint
+) where {P<:ManifoldsBase.AbstractManifoldPoint}
+    throw(
+        DomainError(
+            p,
+            """
+            You are trying to call `JuMP.vectorize` $p of type $P,
+            which seems not to be available.
+            Since the provided shape $(typeof(mp)) is from the extension of
+            `Manopt.jl` and `JuMP.jl` maybe consider opening an issue in `Manopt.jl`,
+            where this extension is maintained.
+            """,
+        ),
+    )
+end
+function JuMP.vectorize(
+    X::T, tv::ManifoldPoint
+) where {T<:ManifoldsBase.AbstractTangentVector}
+    throw(
+        DomainError(
+            X,
+            """
+            You are trying to call `JuMP.vectorize` $X of type $T,
+            which seems not to be available.
+            Since the provided shape $(typeof(tv)) is from the extension of
+            `Manopt.jl` and `JuMP.jl` maybe consider opening an issue in `Manopt.jl`,
+            where this extension is maintained.
+            """,
+        ),
+    )
+end
+
+function JuMP.reshape_vector(
+    v::Vector, p::ManifoldPoint{P}
+) where {P<:ManifoldsBase.AbstractManifoldPoint}
+    throw(
+        DomainError(
+            p,
+            """
+            You are trying to call `reshape_vector` $v to a type $P,
+            which seems not to be available.
+            Since the provided shape $(typeof(p)) is from the extension of
+            `Manopt.jl` and `JuMP.jl` maybe consider opening an issue in `Manopt.jl`,
+            where this extension is maintained.
+            """,
+        ),
+    )
+end
+function JuMP.reshape_vector(
+    v::Vector, X::TangentSpaceVector{T}
+) where {T<:ManifoldsBase.AbstractTangentVector}
+    throw(
+        DomainError(
+            X,
+            """
+            You are trying to call `reshape_vector` $v to a type $T,
+            which seems not to be available.
+            Since the provided shape $(typeof(X)) is from the extension of
+            `Manopt.jl` and `JuMP.jl` maybe consider opening an issue in `Manopt.jl`,
+            where this extension is maintained.
+            """,
+        ),
+    )
+end
+
+# (b) Specific points
+# Poincaré ball ( PoincareBallPoint, PoincareBallTangentVector )
+
+# Poincaré Halfspace (PoincareHalfSpacePoint, PoincareHalfSpaceTangentVector)
+
+# Hyperboloid (HyperboloidPoint, HyperboloidTangentVector)
+
+# SPD matrices (SPDPoint)
+
+# Grassmann as Stiefel (StiefelPoint, StiefelTangentVector)
+
+# Grassmann as Projection (ProjectorPoint, ProjectorTangentVector)
+
+# Fixed Rank matrices (SVDMPoint, UMVTangentVector)
+
+# Flag Manifold (OrthogonalPoint, OrthogonalTangentVector)
+
+# Maybe complicated:
+# ValidationManifold (ValidationMPoint)
+
+# Maybe also (maybe also only if someone needs this)
+# Tucker (TuckerPoint, TuckerTangentVector)
 
 end # module
