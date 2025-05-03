@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.15] unreleased
 
+### Added
+
+* A tutorial for how to use `Manopt.jl` from within [`JuMP.jl`](https://jump.dev)
+
 ### Changed
 
 * the tutorials are now rendered with `quarto` using the [`QuartoNotebookRunner.jl`](https://github.com/PumasAI/QuartoNotebookRunner.jl) and are hence purely julia based.
