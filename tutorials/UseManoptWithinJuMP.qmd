@@ -104,7 +104,7 @@ TODO: Text
 
 One disadvantage of this formulation and leaving the AD to JuMP is, that the
 exponential map computations accumulate an error over time. We use a stabilized version
-to compensate for that by setting the retraction to the stabolozed version of the exponential map, that for numerical stability performs a projection onto the manifold as well.
+to compensate for that by setting the retraction to the stabilized version of the exponential map, that for numerical stability performs a projection onto the manifold as well.
 
 ```{julia}
 set_attribute(model2, "retraction_method", ManifoldsBase.StabilizedRetraction(ExponentialRetraction()))
