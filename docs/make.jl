@@ -152,7 +152,12 @@ makedocs(;
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptJuMPExt)
         else
-            Manopt.ManoptJuMPExt
+            Manopt.ManopManifoldsJuMPExt
+        end,
+        if isdefined(Base, :get_extension)
+            Base.get_extension(Manopt, :ManoptJuMPManifoldsExt)
+        else
+            Manopt.ManopManifoldsJuMPExt
         end,
         if isdefined(Base, :get_extension)
             Base.get_extension(Manopt, :ManoptLineSearchesExt)
