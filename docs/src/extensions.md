@@ -123,3 +123,10 @@ MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveSense)
 MOI.get(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimal, ::MOI.VariableIndex)
 MOI.get(::Manopt.JuMP_Optimizer, ::MOI.RawStatusString)
 ```
+
+### Internal Structures
+
+```@autodocs
+Modules = [Base.get_extension(Manopt, :ManoptJuMPManifoldsExt)]
+Private = true
+```

@@ -149,36 +149,12 @@ makedocs(;
     ),
     modules=[
         Manopt,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptJuMPExt)
-        else
-            Manopt.ManopManifoldsJuMPExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptJuMPManifoldsExt)
-        else
-            Manopt.ManopManifoldsJuMPExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptLineSearchesExt)
-        else
-            Manopt.ManoptLineSearchesExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptLRUCacheExt)
-        else
-            Manopt.ManoptLRUCacheExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptManifoldsExt)
-        else
-            Manopt.ManoptManifoldsExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
-        else
-            Manopt.ManoptRipQPQuadraticModelsExt
-        end,
+        Base.get_extension(Manopt, :ManoptJuMPExt),
+        Base.get_extension(Manopt, :ManoptJuMPManifoldsExt),
+        Base.get_extension(Manopt, :ManoptLineSearchesExt),
+        Base.get_extension(Manopt, :ManoptLRUCacheExt),
+        Base.get_extension(Manopt, :ManoptManifoldsExt),
+        Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
     authors="Ronny Bergmann and contributors.",
     sitename="Manopt.jl",

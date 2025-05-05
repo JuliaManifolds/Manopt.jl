@@ -100,7 +100,6 @@ An [`AbstractShape`](@extref `JuMP.AbstractShape`) to represent any type `T`that
 [`AbstractManifoldPoint`](@extref `ManifoldsBase.AbstractManifoldPoint`) or an [`ManifoldsBase.AbstractTangentVector`](@extref `ManifoldsBase.AbstractTangentVector`)
 that is internally represented by a vector themselves.
 """
-# A comment line to not attach the doc string above, since for now I do not know how to do that in documenter
 struct ManifoldsBaseVectorShape{
     T<:Union{ManifoldsBase.AbstractManifoldPoint,ManifoldsBase.AbstractTangentVector}
 } <: JuMP.AbstractShape
