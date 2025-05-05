@@ -40,7 +40,7 @@ end
 
 JuMP.jump_function(::JuMP.AbstractModel, f::RiemannianFunction) = f
 
-JuMP.function_string(mime::MIME, f::RiemannianFunction) = string(f.func)
+JuMP.function_string(::MIME, f::RiemannianFunction) = string(f.func)
 
 MOI.Utilities.map_indices(::Function, func::RiemannianFunction) = func
 
@@ -598,12 +598,45 @@ function JuMP.reshape_vector(
     )
 end
 
-# (b) Specific points
-# Poincaré ball ( PoincareBallPoint, PoincareBallTangentVector )
+# ---
+# A generic type for a few of the following types
+#
+@doc """
+    ManifoldsBaseVectorShape{T<:Union{ManifoldsBase.AbstractManifoldPoint,ManifoldsBase.AbstractTangentVector}} <: JuMP.AbstractShape
 
-# Poincaré Halfspace (PoincareHalfSpacePoint, PoincareHalfSpaceTangentVector)
+An [`AbstractShape`](@extref `JuMP.AbstractShape`) to represent any type `T`that is either an
+[`AbstractManifoldPoint`](@extref `ManifoldsBase.AbstractManifoldPoint`) or an [`ManifoldsBase.AbstractTangentVector`](@extref `ManifoldsBase.AbstractTangentVector`)
+that is internally represented by a vector themselves.
+"""
+struct ManifoldsBaseVectorShape{
+    T<:Union{ManifoldsBase.AbstractManifoldPoint,ManifoldsBase.AbstractTangentVector}
+} <: JuMP.AbstractShape
+    T::Type{T}
+end
 
-# Hyperboloid (HyperboloidPoint, HyperboloidTangentVector)
+# (b) Specific points – the first of which all “fall back” to just `.value`
+const _VectorValuePoints = Union{
+    PoincareBallPoint,
+    PoincareBallTangentVector,
+    PoincareHalfSpacePoint,
+    PoincareHalfSpaceTangentVector,
+    HyperboloidPoint,
+    HyperboloidTangentVector,
+}
+# from type -> vector
+function JuMP.vectorize(
+    point_or_vector::T, ::ManifoldsBaseVectorShape{T}
+) where {T<:_VectorValuePoints}
+    return point_or_vector.value
+end
+# from vector -> type
+function JuMP.reshape_vector(
+    vector::Vector, ::ManifoldsBaseVectorShape{T}
+) where {T<:_VectorValuePoints}
+    return T(vector)
+end
+
+# Todo – refactor _shape() but to what? What does _shape actually do? something like ManifoldsBase.allocate?
 
 # SPD matrices (SPDPoint)
 
