@@ -391,12 +391,29 @@ function MOI.optimize!(model::Optimizer)
     return nothing
 end
 
+"""
+    struct ArrayShape{N} <: JuMP.AbstractShape
+
+Return a [`JuMP.AbstractShape`](@ref) that can be used to vectorize points
+and tangent vectors of the manifold and reshape the vectorized representation
+to the original objects of the manifold.
+"""
 struct ArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
 end
 
+"""
+    length(shape::ArrayShape)
+
+Return the length of the vectors in the vectorized representation.
+"""
 Base.length(shape::ArrayShape) = prod(shape.size)
 
+"""
+    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{M}) where {T,N,M}
+
+Inplace version of `res = JuMP.vectorize(array, shape)`.
+"""
 function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
     copyto!(res, array)
 end
@@ -413,10 +430,20 @@ function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
     return set.manifold
 end
 
+"""
+    _tangent_shape(m::ManifoldsBase.AbstractManifold)
+
+Return the shape of points of the manifold `m`.
+"""
 function _point_shape(m::ManifoldsBase.AbstractManifold)
     return ArrayShape(ManifoldsBase.representation_size(m))
 end
 
+"""
+    _tangent_shape(m::ManifoldsBase.AbstractManifold)
+
+Return the shape of points of the tangent space of the manifold `m`.
+"""
 function _tangent_shape(m::ManifoldsBase.AbstractManifold)
     return ArrayShape(ManifoldsBase.representation_size(m))
 end
