@@ -13,7 +13,7 @@ const MOI = JuMP.MOI
 # Every representation has to implement
 # * JuMP.vectorize(p::PointType, ::??)
 # * JuMP.reshape_vector(vector::Vector, p::PointType)
-# * (maybe available generically?) JuMP.reshape_set(manifold, ::POintType)
+# * (maybe available generically?) JuMP.reshape_set(manifold, ::PointType)
 
 # Maybe we need a dummy type? Do we need one or two?
 # Probably two We have to distinguish points and vectors somehow! Maybe something like this?
