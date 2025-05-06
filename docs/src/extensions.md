@@ -72,24 +72,27 @@ Manopt.Rn_default
 
 ## JuMP.jl
 
-Manopt can be used using the [JuMP.jl](https://github.com/jump-dev/JuMP.jl) interface.
-The manifold is provided in the `@variable` macro. Note that until now,
-only variables (points on manifolds) are supported, that are arrays, especially structs do not yet work.
-The algebraic expression of the objective function is specified in the `@objective` macro.
-The `descent_state_type` attribute specifies the solver.
+Manopt can be used using the [JuMP.jl](https://jump.dev) interface, see the [use Manopt within JuMP](tutorials/UseManoptWithinJuMP.md)
 
-```julia
-using JuMP, Manopt, Manifolds
-model = Model(Manopt.Optimizer)
-# Change the solver with this option, `GradientDescentState` is the default
-set_attribute("descent_state_type", GradientDescentState)
-@variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
-@objective(model, Min, sum((A - U) .^ 2))
-optimize!(model)
-solution_summary(model)
+### Setting s solver and its options
+
+A main thing to choose is the solver to use. By default this is set to the [`GradientDescentState`](@ref). To change the solver you can set it with `set_attribute`. For exmple to use the [`quasi_Newton`](@ref) instead, use
+
+```{julia}
+model =  Model(Manopt.JuMP_Optimizer)
+set_attribute(model, "descent_state_type", Manopt.QuasiNewtonState)
+```
+
+Any of the keywords of the solver you can set with `set_attribute)model, keyword, value)` for example to change the retraction to use, call
+
+```{julia}
+set_attribute(model, "retraction_method", ManifoldsBase.ProjectionRetraction())
 ```
 
 ### Interface functions
+
+Several functions from the [Mathematical Optimization Interface](https://github.com/jump-dev/MathOptInterface.jl) (MOI) are
+extended when both `Manopt.jl and [JuMP.jl](https://jump.dev) are loaded:
 
 ```@docs
 Manopt.JuMP_ArrayShape
