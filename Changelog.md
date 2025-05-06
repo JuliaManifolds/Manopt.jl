@@ -8,15 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.15] 2025-05-06
 
-### Changed
-
-* the tutorials are now rendered with `quarto` using the [`QuartoNotebookRunner.jl`](https://github.com/PumasAI/QuartoNotebookRunner.jl) and are hence purely julia based.
-
 ### Fixed
 
 * CMA-ES no longer errors when the covariance matrix has nonpositive eigenvalues due to numerical issues.
 
-## [0.5.14] 2025-04-30
+## [0.5.14] 2025-05-05
 
 ### Added
 
@@ -25,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * adapt to using `default_basis` where appropriate.
+* the tutorials are now rendered with `quarto` using the [`QuartoNotebookRunner.jl`](https://github.com/PumasAI/QuartoNotebookRunner.jl) and are hence purely julia based.
 
 ## [0.5.13] 2025-04-25
 
