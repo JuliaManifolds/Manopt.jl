@@ -21,9 +21,12 @@ end
 """
     MOI.dimension(set::VectorizedManifold)
 
-Return the representation side of points on the (vectorized in representation) manifold.
+Return the representation size of points on the (vectorized in representation) manifold.
 As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
 yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
+
+Note that this is not the dimension of the manifold itself, but the
+vector length of the vectorized representation of the manifold.
 """
 function MOI.dimension(set::VectorizedManifold)
     return length(_point_shape(set.manifold))
@@ -327,16 +330,16 @@ function MOI.set(
     MOI.Nonlinear.set_objective(nlp_model, nl)
     evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
     MOI.initialize(evaluator, [:Grad])
-    resize!(model.vectorized_point, length(_point_shape(M)))
-    resize!(model.vectorized_tangent, length(_tangent_shape(M)))
-    function eval_f_cb(M, x)
-        _vectorize!(model.vectorized_point, x, _point_shape(M))
-        return MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
+    resize!(model.vectorized_point, length(_point_shape(model.manifold)))
+    resize!(model.vectorized_tangent, length(_tangent_shape(model.manifold)))
+    function eval_f_cb(M, X)
+        _vectorize!(model.vectorized_point, X, _point_shape(M))
+        return MOI.eval_objective(evaluator, model.vectorized_point)
     end
     function eval_grad_f_cb(M, X)
-        _vectorize!(model.vectorized_point, x, _point_shape(M))
-        MOI.eval_objective_gradient(evaluator, model.vectorized_tangent, x)
-        reshaped_grad_f = JuMP.reshape_vector(grad_f, _tangent_shape(model.manifold))
+        _vectorize!(model.vectorized_point, X, _point_shape(M))
+        MOI.eval_objective_gradient(evaluator, model.vectorized_tangent, model.vectorized_point)
+        reshaped_grad_f = JuMP.reshape_vector(model.vectorized_tangent, _tangent_shape(model.manifold))
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     objective = RiemannianFunction(
