@@ -243,7 +243,7 @@ end
     MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@ref) of the ManifoldsBaseSet`.
+to the [`MOI.dimension`](@ref) of the `ManifoldsBaseSet`.
 """
 function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
