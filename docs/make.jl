@@ -83,10 +83,11 @@ end
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     using Pkg
     Pkg.activate(@__DIR__)
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
-    Pkg.resolve()
-    Pkg.instantiate()
+    #    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
 end
+# now we are in the docs env...
+Pkg.resolve()
+Pkg.instantiate()
 
 # (b) If quarto is set, or we are on CI, run quarto
 if run_quarto || run_on_CI

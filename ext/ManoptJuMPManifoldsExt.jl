@@ -15,17 +15,8 @@ const MOI = JuMP.MOI
 # * JuMP.reshape_vector(vector::Vector, p::PointType)
 # * (maybe available generically?) JuMP.reshape_set(manifold, ::PointType)
 
-# Maybe we need a dummy type? Do we need one or two?
-# Probably two We have to distinguish points and vectors somehow! Maybe something like this?
-struct ManifoldPoint{P<:ManifoldsBase.AbstractManifoldPoint} <: JuMP.AbstractShape end
-struct TangentSpaceVector{T<:ManifoldsBase.AbstractTangentVector} <: JuMP.AbstractShape end
-
-# (a) generic definitions and errors
-JuMP.reshape_set(M::AbstractManifold, ::ManifoldPoint) = M
-JuMP.reshape_set(M::AbstractManifold, ::TangentSpaceVector) = M
-
 function JuMP.vectorize(
-    p::P, mp::ManifoldPoint
+    p::P, mp::ManifoldDataShape{M,P}
 ) where {P<:ManifoldsBase.AbstractManifoldPoint}
     throw(
         DomainError(
@@ -41,7 +32,7 @@ function JuMP.vectorize(
     )
 end
 function JuMP.vectorize(
-    X::T, tv::ManifoldPoint
+    X::T, tv::ManifoldDataShape{M,T}
 ) where {T<:ManifoldsBase.AbstractTangentVector}
     throw(
         DomainError(
@@ -58,7 +49,7 @@ function JuMP.vectorize(
 end
 
 function JuMP.reshape_vector(
-    v::Vector, p::ManifoldPoint{P}
+    v::Vector, p::ManifoldDataShape{M,P}
 ) where {P<:ManifoldsBase.AbstractManifoldPoint}
     throw(
         DomainError(
@@ -74,7 +65,7 @@ function JuMP.reshape_vector(
     )
 end
 function JuMP.reshape_vector(
-    v::Vector, X::TangentSpaceVector{T}
+    v::Vector, X::TangentSManifoldDataShape{M,T}
 ) where {T<:ManifoldsBase.AbstractTangentVector}
     throw(
         DomainError(
@@ -90,24 +81,8 @@ function JuMP.reshape_vector(
     )
 end
 
-# ---
-# A generic type for a few of the following types
-#
-@doc """
-    ManifoldsBaseVectorShape{T<:Union{ManifoldsBase.AbstractManifoldPoint,ManifoldsBase.AbstractTangentVector}} <: JuMP.AbstractShape
-
-An [`AbstractShape`](@extref `JuMP.AbstractShape`) to represent any type `T`that is either an
-[`AbstractManifoldPoint`](@extref `ManifoldsBase.AbstractManifoldPoint`) or an [`ManifoldsBase.AbstractTangentVector`](@extref `ManifoldsBase.AbstractTangentVector`)
-that is internally represented by a vector themselves.
-"""
-struct ManifoldsBaseVectorShape{
-    T<:Union{ManifoldsBase.AbstractManifoldPoint,ManifoldsBase.AbstractTangentVector}
-} <: JuMP.AbstractShape
-    T::Type{T}
-end
-
 # (b) Specific points – the first of which all “fall back” to just `.value`
-const _VectorValuePoints = Union{
+const _VectorValueData = Union{
     Manifolds.PoincareBallPoint,
     PoincareBallTangentVector,
     PoincareHalfSpacePoint,
@@ -117,14 +92,14 @@ const _VectorValuePoints = Union{
 }
 # from type -> vector
 function JuMP.vectorize(
-    point_or_vector::T, ::ManifoldsBaseVectorShape{T}
-) where {T<:_VectorValuePoints}
+    point_or_vector::T, ::ManifoldDataShape{M,T}
+) where {M,T<:_VectorValueData}
     return point_or_vector.value
 end
 # from vector -> type
 function JuMP.reshape_vector(
-    vector::Vector, ::ManifoldsBaseVectorShape{T}
-) where {T<:_VectorValuePoints}
+    vector::AbstractVector, ::ManifoldDataShape{M,T}
+) where {M,T<:_VectorValueData}
     return T(vector)
 end
 

@@ -10,7 +10,8 @@ const MOI = JuMP.MOI
 function __init__()
     setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
     setglobal!(Manopt, :JuMP_VectorizedManifold, VectorizedManifold)
-    setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
+    # necessary?
+    # setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
     return nothing
 end
 
@@ -338,8 +339,12 @@ function MOI.set(
     end
     function eval_grad_f_cb(M, X)
         _vectorize!(model.vectorized_point, X, _point_shape(M))
-        MOI.eval_objective_gradient(evaluator, model.vectorized_tangent, model.vectorized_point)
-        reshaped_grad_f = JuMP.reshape_vector(model.vectorized_tangent, _tangent_shape(model.manifold))
+        MOI.eval_objective_gradient(
+            evaluator, model.vectorized_tangent, model.vectorized_point
+        )
+        reshaped_grad_f = JuMP.reshape_vector(
+            model.vectorized_tangent, _tangent_shape(model.manifold)
+        )
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     objective = RiemannianFunction(
@@ -392,61 +397,84 @@ function MOI.optimize!(model::Optimizer)
 end
 
 """
-    struct ArrayShape{N} <: JuMP.AbstractShape
+    struct ManifoldDataShape{M, T, S} <: JuMP.AbstractShape
 
-Return a [`JuMP.AbstractShape`](@ref) that can be used to vectorize points
-and tangent vectors of the manifold and reshape the vectorized representation
-to the original objects of the manifold.
+Return a [`JuMP.AbstractShape`](@ref) that can be used to vectorize points or tangent vectors
+on an [`AbstractManifold`](@ref).
+
+# Fields
+
+* `manifold::M` the manifold this point belongs to
+* `point_type::T` the point/vector type used on `manifold`
+* `size::S` size of the representation if it is an array, otherwise the length of the vector
+
+# Constructor
+
+    ManifoldDataShape(manifold, data_type, size)
+    ManifoldDataShape(manifold, point_or_vector)
+    ManifoldDataShape(manifold)
+
+A constructor should compute the size based on `manifold` and a concrete `point`.
+Just providing the manifold should generate the default representation.
 """
-struct ArrayShape{N} <: JuMP.AbstractShape
-    size::NTuple{N,Int}
+struct ManifoldDataShape{M<:ManifoldsBase.AbstractManifold,T,S} <: JuMP.AbstractShape
+    manifold::M
+    point_type::T
+    size::S
+end
+function ManifoldDataShape(manifold::M) where {M<:AbstractManifold}
+    rs = representation_size(M)
+    if isnothing(rs)
+        throw(
+            DomainError(
+                "The default representation on $M does not seem to be in array-form"
+            ),
+        )
+    end
+    return ManifoldDataShape(manifold, Array{Float64,length(rs)}, rs)
+end
+function ManifoldDataShape(
+    manifold::M, p::P, array_size=size(p)
+) where {M<:AbstractManifold,P}
+    return ManifoldDataShape(manifold, P, array_size)
 end
 
 """
-    length(shape::ArrayShape)
+    length(shape::ManifoldDataShape)
 
 Return the length of the vectors in the vectorized representation.
 """
-Base.length(shape::ArrayShape) = prod(shape.size)
+Base.length(shape::ManifoldDataShape) = prod(shape.size)
 
 """
     _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{M}) where {T,N,M}
 
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
-function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
-    copyto!(res, array)
+function _vectorize!(
+    res::AbstractVector{T}, array::A, ::ManifoldDataShape{M,A}
+) where {T,N,M,A<:AbstractArray{T,N}}
+    return copyto!(res, array)
 end
 
-function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
+function JuMP.vectorize(
+    array::A, ::ManifoldDataShape{M,A}
+) where {T,N,M,A<:AbstractArray{T,N}}
     return vec(array)
 end
-
-function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
+function JuMP.reshape_vector(
+    vector::AbstractVector, ::ManifoldDataShape{M,A}
+) where {T,N,M,A<:Array{T,N}}
     return reshape(vector, shape.size)
 end
+function _reshape_vector!(
+    array::A, vector::AbstractVector, ::ManifoldDataShape{M,A}
+) where {T,N,M,A<:Array{T,N}}
+    return copyto!(array, vector)
+end
 
-# This is maybe obsolete? We would work on all manifolds anyways?
-function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
+function JuMP.reshape_set(set::VectorizedManifold{M}, ::ManifoldDataShape{M}) where {M}
     return set.manifold
-end
-
-"""
-    _tangent_shape(m::ManifoldsBase.AbstractManifold)
-
-Return the shape of points of the manifold `m`.
-"""
-function _point_shape(m::ManifoldsBase.AbstractManifold)
-    return ArrayShape(ManifoldsBase.representation_size(m))
-end
-
-"""
-    _tangent_shape(m::ManifoldsBase.AbstractManifold)
-
-Return the shape of points of the tangent space of the manifold `m`.
-"""
-function _tangent_shape(m::ManifoldsBase.AbstractManifold)
-    return ArrayShape(ManifoldsBase.representation_size(m))
 end
 
 _in(mime::MIME"text/plain") = "in"
@@ -457,17 +485,17 @@ function JuMP.in_set_string(mime, set::ManifoldsBase.AbstractManifold)
 end
 
 """
-    JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
+    JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
 
-Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
+Build a [`JuMP.VariablesConstrainedOnCreation`](@extref) object containing variables
 and the [`Manopt.JuMP_VectorizedManifold`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, [`Manopt.JuMP_ArrayShape`](@ref).
+shape of the manifold, that is, [`Manopt.ManifoldDataShape`](@ref).
 """
-function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-    shape = _point_shape(m)
+function JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
+    shape = ManifoldDataShape(manifold)
     return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(func, shape), VectorizedManifold(m), shape
+        JuMP.vectorize(func, shape), VectorizedManifold(manifold), shape
     )
 end
 
