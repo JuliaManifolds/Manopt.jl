@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * the internal `VectorizedManifold` is now called `ManifoldSet`
 * the internal `ArrayShape` is not called `ManifoldPointArrayShape`
 
+### Fixed
+
+* Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
+
 ## [0.5.20] July 8, 2025
 
 ### Added
