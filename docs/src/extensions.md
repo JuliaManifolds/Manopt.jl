@@ -92,10 +92,7 @@ solution_summary(model)
 ### Interface functions
 
 ```@docs
-Manopt.JuMP_ArrayShape
-Manopt.JuMP_VectorizedManifold
 Manopt.JuMP_Optimizer
-MOI.supports_add_constrained_variables(::Manopt.JuMP_Optimizer, ::Type{<:Manopt.JuMP_VectorizedManifold})
 ```
 
 ### Internal Structures

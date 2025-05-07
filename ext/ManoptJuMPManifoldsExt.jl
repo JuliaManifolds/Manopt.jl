@@ -7,6 +7,35 @@ using JuMP: JuMP
 using ManifoldsBase
 const MOI = JuMP.MOI
 
+
+struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+    manifold::M
+end
+
+struct ManifoldDataShape{M<:ManifoldsBase.AbstractManifold,T,S} <: JuMP.AbstractShape
+    manifold::M
+    point_type::T
+    size::S
+    function ManifoldDataShape(
+        manifold::M, p::P, array_size::S=size(p)
+    ) where {M<:AbstractManifold,P,S}
+        return new{M,P,S}(manifold, P, array_size)
+    end
+end
+function ManifoldDataShape(manifold::M) where {M<:AbstractManifold}
+    rs = representation_size(M)
+    if isnothing(rs)
+        throw(
+            DomainError(
+                "The default representation on $M does not seem to be in array-form"
+            ),
+        )
+    end
+    return ManifoldDataShape(manifold, Array{Float64,length(rs)}, rs)
+end
+
+Base.length(shape::ManifoldDataShape) = prod(shape.size)
+
 #
 #
 # Point and Tangent vector conversions
@@ -17,7 +46,7 @@ const MOI = JuMP.MOI
 
 function JuMP.vectorize(
     p::P, mp::ManifoldDataShape{M,P}
-) where {P<:ManifoldsBase.AbstractManifoldPoint}
+) where {M, P<:ManifoldsBase.AbstractManifoldPoint}
     throw(
         DomainError(
             p,
@@ -31,9 +60,10 @@ function JuMP.vectorize(
         ),
     )
 end
+
 function JuMP.vectorize(
     X::T, tv::ManifoldDataShape{M,T}
-) where {T<:ManifoldsBase.AbstractTangentVector}
+) where {M, T<:ManifoldsBase.AbstractTangentVector}
     throw(
         DomainError(
             X,
@@ -49,8 +79,8 @@ function JuMP.vectorize(
 end
 
 function JuMP.reshape_vector(
-    v::Vector, p::ManifoldDataShape{M,P}
-) where {P<:ManifoldsBase.AbstractManifoldPoint}
+    v::AbstractVector, p::ManifoldDataShape{M,P}
+) where {M, P<:ManifoldsBase.AbstractManifoldPoint}
     throw(
         DomainError(
             p,
@@ -65,8 +95,9 @@ function JuMP.reshape_vector(
     )
 end
 function JuMP.reshape_vector(
-    v::Vector, X::TangentSManifoldDataShape{M,T}
-) where {T<:ManifoldsBase.AbstractTangentVector}
+    v::AbstractVector,
+    X::ManifoldDataShape{M,T},
+) where {M, T<:ManifoldsBase.AbstractTangentVector}
     throw(
         DomainError(
             X,

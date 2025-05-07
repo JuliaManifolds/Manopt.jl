@@ -239,23 +239,6 @@ by `ManifoldsBase.representation_size`.
 """
 global JuMP_Optimizer
 
-"""
-    struct VectorizedManifold{M} <: MOI.AbstractVectorSet
-        manifold::M
-    end
-
-Representation of points of `manifold` as a vector of `R^n` where `n` is
-`MOI.dimension(VectorizedManifold(manifold))`.
-"""
-global JuMP_VectorizedManifold
-
-"""
-    struct ArrayShape{N} <: JuMP.AbstractShape
-
-Shape of an `Array{T,N}` of size `size`.
-"""
-global JuMP_ArrayShape
-
 function __init__()
     #
     # Error Hints

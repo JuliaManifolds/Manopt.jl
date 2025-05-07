@@ -9,18 +9,18 @@ const MOI = JuMP.MOI
 
 function __init__()
     setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
-    setglobal!(Manopt, :JuMP_VectorizedManifold, VectorizedManifold)
     # necessary?
+    # setglobal!(Manopt, :JuMP_ManifoldsBaseSet, ManifoldsBaseSet)
     # setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
     return nothing
 end
 
-struct VectorizedManifold{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+struct ManifoldsBaseSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
 
 """
-    MOI.dimension(set::VectorizedManifold)
+    MOI.dimension(set::ManifoldsBaseSet)
 
 Return the representation size of points on the (vectorized in representation) manifold.
 As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
@@ -29,8 +29,8 @@ yields (in product) `n`, this refers to the vectorized point / tangent vector  f
 Note that this is not the dimension of the manifold itself, but the
 vector length of the vectorized representation of the manifold.
 """
-function MOI.dimension(set::VectorizedManifold)
-    return length(_point_shape(set.manifold))
+function MOI.dimension(set::ManifoldsBaseSet)
+    return length( _point_shape(set.manifold))
 end
 
 struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
@@ -192,24 +192,24 @@ function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
 end
 
 """
-    MOI.supports_add_constrained_variables(::JuMP_Optimizer, ::Type{<:VectorizedManifold})
+    MOI.supports_add_constrained_variables(::JuMP_Optimizer, ::Type{<:ManifoldsBaseSet})
 
 Return `true` indicating that `Manopt.JuMP_Optimizer` support optimization on
-variables constrained to belong in a vectorized manifold [`Manopt.JuMP_VectorizedManifold`](@ref).
+variables constrained to belong in a vectorized manifold ManifoldsBaseSet`.
 """
-function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
+function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:ManifoldsBaseSet})
     return true
 end
 
 """
-    MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
+    MOI.add_constrained_variables(model::Optimizer, set::ManifoldsBaseSet)
 
 Add `MOI.dimension(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables in the
-[`Manopt.JuMP_VectorizedManifold`](@ref) `set`.
+ManifoldsBaseSet` `set`.
 """
-function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
+function MOI.add_constrained_variables(model::Optimizer, set::ManifoldsBaseSet)
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
         throw(
@@ -236,20 +236,20 @@ Return whether `vi` is a valid variable index.
 """
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
-           1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
+           1 <= vi.value <= MOI.dimension(ManifoldsBaseSet(model.manifold))
 end
 
 """
     MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@ref) of the [`Manopt.JuMP_VectorizedManifold`](@ref).
+to the [`MOI.dimension`](@ref) of the ManifoldsBaseSet`.
 """
 function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
         return 0
     else
-        return MOI.dimension(VectorizedManifold(model.manifold))
+        return MOI.dimension(ManifoldsBaseSet(model.manifold))
     end
 end
 
@@ -397,7 +397,7 @@ function MOI.optimize!(model::Optimizer)
 end
 
 """
-    struct ManifoldDataShape{M, T, S} <: JuMP.AbstractShape
+    struct ManifoldsBaseDataShape{M, T, S} <: JuMP.AbstractShape
 
 Return a [`JuMP.AbstractShape`](@ref) that can be used to vectorize points or tangent vectors
 on an [`AbstractManifold`](@ref).
@@ -410,19 +410,24 @@ on an [`AbstractManifold`](@ref).
 
 # Constructor
 
-    ManifoldDataShape(manifold, data_type, size)
-    ManifoldDataShape(manifold, point_or_vector)
-    ManifoldDataShape(manifold)
+    ManifoldsBaseDataShape(manifold, data_type, size)
+    ManifoldsBaseDataShape(manifold, point_or_vector)
+    ManifoldsBaseDataShape(manifold)
 
 A constructor should compute the size based on `manifold` and a concrete `point`.
 Just providing the manifold should generate the default representation.
 """
-struct ManifoldDataShape{M<:ManifoldsBase.AbstractManifold,T,S} <: JuMP.AbstractShape
+struct ManifoldsBaseDataShape{M<:ManifoldsBase.AbstractManifold,T,S} <: JuMP.AbstractShape
     manifold::M
     point_type::T
     size::S
+    function ManifoldsBaseDataShape(
+        manifold::M, p::P, array_size::S=size(p)
+    ) where {M<:AbstractManifold,P, S}
+        return new{M,P,S}(manifold, P, array_size)
+    end
 end
-function ManifoldDataShape(manifold::M) where {M<:AbstractManifold}
+function ManifoldsBaseDataShape(manifold::M) where {M<:AbstractManifold}
     rs = representation_size(M)
     if isnothing(rs)
         throw(
@@ -431,20 +436,15 @@ function ManifoldDataShape(manifold::M) where {M<:AbstractManifold}
             ),
         )
     end
-    return ManifoldDataShape(manifold, Array{Float64,length(rs)}, rs)
-end
-function ManifoldDataShape(
-    manifold::M, p::P, array_size=size(p)
-) where {M<:AbstractManifold,P}
-    return ManifoldDataShape(manifold, P, array_size)
+    return ManifoldsBaseDataShape(manifold, Array{Float64,length(rs)}, rs)
 end
 
 """
-    length(shape::ManifoldDataShape)
+    length(shape::ManifoldsBaseDataShape)
 
 Return the length of the vectors in the vectorized representation.
 """
-Base.length(shape::ManifoldDataShape) = prod(shape.size)
+Base.length(shape::ManifoldsBaseDataShape) = prod(shape.size)
 
 """
     _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{M}) where {T,N,M}
@@ -452,28 +452,28 @@ Base.length(shape::ManifoldDataShape) = prod(shape.size)
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
 function _vectorize!(
-    res::AbstractVector{T}, array::A, ::ManifoldDataShape{M,A}
+    res::AbstractVector{T}, array::A, ::ManifoldsBaseDataShape{M,A}
 ) where {T,N,M,A<:AbstractArray{T,N}}
     return copyto!(res, array)
 end
 
 function JuMP.vectorize(
-    array::A, ::ManifoldDataShape{M,A}
+    array::A, ::ManifoldsBaseDataShape{M,A}
 ) where {T,N,M,A<:AbstractArray{T,N}}
     return vec(array)
 end
 function JuMP.reshape_vector(
-    vector::AbstractVector, ::ManifoldDataShape{M,A}
+    vector::AbstractVector, ::ManifoldsBaseDataShape{M,A}
 ) where {T,N,M,A<:Array{T,N}}
     return reshape(vector, shape.size)
 end
 function _reshape_vector!(
-    array::A, vector::AbstractVector, ::ManifoldDataShape{M,A}
+    array::A, vector::AbstractVector, ::ManifoldsBaseDataShape{M,A}
 ) where {T,N,M,A<:Array{T,N}}
     return copyto!(array, vector)
 end
 
-function JuMP.reshape_set(set::VectorizedManifold{M}, ::ManifoldDataShape{M}) where {M}
+function JuMP.reshape_set(set::ManifoldsBaseSet{M}, ::ManifoldsBaseDataShape{M}) where {M}
     return set.manifold
 end
 
@@ -488,14 +488,14 @@ end
     JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
 
 Build a [`JuMP.VariablesConstrainedOnCreation`](@extref) object containing variables
-and the [`Manopt.JuMP_VectorizedManifold`](@ref) in which they should belong as well as the
-`shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, [`Manopt.ManifoldDataShape`](@ref).
+and [`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) in which they belong
+as well as the `shape` that can be used to go from the vectorized MOI representation to the
+shape of the manifold `ManifoldsBaseDataShape`.
 """
 function JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
-    shape = ManifoldDataShape(manifold)
+    shape = ManifoldsBaseDataShape(manifold)
     return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(func, shape), VectorizedManifold(manifold), shape
+        JuMP.vectorize(func, shape), ManifoldsBaseSet(manifold), shape
     )
 end
 
