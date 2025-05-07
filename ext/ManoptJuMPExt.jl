@@ -30,7 +30,7 @@ Note that this is not the dimension of the manifold itself, but the
 vector length of the vectorized representation of the manifold.
 """
 function MOI.dimension(set::ManifoldsBaseSet)
-    return length( _point_shape(set.manifold))
+    return length(_point_shape(set.manifold))
 end
 
 struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
@@ -423,7 +423,7 @@ struct ManifoldsBaseDataShape{M<:ManifoldsBase.AbstractManifold,T,S} <: JuMP.Abs
     size::S
     function ManifoldsBaseDataShape(
         manifold::M, p::P, array_size::S=size(p)
-    ) where {M<:AbstractManifold,P, S}
+    ) where {M<:AbstractManifold,P,S}
         return new{M,P,S}(manifold, P, array_size)
     end
 end

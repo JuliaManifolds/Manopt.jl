@@ -7,7 +7,6 @@ using JuMP: JuMP
 using ManifoldsBase
 const MOI = JuMP.MOI
 
-
 struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
@@ -46,7 +45,7 @@ Base.length(shape::ManifoldDataShape) = prod(shape.size)
 
 function JuMP.vectorize(
     p::P, mp::ManifoldDataShape{M,P}
-) where {M, P<:ManifoldsBase.AbstractManifoldPoint}
+) where {M,P<:ManifoldsBase.AbstractManifoldPoint}
     throw(
         DomainError(
             p,
@@ -63,7 +62,7 @@ end
 
 function JuMP.vectorize(
     X::T, tv::ManifoldDataShape{M,T}
-) where {M, T<:ManifoldsBase.AbstractTangentVector}
+) where {M,T<:ManifoldsBase.AbstractTangentVector}
     throw(
         DomainError(
             X,
@@ -80,7 +79,7 @@ end
 
 function JuMP.reshape_vector(
     v::AbstractVector, p::ManifoldDataShape{M,P}
-) where {M, P<:ManifoldsBase.AbstractManifoldPoint}
+) where {M,P<:ManifoldsBase.AbstractManifoldPoint}
     throw(
         DomainError(
             p,
@@ -95,9 +94,8 @@ function JuMP.reshape_vector(
     )
 end
 function JuMP.reshape_vector(
-    v::AbstractVector,
-    X::ManifoldDataShape{M,T},
-) where {M, T<:ManifoldsBase.AbstractTangentVector}
+    v::AbstractVector, X::ManifoldDataShape{M,T}
+) where {M,T<:ManifoldsBase.AbstractTangentVector}
     throw(
         DomainError(
             X,
