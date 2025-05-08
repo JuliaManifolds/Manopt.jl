@@ -61,7 +61,7 @@ $(_var(:Field, :vector_transport_method))
         recombination_weights::Vector{TParams};
         retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
         vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
-        basis::TB=DefaultOrthonormalBasis(),
+        basis::TB=default_basis(M, typeof(p_m)),
         rng::TRng=default_rng(),
     ) where {
         P,
@@ -101,6 +101,7 @@ mutable struct CMAESState{
     population::Vector{P}
     ys_c::Vector{Vector{TParams}}
     covariance_matrix::Matrix{TParams}
+    last_variances::Vector{TParams}
     covariance_matrix_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}}
     covariance_matrix_cond::TParams
     best_fitness_current_gen::TParams
@@ -138,7 +139,7 @@ function CMAESState(
     recombination_weights::Vector{TParams};
     retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
     vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
-    basis::TB=DefaultOrthonormalBasis(),
+    basis::TB=default_basis(M, P),
     rng::TRng=default_rng(),
 ) where {
     P,
@@ -156,6 +157,7 @@ function CMAESState(
     @assert μ_eff >= 1
     @assert μ_eff <= μ
     @assert sum(recombination_weights[1:μ]) ≈ 1
+    cov_eig = eigen(covariance_matrix)
 
     return CMAESState{P,TParams,TStopping,TRetraction,TVTM,TB,TRng}(
         allocate(M, p_m),
@@ -173,7 +175,8 @@ function CMAESState(
         [allocate(M, p_m) for _ in 1:λ],
         [similar(Vector{Float64}, n_coords) for _ in 1:λ],
         covariance_matrix,
-        eigen(covariance_matrix),
+        copy(cov_eig.values),
+        cov_eig,
         1.0,
         Inf,
         Inf,
@@ -251,6 +254,12 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     # `D2, B = eigen(Symmetric(s.covariance_matrix))``
     D2, B = s.covariance_matrix_eigen # assuming eigendecomposition has already been completed
     min_eigval, max_eigval = extrema(abs.(D2))
+    if minimum(D2) <= 0
+        @warn "Covariance matrix has nonpositive eigenvalues; try reformulating the objective, modifying stopping criteria or adjusting optimization parameters to avoid this."
+        # replace nonpositive variances with last positive entries; this is the approach used by pycma
+        nonpos_inds = D2 .<= 0
+        D2[nonpos_inds] .= s.last_variances[nonpos_inds]
+    end
     s.covariance_matrix_cond = max_eigval / min_eigval
     s.deviations .= sqrt.(D2)
     cov_invsqrt = B * Diagonal(inv.(s.deviations)) * B'
@@ -314,6 +323,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
         mul!(s.covariance_matrix, s.ys_c[i], s.ys_c[i]', s.c_μ * wᵒi, true) # Eq. (47), rank μ update
     end
     # move covariance matrix, `p_c`, and `p_σ` to new mean point
+    s.last_variances .= D2
     s.covariance_matrix_eigen = eigen(Symmetric(s.covariance_matrix))
     eigenvector_transport!(
         M, s.covariance_matrix_eigen, s.p_m, new_m, s.basis, s.vector_transport_method
@@ -421,7 +431,7 @@ function cma_es!(
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M, typeof(p_m)
     ),
-    basis::AbstractBasis=DefaultOrthonormalBasis(),
+    basis::AbstractBasis=default_basis(M, typeof(p_m)),
     rng::AbstractRNG=default_rng(),
     kwargs..., #collect rest
 ) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}

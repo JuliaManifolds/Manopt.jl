@@ -14,7 +14,7 @@ where ``d`` is the $(_link(:manifold_dimension; M="")) of `M`.
     NelderMeadSimplex(
         M::AbstractManifold,
         p,
-        B::AbstractBasis=DefaultOrthonormalBasis();
+        B::AbstractBasis=default_basis(M, typeof(p));
         a::Real=0.025,
         retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     )
@@ -35,7 +35,7 @@ end
 function NelderMeadSimplex(
     M::AbstractManifold,
     p,
-    B::AbstractBasis=DefaultOrthonormalBasis();
+    B::AbstractBasis=default_basis(M, typeof(p));
     a::Real=0.025,
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
 )

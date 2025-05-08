@@ -27,7 +27,7 @@ function F_RLM(::AbstractManifold, p)
 end
 
 function jacF_RLM(
-    M::AbstractManifold, p; basis_domain::AbstractBasis=DefaultOrthogonalBasis()
+    M::AbstractManifold, p; basis_domain::AbstractBasis=default_basis(M, typeof(p))
 )
     X0 = zeros(manifold_dimension(M))
     J = ForwardDiff.jacobian(
@@ -78,7 +78,7 @@ struct jacF_reg_r2
 end
 
 function (f::jacF_reg_r2)(
-    ::AbstractManifold, p; basis_domain::AbstractBasis=DefaultOrthogonalBasis()
+    M::AbstractManifold, p; basis_domain::AbstractBasis=default_basis(M, typeof(p))
 )
     return [f.ts_r2 zero(f.ts_r2); zero(f.ts_r2) f.ts_r2]
 end
@@ -91,7 +91,7 @@ function F_reg_r2!(::AbstractManifold, x, p)
 end
 
 function jacF_reg_r2!(
-    ::AbstractManifold, J, p; basis_domain::AbstractBasis=DefaultOrthogonalBasis()
+    M::AbstractManifold, J, p; basis_domain::AbstractBasis=default_basis(M, typeof(p))
 )
     midpoint = div(size(J, 1), 2)
     view(J, 1:midpoint, 1) .= ts_r2
@@ -99,6 +99,11 @@ function jacF_reg_r2!(
     view(J, (midpoint + 1):size(J, 1), 1) .= 0
     view(J, (midpoint + 1):size(J, 1), 2) .= ts_r2
     return J
+end
+
+function test_lm_lin_solve!(sk, JJ, grad_f_c)
+    ldiv!(sk, qr(JJ), grad_f_c)
+    return sk
 end
 
 @testset "LevenbergMarquardt" begin
@@ -160,7 +165,7 @@ end
     )
     @test isapprox(M, p_star, p3; atol=p_atol)
 
-    # allocating R2 regression, zero residual
+    # allocating R2 regression, zero residual, custom subsolver
     M = Euclidean(2)
     ds = LevenbergMarquardt(
         M,
@@ -169,8 +174,10 @@ end
         p0;
         return_state=true,
         expect_zero_residual=true,
+        (linear_subsolver!)=test_lm_lin_solve!,
     )
     lms = get_state(ds)
+    @test lms.linear_subsolver! === test_lm_lin_solve!
     @test isapprox(M, p_star, lms.p; atol=p_atol)
 
     p1 = copy(M, p0)
