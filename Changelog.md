@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.16] TBD
+
+### Fixed
+
+* Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
+
 ## [0.5.15] 2025-05-06
 
 ### Fixed
