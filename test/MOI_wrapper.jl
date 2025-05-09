@@ -117,6 +117,7 @@ function _test_stiefel(solver)
     optimize!(model)
     @test objective_value(model) ≈ 2
     @test value.(U) ≈ [1 0; 0 1]
+    _test_allocs(unsafe_backend(model), zeros(2, 2), zeros(2, 2))
     return nothing
 end
 
