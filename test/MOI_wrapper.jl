@@ -42,17 +42,17 @@ function test_sphere()
         # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
         grad_f = ones(3)
 
-        function eval_sum_cb(M, x)
+        function _get_cost(M, x)
             return sum(x)
         end
 
-        function eval_grad_sum_cb(M, g, X)
+        function _get_gradient!(M, g, X)
             return Manopt.riemannian_gradient!(M, g, X, grad_f)
         end
 
         Manopt.ManifoldGradientObjective(
-            eval_sum_cb,
-            eval_grad_sum_cb,
+            _get_cost,
+            _get_gradient!,
             evaluation=Manopt.InplaceEvaluation(),
         )
     end
