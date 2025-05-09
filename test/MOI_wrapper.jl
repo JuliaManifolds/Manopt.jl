@@ -4,6 +4,15 @@ using Manifolds
 using Manopt
 using JuMP
 
+function _test_allocs(problem::Manopt.AbstractManoptProblem, x, g)
+    Manopt.get_cost(problem, x) # Compilation
+    @test 0 == @allocated Manopt.get_cost(problem, x)
+    Manopt.get_gradient!(problem, g, x) # Compilation
+    @test 0 == @allocated Manopt.get_gradient!(problem, g, x)
+end
+
+_test_allocs(optimizer, x, g) = _test_allocs(optimizer.problem, x, g)
+
 function _test_sphere_sum(model, obj_sign)
     @test MOI.get(unsafe_backend(model), MOI.ResultCount()) == 0
     optimize!(model)
@@ -16,6 +25,7 @@ function _test_sphere_sum(model, obj_sign)
     @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
+    _test_allocs(unsafe_backend(model), zeros(3), zeros(3))
 end
 
 function test_sphere()
@@ -23,15 +33,29 @@ function test_sphere()
     start = normalize(1:3)
     @variable(model, x[i=1:3] in Sphere(2), start = start[i])
 
-    function eval_sum_cb(M, x)
-        return sum(x)
-    end
-    function eval_grad_sum_cb(M, X)
-        grad_f = ones(length(X))
-        return Manopt.riemannian_gradient(M, X, grad_f)
-    end
+    objective = let
+        # We create `grad_f` here to avoid having an allocation in `eval_grad_sum_cb`
+        # so that we can easily test that the rest is allocation-free by testing that
+        # `@allocated` returns 0 the whole call to `get_gradient!`.
+        # To avoid creating a closure capturing the `grad_f` object,
+        # we use the `let` block trick detailed in:
+        # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
+        grad_f = ones(3)
 
-    objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
+        function eval_sum_cb(M, x)
+            return sum(x)
+        end
+
+        function eval_grad_sum_cb(M, g, X)
+            return Manopt.riemannian_gradient!(M, g, X, grad_f)
+        end
+
+        Manopt.ManifoldGradientObjective(
+            eval_sum_cb,
+            eval_grad_sum_cb,
+            evaluation=Manopt.InplaceEvaluation(),
+        )
+    end
 
     @testset "$obj_sense" for (obj_sense, obj_sign) in
                               [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
