@@ -102,7 +102,7 @@ end
 Return the version of the Manopt solver, it corresponds to the version of
 Manopt.jl.
 """
-MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.37"
+MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.5.18"
 
 function MOI.is_empty(model::Optimizer)
     return isnothing(model.manifold) &&
@@ -383,15 +383,15 @@ function MOI.optimize!(model::Optimizer)
     elseif model.sense == MOI.MAX_SENSE
         objective = -objective
     end
-    dmgo = decorate_objective!(model.manifold, objective)
-    model.problem = DefaultManoptProblem(model.manifold, dmgo)
+    model.problem = DefaultManoptProblem(model.manifold, objective)
+    # This probably needs the type as well passed or it has to be stored in the shape
+    # How could one best model this?
     reshaped_start = JuMP.reshape_vector(start, _point_shape(model.manifold))
     descent_state_type = model.options[DESCENT_STATE_TYPE]
     kws = Dict{Symbol,Any}(
         Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
     )
-    s = descent_state_type(model.manifold; p=reshaped_start, kws...)
-    model.state = decorate_state!(s)
+    model.state = descent_state_type(model.manifold; p=reshaped_start, kws...)
     solve!(model.problem, model.state)
     return nothing
 end
@@ -410,7 +410,7 @@ on an [`AbstractManifold`](@ref).
 
 # Constructor
 
-    ManifoldsBaseDataShape(manifold, data_type, size)
+    ManifoldsBaseDataShape(manifold, size)
     ManifoldsBaseDataShape(manifold, point_or_vector)
     ManifoldsBaseDataShape(manifold)
 
@@ -419,7 +419,6 @@ Just providing the manifold should generate the default representation.
 """
 struct ManifoldsBaseDataShape{M<:ManifoldsBase.AbstractManifold,T,S} <: JuMP.AbstractShape
     manifold::M
-    point_type::T
     size::S
     function ManifoldsBaseDataShape(
         manifold::M, p::P, array_size::S=size(p)
@@ -467,6 +466,12 @@ function JuMP.reshape_vector(
 ) where {T,N,M,A<:Array{T,N}}
     return reshape(vector, shape.size)
 end
+"""
+    _reshape_vector!(array::A, vector::AbstractVector, ::ManifoldBaseDataShape{M,A})
+
+Reshape a vector into an `array` according to [`ManifoldBaseDataShape`](@ref)
+on a manifold of type `M`.
+"""
 function _reshape_vector!(
     array::A, vector::AbstractVector, ::ManifoldsBaseDataShape{M,A}
 ) where {T,N,M,A<:Array{T,N}}
@@ -498,6 +503,9 @@ function JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractM
         JuMP.vectorize(func, shape), ManifoldsBaseSet(manifold), shape
     )
 end
+# TODO_: Unclear what Func is. From the call to `vectorize` it is usually `Array`?
+# From what the docs tell it might be `VariableInfo` but that is unclear how that is
+# used, what it contains and what it would mean here and how it would be created along the way.
 
 """
     MOI.get(model::Optimizer, ::MOI.ResultCount)
