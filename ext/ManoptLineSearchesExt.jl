@@ -28,11 +28,11 @@ function (cs::Manopt.LineSearchesStepsize)(
     # perform actual line-search
 
     function ϕ(α)
-        retract!(M, p_tmp, p, η, α, cs.retraction_method)
+        ManifoldsBase.retract_fused!(M, p_tmp, p, η, α, cs.retraction_method)
         return f(M, p_tmp)
     end
     function dϕ(α)
-        retract!(M, p_tmp, p, η, α, cs.retraction_method)
+        ManifoldsBase.retract_fused!(M, p_tmp, p, η, α, cs.retraction_method)
         get_gradient!(mp, X_tmp, p_tmp)
         vector_transport_to!(M, Y_tmp, p, η, p_tmp, cs.vector_transport_method)
         return real(inner(M, p_tmp, X_tmp, Y_tmp))
