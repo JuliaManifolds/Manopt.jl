@@ -328,8 +328,12 @@ end
 # We put all arguments
 function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
     _vectorize!(objective.vectorized_point, p, _point_shape(M))
-    MOI.eval_objective_gradient(objective.evaluator, objective.vectorized_tangent, objective.vectorized_point)
-    _reshape_vector!(objective.embedding_tangent, objective.vectorized_tangent, _tangent_shape(M))
+    MOI.eval_objective_gradient(
+        objective.evaluator, objective.vectorized_tangent, objective.vectorized_point
+    )
+    _reshape_vector!(
+        objective.embedding_tangent, objective.vectorized_tangent, _tangent_shape(M)
+    )
     return ManifoldDiff.riemannian_gradient!(M, gradient, p, objective.embedding_tangent)
 end
 
@@ -361,9 +365,9 @@ function MOI.set(
         RiemannianFunction(
             Manopt.ManifoldGradientObjective(
                 (M, x) -> _get_cost(M, embedding_obj, x),
-                (M, g, x) -> _get_gradient!(M, g, embedding_obj, x),
-                evaluation = Manopt.InplaceEvaluation(),
-            )
+                (M, g, x) -> _get_gradient!(M, g, embedding_obj, x);
+                evaluation=Manopt.InplaceEvaluation(),
+            ),
         )
     end
     MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
@@ -429,7 +433,7 @@ Base.length(shape::ArrayShape) = prod(shape.size)
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
 function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{N}) where {T,N,M}
-    copyto!(res, array)
+    return copyto!(res, array)
 end
 
 """
@@ -438,7 +442,7 @@ end
 Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
 """
 function _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ArrayShape{N}) where {T,N}
-    copyto!(res, vec)
+    return copyto!(res, vec)
 end
 
 """
