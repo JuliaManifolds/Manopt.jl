@@ -321,18 +321,18 @@ struct _EmbeddingObjective{E<:MOI.AbstractNLPEvaluator,T}
 end
 
 function _get_cost(M, objective::_EmbeddingObjective, p)
-    _vectorize!(objective.vectorized_point, p, _point_shape(M))
+    _vectorize!(objective.vectorized_point, p, _shape(M))
     return MOI.eval_objective(objective.evaluator, objective.vectorized_point)
 end
 
 # We put all arguments
 function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
-    _vectorize!(objective.vectorized_point, p, _point_shape(M))
+    _vectorize!(objective.vectorized_point, p, _shape(M))
     MOI.eval_objective_gradient(
         objective.evaluator, objective.vectorized_tangent, objective.vectorized_point
     )
     _reshape_vector!(
-        objective.embedding_tangent, objective.vectorized_tangent, _tangent_shape(M)
+        objective.embedding_tangent, objective.vectorized_tangent, _shape(M)
     )
     return ManifoldDiff.riemannian_gradient!(M, gradient, p, objective.embedding_tangent)
 end
@@ -358,9 +358,9 @@ function MOI.set(
         # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
         embedding_obj = _EmbeddingObjective(
             evaluator,
-            zeros(length(_point_shape(model.manifold))),
-            zeros(length(_tangent_shape(model.manifold))),
-            _zero(_tangent_shape(model.manifold)),
+            zeros(length(_shape(model.manifold))),
+            zeros(length(_shape(model.manifold))),
+            _zero(_shape(model.manifold)),
         )
         RiemannianFunction(
             Manopt.ManifoldGradientObjective(
