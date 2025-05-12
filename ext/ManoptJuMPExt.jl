@@ -315,13 +315,40 @@ already been set.
 """
 MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 
+# We could have it be a subtype of `AbstractManifoldGradientObjective{E,TC,TG}`
+# but I wouldn't know what to do with `TC` and `TG` in this case.
+# But we still implement an API similar to `get_cost` and `get_gradient!`
+# so for consistency.
+struct _EmbeddingObjective{E<:MOI.AbstractNLPEvaluator,T}
+    evaluator::E
+    # Used to store the vectorized point
+    vectorized_point::Vector{Float64}
+    # Used to store the vectorized tangent
+    vectorized_tangent::Vector{Float64}
+    # Used to store the tangent in the embedding space
+    embedding_tangent::T
+end
+
+function _get_cost(M, objective::_EmbeddingObjective, p)
+    _vectorize!(objective.vectorized_point, p, _point_shape(M))
+    return MOI.eval_objective(objective.evaluator, objective.vectorized_point)
+end
+
+# We put all arguments
+function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
+    _vectorize!(objective.vectorized_point, p, _point_shape(M))
+    MOI.eval_objective_gradient(objective.evaluator, objective.vectorized_tangent, objective.vectorized_point)
+    _reshape_vector!(objective.embedding_tangent, objective.vectorized_tangent, _tangent_shape(M))
+    return ManifoldDiff.riemannian_gradient!(M, gradient, p, objective.embedding_tangent)
+end
+
 """
     MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
 
 Set the objective function as `func` for `model`.
 """
 function MOI.set(
-    model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+    model::Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
 )
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
@@ -330,21 +357,24 @@ function MOI.set(
     MOI.Nonlinear.set_objective(nlp_model, nl)
     evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
     MOI.initialize(evaluator, [:Grad])
-    resize!(model.vectorized_point, length(_point_shape(model.manifold)))
-    resize!(model.vectorized_tangent, length(_tangent_shape(model.manifold)))
-    function eval_f_cb(M, X)
-        _vectorize!(model.vectorized_point, X, _point_shape(M))
-        return MOI.eval_objective(evaluator, model.vectorized_point)
+    objective = let
+        # To avoid creating a closure capturing the `embedding_obj` object,
+        # we use the `let` block trick detailed in:
+        # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
+        embedding_obj = _EmbeddingObjective(
+            evaluator,
+            zeros(length(_point_shape(model.manifold))),
+            zeros(length(_tangent_shape(model.manifold))),
+            _zero(_tangent_shape(model.manifold)),
+        )
+        RiemannianFunction(
+            Manopt.ManifoldGradientObjective(
+                (M, x) -> _get_cost(M, embedding_obj, x),
+                (M, g, x) -> _get_gradient!(M, g, embedding_obj, x),
+                evaluation = Manopt.InplaceEvaluation(),
+            )
+        )
     end
-    function eval_grad_f_cb(M, X)
-        _vectorize!(model.vectorized_point, X, _point_shape(M))
-        MOI.eval_objective_gradient(evaluator, model.vectorized_tangent, model.vectorized_point)
-        reshaped_grad_f = JuMP.reshape_vector(model.vectorized_tangent, _tangent_shape(model.manifold))
-        return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
-    end
-    objective = RiemannianFunction(
-        Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
-    )
     MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
     return nothing
 end
@@ -410,15 +440,31 @@ Return the length of the vectors in the vectorized representation.
 Base.length(shape::ArrayShape) = prod(shape.size)
 
 """
-    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{M}) where {T,N,M}
+    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{N}) where {T,N}
 
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
-function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
+function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{N}) where {T,N,M}
     copyto!(res, array)
 end
 
-function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
+"""
+    _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ArrayShape{N}) where {T,N}
+
+Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
+"""
+function _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ArrayShape{N}) where {T,N}
+    copyto!(res, vec)
+end
+
+"""
+    _zero(shape::ArrayShape)
+
+Return a zero element of the shape `shape`.
+"""
+_zero(shape::ArrayShape{N}) where {N} = zeros(shape.size)
+
+function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{N}) where {T,N}
     return vec(array)
 end
 

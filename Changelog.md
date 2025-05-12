@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * A tutorial for how to use `Manopt.jl` from within [`JuMP.jl`](https://jump.dev)
 
+### Fixed
+
+* Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
+
 ## [0.5.15] 2025-05-06
 
 ### Fixed
