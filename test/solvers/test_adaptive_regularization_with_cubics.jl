@@ -203,8 +203,7 @@ using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
         sub_state = GradientDescentState(
             M2;
             p=zero_vector(M, p0),
-            stopping_criterion=StopAfterIteration(500) |
-                               StopWhenGradientNormLess(1e-11) |
+            stopping_criterion=StopAfterIteration(500) | StopWhenGradientNormLess(1e-11) |
                                StopWhenFirstOrderProgress(0.1),
         )
         q3 = copy(M, p0)

@@ -102,7 +102,7 @@ mutable struct AugmentedLagrangianMethodState{
         ϵ_min::R=1e-6,
         λ::V=ones(length(get_equality_constraint(M, co, p, :))),
         λ_max::R=20.0,
-        λ_min::R=-λ_max,
+        λ_min::R=(-λ_max),
         μ::V=ones(length(get_inequality_constraint(M, co, p, :))),
         μ_max::R=20.0,
         ρ::R=1.0,
@@ -110,12 +110,9 @@ mutable struct AugmentedLagrangianMethodState{
         θ_ρ::R=0.3,
         ϵ_exponent=1 / 100,
         θ_ϵ=(ϵ_min / ϵ)^(ϵ_exponent),
-        stopping_criterion::SC=StopAfterIteration(300) |
-                               (
-                                   StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
-                                   StopWhenChangeLess(M, 1e-10)
-                               ) |
-                               StopWhenChangeLess(M, 1e-10),
+        stopping_criterion::SC=StopAfterIteration(300) | (
+            StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1e-10)
+        ) | StopWhenChangeLess(M, 1e-10),
         kwargs...,
     ) where {
         P,
@@ -441,7 +438,7 @@ function augmented_Lagrangian_method!(
     μ_max::Real=20.0,
     λ::Vector=ones(length(get_equality_constraint(M, cmo, p, :))),
     λ_max::Real=20.0,
-    λ_min::Real=-λ_max,
+    λ_min::Real=(-λ_max),
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
@@ -479,12 +476,9 @@ function augmented_Lagrangian_method!(
             sub_kwargs...,
         ),
     ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
-                                          (
-                                              StopWhenSmallerOrEqual(:ϵ, ϵ_min) &
-                                              StopWhenChangeLess(M, 1e-10)
-                                          ) |
-                                          StopWhenStepsizeLess(1e-10),
+    stopping_criterion::StoppingCriterion=StopAfterIteration(300) | (
+        StopWhenSmallerOrEqual(:ϵ, ϵ_min) & StopWhenChangeLess(M, 1e-10)
+    ) | StopWhenStepsizeLess(1e-10),
     kwargs...,
 ) where {O<:Union{ConstrainedManifoldObjective,AbstractDecoratedManifoldObjective}}
     sub_state_storage = maybe_wrap_evaluation_type(sub_state)
@@ -550,18 +544,16 @@ function step_solver!(mp::AbstractManoptProblem, alms::AugmentedLagrangianMethod
     # update multipliers
     cost_ineq = get_inequality_constraint(mp, alms.p, :)
     n_ineq_constraint = length(cost_ineq)
-    alms.μ .=
-        min.(
-            ones(n_ineq_constraint) .* alms.μ_max,
-            max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
-        )
+    alms.μ .= min.(
+        ones(n_ineq_constraint) .* alms.μ_max,
+        max.(alms.μ .+ alms.ρ .* cost_ineq, zeros(n_ineq_constraint)),
+    )
     cost_eq = get_equality_constraint(mp, alms.p, :)
     n_eq_constraint = length(cost_eq)
-    alms.λ =
-        min.(
-            ones(n_eq_constraint) .* alms.λ_max,
-            max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
-        )
+    alms.λ = min.(
+        ones(n_eq_constraint) .* alms.λ_max,
+        max.(ones(n_eq_constraint) .* alms.λ_min, alms.λ + alms.ρ .* cost_eq),
+    )
     # get new evaluation of penalty
     penalty = maximum(
         [abs.(max.(-alms.μ ./ alms.ρ, cost_ineq))..., abs.(cost_eq)...]; init=0

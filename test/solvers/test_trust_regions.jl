@@ -351,7 +351,7 @@ include("trust_region_model.jl")
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=project!)
+        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=(project!))
         @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit imprecise?
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X

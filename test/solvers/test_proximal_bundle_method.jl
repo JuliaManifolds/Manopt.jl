@@ -167,7 +167,7 @@ import Manopt: proximal_bundle_method_subsolver, proximal_bundle_method_subsolve
             bundle_size=2,
             evaluation=InplaceEvaluation(),
             stopping_criterion=StopAfterIteration(200),
-            sub_problem=proximal_bundle_method_subsolver!,
+            sub_problem=(proximal_bundle_method_subsolver!),
         )
     end
 end

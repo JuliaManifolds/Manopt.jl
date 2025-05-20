@@ -238,8 +238,7 @@ function difference_of_convex_algorithm!(
     stopping_criterion=if isnothing(gradient)
         StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
-        StopAfterIteration(300) |
-        StopWhenChangeLess(M, 1e-9) |
+        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9) |
         StopWhenGradientNormLess(1e-9)
     end,
     # Subsolver Magic Cascade.

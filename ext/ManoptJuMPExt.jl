@@ -338,8 +338,12 @@ function MOI.set(
     end
     function eval_grad_f_cb(M, X)
         _vectorize!(model.vectorized_point, X, _point_shape(M))
-        MOI.eval_objective_gradient(evaluator, model.vectorized_tangent, model.vectorized_point)
-        reshaped_grad_f = JuMP.reshape_vector(model.vectorized_tangent, _tangent_shape(model.manifold))
+        MOI.eval_objective_gradient(
+            evaluator, model.vectorized_tangent, model.vectorized_point
+        )
+        reshaped_grad_f = JuMP.reshape_vector(
+            model.vectorized_tangent, _tangent_shape(model.manifold)
+        )
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     objective = RiemannianFunction(
