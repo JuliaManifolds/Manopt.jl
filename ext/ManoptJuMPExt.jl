@@ -21,15 +21,12 @@ end
 """
     MOI.dimension(set::VectorizedManifold)
 
-Return the representation size of points on the (vectorized in representation) manifold.
+Return the representation side of points on the (vectorized in representation) manifold.
 As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
 yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
-
-Note that this is not the dimension of the manifold itself, but the
-vector length of the vectorized representation of the manifold.
 """
 function MOI.dimension(set::VectorizedManifold)
-    return length(_point_shape(set.manifold))
+    return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
 struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
@@ -68,10 +65,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     problem::Union{Nothing,Manopt.AbstractManoptProblem}
     # State of the optimizer
     state::Union{Nothing,Manopt.AbstractManoptSolverState}
-    # Used to store the vectorized point
-    vectorized_point::Vector{Float64}
-    # Used to store the vectorized tangent
-    vectorized_tangent::Vector{Float64}
     # Starting value for each variable
     variable_primal_start::Vector{Union{Nothing,Float64}}
     # Sense of the optimization, that is whether it is for example min, max or no objective
@@ -85,8 +78,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             nothing,
             nothing,
             nothing,
-            Float64[],
-            Float64[],
             Union{Nothing,Float64}[],
             MOI.FEASIBILITY_SENSE,
             nothing,
@@ -330,20 +321,14 @@ function MOI.set(
     MOI.Nonlinear.set_objective(nlp_model, nl)
     evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
     MOI.initialize(evaluator, [:Grad])
-    resize!(model.vectorized_point, length(_point_shape(model.manifold)))
-    resize!(model.vectorized_tangent, length(_tangent_shape(model.manifold)))
-    function eval_f_cb(M, X)
-        _vectorize!(model.vectorized_point, X, _point_shape(M))
-        return MOI.eval_objective(evaluator, model.vectorized_point)
+    function eval_f_cb(M, x)
+        return MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
     end
     function eval_grad_f_cb(M, X)
-        _vectorize!(model.vectorized_point, X, _point_shape(M))
-        MOI.eval_objective_gradient(
-            evaluator, model.vectorized_tangent, model.vectorized_point
-        )
-        reshaped_grad_f = JuMP.reshape_vector(
-            model.vectorized_tangent, _tangent_shape(model.manifold)
-        )
+        x = JuMP.vectorize(X, _shape(model.manifold))
+        grad_f = zeros(length(x))
+        MOI.eval_objective_gradient(evaluator, grad_f, x)
+        reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     objective = RiemannianFunction(
@@ -384,7 +369,7 @@ function MOI.optimize!(model::Optimizer)
     end
     dmgo = decorate_objective!(model.manifold, objective)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
-    reshaped_start = JuMP.reshape_vector(start, _point_shape(model.manifold))
+    reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
     descent_state_type = model.options[DESCENT_STATE_TYPE]
     kws = Dict{Symbol,Any}(
         Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
@@ -395,31 +380,8 @@ function MOI.optimize!(model::Optimizer)
     return nothing
 end
 
-"""
-    struct ArrayShape{N} <: JuMP.AbstractShape
-
-Return a [`JuMP.AbstractShape`](@ref) that can be used to vectorize points
-and tangent vectors of the manifold and reshape the vectorized representation
-to the original objects of the manifold.
-"""
 struct ArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
-end
-
-"""
-    length(shape::ArrayShape)
-
-Return the length of the vectors in the vectorized representation.
-"""
-Base.length(shape::ArrayShape) = prod(shape.size)
-
-"""
-    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{M}) where {T,N,M}
-
-Inplace version of `res = JuMP.vectorize(array, shape)`.
-"""
-function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
-    copyto!(res, array)
 end
 
 function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
@@ -434,21 +396,7 @@ function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
     return set.manifold
 end
 
-"""
-    _tangent_shape(m::ManifoldsBase.AbstractManifold)
-
-Return the shape of points of the manifold `m`.
-"""
-function _point_shape(m::ManifoldsBase.AbstractManifold)
-    return ArrayShape(ManifoldsBase.representation_size(m))
-end
-
-"""
-    _tangent_shape(m::ManifoldsBase.AbstractManifold)
-
-Return the shape of points of the tangent space of the manifold `m`.
-"""
-function _tangent_shape(m::ManifoldsBase.AbstractManifold)
+function _shape(m::ManifoldsBase.AbstractManifold)
     return ArrayShape(ManifoldsBase.representation_size(m))
 end
 
@@ -468,7 +416,7 @@ and the [`Manopt.JuMP_VectorizedManifold`](@ref) in which they should belong as 
 shape of the manifold, that is, [`Manopt.JuMP_ArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-    shape = _point_shape(m)
+    shape = _shape(m)
     return JuMP.VariablesConstrainedOnCreation(
         JuMP.vectorize(func, shape), VectorizedManifold(m), shape
     )

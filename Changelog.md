@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.16] 2025-05-07
+
+### Fixed
+
+* fixes a bug in the `LineSearches.jl` extension, where two (old) `retract!`s were still
+present; they were changed to `retact_fused!`.
+
 ## [0.5.15] 2025-05-06
 
 ### Fixed
