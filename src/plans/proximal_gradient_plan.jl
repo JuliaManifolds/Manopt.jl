@@ -448,6 +448,7 @@ function (s::ProxGradBacktrackingStepsize)(
         # Reduce step size
         λ *= s.contraction_factor
     end
+    return λ
 end
 
 function ProxGradBacktracking(args...; kwargs...)
