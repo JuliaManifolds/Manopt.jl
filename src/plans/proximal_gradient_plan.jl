@@ -226,8 +226,7 @@ function ProximalGradientMethodState(
         return st
     end,
     stepsize::TS=default_stepsize(M, ProximalGradientMethodState),
-    stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
-                          StopAfterIteration(5000) |
+    stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) | StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
@@ -316,10 +315,11 @@ A functor for backtracking line search in proximal gradient methods.
     ProxGradBacktrackingStepsize(M::AbstractManifold; kwargs...)
 
 ## Keyword arguments
-* `initial_stepsize=1.0` - initial stepsize to try
-* `sufficient_decrease=0.5` - sufficient decrease parameter
-* `contraction_factor=0.5` - step size reduction factor
-* `strategy=:nonconvex` - backtracking strategy, either `:convex` or `:nonconvex`
+* `initial_stepsize=1.0`: initial stepsize to try
+* `stop_when_stepsize_less=1e-4`: smallest stepsize when to stop (the last one before is taken)
+* `sufficient_decrease=0.5`: sufficient decrease parameter
+* `contraction_factor=0.5`: step size reduction factor
+* `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
 """
 mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
     initial_stepsize::T
@@ -328,6 +328,7 @@ mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
     strategy::Symbol
     candidate_point::P
     last_stepsize::T
+    stop_when_stepsize_less::T
 
     function ProxGradBacktrackingStepsize(
         M::AbstractManifold;
@@ -335,6 +336,7 @@ mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
         sufficient_decrease::T=0.5,
         contraction_factor::T=0.5,
         strategy::Symbol=:nonconvex,
+        stop_when_stepsize_less::T=1e-4,
     ) where {T}
         0 < sufficient_decrease < 1 ||
             throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
@@ -344,6 +346,11 @@ mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
             throw(DomainError(initial_stepsize, "initial_stepsize must be positive"))
         strategy in [:convex, :nonconvex] ||
             throw(DomainError(strategy, "strategy must be either :convex or :nonconvex"))
+        stop_when_stepsize_less > 0 || throw(
+            DomainError(
+                stop_when_stepsize_less, "stop_when_stepsize_less must be positive"
+            ),
+        )
 
         p = rand(M)
         return new{typeof(p),T}(
@@ -353,6 +360,7 @@ mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
             strategy,
             p,
             initial_stepsize,
+            stop_when_stepsize_less,
         )
     end
 end
@@ -407,7 +415,7 @@ function (s::ProxGradBacktrackingStepsize)(
         inverse_retraction_method=st.inverse_retraction_method,
     )
 
-    while true
+    while λ > s.stop_when_stepsize_less
         # Perform gradient step with current λ
         retract!(M, pgm_temp.a, p, -λ * X, st.retraction_method)
 
