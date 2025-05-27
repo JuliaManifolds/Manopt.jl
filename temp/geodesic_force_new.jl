@@ -23,13 +23,11 @@ end;
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
-	N=20
+	N=50
 	st = 0.5
-	halt = pi/2
+	halt = pi - 0.5
 	h = (halt-st)/(N+1)
-	#halt = pi - st
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1]
-	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
 	
 	y0 = [sin(st),0,cos(st)] # startpoint of geodesic
 	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic
@@ -109,119 +107,90 @@ end
 begin
 S = Manifolds.Sphere(2)
 power = PowerManifold(S, NestedPowerRepresentation(), N);
-integrand=DifferentiableMapping(S,F_at,F_prime_at,4.0) 
+integrand=DifferentiableMapping(S,F_at,F_prime_at,5.0) 
 transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
 end;
 
-# ╔═╡ 98a334b1-5aa9-4e3a-a03d-f6859e77f1dc
-"""
-Dummy
-"""
-function bundlemap(M, y)
-		# Include boundary points
-end
+# ╔═╡ a0b939d5-40e7-4da4-baf1-8a297bb52fb7
+md"""
+	NewtonEquation
 
-# ╔═╡ 6dbfa961-639d-45af-b1d1-2622331e8455
+	Functor to compute the Newton matrix and the right hand side for the Newton equation 
+
+$$Q_{F(x)}\circ F'(x)\delta x + F(x) = 0$$
+
+	by using the assembler provided in ManoptExamples.jl.
+	Returns the matrix and the right hand side in base representation.
+	Moreover, for the computation of the simplified Newton direction (which is necessary for affine covariant damping) a method for assembling the right hand side for the simplified Newton equation is provided.
+	
 """
-Dummy
-"""
-function connection_map(E, q)
-    return q
-end
-
-# ╔═╡ 1abddae9-d862-4c73-a46f-7bb0a1a8f917
-function solve_linear_system(M, p, state, prob)
-	obj = get_objective(prob)
-	n = manifold_dimension(M)
-	Ac::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
-	bc = zeros(n)
-	bcsys=zeros(n)
-	bctrial=zeros(n)
-	Oy = OffsetArray([y0, p..., yT], 0:(length(Omega)+1))
-	Oytrial = OffsetArray([y0, state.p_trial..., yT], 0:(length(Omega)+1))
-	S = M.manifold
-	println("Assemble:")
-    @time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,integrand,transport)
-	if state.is_same == true
-		bcsys=bc
-	else
-		@time ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,integrand,transport)
-    	bcsys=bctrial-(1.0 - state.stepsize.alpha)*bc
-	end
-	#Asparse = sparse(Ac)
-	println("Solve:")
-	@time Xc = (Ac) \ (-bcsys)
-	B = get_basis(M, p, DefaultOrthonormalBasis())
-	res_c = get_vector(M, p, Xc, B)
-	return res_c
-end
-
-# ╔═╡ 7766ff98-f22f-4357-a2ea-040ac3b79651
-solve(problem, newtonstate, k) = solve_linear_system(problem.manifold, newtonstate.p, newtonstate, problem)
-
-# ╔═╡ 6ea95d81-5d50-453b-9077-2a8cd25e4746
-norm_newtonschritt = []
 
 # ╔═╡ 6ce088e9-1aa0-4d44-98a3-2ab8b8ba5422
 begin
-struct LinearizedNewtonObjective{F, T, Om}
-	Manifold::AbstractManifold
-	vb::AbstractManifold
+struct NewtonEquation{F, T, Om}
 	integrand::F
 	transport::T
 	Omega::Om
 end
 
-function LinearizedNewtonObjective(M, vb, F, VT, interval)
-	return LinearizedNewtonObjective{typeof(F), typeof(VT), typeof(interval)}(M, vb, F, VT, interval)
+function NewtonEquation(F, VT, interval)
+	return NewtonEquation{typeof(F), typeof(VT), typeof(interval)}(F, VT, interval)
 end
 	
-function (lno::LinearizedNewtonObjective)(p)
-	n = manifold_dimension(lno.Manifold)
+function (NewtonEquation::NewtonEquation)(M, VB, p)
+	n = manifold_dimension(M)
 	Ac::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
 	bc = zeros(n)
-	bcsys=zeros(n)
-	bctrial=zeros(n)
-	Oy = OffsetArray([y0, p..., yT], 0:(length(lno.Omega)+1))
-	#Oytrial = OffsetArray([y0, state.p_trial..., yT], 0:(length(lno.Omega)+1))
-	S = (lno.Manifold).manifold
+	Oy = OffsetArray([y0, p..., yT], 0:(length(NewtonEquation.Omega)+1))
+	
 	println("Assemble:")
-    @time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,lno.integrand,lno.transport)
-	bcsys=bc
-	#if state.is_same == true
-	#	bcsys=bc
-	#else
-		#@time ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,integrand,transport)
-    	#bcsys=bctrial-(1.0 - state.stepsize.alpha)*bc
-	#end
-	#Asparse = sparse(Ac)
-	#println("Solve:")
-	Xc = (Ac) \ (-bcsys)
-	#println(Xc)
-	#println(Ac)
-	B = get_basis(lno.Manifold, p, DefaultOrthonormalBasis())
-	res_c = get_vector(lno.Manifold, p, Xc, B)
-	push!(norm_newtonschritt, norm(res_c))
-	return res_c
+    @time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,NewtonEquation.integrand,NewtonEquation.transport)
+
+	return Ac, bc
+end
+
+function (NewtonEquation::NewtonEquation)(M, VB, p, p_trial)
+	n = manifold_dimension(M)
+	bctrial=zeros(n)
+	Oy = OffsetArray([y0, p..., yT], 0:(length(NewtonEquation.Omega)+1))
+	Oytrial = OffsetArray([y0, p_trial..., yT], 0:(length(NewtonEquation.Omega)+1))
+
+	ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,NewtonEquation.integrand,NewtonEquation.transport)
+
+	return bctrial
 end
 end;
 
-# ╔═╡ c3c46cc3-7366-4724-98c3-ba94768d472b
-""" Initial geodesic """
+# ╔═╡ f78557e2-363e-4803-97d7-b57df115a619
+"""
+	Computes the Newton direction by solving the linear system given by the base representation of the Newton equation directly and returns the Newton direction in vector representation
+"""
+function solve_in_basis_repr(problem, newtonstate, k) 
+	Xc = (newtonstate.A) \ (-newtonstate.b)
+	res_c = get_vector(problem.manifold, newtonstate.p, Xc, DefaultOrthogonalBasis())
+	return res_c
+end
+
+# ╔═╡ 9a2ebb9a-74c7-4efd-b042-23263bbf4235
+begin
 	y_0 = copy(power, discretized_y)
+	
+	NE = NewtonEquation(integrand, transport, Omega)
+		
+	st_res = vectorbundle_newton(power, TangentBundle(power), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
+	retraction_method=ProjectionRetraction(),
+	stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
+	#stepsize=ConstantLength(power, 1.0),
+	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
+	record=[:Iterate, :Change],
+	return_state=true
+)
+	# Affin kovariante Schrittweite als Stepsize o.Ä., dabei dokumentieren, dass man dann eine methode schreiben muss, die die rechte seite für den vereinfachten Newton zurückgibt und die die signatur wie oben haben soll. 
+end
 
-# ╔═╡ 42dfd796-a6c2-43e0-a8c4-da9f4a545aa3
-lno = LinearizedNewtonObjective(power, TangentBundle(power), integrand, transport, Omega)
-
-# ╔═╡ 8c16594d-504e-4c11-bf90-174e205a2723
-problem = VectorbundleManoptProblem(power, TangentBundle(power), lno)
-
-# ╔═╡ 187488cc-30a5-417a-a7f4-51096e71e67b
-#println(typeof(ConstantLength(1.0)))
-state = VectorbundleNewtonState(power, TangentBundle(power), y_0; stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)), retraction_method=ProjectionRetraction())
-
-# ╔═╡ 30f04f7e-5fdf-4e30-9858-99403bcd2193
-solve!(problem, state)
+# ╔═╡ 161070b9-7953-4260-ab3b-f0f0bf8410ac
+change = get_record(st_res, :Iteration, :Change)[2:end];
 
 # ╔═╡ a08b8946-5adb-43c7-98aa-113875c954b1
 begin
@@ -229,49 +198,15 @@ begin
 	
     row, col = fldmod1(1, 2)
 	
-	Axis(f[row, col], yscale = log10, title = string("Semilogarithmic Plot of the norms of the Newton direction"), xminorgridvisible = true, xticks = (1:length(norm_newtonschritt)), xlabel = "Iteration", ylabel = "‖δx‖")
-    scatterlines!(norm_newtonschritt[1:end], color = :blue)
-	f
-end
-
-# ╔═╡ 4bd08087-470d-456a-85ce-e92e08253cb4
-# ╠═╡ disabled = true
-#=╠═╡
-st_res = vectorbundle_newton(power, TangentBundle(power), lno, y_0;
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
-	retraction_method=ProjectionRetraction(),
-stepsize=ConstantLength(1.0),
-	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
-	record=[:Iterate, :Change],
-	return_state=true
-)
-  ╠═╡ =#
-
-# ╔═╡ abe5c5f3-4a28-425c-afde-64b645f3a9d9
-#=╠═╡
-change = get_record(st_res, :Iteration, :Change)[2:end];
-  ╠═╡ =#
-
-# ╔═╡ 6451f8c5-7b4f-4792-87fd-9ed2635efa88
-#=╠═╡
-begin
-	f = Figure(;)
-	
-    row, col = fldmod1(1, 2)
-	
 	Axis(f[row, col], yscale = log10, title = string("Semilogarithmic Plot of the norms of the Newton direction"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
-    scatterlines!(change, color = :blue)
+    scatterlines!(change[1:end], color = :blue)
 	f
 end
-  ╠═╡ =#
 
 # ╔═╡ b0b8e87f-da09-4500-8aa9-e35934f7ef54
-#=╠═╡
 p_res = get_solver_result(st_res);
-  ╠═╡ =#
 
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
-#=╠═╡
 begin
 n = 45
 u = range(0,stop=2*π,length=n);
@@ -313,7 +248,6 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	#arrows!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y), π1.(ws_start), π2.(ws_start), π3.(ws_start); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.15)
 	fig
 end
-  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
@@ -329,20 +263,11 @@ end
 # ╠═684508bd-4525-418b-b89a-85d56c01b188
 # ╠═808db8aa-64f7-4b36-8c6c-929ba4fa22db
 # ╠═288b9637-0500-40b8-a1f9-90cb9591402b
-# ╠═98a334b1-5aa9-4e3a-a03d-f6859e77f1dc
-# ╠═6dbfa961-639d-45af-b1d1-2622331e8455
-# ╠═7766ff98-f22f-4357-a2ea-040ac3b79651
-# ╠═1abddae9-d862-4c73-a46f-7bb0a1a8f917
-# ╠═6ea95d81-5d50-453b-9077-2a8cd25e4746
+# ╟─a0b939d5-40e7-4da4-baf1-8a297bb52fb7
 # ╠═6ce088e9-1aa0-4d44-98a3-2ab8b8ba5422
-# ╠═c3c46cc3-7366-4724-98c3-ba94768d472b
-# ╠═42dfd796-a6c2-43e0-a8c4-da9f4a545aa3
-# ╠═8c16594d-504e-4c11-bf90-174e205a2723
-# ╠═187488cc-30a5-417a-a7f4-51096e71e67b
-# ╠═30f04f7e-5fdf-4e30-9858-99403bcd2193
+# ╠═f78557e2-363e-4803-97d7-b57df115a619
+# ╠═9a2ebb9a-74c7-4efd-b042-23263bbf4235
+# ╠═161070b9-7953-4260-ab3b-f0f0bf8410ac
 # ╠═a08b8946-5adb-43c7-98aa-113875c954b1
-# ╠═4bd08087-470d-456a-85ce-e92e08253cb4
-# ╠═abe5c5f3-4a28-425c-afde-64b645f3a9d9
-# ╠═6451f8c5-7b4f-4792-87fd-9ed2635efa88
 # ╠═b0b8e87f-da09-4500-8aa9-e35934f7ef54
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
