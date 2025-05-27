@@ -10,7 +10,6 @@ Is state for the vectorbundle Newton method
 * `stopping_criterion`: stopping criterion
 * `stepsize`: damping factor for the Newton direction
 * `retraction_method`:  the retraction to use in the Newton update
-* 'vector_transport_method': the vector transport to use
 
 # Constructor
 
@@ -29,75 +28,72 @@ Is state for the vectorbundle Newton method
 * `retraction_method=``default_retraction_method`(M, typeof(p)),
 * `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)``,
 * `stepsize=`1.0
-* `vector_transport_method=``default_vector_transport_method`(E, typeof(F(p)))
 
 """
-#sub_problem und sub_state dokumentieren?
+#TODO: sub_problem, sub_state, A, b dokumentieren?
 mutable struct VectorbundleNewtonState{
     P,
     #P2,
     T,
-    #Pr,
-    #St,
+    Pr,
+    St,
+    NM,
+    Nrhs,
     TStop<:StoppingCriterion,
     TStep<:Stepsize,
-    TRTM<:AbstractRetractionMethod,
-    #TVM<:AbstractVectorTransportMethod,
+    TRTM<:AbstractRetractionMethod
 } <: AbstractGradientSolverState
     p::P
     p_trial::P
     X::T
-    #sub_problem::Pr
-    #sub_state::St
+    sub_problem::Pr
+    sub_state::St
+    A::NM
+    b::Nrhs
     stop::TStop
     stepsize::TStep
     retraction_method::TRTM
-    #vector_transport_method::TVM
-    is_same::Bool
 end
 
 function VectorbundleNewtonState(
     M::AbstractManifold,
     E::AbstractManifold,
-    #F, #bundle_map
-    p::P;
-   # p_trial::P2,
-   # same_point::Bool,
-    #sub_problem::Pr,
-    #sub_state::Op;
+    p::P,
+    sub_problem::Pr,
+    sub_state::Op,
+    A::NM,
+    b::Nrhs;
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
-    stepsize::S=default_stepsize(M, VectorbundleNewtonState),
-    #vector_transport_method::VTM=default_vector_transport_method(E, typeof(F(M, p))),
+    stepsize::S=default_stepsize(M, VectorbundleNewtonState)
 ) where {
     P,
-   # P2,
     T,
-    #Pr,
-    #Op,
+    Pr,
+    Op,
+    NM,
+    Nrhs,
     RM<:AbstractRetractionMethod,
     SC<:StoppingCriterion,
     S<:Stepsize,
-    #VTM<:AbstractVectorTransportMethod,
 }
-    return VectorbundleNewtonState{P,T,SC,S,RM}(
+    return VectorbundleNewtonState{P,T,Pr,Op,NM,Nrhs,SC,S,RM}(
         p,
         copy(M, p),
         X,
-        #sub_problem,
-        #sub_state,
+        sub_problem,
+        sub_state,
+        A,
+        b,
         stopping_criterion,
         stepsize,
-        retraction_method,
-        #vector_transport_method,
-        true
+        retraction_method
     )
 end
 
 mutable struct AffineCovariantStepsize{T} <: Stepsize
     alpha::T
-    #type::Symbol
     theta::Float64
     theta_des::Float64
     theta_acc::Float64
@@ -107,8 +103,7 @@ function AffineCovariantStepsize(
     M::AbstractManifold=DefaultManifold(2);
     stepsize=1.0,
     theta=1.3,
-    #type=:relative,
-    theta_des=0.5,
+    theta_des=0.1,
     theta_acc=1.1*theta_des,
     last_stepsize = 1.0
 )
@@ -123,12 +118,16 @@ function (acs::AffineCovariantStepsize)(
     acs.alpha = 1.0
     acs.theta = 1.3
     alpha_new = 1.0
-    #acs.theta_des = 0.5
+    b = copy(ams.b)
     while acs.theta > acs.theta_acc && acs.alpha > 1e-10
         acs.alpha = copy(alpha_new)
         X_alpha = acs.alpha * ams.X
-        retract!(get_manifold(amp), ams.p_trial, ams.p, X_alpha, ams.retraction_method)
-        ams.is_same = false
+        M = get_manifold(amp)
+        retract!(M, ams.p_trial, ams.p, X_alpha, ams.retraction_method)
+
+        rhs_next = amp.NewtonEquation(M, get_vectorbundle(amp), ams.p, ams.p_trial)
+        rhs_simplified = rhs_next - (1.0 - acs.alpha)*b
+        ams.b = rhs_simplified
 
         simplified_newton = ams.sub_problem(amp, ams, 1)
         acs.theta = norm(simplified_newton)/norm(ams.X)
@@ -138,7 +137,7 @@ function (acs::AffineCovariantStepsize)(
             return
         end
     end
-    ams.is_same=true
+    ams.b = b
     acs.last_stepsize = acs.alpha
     return acs.alpha
 end
@@ -171,6 +170,7 @@ function show(io::IO, vbns::VectorbundleNewtonState)
     return print(io, s)
 end
 
+#TODO: Objective gibt es so nicht mehr. Entweder entfernen oder überlegen, ob man da noch was sinnvolles machen kann.
 @doc raw"""
     VectorbundleObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
@@ -193,8 +193,7 @@ mutable struct VectorbundleObjective{T<:AbstractEvaluationType,C,G,F} <:
     connection_map!!::F
     scaling::Number
 end
-# TODO: Eventuell zweiter Parameter (a) Tensor/Matrix darstellung vs (b) action Darstellung
-# oder über einen letzten parameter (a) ohne (b) mit
+
 
 function VectorbundleObjective(
     bundle_map::C, derivative::G, connection_map::F; evaluation::E=AllocatingEvaluation()
@@ -207,16 +206,14 @@ raw"""
     TM<:AbstractManifold,TV<:AbstractManifold,O<:AbstractManifoldObjective
 }
 
-Model a vector bundle problem, that consists of the domain manifold ``\mathcal M`` that is a AbstractManifold, the range vector bundle ``\mathcal E`` and an VectorbundleObjective
+Model a vector bundle problem, that consists of the domain manifold ``\mathcal M`` that is a AbstractManifold, the range vector bundle ``\mathcal E`` and the Newton equation ``Q_{F(x)}\circ F'(x) \delta x + F(x) = 0_{p(F(x))}`` given as a functor which returns a representation of the Newton matrix and the right hand side 
 """
-# sollte da O nicht ein VectorbundleObjective sein?
 struct VectorbundleManoptProblem{
     TM<:AbstractManifold,TV<:AbstractManifold,O
 } <: AbstractManoptProblem{TM}
     manifold::TM
     vectorbundle::TV
-    LinearizedNewtonObjective::O
-    # hier: solve_linear_system als Funktor? (vgl. AffineCovariantStepsize)
+    NewtonEquation::O
 end
 
 raw"""
@@ -234,85 +231,26 @@ raw"""
 get_manifold(vbp::VectorbundleManoptProblem) = vbp.manifold
 
 raw"""
+    get_newton_equation(mp::VectorbundleManoptProblem)
+
+return the Newton equation [`NewtonEquation`](@ref) stored within an [`VectorbundleManoptProblem`](@ref).
+"""
+
+function get_newton_equation(vbp::VectorbundleManoptProblem)
+    return vbp.NewtonEquation
+end
+
+raw"""
     get_objective(mp::VectorbundleManoptProblem, recursive=false)
 
 return the objective [`VectorbundleObjective`](@ref) stored within an [`VectorbundleManoptProblem`](@ref).
 If `recursive` is set to true, it additionally unwraps all decorators of the `objective`
 """
 
-function get_linearized_newton_objective(vbp::VectorbundleManoptProblem)
-    return vbp.LinearizedNewtonObjective
-end
-
 #function get_objective(vbp::VectorbundleManoptProblem, recursive=false)
 #    return recursive ? get_objective(vbp.objective, true) : vbp.objective
 #end
 
-raw"""
-    get_bundle_map(M, E, vbo::VectorbundleObjective, p)
-    get_bundle_map!(M, E, X, vbo::VectorbundleObjective, p)
-    get_bundle_map(P::VectorBundleManoptProblem, p)
-    get_bundle_map!(P::VectorBundleManoptProblem, X, p)
-
-    Evaluate the vector field ``F: \mathcal M → \mathcal E`` at ``p``
-"""
-function get_bundle_map(M, E, vbo::VectorbundleObjective, p)
-    return vbo.bundle_map!!(M, p)
-end
-function get_bundle_map(M, E, vbo::VectorbundleObjective{InplaceEvaluation}, p)
-    X = zero_vector(E, p)
-    return vbo.bundle_map!!(M, X, p)
-end
-function get_bundle_map(vpb::VectorbundleManoptProblem, p)
-    return get_bundle_map(
-        get_manifold(vpb), get_vectorbundle(vpb), get_objective(vpb, true), p
-    )
-end
-function get_bundle_map!(M, E, X, vbo::VectorbundleObjective{AllocatingEvaluation}, p)
-    copyto!(E, p, X, vbo.bundle_map!!(M, p))
-    return X
-end
-function get_bundle_map!(M, E, X, vbo::VectorbundleObjective{InplaceEvaluation}, p)
-    vbo.bundle_map!!(M, X, p)
-    return X
-end
-function get_bundle_map!(vbp::VectorbundleManoptProblem, X, p)
-    get_bundle_map!(
-        get_manifold(vbp), get_vectorbundle(vbp), X, get_objective(vbp, true), p
-    )
-    return X
-end
-
-# As a tensor not an action -> for now just matrix representation / tensor.
-raw"""
-    get_derivative(M, E, vbo::VectorbundleObjective, p)
-    get_derivative(P::VectorBundleManoptProblem, p)
-
-    Evaluate the vector field ``F'(p): T_p\mathcal M → T_{F(p)}\mathcal E`` at ``p``
-    in a matrix form (TODO?? (a) matrix, (b) matrix action (c) something nice for Q?)
-"""
-function get_derivative(M, E, vbo::VectorbundleObjective, p)
-    return vbo.derivative!!(M, p)
-end
-function get_derivative(vpb::VectorbundleManoptProblem, p)
-    return get_derivative(
-        get_manifold(vpb), get_vectorbundle(vpb), get_objective(vpb, true), p
-    )
-end
-
-# As a tensor not an action -> for now just matrix representation / tensor.
-raw"""
-    get_connection_map(E, vbo::VectorbundleObjective, q)
-    get_connection_map(vbp::VectorbundleManoptProblem, q)
-
-Returns in matrix form the connection map ``Q_q: T_q\mathcal E → E_{π(q)}``
-"""
-function get_connection_map(E, vbo::VectorbundleObjective, q)
-    return vbo.connection_map!!(E, q)
-end
-function get_connection_map(vbp::VectorbundleManoptProblem, q)
-    return get_connection_map(get_vectorbundle(vbp), get_objective(vbp, true), q)
-end
 
 raw"""
     get_submersion(M, p)
@@ -334,106 +272,94 @@ raw"""
 function get_submersion_derivative(M::AbstractManifold, p) end
 
 @doc raw"""
-    vectorbundle_newton(M, E, F, F_prime, Q, p; kwargs...)
-    vectorbundle_newton(M, E, vbo p0; kwargs...)
-    vectorbundle_newton!(M, E, F, F_prime, Q, p; kwargs...)
-    vectorbundle_newton(M, E, vbo, p0; kwargs...)
+    vectorbundle_newton(M, E, NE, p; kwargs...)
+    vectorbundle_newton(M, E, vbo p0; kwargs...) # ich glaub das gibts nicht
+    vectorbundle_newton!(M, E, NE, p; kwargs...)
+    vectorbundle_newton(M, E, vbo, p0; kwargs...) # ich glaub das gibts nicht
 
-Peform the vector bundle newon method on the vector bundle `E` over the manifold `M`
-for `F` and `F_prime` using the connection map `Q`.
-The point `p` denotes the start point. The algorithm can be run in-place of `p`.
+Peform the Newton's method for finding a zero of a mapping `F:\mathcal M \to \mathcal E$ where `\mathcal M` is a manifold and `\mathcal E` is a vector bundle. 
+`NE` is a functor which has to return a representation of the Newton matrix `Q_{F(p)}\circ F'(p)` (covariant derivative of `F`) and the right hand side `F(p)` at a point `p\in\mathcal M`. The point `p` denotes the start point. The algorithm can be run in-place of `p`.
 
-You can also provide an [`VectorBundleObjective`](@ref) containing `F`, ``F'`` and ``Q``.
 """
 vectorbundle_newton(M::AbstractManifold, E::AbstractManifold, args...; kwargs...) #replace type of E with VectorBundle once this is available in ManifoldsBase
 
 function vectorbundle_newton(
-    M::AbstractManifold, E::AbstractManifold, lno, p; kwargs...
+    M::AbstractManifold, E::AbstractManifold, NE, p; kwargs...
 )
     q = copy(M, p)
-    return vectorbundle_newton!(M, E, lno, q; kwargs...)
+    return vectorbundle_newton!(M, E, NE, q; kwargs...)
 end
-function vectorbundle_newton(
-    M::AbstractManifold, E::AbstractManifold, lno, p; kwargs...
-)
-    q = copy(M, p)
-    return vectorbundle_newton!(M, E, lno, q; kwargs...)
-end
+
+# function vectorbundle_newton!(
+#     M::AbstractManifold,
+#     E::AbstractManifold,
+#     NE,
+#     p;
+#     evaluation=AllocatingEvaluation(),
+#     kwargs...,
+# )
+#     #vbo = VectorbundleObjective(F, F_prime, Q; evaluation=evaluation)
+#     return vectorbundle_newton!(M, E, NE, p; evaluation=evaluation, kwargs...)
+# end
+# die vermutlich auch weg, weil wir kein objective mehr bauen, das ist glaub ich auch das Warning, das beim Precompiling ausgegeben wird
+
 function vectorbundle_newton!(
     M::AbstractManifold,
     E::AbstractManifold,
-    lno,
-    p;
-    #p_trial,
-    #same_point;
-    evaluation=AllocatingEvaluation(),
-    kwargs...,
-)
-    #vbo = VectorbundleObjective(F, F_prime, Q; evaluation=evaluation)
-    return vectorbundle_newton!(M, E, lno, p; evaluation=evaluation, kwargs...)
-end
-function vectorbundle_newton!(
-    M::AbstractManifold,
-    E::AbstractManifold,
-    lno::O,
+    NE::O,
     p::P;
-    #p_trial::P2,
-   # same_point::Bool;
     evaluation=AllocatingEvaluation(),
-    #sub_problem::Pr=nothing, #TODO: find/implement good default solver
-    #sub_state::Op=nothing, #TODO: find/implement good default solver
+    sub_problem::Pr=nothing, #TODO: find/implement good default solver
+    sub_state::Op=nothing, #TODO: find/implement good default solver
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, VectorbundleNewtonState
     ),
-    #vector_transport_method::VTM=default_vector_transport_method(
-    #    E, typeof(get_bundle_map(M, E, vbo, p)),
-    #),
     kwargs...,
 ) where {
     O,
     P,
-    #P2,
     T,
-    #Pr,
-    #O<:Union{AbstractDecoratedManifoldObjective,VectorbundleObjective},
-    #Op,
+    Pr,
+    Op,
     RM<:AbstractRetractionMethod,
-    SC<:StoppingCriterion,
-    #VTM<:AbstractVectorTransportMethod,
+    SC<:StoppingCriterion
 }
     # Once we have proper defaults, these checks should be removed
     #isnothing(sub_problem) && error("Please provide a sub_problem")
     #isnothing(sub_state) && error("Please provide a sub_state")
     #dvbo = decorate_objective!(M, vbo; kwargs...)
-    vbp = VectorbundleManoptProblem(M, E, lno)
+
+    vbp = VectorbundleManoptProblem(M, E, NE)
+    
+    A, b = vbp.NewtonEquation(M, E, p) # das wird in der ersten Iteration nochmal gemacht, kann man A und b irgendwie als nothing setzen?
     vbs = VectorbundleNewtonState(
         M,
         E,
-        #get_objective(vbo).bundle_map!!, #This is a bit of a too concrete access, maybe improve
         p,
-        #p_trial,
-       # same_point,
-        #sub_problem,
-        #sub_state;
+        sub_problem,
+        sub_state,
+        A,
+        b;
         X=X,
         retraction_method=retraction_method,
         stopping_criterion=stopping_criterion,
-        stepsize=_produce_type(stepsize, M),
-        #vector_transport_method=vector_transport_method,
+        stepsize=_produce_type(stepsize, M)
     )
     dvbs = decorate_state!(vbs; kwargs...)
     solve!(vbp, dvbs)
-    return get_solver_return(get_objective(vbp), dvbs) # get_objective gibts nicht mehr
+    #return get_solver_return(get_objective(vbp), dvbs) # get_objective gibts nicht mehr
+    return get_solver_return(dvbs)
 end
 
 function initialize_solver!(::VectorbundleManoptProblem, s::VectorbundleNewtonState)
     return s
 end
 
-# TODO: anpassen
+# TODO: anpassen, evtl kann man da was machen, damit A und b im sub_state stehen oder so
+
 # function step_solver!(mp::VectorbundleManoptProblem, s::VectorbundleNewtonState, k)
 #     # compute Newton direction
 #     #println("Hallo 1")
@@ -443,68 +369,67 @@ end
 
 #     # TODO: pass parameters to sub_state
 #     # set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(N, q)) Set start point x0
-#     #s.is_same = true
+
 #     set_manopt_parameter!(s.sub_problem, :Manifold, :Basepoint, s.p)
 
 #     set_iterate!(s.sub_state, get_manifold(s.sub_problem), zero_vector(get_manifold(s.sub_problem), s.p))
 #     #set_iterate!(s.sub_state, get_manifold(mp), zero_vector(get_manifold(mp), s.p))
-#     s.is_same = true
+
 #     solve!(s.sub_problem, s.sub_state)
 #     s.X = get_solver_result(s.sub_state)
-#     s.is_same= false
+
 
 #     step = s.stepsize(mp, s, k)
-#     s.is_same = true
+
 #     # retract
 #     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
 #     s.p_trial = copy(get_manifold(mp),s.p)
-#     s.is_same = true
+
 #     return s
 # end
 
 function step_solver!(
     mp::VectorbundleManoptProblem,
-    s::VectorbundleNewtonState{P,T}, #,PR,AllocatingEvaluation},
+    s::VectorbundleNewtonState{P,T,PR,AllocatingEvaluation},
     k,
-) where {P,T} #,PR}
-    # compute Newton direction
-    #println("Hallo 2")
+) where {P,T,PR}
+    
+    M = get_manifold(mp) # domain manifold
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
-    #o = get_objective(mp)
-    # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
-    s.is_same = true
-    #s.X = s.sub_problem(mp, s, k)
-    s.X = mp.LinearizedNewtonObjective(s.p)
-    s.is_same= false
-   # println(s.p)
+
+    # update Newton matrix and right hand side
+    s.A, s.b = mp.NewtonEquation(M, E, s.p)
+
+    # compute Newton direction
+    s.X = s.sub_problem(mp, s, k)
+    
+    #compute a stepsize 
     step = s.stepsize(mp, s, k)
-    s.is_same = true
-    #println(s.p)
+    
     # retract
-    #println("norm Newton direction=", norm(s.X))
-    #println("stepsize=", step)
     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
     s.p_trial = copy(get_manifold(mp),s.p)
-    s.is_same = true
+
     return s
 end
 
-# TODO: anpassen
-# function step_solver!(
-#     mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
-# ) where {P,T,PR}
-#     #println("Hallo 3")
-#     # compute Newton direction
-#     E = get_vectorbundle(mp) # vector bundle (codomain of F)
-#     o = get_objective(mp)
-#     # We need a representation of the equation system (use basis of tangent spaces or constraint representation of the tangent space -> augmented system)
-#     #s.is_same = true
-#     s.sub_problem(mp, s.X, s, k)
-#     #s.is_same = false
-#     step = s.stepsize(mp, s, k)
-#     # retract
-#     retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
-#     s.p_trial = copy(s.p)
-#     #s.is_same = true
-#     return s
-# end
+function step_solver!(
+    mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
+) where {P,T,PR}
+    
+    M = get_manifold(mp) # domain manifold
+    E = get_vectorbundle(mp) # vector bundle (codomain of F)
+    
+    # update Newton matrix and right hand side
+    s.A, s.b = mp.NewtonEquation(M, E, s.p)
+
+    # compute Newton direction
+    s.sub_problem(mp, s.X, s, k)
+
+    step = s.stepsize(mp, s, k)
+    # retract
+    retract!(M, s.p, s.p, s.X, step, s.retraction_method)
+    s.p_trial = copy(M, s.p)
+
+    return s
+end
