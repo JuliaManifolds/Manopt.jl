@@ -137,25 +137,34 @@ function NewtonEquation(F, VT, interval)
 	return NewtonEquation{typeof(F), typeof(VT), typeof(interval)}(F, VT, interval)
 end
 	
-function (NewtonEquation::NewtonEquation)(M, VB, p)
+function (ne::NewtonEquation)(M, VB, Ac, bc, p)
 	n = manifold_dimension(M)
-	Ac::SparseMatrixCSC{Float64,Int32} =spzeros(n,n)
-	bc = zeros(n)
-	Oy = OffsetArray([y0, p..., yT], 0:(length(NewtonEquation.Omega)+1))
+	fill!(Ac, 0)
+	#Ac .= spzeros(n,n)
+	fill!(bc, 0)
+	#bc .= zeros(n)
+	Oy = OffsetArray([y0, p..., yT], 0:(length(ne.Omega)+1))
 	
 	println("Assemble:")
-    @time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,NewtonEquation.integrand,NewtonEquation.transport)
+    @time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,ne.integrand,ne.transport)
 
 	return Ac, bc
 end
 
-function (NewtonEquation::NewtonEquation)(M, VB, p, p_trial)
+function (ne::NewtonEquation)(M, VB, p)
+	n = manifold_dimension(M)
+	Ac = spzeros(n,n)
+	bc = zeros(n)
+	return ne(M, VB, Ac, bc, p)
+end
+
+function (ne::NewtonEquation)(M, VB, p, p_trial)
 	n = manifold_dimension(M)
 	bctrial=zeros(n)
-	Oy = OffsetArray([y0, p..., yT], 0:(length(NewtonEquation.Omega)+1))
-	Oytrial = OffsetArray([y0, p_trial..., yT], 0:(length(NewtonEquation.Omega)+1))
+	Oy = OffsetArray([y0, p..., yT], 0:(length(ne.Omega)+1))
+	Oytrial = OffsetArray([y0, p_trial..., yT], 0:(length(ne.Omega)+1))
 
-	ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,NewtonEquation.integrand,NewtonEquation.transport)
+	ManoptExamples.get_rhs_simplified!(bctrial,h,Oy,Oytrial,ne.integrand,ne.transport)
 
 	return bctrial
 end
@@ -180,7 +189,7 @@ begin
 	st_res = vectorbundle_newton(power, TangentBundle(power), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-	stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
+	stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.1),
 	#stepsize=ConstantLength(power, 1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
 	record=[:Iterate, :Change],
