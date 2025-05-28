@@ -92,12 +92,12 @@ function VectorbundleNewtonState(
     )
 end
 
-mutable struct AffineCovariantStepsize{T} <: Stepsize
+mutable struct AffineCovariantStepsize{T, R<:Real} <: Stepsize
     alpha::T
-    theta::Float64
-    theta_des::Float64
-    theta_acc::Float64
-    last_stepsize::Float64
+    theta::R
+    theta_des::R
+    theta_acc::R
+    last_stepsize::R
 end
 function AffineCovariantStepsize(
     M::AbstractManifold=DefaultManifold(2);
@@ -107,11 +107,9 @@ function AffineCovariantStepsize(
     theta_acc=1.1*theta_des,
     last_stepsize = 1.0
 )
-    return AffineCovariantStepsize{typeof(stepsize)}(stepsize, theta, theta_des, theta_acc, last_stepsize)
+    return AffineCovariantStepsize{typeof(stepsize), typeof(theta)}(stepsize, theta, theta_des, theta_acc, last_stepsize)
 end
-function AffineCovariantStepsize(stepsize::T) where {T<:Number}
-    return AffineCovariantStepsize{T}(1.0, 1.3, theta_des, theta_acc, 1.0)
-end
+
 function (acs::AffineCovariantStepsize)(
     amp::AbstractManoptProblem, ams::VectorbundleNewtonState, ::Any, args...; kwargs...
 )
@@ -127,7 +125,7 @@ function (acs::AffineCovariantStepsize)(
 
         rhs_next = amp.NewtonEquation(M, get_vectorbundle(amp), ams.p, ams.p_trial)
         rhs_simplified = rhs_next - (1.0 - acs.alpha)*b
-        ams.b = rhs_simplified
+        ams.b .= rhs_simplified
 
         simplified_newton = ams.sub_problem(amp, ams, 1)
         acs.theta = norm(simplified_newton)/norm(ams.X)
@@ -137,7 +135,7 @@ function (acs::AffineCovariantStepsize)(
             return
         end
     end
-    ams.b = b
+    ams.b .= b
     acs.last_stepsize = acs.alpha
     return acs.alpha
 end
@@ -213,7 +211,7 @@ struct VectorbundleManoptProblem{
 } <: AbstractManoptProblem{TM}
     manifold::TM
     vectorbundle::TV
-    NewtonEquation::O
+    NewtonEquation::O # umbenennen: newton_equation
 end
 
 raw"""
@@ -350,7 +348,6 @@ function vectorbundle_newton!(
     )
     dvbs = decorate_state!(vbs; kwargs...)
     solve!(vbp, dvbs)
-    #return get_solver_return(get_objective(vbp), dvbs) # get_objective gibts nicht mehr
     return get_solver_return(dvbs)
 end
 
@@ -398,7 +395,8 @@ function step_solver!(
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
 
     # update Newton matrix and right hand side
-    s.A, s.b = mp.NewtonEquation(M, E, s.p)
+    mp.NewtonEquation(M, E, s.A, s.b, s.p)
+    #s.A, s.b = mp.NewtonEquation(M, E, s.p)
 
     # compute Newton direction
     s.X = s.sub_problem(mp, s, k)
@@ -421,6 +419,7 @@ function step_solver!(
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
     
     # update Newton matrix and right hand side
+    #mp.NewtonEquation(M, E, s.A, s.b, s.p)
     s.A, s.b = mp.NewtonEquation(M, E, s.p)
 
     # compute Newton direction
