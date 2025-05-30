@@ -127,36 +127,43 @@ $$Q_{F(x)}\circ F'(x)\delta x + F(x) = 0$$
 
 # ╔═╡ 6ce088e9-1aa0-4d44-98a3-2ab8b8ba5422
 begin
-struct NewtonEquation{F, T, Om}
+struct NewtonEquation{F, T, Om, NM, Nrhs}
 	integrand::F
 	transport::T
 	Omega::Om
+	A::NM
+	b::Nrhs
 end
 
-function NewtonEquation(F, VT, interval)
-	return NewtonEquation{typeof(F), typeof(VT), typeof(interval)}(F, VT, interval)
+function NewtonEquation(M, F, VT, interval)
+	n = manifold_dimension(M)
+	A = spzeros(n,n)
+	b = zeros(n)
+	return NewtonEquation{typeof(F), typeof(VT), typeof(interval), typeof(A), typeof(b)}(F, VT, interval, A, b)
 end
 	
-function (ne::NewtonEquation)(M, VB, Ac, bc, p)
+function (ne::NewtonEquation)(M, VB, p)
 	n = manifold_dimension(M)
-	fill!(Ac, 0)
+	ne.A .= spzeros(n,n)
+	ne.b .= zeros(n)
+	#fill!(Ac, 0)
 	#Ac .= spzeros(n,n)
-	fill!(bc, 0)
+	#fill!(bc, 0)
 	#bc .= zeros(n)
 	Oy = OffsetArray([y0, p..., yT], 0:(length(ne.Omega)+1))
 	
 	println("Assemble:")
-    @time ManoptExamples.get_rhs_Jac!(bc,Ac,h,Oy,ne.integrand,ne.transport)
+    @time ManoptExamples.get_rhs_Jac!(ne.b,ne.A,h,Oy,ne.integrand,ne.transport)
 
-	return Ac, bc
+	return
 end
 
-function (ne::NewtonEquation)(M, VB, p)
-	n = manifold_dimension(M)
-	Ac = spzeros(n,n)
-	bc = zeros(n)
-	return ne(M, VB, Ac, bc, p)
-end
+#function (ne::NewtonEquation)(M, VB, p)
+#	n = manifold_dimension(M)
+#	Ac = spzeros(n,n)
+#	bc = zeros(n)
+#	return ne(M, VB, Ac, bc, p)
+#end
 
 function (ne::NewtonEquation)(M, VB, p, p_trial)
 	n = manifold_dimension(M)
@@ -174,8 +181,8 @@ end;
 """
 	Computes the Newton direction by solving the linear system given by the base representation of the Newton equation directly and returns the Newton direction in vector representation
 """
-function solve_in_basis_repr(problem, newtonstate, k) 
-	Xc = (newtonstate.A) \ (-newtonstate.b)
+function solve_in_basis_repr(problem, newtonstate) 
+	Xc = (problem.newton_equation.A) \ (-problem.newton_equation.b)
 	res_c = get_vector(problem.manifold, newtonstate.p, Xc, DefaultOrthogonalBasis())
 	return res_c
 end
@@ -184,12 +191,12 @@ end
 begin
 	y_0 = copy(power, discretized_y)
 	
-	NE = NewtonEquation(integrand, transport, Omega)
+	NE = NewtonEquation(power, integrand, transport, Omega)
 		
 	st_res = vectorbundle_newton(power, TangentBundle(power), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-	stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.1),
+	stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
 	#stepsize=ConstantLength(power, 1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
 	record=[:Iterate, :Change],
