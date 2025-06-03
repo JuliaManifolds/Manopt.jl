@@ -292,6 +292,9 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         @test length(get_reason(sc2)) == 0
         @test sc2(mp, s, 2) # change zero -> triggers
         @test length(get_reason(sc2)) > 0
+        # Reset
+        @test !sc2(mp, s, 0) # reset
+        @test length(get_reason(sc2)) == 0
 
         s.p .= NaN
         sc3 = StopWhenIterateNaN()
