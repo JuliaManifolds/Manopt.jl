@@ -6,9 +6,9 @@ Model an objective of the form
     f(p) = g(p) + h(p),\qquad p \in \mathcal M,
 ```
 where ``g: \mathcal M → \bar{ℝ}`` is a differentiable function
-and ``h: → \bar{ℝ}`` is a convex, lower semicontinous, and proper function.
+and ``h: → \bar{ℝ}`` is a (possibly) lower semicontinous, and proper function.
 
-This objective provides the total cost ``f``, its components ``g`` and ``h``,
+This objective provides the total cost ``f``, its smooth component ``g``,
 as well as ``\operatorname{grad} g`` and ``\operatorname{prox}_{λ} h``.
 
 # Fields
