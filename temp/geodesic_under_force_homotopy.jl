@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.0
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
@@ -278,14 +278,19 @@ begin
 	add = 1/10.0
 
 	y_results = []
-	for i in range(1,35)
+	for i in range(1,50)
 		obj.scaling = obj.scaling + add
 		println(obj.scaling)
 		state = VectorbundleNewtonState(power, E, bundlemap, y_0, solve, AllocatingEvaluation(), stopping_criterion=(StopAfterIteration(20)|StopWhenChangeLess(power,1e-14)), retraction_method=ProjectionRetraction(), stepsize=Manopt.ConstantStepsize(power,1.0)) #stepsize= now always needs the manifold first if you use the “old” ones. They are also no longer exported.
 		st_res = solve!(problem, state)
+		if Manopt.indicates_convergence(st_res.stop) == true
+			push!(y_results, get_solver_result(st_res))
+		else
+			add = add*0.5
+		end
 		println(Manopt.indicates_convergence(st_res.stop))
 		println(Manopt.get_reason(st_res))
-		push!(y_results, get_solver_result(st_res))
+		#push!(y_results, get_solver_result(st_res))
 	end
 end
 
