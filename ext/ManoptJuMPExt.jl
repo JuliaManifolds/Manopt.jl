@@ -29,6 +29,35 @@ function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
+struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
+       MOI.AbstractScalarFunction
+    func::MO
+end
+
+function JuMP.jump_function_type(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
+    return F
+end
+
+JuMP.jump_function(::JuMP.AbstractModel, f::RiemannianFunction) = f
+
+JuMP.function_string(mime::MIME, f::RiemannianFunction) = string(f.func)
+
+MOI.Utilities.map_indices(::Function, func::RiemannianFunction) = func
+
+# We we don't support `MOI.modify` and `RiemannianFunction` is not mutable, no need to copy anything
+Base.copy(func::RiemannianFunction) = func
+
+# This is called for instance when the user does `@objective(model, Min, func)`.
+# JuMP only accepts subtypes of `MOI.AbstractFunction` as objective so we wrap `func`.
+# It will then be allowed to go through all the MOI layers because it is of the right type
+# We will then receive it in `MOI.set(::Optimizer, ::MOI.ObjectiveFunction, RiemannianFunction)`
+# where we will unwrap it and recover `func`.
+function JuMP.set_objective_function(
+    model::JuMP.Model, func::Manopt.AbstractManifoldObjective
+)
+    return JuMP.set_objective_function(model, RiemannianFunction(func))
+end
+
 mutable struct Optimizer <: MOI.AbstractOptimizer
     # Manifold in which all the decision variables leave
     manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
@@ -40,8 +69,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     variable_primal_start::Vector{Union{Nothing,Float64}}
     # Sense of the optimization, that is whether it is for example min, max or no objective
     sense::MOI.OptimizationSense
-    # Model used to compute gradient of the objective function with AD
-    nlp_model::MOI.Nonlinear.Model
+    # Objective function of the optimization
+    objective::Union{Nothing,Manopt.AbstractManifoldObjective}
     # Solver parameters set with `MOI.RawOptimizerAttribute`
     options::Dict{String,Any}
     function Optimizer()
@@ -51,7 +80,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             nothing,
             Union{Nothing,Float64}[],
             MOI.FEASIBILITY_SENSE,
-            MOI.Nonlinear.Model(),
+            nothing,
             Dict{String,Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
         )
     end
@@ -68,7 +97,7 @@ MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.37"
 function MOI.is_empty(model::Optimizer)
     return isnothing(model.manifold) &&
            isempty(model.variable_primal_start) &&
-           MOI.is_empty(model.nlp_model) &&
+           isnothing(model.objective) &&
            model.sense == MOI.FEASIBILITY_SENSE
 end
 
@@ -83,7 +112,7 @@ function MOI.empty!(model::Optimizer)
     model.state = nothing
     empty!(model.variable_primal_start)
     model.sense = MOI.FEASIBILITY_SENSE
-    MOI.empty!(model.nlp_model)
+    model.objective = nothing
     return nothing
 end
 
@@ -270,7 +299,7 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.Optimization
 end
 
 """
-    MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
+    MOI.get(model::Optimizer, ::MOI.ObjectiveSense)
 
 Return the objective sense, defaults to `MOI.FEASIBILITY_SENSE` if no sense has
 already been set.
@@ -282,9 +311,35 @@ MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 
 Set the objective function as `func` for `model`.
 """
-function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
+function MOI.set(
+    model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+)
+    backend = MOI.Nonlinear.SparseReverseMode()
+    vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
+    nlp_model = MOI.Nonlinear.Model()
     nl = convert(MOI.ScalarNonlinearFunction, func)
-    MOI.Nonlinear.set_objective(model.nlp_model, nl)
+    MOI.Nonlinear.set_objective(nlp_model, nl)
+    evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
+    MOI.initialize(evaluator, [:Grad])
+    function eval_f_cb(M, x)
+        return MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
+    end
+    function eval_grad_f_cb(M, X)
+        x = JuMP.vectorize(X, _shape(model.manifold))
+        grad_f = zeros(length(x))
+        MOI.eval_objective_gradient(evaluator, grad_f, x)
+        reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
+        return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
+    end
+    objective = RiemannianFunction(
+        Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+    )
+    MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
+    return nothing
+end
+
+function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::RiemannianFunction)
+    model.objective = func.func
     model.problem = nothing
     model.state = nothing
     return nothing
@@ -304,36 +359,15 @@ function MOI.optimize!(model::Optimizer)
             model.variable_primal_start[i]
         end for i in eachindex(model.variable_primal_start)
     ]
-    backend = MOI.Nonlinear.SparseReverseMode()
-    vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
-    evaluator = MOI.Nonlinear.Evaluator(model.nlp_model, backend, vars)
-    MOI.initialize(evaluator, [:Grad])
-    function eval_f_cb(M, x)
-        if model.sense == MOI.FEASIBILITY_SENSE
-            return 0.0
-        end
-        obj = MOI.eval_objective(evaluator, JuMP.vectorize(x, _shape(model.manifold)))
-        if model.sense == MOI.MAX_SENSE
-            obj = -obj
-        end
-        return obj
+    objective = model.objective
+    if model.sense == MOI.FEASIBILITY_SENSE
+        objective = Manopt.ManifoldGradientObjective(
+            (_, _) -> 0.0, ManifoldsBase.zero_vector
+        )
+    elseif model.sense == MOI.MAX_SENSE
+        objective = -objective
     end
-    function eval_grad_f_cb(M, X)
-        x = JuMP.vectorize(X, _shape(model.manifold))
-        grad_f = zeros(length(x))
-        if model.sense == MOI.FEASIBILITY_SENSE
-            grad_f .= zero(eltype(grad_f))
-        else
-            MOI.eval_objective_gradient(evaluator, grad_f, x)
-        end
-        if model.sense == MOI.MAX_SENSE
-            LinearAlgebra.rmul!(grad_f, -1)
-        end
-        reshaped_grad_f = JuMP.reshape_vector(grad_f, _shape(model.manifold))
-        return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
-    end
-    mgo = Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
-    dmgo = decorate_objective!(model.manifold, mgo)
+    dmgo = decorate_objective!(model.manifold, objective)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
     reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
     descent_state_type = model.options[DESCENT_STATE_TYPE]
@@ -358,8 +392,19 @@ function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
     return reshape(vector, shape.size)
 end
 
+function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
+    return set.manifold
+end
+
 function _shape(m::ManifoldsBase.AbstractManifold)
     return ArrayShape(ManifoldsBase.representation_size(m))
+end
+
+_in(mime::MIME"text/plain") = "in"
+_in(mime::MIME"text/latex") = "\\in"
+
+function JuMP.in_set_string(mime, set::ManifoldsBase.AbstractManifold)
+    return _in(mime) * " " * string(set)
 end
 
 """
@@ -450,7 +495,11 @@ Return the value of the objective function evaluated at the solution.
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
     solution = Manopt.get_solver_return(model.state)
-    return get_cost(model.problem, solution)
+    value = get_cost(model.problem, solution)
+    if model.sense == MOI.MAX_SENSE
+        value = -value
+    end
+    return value
 end
 
 """

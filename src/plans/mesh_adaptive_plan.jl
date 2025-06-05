@@ -128,7 +128,7 @@ end
 function LowerTriangularAdaptivePoll(
     M::AbstractManifold,
     p=rand(M);
-    basis::AbstractBasis=DefaultOrthonormalBasis(),
+    basis::AbstractBasis=default_basis(M, typeof(p)),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M),
     vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
         M
@@ -413,7 +413,7 @@ end
 function MeshAdaptiveDirectSearchState(
     M::AbstractManifold,
     p::P=rand(M);
-    mesh_basis::B=DefaultOrthonormalBasis(),
+    mesh_basis::B=default_basis(M, typeof(p)),
     scale_mesh::F=injectivity_radius(M) / 2,
     max_stepsize::F=injectivity_radius(M),
     stopping_criterion::SC=StopAfterIteration(500) | StopWhenPollSizeLess(1e-7),

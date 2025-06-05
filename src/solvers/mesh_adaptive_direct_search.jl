@@ -65,7 +65,7 @@ function mesh_adaptive_direct_search!(
     M::AbstractManifold,
     mco::AbstractManifoldCostObjective,
     p;
-    mesh_basis::B=DefaultOrthonormalBasis(),
+    mesh_basis::B=default_basis(M, typeof(p)),
     scale_mesh::Real=injectivity_radius(M) / 4,
     max_stepsize::Real=injectivity_radius(M),
     stopping_criterion::StoppingCriterion=StopAfterIteration(500) |

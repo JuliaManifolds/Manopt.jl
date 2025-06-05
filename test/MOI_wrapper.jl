@@ -4,12 +4,7 @@ using Manifolds
 using Manopt
 using JuMP
 
-function test_sphere()
-    model = Model(Manopt.JuMP_Optimizer)
-    start = normalize(1:3)
-    @variable(model, x[i=1:3] in Sphere(2), start = start[i])
-
-    @objective(model, Min, sum(x))
+function _test_sphere_sum(model, obj_sign)
     @test MOI.get(unsafe_backend(model), MOI.ResultCount()) == 0
     optimize!(model)
     @test MOI.get(unsafe_backend(model), MOI.NumberOfVariables()) == 3
@@ -17,18 +12,48 @@ function test_sphere()
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test dual_status(model) == MOI.NO_SOLUTION
-    @test objective_value(model) ≈ -√3
-    @test value.(x) ≈ -inv(√3) * ones(3) rtol = 1e-2
+    @test objective_value(model) ≈ obj_sign * √3
+    @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
+end
 
-    @objective(model, Max, sum(x))
-    set_start_value.(x, start)
-    optimize!(model)
-    @test objective_value(model) ≈ -√3
-    @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
-    @test raw_status(model) isa String
-    @test raw_status(model)[end] != '\n'
+function test_sphere()
+    model = Model(Manopt.JuMP_Optimizer)
+    start = normalize(1:3)
+    @variable(model, x[i=1:3] in Sphere(2), start = start[i])
+
+    function eval_sum_cb(M, x)
+        return sum(x)
+    end
+    function eval_grad_sum_cb(M, X)
+        grad_f = ones(length(X))
+        return Manopt.riemannian_gradient(M, X, grad_f)
+    end
+
+    objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
+
+    @testset "$obj_sense" for (obj_sense, obj_sign) in
+                              [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
+        @testset "JuMP objective" begin
+            @objective(model, obj_sense, sum(x))
+            _test_sphere_sum(model, obj_sign)
+        end
+
+        @testset "Manopt objective" begin
+            @objective(model, obj_sense, objective)
+            _test_sphere_sum(model, obj_sign)
+        end
+    end
+    @test contains(
+        sprint(show, model),
+        "Vector{VariableRef} in ManoptJuMPExt.VectorizedManifold{Sphere{ManifoldsBase.TypeParameter{Tuple{2}}, ℝ}}: 1",
+    )
+    @test contains(sprint(print, model), "[x[1], x[2], x[3]] in Sphere(2, ℝ)")
+    @test contains(
+        JuMP.model_string(MIME("text/latex"), model),
+        "[x_{1}, x_{2}, x_{3}] \\in Sphere(2, ℝ)",
+    )
 
     @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)

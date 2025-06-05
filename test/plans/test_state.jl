@@ -1,21 +1,23 @@
-using Manifolds, Manopt, Test, ManifoldsBase
-using Dates
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/dummy_types.jl")
+using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test
+using Dates
 
 struct NoIterateState <: AbstractManoptSolverState end
 
 @testset "Manopt Solver State" begin
     @testset "Generic State" begin
         M = Euclidean(3)
-        pr = DummyStateProblem{typeof(M)}()
-        s = DummyState()
+        pr = ManoptTestSuite.DummyProblem{typeof(M)}()
+        s = ManoptTestSuite.DummyState()
         @test repr(Manopt.ReturnSolverState(s)) == "ReturnSolverState($s)"
-        @test Manopt.status_summary(Manopt.ReturnSolverState(s)) == "DummyState(Float64[])"
+        @test Manopt.status_summary(Manopt.ReturnSolverState(s)) ==
+            "ManoptTestSuite.DummyState(Float64[])"
         a = ArmijoLinesearch(; initial_stepsize=1.0)(M)
         @test get_last_stepsize(a) == 1.0
         @test get_initial_stepsize(a) == 1.0
-        set_parameter!(s, :Dummy, 1)
+        Manopt.set_parameter!(s, :Dummy, 1)
     end
 
     @testset "Decreasing Stepsize" begin
@@ -25,13 +27,13 @@ struct NoIterateState <: AbstractManoptSolverState end
         )
         @test get_initial_stepsize(dec_step) == 10.0
         M = Euclidean(3)
-        pr = DummyStateProblem{typeof(M)}()
-        @test dec_step(pr, DummyState(), 1) == 10.0
-        @test dec_step(pr, DummyState(), 2) == 5.0
+        pr = ManoptTestSuite.DummyProblem{typeof(M)}()
+        @test dec_step(pr, ManoptTestSuite.DummyState(), 1) == 10.0
+        @test dec_step(pr, ManoptTestSuite.DummyState(), 2) == 5.0
     end
 
     @testset "Decorator State" begin
-        s = DummyState(zeros(3))
+        s = ManoptTestSuite.DummyState(zeros(3))
         r = RecordSolverState(s, RecordIteration())
         d = DebugSolverState(s, DebugIteration())
         ret = Manopt.ReturnSolverState(s)
@@ -101,8 +103,8 @@ struct NoIterateState <: AbstractManoptSolverState end
         f(M, p) = 1
         o = ManifoldCostObjective(f)
         ro = Manopt.ReturnManifoldObjective(o)
-        ddo = DummyDecoratedObjective(o)
-        s = DummyState()
+        ddo = ManoptTestSuite.DummyDecoratedObjective(o)
+        s = ManoptTestSuite.DummyState()
         rs = Manopt.ReturnSolverState(s)
         @test Manopt.get_solver_return(o, rs) == s #no ReturnObjective
         # Return O & S

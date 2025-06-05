@@ -131,6 +131,22 @@ flat_example(::AbstractManifold, p) = 0.0
         @test flat_sc isa StopWhenPopulationCostConcentrated
         @test Manopt.indicates_convergence(flat_sc)
         @test startswith(repr(flat_sc), "StopWhenPopulationCostConcentrated(")
+
+        # test handling of negative covariance matrix eigenvalues
+        @test_warn "Covariance matrix has nonpositive eigenvalues" o_flat = cma_es(
+            M,
+            flat_example,
+            [10.0, 10.0];
+            σ=10.0,
+            stopping_criterion=StopAfterIteration(10000) |
+                               StopWhenPopulationStronglyConcentrated(1e-14),
+            rng=MersenneTwister(12),
+            return_state=true,
+        )
+        flat_sc = only(get_active_stopping_criteria(o_flat.stop))
+        @test flat_sc isa StopWhenPopulationStronglyConcentrated
+        @test Manopt.indicates_convergence(flat_sc)
+        @test startswith(repr(flat_sc), "StopWhenPopulationStronglyConcentrated(")
     end
     @testset "Spherical CMA-ES" begin
         M = Sphere(2)

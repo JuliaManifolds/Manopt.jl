@@ -5,7 +5,7 @@ When it comes to time critical operations, a main ingredient in Julia is given b
 mutating functions, that is those that compute in place without additional memory
 allocations. In the following, we illustrate how to do this with `Manopt.jl`.
 
-Let’s start with the same function as in [🏔️ Get started with Manopt.jl](https://manoptjl.org/stable/tutorials/getstarted.html)
+Let’s start with the same function as in [🏔️ Get started with Manopt.jl](getstarted.md)
 and compute the mean of some points, only that here we use the sphere $\mathbb S^{30}$
 and $n=800$ points.
 
@@ -58,16 +58,16 @@ We can also benchmark this as
 @benchmark gradient_descent($M, $f, $grad_f, $p0; stopping_criterion=$sc)
 ```
 
-    BenchmarkTools.Trial: 89 samples with 1 evaluation per sample.
-     Range (min … max):  52.976 ms … 104.222 ms  ┊ GC (min … max): 8.05% … 5.55%
-     Time  (median):     55.145 ms               ┊ GC (median):    9.99%
-     Time  (mean ± σ):   56.391 ms ±   6.102 ms  ┊ GC (mean ± σ):  9.92% ± 1.43%
+    BenchmarkTools.Trial: 90 samples with 1 evaluation per sample.
+     Range (min … max):  51.678 ms … 134.204 ms  ┊ GC (min … max):  9.64% … 38.77%
+     Time  (median):     53.536 ms               ┊ GC (median):    11.71%
+     Time  (mean ± σ):   55.776 ms ±   9.262 ms  ┊ GC (mean ± σ):  12.53% ±  3.19%
 
-        ▅██▅▃▁
-      ▅███████▁▅▇▅▁▅▁▁▅▅▁▁▁▅▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅ ▁
-      53 ms         Histogram: log(frequency) by time      81.7 ms <
+      █▇▁▇▁▅▂     ▁                                                 
+      ███████▆▅▆▆▆█▁▃▆▅▃▃▅▃▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▃▁▁▁▁▁▁▅▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▅ ▁
+      51.7 ms         Histogram: frequency by time         71.5 ms <
 
-     Memory estimate: 173.54 MiB, allocs estimate: 1167348.
+     Memory estimate: 173.76 MiB, allocs estimate: 1167364.
 
 ## In-place computation of the gradient
 
@@ -116,16 +116,16 @@ We can again benchmark this
 ) setup = (m2 = deepcopy($p0))
 ```
 
-    BenchmarkTools.Trial: 130 samples with 1 evaluation per sample.
-     Range (min … max):  36.646 ms … 64.781 ms  ┊ GC (min … max): 0.00% … 0.00%
-     Time  (median):     37.559 ms              ┊ GC (median):    0.00%
-     Time  (mean ± σ):   38.658 ms ±  3.904 ms  ┊ GC (mean ± σ):  0.73% ± 2.68%
+    BenchmarkTools.Trial: 137 samples with 1 evaluation per sample.
+     Range (min … max):  35.297 ms … 49.118 ms  ┊ GC (min … max): 0.00% … 25.92%
+     Time  (median):     35.863 ms              ┊ GC (median):    0.00%
+     Time  (mean ± σ):   36.604 ms ±  1.640 ms  ┊ GC (mean ± σ):  0.67% ±  2.89%
 
-      ██▅▅▄▂▁ ▂
-      ███████▁██▁▅▁▁▁▅▁▁▁▁▅▅▅▁▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▁▁▁▁▁▁▁▁▁▅ ▅
-      36.6 ms      Histogram: log(frequency) by time        61 ms <
+       ▇▇█                                                         
+      ▇███▃▅▄▅▄▃▃▅▅▅▃█▇▄▃▃▃▃▃▁▃▃▃▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃ ▃
+      35.3 ms         Histogram: frequency by time        44.1 ms <
 
-     Memory estimate: 3.59 MiB, allocs estimate: 6863.
+     Memory estimate: 3.72 MiB, allocs estimate: 6879.
 
 which is faster by about a factor of 2 compared to the first solver-call.
 Note that the results `m1` and `m2` are of course the same.
@@ -140,30 +140,19 @@ distance(M, m1, m2)
 
 This tutorial is cached. It was last run on the following package versions.
 
-``` julia
-using Pkg
-Pkg.status()
-```
-
     Status `~/Repositories/Julia/Manopt.jl/tutorials/Project.toml`
-      [47edcb42] ADTypes v1.13.0
+      [47edcb42] ADTypes v1.14.0
       [6e4b80f9] BenchmarkTools v1.6.0
-    ⌃ [5ae59095] Colors v0.12.11
-      [31c24e10] Distributions v0.25.117
+      [5ae59095] Colors v0.13.0
+      [31c24e10] Distributions v0.25.119
       [26cc04aa] FiniteDifferences v0.12.32
-      [7073ff75] IJulia v1.26.0
-      [8ac3fa9e] LRUCache v1.6.1
+      [7073ff75] IJulia v1.27.0
+      [8ac3fa9e] LRUCache v1.6.2
       [af67fdf4] ManifoldDiff v0.4.2
-      [1cead3c2] Manifolds v0.10.13
-      [3362f125] ManifoldsBase v1.0.1
-      [0fc0a36d] Manopt v0.5.5 `..`
-      [91a5bcdd] Plots v1.40.9
-      [731186ca] RecursiveArrayTools v3.29.0
-    Info Packages marked with ⌃ have new versions available and may be upgradable.
+      [1cead3c2] Manifolds v0.10.17
+      [3362f125] ManifoldsBase v1.1.0
+      [0fc0a36d] Manopt v0.5.14 `..`
+      [91a5bcdd] Plots v1.40.13
+      [731186ca] RecursiveArrayTools v3.33.0
 
-``` julia
-using Dates
-now()
-```
-
-    2025-02-10T13:22:51.002
+This tutorial was last rendered May 2, 2025, 15:48:41.

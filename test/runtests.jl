@@ -1,6 +1,7 @@
-using Manifolds, Manopt, ManifoldsBase, Test
+s = joinpath(@__DIR__, "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("utils/example_tasks.jl")
+using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test
 
 @testset "Manopt.jl" begin
     @testset "Plan Tests         " begin

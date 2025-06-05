@@ -6,12 +6,60 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.13] April 15, 2025
+## [0.5.18] June 5th, 2025
 
 ### Added
 
 * Added back functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`; the function call can stay the same as before since there is a curvature estimation fallback
 * Add back some fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState`
+
+## [0.5.17] 2025-06-03
+
+### Added
+
+* Introduce a `StopWhenCostChangeLess` stopping criterion that stops when the cost function changes less than a given value.
+
+## [0.5.16] 2025-05-07
+
+### Fixed
+
+* fixes a bug in the `LineSearches.jl` extension, where two (old) `retract!`s were still
+present; they were changed to `retact_fused!`.
+
+## [0.5.15] 2025-05-06
+
+### Fixed
+
+* CMA-ES no longer errors when the covariance matrix has nonpositive eigenvalues due to numerical issues.
+
+## [0.5.14] 2025-05-05
+
+### Added
+
+* `linear_subsolver!` is added as a keyword argument to the Levenberg-Marquardt interface.
+
+### Changed
+
+* adapt to using `default_basis` where appropriate.
+* the tutorials are now rendered with `quarto` using the [`QuartoNotebookRunner.jl`](https://github.com/PumasAI/QuartoNotebookRunner.jl) and are hence purely julia based.
+
+## [0.5.13] 2025-04-25
+
+### Added
+
+* Allow setting `AbstractManifoldObjective` through JuMP
+
+### Changed
+
+* Remove dependency on `ManoptExamples.jl` which yielded a circular dependency, though only through extras
+* Unify dummy types and several test functions into the `ManoptTestSuite` subpackage.
+
+### Fixed
+
+* A scaling error that appeared only when calling `get_cost_function` on the new `ScaledManifoldObjective`.
+* Documentation issues for quasi-Newton solvers.
+* fixes a scaling error in quasi newton
+* Fixes printing of JuMP models containg Manopt solver.
 
 
 ## [0.5.12] April 13, 2025
@@ -36,7 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a proper implementation of the preconditioning for `quasi_Newton`, that can be used instead
   of or in combination with the initial scaling.
->>>>>>> master
 
 ## [0.5.9] March 24, 2025
 

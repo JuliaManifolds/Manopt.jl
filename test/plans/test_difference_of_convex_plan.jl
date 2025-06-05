@@ -1,5 +1,7 @@
-using LRUCache, LinearAlgebra, Manopt, Manifolds, Test
-include("../utils/dummy_types.jl")
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using LRUCache, LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Test
 
 @testset "Difference of Convex Plan" begin
     n = 2
@@ -14,7 +16,7 @@ include("../utils/dummy_types.jl")
     dcp_obj = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost=f)
     @testset "Objective Decorator passthrough" begin
         for obj in [dc_obj, dcp_obj]
-            ddo = DummyDecoratedObjective(obj)
+            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
             X = get_subtrahend_gradient(M, ddo, p)
             @test X == get_subtrahend_gradient(M, obj, p)
             Y = zero_vector(M, p)

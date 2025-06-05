@@ -51,6 +51,9 @@ $(_var(:Keyword, :evaluation))
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
 * `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
+  linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
+  symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
 $(_var(:Keyword, :retraction_method))
 
 $(_note(:OtherKeywords))
@@ -130,7 +133,7 @@ function LevenbergMarquardt!(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    jacobian_tangent_basis::AbstractBasis=default_basis(M, typeof(p)),
     jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
     function_type=FunctionVectorialType(),
     kwargs...,
@@ -173,6 +176,7 @@ function LevenbergMarquardt!(
     initial_jacobian_f=similar(
         p, length(get_objective(nlso).objective), manifold_dimension(M)
     ),
+    (linear_subsolver!)=default_lm_lin_solve!,
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     dnlso = decorate_objective!(M, nlso; kwargs...)
@@ -188,6 +192,7 @@ function LevenbergMarquardt!(
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
+        (linear_subsolver!)=linear_subsolver!,
     )
     dlms = decorate_state!(lms; debug=debug, kwargs...)
     solve!(nlsp, dlms)

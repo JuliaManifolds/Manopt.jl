@@ -1,13 +1,13 @@
-using Manifolds, Manopt, Test, ManifoldsBase, Dates
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-struct TestStopProblem <: AbstractManoptProblem{ManifoldsBase.DefaultManifold} end
-struct TestStopState <: AbstractManoptSolverState end
-struct myStoppingCriteriaSet <: StoppingCriterionSet end
-struct DummyStoppingCriterion <: StoppingCriterion end
+using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Dates
 
 @testset "StoppingCriteria" begin
     @testset "Generic Tests" begin
-        @test_throws ErrorException get_stopping_criteria(myStoppingCriteriaSet())
+        @test_throws ErrorException get_stopping_criteria(
+            ManoptTestSuite.DummmyStoppingCriteriaSet()
+        )
 
         s = StopWhenAll(StopAfterIteration(10), StopWhenChangeLess(Euclidean(), 0.1))
         @test Manopt.indicates_convergence(s) #due to all and change this is true
@@ -57,18 +57,20 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         an = get_reason(sm)
         m = match(r"^((.*)\n)+", an)
         @test length(m.captures) == 2 # both have to be active
-        set_parameter!(s3, :MinCost, 1e-2)
+        Manopt.set_parameter!(s3, :MinCost, 1e-2)
         @test s3.threshold == 1e-2
         # Dummy without iterations has a reasonable fallback
-        @test Manopt.get_count(DummyStoppingCriterion(), Val(:Iterations)) == 0
+        @test Manopt.get_count(
+            ManoptTestSuite.DummyStoppingCriterion(), Val(:Iterations)
+        ) == 0
 
         sn = StopWhenAny([StopAfterIteration(10)])
         @test sn isa StoppingCriterion
     end
 
     @testset "Test StopAfter" begin
-        p = TestStopProblem()
-        o = TestStopState()
+        p = ManoptTestSuite.DummyProblem{ManifoldsBase.DefaultManifold}()
+        o = ManoptTestSuite.DummyState()
         s = StopAfter(Millisecond(30))
         @test !Manopt.indicates_convergence(s)
         @test Manopt.status_summary(s) == "stopped after $(s.threshold):\tnot reached"
@@ -80,8 +82,8 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s(p, o, 2) == true
         @test length(get_reason(s)) > 0
         @test_throws ErrorException StopAfter(Second(-1))
-        @test_throws ErrorException set_parameter!(s, :MaxTime, Second(-1))
-        set_parameter!(s, :MaxTime, Second(2))
+        @test_throws ErrorException Manopt.set_parameter!(s, :MaxTime, Second(-1))
+        Manopt.set_parameter!(s, :MaxTime, Second(2))
         @test s.threshold == Second(2)
     end
 
@@ -108,14 +110,14 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test typeof(d) === typeof(a & b & c)
         @test typeof(d) === typeof(a & (b & c))
         @test typeof(d) === typeof((a & b) & c)
-        set_parameter!(d, :MinIterateChange, 1e-8)
+        Manopt.set_parameter!(d, :MinIterateChange, 1e-8)
         @test d.criteria[2].threshold == 1e-8
         @test length((d & d).criteria) == 6
         e = a | b | c
         @test typeof(e) === typeof(a | b | c)
         @test typeof(e) === typeof(a | (b | c))
         @test typeof(e) === typeof((a | b) | c)
-        set_parameter!(e, :MinGradNorm, 1e-9)
+        Manopt.set_parameter!(e, :MinGradNorm, 1e-9)
         @test e.criteria[3].threshold == 1e-9
         @test length((e | e).criteria) == 6
     end
@@ -158,7 +160,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
             @test endswith(Manopt.status_summary(swgcl), "reached")
             @test length(get_reason(swgcl)) > 0
         end
-        set_parameter!(swgcl2, :MinGradientChange, 1e-9)
+        Manopt.set_parameter!(swgcl2, :MinGradientChange, 1e-9)
         @test swgcl2.threshold == 1e-9
     end
 
@@ -183,9 +185,9 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         @test s2(hp, tcgs, 1)
         @test length(get_reason(s2)) > 0
         s3 = StopWhenResidualIsReducedByFactorOrPower()
-        set_parameter!(s3, :ResidualFactor, 0.5)
+        Manopt.set_parameter!(s3, :ResidualFactor, 0.5)
         @test s3.κ == 0.5
-        set_parameter!(s3, :ResidualPower, 0.5)
+        Manopt.set_parameter!(s3, :ResidualPower, 0.5)
         @test s3.θ == 0.5
         @test get_reason(s3) == ""
         # Trigger manually
@@ -208,9 +210,9 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         gds.stepsize = Manopt.ConstantStepsize(Euclidean(), 0.25)
         @test s1(dmp, gds, 2)
         @test length(get_reason(s1)) > 0
-        set_parameter!(gds, :StoppingCriterion, :MaxIteration, 200)
+        Manopt.set_parameter!(gds, :StoppingCriterion, :MaxIteration, 200)
         @test gds.stop.max_iterations == 200
-        set_parameter!(s1, :MinStepsize, 1e-1)
+        Manopt.set_parameter!(s1, :MinStepsize, 1e-1)
         @test s1.threshold == 1e-1
     end
 
@@ -225,7 +227,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         )
         swecl = StopWhenEntryChangeLess(:p, (p, s, v, w) -> norm(w - v), 1e-5)
         @test startswith(repr(swecl), "StopWhenEntryChangeLess\n")
-        set_parameter!(swecl, :Threshold, 1e-4)
+        Manopt.set_parameter!(swecl, :Threshold, 1e-4)
         @test swecl.threshold == 1e-4
         @test !swecl(dmp, gds, 1) #First call stores
         @test length(get_reason(swecl)) == 0
@@ -234,6 +236,7 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         swecl(dmp, gds, 0) # reset
         @test length(get_reason(swecl)) == 0
     end
+
     @testset "Subgradient Norm Stopping Criterion" begin
         M = Euclidean(2)
         p = [1.0, 2.0]
@@ -258,13 +261,13 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         c2(mp, st, 0) # verify that reset works
         @test length(get_reason(c2)) == 0
         @test Manopt.indicates_convergence(c2)
-        set_parameter!(c2, :MinSubgradNorm, 1e-8)
+        Manopt.set_parameter!(c2, :MinSubgradNorm, 1e-8)
         @test c2.threshold == 1e-8
     end
 
-    @testset "StopWhenCostNaN & StopWhenIterateNaN" begin
+    @testset "StopWhenCostNaN, StopWhenCostChangeLess, StopWhenIterateNaN" begin
         sc1 = StopWhenCostNaN()
-        f(M, p) = norm(p) > 2 ? NaN : 0
+        f(M, p) = norm(p) > 2 ? NaN : norm(p)
         M = Euclidean(2)
         p = [1.0, 2.0]
         @test startswith(repr(sc1), "StopWhenCostNaN()\n")
@@ -281,17 +284,29 @@ struct DummyStoppingCriterion <: StoppingCriterion end
         sc1.at_iteration = 1
         @test length(get_reason(sc1)) > 0
 
-        s.p .= NaN
-        sc2 = StopWhenIterateNaN()
-        @test startswith(repr(sc2), "StopWhenIterateNaN()\n")
-        @test sc2(mp, s, 1) #always returns true since p was now set to NaN
+        sc2 = StopWhenCostChangeLess(1e-6)
+        @test startswith(repr(sc2), "StopWhenCostChangeLess with threshold 1.0e-6.\n")
+        @test get_reason(sc2) == ""
+        s.p = [0.0, 0.1]
+        @test !sc2(mp, s, 1) # Init check
+        @test length(get_reason(sc2)) == 0
+        @test sc2(mp, s, 2) # change zero -> triggers
         @test length(get_reason(sc2)) > 0
+        # Reset
+        @test !sc2(mp, s, 0) # reset
+        @test length(get_reason(sc2)) == 0
+
+        s.p .= NaN
+        sc3 = StopWhenIterateNaN()
+        @test startswith(repr(sc3), "StopWhenIterateNaN()\n")
+        @test sc3(mp, s, 1) #always returns true since p was now set to NaN
+        @test length(get_reason(sc3)) > 0
         s.p = p
-        @test !sc2(mp, s, 0) # test reset, though this already again triggers
-        @test length(get_reason(sc2)) == 0 # verify reset
-        @test sc2.at_iteration == -1
+        @test !sc3(mp, s, 0) # test reset, though this already again triggers
+        @test length(get_reason(sc3)) == 0 # verify reset
+        @test sc3.at_iteration == -1
         # Trigger manually
-        sc1.at_iteration = 1
-        @test length(get_reason(sc1)) > 0
+        sc3.at_iteration = 1
+        @test length(get_reason(sc3)) > 0
     end
 end

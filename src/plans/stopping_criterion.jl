@@ -323,6 +323,66 @@ function set_parameter!(c::StopWhenChangeLess, ::Val{:MinIterateChange}, v)
 end
 
 """
+    StopWhenCostChangeLess <: StoppingCriterion
+
+A stopping criterion to stop when the change of the cost function is less than a certain threshold.
+
+# Fields
+$(_var(:Field, :at_iteration))
+$(_var(:Field, :last_change))
+* `last_cost``: the last cost value
+
+# Constructor
+
+    StopWhenCostChangeLess(tolerance::F)
+
+Initialize the stopping criterion to a threshold `tolerance` for the change of the cost function.
+"""
+mutable struct StopWhenCostChangeLess{F<:Real} <: StoppingCriterion
+    tolerance::F
+    at_iteration::Int
+    last_cost::F
+    last_change::F
+end
+function StopWhenCostChangeLess(tol::F) where {F<:Real}
+    return StopWhenCostChangeLess{F}(tol, -1, zero(tol), 2 * tol)
+end
+function (c::StopWhenCostChangeLess)(
+    problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+)
+    if iteration <= 0 # reset on init
+        c.at_iteration = -1
+        c.last_cost = Inf
+        c.last_change = 2 * c.tolerance
+    end
+    c.last_change = c.last_cost
+    c.last_cost = get_cost(problem, get_iterate(state))
+    c.last_change = c.last_change - c.last_cost
+    if abs(c.last_change) < c.tolerance
+        c.at_iteration = iteration
+        return true
+    end
+    return false
+end
+function get_reason(c::StopWhenCostChangeLess)
+    if c.at_iteration >= 0
+        return "At iteration $(c.at_iteration) the algorithm performed a step with an absolute cost change ($(abs(c.last_change))) less than $(c.tolerance)."
+    end
+    return ""
+end
+function status_summary(c::StopWhenCostChangeLess)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δf(p)| = $(abs(c.last_change)) < $(c.tolerance):\t$s"
+end
+function Base.show(io::IO, c::StopWhenCostChangeLess)
+    return print(
+        io,
+        "StopWhenCostChangeLess with threshold $(c.tolerance).\n    $(status_summary(c))",
+    )
+end
+
+"""
     StopWhenCostLess <: StoppingCriterion
 
 store a threshold when to stop looking at the cost function of the

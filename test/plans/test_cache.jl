@@ -1,6 +1,7 @@
-using LinearAlgebra, LRUCache, Manifolds, Manopt, Test, Random
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/dummy_types.jl")
+using LinearAlgebra, LRUCache, Manifolds, Manopt, ManoptTestSuite, Test, Random
 
 # Three dummy functors that are just meant to count their calls
 mutable struct TestCostCount
@@ -76,8 +77,8 @@ end
 A `SimpleManifoldCachedObjective`""",
         )
         @test startswith(
-            repr((sco1, DummyState())),
-            """DummyState(Float64[])
+            repr((sco1, ManoptTestSuite.DummyState())),
+            """ManoptTestSuite.DummyState(Float64[])
 
             ## Cache
             A `SimpleManifoldCachedObjective`""",
@@ -192,9 +193,10 @@ A `SimpleManifoldCachedObjective`""",
         lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient]))
         @test startswith(repr(lco), "## Cache\n  * ")
         @test startswith(
-            repr((lco, DummyState())), "DummyState(Float64[])\n\n## Cache\n  * "
+            repr((lco, ManoptTestSuite.DummyState())),
+            "ManoptTestSuite.DummyState(Float64[])\n\n## Cache\n  * ",
         )
-        ro = DummyDecoratedObjective(o)
+        ro = ManoptTestSuite.DummyDecoratedObjective(o)
         #undecorated works as well
         lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
         @test Manopt.get_cost_function(lco2) != Manopt.get_cost_function(o)
