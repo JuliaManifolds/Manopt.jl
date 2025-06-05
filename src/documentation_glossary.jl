@@ -199,11 +199,11 @@ define!(
     :Note,
     :ManifoldDefaultFactory,
     (type::String) -> """
-                                                                  !!! info
-                                                                      This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
-                                                                      For default values, that depend on the manifold, this factory postpones the construction
-                                                                      until the manifold from for example a corresponding [`AbstractManoptSolverState`](@ref) is available.
-                                                                  """,
+    !!! info
+        This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
+        For default values, that depend on the manifold, this factory postpones the construction
+        until the manifold from for example a corresponding [`AbstractManoptSolverState`](@ref) is available.
+    """,
 )
 define!(
     :Note,
