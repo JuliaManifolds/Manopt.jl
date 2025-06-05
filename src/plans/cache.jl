@@ -900,7 +900,7 @@ function get_proximal_map(M::AbstractManifold, co::ManifoldCachedObjective, λ, 
     !(haskey(co.cache, :ProximalMap)) && return get_proximal_map(M, co.objective, λ, p, i)
     return copy(
         M,
-        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do   #use the tuple (p,i) as key
+        get!(co.cache[:ProximalMap], (copy(M, p), λ, i)) do    #use the tuple (p,i) as key
             get_proximal_map(M, co.objective, λ, p, i)
         end,
     )
