@@ -219,7 +219,7 @@ function (ltap::LowerTriangularAdaptivePoll)(
     M = get_manifold(amp)
     n = manifold_dimension(M)
     l = -log(4, mesh_size)
-    S = (-2 ^ l + 1):(2 ^ l - 1)
+    S = (-2^l + 1):(2^l - 1)
     if ltap.poll_counter <= l # we did not yet generate a b_l on this scale
         ltap.poll_counter += 1
         # A random index ι

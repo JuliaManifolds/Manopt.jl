@@ -22,8 +22,8 @@ function (e::EGrad)(Y::Array, X::Array)
     V = X[e.M, 2]
     AV = A * V
     AtU = transpose(A) * U
-    view(Y,:,:,1) .= -AV * (transpose(AV) * U)
-    view(Y,:,:,2) .= -AtU * (transpose(AtU) * V)
+    view(Y, :, :, 1) .= -AV * (transpose(AV) * U)
+    view(Y, :, :, 2) .= -AtU * (transpose(AtU) * V)
     return Y
 end
 
@@ -98,11 +98,11 @@ function rhess(M::PowerManifold, p, X)
     for i in 1:2
         e2rhess!(
             M.manifold,
-            view(Ha,:,:,i),
-            view(p,:,:,i),
-            view(X,:,:,i),
-            view(eG,:,:,i),
-            view(eH,:,:,i),
+            view(Ha, :, :, i),
+            view(p, :, :, i),
+            view(X, :, :, i),
+            view(eG, :, :, i),
+            view(eH, :, :, i),
         )
     end
     return Ha
@@ -124,11 +124,11 @@ function (r::RHess)(M::PowerManifold, Y, p, X)
     for i in 1:2
         e2rhess!(
             M.manifold,
-            view(Y,:,:,i),
-            view(p,:,:,i),
-            view(X,:,:,i),
-            view(r.G,:,:,i),
-            view(r.H,:,:,i),
+            view(Y, :, :, i),
+            view(p, :, :, i),
+            view(X, :, :, i),
+            view(r.G, :, :, i),
+            view(r.H, :, :, i),
         )
     end
     return Y

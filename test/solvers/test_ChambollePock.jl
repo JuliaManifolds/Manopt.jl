@@ -46,9 +46,8 @@ using ManifoldDiff: prox_distance, prox_distance!
     DΛ(M, m, X) = ArrayPartition(
         zero_vector(M, m), ManoptTestSuite.differential_forward_logs(M, m, X)
     )
-    adjoint_DΛ(N, m, n, ξ) = ManoptTestSuite.adjoint_differential_forward_logs(
-        N.manifold, m, ξ[N, :vector]
-    )
+    adjoint_DΛ(N, m, n, ξ) =
+        ManoptTestSuite.adjoint_differential_forward_logs(N.manifold, m, ξ[N, :vector])
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)
     n = Λ(M, m)

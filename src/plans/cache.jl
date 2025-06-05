@@ -363,7 +363,8 @@ function get_cost(
     M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AbstractEvaluationType}
     #Neither cost not grad cached -> evaluate
-    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) && return get_cost(M, co.objective, p)
+    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_cost(M, co.objective, p)
     return get!(co.cache[:Cost], copy(M, p)) do
         c, X = get_cost_and_gradient(M, co.objective, p)
         # if this is evaluated, also set X
@@ -374,7 +375,8 @@ end
 function get_gradient(
     M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AllocatingEvaluation}
-    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) && return get_gradient(M, co.objective, p)
+    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_gradient(M, co.objective, p)
     return copy(
         M,
         p,
@@ -392,7 +394,8 @@ function get_gradient!(
     co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective},
     p,
 ) where {E}
-    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) && return get_gradient!(M, X, co.objective, p)
+    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
+        return get_gradient!(M, X, co.objective, p)
     return copyto!(
         M,
         X,

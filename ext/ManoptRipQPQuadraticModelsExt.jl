@@ -28,8 +28,8 @@ function convex_bundle_method_subsolver!(
 ) where {A<:AbstractManifold}
     d = length(linearization_errors)
     H = [
-        inner(M, p_last_serious, X, Y) for
-        X in transported_subgradients, Y in transported_subgradients
+        inner(M, p_last_serious, X, Y) for X in transported_subgradients,
+        Y in transported_subgradients
     ]
     qm = QuadraticModel(
         linearization_errors,
@@ -61,8 +61,8 @@ function proximal_bundle_method_subsolver!(
     d = length(approximation_errors)
     H =
         1 / μ * [
-            inner(M, p_last_serious, X, Y) for
-            X in transported_subgradients, Y in transported_subgradients
+            inner(M, p_last_serious, X, Y) for X in transported_subgradients,
+            Y in transported_subgradients
         ]
     qm = QuadraticModel(
         approximation_errors,

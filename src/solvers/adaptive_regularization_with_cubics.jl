@@ -393,7 +393,8 @@ function adaptive_regularization_with_cubics!(
     sub_objective=nothing,
     sub_problem=nothing,
     stopping_criterion::StoppingCriterion=if sub_state isa LanczosState
-        StopAfterIteration(40) | StopWhenGradientNormLess(1e-9) |
+        StopAfterIteration(40) |
+        StopWhenGradientNormLess(1e-9) |
         StopWhenAllLanczosVectorsUsed(maxIterLanczos - 1)
     else
         StopAfterIteration(40) | StopWhenGradientNormLess(1e-9)

@@ -21,7 +21,7 @@ end
 function test_sphere()
     model = Model(Manopt.JuMP_Optimizer)
     start = normalize(1:3)
-    @variable(model, x[i = 1:3] in Sphere(2), start = start[i])
+    @variable(model, x[i=1:3] in Sphere(2), start = start[i])
 
     function eval_sum_cb(M, x)
         return sum(x)

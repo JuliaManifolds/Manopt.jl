@@ -375,7 +375,7 @@ $(_var(:Keyword, :vector_transport_method))
 $(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
 function MomentumGradient(args...; kwargs...)
-    ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
 end
 
 """
@@ -474,7 +474,7 @@ $(_var(:Keyword, :vector_transport_method))
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
 function AverageGradient(args...; kwargs...)
-    ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
 end
 
 @doc """
@@ -687,7 +687,7 @@ $(_var(:Keyword, :evaluation))
 $(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
 """
 function PreconditionedDirection(args...; kwargs...)
-    ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
 end
 
 @doc raw"""

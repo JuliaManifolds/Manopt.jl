@@ -81,7 +81,7 @@ define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
 define!(:LaTeX, :log, raw"\log")
 define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
-define!(:LaTeX, :norm, (v; index="") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
+define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
 define!(
     :LaTeX,
     :pmatrix,

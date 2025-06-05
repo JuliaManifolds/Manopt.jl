@@ -270,7 +270,8 @@ function Frank_Wolfe_method!(
     objective_type=:Riemannian,
     retraction_method=default_retraction_method(M, typeof(p)),
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(M, FrankWolfeState),
-    stopping_criterion::TStop=StopAfterIteration(200) | StopWhenGradientNormLess(1.0e-8) |
+    stopping_criterion::TStop=StopAfterIteration(200) |
+                              StopWhenGradientNormLess(1.0e-8) |
                               StopWhenChangeLess(M, 1.0e-8),
     sub_cost=FrankWolfeCost(p, X),
     sub_grad=FrankWolfeGradient(p, X),

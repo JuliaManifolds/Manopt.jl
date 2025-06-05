@@ -24,9 +24,8 @@ using ManifoldDiff: differential_shortest_geodesic_startpoint
     f(M, x) = (1 / α) * fidelity(M, x) + prior(M, x)
     prox_f(M, λ, x) = prox_distance(M, λ / α, data, x, 2)
 
-    prox_g_dual(N, n, λ, ξ) = ManoptTestSuite.project_collaborative_TV(
-        N, λ, n, ξ, Inf, Inf, 1.0
-    ) # non-isotropic
+    prox_g_dual(N, n, λ, ξ) =
+        ManoptTestSuite.project_collaborative_TV(N, λ, n, ξ, Inf, Inf, 1.0) # non-isotropic
     DΛ(M, m, X) = ManoptTestSuite.differential_forward_logs(M, m, X)
     adjoint_DΛ(N, m, n, ξ) = ManoptTestSuite.adjoint_differential_forward_logs(M, m, ξ)
 

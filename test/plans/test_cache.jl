@@ -224,7 +224,7 @@ A `SimpleManifoldCachedObjective`""",
         #
         # CostGrad
         f_f_grad(M, p) = (p' * A * p, 2 * A * p)
-        f_f_grad!(M, X, p) = (p' * A * p, X.=2 * A * p)
+        f_f_grad!(M, X, p) = (p' * A * p, X .= 2 * A * p)
         o2a = ManifoldCostGradientObjective(f_f_grad)
         co2a = ManifoldCountObjective(M, o2a, [:Cost, :Gradient])
         #pass size

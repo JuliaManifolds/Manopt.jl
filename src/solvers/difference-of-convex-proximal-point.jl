@@ -309,7 +309,8 @@ function difference_of_convex_proximal_point!(
     stopping_criterion=if isnothing(get_gradient_function(mdcpo))
         StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9)
     else
-        StopAfterIteration(300) | StopWhenChangeLess(M, 1e-9) |
+        StopAfterIteration(300) |
+        StopWhenChangeLess(M, 1e-9) |
         StopWhenGradientNormLess(1e-9)
     end,
     sub_cost=isnothing(g) ? nothing : ProximalDCCost(g, copy(M, p), λ(1)),

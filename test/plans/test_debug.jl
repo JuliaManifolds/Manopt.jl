@@ -16,7 +16,7 @@ mutable struct TestDebugParameterState <: AbstractManoptSolverState
     value::Int
 end
 function Manopt.set_parameter!(d::TestDebugParameterState, ::Val{:value}, v)
-    (d.value=v; return d)
+    (d.value = v; return d)
 end
 Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
 

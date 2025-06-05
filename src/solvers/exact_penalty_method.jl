@@ -401,7 +401,8 @@ function exact_penalty_method!(
             sub_kwargs...,
         ),
     ),
-    sub_stopping_criterion=StopAfterIteration(300) | StopWhenGradientNormLess(ϵ) |
+    sub_stopping_criterion=StopAfterIteration(300) |
+                           StopWhenGradientNormLess(ϵ) |
                            StopWhenStepsizeLess(1e-8),
     sub_state::Union{AbstractEvaluationType,AbstractManoptSolverState}=decorate_state!(
         QuasiNewtonState(

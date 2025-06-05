@@ -79,10 +79,13 @@ mutable struct TruncatedConjugateGradientState{T,R<:Real,SC<:StoppingCriterion,P
         θ::Float64=1.0,
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(
-            manifold_dimension(base_manifold(TpM))
-        ) | StopWhenResidualIsReducedByFactorOrPower(;
-            κ=κ, θ=θ
-        ) | StopWhenTrustRegionIsExceeded() | StopWhenCurvatureIsNegative() |
+                                                  manifold_dimension(base_manifold(TpM))
+                                              ) |
+                                              StopWhenResidualIsReducedByFactorOrPower(;
+                                                  κ=κ, θ=θ
+                                              ) |
+                                              StopWhenTrustRegionIsExceeded() |
+                                              StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
         kwargs...,
     ) where {T,R<:Real,F}
@@ -561,8 +564,10 @@ function truncated_conjugate_gradient_descent!(
     randomize::Bool=false,
     stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(TpM)) |
                                           StopWhenResidualIsReducedByFactorOrPower(;
-        κ=κ, θ=θ
-    ) | StopWhenTrustRegionIsExceeded() | StopWhenCurvatureIsNegative() |
+                                              κ=κ, θ=θ
+                                          ) |
+                                          StopWhenTrustRegionIsExceeded() |
+                                          StopWhenCurvatureIsNegative() |
                                           StopWhenModelIncreased(),
     project!::Proj=(copyto!),
     kwargs..., #collect rest

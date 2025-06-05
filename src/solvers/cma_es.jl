@@ -401,14 +401,19 @@ end
 function default_cma_es_stopping_criterion(
     M::AbstractManifold, λ::Int; tol_fun::TParam=1e-12, tol_x::TParam=1e-12
 ) where {TParam<:Real}
-    return StopAfterIteration(50000) | StopWhenCovarianceIllConditioned() |
+    return StopAfterIteration(50000) |
+           StopWhenCovarianceIllConditioned() |
            StopWhenBestCostInGenerationConstant{TParam}(
-        Int(10 + ceil(30 * manifold_dimension(M) / λ))
-    ) | StopWhenEvolutionStagnates(
-        Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
-    ) | StopWhenPopulationDiverges(1e4) | StopWhenPopulationCostConcentrated(
-        tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))
-    ) | StopWhenPopulationStronglyConcentrated(tol_x)
+               Int(10 + ceil(30 * manifold_dimension(M) / λ))
+           ) |
+           StopWhenEvolutionStagnates(
+               Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
+           ) |
+           StopWhenPopulationDiverges(1e4) |
+           StopWhenPopulationCostConcentrated(
+               tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))
+           ) |
+           StopWhenPopulationStronglyConcentrated(tol_x)
 end
 
 function cma_es!(

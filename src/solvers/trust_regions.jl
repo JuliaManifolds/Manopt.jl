@@ -460,8 +460,10 @@ function trust_regions!(
     sub_problem=DefaultManoptProblem(TangentSpace(M, p), sub_objective),
     sub_stopping_criterion::StoppingCriterion=StopAfterIteration(manifold_dimension(M)) |
                                               StopWhenResidualIsReducedByFactorOrPower(;
-        κ=κ, θ=θ
-    ) | StopWhenTrustRegionIsExceeded() | StopWhenCurvatureIsNegative() |
+                                                  κ=κ, θ=θ
+                                              ) |
+                                              StopWhenTrustRegionIsExceeded() |
+                                              StopWhenCurvatureIsNegative() |
                                               StopWhenModelIncreased(),
     sub_state::AbstractManoptSolverState=decorate_state!(
         TruncatedConjugateGradientState(

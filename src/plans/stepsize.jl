@@ -1117,9 +1117,8 @@ $(_var(:Keyword, :retraction_method))
 * `stop_increasing_at_step=100`:  last step to increase the stepsize (phase 1),
 * `stop_decreasing_at_step=1000`: last step size to decrease the stepsize (phase 2),
 """
-NonmonotoneLinesearch(args...; kwargs...) = ManifoldDefaultsFactory(
-    NonmonotoneLinesearchStepsize, args...; kwargs...
-)
+NonmonotoneLinesearch(args...; kwargs...) =
+    ManifoldDefaultsFactory(NonmonotoneLinesearchStepsize, args...; kwargs...)
 
 @doc """
     PolyakStepsize <: Stepsize
@@ -1408,7 +1407,7 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 function WolfePowellLinesearch(args...; kwargs...)
-    ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; kwargs...)
 end
 
 @doc """
@@ -1571,7 +1570,7 @@ $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 """
 function WolfePowellBinaryLinesearch(args...; kwargs...)
-    ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
 end
 
 @doc raw"""
