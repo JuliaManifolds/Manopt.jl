@@ -1,7 +1,7 @@
 name = "Manopt"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 authors = ["Ronny Bergmann <manopt@ronnybergmann.net>"]
-version = "0.5.16"
+version = "0.5.17"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
@@ -59,7 +59,7 @@ Printf = "1.10"
 QuadraticModels = "0.9"
 Random = "1.10"
 RecursiveArrayTools = "2, 3"
-RipQP = "0.6.4"
+RipQP = "0.6.4, 0.7"
 SparseArrays = "1.10"
 Statistics = "1.10"
 Test = "1.10"
