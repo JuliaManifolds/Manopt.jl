@@ -146,10 +146,7 @@ function (ne::NewtonEquation)(M, VB, p)
 	n = manifold_dimension(M)
 	ne.A .= spzeros(n,n)
 	ne.b .= zeros(n)
-	#fill!(Ac, 0)
-	#Ac .= spzeros(n,n)
-	#fill!(bc, 0)
-	#bc .= zeros(n)
+
 	Oy = OffsetArray([y0, p..., yT], 0:(length(ne.Omega)+1))
 	
 	println("Assemble:")
