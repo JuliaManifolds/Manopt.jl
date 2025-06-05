@@ -33,21 +33,16 @@ begin
 	windscale=1
 
 	h = (halt1-st1)/(N+1)
-	#halt = pi - st
+
 	Omega1 = range(; start=st1, stop = halt1, length=N+2)[2:end-1]
 	Omega2 = range(; start=st1, stop = halt1, length=N+2)[2:end-1]
 	Omega3 = range(; start=st1, stop = halt1, length=N+2)[1:end-1]
-	#Omega = range(; start=halt, stop = st, length=N+2)[2:end-1]
 	
 	y01 = [0,0,0] # startpoint of rod
 	yT1 = [0.8,0,0] # endpoint of rod
 
 	y02 = [1,0,0] # start direction of rod
 	yT2 = [1,0,0] # end direction of rod
-
-	#y03 = [0,0,0] # startpoint of geodesic
-	#yT3 = [0,0,0] # endpoint of geodesic
-
 end;
 
 # ╔═╡ 29043ca3-afe0-4280-a76a-7c160a117fdf
@@ -58,7 +53,6 @@ end;
 # ╔═╡ 7f6c588b-e64d-471f-9259-f3e3aeeb193a
 function y2(t)
 	return [sin(t*pi/2+pi/4), cos(t*pi/2+pi/4), 0]
-	#return [1.0, 0, 0]
 end;
 
 # ╔═╡ 5e2e2280-fe0d-443b-8824-101a138a86a0
@@ -351,8 +345,8 @@ function get_rhs_simplified!(b,row_idx,degT,h,nCells,y,y_trial,integrand,transpo
 			#yl=ArrayPartition(getindex.(y.x, (i-1...,)))
 			#yr=ArrayPartition(getindex.(y.x, (i...,)))
 			
-			yl_trial=evaluate(y,i,0.0)
-			yr_trial=evaluate(y,i,1.0)
+			yl_trial=evaluate(y_trial,i,0.0)
+			yr_trial=evaluate(y_trial,i,1.0)
 		
 			#yl_trial=ArrayPartition(getindex.(y_trial.x, (i-1...,)))
 			#yr_trial=ArrayPartition(getindex.(y_trial.x, (i...,)))
@@ -544,6 +538,7 @@ function (ne::NewtonEquation)(M, VB, p, p_trial)
 	get_rhs_simplified!(bctrial1,1,1,h,nCells,Oy,Oytrial,ne.integrand1, zerotransport)
 	get_rhs_simplified!(bctrial2,2,1,h,nCells,Oy,Oytrial,ne.integrand2,ne.transport)
 	get_rhs_simplified!(bctrial3,3,0,h,nCells,Oy,Oytrial,ne.integrand3, zerotransport)
+
 	return vcat(bctrial1,bctrial2, bctrial3)
 end
 end;
@@ -553,9 +548,8 @@ end;
 	Computes the Newton direction by solving the linear system given by the base representation of the Newton equation directly and returns the Newton direction in vector representation
 """
 function solve_in_basis_repr(problem, newtonstate) 
-	Xc = (problem.newton_equation.A) \ (-problem.newton_equation.b)
-	res_c = get_vector(problem.manifold, newtonstate.p, Xc, DefaultOrthogonalBasis())
-	return res_c
+	X = (problem.newton_equation.A) \ (-problem.newton_equation.b)
+	return get_vector(problem.manifold, newtonstate.p, X, DefaultOrthogonalBasis())
 end
 
 # ╔═╡ d903c84a-45f6-4e09-9ec2-88e248531fec
@@ -573,7 +567,7 @@ end
 	record=[:Iterate, :Change],
 	return_state=true
 )
-end;
+end
 
 # ╔═╡ abe5c5f3-4a28-425c-afde-64b645f3a9d9
 change = get_record(st_res, :Iteration, :Change)[2:end];
