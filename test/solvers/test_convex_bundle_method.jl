@@ -264,6 +264,7 @@ using Manopt: estimate_sectional_curvature
 
         nsbt = NullStepBackTrackingStepsize(M; initial_stepsize=cbms.last_stepsize)
         @test get_initial_stepsize(nsbt) == 1
+        @test Manopt.get_message(nsbt) == ""
         @test nsbt(mp, cbms, 1) < 1e-15 # Expected value?
 
         # nsbt show/status
@@ -272,9 +273,12 @@ using Manopt: estimate_sectional_curvature
         @test endswith(Manopt.status_summary(nsbt), "e-16")
         # Test show/summary on domainbt
         dbt = DomainBackTrackingStepsize(M; contraction_factor=0.975)
+        @test get_initial_stepsize(dbt) == 1
         @test startswith(repr(dbt), "DomainBackTracking(;\n")
         @test startswith(Manopt.status_summary(dbt), "DomainBackTracking(;\n")
         @test endswith(Manopt.status_summary(dbt), "of 1.0")
+        # a newly setup stepsize has now message (yet)
+        @test Manopt.get_message(dbt) == ""
     end
 
     @testset "Bundle Cap Condition" begin
