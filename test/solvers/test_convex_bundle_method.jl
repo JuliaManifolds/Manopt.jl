@@ -1,9 +1,7 @@
 using Manopt, Manifolds, Test, QuadraticModels, RipQP, ManifoldDiff, LinearAlgebra, Random
-using Manopt: convex_bundle_method, convex_bundle_method!, ConvexBundleMethodState
-using Manopt: convex_bundle_method_subsolver, convex_bundle_method_subsolver!
+
 using Manopt: ζ_1, ζ_2, close_point, _domain_condition, _null_condition
-using Manopt: DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
-using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
+using Manopt: estimate_sectional_curvature
 
 @testset "Convex Bundle Method Tests" begin
     M = Hyperbolic(4)
@@ -43,7 +41,7 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
         domain=(M, q) -> distance(M, q, p0) < diameter / 2 ? true : false,
         k_max=Ω,
         k_min=ω,
-        stepsize=_produce_type(DomainBackTracking(; contraction_factor=0.975), M),
+        stepsize=Manopt.DomainBackTrackingStepsize(M; contraction_factor=0.975),
         stopping_criterion=StopAfterIteration(200),
     )
     @test get_iterate(cbms) == p0
@@ -253,7 +251,7 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
             p=q,
             k_max=1.0,
             k_min=1.0,
-            stepsize=_produce_type(DomainBackTracking(; contraction_factor=0.975), M),
+            stepsize=DomainBackTrackingStepsize(M; contraction_factor=0.975),
             stopping_criterion=StopAfterIteration(20),
         )
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))
@@ -265,7 +263,18 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
         cbms.g .= [0.1, 0.1, 0.1]
 
         nsbt = NullStepBackTrackingStepsize(M; initial_stepsize=cbms.last_stepsize)
-        nsbt(mp, cbms, 1)
+        @test get_initial_stepsize(nsbt) == 1
+        @test nsbt(mp, cbms, 1) < 1e-15 # Expected value?
+
+        # nsbt show/status
+        @test startswith(repr(nsbt), "NullStepBackTracking(;\n")
+        @test startswith(Manopt.status_summary(nsbt), "NullStepBackTracking(;\n")
+        @test endswith(Manopt.status_summary(nsbt), "e-16")
+        # Test show/summary on domainbt
+        dbt = DomainBackTrackingStepsize(M; contraction_factor=0.975)
+        @test startswith(repr(dbt), "DomainBackTracking(;\n")
+        @test startswith(Manopt.status_summary(dbt), "DomainBackTracking(;\n")
+        @test endswith(Manopt.status_summary(dbt), "of 1.0")
     end
 
     @testset "Bundle Cap Condition" begin
@@ -288,7 +297,7 @@ using Manopt: estimate_sectional_curvature, _produce_type, max_stepsize
             p=q,
             k_max=1.0,
             k_min=1.0,
-            stepsize=_produce_type(DomainBackTracking(; contraction_factor=0.975), M),
+            stepsize=DomainBackTrackingStepsize(M; contraction_factor=0.975),
             stopping_criterion=StopAfterIteration(20),
         )
         mp = DefaultManoptProblem(M, ManifoldSubgradientObjective(f, ∂f))

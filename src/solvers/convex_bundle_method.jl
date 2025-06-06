@@ -131,7 +131,7 @@ Most of the following keyword arguments set default values for the fields mentio
 * `diameter=50.0`
 * `domain=(M, p) -> isfinite(f(M, p))`
 * `k_max=0`
-* `k_min=0` 
+* `k_min=0`
 $(_var(:Keyword, :p; add=:as_Initial))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConvexBundleMethodState)`"))
 $(_var(:Keyword, :inverse_retraction_method))
