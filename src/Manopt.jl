@@ -472,6 +472,8 @@ export adaptive_regularization_with_cubics,
     augmented_Lagrangian_method!,
     convex_bundle_method,
     convex_bundle_method!,
+    convex_bundle_method_subsolver,
+    convex_bundle_method_subsolver!,
     ChambollePock,
     ChambollePock!,
     cma_es,
@@ -542,6 +544,7 @@ export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
+export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
 export ProxGradBacktracking
 #
 # Stopping Criteria

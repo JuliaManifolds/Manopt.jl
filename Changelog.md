@@ -6,13 +6,15 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.18] 2025-06-05
+## [0.5.18] June 6, 2025
 
 ### Added
 
 * Introduce the algorithm `proximal_gradient_method` along with `ManifoldProximalGradientObjective`, `ProximalGradientMethodState`, `ProxGradAcceleration`.
 * Add `ProxGradBacktrackingStepsize` stepsize.
 * Add `StopWhenGradientMappingNormLess` stopping criterion.
+* Added back functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`; the function call can stay the same as before since there is a curvature estimation fallback
+* Add back some fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState`
 
 ## [0.5.17] 2025-06-03
 
