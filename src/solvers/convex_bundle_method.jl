@@ -368,7 +368,7 @@ end
 Implement a backtrack as long as we are ``q = \operatorname{retr}_p(X)``
 yields a point closer to ``p`` than ``\lVert X \rVert_p`` or
 ``q`` is not on the domain.
-For the domain this step size requires a `ConvexBundleMethodState`.
+For the domain this step size requires a [`ConvexBundleMethodState`](@ref).
 """
 mutable struct DomainBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F} <: Stepsize
     candidate_point::P
@@ -469,7 +469,7 @@ end
     NullStepBackTrackingStepsize <: Stepsize
 
 Implement a backtracking with a geometric condition in the case of a null step.
-For the domain this step size requires a `ConvexBundleMethodState`.
+For the domain this step size requires a [`ConvexBundleMethodState`](@ref).
 """
 mutable struct NullStepBackTrackingStepsize{TRM<:AbstractRetractionMethod,P,F,T} <: Stepsize
     candidate_point::P
