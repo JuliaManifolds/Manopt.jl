@@ -222,6 +222,38 @@ end
 #
 # Special single ones
 #
+@doc raw"""
+    DebugCallback <: DDebugAction
+
+Debug for a simple callback function, mainly for compatibility to other solvers and if
+a user already has a callback function or functor available
+
+The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
+A simple callbaclk of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
+
+# Constructor
+
+    DebugCallback(callback; simple=false)
+"""
+struct DebugCallback{CB} <: DebugAction
+    callback::CB
+    function DebugCallback(callback::CB; simple::Bool=false) where {CB}
+        return new{CB}(simple ? (p, s, k) -> callback() : callback)
+    end
+end
+function (d::DebugCallback)(
+    problem::AbstractManoptProblem, state::AbstractManoptSolverState, k
+)
+    d.callback(problem, state, k)
+    return nothing
+end
+function show(io::IO, dc::DebugCallback{CB}) where {CB}
+    return print(io, "DebugCallback containing a $(CB) callback $(dc.callback)")
+end
+function status_summary(dc::DebugCallback)
+    return "$(dc.callback)"
+end
+
 @doc """
     DebugChange(M=DefaultManifold(); kwargs...)
 
@@ -1177,7 +1209,7 @@ one are called with an `i=0` for reset.
    DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
    ```
 
-3. We can even make the stoping criterion concrete and pass Actions directly,
+3. We can even make the stopping criterion concrete and pass Actions directly,
    for example explicitly Making the stop more concrete, we get
 
    ```
@@ -1231,7 +1263,8 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
    see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
 3. Any `String` is passed to [`DebugActionFactory`](@ref DebugActionFactory(d::String))
-4. Any [`DebugAction`](@ref) is included as is.
+4. Any `Function` generates a [`DebugCallback`](@ref).
+5. Any [`DebugAction`](@ref) is included as is.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
 
@@ -1273,9 +1306,11 @@ create a [`DebugAction`](@ref) where
 * a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 * a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
+* a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
+DebugActionFactory(f::F) where {F<:Function} = DebugCallback(f)
 
 """
     DebugActionFactory(s::Symbol)
