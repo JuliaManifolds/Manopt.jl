@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Introduce a `StopWhenRepeated` stopping criterion that stops when the given stopping criterion has indicated to stop `n` times (consecutively, if `consecutive=true`).
+* Introduce a `DebugCallback` that allows to add a callback function to the debug system
+* Introduce a `callback=` keyword to all solvers.
 
 ### Changed
 
