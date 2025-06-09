@@ -62,7 +62,7 @@ function GradientDescentState(
         M, GradientDescentState; retraction_method=retraction_method
     ),
     direction::D=IdentityUpdateRule(),
-    kwargs... # ignore rest
+    kwargs..., # ignore rest
 ) where {
     P,
     T,

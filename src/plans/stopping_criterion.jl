@@ -1246,6 +1246,109 @@ function set_parameter!(c::StopWhenAny, s::Symbol, v)
 end
 
 @doc raw"""
+    StopWhenRepeated <: StoppingCriterion
+
+A stopping Criterion that indicates to stop when the (internal) stoppoing criterion it wraps,
+has indicated to stop for `n` (consecutive) times
+
+# Fields
+
+* `criterion`: the [`StoppingCriterion`](@ref) to wrap
+* `n`: the number of times the criterion has to indicate to stop
+* `count`: the number of times the criterion has indicated to stop so far
+* `consecutive::Bool`: indicate whether to count consecutive indications to stop or arbitrary.
+
+# Constructor
+
+    StopWhenRepeated(criterion::StoppingCriterion, n::Int; consecutive::Bool=true)
+    criterion × n
+    cross(sc::StoppingCriterion, n::Int)
+
+Create a stopping criterion that indicates to stop when the `criterion` has indicated to stop
+`n` times (consecutively, if `consecutive=true` for the first constructor).
+Note that the cross product is in general noncommutative, and here only the order `sc × n`` is possible.
+
+# Examples
+
+A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` for three consecutive iterations:
+    StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3)
+    StopWhenGradientNormLess(1e-6) × 3
+
+A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` at three iterations (not necessarily consecutive):
+    StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3; consecutive=false)
+"""
+mutable struct StopWhenRepeated{SC<:StoppingCriterion} <: StoppingCriterion
+    stopping_criterion::SC
+    n::Int
+    count::Int
+    consecutive::Bool
+    at_iteration::Int
+end
+function StopWhenRepeated(
+    sc::SC, n::Int; consecutive::Bool=true
+) where {SC<:StoppingCriterion}
+    return StopWhenRepeated{SC,I}(sc, n, 0, consecutive, -1)
+end
+function cross(sc::StoppingCriterion, n::Int)
+    return StopWhenRepeated(sc, n)
+end
+
+function (c::StopWhenRepeated)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+)
+    if k <= 0 # reset on init
+        c.count = zero(c.count)
+        return c.stopping_criterion(p, s, k) # reset the criterion
+    end
+    # evaluate the inner stopping criterion
+    stop = c.stopping_criterion(p, s, k)
+    if stop # if we indicated to stop
+        c.count += 1
+        if c.count >= c.n # if it now fired n times (consecutively)
+            c.at_iteration = k
+            return true
+        end
+    else
+        c.consecutive && (c.count = 0) # reset the count
+    end
+    return false
+end
+function get_reason(sc::StopWhenRepeated)
+    if (sc.at_iteration >= 0)
+        s = has_stopped ? "reached" : "not reached"
+        c = sc.consecutive ? "consecutive " : ""
+        # we can only get the last reason, unless we do more allocations
+        r = """Stop when stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
+        $(sc.count) ≥ $(sc.n): $(s)
+        last inner criterion status:
+        $(replace(status_summary(sc.stopping_criterion), "\n" => "\n    "))
+        """
+        return r
+    end
+    return ""
+end
+function status_summary(sc::StopWhenRepeated)
+    has_stopped = (sc.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    c = sc.consecutive ? "consecutive " : ""
+    return "$(c.count) ≥ $(sc.n) ($(c)): $(s) (last inner status: $(status_summary(sc.stopping_criterion)))"
+end
+function indicates_convergence(sc::StopWhenRepeated)
+    return indicates_convergence(sc.stopping_criterion)
+end
+function get_count(c::StopWhenRepeated, v::Val{:Iterations})
+
+    #iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
+    #(length(iters) == 0) && (return 0)
+    return 0
+    #
+end
+function show(io::IO, sc::StopWhenRepeated)
+    s = replace(status_summary(sc), "\n" => "\n    ") #increase indent
+    return print(io, "StopWhenRepeated with the Stopping Criterion\n    $(s)")
+end
+
+@doc raw"""
     get_reason(s::AbstractManoptSolverState)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from
