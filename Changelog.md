@@ -16,26 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * make the `GradientDescentState` a bit more tolerant to ignore keywords it does not use.
 
-## [0.5.17] 2025-06-03
+## [0.5.17] June 3, 2025
 
 ### Added
 
 * Introduce a `StopWhenCostChangeLess` stopping criterion that stops when the cost function changes less than a given value.
 
-## [0.5.16] 2025-05-07
+## [0.5.16] May 7, 2025
 
 ### Fixed
 
 * fixes a bug in the `LineSearches.jl` extension, where two (old) `retract!`s were still
 present; they were changed to `retact_fused!`.
 
-## [0.5.15] 2025-05-06
+## [0.5.15] May 6, 2025
 
 ### Fixed
 
 * CMA-ES no longer errors when the covariance matrix has nonpositive eigenvalues due to numerical issues.
 
-## [0.5.14] 2025-05-05
+## [0.5.14] May 5, 2025
 
 ### Added
 
@@ -46,7 +46,7 @@ present; they were changed to `retact_fused!`.
 * adapt to using `default_basis` where appropriate.
 * the tutorials are now rendered with `quarto` using the [`QuartoNotebookRunner.jl`](https://github.com/PumasAI/QuartoNotebookRunner.jl) and are hence purely julia based.
 
-## [0.5.13] 2025-04-25
+## [0.5.13] April 25, 2025
 
 ### Added
 
