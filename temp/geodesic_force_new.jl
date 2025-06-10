@@ -187,7 +187,7 @@ md"""
 
 In this example we implement a functor to compute the Newton matrix and the right hand side for the Newton equation \ref{paper}
 
-$$Q_{F(\gamma)}\circ F'(\gamma)\delta \gamma + F(\gamma) = 0$$
+$$Q^*_{F(\gamma)}\circ F'(\gamma)\delta \gamma + F(\gamma) = 0$$
 
 by using the assembler provided in ManoptExamples.jl (cf. Referenz).
 	
