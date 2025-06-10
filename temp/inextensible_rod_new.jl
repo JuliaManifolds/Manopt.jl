@@ -135,244 +135,6 @@ function F_prime23_at(Integrand,y,ydot,B,Bdot,T,Tdot)
 	return -T'*B
 end
 
-# ╔═╡ ef0edc46-0b33-42f5-821a-373edd4cdd84
-"""
- A:      Matrix to be written into\\
-row_idx: row index of block inside system\\
-col_idx: column index of block inside system\\
-
-h:       length of interval\\
-i:       index of interval\\
-
-yl:      left value of iterate\\
-yr:      right value of iterate\\
-
-B:       basis vector for basis function\\
-bfl:     0/1 scaling factor at left boundary\\
-bfr:     0/1 scaling factor at right boundary \\
-
-T:       basis vector for test function\\
-tfl:     0/1 scaling factor at left boundary\\
-tfr:     0/1 scaling factor at right boundary \\
-...
-"""
-function assemble_local_Jac_with_connection!(A,row_idx, col_idx, h, i, yl, yr, B, bfl, bfr, T, tfl, tfr, integrand, transport)
- dim = manifold_dimension(integrand.domain)
- dimc = manifold_dimension(integrand.precodomain)
-if tfr == 1
-	idxc=dimc*(i-1)
-else 
-	idxc=dimc*(i-2)
-end
-if bfr == 1
-	idx=dim*(i-1)
-else 
-	idx=dim*(i-2)
-end
-
- ydot=(yr-yl)/h
- quadwght=0.5*h
- nA1=size(A,1)
- nA2=size(A,2)
- #	Schleife über Komponenten der Testfunktion
- for k in 1:dimc
-    # Schleife über Komponenten der Basisfunktion
-	for j in 1:dim
-		# Sicherstellen, dass wir in Indexgrenzen der Matrix bleiben
-        if idx+j >= 1 && idxc+k >= 1 && idx+j <= nA2 && idxc+k <= nA1
-
-		# Zeit-Ableitungen der Basis- und Testfunktionen (=0 am jeweils anderen Rand)
-     	Tdot=(tfr-tfl)*T[k]/h
-		Bdot=(bfr-bfl)*B[j]/h
-
-
-    	# Ableitung in der Einbettung am rechten und linken Quadraturpunkt
-        tmp=integrand.derivative(integrand,yl,ydot,bfl*B[j],Bdot,tfl*T[k],Tdot)	
-			
-		tmp+=integrand.derivative(integrand,yr,ydot,bfr*B[j],Bdot,tfr*T[k],Tdot)	
-			
-		# Modifikation für Kovariante Ableitung:	
-		# y-Ableitungen der Projektionen am linken Punkt
-		# P'(yl)bfl*B[j] (tfl*T(k))
-		Pprime=transport.derivative(integrand.domain,yl.x[row_idx],bfl*B[j],tfl*T[k])
-		# Zeit- und y-Ableitungen der Projektionen
-		Pprimedot=(bfr-bfl)*Pprime/h
-		# Einsetzen in die rechte Seite am rechten und linken Quadraturpunkt
-		tmp+=integrand.value(integrand,yl,ydot,bfl*Pprime,Pprimedot)
-		tmp+=integrand.value(integrand,yr,ydot,bfr*Pprime,Pprimedot)
-			
-		# y-Ableitungen der Projektionen am rechten Punkt
-		Pprime=transport.derivative(integrand.domain,yr.x[row_idx],bfr*B[j],tfr*T[k])
-		Pprimedot=(bfr-bfl)*Pprime/h			
-		tmp+=integrand.value(integrand,yl,ydot,bfl*Pprime,Pprimedot)
-		tmp+=integrand.value(integrand,yr,ydot,bfr*Pprime,Pprimedot)
-			
-        # Update des Matrixeintrags
-			
-		A[idxc+k,idx+j]+=quadwght*tmp
-		end
-	end
- end
-end
-
-# ╔═╡ 2260abfa-86c1-48ea-acdf-b641cad0433a
-"""
-  T          : Test function
-  tlf        : 1/0 : scaling of test function at left interval point
-  trf        : 1/0 : scaling of test function at right interval point
-"""
-function assemble_local_rhs!(b,row_idx, h, i, yl, yr, T, tlf, trf, integrand)
-    dimc = manifold_dimension(integrand.precodomain)
-	if trf == 1
-     idx=dimc*(i-1)
-	else 
-	 idx=dimc*(i-2)
-	end
-	ydotl=(yr-yl)/h
-	ydotr=(yr-yl)/h
-	# Trapezregel
-	quadwght = 0.5*h   
-	for k in 1:dimc
-		# finite differences, taking into account values of test function at both endpoints
-        if idx+k > 0 && idx+k <= length(b)
-			
-			Tdot = (trf-tlf)*T[k]/h
-			#linker Quadraturpunkt
-			tmp =  integrand.value(integrand,yl,ydotl,tlf*T[k],Tdot)	
-			#rechter Quadraturpunkt
-			tmp += integrand.value(integrand,yr,ydotr,trf*T[k],Tdot)	
-			# Update der rechten Seite
-		  	b[idx+k]+= quadwght*tmp	
-		end
-	end
-end
-
-
-# ╔═╡ c83a1cbb-a4fa-4b0a-970d-f65f74e01615
-function evaluate(y, i, tloc)
-	return ArrayPartition(
-		(1.0-tloc)*y.x[1][i-1]+tloc*y.x[1][i],
-		(1.0-tloc)*y.x[2][i-1]+tloc*y.x[2][i],
-		y.x[3][i]
-	)
-end
-
-# ╔═╡ 22d7dbf4-b548-4246-9942-356571b398d0
-"""
- A:      Matrix to be written into\\
-row_idx: row index of block inside system\\
-detT:    degree of test function: 1: linear, 0: constant\\
-col_idx: column index of block inside system\\
-detB:    degree of basis function: 1: linear, 0: constant\\
-h:       length of interval\\
-nCell:    total number of intervals\\
-y:       iterate\\
-...
-"""
-function get_Jac!(A,row_idx,degT,col_idx,degB,h, nCells,y,integrand,transport)
-	M = integrand.domain
-	N = integrand.precodomain
-	# Schleife über Intervalle
-	for i in 1:nCells
-
-		# Evaluation of the current iterate. This routine has to be provided from outside, because Knowledge about the basis functions is needed
-		yl=evaluate(y,i,0.0)
-		yr=evaluate(y,i,1.0)
-
-		#yl=ArrayPartition(getindex.(y.x, (i-1...,)))
-		#yr=ArrayPartition(getindex.(y.x, (i...,)))
-
-		Bcl=get_basis(M,yl.x[col_idx],DefaultOrthonormalBasis())
-	    Bl = get_vectors(M,yl.x[col_idx], Bcl)
-		Bcr=get_basis(M,yr.x[col_idx],DefaultOrthonormalBasis())
-	    Br = get_vectors(M,yr.x[col_idx], Bcr)
-
-		Tcl=get_basis(N,yl.x[row_idx],DefaultOrthonormalBasis())
-	    Tl = get_vectors(N,yl.x[row_idx], Tcl)
-		Tcr=get_basis(N,yr.x[row_idx],DefaultOrthonormalBasis())
-	    Tr = get_vectors(N,yr.x[row_idx], Tcr)
-
-        # In the following, all combinations of test and basis functions have to be considered.
-		
-		# The case, where both test and basis functions are linear. We have 2x2=4 combinations, since there are two test/basis functions on each interval
-		if degT==1 && degB == 1
-    	    assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  			Tl,1,0, integrand, transport)		
-			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tl,1,0, integrand, transport)		
-			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  Tr,0,1, integrand, transport)		
-			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tr,0,1, integrand, transport)		
-		end
-		# The case, where both test functions are linear and basis functions are piecewies constant. We have 1x2=2 combinations, since there are are two test functions and 1 basis function on each interval
-		if degT==1 && degB == 0
-			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,1,1,  Tl,1,0, integrand, transport)		
-			assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,1,1,  Tr,0,1, integrand, transport)		
-		end
-		# Other cases could be added here. I did not need them, thus I havent implented them
-	end
-end
-
-# ╔═╡ 7ee0ea56-6d68-41ae-bc10-9d1f650b3257
-function get_rhs_row!(b,row_idx,degT,h,nCells,y,integrand)
-	CoDom = integrand.precodomain
-	# Schleife über Intervalle
-	for i in 1:nCells
-		yl=evaluate(y,i,0.0)
-		yr=evaluate(y,i,1.0)
-		#yl=ArrayPartition(getindex.(y.x, (i-1...,)))
-		#yr=ArrayPartition(getindex.(y.x, (i...,)))
-
-		Tcl=get_basis(CoDom,yl.x[row_idx],DefaultOrthonormalBasis())
-	    Tl = get_vectors(CoDom, yl.x[row_idx], Tcl)
-		Tcr=get_basis(CoDom,yr.x[row_idx],DefaultOrthonormalBasis())
-	    Tr = get_vectors(CoDom, yr.x[row_idx], Tcr)
-		if degT == 1
-			assemble_local_rhs!(b,row_idx, h, i, yl, yr, Tl, 1, 0, integrand)		
-        	assemble_local_rhs!(b,row_idx, h, i, yl, yr, Tr, 0, 1, integrand)		
-		end
-		if degT == 0
-        	assemble_local_rhs!(b,row_idx, h, i, yl, yr, Tr, 1, 1, integrand)		
-		end
-	end
-end
-
-# ╔═╡ ae6c02fd-00b1-4e15-8f26-ffeca9a91ec0
-function get_rhs_simplified!(b,row_idx,degT,h,nCells,y,y_trial,integrand,transport)
-	S = integrand.precodomain
-	# Schleife über Intervalle
-	for i in 1:nCells
-			yl=evaluate(y,i,0.0)
-		    yr=evaluate(y,i,1.0)
-
-			#yl=ArrayPartition(getindex.(y.x, (i-1...,)))
-			#yr=ArrayPartition(getindex.(y.x, (i...,)))
-			
-			yl_trial=evaluate(y_trial,i,0.0)
-			yr_trial=evaluate(y_trial,i,1.0)
-		
-			#yl_trial=ArrayPartition(getindex.(y_trial.x, (i-1...,)))
-			#yr_trial=ArrayPartition(getindex.(y_trial.x, (i...,)))
-		
-			Tcl=get_basis(S,yl.x[row_idx],DefaultOrthonormalBasis())
-			Tl=get_vectors(S, yl.x[row_idx],Tcl)
-		
-			Tcr=get_basis(S,yr.x[row_idx],DefaultOrthonormalBasis())
-	    	Tr = get_vectors(S, yr.x[row_idx], Tcr)
-		
-			dim = manifold_dimension(S)
-		# Transport der Testfunktionen auf $T_{x_k}S$
-            for k=1:dim
-				Tl[k]=transport.value(S,yl.x[row_idx],Tl[k],yl_trial.x[row_idx])
-				Tr[k]=transport.value(S,yr.x[row_idx],Tr[k],yr_trial.x[row_idx])
-			end
-			if degT == 1
-			assemble_local_rhs!(b,row_idx, h, i, yl_trial, yr_trial, Tl, 1, 0, integrand)		
-        	assemble_local_rhs!(b,row_idx, h, i, yl_trial, yr_trial, Tr, 0, 1, integrand)		
-			end
-			if degT == 0
-        	assemble_local_rhs!(b,row_idx, h, i, yl_trial, yr_trial, Tr, 1, 1, integrand)		
-			end
-	end
-end
-
 # ╔═╡ 808db8aa-64f7-4b36-8c6c-929ba4fa22db
 """
 Force field w and its derivative. A scaling parameter is also employed.
@@ -425,8 +187,17 @@ zerotransport=DifferentiableMapping(R3,R3,identitytrans,zerotrans_prime,nothing)
 """
 If no vector transport is needed, leave it away, then a zero dummy transport is used
 """
-function get_Jac!(A,row_idx,degT,col_idx,degB,h,nCells,y,integrand)
-	get_Jac!(A,row_idx,degT,col_idx,degB,h,nCells,y,integrand,zerotransport)
+function get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand)
+	ManoptExamples.get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand,zerotransport)
+end
+
+# ╔═╡ cab1527e-b7b9-4e13-8483-cba8b95c24da
+function evaluate(y, i, tloc)
+	return ArrayPartition(
+		(1.0-tloc)*y.x[1][i-1]+tloc*y.x[1][i],
+		(1.0-tloc)*y.x[2][i-1]+tloc*y.x[2][i],
+		y.x[3][i]
+	)
 end
 
 # ╔═╡ ea3c49be-896c-4470-b6fe-587ebe009eab
@@ -496,14 +267,14 @@ function (ne::NewtonEquation)(M, VB, p)
 	
 	println("Assemble:")
 	nCells = length(ne.Omega3)
-    get_Jac!(ne.A11,1,1 ,1,1 ,h,nCells,Oy,ne.integrand1)
-	get_Jac!(ne.A22,2,1, 2,1 ,h,nCells,Oy,ne.integrand2,ne.transport)
-    get_Jac!(ne.A13,1,1, 3,0 ,h,nCells,Oy,ne.integrand13)
-	get_Jac!(ne.A23,2,1, 3,0 ,h,nCells,Oy,ne.integrand23)
+   	get_Jac!(evaluate,ne.A11,1,1,1,1,h,nCells,Oy,ne.integrand1)
+	ManoptExamples.get_Jac!(evaluate,ne.A22,2,1,2,1,h,nCells,Oy,ne.integrand2,ne.transport)
+    get_Jac!(evaluate,ne.A13,1,1,3,0,h,nCells,Oy,ne.integrand13)
+	get_Jac!(evaluate,ne.A23,2,1,3,0,h,nCells,Oy,ne.integrand23)
 	# Ac12 = 0, Ac33 = 0 
-    get_rhs_row!(ne.b1,1,1,h,nCells,Oy,ne.integrand1)
-	get_rhs_row!(ne.b2,2,1,h,nCells,Oy,ne.integrand2)
-	get_rhs_row!(ne.b3,3,0,h,nCells,Oy,ne.integrand3)
+    ManoptExamples.get_rhs_row!(evaluate,ne.b1,1,1,h,nCells,Oy,ne.integrand1)
+	ManoptExamples.get_rhs_row!(evaluate,ne.b2,2,1,h,nCells,Oy,ne.integrand2)
+	ManoptExamples.get_rhs_row!(evaluate,ne.b3,3,0,h,nCells,Oy,ne.integrand3)
 	
 	ne.A .= vcat(hcat(ne.A11 , ne.A12 , ne.A13), 
 			  hcat(ne.A12', ne.A22 , ne.A23), 
@@ -535,9 +306,9 @@ function (ne::NewtonEquation)(M, VB, p, p_trial)
 
 	nCells = length(ne.Omega3)
 
-	get_rhs_simplified!(bctrial1,1,1,h,nCells,Oy,Oytrial,ne.integrand1, zerotransport)
-	get_rhs_simplified!(bctrial2,2,1,h,nCells,Oy,Oytrial,ne.integrand2,ne.transport)
-	get_rhs_simplified!(bctrial3,3,0,h,nCells,Oy,Oytrial,ne.integrand3, zerotransport)
+	ManoptExamples.get_rhs_simplified!(bctrial1,1,1,h,nCells,Oy,Oytrial,ne.integrand1, zerotransport)
+	ManoptExamples.get_rhs_simplified!(bctrial2,2,1,h,nCells,Oy,Oytrial,ne.integrand2,ne.transport)
+	ManoptExamples.get_rhs_simplified!(bctrial3,3,0,h,nCells,Oy,Oytrial,ne.integrand3, zerotransport)
 
 	return vcat(bctrial1,bctrial2, bctrial3)
 end
@@ -647,16 +418,11 @@ end
 # ╠═1c284f9d-f34e-435b-976d-61aaa0975fe5
 # ╠═86fc6357-1106-48f9-8efe-fda152caf990
 # ╠═03c147e6-843f-47ae-924e-86ed0260cd8e
-# ╠═ef0edc46-0b33-42f5-821a-373edd4cdd84
-# ╠═22d7dbf4-b548-4246-9942-356571b398d0
 # ╠═e2f48dcc-5c23-453d-8ff3-eb425b7b67af
-# ╠═2260abfa-86c1-48ea-acdf-b641cad0433a
-# ╠═7ee0ea56-6d68-41ae-bc10-9d1f650b3257
-# ╠═ae6c02fd-00b1-4e15-8f26-ffeca9a91ec0
 # ╠═684508bd-4525-418b-b89a-85d56c01b188
-# ╠═c83a1cbb-a4fa-4b0a-970d-f65f74e01615
 # ╠═808db8aa-64f7-4b36-8c6c-929ba4fa22db
 # ╠═288b9637-0500-40b8-a1f9-90cb9591402b
+# ╠═cab1527e-b7b9-4e13-8483-cba8b95c24da
 # ╠═ea3c49be-896c-4470-b6fe-587ebe009eab
 # ╠═5fc9e70a-ff2d-44fa-8e0f-f2d235d462f3
 # ╠═d903c84a-45f6-4e09-9ec2-88e248531fec
