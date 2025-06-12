@@ -370,23 +370,25 @@ end
 
 get_initial_stepsize(s::ProximalGradientMethodBacktracking) = s.initial_stepsize
 
-@doc raw"""
+@doc """
     (s::ProximalGradientMethodBacktracking)(mp, st, i)
 
 Compute a stepsize for the proximal gradient method using a backtracking line search.
 
 For the nonconvex case, the condition is:
+
 ```math
-f(p) - f(T_{λ}(p)) ≥ γλ\\|G_{λ}(p)\\|^2
+f(p) - f(T_{λ}(p)) ≥ γλ$(_tex(:norm, "G_{λ}(p)"))^2
 ```
-where `G_{λ}(p) = (1/λ) * log_p(T_{λ}(p))` is the gradient mapping.
+
+where `G_{λ}(p) = (1/λ) * $(_tex(:log))_p(T_{λ}(p))` is the gradient mapping.
 
 For the convex case, the condition is:
 ```math
-g(T_{λ}(p)) ≤ g(p) + ⟨\\operatorname{grad} g(p), \\operatorname{log}_p T_{λ}(p)⟩ + \\frac{1}{2λ} \\operatorname{dist}^2(p, T_{λ}(p))
+g(T_{λ}(p)) ≤ g(p) + ⟨$(_tex(:grad)) g(p), $(_tex(:log))_p T_{λ}(p)⟩ + $(_tex(:frac, "1", "2λ")) $(_math(:distance))^2(p, T_{λ}(p))
 ```
 
-Returns a stepsize λ that satisfies the specified condition.
+Returns a stepsize `λ` that satisfies the specified condition.
 """
 function (s::ProximalGradientMethodBacktracking)(
     mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
@@ -455,7 +457,9 @@ function (s::ProximalGradientMethodBacktracking)(
 end
 
 function ProxGradBacktracking(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.ProximalGradientMethodBacktracking, args...; kwargs...)
+    return ManifoldDefaultsFactory(
+        Manopt.ProximalGradientMethodBacktracking, args...; kwargs...
+    )
 end
 
 """
@@ -467,7 +471,6 @@ function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodSt
     return ProximalGradientMethodBacktracking(M; initial_stepsize=1.5, strategy=:nonconvex)
 end
 
-# Acceleration
 @doc """
     ProxGradAcceleration{P, T, F}
 
@@ -539,7 +542,6 @@ function (pga::ProxGradAcceleration)(
     return pgms
 end
 
-# Stopping criterion
 """
     StopWhenGradientMappingNormLess <: StoppingCriterion
 

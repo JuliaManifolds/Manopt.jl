@@ -5,7 +5,7 @@ _doc_prox_grad_method = """
     proximal_gradient_method!(M, f, g, grad_g, prox_h, p; kwargs...)
     proximal_gradient_method!(M, mpgo::ManifoldProximalGradientObjective, p; kwargs...)
 
-Perform the proximal gradient method
+Perform the proximal gradient method as introduced in [BergmannJasaJohnPfeffer:2025](@cite).
 
 Given the minimization problem
 
@@ -41,7 +41,7 @@ $(_var(:Argument, :p))
 
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_var(:Keyword, :evaluation))
-* `stepsize=default_stepsize(M, ProximalGradientMethodState)`: a [`ProximalStepsize`](@ref) or function to compute the stepsize
+$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ProximalGradientMethodState)`")) that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(100)`"))
 $(_var(:Keyword, :sub_problem, "sub_problem", "Union{AbstractManoptProblem, F, Nothing}"; default="nothing", add="or nothing to take the proximal map from the [`ManifoldProximalGradientObjective`](@ref)"))

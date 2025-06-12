@@ -21,10 +21,18 @@ ProximalGradientMethodState
 StopWhenGradientMappingNormLess
 ```
 
-## Helpers and internal functions
+## Stepsize
 
 ```@docs
 ProximalGradientMethodBacktracking
+```
+
+## Helpers and internal functions
+
+```@docs
+Manopt.get_cost_h
+Manopt.get_cost_g
+Manopt.default_stepsize(::AbstractManifold, ::Type{<:ProximalGradientMethodState})
 ```
 
 ## Literature
