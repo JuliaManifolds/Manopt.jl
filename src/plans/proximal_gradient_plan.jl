@@ -410,15 +410,7 @@ function (s::ProximalGradientMethodBacktracking)(
     objective = get_objective(mp)
 
     # Temporary state for backtracking that doesn't affect the main state
-    pgm_temp = ProximalGradientMethodState(
-        M;
-        p=copy(M, p),  # Start from current accelerated point
-        X=zero_vector(M, p),
-        sub_problem=st.sub_problem,
-        sub_state=st.sub_state,
-        retraction_method=st.retraction_method,
-        inverse_retraction_method=st.inverse_retraction_method,
-    )
+    pgm_temp = copy(st)
 
     while λ > s.stop_when_stepsize_less
         # Perform gradient step with current λ
@@ -453,6 +445,7 @@ function (s::ProximalGradientMethodBacktracking)(
         # Reduce step size
         λ *= s.contraction_factor
     end
+    @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
     return λ
 end
 
