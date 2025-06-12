@@ -1,4 +1,4 @@
-using Manopt, Manifolds, ManifoldDiff, ManoptExamples
+using Manopt, Manifolds, ManifoldDiff#, ManoptExamples
 
 #
 # L2-TV with 2 points: data ∈ Hyperbolic(2)^2
@@ -13,6 +13,7 @@ data = [-sqrt(2) sqrt(2); sqrt(2) -sqrt(2); sqrt(5) sqrt(5)]
 g(M, p) = distance(M, p, data)^2
 grad_g(M, p) = ManifoldDiff.grad_distance(M, data, p, 2)
 h(M, p) = distance(M.manifold, p[M, 1], p[M, 2])
+#=
 function prox_h(M, λ, p)
     q = copy(M, p)
     (q[M, 1], q[M, 2]) = ManoptExamples.prox_Total_Variation(
@@ -25,3 +26,4 @@ f(M, p) = g(M, p) + h(M, p)
 q = proximal_gradient_method(
     M, f, grad_g, prox_h, data; debug=[:Iteration, :Cost, :Change, "\n", :Stop]
 )
+=#
