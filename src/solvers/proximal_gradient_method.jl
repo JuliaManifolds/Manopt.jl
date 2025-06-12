@@ -1,5 +1,5 @@
 # Solver
-@doc """
+_doc_prox_grad_method = """
     proximal_gradient_method(M, f, g, grad_g, prox_h, p=rand(M); kwargs...)
     proximal_gradient_method(M, mpgo::ManifoldProximalGradientObjective, p=rand(M); kwargs...)
     proximal_gradient_method!(M, f, g, grad_g, prox_h, p; kwargs...)
@@ -52,6 +52,8 @@ $(_note(:OtherKeywords))
 
 $(_note(:OutputSection))
 """
+
+@doc "$(_doc_prox_grad_method)"
 function proximal_gradient_method(
     M::AbstractManifold,
     f,
@@ -73,6 +75,7 @@ function proximal_gradient_method(
     return proximal_gradient_method!(M, mpgo, q; kwargs...)
 end
 
+@doc "$(_doc_prox_grad_method)"
 function proximal_gradient_method!(
     M::AbstractManifold,
     f,

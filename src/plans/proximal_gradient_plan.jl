@@ -148,7 +148,7 @@ function get_proximal_map!(
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
-# 
+#
 # Method State
 @doc """
     ProximalGradientMethodState <: AbstractManoptSolverState
@@ -297,32 +297,34 @@ function show(io::IO, pgms::ProximalGradientMethodState)
     This indicates convergence: $Conv"""
     return print(io, s)
 end
-# 
+#
 # Stepsize
 @doc raw"""
-    ProxGradBacktrackingStepsize <: Stepsize
+    ProximalGradientMethodBacktracking <: Stepsize
 
 A functor for backtracking line search in proximal gradient methods.
 
 # Fields
+
 * `initial_stepsize::T` - initial step size guess
 * `sufficient_decrease::T` - sufficient decrease parameter (default: 0.5)
-* `contraction_factor::T` - step size reduction factor (default: 0.5) 
+* `contraction_factor::T` - step size reduction factor (default: 0.5)
 * `strategy::Symbol` - `:nonconvex` or `:convex` (default: `:convex`)
 * `candidate_point::P` - a working point used during backtracking
 * `last_stepsize::T` - the last computed stepsize
 
 # Constructor
-    ProxGradBacktrackingStepsize(M::AbstractManifold; kwargs...)
+    ProximalGradientMethodBacktracking(M::AbstractManifold; kwargs...)
 
 ## Keyword arguments
+
 * `initial_stepsize=1.0`: initial stepsize to try
 * `stop_when_stepsize_less=1e-4`: smallest stepsize when to stop (the last one before is taken)
 * `sufficient_decrease=0.5`: sufficient decrease parameter
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
 """
-mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
+mutable struct ProximalGradientMethodBacktracking{P,T} <: Stepsize
     initial_stepsize::T
     sufficient_decrease::T
     contraction_factor::T
@@ -331,7 +333,7 @@ mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
     last_stepsize::T
     stop_when_stepsize_less::T
 
-    function ProxGradBacktrackingStepsize(
+    function ProximalGradientMethodBacktracking(
         M::AbstractManifold;
         initial_stepsize::T=1.0,
         sufficient_decrease::T=0.5,
@@ -366,10 +368,10 @@ mutable struct ProxGradBacktrackingStepsize{P,T} <: Stepsize
     end
 end
 
-get_initial_stepsize(s::ProxGradBacktrackingStepsize) = s.initial_stepsize
+get_initial_stepsize(s::ProximalGradientMethodBacktracking) = s.initial_stepsize
 
 @doc raw"""
-    (s::ProxGradBacktrackingStepsize)(mp, st, i)
+    (s::ProximalGradientMethodBacktracking)(mp, st, i)
 
 Compute a stepsize for the proximal gradient method using a backtracking line search.
 
@@ -386,7 +388,7 @@ g(T_{λ}(p)) ≤ g(p) + ⟨\\operatorname{grad} g(p), \\operatorname{log}_p T_{�
 
 Returns a stepsize λ that satisfies the specified condition.
 """
-function (s::ProxGradBacktrackingStepsize)(
+function (s::ProximalGradientMethodBacktracking)(
     mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
 )
     # Initialization
@@ -453,7 +455,7 @@ function (s::ProxGradBacktrackingStepsize)(
 end
 
 function ProxGradBacktracking(args...; kwargs...)
-    return ManifoldDefaultsFactory(Manopt.ProxGradBacktrackingStepsize, args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.ProximalGradientMethodBacktracking, args...; kwargs...)
 end
 
 """
@@ -462,7 +464,7 @@ end
 Returns the default proximal stepsize, which is a nonconvex backtracking strategy.
 """
 function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodState})
-    return ProxGradBacktrackingStepsize(M; initial_stepsize=1.5, strategy=:nonconvex)
+    return ProximalGradientMethodBacktracking(M; initial_stepsize=1.5, strategy=:nonconvex)
 end
 
 # Acceleration

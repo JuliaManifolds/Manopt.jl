@@ -24,7 +24,7 @@ StopWhenGradientMappingNormLess
 ## Helpers and internal functions
 
 ```@docs
-ProxGradBacktrackingStepsize
+ProximalGradientMethodBacktracking
 ```
 
 ## Literature
