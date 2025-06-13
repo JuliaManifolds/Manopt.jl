@@ -317,11 +317,16 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         sc = StopWhenRepeated(s, 3)
         sc2 = s × 3
         @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
+        @test get_reason(sc) == ""
         @test startswith(repr(sc), "StopWhenRepeated with the Stopping Criterion:\n")
         @test startswith(Manopt.status_summary(sc), "0 ≥ 3 (consecutive): not reached")
         @test !sc(p, o, 1) # still count 0
         @test !sc(p, o, 2) # 1
         @test !sc(p, o, 2) # 2
         @test sc(p, o, 3) # 3 -> hits
+        @test length(get_reason(sc)) > 0
+        # reset
+        sc(p, o, 0) # reset
+        @test length(get_reason(sc)) == 0
     end
 end
