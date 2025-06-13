@@ -13,6 +13,7 @@ import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!
+import LinearAlgebra: cross
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -562,6 +563,7 @@ export StopAfter,
     StopWhenCostNaN,
     StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
+    StopWhenCriterionWithIterationCondition,
     StopWhenEntryChangeLess,
     StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess,
@@ -579,6 +581,7 @@ export StopAfter,
     StopWhenPopulationStronglyConcentrated,
     StopWhenProjectedGradientStationary,
     StopWhenRelativeResidualLess,
+    StopWhenRepeated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,

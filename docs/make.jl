@@ -83,7 +83,6 @@ end
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     using Pkg
     Pkg.activate(@__DIR__)
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
     Pkg.resolve()
     Pkg.instantiate()
 end
@@ -95,7 +94,6 @@ if run_quarto || run_on_CI
     # instantiate the tutorials environment if necessary
     Pkg.activate(tutorials_folder)
     # For a breaking release -> also set the tutorials folder to the most recent version
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
     Pkg.resolve()
     Pkg.instantiate()
     Pkg.activate(@__DIR__) # but return to the docs one before
@@ -108,7 +106,23 @@ using DocumenterCitations, DocumenterInterLinks
 using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
-# (d) add contributing.md to docs
+# (d) add contributing.md and changelog.md to the docs – and link to releases and issues
+
+function add_links(line::String, url::String="https://github.com/JuliaManifolds/Manopt.jl")
+    # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
+    while (m = match(r"\(\#([0-9]+)\)", line)) !== nothing
+        id = m.captures[1]
+        line = replace(line, m.match => "([#$id]($url/issues/$id))")
+    end
+    # replace ## [X.Y.Z] -> with a link to the release [X.Y.Z](url/releases/tag/vX.Y.Z)
+    while (m = match(r"\#\# \[([0-9]+.[0-9]+.[0-9]+)\] (.*)", line)) !== nothing
+        tag = m.captures[1]
+        date = m.captures[2]
+        line = replace(line, m.match => "## [$tag]($url/releases/tag/v$tag) ($date)")
+    end
+    return line
+end
+
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
@@ -126,7 +140,7 @@ for (md_file, doc_file) in
         )
         # Write the contents out below the meta block
         for line in eachline(joinpath(dirname(@__DIR__), md_file))
-            println(io, line)
+            println(io, add_links(line))
         end
     end
 end
