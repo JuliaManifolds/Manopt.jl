@@ -472,19 +472,25 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             dst = decorate_state!(st; callback=cb)
             step_solver!(mp, dst, 1)
             @test n == 1
+            dst = decorate_state!(st; callback=cb, debug=DebugDivider(""))
+            step_solver!(mp, dst, 1)
+            @test n == 2
             cb2(p, s, k) = ((k > 1) && (n += 1))
             # Advanced 2, pass to debug
             dst2 = decorate_state!(st; debug=cb2)
             step_solver!(mp, dst2, 1)
             step_solver!(mp, dst2, 2)
-            @test n == 2
+            @test n == 3
             #Equivalent to 2.
             dst3 = decorate_state!(st; debug=Manopt.DebugCallback(cb2))
             step_solver!(mp, dst3, 1)
             step_solver!(mp, dst3, 2)
-            @test n == 3
+            @test n == 4
             return nothing
         end
         test_simple_callback()
+        dbc = Manopt.DebugCallback(() -> nothing; simple=true)
+        @test startswith(repr(dbc), "DebugCallback containing")
+        @test startswith(Manopt.status_summary(dbc), "#")
     end
 end

@@ -54,9 +54,9 @@ function decorate_state!(
             debug = DebugCallback(callback; simple=true)
         else
             # From complex to simple, first array, since the other ones create an array
-            (debug isa Array) && push!(debug, DebugCallback(debug; simple=true))
+            (debug isa Array) && push!(debug, DebugCallback(callback; simple=true))
             if ((debug isa Function) || (debug isa DebugAction))
-                debug = [debug, DebugCallback(debug; simple=false)]
+                debug = [debug, DebugCallback(callback; simple=true)]
             end
             (debug isa Dict) && warn(
                 "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
