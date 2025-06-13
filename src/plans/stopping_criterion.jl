@@ -1320,7 +1320,7 @@ function get_reason(sc::StopWhenRepeated)
         s = has_stopped ? "reached" : "not reached"
         c = sc.consecutive ? "consecutive " : ""
         # we can only get the last reason, unless we do more allocations
-        r = """Stop when stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
+        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
         $(sc.count) ≥ $(sc.n): $(s)
         last inner criterion status:
         $(replace(status_summary(sc.stopping_criterion), "\n" => "\n    "))
@@ -1343,6 +1343,111 @@ function show(io::IO, sc::StopWhenRepeated)
     return print(
         io,
         "StopWhenRepeated with the Stopping Criterion:\n    $(is)\n$(status_summary(sc))",
+    )
+end
+
+@doc raw"""
+    StopWhenCriterionWithIterationCondition <: StoppingCriterion
+
+A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps,
+has indicated to stop with an additional check compared to the current iteration, e.g.
+
+* `>(n)` only (stricly) after iteration `n`
+* `>=(n)` only including and after iteration `n`
+* `==(n)` only exactly at `n`
+* `<=(n)` only including and before iteration `n`
+* `<(n)` only (strictly) before iteration `n`
+* any functor `f(k) -> Bool` indicating to evaluate the stopping criterion at iteration `k`.
+
+# Fields
+
+* `criterion`: the [`StoppingCriterion`](@ref) to wrap
+* `comp`: the number of times the criterion has to indicate to stop
+
+# Constructor
+
+    StopWhenRepeated(criterion::StoppingCriterion, n=0; comp = (>(n)))
+
+Create a stopping criterion that indicates to stop when the `comp` has indicated to
+check the inner criterion. The `n` is ignored if you provide a manual functor `comp`.
+
+As well as for a given [` StoppingCriterion`] `sc` the shortcuts
+`sc > n`, `sc >= n`, `sc == n`, `sc <= n`, `sc < n` for the cases above.
+
+# Examples
+
+A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
+    StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
+    StopWhenGradientNormLess(1e-6) > 3
+"""
+mutable struct StopWhenCriterionWithIterationCondition{SC<:StoppingCriterion,F} <:
+               StoppingCriterion
+    stopping_criterion::SC
+    comp::F
+    at_iteration::Int
+end
+function StopWhenCriterionWithIterationCondition(
+    sc::SC, n::Int=0; comp::F=(>(n))
+) where {SC<:StoppingCriterion,F}
+    return StopWhenCriterionWithIterationCondition{SC,F}(sc, comp, -1)
+end
+function Base.:>(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(>(n)))
+end
+function Base.:>=(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(>=(n)))
+end
+function Base.:(==)(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(==(n)))
+end
+function Base.:<(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(<(n)))
+end
+function Base.:<=(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(<=(n)))
+end
+function (c::StopWhenCriterionWithIterationCondition)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+)
+    if k <= 0 # reset on init
+        c.at_iteration = -1
+        return c.stopping_criterion(p, s, k) # reset the criterion
+    end
+    if c.comp(k)
+        # evaluate the inner stopping criterion
+        stop = c.stopping_criterion(p, s, k)
+        if stop # if we indicated to stop
+            c.at_iteration = k
+            return true
+        end
+    end
+    # Else: do not even check the other one.
+    return false
+end
+function get_reason(sc::StopWhenCriterionWithIterationCondition)
+    has_stopped = (sc.at_iteration >= 0)
+    if has_stopped
+        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp),
+        since $(status_summary(sc.stopping_criterion))"
+        return r
+    end
+    return ""
+end
+function status_summary(sc::StopWhenCriterionWithIterationCondition)
+    has_stopped = (sc.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "$(sc.comp) && $(sc.stopping_criterion): $(s)"
+end
+function indicates_convergence(sc::StopWhenCriterionWithIterationCondition)
+    return indicates_convergence(sc.stopping_criterion)
+end
+function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
+    has_stopped = (sc.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return print(
+        io,
+        "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n    $(is)\nand condition $(sc.comp)\n\toverall: $(s)",
     )
 end
 

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Introduce a `StopWhenRepeated` stopping criterion that stops when the given stopping criterion has indicated to stop `n` times (consecutively, if `consecutive=true`).
+* Introduce a `StopWhenCriterionWithIterationCondition` stopping criterion that stops when a given stopping criterion has been satisfied together with a certain iteration condition. This can the generated even with shortcuts like `sc > 5`
 * Introduce a `DebugCallback` that allows to add a callback function to the debug system
 * Introduce a `callback=` keyword to all solvers.
 * Added back functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`; the function call can stay the same as before since there is a curvature estimation fallback
