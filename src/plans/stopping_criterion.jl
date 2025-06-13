@@ -1287,7 +1287,7 @@ end
 function StopWhenRepeated(
     sc::SC, n::Int; consecutive::Bool=true
 ) where {SC<:StoppingCriterion}
-    return StopWhenRepeated{SC,I}(sc, n, 0, consecutive, -1)
+    return StopWhenRepeated{SC}(sc, n, 0, consecutive, -1)
 end
 function cross(sc::StoppingCriterion, n::Int)
     return StopWhenRepeated(sc, n)
@@ -1330,22 +1330,18 @@ end
 function status_summary(sc::StopWhenRepeated)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    c = sc.consecutive ? "consecutive " : ""
-    return "$(c.count) ≥ $(sc.n) ($(c)): $(s) (last inner status: $(status_summary(sc.stopping_criterion)))"
+    c = sc.consecutive ? "consecutive" : ""
+    return "$(sc.count) ≥ $(sc.n) ($(c)): $(s) (last inner status: $(status_summary(sc.stopping_criterion)))"
 end
 function indicates_convergence(sc::StopWhenRepeated)
     return indicates_convergence(sc.stopping_criterion)
 end
-function get_count(c::StopWhenRepeated, v::Val{:Iterations})
-
-    #iters = filter(x -> x > 0, [get_count(ci, v) for ci in c.criteria])
-    #(length(iters) == 0) && (return 0)
-    return 0
-    #
-end
 function show(io::IO, sc::StopWhenRepeated)
-    s = replace(status_summary(sc), "\n" => "\n    ") #increase indent
-    return print(io, "StopWhenRepeated with the Stopping Criterion\n    $(s)")
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
+    return print(
+        io,
+        "StopWhenRepeated with the Stopping Criterion:\n    $(is)\n$(status_summary(sc))",
+    )
 end
 
 @doc raw"""

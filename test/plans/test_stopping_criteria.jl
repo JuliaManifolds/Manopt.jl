@@ -309,4 +309,19 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         sc3.at_iteration = 1
         @test length(get_reason(sc3)) > 0
     end
+
+    @testset "StopWhenRepeated" begin
+        p = ManoptTestSuite.DummyProblem{ManifoldsBase.DefaultManifold}()
+        o = ManoptTestSuite.DummyState()
+        s = StopAfterIteration(2)
+        sc = StopWhenRepeated(s, 3)
+        sc2 = s × 3
+        @test Manopt.indicates_convergence(sc) == Manopt.indicates_convergence(s)
+        @test startswith(repr(sc), "StopWhenRepeated with the Stopping Criterion:\n")
+        @test startswith(Manopt.status_summary(sc), "0 ≥ 3 (consecutive): not reached")
+        @test !sc(p, o, 1) # still count 0
+        @test !sc(p, o, 2) # 1
+        @test !sc(p, o, 2) # 2
+        @test sc(p, o, 3) # 3 -> hits
+    end
 end
