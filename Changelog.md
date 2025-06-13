@@ -312,9 +312,6 @@ In general this introduces a few factories, that avoid having to pass the manifo
 
 * `max_stepsize` methods for `Hyperrectangle`.
 
-### Added
-* Adds the `proximal_gradient_method`.
-
 ### Fixed
 
 * a few typos in the documentation
