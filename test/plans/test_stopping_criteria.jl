@@ -348,6 +348,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
             repr(sc),
             "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n",
         )
+        @test startswith(Manopt.status_summary(sc), "Base.Fix2{typeof(>), Int64}(>, 5) &&")
         sc2 = s > 5
         @test typeof(sc) === typeof(sc2)
         # Test other constructors

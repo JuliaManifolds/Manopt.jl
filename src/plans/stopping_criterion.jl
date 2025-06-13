@@ -1436,15 +1436,16 @@ end
 function status_summary(sc::StopWhenCriterionWithIterationCondition)
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
-    return "$(sc.comp) && $(sc.stopping_criterion): $(s)"
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
+    return "$(sc.comp) && $(is)\n    overall: $(s)"
 end
 function indicates_convergence(sc::StopWhenCriterionWithIterationCondition)
     return indicates_convergence(sc.stopping_criterion)
 end
 function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
-    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
     has_stopped = (sc.at_iteration >= 0)
     s = has_stopped ? "reached" : "not reached"
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
     return print(
         io,
         "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n    $(is)\nand condition $(sc.comp)\n\toverall: $(s)",
