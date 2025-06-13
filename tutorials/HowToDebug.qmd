@@ -210,8 +210,9 @@ run_with_callback()
 ```
 
 This “simple” mode has the disadvantage, that we do not have access to anything else
-from “within” the solver. Therefore, passing a function to `debug=` is the way to
-activate the extended variant, where the callback has to have the same form as the
+from “within” the solver and it is called both in the initialisation (at “iterate 0”), hence it counts one step more than the previous stopping criterion.
+Therefore, passing a function to `debug=` is the way to
+activate the (extended) variant, where the callback has to have the same form as the
 action functor.
 The following example stores the last gradient the subsolver computed in `last_X`,
 to illustrate how to access elements from even the subsolvers state.
