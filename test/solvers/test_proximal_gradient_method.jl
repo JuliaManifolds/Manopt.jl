@@ -1,4 +1,7 @@
-using Manopt, Manifolds, Test, ManifoldDiff
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
 
 @testset "The Proximal Gradient Method" begin
     M = Hyperbolic(2)
@@ -59,6 +62,15 @@ using Manopt, Manifolds, Test, ManifoldDiff
             M; initial_stepsize=1.0, strategy=:convex, stop_when_stepsize_less=2.0
         )
         @test_logs (:warn,) st(mp, pgms, 1)
+
+        # prox pass through with dummy objective deco
+        dob = ManoptTestSuite.DummyDecoratedObjective(ob)
+        @test get_proximal_map(M, ob, 0.1, p) == get_proximal_map(M, dob, 0.1, p)
+        q1 = copy(M, p)
+        q2 = copy(M, p)
+        get_proximal_map!(M, q1, ob, 0.1, p)
+        get_proximal_map!(M, q2, dob, 0.1, p)
+        @test q1 == q2
     end
     @testset "Mutating Subgradient" begin
         g(M, q) = distance(M, q, p)^2

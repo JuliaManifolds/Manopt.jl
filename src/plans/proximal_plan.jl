@@ -100,7 +100,7 @@ end
 function get_proximal_map(
     M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, λ, p
 )
-    return get_proximal_map(M, get_objective(admo, false), λ, p, i)
+    return get_proximal_map(M, get_objective(admo, false), λ, p)
 end
 
 function check_prox_number(pf::Union{Tuple,Vector}, i)
