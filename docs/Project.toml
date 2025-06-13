@@ -45,3 +45,6 @@ Plots = "1"
 QuadraticModels = "0.9.6"
 RecursiveArrayTools = "2, 3"
 RipQP = "0.6.4, 0.7"
+
+[sources]
+Manopt = { path = ".." }

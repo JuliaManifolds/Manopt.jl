@@ -190,7 +190,47 @@ function (d::DebugDivider)(::AbstractManoptProblem, ::AbstractManoptSolverState,
 end
 ```
 
-or you could implement that of course just for your specific problem or state.
+## Using callbacks
+
+If you prefer to write debugs as callbacks, this is also possible since Manopt 0.5.18.
+There are two variants, a simple and a default variant, that maybe fits a bit better
+the scheme introduced before.
+
+For the simple variant, you can just implement a function `cb()` to perform what ever you like. We illustrate this as follows, where we wrap the code in a function for
+better scoping. Here we just count the number of iterations.
+
+```{julia}
+function run_with_callback()
+    n = 0
+    callback() = (n += 1)
+    exact_penalty_method(M, f, grad_f, p0; g=g, grad_g=grad_g, callback=callback);
+    return n
+end
+run_with_callback()
+```
+
+This “simple” mode has the disadvantage, that we do not have access to anything else
+from “within” the solver and it is called both in the initialisation (at “iterate 0”), hence it counts one step more than the previous stopping criterion.
+Therefore, passing a function to `debug=` is the way to
+activate the (extended) variant, where the callback has to have the same form as the
+action functor.
+The following example stores the last gradient the subsolver computed in `last_X`,
+to illustrate how to access elements from even the subsolvers state.
+
+```{julia}
+function run_with_callback2()
+    last_X = zero_vector(M, p0)
+    callback2(problem, state, k) = copyto!(M, last_X, get_iterate(state), get_gradient(state.sub_state))
+    exact_penalty_method(M, f, grad_f, p0; g=g, grad_g=grad_g, debug=callback2);
+    return last_X
+end
+run_with_callback2()
+```
+
+The full form here would also be possible, calling [`Manopt.DebugCallback`](@ref)`(callback2)`
+or analogously [`Manopt.DebugCallback`](@ref)`(callback; simple=true)` and use that in arrays or [`DebugGroup`](@ref)s as above.
+The `callback2` can also be part of a whole `debug = [...]` array,
+similarly within a dictionary to add callbacks only to the end of an algorithm (`:Stop => callback2`) or to `:BeforeIteration` as illustrated above.
 
 ## Technical details
 
