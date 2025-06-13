@@ -370,7 +370,7 @@ export AlternatingGradient
 #
 # access functions and helpers for `AbstractManoptSolverState`
 export default_stepsize
-export get_cost, get_gradient, get_gradient!
+export get_cost, get_gradient, get_gradient!, get_cost_smooth
 export get_subgradient, get_subgradient!
 export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map, get_proximal_map!
@@ -545,7 +545,7 @@ export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
 export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
-export ProxGradBacktracking
+export ProximalGradientMethodBacktracking
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet

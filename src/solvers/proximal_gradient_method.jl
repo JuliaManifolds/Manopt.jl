@@ -101,7 +101,7 @@ function proximal_gradient_method!(
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, ProximalGradientMethodState
     ),
-    stopping_criterion::S=StopWhenGradientMappingNormLess(1e-2) |
+    stopping_criterion::S=StopWhenGradientMappingNormLess(1e-7) |
                           StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),
     X=zero_vector(M, p),
