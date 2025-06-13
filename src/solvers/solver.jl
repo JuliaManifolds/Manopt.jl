@@ -50,14 +50,18 @@ function decorate_state!(
     deco_s = s
     # Add callback to debug parameter
     if !ismissing(callback) # we got a simple callback
-        (ismissing(debug)) && (debug = DebugCallback(callback; simple=true))
-        if ((debug isa Function) || (debug isa DebugAction))
-            debug = [debug, DebugCallback(debug; simple=false)]
+        if ismissing(debug)
+            debug = DebugCallback(callback; simple=true)
+        else
+            # From complex to simple, first array, since the other ones create an array
+            (debug isa Array) && push!(debug, DebugCallback(debug; simple=true))
+            if ((debug isa Function) || (debug isa DebugAction))
+                debug = [debug, DebugCallback(debug; simple=false)]
+            end
+            (debug isa Dict) && warn(
+                "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
+            )
         end
-        (debug isa Array) && push!(debug, DebugCallback(debug; simple=true))
-        (debug isa Dict) && warn(
-            "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
-        )
     end
     if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
         deco_s = DebugSolverState(s, debug)

@@ -65,6 +65,12 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
+function DebugSolverState( # a function: callback
+    st::S,
+    callback::Function,
+) where {S<:AbstractManoptSolverState}
+    return DebugSolverState{S}(st, DebugFactory([callback]))
+end
 
 """
     set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
@@ -231,14 +237,20 @@ a user already has a callback function or functor available
 The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
 A simple callbaclk of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
 
+!!! note
+    This is for now an internal struct, since its name might still change before
+    it is made public. The functionality with the factory (`callback=f`) will still work,
+    but this debug actions name might still change its name in the future.
+
 # Constructor
 
     DebugCallback(callback; simple=false)
 """
 struct DebugCallback{CB} <: DebugAction
     callback::CB
-    function DebugCallback(callback::CB; simple::Bool=false) where {CB}
-        return new{CB}(simple ? (p, s, k) -> callback() : callback)
+    function DebugCallback(callback; simple::Bool=false)
+        _cb = simple ? (problem, state, k) -> callback() : callback
+        return new{typeof(_cb)}(_cb)
     end
 end
 function (d::DebugCallback)(
