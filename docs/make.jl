@@ -83,7 +83,6 @@ end
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     using Pkg
     Pkg.activate(@__DIR__)
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
     Pkg.resolve()
     Pkg.instantiate()
 end
@@ -95,7 +94,6 @@ if run_quarto || run_on_CI
     # instantiate the tutorials environment if necessary
     Pkg.activate(tutorials_folder)
     # For a breaking release -> also set the tutorials folder to the most recent version
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
     Pkg.resolve()
     Pkg.instantiate()
     Pkg.activate(@__DIR__) # but return to the docs one before
