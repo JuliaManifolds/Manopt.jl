@@ -418,7 +418,8 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 end
 
 @doc """
-    (s::ProximalGradientMethodBacktracking)(mp, st, i)
+    ProximalGradientMethodBacktracking(; kwargs...)
+    ProximalGradientMethodBacktracking(M::AbstractManifold; kwargs...)
 
 Compute a stepsize for the proximal gradient method using a backtracking line search.
 
@@ -431,11 +432,14 @@ f(p) - f(T_{λ}(p)) ≥ γλ$(_tex(:norm, "G_{λ}(p)"))^2
 where `G_{λ}(p) = (1/λ) * $(_tex(:log))_p(T_{λ}(p))` is the gradient mapping.
 
 For the convex case, the condition is:
+
 ```math
 g(T_{λ}(p)) ≤ g(p) + ⟨$(_tex(:grad)) g(p), $(_tex(:log))_p T_{λ}(p)⟩ + $(_tex(:frac, "1", "2λ")) $(_math(:distance))^2(p, T_{λ}(p))
 ```
 
 Returns a stepsize `λ` that satisfies the specified condition.
+
+$(_note(:ManifoldDefaultFactory, "ProximalGradientMethodBacktrackingStepsize"))
 """
 function ProximalGradientMethodBacktracking(args...; kwargs...)
     return ManifoldDefaultsFactory(
