@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Introduce the algorithm `proximal_gradient_method` along
-  with `ManifoldProximalGradientObjective`, `ProximalGradientMethodState`, `ProxGradAcceleration`.
+  with `ManifoldProximalGradientObjective`, `ProximalGradientMethodState`, as well as an experimental `ProximalGradientMethodAcceleration`.
 * Add `ProximalGradientMethodBacktracking` stepsize.
 * Add `StopWhenGradientMappingNormLess` stopping criterion.
 * Introduce a `StopWhenRepeated` stopping criterion that stops when the given stopping criterion has indicated to stop `n` times (consecutively, if `consecutive=true`).

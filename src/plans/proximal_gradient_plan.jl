@@ -349,6 +349,19 @@ end
 
 get_initial_stepsize(s::ProximalGradientMethodBacktrackingStepsize) = s.initial_stepsize
 
+function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
+    s = """
+    ProximalGradientMethodBacktrackingStepsize(;
+        contraction_factor=$(pgb.contraction_factor),
+        Initial_stepsize=$(pgb.initial_stepsize),
+        stop_when_stepsize_less=$(pgb.stop_when_stepsize_less),
+        sufficient_decrease=$(pgb.sufficient_decrease),
+        strategy=$(pgb.strategy)
+    )
+    """
+    return print(io, s)
+end
+
 function (s::ProximalGradientMethodBacktrackingStepsize)(
     mp::AbstractManoptProblem, st::ProximalGradientMethodState, i::Int, args...; kwargs...
 )
@@ -459,7 +472,7 @@ function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodSt
 end
 
 @doc """
-    ProxGradAcceleration{P, T, F}
+    ProximalGradientMethodAcceleration{P, T, F}
 
 Compute an acceleration step
 
@@ -483,7 +496,7 @@ The retraction and its inverse are taken from the state.
 
 # Constructor
 
-    ProxGradAcceleration(M::AbstractManifold; kwargs...)
+    ProximalGradientMethodAcceleration(M::AbstractManifold; kwargs...)
 
 Generate the state for a given manifold `M` with initial iterate `p`.
 
@@ -498,24 +511,24 @@ $(_var(:Argument, :M; type=true))
 * `p` - initial point
 * `X` - initial tangent vector
 """
-mutable struct ProxGradAcceleration{P,T,F,ITR}
+mutable struct ProximalGradientMethodAcceleration{P,T,F,ITR}
     β::F
     inverse_retraction_method::ITR
     p::P
     X::T
 end
 
-function ProxGradAcceleration(
+function ProximalGradientMethodAcceleration(
     M::AbstractManifold;
     p::P=rand(M),
     X::T=zero_vector(M, p),
     β::F=(k) -> (k - 1) / (k + 2),
     inverse_retraction_method::I=default_inverse_retraction_method(M, typeof(p)),
 ) where {P,T,F,I<:AbstractInverseRetractionMethod}
-    return ProxGradAcceleration{P,T,F,I}(β, inverse_retraction_method, p, X)
+    return ProximalGradientMethodAcceleration{P,T,F,I}(β, inverse_retraction_method, p, X)
 end
 
-function (pga::ProxGradAcceleration)(
+function (pga::ProximalGradientMethodAcceleration)(
     amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, k
 )
     # compute the step
@@ -527,6 +540,17 @@ function (pga::ProxGradAcceleration)(
     # save current p for next time as last iterate
     copyto!(M, pga.p, pgms.p)
     return pgms
+end
+
+function Base.show(io::IO, pga::ProximalGradientMethodAcceleration)
+    s = """
+    ProximalGradientMethodAcceleration with parameters
+    * p=$(pga.p)
+    * X=$(pga.X)
+    * β=$(pga.β)
+    * inverse_retraction_method=$(pga.inverse_retraction_method)
+    """
+    return print(io, s)
 end
 
 """
