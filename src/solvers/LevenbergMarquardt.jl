@@ -176,7 +176,7 @@ function LevenbergMarquardt!(
     initial_jacobian_f=similar(
         p, length(get_objective(nlso).objective), manifold_dimension(M)
     ),
-    (linear_subsolver!)=default_lm_lin_solve!,
+    (linear_subsolver!)=(default_lm_lin_solve!),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
     dnlso = decorate_objective!(M, nlso; kwargs...)
@@ -192,7 +192,7 @@ function LevenbergMarquardt!(
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
-        (linear_subsolver!)=linear_subsolver!,
+        (linear_subsolver!)=(linear_subsolver!),
     )
     dlms = decorate_state!(lms; debug=debug, kwargs...)
     solve!(nlsp, dlms)

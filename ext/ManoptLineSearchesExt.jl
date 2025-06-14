@@ -9,7 +9,7 @@ function (cs::Manopt.LineSearchesStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     k::Int,
-    η=-get_gradient(s);
+    η=(-get_gradient(s));
     fp=get_cost(mp, get_iterate(s)),
     kwargs...,
 )

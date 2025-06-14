@@ -75,7 +75,7 @@ mutable struct TruncatedConjugateGradientState{T,R<:Real,SC<:StoppingCriterion,P
         X::T=rand(TpM),
         trust_region_radius::R=injectivity_radius(base_manifold(TpM)) / 4.0,
         randomize::Bool=false,
-        project!::F=copyto!,
+        project!::F=(copyto!),
         θ::Float64=1.0,
         κ::Float64=0.1,
         stopping_criterion::StoppingCriterion=StopAfterIteration(
@@ -569,7 +569,7 @@ function truncated_conjugate_gradient_descent!(
                                           StopWhenTrustRegionIsExceeded() |
                                           StopWhenCurvatureIsNegative() |
                                           StopWhenModelIncreased(),
-    project!::Proj=copyto!,
+    project!::Proj=(copyto!),
     kwargs..., #collect rest
 ) where {Proj}
     dtrm = decorate_objective!(TpM, trm; kwargs...)
@@ -582,7 +582,7 @@ function truncated_conjugate_gradient_descent!(
         θ=θ,
         κ=κ,
         stopping_criterion=stopping_criterion,
-        (project!)=project!,
+        (project!)=(project!),
     )
     dtcgs = decorate_state!(tcgs; kwargs...)
     solve!(mp, dtcgs)

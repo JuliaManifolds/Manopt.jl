@@ -180,7 +180,7 @@ using Manopt: estimate_sectional_curvature
             k_max=Ω,
             stopping_criterion=StopAfterIteration(200),
             evaluation=InplaceEvaluation(),
-            sub_problem=convex_bundle_method_subsolver!,
+            sub_problem=(convex_bundle_method_subsolver!),
             return_state=true,
             debug=[],
         )

@@ -223,7 +223,7 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
         TpM::TangentSpace,
         slso::SymmetricLinearSystemObjective;
         X::T=rand(TpM),
-        r::T=-get_gradient(TpM, slso, X),
+        r::T=(-get_gradient(TpM, slso, X)),
         d::T=copy(TpM, r),
         Ar::T=get_hessian(TpM, slso, X, r),
         Ad::T=copy(TpM, Ar),
