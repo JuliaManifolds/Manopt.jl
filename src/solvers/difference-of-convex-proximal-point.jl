@@ -384,7 +384,7 @@ function difference_of_convex_proximal_point!(
     if isnothing(sub_problem)
         error(
             """
-            The `sub_problem` is not correctly initialized. Provie _one of_ the following setups
+            The `sub_problem` is not correctly initialized. Provide _one of_ the following setups
             * `prox_g` as a closed form solution,
             * `g=` and `grad_g=` keywords to automatically generate the sub cost and gradient,
             * provide individual `sub_cost=` and `sub_grad=` to automatically generate the sub objective,

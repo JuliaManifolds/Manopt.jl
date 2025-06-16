@@ -154,7 +154,7 @@ function proximal_gradient_method!(
     if isnothing(mpgo.proximal_map_h!!) && isnothing(cost_nonsmooth)
         error(
             """
-            The `sub_problem` is not correctly initialized. Provie _one of_ the following setups
+            The `sub_problem` is not correctly initialized. Provide _one of_ the following setups
             * `prox_nonsmooth` keyword argument as a closed form solution,
             * `cost_nonsmooth` keyword argument for the (possibly nonsmooth) part of the cost function whose proximal map is to be computed,
             """,

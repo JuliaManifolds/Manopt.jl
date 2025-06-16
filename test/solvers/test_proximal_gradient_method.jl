@@ -88,6 +88,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             subgradient_nonsmooth=∂h,
             stopping_criterion=StopAfterIteration(10),
         )
+        @test_throws ErrorException proximal_gradient_method(M, f, g, grad_g, p0;)
 
         # prox pass through with dummy objective deco
         dob = ManoptTestSuite.DummyDecoratedObjective(ob)
