@@ -3,8 +3,15 @@ using Manopt, Manifolds, Test, ManifoldDiff
 @testset "The Proximal Gradient Method" begin
     M = Hyperbolic(2)
     p = [0.0, 0.0, 1.0]
-    p0 = [0.0, 0.0, -1.0]
-    pgms = ProximalGradientMethodState(M; p=p0, stopping_criterion=StopAfterIteration(200))
+    p0 = [1.0, 0.0, √2]
+    pgms = ProximalGradientMethodState(
+        M;
+        p=p0,
+        stepsize=Manopt.ProximalGradientMethodBacktrackingStepsize(
+            M; initial_stepsize=1.0, strategy=:convex
+        ),
+        stopping_criterion=StopAfterIteration(200),
+    )
     @test get_iterate(pgms) == p0
 
     pgms.X = [1.0, 0.0, 0.0]
@@ -28,21 +35,22 @@ using Manopt, Manifolds, Test, ManifoldDiff
         Y = get_gradient(mp, p)
         get_gradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
+        # @test_throws Error 
         oR = solve!(mp, pgms)
-        xHat = get_solver_result(oR)
+        # xHat = get_solver_result(oR)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test get_cost_smooth(M, ob, p) == g(M, p)
         @test norm(M, p, get_gradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, 1.0, pgms.p)
         @test_throws MethodError get_proximal_map(mp, 1.0, pgms.p, 1)
-        pgms2 = proximal_gradient_method(
+        pgm = proximal_gradient_method(
             M,
             f,
             g,
             grad_g,
-            prox_h,
             p0;
+            prox_nonsmooth=prox_h,
             stopping_criterion=StopAfterIteration(10),
             return_state=true,
             debug=[],
@@ -50,17 +58,48 @@ using Manopt, Manifolds, Test, ManifoldDiff
                 initial_stepsize=1.0, strategy=:convex
             ),
         )
-        p_star2 = get_solver_result(pgms2)
+        p_star2 = get_solver_result(pgm)
         @test f(M, p_star2) <= f(M, p0)
-        set_iterate!(pgms2, M, p)
-        @test get_iterate(pgms2) == p
-        @test pgms2.last_stepsize ≤ 1.0
+        set_iterate!(pgm, M, p)
+        @test get_iterate(pgm) == p
+        @test pgm.last_stepsize ≤ 1.0
         st = Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; initial_stepsize=1.0, strategy=:convex, stop_when_stepsize_less=2.0
         )
         @test_logs (:warn,) st(mp, pgms, 1)
+        @test get_initial_stepsize(st) == 1.0
+        pr = prox_h(M, 1.0, p0)
+        @test get_proximal_map(M, ob, 1.0, p0) == pr
+        # Test subsolver with subgradient
+        ∂h(M, q) = ManifoldDiff.subgrad_distance(M, p, q, 1; atol=1e-8)
+        # pgnc = ProximalGradientNonsmoothCost(h, 0.1, p)
+        # pgng = ProximalGradientNonsmoothSubgradient(∂h, 0.1, p)
+        # sub_ob = ManifoldSubgradientObjective(pgnc, pgng)
+        # sub_problem = DefaultManoptProblem(M, sub_ob)
+        # sub_state = SubGradientMethodState(
+        #     M; 
+        #     p=p0, 
+        #     stepsize=Manopt.DecreasingStepsize(
+        #         M; 
+        #         exponent=1, factor=1, subtrahend=0, length=1, shift=0, type=:absolute
+        #     ),
+        #     stopping_criterion=StopWhenAny(
+        #         StopAfterIteration(10),
+        #         StopWhenSubgradientNormLess(1e-8),
+        #     ),
+        # )
+        sub_pgm = proximal_gradient_method(
+            M,
+            f,
+            g,
+            grad_g,
+            p0;
+            cost_nonsmooth=h,
+            subgradient_nonsmooth=∂h,
+            stopping_criterion=StopAfterIteration(10),
+        )
     end
-    @testset "Mutating Subgradient" begin
+    @testset "Inplace Evaluation" begin
         g(M, q) = distance(M, q, p)^2
         function grad_g!(M, X, q)
             X .= -2 * log(M, q, p)
@@ -69,10 +108,10 @@ using Manopt, Manifolds, Test, ManifoldDiff
         h(M, q) = distance(M, q, p)
         prox_h!(M, a, λ, q) = ManifoldDiff.prox_distance!(M, a, λ, p, q, 1)
         f(M, q) = g(M, q) + h(M, q)
-        bmom = ManifoldProximalGradientObjective(
+        ieob = ManifoldProximalGradientObjective(
             f, g, grad_g!, prox_h!; evaluation=InplaceEvaluation()
         )
-        mp = DefaultManoptProblem(M, bmom)
+        mp = DefaultManoptProblem(M, ieob)
         X = zero_vector(M, p)
         Y = get_gradient(mp, p)
         get_gradient!(mp, X, p)
@@ -89,8 +128,11 @@ using Manopt, Manifolds, Test, ManifoldDiff
             f,
             g,
             grad_g!,
-            prox_h!,
             copy(p0);
+            prox_nonsmooth=prox_h!,
+            stepsize=ProximalGradientMethodBacktracking(;
+                initial_stepsize=1.0, strategy=:convex
+            ),
             stopping_criterion=StopAfterIteration(200),
             evaluation=InplaceEvaluation(),
             return_state=true,
@@ -98,6 +140,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         )
         p_star2 = get_solver_result(s2)
         @test f(M, p_star2) <= f(M, p0)
+        a = copy(p0)
+        prox_h!(M, a, 1.0, p)
+        @test get_proximal_map(M, ieob, 1.0, p) == a
     end
     @testset "A mean run" begin
         M = Sphere(2)
@@ -114,7 +159,9 @@ using Manopt, Manifolds, Test, ManifoldDiff
         h(M, p) = 0
         prox_h(M, λ, p) = p
         p0 = p1
-        pbm_s = proximal_gradient_method(M, f, g, grad_g, prox_h; return_state=true)
+        pbm_s = proximal_gradient_method(
+            M, f, g, grad_g; prox_nonsmooth=prox_h, return_state=true
+        )
         @test startswith(
             repr(pbm_s), "# Solver state for `Manopt.jl`s Proximal Gradient Method\n"
         )
@@ -122,10 +169,6 @@ using Manopt, Manifolds, Test, ManifoldDiff
         # with default parameters for both median and proximal gradient, this is not very precise
         m = mean(M, data)
         @test distance(M, q, m) < 2 * 1e-2
-        # test access functions
-        # @test get_iterate(pbm_s) == q
-        # @test norm(M, q, get_gradient(pbm_s)) < 1e-4
-        # Test gradient size and in-place
         p_size = copy(p0)
         function grad_g!(M, X, p)
             X = sum(
@@ -138,13 +181,15 @@ using Manopt, Manifolds, Test, ManifoldDiff
             copyto!(M, a, p)
             return a
         end
+        # Cover acceleration
         proximal_gradient_method!(
             M,
             f,
             g,
             grad_g!,
-            prox_h!,
             p_size;
+            prox_nonsmooth=prox_h!,
+            acceleration=Manopt.ProximalGradientMethodAcceleration(M; p=p_size),
             evaluation=InplaceEvaluation(),
             stopping_criterion=StopAfterIteration(200),
         )

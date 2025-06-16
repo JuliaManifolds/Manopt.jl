@@ -434,6 +434,7 @@ export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective
+export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate

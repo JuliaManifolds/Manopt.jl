@@ -34,13 +34,13 @@ $(_var(:Argument, :M; type=true))
 $(_var(:Argument, :f; add="total cost function `f = g + h`"))
 * `g`:              the smooth part of the cost function
 * `grad_g`:           a gradient `(M,p) -> X` or `(M, X, p) -> X` of the smooth part ``g`` of the problem
-* `prox_h`:           a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the nonsmoooth part ``h`` of ``f``
-$(_var(:Argument, :p))
 
 # Keyword Arguments
 
 * `acceleration=(p, s, k) -> (copyto!(get_manifold(M), s.a, s.p); s)`: a function `(problem, state, k) -> state` to compute an acceleration, that is performed before the gradient step - the default is to copy the current point to the acceleration point, i.e. no acceleration is performed
 $(_var(:Keyword, :evaluation))
+* `prox_nonsmooth`:          a proximal map `(M,λ,p) -> q` or `(M, q, λ, p) -> q` for the (possibly) nonsmoooth part ``h`` of ``f``
+$(_var(:Argument, :p))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ProximalGradientMethodState)`")) that by default uses a [`ProximalGradientMethodBacktracking`](@ref).
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(100)`"))
@@ -59,12 +59,14 @@ function proximal_gradient_method(
     f,
     g,
     grad_g,
-    prox_h,
     p=rand(M);
+    prox_nonsmooth=nothing,
     evaluation=AllocatingEvaluation(),
     kwargs...,
 )
-    mpgo = ManifoldProximalGradientObjective(f, g, grad_g, prox_h; evaluation=evaluation)
+    mpgo = ManifoldProximalGradientObjective(
+        f, g, grad_g, prox_nonsmooth; evaluation=evaluation
+    )
     return proximal_gradient_method(M, mpgo, p; evaluation=evaluation, kwargs...)
 end
 
@@ -81,12 +83,14 @@ function proximal_gradient_method!(
     f,
     g,
     grad_g,
-    prox_h,
     p;
+    prox_nonsmooth=nothing,
     evaluation=AllocatingEvaluation(),
     kwargs...,
 )
-    mpgo = ManifoldProximalGradientObjective(f, g, grad_g, prox_h; evaluation=evaluation)
+    mpgo = ManifoldProximalGradientObjective(
+        f, g, grad_g, prox_nonsmooth; evaluation=evaluation
+    )
     return proximal_gradient_method!(M, mpgo, p; evaluation=evaluation, kwargs...)
 end
 
@@ -98,22 +102,64 @@ function proximal_gradient_method!(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, ProximalGradientMethodState
     ),
+    cost_nonsmooth::Union{Nothing,Function}=nothing,
+    subgradient_nonsmooth::Union{Nothing,Function}=nothing,
     stopping_criterion::S=StopWhenGradientMappingNormLess(1e-7) |
                           StopAfterIteration(5000) |
                           StopWhenChangeLess(M, 1e-9),
     X=zero_vector(M, p),
     retraction_method=default_retraction_method(M, typeof(p)),
     inverse_retraction_method=default_inverse_retraction_method(M, typeof(p)),
-    sub_problem=nothing,
-    sub_state=AllocatingEvaluation(),
+    sub_problem=if isnothing(mpgo.proximal_map_h!!)
+        DefaultManoptProblem(
+            M,
+            ManifoldSubgradientObjective(
+                ProximalGradientNonsmoothCost(cost_nonsmooth, 0.1, p),
+                ProximalGradientNonsmoothSubgradient(subgradient_nonsmooth, 0.1, p),
+            ),
+        )
+    else
+        nothing
+    end,
+    sub_state=if !isnothing(mpgo.proximal_map_h!!)
+        # AllocatingEvaluation()
+        nothing
+    else
+        SubGradientMethodState(
+            M;
+            p=p,
+            stepsize=Manopt.DecreasingStepsize(
+                M; exponent=1, factor=1, subtrahend=0, length=1, shift=0, type=:absolute
+            ),
+            stopping_criterion=StopAfterIteration(2500) | StopWhenSubgradientNormLess(1e-8),
+        )
+    end,
+    # ::Union{AbstractEvaluationType,AbstractManoptSolverState,Nothing}=if isnothing(
+    #     mpgo.proximal_map_h!!
+    # )
+    #     maybe_wrap_evaluation_type(evaluation)
+    # else
+    #     nothing
+    # end,
     kwargs...,
 ) where {
     O<:Union{ManifoldProximalGradientObjective,AbstractDecoratedManifoldObjective},
     S<:StoppingCriterion,
 }
+    # Check whether either the right defaults were provided or a `sub_problem`.
+    if isnothing(mpgo.proximal_map_h!!) && isnothing(cost_nonsmooth)
+        error(
+            """
+            The `sub_problem` is not correctly initialized. Provie _one of_ the following setups
+            * `prox_nonsmooth` keyword argument as a closed form solution,
+            * `cost_nonsmooth` keyword argument for the (possibly nonsmooth) part of the cost function whose proximal map is to be computed,
+            """,
+        )
+    end
     dmpgo = decorate_objective!(M, mpgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmpgo)
     pgms = ProximalGradientMethodState(
@@ -181,7 +227,11 @@ function _pgm_proximal_step(
 ) where {P,T}
     M = get_manifold(amp)
     # set lambda
-    set_parameter!(pgms.sub_problem, :λ, λ)
+    set_parameter!(pgms.sub_problem, :Objective, :Cost, :λ, λ)
+    set_parameter!(pgms.sub_problem, :Objective, :SubGradient, :λ, λ)
+    # set the proximity point of the subproblem
+    set_parameter!(pgms.sub_problem, :Objective, :Cost, :proximity_point, pgms.a)
+    set_parameter!(pgms.sub_problem, :Objective, :SubGradient, :proximity_point, pgms.a)
     # set start value to a
     set_iterate!(pgms.sub_state, M, copy(M, pgms.a))
     solve!(pgms.sub_problem, pgms.sub_state)

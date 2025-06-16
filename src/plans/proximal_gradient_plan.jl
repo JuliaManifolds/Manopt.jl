@@ -14,7 +14,7 @@ as well as ``\operatorname{grad} g`` and ``\operatorname{prox}_{λ} h``.
 # Fields
 
 * `cost`: the overall cost ``f = g + h``
-* `cost_g`: the smooth cost component ``g``
+* `cost_smooth`: the smooth cost component ``g``
 * `gradient_g!!`: the gradient ``\operatorname{grad} g``
 * `proximal_map_h!!`: the proximal map ``\operatorname{prox}_{λ} h``
 
@@ -33,7 +33,7 @@ Generate the proximal gradient objective given the total cost `f = g + h`, smoot
 struct ManifoldProximalGradientObjective{E<:AbstractEvaluationType,TC,TG,TGG,TP} <:
        AbstractManifoldCostObjective{E,TC}
     cost::TC # f = g + h
-    cost_g::TG # smooth part
+    cost_smooth::TG # smooth part
     gradient_g!!::TGG
     proximal_map_h!!::TP
     function ManifoldProximalGradientObjective(
@@ -85,7 +85,7 @@ Helper function to extract the smooth part `g` of a proximal gradient objective 
 function get_cost_smooth(
     M::AbstractManifold, objective::ManifoldProximalGradientObjective, p
 )
-    return objective.cost_g(M, p)
+    return objective.cost_smooth(M, p)
 end
 
 @doc raw"""
@@ -126,6 +126,87 @@ function get_proximal_map!(
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
+# 
+# Nonsmooth cost, for subproblem formulation
+@doc raw"""
+    ProximalGradientNonsmoothCost{F, R, P}
+
+Stores the nonsmooth part of the proximal gradient objective and the stepsize parameter ``λ ∈ ℝ``.
+
+This struct is also a functor `(M, p) -> v` that can be used as a cost function within a solver, primarily for solving the proximal map subproblem formulation in the proximal gradient method.
+
+## Fields
+* `cost::F` - the nonsmooth part of the proximal gradient objective, i.e. the part of the objective whose proximal map is sought
+* `λ::R` - the stepsize parameter for the proximal map
+* `proximity_point::P` - point where the proximal map is evaluated
+
+# Constructor
+    ProximalGradientNonsmoothCost(cost, λ, proximity_point)
+"""
+mutable struct ProximalGradientNonsmoothCost{F,R,P}# where {F,R,P}# <: AbstractManifoldCostObjective{R,P}
+    cost::F
+    λ::R
+    proximity_point::P
+end
+function set_parameter!(pgnc::ProximalGradientNonsmoothCost, ::Val{:λ}, λ)
+    pgnc.λ = λ
+    return pgnc
+end
+get_parameter(pgnc::ProximalGradientNonsmoothCost, ::Val{:λ}) = pgnc.λ
+function set_parameter!(pgnc::ProximalGradientNonsmoothCost, ::Val{:proximity_point}, p)
+    pgnc.proximity_point = p
+    return pgnc
+end
+function get_parameter(pgnc::ProximalGradientNonsmoothCost, ::Val{:proximity_point})
+    return pgnc.proximity_point
+end
+
+function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, p)
+    return pgnc.cost(M, p) + (1 / 2 * pgnc.λ) * distance(M, p, pgnc.proximity_point)^2
+end
+
+@doc raw"""
+    ProximalGradientNonsmoothSubgradient{F, R, P}
+Stores the nonsmooth part of the proximal gradient objective and the stepsize parameter ``λ ∈ ℝ``.
+
+This struct is also a functor in both formats
+    * `(M, p) -> X` to compute the gradient in allocating fashion.
+    * `(M, X, p)` to compute the gradient in in-place fashion.
+This is primarily used for computing the subgradient of the proximal map in the proximal gradient method.
+
+## Fields
+
+* `X::F` - the subgradient of the nonsmooth part of the total objective, i.e. the part of the objective whose proximal map is sought
+* `λ::R` - the stepsize parameter for the proximal map
+* `proximity_point::P` - point where the proximal map is evaluated
+
+# Constructor
+    ProximalGradientNonsmoothSubgradient(cost, λ, proximity_point)
+"""
+mutable struct ProximalGradientNonsmoothSubgradient{F,R,P}# where {F,R,P}#<: AbstractManifoldCostObjective{R,P}
+    X::F
+    λ::R
+    proximity_point::P
+end
+function set_parameter!(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:λ}, λ)
+    pgns.λ = λ
+    return pgns
+end
+get_parameter(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:λ}) = pgns.λ
+function set_parameter!(
+    pgns::ProximalGradientNonsmoothSubgradient, ::Val{:proximity_point}, p
+)
+    pgns.proximity_point = p
+    return pgns
+end
+function get_parameter(pgns::ProximalGradientNonsmoothSubgradient, ::Val{:proximity_point})
+    return pgns.proximity_point
+end
+# Default, compute the subgradient of the proximal map given the subgradient of the nonsmooth part X
+function (pgng::ProximalGradientNonsmoothSubgradient)(M::AbstractManifold, p)
+    return pgng.X(M, p) - 1 / pgng.λ * log(M, p, pgng.proximity_point)
+end
+
 #
 # Method State
 @doc """
@@ -174,7 +255,7 @@ mutable struct ProximalGradientMethodState{
     P,
     T,
     Pr<:Union{<:AbstractManoptProblem,F,Nothing} where {F},
-    St<:AbstractManoptSolverState,
+    St<:Union{<:AbstractManoptSolverState,Nothing},
     A,
     S<:StoppingCriterion,
     TStepsize<:Stepsize,
@@ -211,14 +292,14 @@ function ProximalGradientMethodState(
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     inverse_retraction_method::IRM=default_inverse_retraction_method(M, typeof(p)),
     sub_problem::Pr=nothing,
-    sub_state::St=AllocatingEvaluation(),
+    sub_state::St=nothing,#AllocatingEvaluation(),
 ) where {
     P,
     T,
     S<:StoppingCriterion,
     A,
     Pr<:Union{<:AbstractManoptProblem,F,Nothing} where {F},
-    St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType},
+    St<:Union{<:AbstractManoptSolverState,<:AbstractEvaluationType,Nothing},
     RM<:AbstractRetractionMethod,
     IRM<:AbstractInverseRetractionMethod,
     TS<:Stepsize,
@@ -298,7 +379,7 @@ A functor for backtracking line search in proximal gradient methods.
 ## Keyword arguments
 
 * `initial_stepsize=1.0`: initial stepsize to try
-* `stop_when_stepsize_less=1e-4`: smallest stepsize when to stop (the last one before is taken)
+* `stop_when_stepsize_less=1e-8`: smallest stepsize when to stop (the last one before is taken)
 * `sufficient_decrease=0.5`: sufficient decrease parameter
 * `contraction_factor=0.5`: step size reduction factor
 * `strategy=:nonconvex`: backtracking strategy, either `:convex` or `:nonconvex`
@@ -318,7 +399,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P,T} <: Stepsize
         sufficient_decrease::T=0.5,
         contraction_factor::T=0.5,
         strategy::Symbol=:nonconvex,
-        stop_when_stepsize_less::T=1e-4,
+        stop_when_stepsize_less::T=1e-8,
     ) where {T}
         0 < sufficient_decrease < 1 ||
             throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
@@ -455,7 +536,7 @@ function default_stepsize(M::AbstractManifold, ::Type{<:ProximalGradientMethodSt
 end
 
 @doc """
-    ProxGradAcceleration{P, T, F}
+    ProximalGradientMethodAcceleration{P, T, F}
 
 Compute an acceleration step
 
@@ -479,7 +560,7 @@ The retraction and its inverse are taken from the state.
 
 # Constructor
 
-    ProxGradAcceleration(M::AbstractManifold; kwargs...)
+    ProximalGradientMethodAcceleration(M::AbstractManifold; kwargs...)
 
 Generate the state for a given manifold `M` with initial iterate `p`.
 
@@ -494,24 +575,24 @@ $(_var(:Argument, :M; type=true))
 * `p` - initial point
 * `X` - initial tangent vector
 """
-mutable struct ProxGradAcceleration{P,T,F,ITR}
+mutable struct ProximalGradientMethodAcceleration{P,T,F,ITR}
     β::F
     inverse_retraction_method::ITR
     p::P
     X::T
 end
 
-function ProxGradAcceleration(
+function ProximalGradientMethodAcceleration(
     M::AbstractManifold;
     p::P=rand(M),
     X::T=zero_vector(M, p),
     β::F=(k) -> (k - 1) / (k + 2),
     inverse_retraction_method::I=default_inverse_retraction_method(M, typeof(p)),
 ) where {P,T,F,I<:AbstractInverseRetractionMethod}
-    return ProxGradAcceleration{P,T,F,I}(β, inverse_retraction_method, p, X)
+    return ProximalGradientMethodAcceleration{P,T,F,I}(β, inverse_retraction_method, p, X)
 end
 
-function (pga::ProxGradAcceleration)(
+function (pga::ProximalGradientMethodAcceleration)(
     amp::AbstractManoptProblem, pgms::ProximalGradientMethodState, k
 )
     # compute the step

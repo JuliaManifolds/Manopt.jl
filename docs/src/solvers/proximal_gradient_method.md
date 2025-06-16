@@ -6,7 +6,7 @@ proximal_gradient_method!
 ```
 
 ```@docs
-Manopt.ProxGradAcceleration
+Manopt.ProximalGradientMethodAcceleration
 ```
 
 ## State
