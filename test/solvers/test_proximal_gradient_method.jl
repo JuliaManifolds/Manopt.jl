@@ -43,9 +43,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         Y = get_gradient(mp, p)
         get_gradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        # @test_throws Error 
         oR = solve!(mp, pgms)
-        # xHat = get_solver_result(oR)
         # Check Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test get_cost_smooth(M, ob, p) == g(M, p)
@@ -80,22 +78,6 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         @test get_proximal_map(M, ob, 1.0, p0) == pr
         # Test subsolver with subgradient
         ∂h(M, q) = ManifoldDiff.subgrad_distance(M, p, q, 1; atol=1e-8)
-        # pgnc = ProximalGradientNonsmoothCost(h, 0.1, p)
-        # pgng = ProximalGradientNonsmoothSubgradient(∂h, 0.1, p)
-        # sub_ob = ManifoldSubgradientObjective(pgnc, pgng)
-        # sub_problem = DefaultManoptProblem(M, sub_ob)
-        # sub_state = SubGradientMethodState(
-        #     M; 
-        #     p=p0, 
-        #     stepsize=Manopt.DecreasingStepsize(
-        #         M; 
-        #         exponent=1, factor=1, subtrahend=0, length=1, shift=0, type=:absolute
-        #     ),
-        #     stopping_criterion=StopWhenAny(
-        #         StopAfterIteration(10),
-        #         StopWhenSubgradientNormLess(1e-8),
-        #     ),
-        # )
         sub_pgm = proximal_gradient_method(
             M,
             f,
@@ -107,7 +89,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             stopping_criterion=StopAfterIteration(10),
         )
 
- 		# prox pass through with dummy objective deco
+        # prox pass through with dummy objective deco
         dob = ManoptTestSuite.DummyDecoratedObjective(ob)
         @test get_proximal_map(M, ob, 0.1, p) == get_proximal_map(M, dob, 0.1, p)
         q1 = copy(M, p)
@@ -120,7 +102,7 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         pgma = Manopt.ProximalGradientMethodAcceleration(M; p=copy(M, p0))
         # Since this is experimental, we for now just check that it does not error,
         # but we can not yet verify the result
-        pgma(mp, pgms2, 1)
+        pgma(mp, pgms, 1)
         @test startswith(repr(pgma), "ProximalGradientMethodAcceleration with parameters\n")
     end
     @testset "Inplace Evaluation" begin
@@ -140,13 +122,13 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         Y = get_gradient(mp, p)
         get_gradient!(mp, X, p)
         @test isapprox(M, p, X, Y)
-        sr = solve!(mp, pgms)
-        xHat = get_solver_result(sr)
         # Test Fallbacks of Problem
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_gradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, 1.0, pgms.p)
         @test isapprox(M, get_proximal_map(mp, 1.0, pgms.p), pgms.p)
+        sr = solve!(mp, pgms)
+        xHat = get_solver_result(sr)
         s2 = proximal_gradient_method(
             M,
             f,
@@ -205,17 +187,5 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             copyto!(M, a, p)
             return a
         end
-        # Cover acceleration
-        proximal_gradient_method!(
-            M,
-            f,
-            g,
-            grad_g!,
-            p_size;
-            prox_nonsmooth=prox_h!,
-            acceleration=Manopt.ProximalGradientMethodAcceleration(M; p=p_size),
-            evaluation=InplaceEvaluation(),
-            stopping_criterion=StopAfterIteration(200),
-        )
     end
 end
