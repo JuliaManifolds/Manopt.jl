@@ -1,4 +1,7 @@
-using Manopt, Manifolds, Test, ManifoldDiff
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
 
 @testset "The Proximal Gradient Method" begin
     M = Hyperbolic(2)
@@ -22,6 +25,11 @@ using Manopt, Manifolds, Test, ManifoldDiff
         # Trigger manually
         sc1.at_iteration = 2
         @test length(get_reason(sc1)) > 0
+    end
+    @testset "Proximal Gradient Backtracking" begin
+        pgb = Manopt.ProximalGradientMethodBacktrackingStepsize(M)
+        @test get_initial_stepsize(pgb) == 1.0
+        @test startswith(repr(pgb), "ProximalGradientMethodBacktrackingStepsize(;\n")
     end
     @testset "Allocating Evaluation" begin
         g(M, q) = distance(M, q, p)^2
@@ -98,6 +106,22 @@ using Manopt, Manifolds, Test, ManifoldDiff
             subgradient_nonsmooth=∂h,
             stopping_criterion=StopAfterIteration(10),
         )
+
+ 		# prox pass through with dummy objective deco
+        dob = ManoptTestSuite.DummyDecoratedObjective(ob)
+        @test get_proximal_map(M, ob, 0.1, p) == get_proximal_map(M, dob, 0.1, p)
+        q1 = copy(M, p)
+        q2 = copy(M, p)
+        get_proximal_map!(M, q1, ob, 0.1, p)
+        get_proximal_map!(M, q2, dob, 0.1, p)
+        @test q1 == q2
+
+        # Acceleration
+        pgma = Manopt.ProximalGradientMethodAcceleration(M; p=copy(M, p0))
+        # Since this is experimental, we for now just check that it does not error,
+        # but we can not yet verify the result
+        pgma(mp, pgms2, 1)
+        @test startswith(repr(pgma), "ProximalGradientMethodAcceleration with parameters\n")
     end
     @testset "Inplace Evaluation" begin
         g(M, q) = distance(M, q, p)^2
@@ -122,7 +146,7 @@ using Manopt, Manifolds, Test, ManifoldDiff
         @test get_cost(mp, p) == 0.0
         @test norm(M, p, get_gradient(mp, p)) == 0
         @test_throws MethodError get_gradient(mp, 1.0, pgms.p)
-        @test_throws MethodError get_proximal_map(mp, 1.0, pgms.p, 1)
+        @test isapprox(M, get_proximal_map(mp, 1.0, pgms.p), pgms.p)
         s2 = proximal_gradient_method(
             M,
             f,
