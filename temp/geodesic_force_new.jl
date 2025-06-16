@@ -49,13 +49,13 @@ For our example we set
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
-	N=50
+	N=25
 
 	S = Manifolds.Sphere(2)
 	power = PowerManifold(S, NestedPowerRepresentation(), N) # power manifold of S
 	
 	st = 0.5
-	halt = pi - 0.5
+	halt = pi/2
 	h = (halt-st)/(N+1)
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1] # equidistant discrete time points
 	
@@ -99,12 +99,14 @@ is the euclidean derivative of $F$.
 
 """
 
-# ╔═╡ bc449c2d-1f23-4c72-86ab-a46acbf64129
-"""
-Such a structure has to be filled for two purposes:
+# ╔═╡ 4d22e6ed-068d-4127-bf50-5b4a0f6bd9d1
+md"""
+We define a structure that has to be filled for two purposes:
 * Definition of an integrand and its derivative
 * Definition of a vector transport and its derivative
 """
+
+# ╔═╡ bc449c2d-1f23-4c72-86ab-a46acbf64129
 mutable struct DifferentiableMapping{M<:AbstractManifold,F1<:Function,F2<:Function,T}
 	domain::M
 	value::F1
@@ -115,25 +117,32 @@ end
 
 # ╔═╡ 4d36f402-efd1-4e25-83d3-b51ba1684867
 md"""
+The following routines define a vector transport and its euclidean derivative. As seen above, they are needed to derive a covariant derivative of $F$.
+
 As a vector transport we use the (pointwise) orthogonal projection onto the tangent spaces, i.e. for $p, q \in \mathbb S^2$ and $X \in T_p\mathbb S^2$ we set 
 
-$\overset{\rightarrow}{V}_{p}(q)X = (I-q\cdot q^T)X \in T_q\mathbb S^2$
+$\overset{\rightarrow}{V}_{p}(q)X = (I-q\cdot q^T)X \in T_q\mathbb S^2.$
+
+The derivative of the vector transport is then given by 
+
+$\left(\frac{d}{dq}\overset{\rightarrow}{V}_{p}(q)\big\vert_{q=p}\delta q\right)X = \left( - \delta q\cdot p^T - p\cdot \delta q^T\right)\cdot X.$
+
 """
 
 # ╔═╡ 50a51e47-b6b1-4e43-b4b9-aad23f6ec390
-function transport_by_proj(S, p, X, q)
-	return X - q*(q'*X)
-end
+begin 
+	
+	function transport_by_proj(S, p, X, q)
+		return X - q*(q'*X)
+	end
 
-# ╔═╡ 65daa01e-a493-4872-8d45-9460a12753ac
-md"""
-The derivative of the vector transport is then given by 
-"""
+	function transport_by_proj_prime(S, p, X, dq)
+		return (- dq*p' - p*dq')*X
+	end
 
-# ╔═╡ 9cdd4289-c49d-4733-8487-f471e38fc402
-function transport_by_proj_prime(S, p, X, dq)
-	return (- dq*p' - p*dq')*X
-end
+	transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
+	
+end;
 
 # ╔═╡ 8a2fdd86-315d-44e1-90c7-7347304b6bc7
 md"""
@@ -154,11 +163,6 @@ function w(p, c)
 		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
 	end
 
-# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
-function F_at(Integrand, y, ydot, B, Bdot)
-	  return ydot'*Bdot+w(y,Integrand.scaling)'*B
-end
-
 # ╔═╡ e6fdf785-808d-4203-a2d2-be9696b05689
 md"""
 Its derivative is given by 
@@ -170,15 +174,38 @@ function w_prime(p, c)
 		return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
 end
 
-# ╔═╡ ac04e6ec-61c2-475f-bb2f-83755c04bd72
-function F_prime_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
-	return B1dot'*B2dot+(w_prime(y,Integrand.scaling)*B1)'*B2
+# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
+begin 
+
+	function F_at(Integrand, y, ydot, B, Bdot)
+	  	return ydot'*Bdot+w(y,Integrand.scaling)'*B
+	end
+
+	function F_prime_at(Integrand,y,ydot,B1,B1dot,B2,B2dot)
+		return B1dot'*B2dot+(w_prime(y,Integrand.scaling)*B1)'*B2
+	end
+
+	integrand=DifferentiableMapping(S,F_at,F_prime_at,5.1) 
+
+end;
+
+# ╔═╡ 3d1d4b01-e96e-43fc-8e6b-9f7563d0dc59
+md"""
+For comparison we define the identity vector transport to derive the Newton matrix without using the connection term.
+"""
+
+# ╔═╡ fca20ca7-2e12-49dd-9e89-7ab76e34950c
+begin
+function zerotrans_prime(S, p, X, dq)
+	return 0.0*X
 end
 
-# ╔═╡ 684508bd-4525-418b-b89a-85d56c01b188
-begin
-integrand=DifferentiableMapping(S,F_at,F_prime_at,5.0) 
-transport=DifferentiableMapping(S,transport_by_proj,transport_by_proj_prime,nothing)
+function identitytrans(S, p, X, q)
+	return X
+end
+
+idtransport=DifferentiableMapping(S,identitytrans,zerotrans_prime,nothing)
+
 end;
 
 # ╔═╡ a0b939d5-40e7-4da4-baf1-8a297bb52fb7
@@ -255,13 +282,28 @@ begin
 	st_res = vectorbundle_newton(power, TangentBundle(power), NE, discretized_y; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-	stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
+	#stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
 	#stepsize=ConstantLength(power, 1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
 	record=[:Iterate, :Change],
 	return_state=true
 )
 	# Affin kovariante Schrittweite als Stepsize o.Ä., dabei dokumentieren, dass man dann eine methode schreiben muss, die die rechte seite für den vereinfachten Newton zurückgibt und die die signatur wie oben haben soll. 
+end
+
+# ╔═╡ 155d3a4d-7c7e-42a7-8d0d-77f1642546c1
+begin
+	NE_without_connection = NewtonEquation(power, integrand, idtransport, Omega)
+		
+	st_res_without_connection = vectorbundle_newton(power, TangentBundle(power), NE_without_connection, discretized_y; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
+	retraction_method=ProjectionRetraction(),
+	#stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
+	#stepsize=ConstantLength(power, 1.0),
+	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
+	record=[:Iterate, :Change],
+	return_state=true
+)
 end
 
 # ╔═╡ 87af653d-901e-4f81-a41c-ddc613d04909
@@ -286,10 +328,33 @@ begin
 	
     row, col = fldmod1(1, 2)
 	
-	Axis(f[row, col], yscale = log10, title = string("Semilogarithmic Plot of the norms of the Newton direction"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
+	Axis(f[row, col], yscale = log10, title = string("Norms of the Newton directions (semilogarithmic)"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
     scatterlines!(change[1:end], color = :blue)
 	f
 end
+
+# ╔═╡ cc773c9a-982f-4b20-ab03-b6a7a65bb460
+md"""
+For Newton's method without using the connection term, we only obtain linear convergence:
+"""
+
+# ╔═╡ 0d0c62f3-55c7-4401-bce4-8312f986166b
+begin
+	change_without_connection = get_record(st_res_without_connection, :Iteration, :Change)[2:end]
+
+	f2 = Figure(;)
+	
+    row2, col2 = fldmod1(1, 2)
+	
+	Axis(f2[row2, col2], yscale = log10, title = string("Norms of the Newton directions computed without connection term"), xminorgridvisible = true, xticks = (1:length(change_without_connection)), xlabel = "Iteration", ylabel = "‖δx‖")
+    scatterlines!(change_without_connection[1:end], color = :blue)
+	f2
+end
+
+# ╔═╡ 98e0dd3b-3ec2-4dd0-8a9a-4d6db46e52e9
+begin
+	p_res_without_connection = get_solver_result(st_res_without_connection)
+end;
 
 # ╔═╡ 290dbe94-4686-4629-9f93-f01353aac404
 md"""
@@ -321,6 +386,7 @@ fig, ax, plt = meshscatter(
 
 geodesic_start = [y0, discretized_y ...,yT]
 geodesic_final = [y0, p_res ..., yT]
+#geodesic_final = [y0, p_res_without_connection ..., yT]
 ax.show_axis = false
 wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
     π1(x) = 1.02*x[1]
@@ -350,27 +416,30 @@ end
 # ╠═29043ca3-afe0-4280-a76a-7c160a117fdf
 # ╠═5c0980c5-284e-4406-bab8-9b9aff9391ba
 # ╟─e00854e0-95ef-4ef5-be4c-ea19f014c8b7
+# ╟─4d22e6ed-068d-4127-bf50-5b4a0f6bd9d1
 # ╠═bc449c2d-1f23-4c72-86ab-a46acbf64129
 # ╟─4d36f402-efd1-4e25-83d3-b51ba1684867
 # ╠═50a51e47-b6b1-4e43-b4b9-aad23f6ec390
-# ╟─65daa01e-a493-4872-8d45-9460a12753ac
-# ╠═9cdd4289-c49d-4733-8487-f471e38fc402
 # ╟─8a2fdd86-315d-44e1-90c7-7347304b6bc7
 # ╠═56ae7f53-061e-4414-90ad-85c7a12d51e2
-# ╠═ac04e6ec-61c2-475f-bb2f-83755c04bd72
-# ╠═684508bd-4525-418b-b89a-85d56c01b188
 # ╟─ea1f433b-b1c2-44f0-b8cf-45992946704a
 # ╠═808db8aa-64f7-4b36-8c6c-929ba4fa22db
 # ╟─e6fdf785-808d-4203-a2d2-be9696b05689
 # ╠═288b9637-0500-40b8-a1f9-90cb9591402b
+# ╟─3d1d4b01-e96e-43fc-8e6b-9f7563d0dc59
+# ╠═fca20ca7-2e12-49dd-9e89-7ab76e34950c
 # ╟─a0b939d5-40e7-4da4-baf1-8a297bb52fb7
 # ╠═6ce088e9-1aa0-4d44-98a3-2ab8b8ba5422
 # ╟─a3179c3a-cb5a-4fcb-bbdc-75ea693616d2
 # ╠═f78557e2-363e-4803-97d7-b57df115a619
 # ╠═9a2ebb9a-74c7-4efd-b042-23263bbf4235
+# ╠═155d3a4d-7c7e-42a7-8d0d-77f1642546c1
 # ╟─87af653d-901e-4f81-a41c-ddc613d04909
 # ╠═161070b9-7953-4260-ab3b-f0f0bf8410ac
 # ╟─4c939ec9-0e1b-4194-8f22-d2639172922c
 # ╠═a08b8946-5adb-43c7-98aa-113875c954b1
+# ╟─cc773c9a-982f-4b20-ab03-b6a7a65bb460
+# ╠═0d0c62f3-55c7-4401-bce4-8312f986166b
+# ╠═98e0dd3b-3ec2-4dd0-8a9a-4d6db46e52e9
 # ╟─290dbe94-4686-4629-9f93-f01353aac404
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
