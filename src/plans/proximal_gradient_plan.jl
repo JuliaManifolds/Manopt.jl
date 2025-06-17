@@ -369,7 +369,7 @@ A functor for backtracking line search in proximal gradient methods.
 * `initial_stepsize::T` - initial step size guess
 * `sufficient_decrease::T` - sufficient decrease parameter (default: 0.5)
 * `contraction_factor::T` - step size reduction factor (default: 0.5)
-* `strategy::Symbol` - `:nonconvex` or `:convex` (default: `:convex`)
+* `strategy::Symbol` - `:nonconvex` or `:convex` (default: `:nonconvex`)
 * `candidate_point::P` - a working point used during backtracking
 * `last_stepsize::T` - the last computed stepsize
 
@@ -463,16 +463,15 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
     objective = get_objective(mp)
 
     # Temporary state for backtracking that doesn't affect the main state
-    pgm_temp =
-        pgm_temp = ProximalGradientMethodState(
-            M;
-            p=copy(M, p),  # Start from current accelerated point
-            X=zero_vector(M, p),
-            sub_problem=st.sub_problem,
-            sub_state=st.sub_state,
-            retraction_method=st.retraction_method,
-            inverse_retraction_method=st.inverse_retraction_method,
-        )
+    pgm_temp = ProximalGradientMethodState(
+        M;
+        p=copy(M, p),  # Start from current (possibly) accelerated point
+        X=zero_vector(M, p),
+        sub_problem=st.sub_problem,
+        sub_state=st.sub_state,
+        retraction_method=st.retraction_method,
+        inverse_retraction_method=st.inverse_retraction_method,
+    )
 
     while λ > s.stop_when_stepsize_less
         # Perform gradient step with current λ
@@ -480,7 +479,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
         # Perform proximal step with current λ
         _pgm_proximal_step(mp, pgm_temp, λ)
-        candidate_point = pgm_temp.p
+        candidate_point = copy(M, pgm_temp.p)
 
         # Compute log_p(candidate_point) and its squared norm for the conditions
         log_p_q = inverse_retract(M, p, candidate_point, st.inverse_retraction_method)
@@ -493,7 +492,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
                 s.last_stepsize = λ
                 return λ
             end
-        else
+        elseif s.strategy === :convex
             g_p = get_cost_smooth(M, objective, p)
             g_q = get_cost_smooth(M, objective, candidate_point)
 
@@ -502,6 +501,13 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
                 s.last_stepsize = λ
                 return λ
             end
+        else
+            throw(
+                DomainError(
+                    s.strategy,
+                    "Unknown strategy: $(s.strategy). This must be either :convex or :nonconvex.",
+                ),
+            )
         end
 
         # Reduce step size

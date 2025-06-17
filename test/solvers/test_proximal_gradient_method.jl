@@ -76,6 +76,20 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         @test get_initial_stepsize(st) == 1.0
         pr = prox_h(M, 1.0, p0)
         @test get_proximal_map(M, ob, 1.0, p0) == pr
+        @test_throws DomainError proximal_gradient_method(
+            M,
+            f,
+            g,
+            grad_g,
+            p0;
+            prox_nonsmooth=prox_h,
+            stopping_criterion=StopAfterIteration(10),
+            return_state=true,
+            debug=[],
+            stepsize=ProximalGradientMethodBacktracking(;
+                initial_stepsize=1.0, strategy=:neither
+            ),
+        )
         # Test subsolver with subgradient
         ∂h(M, q) = ManifoldDiff.subgrad_distance(M, p, q, 1; atol=1e-8)
         sub_pgm = proximal_gradient_method(
