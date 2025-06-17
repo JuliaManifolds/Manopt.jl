@@ -15,6 +15,13 @@ Manopt.ProximalGradientMethodAcceleration
 ProximalGradientMethodState
 ```
 
+## Helping functions
+
+```@docs
+ProximalGradientNonsmoothSubgradient
+ProximalGradientNonsmoothCost
+```
+
 ## Stopping criteria
 
 ```@docs
@@ -28,7 +35,7 @@ ProximalGradientMethodBacktracking
 Manopt.ProximalGradientMethodBacktrackingStepsize
 ```
 
-## Helpers and internal functions
+## Internal functions
 
 ```@docs
 Manopt.get_cost_smooth
