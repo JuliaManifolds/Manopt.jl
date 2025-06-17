@@ -501,13 +501,6 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
                 s.last_stepsize = λ
                 return λ
             end
-        else
-            throw(
-                DomainError(
-                    s.strategy,
-                    "Unknown strategy: $(s.strategy). This must be either :convex or :nonconvex.",
-                ),
-            )
         end
 
         # Reduce step size
