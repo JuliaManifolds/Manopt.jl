@@ -131,19 +131,27 @@ end
 @doc raw"""
     ProximalGradientNonsmoothCost{F, R, P}
 
-Stores the nonsmooth part of the proximal gradient objective and the stepsize parameter ``λ ∈ ℝ``.
+Stores the nonsmooth part `h` of the proximal gradient objective `f = g + h`, as well as the stepsize parameter ``λ ∈ ℝ``.
 
-This struct is also a functor `(M, p) -> v` that can be used as a cost function within a solver, primarily for solving the proximal map subproblem formulation in the proximal gradient method.
+This struct is also a functor `(M, q) -> v` that can be used as a cost function within a solver, primarily for solving the proximal map subproblem formulation in the proximal gradient method, which reads
+```math
+    \operatorname{prox}_{λ} h(p) = \operatorname{argmin}_{q \in \mathcal M} \left( h(q) + \frac{1}{2λ} d^2(q, p) \right)
+```
+Hence, the functor reads
+```math
+    (M, q) \mapsto h(q) + \frac{1}{2λ} d^2(q, p)
+```
+and `p` is the proximity point where the proximal map is evaluated, i.e. the argument `p` of the proximal map ` \operatorname{prox}_{λ} h`.
 
 ## Fields
-* `cost::F` - the nonsmooth part of the proximal gradient objective, i.e. the part of the objective whose proximal map is sought
+* `cost::F` - the nonsmooth part `h` of the proximal gradient objective, i.e. the part of the objective whose proximal map is sought
 * `λ::R` - the stepsize parameter for the proximal map
-* `proximity_point::P` - point where the proximal map is evaluated
+* `proximity_point::P` - point where the proximal map is evaluated, i.e. the argument `p` of the proximal map ` \operatorname{prox}_{λ} h` that we want to solve for
 
 # Constructor
     ProximalGradientNonsmoothCost(cost, λ, proximity_point)
 """
-mutable struct ProximalGradientNonsmoothCost{F,R,P}# where {F,R,P}# <: AbstractManifoldCostObjective{R,P}
+mutable struct ProximalGradientNonsmoothCost{F,R,P}
     cost::F
     λ::R
     proximity_point::P
@@ -167,23 +175,26 @@ end
 
 @doc raw"""
     ProximalGradientNonsmoothSubgradient{F, R, P}
-Stores the nonsmooth part of the proximal gradient objective and the stepsize parameter ``λ ∈ ℝ``.
+Stores a subgradient of the nonsmooth part `h` of the proximal gradient objective `f = g + h`, as well as the stepsize parameter ``λ ∈ ℝ``.
 
 This struct is also a functor in both formats
     * `(M, p) -> X` to compute the gradient in allocating fashion.
-    * `(M, X, p)` to compute the gradient in in-place fashion.
-This is primarily used for computing the subgradient of the proximal map in the proximal gradient method.
+This is primarily used for computing a subgradient of the cost function `h(q) + \frac{1}{2λ} d^2(q, p)` that defines proximal map in the proximal gradient method. This reads
+```math
+    \partial h(q) - \frac{1}{λ} \operatorname{log}_q p
+```
+where `p` is the proximity point where the proximal map is evaluated, i.e. the argument `p` of the proximal map ` \operatorname{prox}_{λ} h`.
 
 ## Fields
 
 * `X::F` - the subgradient of the nonsmooth part of the total objective, i.e. the part of the objective whose proximal map is sought
 * `λ::R` - the stepsize parameter for the proximal map
-* `proximity_point::P` - point where the proximal map is evaluated
+* `proximity_point::P` - point where the proximal map is evaluated, i.e. the argument of the proximal map that we want to solve for
 
 # Constructor
     ProximalGradientNonsmoothSubgradient(cost, λ, proximity_point)
 """
-mutable struct ProximalGradientNonsmoothSubgradient{F,R,P}# where {F,R,P}#<: AbstractManifoldCostObjective{R,P}
+mutable struct ProximalGradientNonsmoothSubgradient{F,R,P}
     X::F
     λ::R
     proximity_point::P
