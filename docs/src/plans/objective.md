@@ -149,6 +149,13 @@ ManifoldSubgradientObjective
 get_subgradient
 ```
 
+
+and internally
+
+```@docs
+get_subgradient_function
+```
+
 ### Proximal map objective
 
 ```@docs
