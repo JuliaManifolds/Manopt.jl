@@ -103,6 +103,12 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
             stopping_criterion=StopAfterIteration(10),
         )
         @test_throws ErrorException proximal_gradient_method(M, f, g, grad_g, p0;)
+        pgnc = ProximalGradientNonsmoothCost(h, 0.1, p)
+        pgng = ProximalGradientNonsmoothSubgradient(∂h, 0.1, p)
+        @test Manopt.get_parameter(pgnc, :λ) == 0.1
+        @test Manopt.get_parameter(pgnc, :proximity_point) == p
+        @test Manopt.get_parameter(pgng, :λ) == 0.1
+        @test Manopt.get_parameter(pgng, :proximity_point) == p
 
         # prox pass through with dummy objective deco
         dob = ManoptTestSuite.DummyDecoratedObjective(ob)
@@ -164,6 +170,23 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         a = copy(p0)
         prox_h!(M, a, 1.0, p)
         @test get_proximal_map(M, ieob, 1.0, p) == a
+        p2 = copy(M, p0)
+        proximal_gradient_method!(
+            M,
+            f,
+            g,
+            grad_g!,
+            p2;
+            prox_nonsmooth=prox_h!,
+            stepsize=ProximalGradientMethodBacktracking(;
+                initial_stepsize=1.0, strategy=:convex
+            ),
+            stopping_criterion=StopAfterIteration(200),
+            evaluation=InplaceEvaluation(),
+            return_state=true,
+            debug=[],
+        )
+        @test isapprox(M, p2, p_star2)
     end
     @testset "A mean run" begin
         M = Sphere(2)
