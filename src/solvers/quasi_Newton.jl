@@ -304,7 +304,7 @@ function quasi_Newton!(
     basis::AbstractBasis=default_basis(M, typeof(p)),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     memory_size::Int=min(manifold_dimension(M), 20),
-    (project!)=copyto!,
+    (project!)=(copyto!),
     initial_operator::AbstractMatrix=(
         if memory_size >= 0
             fill(1.0, 0, 0) # don't allocate `initial_operator` for limited memory operation
@@ -334,7 +334,7 @@ function quasi_Newton!(
             direction_update,
             memory_size;
             initial_scale=initial_scale,
-            (project!)=project!,
+            (project!)=(project!),
             vector_transport_method=vector_transport_method,
         )
     else

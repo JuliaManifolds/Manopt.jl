@@ -149,6 +149,13 @@ ManifoldSubgradientObjective
 get_subgradient
 ```
 
+
+and internally
+
+```@docs
+get_subgradient_function
+```
+
 ### Proximal map objective
 
 ```@docs
@@ -299,4 +306,10 @@ Manopt.get_objective_cost
 Manopt.get_objective_gradient
 Manopt.get_objective_hessian
 Manopt.get_objective_preconditioner
+```
+
+### Proximal Gradient Objective
+
+```@docs
+ManifoldProximalGradientObjective
 ```

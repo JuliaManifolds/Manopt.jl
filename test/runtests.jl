@@ -63,6 +63,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test
         include("solvers/test_Nelder_Mead.jl")
         include("solvers/test_projected_gradient.jl")
         include("solvers/test_proximal_bundle_method.jl")
+        include("solvers/test_proximal_gradient_method.jl")
         include("solvers/test_proximal_point.jl")
         include("solvers/test_quasi_Newton.jl")
         include("solvers/test_particle_swarm.jl")

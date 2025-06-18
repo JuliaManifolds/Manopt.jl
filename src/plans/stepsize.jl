@@ -379,7 +379,7 @@ function (a::ArmijoLinesearchStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     k::Int,
-    η=-get_gradient(mp, get_iterate(s));
+    η=(-get_gradient(mp, get_iterate(s)));
     kwargs...,
 )
     p = get_iterate(s)
@@ -401,8 +401,8 @@ function (a::ArmijoLinesearchStepsize)(
         a.contraction_factor,
         η;
         retraction_method=a.retraction_method,
-        stop_when_stepsize_less=a.stop_when_stepsize_less / l,
-        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds / l,
+        stop_when_stepsize_less=(a.stop_when_stepsize_less / l),
+        stop_when_stepsize_exceeds=(a.stop_when_stepsize_exceeds / l),
         stop_increasing_at_step=a.stop_increasing_at_step,
         stop_decreasing_at_step=a.stop_decreasing_at_step,
         additional_decrease_condition=a.additional_decrease_condition,
@@ -698,7 +698,7 @@ These keywords are used as safeguards, where only the max stepsize is a very man
 A stepsize `s` and a message `msg` (in case any of the 4 criteria hit)
 """
 function linesearch_backtrack(
-    M::AbstractManifold, f, p, X::T, s, decrease, contract, η::T=-X, f0=f(M, p); kwargs...
+    M::AbstractManifold, f, p, X::T, s, decrease, contract, η::T=(-X), f0=f(M, p); kwargs...
 ) where {T}
     q = allocate(M, p)
     return linesearch_backtrack!(M, q, f, p, X, s, decrease, contract, η, f0; kwargs...)
@@ -719,7 +719,7 @@ function linesearch_backtrack!(
     s,
     decrease,
     contract,
-    η::T=-X,
+    η::T=(-X),
     f0=f(M, p);
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     additional_increase_condition=(M, p) -> true,
@@ -922,7 +922,7 @@ function (a::NonmonotoneLinesearchStepsize)(
     mp::AbstractManoptProblem,
     s::AbstractManoptSolverState,
     k::Int,
-    η=-get_gradient(mp, get_iterate(s));
+    η=(-get_gradient(mp, get_iterate(s)));
     kwargs...,
 )
     if !has_storage(a.storage, PointStorageKey(:Iterate)) ||
@@ -1017,8 +1017,8 @@ function (a::NonmonotoneLinesearchStepsize)(
         η,
         maximum([a.old_costs[j] for j in 1:min(iter, memory_size)]);
         retraction_method=a.retraction_method,
-        stop_when_stepsize_less=a.stop_when_stepsize_less / norm(M, p, η),
-        stop_when_stepsize_exceeds=a.stop_when_stepsize_exceeds / norm(M, p, η),
+        stop_when_stepsize_less=(a.stop_when_stepsize_less / norm(M, p, η)),
+        stop_when_stepsize_exceeds=(a.stop_when_stepsize_exceeds / norm(M, p, η)),
         stop_increasing_at_step=a.stop_increasing_at_step,
         stop_decreasing_at_step=a.stop_decreasing_at_step,
     )
@@ -1278,7 +1278,7 @@ function (a::WolfePowellLinesearchStepsize)(
     mp::AbstractManoptProblem,
     ams::AbstractManoptSolverState,
     ::Int,
-    η=-get_gradient(mp, get_iterate(ams));
+    η=(-get_gradient(mp, get_iterate(ams)));
     kwargs...,
 )
     # For readability extract a few variables
@@ -1406,8 +1406,9 @@ $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 $(_var(:Keyword, :vector_transport_method))
 """
-WolfePowellLinesearch(args...; kwargs...) =
-    ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; kwargs...)
+function WolfePowellLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(WolfePowellLinesearchStepsize, args...; kwargs...)
+end
 
 @doc """
     WolfePowellBinaryLinesearchStepsize{R} <: Linesearch
@@ -1467,7 +1468,7 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     amp::AbstractManoptProblem,
     ams::AbstractManoptSolverState,
     ::Int,
-    η=-get_gradient(amp, get_iterate(ams));
+    η=(-get_gradient(amp, get_iterate(ams)));
     kwargs...,
 )
     M = get_manifold(amp)
@@ -1568,8 +1569,9 @@ $(_var(:Keyword, :retraction_method))
 * `stop_when_stepsize_less=0.0`: smallest stepsize when to stop (the last one before is taken)
 $(_var(:Keyword, :vector_transport_method))
 """
-WolfePowellBinaryLinesearch(args...; kwargs...) =
-    ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
+function WolfePowellBinaryLinesearch(args...; kwargs...)
+    return ManifoldDefaultsFactory(WolfePowellBinaryLinesearchStepsize, args...; kwargs...)
+end
 
 @doc raw"""
     get_stepsize(amp::AbstractManoptProblem, ams::AbstractManoptSolverState, vars...)

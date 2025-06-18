@@ -2,10 +2,10 @@
 """
     AbstractConstrainedFunctor{T}
 
-A common supertype for fucntors that model constraint functions.
+A common supertype for functors that model constraint functions.
 
 This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
-constraintsnof type `T`.
+constraints of type `T`.
 """
 abstract type AbstractConstrainedFunctor{T} end
 
@@ -23,7 +23,7 @@ get_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
 """
     AbstractConstrainedSlackFunctor{T,R}
 
-A common supertype for fucntors that model constraint functions with slack.
+A common supertype for functors that model constraint functions with slack.
 
 This supertype additionally provides access for the fields
 * `μ::T` the dual for the inequality constraints

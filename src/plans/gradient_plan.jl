@@ -374,8 +374,9 @@ $(_var(:Keyword, :vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "MomentumGradientRule"))
 """
-MomentumGradient(args...; kwargs...) =
-    ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+function MomentumGradient(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.MomentumGradientRule, args...; kwargs...)
+end
 
 """
     AverageGradientRule <: DirectionUpdateRule
@@ -472,8 +473,9 @@ $(_var(:Keyword, :vector_transport_method))
 
 $(_note(:ManifoldDefaultFactory, "AverageGradientRule"))
 """
-AverageGradient(args...; kwargs...) =
-    ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+function AverageGradient(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.AverageGradientRule, args...; kwargs...)
+end
 
 @doc """
     NesterovRule <: DirectionUpdateRule
@@ -684,8 +686,9 @@ $(_var(:Keyword, :evaluation))
 
 $(_note(:ManifoldDefaultFactory, "PreconditionedDirectionRule"))
 """
-PreconditionedDirection(args...; kwargs...) =
-    ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
+function PreconditionedDirection(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
+end
 
 @doc raw"""
     DebugGradient <: DebugAction

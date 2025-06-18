@@ -156,9 +156,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         grad_g!,
         h!,
         grad_h!;
-        hess_f=hess_f!,
-        hess_g=hess_g!,
-        hess_h=hess_h!,
+        hess_f=(hess_f!),
+        hess_g=(hess_g!),
+        hess_h=(hess_h!),
         evaluation=InplaceEvaluation(),
         inequality_constraints=2,
         equality_constraints=1,
@@ -183,7 +183,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         [grad_g1!, grad_g2!],
         [h1],
         [grad_h1!];
-        hess_f=hess_f!,
+        hess_f=(hess_f!),
         hess_g=[hess_g1!, hess_g2!],
         hess_h=[hess_h1!],
         evaluation=InplaceEvaluation(),

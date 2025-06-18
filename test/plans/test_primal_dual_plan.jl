@@ -107,8 +107,8 @@ using RecursiveArrayTools
             prox_f!,
             prox_g_dual!,
             adjoint_DΛ!;
-            linearized_forward_operator=DΛ!,
-            Λ=Λ!,
+            linearized_forward_operator=(DΛ!),
+            Λ=(Λ!),
             evaluation=InplaceEvaluation(),
         )
         p2 = TwoManifoldProblem(M, N, pdmoi)

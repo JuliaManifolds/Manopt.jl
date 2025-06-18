@@ -23,6 +23,7 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
         get_subgradient!(M, X, mso, p)
         get_subgradient!(M, Y, ddo, p)
         @test X == Y
+        @test Manopt.get_subgradient_function(ddo) == ∂f
     end
     @testset "Count" begin
         ddo = ManifoldCountObjective(M, mso, [:SubGradient])
