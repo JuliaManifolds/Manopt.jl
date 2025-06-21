@@ -6,6 +6,24 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.19] unreleased
+
+### Added
+
+* a function `get_differential` and `get_differential_function` for first order objectives.
+* a `ParentEvaluationType` for backwards compatibility, then an internal function
+  inhertis its evaluation type from the parent objective. This is the default when
+  passing a function to `GradientFunction` or `DifferenitalFunction`.
+* introduce a new `AllocatingAndInplaceEvaluationType` that is used for the
+  functions that offer both variants.
+
+### Changed
+
+* the `ManifoldGradientObjective` is renamed to `ManifoldFirstOrderObjective`, since the
+ second function might now also represent a differential.
+* the `AbstractManifoldGradientObjective` is renamed to `AbstractManifoldFirstOrderObjective`, since the
+ second function might now also represent a differential.
+
 ## [0.5.18] June 18, 2025
 
 ### Added
@@ -396,7 +414,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * Tests use `Aqua.jl` to spot problems in the code
 * introduce a feature-based list of solvers and reduce the details in the alphabetical list
 * adds a `PolyakStepsize`
-* added a `get_subgradient` for `AbstractManifoldGradientObjectives` since their gradient is a special case of a subgradient.
+* added a `get_subgradient` for `AbstractManifoldFirstOrderObjectives` since their gradient is a special case of a subgradient.
 
 ### Fixed
 

@@ -332,7 +332,7 @@ function MOI.set(
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     objective = RiemannianFunction(
-        Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
+        Manopt.ManifoldFirstOrderObjective(eval_f_cb, eval_grad_f_cb)
     )
     MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
     return nothing
@@ -361,7 +361,7 @@ function MOI.optimize!(model::Optimizer)
     ]
     objective = model.objective
     if model.sense == MOI.FEASIBILITY_SENSE
-        objective = Manopt.ManifoldGradientObjective(
+        objective = Manopt.ManifoldFirstOrderObjective(
             (_, _) -> 0.0, ManifoldsBase.zero_vector
         )
     elseif model.sense == MOI.MAX_SENSE

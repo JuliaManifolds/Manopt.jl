@@ -19,7 +19,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
     @test isapprox(M, p, get_gradient(gst), [1.0, 0.0])
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
-    mgo = ManifoldGradientObjective(f, grad_f)
+    mgo = ManifoldFirstOrderObjective(f, grad_f)
     mp = DefaultManoptProblem(M, mgo)
     @test get_initial_stepsize(mp, gst) == 1.0
     @test get_stepsize(mp, gst, 1) == 1.0

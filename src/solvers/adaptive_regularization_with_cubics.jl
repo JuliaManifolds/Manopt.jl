@@ -249,7 +249,7 @@ $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_o
 
 $(_note(:OtherKeywords))
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 $(_note(:TutorialMode))

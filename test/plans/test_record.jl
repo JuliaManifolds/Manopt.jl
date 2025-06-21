@@ -21,7 +21,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
-    dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+    dmp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
     a = RecordIteration()
     @test repr(a) == "RecordIteration()"
     @test Manopt.status_summary(a) == ":Iteration"

@@ -36,7 +36,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         grad_f(M, q) = -2 * log(M, q, p)
         # summary fallback to show
         @test Manopt.status_summary(TestDebugAction()) === "TestDebugAction()"
-        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
         a1 = DebugDivider("|"; io=io)
         @test Manopt.dispatch_state_decorator(DebugSolverState(st, a1)) === Val{true}()
         # constructors
@@ -261,7 +261,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
-        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
 
         w1 = DebugWarnIfCostNotFinite()
         @test repr(w1) == "DebugWarnIfCostNotFinite()"
@@ -280,7 +280,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test_logs (:warn,) w5(mp, st, 1)
 
         M2 = Sphere(2)
-        mp2 = DefaultManoptProblem(M2, ManifoldGradientObjective(f, grad_f))
+        mp2 = DefaultManoptProblem(M2, ManifoldFirstOrderObjective(f, grad_f))
         w6 = DebugWarnIfGradientNormTooLarge(1.0, :Once)
         @test repr(w6) == "DebugWarnIfGradientNormTooLarge(1.0, :Once)"
         st.X .= [4.0, 0.0] # > π in norm
@@ -309,7 +309,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
-        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
         d1 = DebugTime(; start=true, io=io)
         @test d1.last_time != Nanosecond(0)
         d2 = DebugTime(; io=io)
@@ -396,7 +396,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         )
         f(M, y) = Inf
         grad_f(M, y) = Inf .* ones(2)
-        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
 
         die1 = DebugIfEntry(:p, p -> p[1] > 0.0; type=:warn, message="test1")
         @test startswith(repr(die1), "DebugIfEntry(:p, ")
@@ -421,7 +421,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
-        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
         dD = DebugDivider(" | "; io=io)
         dA = DebugWhenActive(dD, false)
         @test !dA.active
@@ -466,7 +466,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
             )
             f(M, q) = distance(M, q, p) .^ 2
             grad_f(M, q) = -2 * log(M, q, p)
-            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
             n = 0
             cb() = (n += 1)
             dst = decorate_state!(st; callback=cb)

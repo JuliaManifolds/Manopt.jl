@@ -203,7 +203,7 @@ $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500
   the gradient of the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_objective"))
 $(_var(:Keyword, :sub_kwargs))
 
-* `sub_objective=`[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_gradient)`:
+* `sub_objective=`[`ManifoldFirstOrderObjective`](@ref)`(sub_cost, sub_gradient)`:
   the objective for the Frank-Wolfe sub problem. $(_note(:KeywordUsedIn, "sub_problem"))
 
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
@@ -216,7 +216,7 @@ $(_var(:Keyword, :X; add=:as_Gradient))
 
 $(_note(:OtherKeywords))
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 # Output
@@ -237,13 +237,13 @@ function Frank_Wolfe_method(
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldFirstOrderObjective(f_, grad_f_; evaluation=evaluation)
     rs = Frank_Wolfe_method(M, mgo, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function Frank_Wolfe_method(
     M::AbstractManifold, mgo::O, p=rand(M); kwargs...
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return Frank_Wolfe_method!(M, mgo, q; kwargs...)
 end
@@ -258,7 +258,7 @@ function Frank_Wolfe_method!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldFirstOrderObjective(f, grad_f; evaluation=evaluation)
     return Frank_Wolfe_method!(M, mgo, p; evaluation=evaluation, kwargs...)
 end
 function Frank_Wolfe_method!(
@@ -276,7 +276,7 @@ function Frank_Wolfe_method!(
     sub_cost=FrankWolfeCost(p, X),
     sub_grad=FrankWolfeGradient(p, X),
     sub_kwargs=(;),
-    sub_objective=ManifoldGradientObjective(sub_cost, sub_grad),
+    sub_objective=ManifoldFirstOrderObjective(sub_cost, sub_grad),
     sub_problem=DefaultManoptProblem(
         M,
         decorate_objective!(M, sub_objective; objective_type=objective_type, sub_kwargs...),
@@ -303,7 +303,7 @@ function Frank_Wolfe_method!(
     kwargs...,
 ) where {
     TStop<:StoppingCriterion,
-    O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective},
+    O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective},
 }
     dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)

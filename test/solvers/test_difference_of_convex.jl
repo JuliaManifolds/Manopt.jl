@@ -34,7 +34,7 @@ import Manifolds: inner
         X3 = similar(X2)
         dca_sub_grad(M, X3, p0)
         @test X2 == X3
-        dca_sub_objective = ManifoldGradientObjective(dca_sub_cost, dca_sub_grad)
+        dca_sub_objective = ManifoldFirstOrderObjective(dca_sub_cost, dca_sub_grad)
         dca_sub_problem = DefaultManoptProblem(M, dca_sub_objective)
         dca_sub_state = GradientDescentState(M; p=copy(M, p0))
 
@@ -60,7 +60,7 @@ import Manifolds: inner
         dcppa_sub_grad(M, Y2, p0)
         @test Y1 == Y2
 
-        dcppa_sub_objective = ManifoldGradientObjective(dcppa_sub_cost, dcppa_sub_grad)
+        dcppa_sub_objective = ManifoldFirstOrderObjective(dcppa_sub_cost, dcppa_sub_grad)
         dcppa_sub_problem = DefaultManoptProblem(M, dcppa_sub_objective)
         dcppa_sub_state = GradientDescentState(M; p=copy(M, p0))
 

@@ -25,7 +25,7 @@ Note that the subdifferential might be given in two possible signatures
 * `∂h!(M, X, p)` which does an [`InplaceEvaluation`](@ref) in place of `X`.
 """
 struct ManifoldDifferenceOfConvexObjective{E,TCost,TGrad,TSubGrad} <:
-       AbstractManifoldGradientObjective{E,TCost,TGrad}
+       AbstractManifoldFirstOrderObjective{E,TCost,TGrad}
     cost::TCost
     gradient!!::TGrad
     ∂h!!::TSubGrad
@@ -241,7 +241,7 @@ just for eventual debug or stopping criteria.
 """
 struct ManifoldDifferenceOfConvexProximalObjective{
     E<:AbstractEvaluationType,THGrad,TCost,TGrad
-} <: AbstractManifoldGradientObjective{E,TCost,TGrad}
+} <: AbstractManifoldFirstOrderObjective{E,TCost,TGrad}
     cost::TCost
     gradient!!::TGrad
     grad_h!!::THGrad

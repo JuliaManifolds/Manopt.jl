@@ -210,7 +210,7 @@ define!(
     :GradientObjective,
     (; objective="gradient_objective", f="f", grad_f="grad_f") -> """
 Alternatively to `$f` and `$grad_f` you can provide
-the corresponding [`AbstractManifoldGradientObjective`](@ref) `$objective` directly.
+the corresponding [`AbstractManifoldFirstOrderObjective`](@ref) `$objective` directly.
 """,
 )
 define!(

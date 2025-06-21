@@ -266,13 +266,13 @@ function quasi_Newton(
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldFirstOrderObjective(f_, grad_f_; evaluation=evaluation)
     rs = quasi_Newton(M, mgo, p_; kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function quasi_Newton(
     M::AbstractManifold, mgo::O, p; kwargs...
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
@@ -287,7 +287,7 @@ function quasi_Newton!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldFirstOrderObjective(f, grad_f; evaluation=evaluation)
     return quasi_Newton!(M, mgo, p; kwargs...)
 end
 function quasi_Newton!(
@@ -325,7 +325,7 @@ function quasi_Newton!(
     kwargs...,
 ) where {
     E<:AbstractEvaluationType,
-    O<:Union{AbstractManifoldGradientObjective{E},AbstractDecoratedManifoldObjective{E}},
+    O<:Union{AbstractManifoldFirstOrderObjective{E},AbstractDecoratedManifoldObjective{E}},
 }
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(

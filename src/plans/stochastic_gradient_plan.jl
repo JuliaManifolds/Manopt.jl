@@ -1,5 +1,5 @@
 @doc raw"""
-    ManifoldStochasticGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldGradientObjective{T}
+    ManifoldStochasticGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldFirstOrderObjective{T}
 
 A stochastic gradient objective consists of
 
@@ -37,7 +37,7 @@ Note that this can also be used with a [`gradient_descent`](@ref), since the (co
 is just the sums of the single gradients.
 """
 struct ManifoldStochasticGradientObjective{T<:AbstractEvaluationType,TCost,TGradient} <:
-       AbstractManifoldGradientObjective{T,TCost,TGradient}
+       AbstractManifoldFirstOrderObjective{T,TCost,TGradient}
     cost::TCost
     gradient!!::TGradient
 end
