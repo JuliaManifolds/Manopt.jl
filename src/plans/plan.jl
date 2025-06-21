@@ -114,6 +114,8 @@ include("stepsize.jl")
 include("bundle_plan.jl")
 include("cost_plan.jl")
 include("gradient_plan.jl")
+# Requires the definitions from first order ideas from the plan.
+include("differential_plan.jl")
 include("hessian_plan.jl")
 include("proximal_plan.jl")
 include("proximal_gradient_plan.jl")

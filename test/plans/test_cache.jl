@@ -43,7 +43,7 @@ end
     @testset "Test Factory" begin
         M = Euclidean(3)
         # allocating
-        mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
+        mgoa = ManifoldFirstOrderObjective(TestCostCount(0), TestGradCount(0))
         s1 = objective_cache_factory(M, mgoa, :Simple)
         @test s1 isa SimpleManifoldCachedObjective
         @test objective_cache_factory(M, mgoa, :none) == mgoa
@@ -67,8 +67,8 @@ end
         s = 3 * ones(3)
         X = zero_vector(M, p)
         # allocating
-        mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
-        mcgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
+        mgoa = ManifoldFirstOrderObjective(TestCostCount(0), TestGradCount(0))
+        mcgoa = ManifoldFirstOrderObjective(TestCostCount(0), TestGradCount(0))
         sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=p)
         @test repr(sco1) == "SimpleManifoldCachedObjective{AllocatingEvaluation,$(mgoa)}"
         @test startswith(
@@ -107,7 +107,7 @@ A `SimpleManifoldCachedObjective`""",
         @test Manopt.get_cost_function(sco1) != Manopt.get_cost_function(mgoa)
         @test Manopt.get_gradient_function(sco1) != Manopt.get_gradient_function(mgoa)
 
-        mgoi = ManifoldGradientObjective(
+        mgoi = ManifoldFirstOrderObjective(
             TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
         )
         sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; p=p, initialized=false)
@@ -188,7 +188,7 @@ A `SimpleManifoldCachedObjective`""",
         A = [2.0 1.0 0.0; 1.0 2.0 1.0; 0.0 1.0 2.0]
         f(M, p) = p' * A * p
         grad_f(M, p) = 2 * A * p
-        o = ManifoldGradientObjective(f, grad_f)
+        o = ManifoldFirstOrderObjective(f, grad_f)
         co = ManifoldCountObjective(M, o, [:Cost, :Gradient])
         lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient]))
         @test startswith(repr(lco), "## Cache\n  * ")
@@ -329,7 +329,7 @@ A `SimpleManifoldCachedObjective`""",
         @test Hess_f1!(M, Y, p, X) == Hess_f!(M, Z, p, X)
         #
         # Simple
-        obj_g = ManifoldGradientObjective(f, grad_f)
+        obj_g = ManifoldFirstOrderObjective(f, grad_f)
         s_obj = Manopt.SimpleManifoldCachedObjective(M, obj_g; p=similar(p), X=similar(X))
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj_g) === Manopt.get_cost_function(s_obj, true)
@@ -344,7 +344,7 @@ A `SimpleManifoldCachedObjective`""",
         @test grad_f1 != grad_f
         @test grad_f1(M, p) == grad_f(M, p)
         # Simple Mutating
-        obj_g_i = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
+        obj_g_i = ManifoldFirstOrderObjective(f, grad_f!; evaluation=InplaceEvaluation())
         s_obj_i = Manopt.SimpleManifoldCachedObjective(
             M, obj_g_i; p=similar(p), X=similar(X)
         )

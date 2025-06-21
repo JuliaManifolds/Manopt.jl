@@ -135,7 +135,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         @test inequality_constraints_length(cofE) == 0
     end
 
-    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldGradientObjective
+    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldFirstOrderObjective
     cofha = ConstrainedManifoldObjective(
         f,
         grad_f,

@@ -31,7 +31,7 @@ function test_sphere()
         return Manopt.riemannian_gradient(M, X, grad_f)
     end
 
-    objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
+    objective = Manopt.ManifoldFirstOrderObjective(eval_sum_cb, eval_grad_sum_cb)
 
     @testset "$obj_sense" for (obj_sense, obj_sign) in
                               [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]

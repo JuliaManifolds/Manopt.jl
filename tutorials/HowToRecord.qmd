@@ -121,7 +121,7 @@ To illustrate a complicated example let's record:
 We first generate the problem and the state, to also illustrate the low-level works when not using the high-level interface [`gradient_descent`](https://manoptjl.org/stable/solvers/gradient_descent.html).
 
 ```{julia}
-p = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+p = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
 s = GradientDescentState(
     M;
     p=copy(data[1]),

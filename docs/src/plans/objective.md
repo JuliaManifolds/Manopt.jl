@@ -11,7 +11,7 @@ AbstractManifoldObjective
 AbstractDecoratedManifoldObjective
 ```
 
-Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
+Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldFirstOrderObjective`](@ref).
 
 ```@docs
 AbstractEvaluationType
@@ -109,8 +109,8 @@ get_cost_function
 ### Gradient objectives
 
 ```@docs
-AbstractManifoldGradientObjective
-ManifoldGradientObjective
+AbstractManifoldFirstOrderObjective
+ManifoldFirstOrderObjective
 ManifoldAlternatingGradientObjective
 ManifoldStochasticGradientObjective
 NonlinearLeastSquaresObjective

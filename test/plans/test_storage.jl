@@ -17,7 +17,7 @@ using Test, Manopt, ManifoldsBase, Manifolds
         )
         f(M, q) = distance(M, q, p) .^ 2
         grad_f(M, q) = -2 * log(M, q, p)
-        mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+        mp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
 
         a = StoreStateAction(M; store_fields=[:p, :X])
 

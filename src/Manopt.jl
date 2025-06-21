@@ -293,7 +293,7 @@ export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
-    AbstractManifoldGradientObjective,
+    AbstractManifoldFirstOrderObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractManifoldSubObjective,
@@ -309,7 +309,7 @@ export AbstractDecoratedManifoldObjective,
     ManifoldCostObjective,
     ManifoldDifferenceOfConvexObjective,
     ManifoldDifferenceOfConvexProximalObjective,
-    ManifoldGradientObjective,
+    ManifoldFirstOrderObjective,
     ManifoldHessianObjective,
     ManifoldProximalGradientObjective,
     ManifoldProximalMapObjective,

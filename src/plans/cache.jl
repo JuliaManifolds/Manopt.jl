@@ -2,16 +2,16 @@
 # A Simple Cache for Objectives
 #
 @doc """
-     SimpleManifoldCachedObjective{O<:AbstractManifoldGradientObjective{E,TC,TG}, P, T,C} <: AbstractManifoldGradientObjective{E,TC,TG}
+     SimpleManifoldCachedObjective{O<:AbstractManifoldFirstOrderObjective{E,TC,TG}, P, T,C} <: AbstractManifoldFirstOrderObjective{E,TC,TG}
 
-Provide a simple cache for an [`AbstractManifoldGradientObjective`](@ref) that is for a given point `p` this cache
+Provide a simple cache for an [`AbstractManifoldFirstOrderObjective`](@ref) that is for a given point `p` this cache
 stores a point `p` and a gradient ``$(_tex(:grad)) f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
 
 Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
 # Constructor
 
-    SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
+    SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldFirstOrderObjective; kwargs...)
 
 ## Keyword arguments
 
