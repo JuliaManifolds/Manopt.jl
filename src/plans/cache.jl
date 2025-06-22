@@ -106,7 +106,7 @@ end
 function get_cost(
     M::AbstractManifold,
     sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,<:ManifoldCostGradientObjective
+        AllocatingEvaluation,<:ManifoldCombinedFirstOrderObjective
     },
     p,
 )
@@ -121,7 +121,9 @@ function get_cost(
 end
 function get_cost(
     M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
+    sco::SimpleManifoldCachedObjective{
+        InplaceEvaluation,<:ManifoldCombinedFirstOrderObjective
+    },
     p,
 )
     scop_neq_p = sco.p != p
@@ -136,7 +138,7 @@ end
 function get_gradient(
     M::AbstractManifold,
     sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,<:ManifoldCostGradientObjective
+        AllocatingEvaluation,<:ManifoldCombinedFirstOrderObjective
     },
     p,
 )
@@ -152,7 +154,9 @@ function get_gradient(
 end
 function get_gradient(
     M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
+    sco::SimpleManifoldCachedObjective{
+        InplaceEvaluation,<:ManifoldCombinedFirstOrderObjective
+    },
     p,
 )
     scop_neq_p = sco.p != p
@@ -169,7 +173,7 @@ function get_gradient!(
     M::AbstractManifold,
     X,
     sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,<:ManifoldCostGradientObjective
+        AllocatingEvaluation,<:ManifoldCombinedFirstOrderObjective
     },
     p,
 )
@@ -186,7 +190,9 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
+    sco::SimpleManifoldCachedObjective{
+        InplaceEvaluation,<:ManifoldCombinedFirstOrderObjective
+    },
     p,
 )
     scop_neq_p = sco.p != p
@@ -360,7 +366,9 @@ end
 #
 # CostGradImplementation
 function get_cost(
-    M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
+    M::AbstractManifold,
+    co::ManifoldCachedObjective{E,<:ManifoldCombinedFirstOrderObjective},
+    p,
 ) where {E<:AbstractEvaluationType}
     #Neither cost not grad cached -> evaluate
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
@@ -373,7 +381,9 @@ function get_cost(
     end
 end
 function get_gradient(
-    M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
+    M::AbstractManifold,
+    co::ManifoldCachedObjective{E,<:ManifoldCombinedFirstOrderObjective},
+    p,
 ) where {E<:AllocatingEvaluation}
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
         return get_gradient(M, co.objective, p)
@@ -391,7 +401,7 @@ end
 function get_gradient!(
     M::AbstractManifold,
     X,
-    co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective},
+    co::ManifoldCachedObjective{E,<:ManifoldCombinedFirstOrderObjective},
     p,
 ) where {E}
     all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&

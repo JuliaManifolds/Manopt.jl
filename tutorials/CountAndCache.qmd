@@ -131,7 +131,7 @@ For example you may want to cache intermediate results
 of computing the cost and share that with the gradient computation.
 We present three solutions to this:
 
-1. An easy approach from within `Manopt.jl`: the [`ManifoldCostGradientObjective`](@ref)
+1. An easy approach from within `Manopt.jl`: the [`ManifoldCombinedFirstOrderObjective`](@ref)
 2. A shared storage approach using a functor
 3. A shared (internal) cache approach also using a functor
 
@@ -163,9 +163,9 @@ grad_g!(M,X, p) = project!(M, X, p, ∇g(p))
 
 But since both the cost and the gradient require the computation of the matrix-vector product $Ap$, it might be beneficial to only compute this once.
 
-### The [`ManifoldCostGradientObjective`](@ref) approach
+### The [`ManifoldCombinedFirstOrderObjective`](@ref) approach
 
-The [`ManifoldCostGradientObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the in-place variant as
+The [`ManifoldCombinedFirstOrderObjective`](@ref) uses a combined function to compute both the gradient and the cost at the same time. We define the in-place variant as
 
 ```{julia}
 function g_grad_g!(M::AbstractManifold, X, p)
@@ -196,7 +196,7 @@ p0 = [(1/5 .* ones(5))..., zeros(m-4)...];
 versus
 
 ```{julia}
-obj = ManifoldCostGradientObjective(g_grad_g!; evaluation=InplaceEvaluation())
+obj = ManifoldCombinedFirstOrderObjective(g_grad_g!; evaluation=InplaceEvaluation())
 @time s2 = gradient_descent(N, obj, p0;
     stopping_criterion=StopWhenGradientNormLess(1e-5),
     count=[:Cost, :Gradient],
@@ -337,7 +337,7 @@ it is about the same effort both time and allocation-wise.
 
 ## Summary
 
-While the second approach of [`ManifoldCostGradientObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
+While the second approach of [`ManifoldCombinedFirstOrderObjective`](@ref) is very easy to implement, both the storage and the (local) cache approach are more efficient.
 All three are an improvement over the first implementation without sharing interim results.
 The results with storage or cache have further advantage of being more flexible, since the stored information could also be reused in a third function, for example when also computing the Hessian.
 

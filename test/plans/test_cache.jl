@@ -130,7 +130,7 @@ A `SimpleManifoldCachedObjective`""",
         @test get_gradient(M, sco2, r) == X # cached
         @test X == r
 
-        mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
+        mcgoa = ManifoldCombinedFirstOrderObjective(TestCostGradCount(0))
         sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; p=p, initialized=false)
         # not evaluated on init -> still zero
         @test sco3.objective.costgrad!!.i == 0
@@ -156,7 +156,7 @@ A `SimpleManifoldCachedObjective`""",
         @test get_gradient(M, sco3, s) == s # cached
         @test sco3.objective.costgrad!!.i == 4
 
-        mcgoi = ManifoldCostGradientObjective(
+        mcgoi = ManifoldCombinedFirstOrderObjective(
             TestCostGradCount(0); evaluation=InplaceEvaluation()
         )
         sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p=p)
@@ -225,11 +225,11 @@ A `SimpleManifoldCachedObjective`""",
         # CostGrad
         f_f_grad(M, p) = (p' * A * p, 2 * A * p)
         f_f_grad!(M, X, p) = (p' * A * p, X .= 2 * A * p)
-        o2a = ManifoldCostGradientObjective(f_f_grad)
+        o2a = ManifoldCombinedFirstOrderObjective(f_f_grad)
         co2a = ManifoldCountObjective(M, o2a, [:Cost, :Gradient])
         #pass size
         lco2a = objective_cache_factory(M, co2a, (:LRU, [:Cost, :Gradient], 10))
-        o2i = ManifoldCostGradientObjective(f_f_grad!; evaluation=InplaceEvaluation())
+        o2i = ManifoldCombinedFirstOrderObjective(f_f_grad!; evaluation=InplaceEvaluation())
         co2i = ManifoldCountObjective(M, o2i, [:Cost, :Gradient])
         # pass keyword
         lco2i = objective_cache_factory(

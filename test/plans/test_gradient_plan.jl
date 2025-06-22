@@ -70,7 +70,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
     end
     @testset "CostGradObjective" begin
         costgrad(M, p) = (f(M, p), grad_f(M, p))
-        mcgo = ManifoldCostGradientObjective(costgrad)
+        mcgo = ManifoldCombinedFirstOrderObjective(costgrad)
         f2 = Manopt.get_cost_function(mcgo)
         @test f(M, p) == f2(M, p)
         @test f(M, p) == get_cost(M, mcgo, p)
@@ -84,7 +84,9 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
 
         grad_f!(M, X, q) = -2 * log!(M, X, q, p)
         costgrad!(M, X, p) = (f(M, p), grad_f!(M, X, p))
-        mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation=InplaceEvaluation())
+        mcgo! = ManifoldCombinedFirstOrderObjective(
+            costgrad!; evaluation=InplaceEvaluation()
+        )
         @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
         get_gradient!(M, Y, mcgo!, p)
         @test isapprox(M, p, X, Y)
