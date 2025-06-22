@@ -1,14 +1,14 @@
 @doc """
-    AbstractManifoldFirstOrderInformationFunction
+    AbstractManifoldFirstOrderInformationFunction <: Function
 
 An abstract type to represent the first order derivative information of a function.
 """
-abstract type AbstractFirstOrderFunction end
+abstract type AbstractFirstOrderFunction <: Function end
 
 @doc """
     GradientFunction{E<:AbstractEvaluationType, G} <: AbstractFirstOrderFunction
 
-A wrapper for a function representing the (Riemannian) gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))`` of a function.
+A wrapper for a function representing the Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))`` of a function.
 Compared to a usual function or functor, this type is meant to distinguish
 the gradient from the differential of a function, since both have similar
 signatures that would only be distinguishable if we require types points and vectors.
@@ -31,30 +31,48 @@ function GradientFunction(
 ) where {D,E<:AbstractEvaluationType}
     return GradientFunction{E,D}(diff_f)
 end
-function get_gradient(
-    gf::GradientFunction{AllocatingEvaluation,G}, M, p; kwargs...
-) where {G}
-    return gf.grad_f!!(M, p)
+
+@doc """
+    DifferentialFunction{D} <: AbstractFirstOrderFunction
+
+A wrapper for a set of two function representing the gradient a function representing the differential ``Df: $(_math(:TM)) → ℝ``,
+or in other words is is a map ``Df(p)[X] ∈ ℝ``.
+Compared to a usual function or functor, this type is meant to distinguish
+the differential from the gradient of a function, since both have similar
+signatures that would only be distinguishable if we require types points and vectors.
+
+# Fields
+* `diff_f!!::D`: a function or functor for the gradient
+
+# Constructor
+
+    DifferentialFunction(diff_f::D)
+
+Create a differential function `diff_f`
+"""
+struct DifferentialFunction{D} <: AbstractFirstOrderFunction
+    diff_f!!::D
 end
-function get_gradient(gf::GradientFunction{InplaceEvaluation,G}, M, p; kwargs...) where {G}
-    X = zero_vector(M, p)
-    return gf.grad_f!!(M, X, p)
-end
-function get_gradient(
-    gf::GradientFunction{ParentEvaluationType,G}, M, p; evaluation=AllocatingEvaluation()
-) where {G}
-    return _get_gradient(gf, M, p, evaluation)
-end
-function _get_gradient(
-    gf::GradientFunction{ParentEvaluationType,G}, M, p, ::AllocatingEvaluation
-) where {G}
-    return gf.grad_f!!(M, p)
-end
-function _get_gradient(
-    gf::GradientFunction{ParentEvaluationType,G}, M, p, ::InplaceEvaluation
-) where {G}
-    X = zero_vector(M, p)
-    return gf.grad_f!!(M, X, p)
+
+@doc """
+    DifferentialAndGradientFunction{D} <: AbstractFirstOrderFunction
+
+A wrapper for a function representing the Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``
+of a function and a differential ``Df: $(_math(:TM)) → ℝ``, or in other words is is a map ``Df(p)[X] ∈ ℝ``.
+
+# Fields
+* `diff_f!!::D`: a function or functor for the gradient
+* `grad_f!!::D`: a function or functor for the differential
+
+# Constructor
+
+    DifferentialFunction(diff_f::D)
+
+Create a differential function `diff_f`
+"""
+struct DifferentialAndGradientFunction{D,G} <: AbstractFirstOrderFunction
+    diff_f!!::D
+    grad_f!!::G
 end
 
 @doc raw"""
@@ -66,27 +84,7 @@ An abstract type for all objectives that provide a (full) gradient, where
 abstract type AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType,TC,TG} <:
               AbstractManifoldCostObjective{E,TC} end
 
-@doc raw"""
-    get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false)
-
-return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``,
-where either the gradient function using the decorator or without the decorator is used.
-
-By default `recursive` is set to `false`, since usually to just pass the gradient function
-somewhere, one still wants for example the cached one or the one that still counts calls.
-
-Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
-
-* `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
-* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
-"""
-get_gradient_function(::AbstractManifoldFirstOrderObjective; recursive=false)
-
-function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
-    return get_gradient_function(get_objective(admo, recursive))
-end
-
-@doc raw"""
+@doc """
     ManifoldFirstOrderObjective{T<:AbstractEvaluationType} <: AbstractManifoldFirstOrderObjective{T}
 
 specify an objective containing a cost and its gradient or differential.
@@ -107,7 +105,14 @@ Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to f
 Since the differential always returns a real number, the evaluation type is not used for it.
 
 # Constructors
-    ManifoldFirstOrderObjective(cost, gradient; evaluation=AllocatingEvaluation())
+    ManifoldFirstOrderObjective(cost, gradient=nothing; kwargs,...)
+
+## Keyword arguments
+
+* `differential = nothing` provide a separate function for the differential
+$(_var(:Keyword, :evaluation; add=:GradientExample))
+
+Either the gradient or the differential have to be different from `nothing`.
 
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
@@ -153,6 +158,90 @@ function ManifoldCostGradientObjective(
     costgrad::CG; evaluation::AbstractEvaluationType=AllocatingEvaluation()
 ) where {CG}
     return ManifoldCostGradientObjective{typeof(evaluation),CG}(costgrad)
+end
+
+#
+# Access the differential
+# -----------------------------
+@doc """
+    get_differential(amgo::AbstractManifoldFirstOrderObjective, M, p, X)
+
+return the differential of an [`AbstractManifoldFirstOrderObjective`](@ref) `amgo`
+on the [`AbstractManifold`](@extref) `M` at the point `p` and with tangent vector `X`.
+
+If the objective has access to a differential, this is called.
+Otherwise, if it has access to a gradient, the inner product is used to evaluate the differential
+"""
+get_differential(amgo::AbstractManifoldFirstOrderObjective, M::AbstractManifold, p, X)
+
+function get_differential(
+    amfoo::AbstractManifoldFirstOrderObjective{E,F,DifferentialFunction},
+    M::AbstractManifold,
+    p,
+    X;
+) where {E,F}
+    return amfoo.first_order!!.diff_f!!(M, p, X)
+end
+function get_differential(
+    amfoo::AbstractManifoldFirstOrderObjective{E,F,DifferentialAndGradientFunction},
+    M::AbstractManifold,
+    p,
+    X;
+) where {E,F}
+    return amfoo.first_order!!.diff_f!!(M, p, X)
+end
+# Default – functions, funtors as well as GradientFunctions
+function get_differential(
+    amfoo::AbstractManifoldFirstOrderObjective, M::AbstractManifold, p, X;
+)
+    return real(inner(M, p, get_gradient(amfoo, M, p, X), X))
+end
+
+
+function get_gradient(
+    gf::GradientFunction{AllocatingEvaluation,G}, M, p; kwargs...
+) where {G}
+    return gf.grad_f!!(M, p)
+end
+function get_gradient(gf::GradientFunction{InplaceEvaluation,G}, M, p; kwargs...) where {G}
+    X = zero_vector(M, p)
+    return gf.grad_f!!(M, X, p)
+end
+function get_gradient(
+    gf::GradientFunction{ParentEvaluationType,G}, M, p; evaluation=AllocatingEvaluation()
+) where {G}
+    return _get_gradient(gf, M, p, evaluation)
+end
+function _get_gradient(
+    gf::GradientFunction{ParentEvaluationType,G}, M, p, ::AllocatingEvaluation
+) where {G}
+    return gf.grad_f!!(M, p)
+end
+function _get_gradient(
+    gf::GradientFunction{ParentEvaluationType,G}, M, p, ::InplaceEvaluation
+) where {G}
+    X = zero_vector(M, p)
+    return gf.grad_f!!(M, X, p)
+end
+
+@doc raw"""
+    get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false)
+
+return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``,
+where either the gradient function using the decorator or without the decorator is used.
+
+By default `recursive` is set to `false`, since usually to just pass the gradient function
+somewhere, one still wants for example the cached one or the one that still counts calls.
+
+Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
+
+* `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
+* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
+"""
+get_gradient_function(::AbstractManifoldFirstOrderObjective; recursive=false)
+
+function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+    return get_gradient_function(get_objective(admo, recursive))
 end
 
 function get_cost_function(cgo::ManifoldCostGradientObjective, recursive=false)
