@@ -1,3 +1,6 @@
+# TODO: Also implement get_cost/grad/diff on the function level or the tuple of functions,
+#       that simplifies the dispatches again.
+
 @doc """
     AbstractManifoldFirstOrderInformationFunction <: Function
 
