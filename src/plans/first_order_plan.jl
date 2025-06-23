@@ -239,7 +239,7 @@ _mfo_wrap_cost(cost::CostFunction) = cost
 # Case 3: CostGrad and diff
 function ManifoldFirstOrderObjective(
     cost_grad::FG; evaluation::E=AllocatingEvaluation(), differential=nothing
-) where {FG<:CostGradientFunction,E<:AbstractEvaluationType}
+) where {FG,E<:AbstractEvaluationType}
     if !isnothing(differential)
         # 2-tuple, we have to indicate the second is a diff, so that the first is clearly
         # a costgrad
@@ -298,14 +298,14 @@ function ManifoldFirstOrderObjective(
     return ManifoldFirstOrderObjective{E,FGD}(cost_grad_diff)
 end
 # Case 9: cost and diff (as keyword)
-function ManifoldFirstOrderObjective(cost; differential=nothing)
-    isnothing(differential) && thrown(
+function ManifoldFirstOrderObjective(cost::CostFunction; differential=nothing)
+    isnothing(differential) && throw(
         DomainError(
             "For a first order objective some first order information as to be provide, here only a cost was provided, neither a gradient (positional) nor a differential",
         ),
     )
     # Make sure we store this typed, to avoid ambiguities
-    cost_diff = Tuple(_mfo_wrap_cost(cost), _mfo_wrap_diff(differential))
+    cost_diff = Tuple(cost, _mfo_wrap_diff(differential))
     return ManifoldFirstOrderObjective{AllocatingEvaluation,typeof{cost_diff}}(cost_diff)
 end
 # For ease of use and to be nonbreaking in type names
