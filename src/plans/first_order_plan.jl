@@ -9,26 +9,91 @@ An abstract type to represent the first order derivative information of a functi
 abstract type AbstractFirstOrderFunction <: Function end
 
 @doc """
-    GradientFunction{G} <: AbstractFirstOrderFunction
+    CostDifferentialFunction{DD} <: AbstractFirstOrderFunction
 
-A wrapper for a function representing the Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))`` of a function.
+A wrapper for a function representing a cost ``f`` and its differential ``Df: $(_math(:TM)) → ℝ``,
+or in other words is is a map ``Df(p)[X] ∈ ℝ``, in a combined fashion as a function `(M, p, X) -> (c, d)`.
+
+Since both return real values, this function would always work as an [`AllocatingEvaluation`](@ref).
 
 # Fields
-* `grad_f!!::G`: a function or functor for the gradient
+
+* `cost_diff::CD`: a function or functor for the gradient
 
 # Constructor
 
-    GradientFunction(grad_f)
-    GradientFunction(grad_f::GradientFunction)
+    CostDifferentialFunction(cost_diff::FD)
 
-Create a gradient function, where `grad_f`.
-This is a “single-wrapper” in the sense that the second constructor avoids to “wrap twice”.
+Create a combined cost and differential function `cost_diff`.
 """
-struct GradientFunction{G} <: AbstractFirstOrderFunction
-    grad_f!!::G
+struct CostDifferentialFunction{FD} <: AbstractFirstOrderFunction
+    cost_diff::FD
 end
-# avoid double wrap
-GradientFunction(grad_f::GradientFunction) = GradientFunction(grad_f.grad_f!!)
+function get_cost_function(cost_diff::CostDifferentialFunction)
+    return function (M, p)
+        X = zero_vector(M, p)
+        (c, _) = cost_diff.cost_diff(M, p, X)
+        return c
+    end
+end
+function get_differential_function(cost_diff::CostDifferentialFunction)
+    return function (M, p, X)
+        (_, d) = cost_diff.cost_diff(M, p, X)
+        return d
+    end
+end
+
+@doc """
+    CostGradientDifferentialFunction{FGD} <: AbstractFirstOrderFunction
+
+A wrapper for a function representing a cost, its Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``,
+as well as its differential ``Df: $(_math(:TM)) → ℝ``, or in other words is is a map ``Df(p)[X] ∈ ℝ``.
+
+It might have two forms
+
+* as a function `(M, p, X) -> (c, Y, d)` that allocates memory for the gradient `Y` (also [`AllocatingEvaluation`](@ref))
+* as a function `(M, Y, p, X) -> (c, Y, d)` that work in place of `Y` (also [`InplaceEvaluation`](@ref))
+
+Note that both the cost and differential are real valued results, so both always work in an allocating sense.
+
+# Fields
+
+* `cost_grad_diff!!::FGD`: a function or functor for the cost, gradient, and differential
+
+# Constructor
+
+    CostGradientDifferentialFunction(cost_grad_diff!!::FGD)
+
+Create a combined cost, grad, and diff function `cost_grad_diff!!`.
+"""
+struct CostGradientDifferentialFunction{FGD} <: AbstractFirstOrderFunction
+    cost_grad_diff!!::FGD
+end
+
+@doc """
+    CostGradientFunction{FG} <: AbstractFirstOrderFunction
+
+A wrapper for a function representing the joint computation of the cost ``f`` and
+its Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``.
+
+It might have two forms
+
+* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X` (also [`AllocatingEvaluation`](@ref))
+* as a function `(M, X, p) -> (c, X)` that work in place of `X` (also [`InplaceEvaluation`](@ref))
+
+# Fields
+
+* `cost_grad!!::FG`: a function or functor for the gradient
+
+# Constructor
+
+    CostGradientFunction(costgrad!!::FG)
+
+Create a combined costgrad function `costgrad!!`.
+"""
+struct CostGradientFunction{FG} <: AbstractFirstOrderFunction
+    cost_grad!!::FG
+end
 
 @doc """
     DifferentialFunction{D} <: AbstractFirstOrderFunction
@@ -45,323 +110,372 @@ signatures that would only be distinguishable if we require types points and vec
 # Constructor
 
     DifferentialFunction(diff_f::D)
-    DifferentialFunction(diff_f::DifferentialFunction)
 
 Create a differential function `diff_f`
-This is a “single-wrapper” in the sense that the second constructor avoids to “wrap twice”.
 """
 struct DifferentialFunction{D} <: AbstractFirstOrderFunction
-    diff_f!!::D
-end
-DifferentialFunction(diff_f::DifferentialFunction) = DifferentialFunction(diff_f.diff_f!!)
-
-@doc """
-    CostGradientFunction{CG} <: AbstractFirstOrderFunction
-
-A wrapper for a function representing the joint computation of the cost ``f`` and
-its Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``.
-
-It might have two forms
-
-* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X` (also [`AllocatingEvaluation`](@ref))
-* as a function `(M, X, p) -> (c, X)` that work in place of `X` (also [`InplaceEvaluation`](@ref))
-
-# Fields
-
-* `cost_grad!!::CG`: a function or functor for the gradient
-
-# Constructor
-
-    CostGradientFunction(costgrad!!::CG)
-    CostGradientFunction(costgrad!!::CostGradientFunction)
-
-Create a combined costgrad function `costgrad!!`.
-This is a “single-wrapper” in the sense that the second constructor avoids to “wrap twice”.
-"""
-struct CostGradientFunction{CG} <: AbstractFirstOrderFunction
-    cost_grad!!::CG
-end
-function CostGradientFunction(cost_grad::CostGradientFunction)
-    return CostGradientFunction(cost_grad.cost_grad!!)
+    diff::D
 end
 
 @doc """
-    CostDifferentialFunction{CD} <: AbstractFirstOrderFunction
+    GradientDifferentialFunction{CGD} <: AbstractFirstOrderFunction
 
-A wrapper for a function representing a cost ``f`` and its differential ``Df: $(_math(:TM)) → ℝ``,
-or in other words is is a map ``Df(p)[X] ∈ ℝ``, in a combined fashion as a function `(M, p, X) -> (c, d)`.
-
-Since both return real values, this function would always work as an [`AllocatingEvaluation`](@ref).
-
-# Fields
-
-* `cost_diff::CD`: a function or functor for the gradient
-
-# Constructor
-
-    CostDifferentialFunction(costdiff::CD)
-    CostDifferenitalFunction(cost_diff::CostDifferentialFunction)
-
-Create a combined cost and differential function `costdiff`
-This is a “single-wrapper” in the sense that the second constructor avoids to “wrap twice”.
-"""
-struct CostDifferentialFunction{CD} <: AbstractFirstOrderFunction
-    cost_diff::CD
-end
-function CostDifferentialFunction(cost_diff::CostDifferentialFunction)
-    return CostDifferentialFunction(cost_diff.cost_diff)
-end
-
-@doc """
-    CostGradientDifferentialFunction{CGD} <: AbstractFirstOrderFunction
-
-A wrapper for a function representing a cost, its Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``,
+A wrapper for a function representing a Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``,
 as well as its differential ``Df: $(_math(:TM)) → ℝ``, or in other words is is a map ``Df(p)[X] ∈ ℝ``.
 
 It might have two forms
 
-* as a function `(M, p, X) -> (c, Y, d)` that allocates memory for the gradient `Y` (also [`AllocatingEvaluation`](@ref))
-* as a function `(M, Y, p, X) -> (c, Y, d)` that work in place of `Y` (also [`InplaceEvaluation`](@ref))
+* as a function `(M, p, X) -> (Y, d)` that allocates memory for the gradient `Y` (also [`AllocatingEvaluation`](@ref))
+* as a function `(M, Y, p, X) -> (Y, d)` that work in place of `Y` (also [`InplaceEvaluation`](@ref))
 
-Note that both the cost and differential are real valued results, so both always work in an allocating sense.
+Note that differential is real valued, so always works in an allocating sense.
 
 # Fields
 
-* `cost_grad_diff!!::CGD`: a function or functor for the cost, gradient, and differential
+* `grad_diff!!::GD`: a function or functor for the cost, gradient, and differential
 
 # Constructor
 
-    CostGradientDifferentialFunction(cost_graddiff!!::CGD)
+    GradientDifferentialFunction(grad_diff!!::GD)
 
-Create a combined cost, grad, and diff function `cost_graddiff!!`.
+Create a combined cost, grad, and diff function `grad_diff!!`.
 """
-struct CostGradientDifferentialFunction{CGD} <: AbstractFirstOrderFunction
-    cost_grad_diff!!::CGD
+struct GradientDifferentialFunction{GD} <: AbstractFirstOrderFunction
+    grad_diff!!::GD
+end
+
+@doc """
+    GradientFunction{G} <: AbstractFirstOrderFunction
+
+A wrapper for a function representing the Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))`` of a function.
+
+# Fields
+* `grad_f!!::G`: a function or functor for the gradient
+
+# Constructor
+
+    GradientFunction(grad_f)
+
+Create a gradient function, where `grad_f`.
+"""
+struct GradientFunction{G} <: AbstractFirstOrderFunction
+    grad!!::G
 end
 
 @doc raw"""
-    AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType, TC, TG} <: AbstractManifoldCostObjective{E, TC}
+    AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType, FGD} <: AbstractManifoldCostObjective{E, FGD}
 
-An abstract type for all objectives that provide a (full) gradient, where
-`T` is a [`AbstractEvaluationType`](@ref) for the gradient function.
+An abstract type for all objectives that provide
+* a cost
+* first order information, so either a (full) gradient or a differential, where
+`E` is a [`AbstractEvaluationType`](@ref) for the gradient function.
 """
-abstract type AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType,TC,TG} <:
-              AbstractManifoldCostObjective{E,TC} end
+abstract type AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType,FGD} <:
+              AbstractManifoldCostObjective{E,FGD} end
 
 @doc """
-    ManifoldFirstOrderObjective{T<:AbstractEvaluationType} <: AbstractManifoldFirstOrderObjective{T}
+    ManifoldFirstOrderObjective{E<:AbstractEvaluationType, F} <: AbstractManifoldFirstOrderObjective{E, F}
 
-specify an objective containing a cost and its gradient or differential.
+specify an objective containing a cost and its gradient or differential,
+where the [`AbstractEvaluationType`](@ref) `E` indicates the type of evaluation for a gradient.
 
 # Fields
 
-* `cost`:          a function ``f: $(_math(:M)) → ℝ``
-* `first_order!!`: the first order information of the cost function ``f``.
-  If it is a function, it represents a gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``,
-  which equivalently is a [`GradientFunction`](@ref). It can also represent a [`DifferentialFunction`](@ref),
-  or wrap both simultaneously as a tuple of these.
+* `functions::F`: a function or a tuple of functions containing the cost and first order information.
 
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+Currently the following cases are covered, sorted by their popularity
 
-* as a function `(M, p) -> X` that allocates memory for `X`, an [`AllocatingEvaluation`](@ref)
-* as a function `(M, X, p) -> X` that work in place of `X`, an [`InplaceEvaluation`](@ref)
+1. a single type `FG`, i.e. a function or a functor, represents a combined function
+  `(M, p) -> (c, X)` that computes the cost `c=cost(M,p)` and gradient `X=grad_f(M,p)`;
+  this can wrapped in a [`CostGradientFunction`](@ref) optionally.
+2. a `Tuple{F, G}` of two functions or functors represents a separate cost and gradient function;
+  they can be wrapped in a [`CostFunction`](@ref) and a [`GradientFunction`](@ref), respectively.
+3. a `Tuple{FG, D<:DifferentialFunction}` to provide the differential as a separate function,
+  where the first is the same as in case 1 and can be wrapped in a [`CostGradientFunction`](@ref).
+4. a `Tuple{F, G, D}` providing `cost::F`, `grad_f::G` and `diff_f::D` seperately; all three
+  can be wrapped in their types, [`CostFunction`](@ref), [`GradientFunction`](@ref), and [`DifferentialFunction`](@ref), respectively
+5. a `Tuple{F, GD <: GradientDifferentialFunction}` representing a `cost::F` and a common function
+  `(X, d) = grad_diff(M, p, X)` indicated by the [`GradientDifferentialFunction`](@ref)
+6. a [`CostDifferential`](@ref) representing a single function to compute `(c,d) = cost_diff(M, p, X)`.
+7. a Tuple{FD<:CostDifferential, G} representing a function like in 6. and a separate gradient function,
+  where the gradient function can be wrapped in a [`GradientFunction`](@ref).
+8. a `cost` and a [`DifferentialFunction`]()
+9. a [`CostGradientDifferential`](@ref) representing a single function to compute `(c,Y,d) = cost_grad_diff(M, p, X)`
 
-Since the differential always returns a real number, the evaluation type is not used for it.
+For all cases where a gradient is present, also an inplace variant is possible, where the
+signature has the result `Y` in second place.
+
+The first two cases are the most common one. They can also be addressed by their constants
+[`ManifoldCostGradientObjective`](@ref) and [`ManifoldGradientObjective`](@ref), respectively.
 
 # Constructors
-    ManifoldFirstOrderObjective(cost, gradient=nothing; kwargs,...)
+    ManifoldFirstOrderObjective(cost_grad; kwargs,...)
+    ManifoldFirstOrderObjective(cost_differential::CostDifferentialFunction, grad=nothing; kwargs,...)
+    ManifoldFirstOrderObjective(cost_grad_differential::CostGradientDifferentialFunction; kwargs,...)
+    ManifoldFirstOrderObjective(cost, grad; kwargs,...)
+    ManifoldFirstOrderObjective(cost; differential=nothing)
 
 ## Keyword arguments
 
-* `differential = nothing` provide a separate function for the differential
-$(_var(:Keyword, :evaluation; add=:GradientExample))
+* `differential = nothing` provide a separate function for the differential.
+$(_var(:Keyword, :evaluation))
 
-Either the gradient or the differential have to be different from `nothing`.
+For the last signature, a differential has to be provided
 
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
-struct ManifoldFirstOrderObjective{E<:AbstractEvaluationType,C,G} <:
-       AbstractManifoldFirstOrderObjective{E,C,G}
-    cost::C
-    first_order!!::G
+struct ManifoldFirstOrderObjective{E<:AbstractEvaluationType,F} <:
+       AbstractManifoldFirstOrderObjective{E,F}
+    functions::F
 end
 
+# a small wrapping helper
+_mfoo_wrap_diff(diff) = DifferentialFunction(diff)
+_mfoo_wrap_diff(diff::DifferentialFunction) = diff
+# Case 1: CostGrad
+# Case 3: CostGrad and diff
 function ManifoldFirstOrderObjective(
-    cost::C, first_order!!::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-) where {C,G}
-    return ManifoldFirstOrderObjective{typeof(evaluation),C,G}(cost, first_order!!)
+    cost_grad::FG; evaluation::E=AllocatingEvaluation(), differential=nothing
+) where {FG<:CostGradientFunction,E<:AbstractEvaluationType}
+    if !isnothing(differential)
+        # 2-tuple, we have to indicate the second is a diff, so that the first is clearly
+        # a costgrad
+        cost_grad_diff = Tuple(costgrad, _mfoo_wrap_diff(differential))
+        return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
+    end
+    return ManifoldFirstOrderObjective{E,FG}(cost_grad)
 end
 
+# Case 2: cost and grad
+# Case 4: cost and grad and diff
+function ManifoldFirstOrderObjective(
+    cost, grad; evaluation::E=AllocatingEvaluation(), differential=nothing
+) where {E<:AbstractEvaluationType}
+    if !isnothing(differential)
+        cost_grad_diff = Tuple(cost, grad, differential)
+        return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
+    end
+    cost_grad = Tuple(cost, grad)
+    return ManifoldFirstOrderObjective{E,typeof(cost_grad)}(cost_grad)
+end
+# Case 5: cost and grad_diff
+function ManifoldFirstOrderObjective(
+    cost, grad_diff::GD; evaluation::E=AllocatingEvaluation()
+) where {GD<:GradientDifferentialFunction,E<:AbstractEvaluationType}
+    cost_grad_diff = Tuple(cost, grad_diff)
+    return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
+end
+# Case 6: cost_diff
+# Case 7: cost_diff and extra grad
+function ManifoldFirstOrderObjective(
+    cost_diff::FD, grad=nothing; evaluation::E=AllocatingEvaluation()
+) where {FD<:CostDifferentialFunction,E<:AbstractEvaluationType}
+    isnothing(grad) && (return ManifoldFirstOrderObjective{E,FD}(cost_diff))
+    cost_diff = Tuple(cost_diff, grad)
+    return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_diff)
+end
+# Case 8: cost_grad_diff in one function
+function ManifoldFirstOrderObjective(
+    cost_grad_diff::FGD; evaluation::E=AllocatingEvaluation()
+) where {FGD<:CostGradientDifferentialFunction,E<:AbstractEvaluationType}
+    return ManifoldFirstOrderObjective{E,FGD}(cost_grad_diff)
+end
+# Case 9: cost and diff (as keyword)
+function ManifoldFirstOrderObjective(cost; differential=nothing)
+    isnothing(differential) && thrown(
+        DomainError(
+            "For a first order objective some first order information as to be provide, here only a cost was provided, neither a gradient (positional) nor a differential",
+        ),
+    )
+    cost_diff = Tuple(cost, _mfoo_wrap_diff(differential))
+    return ManifoldFirstOrderObjective{AllocatingEvaluation,typeof{cost_diff}}(cost_diff)
+end
+# For ease of use and to be nonbreaking in type names
+const ManifoldGradientObjective{E,F,G} = ManifoldFirstOrderObjective{E,Tuple{F,G}}
 @doc """
-    ManifoldCombinedFirstOrderObjective{T} <: AbstractManifoldFirstOrderObjective{T}
+     ManifoldGradientObjective(cost, gradient; kwargs...)
 
-specify an objective containing one function to perform a combined computation of
-the cost and first order information like gradient and/or differential
-
-# Fields
-
-* `costgrad!!`: a function that computes both the cost ``f: $(_math(:M)) → ℝ``
-  and its gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``
-  and/or its differential ``Df: $(_math(:TM)) → ℝ``
-
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient
-can be of [`AllocatingEvaluation`](@ref) or [`InplaceEvaluation`](@ref).
-
-Having a function stored in the field is equivalent to the [``]
-
-# Constructors
-
-    ManifoldCombinedFirstOrderObjective(costgrad; evaluation=AllocatingEvaluation())
-
-# Used with
-[`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
+TODO: Doocument old / comfort constructor
 """
-struct ManifoldCombinedFirstOrderObjective{E,CG} <:
-       AbstractManifoldFirstOrderObjective{E,CG,CG}
-    cost_first_order!!::CG
-end
-function ManifoldCombinedFirstOrderObjective(
-    cost_first_order!!::CG; evaluation::E=AllocatingEvaluation()
-) where {CG,E<:AbstractEvaluationType}
-    return ManifoldCombinedFirstOrderObjective{E,CG}(cost_first_order!!)
+function ManifoldGradientObjective(cost, grad; kwargs...)
+    # Now case 2
+    return ManifoldFirstOrderObjective(cost, grad; kwargs...)
 end
 
-function get_cost(
-    mcfoo::ManifoldCombinedFirstOrderObjective{E,CostDifferentialFunction}, M, p
-) where {E<:AbstractEvaluationType}
-    X = zero_vector(M, p)
-    (c, _) = mcfoo.cost_first_order!!(M, p, X)
-    return c
-end
-function get_cost(
-    mcfoo::ManifoldCombinedFirstOrderObjective{AllocatingEvaluation,CostGradientFunction},
-    M,
-    p,
-)
-    (c, _) = mcfoo.cost_first_order!!(M, p)
-    return c
-end
-function get_cost(
-    mcfoo::ManifoldCombinedFirstOrderObjective{InplaceEvaluation,CostGradientFunction}, M, p
-)
-    X = zero_vector(M, p)
-    (c, _) = mcfoo.cost_first_order!!(M, X, p)
-    return c
-end
-function get_cost(
-    mcfoo::ManifoldCombinedFirstOrderObjective{
-        AllocatingEvaluation,CostGradientDifferentialFunction
-    },
-    M,
-    p,
-)
-    X = zero_vector(M, p)
-    (c, _) = mcfoo.cost_first_order!!(M, p, X)
-    return c
-end
-function get_cost(
-    mcfoo::ManifoldCombinedFirstOrderObjective{
-        InplaceEvaluation,CostGradientDifferentialFunction
-    },
-    M,
-    p,
-)
-    X = zero_vector(M, p)
-    (c, _, _) = mcfoo.cost_first_order!!(M, X, p, X)
-    return c
-end
+const ManifoldCostGradientObjective{E,FG} = ManifoldFirstOrderObjective{E,FG}
+@doc """
+     ManifoldGradientObjective(cost_grad; kwargs...)
 
-function get_differential(
-    mcfoo::ManifoldCombinedFirstOrderObjective{E,CostDifferentialFunction}, M, p, X
-) where {E<:AbstractEvaluationType}
-    (_, d) = mcfoo.cost_first_order!!(M, p, X)
-    return d
-end
-function get_differential(
-    mcfoo::ManifoldCombinedFirstOrderObjective{AllocatingEvaluation,CostGradientFunction},
-    M,
-    p,
-    X,
-)
-    (_, Y) = mcfoo.cost_first_order!!(M, p)
-    return real(inner(M, p, Y, X))
-end
-function get_differential(
-    mcfoo::ManifoldCombinedFirstOrderObjective{InplaceEvaluation,CostGradientFunction},
-    M,
-    p,
-    Y,
-)
-    X = zero_vector(M, p)
-    mcfoo.cost_first_order!!(M, X, p)
-    return real(inner(M, p, Y, X))
-end
-function get_differential(
-    mcfoo::ManifoldCombinedFirstOrderObjective{
-        AllocatingEvaluation,CostGradientDifferentialFunction
-    },
-    M,
-    p,
-    X,
-)
-    (_, _, d) = mcfoo.cost_first_order!!(M, p, X)
-    return d
-end
-function get_differential(
-    mcfoo::ManifoldCombinedFirstOrderObjective{
-        InplaceEvaluation,CostGradientDifferentialFunction
-    },
-    M,
-    p,
-    X,
-)
-    Y = zero_vector(M, p)
-    (_, _, d) = mcfoo.cost_first_order!!(M, Y, p, X)
-    return d
-end
-
-function get_cost_function(cgo::ManifoldFirstOrderObjective, recursive=false)
-    return (M, p) -> get_cost(M, cgo, p)
+TODO: Doocument old / comfort constructor
+"""
+function ManifolCostGradientObjective(cost_grad; kwargs...)
+    # Now case 1
+    return ManifoldFirstOrderObjective(cost_grad; kwargs...)
 end
 
 #
-# Access the differential
-# -----------------------------
-@doc """
-    get_differential(amgo::AbstractManifoldFirstOrderObjective, M, p, X)
-
-return the differential of an [`AbstractManifoldFirstOrderObjective`](@ref) `amgo`
-on the [`AbstractManifold`](@extref) `M` at the point `p` and with tangent vector `X`.
-
-If the objective has access to a differential, this is called.
-Otherwise, if it has access to a gradient, the inner product is used to evaluate the differential
-"""
-get_differential(amgo::AbstractManifoldFirstOrderObjective, M::AbstractManifold, p, X)
-
-function get_differential(
-    amfoo::AbstractManifoldFirstOrderObjective{E,F,DifferentialFunction},
-    M::AbstractManifold,
-    p,
-    X;
-) where {E,F}
-    return amfoo.first_order!!.diff_f!!(M, p, X)
-end
-function get_differential(
-    amfoo::AbstractManifoldFirstOrderObjective{
-        E,F,Tuple{GradientFunction,DifferentialFunction}
-    },
-    M::AbstractManifold,
-    p,
-    X;
-) where {E,F}
-    return amfoo.first_order!![2].diff_f!!(M, p, X)
-end
-# Default – functions, functors as well as GradientFunctions
-function get_differential(
-    amfoo::AbstractManifoldFirstOrderObjective, M::AbstractManifold, p, X;
+# get_cost
+# for all 9 cases of ManifoldFirstOrderObjective
+# Case 1&3: FG, allocating
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, p
 )
-    return real(inner(M, p, get_gradient(amfoo, M, p, X), X))
+    (c, _) = mcfo.functions(M, p)
+    return c
+end
+function get_cost(
+    M::AbstractManifold,
+    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,CostGradientFunction},
+    p,
+)
+    (c, _) = mcfo.functions.cost_grad(M, p)
+    return c
+end
+# Case 1&3: FG, Inplace
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    (c, _) = mcfoo.functions(M, X, p)
+    return c
+end
+function get_cost(
+    M::AbstractManifold,
+    mfo::ManifoldFirstOrderObjective{InplaceEvaluation,CostGradientFunction},
+    p,
+)
+    X = zero_vector(M, p)
+    (c, _) = mcfoo.function.cost_grad(M, X, p)
+    return c
+end
+# Case 2: F, G, Case 4: F, G, D, Case 5: F, GD, Case 9: F, D (cost alone first)
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
+) where {E,F,G}
+    return mfo.functions[1](M, p)
+end
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{<:CostFunction,G}}, p
+) where {E,G}
+    return mfo.functions[1].cost(M, p)
+end
+# Case 6: FD
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,<:CostDifferentialFunction}, p
+) where {E}
+    (c, _) = mfo.functions(M, p, zero_vector(M, p))
+    return c
+end
+# Case 7: FD, G
+function get_cost(
+    M::AbstractManifold,
+    mfo::ManifoldFirstOrderObjective{E,Tuple{<:CostDifferentialFunction,G}},
+    p,
+) where {E,G}
+    (c, _) = mfo.functions[1](M, p, zero_vector(M, p))
+    return c
+end
+# Case 8: FGD, Alloc
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, p
+) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
+    X = zero_vector(M, p)
+    (c, _, _) = mfo.functions(M, p, X)
+    return c
+end
+# Case 8: FGD, Inplace
+function get_cost(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, p
+) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
+    X = zero_vector(M, p)
+    (c, _, _) = mfo.functions(M, X, p, X)
+    return c
+end
+
+#
+# get_differential, for the cases where we have one (3,4,5,6,7,8,9) evaluate that
+# for the other two (1,2) fall back to the inner product of the gradient
+# Case 1: FG
+function get_differential end
+"""
+    get_differential(M, amfo, p, X)
+
+TODO
+"""
+get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X)
+# Case 1: FG (single FG), eval gradient and to an inner
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p, X
+) where {E<:AbstractEvaluationType,FG}
+    return real(inner(M, p, get_gradient(M, mfo, p), X))
+end
+# Case 2: F, G
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p, X
+) where {E<:AbstractEvaluationType,F,G}
+    return real(inner(M, p, get_gradient(M, mfo, p), X))
+end
+# Case 3: FG, D & Case 9: F, D (D second & typed)
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,D}}, p, X
+) where {E<:AbstractEvaluationType,F,D<:DifferentialFunction}
+    return mfo.functions[2].diff(M, p, X)
+end
+# Case 4: F, G, D (D third – typed or not)
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p, X
+) where {E<:AbstractEvaluationType,F,G,D}
+    return mfo.functions[3](M, p, X)
+end
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p, X
+) where {E<:AbstractEvaluationType,F,G,D<:DifferentialFunction}
+    return mfo.functions[3].diff(M, p, X)
+end
+# Case 5: F, GD (second typed), Allocating
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p, X
+) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
+    (d, _) = mfo.functions[2](M, p, X)
+    return d
+end
+# Case 5: F, GD (second typed), Inplace
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p, X
+) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
+    Y = zero_vector(M, p)
+    (d, _) = mfo.funcrions[2](M, Y, p, X)
+    return d
+end
+# Case 6: FD (typed)
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FD}, p, X
+) where {E<:AbstractEvaluationType,FD<:CostDifferentialFunction}
+    (_, d) = mfo.functions(M, p, X)
+    return d
+end
+# Case 7: FD, G (1 typed)
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FD,G}}, p, X
+) where {E<:AbstractEvaluationType,FD<:CostDifferentialFunction,G}
+    (_, d) = mfo.functions[1].cost_diff(M, p, X)
+    return d
+end
+# Case 8: FDG (typed), Allocing
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FDG}, p, X
+) where {E<:AllocatingEvaluation,FDG<:CostGradientDifferentialFunction}
+    (_, _, d) = mfo.functions(M, p, X)
+    return d
+end
+# Case 8: FDG (typed), Inplace
+function get_differential(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FDG}, p, X
+) where {E<:InplaceEvaluation,FDG<:CostGradientDifferentialFunction}
+    Y = zero_vector(M, p)
+    (_, _, d) = mfo.functions(M, Y, p, X)
+    return d
 end
 
 @doc """
@@ -378,9 +492,32 @@ function get_differential_function(
 )
     return get_differential_function(get_objective(admo, recursive))
 end
-function get_differential_function(mfoo::ManifoldFirstOrderObjective, recursive=false)
-    return (M, p, X) -> get_differential(M, mfoo, p, X)
+function get_differential_function(mfo::ManifoldFirstOrderObjective, recursive=false)
+    return (M, p, X) -> get_differential(M, mfo, p, X)
 end
+
+#
+#
+# Gradient access – a bit of cases!
+#
+# Case 1, FG (a) untyped, alloc
+function get_gradient(
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p
+) where {E<:AllocatingEvaluation,FG} end
+# Case 1, FG (b) untyped, inplace
+# Case 1, FG (c) untyped, alloc
+# Case 1, FG (d) untyped, inplace
+# case 2: F, G & Case 7: FD, G (gradient second)
+# (a) untyped, alloc
+# (b) untyped, in-place
+# (a) typed, alloc
+# (a) typed, in-place
+# Case 3: FG, D (4 cases)
+# Case 4: F, G, D (4 cases)
+# Case 5: F, GD (2 cases)
+# Case 6 does not provide a gradient
+# Case 8: FGD (2 cases)
+# Case 9 does not provide a gradient
 
 @doc """
     get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false)
@@ -412,15 +549,10 @@ function get_gradient_function(
     return (M, X, p) -> get_gradient!(M, X, cgo, p)
 end
 
-# ------------------------------------------------------------------------------------------
-#
-# Access functions
-#  ... that involve the gradient
-# ------------------------------------------------------------------------------------------
-
 #
 #  Access cost and gradient – TODO rework for cases.
 # -----------------------------
+
 function get_cost_and_gradient(
     M::AbstractManifold, cgo::ManifoldFirstOrderObjective{AllocatingEvaluation}, p
 )
@@ -446,11 +578,6 @@ function get_cost_and_gradient!(
     return cgo.costgrad!!(M, X, p)
 end
 
-function get_cost(M::AbstractManifold, cgo::ManifoldFirstOrderObjective, p)
-    v, _ = get_cost_and_gradient(M, cgo, p)
-    return v
-end
-
 #
 #  Access gradient
 # -----------------------------
@@ -468,67 +595,6 @@ function get_gradient(mp::AbstractManoptProblem, p)
 end
 function get_gradient!(mp::AbstractManoptProblem, X, p)
     return get_gradient!(get_manifold(mp), X, get_objective(mp), p)
-end
-
-"""
-    get_gradient(M::AbstractManifold, mgo::AbstractManifoldFirstOrderObjective{T}, p)
-    get_gradient!(M::AbstractManifold, X, mgo::AbstractManifoldFirstOrderObjective{T}, p)
-
-evaluate the gradient of a [`AbstractManifoldFirstOrderObjective{T}`](@ref) `mgo` at `p`.
-
-The evaluation is done in place of `X` for the `!`-variant.
-The `T=`[`AllocatingEvaluation`](@ref) problem might still allocate memory within.
-When the non-mutating variant is called with a `T=`[`InplaceEvaluation`](@ref)
-memory for the result is allocated.
-
-Note that the order of parameters follows the philosophy of `Manifolds.jl`, namely that
-even for the mutating variant, the manifold is the first parameter and the (in-place) tangent
-vector `X` comes second.
-"""
-get_gradient(M::AbstractManifold, mgo::AbstractManifoldFirstOrderObjective, p)
-
-function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient(M, get_objective(admo, false), p)
-end
-function get_gradient(
-    M::AbstractManifold, mgo::AbstractManifoldFirstOrderObjective{AllocatingEvaluation}, p
-)
-    return mgo.first_order!!(M, p)
-end
-function get_gradient(
-    M::AbstractManifold, mgo::AbstractManifoldFirstOrderObjective{InplaceEvaluation}, p
-)
-    X = zero_vector(M, p)
-    mgo.first_order!!(M, X, p)
-    return X
-end
-function get_gradient(M::AbstractManifold, mcgo::ManifoldFirstOrderObjective, p)
-    _, X = get_cost_and_gradient(M, mcgo, p)
-    return X
-end
-
-function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p)
-    return get_gradient!(M, X, get_objective(admo, false), p)
-end
-
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    mgo::AbstractManifoldFirstOrderObjective{AllocatingEvaluation},
-    p,
-)
-    copyto!(M, X, p, mgo.first_order!!(M, p))
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold, X, mgo::AbstractManifoldFirstOrderObjective{InplaceEvaluation}, p
-)
-    mgo.first_order!!(M, X, p)
-    return X
-end
-function get_gradient!(M::AbstractManifold, X, mcgo::ManifoldFirstOrderObjective, p)
-    get_cost_and_gradient!(M, X, mcgo, p)
-    return X
 end
 
 """

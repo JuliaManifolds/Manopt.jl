@@ -212,9 +212,7 @@ function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
     return get_cost(M, co.objective, p)
 end
 function get_cost(
-    M::AbstractManifold,
-    co::ManifoldCountObjective{E,<:ManifoldCombinedFirstOrderObjective},
-    p,
+    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AbstractEvaluationType}
     c, _ = get_cost_and_gradient(M, co, p)
     return c
@@ -259,18 +257,13 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     return X
 end
 function get_gradient(
-    M::AbstractManifold,
-    co::ManifoldCountObjective{E,<:ManifoldCombinedFirstOrderObjective},
-    p,
+    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AbstractEvaluationType}
     _, X = get_cost_and_gradient(M, co, p)
     return X
 end
 function get_gradient!(
-    M::AbstractManifold,
-    X,
-    co::ManifoldCountObjective{E,<:ManifoldCombinedFirstOrderObjective},
-    p,
+    M::AbstractManifold, X, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
 ) where {E<:AbstractEvaluationType}
     get_cost_and_gradient!(M, X, co, p)
     return X

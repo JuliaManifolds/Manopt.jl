@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a `ParentEvaluationType` for backwards compatibility, then an internal function
   inhertis its evaluation type from the parent objective. This is the default when
   passing a function to `GradientFunction` or `DifferenitalFunction`.
-* introduce a new `AllocatingAndInplaceEvaluationType` that is used for the
-  functions that offer both variants.
+* introduce a new `AllocatingInplaceEvaluation` that is used for the
+  functions that offer both variants simultaneously.
 
 ### Changed
 

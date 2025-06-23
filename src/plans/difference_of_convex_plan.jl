@@ -24,11 +24,11 @@ Note that the subdifferential might be given in two possible signatures
 * `∂h(M,p)` which does an [`AllocatingEvaluation`](@ref)
 * `∂h!(M, X, p)` which does an [`InplaceEvaluation`](@ref) in place of `X`.
 """
-struct ManifoldDifferenceOfConvexObjective{E,TCost,TGrad,TSubGrad} <:
-       AbstractManifoldFirstOrderObjective{E,TCost,TGrad}
-    cost::TCost
-    gradient!!::TGrad
-    ∂h!!::TSubGrad
+struct ManifoldDifferenceOfConvexObjective{E,F,G,S} <:
+       AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
+    cost::F
+    gradient!!::G
+    ∂h!!::S
     function ManifoldDifferenceOfConvexObjective(
         cost::TC, ∂h::TSH; gradient::TG=nothing, evaluation::ET=AllocatingEvaluation()
     ) where {ET<:AbstractEvaluationType,TC,TG,TSH}
@@ -239,12 +239,11 @@ as allocating or in-place.
 an note that neither cost nor gradient are required for the algorithm,
 just for eventual debug or stopping criteria.
 """
-struct ManifoldDifferenceOfConvexProximalObjective{
-    E<:AbstractEvaluationType,THGrad,TCost,TGrad
-} <: AbstractManifoldFirstOrderObjective{E,TCost,TGrad}
-    cost::TCost
-    gradient!!::TGrad
-    grad_h!!::THGrad
+struct ManifoldDifferenceOfConvexProximalObjective{E<:AbstractEvaluationType,GH,F,G} <:
+       AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
+    cost::F
+    gradient!!::G
+    grad_h!!::GH
     function ManifoldDifferenceOfConvexProximalObjective(
         grad_h::THG;
         cost::TC=nothing,

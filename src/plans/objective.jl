@@ -57,13 +57,13 @@ the problem contains or the function(s) do inherit their property from a parent
 struct ParentEvaluationType <: AbstractEvaluationType end
 
 @doc raw"""
-    AllocatingAndInplaceEvaluation <: AbstractEvaluationType
+    AllocatingInplaceEvaluation <: AbstractEvaluationType
 
 A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
 the problem contains or the function(s) that provides both an allocating variant and one,
 that does not allocate memory but work on their input, in place.
 """
-struct AllocatingAndInplaceEvaluation <: AbstractEvaluationType end
+struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
 
 @doc raw"""
     ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:

@@ -1,4 +1,2 @@
 
-Base.@deprecate_binding ManifoldGradientObjective ManifoldFirstOrderObjective
 Base.@deprecate_binding AbstractManifoldGradientObjective AbstractManifoldFirstOrderObjective
-Base.@deprecate_binding ManifoldCostGradientObjective ManifoldCombinedFirstOrderObjective

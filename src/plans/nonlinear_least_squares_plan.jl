@@ -47,7 +47,7 @@ $(_var(:Keyword, :evaluation))
 """
 struct NonlinearLeastSquaresObjective{
     E<:AbstractEvaluationType,F<:AbstractVectorGradientFunction{E}
-} <: AbstractManifoldFirstOrderObjective{E,F,F}
+} <: AbstractManifoldFirstOrderObjective{E,F}
     objective::F
 end
 

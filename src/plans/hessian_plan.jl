@@ -7,13 +7,13 @@ These options are assumed to have a field (`gradient`) to store the current grad
 abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
 """
-    AbstractManifoldHessianObjective{T<:AbstractEvaluationType,TC,TG,TH} <: AbstractManifoldFirstOrderObjective{T,TC,TG}
+    AbstractManifoldHessianObjective{E<:AbstractEvaluationType,F, G, H} <: AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
 
 An abstract type for all objectives that provide a (full) Hessian, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient and Hessian functions.
 """
-abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,TC,TG,TH} <:
-              AbstractManifoldFirstOrderObjective{E,TC,TG} end
+abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,F,G,H} <:
+              AbstractManifoldFirstOrderObjective{E,Tuple{F,G}} end
 
 @doc raw"""
     ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
@@ -116,7 +116,7 @@ function get_hessian!(
 end
 
 @doc raw"""
-    get_gradient_function(amgo::AbstractManifoldFirstOrderObjective{E<:AbstractEvaluationType})
+    get_hessian_function(amgo::ManifoldHessianObjective{E<:AbstractEvaluationType})
 
 return the function to evaluate (just) the Hessian ``\operatorname{Hess} f(p)``.
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function

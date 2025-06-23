@@ -6,6 +6,29 @@ Representing objectives on manifolds with a cost function implemented.
 abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
               AbstractManifoldObjective{T} end
 
+@doc """
+    CostFunction{CD} <: Function
+
+A wrapper for a function representing a cost ``f: $(_math(:TM)) → ℝ``,
+Since both return real values, this function would always work as an [`AllocatingEvaluation`](@ref).
+
+Usually this type is equivalent to its inner `cost`, but for completeness it
+might be beneficital to wrap a `cost` to distinguish it from e.g. a `gradient`.
+
+# Fields
+
+* `cost::F`: a function or functor for the cost
+
+# Constructor
+
+    CostFunction(costdiff::F)
+
+Create a cost function.
+"""
+struct CostFunction{F} <: Function
+    cost::F
+end
+
 @doc raw"""
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 
@@ -48,11 +71,21 @@ function get_cost(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective,
 end
 
 @doc raw"""
-    get_cost_function(amco::AbstractManifoldCostObjective)
+    get_cost_function(amco::AbstractManifoldCostObjective; recursive=false)
 
 return the function to evaluate (just) the cost ``f(p)=c`` as a function `(M,p) -> c`.
+If `amco` has more than one decorator, `recursive` determines whether just one (`false`)
+or all wrappers (`true`) should be “unwrapped” at once.
 """
 get_cost_function(mco::AbstractManifoldCostObjective, recursive=false) = mco.cost
+function get_cost_function(
+    mco::AbstractManifoldCostObjective{<:CostFunction}, recursive=false
+)
+    return get_cost_function(mco.cost, recursive)
+end
+function get_cost_function(cost::CostFunction, recursive=false)
+    return cost.cost
+end
 function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
     return get_cost_function(get_objective(admo, recursive))
 end

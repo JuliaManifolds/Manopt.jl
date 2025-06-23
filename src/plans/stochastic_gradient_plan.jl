@@ -1,12 +1,12 @@
-@doc raw"""
-    ManifoldStochasticGradientObjective{T<:AbstractEvaluationType} <: AbstractManifoldFirstOrderObjective{T}
+@doc """
+    ManifoldStochasticGradientObjective{E<:AbstractEvaluationType, F, G} <: AbstractManifoldFirstOrderObjective{E, Tuple{F,G}}
 
 A stochastic gradient objective consists of
 
-* a(n optional) cost function ``f(p) = \displaystyle\sum_{i=1}^n f_i(p)``
-* an array of gradients, ``\operatorname{grad}f_i(p), i=1,\ldots,n`` which can be given in two forms
-  * as one single function ``(\mathcal M, p) ↦ (X_1,…,X_n) ∈ (T_p\mathcal M)^n``
-  * as a vector of functions ``\bigl( (\mathcal M, p) ↦ X_1, …, (\mathcal M, p) ↦ X_n\bigr)``.
+* a(n optional) cost function ``f(p) = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) f_i(p)``
+* an array of gradients, ``$(_tex(:grad)) f_i(p), i=1,…,n`` which can be given in two forms
+  * as one single function ``($(_math(:M)), p) ↦ (X_1,…,X_n) ∈ ($(_math(:TpM)))^n``
+  * as a vector of functions ``$(_tex(:bigl))( ($(_math(:M)), p) ↦ X_1, …, ($(_math(:M)), p) ↦ X_n$(_tex(:bigr)))``.
 
 Where both variants can also be provided as [`InplaceEvaluation`](@ref) functions
 `(M, X, p) -> X`, where `X` is the vector of `X1,...,Xn` and `(M, X1, p) -> X1, ..., (M, Xn, p) -> Xn`,
@@ -37,7 +37,7 @@ Note that this can also be used with a [`gradient_descent`](@ref), since the (co
 is just the sums of the single gradients.
 """
 struct ManifoldStochasticGradientObjective{T<:AbstractEvaluationType,TCost,TGradient} <:
-       AbstractManifoldFirstOrderObjective{T,TCost,TGradient}
+       AbstractManifoldFirstOrderObjective{T,Tuple{TCost,TGradient}}
     cost::TCost
     gradient!!::TGradient
 end

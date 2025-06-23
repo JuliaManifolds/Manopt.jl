@@ -119,7 +119,7 @@ NonlinearLeastSquaresObjective
 There is also a second variant, if just one function is responsible for computing the cost _and_ the gradient
 
 ```@docs
-ManifoldCombinedFirstOrderObjective
+ManifoldCostGradientObjective
 ```
 
 #### Access functions

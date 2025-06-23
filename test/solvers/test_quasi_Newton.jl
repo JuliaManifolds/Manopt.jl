@@ -103,7 +103,7 @@ end
         @test isapprox(M, x_lrbfgs_cached_2, x_lrbfgs; atol=1e-5)
 
         # with Costgrad
-        mcgo = ManifoldCombinedFirstOrderObjective(costgrad)
+        mcgo = ManifoldCostGradientObjective(costgrad)
 
         x_lrbfgs_costgrad = quasi_Newton(
             M, mcgo, p; stopping_criterion=StopWhenGradientNormLess(10^(-6)), debug=[]
