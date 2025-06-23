@@ -91,7 +91,7 @@ function get_gradient!(
     return mho.gradient!!(M, Y, p)
 end
 
-function get_gradient_function(mho::ManifoldHessianObjective)
+function get_gradient_function(mho::ManifoldHessianObjective, recursive=false)
     return mho.gradient!!
 end
 

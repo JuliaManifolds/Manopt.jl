@@ -84,21 +84,21 @@ A `SimpleManifoldCachedObjective`""",
             A `SimpleManifoldCachedObjective`""",
         )
         # evaluated on init -> 1
-        @test sco1.objective.gradient!!.i == 1
-        @test sco1.objective.cost.i == 1
+        @test sco1.objective.functions[2].i == 1
+        @test sco1.objective.functions[1].i == 1
         @test get_gradient(M, sco1, p) == p
         get_gradient!(M, X, sco1, p)
         @test X == zero_vector(M, p)
         @test get_cost(M, sco1, p) == norm(p)
         # still at 1
-        @test sco1.objective.gradient!!.i == 1
-        @test sco1.objective.cost.i == 1
+        @test sco1.objective.functions[2].i == 1
+        @test sco1.objective.functions[1].i == 1
         @test get_gradient(M, sco1, q) == q # triggers an evaluation
         get_gradient!(M, X, sco1, q) # same point, copies
         @test X == q
         @test get_cost(M, sco1, q) == norm(q)
-        @test sco1.objective.cost.i == 2
-        @test sco1.objective.gradient!!.i == 2
+        @test sco1.objective.functions[1].i == 2
+        @test sco1.objective.functions[2].i == 2
         # first `grad!`
         get_gradient!(M, X, sco1, r) # triggers an evaluation
         @test get_gradient(M, sco1, r) == X # cached
@@ -112,20 +112,20 @@ A `SimpleManifoldCachedObjective`""",
         )
         sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; p=p, initialized=false)
         # not evaluated on init -> this is the first
-        @test sco2.objective.gradient!!.i == 0
-        @test sco2.objective.cost.i == 0
+        @test sco2.objective.functions[2].i == 0
+        @test sco2.objective.functions[1].i == 0
         @test get_gradient(M, sco2, p) == p
         @test get_cost(M, sco2, p) == norm(p)
         # now 1
-        @test sco2.objective.gradient!!.i == 1
-        @test sco2.objective.cost.i == 1
+        @test sco2.objective.functions[2].i == 1
+        @test sco2.objective.functions[1].i == 1
         # new point -> 2
         @test get_gradient(M, sco2, q) == q
         get_gradient!(M, X, sco2, q) # cached
         @test X == q
         @test get_cost(M, sco2, q) == norm(q)
-        @test sco2.objective.gradient!!.i == 2
-        @test sco2.objective.cost.i == 2
+        @test sco2.objective.functions[2].i == 2
+        @test sco2.objective.functions[1].i == 2
         get_gradient!(M, X, sco2, r)
         @test get_gradient(M, sco2, r) == X # cached
         @test X == r

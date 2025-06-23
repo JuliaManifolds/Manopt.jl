@@ -112,7 +112,7 @@ function get_cost(
 )
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.c_valid
-        sco.c, sco.X = sco.objective.costgrad!!(M, p)
+        sco.c, sco.X = _maybe_unwrap_function(sco.objective.functions)(M, p)
         copyto!(M, sco.p, p)
         sco.X_valid = true
         sco.c_valid = true
@@ -126,7 +126,7 @@ function get_cost(
 )
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.c_valid
-        sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
+        sco.c, _ = _maybe_unwrap_function(sco.objective.functions)(M, sco.X, p)
         copyto!(M, sco.p, p)
         sco.X_valid = true
         sco.c_valid = true
@@ -142,7 +142,7 @@ function get_gradient(
 )
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        sco.c, sco.X = sco.objective.costgrad!!(M, p)
+        sco.c, sco.X = _maybe_unwrap_function(sco.objective.functions)(M, p)
         copyto!(M, sco.p, p)
         # for switched points, invalidate c
         sco.X_valid = true
@@ -157,7 +157,7 @@ function get_gradient(
 )
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
+        sco.c, _ = _maybe_unwrap_function(sco.objective.functions)(M, sco.X, p)
         copyto!(M, sco.p, p)
         # for switched points, invalidate c
         sco.X_valid = true
@@ -175,7 +175,7 @@ function get_gradient!(
 )
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        sco.c, sco.X = sco.objective.costgrad!!(M, p)
+        sco.c, sco.X = _maybe_unwrap_function(sco.objective.functions)(M, p)
         copyto!(M, sco.p, p)
         sco.X_valid = true
         sco.c_valid = true
@@ -191,7 +191,7 @@ function get_gradient!(
 )
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
+        sco.c, _ = _maybe_unwrap_function(sco.objective.functions)(M, sco.X, p)
         sco.p = p
         sco.X_valid = true
         sco.c_valid = true
