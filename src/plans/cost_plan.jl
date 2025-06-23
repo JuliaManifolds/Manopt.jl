@@ -83,9 +83,6 @@ function get_cost_function(
 )
     return get_cost_function(mco.cost, recursive)
 end
-function get_cost_function(cost::CostFunction, recursive=false)
-    return cost.cost
-end
 function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
     return get_cost_function(get_objective(admo, recursive))
 end

@@ -67,6 +67,34 @@ struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
     end
 end
 
+function get_gradient(
+    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
+)
+    return mho.gradient!!(M, p)
+end
+function get_gradient(
+    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    mho.gradient!!(M, X, p)
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold, X, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
+)
+    copyto!(M, X, p, mho.gradient!!(M, p))
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p
+)
+    return mho.gradient!!(M, Y, p)
+end
+
+function get_gradient_function(mho::ManifoldHessianObjective)
+    return mho.gradient!!
+end
+
 @doc raw"""
     Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
     get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)

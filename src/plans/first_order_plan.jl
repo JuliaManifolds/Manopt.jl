@@ -241,7 +241,7 @@ function ManifoldFirstOrderObjective(
     if !isnothing(differential)
         # 2-tuple, we have to indicate the second is a diff, so that the first is clearly
         # a costgrad
-        cost_grad_diff = Tuple(costgrad, _mfoo_wrap_diff(differential))
+        cost_grad_diff = (costgrad, _mfoo_wrap_diff(differential))
         return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
     end
     return ManifoldFirstOrderObjective{E,FG}(cost_grad)
@@ -256,14 +256,14 @@ function ManifoldFirstOrderObjective(
         cost_grad_diff = Tuple(cost, grad, differential)
         return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
     end
-    cost_grad = Tuple(cost, grad)
+    cost_grad = (cost, grad)
     return ManifoldFirstOrderObjective{E,typeof(cost_grad)}(cost_grad)
 end
 # Case 5: cost and grad_diff
 function ManifoldFirstOrderObjective(
     cost, grad_diff::GD; evaluation::E=AllocatingEvaluation()
 ) where {GD<:GradientDifferentialFunction,E<:AbstractEvaluationType}
-    cost_grad_diff = Tuple(cost, grad_diff)
+    cost_grad_diff = (cost, grad_diff)
     return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
 end
 # Case 6: cost_diff
@@ -272,7 +272,7 @@ function ManifoldFirstOrderObjective(
     cost_diff::FD, grad=nothing; evaluation::E=AllocatingEvaluation()
 ) where {FD<:CostDifferentialFunction,E<:AbstractEvaluationType}
     isnothing(grad) && (return ManifoldFirstOrderObjective{E,FD}(cost_diff))
-    cost_diff = Tuple(cost_diff, grad)
+    cost_diff = (cost_diff, grad)
     return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_diff)
 end
 # Case 8: cost_grad_diff in one function
@@ -318,10 +318,8 @@ end
 # get_cost
 # for all 9 cases of ManifoldFirstOrderObjective
 # Case 1&3: FG, allocating
-function get_cost(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, p
-)
-    (c, _) = _maybe_unwrap_function(mcfo.functions)(M, p)
+function get_cost(M::AbstractManifold, mfo::ManifoldFirstOrderObjective, p)
+    (c, _) = _maybe_unwrap_function(mfo.functions)(M, p)
     return c
 end
 # Case 1&3: FG, Inplace
@@ -369,6 +367,10 @@ function get_cost(
     X = zero_vector(M, p)
     (c, _, _) = mfo.functions(M, X, p, X)
     return c
+end
+
+function get_cost_function(mfo::ManifoldFirstOrderObjective)
+    return (M, p) -> get_cost(M, mfo, p)
 end
 
 #
@@ -482,7 +484,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
 ) where {E<:AllocatingEvaluation,FG}
     (_, Y) = _maybe_unwrap_function(mfo.functions)(M, p)
     copyto!(M, X, p, Y)
@@ -497,7 +499,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
 ) where {E<:InplaceEvaluation,FG}
     _maybe_unwrap_function(mfo.functions)(M, X, p)
     return X
@@ -510,7 +512,7 @@ function get_gradient(
     return _maybe_unwrap_function(mfo.functions[2])(M, p)
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
 ) where {E<:AllocatingEvaluation,F,G}
     return copyto!(M, X, p, _maybe_unwrap_function(mfo.functions[2])(M, p))
 end
@@ -522,7 +524,7 @@ function get_gradient(
     return _maybe_unwrap_function(mfo.functions[2])(M, X, p)
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
 ) where {E<:InplaceEvaluation,F,G}
     return _maybe_unwrap_function(mfo.functions[2])(M, X, p)
 end
@@ -535,7 +537,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
 ) where {E<:AllocatingEvaluation,FG,D<:DifferentialFunction}
     (_, Y) = _maybe_unwrap_function(mfo.functions[1])(M, p)
     copyto!(M, X, p, Y)
@@ -550,7 +552,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
 ) where {E<:InplaceEvaluation,FG,D<:DifferentialFunction}
     _maybe_unwrap_function(mfo.functions[1])(M, X, p)
     return X
@@ -563,7 +565,7 @@ function get_gradient(
     return _maybe_unwrap_function(mfo.functions[2])(M, p)
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
 ) where {E<:AllocatingEvaluation,F,G,D}
     return copyto!(M, X, p, _maybe_unwrap_function(mfo.functions[2])(M, p))
 end
@@ -575,7 +577,7 @@ function get_gradient(
     return _maybe_unwrap_function(mfo.functions[2])(M, X, p)
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
 ) where {E<:InplaceEvaluation,F,G,D}
     return _maybe_unwrap_function(mfo.functions[2])(M, X, p)
 end
@@ -589,7 +591,7 @@ function get_gradient(
     return Y
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
 ) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
     (Y, _) = _maybe_unwrap_function(mfo.functions[2])(M, p, X)
     return copyto!(M, X, p, Y)
@@ -603,7 +605,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
 ) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
     _maybe_unwrap_function(mfo.functions[2])(M, X, p, X)
     return X
@@ -619,7 +621,7 @@ function get_gradient(
     return Y
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
 ) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
     (_, Y, _) = _maybe_unwrap_function(mfo.functions)(M, p, X)
     return copyto!(M, X, p, Y)
@@ -633,7 +635,7 @@ function get_gradient(
     return X
 end
 function get_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
 ) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
     _maybe_unwrap_function(mfo.functions)(M, X, p, X)
     return X
@@ -681,7 +683,7 @@ function get_cost_and_gradient(
     return _maybe_unwrap_function(mfo.functions)(M, p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
 ) where {E<:AllocatingEvaluation,FG}
     (c, Y) = _maybe_unwrap_function(mfo.functions)(M, p)
     copyto!(M, X, p, Y)
@@ -695,7 +697,7 @@ function get_cost_and_gradient(
     return _maybe_unwrap_function(mfo.functions)(M, X, p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
 ) where {E<:InplaceEvaluation,FG}
     return _maybe_unwrap_function(mfo.functions)(M, X, p)
 end
@@ -709,7 +711,7 @@ function get_cost_and_gradient(
     return (c, X)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
 ) where {E<:AllocatingEvaluation,F,G}
     c = _maybe_unwrap_function(mfo.functions[1])(M, p)
     copyto!(M, X, p, _maybe_unwrap_function(mfo.functions[2])(M, p))
@@ -725,7 +727,7 @@ function get_cost_and_gradient(
     return (c, X)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
 ) where {E<:InplaceEvaluation,F,G}
     return _maybe_unwrap_function(mfo.functions[2])(M, X, p)
 end
@@ -737,7 +739,7 @@ function get_cost_and_gradient(
     return _maybe_unwrap_function(mfo.functions[1])(M, p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
 ) where {E<:AllocatingEvaluation,FG,D<:DifferentialFunction}
     (c, Y) = _maybe_unwrap_function(mfo.functions[1])(M, p)
     copyto!(M, X, p, Y)
@@ -751,7 +753,7 @@ function get_cost_and_gradient(
     return _maybe_unwrap_function(mfo.functions[1])(M, X, p)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
 ) where {E<:InplaceEvaluation,FG,D<:DifferentialFunction}
     return _maybe_unwrap_function(mfo.functions[1])(M, X, p)
 end
@@ -765,7 +767,7 @@ function get_cost_and_gradient(
     return nothing
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
 ) where {E<:AllocatingEvaluation,F,G,D}
     c = _maybe_unwrap_function(mfo.functions[1])(M, p)
     copyto!(M, X, p, _maybe_unwrap_function(mfo.functions[2])(M, p))
@@ -781,7 +783,7 @@ function get_cost_and_gradient(
     return (c, X)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
 ) where {E<:InplaceEvaluation,F,G,D}
     c = _maybe_unwrap_function(mfo.functions[1])(M, p)
     _maybe_unwrap_function(mfo.functions[2])(M, X, p)
@@ -798,7 +800,7 @@ function get_cost_and_gradient(
     return (c, Y)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
 ) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
     c = _maybe_unwrap_function(mfo.functions[1])(M, p)
     (Y, _) = _maybe_unwrap_function(mfo.functions[2])(M, p, X)
@@ -815,7 +817,7 @@ function get_cost_and_gradient(
     return (c, X)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
 ) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
     c = _maybe_unwrap_function(mfo.functions[1])(M, p)
     _maybe_unwrap_function(mfo.functions[2])(M, X, p, X)
@@ -832,7 +834,7 @@ function get_cost_and_gradient(
     return (c, Y)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
 ) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
     (c, Y, _) = _maybe_unwrap_function(mfo.functions)(M, p, X)
     copyto!(M, X, p, Y)
@@ -847,7 +849,7 @@ function get_cost_and_gradient(
     return (c, X)
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, X, p
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
 ) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
     (c, _, _) = _maybe_unwrap_function(mfo.functions)(M, X, p, X)
     return (c, X)
