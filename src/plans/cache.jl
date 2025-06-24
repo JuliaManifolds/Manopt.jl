@@ -324,7 +324,7 @@ function get_gradient_function(
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
-function get_cost_and_gradient(M, mco::ManifoldCachedObjective, p)
+function get_cost_and_gradient(M::AbstractManifold, mco::ManifoldCachedObjective, p)
     #Neither cost not grad cached -> evaluate normally
     all(.!(haskey.(Ref(mco.cache), [:Cost, :Gradient]))) &&
         return get_cost_and_gradient(M, mco.objective, p)
@@ -343,7 +343,7 @@ function get_cost_and_gradient(M, mco::ManifoldCachedObjective, p)
         return get(mco.cache[:Cost], p), copy(M, p, get(mco.cache[:Gradient], p))
     end
 end
-function get_cost_and_gradient!(M, X, mco::ManifoldCachedObjective, p)
+function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjective, p)
     #Neither cost not grad cached -> evaluate normally
     all(.!(haskey.(Ref(mco.cache), [:Cost, :Gradient]))) &&
         return get_cost_and_gradient!(M, X, mco.objective, p)
