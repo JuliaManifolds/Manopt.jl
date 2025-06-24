@@ -208,18 +208,17 @@ end
 # First order iformation has different types, here we count based on the provided type
 
 """
-    _count_based_on_group(::ManifoldCountObjective, group_type, eval::Symbol)
+    _count_at_least(::ManifoldCountObjective, group_type, eval::Symbol)
 
 count the evaluations based on the `group_type` that is the second parameyer of
-the [`ManifoldFirstOrderObjective`](@ref). See their 9 cases
+the [`ManifoldFirstOrderObjective`](@ref), while evaluating `eval` (from `:Cost`; `:Gradient`, `:Differential`).
+This counts all others that are evaluated with `eval`. See their 9 cases
 
 """
-_count_based_on_group(::ManifoldCountObjective, group_type, eval::Symbol)
+_count_at_least(::ManifoldCountObjective, group_type, eval::Symbol)
 
 # Case 1: FG
-function _count_based_on_group(
-    co::ManifoldCountObjective, ::Type{FG}, eval::Symbol
-) where {FG}
+function _count_at_least(co::ManifoldCountObjective, ::Type{FG}, eval::Symbol) where {FG}
     # If we have grad or cost – count both Cost and grad – diff needs grad, that evaluates cost a well
     if (eval in [:Cost, :Gradient, :Differential])
         _count_if_exists(co, :Cost)
@@ -228,7 +227,7 @@ function _count_based_on_group(
     return nothing
 end
 # Case 2: F, G, untyped
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{Tuple{F,G}}, eval::Symbol
 ) where {F,G}
     # Count separately
@@ -237,7 +236,7 @@ function _count_based_on_group(
     return nothing
 end
 # Case 3: FG, D, untyped first
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{Tuple{FG,<:DifferentialFunction}}, eval::Symbol
 ) where {FG}
     if (eval in [:Cost, :Gradient])
@@ -248,7 +247,7 @@ function _count_based_on_group(
     return nothing
 end
 # Case 4: F, G, D, untyped
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{Tuple{F,G,D}}, eval::Symbol
 ) where {F,G,D}
     # Count separately
@@ -258,7 +257,7 @@ function _count_based_on_group(
     return nothing
 end
 # Case 5: F, GD, second typed
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{Tuple{F,GD}}, eval::Symbol
 ) where {F,GD<:GradientDifferentialFunction}
     # Count separately
@@ -270,7 +269,7 @@ function _count_based_on_group(
     return nothing
 end
 # Case 6: FD, typed
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{FD}, eval::Symbol
 ) where {FD<:CostDifferentialFunction}
     # Count always both
@@ -281,10 +280,10 @@ function _count_based_on_group(
     # Gradient is not available
     return nothing
 end
-# Case 7: FD, G, first typed
-function _count_based_on_group(
+# Case 7: FD, G, both typed (G to avoid ambiguity with 5)
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{Tuple{FD,G}}, eval::Symbol
-) where {FD<:CostDifferentialFunction,G}
+) where {FD<:CostDifferentialFunction,G<:GradientFunction}
     # Count always both
     if (eval in [:Differential, :Cost])
         _count_if_exists(co, :Cost)
@@ -294,7 +293,7 @@ function _count_based_on_group(
     return nothing
 end
 # Case 8: FDG, typed
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{FDG}, eval::Symbol
 ) where {FDG<:CostGradientDifferentialFunction}
     # Count always all
@@ -306,21 +305,11 @@ function _count_based_on_group(
     return nothing
 end
 # Case 9: F,D, both typed
-function _count_based_on_group(
+function _count_at_least(
     co::ManifoldCountObjective, ::Type{Tuple{F,D}}, eval::Symbol
 ) where {F<:CostFunction,D<:DifferentialFunction}
     (eval in [:Cost, :Differential]) && _count_if_exists(co, eval)
     return nothing
-end
-#resolve one ambiguity
-function _count_based_on_group(
-    co::ManifoldCountObjective, ::Type{Tuple{FD,GD}}, eval::Symbol
-) where {FD<:CostDifferentialFunction,GD<:GradientDifferentialFunction}
-    throw(
-        DomainError(
-            "the differential is stored twice, once within $FD, once within $GD. Counting not possible.",
-        ),
-    )
 end
 
 #
@@ -335,9 +324,8 @@ end
 function get_cost(
     M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,T}}, p
 ) where {E<:AbstractEvaluationType,T}
-    _count_based_on_group(co, T, :Cost)
+    _count_at_least(co, T, :Cost)
     return get_cost(M, co.objective, p)
-    return c
 end
 # Passthrough
 function get_cost_function(co::ManifoldCountObjective, recursive=false)
@@ -353,8 +341,8 @@ end
 function get_cost_and_gradient(
     M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,T}}, p
 ) where {E<:AbstractEvaluationType,T}
-    _count_based_on_group(co, T, :Cost)
-    _count_based_on_group(co, T, :Gradient)
+    _count_at_least(co, T, :Cost)
+    _count_at_least(co, T, :Gradient)
     return get_cost_and_gradient(M, co.objective, p)
 end
 
@@ -369,8 +357,8 @@ function get_cost_and_gradient!(
     co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,T}},
     p,
 ) where {E<:AbstractEvaluationType,T}
-    _count_based_on_group(co, T, :Cost)
-    _count_based_on_group(co, T, :Gradient)
+    _count_at_least(co, T, :Cost)
+    _count_at_least(co, T, :Gradient)
     return get_cost_and_gradient!(M, X, co.objective, p)
 end
 
@@ -385,7 +373,7 @@ function get_differential(
     p,
     X,
 ) where {E<:AbstractEvaluationType,T}
-    _count_based_on_group(co, T, :Differential)
+    _count_at_least(co, T, :Differential)
     return get_differential(M, co.objective, p, X)
 end
 # Passthrough
@@ -419,7 +407,7 @@ end
 function get_gradient(
     M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,T}}, p
 ) where {E<:AbstractEvaluationType,T}
-    _count_based_on_group(co, T, :Gradient)
+    _count_at_least(co, T, :Gradient)
     return get_gradient(M, co.objective, p)
 end
 function get_gradient!(
@@ -428,7 +416,7 @@ function get_gradient!(
     co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,T}},
     p,
 ) where {E<:AbstractEvaluationType,T}
-    _count_based_on_group(co, T, :Gradient)
+    _count_at_least(co, T, :Gradient)
     get_gradient!(M, X, co.objective, p)
     return X
 end

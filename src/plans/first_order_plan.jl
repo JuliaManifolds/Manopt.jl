@@ -209,17 +209,20 @@ The first two cases are the most common one. They can also be addressed by their
 
 # Constructors
     ManifoldFirstOrderObjective(cost_grad; kwargs,...)
-    ManifoldFirstOrderObjective(cost_differential::CostDifferentialFunction, grad=nothing; kwargs,...)
-    ManifoldFirstOrderObjective(cost_grad_differential::CostGradientDifferentialFunction; kwargs,...)
     ManifoldFirstOrderObjective(cost, grad; kwargs,...)
-    ManifoldFirstOrderObjective(cost; differential=nothing)
+    ManifoldFirstOrderObjective(cost_differential::CostDifferentialFunction; kwargs,...)
+    ManifoldFirstOrderObjective(cost_differential::CostDifferentialFunction, grad::GradientFunction; kwargs,...)
+    ManifoldFirstOrderObjective(cost_grad_differential::CostGradientDifferentialFunction; kwargs,...)
+    ManifoldFirstOrderObjective(cost; differential=nothing...)
 
 ## Keyword arguments
 
 * `differential = nothing` provide a separate function for the differential.
 $(_var(:Keyword, :evaluation))
+  for the last case, since both
 
-For the last signature, a differential has to be provided
+For the last signature, a differential has to be provided; since both return numbers,
+the evaluation is ignored for this case as well
 
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
@@ -230,10 +233,12 @@ struct ManifoldFirstOrderObjective{E<:AbstractEvaluationType,F} <:
 end
 
 # a small wrapping helper
-_mfo_wrap_diff(diff) = DifferentialFunction(diff)
-_mfo_wrap_diff(diff::DifferentialFunction) = diff
-_mfo_wrap_cost(cost) = CostFunction(cost)
-_mfo_wrap_cost(cost::CostFunction) = cost
+_mfo_make_sure_wrapped_diff(diff) = DifferentialFunction(diff)
+_mfo_make_sure_wrapped_diff(diff::DifferentialFunction) = diff
+_mfo_make_sure_wrapped_grad(grad) = GradientFunction(grad)
+_mfo_make_sure_wrapped_grad(grad::GradientFunction) = grad
+_mfo_make_sure_wrapped_cost(cost) = CostFunction(cost)
+_mfo_make_sure_wrapped_cost(cost::CostFunction) = cost
 # Case 1: CostGrad
 # Case 3: CostGrad and diff
 function ManifoldFirstOrderObjective(
@@ -242,7 +247,7 @@ function ManifoldFirstOrderObjective(
     if !isnothing(differential)
         # 2-tuple, we have to indicate the second is a diff, so that the first is clearly
         # a costgrad
-        cost_grad_diff = (costgrad, _mfo_wrap_diff(differential))
+        cost_grad_diff = (costgrad, _mfo_make_sure_wrapped_diff(differential))
         return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
     end
     return ManifoldFirstOrderObjective{E,FG}(cost_grad)
@@ -261,10 +266,11 @@ function ManifoldFirstOrderObjective(
     return ManifoldFirstOrderObjective{E,typeof(cost_grad)}(cost_grad)
 end
 # Case 5: cost and grad_diff
+# internally always make sure cost is wrapped to avoid ambiguities with case 7
 function ManifoldFirstOrderObjective(
     cost, grad_diff::GD; evaluation::E=AllocatingEvaluation()
 ) where {GD<:GradientDifferentialFunction,E<:AbstractEvaluationType}
-    cost_grad_diff = (cost, grad_diff)
+    cost_grad_diff = (_mfo_make_sure_wrapped_cost(cost), grad_diff)
     return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_grad_diff)
 end
 # Case 6: cost_diff
@@ -273,23 +279,14 @@ function ManifoldFirstOrderObjective(
 ) where {FD<:CostDifferentialFunction,E<:AbstractEvaluationType}
     return ManifoldFirstOrderObjective{E,FD}(cost_diff)
 end
-# Case 7: cost_diff and extra grad
+# Case 7: cost_diff and extra grad – type both
 function ManifoldFirstOrderObjective(
-    cost_diff::FD, grad; evaluation::E=AllocatingEvaluation()
-) where {FD<:CostDifferentialFunction,E<:AbstractEvaluationType}
-    cost_diff = (cost_diff, grad)
+    cost_diff::FD, grad::G; evaluation::E=AllocatingEvaluation()
+) where {FD<:CostDifferentialFunction,G<:GradientFunction,E<:AbstractEvaluationType}
+    cost_diff = (cost_diff, _mfo_make_sure_wrapped_grad(grad))
     return ManifoldFirstOrderObjective{E,typeof{cost_grad_diff}}(cost_diff)
 end
 # You can not provide diff twice – resolve an ambiguity
-function ManifoldFirstOrderObjective(
-    cost_diff::FD, grad_diff::GD; kwargs...
-) where {FD<:CostDifferentialFunction,GD<:GradientDifferentialFunction}
-    throw(
-        DomainError(
-            "You can not provide the differential together with a cost ($FD) and a gradient $(GD), please only provide a differential once.",
-        ),
-    )
-end
 # Case 8: cost_grad_diff in one function
 function ManifoldFirstOrderObjective(
     cost_grad_diff::FGD; evaluation::E=AllocatingEvaluation()
@@ -304,7 +301,7 @@ function ManifoldFirstOrderObjective(cost::CostFunction; differential=nothing)
         ),
     )
     # Make sure we store this typed, to avoid ambiguities
-    cost_diff = Tuple(cost, _mfo_wrap_diff(differential))
+    cost_diff = Tuple(cost, _mfo_make_sure_wrapped_diff(differential))
     return ManifoldFirstOrderObjective{AllocatingEvaluation,typeof{cost_diff}}(cost_diff)
 end
 # For ease of use and to be nonbreaking in type names

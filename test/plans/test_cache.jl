@@ -103,7 +103,7 @@ A `SimpleManifoldCachedObjective`""",
         get_gradient!(M, X, sco1, r) # triggers an evaluation
         @test get_gradient(M, sco1, r) == X # cached
         @test X == r
-        @test sco1.objective.gradient!!.i == 3
+        @test sco1.objective.functions[2].i == 3
         @test Manopt.get_cost_function(sco1) != Manopt.get_cost_function(mgoa)
         @test Manopt.get_gradient_function(sco1) != Manopt.get_gradient_function(mgoa)
 
@@ -133,55 +133,55 @@ A `SimpleManifoldCachedObjective`""",
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
         sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; p=p, initialized=false)
         # not evaluated on init -> still zero
-        @test sco3.objective.costgrad!!.i == 0
+        @test sco3.objective.functions.i == 0
         @test get_gradient(M, sco3, p) == p
         get_gradient!(M, X, sco3, p)
         @test X == p
         @test get_cost(M, sco3, p) == norm(p)
-        # still at 1
-        @test sco3.objective.costgrad!!.i == 1
+        # for seperate calls this is a 2
+        @test sco3.objective.functions.i == 2
         @test get_gradient(M, sco3, q) == q
         get_gradient!(M, X, sco3, q) # cached
         @test X == q
-        @test get_cost(M, sco3, q) == norm(q) # cached
-        @test sco3.objective.costgrad!!.i == 2
+        @test get_cost(M, sco3, q) == norm(q)
+        @test sco3.objective.functions.i == 4
         get_gradient!(M, X, sco3, r)
         @test X == r
         @test get_gradient(M, sco3, r) == r # cached
-        @test get_cost(M, sco3, r) == norm(r) # cached
-        @test sco3.objective.costgrad!!.i == 3
+        @test get_cost(M, sco3, r) == norm(r)
+        @test sco3.objective.functions.i == 6
         @test get_cost(M, sco3, s) == norm(s)
-        get_gradient!(M, X, sco3, s) # cached
+        get_gradient!(M, X, sco3, s)
         @test X == s
         @test get_gradient(M, sco3, s) == s # cached
-        @test sco3.objective.costgrad!!.i == 4
+        @test sco3.objective.functions.i == 8
 
         mcgoi = ManifoldCostGradientObjective(
             TestCostGradCount(0); evaluation=InplaceEvaluation()
         )
         sco4 = Manopt.SimpleManifoldCachedObjective(M, mcgoi; p=p)
         # evaluated on init -> evaluates twice
-        @test sco4.objective.costgrad!!.i == 2
+        @test sco4.objective.functions.i == 2
         @test get_gradient(M, sco4, p) == p
         get_gradient!(M, X, sco4, p) # cached
         @test X == p
         @test get_cost(M, sco4, p) == norm(p)
         # still at 2
-        @test sco4.objective.costgrad!!.i == 2
+        @test sco4.objective.functions.i == 2
         @test get_gradient(M, sco4, q) == q
         get_gradient!(M, X, sco4, q) #cached
         @test X == q
         @test get_cost(M, sco4, q) == norm(q)
-        @test sco4.objective.costgrad!!.i == 3
+        @test sco4.objective.functions.i == 4
         get_gradient!(M, X, sco4, r)
         @test X == r
         @test get_gradient(M, sco4, r) == r # cached
-        @test sco4.objective.costgrad!!.i == 4
+        @test sco4.objective.functions.i == 5
         @test get_cost(M, sco4, s) == norm(s)
-        get_gradient!(M, X, sco4, s) # cached
+        get_gradient!(M, X, sco4, s)
         @test X == s
         @test get_gradient(M, sco4, s) == s # cached
-        @test sco4.objective.costgrad!!.i == 5
+        @test sco4.objective.functions.i == 7
     end
     @testset "ManifoldCachedObjective on Cost&Grad" begin
         M = Sphere(2)
@@ -256,8 +256,8 @@ A `SimpleManifoldCachedObjective`""",
         get_gradient!(M, Y, lco, -p) #trigger cache with in-place
         @test Y == -X
         # Similar with
-        # Gradient cached already so no new evaluations
-        @test get_count(lco2a, :Gradient) == d
+        # Gradient not yet cached from cost (fornow) so one new evaluations
+        @test get_count(lco2a, :Gradient) == d + 1
         # Trigger caching on `costgrad`
         X = get_gradient(M, lco2a, -p)
         @test X == Y
