@@ -312,6 +312,15 @@ function _count_based_on_group(
     (eval in [:Cost, :Differential]) && _count_if_exists(co, eval)
     return nothing
 end
+#resolve one ambiguity
+function _count_based_on_group(
+    co::ManifoldCountObjective, ::Type{Tuple{FD,GD}}, eval::Symbol
+) where {FD<:CostDifferentialFunction,GD<:GradientDifferentialFunction}
+    throw(
+        DomainError("the differential is stored twice, once within $FD, once within $GD. Counting not possible.")
+    )
+end
+
 #
 # Overwrite access functions
 #
