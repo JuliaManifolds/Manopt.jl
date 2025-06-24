@@ -40,17 +40,22 @@ function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recurs
     return doco.gradient!!
 end
 
-function get_gradient(M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p)
-    return doco.gradient!!(M,p)
+function get_gradient(
+    M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p
+)
+    return doco.gradient!!(M, p)
 end
 function get_gradient(
     M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
 )
-    X = zero_vector(M,p)
+    X = zero_vector(M, p)
     return doco.gradient!!(M, X, p)
 end
 function get_gradient!(
-    M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p
+    M::AbstractManifold,
+    X,
+    doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation},
+    p,
 )
     return copyto!(M, X, p, doco.gradient!!(M, p))
 end

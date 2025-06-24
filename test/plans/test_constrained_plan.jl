@@ -120,8 +120,8 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
     @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
     @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
     # Test cost/grad pass through
-    @test Manopt.get_cost_function(cofa)(M,p) == f(M,p)
-    @test Manopt.get_gradient_function(cofa)(M,p) == grad_f(M,p)
+    @test Manopt.get_cost_function(cofa)(M, p) == f(M, p)
+    @test Manopt.get_gradient_function(cofa)(M, p) == grad_f(M, p)
     @testset "lengths" begin
         @test equality_constraints_length(cofa) == 1
         @test inequality_constraints_length(cofa) == 2
