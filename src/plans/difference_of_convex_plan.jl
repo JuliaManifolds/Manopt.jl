@@ -36,6 +36,30 @@ struct ManifoldDifferenceOfConvexObjective{E,F,G,S} <:
     end
 end
 
+function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive=false)
+    return doco.gradient!!
+end
+
+function get_gradient(M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p)
+    return doco.gradient!!(M,p)
+end
+function get_gradient(
+    M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M,p)
+    return doco.gradient!!(M, X, p)
+end
+function get_gradient!(
+    M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p
+)
+    return copyto!(M, X, p, doco.gradient!!(M, p))
+end
+function get_gradient!(
+    M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
+)
+    return doco.gradient!!(M, X, p)
+end
+
 """
     X = get_subtrahend_gradient(amp, q)
     get_subtrahend_gradient!(amp, X, q)
@@ -252,6 +276,44 @@ struct ManifoldDifferenceOfConvexProximalObjective{E<:AbstractEvaluationType,GH,
     ) where {ET<:AbstractEvaluationType,TC,TG,THG}
         return new{ET,THG,TC,TG}(cost, gradient, grad_h)
     end
+end
+
+function get_gradient(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    p,
+)
+    return dcpo.gradient!!(M, p)
+end
+function get_gradient(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    p,
+)
+    X = zero_vector(M, p)
+    return dcpo.gradient!!(M, X, p)
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    p,
+)
+    return copyto!(M, X, p, dcpo.gradient!!(M, p))
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    p,
+)
+    return dcpo.gradient!!(M, X, p)
+end
+
+function get_gradient_function(
+    dcpo::ManifoldDifferenceOfConvexProximalObjective, recursive=false
+)
+    return dcpo.gradient!!
 end
 
 @doc raw"""

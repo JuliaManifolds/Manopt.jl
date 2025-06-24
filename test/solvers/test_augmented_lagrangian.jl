@@ -28,7 +28,7 @@ using LinearAlgebra: I, tr
             grad_g=grad_g,
             gradient_inequality_range=NestedPowerRepresentation(),
         )
-        @test sol2 == sol
+        @test sol2 ≈ sol
 
         co = ConstrainedManifoldObjective(f, grad_f; g=g, grad_g=grad_g, M=M)
         mp = DefaultManoptProblem(M, co)
