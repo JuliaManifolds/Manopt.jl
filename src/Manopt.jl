@@ -318,9 +318,18 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
-    ManifoldCachedObjective,
-    AbstractVectorFunction,
+    ManifoldCachedObjective
+# Functions
+export AbstractVectorFunction,
     AbstractVectorGradientFunction,
+    AbstractFirstOrderFunction,
+    CostDifferentialFunction,
+    CostGradientDifferentialFunction,
+    CostFunction,
+    CostGradientFunction,
+    DifferentialFunction,
+    GradientDifferentialFunction,
+    GradientFunction,
     VectorGradientFunction,
     VectorHessianFunction
 #
@@ -408,6 +417,7 @@ export get_state,
     get_objective,
     get_unconstrained_objective
 export get_hessian, get_hessian!
+export get_differential
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual

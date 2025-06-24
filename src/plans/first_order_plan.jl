@@ -99,7 +99,7 @@ the differential from the gradient of a function, since both have similar
 signatures that would only be distinguishable if we require types points and vectors.
 
 # Fields
-* `diff_f!!::D`: a function or functor for the gradient
+* `diff!!::D`: a function or functor for the differential
 
 # Constructor
 
@@ -146,9 +146,11 @@ _maybe_unwrap_function(gdf::GradientDifferentialFunction) = gdf.grad_diff!!
     GradientFunction{G} <: AbstractFirstOrderFunction
 
 A wrapper for a function representing the Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))`` of a function.
+This wrapper is usually not necessary, unless it is important to distinguish cases,
+e.g. from the [`DifferentialFunction`](@ref)
 
 # Fields
-* `grad_f!!::G`: a function or functor for the gradient
+* `grad!!::G`: a function or functor for the gradient
 
 # Constructor
 
@@ -196,11 +198,11 @@ Currently the following cases are covered, sorted by their popularity
   can be wrapped in their types, [`CostFunction`](@ref), [`GradientFunction`](@ref), and [`DifferentialFunction`](@ref), respectively
 5. a `Tuple{F, GD <: GradientDifferentialFunction}` representing a `cost::F` and a common function
   `(X, d) = grad_diff(M, p, X)` indicated by the [`GradientDifferentialFunction`](@ref)
-6. a [`CostDifferential`](@ref) representing a single function to compute `(c,d) = cost_diff(M, p, X)`.
-7. a Tuple{FD<:CostDifferential, G} representing a function like in 6. and a separate gradient function,
+6. a [`CostDifferentialFunction`](@ref) representing a single function to compute `(c,d) = cost_diff(M, p, X)`.
+7. a Tuple{FD<:CostDifferentialFunction, G} representing a function like in 6. and a separate gradient function,
   where the gradient function can be wrapped in a [`GradientFunction`](@ref).
-8. a `cost` and a [`DifferentialFunction`]()
-9. a [`CostGradientDifferential`](@ref) representing a single function to compute `(c,Y,d) = cost_grad_diff(M, p, X)`
+8. a `cost` and a [`DifferentialFunction`](@ref)
+9. a [`CostGradientDifferentialFunction`](@ref) representing a single function to compute `(c,Y,d) = cost_grad_diff(M, p, X)`
 
 For all cases where a gradient is present, also an in-place variant is possible, where the
 signature has the result `Y` in second place.
@@ -322,11 +324,11 @@ end
 
 const ManifoldCostGradientObjective{E,FG} = ManifoldFirstOrderObjective{E,FG}
 @doc """
-     ManifoldGradientObjective(cost_grad; kwargs...)
+     ManifoldCostGradientObjective(cost_grad; kwargs...)
 
 TODO: Doocument old / comfort constructor
 """
-function ManifolCostGradientObjective(cost_grad; kwargs...)
+function ManifoldCostGradientObjective(cost_grad; kwargs...)
     # Now case 1
     return ManifoldFirstOrderObjective(cost_grad; kwargs...)
 end
