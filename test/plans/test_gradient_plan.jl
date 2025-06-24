@@ -6,21 +6,23 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
 @testset "Gradient Plan" begin
     io = IOBuffer()
     M = ManifoldsBase.DefaultManifold(2)
-    p = [4.0, 2.0]
+    q = [4.0, 2.0]
+    f(M, p) = distance(M, p, q) .^ 2
+    grad_f(M, p) = -2 * log(M, p, q)
+    grad_f!(M, X, p) = (X .= -2 * log(M, p, q))
+    diff_f(M, p, X) = inner(M, p, grad_f(M, p), X)
+    p = [1.0, 2.0]
+    X = [0.2, 0.3]
     gst = GradientDescentState(
         M;
         p=zero(p),
         stopping_criterion=StopAfterIteration(20),
         stepsize=Manopt.ConstantStepsize(M),
     )
-    set_iterate!(gst, M, p)
-    @test get_iterate(gst) == p
+    set_iterate!(gst, M, q)
+    @test get_iterate(gst) == q
     set_gradient!(gst, M, p, [1.0, 0.0])
     @test isapprox(M, p, get_gradient(gst), [1.0, 0.0])
-    f(M, q) = distance(M, q, p) .^ 2
-    grad_f(M, q) = -2 * log(M, q, p)
-    grad_f!(M, X, q) = (x .= -2 * log(M, q, p))
-    diff_f(M, q, X) = inner(M, p, grad_f(M, q), X)
     mgo = ManifoldFirstOrderObjective(f, grad_f)
     mp = DefaultManoptProblem(M, mgo)
     @test get_initial_stepsize(mp, gst) == 1.0
@@ -84,7 +86,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         get_gradient!(M, Y, mcgo, p)
         @test isapprox(M, p, X, Y)
 
-        grad_f!(M, X, q) = -2 * log!(M, X, q, p)
+        grad_f!(M, X, p) = -2 * log!(M, X, p, q)
         costgrad!(M, X, p) = (f(M, p), grad_f!(M, X, p))
         mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation=InplaceEvaluation())
         @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
@@ -112,14 +114,6 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test Manopt.get_cost_function(ddo) == Manopt.get_cost_function(mgo)
     end
     @testset "FirstOrderObjective cases and Functions" begin
-        M = ManifoldsBase.DefaultManifold(2)
-        q = [4.0, 2.0]
-        f(M, p) = distance(M, p, q) .^ 2
-        grad_f(M, p) = -2 * log(M, p, q)
-        grad_f!(M, X, p) = (X .= -2 * log(M, p, q))
-        diff_f(M, p, X) = inner(M, p, grad_f(M, p), X)
-        p = [1.0, 2.0]
-        X = [0.2, 0.3]
         c = f(M, p)
         G = grad_f(M, p)
         d = diff_f(M, p, X)
@@ -132,7 +126,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         fgd!(M, Y, p, X) = (f(M, p), grad_f!(M, Y, p), diff_f(M, p, X))
         # the number represents the case, a/i alloc/inplace
         mfo1a = ManifoldFirstOrderObjective(fg)
-        @test repr(mfo1a) == "ManifoldFirstOrderObjective{AllocatingEvaluation, typeof(fg)}"
+        @test startswith(repr(mfo1a), "ManifoldFirstOrderObjective{AllocatingEvaluation, ")
         mfo1i = ManifoldFirstOrderObjective(fg!; evaluation=InplaceEvaluation())
         mfo2a = ManifoldFirstOrderObjective(f, grad_f)
         mfo2i = ManifoldFirstOrderObjective(f, grad_f!; evaluation=InplaceEvaluation())
@@ -180,7 +174,6 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         gcgt = [gcgt..., mfo7a, mfo7i, mfo8a, mfo8i]
         Yi = zero_vector(M, p)
         for obj in gcgt
-            println(typeof(obj))
             @test get_gradient(M, obj, p) == G
             get_gradient!(M, Yi, obj, p)
             @test Yi == G
