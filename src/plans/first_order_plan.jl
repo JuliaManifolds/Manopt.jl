@@ -1,6 +1,3 @@
-# TODO: Also implement get_cost/grad/diff on the function level or the tuple of functions,
-#       that simplifies the dispatches again.
-
 @doc """
     AbstractManifoldFirstOrderInformationFunction <: Function
 
@@ -313,9 +310,18 @@ end
 # For ease of use and to be nonbreaking in type names
 const ManifoldGradientObjective{E,F,G} = ManifoldFirstOrderObjective{E,Tuple{F,G}}
 @doc """
-     ManifoldGradientObjective(cost, gradient; kwargs...)
+    ManifoldGradientObjective(cost, gradient; evaluation=AllocatingEvaluation())
 
-TODO: Doocument old / comfort constructor
+Generate an objective with a function `cost` and its `gradient`.
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+
+* as a function `(M, p) -> X` that allocates memory for `X`, an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> X` that work in place of `X`, an [`InplaceEvaluation`](@ref)
+
+Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref)
+
+# Used with
+[`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 function ManifoldGradientObjective(cost, grad; kwargs...)
     # Now case 2
@@ -324,9 +330,19 @@ end
 
 const ManifoldCostGradientObjective{E,FG} = ManifoldFirstOrderObjective{E,FG}
 @doc """
-     ManifoldCostGradientObjective(cost_grad; kwargs...)
+    ManifoldCostGradientObjective(costgrad; evaluation=AllocatingEvaluation())
 
-TODO: Doocument old / comfort constructor
+create an objective containing one function to perform a combined computation of cost and its gradient
+
+Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+
+* as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, an [`AllocatingEvaluation`](@ref)
+* as a function `(M, X, p) -> (c, X)` that work in place of `X`, an [`InplaceEvaluation`](@ref)
+
+Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref)
+
+# Used with
+[`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
 """
 function ManifoldCostGradientObjective(cost_grad; kwargs...)
     # Now case 1
@@ -430,12 +446,11 @@ function get_differential(
     return get_differential(M, get_objective(admo, false), p, X)
 end
 
-# Case 1: FG
-function get_differential end
 """
-    get_differential(M, amfo, p, X)
+    get_differential(M, amfo:AbstractManifoldFirstOrderObjective, p, X)
 
-TODO
+Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
+the [`AbstractManifoldFirstOrderObjective`](@ref),
 """
 get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X)
 # Case 1: FG (single FG), eval gradient and to an inner
