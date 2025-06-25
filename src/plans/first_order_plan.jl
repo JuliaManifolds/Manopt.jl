@@ -187,24 +187,26 @@ end
 function get_cost(
     M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple}, p
 )
+    haskey(mfo.functions, :cost) && (mfo.functions[:cost](M, p))
     haskey(mfo.functions, :costgradientdifferential) &&
-        return mfo.functions[:costgradientdifferential](M, p)[1]
-    haskey(mfo.functions, :costgradient) && return mfo.functions[:costgradient](M, p)[1]
+        (return mfo.functions[:costgradientdifferential](M, p)[1])
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, p)[1])
+    (!haskey(mfo.functions, :costdifferential)) &&
+        error("$mfo does not seem to provide a cost")
     X = zero_vector(M, p)
-    haskey(mfo.functions, :costdifferential) && return mfo.functions[:costdifferential](M, p, X)[1]
-    # default: cost
-    return mfo.functions[:cost](M, p, X)
+    return mfo.functions[:costdifferential](M, p, X)[1]
 end
 function get_cost(
     M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple}, p
 )
+    haskey(mfo.functions, :cost) && (mfo.functions[:cost](M, p))
     X = zero_vector(M, p)
     haskey(mfo.functions, :costgradientdifferential) &&
         return mfo.functions[:cocostgradientdifferentialst](M, X, p, X)
     haskey(mfo.functions, :costgradient) && return mfo.functions[:costgradient](M, X, p)[1]
-    haskey(mfo.functions, :costdifferential) && return mfo.functions[:costdifferential](M, p, X)[1]
-    # default: cost
-    return mfo.functions[:cost](M, p)
+    (!haskey(mfo.functions, :costdifferential)) &&
+        error("$mfo does not seem to provide a cost")
+    return mfo.functions[:costdifferential](M, p, X)[1]
 end
 
 # general: Generate a separate cost
@@ -216,117 +218,40 @@ function get_cost_function(mfo::ManifoldFirstOrderObjective{E,<:NamedTuple}, rec
         return (M, p) -> get_cost(M, mfo, p)
     end
 end
-#=
-#
-# get_differential, for the cases where we have one (3,4,5,6,7,8,9) evaluate that
-# for the other two (1,2) fall back to the inner product of the gradient
-# 0 decorator cases
+
 function get_differential(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+    M::AbstractManifold,
+    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
+    p,
+    X,
 )
-    return get_differential(M, get_objective(admo, false), p, X)
-end
-
-"""
-    get_differential(M, amfo:AbstractManifoldFirstOrderObjective, p, X)
-
-Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
-the [`AbstractManifoldFirstOrderObjective`](@ref),
-"""
-get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X)
-# Case 1: FG (single FG), eval gradient and to an inner
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p, X
-) where {E<:AbstractEvaluationType,FG}
+    haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
+    haskey(mfo.functions, :costdifferential) &&
+        (return mfo.functions[:costdifferential](M, p, X)[2])
+    haskey(mfo.functions, :gradientdifferential) &&
+        (return mfo.functions[:gradientdifferential](M, p, X)[2])
+    haskey(mfo.functions, :costgradientdifferential) &&
+        (return mfo.functions[:costgradientdifferential](M, p, X)[3])
+    # default: inner with gradient
     return real(inner(M, p, get_gradient(M, mfo, p), X))
 end
-# Case 2: F, G
 function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p, X
-) where {E<:AbstractEvaluationType,F,G}
-    return real(inner(M, p, get_gradient(M, mfo, p), X))
-end
-# Case 3: FG, D & Case 9: F, D (D second & typed)
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,D}}, p, X
-) where {E<:AbstractEvaluationType,F<:CostFunction,D<:DifferentialFunction}
-    return mfo.functions[2].diff(M, p, X)
-end
-# Case 4: F, G, D (D third – typed or not)
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p, X
-) where {E<:AbstractEvaluationType,F,G,D}
-    return _make_sure_unwrapped(mfo.functions[3])(M, p, X)
-end
-# Case 5: F, GD (second typed), Allocating
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p, X
-) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
-    _, d = mfo.functions[2].grad_diff!!(M, p, X)
-    return d
-end
-# Case 5: F, GD (second typed), Inplace
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p, X
-) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
-    Y = zero_vector(M, p)
-    _, d = mfo.functions[2].grad_diff!!(M, Y, p, X)
-    return d
-end
-# Case 6: FD (typed)
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FD}, p, X
-) where {E<:AbstractEvaluationType,FD<:CostDifferentialFunction}
-    _, d = mfo.functions.cost_diff(M, p, X)
-    return d
-end
-# Case 7: FD, G (1 typed)
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FD,G}}, p, X
-) where {E<:AbstractEvaluationType,FD<:CostDifferentialFunction,G}
-    (_, d) = mfo.functions[1].cost_diff(M, p, X)
-    return d
-end
-# Case 8: FDG (typed), Allocating
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FDG}, p, X
-) where {E<:AllocatingEvaluation,FDG<:CostGradientDifferentialFunction}
-    (_, _, d) = mfo.functions.cost_grad_diff!!(M, p, X)
-    return d
-end
-# Case 8: FDG (typed), Inplace
-function get_differential(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FDG}, p, X
-) where {E<:InplaceEvaluation,FDG<:CostGradientDifferentialFunction}
-    Y = zero_vector(M, p)
-    (_, _, d) = mfo.functions.cost_grad_diff!!(M, Y, p, X)
-    return d
-end
-
-function get_differential_function end
-@doc """
-    get_differential_function(admo::AbstractManifoldFirstOrderObjective, recursive=false)
-
-return the function to evaluate (just) the differential ``Df(p)[X]``.
-For a decorated objective, the `recursive` positional parameter determines whether to
-directly call this function on the next decorator or whether to get the “most inner” objective.
-"""
-get_differential_function(::AbstractManifoldFirstOrderObjective; recursive=false)
-
-function get_differential_function(
-    admo::AbstractDecoratedManifoldObjective, recursive=false
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple}, p, X,
 )
-    return get_differential_function(get_objective(admo, recursive))
-end
-function get_differential_function(mfo::ManifoldFirstOrderObjective, recursive=false)
-    return (M, p, X) -> get_differential(M, mfo, p, X)
+    haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
+    haskey(mfo.functions, :costdifferential) &&
+        (return mfo.functions[:costdifferential](M, p, X)[2])
+    Y = zero_vector(M, p)
+    haskey(mfo.functions, :gradientdifferential) &&
+        (return mfo.functions[:gradientdifferentialst](M, Y, p, X)[2])
+    haskey(mfo.functions, :costgradientdifferential) &&
+        (return mfo.functions[:costgradientdifferentialst](M, Y, p, X)[3])
+    # default: inner with gradient
+    get_gradient!(M, Y, mfo, p)
+    return real(inner(M, p, Y, X))
 end
 
-#
-#
-# Gradient access – a bit of cases!
-#
-# 0 decorator cases
+# Decorator case
 function get_gradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p)
     return get_gradient(M, get_objective(admo, false), p)
 end
@@ -334,171 +259,49 @@ function get_gradient!(M::AbstractManifold, X, admo::AbstractDecoratedManifoldOb
     return get_gradient!(M, X, get_objective(admo, false), p)
 end
 
-# Case 1, FG (a) alloc
+# (a) alloc
 function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:AllocatingEvaluation,FG}
-    (c, X) = _make_sure_unwrapped(mfo.functions)(M, p)
-    return X
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
+    p
+)
+    haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, p))
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, p)[2])
+    haskey(mfo.functions, :gradientdifferential) && (return mfo.functions[:gradientdifferential](M, p)[1])
+    !haskey(mfo.functions, :costgradientdifferential) && error("$mfo does not seem to provide a gradient")
+    return mfo.functions[:costgradientdifferential](M, p)[2]
 end
 function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:AllocatingEvaluation,FG}
-    (_, Y) = _make_sure_unwrapped(mfo.functions)(M, p)
-    copyto!(M, X, p, Y)
-    return X
+    M::AbstractManifold,
+    X,
+    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple},
+    p
+)
+    haskey(mfo.functions, :gradient) && (return copyto!(M, X, p, mfo.functions[:gradient](M, p)))
+    haskey(mfo.functions, :costgradient) && (return copyto!(M, X, p, mfo.functions[:costgradient](M, p)[2]))
+    haskey(mfo.functions, :gradientdifferential) && (return copyto!(M, X, p, mfo.functions[:gradientdifferential](M, p)[1]))
+    !haskey(mfo.functions, :costgradientdifferential) && error("$mfo does not seem to provide a gradient")
+    return copyto!(M, X, p, mfo.functions[:costgradientdifferential](M, p)[2])
 end
-# Case 1, FG (b) in-place
+# (b) inplace
 function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:InplaceEvaluation,FG}
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions)(M, X, p)
-    return X
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple},
+    p
+)
+    X = zero_vetor(M, p)
+    return get_gradient!(M, X, mfo, p)
 end
 function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:InplaceEvaluation,FG}
-    _make_sure_unwrapped(mfo.functions)(M, X, p)
-    return X
+    M::AbstractManifold,
+    X,
+    mfo::ManifoldFirstOrderObjective{InplaceEvaluation, <:NamedTuple},
+    p
+)
+    haskey(mfo.functions, :gradient) && (return mfo.functions[:gradient](M, X,  p))
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p)[2])
+    haskey(mfo.functions, :gradientdifferential) && (return mfo.functions[:gradientdifferential](M, X, p)[1])
+    !haskey(mfo.functions, :costgradientdifferential) && error("$mfo does not seem to provide a gradient")
+    return mfo.functions[:costgradientdifferential](M, X, p)[2]
 end
-# case 2: F, G & Case 7: FD, G (gradient second)
-# 2&7(a) alloc
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:AllocatingEvaluation,F,G}
-    return _make_sure_unwrapped(mfo.functions[2])(M, p)
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:AllocatingEvaluation,F,G}
-    return copyto!(M, X, p, _make_sure_unwrapped(mfo.functions[2])(M, p))
-end
-# 2&7(b) in-place
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:InplaceEvaluation,F,G}
-    X = zero_vector(M, p)
-    return _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:InplaceEvaluation,F,G}
-    return _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-end
-# Case 3: FG, D
-# 3(a) alloc
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:AllocatingEvaluation,FG,D<:DifferentialFunction}
-    (_, X) = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:AllocatingEvaluation,FG,D<:DifferentialFunction}
-    (_, Y) = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    copyto!(M, X, p, Y)
-    return X
-end
-# 3(b), in-place
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:InplaceEvaluation,FG,D<:DifferentialFunction}
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions[1])(M, X, p)
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:InplaceEvaluation,FG,D<:DifferentialFunction}
-    _make_sure_unwrapped(mfo.functions[1])(M, X, p)
-    return X
-end
-# Case 4: F, G, D
-# 4(a) alloc
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:AllocatingEvaluation,F,G,D}
-    return _make_sure_unwrapped(mfo.functions[2])(M, p)
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:AllocatingEvaluation,F,G,D}
-    return copyto!(M, X, p, _make_sure_unwrapped(mfo.functions[2])(M, p))
-end
-# 4(b), in-place
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:InplaceEvaluation,F,G,D}
-    X = zero_vector(M, p)
-    return _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:InplaceEvaluation,F,G,D}
-    return _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-end
-# Case 5: F, GD (2 cases)
-# 5(a) alloc
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
-    X = zero_vector(M, p)
-    (Y, _) = _make_sure_unwrapped(mfo.functions[2])(M, p, X)
-    return Y
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
-    (Y, _) = _make_sure_unwrapped(mfo.functions[2])(M, p, X)
-    return copyto!(M, X, p, Y)
-end
-# 5(b), in-place
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p, X)
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p, X)
-    return X
-end
-# Case 6 does not provide a gradient
-# Case 8: FGD
-# 8(a) alloc
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
-    X = zero_vector(M, p)
-    (_, Y, _) = _make_sure_unwrapped(mfo.functions)(M, p, X)
-    return Y
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
-    (_, Y, _) = _make_sure_unwrapped(mfo.functions)(M, p, X)
-    return copyto!(M, X, p, Y)
-end
-# 8(b), in-place
-function get_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions)(M, X, p, X)
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
-    _make_sure_unwrapped(mfo.functions)(M, X, p, X)
-    return X
-end
-# Case 9 does not provide a gradient
 
 @doc """
     get_gradient_function(amgo::AbstractManifoldFirstOrderObjective, recursive=false)
@@ -520,13 +323,15 @@ function get_gradient_function(admo::AbstractDecoratedManifoldObjective, recursi
     return get_gradient_function(get_objective(admo, recursive))
 end
 function get_gradient_function(
-    cgo::ManifoldFirstOrderObjective{AllocatingEvaluation}, recursive=false
+    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation, <:NamedTuple}, recursive=false
 )
+    haskey(mfo, :gradient) && (return mfo.functions[:gradient])
     return (M, p) -> get_gradient(M, cgo, p)
 end
 function get_gradient_function(
     cgo::ManifoldFirstOrderObjective{InplaceEvaluation}, recursive=false
 )
+    haskey(mfo, :gradient) && (return mfo.functions[:gradient])
     return (M, X, p) -> get_gradient!(M, X, cgo, p)
 end
 
@@ -547,219 +352,72 @@ end
 
 # Case 1, FG (a) alloc
 function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:AllocatingEvaluation,FG}
-    return _make_sure_unwrapped(mfo.functions)(M, p)
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple}, p
+)
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, p))
+    if haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
+        return (mfo.functions[:cost](M, p),  mfo.functions[:gradient](M, p))
+    end
+    Y = zero_vector(M,p)
+    if haskey(mfo.functions, :costgradientdifferential)
+        return mfo.functions[:costgradientdifferential](M, p, Y)[1:2]
+    end
+    !(haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, :gradient)) && error("$mfo seems to either have no acces to a cost or a gradient")
+    return (mfo.functions[:costdifferential](M, p, Y)[2],  mfo.functions[:gradient](M, p))
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:AllocatingEvaluation,FG}
-    (c, Y) = _make_sure_unwrapped(mfo.functions)(M, p)
-    copyto!(M, X, p, Y)
-    return (c, X)
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple}, p
+)
+    if haskey(mfo.functions, :costgradient)
+        c, Y = mfo.functions[:costgradient](M, p)
+        copyto!(M, X, p, Y)
+        return c, X
+    end
+    if haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
+        copyto!(M, X, p, mfo.functions[:gradient](M, p))
+        return mfo.functions[:cost](M, p), X
+    end
+    Y = zero_vector(M,p)
+    if haskey(mfo.functions, :costgradientdifferential)
+        c, Y = mfo.functions[:costgradientdifferential](M, p, Y)[1:2]
+        copyto!(M, X, p, Y)
+        return c, X
+    end
+    !(haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, gradient)) && error("$mfo seems to either have no acces to a cost or a gradient")
+    copyto!(M, X, p, mfo.functions[:gradient](M, p))
+    return (mfo.functions[:costdifferential](M, p, Y)[2],  X)
 end
-# Case 1, FG (b) in-place
 function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:InplaceEvaluation,FG}
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple}, p
+)
     X = zero_vector(M, p)
-    return _make_sure_unwrapped(mfo.functions)(M, X, p)
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p))
+    if haskey(mfo.functions, :cost) && haskey(mfo.functions, gradient)
+        mfo.functions[:gradient](M, X, p)
+        return (mfo.functions[:cost](M, p), X)
+    end
+    Y = zero_vector(M,p)
+    if haskey(mfo.functions, :costgradientdifferential)
+        return mfo.functions[:costgradientdifferential](M, X, p, Y)[1:2]
+    end
+    !(haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, gradient)) && error("$mfo seems to either have no acces to a cost or a gradient")
+    return (mfo.functions[:costdifferential](M, p, Y)[2],  mfo.functions[:gradient](M, X, p))
 end
 function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FG}, p
-) where {E<:InplaceEvaluation,FG}
-    return _make_sure_unwrapped(mfo.functions)(M, X, p)
+    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple}, p
+)
+    haskey(mfo.functions, :costgradient) && (return mfo.functions[:costgradient](M, X, p))
+    if haskey(mfo.functions, :cost) && haskey(mfo.functions, gradient)
+        return mfo.functions[:cost](M, p),  mfo.functions[:gradient](M, X, p)
+    end
+    Y = zero_vector(M,p)
+    if haskey(mfo.functions, :costgradientdifferential)
+        return mfo.functions[:costgradientdifferential](M, X, p, Y)[1:2]
+    end
+    !(haskey(mfo.functions, :costdifferential) && haskey(mfo.functions, gradient)) && error("$mfo seems to either have no acces to a cost or a gradient")
+    return (mfo.functions[:costdifferential](M, p, Y)[2],  mfo.functions[:gradient](M, X, p))
 end
-# case 2: F, G
-# 2(a) alloc
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:AllocatingEvaluation,F,G}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    X = _make_sure_unwrapped(mfo.functions[2])(M, p)
-    return (c, X)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:AllocatingEvaluation,F,G}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    copyto!(M, X, p, _make_sure_unwrapped(mfo.functions[2])(M, p))
-    return (c, X)
-end
-# 2(b) in-place
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:InplaceEvaluation,F,G}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-    return c, X
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:InplaceEvaluation,F,G}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-    return c, X
-end
-# Case 3: FG, D
-# 3(a) alloc
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:AllocatingEvaluation,FG,D<:DifferentialFunction}
-    return _make_sure_unwrapped(mfo.functions[1])(M, p)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:AllocatingEvaluation,FG,D<:DifferentialFunction}
-    (c, Y) = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    copyto!(M, X, p, Y)
-    return (c, X)
-end
-# 3(b), in-place
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:InplaceEvaluation,FG,D<:DifferentialFunction}
-    X = zero_vector(M, p)
-    return _make_sure_unwrapped(mfo.functions[1])(M, X, p)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{FG,D}}, p
-) where {E<:InplaceEvaluation,FG,D<:DifferentialFunction}
-    return _make_sure_unwrapped(mfo.functions[1])(M, X, p)
-end
-# Case 4: F, G, D
-# 4(a) alloc
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:AllocatingEvaluation,F,G,D}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    X = _make_sure_unwrapped(mfo.functions[2])(M, p)
-    return c, X
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:AllocatingEvaluation,F,G,D}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    copyto!(M, X, p, _make_sure_unwrapped(mfo.functions[2])(M, p))
-    return c, X
-end
-# 4(b), in-place
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:InplaceEvaluation,F,G,D}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-    return (c, X)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G,D}}, p
-) where {E<:InplaceEvaluation,F,G,D}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-    return (c, X)
-end
-# Case 5: F, GD (2 cases)
-# 5(a) alloc
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    X = zero_vector(M, p)
-    (Y, _) = _make_sure_unwrapped(mfo.functions[2])(M, p, X)
-    return (c, Y)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:AllocatingEvaluation,F,GD<:GradientDifferentialFunction}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    (Y, _) = _make_sure_unwrapped(mfo.functions[2])(M, p, X)
-    copyto!(M, X, p, Y)
-    return (c, X)
-end
-# 5(b), in-place
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p, X)
-    return (c, X)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,GD}}, p
-) where {E<:InplaceEvaluation,F,GD<:GradientDifferentialFunction}
-    c = _make_sure_unwrapped(mfo.functions[1])(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p, X)
-    return (c, X)
-end
-# Case 6 does not provide a gradient
-# Case 7: FD, G (gradient second)
-# 7(a) alloc
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:AllocatingEvaluation,F<:CostDifferentialFunction,G<:GradientFunction}
-    c, _ = _make_sure_unwrapped(mfo.functions[1])(M, p, zero_vector(M, p))
-    X = _make_sure_unwrapped(mfo.functions[2])(M, p)
-    return (c, X)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:AllocatingEvaluation,F<:CostDifferentialFunction,G<:GradientFunction}
-    c, _ = _make_sure_unwrapped(mfo.functions[1])(M, p, zero_vector(M, p))
-    copyto!(M, X, p, _make_sure_unwrapped(mfo.functions[2])(M, p))
-    return (c, X)
-end
-# 7(b) in-place
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:InplaceEvaluation,F<:CostDifferentialFunction,G<:GradientFunction}
-    c, _ = _make_sure_unwrapped(mfo.functions[1])(M, p, zero_vector(M, p))
-    X = zero_vector(M, p)
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-    return c, X
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,Tuple{F,G}}, p
-) where {E<:InplaceEvaluation,F<:CostDifferentialFunction,G<:GradientFunction}
-    c, _ = _make_sure_unwrapped(mfo.functions[1])(M, p, zero_vector(M, p))
-    _make_sure_unwrapped(mfo.functions[2])(M, X, p)
-    return c, X
-end
-# Case 8: FGD
-# 8(a) alloc
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
-    X = zero_vector(M, p)
-    (c, Y, _) = _make_sure_unwrapped(mfo.functions)(M, p, X)
-    return (c, Y)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:AllocatingEvaluation,FGD<:CostGradientDifferentialFunction}
-    (c, Y, _) = _make_sure_unwrapped(mfo.functions)(M, p, X)
-    copyto!(M, X, p, Y)
-    return (c, Y)
-end
-# 8(b), in-place
-function get_cost_and_gradient(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
-    X = zero_vector(M, p)
-    (c, _, _) = _make_sure_unwrapped(mfo.functions)(M, X, p, X)
-    return (c, X)
-end
-function get_cost_and_gradient!(
-    M::AbstractManifold, X, mfo::ManifoldFirstOrderObjective{E,FGD}, p
-) where {E<:InplaceEvaluation,FGD<:CostGradientDifferentialFunction}
-    (c, _, _) = _make_sure_unwrapped(mfo.functions)(M, X, p, X)
-    return (c, X)
-end
-# Case 9 does not provide a gradient
-=#
-function show(io::IO, mfo::ManifoldFirstOrderObjective{E,FG}) where {E,FG}
+function show(io::IO, ::ManifoldFirstOrderObjective{E,FG}) where {E,FG}
     return print(io, "ManifoldFirstOrderObjective{$E, $FG}")
 end
 
