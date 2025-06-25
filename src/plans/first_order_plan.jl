@@ -6,7 +6,7 @@ An abstract type to represent the first order derivative information of a functi
 abstract type AbstractFirstOrderFunction <: Function end
 
 @doc """
-    CostDifferentialFunction{DD} <: AbstractFirstOrderFunction
+    CostDifferentialFunction{FD} <: AbstractFirstOrderFunction
 
 A wrapper for a function representing a cost ``f`` and its differential ``Df: $(_math(:TM)) → ℝ``,
 or in other words is is a map ``Df(p)[X] ∈ ℝ``, in a combined fashion as a function `(M, p, X) -> (c, d)`.
@@ -37,7 +37,7 @@ _make_sure_unwrapped(cdf::CostDifferentialFunction) = cdf.cost_diff
 A wrapper for a function representing a cost, its Riemannian gradient ``$(_tex(:grad))f: $(_math(:M)) → $(_math(:TM))``,
 as well as its differential ``Df: $(_math(:TM)) → ℝ``, or in other words is is a map ``Df(p)[X] ∈ ℝ``.
 
-It might have two forms
+The wrapped function can have one of these two forms
 
 * as a function `(M, p, X) -> (c, Y, d)` that allocates memory for the gradient `Y` (also [`AllocatingEvaluation`](@ref))
 * as a function `(M, Y, p, X) -> (c, Y, d)` that work in place of `Y` (also [`InplaceEvaluation`](@ref))
@@ -188,7 +188,7 @@ Currently the following cases are covered, sorted by their popularity
 1. a single type `FG`, i.e. a function or a functor, represents a combined function
   `(M, p) -> (c, X)` that computes the cost `c=cost(M,p)` and gradient `X=grad_f(M,p)`;
   this can wrapped in a [`CostGradientFunction`](@ref) optionally.
-2. a `Tuple{F, G}` of two functions or functors represents a separate cost and gradient function;
+2. a `(f, g)` of two functions or functors represents a separate cost and gradient function;
   they can be wrapped in a [`CostFunction`](@ref) and a [`GradientFunction`](@ref), respectively.
 3. a `Tuple{FG, D<:DifferentialFunction}` to provide the differential as a separate function,
   where the first is the same as in case 1 and can be wrapped in a [`CostGradientFunction`](@ref).

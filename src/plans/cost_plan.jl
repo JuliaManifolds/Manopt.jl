@@ -7,7 +7,7 @@ abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
               AbstractManifoldObjective{T} end
 
 @doc """
-    CostFunction{CD} <: Function
+    CostFunction{F} <: Function
 
 A wrapper for a function representing a cost ``f: $(_math(:TM)) → ℝ``,
 Since both return real values, this function would always work as an [`AllocatingEvaluation`](@ref).
@@ -21,7 +21,7 @@ might be beneficital to wrap a `cost` to distinguish it from e.g. a `gradient`.
 
 # Constructor
 
-    CostFunction(costdiff::F)
+    CostFunction(cost::F)
 
 Create a cost function.
 """

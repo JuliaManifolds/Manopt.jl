@@ -205,7 +205,7 @@ function reset_counters!(o::AbstractManifoldObjective, value::Integer=0)
     return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
 end
 
-# First order iformation has different types, here we count based on the provided type
+# First order information has different types, here we count based on the provided type
 
 """
     _count_at_least(::ManifoldCountObjective, group_type, eval::Symbol)
