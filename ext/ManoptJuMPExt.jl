@@ -332,7 +332,7 @@ function MOI.set(
         return ManifoldDiff.riemannian_gradient(model.manifold, X, reshaped_grad_f)
     end
     objective = RiemannianFunction(
-        Manopt.ManifoldFirstOrderObjective(eval_f_cb, eval_grad_f_cb)
+        Manopt.ManifoldGradientObjective(eval_f_cb, eval_grad_f_cb)
     )
     MOI.set(model, MOI.ObjectiveFunction{typeof(objective)}(), objective)
     return nothing
