@@ -11,7 +11,7 @@ using LinearAlgebra: Symmetric
         A = [2.0 1.0 0.0; 1.0 2.0 1.0; 0.0 1.0 2.0]
         f(M, p) = p' * A * p
         grad_f(M, p) = project(M, p, 2 * A * p)
-        obj = ManifoldFirstOrderObjective(f, grad_f)
+        obj = ManifoldGradientObjective(f, grad_f)
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient])
         # function access functions are different since the right is still counting.
         @test get_cost_function(obj) != get_cost_function(c_obj)

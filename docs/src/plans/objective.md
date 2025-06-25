@@ -97,12 +97,6 @@ AbstractManifoldCostObjective
 ManifoldCostObjective
 ```
 
-#### Function Wrappers
-
-```@docs
-CostFunction
-```
-
 #### Access functions
 
 ```@docs
@@ -132,18 +126,6 @@ but also since these are the most commonly used ones.
 ```@docs
 ManifoldGradientObjective
 ManifoldCostGradientObjective
-```
-
-#### Function Wrappers
-
-```@docs
-AbstractFirstOrderFunction
-CostDifferentialFunction
-CostGradientDifferentialFunction
-CostGradientFunction
-DifferentialFunction
-GradientDifferentialFunction
-GradientFunction
 ```
 
 #### Access functions

@@ -261,12 +261,15 @@ function quasi_Newton(
     grad_f::TDF,
     p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    differential=nothing,
     kwargs...,
 ) where {TF,TDF}
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldFirstOrderObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f_, grad_f_; differential=differential, evaluation=evaluation
+    )
     rs = quasi_Newton(M, mgo, p_; kwargs...)
     return _ensure_matching_output(p, rs)
 end
@@ -287,7 +290,7 @@ function quasi_Newton!(
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldFirstOrderObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     return quasi_Newton!(M, mgo, p; kwargs...)
 end
 function quasi_Newton!(

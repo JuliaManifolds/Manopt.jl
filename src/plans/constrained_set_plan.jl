@@ -39,7 +39,7 @@ end
 function ManifoldConstrainedSetObjective(
     f, grad_f, project!!::PF; evaluation::E=AllocatingEvaluation(), indicator=nothing
 ) where {PF,E<:AbstractEvaluationType}
-    obj = ManifoldFirstOrderObjective(f, grad_f; evaluation=evaluation)
+    obj = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     if isnothing(indicator)
         if evaluation isa AllocatingEvaluation
             ind(M, p) = (distance(M, p, project!!(M, p)) ≈ 0 ? 0 : Inf)

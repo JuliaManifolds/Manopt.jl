@@ -9,7 +9,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         M = Euclidean(2)
         f(M, x) = norm(x)^2
         grad_f(::Euclidean, x) = 2 * x
-        dmp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         x0 = [0.0, 1.0]
         sC = StopAfterIteration(1)
         s = Manopt.ConstantStepsize(M)

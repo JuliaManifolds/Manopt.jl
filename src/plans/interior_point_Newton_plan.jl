@@ -87,7 +87,7 @@ $(_var(:Keyword, :p; add=:as_Initial))
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`[` | `](@ref StopWhenAny)[`StopWhenChangeLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :retraction_method))
-* `step_objective=`[`ManifoldFirstOrderObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
+* `step_objective=`[`ManifoldGradientObjective`](@ref)`(`[`KKTVectorFieldNormSq`](@ref)`(cmo)`, [`KKTVectorFieldNormSqGradient`](@ref)`(cmo)`; evaluation=[`InplaceEvaluation`](@ref)`())`
 * `vector_space=`[`Rn`](@ref Manopt.Rn): a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
 * `step_problem`: wrap the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
@@ -143,7 +143,7 @@ mutable struct InteriorPointNewtonState{
         σ::R=calculate_σ(M, cmo, p, μ, λ, s),
         stopping_criterion::SC=StopAfterIteration(200) | StopWhenChangeLess(1e-8),
         retraction_method::RTM=default_retraction_method(M),
-        step_objective=ManifoldFirstOrderObjective(
+        step_objective=ManifoldGradientObjective(
             KKTVectorFieldNormSq(cmo),
             KKTVectorFieldNormSqGradient(cmo);
             evaluation=InplaceEvaluation(),

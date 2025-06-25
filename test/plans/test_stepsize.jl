@@ -76,7 +76,7 @@ using ManoptTestSuite
         grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
-        mgo = ManifoldFirstOrderObjective(f, grad_f)
+        mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         s = AdaptiveWNGradient(; gradient_reduction=0.5, count_threshold=2)(M)
         gds = GradientDescentState(M; p=p)
@@ -102,7 +102,7 @@ using ManoptTestSuite
         grad_f(M, p) = [0.0, 0.75, 0.0] # valid, since only north pole used
         M = Sphere(2)
         p = [1.0, 0.0, 0.0]
-        mgo = ManifoldFirstOrderObjective(f, grad_f)
+        mgo = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, mgo)
         gds = GradientDescentState(M; p=p)
         abs_dec_step = Manopt.DecreasingStepsize(
@@ -119,7 +119,7 @@ using ManoptTestSuite
         M = Euclidean(2)
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = sum(2 .* p)
-        dmp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p = [2.0, 2.0]
         X = grad_f(M, p)
         sgs = SubGradientMethodState(M; p=p)

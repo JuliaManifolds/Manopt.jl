@@ -34,7 +34,7 @@ import Manifolds: inner
         X3 = similar(X2)
         dca_sub_grad(M, X3, p0)
         @test X2 == X3
-        dca_sub_objective = ManifoldFirstOrderObjective(dca_sub_cost, dca_sub_grad)
+        dca_sub_objective = ManifoldGradientObjective(dca_sub_cost, dca_sub_grad)
         dca_sub_problem = DefaultManoptProblem(M, dca_sub_objective)
         dca_sub_state = GradientDescentState(M; p=copy(M, p0))
 
@@ -60,7 +60,7 @@ import Manifolds: inner
         dcppa_sub_grad(M, Y2, p0)
         @test Y1 == Y2
 
-        dcppa_sub_objective = ManifoldFirstOrderObjective(dcppa_sub_cost, dcppa_sub_grad)
+        dcppa_sub_objective = ManifoldGradientObjective(dcppa_sub_cost, dcppa_sub_grad)
         dcppa_sub_problem = DefaultManoptProblem(M, dcppa_sub_objective)
         dcppa_sub_state = GradientDescentState(M; p=copy(M, p0))
 
@@ -161,7 +161,7 @@ import Manifolds: inner
         @test isapprox(M, p4, p5)
         @test isapprox(M, p5, p6)
         @test isapprox(f(M, p5b), 0.0; atol=2e-16) # bit might be a different min due to rand
-        @test_broken isapprox(f(M, p5c), 0.0; atol=1e-10)
+        @test isapprox(f(M, p5c), 0.0; atol=1e-10)
         @test isapprox(f(M, p4), 0.0; atol=1e-14)
 
         Random.seed!(23)
@@ -176,7 +176,7 @@ import Manifolds: inner
         p9 = difference_of_convex_algorithm(
             M, f, g, grad_h, p0; grad_g=grad_g, sub_hess=nothing
         )
-        @test_broken isapprox(M, p9, p2; atol=1e-7)
+        @test isapprox(M, p9, p2; atol=1e-7)
 
         @test_throws ErrorException difference_of_convex_proximal_point(
             M, grad_h, p0; sub_problem=nothing

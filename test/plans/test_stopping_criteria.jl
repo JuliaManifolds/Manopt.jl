@@ -23,7 +23,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
 
         s3 = StopWhenCostLess(0.1)
         p = DefaultManoptProblem(
-            Euclidean(), ManifoldFirstOrderObjective((M, x) -> x^2, x -> 2x)
+            Euclidean(), ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         )
         s = GradientDescentState(Euclidean(); p=1.0)
         @test !s3(p, s, 1)
@@ -133,7 +133,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
         @test repr(g) == "StopWhenCostLess(0.0001)\n    $(Manopt.status_summary(g))"
         gf(M, p) = norm(p)
         grad_gf(M, p) = p
-        gp = DefaultManoptProblem(Euclidean(2), ManifoldFirstOrderObjective(gf, grad_gf))
+        gp = DefaultManoptProblem(Euclidean(2), ManifoldGradientObjective(gf, grad_gf))
         gs = GradientDescentState(Euclidean(2))
         Manopt.set_iterate!(gs, Euclidean(2), [0.0, 1e-2])
         g(gp, gs, 0) # reset
@@ -196,7 +196,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
     end
 
     @testset "Stop with step size" begin
-        mgo = ManifoldFirstOrderObjective((M, x) -> x^2, x -> 2x)
+        mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
             Euclidean();
@@ -217,7 +217,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
     end
 
     @testset "Test further setters" begin
-        mgo = ManifoldFirstOrderObjective((M, x) -> x^2, x -> 2x)
+        mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
             Euclidean();

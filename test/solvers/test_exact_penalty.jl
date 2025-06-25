@@ -34,8 +34,8 @@ using LinearAlgebra: I, tr
         gradient_inequality_range=NestedPowerRepresentation(),
     )
     a_tol_emp = 8e-2
-    @test_broken isapprox(M, v0, sol_lse; atol=a_tol_emp)
-    @test_broken isapprox(M, v0, sol_lse2; atol=a_tol_emp)
+    @test isapprox(M, v0, sol_lse; atol=a_tol_emp)
+    @test isapprox(M, v0, sol_lse2; atol=a_tol_emp)
     @test isapprox(M, v0, sol_lqh; atol=a_tol_emp)
     @test isapprox(M, v0, sol_lqh2; atol=a_tol_emp)
     @test isapprox(M, v0, sol_lqh3; atol=a_tol_emp)

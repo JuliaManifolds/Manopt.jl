@@ -6,29 +6,6 @@ Representing objectives on manifolds with a cost function implemented.
 abstract type AbstractManifoldCostObjective{T<:AbstractEvaluationType,TC} <:
               AbstractManifoldObjective{T} end
 
-@doc """
-    CostFunction{F} <: Function
-
-A wrapper for a function representing a cost ``f: $(_math(:TM)) → ℝ``,
-Since both return real values, this function would always work as an [`AllocatingEvaluation`](@ref).
-
-Usually this type is equivalent to its inner `cost`, but for completeness it
-might be beneficital to wrap a `cost` to distinguish it from e.g. a `gradient`.
-
-# Fields
-
-* `cost::F`: a function or functor for the cost
-
-# Constructor
-
-    CostFunction(cost::F)
-
-Create a cost function.
-"""
-struct CostFunction{F} <: Function
-    cost::F
-end
-
 @doc raw"""
     ManifoldCostObjective{T, TC} <: AbstractManifoldCostObjective{T, TC}
 

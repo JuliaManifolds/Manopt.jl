@@ -255,7 +255,7 @@ Otherwise the problem is not constrained and a better solver would be for exampl
 $(_var(:Keyword, :sub_kwargs))
 * `sub_stopping_criterion=`[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-10)`: a stopping cirterion for the sub solver
   $(_note(:KeywordUsedIn, "sub_state"))
-$(_var(:Keyword, :sub_state; default="[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldFirstOrderObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
+$(_var(:Keyword, :sub_state; default="[`DefaultManoptProblem`](@ref)`(M, `[`ManifoldGradientObjective`](@ref)`(sub_cost, sub_grad; evaluation=evaluation)"))
 $(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add=" where [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used"))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))` ( `[`StopWhenSmallerOrEqual`](@ref)`(ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`"))
 
@@ -396,7 +396,7 @@ function exact_penalty_method!(
         M,
         decorate_objective!(
             M,
-            ManifoldFirstOrderObjective(sub_cost, sub_grad; evaluation=evaluation);
+            ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation);
             objective_type=objective_type,
             sub_kwargs...,
         ),

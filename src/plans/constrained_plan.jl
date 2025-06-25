@@ -185,7 +185,7 @@ function ConstrainedManifoldObjective(
     kwargs...,
 )
     if isnothing(hess_f)
-        objective = ManifoldFirstOrderObjective(f, grad_f; evaluation=evaluation)
+        objective = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
     else
         objective = ManifoldHessianObjective(f, grad_f, hess_f; evaluation=evaluation)
     end

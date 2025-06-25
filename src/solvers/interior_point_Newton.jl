@@ -71,7 +71,7 @@ $(_var(:Keyword, :retraction_method))
 * `ρ=μ's / length(μ)`:  store the orthogonality `μ's/m` to compute the barrier parameter `β` in the sub problem.
 * `s=copy(μ)`: initial value for the slack variables
 * `σ=`[`calculate_σ`](@ref)`(M, cmo, p, μ, λ, s)`:  scaling factor for the barrier parameter `β` in the sub problem, which is updated during the iterations
-* `step_objective`: a [`ManifoldFirstOrderObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
+* `step_objective`: a [`ManifoldGradientObjective`](@ref) of the norm of the KKT vector field [`KKTVectorFieldNormSq`](@ref) and its gradient [`KKTVectorFieldNormSqGradient`](@ref)
 * `step_problem`: the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` together with the `step_objective`
   as the problem the linesearch `stepsize=` employs for determining a step size
 * `step_state`: the [`StepsizeState`](@ref) with point and search direction
@@ -213,7 +213,7 @@ function interior_point_Newton!(
     vector_space=Rn,
     #γ=0.9,
     centrality_condition=missing, #InteriorPointCentralityCondition(cmo, γ, zero(γ), zero(γ)),
-    step_objective=ManifoldFirstOrderObjective(
+    step_objective=ManifoldGradientObjective(
         KKTVectorFieldNormSq(cmo), KKTVectorFieldNormSqGradient(cmo); evaluation=evaluation
     ),
     _step_M::AbstractManifold=M × vector_space(length(μ)) × vector_space(length(λ)) ×

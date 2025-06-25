@@ -105,7 +105,7 @@ function conjugate_gradient_descent(
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldFirstOrderObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
     rs = conjugate_gradient_descent(M, mgo, p_; evaluation=evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
@@ -123,10 +123,13 @@ function conjugate_gradient_descent!(
     f::TF,
     grad_f::TDF,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldFirstOrderObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     dmgo = decorate_objective!(M, mgo; kwargs...)
     return conjugate_gradient_descent!(M, dmgo, p; kwargs...)
 end

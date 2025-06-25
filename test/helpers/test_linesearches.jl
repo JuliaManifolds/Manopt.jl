@@ -42,7 +42,7 @@ using Test
     @test startswith(sprint(show, ls_hz), "LineSearchesStepsize(HagerZhang")
 
     # make sure get_last_stepsize works
-    mgo = ManifoldFirstOrderObjective(
+    mgo = ManifoldGradientObjective(
         rosenbrock, rosenbrock_grad!; evaluation=InplaceEvaluation()
     )
     mp = DefaultManoptProblem(M, mgo)
@@ -55,7 +55,7 @@ using Test
     function rosenbrock_throw(::AbstractManifold, x)
         return error("test exception")
     end
-    mgo_throw = ManifoldFirstOrderObjective(
+    mgo_throw = Manopt.ManifoldGradientObjective(
         rosenbrock_throw, rosenbrock_grad!; evaluation=InplaceEvaluation()
     )
     mp_throw = DefaultManoptProblem(M, mgo_throw)

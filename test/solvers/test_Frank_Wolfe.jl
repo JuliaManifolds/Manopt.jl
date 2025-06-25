@@ -37,7 +37,7 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
         set_iterate!(s, 2 .* p)
         @test get_iterate(s) == 2 .* p
-        dmp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(FC, FG))
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)
         s2 = FrankWolfeState(M, dmp, gds; p=p)
         @test Manopt.get_message(s2) == ""

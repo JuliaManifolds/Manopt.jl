@@ -322,17 +322,7 @@ export AbstractDecoratedManifoldObjective,
     ManifoldCachedObjective
 # Functions
 export AbstractVectorFunction,
-    AbstractVectorGradientFunction,
-    AbstractFirstOrderFunction,
-    CostDifferentialFunction,
-    CostGradientDifferentialFunction,
-    CostFunction,
-    CostGradientFunction,
-    DifferentialFunction,
-    GradientDifferentialFunction,
-    GradientFunction,
-    VectorGradientFunction,
-    VectorHessianFunction
+    AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type

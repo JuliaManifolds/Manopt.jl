@@ -205,7 +205,6 @@ function reset_counters!(o::AbstractManifoldObjective, value::Integer=0)
     return error("It seems $o does not provide access to a `ManifoldCountObjective`.")
 end
 
-
 #
 # Overwrite access functions
 #
@@ -216,10 +215,12 @@ function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
 end
 # First order: count based on second type
 function get_cost(
-    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}}, p
+    M::AbstractManifold,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
 ) where {E<:AbstractEvaluationType}
     _count_if_exists(co, :Cost)
-    fs = co.objective.functions
+    fs = get_objective(co.objective, true).functions
     haskey(fs, :costdifferential) && _count_if_exists(co, :Differential)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Gradient)
@@ -238,11 +239,13 @@ function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, 
     return get_cost_and_gradient(M, co.objective, p)
 end
 function get_cost_and_gradient(
-    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}}, p
+    M::AbstractManifold,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
 ) where {E<:AbstractEvaluationType}
     _count_if_exists(co, :Cost)
     _count_if_exists(co, :Gradient)
-    fs = co.objective.functions
+    fs = get_objective(co.objective, true).functions
     haskey(fs, :costdifferential) && _count_if_exists(co, :Differential)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
     haskey(fs, :gradientdifferential) && _count_if_exists(co, :Differential)
@@ -262,7 +265,7 @@ function get_cost_and_gradient!(
 ) where {E<:AbstractEvaluationType}
     _count_if_exists(co, :Cost)
     _count_if_exists(co, :Gradient)
-    fs = co.objective.functions
+    fs = get_objective(co.objective, true).functions
     haskey(fs, :costdifferential) && _count_if_exists(co, :Differential)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
     haskey(fs, :gradientdifferential) && _count_if_exists(co, :Differential)
@@ -281,6 +284,7 @@ function get_differential(
     X,
 ) where {E<:AbstractEvaluationType}
     _count_if_exists(co, :Differential)
+    fs = get_objective(co.objective, true).functions
     haskey(fs, :costdifferential) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Gradient)
@@ -316,9 +320,12 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     return X
 end
 function get_gradient(
-    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}}, p
+    M::AbstractManifold,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
 ) where {E<:AbstractEvaluationType}
     _count_if_exists(co, :Gradient)
+    fs = get_objective(co.objective, true).functions
     haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
@@ -332,6 +339,7 @@ function get_gradient!(
     p,
 ) where {E<:AbstractEvaluationType}
     _count_if_exists(co, :Gradient)
+    fs = co.objective.functions
     haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
     haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)

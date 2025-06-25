@@ -66,7 +66,7 @@ end
             debug=[],
         )
         # Verify that Newton update direction works also allocating
-        dmp = DefaultManoptProblem(M, ManifoldFirstOrderObjective(f, grad_f))
+        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
         p_star = get_solver_result(lrbfgs_s)
         D = zero_vector(M, p_star)
         lrbfgs_s.direction_update(D, dmp, lrbfgs_s)
@@ -402,7 +402,7 @@ end
         p = [0.0, 0.0]
         f(M, p) = sum(p .^ 2)
         grad_f(M, p) = 2 * sum(p)
-        gmp = ManifoldFirstOrderObjective(f, grad_f)
+        gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(M; p=p)
         # push zeros to memory
@@ -422,7 +422,7 @@ end
         f(M, p) = sum(p .^ 2)
         # A wrong gradient
         grad_f(M, p) = -2 .* p
-        gmp = ManifoldFirstOrderObjective(f, grad_f)
+        gmp = ManifoldGradientObjective(f, grad_f)
         mp = DefaultManoptProblem(M, gmp)
         qns = QuasiNewtonState(
             M;

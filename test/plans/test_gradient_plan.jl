@@ -23,7 +23,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
     @test get_iterate(gst) == q
     set_gradient!(gst, M, p, [1.0, 0.0])
     @test isapprox(M, p, get_gradient(gst), [1.0, 0.0])
-    mgo = ManifoldFirstOrderObjective(f, grad_f)
+    mgo = ManifoldGradientObjective(f, grad_f)
     mp = DefaultManoptProblem(M, mgo)
     @test get_initial_stepsize(mp, gst) == 1.0
     @test get_stepsize(mp, gst, 1) == 1.0
@@ -124,62 +124,36 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         fgd(M, p, X) = (f(M, p), grad_f(M, p), diff_f(M, p, X))
         fgd!(M, Y, p, X) = (f(M, p), grad_f!(M, Y, p), diff_f(M, p, X))
 
-        # test wrapper ensurance
-        df = DifferentialFunction(diff_f)
-        @test Manopt._mfo_make_sure_wrapped_diff(df) === df
-        @test Manopt._mfo_make_sure_wrapped_diff(diff_f) isa DifferentialFunction
-        @test Manopt._make_sure_unwrapped(diff_f) === diff_f
-        @test Manopt._make_sure_unwrapped(df) === diff_f
-        gf = GradientFunction(grad_f)
-        @test Manopt._mfo_make_sure_wrapped_grad(gf) === gf
-        @test Manopt._mfo_make_sure_wrapped_grad(grad_f) isa GradientFunction
-        @test Manopt._make_sure_unwrapped(grad_f) === grad_f
-        @test Manopt._make_sure_unwrapped(gf) === grad_f
-        cf = CostFunction(f)
-        @test Manopt._mfo_make_sure_wrapped_cost(cf) === cf
-        @test Manopt._mfo_make_sure_wrapped_cost(f) isa CostFunction
-        @test Manopt._make_sure_unwrapped(f) === f
-        @test Manopt._make_sure_unwrapped(cf) === f
-        cfg = CostGradientFunction(fg)
-        @test Manopt._make_sure_unwrapped(fg) === fg
-        @test Manopt._make_sure_unwrapped(cfg) === fg
-
         # the number represents the case, a/i alloc/inplace
         # Use old names here
-        mfo1a = ManifoldFirstOrderObjective(fg)
+        mfo1a = ManifoldCostGradientObjective(fg)
         @test startswith(repr(mfo1a), "ManifoldFirstOrderObjective{AllocatingEvaluation, ")
-        mfo1i = ManifoldFirstOrderObjective(fg!; evaluation=InplaceEvaluation())
+        mfo1i = ManifoldCostGradientObjective(fg!; evaluation=InplaceEvaluation())
         mfo2a = ManifoldGradientObjective(f, grad_f)
         mfo2i = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
-        mfo3a = ManifoldFirstOrderObjective(fg; differential=diff_f)
-        mfo3i = ManifoldFirstOrderObjective(
+        mfo3a = ManifoldCostGradientObjective(fg; differential=diff_f)
+        mfo3i = ManifoldCostGradientObjective(
             fg!; differential=diff_f, evaluation=InplaceEvaluation()
         )
-        mfo4a = ManifoldFirstOrderObjective(f, grad_f; differential=diff_f)
-        mfo4i = ManifoldFirstOrderObjective(
+        mfo4a = ManifoldGradientObjective(f, grad_f; differential=diff_f)
+        mfo4i = ManifoldGradientObjective(
             f, grad_f!; differential=diff_f, evaluation=InplaceEvaluation()
         )
-        mfo5a = ManifoldFirstOrderObjective(f, GradientDifferentialFunction(gd))
-        mfo5i = ManifoldFirstOrderObjective(
-            f, GradientDifferentialFunction(gd!); evaluation=InplaceEvaluation()
+        mfo5a = ManifoldFirstOrderObjective(; cost=f, gradientdifferential=gd)
+        mfo5i = ManifoldFirstOrderObjective(;
+            cost=f, gradientdifferential=gd!, evaluation=InplaceEvaluation()
         )
         # an inplace does not make sense for 6
-        mfo6 = ManifoldFirstOrderObjective(CostDifferentialFunction(fd))
-        mfo7a = ManifoldFirstOrderObjective(
-            CostDifferentialFunction(fd), GradientFunction(grad_f)
+        mfo6 = ManifoldFirstOrderObjective(; costdifferential=fd)
+        mfo7a = ManifoldFirstOrderObjective(; costdifferential=fd, gradient=grad_f)
+        mfo7i = ManifoldFirstOrderObjective(;
+            costdifferential=fd, gradient=grad_f!, evaluation=InplaceEvaluation()
         )
-        mfo7i = ManifoldFirstOrderObjective(
-            CostDifferentialFunction(fd),
-            GradientFunction(grad_f!);
-            evaluation=InplaceEvaluation(),
+        mfo8a = ManifoldFirstOrderObjective(; costgradientdifferential=fgd)
+        mfo8i = ManifoldFirstOrderObjective(;
+            costgradientdifferential=fgd!, evaluation=InplaceEvaluation()
         )
-        mfo8a = ManifoldFirstOrderObjective(CostGradientDifferentialFunction(fgd))
-        mfo8i = ManifoldFirstOrderObjective(
-            CostGradientDifferentialFunction(fgd!); evaluation=InplaceEvaluation()
-        )
-        @test_throws DomainError ManifoldFirstOrderObjective(CostFunction(f))
-        # an inplace does not make sense for 9
-        mfo9 = ManifoldFirstOrderObjective(CostFunction(f); differential=diff_f)
+        mfo9 = ManifoldFirstOrderObjective(; cost=f, differential=diff_f)
 
         # test cost & diff for all
         # collect all allocs, inplace, and 6&9

@@ -328,7 +328,7 @@ function difference_of_convex_proximal_point!(
         decorate_objective!(
             M,
             if isnothing(sub_hess)
-                ManifoldFirstOrderObjective(sub_cost, sub_grad; evaluation=evaluation)
+                ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation)
             else
                 ManifoldHessianObjective(
                     sub_cost, sub_grad, sub_hess; evaluation=evaluation
