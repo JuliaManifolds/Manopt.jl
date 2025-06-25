@@ -361,7 +361,7 @@ function MOI.optimize!(model::Optimizer)
     ]
     objective = model.objective
     if model.sense == MOI.FEASIBILITY_SENSE
-        objective = Manopt.ManifoldFirstOrderObjective(
+        objective = Manopt.ManifoldGradientObjective(
             (_, _) -> 0.0, ManifoldsBase.zero_vector
         )
     elseif model.sense == MOI.MAX_SENSE

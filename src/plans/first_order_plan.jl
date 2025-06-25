@@ -240,6 +240,13 @@ function get_differential(
     return get_differential(M, get_objective(admo, false), p, X)
 end
 
+"""
+     get_differential(M, amfo:AbstractManifoldFirstOrderObjective, p, X)
+ Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
+ the [`AbstractManifoldFirstOrderObjective`](@ref),
+ """
+get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X)
+
 function get_differential(
     M::AbstractManifold,
     mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
@@ -280,6 +287,15 @@ function get_differential_function(
 )
     return get_differential_function(get_objective(admo, recursive))
 end
+
+@doc """
+     get_differential_function(admo::AbstractManifoldFirstOrderObjective, recursive=false)
+ return the function to evaluate (just) the differential ``Df(p)[X]``.
+ For a decorated objective, the `recursive` positional parameter determines whether to
+ directly call this function on the next decorator or whether to get the “most inner” objective.
+ """
+get_differential_function(::AbstractManifoldFirstOrderObjective; recursive=false)
+
 function get_differential_function(
     mfo::ManifoldFirstOrderObjective{<:AbstractEvaluationType,<:NamedTuple}, recursive=false
 )

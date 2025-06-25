@@ -85,7 +85,6 @@ ManifoldCountObjective
 
 ```@docs
 ReturnManifoldObjective
-_count_based_on_group
 ```
 
 ## Specific Objective typed and their access functions
