@@ -78,12 +78,6 @@ If `amco` has more than one decorator, `recursive` determines whether just one (
 or all wrappers (`true`) should be “unwrapped” at once.
 """
 get_cost_function(mco::AbstractManifoldCostObjective, recursive=false) = mco.cost
-function get_cost_function(
-    mco::AbstractManifoldCostObjective{E,<:CostFunction}, recursive=false
-) where {E<:AbstractEvaluationType}
-    println("Fnu")
-    return get_cost_function(mco.cost, recursive)
-end
 function get_cost_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
     return get_cost_function(get_objective(admo, recursive))
 end

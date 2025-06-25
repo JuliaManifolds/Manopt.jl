@@ -31,10 +31,10 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
     # Check Fallbacks of Problem
     @testset "Subgradient is Gradient" begin
         @test get_subgradient(M, mgo, p) == get_gradient(M, mgo, p)
-        X = zero_vector(M, p)
-        Y = similar(X)
-        @test get_subgradient!(M, Y, mgo, p) == get_gradient!(M, X, mgo, p)
-        @test X == Y
+        Y1 = zero_vector(M, p)
+        Y2 = similar(Y1)
+        @test get_subgradient!(M, Y2, mgo, p) == get_gradient!(M, Y1, mgo, p)
+        @test Y1 == Y2
     end
     @test get_cost(mp, gst.p) == 0.0
     @test get_gradient(mp, gst.p) == zero_vector(M, p)
@@ -79,24 +79,23 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test f(M, p) == f2(M, p)
         @test f(M, p) == get_cost(M, mcgo, p)
         grad_f2 = Manopt.get_gradient_function(mcgo)
-        X = grad_f(M, p)
-        @test isapprox(M, p, X, grad_f2(M, p))
-        @test isapprox(M, p, X, get_gradient(M, mcgo, p))
-        Y = zero_vector(M, p)
-        get_gradient!(M, Y, mcgo, p)
-        @test isapprox(M, p, X, Y)
+        Y1 = grad_f(M, p)
+        @test isapprox(M, p, Y1, grad_f2(M, p))
+        @test isapprox(M, p, Y1, get_gradient(M, mcgo, p))
+        Y2 = zero_vector(M, p)
+        get_gradient!(M, Y2, mcgo, p)
+        @test isapprox(M, p, Y1, Y2)
 
-        grad_f!(M, X, p) = -2 * log!(M, X, p, q)
         costgrad!(M, X, p) = (f(M, p), grad_f!(M, X, p))
         mcgo! = ManifoldCostGradientObjective(costgrad!; evaluation=InplaceEvaluation())
-        @test isapprox(M, p, X, get_gradient(M, mcgo!, p))
-        get_gradient!(M, Y, mcgo!, p)
-        @test isapprox(M, p, X, Y)
+        @test isapprox(M, p, Y1, get_gradient(M, mcgo!, p))
+        get_gradient!(M, Y2, mcgo!, p)
+        @test isapprox(M, p, Y1, Y2)
         cmcgo = ManifoldCountObjective(M, mcgo, [:Cost, :Gradient])
         @test get_cost(M, cmcgo, p) == get_cost(M, mcgo, p)
         @test get_gradient(M, cmcgo, p) == get_gradient(M, mcgo, p)
-        get_gradient!(M, Y, cmcgo, p)
-        get_gradient!(M, X, mcgo, p)
+        get_gradient!(M, Y2, cmcgo, p)
+        get_gradient!(M, Y1, mcgo, p)
         # Verify that both were called 3 times
         @test get_count(cmcgo, :Gradient) == 3
         @test get_count(cmcgo, :Cost) == 3
