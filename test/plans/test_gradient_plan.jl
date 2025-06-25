@@ -160,19 +160,20 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         mfo9 = ManifoldFirstOrderObjective(CostFunction(f); differential=diff_f)
 
         # test cost & diff for all
-        cdt = [mfo1a, mfo1i, mfo2a, mfo2i, mfo3a, mfo3i, mfo4a, mfo4i, mfo5a, mfo5i, mfo6]
-        cdt = [cdt..., mfo7a, mfo7i, mfo8a, mfo8i, mfo9]
-        for obj in cdt
+        # collect all allocs, inplace, and 6&9
+        cda = [mfo1a, mfo2a, mfo3a, mfo4a, mfo5a, mfo7a, mfo8a]
+        cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i]
+        cdr = [mfo6, mfo9]
+        # For all: Test cost&diff
+        for obj in [cda..., cdi..., cdr...]
             @test get_cost(M, obj, p) == c
             @test Manopt.get_cost_function(obj)(M, p) == c
             @test get_differential(M, obj, p, X) == d
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end
-        # test grad and cost_grad for all but 6 and 9
-        gcgt = [mfo1a, mfo1i, mfo2a, mfo2i, mfo3a, mfo3i, mfo4a, mfo4i, mfo5a, mfo5i]
-        gcgt = [gcgt..., mfo7a, mfo7i, mfo8a, mfo8i]
         Yi = zero_vector(M, p)
-        for obj in gcgt
+        # For all that have a gradient (all but 6&9) test their access
+        for obj in [cda..., cdi...]
             @test get_gradient(M, obj, p) == G
             get_gradient!(M, Yi, obj, p)
             @test Yi == G
@@ -181,6 +182,14 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             @test Ya == G
             cb, _ = Manopt.get_cost_and_gradient!(M, Yi, obj, p)
             @test cb == c
+            @test Yi == G
+        end
+        # For all allocs: test gradient function access.
+        for obj in cda
+            @test Manopt.get_gradient_function(obj)(M, p) == G
+        end
+        for obj in cdi
+            Manopt.get_gradient_function(obj)(M, Yi, p)
             @test Yi == G
         end
     end
