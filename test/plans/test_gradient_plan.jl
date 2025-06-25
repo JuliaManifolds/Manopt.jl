@@ -140,6 +140,9 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test Manopt._mfo_make_sure_wrapped_cost(f) isa CostFunction
         @test Manopt._make_sure_unwrapped(f) === f
         @test Manopt._make_sure_unwrapped(cf) === f
+        cfg = CostGradientFunction(fg)
+        @test Manopt._make_sure_unwrapped(fg) === fg
+        @test Manopt._make_sure_unwrapped(cfg) === fg
 
         # the number represents the case, a/i alloc/inplace
         # Use old names here
