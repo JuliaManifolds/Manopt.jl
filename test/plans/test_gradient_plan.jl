@@ -123,12 +123,31 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         fd(M, p, X) = (f(M, p), diff_f(M, p, X))
         fgd(M, p, X) = (f(M, p), grad_f(M, p), diff_f(M, p, X))
         fgd!(M, Y, p, X) = (f(M, p), grad_f!(M, Y, p), diff_f(M, p, X))
+
+        # test wrapper ensurance
+        df = DifferentialFunction(diff_f)
+        @test Manopt._mfo_make_sure_wrapped_diff(df) === df
+        @test Manopt._mfo_make_sure_wrapped_diff(diff_f) isa DifferentialFunction
+        @test Manopt._make_sure_unwrapped(diff_f) === diff_f
+        @test Manopt._make_sure_unwrapped(df) === diff_f
+        gf = GradientFunction(grad_f)
+        @test Manopt._mfo_make_sure_wrapped_grad(gf) === gf
+        @test Manopt._mfo_make_sure_wrapped_grad(grad_f) isa GradientFunction
+        @test Manopt._make_sure_unwrapped(grad_f) === grad_f
+        @test Manopt._make_sure_unwrapped(gf) === grad_f
+        cf = CostFunction(f)
+        @test Manopt._mfo_make_sure_wrapped_cost(cf) === cf
+        @test Manopt._mfo_make_sure_wrapped_cost(f) isa CostFunction
+        @test Manopt._make_sure_unwrapped(f) === f
+        @test Manopt._make_sure_unwrapped(cf) === f
+
         # the number represents the case, a/i alloc/inplace
+        # Use old names here
         mfo1a = ManifoldFirstOrderObjective(fg)
         @test startswith(repr(mfo1a), "ManifoldFirstOrderObjective{AllocatingEvaluation, ")
         mfo1i = ManifoldFirstOrderObjective(fg!; evaluation=InplaceEvaluation())
-        mfo2a = ManifoldFirstOrderObjective(f, grad_f)
-        mfo2i = ManifoldFirstOrderObjective(f, grad_f!; evaluation=InplaceEvaluation())
+        mfo2a = ManifoldGradientObjective(f, grad_f)
+        mfo2i = ManifoldGradientObjective(f, grad_f!; evaluation=InplaceEvaluation())
         mfo3a = ManifoldFirstOrderObjective(fg; differential=diff_f)
         mfo3i = ManifoldFirstOrderObjective(
             fg!; differential=diff_f, evaluation=InplaceEvaluation()
@@ -161,8 +180,10 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
 
         # test cost & diff for all
         # collect all allocs, inplace, and 6&9
-        cda = [mfo1a, mfo2a, mfo3a, mfo4a, mfo5a, mfo7a, mfo8a]
-        cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i]
+        mfod1a = ManoptTestSuite.DummyDecoratedObjective(mfo1a)
+        mfod1i = ManoptTestSuite.DummyDecoratedObjective(mfo1i)
+        cda = [mfo1a, mfo2a, mfo3a, mfo4a, mfo5a, mfo7a, mfo8a, mfod1a]
+        cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i, mfod1i]
         cdr = [mfo6, mfo9]
         # For all: Test cost&diff
         for obj in [cda..., cdi..., cdr...]

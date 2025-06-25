@@ -19,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* the `ManifoldGradientObjective` is renamed to `ManifoldFirstOrderObjective`, since the
- second function might now also represent a differential.
+* the `ManifoldGradientObjective` and the `ManifoldCostGradientObjective` are now merely
+  a const special cases of the `ManifoldFirstOrderObjective`, since this type might now
+  also represent a differential.
 * the `AbstractManifoldGradientObjective` is renamed to `AbstractManifoldFirstOrderObjective`, since the
  second function might now also represent a differential.
 
