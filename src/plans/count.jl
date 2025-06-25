@@ -206,7 +206,7 @@ function reset_counters!(o::AbstractManifoldObjective, value::Integer=0)
 end
 
 # First order information has different types, here we count based on the provided type
-
+#=
 """
     _count_at_least(::ManifoldCountObjective, group_type, eval::Symbol)
 
@@ -420,7 +420,7 @@ function get_gradient!(
     get_gradient!(M, X, co.objective, p)
     return X
 end
-
+=#
 function get_hessian(M::AbstractManifold, co::ManifoldCountObjective, p, X)
     _count_if_exists(co, :Hessian)
     return get_hessian(M, co.objective, p, X)
