@@ -18,7 +18,7 @@ end
 TestGradCount() = TestGradCount(0)
 function (tgc::TestGradCount)(M, p)
     tgc.i += 1
-    return p
+    return copy(p) # for cache, copy
 end
 function (tgc::TestGradCount)(M, X, p)
     tgc.i += 1
@@ -68,7 +68,8 @@ end
         X = zero_vector(M, p)
         # allocating
         mgoa = ManifoldGradientObjective(TestCostCount(0), TestGradCount(0))
-        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=p)
+        # Init to copy of p - init cache
+        sco1 = Manopt.SimpleManifoldCachedObjective(M, mgoa; p=copy(M, p))
         @test repr(sco1) == "SimpleManifoldCachedObjective{AllocatingEvaluation,$(mgoa)}"
         @test startswith(
             repr((sco1, 1.0)),
@@ -83,54 +84,89 @@ A `SimpleManifoldCachedObjective`""",
             A `SimpleManifoldCachedObjective`""",
         )
         # evaluated on init -> 1
-        @test sco1.objective.functions[2].i == 1
-        @test sco1.objective.functions[1].i == 1
+        @test sco1.objective.functions[:cost].i == 1
+        @test sco1.objective.functions[:gradient].i == 1
         @test get_gradient(M, sco1, p) == p
         get_gradient!(M, X, sco1, p)
         @test X == zero_vector(M, p)
         @test get_cost(M, sco1, p) == norm(p)
         # still at 1
-        @test sco1.objective.functions[2].i == 1
-        @test sco1.objective.functions[1].i == 1
+        @test sco1.objective.functions[:cost].i == 1
+        @test sco1.objective.functions[:gradient].i == 1
         @test get_gradient(M, sco1, q) == q # triggers an evaluation
         get_gradient!(M, X, sco1, q) # same point, copies
         @test X == q
         @test get_cost(M, sco1, q) == norm(q)
-        @test sco1.objective.functions[1].i == 2
-        @test sco1.objective.functions[2].i == 2
+        @test sco1.objective.functions[:cost].i == 2
+        @test sco1.objective.functions[:gradient].i == 2
         # first `grad!`
         get_gradient!(M, X, sco1, r) # triggers an evaluation
         @test get_gradient(M, sco1, r) == X # cached
         @test X == r
-        @test sco1.objective.functions[2].i == 3
+        @test sco1.objective.functions[:gradient].i == 3
         @test Manopt.get_cost_function(sco1) != Manopt.get_cost_function(mgoa)
         @test Manopt.get_gradient_function(sco1) != Manopt.get_gradient_function(mgoa)
+        # test cost_grad, back to q to trigger first
+        c, X = Manopt.get_cost_and_gradient(M, sco1, q) # trigger
+        @test X == q
+        @test c == norm(q)
+        @test sco1.objective.functions[:cost].i == 3
+        @test sco1.objective.functions[:gradient].i == 4
+        c, _ = Manopt.get_cost_and_gradient!(M, X, sco1, q) # cached
+        @test X == q
+        @test c == norm(q)
+        @test sco1.objective.functions[:cost].i == 3
+        @test sco1.objective.functions[:gradient].i == 4
+        # Diff via grad - with caching (since not recursive)
+        df = Manopt.get_differential_function(sco1)
+        d = df(M, r, X) #norm <r, X> since grad is r, triggers, but does not cache grad
+        @test d == dot(X, r)
+        @test sco1.objective.functions[:gradient].i == 5
+        get_gradient(M, sco1, r)
+        @test sco1.objective.functions[:gradient].i == 6
+        d = get_differential(M, sco1, r, X) # ...so that this is cached
+        @test d == dot(X, r)
+        @test sco1.objective.functions[:gradient].i == 6
 
         mgoi = ManifoldGradientObjective(
             TestCostCount(0), TestGradCount(0); evaluation=InplaceEvaluation()
         )
-        sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; p=p, initialized=false)
+        sco2 = Manopt.SimpleManifoldCachedObjective(M, mgoi; initialized=false)
         # not evaluated on init -> this is the first
-        @test sco2.objective.functions[2].i == 0
-        @test sco2.objective.functions[1].i == 0
+        @test sco2.objective.functions[:cost].i == 0
+        @test sco2.objective.functions[:gradient].i == 0
         @test get_gradient(M, sco2, p) == p
         @test get_cost(M, sco2, p) == norm(p)
-        # now 1
-        @test sco2.objective.functions[2].i == 1
-        @test sco2.objective.functions[1].i == 1
+        # both evaluated once
+        @test sco2.objective.functions[:cost].i == 1
+        @test sco2.objective.functions[:gradient].i == 1
         # new point -> 2
         @test get_gradient(M, sco2, q) == q
         get_gradient!(M, X, sco2, q) # cached
         @test X == q
         @test get_cost(M, sco2, q) == norm(q)
-        @test sco2.objective.functions[2].i == 2
-        @test sco2.objective.functions[1].i == 2
+        @test sco2.objective.functions[:cost].i == 2
+        @test sco2.objective.functions[:gradient].i == 2
+        # Just gradient anew
         get_gradient!(M, X, sco2, r)
+        @test sco2.objective.functions[:gradient].i == 3
         @test get_gradient(M, sco2, r) == X # cached
+        @test sco2.objective.functions[:gradient].i == 3
         @test X == r
+        # Costgrad, here first inplace
+        c, _ = Manopt.get_cost_and_gradient!(M, X, sco2, q) # trigger
+        @test X == q
+        @test c == norm(q)
+        @test sco2.objective.functions[:cost].i == 3
+        @test sco2.objective.functions[:gradient].i == 4
+        c, X = Manopt.get_cost_and_gradient(M, sco2, q) # cached
+        @test X == q
+        @test c == norm(q)
+        @test sco2.objective.functions[:cost].i == 3
+        @test sco2.objective.functions[:gradient].i == 4
 
         mcgoa = ManifoldCostGradientObjective(TestCostGradCount(0))
-        sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; p=p, initialized=false)
+        sco3 = Manopt.SimpleManifoldCachedObjective(M, mcgoa; initialized=false)
         # not evaluated on init -> still zero
         @test sco3.objective.functions[:costgradient].i == 0
         @test get_gradient(M, sco3, p) == p
@@ -138,6 +174,7 @@ A `SimpleManifoldCachedObjective`""",
         @test X == p
         @test get_cost(M, sco3, p) == norm(p)
         # for seperate calls this is a 2
+
         @test sco3.objective.functions[:costgradient].i == 2
         @test get_gradient(M, sco3, q) == q
         get_gradient!(M, X, sco3, q) # cached

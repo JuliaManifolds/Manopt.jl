@@ -369,6 +369,14 @@ define!(:Variable, :at_iteration, :type, "Int")
 
 define!(
     :Variable,
+    :differential,
+    :description,
+    "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩``. is used",
+)
+define!(:Variable, :differential, :default, "`nothing`")
+
+define!(
+    :Variable,
     :evaluation,
     :description,
     "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.",

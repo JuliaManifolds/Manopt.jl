@@ -219,6 +219,7 @@ $(_var(:Argument, :p))
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
   and strictly increasing at ``0``
+$(_var(:Keyword, :differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
 $(_var(:Keyword, :evaluation; add=:GradientExample))
@@ -287,10 +288,13 @@ function quasi_Newton!(
     f::TF,
     grad_f::TDF,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     return quasi_Newton!(M, mgo, p; kwargs...)
 end
 function quasi_Newton!(

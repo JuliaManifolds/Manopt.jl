@@ -2,7 +2,7 @@ s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
 using Manifolds, Manopt, ManoptTestSuite, Test, Random
-using Manopt: get_cost_function, get_gradient_function
+using Manopt: get_cost_function, get_gradient_function, get_differential_function
 using LinearAlgebra: Symmetric
 
 @testset "Counting Objective test" begin
@@ -12,10 +12,11 @@ using LinearAlgebra: Symmetric
         f(M, p) = p' * A * p
         grad_f(M, p) = project(M, p, 2 * A * p)
         obj = ManifoldGradientObjective(f, grad_f)
-        c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient])
+        c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Differential])
         # function access functions are different since the right is still counting.
         @test get_cost_function(obj) != get_cost_function(c_obj)
         @test get_gradient_function(obj) != get_gradient_function(c_obj)
+        @test get_differential_function(obj) != get_differential_function(c_obj)
         p = [1.0, 0.0, 0.0]
         X = [1.0, 1.0, 0.0]
         get_cost(M, c_obj, p)
@@ -29,6 +30,13 @@ using LinearAlgebra: Symmetric
         get_gradient(M, obj, p)
         # others do not affect the counter
         @test get_count(c_obj, :Gradient) == 2
+        # Costgrad is counted
+        Manopt.get_cost_and_gradient(M, c_obj, p)
+        Manopt.get_cost_and_gradient!(M, Y, c_obj, p)
+        @test get_count(c_obj, :Cost) == 3
+        @test get_count(c_obj, :Gradient) == 4
+        d = get_differential(M, c_obj, p, X)
+        @test get_count(c_obj, :Differential) == 1
         # also decorated objects can be wrapped to be counted
         ro = ManoptTestSuite.DummyDecoratedObjective(obj)
         c_obj2 = ManifoldCountObjective(M, ro, [:Gradient])
@@ -44,9 +52,9 @@ using LinearAlgebra: Symmetric
         # but this also includes the hint, how to access the result
         @test endswith(repr((c_obj, p)), "on this variable.")
         rc_obj = ManoptTestSuite.DummyDecoratedObjective(c_obj)
-        @test get_count(rc_obj, :Gradient) == 2 #still works if count is encapsulated
+        @test get_count(rc_obj, :Gradient) == 4 #still works if count is encapsulated
         @test_throws ErrorException get_count(obj, :Gradient) # no count objective
-        @test get_count(rc_obj, :Gradient, 1) == 2 #still works if count is encapsulated
+        @test get_count(rc_obj, :Gradient, 1) == 4 #still works if count is encapsulated
         @test_throws ErrorException get_count(obj, :Gradient, 1) # no count objective
         # test fallbacks
         @test get_count(c_obj, :None, 1) == -1
@@ -72,6 +80,8 @@ using LinearAlgebra: Symmetric
         c_obj = ManifoldCountObjective(M, obj, [:Cost, :Gradient, :Hessian])
         # undecorated / recursive cost -> exactly f
         @test Manopt.get_cost_function(obj) === Manopt.get_cost_function(c_obj, true)
+        # PLain get_diff passthrough
+        @test get_differential(M, c_obj, p, X) == get_differential(M, obj, p, X)
         # otherwise different
         f1 = get_cost_function(c_obj)
         @test f1 != f

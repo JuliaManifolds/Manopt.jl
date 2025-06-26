@@ -71,11 +71,16 @@ end
 function get_cost_and_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid || !sco.c_valid
-        sco.c, sco.X = get_cost_and_gradient(M, sco.objective, p)
+        sco.c, X = get_cost_and_gradient(M, sco.objective, p)
+        # Update point
+        copyto!(M, sco.p, p)
         sco.c_valid = true
+        copyto!(M, sco.X, X)
         sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
     end
-    return (sco.c, copy(M, p, sco.X))
+    return (sco.c, X)
 end
 function get_cost_and_gradient!(
     M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p
@@ -83,9 +88,12 @@ function get_cost_and_gradient!(
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid || !sco.c_valid
         sco.c, _ = get_cost_and_gradient!(M, X, sco.objective, p)
-        copyto!(M, sco.X, p, X)
+        copyto!(M, sco.p, p)
         sco.c_valid = true
+        copyto!(M, sco.X, p, X)
         sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
     end
     return (sco.c, X)
 end
@@ -104,9 +112,7 @@ function get_differential(M::AbstractManifold, sco::SimpleManifoldCachedObjectiv
     # otherwise use the up to date gradient and inner
     return real(inner(M, p, sco.X, X))
 end
-function get_differential_function(
-    sco::SimpleManifoldCachedObjective{AllocatingEvaluation}, recursive=false
-)
+function get_differential_function(sco::SimpleManifoldCachedObjective, recursive=false)
     recursive && (return get_differential_function(sco.objective, recursive))
     return (M, p, X) -> get_differential(M, sco, p, X)
 end
@@ -114,24 +120,29 @@ end
 function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        get_gradient!(M, sco.X, sco.objective, p)
+        X = get_gradient(M, sco.objective, p)
         # for switched points, invalidate c
-        scop_neq_p && (sco.c_valid = false)
         copyto!(M, sco.p, p)
+        scop_neq_p && (sco.c_valid = false)
+        copyto!(M, sco.X, X)
         sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
     end
-    return copy(M, p, sco.X)
+    return X
 end
 function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        get_gradient!(M, sco.X, sco.objective, p)
-        scop_neq_p && (sco.c_valid = false)
-        copyto!(M, sco.p, p)
+        get_gradient!(M, X, sco.objective, p)
         # for switched points, invalidate c
+        copyto!(M, sco.p, p)
+        scop_neq_p && (sco.c_valid = false)
+        copyto!(M, sco.X, X)
         sco.X_valid = true
+    else
+        copyto!(M, X, p, sco.X)
     end
-    copyto!(M, X, sco.p, sco.X)
     return X
 end
 

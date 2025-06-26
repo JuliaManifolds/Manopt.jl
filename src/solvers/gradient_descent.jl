@@ -143,10 +143,11 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
+
+$(_var(:Keyword, :differential))
 * `direction=`[`IdentityUpdateRule`](@ref)`()`:
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref).
-
 $(_var(:Keyword, :evaluation; add=:GradientExample))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, GradientDescentState)`"))
@@ -171,13 +172,16 @@ function gradient_descent(
     f,
     grad_f,
     p=rand(M);
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f_, grad_f_; evaluation=evaluation, differential=differential
+    )
     rs = gradient_descent(M, mgo, p_; kwargs...)
     return _ensure_matching_output(p, rs)
 end

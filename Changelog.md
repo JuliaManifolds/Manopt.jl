@@ -11,17 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * a function `get_differential` and `get_differential_function` for first order objectives.
-* a `ParentEvaluationType` for backwards compatibility, then an internal function
-  inhertis its evaluation type from the parent objective. This is the default when
-  passing a function to `GradientFunction` or `DifferenitalFunction`.
-* introduce a new `AllocatingInplaceEvaluation` that is used for the
-  functions that offer both variants simultaneously.
-
+* a `ParentEvaluationType` to indicate that a certain objective inherits it evaluation from the parent (wrapping) objective
+* a new `AllocatingInplaceEvaluation` that is used for the functions that offer both variants simultaneously.
+* a `differential=` keyword as a lightweight version instead of using `⟨grad_f(p), X⟩`, introduced to the algorithms `conjugate_gradient_descent`, `gradient_descent`, `Frank_Wolfe_method`, `quasi_Newton`
 ### Changed
 
 * the `ManifoldGradientObjective` and the `ManifoldCostGradientObjective` are now merely
   a const special cases of the `ManifoldFirstOrderObjective`, since this type might now
-  also represent a differential.
+  also represent a differential or other combinations of cost, grad, and differential, where they are computed together.
 * the `AbstractManifoldGradientObjective` is renamed to `AbstractManifoldFirstOrderObjective`, since the
  second function might now also represent a differential.
 

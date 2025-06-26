@@ -155,6 +155,13 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         )
         mfo9 = ManifoldFirstOrderObjective(; cost=f, differential=diff_f)
 
+        # only cost
+        @test_throws DomainError ManifoldFirstOrderObjective(; cost=f)
+        # No cost
+        @test_throws ErrorException ManifoldFirstOrderObjective(;)
+        @test_throws ErrorException ManifoldFirstOrderObjective(; gradientdifferential=gd)
+        @test_throws ErrorException ManifoldFirstOrderObjective(; gradient=grad_f)
+        @test_throws ErrorException ManifoldFirstOrderObjective(; differential=diff_f)
         # test cost & diff for all
         # collect all allocs, inplace, and 6&9
         mfod1a = ManoptTestSuite.DummyDecoratedObjective(mfo1a)

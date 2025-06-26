@@ -193,6 +193,7 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
+$(_var(:Keyword, :differential))
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
@@ -255,10 +256,13 @@ function Frank_Wolfe_method!(
     f,
     grad_f,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     return Frank_Wolfe_method!(M, mgo, p; evaluation=evaluation, kwargs...)
 end
 function Frank_Wolfe_method!(

@@ -27,16 +27,16 @@ Currently the following cases are covered, sorted by their popularity
 2. a single function `fdf`, i.e. a function or a functor, represents a combined function
   `(M, p) -> (c, d)` that computes the cost `c=cost(M,p)` and differential `d=diff_f(M,p)`;
 3. pairs of single functions `(f, g)`, `(f, df)` of a cost function `f` and either its gradient `g` or its differential `d`, respectively
-4. The function `(fg, d)` and `(fdf, g)`  from 1 and 2, respectively joined by the other mising third information,
+4. The function `(fg, d)` and `(fdf, g)`  from 1 and 2, respectively joined by the other missing third information,
   the differential for the first or the gradient for the second
-5. a tuole `(f, g, d)` of three functions, computing cost, `f`, gradiebnt `g`, and `differential `d` separately
+5. a tuple `(f, g, d)` of three functions, computing cost, `f`, gradient `g`, and `differential `d` separately
 6. a `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, p, X)` to compute gradient and differential together
 7. a single function `(c, X, d) = fgd(M, p,X)`
 
 For all cases where a gradient is present, also an in-place variant is possible, where the
 signature has the result `Y` in second place.
 
-The cases of a commen `fg` function for cost and gradient and the tuple `(f,g)` are the most common one.
+The cases of a common `fg` function for cost and gradient and the tuple `(f,g)` are the most common one.
 They can also be addressed by their alternate constructors
 [`ManifoldCostGradientObjective`](@ref)`(fg)` and [`ManifoldGradientObjective`](@ref)`(f,g)`, respectively.
 
@@ -107,7 +107,12 @@ function ManifoldFirstOrderObjective(;
                 if !ngd #but a combined
                     nt = (cost=cost, gradientdifferential=gradientdifferential)
                 else # only cost
-                    error("First order information missing, only a cost provided.")
+                    throw(
+                        DomainError(
+                            cost,
+                            "Only a cost provided. Consider using a ManifoldCostObjective instead",
+                        ),
+                    )
                 end
             end
         end
@@ -126,8 +131,12 @@ function ManifoldFirstOrderObjective(;
             end
         elseif !ncgd
             nt = (costgradientdifferential=costgradientdifferential,)
-        else
-            error("No cost provided")
+        else # If we reach this no cost or nothing was provided.
+            throw(
+                ErrorException(
+                    "Neither a single cost nor a cost within another function provided"
+                ),
+            )
         end
     end
     return ManifoldFirstOrderObjective{E,typeof(nt)}(nt)
@@ -141,15 +150,17 @@ const ManifoldGradientObjective{E,F,G} = ManifoldFirstOrderObjective{
     },
 }
 @doc """
-    ManifoldGradientObjective(cost, gradient; evaluation=AllocatingEvaluation())
+    ManifoldGradientObjective(cost, gradient; evaluation::E=AllocatingEvaluation() kwargs...)
 
 Generate an objective with a function `cost` and its `gradient`.
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+Depending on the [`AbstractEvaluationType`](@ref) `E` the gradient can have to forms
 
 * as a function `(M, p) -> X` that allocates memory for `X`, an [`AllocatingEvaluation`](@ref)
 * as a function `(M, X, p) -> X` that work in place of `X`, an [`InplaceEvaluation`](@ref)
 
-Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref)
+Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref). The `kwargs...`
+are also passed to this representation, which allows to add a special function
+to evaluate the `differential`.
 
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
@@ -166,16 +177,18 @@ const ManifoldCostGradientObjective{E,FG} = ManifoldFirstOrderObjective{
     },
 }
 @doc """
-    ManifoldCostGradientObjective(costgrad; evaluation=AllocatingEvaluation())
+    ManifoldCostGradientObjective(costgrad; evaluation::E=AllocatingEvaluation(), kwargs...)
 
 create an objective containing one function to perform a combined computation of cost and its gradient
 
-Depending on the [`AbstractEvaluationType`](@ref) `T` the gradient can have to forms
+Depending on the [`AbstractEvaluationType`](@ref) `E` the gradient can have to forms
 
 * as a function `(M, p) -> (c, X)` that allocates memory for the gradient `X`, an [`AllocatingEvaluation`](@ref)
 * as a function `(M, X, p) -> (c, X)` that work in place of `X`, an [`InplaceEvaluation`](@ref)
 
-Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref).
+Internally this is stored in a [`ManifoldFirstOrderObjective`](@ref). The `kwargs...`
+are also passed to this representation, which allows to add a special function
+to evaluate the `differential`.
 
 # Used with
 [`gradient_descent`](@ref), [`conjugate_gradient_descent`](@ref), [`quasi_Newton`](@ref)
@@ -242,11 +255,17 @@ end
 
 """
      get_differential(M, amfo:AbstractManifoldFirstOrderObjective, p, X)
- Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
- the [`AbstractManifoldFirstOrderObjective`](@ref),
- """
-get_differential(M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X)
 
+ Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
+ the [`AbstractManifoldFirstOrderObjective`](@ref).
+
+ By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
+ """
+function get_differential(
+    M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X
+)
+    return real(inner(M, p, get_gradient(M, amfo, p), X))
+end
 function get_differential(
     M::AbstractManifold,
     mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
