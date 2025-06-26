@@ -252,12 +252,20 @@ function get_differential(
 )
     return get_differential(M, get_objective(admo, false), p, X)
 end
-
+# On problems -> “unpack”
+function get_differential(amp::AbstractManoptProblem, p, X)
+    return get_differential(get_manifold(amp), get_objective(amp), p, X)
+end
 """
-     get_differential(M, amfo:AbstractManifoldFirstOrderObjective, p, X)
+     get_differential(amp::AbstractManoptProblem, p, X)
+     get_differential(M::AbstractManifold, amfo:AbstractManifoldFirstOrderObjective, p, X)
+     get_differential(M::AbstractManifold, amfo:AbstractDecoratedManifoldObjective, p, X)
 
  Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
  the [`AbstractManifoldFirstOrderObjective`](@ref).
+
+For [`AbstractManoptProblem`](@ref) the inner manifold and objectives are used,
+similarly, any objective decorator would “pass though” to its inner objective.
 
  By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
  """

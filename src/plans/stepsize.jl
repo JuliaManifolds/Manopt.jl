@@ -1475,18 +1475,17 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     α = 0.0
     β = Inf
     t = 1.0
-    f0 = get_cost(amp, get_iterate(ams))
-    xNew = ManifoldsBase.retract_fused(M, get_iterate(ams), η, t, a.retraction_method)
+    p = get_iterate(ams)
+    f0 = get_cost(amp, p)
+    xNew = ManifoldsBase.retract_fused(M, p, η, t, a.retraction_method)
     fNew = get_cost(amp, xNew)
-    η_xNew = vector_transport_to(M, get_iterate(ams), η, xNew, a.vector_transport_method)
-    gradient_new = get_gradient(amp, xNew)
-    nAt =
-        fNew >
-        f0 +
-        a.sufficient_decrease * t * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+    η_xNew = vector_transport_to(M, p, η, xNew, a.vector_transport_method)
+    nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η)
+    # last part was real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     nWt =
-        real(inner(M, xNew, gradient_new, η_xNew)) <
-        a.sufficient_curvature * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+        get_differential(amp, xNew, η_xNew) <
+        a.sufficient_curvature * get_differential(amp, p, η)
+    # last factor was * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
     while (nAt || nWt) &&
               (t > a.stop_when_stepsize_less) &&
               ((α + β) / 2 - 1 > a.stop_when_stepsize_less)
@@ -1496,20 +1495,14 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
         # Update trial point
         ManifoldsBase.retract_fused!(M, xNew, get_iterate(ams), η, t, a.retraction_method)
         fNew = get_cost(amp, xNew)
-        gradient_new = get_gradient(amp, xNew)
         vector_transport_to!(
             M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt =
-            fNew >
-            f0 +
-            a.sufficient_decrease *
-            t *
-            real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+        nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η)
         nWt =
-            real(inner(M, xNew, gradient_new, η_xNew)) <
-            a.sufficient_curvature * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+            get_differential(amp, xNew, η_xNew) <
+            a.sufficient_curvature * get_differential(amp, p, η)
     end
     a.last_stepsize = t
     return t

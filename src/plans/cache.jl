@@ -215,7 +215,6 @@ struct ManifoldCachedObjective{E,P,O<:AbstractManifoldObjective{<:E},C<:NamedTup
        AbstractDecoratedManifoldObjective{E,P}
     objective::O
     cache::C
-    cache_all::Bool
 end
 function ManifoldCachedObjective(
     M::AbstractManifold,
@@ -226,12 +225,11 @@ function ManifoldCachedObjective(
     X::T=zero_vector(M, p),
     cache_size::Int=10,
     cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
-    cache_all=true,
 ) where {E,O<:AbstractManifoldObjective{E},R<:Real,P,T}
     c = init_caches(
         M, caches; p=p, value=value, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
-    return ManifoldCachedObjective{E,O,O,typeof(c)}(objective, c, cache_all)
+    return ManifoldCachedObjective{E,O,O,typeof(c)}(objective, c)
 end
 function ManifoldCachedObjective(
     M::AbstractManifold,
@@ -242,12 +240,11 @@ function ManifoldCachedObjective(
     X::T=zero_vector(M, p),
     cache_size::Int=10,
     cache_sizes::Dict{Symbol,Int}=Dict{Symbol,Int}(),
-    cache_all=true,
 ) where {E,O2,O<:AbstractDecoratedManifoldObjective{E,O2},R<:Real,P,T}
     c = init_caches(
         M, caches; p=p, value=value, X=X, cache_size=cache_size, cache_sizes=cache_sizes
     )
-    return ManifoldCachedObjective{E,O2,O,typeof(c)}(objective, c, cache_all)
+    return ManifoldCachedObjective{E,O2,O,typeof(c)}(objective, c)
 end
 
 """
