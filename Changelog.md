@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a function `get_differential` and `get_differential_function` for first order objectives.
 * a `ParentEvaluationType` to indicate that a certain objective inherits it evaluation from the parent (wrapping) objective
 * a new `AllocatingInplaceEvaluation` that is used for the functions that offer both variants simultaneously.
-* a `differential=` keyword as a lightweight version instead of using `⟨grad_f(p), X⟩`, introduced to the algorithms `conjugate_gradient_descent`, `gradient_descent`, `Frank_Wolfe_method`, `quasi_Newton`
+* a `differential=` keyword for providing a faster way of computing `inner(M, p, grad_f(p), X)`, introduced to the algorithms `conjugate_gradient_descent`, `gradient_descent`, `Frank_Wolfe_method`, `quasi_Newton`
 ### Changed
 
 * the `ManifoldGradientObjective` and the `ManifoldCostGradientObjective` are now merely
