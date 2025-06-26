@@ -279,15 +279,28 @@ end
         q = p .+ 1
         c2 = get_cost(M, o, q)
         X2 = get_gradient(M, o, q)
-        c, X = Manopt.get_cost_and_gradient(M, lco, q)
+        c, X = Manopt.get_cost_and_gradient(M, lco, q) #miss
         @test c == c2
         @test X == X2
-        c, _ = Manopt.get_cost_and_gradient!(M, X, lco, q)
+        c, _ = Manopt.get_cost_and_gradient!(M, X, lco, q) # cached
         @test c == c2
         @test X == X2
         # one of these was cached
         @test get_count(lco, :Cost) == a2 + 1
         @test get_count(lco, :Gradient) == b2 + 1
+        # yet again the other way around
+        q = q .+ 1
+        c2 = get_cost(M, o, q)
+        X2 = get_gradient(M, o, q)
+        c, _ = Manopt.get_cost_and_gradient!(M, X, lco, q) # miss
+        @test c == c2
+        @test X == X2
+        c, X = Manopt.get_cost_and_gradient(M, lco, q) # cached
+        @test c == c2
+        @test X == X2
+        # one of these was cached
+        @test get_count(lco, :Cost) == a2 + 2
+        @test get_count(lco, :Gradient) == b2 + 2
 
         #
         # CostGrad

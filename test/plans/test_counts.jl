@@ -45,6 +45,16 @@ using LinearAlgebra: Symmetric
         @test_throws ErrorException get_count(ro, :Cost) # Errors since no CountObj
         @test get_count(c_obj2, :Cost) == -1 # Does not count cost
         @test_throws ErrorException get_count(c_obj2, :Cost, :error)
+        # Dummy Hessian to call plain costgrad (half)
+        obj3 = ManifoldHessianObjective(f, grad_f, (M, p, X) -> X)
+        c_obj3 = ManifoldCountObjective(M, obj3, [:Gradient])
+        # Those do not exist but they count
+        @test_throws MethodError Manopt.get_cost_and_gradient(M, c_obj3, p)
+        @test_throws MethodError Manopt.get_cost_and_gradient!(
+            M, zero_vector(M, p), c_obj3, p
+        )
+        @test get_count(c_obj3, :Gradient) == 2
+        @test get_count(c_obj3, :Cost) == -1 # nonexistent
         @test startswith(repr(c_obj), "## Statistics")
         @test startswith(Manopt.status_summary(c_obj), "## Statistics")
         # also for the `repr` call
