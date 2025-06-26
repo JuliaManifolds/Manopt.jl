@@ -383,7 +383,7 @@ function (a::ArmijoLinesearchStepsize)(
     kwargs...,
 )
     p = get_iterate(s)
-    X = get_gradient!(mp, get_gradient(s), p)
+    X = get_gradient!(mp, get_gradient(s), p) # TODO: diff
     return a(mp, p, X, η; initial_guess=a.initial_guess(mp, s, k, a.last_stepsize))
 end
 function (a::ArmijoLinesearchStepsize)(
@@ -1314,7 +1314,7 @@ function (a::WolfePowellLinesearchStepsize)(
         vector_transport_to!(
             M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
         )
-        get_gradient!(mp, a.candidate_tangent, a.candidate_point)
+        get_gradient!(mp, a.candidate_tangent, a.candidate_point) # TODO: diff
         if real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
             a.sufficient_curvature * l
             while fNew <= f0 + a.sufficient_decrease * step * l &&
@@ -1333,7 +1333,7 @@ function (a::WolfePowellLinesearchStepsize)(
     vector_transport_to!(
         M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
     )
-    get_gradient!(mp, a.candidate_tangent, a.candidate_point)
+    get_gradient!(mp, a.candidate_tangent, a.candidate_point) # TODO: diff
     while real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
           a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
