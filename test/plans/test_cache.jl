@@ -74,7 +74,7 @@ end
         @test startswith(
             repr((sco1, 1.0)),
             """## Cache
-A `SimpleManifoldCachedObjective`""",
+            A `SimpleManifoldCachedObjective`""",
         )
         @test startswith(
             repr((sco1, ManoptTestSuite.DummyState())),
@@ -225,8 +225,8 @@ A `SimpleManifoldCachedObjective`""",
         f(M, p) = p' * A * p
         grad_f(M, p) = 2 * A * p
         o = ManifoldGradientObjective(f, grad_f)
-        co = ManifoldCountObjective(M, o, [:Cost, :Gradient])
-        lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient]))
+        co = ManifoldCountObjective(M, o, [:Cost, :Gradient, :Differential])
+        lco = objective_cache_factory(M, co, (:LRU, [:Cost, :Gradient, :Differential]))
         @test startswith(repr(lco), "## Cache\n  * ")
         @test startswith(
             repr((lco, ManoptTestSuite.DummyState())),
@@ -237,6 +237,7 @@ A `SimpleManifoldCachedObjective`""",
         lco2 = objective_cache_factory(M, o, (:LRU, [:Cost, :Gradient]))
         @test Manopt.get_cost_function(lco2) != Manopt.get_cost_function(o)
         @test Manopt.get_gradient_function(lco2) != Manopt.get_gradient_function(o)
+        @test Manopt.get_differential_function(lco2) != Manopt.get_differential_function(o)
         p = [1.0, 0.0, 0.0]
         a = get_count(lco, :Cost) # usually 1 since creating `lco` calls that once
         @test get_cost(M, lco, p) == 2.0
@@ -257,6 +258,37 @@ A `SimpleManifoldCachedObjective`""",
         get_gradient!(M, Y, lco, p)
         @test Y == X
         @test get_count(lco, :Gradient) == b + 1
+        # Differential
+        c = get_count(lco, :Differential)
+        @test get_differential(M, lco, p, X) == inner(M, p, X, Y)
+        @test get_count(lco, :Differential) == c + 1
+        d = get_differential(M, lco, p, X) # cached
+        @test get_count(lco, :Differential) == c + 1
+        # A second point to check cost grad cache
+        # Staying at p eval cost_grad comes at no cost.
+        a2 = get_count(lco, :Cost)
+        b2 = get_count(lco, :Gradient)
+        c, X = Manopt.get_cost_and_gradient(M, lco, p)
+        @test c == 2.0
+        @test X == Y
+        c, _ = Manopt.get_cost_and_gradient!(M, X, lco, p)
+        @test c == 2.0
+        @test X == Y
+        @test get_count(lco, :Cost) == a2
+        @test get_count(lco, :Gradient) == b2
+        q = p .+ 1
+        c2 = get_cost(M, o, q)
+        X2 = get_gradient(M, o, q)
+        c, X = Manopt.get_cost_and_gradient(M, lco, q)
+        @test c == c2
+        @test X == X2
+        c, _ = Manopt.get_cost_and_gradient!(M, X, lco, q)
+        @test c == c2
+        @test X == X2
+        # one of these was cached
+        @test get_count(lco, :Cost) == a2 + 1
+        @test get_count(lco, :Gradient) == b2 + 1
+
         #
         # CostGrad
         f_f_grad(M, p) = (p' * A * p, 2 * A * p)

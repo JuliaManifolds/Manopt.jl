@@ -283,7 +283,7 @@ function get_cost_function(co::ManifoldCachedObjective, recursive=false)
     return (M, p) -> get_cost(M, co, p)
 end
 
-function get_differrential(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
+function get_differential(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
     # No Differential Cache
     !(haskey(co.cache, :Differential)) && return get_differential(M, co.objective, p, X)
     # If so, check whether we should cache
@@ -351,7 +351,7 @@ function get_cost_and_gradient(M::AbstractManifold, mco::ManifoldCachedObjective
             setindex!(mco.cache[:Gradient], copy(M, p, X), copy(M, p))
         return c, X
     else # both exist and are cached, return them
-        return get(mco.cache[:Cost], p), copy(M, p, get(mco.cache[:Gradient], p))
+        return mco.cache[:Cost][p], copy(M, p, mco.cache[:Gradient][p])
     end
 end
 function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjective, p)
@@ -370,8 +370,8 @@ function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjec
             setindex!(mco.cache[:Gradient], copy(M, p, X), copy(M, p))
         return c, X
     else # both exist and are cached, return them
-        copyto!(M, X, p, get(mco.cache[:Gradient], p))
-        return get(mco.cache[:Cost], p), X
+        copyto!(M, X, p, mco.cache[:Gradient][p])
+        return mco.cache[:Cost][p], X
     end
 end
 
