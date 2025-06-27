@@ -1242,7 +1242,6 @@ mutable struct WolfePowellLinesearchStepsize{
     sufficient_curvature::R
     candidate_direction::T
     candidate_point::P
-    candidate_tangent::T
     last_stepsize::R
     max_stepsize::R
     retraction_method::TRM
@@ -1265,7 +1264,6 @@ mutable struct WolfePowellLinesearchStepsize{
             sufficient_curvature,
             X,
             p,
-            copy(M, p, X),
             0.0,
             max_stepsize,
             retraction_method,
@@ -1284,8 +1282,7 @@ function (a::WolfePowellLinesearchStepsize)(
     # For readability extract a few variables
     M = get_manifold(mp)
     p = get_iterate(ams)
-    X = get_gradient(ams)
-    l = real(inner(M, p, η, X))
+    l = get_differential(mp, p, η)
     grad_norm = norm(M, p, η)
     max_step_increase = ifelse(
         isfinite(a.max_stepsize), min(1e9, a.max_stepsize / grad_norm), 1e9
@@ -1300,6 +1297,8 @@ function (a::WolfePowellLinesearchStepsize)(
     vector_transport_to!(
         M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
     )
+    # Temp tangent vector
+    Y = zero_vector(M, a.candidate_point)
     if fNew > f0 + a.sufficient_decrease * step * l
         while (fNew > f0 + a.sufficient_decrease * step * l) && (s_minus > 10^(-9)) # decrease
             s_minus = s_minus * 0.5
@@ -1314,8 +1313,10 @@ function (a::WolfePowellLinesearchStepsize)(
         vector_transport_to!(
             M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
         )
-        get_gradient!(mp, a.candidate_tangent, a.candidate_point) # TODO: diff
-        if real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
+        #get_gradient!(mp, a.candidate_tangent, a.candidate_point) # TODO: diff
+        #if real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
+        #    a.sufficient_curvature * l
+        if get_differential(mp, a.candidate_point, a.candidate_direction; Y=Y) <
             a.sufficient_curvature * l
             while fNew <= f0 + a.sufficient_decrease * step * l &&
                 (s_plus < max_step_increase)# increase
@@ -1333,8 +1334,7 @@ function (a::WolfePowellLinesearchStepsize)(
     vector_transport_to!(
         M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
     )
-    get_gradient!(mp, a.candidate_tangent, a.candidate_point) # TODO: diff
-    while real(inner(M, a.candidate_point, a.candidate_tangent, a.candidate_direction)) <
+    while get_differential(mp, a.candidate_point, a.candidate_direction; Y=Y) <
           a.sufficient_curvature * l
         step = (s_minus + s_plus) / 2
         ManifoldsBase.retract_fused!(M, a.candidate_point, p, η, step, a.retraction_method)
@@ -1351,7 +1351,6 @@ function (a::WolfePowellLinesearchStepsize)(
         vector_transport_to!(
             M, a.candidate_direction, p, η, a.candidate_point, a.vector_transport_method
         )
-        get_gradient!(mp, a.candidate_tangent, a.candidate_point)
     end
     step = s_minus
     a.last_stepsize = step

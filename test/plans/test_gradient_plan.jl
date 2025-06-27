@@ -170,10 +170,14 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         cdi = [mfo1i, mfo2i, mfo3i, mfo4i, mfo5i, mfo7i, mfo8i, mfod1i]
         cdr = [mfo6, mfo9]
         # For all: Test cost&diff
+        Y = zero_vector(M, p)
         for obj in [cda..., cdi..., cdr...]
             @test get_cost(M, obj, p) == c
             @test Manopt.get_cost_function(obj)(M, p) == c
+            # using gradient
             @test get_differential(M, obj, p, X) == d
+            # using gradient!
+            @test get_differential(M, obj, p, X; Y=Y) == d
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end
         Yi = zero_vector(M, p)
