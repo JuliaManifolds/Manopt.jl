@@ -201,5 +201,15 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             Manopt.get_gradient_function(obj)(M, Yi, p)
             @test Yi == G
         end
+        # Corner case, check that the fake-empty one causes the errors as expected
+        mfo_fa = ManifoldFirstOrderObjective{AllocatingEvaluation,typeof((;))}((;))
+        mfo_fi = ManifoldFirstOrderObjective{InplaceEvaluation,typeof((;))}((;))
+        for mfo_f in [mfo_fa, mfo_fi]
+            @test_throws ErrorException get_cost(M, mfo_f, q)
+            @test_throws ErrorException get_gradient(M, mfo_f, q)
+            @test_throws ErrorException get_gradient!(M, Y, mfo_f, q)
+            @test_throws ErrorException Manopt.get_cost_and_gradient(M, mfo_f, q)
+            @test_throws ErrorException Manopt.get_cost_and_gradient!(M, Y, mfo_f, q)
+        end
     end
 end

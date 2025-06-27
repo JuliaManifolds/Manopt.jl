@@ -197,7 +197,6 @@ function get_cost(
     if haskey(mfo.functions, :costdifferential)
         return mfo.functions[:costdifferential](M, p, X)[1]
     end
-
     return error("$mfo does not seem to provide a cost")
 end
 
@@ -252,7 +251,7 @@ function get_differential(
 )
     isnothing(Y) && (return real(inner(M, p, get_gradient(M, amfo, p), X)))
     # if it is not nothing call in-place
-    get_gradient!(M, Y, p)
+    get_gradient!(M, Y, amfo, p)
     return real(inner(M, p, Y, X))
 end
 function get_differential(
