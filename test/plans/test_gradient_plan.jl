@@ -121,8 +121,6 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         gd(M, p, X) = (grad_f(M, p), diff_f(M, p, X))
         gd!(M, Y, p, X) = (grad_f!(M, Y, p), diff_f(M, p, X))
         fd(M, p, X) = (f(M, p), diff_f(M, p, X))
-        fgd(M, p, X) = (f(M, p), grad_f(M, p), diff_f(M, p, X))
-        fgd!(M, Y, p, X) = (f(M, p), grad_f!(M, Y, p), diff_f(M, p, X))
 
         # the number represents the case, a/i alloc/inplace
         # Use old names here
@@ -139,9 +137,9 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         mfo4i = ManifoldGradientObjective(
             f, grad_f!; differential=diff_f, evaluation=InplaceEvaluation()
         )
-        mfo5a = ManifoldFirstOrderObjective(; cost=f, gradientdifferential=gd)
+        mfo5a = ManifoldFirstOrderObjective(; cost=f, costgradient=fg, costdifferential=fd)
         mfo5i = ManifoldFirstOrderObjective(;
-            cost=f, gradientdifferential=gd!, evaluation=InplaceEvaluation()
+            cost=f, costgradient=fg!, costdifferential=fd, evaluation=InplaceEvaluation()
         )
         # an inplace does not make sense for 6
         mfo6 = ManifoldFirstOrderObjective(; costdifferential=fd)
@@ -149,19 +147,21 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         mfo7i = ManifoldFirstOrderObjective(;
             costdifferential=fd, gradient=grad_f!, evaluation=InplaceEvaluation()
         )
-        mfo8a = ManifoldFirstOrderObjective(; costgradientdifferential=fgd)
+        mfo8a = ManifoldFirstOrderObjective(; costgradient=fg, costdifferential=fd)
         mfo8i = ManifoldFirstOrderObjective(;
-            costgradientdifferential=fgd!, evaluation=InplaceEvaluation()
+            costgradient=fg!, costdifferential=fd, evaluation=InplaceEvaluation()
         )
         mfo9 = ManifoldFirstOrderObjective(; cost=f, differential=diff_f)
 
         # only cost
-        @test_throws DomainError ManifoldFirstOrderObjective(; cost=f)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; cost=f)
         # No cost
-        @test_throws ErrorException ManifoldFirstOrderObjective(;)
-        @test_throws ErrorException ManifoldFirstOrderObjective(; gradientdifferential=gd)
-        @test_throws ErrorException ManifoldFirstOrderObjective(; gradient=grad_f)
-        @test_throws ErrorException ManifoldFirstOrderObjective(; differential=diff_f)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(;)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(;
+            gradient=grad_f, differential=diff_f
+        )
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; gradient=grad_f)
+        @test_throws ArgumentError ManifoldFirstOrderObjective(; differential=diff_f)
         # test cost & diff for all
         # collect all allocs, inplace, and 6&9
         mfod1a = ManoptTestSuite.DummyDecoratedObjective(mfo1a)

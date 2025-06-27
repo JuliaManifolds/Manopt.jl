@@ -9,7 +9,7 @@ the interface `(p,o,i)` where a [`AbstractManoptProblem`](@ref) as well as [`Abs
 and the current number of iterations are the arguments
 and returns a number, namely the stepsize to use.
 
-For most it is adviable to employ a [`ManifoldDefaultsFactory`](@ref). Then
+For most it is advisable to employ a [`ManifoldDefaultsFactory`](@ref). Then
 the function creating the factory should either be called `TypeOf` or if that is confusing or too generic, `TypeOfLength`
 
 # See also
