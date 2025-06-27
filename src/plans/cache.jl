@@ -103,18 +103,20 @@ function get_cost_function(sco::SimpleManifoldCachedObjective, recursive=false)
     return (M, p) -> get_cost(M, sco, p)
 end
 
-function get_differential(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p, X)
+function get_differential(
+    M::AbstractManifold, sco::SimpleManifoldCachedObjective, p, X; kwargs...
+)
     scop_neq_p = sco.p != p
     # Gradient outdated -> just call differenital of the inner objective
     if scop_neq_p || !sco.X_valid
-        return get_differential(M, sco.objective, p, X)
+        return get_differential(M, sco.objective, p, X; kwargs...)
     end
     # otherwise use the up to date gradient and inner
     return real(inner(M, p, sco.X, X))
 end
 function get_differential_function(sco::SimpleManifoldCachedObjective, recursive=false)
     recursive && (return get_differential_function(sco.objective, recursive))
-    return (M, p, X) -> get_differential(M, sco, p, X)
+    return (M, p, X; kwargs...) -> get_differential(M, sco, p, X; kwargs...)
 end
 
 function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
@@ -280,18 +282,19 @@ function get_cost_function(co::ManifoldCachedObjective, recursive=false)
     return (M, p) -> get_cost(M, co, p)
 end
 
-function get_differential(M::AbstractManifold, co::ManifoldCachedObjective, p, X)
+function get_differential(M::AbstractManifold, co::ManifoldCachedObjective, p, X; kwargs...)
     # No Differential Cache
-    !(haskey(co.cache, :Differential)) && return get_differential(M, co.objective, p, X)
+    !(haskey(co.cache, :Differential)) &&
+        return get_differential(M, co.objective, p, X; kwargs...)
     # If so, check whether we should cache
     return get!(co.cache[:Differential], (copy(M, p), copy(M, p, X))) do
-        get_differential(M, co.objective, p, X)
+        get_differential(M, co.objective, p, X; kwargs...)
     end
 end
 
 function get_differential_function(mco::ManifoldCachedObjective, recursive=false)
     recursive && (return get_differential_function(mco.objective, recursive))
-    return (M, p, X) -> get_differential(M, mco, p, X)
+    return (M, p, X; kwargs...) -> get_differential(M, mco, p, X; kwargs...)
 end
 
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)

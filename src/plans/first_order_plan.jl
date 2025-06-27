@@ -248,37 +248,44 @@ end
 
 # Differential - passthrough
 function get_differential(
-    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...
 )
-    return get_differential(M, get_objective(admo, false), p, X)
+    return get_differential(M, get_objective(admo, false), p, X; kwargs...)
 end
 # On problems -> “unpack”
-function get_differential(amp::AbstractManoptProblem, p, X)
-    return get_differential(get_manifold(amp), get_objective(amp), p, X)
+function get_differential(amp::AbstractManoptProblem, p, X; kwargs...)
+    return get_differential(get_manifold(amp), get_objective(amp), p, X; kwargs...)
 end
 """
-     get_differential(amp::AbstractManoptProblem, p, X)
-     get_differential(M::AbstractManifold, amfo:AbstractManifoldFirstOrderObjective, p, X)
-     get_differential(M::AbstractManifold, amfo:AbstractDecoratedManifoldObjective, p, X)
+     get_differential(amp::AbstractManoptProblem, p, X; kwargs...)
+     get_differential(M::AbstractManifold, amfo:AbstractManifoldFirstOrderObjective, p, X; kwargs...)
+     get_differential(M::AbstractManifold, amfo:AbstractDecoratedManifoldObjective, p, X; kwargs...)
 
- Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
- the [`AbstractManifoldFirstOrderObjective`](@ref).
-
+Evaluate the differential ``Df(p)[X]`` of the function ``f`` represented by
+the [`AbstractManifoldFirstOrderObjective`](@ref).
 For [`AbstractManoptProblem`](@ref) the inner manifold and objectives are used,
 similarly, any objective decorator would “pass though” to its inner objective.
+By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
 
- By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
- """
+# Keyword arguments
+* `Y=nothing` pass a tangent vector to be used internally as interims memory,
+  e.g. in the default variant to evaluate the gradient in-place in.
+
+"""
 function get_differential(
-    M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X
+    M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X; Y=nothing
 )
-    return real(inner(M, p, get_gradient(M, amfo, p), X))
+    isnothing(Y) && (return real(inner(M, p, get_gradient(M, amfo, p), X)))
+    # if it is not nothing call in-place
+    get_gradient!(M, Y, p)
+    return real(inner(M, p, Y, X))
 end
 function get_differential(
     M::AbstractManifold,
     mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
     p,
-    X,
+    X;
+    kwargs...,
 )
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
     haskey(mfo.functions, :costdifferential) &&
@@ -294,19 +301,20 @@ function get_differential(
     M::AbstractManifold,
     mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple},
     p,
-    X,
+    X;
+    Y=nothing,
 )
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
     haskey(mfo.functions, :costdifferential) &&
         (return mfo.functions[:costdifferential](M, p, X)[2])
-    Y = zero_vector(M, p)
+    _Y = isnothing(Y) ? zero_vector(M, p) : Y
     haskey(mfo.functions, :gradientdifferential) &&
-        (return mfo.functions[:gradientdifferential](M, Y, p, X)[2])
+        (return mfo.functions[:gradientdifferential](M, _Y, p, X)[2])
     haskey(mfo.functions, :costgradientdifferential) &&
-        (return mfo.functions[:costgradientdifferential](M, Y, p, X)[3])
+        (return mfo.functions[:costgradientdifferential](M, _Y, p, X)[3])
     # default: inner with gradient
-    get_gradient!(M, Y, mfo, p)
-    return real(inner(M, p, Y, X))
+    get_gradient!(M, _Y, mfo, p)
+    return real(inner(M, p, _Y, X))
 end
 # Differential function - passthrough
 function get_differential_function(
@@ -329,7 +337,7 @@ function get_differential_function(
     if haskey(mfo.functions, :differential)
         return mfo.functions[:differential]
     else
-        return (M, p, X) -> get_differential(M, mfo, p, X)
+        return (M, p, X; kwargs...) -> get_differential(M, mfo, p, X, kwargs...)
     end
 end
 

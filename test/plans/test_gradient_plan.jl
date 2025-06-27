@@ -96,8 +96,8 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
         @test get_gradient(M, cmcgo, p) == get_gradient(M, mcgo, p)
         get_gradient!(M, Y2, cmcgo, p)
         get_gradient!(M, Y1, mcgo, p)
-        # Verify that both were called 3 times
-        @test get_count(cmcgo, :Gradient) == 3
+        # We called grad twice, cost 3x
+        @test get_count(cmcgo, :Gradient) == 2
         @test get_count(cmcgo, :Cost) == 3
     end
     @testset "Objective Decorator passthrough" begin

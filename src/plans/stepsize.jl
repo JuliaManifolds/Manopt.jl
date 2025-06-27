@@ -1479,13 +1479,12 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
     f0 = get_cost(amp, p)
     xNew = ManifoldsBase.retract_fused(M, p, η, t, a.retraction_method)
     fNew = get_cost(amp, xNew)
+    X_tmp = zero_vector(M, p)
     η_xNew = vector_transport_to(M, p, η, xNew, a.vector_transport_method)
-    nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η)
-    # last part was real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+    nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; Y=X_tmp)
     nWt =
-        get_differential(amp, xNew, η_xNew) <
-        a.sufficient_curvature * get_differential(amp, p, η)
-    # last factor was * real(inner(M, get_iterate(ams), η, get_gradient(ams)))
+        get_differential(amp, xNew, η_xNew; Y=X_tmp) <
+        a.sufficient_curvature * get_differential(amp, p, η; Y=X_tmp)
     while (nAt || nWt) &&
               (t > a.stop_when_stepsize_less) &&
               ((α + β) / 2 - 1 > a.stop_when_stepsize_less)
@@ -1499,10 +1498,10 @@ function (a::WolfePowellBinaryLinesearchStepsize)(
             M, η_xNew, get_iterate(ams), η, xNew, a.vector_transport_method
         )
         # Update conditions
-        nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η)
+        nAt = fNew > f0 + a.sufficient_decrease * t * get_differential(amp, p, η; Y=X_tmp)
         nWt =
-            get_differential(amp, xNew, η_xNew) <
-            a.sufficient_curvature * get_differential(amp, p, η)
+            get_differential(amp, xNew, η_xNew; Y=X_tmp) <
+            a.sufficient_curvature * get_differential(amp, p, η; Y=X_tmp)
     end
     a.last_stepsize = t
     return t
