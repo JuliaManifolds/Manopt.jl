@@ -176,10 +176,10 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             @test Manopt.get_cost_function(obj)(M, p) == c
             # using gradient
             @test get_differential(M, obj, p, X) == d
-            @test get_cost_and_differential(M, obj, p, X) == (c, d)
+            @test Manopt.get_cost_and_differential(M, obj, p, X) == (c, d)
             # using gradient!
             @test get_differential(M, obj, p, X; Y=Y) == d
-            @test get_cost_and_differential(M, obj, p, X; Y=Y) == (c, d)
+            @test Manopt.get_cost_and_differential(M, obj, p, X; Y=Y) == (c, d)
             @test Manopt.get_differential_function(obj)(M, p, X) == d
         end
         Yi = zero_vector(M, p)
@@ -210,7 +210,7 @@ using ManifoldsBase, Manopt, ManoptTestSuite, Test
             @test_throws ErrorException get_cost(M, mfo_f, q)
             @test_throws ErrorException get_gradient(M, mfo_f, q)
             @test_throws ErrorException get_gradient!(M, Y, mfo_f, q)
-            @test_throws ErrorException get_cost_and_differential(M, mfo_f, q, Y)
+            @test_throws ErrorException Manopt.get_cost_and_differential(M, mfo_f, q, Y)
             @test_throws ErrorException Manopt.get_cost_and_gradient(M, mfo_f, q)
             @test_throws ErrorException Manopt.get_cost_and_gradient!(M, Y, mfo_f, q)
         end
