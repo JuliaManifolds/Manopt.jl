@@ -175,9 +175,7 @@ end
 #
 # get_cost
 function get_cost(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation,<:NamedTuple},
-    p,
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{AllocatingEvaluation}, p
 )
     haskey(mfo.functions, :cost) && (return mfo.functions[:cost](M, p))
     if haskey(mfo.functions, :costdifferential)
@@ -189,7 +187,7 @@ function get_cost(
     return error("$mfo does not seem to provide a cost")
 end
 function get_cost(
-    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation,<:NamedTuple}, p
+    M::AbstractManifold, mfo::ManifoldFirstOrderObjective{InplaceEvaluation}, p
 )
     haskey(mfo.functions, :cost) && (return mfo.functions[:cost](M, p))
     X = zero_vector(M, p)
@@ -198,6 +196,64 @@ function get_cost(
         return mfo.functions[:costdifferential](M, p, X)[1]
     end
     return error("$mfo does not seem to provide a cost")
+end
+
+# get_cost_and_differential
+
+function get_cost_and_differential(
+    M::AbstractManifold,
+    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation},
+    p,
+    X;
+    kwargs...,
+)
+    if haskey(mfo.functions, :costdifferential)
+        return mfo.functions[:costdifferential](M, p, X)
+    elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
+        return (mfo.functions[:cost](M, p), mfo.functions[:differential](M, p, X))
+    elseif haskey(mfo.functions, :costgradient)
+        cost, grad = mfo.functions[:costgradient](M, p)
+        return (cost, real(inner(M, p, X, grad)))
+    elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
+        cost = mfo.functions[:cost](M, p)
+        grad = mfo.functions[:gradient](M, p)
+        return (cost, real(inner(M, p, X, grad)))
+    end
+    return error("$mfo does not provide a cost and a differential")
+end
+function get_cost_and_differential(
+    M::AbstractManifold,
+    mfo::ManifoldFirstOrderObjective{InplaceEvaluation},
+    p,
+    X;
+    Y=nothing,
+)
+    if haskey(mfo.functions, :costdifferential)
+        return mfo.functions[:costdifferential](M, p, X)
+    elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :differential)
+        return (mfo.functions[:cost](M, p), mfo.functions[:differential](M, p, X))
+    elseif haskey(mfo.functions, :costgradient)
+        _Y = isnothing(Y) ? zero_vector(M, p) : Y
+        cost, grad = mfo.functions[:costgradient](M, _Y, p)
+        return (cost, real(inner(M, p, X, grad)))
+    elseif haskey(mfo.functions, :cost) && haskey(mfo.functions, :gradient)
+        cost = mfo.functions[:cost](M, p)
+        _Y = isnothing(Y) ? zero_vector(M, p) : Y
+        grad = mfo.functions[:gradient](M, _Y, p)
+        return (cost, real(inner(M, p, X, grad)))
+    end
+    return error("$mfo does not provide a cost and a differential")
+end
+
+# On problems -> “unpack”
+function get_cost_and_differential(amp::AbstractManoptProblem, p, X; kwargs...)
+    return get_cost_and_differential(get_manifold(amp), get_objective(amp), p, X; kwargs...)
+end
+
+function get_cost_and_differential(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, p, X; kwargs...
+)
+    return get_cost_and_differential(M, get_objective(admo, false), p, X; kwargs...)
 end
 
 # general: Generate a separate cost

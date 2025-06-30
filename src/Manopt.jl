@@ -408,7 +408,7 @@ export get_state,
     get_objective,
     get_unconstrained_objective
 export get_hessian, get_hessian!
-export get_differential
+export get_differential, get_cost_and_differential
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
