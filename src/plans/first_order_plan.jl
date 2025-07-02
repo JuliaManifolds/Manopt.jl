@@ -331,7 +331,7 @@ function get_differential(
         (return mfo.functions[:costdifferential](M, p, X)[2])
     # default: inner with gradient
     # (a) we have gradient but it is not evaluated -> eval
-    (evaluated && !isnothing(gradient)) && (get_gradient!(M, gradient, mfo, p))
+    (!evaluated && !isnothing(gradient)) && (get_gradient!(M, gradient, mfo, p))
     # if grad is nothing -> allocated gradient
     isnothing(gradient) && (gradient = get_gradient(M, mfo, p))
     # -> we have a gradient!

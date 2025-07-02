@@ -160,15 +160,11 @@ makedocs(;
     ),
     modules=[
         Manopt,
-        Base.get_extension(
-            Manopt, :ManoptJuMPExt
-        )Base.get_extension(
-            Manopt, :ManoptLineSearchesExt
-        )Base.get_extension(
-            Manopt, :ManoptLRUCacheExt
-        )Base.get_extension(
-            Manopt, :ManoptManifoldsExt
-        )Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
+        Base.get_extension(Manopt, :ManoptJuMPExt),
+        Base.get_extension(Manopt, :ManoptLineSearchesExt),
+        Base.get_extension(Manopt, :ManoptLRUCacheExt),
+        Base.get_extension(Manopt, :ManoptManifoldsExt),
+        Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
     authors="Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
     sitename="Manopt.jl",

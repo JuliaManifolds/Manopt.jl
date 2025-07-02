@@ -173,8 +173,16 @@ $(_doc_CG_notaion)
 
 Then the coefficient reads
 ```math
-β_k = $(_tex(:frac, _tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2", "⟨-δ_k,X_k⟩_{p_k}"))
+β_k = $(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:diff))f(p_k)[-δ_k]"))
 ```
+
+When the differential falls back to an inner product with the gradient, nominator and denominator read
+```math
+$(_tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2") = $(_tex(:inner, "X_{k+1}", "X_{k+1}"; index="p_{k+1}"))
+$(_tex(:quad))$(_tex(:text," and "))$(_tex(:quad))
+$(_tex(:inner, "-δ_k", "X_k"; index = "p_k")),
+```
+respectively.
 
 $(_note(:ManifoldDefaultFactory, "ConjugateDescentCoefficientRule"))
 """
@@ -198,9 +206,14 @@ function (u::DirectionUpdateRuleStorage{ConjugateDescentCoefficientRule})(
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
+    # previously
+    # coeff = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, -cgs.δ, X_old)
+    # now via differential, but also provide gradients for the fallbacks
+    nom = get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true)
+    denom = get_differential(amp, p_old, -cgs.δ; gradient=X_old, evaluated=true)
+    coeff = nom / denom
     update_storage!(u.storage, amp, cgs)
-    return coef
+    return coeff
 end
 function show(io::IO, ::ConjugateDescentCoefficientRule)
     return print(io, "Manopt.ConjugateDescentCoefficientRule()")
