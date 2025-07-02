@@ -86,11 +86,34 @@ function VectorbundleNewtonState(
     )
 end
 
-# TODO: stepsize dokumentieren
-raw""" 
-    AffineCovariantStepsize{T, R<:Real} <: Stepsize
+# TODO: paper zitieren, unten evtl ManoptExamples-Beispiel zitieren, falls möglich
+@doc raw""" 
+    AffineCovariantStepsize <: Stepsize
 
-    Affine covariant stepsize 
+    A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [TODO](@cite). It can be used to derive a damped Newton method. The step sizes (damping factors) are computed by a predictor-corrector-loop using an affine covariant quantity ``\theta`` to measure local convergence.
+
+    # Fields
+
+    * `alpha`: the step size
+    * `theta`: quantity that measures local convergence of Newton's method
+    * `theta_des`: desired theta
+    * `theta_acc`: acceptable theta
+    * `last_stepsize`: last computed step size (helper)
+
+    # Constructor 
+
+        AffineCovariantStepsize(M::AbstractManifold=DefaultManifold(2);
+        stepsize=1.0,
+        theta=1.3,
+        theta_des=0.1,
+        theta_acc=1.1*theta_des,
+        last_stepsize = 1.0
+        )
+
+        initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
+
+    Since the computation of the convergence monitor ``\theta`` requires simplified Newton directions a method for computing them has to be provided. This should be implemented as a method of the ``newton_equation`` getting ``(M, VB, p, p_trial)`` as parameters and returning a representation of the (transported) ``F(p_{trial})``.
+
 """
 
 mutable struct AffineCovariantStepsize{T, R<:Real} <: Stepsize
@@ -102,13 +125,13 @@ mutable struct AffineCovariantStepsize{T, R<:Real} <: Stepsize
 end
 function AffineCovariantStepsize(
     M::AbstractManifold=DefaultManifold(2);
-    stepsize=1.0,
+    alpha=1.0,
     theta=1.3,
     theta_des=0.1,
     theta_acc=1.1*theta_des,
     last_stepsize = 1.0
 )
-    return AffineCovariantStepsize{typeof(stepsize), typeof(theta)}(stepsize, theta, theta_des, theta_acc, last_stepsize)
+    return AffineCovariantStepsize{typeof(stepsize), typeof(theta)}(alpha, theta, theta_des, theta_acc, last_stepsize)
 end
 
 function (acs::AffineCovariantStepsize)(
