@@ -29,7 +29,7 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test, Random
         get_gradient!(mp, Y, p)
         @test Y == zeros(2)
         # check differential default
-        @test get_differential(mp, p, X; Y=Y) == 0
+        @test get_differential(mp, p, X; gradient=Y) == 0
         @test get_differential(mp, p, X) == 0
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X

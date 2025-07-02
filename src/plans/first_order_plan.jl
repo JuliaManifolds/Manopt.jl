@@ -298,47 +298,46 @@ similarly, any objective decorator would “pass though” to its inner objectiv
 By default this falls back to ``Df(p)[X] = ⟨$(_tex(:grad))f(p), X⟩
 
 # Keyword arguments
-* `Y=nothing` pass a tangent vector to be used internally as interims memory,
+* `gradient=nothing` – pass a tangent vector to be used internally as interims memory,
   e.g. in the default variant to evaluate the gradient in-place in.
-
+* `evaluated=false` – indicate whether `gradient` is just memory (`false`, default) or
+  already contains the evaluated gradient (`true`).
 """
 function get_differential(
-    M::AbstractManifold, amfo::AbstractManifoldFirstOrderObjective, p, X; Y=nothing
+    M::AbstractManifold,
+    amfo::AbstractManifoldFirstOrderObjective,
+    p,
+    X;
+    gradient=nothing,
+    evaluated::Bool=false,
 )
-    isnothing(Y) && (return real(inner(M, p, get_gradient(M, amfo, p), X)))
+    isnothing(gradient) && (return real(inner(M, p, get_gradient(M, amfo, p), X)))
     # if it is not nothing call in-place
-    get_gradient!(M, Y, amfo, p)
-    return real(inner(M, p, Y, X))
+    (!evaluated) && (get_gradient!(M, gradient, amfo, p))
+    return real(inner(M, p, gradient, X))
 end
 function get_differential(
     M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{AllocatingEvaluation},
+    mfo::ManifoldFirstOrderObjective,
     p,
     X;
+    gradient=nothing,
+    evaluated::Bool=false,
     kwargs...,
 )
+    # If we have a differential – evaluate that
     haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
     haskey(mfo.functions, :costdifferential) &&
         (return mfo.functions[:costdifferential](M, p, X)[2])
     # default: inner with gradient
-    return real(inner(M, p, get_gradient(M, mfo, p), X))
+    # (a) we have gradient but it is not evaluated -> eval
+    (evaluated && !isnothing(gradient)) && (get_gradient!(M, gradient, mfo, p))
+    # if grad is nothing -> allocated gradient
+    isnothing(gradient) && (gradient = get_gradient(M, mfo, p))
+    # -> we have a gradient!
+    return real(inner(M, p, gradient, X))
 end
-function get_differential(
-    M::AbstractManifold,
-    mfo::ManifoldFirstOrderObjective{InplaceEvaluation},
-    p,
-    X;
-    Y=nothing,
-)
-    haskey(mfo.functions, :differential) && (return mfo.functions[:differential](M, p, X))
-    haskey(mfo.functions, :costdifferential) &&
-        (return mfo.functions[:costdifferential](M, p, X)[2])
-    _Y = isnothing(Y) ? zero_vector(M, p) : Y
-    # default: inner with gradient
-    get_gradient!(M, _Y, mfo, p)
-    return real(inner(M, p, _Y, X))
-end
-# Differential function - passthrough
+# Differential function - pass-through
 function get_differential_function(
     admo::AbstractDecoratedManifoldObjective, recursive=false
 )
