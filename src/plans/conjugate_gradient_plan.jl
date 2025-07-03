@@ -643,9 +643,13 @@ function (u::DirectionUpdateRuleStorage{<:LiuStoreyCoefficientRule})(
         M, p_old, X_old, cgs.p, u.coefficient.vector_transport_method
     )
     ν = cgs.X - gradienttr # notation y from [HZ06]
-    coef = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
+    # old:
+    # β = inner(M, cgs.p, cgs.X, ν) / inner(M, p_old, -δ_old, X_old)
+    nominator = get_differential(amp, cgs.p, ν; gradient=cgs.X, evaluated=true)
+    denominator = get_differential(amp, p_old, δ_old; gradient=X_old, evaluated=true)
+    β = -nominator / denominator
     update_storage!(u.storage, amp, cgs)
-    return coef
+    return β
 end
 function show(io::IO, u::LiuStoreyCoefficientRule)
     return print(
@@ -666,8 +670,13 @@ where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 
 Then the coefficient reads
 ```math
-β_k = - $(_tex(:frac, "⟨ X_{k+1},ν_k ⟩_{p_{k+1}}", "⟨ δ_k,X_k ⟩_{p_k}")).
+β_k
+= - $(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[ν_k]", "$(_tex(:diff))f(p_k)[δ_k]"))
+= - $(_tex(:frac, "$(_tex(:inner, "X_{k+1}", "ν_k"; index="p_{k+1}"))", "$(_tex(:inner, "δ_k", "X_k"; index="p_k"))")).
 ```
+
+The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 # Keyword arguments
 
