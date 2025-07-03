@@ -174,15 +174,11 @@ $(_doc_CG_notaion)
 Then the coefficient reads
 ```math
 β_k = $(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:diff))f(p_k)[-δ_k]"))
+ = $(_tex(:frac, "$(_tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2")", "$(_tex(:inner, "-δ_k", "X_k"; index = "p_k"))"))
 ```
 
-When the differential falls back to an inner product with the gradient, nominator and denominator read
-```math
-$(_tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2") = $(_tex(:inner, "X_{k+1}", "X_{k+1}"; index="p_{k+1}"))
-$(_tex(:quad))$(_tex(:text," and "))$(_tex(:quad))
-$(_tex(:inner, "-δ_k", "X_k"; index = "p_k")),
-```
-respectively.
+The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 $(_note(:ManifoldDefaultFactory, "ConjugateDescentCoefficientRule"))
 """
@@ -273,9 +269,11 @@ function (u::DirectionUpdateRuleStorage{<:DaiYuanCoefficientRule})(
     )
     ν = cgs.X - gradienttr #notation y from [HZ06]
     δtr = vector_transport_to(M, p_old, δ_old, cgs.p, u.coefficient.vector_transport_method)
-    coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, δtr, ν)
+    # previously: nominator = inner(M, cgs.p, cgs.X, cgs.X)
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true)
+    β = nominator / inner(M, p_old, δtr, ν)
     update_storage!(u.storage, amp, cgs)
-    return coef
+    return β
 end
 function show(io::IO, u::DaiYuanCoefficientRule)
     return print(
@@ -298,12 +296,18 @@ where ``$(_math(:vector_transport, :symbol))`` denotes a vector transport.
 Then the coefficient reads
 ````math
 β_k =
+=
+$(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:inner, "δ_k", "ν_k"; index="p_{k+1}"))"))
+=
 $(_tex(
     :frac,
     _tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2",
     "⟨$(_math(:vector_transport, :symbol, "p_{k+1}", "p_k"))δ_k, ν_k⟩_{p_{k+1}}"
 ))
 ````
+
+The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 # Keyword arguments
 
@@ -344,9 +348,13 @@ function (u::DirectionUpdateRuleStorage{FletcherReevesCoefficientRule})(
     end
     p_old = get_storage(u.storage, PointStorageKey(:Iterate))
     X_old = get_storage(u.storage, VectorStorageKey(:Gradient))
-    coef = inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
+    # old version:
+    # inner(M, cgs.p, cgs.X, cgs.X) / inner(M, p_old, X_old, X_old)
+    nominator = get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true)
+    denominator = get_differential(amp, p_old, X_old; gradient=X_old, evaluated=true)
+    coeff = nominator / denominator
     update_storage!(u.storage, amp, cgs)
-    return coef
+    return coeff
 end
 function show(io::IO, ::FletcherReevesCoefficientRule)
     return print(io, "Manopt.FletcherReevesCoefficientRule()")
@@ -361,14 +369,13 @@ Computes an update coefficient for the [`conjugate_gradient_descent`](@ref) algo
 $(_doc_CG_notaion)
 
 Then the coefficient reads
-````math
-β_k =
-$(_tex(
-    :frac,
-    _tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2",
-    _tex(:norm, "X_k"; index="p_{k}")*"^2"
-)).
-````
+```math
+β_k = $(_tex(:frac, "$(_tex(:diff))f(p_{k+1})[X_{k+1}]", "$(_tex(:diff))f(p_k)[X_k]"))
+ = $(_tex(:frac, _tex(:norm, "X_{k+1}"; index="p_{k+1}")*"^2", _tex(:norm, "X_k"; index="p_k")*"^2"))
+```
+
+The second one it the one usually stated, while the first one avoids to use the metric `inner`.
+The first one is implemented here, but falls back to calling `inner` if there is no dedicated differential available.
 
 $(_note(:ManifoldDefaultFactory, "FletcherReevesCoefficientRule"))
 """
@@ -391,7 +398,7 @@ $(_var(:Field, :vector_transport_method))
 
     HagerZhangCoefficientRule(M::AbstractManifold; kwargs...)
 
-Construct the Hager-Zang coefficient update rule based on [HagerZhang:2005](@cite) adapted to manifolds.
+Construct the Hager-Zhang coefficient update rule based on [HagerZhang:2005](@cite) adapted to manifolds.
 
 # Keyword arguments
 
