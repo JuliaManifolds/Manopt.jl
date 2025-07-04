@@ -252,14 +252,14 @@ define!(
     :Problem,
     :Constrained,
     (; M="M", p="p") -> """
-                                                                            ```math
-                                                                        \\begin{aligned}
-                                                                        $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
-                                                                        $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
-                                                                        \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
-                                                                        \\end{aligned}
-                                                                        ```
-                                                                        """,
+        ```math
+    \\begin{aligned}
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
+    $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
+    \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+    \\end{aligned}
+    ```
+    """,
 )
 define!(
     :Problem,
