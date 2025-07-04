@@ -46,7 +46,7 @@ mesh_adaptive_direct_search(M::AbstractManifold, args...; kwargs...)
 
 function mesh_adaptive_direct_search(M::AbstractManifold, f, p=rand(M); kwargs...)
     mco = ManifoldCostObjective(f)
-    return mesh_adaptive_direct_search(M, mco; kwargs...)
+    return mesh_adaptive_direct_search(M, mco, p; kwargs...)
 end
 function mesh_adaptive_direct_search(
     M::AbstractManifold, mco::AbstractManifoldCostObjective, p=rand(M); kwargs...
