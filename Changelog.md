@@ -6,6 +6,13 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.19] unreleased
+
+### Fixed
+
+* fixes a small bug where calling `mesh_adaptive_direct_search` with a start point in some cases did not initialise the state correctly with that start point.
+
+
 ## [0.5.18] June 18, 2025
 
 ### Added
