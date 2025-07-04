@@ -293,7 +293,7 @@ export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
-    AbstractManifoldGradientObjective,
+    AbstractManifoldFirstOrderObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractManifoldSubObjective,
@@ -309,6 +309,7 @@ export AbstractDecoratedManifoldObjective,
     ManifoldCostObjective,
     ManifoldDifferenceOfConvexObjective,
     ManifoldDifferenceOfConvexProximalObjective,
+    ManifoldFirstOrderObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
     ManifoldProximalGradientObjective,
@@ -318,11 +319,10 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
-    ManifoldCachedObjective,
-    AbstractVectorFunction,
-    AbstractVectorGradientFunction,
-    VectorGradientFunction,
-    VectorHessianFunction
+    ManifoldCachedObjective
+# Functions
+export AbstractVectorFunction,
+    AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -408,6 +408,7 @@ export get_state,
     get_objective,
     get_unconstrained_objective
 export get_hessian, get_hessian!
+export get_differential
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual

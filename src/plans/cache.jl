@@ -2,16 +2,24 @@
 # A Simple Cache for Objectives
 #
 @doc """
-     SimpleManifoldCachedObjective{O<:AbstractManifoldGradientObjective{E,TC,TG}, P, T,C} <: AbstractManifoldGradientObjective{E,TC,TG}
+     SimpleManifoldCachedObjective{O<:AbstractManifoldFirstOrderObjective{E}, P, T,C} <: AbstractDecoratedManifoldObjective{E,O}
 
-Provide a simple cache for an [`AbstractManifoldGradientObjective`](@ref) that is for a given point `p` this cache
+Provide a simple cache for an [`AbstractManifoldFirstOrderObjective`](@ref) that is, this cache
 stores a point `p` and a gradient ``$(_tex(:grad)) f(p)`` in `X` as well as a cost value ``f(p)`` in `c`.
+It can also easily evaluate the differential based on the cached gradient.
 
 Both `X` and `c` are accompanied by booleans to keep track of their validity.
 
+While this does not provide a cache for the differential, it uses the cached gradient
+as a help to evaluate the differential, if an up-to-date gradient is available.
+It otherwise does call the original differential.
+
+This simple cache does not take into account, that some first order objectives have a
+common function for cost & grad. It only caches the function that is actually called.
+
 # Constructor
 
-    SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldGradientObjective; kwargs...)
+    SimpleManifoldCachedObjective(M::AbstractManifold, obj::AbstractManifoldFirstOrderObjective; kwargs...)
 
 ## Keyword arguments
 
@@ -45,6 +53,7 @@ function SimpleManifoldCachedObjective(
         obj, q, X, initialized, c, initialized
     )
 end
+
 # Default implementations
 function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
@@ -58,32 +67,84 @@ function get_cost(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     end
     return sco.c
 end
+
+function get_cost_and_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.X_valid || !sco.c_valid
+        sco.c, X = get_cost_and_gradient(M, sco.objective, p)
+        # Update point
+        copyto!(M, sco.p, p)
+        sco.c_valid = true
+        copyto!(M, sco.X, X)
+        sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
+    end
+    return (sco.c, X)
+end
+function get_cost_and_gradient!(
+    M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p
+)
+    scop_neq_p = sco.p != p
+    if scop_neq_p || !sco.X_valid || !sco.c_valid
+        sco.c, _ = get_cost_and_gradient!(M, X, sco.objective, p)
+        copyto!(M, sco.p, p)
+        sco.c_valid = true
+        copyto!(M, sco.X, p, X)
+        sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
+    end
+    return (sco.c, X)
+end
+
 function get_cost_function(sco::SimpleManifoldCachedObjective, recursive=false)
     recursive && return get_cost_function(sco.objective, recursive)
     return (M, p) -> get_cost(M, sco, p)
 end
 
+function get_differential(
+    M::AbstractManifold, sco::SimpleManifoldCachedObjective, p, X; kwargs...
+)
+    scop_neq_p = sco.p != p
+    # Gradient outdated -> just call differenital of the inner objective
+    if scop_neq_p || !sco.X_valid
+        return get_differential(M, sco.objective, p, X; kwargs...)
+    end
+    # otherwise use the up to date gradient and inner
+    return real(inner(M, p, sco.X, X))
+end
+function get_differential_function(sco::SimpleManifoldCachedObjective, recursive=false)
+    recursive && (return get_differential_function(sco.objective, recursive))
+    return (M, p, X; kwargs...) -> get_differential(M, sco, p, X; kwargs...)
+end
+
 function get_gradient(M::AbstractManifold, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        get_gradient!(M, sco.X, sco.objective, p)
+        X = get_gradient(M, sco.objective, p)
         # for switched points, invalidate c
-        scop_neq_p && (sco.c_valid = false)
         copyto!(M, sco.p, p)
+        scop_neq_p && (sco.c_valid = false)
+        copyto!(M, sco.X, X)
         sco.X_valid = true
+    else
+        X = copy(M, p, sco.X)
     end
-    return copy(M, p, sco.X)
+    return X
 end
 function get_gradient!(M::AbstractManifold, X, sco::SimpleManifoldCachedObjective, p)
     scop_neq_p = sco.p != p
     if scop_neq_p || !sco.X_valid
-        get_gradient!(M, sco.X, sco.objective, p)
-        scop_neq_p && (sco.c_valid = false)
-        copyto!(M, sco.p, p)
+        get_gradient!(M, X, sco.objective, p)
         # for switched points, invalidate c
+        copyto!(M, sco.p, p)
+        scop_neq_p && (sco.c_valid = false)
+        copyto!(M, sco.X, X)
         sco.X_valid = true
+    else
+        copyto!(M, X, p, sco.X)
     end
-    copyto!(M, X, sco.p, sco.X)
     return X
 end
 
@@ -98,106 +159,6 @@ function get_gradient_function(
 )
     recursive && (return get_gradient_function(sco.objective, recursive))
     return (M, X, p) -> get_gradient!(M, X, sco, p)
-end
-
-#
-# CostGradImplementation
-#
-function get_cost(
-    M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,<:ManifoldCostGradientObjective
-    },
-    p,
-)
-    scop_neq_p = sco.p != p
-    if scop_neq_p || !sco.c_valid
-        sco.c, sco.X = sco.objective.costgrad!!(M, p)
-        copyto!(M, sco.p, p)
-        sco.X_valid = true
-        sco.c_valid = true
-    end
-    return sco.c
-end
-function get_cost(
-    M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    scop_neq_p = sco.p != p
-    if scop_neq_p || !sco.c_valid
-        sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
-        copyto!(M, sco.p, p)
-        sco.X_valid = true
-        sco.c_valid = true
-    end
-    return sco.c
-end
-function get_gradient(
-    M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,<:ManifoldCostGradientObjective
-    },
-    p,
-)
-    scop_neq_p = sco.p != p
-    if scop_neq_p || !sco.X_valid
-        sco.c, sco.X = sco.objective.costgrad!!(M, p)
-        copyto!(M, sco.p, p)
-        # for switched points, invalidate c
-        sco.X_valid = true
-        sco.c_valid = true
-    end
-    return copy(M, p, sco.X)
-end
-function get_gradient(
-    M::AbstractManifold,
-    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    scop_neq_p = sco.p != p
-    if scop_neq_p || !sco.X_valid
-        sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
-        copyto!(M, sco.p, p)
-        # for switched points, invalidate c
-        sco.X_valid = true
-        sco.c_valid = true
-    end
-    return sco.X
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    sco::SimpleManifoldCachedObjective{
-        AllocatingEvaluation,<:ManifoldCostGradientObjective
-    },
-    p,
-)
-    scop_neq_p = sco.p != p
-    if scop_neq_p || !sco.X_valid
-        sco.c, sco.X = sco.objective.costgrad!!(M, p)
-        copyto!(M, sco.p, p)
-        sco.X_valid = true
-        sco.c_valid = true
-    end
-    copyto!(M, X, sco.p, sco.X)
-    return X
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    sco::SimpleManifoldCachedObjective{InplaceEvaluation,<:ManifoldCostGradientObjective},
-    p,
-)
-    scop_neq_p = sco.p != p
-    if scop_neq_p || !sco.X_valid
-        sco.c, _ = sco.objective.costgrad!!(M, sco.X, p)
-        sco.p = p
-        sco.X_valid = true
-        sco.c_valid = true
-    end
-    copyto!(M, X, sco.p, sco.X)
-    return X
 end
 
 #
@@ -221,6 +182,7 @@ which function evaluations to cache.
 | Symbol                      | Caches calls to (incl. `!` variants)            | Comment
 | :-------------------------- | :---------------------------------------------- | :------------------------ |
 | `:Cost`                     | [`get_cost`](@ref)                              |                           |
+| `:Differential`             | [`get_differential`](@ref)`(M, p, X)`.          |                           |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)`(M, p, i)`    |                           |
 | `:EqualityConstraints`      | [`get_equality_constraint`](@ref)`(M, p, :)`    |                           |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref)          | tangent vector per (p,i)  |
@@ -308,7 +270,8 @@ end
 #
 # Default implementations: if field exists -> try to get cache
 function get_cost(M::AbstractManifold, co::ManifoldCachedObjective, p)
-    !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p)
+    !(haskey(co.cache, :Cost)) && return get_cost(M, co.objective, p) #No Cost cache
+    # If so, check whether we should cache
     return get!(co.cache[:Cost], copy(M, p)) do
         get_cost(M, co.objective, p)
     end
@@ -317,6 +280,21 @@ end
 function get_cost_function(co::ManifoldCachedObjective, recursive=false)
     recursive && (return get_cost_function(co.objective, recursive))
     return (M, p) -> get_cost(M, co, p)
+end
+
+function get_differential(M::AbstractManifold, co::ManifoldCachedObjective, p, X; kwargs...)
+    # No Differential Cache
+    !(haskey(co.cache, :Differential)) &&
+        return get_differential(M, co.objective, p, X; kwargs...)
+    # If so, check whether we should cache
+    return get!(co.cache[:Differential], (copy(M, p), copy(M, p, X))) do
+        get_differential(M, co.objective, p, X; kwargs...)
+    end
+end
+
+function get_differential_function(mco::ManifoldCachedObjective, recursive=false)
+    recursive && (return get_differential_function(mco.objective, recursive))
+    return (M, p, X; kwargs...) -> get_differential(M, mco, p, X; kwargs...)
 end
 
 function get_gradient(M::AbstractManifold, co::ManifoldCachedObjective, p)
@@ -357,56 +335,44 @@ function get_gradient_function(
     return (M, X, p) -> get_gradient!(M, X, sco, p)
 end
 
-#
-# CostGradImplementation
-function get_cost(
-    M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
-) where {E<:AbstractEvaluationType}
-    #Neither cost not grad cached -> evaluate
-    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
-        return get_cost(M, co.objective, p)
-    return get!(co.cache[:Cost], copy(M, p)) do
-        c, X = get_cost_and_gradient(M, co.objective, p)
-        # if this is evaluated, also set X
-        haskey(co.cache, :Gradient) && setindex!(co.cache[:Gradient], X, copy(M, p))
-        c #but also set the new cost here
+function get_cost_and_gradient(M::AbstractManifold, mco::ManifoldCachedObjective, p)
+    #Neither cost not grad cached -> evaluate normally
+    all(.!(haskey.(Ref(mco.cache), [:Cost, :Gradient]))) &&
+        return get_cost_and_gradient(M, mco.objective, p)
+    # Otherwise -> check whether any of the does not have this index:
+    # No cost case or no grad case
+    nc = !haskey(mco.cache, :Cost) || !haskey(mco.cache[:Cost], p)
+    ng = !haskey(mco.cache, :Gradient) || !haskey(mco.cache[:Gradient], p)
+    if nc || ng # one of them does not exist, either full cache or entry -> eval
+        c, X = get_cost_and_gradient(M, mco.objective, p)
+        # Cache if cache present
+        haskey(mco.cache, :Cost) && setindex!(mco.cache[:Cost], c, copy(M, p))
+        haskey(mco.cache, :Gradient) &&
+            setindex!(mco.cache[:Gradient], copy(M, p, X), copy(M, p))
+        return c, X
+    else # both exist and are cached, return them
+        return mco.cache[:Cost][p], copy(M, p, mco.cache[:Gradient][p])
     end
 end
-function get_gradient(
-    M::AbstractManifold, co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective}, p
-) where {E<:AllocatingEvaluation}
-    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
-        return get_gradient(M, co.objective, p)
-    return copy(
-        M,
-        p,
-        get!(co.cache[:Gradient], copy(M, p)) do
-            c, X = get_cost_and_gradient(M, co.objective, p)
-            #if this is evaluated, also set c
-            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
-            X #but also set the new cost here
-        end,
-    )
-end
-function get_gradient!(
-    M::AbstractManifold,
-    X,
-    co::ManifoldCachedObjective{E,<:ManifoldCostGradientObjective},
-    p,
-) where {E}
-    all(.!(haskey.(Ref(co.cache), [:Cost, :Gradient]))) &&
-        return get_gradient!(M, X, co.objective, p)
-    return copyto!(
-        M,
-        X,
-        p,
-        get!(co.cache[:Gradient], copy(M, p)) do
-            c, _ = get_cost_and_gradient!(M, X, get_objective(co.objective), p)
-            #if this is evaluated, also set c
-            haskey(co.cache, :Cost) && setindex!(co.cache[:Cost], c, copy(M, p))
-            X
-        end,
-    )
+function get_cost_and_gradient!(M::AbstractManifold, X, mco::ManifoldCachedObjective, p)
+    #Neither cost not grad cached -> evaluate normally
+    all(.!(haskey.(Ref(mco.cache), [:Cost, :Gradient]))) &&
+        return get_cost_and_gradient!(M, X, mco.objective, p)
+    # Otherwise -> check whether any of the does not have this index:
+    # No cost case or no grad case
+    nc = !haskey(mco.cache, :Cost) || !haskey(mco.cache[:Cost], p)
+    ng = !haskey(mco.cache, :Gradient) || !haskey(mco.cache[:Gradient], p)
+    if nc || ng # one of them does not exist, either full cache or entry -> eval
+        c, _ = get_cost_and_gradient!(M, X, mco.objective, p)
+        # Cache if cache present
+        haskey(mco.cache, :Cost) && setindex!(mco.cache[:Cost], c, copy(M, p))
+        haskey(mco.cache, :Gradient) &&
+            setindex!(mco.cache[:Gradient], copy(M, p, X), copy(M, p))
+        return c, X
+    else # both exist and are cached, return them
+        copyto!(M, X, p, mco.cache[:Gradient][p])
+        return mco.cache[:Cost][p], X
+    end
 end
 
 #

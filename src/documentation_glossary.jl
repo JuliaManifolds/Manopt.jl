@@ -72,12 +72,14 @@ define!(
 define!(:LaTeX, :cdots, raw"\cdots")
 define!(:LaTeX, :ddots, raw"\ddots")
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
+define!(:LaTeX, :diff, (t = "") -> raw"\mathrm{D}_{" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
 define!(:LaTeX, :grad, raw"\operatorname{grad}")
 define!(:LaTeX, :hat, (letter) -> raw"\hat{" * "$letter" * "}")
 define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
 define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
+define!(:LaTeX, :inner, (a, b; index="") -> "⟨$a,$b⟩_{$index}")
 define!(:LaTeX, :log, raw"\log")
 define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
@@ -96,7 +98,7 @@ define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
 define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
-define!(:LaTeX, :sum, raw"\sum")
+define!(:LaTeX, :sum, (b="", t="") -> raw"\sum" * "_{$b}^{$t}")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :transp, raw"\mathrm{T}")
 define!(:LaTeX, :vdots, raw"\vdots")
@@ -210,7 +212,7 @@ define!(
     :GradientObjective,
     (; objective="gradient_objective", f="f", grad_f="grad_f") -> """
 Alternatively to `$f` and `$grad_f` you can provide
-the corresponding [`AbstractManifoldGradientObjective`](@ref) `$objective` directly.
+the corresponding [`AbstractManifoldFirstOrderObjective`](@ref) `$objective` directly.
 """,
 )
 define!(
@@ -250,14 +252,14 @@ define!(
     :Problem,
     :Constrained,
     (; M="M", p="p") -> """
-                                                                            ```math
-                                                                        \\begin{aligned}
-                                                                        $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
-                                                                        $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
-                                                                        \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
-                                                                        \\end{aligned}
-                                                                        ```
-                                                                        """,
+        ```math
+    \\begin{aligned}
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
+    $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
+    \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+    \\end{aligned}
+    ```
+    """,
 )
 define!(
     :Problem,
@@ -366,6 +368,14 @@ define!(
     "an integer indicating at which the stopping criterion last indicted to stop, which might also be before the solver started (`0`). Any negative value indicates that this was not yet the case;",
 )
 define!(:Variable, :at_iteration, :type, "Int")
+
+define!(
+    :Variable,
+    :differential,
+    :description,
+    "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩``. is used",
+)
+define!(:Variable, :differential, :default, "`nothing`")
 
 define!(
     :Variable,

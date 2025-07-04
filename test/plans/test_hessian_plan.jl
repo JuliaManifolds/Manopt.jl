@@ -1,7 +1,7 @@
 s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
+using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test, Random
 
 @testset "Hessian access functions" begin
     M = Euclidean(2)
@@ -28,6 +28,9 @@ using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
         @test get_gradient(mp, p) == zeros(2)
         get_gradient!(mp, Y, p)
         @test Y == zeros(2)
+        # check differential default
+        @test get_differential(mp, p, X; gradient=Y) == 0
+        @test get_differential(mp, p, X) == 0
         # Hessian
         @test get_hessian(mp, p, X) == 0.5 * X
         get_hessian!(mp, Y, p, X)

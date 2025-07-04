@@ -11,12 +11,14 @@ AbstractManifoldObjective
 AbstractDecoratedManifoldObjective
 ```
 
-Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
+Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldFirstOrderObjective`](@ref).
 
 ```@docs
 AbstractEvaluationType
 AllocatingEvaluation
+AllocatingInplaceEvaluation
 InplaceEvaluation
+ParentEvaluationType
 evaluation_type
 ```
 
@@ -79,7 +81,7 @@ init_caches
 ManifoldCountObjective
 ```
 
-### Internal decorators
+#### Internal decorators and functions
 
 ```@docs
 ReturnManifoldObjective
@@ -106,19 +108,22 @@ and internally
 get_cost_function
 ```
 
-### Gradient objectives
+### First order objectives
 
 ```@docs
-AbstractManifoldGradientObjective
-ManifoldGradientObjective
+AbstractManifoldFirstOrderObjective
+ManifoldFirstOrderObjective
 ManifoldAlternatingGradientObjective
 ManifoldStochasticGradientObjective
 NonlinearLeastSquaresObjective
 ```
 
-There is also a second variant, if just one function is responsible for computing the cost _and_ the gradient
+While the [`ManifoldFirstOrderObjective`](@ref) allows to provide different
+first order information, there are also its shortcuts, mainly for historical reasons,
+but also since these are the most commonly used ones.
 
 ```@docs
+ManifoldGradientObjective
 ManifoldCostGradientObjective
 ```
 
@@ -127,6 +132,7 @@ ManifoldCostGradientObjective
 ```@docs
 get_gradient
 get_gradients
+get_differential
 get_residuals
 get_residuals!
 ```
@@ -134,6 +140,7 @@ get_residuals!
 and internally
 
 ```@docs
+get_differential_function
 get_gradient_function
 ```
 

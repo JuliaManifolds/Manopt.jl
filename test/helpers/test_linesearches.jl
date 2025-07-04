@@ -55,7 +55,7 @@ using Test
     function rosenbrock_throw(::AbstractManifold, x)
         return error("test exception")
     end
-    mgo_throw = ManifoldGradientObjective(
+    mgo_throw = Manopt.ManifoldGradientObjective(
         rosenbrock_throw, rosenbrock_grad!; evaluation=InplaceEvaluation()
     )
     mp_throw = DefaultManoptProblem(M, mgo_throw)

@@ -160,33 +160,13 @@ makedocs(;
     ),
     modules=[
         Manopt,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptJuMPExt)
-        else
-            Manopt.ManoptJuMPExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptLineSearchesExt)
-        else
-            Manopt.ManoptLineSearchesExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptLRUCacheExt)
-        else
-            Manopt.ManoptLRUCacheExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptManifoldsExt)
-        else
-            Manopt.ManoptManifoldsExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
-        else
-            Manopt.ManoptRipQPQuadraticModelsExt
-        end,
+        Base.get_extension(Manopt, :ManoptJuMPExt),
+        Base.get_extension(Manopt, :ManoptLineSearchesExt),
+        Base.get_extension(Manopt, :ManoptLRUCacheExt),
+        Base.get_extension(Manopt, :ManoptManifoldsExt),
+        Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
-    authors="Ronny Bergmann and contributors.",
+    authors="Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
     sitename="Manopt.jl",
     pages=[
         "Home" => "index.md",
@@ -210,7 +190,7 @@ makedocs(;
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
-            "MADS" => "solvers/mesh_adaptive_direct_search.md",
+            "Mesh Adaptive Direct Search" => "solvers/mesh_adaptive_direct_search.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",

@@ -1,5 +1,5 @@
 @doc raw"""
-    ManifoldAlternatingGradientObjective{E<:AbstractEvaluationType,TCost,TGradient} <: AbstractManifoldGradientObjective{E}
+    ManifoldAlternatingGradientObjective{E<:AbstractEvaluationType,F,G} <: AbstractManifoldFirstOrderObjective{E, Tuple{F,G}}
 
 An alternating gradient objective consists of
 
@@ -25,10 +25,10 @@ An alternating gradient objective consists of
 Create a alternating gradient problem with an optional `cost` and the gradient either as one
 function (returning an array) or a vector of functions.
 """
-struct ManifoldAlternatingGradientObjective{E<:AbstractEvaluationType,TCost,TGradient} <:
-       AbstractManifoldGradientObjective{E,TCost,TGradient}
-    cost::TCost
-    gradient!!::TGradient
+struct ManifoldAlternatingGradientObjective{E<:AbstractEvaluationType,F,G} <:
+       AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
+    cost::F
+    gradient!!::G
 end
 function ManifoldAlternatingGradientObjective(
     f::TCost, grad_f::G; evaluation::AbstractEvaluationType=AllocatingEvaluation()

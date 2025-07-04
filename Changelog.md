@@ -6,12 +6,28 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.19] unreleased
+## [0.5.19] July 4, 2025
+
+### Added
+
+* a function `get_differential` and `get_differential_function` for first order objectives.
+* a `ParentEvaluationType` to indicate that a certain objective inherits it evaluation from the parent (wrapping) objective
+* a new `AllocatingInplaceEvaluation` that is used for the functions that offer both variants simultaneously.
+* a `differential=` keyword for providing a faster way of computing `inner(M, p, grad_f(p), X)`, introduced to the algorithms `conjugate_gradient_descent`, `gradient_descent`, `Frank_Wolfe_method`, `quasi_Newton`
+
+### Changed
+
+* the `ManifoldGradientObjective` and the `ManifoldCostGradientObjective` are now merely
+  a const special cases of the `ManifoldFirstOrderObjective`, since this type might now
+  also represent a differential or other combinations of cost, grad, and differential, where they are computed together.
+* the `AbstractManifoldGradientObjective` is renamed to `AbstractManifoldFirstOrderObjective`, since the
+ second function might now also represent a differential.
 
 ### Fixed
 
 * fixes a small bug where calling `mesh_adaptive_direct_search` with a start point in some cases did not initialise the state correctly with that start point.
-
+* The `HestenesStiefelCoefficient` now also always returns a real value, similar
+  the other coefficient rules. To the best of our knowledge, this might have been a bug previously.
 
 ## [0.5.18] June 18, 2025
 
