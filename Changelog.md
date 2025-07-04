@@ -418,7 +418,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
 * Tests use `Aqua.jl` to spot problems in the code
 * introduce a feature-based list of solvers and reduce the details in the alphabetical list
 * adds a `PolyakStepsize`
-* added a `get_subgradient` for `AbstractManifoldFirstOrderObjectives` since their gradient is a special case of a subgradient.
+* added a `get_subgradient` for `AbstractManifoldGradientObjectives` since their gradient is a special case of a subgradient.
 
 ### Fixed
 
