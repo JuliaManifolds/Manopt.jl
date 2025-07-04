@@ -6,7 +6,7 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.19] unreleased
+## [0.5.19] July 4, 2025
 
 ### Added
 
@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* fixes a small bug where calling `mesh_adaptive_direct_search` with a start point in some cases did not initialise the state correctly with that start point.
 * The `HestenesStiefelCoefficient` now also always returns a real value, similar
   the other coefficient rules. To the best of our knowledge, this might have been a bug previously.
 
