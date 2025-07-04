@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a `ParentEvaluationType` to indicate that a certain objective inherits it evaluation from the parent (wrapping) objective
 * a new `AllocatingInplaceEvaluation` that is used for the functions that offer both variants simultaneously.
 * a `differential=` keyword for providing a faster way of computing `inner(M, p, grad_f(p), X)`, introduced to the algorithms `conjugate_gradient_descent`, `gradient_descent`, `Frank_Wolfe_method`, `quasi_Newton`
+
 ### Changed
 
 * the `ManifoldGradientObjective` and the `ManifoldCostGradientObjective` are now merely
@@ -21,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also represent a differential or other combinations of cost, grad, and differential, where they are computed together.
 * the `AbstractManifoldGradientObjective` is renamed to `AbstractManifoldFirstOrderObjective`, since the
  second function might now also represent a differential.
+
+### Fixed
+
+* The `HestenesStiefelCoefficient` now also always returns a real value, similar
+  the other coefficient rules. To the best of our knowledge, this might have been a bug previously.
 
 ## [0.5.18] June 18, 2025
 
