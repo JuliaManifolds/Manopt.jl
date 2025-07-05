@@ -67,7 +67,7 @@ using ManifoldDiff: grad_distance, prox_distance
 Random.seed!(42);
 ```
 
-Now assume we are on the [Sphere](https://juliamanifolds.github.io/Manifolds.jl/latest/manifolds/sphere.html)
+Now assume we are on the ``[Sphere](@extref `Manifolds.Sphere``{=commonmark}
 $\mathcal M = \mathbb S^2$ and we generate some random points “around” some initial point $p$
 
 ```{julia}

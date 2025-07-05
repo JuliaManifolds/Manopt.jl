@@ -72,54 +72,51 @@ Manopt.Rn_default
 
 ## JuMP.jl
 
-Manopt can be used using the [JuMP.jl](https://github.com/jump-dev/JuMP.jl) interface.
-The manifold is provided in the `@variable` macro. Note that until now,
-only variables (points on manifolds) are supported, that are arrays, especially structs do not yet work.
-The algebraic expression of the objective function is specified in the `@objective` macro.
-The `descent_state_type` attribute specifies the solver.
+Manopt can be used using the [JuMP.jl](https://jump.dev) interface, see the tutorial TODO:
 
-```julia
-using JuMP, Manopt, Manifolds
-model = Model(Manopt.Optimizer)
-# Change the solver with this option, `GradientDescentState` is the default
-set_attribute("descent_state_type", GradientDescentState)
-@variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
-@objective(model, Min, sum((A - U) .^ 2))
-optimize!(model)
-solution_summary(model)
+### Setting s solver and its options
+
+A main thing to choose is the solver to use. By default this is set to the [`GradientDescentState`](@ref). To change the solver you can set it with `set_attribute`. For exmple to use the [`quasi_Newton`](@ref) instead, use
+
+```{julia}
+model =  Model(Manopt.JuMP_Optimizer)
+set_attribute(model, "descent_state_type", Manopt.QuasiNewtonState)
+```
+
+Any of the keywords of the solver you can set with `set_attribute)model, keyword, value)` for example to change the retraction to use, call
+
+```{julia}
+set_attribute(model, "retraction_method", ManifoldsBase.ProjectionRetraction())
 ```
 
 ### Interface functions
 
+Several functions from the [Mathematical Optimization Interface](https://github.com/jump-dev/MOI.jl) (MOI) are
+extended when both `Manopt.jl and [JuMP.jl](https://jump.dev) are loaded:
+
 ```@docs
-Manopt.JuMP_ArrayShape
-Manopt.JuMP_VectorizedManifold
-MOI.dimension(::Manopt.JuMP_VectorizedManifold)
 Manopt.JuMP_Optimizer
-MOI.empty!(::Manopt.JuMP_Optimizer)
-MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute, ::Any)
-MOI.supports_incremental_interface(::Manopt.JuMP_Optimizer)
-MOI.copy_to(::Manopt.JuMP_Optimizer, ::MOI.ModelLike)
-MOI.supports_add_constrained_variables(::Manopt.JuMP_Optimizer, ::Type{<:Manopt.JuMP_VectorizedManifold})
-MOI.add_constrained_variables(::Manopt.JuMP_Optimizer, ::Manopt.JuMP_VectorizedManifold)
-MOI.is_valid(model::Manopt.JuMP_Optimizer, ::MOI.VariableIndex)
-MOI.get(model::Manopt.JuMP_Optimizer, ::MOI.NumberOfVariables)
-MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
-MOI.supports(::Manopt.JuMP_Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
-JuMP.build_variable(::Function, ::Any, ::Manopt.AbstractManifold)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ResultCount)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.SolverName)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveValue)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.PrimalStatus)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.DualStatus)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.TerminationStatus)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.SolverVersion)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveSense)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimal, ::MOI.VariableIndex)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.RawStatusString)
+Manopt.JuMP_ManifoldSet
+JuMP.build_variable
+JuMP.jump_function
+JuMP.jump_function_type
+JuMP.set_objective_function
+MOI.add_constrained_variables
+MOI.copy_to
+MOI.empty!
+MOI.dimension
+MOI.Utilities.map_indices
+MOI.supports_add_constrained_variables
+MOI.get
+MOI.is_valid
+MOI.supports
+MOI.supports_incremental_interface
+MOI.set
+```
+
+as well as the internal functions
+
+```@autodocs
+Modules = [Base.get_extension(Manopt, :ManoptJuMPExt)]
+Order   = [:type, :function]
 ```

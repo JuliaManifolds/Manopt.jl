@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.20] unreleased
 
+### Changed
+
+* generalize the [`JuMP.jl`](https://jump.dev/) interface to work with general manifolds
+
 ### Fixed
 
 * Fixed a few typos in the docs.
