@@ -222,9 +222,12 @@ include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
 include("deprecated.jl")
 
+#
+# JuMP constructors
 function JuMP_Optimizer end
 function JuMP_ManifoldSet end
-function JuMP_ArrayShape end
+#
+# JuMP structs
 
 function __init__()
     #
@@ -249,7 +252,7 @@ function __init__()
             if exc.f === JuMP_Optimizer ||
                 exc.f === Manopt.JuMP_ManifoldSet ||
                 exc.f === Manopt.JuMP_ArrayShape
-                 print(
+                print(
                     io,
                     "\nThe `Manopt.JuMP_Optimizer` is not yet properly initialized. It requires the package `JuMP.jl`, so please load it e.g. via.\n",
                 )

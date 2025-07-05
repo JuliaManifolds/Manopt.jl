@@ -23,6 +23,11 @@ but just be paremetrized in a certain way.
 struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
+@doc """
+    JuMP_ManifoldSet(M::ManifoldsBase.AbstractManifold) = ManifoldSet(M)
+
+Create a [`ManifoldSet`](@ref).
+"""
 Manopt.JuMP_ManifoldSet(M::ManifoldsBase.AbstractManifold) = ManifoldSet(M)
 
 @doc """
@@ -46,7 +51,8 @@ as a [`MOI.AbstractScalarFunction`](@extref JuMP.MOI).
 
 * `func::MO`: The [`AbstractManifoldObjective`](@ref) function to be wrapped.
 """
-struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
+struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
+       MOI.AbstractScalarFunction
     func::MO
 end
 
@@ -118,6 +124,9 @@ Represent a solver from `Manopt.jl` within the [`MathOptInterface`](@extref JuMP
   when setting up the `state.
 
 All types in brackets can also be `Nothing`, indicating they were not yet initialized.
+
+# TODO: We might have to store the point and vector types `P` and `T` here maybe?
+at least for the case where we are not on ManifoldArrayShape
 """
 mutable struct ManoptOptimizer <: MOI.AbstractOptimizer
     problem::Union{Nothing,Manopt.AbstractManoptProblem}
@@ -158,7 +167,7 @@ end
 Return the version of the Manopt solver, it corresponds to the version of
 Manopt.jl.
 """
-MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) =  pkgversion(Manopt)
+MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) = pkgversion(Manopt)
 
 function MOI.is_empty(model::ManoptOptimizer)
     return isnothing(model.manifold) &&
@@ -316,7 +325,9 @@ end
 Return `true` indicating that `Manopt.JuMP_Optimizer` supports starting values
 for the variables.
 """
-function MOI.supports(::ManoptOptimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
+function MOI.supports(
+    ::ManoptOptimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex}
+)
     return true
 end
 
@@ -481,57 +492,79 @@ function MOI.optimize!(model::ManoptOptimizer)
     return nothing
 end
 
-struct ArrayShape{N} <: JuMP.AbstractShape
+@doc """
+    ManifoldArrayShape{N} <: JuMP.AbstractShape
+
+Represent some generic `AbstractArray` of a certain size representing an element
+on a manifold, that is either a point or a tangent vector.
+
+# Fields
+* `size::NTuple{N,Int}`: The size of the array
+"""
+struct ManifoldArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
 end
-Manopt.JuMP_ArrayShape(size::NTuple{N,Int}) where {N} = ArrayShape{N}(size)
+
+@doc """
+"""
+struct ManifoldPointShape{M<:ManifoldsBase.AbstractManifold,P} <: JuMP.AbstractShape
+    manifold::M
+end
+
+@doc """
+"""
+struct TangentVectorShape{M<:ManifoldsBase.AbstractManifold,T} <: JuMP.AbstractShape
+    manifold::M
+end
 
 """
-    length(shape::ArrayShape)
+    length(shape::ManifoldArrayShape)
 
 Return the length of the vectors in the vectorized representation.
 """
-Base.length(shape::ArrayShape) = prod(shape.size)
+Base.length(shape::ManifoldArrayShape) = prod(shape.size)
 
 """
-    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ArrayShape{N}) where {T,N}
+    _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ManifoldArrayShape{N}) where {T,N}
 
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
-function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{N}) where {T,N}
+function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ManifoldArrayShape{N}) where {T,N}
     return copyto!(res, array)
 end
 
 """
-    _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ArrayShape{N}) where {T,N}
+    _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ManifoldArrayShape{N}) where {T,N}
 
 Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
 """
-function _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ArrayShape{N}) where {T,N}
+function _reshape_vector!(
+    res::Array{T,N}, vec::Vector{T}, ::ManifoldArrayShape{N}
+) where {T,N}
     return copyto!(res, vec)
 end
 
 """
-    _zero(shape::ArrayShape)
+    _zero(shape::ManifoldArrayShape)
 
 Return a zero element of the shape `shape`.
 """
-_zero(shape::ArrayShape{N}) where {N} = zeros(shape.size)
+_zero(shape::ManifoldArrayShape{N}) where {N} = zeros(shape.size)
 
-function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{N}) where {T,N}
+function JuMP.vectorize(array::Array{T,N}, ::ManifoldArrayShape{N}) where {T,N}
     return vec(array)
 end
 
-function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
+function JuMP.reshape_vector(vector::Vector, shape::ManifoldArrayShape)
     return reshape(vector, shape.size)
 end
 
-function JuMP.reshape_set(set::ManifoldSet, shape::ArrayShape)
+function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldArrayShape)
     return set.manifold
 end
 
 function _shape(m::ManifoldsBase.AbstractManifold)
-    return ArrayShape(ManifoldsBase.representation_size(m))
+    return ManifoldArrayShape(ManifoldsBase.representation_size(m))
 end
 
 _in(mime::MIME"text/plain") = "in"
@@ -547,7 +580,7 @@ end
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
 and the [`Manopt.JuMP_ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, [`Manopt.JuMP_ArrayShape`](@ref).
+shape of the manifold, that is, a [`Manopt.JuMPManifoldArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)
@@ -648,4 +681,4 @@ function MOI.get(model::ManoptOptimizer, attr::MOI.VariablePrimal, vi::MOI.Varia
     return solution[vi.value]
 end
 
-end # module
+end # module ManoptJuMPExt

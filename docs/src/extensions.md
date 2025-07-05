@@ -79,7 +79,7 @@ Manopt can be used using the [JuMP.jl](https://jump.dev) interface, see the [use
 A main thing to choose is the solver to use. By default this is set to the [`GradientDescentState`](@ref). To change the solver you can set it with `set_attribute`. For exmple to use the [`quasi_Newton`](@ref) instead, use
 
 ```{julia}
-model =  Model(Manopt.JuMP_Optimizer)
+model =  Model(Manopt.ManoptOptimizer)
 set_attribute(model, "descent_state_type", Manopt.QuasiNewtonState)
 ```
 
@@ -94,35 +94,8 @@ set_attribute(model, "retraction_method", ManifoldsBase.ProjectionRetraction())
 Several functions from the [Mathematical Optimization Interface](https://github.com/jump-dev/MathOptInterface.jl) (MOI) are
 extended when both `Manopt.jl and [JuMP.jl](https://jump.dev) are loaded:
 
-```@docs
-Manopt.JuMP_ArrayShape
-Manopt.JuMP_VectorizedManifold
-MOI.dimension(::Manopt.JuMP_VectorizedManifold)
-Manopt.JuMP_Optimizer
-MOI.empty!(::Manopt.JuMP_Optimizer)
-MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute)
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.RawOptimizerAttribute, ::Any)
-MOI.supports_incremental_interface(::Manopt.JuMP_Optimizer)
-MOI.copy_to(::Manopt.JuMP_Optimizer, ::MOI.ModelLike)
-MOI.supports_add_constrained_variables(::Manopt.JuMP_Optimizer, ::Type{<:Manopt.JuMP_VectorizedManifold})
-MOI.add_constrained_variables(::Manopt.JuMP_Optimizer, ::Manopt.JuMP_VectorizedManifold)
-MOI.is_valid(model::Manopt.JuMP_Optimizer, ::MOI.VariableIndex)
-MOI.get(model::Manopt.JuMP_Optimizer, ::MOI.NumberOfVariables)
-MOI.supports(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
-MOI.set(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
-MOI.supports(::Manopt.JuMP_Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
-JuMP.build_variable(::Function, ::Any, ::Manopt.AbstractManifold)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ResultCount)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.SolverName)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveValue)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.PrimalStatus)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.DualStatus)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.TerminationStatus)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.SolverVersion)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.ObjectiveSense)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.VariablePrimal, ::MOI.VariableIndex)
-MOI.get(::Manopt.JuMP_Optimizer, ::MOI.RawStatusString)
+```@autodocs
+Modules = [Manopt]
+Pages = ["../ext/ManoptJumpExt.jl"]
+Order = [:type, :function]
 ```
