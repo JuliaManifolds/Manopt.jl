@@ -291,7 +291,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
     to keyword arguments of the same name for start point and tangent vector.
   * in detail
     * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
-      the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
+      the (unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
     * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
     * `AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
