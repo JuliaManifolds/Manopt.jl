@@ -10,8 +10,8 @@ const MOI = JuMP.MOI
 """
     ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
 
-Model a manifold from [`ManifoldsBase`](@extref) as a vectorial set in the
-[`MathOptInterface`](@extref JuMP.MOI).
+Model a manifold from [`ManifoldsBase.jl`](@extref) as a vectorial set in the
+`MathOptInterface` (`MOI`).
 This is a slight misuse of notation, since the manifold itself might not be embedded,
 but just be paremetrized in a certain way.
 
@@ -44,8 +44,8 @@ end
 @doc """
     RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
 
-A wrapper for a [`Manopt.AbstractManifoldObjective`](@extref) that can be used
-as a [`MOI.AbstractScalarFunction`](@extref JuMP.MOI).
+A wrapper for a [`AbstractManifoldObjective`](@ref) that can be used
+as a [`MOI.AbstractScalarFunction`](@extref JuMP :jl:type:`MathOptInterface.AbstractScalarFunction`).
 
 # Fields
 
@@ -106,7 +106,7 @@ end
 """
     ManoptOptimizer <: MOI.AbstractOptimizer
 
-Represent a solver from `Manopt.jl` within the [`MathOptInterface`](@extref JuMP.MOI) framework.
+Represent a solver from `Manopt.jl` within the `MathOptInterface` (`MOI`) framework.
 
 # Fields
 * `problem::([`AbstractManoptProblem`](@ref) a problem in manopt, especially
@@ -116,8 +116,8 @@ Represent a solver from `Manopt.jl` within the [`MathOptInterface`](@extref JuMP
 * `objective::`([`AbstractManifoldObjective`](@ref) the objective function to be optimized.
 * `state::`([`AbstractManoptSolverState`](@ref) the state specifying the solver to use.
 * `variable_primal_start::Vector{Union{Nothing,Float64}}` starting value for the solver,
-    in a vectorized form that [`JuMP`](@extref) requires.
-* `sense::`[`MOI.OptimizationSense`](@extref) the sense of optimization,
+    in a vectorized form that [`JuMP.jl`](@extref JuMP :std:doc:`index`) requires.
+* `sense::`[`MOI.OptimizationSense`](@extref JuMP :jl:type:`MathOptInterface.OptimizationSense`) the sense of optimization,
   currently only minimization and maximization are supported.
 * `options::Dict{String,Any}`: parameters specifying a solver before the `state`
   is initialized, so especially which [`AbstractManoptSolverState`](@ref) to use,
@@ -153,7 +153,7 @@ end
 """
     Manopt.JuMP_Optimizer()
 
-Represent a solver from `Manopt.jl` within the [`MathOptInterface`](@extref JuMP.MOI) framework.
+Represent a solver from `Manopt.jl` within the `MathOptInterface` (`MOI`) framework.
 
 See [`ManoptOptimizer`](@ref) for the fields and their meaning.
 """
@@ -242,7 +242,7 @@ Return `true` indicating that `Manopt.JuMP_Optimizer` implements
 `MOI.add_constrained_variables` and `MOI.set` for
 `MOI.ObjectiveFunction` so it can be used with [`JuMP.direct_model`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.direct_model)
 and does not require a `MOI.Utilities.CachingOptimizer`.
-See [`MOI.supports_incremental_interface`](@extref JuMP.MOI.supports_incremental_interface).
+See [`MOI.supports_incremental_interface`](@extref JuMP :jl:function:`MathOptInterface.supports_incremental_interface`).
 """
 MOI.supports_incremental_interface(::ManoptOptimizer) = true
 
@@ -580,7 +580,7 @@ end
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
 and the [`ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, a [`Manopt.JuMPManifoldArrayShape`](@ref).
+shape of the manifold, that is, a [`ManifoldArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)

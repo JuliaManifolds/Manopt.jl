@@ -114,16 +114,9 @@ MOI.supports_incremental_interface
 MOI.set
 ```
 
-Missing, no idea yet how to add structs from within extensions here
+as well as the internal functions
 
-```
-ManoptJuMPExt.ManifoldSet
-ManoptJuMPExt.ManifoldArrayShape
-ManoptJuMPExt.ManifoldPointShape
-ManoptJuMPExt.TangentVectorShape
-ManoptJuMPExt.ManoptOptimizer
-ManoptJuMPExt.RiemannianFunction
-ManoptJuMPExt._zero
-ManoptJuMPExt._reshape_vector!
-ManoptJuMPExt._vectorize!
+```@autodocs
+Modules = [Base.get_extension(Manopt, :ManoptJuMPExt)]
+Order   = [:type, :function]
 ```
