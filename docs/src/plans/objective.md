@@ -315,7 +315,7 @@ Manopt.get_objective_hessian
 Manopt.get_objective_preconditioner
 ```
 
-### Proximal Gradient Objective
+### Proximal gradient objective
 
 ```@docs
 ManifoldProximalGradientObjective
