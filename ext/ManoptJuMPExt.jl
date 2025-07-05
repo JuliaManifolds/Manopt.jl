@@ -9,23 +9,30 @@ const MOI = JuMP.MOI
 
 function __init__()
     setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
-    setglobal!(Manopt, :JuMP_VectorizedManifold, VectorizedManifold)
+    setglobal!(Manopt, :JuMP_ManifoldSet, ManifoldSet)
     setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
     return nothing
 end
 
-struct VectorizedManifold{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+"""
+    ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+
+Model a manifold from [`ManifoldsBase`](@ref) as a vectorial set in the
+[`MathOptInterface`](@ref MOI).
+
+"""
+struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
 
 """
-    MOI.dimension(set::VectorizedManifold)
+    MOI.dimension(set::ManifoldSet)
 
 Return the representation side of points on the (vectorized in representation) manifold.
 As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
 yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
 """
-function MOI.dimension(set::VectorizedManifold)
+function MOI.dimension(set::ManifoldSet)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
@@ -182,24 +189,24 @@ function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
 end
 
 """
-    MOI.supports_add_constrained_variables(::JuMP_Optimizer, ::Type{<:VectorizedManifold})
+    MOI.supports_add_constrained_variables(::JuMP_Optimizer, ::Type{<:ManifoldSet})
 
 Return `true` indicating that `Manopt.JuMP_Optimizer` support optimization on
-variables constrained to belong in a vectorized manifold [`Manopt.JuMP_VectorizedManifold`](@ref).
+variables constrained to belong in a vectorized manifold [`Manopt.JuMP_ManifoldSet`](@ref).
 """
-function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:VectorizedManifold})
+function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:ManifoldSet})
     return true
 end
 
 """
-    MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
+    MOI.add_constrained_variables(model::Optimizer, set::ManifoldSet)
 
 Add `MOI.dimension(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables in the
-[`Manopt.JuMP_VectorizedManifold`](@ref) `set`.
+[`Manopt.JuMP_ManifoldSet`](@ref) `set`.
 """
-function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold)
+function MOI.add_constrained_variables(model::Optimizer, set::ManifoldSet)
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
         throw(
@@ -226,20 +233,20 @@ Return whether `vi` is a valid variable index.
 """
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
-           1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
+           1 <= vi.value <= MOI.dimension(ManifoldSet(model.manifold))
 end
 
 """
     MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@ref) of the [`Manopt.JuMP_VectorizedManifold`](@ref).
+to the [`MOI.dimension`](@ref) of the [`Manopt.JuMP_ManifoldSet`](@ref).
 """
 function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
         return 0
     else
-        return MOI.dimension(VectorizedManifold(model.manifold))
+        return MOI.dimension(ManifoldSet(model.manifold))
     end
 end
 
@@ -458,7 +465,7 @@ function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
     return reshape(vector, shape.size)
 end
 
-function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
+function JuMP.reshape_set(set::ManifoldSet, shape::ArrayShape)
     return set.manifold
 end
 
@@ -477,14 +484,14 @@ end
     JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
 
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
-and the [`Manopt.JuMP_VectorizedManifold`](@ref) in which they should belong as well as the
+and the [`Manopt.JuMP_ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
 shape of the manifold, that is, [`Manopt.JuMP_ArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)
     return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(func, shape), VectorizedManifold(m), shape
+        JuMP.vectorize(func, shape), ManifoldSet(m), shape
     )
 end
 
