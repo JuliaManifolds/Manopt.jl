@@ -6,30 +6,74 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.17] unreleased
-
-### Added
-
-* A tutorial for how to use `Manopt.jl` from within [`JuMP.jl`](https://jump.dev)
+## [0.5.20] unreleased
 
 ### Fixed
 
-* Fixed allocations in the callbacks of the JuMP interface so that the solver can query the cost and gradient without allocating.
+* Fixed a few typos in the docs.
 
-## [0.5.16] 2025-05-07
+## [0.5.19] July 4, 2025
+
+### Added
+
+* a function `get_differential` and `get_differential_function` for first order objectives.
+* a `ParentEvaluationType` to indicate that a certain objective inherits it evaluation from the parent (wrapping) objective
+* a new `AllocatingInplaceEvaluation` that is used for the functions that offer both variants simultaneously.
+* a `differential=` keyword for providing a faster way of computing `inner(M, p, grad_f(p), X)`, introduced to the algorithms `conjugate_gradient_descent`, `gradient_descent`, `Frank_Wolfe_method`, `quasi_Newton`
+
+### Changed
+
+* the `ManifoldGradientObjective` and the `ManifoldCostGradientObjective` are now merely
+  a const special cases of the `ManifoldFirstOrderObjective`, since this type might now
+  also represent a differential or other combinations of cost, grad, and differential, where they are computed together.
+* the `AbstractManifoldGradientObjective` is renamed to `AbstractManifoldFirstOrderObjective`, since the
+ second function might now also represent a differential.
+
+### Fixed
+
+* fixes a small bug where calling `mesh_adaptive_direct_search` with a start point in some cases did not initialise the state correctly with that start point.
+* The `HestenesStiefelCoefficient` now also always returns a real value, similar
+  the other coefficient rules. To the best of our knowledge, this might have been a bug previously.
+
+## [0.5.18] June 18, 2025
+
+### Added
+
+* Introduce the algorithm `proximal_gradient_method` along
+  with `ManifoldProximalGradientObjective`, `ProximalGradientMethodState`, as well as an experimental `ProximalGradientMethodAcceleration`.
+* Add `ProximalGradientMethodBacktracking` stepsize.
+* Add `StopWhenGradientMappingNormLess` stopping criterion.
+* Introduce a `StopWhenRepeated` stopping criterion that stops when the given stopping criterion has indicated to stop `n` times (consecutively, if `consecutive=true`).
+* Introduce a `StopWhenCriterionWithIterationCondition` stopping criterion that stops when a given stopping criterion has been satisfied together with a certain iteration condition. This can the generated even with shortcuts like `sc > 5`
+* Introduce a `DebugCallback` that allows to add a callback function to the debug system
+* Introduce a `callback=` keyword to all solvers.
+* Added back functions `estimate_sectional_curvature`, `ζ_1`, `ζ_2`, `close_point` from `convex_bundle_method`; the function call can stay the same as before since there is a curvature estimation fallback
+* Add back some fields and arguments such as `p_estimate`, `ϱ`, `α`, from `ConvexBundleMethodState`
+
+### Changed
+
+* make the `GradientDescentState` a bit more tolerant to ignore keywords it does not use.
+
+## [0.5.17] June 3, 2025
+
+### Added
+
+* Introduce a `StopWhenCostChangeLess` stopping criterion that stops when the cost function changes less than a given value.
+
+## [0.5.16] May 7, 2025
 
 ### Fixed
 
 * fixes a bug in the `LineSearches.jl` extension, where two (old) `retract!`s were still
 present; they were changed to `retact_fused!`.
 
-## [0.5.15] 2025-05-06
+## [0.5.15] May 6, 2025
 
 ### Fixed
 
 * CMA-ES no longer errors when the covariance matrix has nonpositive eigenvalues due to numerical issues.
 
-## [0.5.14] 2025-05-05
+## [0.5.14] May 5, 2025
 
 ### Added
 
@@ -40,7 +84,7 @@ present; they were changed to `retact_fused!`.
 * adapt to using `default_basis` where appropriate.
 * the tutorials are now rendered with `quarto` using the [`QuartoNotebookRunner.jl`](https://github.com/PumasAI/QuartoNotebookRunner.jl) and are hence purely julia based.
 
-## [0.5.13] 2025-04-25
+## [0.5.13] April 25, 2025
 
 ### Added
 
@@ -247,7 +291,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
     to keyword arguments of the same name for start point and tangent vector.
   * in detail
     * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
-      the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
+      the (unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
     * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
     * `AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one

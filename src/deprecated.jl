@@ -1,1 +1,2 @@
 
+Base.@deprecate_binding AbstractManifoldGradientObjective AbstractManifoldFirstOrderObjective

@@ -24,16 +24,45 @@ Note that the subdifferential might be given in two possible signatures
 * `∂h(M,p)` which does an [`AllocatingEvaluation`](@ref)
 * `∂h!(M, X, p)` which does an [`InplaceEvaluation`](@ref) in place of `X`.
 """
-struct ManifoldDifferenceOfConvexObjective{E,TCost,TGrad,TSubGrad} <:
-       AbstractManifoldGradientObjective{E,TCost,TGrad}
-    cost::TCost
-    gradient!!::TGrad
-    ∂h!!::TSubGrad
+struct ManifoldDifferenceOfConvexObjective{E,F,G,S} <:
+       AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
+    cost::F
+    gradient!!::G
+    ∂h!!::S
     function ManifoldDifferenceOfConvexObjective(
         cost::TC, ∂h::TSH; gradient::TG=nothing, evaluation::ET=AllocatingEvaluation()
     ) where {ET<:AbstractEvaluationType,TC,TG,TSH}
         return new{ET,TC,TG,TSH}(cost, gradient, ∂h)
     end
+end
+
+function get_gradient_function(doco::ManifoldDifferenceOfConvexObjective, recursive=false)
+    return doco.gradient!!
+end
+
+function get_gradient(
+    M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation}, p
+)
+    return doco.gradient!!(M, p)
+end
+function get_gradient(
+    M::AbstractManifold, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    return doco.gradient!!(M, X, p)
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    doco::ManifoldDifferenceOfConvexObjective{AllocatingEvaluation},
+    p,
+)
+    return copyto!(M, X, p, doco.gradient!!(M, p))
+end
+function get_gradient!(
+    M::AbstractManifold, X, doco::ManifoldDifferenceOfConvexObjective{InplaceEvaluation}, p
+)
+    return doco.gradient!!(M, X, p)
 end
 
 """
@@ -239,12 +268,11 @@ as allocating or in-place.
 an note that neither cost nor gradient are required for the algorithm,
 just for eventual debug or stopping criteria.
 """
-struct ManifoldDifferenceOfConvexProximalObjective{
-    E<:AbstractEvaluationType,THGrad,TCost,TGrad
-} <: AbstractManifoldGradientObjective{E,TCost,TGrad}
-    cost::TCost
-    gradient!!::TGrad
-    grad_h!!::THGrad
+struct ManifoldDifferenceOfConvexProximalObjective{E<:AbstractEvaluationType,GH,F,G} <:
+       AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
+    cost::F
+    gradient!!::G
+    grad_h!!::GH
     function ManifoldDifferenceOfConvexProximalObjective(
         grad_h::THG;
         cost::TC=nothing,
@@ -253,6 +281,44 @@ struct ManifoldDifferenceOfConvexProximalObjective{
     ) where {ET<:AbstractEvaluationType,TC,TG,THG}
         return new{ET,THG,TC,TG}(cost, gradient, grad_h)
     end
+end
+
+function get_gradient(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    p,
+)
+    return dcpo.gradient!!(M, p)
+end
+function get_gradient(
+    M::AbstractManifold,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    p,
+)
+    X = zero_vector(M, p)
+    return dcpo.gradient!!(M, X, p)
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{AllocatingEvaluation},
+    p,
+)
+    return copyto!(M, X, p, dcpo.gradient!!(M, p))
+end
+function get_gradient!(
+    M::AbstractManifold,
+    X,
+    dcpo::ManifoldDifferenceOfConvexProximalObjective{InplaceEvaluation},
+    p,
+)
+    return dcpo.gradient!!(M, X, p)
+end
+
+function get_gradient_function(
+    dcpo::ManifoldDifferenceOfConvexProximalObjective, recursive=false
+)
+    return dcpo.gradient!!
 end
 
 @doc raw"""

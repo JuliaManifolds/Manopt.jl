@@ -84,8 +84,6 @@ end
 if Base.active_project() != joinpath(@__DIR__, "Project.toml")
     using Pkg
     Pkg.activate(@__DIR__)
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
-    Pkg.resolve()
     Pkg.instantiate()
 end
 
@@ -96,8 +94,6 @@ if run_quarto || run_on_CI
     # instantiate the tutorials environment if necessary
     Pkg.activate(tutorials_folder)
     # For a breaking release -> also set the tutorials folder to the most recent version
-    Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
-    Pkg.resolve()
     Pkg.instantiate()
     Pkg.activate(@__DIR__) # but return to the docs one before
     run(`quarto render $(tutorials_folder)`)
@@ -109,7 +105,23 @@ using DocumenterCitations, DocumenterInterLinks
 using JuMP, LineSearches, LRUCache, Manopt, Manifolds, Plots, RecursiveArrayTools
 using RipQP, QuadraticModels
 
-# (d) add contributing.md to docs
+# (d) add contributing.md and changelog.md to the docs – and link to releases and issues
+
+function add_links(line::String, url::String="https://github.com/JuliaManifolds/Manopt.jl")
+    # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
+    while (m = match(r"\(\#([0-9]+)\)", line)) !== nothing
+        id = m.captures[1]
+        line = replace(line, m.match => "([#$id]($url/issues/$id))")
+    end
+    # replace ## [X.Y.Z] -> with a link to the release [X.Y.Z](url/releases/tag/vX.Y.Z)
+    while (m = match(r"\#\# \[([0-9]+.[0-9]+.[0-9]+)\] (.*)", line)) !== nothing
+        tag = m.captures[1]
+        date = m.captures[2]
+        line = replace(line, m.match => "## [$tag]($url/releases/tag/v$tag) ($date)")
+    end
+    return line
+end
+
 generated_path = joinpath(@__DIR__, "src")
 base_url = "https://github.com/JuliaManifolds/Manopt.jl/blob/master/"
 isdir(generated_path) || mkdir(generated_path)
@@ -127,7 +139,7 @@ for (md_file, doc_file) in
         )
         # Write the contents out below the meta block
         for line in eachline(joinpath(dirname(@__DIR__), md_file))
-            println(io, line)
+            println(io, add_links(line))
         end
     end
 end
@@ -149,33 +161,13 @@ makedocs(;
     ),
     modules=[
         Manopt,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptJuMPExt)
-        else
-            Manopt.ManoptJuMPExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptLineSearchesExt)
-        else
-            Manopt.ManoptLineSearchesExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptLRUCacheExt)
-        else
-            Manopt.ManoptLRUCacheExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptManifoldsExt)
-        else
-            Manopt.ManoptManifoldsExt
-        end,
-        if isdefined(Base, :get_extension)
-            Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt)
-        else
-            Manopt.ManoptRipQPQuadraticModelsExt
-        end,
+        Base.get_extension(Manopt, :ManoptJuMPExt),
+        Base.get_extension(Manopt, :ManoptLineSearchesExt),
+        Base.get_extension(Manopt, :ManoptLRUCacheExt),
+        Base.get_extension(Manopt, :ManoptManifoldsExt),
+        Base.get_extension(Manopt, :ManoptRipQPQuadraticModelsExt),
     ],
-    authors="Ronny Bergmann and contributors.",
+    authors="Ronny Bergmann <ronny.bergmann@ntnu.no> and contributors.",
     sitename="Manopt.jl",
     pages=[
         "Home" => "index.md",
@@ -199,12 +191,13 @@ makedocs(;
             "Gradient Descent" => "solvers/gradient_descent.md",
             "Interior Point Newton" => "solvers/interior_point_Newton.md",
             "Levenberg–Marquardt" => "solvers/LevenbergMarquardt.md",
-            "MADS" => "solvers/mesh_adaptive_direct_search.md",
+            "Mesh Adaptive Direct Search" => "solvers/mesh_adaptive_direct_search.md",
             "Nelder–Mead" => "solvers/NelderMead.md",
             "Particle Swarm Optimization" => "solvers/particle_swarm.md",
             "Primal-dual Riemannian semismooth Newton" => "solvers/primal_dual_semismooth_Newton.md",
             "Projected Gradient Method" => "solvers/projected_gradient_method.md",
             "Proximal bundle method" => "solvers/proximal_bundle_method.md",
+            "Proximal Gradient Method" => "solvers/proximal_gradient_method.md",
             "Quasi-Newton" => "solvers/quasi_Newton.md",
             "Stochastic Gradient Descent" => "solvers/stochastic_gradient_descent.md",
             "Subgradient method" => "solvers/subgradient.md",

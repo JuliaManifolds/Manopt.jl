@@ -119,8 +119,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
     @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
     @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
     @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
-    @test Manopt.get_cost_function(cofa) === f
-    @test Manopt.get_gradient_function(cofa) === grad_f
+    # Test cost/grad pass through
+    @test Manopt.get_cost_function(cofa)(M, p) == f(M, p)
+    @test Manopt.get_gradient_function(cofa)(M, p) == grad_f(M, p)
     @testset "lengths" begin
         @test equality_constraints_length(cofa) == 1
         @test inequality_constraints_length(cofa) == 2
@@ -135,7 +136,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         @test inequality_constraints_length(cofE) == 0
     end
 
-    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldGradientObjective
+    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldFirstOrderObjective
     cofha = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -156,9 +157,9 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         grad_g!,
         h!,
         grad_h!;
-        hess_f=hess_f!,
-        hess_g=hess_g!,
-        hess_h=hess_h!,
+        hess_f=(hess_f!),
+        hess_g=(hess_g!),
+        hess_h=(hess_h!),
         evaluation=InplaceEvaluation(),
         inequality_constraints=2,
         equality_constraints=1,
@@ -183,7 +184,7 @@ using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Recursi
         [grad_g1!, grad_g2!],
         [h1],
         [grad_h1!];
-        hess_f=hess_f!,
+        hess_f=(hess_f!),
         hess_g=[hess_g1!, hess_g2!],
         hess_h=[hess_h1!],
         evaluation=InplaceEvaluation(),

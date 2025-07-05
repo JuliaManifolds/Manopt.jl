@@ -9,10 +9,10 @@ It comes in two forms, depending on the realisation of the `subproblem`.
 # Fields
 
 $(_var(:Field, :inverse_retraction_method))
-$(_var(:Field, :retraction_method))
 $(_var(:Field, :p; add=[:as_Iterate]))
 $(_var(:Field, :p, "q"; add=" storing the gradient step"))
 $(_var(:Field, :p, "r"; add=" storing the result of the proximal map"))
+$(_var(:Field, :retraction_method))
 $(_var(:Field, :stepsize))
 $(_var(:Field, :stopping_criterion, "stop"))
 * `X`, `Y`: the current gradient and descent direction, respectively
@@ -78,7 +78,7 @@ mutable struct DifferenceOfConvexProximalState{
         X::T=zero_vector(M, p),
         stepsize::S=ConstantStepsize(M),
         stopping_criterion::SC=StopWhenChangeLess(M, 1e-8),
-        inverse_retraction_method::I=default_inverse_retraction_method(M),
+        inverse_retraction_method::I=default_inverse_retraction_method(M, typeof(p)),
         retraction_method::R=default_retraction_method(M, typeof(p)),
         λ::Fλ=i -> 1,
     ) where {
@@ -384,7 +384,7 @@ function difference_of_convex_proximal_point!(
     if isnothing(sub_problem)
         error(
             """
-            The `sub_problem` is not correctly initialized. Provie _one of_ the following setups
+            The `sub_problem` is not correctly initialized. Provide _one of_ the following setups
             * `prox_g` as a closed form solution,
             * `g=` and `grad_g=` keywords to automatically generate the sub cost and gradient,
             * provide individual `sub_cost=` and `sub_grad=` to automatically generate the sub objective,

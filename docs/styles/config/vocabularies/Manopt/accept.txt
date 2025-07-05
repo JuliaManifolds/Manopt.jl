@@ -118,6 +118,7 @@ Stokkenes
 [Ss]ubgradients
 subsampled
 [Ss]ubsolver
+[Ss]ubsolvers
 summand
 summands
 superlinear

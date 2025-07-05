@@ -174,7 +174,7 @@ end
         p0;
         return_state=true,
         expect_zero_residual=true,
-        (linear_subsolver!)=test_lm_lin_solve!,
+        (linear_subsolver!)=(test_lm_lin_solve!),
     )
     lms = get_state(ds)
     @test lms.linear_subsolver! === test_lm_lin_solve!

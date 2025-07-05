@@ -47,7 +47,7 @@ $(_var(:Keyword, :evaluation))
 """
 struct NonlinearLeastSquaresObjective{
     E<:AbstractEvaluationType,F<:AbstractVectorGradientFunction{E}
-} <: AbstractManifoldGradientObjective{E,F,F}
+} <: AbstractManifoldFirstOrderObjective{E,F}
     objective::F
 end
 
@@ -273,7 +273,7 @@ mutable struct LevenbergMarquardtState{
         damping_term_min::Real=0.1,
         β::Real=5.0,
         expect_zero_residual::Bool=false,
-        linear_subsolver!::TLS=default_lm_lin_solve!,
+        linear_subsolver!::TLS=(default_lm_lin_solve!),
     ) where {P,Tresidual_values,TJac,TGrad,TLS}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))

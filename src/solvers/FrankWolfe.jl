@@ -193,6 +193,7 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
+$(_var(:Keyword, :differential))
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`DecreasingStepsize`](@ref)`(; length=2.0, shift=2)`"))
@@ -216,7 +217,7 @@ $(_var(:Keyword, :X; add=:as_Gradient))
 
 $(_note(:OtherKeywords))
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide a [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 # Output
@@ -243,7 +244,7 @@ function Frank_Wolfe_method(
 end
 function Frank_Wolfe_method(
     M::AbstractManifold, mgo::O, p=rand(M); kwargs...
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return Frank_Wolfe_method!(M, mgo, q; kwargs...)
 end
@@ -255,10 +256,13 @@ function Frank_Wolfe_method!(
     f,
     grad_f,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     return Frank_Wolfe_method!(M, mgo, p; evaluation=evaluation, kwargs...)
 end
 function Frank_Wolfe_method!(
@@ -303,7 +307,7 @@ function Frank_Wolfe_method!(
     kwargs...,
 ) where {
     TStop<:StoppingCriterion,
-    O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective},
+    O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective},
 }
     dmgo = decorate_objective!(M, mgo; objective_type=objective_type, kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)

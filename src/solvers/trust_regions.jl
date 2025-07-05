@@ -111,7 +111,7 @@ mutable struct TrustRegionsState{
         augmentation_threshold::R,
         sub_problem::Pr,
         sub_state::St,
-        project!::Proj=copyto!,
+        project!::Proj=(copyto!),
         reduction_factor=0.25,
         augmentation_factor=2.0,
         σ::R=random ? 1e-6 : 0.0,
@@ -164,7 +164,7 @@ function TrustRegionsState(
     reduction_factor=0.25,
     augmentation_threshold::R=0.75,
     augmentation_factor=2.0,
-    project!::Proj=copyto!,
+    project!::Proj=(copyto!),
     σ=randomize ? 1e-4 : 0.0,
 ) where {
     P,
@@ -444,7 +444,7 @@ function trust_regions!(
     max_trust_region_radius::R=sqrt(manifold_dimension(M)),
     trust_region_radius::R=max_trust_region_radius / 8,
     randomize::Bool=false, # Deprecated, remove on next release (use just `σ`)
-    project!::Proj=copyto!,
+    project!::Proj=(copyto!),
     ρ_prime::R=0.1, # Deprecated, remove on next breaking change (use `acceptance_rate``)
     acceptance_rate::R=ρ_prime,
     ρ_regularization=1e3,
@@ -473,7 +473,7 @@ function trust_regions!(
             κ=κ,
             trust_region_radius,
             randomize=randomize,
-            (project!)=project!,
+            (project!)=(project!),
             stopping_criterion=sub_stopping_criterion,
             sub_kwargs...,
         );
@@ -510,7 +510,7 @@ function trust_regions!(
         reduction_factor=reduction_factor,
         augmentation_threshold=augmentation_threshold,
         augmentation_factor=augmentation_factor,
-        (project!)=project!,
+        (project!)=(project!),
         σ=σ,
     )
     dtrs = decorate_state!(trs; kwargs...)

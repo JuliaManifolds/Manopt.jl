@@ -23,12 +23,9 @@ one can call the solver, depending on which gradient and/or Hessian one provides
 #| echo: false
 #| code-fold: true
 #| output: false
-# For now use the local one since Manifolds.jl #644 is required for this
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
-# But for this version use here the most recent development version from the parent folder
-Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
 ```
 
 ```{julia}

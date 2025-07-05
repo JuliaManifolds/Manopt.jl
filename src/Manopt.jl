@@ -13,6 +13,7 @@ import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
 import ManifoldsBase: base_manifold, base_point, get_basis
 import ManifoldsBase: project, project!
+import LinearAlgebra: cross
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -207,6 +208,7 @@ include("solvers/mesh_adaptive_direct_search.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/proximal_bundle_method.jl")
+include("solvers/proximal_gradient_method.jl")
 include("solvers/proximal_point.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
@@ -291,7 +293,7 @@ export DefaultManoptProblem, TwoManifoldProblem, ConstrainedManoptProblem
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
-    AbstractManifoldGradientObjective,
+    AbstractManifoldFirstOrderObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractManifoldSubObjective,
@@ -307,19 +309,20 @@ export AbstractDecoratedManifoldObjective,
     ManifoldCostObjective,
     ManifoldDifferenceOfConvexObjective,
     ManifoldDifferenceOfConvexProximalObjective,
+    ManifoldFirstOrderObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
+    ManifoldProximalGradientObjective,
     ManifoldProximalMapObjective,
     ManifoldStochasticGradientObjective,
     ManifoldSubgradientObjective,
     PrimalDualManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
-    ManifoldCachedObjective,
-    AbstractVectorFunction,
-    AbstractVectorGradientFunction,
-    VectorGradientFunction,
-    VectorHessianFunction
+    ManifoldCachedObjective
+# Functions
+export AbstractVectorFunction,
+    AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -354,6 +357,7 @@ export AbstractGradientSolverState,
     PrimalDualSemismoothNewtonState,
     ProjectedGradientMethodState,
     ProximalBundleMethodState,
+    ProximalGradientMethodState,
     RecordSolverState,
     StepsizeState,
     StochasticGradientDescentState,
@@ -367,7 +371,7 @@ export AlternatingGradient
 #
 # access functions and helpers for `AbstractManoptSolverState`
 export default_stepsize
-export get_cost, get_gradient, get_gradient!
+export get_cost, get_gradient, get_gradient!, get_cost_smooth
 export get_subgradient, get_subgradient!
 export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map, get_proximal_map!
@@ -404,6 +408,7 @@ export get_state,
     get_objective,
     get_unconstrained_objective
 export get_hessian, get_hessian!
+export get_differential
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
@@ -431,6 +436,7 @@ export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective
+export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
@@ -469,6 +475,8 @@ export adaptive_regularization_with_cubics,
     augmented_Lagrangian_method!,
     convex_bundle_method,
     convex_bundle_method!,
+    convex_bundle_method_subsolver,
+    convex_bundle_method_subsolver!,
     ChambollePock,
     ChambollePock!,
     cma_es,
@@ -506,6 +514,8 @@ export adaptive_regularization_with_cubics,
     projected_gradient_method!,
     proximal_bundle_method,
     proximal_bundle_method!,
+    proximal_gradient_method,
+    proximal_gradient_method!,
     proximal_point,
     proximal_point!,
     quasi_Newton,
@@ -533,9 +543,12 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 # Stepsize
 export Stepsize
 export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
+export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
+export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
+export ProximalGradientMethodBacktracking
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
@@ -548,12 +561,15 @@ export StopAfter,
     StopWhenBestCostInGenerationConstant,
     StopWhenChangeLess,
     StopWhenCostLess,
+    StopWhenCostChangeLess,
     StopWhenCostNaN,
     StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
+    StopWhenCriterionWithIterationCondition,
     StopWhenEntryChangeLess,
     StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess,
+    StopWhenGradientMappingNormLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
@@ -567,6 +583,7 @@ export StopAfter,
     StopWhenPopulationStronglyConcentrated,
     StopWhenProjectedGradientStationary,
     StopWhenRelativeResidualLess,
+    StopWhenRepeated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,

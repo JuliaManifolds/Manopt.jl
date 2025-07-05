@@ -585,7 +585,7 @@ function QuasiNewtonLimitedMemoryDirectionUpdate(
     memory_size::Int;
     initial_vector::T=zero_vector(M, p),
     initial_scale::G=1.0,
-    (project!)::Proj=copyto!,
+    (project!)::Proj=(copyto!),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
 ) where {
     NT<:AbstractQuasiNewtonUpdateRule,

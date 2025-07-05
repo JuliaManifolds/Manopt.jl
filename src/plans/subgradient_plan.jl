@@ -85,3 +85,24 @@ function get_subgradient!(
 )
     return get_subgradient!(M, X, get_objective(admo, false), p)
 end
+
+@doc raw"""
+    get_subgradient_function(amgo::ManifoldSubgradientObjective, recursive=false)
+
+return the function to evaluate (just) the gradient ``\operatorname{grad} f(p)``,
+where either the gradient function using the decorator or without the decorator is used.
+
+By default `recursive` is set to `false`, since usually to just pass the gradient function
+somewhere, one still wants for example the cached one or the one that still counts calls.
+
+Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
+
+* `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
+* `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
+"""
+function get_subgradient_function(amso::ManifoldSubgradientObjective, recursive=false)
+    return amso.subgradient!!
+end
+function get_subgradient_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+    return get_subgradient_function(get_objective(admo, recursive))
+end

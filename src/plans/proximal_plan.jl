@@ -80,7 +80,8 @@ end
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p, i)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p, i)
 
-evaluate the (`i`th) proximal map of `ManifoldProximalMapObjective p` at the point `p` of `p.M` with parameter ``λ>0``.
+evaluate the (`i`th) proximal map of the [`ManifoldProximalMapObjective`](@ref)` mpo` at
+the point `p` of `M` with parameter ``λ>0``.
 """
 get_proximal_map(::AbstractManifold, ::ManifoldProximalMapObjective, ::Any...)
 
@@ -95,6 +96,11 @@ function get_proximal_map(amp::AbstractManoptProblem, λ, p)
 end
 function get_proximal_map!(amp::AbstractManoptProblem, q, λ, p)
     return get_proximal_map!(get_manifold(amp), q, get_objective(amp), λ, p)
+end
+function get_proximal_map(
+    M::AbstractManifold, admo::AbstractDecoratedManifoldObjective, λ, p
+)
+    return get_proximal_map(M, get_objective(admo, false), λ, p)
 end
 
 function check_prox_number(pf::Union{Tuple,Vector}, i)

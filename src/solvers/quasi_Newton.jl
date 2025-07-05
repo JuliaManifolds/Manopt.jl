@@ -219,6 +219,7 @@ $(_var(:Argument, :p))
 * `cautious_function=(x) -> x * 1e-4`:
   a monotone increasing function for the cautious update that is zero at ``x=0``
   and strictly increasing at ``0``
+$(_var(:Keyword, :differential))
 * `direction_update=`[`InverseBFGS`](@ref)`()`:
   the [`AbstractQuasiNewtonUpdateRule`](@ref) to use.
 $(_var(:Keyword, :evaluation; add=:GradientExample))
@@ -261,18 +262,21 @@ function quasi_Newton(
     grad_f::TDF,
     p=rand(M);
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    differential=nothing,
     kwargs...,
 ) where {TF,TDF}
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f_, grad_f_; differential=differential, evaluation=evaluation
+    )
     rs = quasi_Newton(M, mgo, p_; kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function quasi_Newton(
     M::AbstractManifold, mgo::O, p; kwargs...
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return quasi_Newton!(M, mgo, q; kwargs...)
 end
@@ -284,10 +288,13 @@ function quasi_Newton!(
     f::TF,
     grad_f::TDF,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     return quasi_Newton!(M, mgo, p; kwargs...)
 end
 function quasi_Newton!(
@@ -304,7 +311,7 @@ function quasi_Newton!(
     basis::AbstractBasis=default_basis(M, typeof(p)),
     direction_update::AbstractQuasiNewtonUpdateRule=InverseBFGS(),
     memory_size::Int=min(manifold_dimension(M), 20),
-    (project!)=copyto!,
+    (project!)=(copyto!),
     initial_operator::AbstractMatrix=(
         if memory_size >= 0
             fill(1.0, 0, 0) # don't allocate `initial_operator` for limited memory operation
@@ -325,7 +332,7 @@ function quasi_Newton!(
     kwargs...,
 ) where {
     E<:AbstractEvaluationType,
-    O<:Union{AbstractManifoldGradientObjective{E},AbstractDecoratedManifoldObjective{E}},
+    O<:Union{AbstractManifoldFirstOrderObjective{E},AbstractDecoratedManifoldObjective{E}},
 }
     if memory_size >= 0
         local_dir_upd = QuasiNewtonLimitedMemoryDirectionUpdate(
@@ -334,7 +341,7 @@ function quasi_Newton!(
             direction_update,
             memory_size;
             initial_scale=initial_scale,
-            (project!)=project!,
+            (project!)=(project!),
             vector_transport_method=vector_transport_method,
         )
     else
