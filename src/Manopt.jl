@@ -222,41 +222,9 @@ include("helpers/exports/Asymptote.jl")
 include("helpers/LineSearchesTypes.jl")
 include("deprecated.jl")
 
-"""
-    Manopt.JuMP_Optimizer()
-
-Creates a new optimizer object for the [MathOptInterface](https://jump.dev/MathOptInterface.jl/) (MOI).
-An alias `Manopt.JuMP_Optimizer` is defined for convenience.
-
-The minimization of a function `f(X)` of an array `X[1:n1,1:n2,...]`
-over a manifold `M` starting at `X0`, can be modeled as follows:
-```julia
-using JuMP
-model = Model(Manopt.JuMP_Optimizer)
-@variable(model, X[i1=1:n1,i2=1:n2,...] in M, start = X0[i1,i2,...])
-@objective(model, Min, f(X))
-```
-The optimizer assumes that `M` has a `Array` shape described
-by `ManifoldsBase.representation_size`.
-"""
-global JuMP_Optimizer
-
-"""
-    struct VectorizedManifold{M} <: MOI.AbstractVectorSet
-        manifold::M
-    end
-
-Representation of points of `manifold` as a vector of `R^n` where `n` is
-`MOI.dimension(VectorizedManifold(manifold))`.
-"""
-global JuMP_VectorizedManifold
-
-"""
-    struct ArrayShape{N} <: JuMP.AbstractShape
-
-Shape of an `Array{T,N}` of size `size`.
-"""
-global JuMP_ArrayShape
+function JuMP_Optimizer end
+function JuMP_ManifoldSet end
+function JuMP_ArrayShape end
 
 function __init__()
     #
@@ -277,6 +245,15 @@ function __init__()
                     "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
                 printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+            end
+            if exc.f === JuMP_Optimizer ||
+                exc.f === Manopt.JuMP_ManifoldSet ||
+                exc.f === Manopt.JuMP_ArrayShape
+                 print(
+                    io,
+                    "\nThe `Manopt.JuMP_Optimizer` is not yet properly initialized. It requires the package `JuMP.jl`, so please load it e.g. via.\n",
+                )
+                printstyled(io, "`using JuMP`"; color=:cyan)
             end
         end
     end

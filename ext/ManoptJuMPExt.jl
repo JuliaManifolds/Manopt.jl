@@ -7,25 +7,25 @@ using ManifoldsBase
 using ManifoldDiff
 const MOI = JuMP.MOI
 
-function __init__()
-    setglobal!(Manopt, :JuMP_Optimizer, Optimizer)
-    setglobal!(Manopt, :JuMP_ManifoldSet, ManifoldSet)
-    setglobal!(Manopt, :JuMP_ArrayShape, ArrayShape)
-    return nothing
-end
-
 """
     ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
 
-Model a manifold from [`ManifoldsBase`](@ref) as a vectorial set in the
-[`MathOptInterface`](@ref MOI).
+Model a manifold from [`ManifoldsBase`](@extref) as a vectorial set in the
+[`MathOptInterface`](@extref JuMP.MOI).
+This is a slight misuse of notation, since the manifold itself might not be embedded,
+but just be paremetrized in a certain way.
+
+# Fields
+* `manifold::M`: The manifold in which the variables are constrained to lie.
+  This is a [`ManifoldsBase.AbstractManifold`](@extref) object.
 
 """
 struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
+Manopt.JuMP_ManifoldSet(M::ManifoldsBase.AbstractManifold) = ManifoldSet(M)
 
-"""
+@doc """
     MOI.dimension(set::ManifoldSet)
 
 Return the representation side of points on the (vectorized in representation) manifold.
@@ -36,75 +36,135 @@ function MOI.dimension(set::ManifoldSet)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
-struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
-       MOI.AbstractScalarFunction
+@doc """
+    RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
+
+A wrapper for a [`Manopt.AbstractManifoldObjective`](@extref) that can be used
+as a [`MOI.AbstractScalarFunction`](@extref JuMP.MOI).
+
+# Fields
+
+* `func::MO`: The [`AbstractManifoldObjective`](@ref) function to be wrapped.
+"""
+struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
     func::MO
 end
 
+@doc """
+    JuMP.jump_function_type(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
+
+The JuMP function type of a function of type [`RiemannianFunction`](@ref) for any [`AbstractModel`](@extref JuMP.AbstractModel)
+is that function type itself
+"""
 function JuMP.jump_function_type(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
     return F
 end
 
+@doc """
+    JuMP.jump_function(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
+
+The JuMP function of a [`RiemannianFunction`](@ref) for any [`AbstractModel`](@extref JuMP.AbstractModel)
+is that function itself.
+"""
 JuMP.jump_function(::JuMP.AbstractModel, f::RiemannianFunction) = f
 
+#
+# The string representation
+# maybe not document this since it seems to be mainly for display reasons
 JuMP.function_string(mime::MIME, f::RiemannianFunction) = string(f.func)
 
-MOI.Utilities.map_indices(::Function, func::RiemannianFunction) = func
+"""
+    MOI.Utilities.map_indices(index_map::Function, func::RiemannianFunction)
+
+The original docstring states something about substituting some variable indices
+by their index map variants.
+On a [`RiemannianFunction`](@ref) there is nothing to substitute,
+"""
+MOI.Utilities.map_indices(::Function, f::RiemannianFunction) = f
 
 # We we don't support `MOI.modify` and `RiemannianFunction` is not mutable, no need to copy anything
-Base.copy(func::RiemannianFunction) = func
+Base.copy(f::RiemannianFunction) = f
 
-# This is called for instance when the user does `@objective(model, Min, func)`.
-# JuMP only accepts subtypes of `MOI.AbstractFunction` as objective so we wrap `func`.
-# It will then be allowed to go through all the MOI layers because it is of the right type
-# We will then receive it in `MOI.set(::Optimizer, ::MOI.ObjectiveFunction, RiemannianFunction)`
-# where we will unwrap it and recover `func`.
+@doc """
+    JuMP.set_objective_function(model::JuMP.Model, obj::Manopt.AbstractManifoldObjective)
+
+Set the objective function of a [`JuMP.Model`](@ref) `model` to an [`AbstractManifoldObjective`](@ref) `obj`.
+This allows to use `@objective` with an objective from `Manopt.jl`.
+"""
 function JuMP.set_objective_function(
     model::JuMP.Model, func::Manopt.AbstractManifoldObjective
 )
     return JuMP.set_objective_function(model, RiemannianFunction(func))
 end
 
-mutable struct Optimizer <: MOI.AbstractOptimizer
-    # Manifold in which all the decision variables leave
-    manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
-    # Description of the problem in Manopt
+"""
+    ManoptOptimizer <: MOI.AbstractOptimizer
+
+Represent a solver from `Manopt.jl` within the [`MathOptInterface`](@extref JuMP.MOI) framework.
+
+# Fields
+* `problem::([`AbstractManoptProblem`](@ref) a problem in manopt, especially
+    containing the manifold and the objective function. It can be constructed as soon as
+    the manifold and the objective are present.
+* `manifold::`([`AbstractManifold`](@ref) the manifold on which the optimization is performed.
+* `objective::`([`AbstractManifoldObjective`](@ref) the objective function to be optimized.
+* `state::`([`AbstractManoptSolverState`](@ref) the state specifying the solver to use.
+* `variable_primal_start::Vector{Union{Nothing,Float64}}` starting value for the solver,
+    in a vectorized form that [`JuMP`](@extref) requires.
+* `sense::`[`MOI.OptimizationSense`](@extref) the sense of optimization,
+  currently only minimization and maximization are supported.
+* `options::Dict{String,Any}`: parameters specifying a solver before the `state`
+  is initialized, so especially which [`AbstractManoptSolverState`](@ref) to use,
+  when setting up the `state.
+
+All types in brackets can also be `Nothing`, indicating they were not yet initialized.
+"""
+mutable struct ManoptOptimizer <: MOI.AbstractOptimizer
     problem::Union{Nothing,Manopt.AbstractManoptProblem}
-    # State of the optimizer
-    state::Union{Nothing,Manopt.AbstractManoptSolverState}
-    # Starting value for each variable
-    variable_primal_start::Vector{Union{Nothing,Float64}}
-    # Sense of the optimization, that is whether it is for example min, max or no objective
-    sense::MOI.OptimizationSense
-    # Objective function of the optimization
+    manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
     objective::Union{Nothing,Manopt.AbstractManifoldObjective}
-    # Solver parameters set with `MOI.RawOptimizerAttribute`
+    state::Union{Nothing,Manopt.AbstractManoptSolverState}
+    # Does this make sense to be elementwise Nothing? On a manifold a partial init is not possible
+    variable_primal_start::Vector{Union{Nothing,Float64}}
+    sense::MOI.OptimizationSense
+    # Not sure what these are for? All parameters set should be reflected in the `state` parameter.
     options::Dict{String,Any}
-    function Optimizer()
+    function ManoptOptimizer()
         return new(
+            nothing,
             nothing,
             nothing,
             nothing,
             Union{Nothing,Float64}[],
             MOI.FEASIBILITY_SENSE,
-            nothing,
             Dict{String,Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
         )
     end
 end
+"""
+    Manopt.JuMP_Optimizer()
+
+Represent a solver from `Manopt.jl` within the [`MathOptInterface`](@extref JuMP.MOI) framework.
+
+See [`ManoptOptimizer`](@ref) for the fields and their meaning.
+"""
+function Manopt.JuMP_Optimizer(args...)
+    return ManoptOptimizer(args...)
+end
 
 """
-    MOI.get(::Optimizer, ::MOI.SolverVersion)
+    MOI.get(::ManoptOptimizer, ::MOI.SolverVersion)
 
 Return the version of the Manopt solver, it corresponds to the version of
 Manopt.jl.
 """
-MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.37"
+MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) =  pkgversion(Manopt)
 
-function MOI.is_empty(model::Optimizer)
+function MOI.is_empty(model::ManoptOptimizer)
     return isnothing(model.manifold) &&
            isempty(model.variable_primal_start) &&
            isnothing(model.objective) &&
+           isnothing(model.problem) &&
            model.sense == MOI.FEASIBILITY_SENSE
 end
 
@@ -113,7 +173,7 @@ end
 
 Clear all model data from `model` but keep the `options` set.
 """
-function MOI.empty!(model::Optimizer)
+function MOI.empty!(model::ManoptOptimizer)
     model.manifold = nothing
     model.problem = nothing
     model.state = nothing
@@ -124,12 +184,12 @@ function MOI.empty!(model::Optimizer)
 end
 
 """
-    MOI.supports(::Optimizer, attr::MOI.RawOptimizerAttribute)
+    MOI.supports(::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
 
 Return a `Bool` indicating whether `attr.name` is a valid option name
 for `Manopt`.
 """
-function MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
+function MOI.supports(::ManoptOptimizer, ::MOI.RawOptimizerAttribute)
     # FIXME Ideally, this should only return `true` if it is a valid keyword argument for
     #       one of the `...DescentState()` constructors. Is there an easy way to check this ?
     #       Does it depend on the different solvers ?
@@ -137,33 +197,33 @@ function MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute)
 end
 
 """
-    MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
+    MOI.get(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
 
 Return last `value` set by `MOI.set(model, attr, value)`.
 """
-function MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
+function MOI.get(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
     return model.options[attr.name]
 end
 
 """
-    MOI.get(model::Optimizer, attr::MOI.RawOptimizerAttribute)
+    MOI.get(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
 
 Set the value for the keyword argument `attr.name` to give for the constructor
 `model.options[DESCENT_STATE_TYPE]`.
 """
-function MOI.set(model::Optimizer, attr::MOI.RawOptimizerAttribute, value)
+function MOI.set(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute, value)
     model.options[attr.name] = value
     return nothing
 end
 
 """
-    MOI.get(::Optimizer, ::MOI.SolverName)
+    MOI.get(::ManoptOptimizer, ::MOI.SolverName)
 
 Return the name of the `Optimizer` with the value of
 the `descent_state_type` option.
 """
-function MOI.get(model::Optimizer, ::MOI.SolverName)
-    return "Manopt with $(model.options[DESCENT_STATE_TYPE])"
+function MOI.get(model::ManoptOptimizer, ::MOI.SolverName)
+    return "A Manopt.jl solver, namely $(model.options[DESCENT_STATE_TYPE])"
 end
 
 """
@@ -175,16 +235,16 @@ Return `true` indicating that `Manopt.JuMP_Optimizer` implements
 and does not require a `MOI.Utilities.CachingOptimizer`.
 See [`MOI.supports_incremental_interface`](https://jump.dev/JuMP.jl/stable/moi/reference/models/#MathOptInterface.supports_incremental_interface).
 """
-MOI.supports_incremental_interface(::Optimizer) = true
+MOI.supports_incremental_interface(::ManoptOptimizer) = true
 
 """
-    MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
+    MOI.copy_to(dest::ManoptOptimizer, src::MOI.ModelLike)
 
 Because `supports_incremental_interface(dest)` is `true`, this simply
 uses `MOI.Utilities.default_copy_to` and copies the variables with
 `MOI.add_constrained_variables` and the objective sense with `MOI.set`.
 """
-function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
+function MOI.copy_to(dest::ManoptOptimizer, src::MOI.ModelLike)
     return MOI.Utilities.default_copy_to(dest, src)
 end
 
@@ -194,19 +254,19 @@ end
 Return `true` indicating that `Manopt.JuMP_Optimizer` support optimization on
 variables constrained to belong in a vectorized manifold [`Manopt.JuMP_ManifoldSet`](@ref).
 """
-function MOI.supports_add_constrained_variables(::Optimizer, ::Type{<:ManifoldSet})
+function MOI.supports_add_constrained_variables(::ManoptOptimizer, ::Type{<:ManifoldSet})
     return true
 end
 
 """
-    MOI.add_constrained_variables(model::Optimizer, set::ManifoldSet)
+    MOI.add_constrained_variables(model::ManoptOptimizer, set::ManifoldSet)
 
 Add `MOI.dimension(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables in the
 [`Manopt.JuMP_ManifoldSet`](@ref) `set`.
 """
-function MOI.add_constrained_variables(model::Optimizer, set::ManifoldSet)
+function MOI.add_constrained_variables(model::ManoptOptimizer, set::ManifoldSet)
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
         throw(
@@ -227,22 +287,22 @@ function MOI.add_constrained_variables(model::Optimizer, set::ManifoldSet)
 end
 
 """
-    MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
+    MOI.is_valid(model::ManoptOptimizer, vi::MOI.VariableIndex)
 
 Return whether `vi` is a valid variable index.
 """
-function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
+function MOI.is_valid(model::ManoptOptimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
            1 <= vi.value <= MOI.dimension(ManifoldSet(model.manifold))
 end
 
 """
-    MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
+    MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
 to the [`MOI.dimension`](@ref) of the [`Manopt.JuMP_ManifoldSet`](@ref).
 """
-function MOI.get(model::Optimizer, ::MOI.NumberOfVariables)
+function MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
         return 0
     else
@@ -256,13 +316,13 @@ end
 Return `true` indicating that `Manopt.JuMP_Optimizer` supports starting values
 for the variables.
 """
-function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
+function MOI.supports(::ManoptOptimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
     return true
 end
 
 """
     function MOI.set(
-        model::Optimizer,
+        model::ManoptOptimizer,
         ::MOI.VariablePrimalStart,
         vi::MOI.VariableIndex,
         value::Union{Real,Nothing},
@@ -273,7 +333,7 @@ Set the starting value of the variable of index `vi` to `value`. Note that if
 and hence `MOI.optimize!` unless another starting value is set.
 """
 function MOI.set(
-    model::Optimizer,
+    model::ManoptOptimizer,
     ::MOI.VariablePrimalStart,
     vi::MOI.VariableIndex,
     value::Union{Real,Nothing},
@@ -285,33 +345,33 @@ function MOI.set(
 end
 
 """
-    MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
+    MOI.supports(::ManoptOptimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
 
 Return `true` indicating that `Optimizer` supports being set the objective
 sense (that is, min, max or feasibility) and the objective function.
 """
-function MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
+function MOI.supports(::ManoptOptimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
     return true
 end
 
 """
-    MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
+    MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
 
 Modify the objective sense to either `MOI.MAX_SENSE`, `MOI.MIN_SENSE` or
 `MOI.FEASIBILITY_SENSE`.
 """
-function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
+function MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
     return nothing
 end
 
 """
-    MOI.get(model::Optimizer, ::MOI.ObjectiveSense)
+    MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense)
 
 Return the objective sense, defaults to `MOI.FEASIBILITY_SENSE` if no sense has
 already been set.
 """
-MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
+MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense) = model.sense
 
 # We could have it be a subtype of `AbstractManifoldGradientObjective{E,TC,TG}`
 # but I wouldn't know what to do with `TC` and `TG` in this case.
@@ -343,12 +403,12 @@ function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
 end
 
 """
-    MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
+    MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveFunction{F}, func::F) where {F}
 
 Set the objective function as `func` for `model`.
 """
 function MOI.set(
-    model::Optimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+    model::ManoptOptimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
 )
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
@@ -379,8 +439,8 @@ function MOI.set(
     return nothing
 end
 
-function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction, func::RiemannianFunction)
-    model.objective = func.func
+function MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveFunction, rf::RiemannianFunction)
+    model.objective = rf.func
     model.problem = nothing
     model.state = nothing
     return nothing
@@ -392,7 +452,7 @@ end
 # ```
 const DESCENT_STATE_TYPE = "descent_state_type"
 
-function MOI.optimize!(model::Optimizer)
+function MOI.optimize!(model::ManoptOptimizer)
     start = Float64[
         if isnothing(model.variable_primal_start[i])
             error("No starting value specified for `$i`th variable.")
@@ -424,6 +484,7 @@ end
 struct ArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
 end
+Manopt.JuMP_ArrayShape(size::NTuple{N,Int}) where {N} = ArrayShape{N}(size)
 
 """
     length(shape::ArrayShape)
@@ -437,7 +498,7 @@ Base.length(shape::ArrayShape) = prod(shape.size)
 
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
-function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{N}) where {T,N,M}
+function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ArrayShape{N}) where {T,N}
     return copyto!(res, array)
 end
 
@@ -496,14 +557,14 @@ function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold
 end
 
 """
-    MOI.get(model::Optimizer, ::MOI.ResultCount)
+    MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
 
 Return `MOI.OPTIMIZE_NOT_CALLED` if `optimize!` hasn't been called yet and
 `MOI.LOCALLY_SOLVED` otherwise indicating that the solver has solved the
 problem to local optimality the value of `MOI.RawStatusString` for more
 details on why the solver stopped.
 """
-function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
+function MOI.get(model::ManoptOptimizer, ::MOI.TerminationStatus)
     if isnothing(model.state)
         return MOI.OPTIMIZE_NOT_CALLED
     else
@@ -512,12 +573,12 @@ function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
 end
 
 """
-    MOI.get(model::Optimizer, ::MOI.ResultCount)
+    MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
 
 Return `0` if `optimize!` hasn't been called yet and
 `1` otherwise indicating that one solution is available.
 """
-function MOI.get(model::Optimizer, ::MOI.ResultCount)
+function MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
     if isnothing(model.state)
         return 0
     else
@@ -526,13 +587,13 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
 end
 
 """
-    MOI.get(model::Optimizer, ::MOI.PrimalStatus)
+    MOI.get(model::ManoptOptimizer, ::MOI.PrimalStatus)
 
 Return `MOI.NO_SOLUTION` if `optimize!` hasn't been called yet and
 `MOI.FEASIBLE_POINT` otherwise indicating that a solution is available
 to query with `MOI.VariablePrimalStart`.
 """
-function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
+function MOI.get(model::ManoptOptimizer, ::MOI.PrimalStatus)
     if isnothing(model.state)
         return MOI.NO_SOLUTION
     else
@@ -541,31 +602,31 @@ function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
 end
 
 """
-    MOI.get(::Optimizer, ::MOI.DualStatus)
+    MOI.get(::ManoptOptimizer, ::MOI.DualStatus)
 
 Returns `MOI.NO_SOLUTION` indicating that there is no dual solution
 available.
 """
-MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
+MOI.get(::ManoptOptimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 
 """
-    MOI.get(model::Optimizer, ::MOI.RawStatusString)
+    MOI.get(model::ManoptOptimizer, ::MOI.RawStatusString)
 
 Return a `String` containing `Manopt.get_reason` without the ending newline
 character.
 """
-function MOI.get(model::Optimizer, ::MOI.RawStatusString)
+function MOI.get(model::ManoptOptimizer, ::MOI.RawStatusString)
     # `strip` removes the `\n` at the end and returns an `AbstractString`
     # Since MOI wants a `String`, pass it through `string`
     return string(strip(get_reason(model.state)))
 end
 
 """
-    MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
+    MOI.get(model::ManoptOptimizer, attr::MOI.ObjectiveValue)
 
 Return the value of the objective function evaluated at the solution.
 """
-function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
+function MOI.get(model::ManoptOptimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
     solution = Manopt.get_solver_return(model.state)
     value = get_cost(model.problem, solution)
@@ -576,11 +637,11 @@ function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
 end
 
 """
-    MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
+    MOI.get(model::ManoptOptimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
 
 Return the value of the solution for the variable of index `vi`.
 """
-function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
+function MOI.get(model::ManoptOptimizer, attr::MOI.VariablePrimal, vi::MOI.VariableIndex)
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)
     solution = Manopt.get_solver_return(get_objective(model.problem), model.state)
