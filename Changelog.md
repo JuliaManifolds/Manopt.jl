@@ -6,6 +6,12 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.20] unreleased
+
+### Fixed
+
+* Fixed a few typos in the docs.
+
 ## [0.5.19] July 4, 2025
 
 ### Added
@@ -285,7 +291,7 @@ In general this introduces a few factories, that avoid having to pass the manifo
     to keyword arguments of the same name for start point and tangent vector.
   * in detail
     * `AdaptiveRegularizationState(M, sub_problem [, sub_state]; kwargs...)` replaces
-      the (anyways unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
+      the (unused) variant to only provide the objective; both `X` and `p` moved to keyword arguments.
     * `AugmentedLagrangianMethodState(M, objective, sub_problem; evaluation=...)` was added
     * `AugmentedLagrangianMethodState(M, objective, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one
     * `ExactPenaltyMethodState(M, sub_problem; evaluation=...)` was added and `ExactPenaltyMethodState(M, sub_problem, sub_state; evaluation=...)` now has `p=rand(M)` as keyword argument instead of being the second positional one

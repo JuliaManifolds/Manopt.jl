@@ -1,4 +1,4 @@
-# Proximal Gradient Method
+# Proximal gradient method
 
 ```@docs
 proximal_gradient_method

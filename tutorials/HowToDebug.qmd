@@ -228,9 +228,9 @@ run_with_callback2()
 ```
 
 The full form here would also be possible, calling [`Manopt.DebugCallback`](@ref)`(callback2)`
-or analogously [`Manopt.DebugCallback`](@ref)`(callback; simple=true)` and use that in arrays or [`DebugGroup`](@ref)s as above.
+or analogously [`Manopt.DebugCallback`](@ref)`(callback; simple=true)` and use that in arrays or [`DebugGroup`](@ref)s as before.
 The `callback2` can also be part of a whole `debug = [...]` array,
-similarly within a dictionary to add callbacks only to the end of an algorithm (`:Stop => callback2`) or to `:BeforeIteration` as illustrated above.
+similarly within a dictionary to add callbacks only to the end of an algorithm (`:Stop => callback2`) or to `:BeforeIteration` as illustrated.
 
 ## Technical details
 

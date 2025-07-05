@@ -22,15 +22,18 @@ where the [`AbstractEvaluationType`](@ref) `E` indicates the type of evaluation 
 
 Currently the following cases are covered, sorted by their popularity
 
-1. a single function `fg`, i.e. a function or a functor, represents a combined function
-  `(M, p) -> (c, X)` that computes the cost `c=cost(M,p)` and gradient `X=grad_f(M,p)`;
+1. a single function `fg`, i.e. a function or a functor, represents a combined
+    function `(M, p) -> (c, X)` that computes the cost `c=cost(M,p)` and gradient `X=grad_f(M,p)`;
 2. a single function `fdf`, i.e. a function or a functor, represents a combined function
-  `(M, p) -> (c, d)` that computes the cost `c=cost(M,p)` and differential `d=diff_f(M,p)`;
-3. pairs of single functions `(f, g)`, `(f, df)` of a cost function `f` and either its gradient `g` or its differential `d`, respectively
-4. The function `(fg, d)` and `(fdf, g)`  from 1 and 2, respectively joined by the other missing third information,
-  the differential for the first or the gradient for the second
-5. a tuple `(f, g, d)` of three functions, computing cost, `f`, gradient `g`, and `differential `d` separately
-6. a `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, p, X)` to compute gradient and differential together
+    `(M, p) -> (c, d)` that computes the cost `c=cost(M,p)` and differential `d=diff_f(M,p)`;
+3. pairs of single functions `(f, g)`, `(f, df)` of a cost function `f` and either its
+    gradient `g` or its differential `d`, respectively
+4. The function `(fg, d)` and `(fdf, g)`  from 1 and 2, respectively joined by
+    the other missing third information, the differential for the first or the gradient for the second
+5. a tuple `(f, g, d)` of three functions, computing cost, `f`, gradient `g`,
+    and `differential `d` separately
+6. a `(f, gd)` of a cost function and a combined function `(X, d) = gd(M, p, X)`
+    to compute gradient and differential together
 7. a single function `(c, X, d) = fgd(M, p,X)`
 
 For all cases where a gradient is present, also an in-place variant is possible, where the
