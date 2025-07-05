@@ -242,7 +242,7 @@ Return `true` indicating that `Manopt.JuMP_Optimizer` implements
 `MOI.add_constrained_variables` and `MOI.set` for
 `MOI.ObjectiveFunction` so it can be used with [`JuMP.direct_model`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.direct_model)
 and does not require a `MOI.Utilities.CachingOptimizer`.
-See [`MOI.supports_incremental_interface`](https://jump.dev/JuMP.jl/stable/moi/reference/models/#MathOptInterface.supports_incremental_interface).
+See [`MOI.supports_incremental_interface`](@extref JuMP.MOI.supports_incremental_interface).
 """
 MOI.supports_incremental_interface(::ManoptOptimizer) = true
 
@@ -261,7 +261,7 @@ end
     MOI.supports_add_constrained_variables(::JuMP_Optimizer, ::Type{<:ManifoldSet})
 
 Return `true` indicating that `Manopt.JuMP_Optimizer` support optimization on
-variables constrained to belong in a vectorized manifold [`Manopt.JuMP_ManifoldSet`](@ref).
+variables constrained to belong in a vectorized manifold [`ManifoldSet`](@ref).
 """
 function MOI.supports_add_constrained_variables(::ManoptOptimizer, ::Type{<:ManifoldSet})
     return true
@@ -273,7 +273,7 @@ end
 Add `MOI.dimension(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables in the
-[`Manopt.JuMP_ManifoldSet`](@ref) `set`.
+[`ManifoldSet`](@ref) `set`.
 """
 function MOI.add_constrained_variables(model::ManoptOptimizer, set::ManifoldSet)
     F = MOI.VectorOfVariables
@@ -309,7 +309,7 @@ end
     MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@ref) of the [`Manopt.JuMP_ManifoldSet`](@ref).
+to the [`MOI.dimension`](@ref) of the [`ManifoldSet`](@ref).
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
@@ -578,7 +578,7 @@ end
     JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
 
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
-and the [`Manopt.JuMP_ManifoldSet`](@ref) in which they should belong as well as the
+and the [`ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
 shape of the manifold, that is, a [`Manopt.JuMPManifoldArrayShape`](@ref).
 """
