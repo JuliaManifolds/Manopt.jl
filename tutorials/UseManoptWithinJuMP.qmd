@@ -43,8 +43,6 @@ where we specify the manifold using the `in` keyword, `start=` cares for the ini
 @variable(model, p[i=1:3] in M, start=p0[i])
 ```
 
-For now this is restricted to array-type-representations of points and tangent vectors.
-
 Our cost and gradient are defined as
 
 ```{julia}
@@ -95,7 +93,7 @@ model2 = Model(Manopt.JuMP_Optimizer)
 @variable(model2, p[i=1:3] in M, start = p0[i])
 ```
 
-TODO: Text
+We defined the cost function in the embedding in a form, that `JuMP` can perform AD with.
 
 ```{julia}
 #| output: false
@@ -124,7 +122,7 @@ and look at the solution
 solution_summary(model2)
 ```
 
-Since we are optimizing different functions, the results are not completely the same; the first objective compites geodesic distances between the points,
+Since we are optimizing different functions, the results are not completely the same; the first objective computes geodesic distances between the points,
 while the second computes the distances in $\bbR^3$.
 Still the resulting minimizer
 
@@ -137,6 +135,10 @@ is not that far away from the result of the first solver run.
 ```{julia}
 distance(Sphere(2), q1, q2)
 ```
+
+## Non-array representation
+
+TODO
 
 ## Technical details
 
