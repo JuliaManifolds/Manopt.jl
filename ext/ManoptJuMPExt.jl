@@ -508,7 +508,7 @@ end
 @doc """
     ManifoldPointShape{M<:ManifoldsBase.AbstractManifold,P}
 
-Given a concrete manifold and a point type [`AbstractManifoldPoint`](@extref),
+Given a concrete manifold and a point type [`AbstractManifoldPoint`](@extref `ManifoldsBase.AbstractManifoldPoint`),
 this type can represent all information necessary to “reshape” or “vectorize”
 such a point or to transform a vector back into a point of type `P` on `M`.
 
