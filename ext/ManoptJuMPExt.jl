@@ -167,7 +167,7 @@ end
 Return the version of the Manopt solver, it corresponds to the version of
 Manopt.jl.
 """
-MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) = pkgversion(Manopt)
+MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) = "Manopt.jl $(pkgversion(Manopt))"
 
 function MOI.is_empty(model::ManoptOptimizer)
     return isnothing(model.manifold) &&
