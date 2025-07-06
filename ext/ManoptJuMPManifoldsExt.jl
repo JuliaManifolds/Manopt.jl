@@ -8,7 +8,6 @@ using JuMP: JuMP
 const MOI = JuMP.MOI
 # Finally found a hack to bring functions here as well.
 const MJE = Base.get_extension(Manopt, :ManoptJuMPExt)
-
 #
 #
 # define further conversions between certain Manifolds point/vector types
@@ -21,6 +20,7 @@ const MJE = Base.get_extension(Manopt, :ManoptJuMPExt)
 # #TODO: 2. implement at least the hyperbolic conversions.
 
 # TODO: These are just proof of concept functions to extend conversion to further types.
+# vector -> point
 function MJE._reshape_vector!(
     v::Vector{T},
     p::Manifolds.HyperboloidPoint,
@@ -29,10 +29,19 @@ function MJE._reshape_vector!(
     v .= p.value
     return v
 end
+function JuMP.reshape_vector(
+    v::Vector{T}, shape::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}
+) where {T,M<:ManifoldsBase.AbstractManifold}
+    p = rand(shape.manifold, HyperboloidPoint)
+    p.value .= v
+    return p
+end
+# point -> vector
 function JuMP.vectorize(
-    p::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}
+    p::Manifolds.HyperboloidPoint,
+    shape::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint},
 ) where {M<:ManifoldsBase.AbstractManifold}
-    return NaN
+    return p.value # is a vector already
 end
 
 end # module ManoptJuMPManifoldsExt

@@ -602,9 +602,8 @@ function JuMP.reshape_vector(vector::Vector, shape::ManifoldArrayShape)
     return reshape(vector, shape.size)
 end
 
-function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldArrayShape)
-    return set.manifold
-end
+JuMP.reshape_set(set::ManifoldSet, shape::ManifoldArrayShape) = set.manifold
+JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointShape) = set.manifold
 
 function _shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldArrayShape(ManifoldsBase.representation_size(m))
@@ -625,12 +624,13 @@ and the [`ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
 shape of the manifold, that is, a [`ManifoldArrayShape`](@ref).
 """
-function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-    shape = _shape(m)
+function JuMP.build_variable(::Function, array, M::ManifoldsBase.AbstractManifold)
+    shape = _shape(M)
     return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(func, shape), ManifoldSet(m), shape
+        JuMP.vectorize(array, shape), ManifoldSet(M), shape
     )
 end
+#TODO: How to do this for non-array points?
 
 """
     MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
