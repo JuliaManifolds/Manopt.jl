@@ -654,6 +654,7 @@ end
 # TODO: Understand parameters here and document them
 function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, name::String="")
     # What does this do? This looks like pure magic to me.
+    #=
     function _newvar(i)
         vref = VariableRef(model)
         if v.binary
@@ -665,6 +666,8 @@ function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, name:
         return vref
     end
     return MB.algebra_element(_newvar, v.p.polynomial_basis)
+    =#
+    return nothing
 end
 
 """
