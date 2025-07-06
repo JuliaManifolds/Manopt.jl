@@ -39,7 +39,7 @@ end
 # point -> vector
 function JuMP.vectorize(
     p::Manifolds.HyperboloidPoint,
-    shape::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint},
+    ::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint},
 ) where {M<:ManifoldsBase.AbstractManifold}
     return p.value # is a vector already
 end
