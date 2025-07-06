@@ -218,7 +218,12 @@ makedocs(;
         ],
         "Helpers" => ["Checks" => "helpers/checks.md", "Exports" => "helpers/exports.md"],
         "Contributing to Manopt.jl" => "contributing.md",
-        "Extensions" => "extensions.md",
+        "Extensions" => [
+            "Overview" => "extensions/index.md",
+            "JuMP" => "extensions/JuMP.md",
+            "LineSearches.jl" => "extensions/LineSearches.md",
+            "Manifolds" => "extensions/Manifolds.md",
+        ],
         "Notation" => "notation.md",
         "Changelog" => "changelog.md",
         "References" => "references.md",
