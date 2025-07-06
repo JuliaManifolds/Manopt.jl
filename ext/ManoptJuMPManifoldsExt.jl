@@ -38,8 +38,7 @@ function JuMP.reshape_vector(
 end
 # point -> vector
 function JuMP.vectorize(
-    p::Manifolds.HyperboloidPoint,
-    ::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint},
+    p::Manifolds.HyperboloidPoint, ::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}
 ) where {M<:ManifoldsBase.AbstractManifold}
     return p.value # is a vector already
 end

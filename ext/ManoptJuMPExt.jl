@@ -519,8 +519,6 @@ such a point or to transform a vector back into a point of type `P` on `M`.
     ManifoldPointShape(M::TM, ::Type{P<:ManifoldsBase.AbstractManifoldPoint})
 
 Create a shape of a point on the manifold `M` of type `P`
-    where {TM<:ManifoldsBase.Abstract, P<:ManifoldsBase.AbstractManifoldPoint}`:
-  Create a [`ManifoldPointShape`](@ref) for the manifold `M` and point type `P`.
 """
 struct ManifoldPointShape{M<:ManifoldsBase.AbstractManifold,P} <: JuMP.AbstractShape
     manifold::M
