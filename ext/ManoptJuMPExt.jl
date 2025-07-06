@@ -617,7 +617,7 @@ function JuMP.in_set_string(mime, set::ManifoldsBase.AbstractManifold)
 end
 
 """
-    JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
+    JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
 
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
 and the [`ManifoldSet`](@ref) in which they should belong as well as the

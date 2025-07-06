@@ -226,8 +226,6 @@ include("deprecated.jl")
 # JuMP constructors
 function JuMP_Optimizer end
 function JuMP_ManifoldSet end
-#
-# JuMP structs
 
 function __init__()
     #
