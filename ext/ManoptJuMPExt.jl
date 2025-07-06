@@ -506,15 +506,58 @@ struct ManifoldArrayShape{N} <: JuMP.AbstractShape
 end
 
 @doc """
+    ManifoldPointShape{M<:ManifoldsBase.AbstractManifold,P}
+
+Given a concrete manifold and a point type [`AbstractManifoldPoint`](@extref),
+this type can represent all information necessary to “reshape” or “vectorize”
+such a point or to transform a vector back into a point of type `P` on `M`.
+
+# Fields
+* `manifold::M`: The manifold on which the point resides
+
+# Constructor
+    ManifoldPointShape(M::TM, ::Type{P<:ManifoldsBase.AbstractManifoldPoint})
+
+Create a shape of a point on the manifold `M` of type `P`
+    where {TM<:ManifoldsBase.Abstract, P<:ManifoldsBase.AbstractManifoldPoint}`:
+  Create a [`ManifoldPointShape`](@ref) for the manifold `M` and point type `P`.
 """
 struct ManifoldPointShape{M<:ManifoldsBase.AbstractManifold,P} <: JuMP.AbstractShape
     manifold::M
 end
-
+function ManifoldPointShape(
+    M::TM, ::Type{P}
+) where {TM<:ManifoldsBase.AbstractManifold,P<:ManifoldsBase.AbstractManifoldPoint}
+    return ManifoldPointShape{TM,P}(M)
+end
 @doc """
+    TangentVectorShape{M<:ManifoldsBase.AbstractManifold,T}
+
+Represent a tangect vector on the tangent bundle of a manifold `M`.
+
+# Fields
+* `manifold::M`: The manifold on which the tangent vector resides
+* `p::P` (optioal) the base point P the tangent space is at where the vector of type `T`
+    is defined.
+
+# Constructor
+    TangentVectorShape(M::TM, ::Type{T<:ManifoldsBase.AbstractTangentVector}, p::P=nothing)
+
+Create a shape of a tangent vector on the manifold `M` of type `T`, where optionally a base
+point `p` can be specified.
 """
-struct TangentVectorShape{M<:ManifoldsBase.AbstractManifold,T} <: JuMP.AbstractShape
+struct TangentVectorShape{M<:ManifoldsBase.AbstractManifold,P,T} <: JuMP.AbstractShape
     manifold::M
+    p::P
+end
+function TangentVectorShape(
+    M::TM, ::Type{T}, p::P=nothing
+) where {
+    TM<:ManifoldsBase.AbstractManifold,
+    P<:Union{Nothing,ManifoldsBase.AbstractManifoldPoint},
+    T<:ManifoldsBase.AbstractTangentVector,
+}
+    return TangentVectorShape{TM,P,T}(M, p)
 end
 
 """
