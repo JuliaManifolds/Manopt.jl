@@ -628,7 +628,44 @@ function JuMP.build_variable(::Function, array, M::ManifoldsBase.AbstractManifol
         JuMP.vectorize(array, shape), ManifoldSet(M), shape
     )
 end
-#TODO: How to do this for non-array points?
+
+#
+#
+# NonArrayPoints define own variable
+# TODO: Document
+struct ManifoldVariable{P<:ManifoldsBase.AbstractManifoldPoint} <: JuMP.AbstractVariable
+    p::P
+end
+# Taken / adapted from https://github.com/JuliaManifolds/Manopt.jl/pull/466#issuecomment-2862071520
+# TODO: I think I would prefer PoincareHalfPlanePoint(p) in Hyperbolic(3),
+# but it seems the in and such where not present for polynomials?
+function JuMP.build_variable(
+    _error::Function,
+    info::JuMP.VariableInfo,
+    p::ManifoldsBase.AbstractManifoldPoint;
+    extra_kwargs...,
+)
+    # cvarchecks(_error, info; extra_kwargs...) # What does this do? Necessary?
+    # _warnbounds(_error, p, info)              # What does this do?
+    return ManifoldVariable(p)
+end
+#
+#
+# TODO: Understand parameters here and document them
+function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, name::String="")
+    # What does this do? This looks like pure magic to me.
+    function _newvar(i)
+        vref = VariableRef(model)
+        if v.binary
+            JuMP.set_binary(vref)
+        end
+        if v.integer
+            JuMP.set_integer(vref)
+        end
+        return vref
+    end
+    return MB.algebra_element(_newvar, v.p.polynomial_basis)
+end
 
 """
     MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
