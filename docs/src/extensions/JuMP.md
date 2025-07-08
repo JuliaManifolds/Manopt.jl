@@ -19,7 +19,7 @@ set_attribute(model, "retraction_method", ManifoldsBase.ProjectionRetraction())
 
 ## Interface functions
 
-Several functions from the [Mathematical Optimization Interface](https://github.com/jump-dev/MOI.jl) (MOI) are
+Several functions from the [Mathematical Optimization Interface](https://github.com/jump-dev/MathOptInterface.jl) (MOI) are
 extended when both `Manopt.jl and [JuMP.jl](https://jump.dev) are loaded:
 
 ```@docs
