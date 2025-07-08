@@ -6,11 +6,15 @@ The file was started with Version `0.4`.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.20] unreleased
+## [0.5.20] July 8, 2025
 
 ### Added
 
 * a `DebugWarnIfStepsizeCollapsed` DebugAction and a related `:WarnStepsize` symbol for the debug dictionary. This is to be used in conjunction with the `ProximalGradientMethodBacktracking` stepsize to warn if the backtracking procedure of the `proximal_gradient_method` hit the stepsize length threshold without converging.
+
+### Changed
+
+* bumped dependencies.
 
 ### Fixed
 
