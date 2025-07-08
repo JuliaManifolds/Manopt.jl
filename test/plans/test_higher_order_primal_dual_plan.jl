@@ -1,5 +1,8 @@
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
 using Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
-using ManoptExamples: forward_logs, adjoint_differential_forward_logs
+using ManoptTestSuite: forward_logs, adjoint_differential_forward_logs
 using ManifoldDiff:
     differential_shortest_geodesic_startpoint,
     differential_shortest_geodesic_startpoint!,
@@ -29,114 +32,6 @@ using ManifoldDiff:
     adjoint_DΛ(N, m, n, X) = adjoint_differential_forward_logs(M, m, X)
     adjoint_DΛ!(N, Y, m, n, X) = adjoint_differential_forward_logs!(M, Y, m, X)
 
-    function differential_project_collaborative_TV(
-        N::PowerManifold, p, ξ, η, p1=2.0, p2=1.0
-    )
-        ζ = zero_vector(N, p)
-        return differential_project_collaborative_TV!(N, ζ, p, ξ, η, p1, p2)
-    end
-    function differential_project_collaborative_TV!(
-        N::PowerManifold, ζ, p, ξ, η, p1=2.0, p2=1.0
-    )
-        ζ = zero_vector!(N, ζ, p)
-        pdims = power_dimensions(N)
-        if length(pdims) == 1
-            d = 1
-            s = 1
-            R = CartesianIndices(Tuple(pdims))
-        else
-            d = pdims[end]
-            s = length(pdims) - 1
-            if s != d
-                throw(
-                    ErrorException(
-                        "the last dimension ($(d)) has to be equal to the number of the previous ones ($(s)) but its not.",
-                    ),
-                )
-            end
-            R = CartesianIndices(Tuple(pdims[1:(end - 1)]))
-        end
-
-        # R = CartesianIndices(Tuple(power_size))
-        maxInd = last(R).I
-        e_k_vals = [1 * (1:d .== k) for k in 1:d]
-
-        if p2 == Inf
-            if p1 == Inf || d == 1
-                norms = norm.(Ref(N.manifold), p, ξ)
-
-                for i in R # iterate over all pixel
-                    for k in 1:d # for all direction combinations
-                        I = i.I # array of index
-                        J = I .+ e_k_vals[k] #`i + e_k` is `j`
-                        if all(J .<= maxInd)
-                            # this is neighbor in range,
-                            ζ[N, I..., k] += if norms[I..., k] <= 1
-                                η[N, I..., k]
-                            else
-                                1 / norms[I..., k] * (
-                                    η[N, I..., k] .-
-                                    1 / norms[I..., k]^2 .* inner(
-                                        N.manifold,
-                                        p[N, I..., k],
-                                        η[N, I..., k],
-                                        ξ[N, I..., k],
-                                    ) .* ξ[N, I..., k]
-                                )
-                            end
-                        else
-                            ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
-                        end
-                    end # directions
-                end # end iterate over all pixel in R
-                return ζ
-            elseif p1 == 2
-                norms = norm.(Ref(N.manifold), p, ξ)
-                norms_ = sqrt.(sum(norms .^ 2; dims=length(pdims)))
-
-                for i in R # iterate over all pixel
-                    for k in 1:d # for all direction combinations
-                        I = i.I # array of index
-                        J = I .+ e_k_vals[k] # `i + e_k` is `j`
-                        if all(J .<= maxInd)
-                            # this is neighbor in range,
-                            if norms_[I...] <= 1
-                                ζ[N, I..., k] += η[N, I..., k]
-                            else
-                                for κ in 1:d
-                                    ζ[N, I..., κ] += if k != κ
-                                        -1 / norms_[I...]^3 * inner(
-                                            N.manifold,
-                                            p[N, I..., k],
-                                            η[N, I..., k],
-                                            ξ[N, I..., k],
-                                        ) .* ξ[N, I..., κ]
-                                    else
-                                        1 / norms_[I...] * (
-                                            η[N, I..., k] .-
-                                            1 / norms_[I...]^2 .* inner(
-                                                N.manifold,
-                                                p[N, I..., k],
-                                                η[N, I..., k],
-                                                ξ[N, I..., k],
-                                            ) .* ξ[N, I..., k]
-                                        )
-                                    end
-                                end
-                            end
-                        else
-                            ζ[N, I..., k] = zero_vector(N.manifold, p[N, I..., k])
-                        end
-                    end # directions
-                end # end iterate over all pixel in R
-                return ζ
-            else
-                throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))
-            end
-        end # end q
-        throw(ErrorException("The case p=$p1, q=$p2 is not yet implemented"))
-    end
-
     function Dprox_F(M, λ, p, X)
         return differential_shortest_geodesic_startpoint(M, p, data, λ / (α + λ), X)
     end
@@ -145,10 +40,12 @@ using ManifoldDiff:
         return Y
     end
     function Dprox_G_dual(N, n, λ, X, Y)
-        return differential_project_collaborative_TV(N, n, X, Y, Inf, Inf)
+        return ManoptTestSuite.differential_project_collaborative_TV(N, n, X, Y, Inf, Inf)
     end
     function Dprox_G_dual!(N, Z, n, λ, X, Y)
-        return differential_project_collaborative_TV!(N, Z, n, X, Y, Inf, Inf)
+        return ManoptTestSuite.differential_project_collaborative_TV!(
+            N, Z, n, X, Y, Inf, Inf
+        )
     end
 
     m = fill(mid_point(pixelM, data[1], data[2]), 2)

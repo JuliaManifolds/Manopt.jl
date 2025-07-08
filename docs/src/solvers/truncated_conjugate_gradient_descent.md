@@ -51,7 +51,7 @@ The [`trust_regions`](@ref) solver requires the following functions of a manifol
 * if you do not provide a `trust_region_radius=`, then [`injectivity_radius`](@extref `ManifoldsBase.injectivity_radius-Tuple{AbstractManifold}`) on the manifold `M` is required.
 * the [`norm`](@extref `LinearAlgebra.norm-Tuple{AbstractManifold, Any, Any}`) as well, to stop when the norm of the gradient is small, but if you implemented `inner`, the norm is provided already.
 * A [`zero_vector!`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,X,p)`.
-* A [`copyto!](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
+* A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points.
 
 ## Literature
 

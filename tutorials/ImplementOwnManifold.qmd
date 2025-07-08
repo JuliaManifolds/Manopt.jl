@@ -10,7 +10,7 @@ CurrentModule = Manopt
 ````
 
 When you have used a few solvers from [`Manopt.jl`](https://manoptjl.org/) for example like in the opening
-tutorial [🏔️ Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+tutorial [🏔️ Get started with Manopt.jl](getstarted.md)
 and also familiarized yourself with how to work with manifolds in general at
 [🚀 Get Started with `Manifolds.jl`](https://juliamanifolds.github.io/Manifolds.jl/stable/tutorials/getstarted.html),
 you might come across the point that you want to
@@ -80,7 +80,7 @@ struct ScaledSphere <: AbstractManifold{ℝ}
 end
 ```
 
-We would like to compute a mean and/or median similar to [🏔️ Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
+We would like to compute a mean and/or median similar to [🏔️ Get started with Manopt.jl!](getstarted.md).
 For given a set of points $q_1,\ldots,q_n$ we want to compute [Karcher:1977](@cite)
 
 ```math
@@ -154,8 +154,8 @@ To be precise, we have to implement the ``[in-place variant](@extref ManifoldsBa
 
 ```{julia}
 import ManifoldsBase: retract_project!
-function retract_project!(M::ScaledSphere, q, p, X, t::Number)
-    q .= p .+ t .* X
+function retract_project!(M::ScaledSphere, q, p, X)
+    q .= p .+ X
     q .*= M.radius / norm(q)
     return q
 end
@@ -252,13 +252,16 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```
 
 ## Literature

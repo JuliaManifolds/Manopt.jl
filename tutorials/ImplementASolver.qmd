@@ -4,7 +4,7 @@ author: "Ronny Bergmann"
 ---
 
 When you have used a few solvers from `Manopt.jl` for example like in the opening
-tutorial [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html)
+tutorial [Get started: optimize](getstarted.md)
 you might come to the idea of implementing a solver yourself.
 
 After a short introduction of the algorithm we aim to implement,
@@ -204,7 +204,7 @@ In practice, however, it is preferable to cache intermediate values like cost of
 
 Now we can just run the solver already. We take the same example as for the other tutorials
 
-We first define our task, the Riemannian Center of Mass from the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We first define our task, the Riemannian Center of Mass from the [Get started: optimize](https://manoptjl.org/stable/tutorials/md) tutorial.
 
 ```{julia}
 #| output: false
@@ -351,11 +351,14 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```

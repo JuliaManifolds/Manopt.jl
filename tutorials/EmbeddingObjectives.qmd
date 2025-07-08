@@ -23,12 +23,9 @@ one can call the solver, depending on which gradient and/or Hessian one provides
 #| echo: false
 #| code-fold: true
 #| output: false
-# For now use the local one since Manifolds.jl #644 is required for this
 using Pkg;
 cd(@__DIR__)
 Pkg.activate("."); # for reproducibility use the local tutorial environment.
-# But for this version use here the most recent development version from the parent folder
-Pkg.develop(PackageSpec(; path=(@__DIR__) * "/../"))
 ```
 
 ```{julia}
@@ -181,7 +178,7 @@ distance(M, q1, q2)
 
 
 This conversion also works for the gradients of constraints, and is passed down to
-subsolvers by default when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
+sub solvers by default when these are created using the Euclidean objective $f$, $\nabla f$ and $\nabla^2 f$.
 
 ## Summary
 
@@ -204,11 +201,14 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```

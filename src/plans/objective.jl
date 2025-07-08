@@ -34,18 +34,36 @@ abstract type AbstractDecoratedManifoldObjective{E,O<:AbstractManifoldObjective}
 @doc raw"""
     AllocatingEvaluation <: AbstractEvaluationType
 
-A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
-allocate memory for their result, they work out of place.
+A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
+the problem contains or the function(s) allocate memory for their result, they work out of place.
 """
 struct AllocatingEvaluation <: AbstractEvaluationType end
 
 @doc raw"""
     InplaceEvaluation <: AbstractEvaluationType
 
-A parameter for a [`AbstractManoptProblem`](@ref) indicating that the problem uses functions that
-do not allocate memory but work on their input, in place.
+A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
+the problem contains or the function(s) do not allocate memory but work on their input, in place.
 """
 struct InplaceEvaluation <: AbstractEvaluationType end
+
+@doc raw"""
+    ParentEvaluationType <: AbstractEvaluationType
+
+A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
+the problem contains or the function(s) do inherit their property from a parent
+[`AbstractManoptProblem`](@ref) or function.
+"""
+struct ParentEvaluationType <: AbstractEvaluationType end
+
+@doc raw"""
+    AllocatingInplaceEvaluation <: AbstractEvaluationType
+
+A parameter for a [`AbstractManoptProblem`](@ref) or a `Function` indicating that
+the problem contains or the function(s) that provides both an allocating variant and one,
+that does not allocate memory but work on their input, in place.
+"""
+struct AllocatingInplaceEvaluation <: AbstractEvaluationType end
 
 @doc raw"""
     ReturnManifoldObjective{E,O2,O1<:AbstractManifoldObjective{E}} <:
@@ -174,6 +192,7 @@ This function should dispatch on `Val(element)`.
 Currently supported
 * `:Cost` passes to the [`get_cost_function`](@ref)
 * `:Gradient` passes to the [`get_gradient_function`](@ref)
+* `:SubGradient` passes to the [`get_subgradient_function`](@ref)
 """
 set_parameter!(amo::AbstractManifoldObjective, e::Symbol, args...)
 
@@ -183,6 +202,10 @@ function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Cost}, args...)
 end
 function set_parameter!(amo::AbstractManifoldObjective, ::Val{:Gradient}, args...)
     set_parameter!(get_gradient_function(amo), args...)
+    return amo
+end
+function set_parameter!(amo::AbstractManifoldObjective, ::Val{:SubGradient}, args...)
+    set_parameter!(get_subgradient_function(amo), args...)
     return amo
 end
 

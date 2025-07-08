@@ -62,6 +62,7 @@ function GradientDescentState(
         M, GradientDescentState; retraction_method=retraction_method
     ),
     direction::D=IdentityUpdateRule(),
+    kwargs..., # ignore rest
 ) where {
     P,
     T,
@@ -74,7 +75,9 @@ function GradientDescentState(
         p, X, direction, stepsize, stopping_criterion, retraction_method
     )
 end
-function (r::IdentityUpdateRule)(mp::AbstractManoptProblem, s::GradientDescentState, k)
+function (r::IdentityUpdateRule)(
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
     return get_stepsize(mp, s, k), get_gradient!(mp, s.X, s.p)
 end
 function default_stepsize(
@@ -140,10 +143,11 @@ $(_note(:GradientObjective))
 
 # Keyword arguments
 
+
+$(_var(:Keyword, :differential))
 * `direction=`[`IdentityUpdateRule`](@ref)`()`:
   specify to perform a certain processing of the direction, for example
   [`Nesterov`](@ref), [`MomentumGradient`](@ref) or [`AverageGradient`](@ref).
-
 $(_var(:Keyword, :evaluation; add=:GradientExample))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, GradientDescentState)`"))
@@ -152,7 +156,7 @@ $(_var(:Keyword, :X; add=:as_Gradient))
 
 $(_note(:OtherKeywords))
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 $(_note(:TutorialMode))
@@ -168,19 +172,22 @@ function gradient_descent(
     f,
     grad_f,
     p=rand(M);
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f_, grad_f_; evaluation=evaluation, differential=differential
+    )
     rs = gradient_descent(M, mgo, p_; kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function gradient_descent(
-    M::AbstractManifold, mgo::O, p; kwargs...
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -221,7 +228,7 @@ function gradient_descent!(
     direction=Gradient(),
     X=zero_vector(M, p),
     kwargs..., #collect rest
-) where {O<:Union{AbstractManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     s = GradientDescentState(
@@ -246,6 +253,6 @@ function initialize_solver!(mp::AbstractManoptProblem, s::GradientDescentState)
 end
 function step_solver!(p::AbstractManoptProblem, s::GradientDescentState, k)
     step, s.X = s.direction(p, s, k)
-    retract!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
+    ManifoldsBase.retract_fused!(get_manifold(p), s.p, s.p, s.X, -step, s.retraction_method)
     return s
 end

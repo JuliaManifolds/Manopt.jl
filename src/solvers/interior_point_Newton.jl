@@ -58,7 +58,7 @@ $(_var(:Keyword, :evaluation))
 * `g=nothing`: the inequality constraints
 * `grad_g=nothing`: the gradient of the inequality constraints
 * `grad_h=nothing`: the gradient of the equality constraints
-* `gradient_range=nothing`: specify how gradients are represented, where `nothing` is equivalent to [`NestedPowerRepresentation`](@extref)
+* `gradient_range=nothing`: specify how gradients are represented, where `nothing` is equivalent to [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`)
 * `gradient_equality_range=gradient_range`: specify how the gradients of the equality constraints are represented
 * `gradient_inequality_range=gradient_range`: specify how the gradients of the inequality constraints are represented
 * `h=nothing`: the equality constraints

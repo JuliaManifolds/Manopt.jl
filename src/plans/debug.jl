@@ -65,6 +65,12 @@ function DebugSolverState(
 ) where {S<:AbstractManoptSolverState}
     return DebugSolverState{S}(st, DebugFactory(format))
 end
+function DebugSolverState( # a function: callback
+    st::S,
+    callback::Function,
+) where {S<:AbstractManoptSolverState}
+    return DebugSolverState{S}(st, DebugFactory([callback]))
+end
 
 """
     set_parameter!(ams::DebugSolverState, ::Val{:Debug}, args...)
@@ -158,7 +164,7 @@ Whether internal variables are updates is determined by `always_update`.
 
 This method does not perform any print itself but relies on it's children's print.
 
-It also sets the subsolvers active parameter, see |`DebugWhenActive`}(#ref).
+It also sets the sub solvers active parameter, see |`DebugWhenActive`}(#ref).
 Here, the `activattion_offset` can be used to specify whether it refers to _this_ iteration,
 the `i`th, when this call is _before_ the iteration, then the offset should be 0,
 for the _next_ iteration, that is if this is called _after_ an iteration, it has to be set to 1.
@@ -185,7 +191,7 @@ function (d::DebugEvery)(p::AbstractManoptProblem, st::AbstractManoptSolverState
     elseif d.always_update
         d.debug(p, st, -1)
     end
-    # set activity for this iterate in subsolvers
+    # set activity for this iterate in sub solvers
     set_parameter!(
         st,
         :SubState,
@@ -222,6 +228,44 @@ end
 #
 # Special single ones
 #
+@doc raw"""
+    DebugCallback <: DDebugAction
+
+Debug for a simple callback function, mainly for compatibility to other solvers and if
+a user already has a callback function or functor available
+
+The expected format of the is that it is a function with signature `(problem, state, iteration) -> nothing`
+A simple callbaclk of the signature `() -> nothing` can be specified by `simple=true`. In this case the callback is wrapped in a function of the generic form
+
+!!! note
+    This is for now an internal struct, since its name might still change before
+    it is made public. The functionality with the factory (`callback=f`) will still work,
+    but this debug actions name might still change its name in the future.
+
+# Constructor
+
+    DebugCallback(callback; simple=false)
+"""
+struct DebugCallback{CB} <: DebugAction
+    callback::CB
+    function DebugCallback(callback; simple::Bool=false)
+        _cb = simple ? (problem, state, k) -> callback() : callback
+        return new{typeof(_cb)}(_cb)
+    end
+end
+function (d::DebugCallback)(
+    problem::AbstractManoptProblem, state::AbstractManoptSolverState, k
+)
+    d.callback(problem, state, k)
+    return nothing
+end
+function show(io::IO, dc::DebugCallback{CB}) where {CB}
+    return print(io, "DebugCallback containing a $(CB) callback $(dc.callback)")
+end
+function status_summary(dc::DebugCallback)
+    return "$(dc.callback)"
+end
+
 @doc """
     DebugChange(M=DefaultManifold(); kwargs...)
 
@@ -1177,7 +1221,7 @@ one are called with an `i=0` for reset.
    DebugFactory([:Iteration => [:Iterate, " | ", :Cost, 10], :Stop])
    ```
 
-3. We can even make the stoping criterion concrete and pass Actions directly,
+3. We can even make the stopping criterion concrete and pass Actions directly,
    for example explicitly Making the stop more concrete, we get
 
    ```
@@ -1231,7 +1275,8 @@ Generate a [`DebugGroup`](@ref) of [`DebugAction`](@ref)s. The following rules a
 2. Any `(Symbol, String)` generates similar actions as in 1., but the string is used for `format=`,
    see [`DebugActionFactory`](@ref DebugActionFactory(::Tuple{Symbol,String}))
 3. Any `String` is passed to [`DebugActionFactory`](@ref DebugActionFactory(d::String))
-4. Any [`DebugAction`](@ref) is included as is.
+4. Any `Function` generates a [`DebugCallback`](@ref).
+5. Any [`DebugAction`](@ref) is included as is.
 
 If this results in more than one [`DebugAction`](@ref) a [`DebugGroup`](@ref) of these is build.
 
@@ -1273,9 +1318,11 @@ create a [`DebugAction`](@ref) where
 * a [`Symbol`] creates [`DebugEntry`](@ref) of that symbol, with the exceptions
   of `:Change`, `:Iterate`, `:Iteration`, and `:Cost`.
 * a `Tuple{Symbol,String}` creates a [`DebugEntry`](@ref) of that symbol where the String specifies the format.
+* a `<:Function` creates a [`DebugCallback`](@ref) with the function as callback.
 """
 DebugActionFactory(d::String) = DebugDivider(d)
 DebugActionFactory(a::A) where {A<:DebugAction} = a
+DebugActionFactory(f::F) where {F<:Function} = DebugCallback(f)
 
 """
     DebugActionFactory(s::Symbol)

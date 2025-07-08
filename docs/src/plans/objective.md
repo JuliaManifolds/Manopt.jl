@@ -11,12 +11,14 @@ AbstractManifoldObjective
 AbstractDecoratedManifoldObjective
 ```
 
-Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldGradientObjective`](@ref).
+Which has two main different possibilities for its containing functions concerning the evaluation mode, not necessarily the cost, but for example gradient in an [`AbstractManifoldFirstOrderObjective`](@ref).
 
 ```@docs
 AbstractEvaluationType
 AllocatingEvaluation
+AllocatingInplaceEvaluation
 InplaceEvaluation
+ParentEvaluationType
 evaluation_type
 ```
 
@@ -34,6 +36,12 @@ decorate_objective!
 
 ```@docs
 EmbeddedManifoldObjective
+```
+
+### [Scaled objectives](@id subsection-scaled-objectives)
+
+```@docs
+ScaledManifoldObjective
 ```
 
 ### [Cache objective](@id subsection-cache-objective)
@@ -73,7 +81,7 @@ init_caches
 ManifoldCountObjective
 ```
 
-### Internal decorators
+#### Internal decorators and functions
 
 ```@docs
 ReturnManifoldObjective
@@ -100,19 +108,22 @@ and internally
 get_cost_function
 ```
 
-### Gradient objectives
+### First order objectives
 
 ```@docs
-AbstractManifoldGradientObjective
-ManifoldGradientObjective
+AbstractManifoldFirstOrderObjective
+ManifoldFirstOrderObjective
 ManifoldAlternatingGradientObjective
 ManifoldStochasticGradientObjective
 NonlinearLeastSquaresObjective
 ```
 
-There is also a second variant, if just one function is responsible for computing the cost _and_ the gradient
+While the [`ManifoldFirstOrderObjective`](@ref) allows to provide different
+first order information, there are also its shortcuts, mainly for historical reasons,
+but also since these are the most commonly used ones.
 
 ```@docs
+ManifoldGradientObjective
 ManifoldCostGradientObjective
 ```
 
@@ -121,18 +132,16 @@ ManifoldCostGradientObjective
 ```@docs
 get_gradient
 get_gradients
+get_differential
+get_residuals
+get_residuals!
 ```
 
 and internally
 
 ```@docs
+get_differential_function
 get_gradient_function
-```
-
-#### Internal helpers
-
-```@docs
-get_gradient_from_Jacobian!
 ```
 
 ### Subgradient objective
@@ -145,6 +154,13 @@ ManifoldSubgradientObjective
 
 ```@docs
 get_subgradient
+```
+
+
+and internally
+
+```@docs
+get_subgradient_function
 ```
 
 ### Proximal map objective
@@ -203,6 +219,7 @@ linearized_forward_operator
 
 ```@docs
 ConstrainedManifoldObjective
+ManifoldConstrainedSetObjective
 ```
 
 It might be beneficial to use the adapted problem to specify different ranges for the gradients of the constraints
@@ -226,13 +243,15 @@ LagrangianHessian
 ```@docs
 equality_constraints_length
 inequality_constraints_length
-get_unconstrained_objective
 get_equality_constraint
-get_inequality_constraint
 get_grad_equality_constraint
 get_grad_inequality_constraint
 get_hess_equality_constraint
 get_hess_inequality_constraint
+get_inequality_constraint
+get_projected_point
+get_projected_point!
+get_unconstrained_objective
 is_feasible
 ```
 
@@ -262,6 +281,8 @@ Manopt.FunctionVectorialType
 #### Access functions
 
 ```@docs
+Manopt.get_jacobian
+Manopt.get_jacobian!
 Manopt.get_value
 Manopt.get_value_function
 Base.length(::VectorGradientFunction)
@@ -271,6 +292,9 @@ Base.length(::VectorGradientFunction)
 
 ```@docs
 Manopt._to_iterable_indices
+Manopt._change_basis!
+Manopt.get_basis
+Manopt.get_range
 ```
 
 ### Subproblem objective
@@ -289,4 +313,10 @@ Manopt.get_objective_cost
 Manopt.get_objective_gradient
 Manopt.get_objective_hessian
 Manopt.get_objective_preconditioner
+```
+
+### Proximal gradient objective
+
+```@docs
+ManifoldProximalGradientObjective
 ```

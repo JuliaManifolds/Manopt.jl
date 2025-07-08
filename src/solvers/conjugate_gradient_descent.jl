@@ -57,7 +57,7 @@ the last direction ``δ_{k-1}`` and both gradients ``$(_tex(:grad))f(x_k)``,``$(
 The [`Stepsize`](@ref) ``s_k`` may be determined by a [`Linesearch`](@ref).
 
 Alternatively to `f` and `grad_f` you can provide
-the [`AbstractManifoldGradientObjective`](@ref) `gradient_objective` directly.
+the [`AbstractManifoldFirstOrderObjective`](@ref) `gradient_objective` directly.
 
 Available update rules are [`SteepestDescentCoefficientRule`](@ref), which yields a [`gradient_descent`](@ref),
 [`ConjugateDescentCoefficient`](@ref) (the default), [`DaiYuanCoefficientRule`](@ref), [`FletcherReevesCoefficient`](@ref),
@@ -82,13 +82,14 @@ $(_var(:Argument, :p))
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
+$(_var(:Keyword, :differential))
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`"))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :vector_transport_method))
 
-If you provide the [`ManifoldGradientObjective`](@ref) directly, the `evaluation=` keyword is ignored.
+If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
 The decorations are still applied to the objective.
 
 $(_note(:OutputSection))
@@ -111,7 +112,7 @@ function conjugate_gradient_descent(
 end
 function conjugate_gradient_descent(
     M::AbstractManifold, mgo::O, p=rand(M); kwargs...
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -123,10 +124,13 @@ function conjugate_gradient_descent!(
     f::TF,
     grad_f::TDF,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 ) where {TF,TDF}
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     dmgo = decorate_objective!(M, mgo; kwargs...)
     return conjugate_gradient_descent!(M, dmgo, p; kwargs...)
 end
@@ -144,7 +148,7 @@ function conjugate_gradient_descent!(
     vector_transport_method=default_vector_transport_method(M, typeof(p)),
     initial_gradient=zero_vector(M, p),
     kwargs...,
-) where {O<:Union{ManifoldGradientObjective,AbstractDecoratedManifoldObjective}}
+) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
@@ -173,7 +177,9 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     M = get_manifold(amp)
     copyto!(M, cgs.p_old, cgs.p)
     current_stepsize = get_stepsize(amp, cgs, k, cgs.δ)
-    retract!(M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method)
+    ManifoldsBase.retract_fused!(
+        M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method
+    )
     get_gradient!(amp, cgs.X, cgs.p)
     cgs.β = cgs.coefficient(amp, cgs, k)
     vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)

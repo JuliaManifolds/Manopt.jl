@@ -1,11 +1,12 @@
-using ManifoldsBase, Manopt, Test
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/dummy_types.jl")
+using ManifoldsBase, Manopt, ManoptTestSuite, Test
 
 @testset "Objective" begin
     @testset "Test decorator" begin
         o = ManifoldCostObjective(x -> x)
-        d = DummyDecoratedObjective(o)
+        d = ManoptTestSuite.DummyDecoratedObjective(o)
         @test (get_objective(d) isa ManifoldCostObjective)
         @test Manopt.is_objective_decorator(d)
         @test !Manopt.is_objective_decorator(o)
@@ -19,14 +20,14 @@ include("../utils/dummy_types.jl")
         @test Manopt.status_summary(r) == ""
         @test repr((o, 1.0)) ==
             "To access the solver result, call `get_solver_result` on this variable."
-        d = DummyDecoratedObjective(o)
+        d = ManoptTestSuite.DummyDecoratedObjective(o)
         r2 = Manopt.ReturnManifoldObjective(d)
         @test repr(r) == "ManifoldCostObjective{AllocatingEvaluation}"
     end
     @testset "set_parameter!" begin
         o = ManifoldCostObjective(x -> x)
         mp = DefaultManoptProblem(ManifoldsBase.DefaultManifold(2), o)
-        set_parameter!(mp, :Objective, :Dummy, 1)
+        Manopt.set_parameter!(mp, :Objective, :Dummy, 1)
     end
     @testset "functions" begin
         M = ManifoldsBase.DefaultManifold(2)

@@ -13,6 +13,7 @@ Thanks to the following contributors to `Manopt.jl`:
 * [Hajg Jasa](https://www.ntnu.edu/employees/hajg.jasa) implemented the [convex bundle method](solvers/convex_bundle_method.md) and the [proximal bundle method](solvers/proximal_bundle_method.md) and a default subsolver each of them.
 * Even Stephansen Kjemsås contributed to the implementation of the [Frank Wolfe Method](solvers/FrankWolfe.md) solver.
 * Mathias Ravn Munkvold contributed most of the implementation of the [Adaptive Regularization with Cubics](solvers/adaptive-regularization-with-cubics.md) solver as well as its [Lanczos](@ref arc-Lanczos) subsolver
+* [Sander Engen Oddsen](https://github.com/oddsen) contributed to the implementation of the [LTMADS](solvers/mesh_adaptive_direct_search.md) solver.
 * [Tom-Christian Riemer](https://www.tu-chemnitz.de/mathematik/wire/mitarbeiter.php) implemented the [trust regions](solvers/trust_regions.md) and [quasi Newton](solvers/quasi_Newton.md) solvers as well as the [truncated conjugate gradient descent](solvers/truncated_conjugate_gradient_descent.md) subsolver.
 * [Markus A. Stokkenes](https://www.linkedin.com/in/markus-a-stokkenes-b41bba17b/) contributed most of the implementation of the [Interior Point Newton Method](solvers/interior_point_Newton.md) as well as its default [Conjugate Residual](solvers/conjugate_residual.md) subsolver
 * [Manuel Weiss](https://scoop.iwr.uni-heidelberg.de/author/manuel-weiß/) implemented most of the [conjugate gradient update rules](@ref cg-coeffs)
@@ -28,8 +29,8 @@ to clone/fork the repository or open an issue.
 * [ExponentialFamilyProjection.jl](https://github.com/ReactiveBayes/ExponentialFamilyProjection.jl) package uses `Manopt.jl` to project arbitrary functions onto the closest exponential family distributions. The package also integrates with [`RxInfer.jl`](https://github.com/ReactiveBayes/RxInfer.jl) to enable Bayesian inference in a larger set of probabilistic models.
 * [Caesar.jl](https://github.com/JuliaRobotics/Caesar.jl) within non-Gaussian factor graph inference algorithms
 
-Is a package missing? [Open an issue](https://github.com/JuliaManifolds/Manopt.jl/issues/new)!
-It would be great to collect anything and anyone using Manopt.jl
+If you are missing a package, that uses `Manopt.jl`, please [open an issue](https://github.com/JuliaManifolds/Manopt.jl/issues/new).
+It would be great to collect anything and anyone using Manopt.jl in this list.
 
 ## Further packages
 

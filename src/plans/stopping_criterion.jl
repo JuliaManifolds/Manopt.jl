@@ -165,7 +165,7 @@ function (c::StopAfterIteration)(
 end
 function get_reason(c::StopAfterIteration)
     if c.at_iteration >= c.max_iterations
-        return "The algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
+        return "At iteration $(c.at_iteration) the algorithm reached its maximal number of iterations ($(c.max_iterations)).\n"
     end
     return ""
 end
@@ -204,7 +204,7 @@ $(_var(:Field, :last_change))
 $(_var(:Field, :inverse_retraction_method))
 $(_var(:Field, :storage))
 * `at_iteration::Int`: indicate at which iteration this stopping criterion was last active.
-* `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@ref) that can be passed
+* `inverse_retraction`: An [`AbstractInverseRetractionMethod`](@extref `ManifoldsBase.AbstractInverseRetractionMethod`) that can be passed
   to approximate the distance by this inverse retraction and a norm on the tangent space.
   This can be used if neither the distance nor the logarithmic map are availannle on `M`.
 * `last_change`: store the last change
@@ -274,6 +274,7 @@ end
 function (c::StopWhenChangeLess)(mp::AbstractManoptProblem, s::AbstractManoptSolverState, k)
     if k == 0 # reset on init
         c.at_iteration = -1
+        c.last_change = Inf
     end
     if has_storage(c.storage, PointStorageKey(:Iterate))
         M = get_manifold(mp)
@@ -319,6 +320,66 @@ Update the minimal change below which an algorithm shall stop.
 function set_parameter!(c::StopWhenChangeLess, ::Val{:MinIterateChange}, v)
     c.threshold = v
     return c
+end
+
+"""
+    StopWhenCostChangeLess <: StoppingCriterion
+
+A stopping criterion to stop when the change of the cost function is less than a certain threshold.
+
+# Fields
+$(_var(:Field, :at_iteration))
+$(_var(:Field, :last_change))
+* `last_cost``: the last cost value
+
+# Constructor
+
+    StopWhenCostChangeLess(tolerance::F)
+
+Initialize the stopping criterion to a threshold `tolerance` for the change of the cost function.
+"""
+mutable struct StopWhenCostChangeLess{F<:Real} <: StoppingCriterion
+    tolerance::F
+    at_iteration::Int
+    last_cost::F
+    last_change::F
+end
+function StopWhenCostChangeLess(tol::F) where {F<:Real}
+    return StopWhenCostChangeLess{F}(tol, -1, zero(tol), 2 * tol)
+end
+function (c::StopWhenCostChangeLess)(
+    problem::AbstractManoptProblem, state::AbstractManoptSolverState, iteration::Int
+)
+    if iteration <= 0 # reset on init
+        c.at_iteration = -1
+        c.last_cost = Inf
+        c.last_change = 2 * c.tolerance
+    end
+    c.last_change = c.last_cost
+    c.last_cost = get_cost(problem, get_iterate(state))
+    c.last_change = c.last_change - c.last_cost
+    if abs(c.last_change) < c.tolerance
+        c.at_iteration = iteration
+        return true
+    end
+    return false
+end
+function get_reason(c::StopWhenCostChangeLess)
+    if c.at_iteration >= 0
+        return "At iteration $(c.at_iteration) the algorithm performed a step with an absolute cost change ($(abs(c.last_change))) less than $(c.tolerance)."
+    end
+    return ""
+end
+function status_summary(c::StopWhenCostChangeLess)
+    has_stopped = (c.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    return "|Δf(p)| = $(abs(c.last_change)) < $(c.tolerance):\t$s"
+end
+function Base.show(io::IO, c::StopWhenCostChangeLess)
+    return print(
+        io,
+        "StopWhenCostChangeLess with threshold $(c.tolerance).\n    $(status_summary(c))",
+    )
 end
 
 """
@@ -989,7 +1050,7 @@ function status_summary(c::StopWhenAll)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _all_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r    $(status_summary(cs))\n"
+        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
@@ -1083,7 +1144,7 @@ function status_summary(c::StopWhenAny)
     s = has_stopped ? "reached" : "not reached"
     r = "Stop When _one_ of the following are fulfilled:\n"
     for cs in c.criteria
-        r = "$r    $(status_summary(cs))\n"
+        r = "$r  * $(replace(status_summary(cs),"\n" => "\n    "))\n"
     end
     return "$(r)Overall: $s"
 end
@@ -1182,6 +1243,213 @@ function set_parameter!(c::StopWhenAny, s::Symbol, v)
         set_parameter!(d, s, v)
     end
     return c
+end
+
+@doc raw"""
+    StopWhenRepeated <: StoppingCriterion
+
+A stopping Criterion that indicates to stop when the (internal) stoppoing criterion it wraps,
+has indicated to stop for `n` (consecutive) times
+
+# Fields
+
+* `criterion`: the [`StoppingCriterion`](@ref) to wrap
+* `n`: the number of times the criterion has to indicate to stop
+* `count`: the number of times the criterion has indicated to stop so far
+* `consecutive::Bool`: indicate whether to count consecutive indications to stop or arbitrary.
+
+# Constructor
+
+    StopWhenRepeated(criterion::StoppingCriterion, n::Int; consecutive::Bool=true)
+    criterion × n
+    cross(sc::StoppingCriterion, n::Int)
+
+Create a stopping criterion that indicates to stop when the `criterion` has indicated to stop
+`n` times (consecutively, if `consecutive=true` for the first constructor).
+Note that the cross product is in general noncommutative, and here only the order `sc × n`` is possible.
+
+# Examples
+
+A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` for three consecutive iterations:
+    StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3)
+    StopWhenGradientNormLess(1e-6) × 3
+
+A stopping criterion that indicates to stop whenever the gradient norm is less that `1e-6` at three iterations (not necessarily consecutive):
+    StopWhenRepeated(StopWhenGradientNormLess(1e-6), 3; consecutive=false)
+"""
+mutable struct StopWhenRepeated{SC<:StoppingCriterion} <: StoppingCriterion
+    stopping_criterion::SC
+    n::Int
+    count::Int
+    consecutive::Bool
+    at_iteration::Int
+end
+function StopWhenRepeated(
+    sc::SC, n::Int; consecutive::Bool=true
+) where {SC<:StoppingCriterion}
+    return StopWhenRepeated{SC}(sc, n, 0, consecutive, -1)
+end
+function cross(sc::StoppingCriterion, n::Int)
+    return StopWhenRepeated(sc, n)
+end
+
+function (c::StopWhenRepeated)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+)
+    if k <= 0 # reset on init
+        c.count = zero(c.count)
+        c.at_iteration = -1
+        return c.stopping_criterion(p, s, k) # reset the criterion
+    end
+    # evaluate the inner stopping criterion
+    stop = c.stopping_criterion(p, s, k)
+    if stop # if we indicated to stop
+        c.count += 1
+        if c.count >= c.n # if it now fired n times (consecutively)
+            c.at_iteration = k
+            return true
+        end
+    else
+        c.consecutive && (c.count = 0) # reset the count
+    end
+    return false
+end
+function get_reason(sc::StopWhenRepeated)
+    has_stopped = (sc.at_iteration >= 0)
+    if (sc.at_iteration >= 0)
+        s = has_stopped ? "reached" : "not reached"
+        c = sc.consecutive ? "consecutive " : ""
+        # we can only get the last reason, unless we do more allocations
+        r = """At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop $(sc.n) $(c) times:
+        $(sc.count) ≥ $(sc.n): $(s)
+        last inner criterion status:
+        $(replace(status_summary(sc.stopping_criterion), "\n" => "\n    "))
+        """
+        return r
+    end
+    return ""
+end
+function status_summary(sc::StopWhenRepeated)
+    has_stopped = (sc.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    c = sc.consecutive ? "consecutive" : ""
+    return "$(sc.count) ≥ $(sc.n) ($(c)): $(s) (last inner status: $(status_summary(sc.stopping_criterion)))"
+end
+function indicates_convergence(sc::StopWhenRepeated)
+    return indicates_convergence(sc.stopping_criterion)
+end
+function show(io::IO, sc::StopWhenRepeated)
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
+    return print(
+        io,
+        "StopWhenRepeated with the Stopping Criterion:\n    $(is)\n$(status_summary(sc))",
+    )
+end
+
+@doc raw"""
+    StopWhenCriterionWithIterationCondition <: StoppingCriterion
+
+A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps,
+has indicated to stop with an additional check compared to the current iteration, e.g.
+
+* `>(n)` only (stricly) after iteration `n`
+* `>=(n)` only including and after iteration `n`
+* `==(n)` only exactly at `n`
+* `<=(n)` only including and before iteration `n`
+* `<(n)` only (strictly) before iteration `n`
+* any functor `f(k) -> Bool` indicating to evaluate the stopping criterion at iteration `k`.
+
+# Fields
+
+* `criterion`: the [`StoppingCriterion`](@ref) to wrap
+* `comp`: the number of times the criterion has to indicate to stop
+
+# Constructor
+
+    StopWhenRepeated(criterion::StoppingCriterion, n=0; comp = (>(n)))
+
+Create a stopping criterion that indicates to stop when the `comp` has indicated to
+check the inner criterion. The `n` is ignored if you provide a manual functor `comp`.
+
+As well as for a given [` StoppingCriterion`] `sc` the shortcuts
+`sc > n`, `sc >= n`, `sc == n`, `sc <= n`, `sc < n` for the cases above.
+
+# Examples
+
+A stopping criterion that indicates to stop when the gradient norm is small but only after the third iteration
+    StopWhenCriterionWithIterationCondition(StopWhenGradientNormLess(1e-6), 3)
+    StopWhenGradientNormLess(1e-6) > 3
+"""
+mutable struct StopWhenCriterionWithIterationCondition{SC<:StoppingCriterion,F} <:
+               StoppingCriterion
+    stopping_criterion::SC
+    comp::F
+    at_iteration::Int
+end
+function StopWhenCriterionWithIterationCondition(
+    sc::SC, n::Int=0; comp::F=(>(n))
+) where {SC<:StoppingCriterion,F}
+    return StopWhenCriterionWithIterationCondition{SC,F}(sc, comp, -1)
+end
+function Base.:>(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(>(n)))
+end
+function Base.:>=(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(>=(n)))
+end
+function Base.:(==)(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(==(n)))
+end
+function Base.:<(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(<(n)))
+end
+function Base.:<=(sc::StoppingCriterion, n::Int)
+    return StopWhenCriterionWithIterationCondition(sc, n; comp=(<=(n)))
+end
+function (c::StopWhenCriterionWithIterationCondition)(
+    p::AbstractManoptProblem, s::AbstractManoptSolverState, k::Int
+)
+    if k <= 0 # reset on init
+        c.at_iteration = -1
+        return c.stopping_criterion(p, s, k) # reset the criterion
+    end
+    if c.comp(k)
+        # evaluate the inner stopping criterion
+        stop = c.stopping_criterion(p, s, k)
+        if stop # if we indicated to stop
+            c.at_iteration = k
+            return true
+        end
+    end
+    # Else: do not even check the other one.
+    return false
+end
+function get_reason(sc::StopWhenCriterionWithIterationCondition)
+    has_stopped = (sc.at_iteration >= 0)
+    if has_stopped
+        r = "At iteration $(sc.at_iteration), the stopping criterion $(typeof(sc.stopping_criterion)) has indicated to stop together with $(sc.comp),
+        since $(status_summary(sc.stopping_criterion))"
+        return r
+    end
+    return ""
+end
+function status_summary(sc::StopWhenCriterionWithIterationCondition)
+    has_stopped = (sc.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
+    return "$(sc.comp) && $(is)\n    overall: $(s)"
+end
+function indicates_convergence(sc::StopWhenCriterionWithIterationCondition)
+    return indicates_convergence(sc.stopping_criterion)
+end
+function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
+    has_stopped = (sc.at_iteration >= 0)
+    s = has_stopped ? "reached" : "not reached"
+    is = replace("$(sc.stopping_criterion)", "\n" => "\n    ") #increase indent
+    return print(
+        io,
+        "StopWhenCriterionWithIterationCondition with the Stopping Criterion:\n    $(is)\nand condition $(sc.comp)\n\toverall: $(s)",
+    )
 end
 
 @doc raw"""

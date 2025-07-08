@@ -4,8 +4,9 @@ default(; show=false, reuse=true)
 
 @testset "Numerical Check functions" begin
     @testset "Test Gradient checks" begin
-        M = Sphere(10)
-        q = zeros(11)
+        n = 10
+        M = Sphere(n)
+        q = zeros(n + 1)
         q[1] = 1.0
         p = zeros(11)
         p[1:4] .= 1 / sqrt(4)
@@ -27,6 +28,9 @@ default(; show=false, reuse=true)
         @test_throws ErrorException Manopt.find_best_slope_window(
             zeros(2), zeros(2), [2, 20]
         )
+        #Check complex Sphere as well
+        M2 = Sphere(n, ℂ)
+        check_gradient(M2, f, grad_f, p, X)
         # Linear Euclidean function -> exact
         M2 = Euclidean(1)
         f2(M, p) = 3 * p[1]

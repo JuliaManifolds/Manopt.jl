@@ -33,7 +33,7 @@ using Manifolds, Manopt, Test, LinearAlgebra, Random
                 get_gradient!(M, Y, eo, p)
                 @test Y == grad_f(M, p)
                 @test get_hessian(M, o, p, X) == ∇²f(M, p, X)
-                get_hessian(M, eo, p, X) == Hess_f(M, p, X)
+                @test get_hessian(M, eo, p, X) == Hess_f(M, p, X)
                 get_hessian!(M, Y, eo, p, X)
                 @test Y == Hess_f(M, p, X)
             end

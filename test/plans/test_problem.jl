@@ -19,9 +19,9 @@ using Manopt, Manifolds, Test
         mco = ManifoldCostObjective(f)
         dmp = DefaultManoptProblem(Euclidean(3), mco)
         # has no effect but does not error
-        set_parameter!(f, :Dummy, 1)
-        set_parameter!(dmp, :Cost, :Dummy, 1)
-        set_parameter!(mco, :Cost, :Dummy, 1)
+        Manopt.set_parameter!(f, :Dummy, 1)
+        Manopt.set_parameter!(dmp, :Cost, :Dummy, 1)
+        Manopt.set_parameter!(mco, :Cost, :Dummy, 1)
         # but the objective here does not have a gradient
     end
 end

@@ -18,7 +18,7 @@ tutorials/img
 docs/src/tutorials/*/
 docs/src/tutorials/*.md
 docs/.CondaPkg
-docs/src/tutorials/Optimize!_files
+docs/src/tutorials/getstarted_files
 docs/src/tutorials/*.html
 docs/src/changelog.md
 docs/styles/Google

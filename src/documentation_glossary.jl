@@ -23,7 +23,7 @@ _manopt_glossary = _MANOPT_DOC_TYPE()
     glossary(g::Dict, s::Symbol, args...; kwargs...)
 
 Access an entry in the glossary at `Symbol` s
-if that entrs is
+if that entry is
 * a string, this is returned
 * a function, it is called with `args...` and `kwargs...` passed
 * a dictionary, then the arguments and keyword arguments are passed to this dictionary, assuming `args[1]` is a symbol
@@ -50,7 +50,8 @@ end
 # ---
 # LaTeX
 
-define!(:LaTeX, :argmin, raw"\operatorname{arg\,min}")
+define!(:LaTeX, :abs, (v) -> raw"\lvert " * "$v" * raw" \rvert")
+define!(:LaTeX, :argmin, raw"\operatorname*{arg\,min}")
 define!(:LaTeX, :ast, raw"\ast")
 define!(:LaTeX, :bar, (letter) -> raw"\bar" * "$(letter)")
 define!(:LaTeX, :big, raw"\big")
@@ -65,29 +66,42 @@ define!(
     :cases,
     (c...) ->
         raw"\begin{cases}" *
-        "\n" *
-        "$(join(["   $(ci)" for ci in c], raw"\\\\"*"\n"))" *
-        "\n" *
+        "$(join(["   $(ci)" for ci in c], raw"\\\\ "))" *
         raw"\end{cases}",
 )
+define!(:LaTeX, :cdots, raw"\cdots")
+define!(:LaTeX, :ddots, raw"\ddots")
 define!(:LaTeX, :deriv, (t = "t") -> raw"\frac{\mathrm{d}}{\mathrm{d}" * "$(t)" * "}")
+define!(:LaTeX, :diff, (t = "") -> raw"\mathrm{D}_{" * "$(t)" * "}")
 define!(:LaTeX, :displaystyle, raw"\displaystyle")
 define!(:LaTeX, :frac, (a, b) -> raw"\frac" * "{$a}{$b}")
 define!(:LaTeX, :grad, raw"\operatorname{grad}")
 define!(:LaTeX, :hat, (letter) -> raw"\hat{" * "$letter" * "}")
 define!(:LaTeX, :Hess, raw"\operatorname{Hess}")
 define!(:LaTeX, :invretr, raw"\operatorname{retr}^{-1}")
+define!(:LaTeX, :inner, (a, b; index="") -> "⟨$a,$b⟩_{$index}")
 define!(:LaTeX, :log, raw"\log")
 define!(:LaTeX, :max, raw"\max")
 define!(:LaTeX, :min, raw"\min")
 define!(:LaTeX, :norm, (v; index = "") -> raw"\lVert " * "$v" * raw" \rVert" * "_{$index}")
+define!(
+    :LaTeX,
+    :pmatrix,
+    (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
+)
+define!(:LaTeX, :proj, raw"\operatorname{proj}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
+define!(:LaTeX, :qquad, raw"\qquad")
 define!(:LaTeX, :reflect, raw"\operatorname{refl}")
 define!(:LaTeX, :retr, raw"\operatorname{retr}")
+define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
+define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
-define!(:LaTeX, :sum, raw"\sum")
+define!(:LaTeX, :sum, (b="", t="") -> raw"\sum" * "_{$b}^{$t}")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
+define!(:LaTeX, :transp, raw"\mathrm{T}")
+define!(:LaTeX, :vdots, raw"\vdots")
 define!(:LaTeX, :vert, raw"\vert")
 define!(:LaTeX, :widehat, (letter) -> raw"\widehat{" * "$letter" * "}")
 _tex(args...; kwargs...) = glossary(:LaTeX, args...; kwargs...)
@@ -100,6 +114,7 @@ define!(:Math, :distance, raw"\mathrm{d}")
 define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Manifold, :symbol, (; M="M") -> _tex(:Cal, M))
 define!(:Math, :Manifold, :descrption, "the Riemannian manifold")
+define!(:Math, :M, (; M="M") -> _math(:Manifold, :symbol; M=M))
 define!(:Math, :Iterate, (; p="p", k="k") -> "$(p)^{($(k))}")
 define!(
     :Math,
@@ -186,18 +201,18 @@ define!(
     :Note,
     :ManifoldDefaultFactory,
     (type::String) -> """
-!!! info
-    This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
-    For default values, that depend on the manifold, this factory postpones the construction
-    until the manifold from for example a corresponding [`AbstractManoptSolverState`](@ref) is available.
-""",
+    !!! info
+        This function generates a [`ManifoldDefaultsFactory`](@ref) for [`$(type)`](@ref).
+        For default values, that depend on the manifold, this factory postpones the construction
+        until the manifold from for example a corresponding [`AbstractManoptSolverState`](@ref) is available.
+    """,
 )
 define!(
     :Note,
     :GradientObjective,
     (; objective="gradient_objective", f="f", grad_f="grad_f") -> """
 Alternatively to `$f` and `$grad_f` you can provide
-the corresponding [`AbstractManifoldGradientObjective`](@ref) `$objective` directly.
+the corresponding [`AbstractManifoldFirstOrderObjective`](@ref) `$objective` directly.
 """,
 )
 define!(
@@ -209,11 +224,11 @@ define!(
     :Note,
     :OutputSection,
     (; p_min="p^*") -> """
-# Output
+                                                                     # Output
 
-The obtained approximate minimizer ``$(p_min)``.
-To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
-""",
+                                                                     The obtained approximate minimizer ``$(p_min)``.
+                                                                     To obtain the whole final state of the solver, see [`get_solver_return`](@ref) for details, especially the `return_state=` keyword.
+                                                                     """,
 )
 define!(
     :Note,
@@ -231,25 +246,51 @@ define!(
 #
 #
 # Problems
+_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+
 define!(
     :Problem,
     :Constrained,
     (; M="M", p="p") -> """
+        ```math
+    \\begin{aligned}
+    $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
+    $(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
+    \\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+    \\end{aligned}
+    ```
+    """,
+)
+define!(
+    :Problem,
+    :SetConstrained,
+    (; M="M", p="p") -> """
     ```math
 \\begin{aligned}
-\\min_{$p ∈ $(_tex(:Cal, M))} & f($p)\\\\
-$(_tex(:text, "subject to"))$(_tex(:quad))&g_i($p) ≤ 0 \\quad $(_tex(:text, " for ")) i= 1, …, m,\\\\
-\\quad & h_j($p)=0 \\quad $(_tex(:text, " for ")) j=1,…,n,
+$(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} & f($p)\\\\
+$(_tex(:text, "subject to"))$(_tex(:quad))& p ∈ $(_tex(:Cal, "C")) ⊂ $(_math(:M; M=M))
 \\end{aligned}
 ```
 """,
 )
+define!(:Problem, :Default, (; M="M", p="p") -> """
+                        ```math
+                        $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} f($p)
+                        ```
+                        """)
 define!(
     :Problem,
-    :Default,
-    (; M="M", p="p") -> "\n```math\n$(_tex(:argmin))_{$p ∈ $(_tex(:Cal, M))} f($p)\n```\n",
+    :NonLinearLeastSquares,
+    (; M="M", p="p") -> """
+                                                                        ```math
+                                                                        $(_tex(:argmin))_{$p ∈ $(_math(:M; M=M))} $(_tex(:frac,1,2)) $(_tex(:sum))_{i=1}^m $(_tex(:abs, "f_i($p)"))^2
+                                                                        ```
+
+                                                                        where ``f: $(_math(:M; M=M)) → ℝ^m`` is written with component functions ``f_i: $(_math(:M; M=M)) → ℝ``, ``i=1,…,m``,
+                                                                        and each component function is continuously differentiable.
+                                                                        """,
 )
-_problem(args...; kwargs...) = glossary(:Problem, args...; kwargs...)
+
 #
 #
 # Stopping Criteria
@@ -290,7 +331,7 @@ define!(
     :Variable,
     :Field,
     function (s::Symbol, d="$s", t=""; type=true, add="", kwargs...)
-        disp_type = type ? "::$(length(t) > 0 ? t : _var(s, :type))" : ""
+        disp_type = type ? "::$(length(t) > 0 ? "$(t)" : _var(s, :type))" : ""
         addv = !isa(add, Vector) ? [add] : add
         disp_add = join([a isa Symbol ? _var(s, a; kwargs...) : "$a" for a in addv])
         return "* `$(d)$(disp_type)`: $(_var(s, :description; kwargs...))$(disp_add)"
@@ -330,6 +371,14 @@ define!(:Variable, :at_iteration, :type, "Int")
 
 define!(
     :Variable,
+    :differential,
+    :description,
+    "specify a specific function to evaluate the differential. By default, ``Df(p)[X] = ⟨$(_tex(:grad))f(p),X⟩``. is used",
+)
+define!(:Variable, :differential, :default, "`nothing`")
+
+define!(
+    :Variable,
     :evaluation,
     :description,
     "specify whether the functions that return an array, for example a point or a tangent vector, work by allocating its result ([`AllocatingEvaluation`](@ref)) or whether they modify their input argument to return the result therein ([`InplaceEvaluation`](@ref)). Since usually the first argument is the manifold, the modified argument is the second.",
@@ -357,7 +406,7 @@ define!(
     :grad_f,
     :description,
     (; M="M", p="p") ->
-        "the (Riemannian) gradient ``$(_tex(:grad))f``: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
+        "the (Riemannian) gradient ``$(_tex(:grad))f: $(_math(:M, M=M)) → $(_math(:TpM; M=M, p=p))`` of f as a function `(M, p) -> X` or a function `(M, X, p) -> X` computing `X` in-place",
 )
 
 define!(
@@ -365,7 +414,7 @@ define!(
     :Hess_f,
     :description,
     (; M="M", p="p") ->
-        "the (Riemannian) Hessian ``$(_tex(:Hess))f``: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p)) of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
+        "the (Riemannian) Hessian ``$(_tex(:Hess))f: $(_math(:TpM, M=M, p=p)) → $(_math(:TpM; M=M, p=p))`` of f as a function `(M, p, X) -> Y` or a function `(M, Y, p, X) -> Y` computing `Y` in-place",
 )
 
 define!(
@@ -400,8 +449,8 @@ define!(
 )
 define!(:Variable, :p, :type, "P")
 define!(:Variable, :p, :default, (; M="M") -> _link(:rand; M=M))
-define!(:Variable, :p, :as_Iterate, "storing the current iterate")
-define!(:Variable, :p, :as_Initial, "to specify the initial value")
+define!(:Variable, :p, :as_Iterate, " storing the current iterate")
+define!(:Variable, :p, :as_Initial, " to specify the initial value")
 
 define!(
     :Variable,
@@ -442,15 +491,6 @@ define!(:Variable, :stopping_criterion, :type, "StoppingCriterion")
 
 define!(
     :Variable,
-    :sub_problem,
-    :description,
-    (; M="M") ->
-        "specify a problem for a solver or a closed form solution function, which can be allocating or in-place.",
-)
-define!(:Variable, :sub_problem, :type, "Union{AbstractManoptProblem, F}")
-
-define!(
-    :Variable,
     :sub_kwargs,
     :description,
     "a named tuple of keyword arguments that are passed to [`decorate_objective!`](@ref) of the sub solvers objective, the [`decorate_state!`](@ref) of the subsovlers state, and the sub state constructor itself.",
@@ -481,10 +521,10 @@ define!(
     :subgrad_f,
     :description,
     (; M="M", p="p") -> """
-the subgradient ``∂f: $(_math(:M; M=M)) → $(_math(:TM; M=M))`` of f as a function `(M, p) -> X`
-or a function `(M, X, p) -> X` computing `X` in-place.
-This function should always only return one element from the subgradient.
-""",
+                                                                        the subgradient ``∂f: $(_math(:M; M=M)) → $(_math(:TM; M=M))`` of f as a function `(M, p) -> X`
+                                                                        or a function `(M, X, p) -> X` computing `X` in-place.
+                                                                        This function should always only return one element from the subgradient.
+                                                                        """,
 )
 define!(
     :Variable,

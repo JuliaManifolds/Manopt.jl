@@ -7,13 +7,13 @@ These options are assumed to have a field (`gradient`) to store the current grad
 abstract type AbstractHessianSolverState <: AbstractGradientSolverState end
 
 """
-    AbstractManifoldHessianObjective{T<:AbstractEvaluationType,TC,TG,TH} <: AbstractManifoldGradientObjective{T,TC,TG}
+    AbstractManifoldHessianObjective{E<:AbstractEvaluationType,F, G, H} <: AbstractManifoldFirstOrderObjective{E,Tuple{F,G}}
 
 An abstract type for all objectives that provide a (full) Hessian, where
 `T` is a [`AbstractEvaluationType`](@ref) for the gradient and Hessian functions.
 """
-abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,TC,TG,TH} <:
-              AbstractManifoldGradientObjective{E,TC,TG} end
+abstract type AbstractManifoldHessianObjective{E<:AbstractEvaluationType,F,G,H} <:
+              AbstractManifoldFirstOrderObjective{E,Tuple{F,G}} end
 
 @doc raw"""
     ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <: AbstractManifoldHessianObjective{T,C,G,H}
@@ -67,6 +67,34 @@ struct ManifoldHessianObjective{T<:AbstractEvaluationType,C,G,H,Pre} <:
     end
 end
 
+function get_gradient(
+    M::AbstractManifold, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
+)
+    return mho.gradient!!(M, p)
+end
+function get_gradient(
+    M::AbstractManifold, mho::ManifoldHessianObjective{InplaceEvaluation}, p
+)
+    X = zero_vector(M, p)
+    mho.gradient!!(M, X, p)
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold, X, mho::ManifoldHessianObjective{AllocatingEvaluation}, p
+)
+    copyto!(M, X, p, mho.gradient!!(M, p))
+    return X
+end
+function get_gradient!(
+    M::AbstractManifold, Y, mho::ManifoldHessianObjective{InplaceEvaluation}, p
+)
+    return mho.gradient!!(M, Y, p)
+end
+
+function get_gradient_function(mho::ManifoldHessianObjective, recursive=false)
+    return mho.gradient!!
+end
+
 @doc raw"""
     Y = get_hessian(amp::AbstractManoptProblem{T}, p, X)
     get_hessian!(amp::AbstractManoptProblem{T}, Y, p, X)
@@ -116,7 +144,7 @@ function get_hessian!(
 end
 
 @doc raw"""
-    get_gradient_function(amgo::AbstractManifoldGradientObjective{E<:AbstractEvaluationType})
+    get_hessian_function(amgo::ManifoldHessianObjective{E<:AbstractEvaluationType})
 
 return the function to evaluate (just) the Hessian ``\operatorname{Hess} f(p)``.
 Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
@@ -356,7 +384,7 @@ function ApproxHessianSymmetricRankOne(
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M, typeof(p)),
     nu::R=-1.0,
     evaluation=AllocatingEvaluation(),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
@@ -502,7 +530,7 @@ function ApproxHessianBFGS(
     initial_operator::AbstractMatrix=Matrix{Float64}(
         I, manifold_dimension(M), manifold_dimension(M)
     ),
-    basis::B=DefaultOrthonormalBasis(),
+    basis::B=default_basis(M, typeof(p)),
     scale::Bool=true,
     evaluation=AllocatingEvaluation(),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),

@@ -2,7 +2,7 @@
 # State
 #
 
-_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))([`StopWhenSmallerOrEqual](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )$(_sc(:Any))[`StopWhenChangeLess`](@ref)`"
+_sc_alm_default = "[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))([`StopWhenSmallerOrEqual`](@ref)`(:ϵ, ϵ_min)`$(_sc(:All))[`StopWhenChangeLess`](@ref)`(1e-10) )`$(_sc(:Any))[`StopWhenChangeLess`](@ref)`"
 @doc """
     AugmentedLagrangianMethodState{P,T} <: AbstractManoptSolverState
 
@@ -102,7 +102,7 @@ mutable struct AugmentedLagrangianMethodState{
         ϵ_min::R=1e-6,
         λ::V=ones(length(get_equality_constraint(M, co, p, :))),
         λ_max::R=20.0,
-        λ_min::R=-λ_max,
+        λ_min::R=(-λ_max),
         μ::V=ones(length(get_inequality_constraint(M, co, p, :))),
         μ_max::R=20.0,
         ρ::R=1.0,
@@ -326,9 +326,7 @@ $(_var(:Keyword, :sub_kwargs))
 $(_var(:Keyword, :stopping_criterion; default= _sc_alm_default))
 $(_var(:Keyword, :sub_problem; default="[`DefaultManoptProblem`](@ref)`(M, sub_objective)`"))
 $(_var(:Keyword, :sub_state; default="[`QuasiNewtonState`](@ref)", add="as the quasi newton method, the [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) with [`InverseBFGS`](@ref) is used."))
-* `sub_stopping_criterion::StoppingCriterion=StopAfterIteration(300) |
-                                              StopWhenGradientNormLess(ϵ) |
-                                              StopWhenStepsizeLess(1e-8),
+* `sub_stopping_criterion::StoppingCriterion=`[`StopAfterIteration`](@ref)`(300)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(ϵ)`$(_sc(:Any))[`StopWhenStepsizeLess`](@ref)`(1e-8)`,
 
 
 For the `range`s of the constraints' gradient, other power manifold tangent space representations,
@@ -443,7 +441,7 @@ function augmented_Lagrangian_method!(
     μ_max::Real=20.0,
     λ::Vector=ones(length(get_equality_constraint(M, cmo, p, :))),
     λ_max::Real=20.0,
-    λ_min::Real=-λ_max,
+    λ_min::Real=(-λ_max),
     τ::Real=0.8,
     ρ::Real=1.0,
     θ_ρ::Real=0.3,
@@ -473,7 +471,7 @@ function augmented_Lagrangian_method!(
     ),
     sub_problem::AbstractManoptProblem=DefaultManoptProblem(
         M,
-        # pass down objective type to subsolvers
+        # pass down objective type to sub solvers
         decorate_objective!(
             M,
             ManifoldGradientObjective(sub_cost, sub_grad; evaluation=evaluation);

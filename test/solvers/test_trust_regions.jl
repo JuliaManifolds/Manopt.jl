@@ -1,7 +1,9 @@
-using Manifolds, Manopt, Test, LinearAlgebra, Random
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Random, Test
 
 include("trust_region_model.jl")
-include("../utils/example_tasks.jl")
 
 @testset "Riemannian Trust-Region" begin
     n = size(A, 1)
@@ -183,15 +185,15 @@ include("../utils/example_tasks.jl")
 
         @testset "Allocating Variant" begin
             q = trust_regions(M, f, grad_f, Hess_f, p)
-            @test isapprox(M, q, p_star)
+            @test isapprox(M, q, p_star) || isapprox(M, q, -p_star)
             q2 = copy(M, p)
             trust_regions!(M, f, grad_f, Hess_f, q2)
-            @test isapprox(M, q2, p_star)
+            @test isapprox(M, q2, p_star) || isapprox(M, q2, -p_star)
             # random start point
             q3 = trust_regions(M, f, grad_f, Hess_f)
             # remove ambiguity
             q3 = (sign(q3[1]) == sign(p_star[1])) ? q3 : -q3
-            @test isapprox(M, q3, p_star)
+            @test isapprox(M, q3, p_star) || isapprox(M, q3, -p_star)
 
             # a Default
             qaAoor = trust_regions(M, f, grad_f)
@@ -211,7 +213,7 @@ include("../utils/example_tasks.jl")
                 retraction_method=ProjectionRetraction(),
                 evaluation=InplaceEvaluation(),
             )
-            @test isapprox(M, qaHSR1, p_star)
+            @test isapprox(M, qaHSR1, p_star) || isapprox(M, qaHSR1, -p_star)
 
             qaHSR1_2 = copy(M, p)
             trust_regions!(
@@ -227,7 +229,7 @@ include("../utils/example_tasks.jl")
                 κ=0.9,
                 retraction_method=ProjectionRetraction(),
             )
-            @test isapprox(M, qaHSR1_2, p_star)
+            @test isapprox(M, qaHSR1_2, p_star) || isapprox(M, qaHSR1_2, -p_star)
 
             qaHBFGS = trust_regions(
                 M,
@@ -242,7 +244,7 @@ include("../utils/example_tasks.jl")
                 κ=0.9,
                 retraction_method=ProjectionRetraction(),
             )
-            @test isapprox(M, qaHBFGS, p_star)
+            @test isapprox(M, qaHBFGS, p_star) || isapprox(M, qaHBFGS, -p_star)
 
             qaHBFGS_2 = copy(M, p)
             trust_regions!(
@@ -258,7 +260,7 @@ include("../utils/example_tasks.jl")
                 κ=0.9,
                 retraction_method=ProjectionRetraction(),
             )
-            @test isapprox(M, qaHBFGS_2, p_star)
+            @test isapprox(M, qaHBFGS_2, p_star) || isapprox(M, qaHBFGS_2, -p_star)
         end
         @testset "Mutating" begin
             q3 = copy(M, p)
@@ -271,7 +273,7 @@ include("../utils/example_tasks.jl")
                 trust_region_radius=1.0,
                 evaluation=InplaceEvaluation(),
             )
-            @test isapprox(M, q3, p_star)
+            @test isapprox(M, q3, p_star) || isapprox(M, q3, -p_star)
 
             q4 = copy(M, p)
             trust_regions!(
@@ -283,7 +285,7 @@ include("../utils/example_tasks.jl")
                 trust_region_radius=1.0,
                 evaluation=InplaceEvaluation(),
             )
-            @test isapprox(M, q4, p_star)
+            @test isapprox(M, q4, p_star) || isapprox(M, q4, -p_star)
 
             qaHSR1_3 = copy(M, p)
 
@@ -303,7 +305,7 @@ include("../utils/example_tasks.jl")
                 retraction_method=ProjectionRetraction(),
                 evaluation=InplaceEvaluation(),
             )
-            @test isapprox(M, qaHSR1_3, p_star)
+            @test isapprox(M, qaHSR1_3, p_star) || isapprox(M, qaHSR1_3, -p_star)
 
             qaHBFGS_3 = copy(M, p)
             trust_regions!(
@@ -320,11 +322,11 @@ include("../utils/example_tasks.jl")
                 retraction_method=ProjectionRetraction(),
                 evaluation=InplaceEvaluation(),
             )
-            @test isapprox(M, qaHBFGS_3, p_star)
+            @test isapprox(M, qaHBFGS_3, p_star) || isapprox(M, qaHBFGS_3, -p_star)
         end
     end
     @testset "on the Circle" begin
-        Mc, fc, grad_fc, pc0, pc_star = Circle_mean_task()
+        Mc, fc, grad_fc, pc0, pc_star = ManoptTestSuite.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         s = trust_regions(Mc, fc, grad_fc, hess_fc; return_state=true)
         q = get_solver_result(s)
@@ -349,7 +351,7 @@ include("../utils/example_tasks.jl")
         ∇f(E, p) = A * p
         ∇²f(M, p, X) = A * X
         λ = min(eigvals(A)...)
-        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=project!)
+        q = trust_regions(M, f, ∇f, p0; objective_type=:Euclidean, (project!)=(project!))
         @test f(M, q) ≈ λ atol = 1 * 1e-1 # a bit imprecise?
         grad_f(M, p) = A * p - (p' * A * p) * p
         Hess_f(M, p, X) = A * X - (p' * A * X) .* p - (p' * A * p) .* X

@@ -432,7 +432,7 @@ get_solver_result(pbms::ProximalBundleMethodState) = pbms.p_last_serious
 
 #
 #
-# Dispatching on different types of subsolvers
+# Dispatching on different types of sub solvers
 # (a) closed form allocating
 function _proximal_bundle_subsolver!(
     M, pbms::ProximalBundleMethodState{P,T,F,ClosedFormSubSolverState{AllocatingEvaluation}}

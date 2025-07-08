@@ -7,10 +7,12 @@ decorate the [`AbstractManoptSolverState`](@ref)` s` with specific decorators.
 
 optional arguments provide necessary details on the decorators.
 
-* `debug=Array{Union{Symbol,DebugAction,String,Int},1}()`: a set of symbols
+* `callback=missing` add an arbitrary (simple) callback function `cb()` to be called every iteration.
+* `debug=Array{Union{Symbol,DebugAction,String,Int, Function},1}()`: a set of symbols
   representing [`DebugAction`](@ref)s, `Strings` used as dividers and a sub-sampling
   integer. These are passed as a [`DebugGroup`](@ref) within `:Iteration` to the
-  [`DebugSolverState`](@ref) decorator dictionary. Only exception is `:Stop` that is passed to `:Stop`.
+  [`DebugSolverState`](@ref) decorator dictionary. A function is added as a (non-simple) callback within a [`DebugCallback`](@ref).
+  Only exception is `:Stop` that is passed to `:Stop`.
 * `record=Array{Union{Symbol,RecordAction,Int},1}()`: specify recordings
   by using `Symbol`s or [`RecordAction`](@ref)s directly.
   An integer can again be used for only recording every ``i``th iteration.
@@ -27,6 +29,7 @@ function decorate_state!(
     s::S;
     debug::Union{
         Missing, # none
+        Function, # a function to indicate a (non-simple) callback
         DebugAction, # single one -> to :Iteration
         Array{DebugAction,1}, # a group -> to :Iteration
         Dict{Symbol,DebugAction}, # the most elaborate, a dictionary
@@ -40,10 +43,26 @@ function decorate_state!(
         Dict{Symbol,RecordAction}, # a dictionary for precise settings
         Array{<:Any,1}, # a formatted string with symbols or AbstractStateActions
     }=missing,
+    callback=missing, # a (simple) callback function
     return_state=false,
     kwargs..., # ignore all others
 ) where {S<:AbstractManoptSolverState}
     deco_s = s
+    # Add callback to debug parameter
+    if !ismissing(callback) # we got a simple callback
+        if ismissing(debug)
+            debug = DebugCallback(callback; simple=true)
+        else
+            # From complex to simple, first array, since the other ones create an array
+            (debug isa Array) && push!(debug, DebugCallback(callback; simple=true))
+            if ((debug isa Function) || (debug isa DebugAction))
+                debug = [debug, DebugCallback(callback; simple=true)]
+            end
+            (debug isa Dict) && warn(
+                "Adding callback to decorator too complicated; Callback ignored. Please add it to your Dictionary at :Iteration as a `DebugCallback` manually",
+            )
+        end
+    end
     if !ismissing(debug) && !(debug isa AbstractArray && length(debug) == 0)
         deco_s = DebugSolverState(s, debug)
     end

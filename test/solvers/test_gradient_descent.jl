@@ -107,9 +107,31 @@ using ManifoldDiff: grad_distance
             grad_f,
             data[1];
             stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
-            direction=Nesterov(M; p=copy(M, data[1])),
+            direction=Nesterov(; p=copy(M, data[1])),
         )
         @test isapprox(M, p, p6; atol=1e-13)
+        # Precon in simple scale down by 2
+        p7 = gradient_descent(
+            M,
+            f,
+            grad_f,
+            data[1];
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
+            direction=PreconditionedDirection((M, p, X) -> 0.5 .* X),
+        )
+        @test isapprox(M, p, p7; atol=1e-13)
+        # Precon in simple scale down by 2 – inplace
+        p8 = gradient_descent(
+            M,
+            f,
+            grad_f,
+            data[1];
+            stopping_criterion=StopAfterIteration(1000) | StopWhenChangeLess(M, 1e-16),
+            direction=PreconditionedDirection(
+                (M, Y, p, X) -> (Y .= 0.5 .* X); evaluation=InplaceEvaluation()
+            ),
+        )
+        @test isapprox(M, p, p8; atol=1e-13)
         M2 = Euclidean()
         @test_logs (
             :warn,

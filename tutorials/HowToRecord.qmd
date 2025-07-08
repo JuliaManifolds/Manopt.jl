@@ -11,11 +11,11 @@ This tutorial illustrates how to:
 * record within a subsolver
 * define an own `RecordAction` to perform individual recordings.
 
-Several predefined recordings exist, for example [`RecordCost`](https://manoptjl.org/stable/plans/record/#Manopt.RecordCost) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
-For fields of the `State` the recording can also be done [`RecordEntry`](https://manoptjl.org/stable/plans/record/#Manopt.RecordEvery).
+Several predefined recordings exist, for example [`RecordCost`](@ref) or [`RecordGradient`](https://manoptjl.org/stable/solvers/gradient_descent/#Manopt.RecordGradient), if the problem the solver uses provides a gradient.
+For fields of the `State` the recording can also be done [`RecordEntry`](@ref).
 For other recordings, for example more advanced computations before storing a value, an own `RecordAction` can be defined.
 
-We illustrate these using the gradient descent from the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We illustrate these using the gradient descent from the [Get started: optimize](getstarted.md) tutorial.
 
 Here the focus is put on ways to investigate the behaviour during iterations by using Recording techniques.
 
@@ -204,9 +204,9 @@ grad_g(M, p) = [project(M, p, mI[:, i]) for i in 1:d]
 p0 = project(M2, [ones(2)..., zeros(d - 3)..., 0.1])
 ```
 
-We directly start with recording the subsolvers Iteration.
+We directly start with recording the sub solvers Iteration.
 We can specify what to record in the subsolver using the `sub_kwargs`
-keyword argument with a `Symbol => value` pair. Here we specify to record the iteration and the cost in every subsolvers step.
+keyword argument with a `Symbol => value` pair. Here we specify to record the iteration and the cost in every sub solvers step.
 
 Furthermore, we have to “collect” this recording after every sub solver run.
 This is done with the `:Subsolver` keyword in the main `record=` keyword.
@@ -273,7 +273,7 @@ s3 = exact_penalty_method(
 );
 ```
 
-Then the following displays also the reasons why each of the recorded subsolvers stopped and the corresponding cost
+Then the following displays also the reasons why each of the recorded sub solvers stopped and the corresponding cost
 
 ```{julia}
 get_record(s3)
@@ -387,11 +387,14 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```

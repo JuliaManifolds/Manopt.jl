@@ -14,63 +14,63 @@
 The aim is to minimize a real-valued function on a Riemannian manifold, that is
 
 ```math
-\min f(x), \quad x ∈ \mathcal{M}.
+\min f(p), \quad p ∈ \mathcal{M}.
 ```
 
-Riemannian quasi-Newtonian methods are as generalizations of their Euclidean counterparts Riemannian line search methods. These methods determine a search direction ``η_k ∈ T_{x_k} \mathcal{M}`` at the current iterate ``x_k`` and a suitable stepsize ``α_k`` along ``\gamma(α) = R_{x_k}(α η_k)``, where ``R: T \mathcal{M} →\mathcal{M}`` is a retraction. The next iterate is obtained by
+Riemannian quasi-Newtonian methods are as generalizations of their Euclidean counterparts Riemannian line search methods. These methods determine a search direction ``η_k ∈ T_{p_k} \mathcal{M}`` at the current iterate ``p_k`` and a suitable stepsize ``α_k`` along ``\gamma(α) = R_{p_k}(α η_k)``, where ``R: T \mathcal{M} →\mathcal{M}`` is a retraction. The next iterate is obtained by
 
 ```math
-x_{k+1} = R_{x_k}(α_k η_k).
+p_{k+1} = R_{p_k}(α_k η_k).
 ```
 
 In quasi-Newton methods, the search direction is given by
 
 ```math
-η_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad}f (x_k)] = -\mathcal{B}_k [\operatorname{grad} (x_k)],
+η_k = -{\mathcal{H}_k}^{-1}[\operatorname{grad}f (p_k)] = -\mathcal{B}_k [\operatorname{grad} (p_k)],
 ```
 
-where ``\mathcal{H}_k : T_{x_k} \mathcal{M} →T_{x_k} \mathcal{M}`` is a positive definite self-adjoint operator, which approximates the action of the Hessian ``\operatorname{Hess} f (x_k)[⋅]`` and ``\mathcal{B}_k = {\mathcal{H}_k}^{-1}``. The idea of quasi-Newton methods is instead of creating a complete new approximation of the Hessian operator ``\operatorname{Hess} f(x_{k+1})`` or its inverse at every iteration, the previous operator ``\mathcal{H}_k`` or ``\mathcal{B}_k`` is updated by a convenient formula using the obtained information about the curvature of the objective function during the iteration. The resulting operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` acts on the tangent space ``T_{x_{k+1}} \mathcal{M}`` of the freshly computed iterate ``x_{k+1}``.
+where ``\mathcal{H}_k : T_{p_k} \mathcal{M} →T_{p_k} \mathcal{M}`` is a positive definite self-adjoint operator, which approximates the action of the Hessian ``\operatorname{Hess} f (p_k)[⋅]`` and ``\mathcal{B}_k = {\mathcal{H}_k}^{-1}``. The idea of quasi-Newton methods is instead of creating a complete new approximation of the Hessian operator ``\operatorname{Hess} f(p_{k+1})`` or its inverse at every iteration, the previous operator ``\mathcal{H}_k`` or ``\mathcal{B}_k`` is updated by a convenient formula using the obtained information about the curvature of the objective function during the iteration. The resulting operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` acts on the tangent space ``T_{p_{k+1}} \mathcal{M}`` of the freshly computed iterate ``p_{k+1}``.
 In order to get a well-defined method, the following requirements are placed on the new operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` that is created by an update.
-Since the Hessian ``\operatorname{Hess} f(x_{k+1})`` is a self-adjoint operator on the tangent space ``T_{x_{k+1}} \mathcal{M}``, and ``\mathcal{H}_{k+1}`` approximates it, one requirement is, that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is also self-adjoint on ``T_{x_{k+1}} \mathcal{M}``.
+Since the Hessian ``\operatorname{Hess} f(p_{k+1})`` is a self-adjoint operator on the tangent space ``T_{p_{k+1}} \mathcal{M}``, and ``\mathcal{H}_{k+1}`` approximates it, one requirement is, that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is also self-adjoint on ``T_{p_{k+1}} \mathcal{M}``.
 In order to achieve a steady descent, the next requirement is that ``η_k`` is a descent direction in each iteration.
-Hence a further requirement is that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is a positive definite operator on ``T_{x_{k+1}} \mathcal{M}``.
+Hence a further requirement is that ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` is a positive definite operator on ``T_{p_{k+1}} \mathcal{M}``.
 In order to get information about the curvature of the objective function into the new operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``, the last requirement is a form of a Riemannian quasi-Newton equation:
 
 ```math
-\mathcal{H}_{k+1} [T_{x_k \rightarrow x_{k+1}}({R_{x_k}}^{-1}(x_{k+1}))] = \operatorname{grad}(x_{k+1}) - T_{x_k \rightarrow x_{k+1}}(\operatorname{grad}f(x_k))
+\mathcal{H}_{k+1} [T_{p_k \rightarrow p_{k+1}}({R_{p_k}}^{-1}(p_{k+1}))] = \operatorname{grad}(p_{k+1}) - T_{p_k \rightarrow p_{k+1}}(\operatorname{grad}f(p_k))
 ```
 
 or
 
 ```math
-\mathcal{B}_{k+1} [\operatorname{grad}f(x_{k+1}) - T_{x_k \rightarrow x_{k+1}}(\operatorname{grad}f(x_k))] = T_{x_k \rightarrow x_{k+1}}({R_{x_k}}^{-1}(x_{k+1}))
+\mathcal{B}_{k+1} [\operatorname{grad}f(p_{k+1}) - T_{p_k \rightarrow p_{k+1}}(\operatorname{grad}f(p_k))] = T_{p_k \rightarrow p_{k+1}}({R_{p_k}}^{-1}(p_{k+1}))
 ```
 
-where ``T_{x_k \rightarrow x_{k+1}} : T_{x_k} \mathcal{M} →T_{x_{k+1}} \mathcal{M}`` and
+where ``T_{p_k \rightarrow p_{k+1}} : T_{p_k} \mathcal{M} →T_{p_{k+1}} \mathcal{M}`` and
 the chosen retraction ``R`` is the associated retraction of ``T``.
 Note that, of course, not all updates in all situations meet these conditions in every iteration.
 For specific quasi-Newton updates, the fulfilment of the Riemannian curvature condition, which requires that
 
 ```math
-g_{x_{k+1}}(s_k, y_k) > 0
+g_{p_{k+1}}(s_k, y_k) > 0
 ```
 
 holds, is a requirement for the inheritance of the self-adjointness and positive definiteness of the ``\mathcal{H}_k`` or ``\mathcal{B}_k`` to the operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}``. Unfortunately, the fulfilment of the Riemannian curvature condition is not given by a step size ``\alpha_k > 0`` that satisfies the generalized Wolfe conditions. However, to create a positive definite operator ``\mathcal{H}_{k+1}`` or ``\mathcal{B}_{k+1}`` in each iteration, the so-called locking condition was introduced in [HuangGallivanAbsil:2015](@cite), which requires that the isometric vector transport ``T^S``, which is used in the update formula, and its associate retraction ``R`` fulfil
 
 ```math
-T^{S}{x, ξ_x}(ξ_x) = β T^{R}{x, ξ_x}(ξ_x), \quad β = \frac{\lVert ξ_x \rVert_x}{\lVert T^{R}{x, ξ_x}(ξ_x) \rVert_{R_{x}(ξ_x)}},
+T^{S}{p, ξ_p}(ξ_p) = β T^{R}{p, ξ_p}(ξ_p), \quad β = \frac{\lVert ξ_p \rVert_p}{\lVert T^{R}{p, ξ_p}(ξ_p) \rVert_{R_{p}(ξ_p)}},
 ```
 
 where ``T^R`` is the vector transport by differentiated retraction. With the requirement that the isometric vector transport ``T^S`` and its associated retraction ``R`` satisfies the locking condition and using the tangent vector
 
 ```math
-y_k = {β_k}^{-1} \operatorname{grad}f(x_{k+1}) - T^{S}{x_k, α_k η_k}(\operatorname{grad}f(x_k)),
+y_k = {β_k}^{-1} \operatorname{grad}f(p_{k+1}) - T^{S}{p_k, α_k η_k}(\operatorname{grad}f(p_k)),
 ```
 
 where
 
 ```math
-β_k = \frac{\lVert α_k η_k \rVert_{x_k}}{\lVert T^{R}{x_k, α_k η_k}(α_k η_k) \rVert_{x_{k+1}}},
+β_k = \frac{\lVert α_k η_k \rVert_{p_k}}{\lVert T^{R}{p_k, α_k η_k}(α_k η_k) \rVert_{p_{k+1}}},
 ```
 
 in the update, it can be shown that choosing a stepsize ``α_k > 0`` that satisfies the Riemannian Wolfe conditions leads to the fulfilment of the Riemannian curvature condition, which in turn implies that the operator generated by the updates is positive definite.
@@ -87,6 +87,7 @@ QuasiNewtonMatrixDirectionUpdate
 QuasiNewtonLimitedMemoryDirectionUpdate
 QuasiNewtonCautiousDirectionUpdate
 Manopt.initialize_update!
+QuasiNewtonPreconditioner
 ```
 
 ## Hessian update rules
@@ -129,7 +130,7 @@ The [`quasi_Newton`](@ref) solver requires the following functions of a manifold
 * A [`copyto!`](@extref `Base.copyto!-Tuple{AbstractManifold, Any, Any}`)`(M, q, p)` and [`copy`](@extref `Base.copy-Tuple{AbstractManifold, Any}`)`(M,p)` for points and similarly `copy(M, p, X)` for tangent vectors.
 * By default the tangent vector storing the gradient is initialized calling [`zero_vector`](@extref `ManifoldsBase.zero_vector-Tuple{AbstractManifold, Any}`)`(M,p)`.
 
-Most Hessian approximations further require [`get_coordinates`](@extref `ManifoldsBase.get_coordinates-Tuple{AbstractManifold, Any, Any, ManifoldsBase.AbstractBasis}`)`(M, p, X, b)` with respect to the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `b` provided, which is [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) by default from the `basis=` keyword.
+Most Hessian approximations further require [`get_coordinates`](@extref `ManifoldsBase.get_coordinates`)`(M, p, X, b)` with respect to the [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) `b` provided, which is [`DefaultOrthonormalBasis`](@extref `ManifoldsBase.DefaultOrthonormalBasis`) by default from the `basis=` keyword.
 
 
 

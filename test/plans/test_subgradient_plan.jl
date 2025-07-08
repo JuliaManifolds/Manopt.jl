@@ -1,5 +1,8 @@
-using LRUCache, Manopt, Manifolds, Test
-include("../utils/dummy_types.jl")
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using LRUCache, Manifolds, Manopt, ManoptTestSuite, Test
+
 @testset "Subgradient Plan" begin
     M = Euclidean(2)
     p = [1.0, 2.0]
@@ -12,7 +15,7 @@ include("../utils/dummy_types.jl")
     end
     mso = ManifoldSubgradientObjective(f, ∂f)
     @testset "Objective Decorator passthrough" begin
-        ddo = DummyDecoratedObjective(mso)
+        ddo = ManoptTestSuite.DummyDecoratedObjective(mso)
         @test get_cost(M, mso, p) == get_cost(M, ddo, p)
         @test get_subgradient(M, mso, p) == get_subgradient(M, ddo, p)
         X = zero_vector(M, p)
@@ -20,6 +23,7 @@ include("../utils/dummy_types.jl")
         get_subgradient!(M, X, mso, p)
         get_subgradient!(M, Y, ddo, p)
         @test X == Y
+        @test Manopt.get_subgradient_function(ddo) == ∂f
     end
     @testset "Count" begin
         ddo = ManifoldCountObjective(M, mso, [:SubGradient])

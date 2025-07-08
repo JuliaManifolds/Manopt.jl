@@ -1,6 +1,7 @@
-using LRUCache, Manopt, Manifolds, ManifoldsBase, Test, RecursiveArrayTools
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/dummy_types.jl")
+using LRUCache, Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, RecursiveArrayTools
 
 @testset "Constrained Plan" begin
     M = ManifoldsBase.DefaultManifold(3)
@@ -12,6 +13,7 @@ include("../utils/dummy_types.jl")
     hess_f!(M, Y, p, X) = (Y .= [2.0, 2.0, 2.0])
     # Inequality constraints
     g(M, p) = [p[1] - 1, -p[2] - 1]
+    g!(M, V, p) = (V .= [p[1] - 1, -p[2] - 1])
     # # Function
     grad_g(M, p) = [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     grad_gA(M, p) = [1.0 0.0; 0.0 -1.0; 0.0 0.0]
@@ -41,6 +43,7 @@ include("../utils/dummy_types.jl")
     ) == 2
     # Equality Constraints
     h(M, p) = [2 * p[3] - 1]
+    h!(M, V, p) = (V .= [2 * p[3] - 1])
     h1(M, p) = 2 * p[3] - 1
     grad_h(M, p) = [[0.0, 0.0, 2.0]]
     grad_hA(M, p) = [[0.0, 0.0, 2.0];;]
@@ -83,9 +86,9 @@ include("../utils/dummy_types.jl")
     cofm = ConstrainedManifoldObjective(
         f,
         grad_f!,
-        g,
+        g!,
         grad_g!,
-        h,
+        h!,
         grad_h!;
         evaluation=InplaceEvaluation(),
         inequality_constraints=2,
@@ -116,8 +119,9 @@ include("../utils/dummy_types.jl")
     @test repr(cofm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
     @test repr(cova) === "ConstrainedManifoldObjective{AllocatingEvaluation}"
     @test repr(covm) === "ConstrainedManifoldObjective{InplaceEvaluation}"
-    @test Manopt.get_cost_function(cofa) === f
-    @test Manopt.get_gradient_function(cofa) === grad_f
+    # Test cost/grad pass through
+    @test Manopt.get_cost_function(cofa)(M, p) == f(M, p)
+    @test Manopt.get_gradient_function(cofa)(M, p) == grad_f(M, p)
     @testset "lengths" begin
         @test equality_constraints_length(cofa) == 1
         @test inequality_constraints_length(cofa) == 2
@@ -132,7 +136,7 @@ include("../utils/dummy_types.jl")
         @test inequality_constraints_length(cofE) == 0
     end
 
-    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldGradientObjective
+    @test Manopt.get_unconstrained_objective(cofa) isa ManifoldFirstOrderObjective
     cofha = ConstrainedManifoldObjective(
         f,
         grad_f,
@@ -149,13 +153,13 @@ include("../utils/dummy_types.jl")
     cofhm = ConstrainedManifoldObjective(
         f,
         grad_f!,
-        g,
+        g!,
         grad_g!,
-        h,
+        h!,
         grad_h!;
-        hess_f=hess_f!,
-        hess_g=hess_g!,
-        hess_h=hess_h!,
+        hess_f=(hess_f!),
+        hess_g=(hess_g!),
+        hess_h=(hess_h!),
         evaluation=InplaceEvaluation(),
         inequality_constraints=2,
         equality_constraints=1,
@@ -180,7 +184,7 @@ include("../utils/dummy_types.jl")
         [grad_g1!, grad_g2!],
         [h1],
         [grad_h1!];
-        hess_f=hess_f!,
+        hess_f=(hess_f!),
         hess_g=[hess_g1!, hess_g2!],
         hess_h=[hess_h1!],
         evaluation=InplaceEvaluation(),
@@ -371,7 +375,6 @@ include("../utils/dummy_types.jl")
         @test_throws ErrorException is_feasible(M, coh, p; error=:error)
         @test_logs (:info,) !is_feasible(M, coh, p; error=:info)
         @test_logs (:warn,) !is_feasible(M, coh, p; error=:warn)
-        # Dummy state
         st = Manopt.StepsizeState(p, X)
         mp = DefaultManoptProblem(M, coh)
         io = IOBuffer()
@@ -600,7 +603,7 @@ include("../utils/dummy_types.jl")
     end
     @testset "Objective Decorator passthrough" begin
         for obj in [cofa, cofm, cova, covm, cofha, cofhm, covha, covhm]
-            ddo = DummyDecoratedObjective(obj)
+            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
             @test get_equality_constraint(M, ddo, p, :) ==
                 get_equality_constraint(M, obj, p, :)
             @test get_inequality_constraint(M, ddo, p, :) ==
@@ -640,7 +643,7 @@ include("../utils/dummy_types.jl")
             @test Ye == Xe
         end
         for obj in [cofha, cofhm, covha, covhm]
-            ddo = DummyDecoratedObjective(obj)
+            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
             Xe = get_hess_equality_constraint(M, ddo, p, X, :)
             Ye = get_hess_equality_constraint(M, obj, p, X, :)
             @test Ye == Xe

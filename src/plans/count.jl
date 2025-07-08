@@ -14,6 +14,7 @@ to parts of the objective.
 | Symbol                      | Counts calls to (incl. `!` variants)   | Comment                      |
 | :-------------------------- | :------------------------------------- | :--------------------------- |
 | `:Cost`                     | [`get_cost`](@ref)                     |                              |
+| `:Differential`             | [`get_differential`](@ref).            |
 | `:EqualityConstraint`       | [`get_equality_constraint`](@ref)      | requires vector of counters  |
 | `:EqualityConstraints`      | [`get_equality_constraint`](@ref)      | when evaluating all of them with `:` |
 | `:GradEqualityConstraint`   | [`get_grad_equality_constraint`](@ref) | requires vector of counters  |
@@ -207,16 +208,12 @@ end
 #
 # Overwrite access functions
 #
+# Default, just count cost
 function get_cost(M::AbstractManifold, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
     return get_cost(M, co.objective, p)
 end
-function get_cost(
-    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
-) where {E<:AbstractEvaluationType}
-    c, _ = get_cost_and_gradient(M, co, p)
-    return c
-end
+# Passthrough
 function get_cost_function(co::ManifoldCountObjective, recursive=false)
     recursive && return get_cost_function(co.objective, recursive)
     return (M, p) -> get_cost(M, co, p)
@@ -227,11 +224,40 @@ function get_cost_and_gradient(M::AbstractManifold, co::ManifoldCountObjective, 
     _count_if_exists(co, :Gradient)
     return get_cost_and_gradient(M, co.objective, p)
 end
+function get_cost_and_gradient(
+    M::AbstractManifold,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
+) where {E<:AbstractEvaluationType}
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient(M, co.objective, p)
+end
 
 function get_cost_and_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     _count_if_exists(co, :Cost)
     _count_if_exists(co, :Gradient)
     return get_cost_and_gradient!(M, X, co.objective, p)
+end
+function get_cost_and_gradient!(
+    M::AbstractManifold,
+    X,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
+) where {E<:AbstractEvaluationType}
+    _count_if_exists(co, :Cost)
+    _count_if_exists(co, :Gradient)
+    return get_cost_and_gradient!(M, X, co.objective, p)
+end
+
+function get_differential(M::AbstractManifold, co::ManifoldCountObjective, p, X; kwargs...)
+    _count_if_exists(co, :Differential)
+    return get_differential(M, co.objective, p, X; kwargs...)
+end
+# Passthrough
+function get_differential_function(co::ManifoldCountObjective, recursive=false)
+    recursive && return get_differential_function(co.objective, recursive)
+    return (M, p, X; kwargs...) -> get_differential(M, co, p, X; kwargs...)
 end
 
 function get_gradient_function(
@@ -257,15 +283,31 @@ function get_gradient!(M::AbstractManifold, X, co::ManifoldCountObjective, p)
     return X
 end
 function get_gradient(
-    M::AbstractManifold, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
+    M::AbstractManifold,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
 ) where {E<:AbstractEvaluationType}
-    _, X = get_cost_and_gradient(M, co, p)
-    return X
+    _count_if_exists(co, :Gradient)
+    fs = get_objective(co.objective, true).functions
+    haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
+    haskey(fs, :gradientdifferential) && _count_if_exists(co, :Differential)
+    return get_gradient(M, co.objective, p)
 end
 function get_gradient!(
-    M::AbstractManifold, X, co::ManifoldCountObjective{E,<:ManifoldCostGradientObjective}, p
+    M::AbstractManifold,
+    X,
+    co::ManifoldCountObjective{E,<:ManifoldFirstOrderObjective{E,<:NamedTuple}},
+    p,
 ) where {E<:AbstractEvaluationType}
-    get_cost_and_gradient!(M, X, co, p)
+    _count_if_exists(co, :Gradient)
+    fs = co.objective.functions
+    haskey(fs, :costgradient) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Cost)
+    haskey(fs, :costgradientdifferential) && _count_if_exists(co, :Differential)
+    haskey(fs, :gradientdifferential) && _count_if_exists(co, :Differential)
+    get_gradient!(M, X, co.objective, p)
     return X
 end
 

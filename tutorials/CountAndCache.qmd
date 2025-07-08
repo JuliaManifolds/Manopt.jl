@@ -5,7 +5,7 @@ author: Ronny Bergmann
 
 In this tutorial, we want to investigate the caching and counting (statistics) features
 of [Manopt.jl](https://manoptjl.org). We reuse the optimization tasks from the
-introductory tutorial [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html).
+introductory tutorial [🏔️ Get started with Manopt.jl](getstarted.md).
 
 ## Introduction
 
@@ -67,7 +67,7 @@ using ManifoldDiff: grad_distance
 
 ## Counting
 
-We first define our task, the Riemannian Center of Mass from the [Get started: optimize!](https://manoptjl.org/stable/tutorials/Optimize!.html) tutorial.
+We first define our task, the Riemannian Center of Mass from the [🏔️ Get started with Manopt.jl](getstarted.md) tutorial.
 
 ```{julia}
 n = 100
@@ -347,11 +347,14 @@ This tutorial is cached. It was last run on the following package versions.
 
 ```{julia}
 #| code-fold: true
+#| echo: false
 using Pkg
 Pkg.status()
 ```
 ```{julia}
 #| code-fold: true
+#| echo: false
+#| output: asis
 using Dates
-now()
+println("This tutorial was last rendered $(Dates.format(now(), "U d, Y, HH:MM:SS")).");
 ```

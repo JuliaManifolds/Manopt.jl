@@ -47,8 +47,8 @@ import Manifolds: inner
         @test dcs.p == p1
         set_gradient!(dcs, M, p1, X1)
         @test dcs.X == X1
-        set_parameter!(dcs, :SubProblem, :X, X1)
-        set_parameter!(dcs, :SubState, :X, X1)
+        Manopt.set_parameter!(dcs, :SubProblem, :X, X1)
+        Manopt.set_parameter!(dcs, :SubState, :X, X1)
 
         dcppa_sub_cost = ProximalDCCost(g, copy(M, p0), 1.0)
         dcppa_sub_grad = ProximalDCGrad(grad_g, copy(M, p0), 1.0)
@@ -109,7 +109,7 @@ import Manifolds: inner
     end
     @testset "Running the subsolver algorithms" begin
         p1 = difference_of_convex_algorithm(
-            M, f, g, grad_h!, p0; grad_g=grad_g!, evaluation=InplaceEvaluation()
+            M, f, g, grad_h!, p0; grad_g=(grad_g!), evaluation=InplaceEvaluation()
         )
         p2 = difference_of_convex_algorithm(M, f, g, grad_h, p0; grad_g=grad_g)
         s1 = difference_of_convex_algorithm(
@@ -133,7 +133,7 @@ import Manifolds: inner
         @test_throws ErrorException difference_of_convex_algorithm(M, f, g, grad_h, p0)
 
         p4 = difference_of_convex_proximal_point(
-            M, grad_h!, p0; g=g, grad_g=grad_g!, evaluation=InplaceEvaluation()
+            M, grad_h!, p0; g=g, grad_g=(grad_g!), evaluation=InplaceEvaluation()
         )
         p5 = difference_of_convex_proximal_point(M, grad_h, p0; g=g, grad_g=grad_g)
         p5b = difference_of_convex_proximal_point(M, grad_h; g=g, grad_g=grad_g)
@@ -192,7 +192,7 @@ import Manifolds: inner
         )
     end
     @testset "Running the closed form solution solvers" begin
-        # make them a bit by providing subsolvers as functions
+        # make them a bit by providing sub solvers as functions
         function dca_sub(M, p, X)
             q = copy(M, p)
             lin_s = LinearizedDCCost(g, copy(M, p), copy(M, p, X))
@@ -211,12 +211,12 @@ import Manifolds: inner
             return q
         end
         p12 = difference_of_convex_algorithm(
-            M, f, g, grad_h!, p0; sub_problem=dca_sub!, evaluation=InplaceEvaluation()
+            M, f, g, grad_h!, p0; sub_problem=(dca_sub!), evaluation=InplaceEvaluation()
         )
         @test isapprox(M, p11, p12)
         @test f(M, p11) ≈ 0.0 atol = 1e-15
 
-        # fake them a bit by providing subsolvers as functions
+        # fake them a bit by providing sub solvers as functions
         function prox_g(M, λ, p)
             q = copy(M, p)
             prox = ProximalDCCost(g, copy(M, p), λ)
@@ -238,7 +238,7 @@ import Manifolds: inner
             return q
         end
         p14 = difference_of_convex_proximal_point(
-            M, grad_h!, p0; prox_g=prox_g!, evaluation=InplaceEvaluation()
+            M, grad_h!, p0; prox_g=(prox_g!), evaluation=InplaceEvaluation()
         )
         @test isapprox(M, p13, p14)
         @test f(M, p13) ≈ 0.0 atol = 1e-15

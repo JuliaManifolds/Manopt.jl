@@ -243,7 +243,7 @@ function (re::RecordEvery)(
     elseif re.always_update
         re.record(amp, ams, 0)
     end
-    # Set activity to activate or deactivate subsolvers
+    # Set activity to activate or deactivate sub solvers
     # note that since recording is happening at the end
     # sets activity for the _next_ iteration
     set_parameter!(
@@ -390,7 +390,7 @@ getindex(r::RecordGroup, i) = get_record(r, i)
 @doc raw"""
     RecordSubsolver <: RecordAction
 
-Record the current subsolvers recording, by calling [`get_record`](@ref)
+Record the current sub solvers recording, by calling [`get_record`](@ref)
 on the sub state with
 
 # Fields
@@ -428,7 +428,7 @@ status_summary(::RecordSubsolver) = ":Subsolver"
 record action that only records if the `active` boolean is set to true.
 This can be set from outside and is for example triggered by |`RecordEvery`](@ref)
 on recordings of the subsolver.
-While this is for subsolvers maybe not completely necessary, recording values that
+While this is for sub solvers maybe not completely necessary, recording values that
 are never accessible, is not that useful.
 
 # Fields

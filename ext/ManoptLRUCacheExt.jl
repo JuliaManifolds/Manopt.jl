@@ -3,14 +3,7 @@ module ManoptLRUCacheExt
 using Manopt
 import Manopt: init_caches
 using ManifoldsBase
-
-if isdefined(Base, :get_extension)
-    using LRUCache
-else
-    # imports need to be relative for Requires.jl-based workflows:
-    # https://github.com/JuliaArrays/ArrayInterface.jl/pull/387
-    using ..LRUCache
-end
+using LRUCache
 
 # introduce LRU even as default.
 function Manopt.init_caches(
@@ -53,6 +46,7 @@ function Manopt.init_caches(
         m = get(cache_sizes, c, cache_size)
         # Float cache, like for f
         (c === :Cost) && push!(lru_caches, LRU{P,R}(; maxsize=m))
+        (c === :Differential) && push!(lru_caches, LRU{Tuple{P,T},R}(; maxsize=m))
         # vectors, like for Constraints/EqCOnstraints/InEqCOnstraints
         # (a) store whole vectors
         (c === :EqualityConstraints) && push!(lru_caches, LRU{P,Vector{R}}(; maxsize=m))

@@ -1,36 +1,41 @@
-_doc_LM_formula = raw"""
-```math
-\operatorname*{arg\,min}_{p ∈ \mathcal M} \frac{1}{2} \lVert f(p) \rVert^2,
-```
-"""
 _doc_LM = """
-    LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1)
+    LevenbergMarquardt(M, f, jacobian_f, p, num_components=-1; kwargs...)
+    LevenbergMarquardt(M, vgf, p; kwargs...)
+    LevenbergMarquardt(M, nlso, p; kwargs...)
     LevenbergMarquardt!(M, f, jacobian_f, p, num_components=-1; kwargs...)
+    LevenbergMarquardt!(M, vgf, p, num_components=-1; kwargs...)
+    LevenbergMarquardt!(M, nlso, p, num_components=-1; kwargs...)
 
-Solve an optimization problem of the form
+compute the the Riemannian Levenberg-Marquardt algorithm [Peeters:1993, AdachiOkunoTakeda:2022](@cite)
+to solve
 
-$(_doc_LM_formula)
+$(_problem(:NonLinearLeastSquares))
 
-where ``f: $(_math(:M)) → ℝ^d`` is a continuously differentiable function,
-using the Riemannian Levenberg-Marquardt algorithm [Peeters:1993](@cite).
-The implementation follows Algorithm 1 [AdachiOkunoTakeda:2022](@cite).
-The second signature performs the optimization in-place of `p`.
+The second block of signatures perform the optimization in-place of `p`.
 
 # Input
 
 $(_var(:Argument, :M; type=true))
-* `f`:              a cost function ``f: $(_math(:M))→ℝ^d``
-* `jacobian_f`:     the Jacobian of ``f``. The Jacobian is supposed to accept a keyword argument
-  `basis_domain` which specifies basis of the tangent space at a given point in which the
-  Jacobian is to be calculated. By default it should be the `DefaultOrthonormalBasis`.
+* `f`: a cost function ``f: $(_math(:M))→ℝ^m``.
+  The cost function can be provided in two different ways
+    * as a single function returning a vector ``f(p) ∈ ℝ^m``
+    * as a vector of functions, where each single function returns a scalar ``f_i(p) ∈ ℝ``
+  The type is determined by the `function_type=` keyword argument.
+* `jacobian_f`:   the Jacobian of ``f``.
+  The Jacobian can be provided in three different ways
+  * as a single function returning a vector of gradient vectors ``$(_tex(:bigl))($(_tex(:grad)) f_i(p)$(_tex(:bigr)))_{i=1}^m``
+  * as a vector of functions, where each single function returns a gradient vector ``$(_tex(:grad)) f_i(p)``, ``i=1,…,m``
+  * as a single function returning a (coefficient) matrix ``J ∈ ℝ^{m×d}``, where ``d`` is the dimension of the manifold.
+  These coefficients are given with respect to an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) of the tangent space at `p`.
+  The type is determined by the `jacobian_type=` keyword argument.
 $(_var(:Argument, :p))
-* `num_components`: length of the vector returned by the cost function (`d`).
+* `num_components`: length ``m`` of the vector returned by the cost function.
   By default its value is -1 which means that it is determined automatically by
-  calling `f` one additional time. This is only possible when `evaluation` is `AllocatingEvaluation`,
+  calling `f` one additional time. This is only possible when `evaluation` is [`AllocatingEvaluation`](@ref),
   for mutating evaluation this value must be explicitly specified.
 
-These can also be passed as a [`NonlinearLeastSquaresObjective`](@ref),
-then the keyword `jacobian_tangent_basis` below is ignored
+You can also provide the cost and its Jacobian already as a[`VectorGradientFunction`](@ref) `vgf`,
+Alternatively, passing a [`NonlinearLeastSquaresObjective`](@ref) `nlso`.
 
 # Keyword arguments
 
@@ -40,13 +45,16 @@ $(_var(:Keyword, :evaluation))
   residual (objective) at minimum is equal to 0.
 * `damping_term_min=0.1`:      initial (and also minimal) value of the damping term
 * `β=5.0`:                     parameter by which the damping term is multiplied when the current new point is rejected
+* `function_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of cost function provided.
 * `initial_jacobian_f`:      the initial Jacobian of the cost function `f`.
   By default this is a matrix of size `num_components` times the manifold dimension of similar type as `p`.
 * `initial_residual_values`: the initial residual vector of the cost function `f`.
   By default this is a vector of length `num_components` of similar type as `p`.
-* `jacobian_tangent_basis`:  an [`AbstractBasis`](@extref `ManifoldsBase.AbstractBasis`) specify the basis of the tangent space for `jacobian_f`.
+* `jacobian_type=`[`FunctionVectorialType`](@ref): an [`AbstractVectorialType`](@ref) specifying the type of Jacobian provided.
+* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
+  linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
+  symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(200)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-12)`"))
 
 $(_note(:OtherKeywords))
 
@@ -74,7 +82,8 @@ function LevenbergMarquardt(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    function_type::AbstractVectorialType=FunctionVectorialType(),
+    jacobian_type::AbstractVectorialType=CoordinateVectorialType(DefaultOrthonormalBasis()),
     kwargs...,
 )
     if num_components == -1
@@ -88,13 +97,24 @@ function LevenbergMarquardt(
             )
         end
     end
-    nlso = NonlinearLeastSquaresObjective(
+    vgf = VectorGradientFunction(
         f,
         jacobian_f,
         num_components;
         evaluation=evaluation,
-        jacobian_tangent_basis=jacobian_tangent_basis,
+        function_type=function_type,
+        jacobian_type=jacobian_type,
     )
+    return LevenbergMarquardt(M, vgf, p; evaluation=evaluation, kwargs...)
+end
+function LevenbergMarquardt(
+    M::AbstractManifold,
+    vgf::VectorGradientFunction,
+    p;
+    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
+    kwargs...,
+)
+    nlso = NonlinearLeastSquaresObjective(vgf)
     return LevenbergMarquardt(M, nlso, p; evaluation=evaluation, kwargs...)
 end
 function LevenbergMarquardt(
@@ -113,7 +133,9 @@ function LevenbergMarquardt!(
     p,
     num_components::Int=-1;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    jacobian_tangent_basis::AbstractBasis=default_basis(M, typeof(p)),
+    jacobian_type=CoordinateVectorialType(jacobian_tangent_basis),
+    function_type=FunctionVectorialType(),
     kwargs...,
 )
     if num_components == -1
@@ -132,7 +154,8 @@ function LevenbergMarquardt!(
         jacobian_f,
         num_components;
         evaluation=evaluation,
-        jacobian_tangent_basis=jacobian_tangent_basis,
+        jacobian_type=jacobian_type,
+        function_type=function_type,
     )
     return LevenbergMarquardt!(M, nlso, p; evaluation=evaluation, kwargs...)
 end
@@ -149,13 +172,13 @@ function LevenbergMarquardt!(
     β::Real=5.0,
     η::Real=0.2,
     damping_term_min::Real=0.1,
-    initial_residual_values=similar(p, get_objective(nlso).num_components),
+    initial_residual_values=similar(p, length(get_objective(nlso).objective)),
     initial_jacobian_f=similar(
-        p, get_objective(nlso).num_components, manifold_dimension(M)
+        p, length(get_objective(nlso).objective), manifold_dimension(M)
     ),
+    (linear_subsolver!)=(default_lm_lin_solve!),
     kwargs..., #collect rest
 ) where {O<:Union{NonlinearLeastSquaresObjective,AbstractDecoratedManifoldObjective}}
-    i_nlso = get_objective(nlso) # un-decorate for safety
     dnlso = decorate_objective!(M, nlso; kwargs...)
     nlsp = DefaultManoptProblem(M, dnlso)
     lms = LevenbergMarquardtState(
@@ -169,6 +192,7 @@ function LevenbergMarquardt!(
         stopping_criterion=stopping_criterion,
         retraction_method=retraction_method,
         expect_zero_residual=expect_zero_residual,
+        (linear_subsolver!)=(linear_subsolver!),
     )
     dlms = decorate_state!(lms; debug=debug, kwargs...)
     solve!(nlsp, dlms)
@@ -178,86 +202,61 @@ end
 # Solver functions
 #
 function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
+    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
 ) where {mT<:AbstractManifold}
     M = get_manifold(dmp)
-    lms.residual_values = get_objective(dmp).f(M, lms.p)
-    lms.X = get_gradient(dmp, lms.p)
-    return lms
-end
-function initialize_solver!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    lms::LevenbergMarquardtState,
-) where {mT<:AbstractManifold}
-    M = get_manifold(dmp)
-    get_objective(dmp).f(M, lms.residual_values, lms.p)
-    get_gradient_from_Jacobian!(M, lms.X, get_objective(dmp), lms.p, lms.jacF)
+    nlso = get_objective(dmp)
+    get_residuals!(M, lms.residual_values, nlso, lms.p)
+    get_jacobian!(M, lms.jacobian, nlso, lms.p)
+    get_gradient!(M, lms.X, nlso, lms.p; jacobian_cache=lms.jacobian)
     return lms
 end
 
-function _maybe_get_basis(M::AbstractManifold, p, B::AbstractBasis)
-    if requires_caching(B)
-        return get_basis(M, p, B)
-    else
-        return B
+"""
+    default_lm_lin_solve!(sk, JJ, grad_f_c)
+
+Solve the system `JJ \\ grad_f_c` where JJ is (mathematically) a symmetric positive
+definite matrix and save the result to `sk`. In case of numerical errors the
+`PosDefException` is caught and the default symmetric solver `(Symmetric(JJ) \\ grad_f_c)`
+is used.
+
+The function is intended to be used with [`LevenbergMarquardt`](@ref).
+"""
+function default_lm_lin_solve!(sk, JJ, grad_f_c)
+    try
+        ldiv!(sk, cholesky(JJ), grad_f_c)
+    catch e
+        if e isa PosDefException
+            sk .= Symmetric(JJ) \ grad_f_c
+        else
+            rethrow()
+        end
     end
-end
-
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    jacF,
-    p,
-    basis_domain::AbstractBasis,
-) where {mT}
-    nlso = get_objective(dmp)
-    return copyto!(jacF, nlso.jacobian!!(get_manifold(dmp), p; basis_domain=basis_domain))
-end
-function get_jacobian!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    jacF,
-    p,
-    basis_domain::AbstractBasis,
-) where {mT}
-    nlso = get_objective(dmp)
-    return nlso.jacobian!!(get_manifold(dmp), jacF, p; basis_domain=basis_domain)
-end
-
-function get_residuals!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{AllocatingEvaluation}},
-    residuals,
-    p,
-) where {mT}
-    return copyto!(residuals, get_objective(dmp).f(get_manifold(dmp), p))
-end
-function get_residuals!(
-    dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective{InplaceEvaluation}},
-    residuals,
-    p,
-) where {mT}
-    return get_objective(dmp).f(get_manifold(dmp), residuals, p)
+    return sk
 end
 
 function step_solver!(
     dmp::DefaultManoptProblem{mT,<:NonlinearLeastSquaresObjective},
     lms::LevenbergMarquardtState,
-    k::Integer,
+    ::Integer,
 ) where {mT<:AbstractManifold}
     # `o.residual_values` is either initialized by `initialize_solver!` or taken from the previous iteration
     M = get_manifold(dmp)
     nlso = get_objective(dmp)
-    basis_ox = _maybe_get_basis(M, lms.p, nlso.jacobian_tangent_basis)
     # a new Jacobian is only  needed if the last step was successful
     if lms.last_step_successful
-        get_jacobian!(dmp, lms.jacF, lms.p, basis_ox)
+        get_jacobian!(M, lms.jacobian, nlso, lms.p)
     end
     λk = lms.damping_term * norm(lms.residual_values)^2
-
-    JJ = transpose(lms.jacF) * lms.jacF + λk * I
+    basis_ox = get_basis(nlso.objective.jacobian_type)
+    JJ = transpose(lms.jacobian) * lms.jacobian + λk * I
     # `cholesky` is technically not necessary but it's the fastest method to solve the
     # problem because JJ is symmetric positive definite
-    grad_f_c = transpose(lms.jacF) * lms.residual_values
-    sk = cholesky(JJ) \ -grad_f_c
+    grad_f_c = transpose(lms.jacobian) * lms.residual_values
+    sk = similar(grad_f_c)
+    lms.linear_subsolver!(sk, JJ, grad_f_c)
+    sk .*= -1
     get_vector!(M, lms.X, lms.p, grad_f_c, basis_ox)
 
     get_vector!(M, lms.step_vector, lms.p, sk, basis_ox)
@@ -265,11 +264,11 @@ function step_solver!(
     temp_x = retract(M, lms.p, lms.step_vector, lms.retraction_method)
 
     normFk2 = norm(lms.residual_values)^2
-    get_residuals!(dmp, lms.candidate_residual_values, temp_x)
+    get_value!(M, lms.candidate_residual_values, nlso.objective, temp_x)
 
     ρk =
         (normFk2 - norm(lms.candidate_residual_values)^2) / (
-            -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacF * sk)^2 -
+            -2 * inner(M, lms.p, lms.X, lms.step_vector) - norm(lms.jacobian * sk)^2 -
             λk * norm(sk)^2
         )
     if ρk >= lms.η

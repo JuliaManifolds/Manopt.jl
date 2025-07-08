@@ -23,6 +23,7 @@ Cartis
 canonicalization
 canonicalized
 Constantin
+[Cc]ubics
 Dai
 deactivatable
 Diepeveen
@@ -33,6 +34,7 @@ eigen
 eigendecomposition
 elementwise
 Ehresmann
+Engen
 Fenchel
 Ferreira
 Frank
@@ -76,9 +78,12 @@ Munkvold
 [Mm]ead
 [Nn]elder
 Nesterov
+Nesterovs
 Newton
 nonmonotone
 nonpositive
+[Nn]onsmooth
+Oddsen
 [Pp]arametrising
 Parametrising
 [Pp]ock
@@ -110,9 +115,12 @@ Stephansen
 Stokkenes
 [Ss]ubdifferential
 [Ss]ubgradient
+[Ss]ubgradients
 subsampled
 [Ss]ubsolver
+[Ss]ubsolvers
 summand
+summands
 superlinear
 supertype
 th

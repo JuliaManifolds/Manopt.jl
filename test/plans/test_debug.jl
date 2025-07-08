@@ -153,7 +153,7 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         st.stop(mp, st, 20)
         DebugStoppingCriterion(; io=io)(mp, st, 20)
         @test String(take!(io)) ==
-            "The algorithm reached its maximal number of iterations (20).\n"
+            "At iteration 20 the algorithm reached its maximal number of iterations (20).\n"
         @test repr(DebugStoppingCriterion()) == "DebugStoppingCriterion()"
         @test Manopt.status_summary(DebugStoppingCriterion()) == ":Stop"
         # Status for multiple dictionaries
@@ -425,8 +425,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dD = DebugDivider(" | "; io=io)
         dA = DebugWhenActive(dD, false)
         @test !dA.active
-        set_parameter!(dA, :Dummy, true) # pass down
-        set_parameter!(dA, :Activity, true) # activate
+        Manopt.set_parameter!(dA, :Dummy, true) # pass down
+        Manopt.set_parameter!(dA, :Activity, true) # activate
         @test dA.active
         @test repr(dA) == "DebugWhenActive($(repr(dD)), true, true)"
         @test Manopt.status_summary(dA) == repr(dA)
@@ -436,13 +436,13 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         dE = DebugEvery(dA, 2)
         dE(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
-        set_parameter!(dE, :Activity, false) # deactivate
+        Manopt.set_parameter!(dE, :Activity, false) # deactivate
         dE(mp, st, -1) # test that reset is still working
         dE(mp, st, 2)
         @test endswith(String(take!(io)), "")
         @test !dA.active
         dG = DebugGroup([dA])
-        set_parameter!(dG, :Activity, true) # activate in group
+        Manopt.set_parameter!(dG, :Activity, true) # activate in group
         dG(mp, st, 2)
         @test endswith(String(take!(io)), " | ")
         # test its usage in the factory independent of position
@@ -450,7 +450,47 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test DebugFactory([:WhenActive, " | "])[:Iteration] isa DebugWhenActive
 
         dst = DebugSolverState(st, dA)
-        set_parameter!(dst, :Debug, :Activity, true)
+        Manopt.set_parameter!(dst, :Debug, :Activity, true)
         @test dA.active
+    end
+    @testset "decorate_state! and callbacks" begin
+        # Wrap this in a function so the callback uses right scope for n
+        function test_simple_callback()
+            M = ManifoldsBase.DefaultManifold(2)
+            p = [4.0, 2.0]
+            st = GradientDescentState(
+                M;
+                p=p,
+                stopping_criterion=StopAfterIteration(20),
+                stepsize=Manopt.ConstantStepsize(M),
+            )
+            f(M, q) = distance(M, q, p) .^ 2
+            grad_f(M, q) = -2 * log(M, q, p)
+            mp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            n = 0
+            cb() = (n += 1)
+            dst = decorate_state!(st; callback=cb)
+            step_solver!(mp, dst, 1)
+            @test n == 1
+            dst = decorate_state!(st; callback=cb, debug=DebugDivider(""))
+            step_solver!(mp, dst, 1)
+            @test n == 2
+            cb2(p, s, k) = ((k > 1) && (n += 1))
+            # Advanced 2, pass to debug
+            dst2 = decorate_state!(st; debug=cb2)
+            step_solver!(mp, dst2, 1)
+            step_solver!(mp, dst2, 2)
+            @test n == 3
+            #Equivalent to 2.
+            dst3 = decorate_state!(st; debug=Manopt.DebugCallback(cb2))
+            step_solver!(mp, dst3, 1)
+            step_solver!(mp, dst3, 2)
+            @test n == 4
+            return nothing
+        end
+        test_simple_callback()
+        dbc = Manopt.DebugCallback(() -> nothing; simple=true)
+        @test startswith(repr(dbc), "DebugCallback containing")
+        @test startswith(Manopt.status_summary(dbc), "#")
     end
 end

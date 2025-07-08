@@ -2,10 +2,10 @@
 """
     AbstractConstrainedFunctor{T}
 
-A common supertype for fucntors that model constraint functions.
+A common supertype for functors that model constraint functions.
 
 This supertype provides access for the fields ``λ`` and ``μ``, the dual variables of
-constraintsnof type `T`.
+constraints of type `T`.
 """
 abstract type AbstractConstrainedFunctor{T} end
 
@@ -23,13 +23,13 @@ get_parameter(acf::AbstractConstrainedFunctor, ::Val{:λ}) = acf.λ
 """
     AbstractConstrainedSlackFunctor{T,R}
 
-A common supertype for fucntors that model constraint functions with slack.
+A common supertype for functors that model constraint functions with slack.
 
 This supertype additionally provides access for the fields
 * `μ::T` the dual for the inequality constraints
-* `s::T` the slack parametyer, and
+* `s::T` the slack parameter, and
 * `β::R` the  the barrier parameter
-which is also of typee `T`.
+which is also of type `T`.
 """
 abstract type AbstractConstrainedSlackFunctor{T,R} end
 
@@ -109,11 +109,11 @@ If any of the three parts provides a Hessian, the corresponding object, that is 
 respectively, is created.
 """
 struct ConstrainedManifoldObjective{
-    T<:AbstractEvaluationType,
+    E<:AbstractEvaluationType,
     MO<:AbstractManifoldObjective,
     EMO<:Union{AbstractVectorGradientFunction,Nothing},
     IMO<:Union{AbstractVectorGradientFunction,Nothing},
-} <: AbstractManifoldObjective{T}
+} <: AbstractManifoldObjective{E}
     objective::MO
     equality_constraints::EMO
     inequality_constraints::IMO
@@ -332,7 +332,7 @@ components gradients, for example
 
 In another interpretation, this can be considered a point on the tangent space
 at ``P = (p,…,p) \in \mathcal M^m``, so in the tangent space to the [`PowerManifold`](@extref `ManifoldsBase.PowerManifold`) ``\mathcal M^m``.
-The case where this is a [`NestedPowerRepresentation`](@extref) this agrees with the
+The case where this is a [`NestedPowerRepresentation`](@extref `ManifoldsBase.NestedPowerRepresentation`) this agrees with the
 interpretation from before, but on power manifolds, more efficient representations exist.
 
 To then access the elements, the range has to be specified. That is what this
@@ -992,14 +992,15 @@ g_i(p) ≤ 0, \text{ for all } i=1,…,m\quad\text{ and }\quad h_j(p) = 0, \text
 ```
 
 # Keyword arguments
-* `check_point::Bool=true`: whether to also verify that ``p∈\mathcal M` holds, using [`is_point`](@extref ManifoldsBase.is_point)
+* `check_point::Bool=true`: whether to also verify that ``p∈\mathcal M` holds, using [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
 * `error::Symbol=:none`: if the point is not feasible, this symbol determines how to report the error.
     * `:error`: throws an error
     * `:info`: displays the error message as an @info
     * `:none`: (default) the function just returns true/false
     * `:warn`: displays the error message as a @warning.
 
-The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@extref ManifoldsBase.is_point) if the point is verfied (see `check_point`).
+The keyword `error=` and all other `kwargs...` are passed on to [`is_point`](@extref ManifoldsBase :jl:method:`ManifoldsBase.is_point-Tuple{AbstractManifold, Any, Bool}`)
+if the point is verfied (see `check_point`).
 
 All other keywords are passed on to `is_poi`
 """

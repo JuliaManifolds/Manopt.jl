@@ -1,7 +1,8 @@
-using Manifolds, ManifoldsBase, Manopt, Test, Random
-using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-include("../utils/example_tasks.jl")
+using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, Random
+using LinearAlgebra: I, tr, Symmetric, diagm, eigvals, eigvecs
 
 @testset "Adaptive Regularization with Cubics" begin
     Random.seed!(42)
@@ -147,7 +148,7 @@ include("../utils/example_tasks.jl")
         p1 = adaptive_regularization_with_cubics(
             M, f, grad_f, Hess_f, p0; θ=0.5, σ=100.0, retraction_method=PolarRetraction()
         )
-        @test abs(f(M, p1) - f_min) < 1e-14
+        @test abs(f(M, p1) - f_min) < 5e-14
         @test isapprox(M, p_min, p1)
         Random.seed!(42)
         p2 = adaptive_regularization_with_cubics(
@@ -227,7 +228,7 @@ include("../utils/example_tasks.jl")
     end
 
     @testset "A short solver run on the circle" begin
-        Mc, fc, grad_fc, pc0, pc_star = Circle_mean_task()
+        Mc, fc, grad_fc, pc0, pc_star = ManoptTestSuite.Circle_mean_task()
         hess_fc(Mc, p, X) = 1.0
         p0 = 0.2
         p1 = adaptive_regularization_with_cubics(

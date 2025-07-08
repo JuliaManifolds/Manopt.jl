@@ -1,5 +1,7 @@
-using LRUCache, LinearAlgebra, Manopt, Manifolds, Test
-include("../utils/dummy_types.jl")
+s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
+!(s in LOAD_PATH) && (push!(LOAD_PATH, s))
+
+using LRUCache, LinearAlgebra, Manifolds, Manopt, ManoptTestSuite, Test
 
 @testset "Difference of Convex Plan" begin
     n = 2
@@ -7,14 +9,59 @@ include("../utils/dummy_types.jl")
     g(M, p) = log(det(p))^4 + 1 / 4
     h(M, p) = log(det(p))^2
     grad_h(M, p) = 2 * log(det(p)) * p
+    grad_h!(M, X, p) = (X .= 2 * log(det(p)) * p)
+    grad_g(M, p) = 4 * log(det(p))^3 * p
+    grad_g!(M, X, p) = (X .= 4 * log(det(p))^3 * p)
     f(M, p) = g(M, p) - h(M, p)
     p = log(2) * Matrix{Float64}(I, n, n)
+    G = grad_g(M, p)
 
-    dc_obj = ManifoldDifferenceOfConvexObjective(f, grad_h)
-    dcp_obj = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost=f)
+    dc_obja = ManifoldDifferenceOfConvexObjective(f, grad_h)
+    dc_obji = ManifoldDifferenceOfConvexObjective(
+        f, grad_h!; evaluation=InplaceEvaluation()
+    )
+    dcp_obja = ManifoldDifferenceOfConvexProximalObjective(grad_h; cost=f)
+    dcp_obji = ManifoldDifferenceOfConvexProximalObjective(
+        grad_h!; evaluation=InplaceEvaluation(), cost=f
+    )
+    @testset "Gradient access" begin
+        # Alloc
+        dc_objga = ManifoldDifferenceOfConvexObjective(f, grad_h; gradient=grad_g)
+        dcp_objga = ManifoldDifferenceOfConvexProximalObjective(
+            grad_h; cost=f, gradient=grad_g
+        )
+        for o in [dc_objga, dcp_objga]
+            gga = Manopt.get_gradient_function(o)
+            X = gga(M, p)
+            @test X == G
+            Y = get_gradient(M, o, p)
+            @test Y == G
+            Z = zero_vector(M, p)
+            get_gradient!(M, Z, o, p)
+            @test Z == G
+        end
+        # Inplace
+        dc_objgi = ManifoldDifferenceOfConvexObjective(
+            f, grad_h!; gradient=grad_g!, evaluation=InplaceEvaluation()
+        )
+        dcp_objgi = ManifoldDifferenceOfConvexProximalObjective(
+            grad_h!; cost=f, gradient=grad_g!, evaluation=InplaceEvaluation()
+        )
+        for o in [dc_objgi, dcp_objgi]
+            ggi = Manopt.get_gradient_function(o)
+            X = zero_vector(M, p)
+            ggi(M, X, p)
+            @test X == G
+            Y = get_gradient(M, o, p)
+            @test Y == G
+            Z = zero_vector(M, p)
+            get_gradient!(M, Z, o, p)
+            @test Z == G
+        end
+    end
     @testset "Objective Decorator passthrough" begin
-        for obj in [dc_obj, dcp_obj]
-            ddo = DummyDecoratedObjective(obj)
+        for obj in [dc_obja, dc_obji, dcp_obja, dcp_obji]
+            ddo = ManoptTestSuite.DummyDecoratedObjective(obj)
             X = get_subtrahend_gradient(M, ddo, p)
             @test X == get_subtrahend_gradient(M, obj, p)
             Y = zero_vector(M, p)
@@ -25,7 +72,7 @@ include("../utils/dummy_types.jl")
         end
     end
     @testset "Count" begin
-        for obj in [dc_obj, dcp_obj]
+        for obj in [dc_obja, dc_obji, dcp_obja, dcp_obji]
             ddo = ManifoldCountObjective(M, obj, [:SubtrahendGradient])
             X = get_subtrahend_gradient(M, ddo, p)
             @test X == get_subtrahend_gradient(M, obj, p)
@@ -38,7 +85,7 @@ include("../utils/dummy_types.jl")
         end
     end
     @testset "Cache" begin
-        for obj in [dc_obj, dcp_obj]
+        for obj in [dc_obja, dc_obji, dcp_obja, dcp_obji]
             ddo = ManifoldCountObjective(M, obj, [:SubtrahendGradient])
             cddo = objective_cache_factory(M, ddo, (:LRU, [:SubtrahendGradient]))
             X = get_subtrahend_gradient(M, obj, p)

@@ -113,7 +113,7 @@ _doc_DoC = """
     difference_of_convex_algorithm!(M, f, g, ∂h, p; kwargs...)
     difference_of_convex_algorithm!(M, mdco, p; kwargs...)
 
-Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2023](@cite) to minimize
+Compute the difference of convex algorithm [BergmannFerreiraSantosSouza:2024](@cite) to minimize
 
 ```math
     $(_tex(:argmin))_{p∈$(_math(:M))}\\ g(p) - h(p)

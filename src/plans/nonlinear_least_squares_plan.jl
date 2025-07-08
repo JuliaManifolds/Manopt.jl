@@ -1,132 +1,184 @@
 
 @doc """
-    NonlinearLeastSquaresObjective{T<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
+    NonlinearLeastSquaresObjective{E<:AbstractEvaluationType} <: AbstractManifoldObjective{T}
 
-A type for nonlinear least squares problems.
-`T` is a [`AbstractEvaluationType`](@ref) for the `F` and Jacobian functions.
+An objective to model the nonlinear least squares problem
+
+$(_problem(:NonLinearLeastSquares))
 
 Specify a nonlinear least squares problem
 
 # Fields
-* `f`                      a function ``f: $(_math(:M)) → ℝ^d`` to minimize
-* `jacobian!!`             Jacobian of the function ``f``
-* `jacobian_tangent_basis` the basis of tangent space used for computing the Jacobian.
-* `num_components`         number of values returned by `f` (equal to `d`).
 
-Depending on the [`AbstractEvaluationType`](@ref) `T` the function ``F`` has to be provided:
+* `objective`: a [`AbstractVectorGradientFunction`](@ref)`{E}` containing both the vector of
+  cost functions ``f_i`` (or a function returning a vector of costs) as well as their
+  gradients ``$(_tex(:grad)) f_i`` (or Jacobian of the vector-valued function).
 
-* as a functions `(M::AbstractManifold, p) -> v` that allocates memory for `v` itself for
-  an [`AllocatingEvaluation`](@ref),
-* as a function `(M::AbstractManifold, v, p) -> v` that works in place of `v` for a
-  [`InplaceEvaluation`](@ref).
-
-Also the Jacobian ``jacF!!`` is required:
-
-* as a functions `(M::AbstractManifold, p; basis_domain::AbstractBasis) -> v` that allocates
-  memory for `v` itself for an [`AllocatingEvaluation`](@ref),
-* as a function `(M::AbstractManifold, v, p; basis_domain::AbstractBasis) -> v` that works
-  in place of `v` for an [`InplaceEvaluation`](@ref).
+This `NonlinearLeastSquaresObjective` then has the same [`AbstractEvaluationType`](@ref) `T`
+as the (inner) `objective`.
 
 # Constructors
 
-    NonlinearLeastSquaresProblem(M, F, jacF, num_components; evaluation=AllocatingEvaluation(), jacobian_tangent_basis=DefaultOrthonormalBasis())
+    NonlinearLeastSquaresObjective(f, jacobian, range_dimension::Integer; kwargs...)
+    NonlinearLeastSquaresObjective(vf::AbstractVectorGradientFunction)
+
+# Arguments
+
+* `f` the vectorial cost function ``f: $(_math(:M)) → ℝ^m``
+* `jacobian` the Jacobian, might also be a vector of gradients of the component functions of `f`
+* `range_dimension::Integer` the number of dimensions `m` the function `f` maps into
+
+These three can also be passed as a [`AbstractVectorGradientFunction`](@ref) `vf` already.
+
+# Keyword arguments
+
+$(_var(:Keyword, :evaluation))
+* `function_type::`[`AbstractVectorialType`](@ref)`=`[`FunctionVectorialType`](@ref)`()`: specify
+  the format the residuals are given in. By default a function returning a vector.
+* `jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis()`; shortcut to specify
+  the basis the Jacobian matrix is build with.
+* `jacobian_type::`[`AbstractVectorialType`](@ref)`=`[`CoordinateVectorialType`](@ref)`(jacobian_tangent_basis)`:
+  specify the format the Jacobian is given in. By default a matrix of the differential with
+  respect to a certain basis of the tangent space.
 
 # See also
 
 [`LevenbergMarquardt`](@ref), [`LevenbergMarquardtState`](@ref)
 """
-struct NonlinearLeastSquaresObjective{E<:AbstractEvaluationType,TC,TJ,TB<:AbstractBasis} <:
-       AbstractManifoldGradientObjective{E,TC,TJ}
-    f::TC
-    jacobian!!::TJ
-    jacobian_tangent_basis::TB
-    num_components::Int
+struct NonlinearLeastSquaresObjective{
+    E<:AbstractEvaluationType,F<:AbstractVectorGradientFunction{E}
+} <: AbstractManifoldFirstOrderObjective{E,F}
+    objective::F
 end
+
 function NonlinearLeastSquaresObjective(
-    f::TF,
-    jacobian_f::TJ,
-    num_components::Int;
+    f,
+    jacobian,
+    range_dimension::Integer;
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    jacobian_tangent_basis::TB=DefaultOrthonormalBasis(),
-) where {TF,TJ,TB<:AbstractBasis}
-    return NonlinearLeastSquaresObjective{typeof(evaluation),TF,TJ,TB}(
-        f, jacobian_f, jacobian_tangent_basis, num_components
-    )
-end
-
-function get_cost(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
+    jacobian_tangent_basis::AbstractBasis=DefaultOrthonormalBasis(),
+    jacobian_type::AbstractVectorialType=CoordinateVectorialType(jacobian_tangent_basis),
+    function_type::AbstractVectorialType=FunctionVectorialType(),
+    kwargs...,
 )
-    return 1//2 * norm(nlso.f(M, p))^2
+    vgf = VectorGradientFunction(
+        f,
+        jacobian,
+        range_dimension;
+        evaluation=evaluation,
+        jacobian_type=jacobian_type,
+        function_type=function_type,
+    )
+    return NonlinearLeastSquaresObjective(vgf; kwargs...)
+end
+
+# Cost
+function get_cost(
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,<:AbstractVectorFunction{E,<:ComponentVectorialType}
+    },
+    p;
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    v = 0.0
+    for i in 1:length(nlso.objective)
+        v += abs(get_value(M, nlso.objective, p, i))^2
+    end
+    v /= 2
+    return v
 end
 function get_cost(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
-)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    return 1//2 * norm(residual_values)^2
+    M::AbstractManifold,
+    nlso::NonlinearLeastSquaresObjective{
+        E,<:AbstractVectorFunction{E,<:FunctionVectorialType}
+    },
+    p;
+    value_cache=get_value(M, nlso.objective, p),
+) where {E<:AbstractEvaluationType}
+    return sum(abs2, value_cache) / 2
 end
 
-"""
-    get_gradient_from_Jacobian!(
-        M::AbstractManifold,
-        X,
-        nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
-        p,
-        Jval=zeros(nlso.num_components, manifold_dimension(M)),
-    )
-
-Compute gradient of [`NonlinearLeastSquaresObjective`](@ref) `nlso` at point `p` in place of
-`X`, with temporary Jacobian stored in the optional argument `Jval`.
-"""
-function get_gradient_from_Jacobian!(
+function get_jacobian(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+)
+    J = zeros(length(nlso.objective), manifold_dimension(M))
+    get_jacobian!(M, J, nlso, p; kwargs...)
+    return J
+end
+# The jacobian is now just a pass-through
+function get_jacobian!(
+    M::AbstractManifold, J, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+)
+    get_jacobian!(M, J, nlso.objective, p; kwargs...)
+    return J
+end
+function get_gradient(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+)
+    X = zero_vector(M, p)
+    return get_gradient!(M, X, nlso, p; kwargs...)
+end
+function get_gradient!(
     M::AbstractManifold,
     X,
-    nlso::NonlinearLeastSquaresObjective{InplaceEvaluation},
+    nlso::NonlinearLeastSquaresObjective,
+    p;
+    basis=get_basis(nlso.objective.jacobian_type),
+    jacobian_cache=get_jacobian(M, nlso, p; basis=basis),
+    value_cache=get_residuals(M, nlso, p),
+)
+    return get_vector!(M, X, p, transpose(jacobian_cache) * value_cache, basis)
+end
+
+#
+#
+# --- Residuals
+_doc_get_residuals_nlso = """
+    get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p)
+    get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p)
+
+Compute the vector of residuals ``f_i(p)``, ``i=1,…,m`` given the manifold `M`,
+the [`NonlinearLeastSquaresObjective`](@ref) `nlso` and a current point ``p`` on `M`.
+"""
+
+@doc "$(_doc_get_residuals_nlso)"
+get_residuals(M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+
+function get_residuals(
+    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective, p; kwargs...
+)
+    V = zeros(length(nlso.objective))
+    return get_residuals!(M, V, nlso, p; kwargs...)
+end
+
+@doc "$(_doc_get_residuals_nlso)"
+get_residuals!(M::AbstractManifold, V, nlso::NonlinearLeastSquaresObjective, p; kwargs...)
+
+function get_residuals!(
+    M::AbstractManifold,
+    V,
+    nlso::NonlinearLeastSquaresObjective{
+        E,<:AbstractVectorFunction{E,<:ComponentVectorialType}
+    },
+    p;
+    kwargs...,
+) where {E<:AbstractEvaluationType}
+    for i in 1:length(nlso.objective)
+        V[i] = get_value(M, nlso.objective, p, i)
+    end
+    return V
+end
+function get_residuals!(
+    M::AbstractManifold,
+    V,
+    nlso::NonlinearLeastSquaresObjective{
+        E,<:AbstractVectorFunction{E,<:FunctionVectorialType}
+    },
     p,
-    Jval=zeros(nlso.num_components, manifold_dimension(M)),
-)
-    basis_p = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    nlso.jacobian!!(M, Jval, p; basis_domain=basis_p)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    get_vector!(M, X, p, transpose(Jval) * residual_values, basis_p)
-    return X
-end
-
-function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
-)
-    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
-    residual_values = nlso.f(M, p)
-    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
-end
-function get_gradient(
-    M::AbstractManifold, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
-)
-    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = zeros(nlso.num_components, manifold_dimension(M))
-    nlso.jacobian!!(M, Jval, p; basis_domain=basis_x)
-    residual_values = zeros(nlso.num_components)
-    nlso.f(M, residual_values, p)
-    return get_vector(M, p, transpose(Jval) * residual_values, basis_x)
-end
-
-function get_gradient!(
-    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{AllocatingEvaluation}, p
-)
-    basis_x = _maybe_get_basis(M, p, nlso.jacobian_tangent_basis)
-    Jval = nlso.jacobian!!(M, p; basis_domain=basis_x)
-    residual_values = nlso.f(M, p)
-    return get_vector!(M, X, p, transpose(Jval) * residual_values, basis_x)
-end
-
-function get_gradient!(
-    M::AbstractManifold, X, nlso::NonlinearLeastSquaresObjective{InplaceEvaluation}, p
-)
-    get_gradient_from_Jacobian!(M, X, nlso, p)
-    return X
+) where {E<:AbstractEvaluationType}
+    get_value!(M, V, nlso.objective, p)
+    return V
 end
 
 @doc """
@@ -143,7 +195,7 @@ $(_var(:Field, :retraction_method))
 * `residual_values`:      value of ``F`` calculated in the solver setup or the previous iteration
 * `residual_values_temp`: value of ``F`` for the current proposal point
 $(_var(:Field, :stopping_criterion, "stop"))
-* `jacF`:                 the current Jacobian of ``F``
+* `jacobian`:                 the current Jacobian of ``F``
 * `gradient`:             the current gradient of ``F``
 * `step_vector`:          the tangent vector at `x` that is used to move to the next point
 * `last_stepsize`:        length of `step_vector`
@@ -155,10 +207,13 @@ $(_var(:Field, :stopping_criterion, "stop"))
   new point is rejected
 * `expect_zero_residual`: if true, the algorithm expects that the value of
   the residual (objective) at minimum is equal to 0.
+* `linear_subsolver!`:    a function with three arguments `sk, JJ, grad_f_c`` that solves the
+  linear subproblem `sk .= JJ \\ grad_f_c`, where `JJ` is (up to numerical issues) a
+  symmetric positive definite matrix. Default value is [`default_lm_lin_solve!`](@ref).
 
 # Constructor
 
-    LevenbergMarquardtState(M, initial_residual_values, initial_jacF; kwargs...)
+    LevenbergMarquardtState(M, initial_residual_values, initial_jacobian; kwargs...)
 
 Generate the Levenberg-Marquardt solver state.
 
@@ -186,13 +241,14 @@ mutable struct LevenbergMarquardtState{
     TJac,
     TGrad,
     Tparams<:Real,
+    TLS,
 } <: AbstractGradientSolverState
     p::P
     stop::TStop
     retraction_method::TRTM
     residual_values::Tresidual_values
     candidate_residual_values::Tresidual_values
-    jacF::TJac
+    jacobian::TJac
     X::TGrad
     step_vector::TGrad
     last_stepsize::Tparams
@@ -202,10 +258,11 @@ mutable struct LevenbergMarquardtState{
     β::Tparams
     expect_zero_residual::Bool
     last_step_successful::Bool
+    linear_subsolver!::TLS
     function LevenbergMarquardtState(
         M::AbstractManifold,
         initial_residual_values::Tresidual_values,
-        initial_jacF::TJac;
+        initial_jacobian::TJac;
         p::P=rand(M),
         X::TGrad=zero_vector(M, p),
         stopping_criterion::StoppingCriterion=StopAfterIteration(200) |
@@ -216,7 +273,8 @@ mutable struct LevenbergMarquardtState{
         damping_term_min::Real=0.1,
         β::Real=5.0,
         expect_zero_residual::Bool=false,
-    ) where {P,Tresidual_values,TJac,TGrad}
+        linear_subsolver!::TLS=(default_lm_lin_solve!),
+    ) where {P,Tresidual_values,TJac,TGrad,TLS}
         if η <= 0 || η >= 1
             throw(ArgumentError("Value of η must be strictly between 0 and 1, received $η"))
         end
@@ -239,13 +297,14 @@ mutable struct LevenbergMarquardtState{
             TJac,
             TGrad,
             Tparams,
+            TLS,
         }(
             p,
             stopping_criterion,
             retraction_method,
             initial_residual_values,
             copy(initial_residual_values),
-            initial_jacF,
+            initial_jacobian,
             X,
             allocate(M, X),
             zero(Tparams),
@@ -255,6 +314,7 @@ mutable struct LevenbergMarquardtState{
             β,
             expect_zero_residual,
             true,
+            linear_subsolver!,
         )
     end
 end

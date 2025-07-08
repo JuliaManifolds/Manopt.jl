@@ -360,7 +360,7 @@ function step_solver!(amp::AbstractManoptProblem, drs::DouglasRachfordState, k)
     get_proximal_map!(amp, drs.p, drs.λ(k), drs.s_tmp, 2)
     _reflect!(M, drs.s_tmp, drs.p, drs.s_tmp, drs.R, drs.reflection_evaluation)
     # relaxation
-    drs.s = retract(
+    drs.s = ManifoldsBase.retract_fused(
         M,
         drs.s,
         inverse_retract(M, drs.s, drs.s_tmp, drs.inverse_retraction_method),

@@ -11,7 +11,9 @@ module Manopt
 import Base: &, copy, getindex, identity, length, setindex!, show, |
 import LinearAlgebra: reflect!
 import ManifoldsBase: embed!, plot_slope, prepare_check_result, find_best_slope_window
-import ManifoldsBase: base_manifold, base_point
+import ManifoldsBase: base_manifold, base_point, get_basis
+import ManifoldsBase: project, project!
+import LinearAlgebra: cross
 using ColorSchemes
 using ColorTypes
 using Colors
@@ -22,9 +24,11 @@ using LinearAlgebra:
     Diagonal,
     I,
     Eigen,
+    PosDefException,
     eigen,
     eigen!,
     eigvals,
+    ldiv!,
     tril,
     Symmetric,
     dot,
@@ -53,6 +57,7 @@ using ManifoldDiff:
     riemannian_gradient!,
     riemannian_Hessian,
     riemannian_Hessian!
+using ManifoldsBase
 using ManifoldsBase:
     AbstractBasis,
     AbstractDecoratorManifold,
@@ -146,7 +151,6 @@ using Preferences:
     @load_preference, @set_preferences!, @has_preference, @delete_preferences!
 using Printf
 using Random: AbstractRNG, default_rng, shuffle!, rand, randn!, randperm
-using Requires
 using SparseArrays
 using Statistics
 
@@ -193,15 +197,18 @@ include("solvers/difference_of_convex_algorithm.jl")
 include("solvers/difference-of-convex-proximal-point.jl")
 include("solvers/DouglasRachford.jl")
 include("solvers/exact_penalty_method.jl")
+include("solvers/projected_gradient_method.jl")
 include("solvers/Lanczos.jl")
 include("solvers/NelderMead.jl")
 include("solvers/FrankWolfe.jl")
 include("solvers/gradient_descent.jl")
 include("solvers/interior_point_Newton.jl")
 include("solvers/LevenbergMarquardt.jl")
+include("solvers/mesh_adaptive_direct_search.jl")
 include("solvers/particle_swarm.jl")
 include("solvers/primal_dual_semismooth_Newton.jl")
 include("solvers/proximal_bundle_method.jl")
+include("solvers/proximal_gradient_method.jl")
 include("solvers/proximal_point.jl")
 include("solvers/quasi_Newton.jl")
 include("solvers/truncated_conjugate_gradient_descent.jl")
@@ -274,32 +281,6 @@ function __init__()
             end
         end
     end
-    #
-    # Requires fallback for Julia < 1.9
-    #
-    @static if !isdefined(Base, :get_extension) # COV_EXCL_LINE
-        @require JuMP = "4076af6c-e467-56ae-b986-b466b2749572" begin
-            include("../ext/ManoptJuMPExt.jl")
-        end
-        @require Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e" begin
-            include("../ext/ManoptManifoldsExt/ManoptManifoldsExt.jl")
-        end
-        @require RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd" begin
-            include("../ext/ManoptRecursiveArrayToolsExt.jl")
-        end
-        @require LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255" begin
-            include("../ext/ManoptLineSearchesExt.jl")
-        end
-        @require LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637" begin
-            include("../ext/ManoptLRUCacheExt.jl")
-        end
-        @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
-            @require RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08" begin
-                include("../ext/ManoptRipQPQuadraticModelsExt.jl")
-            end
-        end
-    end
-
     return nothing
 end
 #
@@ -314,13 +295,15 @@ export DefaultManoptProblem,
 #
 # Objectives
 export AbstractDecoratedManifoldObjective,
-    AbstractManifoldGradientObjective,
+    AbstractManifoldFirstOrderObjective,
     AbstractManifoldCostObjective,
     AbstractManifoldObjective,
     AbstractManifoldSubObjective,
     AbstractPrimalDualManifoldObjective,
     ConstrainedManifoldObjective,
+    ManifoldConstrainedSetObjective,
     EmbeddedManifoldObjective,
+    ScaledManifoldObjective,
     ManifoldCountObjective,
     NonlinearLeastSquaresObjective,
     ManifoldAlternatingGradientObjective,
@@ -328,8 +311,10 @@ export AbstractDecoratedManifoldObjective,
     ManifoldCostObjective,
     ManifoldDifferenceOfConvexObjective,
     ManifoldDifferenceOfConvexProximalObjective,
+    ManifoldFirstOrderObjective,
     ManifoldGradientObjective,
     ManifoldHessianObjective,
+    ManifoldProximalGradientObjective,
     ManifoldProximalMapObjective,
     ManifoldStochasticGradientObjective,
     ManifoldSubgradientObjective,
@@ -337,11 +322,10 @@ export AbstractDecoratedManifoldObjective,
     PrimalDualManifoldSemismoothNewtonObjective,
     SimpleManifoldCachedObjective,
     ManifoldCachedObjective,
-    AbstractVectorFunction,
-    AbstractVectorGradientFunction,
-    VectorGradientFunction,
-    VectorHessianFunction,
     VectorbundleObjective
+# Functions
+export AbstractVectorFunction,
+    AbstractVectorGradientFunction, VectorGradientFunction, VectorHessianFunction
 #
 # Evaluation & Vectorial Types
 export AbstractEvaluationType, AllocatingEvaluation, InplaceEvaluation, evaluation_type
@@ -370,10 +354,13 @@ export AbstractGradientSolverState,
     InteriorPointNewtonState,
     LanczosState,
     LevenbergMarquardtState,
+    MeshAdaptiveDirectSearchState,
     NelderMeadState,
     ParticleSwarmState,
     PrimalDualSemismoothNewtonState,
+    ProjectedGradientMethodState,
     ProximalBundleMethodState,
+    ProximalGradientMethodState,
     RecordSolverState,
     StepsizeState,
     StochasticGradientDescentState,
@@ -388,13 +375,15 @@ export AlternatingGradient
 #
 # access functions and helpers for `AbstractManoptSolverState`
 export default_stepsize
-export get_cost, get_gradient, get_gradient!
+export get_cost, get_gradient, get_gradient!, get_cost_smooth
 export get_subgradient, get_subgradient!
 export get_subtrahend_gradient!, get_subtrahend_gradient
 export get_proximal_map, get_proximal_map!
 export get_state,
     get_initial_stepsize,
     get_iterate,
+    get_jacobian,
+    get_jacobian!,
     get_gradients,
     get_gradients!,
     get_manifold,
@@ -402,6 +391,8 @@ export get_state,
     get_preconditioner!,
     get_primal_prox,
     get_primal_prox!,
+    get_projected_point,
+    get_projected_point!,
     get_differential_primal_prox,
     get_differential_primal_prox!,
     get_dual_prox,
@@ -410,6 +401,8 @@ export get_state,
     get_differential_dual_prox!,
     set_gradient!,
     set_iterate!,
+    get_residuals,
+    get_residuals!,
     linearized_forward_operator,
     linearized_forward_operator!,
     adjoint_linearized_operator,
@@ -419,6 +412,7 @@ export get_state,
     get_objective,
     get_unconstrained_objective
 export get_hessian, get_hessian!
+export get_differential
 export ApproxHessianFiniteDifference
 export is_state_decorator, dispatch_state_decorator
 export primal_residual, dual_residual
@@ -447,9 +441,11 @@ export FrankWolfeCost, FrankWolfeGradient
 export TrustRegionModelObjective
 export CondensedKKTVectorField, CondensedKKTVectorFieldJacobian
 export SymmetricLinearSystemObjective
+export ProximalGradientNonsmoothCost, ProximalGradientNonsmoothSubgradient
 
 export QuasiNewtonState, QuasiNewtonLimitedMemoryDirectionUpdate
 export QuasiNewtonMatrixDirectionUpdate
+export QuasiNewtonPreconditioner
 export QuasiNewtonCautiousDirectionUpdate,
     BFGS, InverseBFGS, DFP, InverseDFP, SR1, InverseSR1
 export InverseBroyden, Broyden
@@ -458,10 +454,13 @@ export WolfePowellLinesearch, WolfePowellBinaryLinesearch
 export AbstractStateAction, StoreStateAction
 export has_storage, get_storage, update_storage!
 export objective_cache_factory
+export AbstractMeshPollFunction, LowerTriangularAdaptivePoll
+export AbstractMeshSearchFunction, DefaultMeshAdaptiveDirectSearch
 #
 # Direction Update Rules
 export DirectionUpdateRule
-export Gradient, StochasticGradient, AverageGradient, MomentumGradient, Nesterov
+export Gradient, StochasticGradient
+export AverageGradient, MomentumGradient, Nesterov, PreconditionedDirection
 export SteepestDescentCoefficient,
     HestenesStiefelCoefficient,
     FletcherReevesCoefficient,
@@ -481,6 +480,8 @@ export adaptive_regularization_with_cubics,
     augmented_Lagrangian_method!,
     convex_bundle_method,
     convex_bundle_method!,
+    convex_bundle_method_subsolver,
+    convex_bundle_method_subsolver!,
     ChambollePock,
     ChambollePock!,
     cma_es,
@@ -507,13 +508,19 @@ export adaptive_regularization_with_cubics,
     interior_point_Newton!,
     LevenbergMarquardt,
     LevenbergMarquardt!,
+    mesh_adaptive_direct_search,
+    mesh_adaptive_direct_search!,
     NelderMead,
     NelderMead!,
     particle_swarm,
     particle_swarm!,
     primal_dual_semismooth_Newton,
+    projected_gradient_method,
+    projected_gradient_method!,
     proximal_bundle_method,
     proximal_bundle_method!,
+    proximal_gradient_method,
+    proximal_gradient_method!,
     proximal_point,
     proximal_point!,
     quasi_Newton,
@@ -543,9 +550,12 @@ export SmoothingTechnique, LinearQuadraticHuber, LogarithmicSumOfExponentials
 # Stepsize
 export Stepsize
 export AdaptiveWNGradient, ConstantLength, DecreasingLength, Polyak
+export ProximalGradientMethodBacktracking
 export ArmijoLinesearch, Linesearch, NonmonotoneLinesearch
 export get_stepsize, get_initial_stepsize, get_last_stepsize
 export InteriorPointCentralityCondition
+export DomainBackTracking, DomainBackTrackingStepsize, NullStepBackTrackingStepsize
+export ProximalGradientMethodBacktracking
 #
 # Stopping Criteria
 export StoppingCriterion, StoppingCriterionSet
@@ -558,23 +568,29 @@ export StopAfter,
     StopWhenBestCostInGenerationConstant,
     StopWhenChangeLess,
     StopWhenCostLess,
+    StopWhenCostChangeLess,
     StopWhenCostNaN,
     StopWhenCovarianceIllConditioned,
     StopWhenCurvatureIsNegative,
+    StopWhenCriterionWithIterationCondition,
     StopWhenEntryChangeLess,
     StopWhenEvolutionStagnates,
     StopWhenGradientChangeLess,
+    StopWhenGradientMappingNormLess,
     StopWhenGradientNormLess,
     StopWhenFirstOrderProgress,
     StopWhenIterateNaN,
     StopWhenKKTResidualLess,
     StopWhenLagrangeMultiplierLess,
     StopWhenModelIncreased,
+    StopWhenPollSizeLess,
     StopWhenPopulationCostConcentrated,
     StopWhenPopulationConcentrated,
     StopWhenPopulationDiverges,
     StopWhenPopulationStronglyConcentrated,
+    StopWhenProjectedGradientStationary,
     StopWhenRelativeResidualLess,
+    StopWhenRepeated,
     StopWhenSmallerOrEqual,
     StopWhenStepsizeLess,
     StopWhenSubgradientNormLess,
