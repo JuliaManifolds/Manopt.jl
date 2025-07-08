@@ -15,10 +15,11 @@ begin
 	using Manopt
 	using ManoptExamples
 	using Manifolds
-    using WGLMakie, Makie, GeometryTypes, Colors
+    using WGLMakie, Makie, GeometryTypes, Colors, ColorSchemes, NamedColors
 	using GLMakie
 	using CairoMakie
 	using CSV, DataFrames
+	using FileIO, ProgressLogging
 end;
 
 # ╔═╡ 3f3a047f-0e9d-4364-8df2-7105a104843b
@@ -352,6 +353,7 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	#cam.lookat[] =[1, 3.5, 2]
 	
 	fig
+	#cam
 	#save("/Users/bt308990/Documents/Publications/dmv/gfx_pdf/geodesic_under_force.png", fig, resolution=(1500, 800))
 end
 
@@ -363,6 +365,44 @@ begin
 	CSV.write("geodesic_forcefield_final.csv", Tables.table(reduce(hcat, ws)), writeheader=false)
 	CSV.write("geodesic_forcefield_start.csv", Tables.table(reduce(hcat, ws_start)), writeheader=false)
 end;
+
+# ╔═╡ 6401400b-f1f2-4993-a990-fe82ed350226
+begin
+	paul_tol = load_paul_tol()
+	# We have to trick with the colors a bit because the export is a bit too restrictive.
+
+	green = RGBA(paul_tol["mutedgreen"])	
+	orange = RGBA(paul_tol["vibrantorange"])
+	red = RGBA(paul_tol["urban and built up"])
+	blue = RGBA(paul_tol["water"])
+end;
+
+# ╔═╡ 0324c562-2573-46d6-a8b6-a282a6c996cc
+begin
+
+	file_name = "test_asy"
+	#local force field
+	#ws_local = [1.0*w(Manifolds.Sphere(2), p, s) for p in solutions[i]]		
+	asymptote_export_S2_signals(file_name*".asy";
+	points= [ [y0,yT] ],
+	curves = [geodesic_start, geodesic_final],
+	tangent_vectors = [
+		[ Tuple(a) for a in zip(geodesic_final[2:end-1], 0.1 .* ws)]
+	],
+	dot_sizes = [3.0,],
+	line_widths = [1.5, 1.5, 1.], #2 curves, tangent vectors
+	arrow_head_size = 3.5,
+	colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
+		:points => [red],
+		:curves => [blue, orange],
+		:tvectors => [green],
+	),
+	camera_position=(3., 3., 3.),
+	target=(-2.5, 2.5, 2.),
+	sphere_color=RGBA(0.,0.,0.,0.02)
+	);
+	render_asymptote(file_name*".asy")
+end
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
@@ -397,3 +437,5 @@ end;
 # ╟─290dbe94-4686-4629-9f93-f01353aac404
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 # ╠═574c7fd7-6d60-413c-b542-e69b675acc40
+# ╠═6401400b-f1f2-4993-a990-fe82ed350226
+# ╠═0324c562-2573-46d6-a8b6-a282a6c996cc
