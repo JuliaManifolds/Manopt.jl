@@ -102,6 +102,7 @@ function proximal_gradient_method!(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
+    debug=[DebugWarnIfStepsizeCollapsed()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, ProximalGradientMethodState
@@ -138,13 +139,6 @@ function proximal_gradient_method!(
             stopping_criterion=StopAfterIteration(2500) | StopWhenSubgradientNormLess(1e-8),
         )
     end,
-    # ::Union{AbstractEvaluationType,AbstractManoptSolverState,Nothing}=if isnothing(
-    #     mpgo.proximal_map_h!!
-    # )
-    #     maybe_wrap_evaluation_type(evaluation)
-    # else
-    #     nothing
-    # end,
     kwargs...,
 ) where {
     O<:Union{ManifoldProximalGradientObjective,AbstractDecoratedManifoldObjective},

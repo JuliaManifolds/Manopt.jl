@@ -229,7 +229,7 @@ end
 # Special single ones
 #
 @doc raw"""
-    DebugCallback <: DDebugAction
+    DebugCallback <: DebugAction
 
 Debug for a simple callback function, mainly for compatibility to other solvers and if
 a user already has a callback function or functor available
@@ -1341,9 +1341,10 @@ Note that the Shortcut symbols should all start with a capital letter.
 * `:IterativeTime` creates a [`DebugTime`](@ref)`(:Iterative)`
 * `:Stepsize` creates a [`DebugStepsize`](@ref)
 * `:Stop` creates a [`StoppingCriterion`](@ref)`()`
+* `:WarnStepsize` creates a [`DebugWarnIfStepsizeCollapsed`](@ref)
+* `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)
 * `:WarnCost` creates a [`DebugWarnIfCostNotFinite`](@ref)
 * `:WarnGradient` creates a [`DebugWarnIfFieldNotFinite`](@ref) for the `::Gradient`.
-* `:WarnBundle` creates a [`DebugWarnIfLagrangeMultiplierIncreases`](@ref)
 * `:Time` creates a [`DebugTime`](@ref)
 * `:WarningMessages` creates a [`DebugMessages`](@ref)`(:Warning)`
 * `:InfoMessages` creates a [`DebugMessages`](@ref)`(:Info)`
@@ -1363,6 +1364,7 @@ function DebugActionFactory(d::Symbol)
     (d == :Feasibility) && return DebugFeasibility()
     (d == :Stepsize) && return DebugStepsize()
     (d == :Stop) && return DebugStoppingCriterion()
+    (d == :WarnStepsize) && return DebugWarnIfStepsizeCollapsed()
     (d == :WarnBundle) && return DebugWarnIfLagrangeMultiplierIncreases()
     (d == :WarnCost) && return DebugWarnIfCostNotFinite()
     (d == :WarnGradient) && return DebugWarnIfFieldNotFinite(:Gradient)

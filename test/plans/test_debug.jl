@@ -296,6 +296,8 @@ Manopt.get_parameter(d::TestDebugParameterState, ::Val{:value}) = d.value
         @test isa(df2[:Iteration], DebugWarnIfFieldNotFinite)
         df3 = DebugFactory([:WarnBundle])
         @test isa(df3[:Iteration], DebugWarnIfLagrangeMultiplierIncreases)
+        df4 = DebugFactory([:WarnStepsize])
+        @test isa(df4[:Iteration], DebugWarnIfStepsizeCollapsed)
     end
     @testset "Debug Time" begin
         io = IOBuffer()
