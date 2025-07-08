@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* a `DebugWarnIfBacktrackingNotConverged` DebugAction and a related `:WarnBacktracking` symbol for the debug dictionary. This is to be used in conjunction with the `ProximalGradientMethodBacktracking` stepsize to warn if the backtracking procedure of the `proximal_gradient_method` hit the stepsize length threshold without converging.
+* a `DebugWarnIfStepsizeCollapsed` DebugAction and a related `:WarnBacktracking` symbol for the debug dictionary. This is to be used in conjunction with the `ProximalGradientMethodBacktracking` stepsize to warn if the backtracking procedure of the `proximal_gradient_method` hit the stepsize length threshold without converging.
 
 ### Fixed
 

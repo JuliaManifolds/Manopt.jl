@@ -38,7 +38,7 @@ Manopt.ProximalGradientMethodBacktrackingStepsize
 ## Debug functions
 
 ```@docs
-DebugWarnIfBacktrackingNotConverged
+DebugWarnIfStepsizeCollapsed
 ```
 
 ## Internal functions

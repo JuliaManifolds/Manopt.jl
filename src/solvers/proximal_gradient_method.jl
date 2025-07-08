@@ -102,7 +102,7 @@ function proximal_gradient_method!(
         copyto!(get_manifold(pr), st.a, st.p)
         return st
     end,
-    debug=[DebugWarnIfBacktrackingNotConverged()],
+    debug=[DebugWarnIfStepsizeCollapsed()],
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, ProximalGradientMethodState

@@ -610,7 +610,7 @@ export DebugProximalParameter, DebugWarnIfCostIncreases
 export DebugGradient, DebugGradientNorm, DebugStepsize
 export DebugWhenActive, DebugWarnIfFieldNotFinite, DebugIfEntry
 export DebugWarnIfCostNotFinite, DebugWarnIfFieldNotFinite
-export DebugWarnIfLagrangeMultiplierIncreases, DebugWarnIfBacktrackingNotConverged
+export DebugWarnIfLagrangeMultiplierIncreases, DebugWarnIfStepsizeCollapsed
 export DebugWarnIfGradientNormTooLarge, DebugMessages
 #
 # Records - and access functions

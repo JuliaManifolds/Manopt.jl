@@ -713,14 +713,14 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
 end
 
 @doc raw"""
-    DebugWarnIfBacktrackingNotConverged <: DebugAction
+    DebugWarnIfStepsizeCollapsed <: DebugAction
 
 print a warning if the backtracking stopped because the stepsize fell below a given threshold in the [`proximal_gradient_method`](@ref).
 This threshold is specified by the `stop_when_stepsize_less` field of the [`ProximalGradientMethodBacktrackingStepsize`](@ref).
 
 # Constructor
 
-    DebugWarnIfBacktrackingNotConverged(warn=:Once;)
+    DebugWarnIfStepsizeCollapsed(warn=:Once;)
 
 Initialize the warning to warning level (`:Once`).
 
@@ -729,17 +729,17 @@ to `:Always` to report an increase every time it happens, and it can be set to `
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
 All other symbols are handled as if they were `:Always`
 """
-mutable struct DebugWarnIfBacktrackingNotConverged <: DebugAction
+mutable struct DebugWarnIfStepsizeCollapsed <: DebugAction
     status::Symbol
-    function DebugWarnIfBacktrackingNotConverged(warn::Symbol=:Once;)
+    function DebugWarnIfStepsizeCollapsed(warn::Symbol=:Once;)
         return new(warn)
     end
 end
-function show(io::IO, di::DebugWarnIfBacktrackingNotConverged)
-    return print(io, "DebugWarnIfBacktrackingNotConverged()")
+function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
+    return print(io, "DebugWarnIfStepsizeCollapsed()")
 end
 
-function (d::DebugWarnIfBacktrackingNotConverged)(
+function (d::DebugWarnIfStepsizeCollapsed)(
     ::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int
 )
     (k < 1) && (return nothing)
@@ -747,7 +747,7 @@ function (d::DebugWarnIfBacktrackingNotConverged)(
     (!isa(s, Manopt.ProximalGradientMethodBacktrackingStepsize)) && throw(
         DomainError(
             s,
-            "DebugWarnIfBacktrackingNotConverged only works with `ProximalGradientMethodBacktrackingStepsize` stepsizes.",
+            "DebugWarnIfStepsizeCollapsed only works with `ProximalGradientMethodBacktrackingStepsize` stepsizes.",
         ),
     )
     if d.status !== :No
