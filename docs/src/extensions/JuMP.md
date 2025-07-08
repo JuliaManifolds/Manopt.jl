@@ -11,7 +11,7 @@ model =  Model(Manopt.JuMP_Optimizer)
 set_attribute(model, "descent_state_type", Manopt.QuasiNewtonState)
 ```
 
-Any of the keywords of the solver you can set with `set_attribute)model, keyword, value)` for example to change the retraction to use, call
+Any of the keywords of the solver you can set with `set_attribute(model, keyword, value)` for example to change the retraction to use, call
 
 ```{julia}
 set_attribute(model, "retraction_method", ManifoldsBase.ProjectionRetraction())
