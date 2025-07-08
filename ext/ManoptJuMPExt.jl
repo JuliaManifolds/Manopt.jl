@@ -653,7 +653,7 @@ end
 #
 # TODO: Understand parameters here and document them
 function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, name::String="")
-    return JuMP.reshape_vector([VariableRef(model) for _ in 1:...], _shape(...))
+    return nothing
 end
 
 """
