@@ -8,7 +8,7 @@ Is state for the vectorbundle Newton method
 * 'p': current iterate
 * 'p_trial': next iterate needed for simplified Newton (not needed if affine covariant damping is not used to compute stepsizes)
 * 'X': current Newton direction
-* 'sub_problem': method (closed form solution) that returns the solution of the Newton equation, i.e. the Newton direction 
+* 'sub_problem': method (closed form solution) that returns the solution of the Newton equation, i.e. the Newton direction
 * 'sub_state': sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
 * `stop`: stopping criterion
 * `stepsize`: damping factor for the Newton direction
@@ -87,7 +87,7 @@ function VectorbundleNewtonState(
 end
 
 # TODO: paper zitieren, unten evtl ManoptExamples-Beispiel zitieren, falls möglich
-@doc raw""" 
+@doc raw"""
     AffineCovariantStepsize <: Stepsize
 
     A functor to provide an affine covariant stepsize generalizing the idea of following Newton paths introduced by [TODO](@cite). It can be used to derive a damped Newton method. The step sizes (damping factors) are computed by a predictor-corrector-loop using an affine covariant quantity ``\theta`` to measure local convergence.
@@ -100,7 +100,7 @@ end
     * `theta_acc`: acceptable theta
     * `last_stepsize`: last computed step size (helper)
 
-    # Constructor 
+    # Constructor
 
         AffineCovariantStepsize(M::AbstractManifold=DefaultManifold(2);
         stepsize=1.0,
@@ -259,7 +259,7 @@ function get_submersion_derivative(M::AbstractManifold, p) end
 Perform Newton's method for finding a zero of a mapping ``F:\mathcal M \to \mathcal E`` where ``\mathcal M`` is a manifold and ``\mathcal E`` is a vector bundle.
 In each iteration the Newton equation
 `` Q_{F(p)} \circ F'(p) X + F(p) = 0``
-is solved to compute a Newton direction ``X``. The next iterate is then computed by applying a retraction. 
+is solved to compute a Newton direction ``X``. The next iterate is then computed by applying a retraction.
 ``NE`` is a functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}\circ F'(p)`` (covariant derivative of ``F``) and the right hand side ``F(p)`` at a point ``p\in\mathcal M``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
 
 """
@@ -280,7 +280,7 @@ function vectorbundle_newton!(
     p::P;
     evaluation=AllocatingEvaluation(),
     sub_problem::Pr=nothing,
-    sub_state::Op=nothing, 
+    sub_state::Op=nothing,
     X::T=zero_vector(M, p),
     retraction_method::RM=default_retraction_method(M, typeof(p)),
     stopping_criterion::SC=StopAfterIteration(1000),
@@ -301,7 +301,7 @@ function vectorbundle_newton!(
     isnothing(sub_state) && error("Please provide a sub_state")
 
     vbp = VectorbundleManoptProblem(M, E, NE)
-    
+
     vbs = VectorbundleNewtonState(
         M,
         E,
@@ -353,7 +353,7 @@ function step_solver!(
     s::VectorbundleNewtonState{P,T,PR,AllocatingEvaluation},
     k,
 ) where {P,T,PR}
-    
+
     M = get_manifold(mp) # domain manifold
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
 
@@ -362,12 +362,12 @@ function step_solver!(
 
     # compute Newton direction
     s.X = s.sub_problem(mp, s)
-    
-    #compute a stepsize 
+
+    #compute a stepsize
     step = s.stepsize(mp, s, k)
-    
+
     # retract
-    retract!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
+    ManifoldsBase.retract_fused!(get_manifold(mp), s.p, s.p, s.X, step, s.retraction_method)
     s.p_trial = copy(get_manifold(mp),s.p)
 
     return s
@@ -376,10 +376,10 @@ end
 function step_solver!(
     mp::VectorbundleManoptProblem, s::VectorbundleNewtonState{P,T,PR,InplaceEvaluation}, k
 ) where {P,T,PR}
-    
+
     M = get_manifold(mp) # domain manifold
     E = get_vectorbundle(mp) # vector bundle (codomain of F)
-    
+
     # update Newton matrix and right hand side
     mp.newton_equation(M, E, s.p)
 
