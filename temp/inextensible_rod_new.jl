@@ -18,7 +18,7 @@ begin
 	using Random
 	using RecursiveArrayTools
     using WGLMakie, Makie, GeometryTypes, Colors
-	#using CairoMakie
+	using CairoMakie
 	#using FileIO
 end;
 
@@ -41,8 +41,8 @@ begin
 	y01 = [0,0,0] # startpoint of rod
 	yT1 = [0.8,0,0] # endpoint of rod
 
-	y02 = [1,0,0] # start direction of rod
-	yT2 = [1,0,0] # end direction of rod
+	y02 = 1/norm([1,0,0.5])*[1,0,0.5] # start direction of rod
+	yT2 = 1/norm([1,0,0.5])*[1,0,0.5]# end direction of rod
 end;
 
 # ╔═╡ 29043ca3-afe0-4280-a76a-7c160a117fdf
@@ -357,31 +357,23 @@ end
 # ╔═╡ b0b8e87f-da09-4500-8aa9-e35934f7ef54
 p_res = get_solver_result(st_res);
 
+# ╔═╡ 52b11216-16d5-412c-9dc5-a7722ae19339
+p_res[product,1]
+
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 begin
-n = 0
-u = range(0,stop=2*π,length=n);
-v = range(0,stop=π,length=n);
-sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
+fig = Figure(size = (900, 400))
+ax = Axis3(fig[1, 2], aspect = (1,0.25,0.1), xticklabelsvisible=false, yticklabelsvisible=false, zticklabelsvisible=false, xlabelvisible=false, ylabelvisible=false, zlabelvisible=false, viewmode = :fitzoom)
+#ax = Axis3(fig[1, 2], aspect = :equal)
 
-ws1 = [-w(p, integrand1.scaling) for p in p_res[product, 1]]
-ws2 = [-w(p, integrand1.scaling) for p in p_res[product, 2]]
-	
-for i in 1:n
-    for j in 1:n
-        sx[i,j] = cos.(u[i]) * sin(v[j]);
-        sy[i,j] = sin.(u[i]) * sin(v[j]);
-        sz[i,j] = cos(v[j]);
-    end
-end
-fig, ax, plt = meshscatter(
-  sx,sy,sz,
-  color = fill(RGBA(1.,1.,1.,0.75), n, n),
-  shading = Makie.automatic,
-  transparency=true
-)
-ax.show_axis = false
-#wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.45); transparency=true)
+#fig, ax, plt = meshscatter(
+#  sx,sy,sz,
+#  color = fill(RGBA(1.,1.,1.,0.75), n, n),
+#  shading = Makie.automatic,
+#  transparency=true
+#)
+#ax.show_axis = false
+
     π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
@@ -389,9 +381,11 @@ ax.show_axis = false
 	#scatter!(ax, π1.(p_res[product, 2]), π2.(p_res[product, 2]), π3.(p_res[product, 2]); markersize =8, color=:blue)
 	#scatter!(ax, π1.(y_0), π2.(y_0), π3.(y_0); markersize =8, color=:blue)
 	scatter!(ax, π1.([y01, yT1]), π2.([y01, yT1]), π3.([y01, yT1]); markersize =8, color=:red)
-	#scatter!(ax, π1.([y02, yT2]), π2.([y02, yT2]), π3.([y02, yT2]); markersize =8, color=:red)
+	scatter!(ax, π1.(discretized_y1), π2.(discretized_y1), π3.(discretized_y1); markersize =8, color=:red)
 	#arrows!(ax, π1.(p_res), π2.(p_res), π3.(p_res), π1.(ws), π2.(ws), π3.(ws); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.13), transparency=true, lengthscale=0.15)
 	fig
+
+	#save("rod.png", fig, resolution=(1500, 800))
 end
 
 # ╔═╡ Cell order:
@@ -429,4 +423,5 @@ end
 # ╠═abe5c5f3-4a28-425c-afde-64b645f3a9d9
 # ╠═6451f8c5-7b4f-4792-87fd-9ed2635efa88
 # ╠═b0b8e87f-da09-4500-8aa9-e35934f7ef54
+# ╠═52b11216-16d5-412c-9dc5-a7722ae19339
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
