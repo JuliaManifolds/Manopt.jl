@@ -16,6 +16,9 @@ begin
 	using ManoptExamples
 	using Manifolds
     using WGLMakie, Makie, GeometryTypes, Colors
+	using GLMakie
+	using CairoMakie
+	using CSV, DataFrames
 end;
 
 # ╔═╡ 3f3a047f-0e9d-4364-8df2-7105a104843b
@@ -25,7 +28,7 @@ In this example we compute a geodesic under a force field on the sphere by apply
 
 # ╔═╡ c9d93358-17a7-4c6b-8f3c-2884e65e698c
 md"""
-We consider the sphere $$\mathbb{S}^2$$ equipped with the Riemannian metric $\langle \cdot, \cdot \rangle$ given by the Euclidean inner product with corresponding norm $\|\cdot\|$ and a time interval $\Omega =[0,T]$.
+We consider the sphere $$\mathbb{S}^2$$ equipped with the Riemannian metric $\langle \cdot, \cdot \rangle$ given by the Euclidean inner product with corresponding norm $\|\cdot\|$ and an interval $\Omega \subset \mathbb R$.
 
 Let $\mathcal X = H^1(\Omega, \mathbb S^2)$ and  $\mathcal E^* = T^*\mathcal X$ its cotangent bundle.
 
@@ -53,6 +56,8 @@ begin
 	
 	st = 0.4
 	halt = pi - 0.4
+	#halt = pi/2
+	
 	h = (halt-st)/(N+1)
 	Omega = range(; start=st, stop = halt, length=N+2)[2:end-1] # equidistant discrete time points
 	
@@ -181,7 +186,7 @@ begin
 		return B1dot'*B2dot+(w_prime(y,Integrand.scaling)*B1)'*B2
 	end
 
-	integrand=DifferentiableMapping(S,F_at,F_prime_at,3.0) 
+	integrand=DifferentiableMapping(S,F_at,F_prime_at,3.4) 
 
 end;
 
@@ -291,7 +296,7 @@ begin
 	
 	Axis(f[row, col], yscale = log10, title = string("Norms of the Newton directions (semilogarithmic)"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
     scatterlines!(change[1:end], color = :blue)
-	f
+	f	
 end
 
 # ╔═╡ 290dbe94-4686-4629-9f93-f01353aac404
@@ -301,7 +306,7 @@ and the resulting geodesic under the force field (orange). The starting geodesic
 
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 begin
-n = 45
+n = 25
 u = range(0,stop=2*π,length=n);
 v = range(0,stop=π,length=n);
 sx = zeros(n,n); sy = zeros(n,n); sz = zeros(n,n)
@@ -317,31 +322,47 @@ for i in 1:n
 end
 fig, ax, plt = meshscatter(
   sx,sy,sz,
-  color = fill(RGBA(1.,1.,1.,0.), n, n),
+  #color = fill(RGBA(1.,1.,1.,0.), n, n),
+	color = RGBA(1.,1.,1.,0.),
   shading = Makie.automatic,
   transparency=true
 )
 
 geodesic_start = [y0, discretized_y ...,yT]
 geodesic_final = [y0, p_res ..., yT]
-#geodesic_final = [y0, p_res_without_connection ..., yT]
+
 ax.show_axis = false
 wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
     π1(x) = 1.02*x[1]
     π2(x) = 1.02*x[2]
     π3(x) = 1.02*x[3]
 	
-	scatterlines!(ax, π1.(geodesic_final), π2.(geodesic_final), π3.(geodesic_final); markersize =8, color=:orange, linewidth=2)
+	scatterlines!(ax, π1.(geodesic_final), π2.(geodesic_final), π3.(geodesic_final); markersize =5, color=:orange, linewidth=2)
 	
-	scatterlines!(ax, π1.(geodesic_start), π2.(geodesic_start), π3.(geodesic_start); markersize =8, color=:blue, linewidth=2)
+	scatterlines!(ax, π1.(geodesic_start), π2.(geodesic_start), π3.(geodesic_start); markersize =5, color=:blue, linewidth=2)
 	
-	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =8, color=:red)
+	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =5, color=:red)
 	
 	arrows!(ax, π1.(p_res), π2.(p_res), π3.(p_res), π1.(ws), π2.(ws), π3.(ws); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.07)
 	
 	#arrows!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y), π1.(ws_start), π2.(ws_start), π3.(ws_start); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.15)
+
+	cam = cameracontrols(ax.scene)
+	cam.lookat[] =[-2.5, 2.5, 2]
+	#cam.lookat[] =[1, 3.5, 2]
+	
 	fig
+	#save("/Users/bt308990/Documents/Publications/dmv/gfx_pdf/geodesic_under_force.png", fig, resolution=(1500, 800))
 end
+
+# ╔═╡ 574c7fd7-6d60-413c-b542-e69b675acc40
+begin
+	CSV.write("norm_newton_direction_geodesic_force.csv", Tables.table(change), writeheader=false)
+	CSV.write("geodesic_force_final.csv", Tables.table(reduce(hcat, geodesic_final)), writeheader=false) # saved as 3x(N+2) table (columns are points on the sphere)
+	CSV.write("geodesic_force_start.csv", Tables.table(reduce(hcat, geodesic_start)), writeheader=false)
+	CSV.write("geodesic_forcefield_final.csv", Tables.table(reduce(hcat, ws)), writeheader=false)
+	CSV.write("geodesic_forcefield_start.csv", Tables.table(reduce(hcat, ws_start)), writeheader=false)
+end;
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
@@ -375,3 +396,4 @@ end
 # ╠═a08b8946-5adb-43c7-98aa-113875c954b1
 # ╟─290dbe94-4686-4629-9f93-f01353aac404
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
+# ╠═574c7fd7-6d60-413c-b542-e69b675acc40
