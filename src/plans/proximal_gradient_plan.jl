@@ -445,7 +445,7 @@ function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
     s = """
     ProximalGradientMethodBacktrackingStepsize(;
         contraction_factor=$(pgb.contraction_factor),
-        Initial_stepsize=$(pgb.initial_stepsize),
+        initial_stepsize=$(pgb.initial_stepsize),
         stop_when_stepsize_less=$(pgb.stop_when_stepsize_less),
         sufficient_decrease=$(pgb.sufficient_decrease),
         strategy=$(pgb.strategy)
@@ -462,8 +462,8 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
     p = st.a  # Current point (post-acceleration)
     X = st.X  # Current gradient
 
-    # For convex case, start with the last stepsize (warm start)
-    # For nonconvex case, reset to initial stepsize
+    # For the convex case, start with the last stepsize (warm start)
+    # For the nonconvex case, reset to initial stepsize
     λ = if s.strategy === :convex && i > 1
         s.last_stepsize
     else
@@ -517,7 +517,6 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
         # Reduce step size
         λ *= s.contraction_factor
     end
-    @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
     return λ
 end
 
@@ -711,4 +710,54 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(
         io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
     )
+end
+
+@doc raw"""
+    DebugWarnIfBacktrackingNotConverged <: DebugAction
+
+print a warning if the backtracking stopped because the stepsize fell below a given threshold in the [`proximal_gradient_method`](@ref).
+This threshold is specified by the `stop_when_stepsize_less` field of the [`ProximalGradientMethodBacktrackingStepsize`](@ref).
+
+# Constructor
+
+    DebugWarnIfBacktrackingNotConverged(warn=:Once;)
+
+Initialize the warning to warning level (`:Once`).
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always`
+"""
+mutable struct DebugWarnIfBacktrackingNotConverged <: DebugAction
+    status::Symbol
+    function DebugWarnIfBacktrackingNotConverged(warn::Symbol=:Once;)
+        return new(warn)
+    end
+end
+function show(io::IO, di::DebugWarnIfBacktrackingNotConverged)
+    return print(io, "DebugWarnIfBacktrackingNotConverged()")
+end
+
+function (d::DebugWarnIfBacktrackingNotConverged)(
+    ::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int
+)
+    (k < 1) && (return nothing)
+    s = st.stepsize
+    (!isa(s, Manopt.ProximalGradientMethodBacktrackingStepsize)) && throw(
+        DomainError(
+            s,
+            "DebugWarnIfBacktrackingNotConverged only works with `ProximalGradientMethodBacktrackingStepsize` stepsizes.",
+        ),
+    )
+    if d.status !== :No
+        if s.last_stepsize ≤ s.stop_when_stepsize_less
+            @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
+            if d.status === :Once
+                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                d.status = :No
+            end
+        end
+    end
+    return nothing
 end

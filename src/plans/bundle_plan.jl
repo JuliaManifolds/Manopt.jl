@@ -170,7 +170,7 @@ Initialize the warning to warning level (`:Once`) and introduce a tolerance for 
 The `warn` level can be set to `:Once` to only warn the first time the cost increases,
 to `:Always` to report an increase every time it happens, and it can be set to `:No`
 to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
-All other symbols are handled as if they were `:Always:`
+All other symbols are handled as if they were `:Always`.
 """
 mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
     status::Symbol

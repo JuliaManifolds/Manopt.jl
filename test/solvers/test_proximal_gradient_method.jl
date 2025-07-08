@@ -73,7 +73,30 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         st = Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; initial_stepsize=1.0, strategy=:convex, stop_when_stepsize_less=2.0
         )
-        @test_logs (:warn,) st(mp, pgms, 1)
+
+        @testset "Warnings" begin
+            dw1 = DebugWarnIfBacktrackingNotConverged(:Once)
+            @test repr(dw1) == "DebugWarnIfBacktrackingNotConverged()"
+            pgms_warn = ProximalGradientMethodState(
+                M;
+                p=p0,
+                stepsize=Manopt.ProximalGradientMethodBacktrackingStepsize(
+                    M; initial_stepsize=1.0, strategy=:convex, stop_when_stepsize_less=10.0
+                ),
+                stopping_criterion=StopAfterIteration(200),
+            )
+            @test_logs (:warn,) (:warn,) dw1(mp, pgms_warn, 1)
+            dw2 = DebugWarnIfBacktrackingNotConverged(:Once)
+            pgms_const = ProximalGradientMethodState(
+                M;
+                p=p0,
+                stepsize=Manopt.ConstantStepsize(M, 1.0),
+                stopping_criterion=StopAfterIteration(2),
+            )
+            @test_throws DomainError dw2(mp, pgms_const, 1)
+            @test isnothing(dw2(mp, pgms_const, 0))
+        end
+
         @test get_initial_stepsize(st) == 1.0
         pr = prox_h(M, 1.0, p0)
         @test get_proximal_map(M, ob, 1.0, p0) == pr
