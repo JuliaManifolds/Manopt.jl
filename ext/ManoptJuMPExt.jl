@@ -667,7 +667,7 @@ function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, name:
     end
     return MB.algebra_element(_newvar, v.p.polynomial_basis)
     =#
-    return nothing
+    return JuMP.reshape_vector([VariableRef(model) for _ in 1:...], _shape(...))
 end
 
 """
