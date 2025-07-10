@@ -405,6 +405,9 @@ begin
 	f
 end
 
+# ╔═╡ 87785942-c83b-4921-ad67-3bd7fd04b2bf
+CSV.write("norm_newton_direction_rod.csv", Tables.table(change), writeheader=false)
+
 # ╔═╡ b0b8e87f-da09-4500-8aa9-e35934f7ef54
 p_res = get_solver_result(st_res);
 
@@ -414,7 +417,7 @@ p_res[product,1]
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 begin
 fig = Figure(size = (1000, 500))
-ax = Axis3(fig[1, 2], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3, elevation=pi/8 + 0.15) 
+ax = Axis3(fig[1, 1], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3, elevation=pi/8 + 0.15) 
 	#xticklabelsvisible=false, yticklabelsvisible=false, zticklabelsvisible=false, xlabelvisible=false, ylabelvisible=false, zlabelvisible=false)
 #ax = Axis3(fig[1, 2], aspect = :equal)
 
@@ -425,6 +428,8 @@ ax = Axis3(fig[1, 2], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3,
 	#scatter!(ax, π1.(p_res[product, 1]), π2.(p_res[product, 1]), -0.1.+ 0.0.*π3.(p_res[product, 1]); markersize =8, color = RGBAf(0.9, 0.7, 0.5, 0.5))
 
 	scatter!(ax, π1.(p_res[product, 1]), 0.3 .+ 0.0.*π2.(p_res[product, 1]), π3.(p_res[product, 1]); markersize =8, color = RGBAf(0.9, 0.7, 0.5, 0.5))
+
+	#scatter!(ax, 0.8 .+ 0.0.*π1.(p_res[product, 1]), π2.(p_res[product, 1]), π3.(p_res[product, 1]); markersize =8, color = RGBAf(0.9, 0.7, 0.5, 0.5))
 	
 	#scatter!(ax, π1.(discretized_y1), π2.(discretized_y1), -0.1.+ 0.0.*π3.(discretized_y1); markersize =8, color = RGBAf(0.8, 0.5, 0.5, 0.5))
 
@@ -448,9 +453,9 @@ begin
 	# Create a DataFrame from the two signals
 	
 	df = DataFrame(
-	    x1 = [p[1] for p in p_res],
-	    y1 = [p[2] for p in p_res],
-	    z1 = [p[3] for p in p_res],
+	    x1 = [p[1] for p in [y01, p_res[product,1] ..., yT1]],
+	    y1 = [p[2] for p in [y01, p_res[product,1] ..., yT1]],
+	    z1 = [p[3] for p in [y01, p_res[product,1] ..., yT1]],
 	)
 	# Write to CSV
 	CSV.write("inextensible-rod-result.csv", df)
@@ -500,6 +505,7 @@ end
 # ╠═d903c84a-45f6-4e09-9ec2-88e248531fec
 # ╠═abe5c5f3-4a28-425c-afde-64b645f3a9d9
 # ╠═6451f8c5-7b4f-4792-87fd-9ed2635efa88
+# ╠═87785942-c83b-4921-ad67-3bd7fd04b2bf
 # ╠═b0b8e87f-da09-4500-8aa9-e35934f7ef54
 # ╠═52b11216-16d5-412c-9dc5-a7722ae19339
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
