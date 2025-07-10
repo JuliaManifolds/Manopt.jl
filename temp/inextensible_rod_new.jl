@@ -18,6 +18,7 @@ begin
 	using RecursiveArrayTools
     using WGLMakie, Makie, GeometryTypes, Colors
 	using CairoMakie
+	using DataFrames, CSV
 end;
 
 # ╔═╡ 116b717d-f9cf-44a0-be18-4950ea2f019a
@@ -441,6 +442,27 @@ ax = Axis3(fig[1, 2], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3,
 	#save("rod.png", fig, resolution=(1500, 800))
 end
 
+# ╔═╡ c7cd2023-f1cd-4728-bb53-bb6dcf545963
+begin
+	# CSV Exprot of the two signals
+	# Create a DataFrame from the two signals
+	
+	df = DataFrame(
+	    x1 = [p[1] for p in p_res],
+	    y1 = [p[2] for p in p_res],
+	    z1 = [p[3] for p in p_res],
+	)
+	# Write to CSV
+	CSV.write("inextensible-rod-result.csv", df)
+	
+	df = DataFrame(
+	    x1 = [p[1] for p in [y01, yT1]],
+	    y1 = [p[2] for p in [y01, yT1]],
+	    z1 = [p[3] for p in [y01, yT1]],
+	)
+	CSV.write("inextensible-rod-data.csv", df)
+end
+
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
 # ╟─116b717d-f9cf-44a0-be18-4950ea2f019a
@@ -481,3 +503,4 @@ end
 # ╠═b0b8e87f-da09-4500-8aa9-e35934f7ef54
 # ╠═52b11216-16d5-412c-9dc5-a7722ae19339
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
+# ╠═c7cd2023-f1cd-4728-bb53-bb6dcf545963
