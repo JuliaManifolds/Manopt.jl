@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -15,7 +15,7 @@ begin
 	using Manopt
 	using ManoptExamples
 	using Manifolds
-    using WGLMakie, Makie, GeometryTypes, Colors
+    using WGLMakie, Makie, GeometryTypes, Colors, ColorSchemes, NamedColors
 end;
 
 # ╔═╡ aa62a032-baec-40ab-918a-971dace0d844
@@ -70,7 +70,7 @@ begin
 	y0 = [sin(theta)*cos(st),sin(theta)*sin(st),cos(theta)] # startpoint of geodesic
 	yT = [sin(theta)*cos(halt),sin(theta)*sin(halt),cos(theta)] # endpoint of geodesic
 
-	h_ref = 0.12232101043274435
+	h_ref = 0.15
 end;
 
 # ╔═╡ 81c14a72-309c-470e-8c8c-bcc7dd843e43
@@ -301,6 +301,19 @@ for i in 1:n
         sz[i,j] = cos(v[j]);
     end
 end
+
+x = acos(1-h_ref)
+
+circx = zeros(n)
+circy = zeros(n)
+circz = zeros(n)
+for i in 1:n
+	circx[i] = cos.(u[i]) * sin(x);
+	circy[i] = sin.(u[i]) * sin(x);
+	circz[i] = cos(x);
+end
+
+	
 fig, ax, plt = meshscatter(
   sx,sy,sz,
   color = fill(RGBA(1.,1.,1.,0.), n, n),
@@ -316,18 +329,51 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
     π2(x) = 1.0*x[2]
     π3(x) = 1.0*x[3]
 
-	scatterlines!(ax, sx[:,8], sy[:,8], sz[:,8]; markersize =2, color=:black, linewidth=2)
-
-	println(1-cos(v[8])) #this is h_ref
+	scatterlines!(ax, circx, circy, circz; markersize =2, color=:black, linewidth=2)
 	
 	scatterlines!(ax, π1.(y_star), π2.(y_star), π3.(y_star); markersize =8, color=:orange, linewidth=2)
-	
-	#scatterlines!(ax, π1.(geodesic_start), π2.(geodesic_start), π3.(geodesic_start); markersize =8, color=:blue, linewidth=2)
 	
 	scatter!(ax, π1.([y0]), π2.([y0]), π3.([y0]); markersize = 10, color=:green)
 	scatter!(ax, π1.([yT]), π2.([yT]), π3.([yT]); markersize = 10, color=:red)
 	
 	fig
+end
+
+# ╔═╡ 816eec7a-57b0-4dfc-95e9-749e8eb5a774
+circ = [[circx[i], circy[i], circz[i]] for i in 1:n]
+
+# ╔═╡ 6c798c86-aa6f-4050-a8db-70751de97470
+begin
+	paul_tol = load_paul_tol()
+	# We have to trick with the colors a bit because the export is a bit too restrictive.
+
+	green = RGBA(paul_tol["mutedgreen"])	
+	orange = RGBA(paul_tol["vibrantorange"])
+	red = RGBA(paul_tol["urban and built up"])
+	blue = RGBA(paul_tol["water"])
+	black = RGBA(paul_tol["mediumcontrastblack"])
+end;
+
+# ╔═╡ 69b5427c-81b6-40a2-8bc0-ecb4701f663f
+begin
+
+	file_name = "geodesic_obstacle"
+	#local force field
+	#ws_local = [1.0*w(Manifolds.Sphere(2), p, s) for p in solutions[i]]		
+	asymptote_export_S2_signals(file_name*".asy";
+	points= [ [y0,yT] ],
+	curves = [y_star, circ],
+	dot_sizes = [3.0,],
+	line_widths = [1.5, 1.5], #2 curves, tangent vectors
+	colors = Dict{Symbol, Vector{ColorTypes.RGBA{Float64}}}(
+		:points => [red],
+		:curves => [orange, black]
+	),
+	camera_position=(3., 4., 6.),
+	target=(-2.5, 2.5, 2.0),
+	sphere_color=RGBA(0.,0.,0.,0.02)
+	);
+	render_asymptote(file_name*".asy")
 end
 
 # ╔═╡ Cell order:
@@ -353,3 +399,6 @@ end
 # ╠═4c26b3d0-51ed-48b1-9efe-1a4ba0949e04
 # ╟─da4fca13-23d3-4f4a-bc35-ace2b5dacaf8
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
+# ╠═816eec7a-57b0-4dfc-95e9-749e8eb5a774
+# ╠═6c798c86-aa6f-4050-a8db-70751de97470
+# ╠═69b5427c-81b6-40a2-8bc0-ecb4701f663f
