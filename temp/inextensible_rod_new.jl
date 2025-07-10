@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -15,12 +15,63 @@ begin
 	using ManoptExamples
 	using Manifolds
 	using OffsetArrays
-	using Random
 	using RecursiveArrayTools
     using WGLMakie, Makie, GeometryTypes, Colors
 	using CairoMakie
-	#using FileIO
 end;
+
+# ╔═╡ 116b717d-f9cf-44a0-be18-4950ea2f019a
+md"""
+In this example we compute equilibrium states of an inextensible elastic rod by applying Newton's method on vector bundles which was introduced in \ref{paper}. This example reproduces the results from \ref{paper}.
+"""
+
+# ╔═╡ 8153941a-39a0-4d91-9796-35cbd4c547e3
+md"""
+We start with the following energy minimization problem 
+
+$\min_{y\in \mathcal M}\frac{1}{2}\int_{0}^{1} \sigma(s) \langle \ddot y(s),\ddot y(s)\rangle ds$
+where $\mathcal M := \{y\mid y\in H^2([0,1];\mathbb{R}^3),\dot y(s)\in \mathbb S^2  \, \mbox{on} \, [0,1] \}.$ The quantity $\overline \sigma > \sigma(s)\ge \underline \sigma>0$ is the flexural stiffness of the rod, and $\dot y$, $\ddot y$ are the derivatives of $y$ with respect to $s\in[0,1]$. 
+
+In addition the following boundary conditions are imposed:
+
+$y(0)=y_a \in \mathbb{R}^3, \, \dot y(0)=v_a\in \mathbb{S}^2, \;
+y(1)=y_b \in \mathbb{R}^3, \, \dot y(1)=v_b\in \mathbb{S}^2.$
+
+Introducing $v(s):=\dot y(s)$ we reformulate the problem as a mixed problem:
+
+$\min_{(y,v)\in Y\times \mathcal V} \frac{1}{2}\int_{0}^{1} \sigma \langle \dot v,\dot v\rangle \, ds
+\quad \mbox{ s.t. } \quad \dot y-v =0$
+where 
+
+$Y=\{y\in H^2([0,1];\mathbb{R}^3)\,\, : \,\, y(0)=y_a,\,\, y(1)=y_b  \},$ 
+
+$\mathcal V=\{v\in H^1([0,1];\mathbb{S}^2)\,\, :\,\, v(0)=v_a,\,\, v(1)=v_b  \}.$
+
+To derive equilibrium conditions for this problem we define the Lagrangian function
+
+$L(y,v,\lambda) =\int_{0}^{1} \frac{1}{2}  \sigma \left\langle \dot v,\dot v \right\rangle+\lambda (\dot y-v)\, ds$
+
+using a Lagrangian multiplier $\lambda \in \Lambda \coloneqq L_2([0,1];\mathbb R^3)$.
+
+We obtain the following equilibrium conditions via setting the derivatives of the Lagrangian to zero:
+
+$\int_0^1 \lambda (\dot{\delta  y})\, ds=0 \quad \forall \delta y\in Y$
+
+$\int_{0}^{1} \sigma \left\langle  \dot v,\dot{\delta v}\right\rangle -  \lambda(\delta v) ds=0 \quad \forall \delta v\in T_v \mathcal V$
+
+$\int_{0}^{1}  \delta \lambda(\dot y-v) ds=0 \quad \forall \delta \lambda\in \Lambda$
+
+Hence, have to find a zero of the mapping
+
+$F : Y \times \mathcal V \times \Lambda \to Y^* \times T^*\mathcal V\times \Lambda^*$
+
+defined by the equilibrium conditions.
+"""
+
+# ╔═╡ 03baac67-02bd-432e-a21f-c31c809fbd5e
+md"""
+For our example we set
+"""
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
@@ -29,7 +80,6 @@ begin
 	st1 = 0.0
 	halt1 = 1.0
 
-	scale_couple=-1
 	windscale=1
 
 	h = (halt1-st1)/(N+1)
@@ -362,22 +412,25 @@ p_res[product,1]
 
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 begin
-fig = Figure(size = (900, 400))
-ax = Axis3(fig[1, 2], aspect = (1,0.25,0.1), xticklabelsvisible=false, yticklabelsvisible=false, zticklabelsvisible=false, xlabelvisible=false, ylabelvisible=false, zlabelvisible=false, viewmode = :fitzoom)
+fig = Figure(size = (1000, 500))
+ax = Axis3(fig[1, 2], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3, elevation=pi/8 + 0.15) 
+	#xticklabelsvisible=false, yticklabelsvisible=false, zticklabelsvisible=false, xlabelvisible=false, ylabelvisible=false, zlabelvisible=false)
 #ax = Axis3(fig[1, 2], aspect = :equal)
 
-#fig, ax, plt = meshscatter(
-#  sx,sy,sz,
-#  color = fill(RGBA(1.,1.,1.,0.75), n, n),
-#  shading = Makie.automatic,
-#  transparency=true
-#)
-#ax.show_axis = false
 
-    π1(x) = 1.02*x[1]
-    π2(x) = 1.02*x[2]
-    π3(x) = 1.02*x[3]
+    π1(x) = 1.0*x[1]
+    π2(x) = 1.0*x[2]
+    π3(x) = 1.0*x[3]
+	#scatter!(ax, π1.(p_res[product, 1]), π2.(p_res[product, 1]), -0.1.+ 0.0.*π3.(p_res[product, 1]); markersize =8, color = RGBAf(0.9, 0.7, 0.5, 0.5))
+
+	scatter!(ax, π1.(p_res[product, 1]), 0.3 .+ 0.0.*π2.(p_res[product, 1]), π3.(p_res[product, 1]); markersize =8, color = RGBAf(0.9, 0.7, 0.5, 0.5))
+	
+	#scatter!(ax, π1.(discretized_y1), π2.(discretized_y1), -0.1.+ 0.0.*π3.(discretized_y1); markersize =8, color = RGBAf(0.8, 0.5, 0.5, 0.5))
+
+	scatter!(ax, π1.(discretized_y1), 0.3 .+ 0.0.*π2.(discretized_y1), π3.(discretized_y1); markersize =8, color = RGBAf(0.8, 0.5, 0.5, 0.5))
+	
 	scatter!(ax, π1.(p_res[product, 1]), π2.(p_res[product, 1]), π3.(p_res[product, 1]); markersize =8, color=:orange)
+
 	#scatter!(ax, π1.(p_res[product, 2]), π2.(p_res[product, 2]), π3.(p_res[product, 2]); markersize =8, color=:blue)
 	#scatter!(ax, π1.(y_0), π2.(y_0), π3.(y_0); markersize =8, color=:blue)
 	scatter!(ax, π1.([y01, yT1]), π2.([y01, yT1]), π3.([y01, yT1]); markersize =8, color=:red)
@@ -390,7 +443,10 @@ end
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
+# ╟─116b717d-f9cf-44a0-be18-4950ea2f019a
 # ╠═9fb54416-3909-49c4-b1bf-cc868e580652
+# ╟─8153941a-39a0-4d91-9796-35cbd4c547e3
+# ╟─03baac67-02bd-432e-a21f-c31c809fbd5e
 # ╠═12e32b83-ae65-406c-be51-3f21935eaae5
 # ╠═29043ca3-afe0-4280-a76a-7c160a117fdf
 # ╠═7f6c588b-e64d-471f-9259-f3e3aeeb193a
