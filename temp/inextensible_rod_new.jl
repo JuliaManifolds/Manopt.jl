@@ -67,6 +67,7 @@ Hence, have to find a zero of the mapping
 $F : Y \times \mathcal V \times \Lambda \to Y^* \times T^*\mathcal V\times \Lambda^*$
 
 defined by the equilibrium conditions.
+For brevity we set $\mathcal X=Y \times \mathcal V \times \Lambda$ and $x=(y,v,\lambda)$
 """
 
 # ╔═╡ 03baac67-02bd-432e-a21f-c31c809fbd5e
@@ -92,43 +93,60 @@ begin
 	y01 = [0,0,0] # startpoint of rod
 	yT1 = [0.8,0,0] # endpoint of rod
 
-	y02 = 1/norm([1,0,0.5])*[1,0,0.5] # start direction of rod
-	yT2 = 1/norm([1,0,0.5])*[1,0,0.5]# end direction of rod
+	y02 = 1/norm([1,0,2])*[1,0,2] # start direction of rod
+	yT2 = 1/norm([1,0,0.8])*[1,0,0.8]# end direction of rod
 end;
+
+# ╔═╡ b52ba66d-2fc2-4ff2-9e74-cd9cc87e1b65
+md"""
+As a starting point, we use
+"""
 
 # ╔═╡ 29043ca3-afe0-4280-a76a-7c160a117fdf
-function y1(t)
-	return [t*0.8, 0.1*t*(1-t), 0]
+begin
+	function y1(t)
+		return [t*0.8, 0.1*t*(1-t), 0]
+	end
+	
+	function y2(t)
+		return [sin(t*pi/2+pi/4), cos(t*pi/2+pi/4), 0]
+	end
+
+	function y3(t)
+		return [0.1, 0.1, 0.1]
+	end
+
+	discretized_y1 = [y1(Ωi) for Ωi in Omega1]
+	discretized_y2 = [y2(Ωi) for Ωi in Omega2]
+	discretized_y3 = [y3(Ωi) for Ωi in Omega3]
+
+	disc_y = ArrayPartition(discretized_y1, discretized_y2,discretized_y3)
+	
 end;
 
-# ╔═╡ 7f6c588b-e64d-471f-9259-f3e3aeeb193a
-function y2(t)
-	return [sin(t*pi/2+pi/4), cos(t*pi/2+pi/4), 0]
-end;
+# ╔═╡ 7741a74f-0a73-47c8-9202-b8789782eb7b
+md"""
+In order to apply Newton's method to find a zero of $F$, we need the linear mapping $Q_{F(x)}^*\circ F'(x)$ (cf. \ref{paper}). Since the sphere is an embedded submanifold of $\mathbb R^3$, we can use the formula 
 
-# ╔═╡ 5e2e2280-fe0d-443b-8824-101a138a86a0
-function y3(t)
-	return [0.1, 0.1, 0.1]
-end;
+$Q_{F(x)}^*\circ F'(x)\delta x^2\,\delta x^1 = F(x)(\overset{\rightarrow}{V}_x'(x)\delta x^2\,\delta x^1) + F_{\mathbb R^9}'(x)\delta x^2\,\delta x^1$
 
-# ╔═╡ 5c0980c5-284e-4406-bab8-9b9aff9391ba
-discretized_y1 = [y1(Ωi) for Ωi in Omega1];
+for $\delta x^1, \, \delta x^2 \in T_x \mathcal X$, where $\overset{\rightarrow}{V}_x(\hat x) \in L(T_x \mathcal X, T_{\hat{x}}\mathcal X)$ is a vector transport and 
 
-# ╔═╡ 8cc3124c-dbb8-4286-aee3-3984d87868c1
-discretized_y2 = [y2(Ωi) for Ωi in Omega2];
+$F_{\mathbb R^9}'(x)\delta x^2\, \delta x^1 = \int_0^1 \omega'(y)(\delta y^1,\delta y^2) + \delta \lambda^2(\delta \dot y^1) + \sigma \langle \delta \dot v^1,\delta \dot v^2\rangle  -\delta \lambda^2(\delta v^1) + \delta \lambda^1(\delta \dot y^2)  - \delta \lambda^1(\delta v^2) \, ds$
 
-# ╔═╡ 47d26c17-d422-4e6f-a5fc-7f11a2bcba0c
-discretized_y3 = [y3(Ωi) for Ωi in Omega3];
+is the euclidean derivative of $F$.
 
-# ╔═╡ ba3051a0-078a-49ff-85b9-441eef4cb9fc
-disc_y = ArrayPartition(discretized_y1, discretized_y2,discretized_y3)
 
-# ╔═╡ bc449c2d-1f23-4c72-86ab-a46acbf64129
 """
-Such a structure has to be filled for two purposes:
-* Definition of an integrand and its derivative
+
+# ╔═╡ 6c7f20ef-e7bf-47cf-9017-8056153b5e06
+md"""
+We define a structure that has to be filled for two purposes:
+* Definition of an integrands and their derivatives
 * Definition of a vector transport and its derivative
 """
+
+# ╔═╡ bc449c2d-1f23-4c72-86ab-a46acbf64129
 mutable struct DifferentiableMapping{M<:AbstractManifold, N<:AbstractManifold,F1<:Function,F2<:Function,T}
 	domain::M
 	precodomain::N
@@ -137,6 +155,20 @@ mutable struct DifferentiableMapping{M<:AbstractManifold, N<:AbstractManifold,F1
 	scaling::T
 end
 
+
+# ╔═╡ efc9897e-cd5b-43b3-ad96-62360ccec659
+md"""
+The following routines define a vector transport and its euclidean derivative. As seen above, they are needed to derive a covariant derivative of $F$.
+
+As a vector transport we use the (pointwise) orthogonal projection onto the tangent spaces, i.e. for $p, q \in \mathbb S^2$ and $X \in T_p\mathbb S^2$ we set 
+
+$\overset{\rightarrow}{V}_{p}(q)X = (I-q\cdot q^T)X \in T_q\mathbb S^2.$
+
+The derivative of the vector transport is then given by 
+
+$\left(\frac{d}{dq}\overset{\rightarrow}{V}_{p}(q)\big\vert_{q=p}\delta q\right)X = \left( - \delta q\cdot p^T - p\cdot \delta q^T\right)\cdot X.$
+
+"""
 
 # ╔═╡ 50a51e47-b6b1-4e43-b4b9-aad23f6ec390
 """
@@ -357,9 +389,9 @@ function (ne::NewtonEquation)(M, VB, p, p_trial)
 
 	nCells = length(ne.Omega3)
 
-	ManoptExamples.get_rhs_simplified!(bctrial1,1,1,h,nCells,Oy,Oytrial,ne.integrand1, zerotransport)
-	ManoptExamples.get_rhs_simplified!(bctrial2,2,1,h,nCells,Oy,Oytrial,ne.integrand2,ne.transport)
-	ManoptExamples.get_rhs_simplified!(bctrial3,3,0,h,nCells,Oy,Oytrial,ne.integrand3, zerotransport)
+	ManoptExamples.get_rhs_simplified!(evaluate, bctrial1,1,1,h,nCells,Oy,Oytrial,ne.integrand1, zerotransport)
+	ManoptExamples.get_rhs_simplified!(evaluate,bctrial2,2,1,h,nCells,Oy,Oytrial,ne.integrand2,ne.transport)
+	ManoptExamples.get_rhs_simplified!(evaluate,bctrial3,3,0,h,nCells,Oy,Oytrial,ne.integrand3, zerotransport)
 
 	return vcat(bctrial1,bctrial2, bctrial3)
 end
@@ -383,10 +415,10 @@ end
 	st_res = vectorbundle_newton(product, TangentBundle(product), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
 	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(product,1e-12; outer_norm=Inf)),
 	#retraction_method=ProjectionRetraction(),
-	#stepsize=Manopt.AffineCovariantStepsize(product, theta_des=0.5),
+	stepsize=Manopt.AffineCovariantStepsize(product, theta_des=0.5),
 	#stepsize=ConstantLength(power, 1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
-	record=[:Iterate, :Change],
+	record=[:Iterate, :Change, :Stepsize],
 	return_state=true
 )
 end
@@ -403,6 +435,23 @@ begin
 	Axis(f[row, col], yscale = log10, title = string("Semilogarithmic Plot of the norms of the Newton direction"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
     scatterlines!(change, color = :blue)
 	f
+end
+
+# ╔═╡ 4c9e7334-828f-4711-93fe-aef1dc632bac
+stepsizes = get_record(st_res, :Iteration, :Stepsize)
+
+# ╔═╡ 929a282c-3b78-44c4-a1f2-e97c23746a9d
+CSV.write("stepsize_rod.csv", Tables.table(stepsizes[1:end-1]), writeheader=false)
+
+# ╔═╡ e429bda6-61de-4277-bd95-db0ce25e0144
+begin
+	f_st = Figure(;)
+	
+    row_st, col_st = fldmod1(1, 2)
+	
+	Axis(f_st[row_st, col_st], title = string("Stepsizes"), xminorgridvisible = true, xticks = (1:length(stepsizes)), xlabel = "Iteration", ylabel = "α")
+    scatterlines!(stepsizes[1:end-1], color = :blue)
+	f_st
 end
 
 # ╔═╡ 87785942-c83b-4921-ad67-3bd7fd04b2bf
@@ -475,14 +524,12 @@ end
 # ╟─8153941a-39a0-4d91-9796-35cbd4c547e3
 # ╟─03baac67-02bd-432e-a21f-c31c809fbd5e
 # ╠═12e32b83-ae65-406c-be51-3f21935eaae5
+# ╟─b52ba66d-2fc2-4ff2-9e74-cd9cc87e1b65
 # ╠═29043ca3-afe0-4280-a76a-7c160a117fdf
-# ╠═7f6c588b-e64d-471f-9259-f3e3aeeb193a
-# ╠═5e2e2280-fe0d-443b-8824-101a138a86a0
-# ╠═5c0980c5-284e-4406-bab8-9b9aff9391ba
-# ╠═8cc3124c-dbb8-4286-aee3-3984d87868c1
-# ╠═47d26c17-d422-4e6f-a5fc-7f11a2bcba0c
-# ╠═ba3051a0-078a-49ff-85b9-441eef4cb9fc
+# ╟─7741a74f-0a73-47c8-9202-b8789782eb7b
+# ╟─6c7f20ef-e7bf-47cf-9017-8056153b5e06
 # ╠═bc449c2d-1f23-4c72-86ab-a46acbf64129
+# ╟─efc9897e-cd5b-43b3-ad96-62360ccec659
 # ╠═50a51e47-b6b1-4e43-b4b9-aad23f6ec390
 # ╠═9cdd4289-c49d-4733-8487-f471e38fc402
 # ╠═48834792-fff9-4e96-803a-b4d07e714797
@@ -505,6 +552,9 @@ end
 # ╠═d903c84a-45f6-4e09-9ec2-88e248531fec
 # ╠═abe5c5f3-4a28-425c-afde-64b645f3a9d9
 # ╠═6451f8c5-7b4f-4792-87fd-9ed2635efa88
+# ╠═4c9e7334-828f-4711-93fe-aef1dc632bac
+# ╠═929a282c-3b78-44c4-a1f2-e97c23746a9d
+# ╠═e429bda6-61de-4277-bd95-db0ce25e0144
 # ╠═87785942-c83b-4921-ad67-3bd7fd04b2bf
 # ╠═b0b8e87f-da09-4500-8aa9-e35934f7ef54
 # ╠═52b11216-16d5-412c-9dc5-a7722ae19339
