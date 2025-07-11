@@ -45,6 +45,7 @@ tutorials_menu =
         "Implement a solver" => "tutorials/ImplementASolver.md",
         "Optimize on your own manifold" => "tutorials/ImplementOwnManifold.md",
         "Do constrained optimization" => "tutorials/ConstrainedOptimization.md",
+        "use Manifolds in JuMP" => "tutorials/UseManoptWithinJuMP.md",
     ]
 # Check whether all tutorials are rendered, issue a warning if not (and quarto if not set)
 all_tutorials_exist = true
@@ -147,6 +148,7 @@ end
 # (e) finally make docs
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"); style=:alpha)
 links = InterLinks(
+    "JuMP" => ("https://jump.dev/JuMP.jl/stable/"),
     "ManifoldDiff" => ("https://juliamanifolds.github.io/ManifoldDiff.jl/stable/"),
     "ManifoldsBase" => ("https://juliamanifolds.github.io/ManifoldsBase.jl/stable/"),
     "Manifolds" => ("https://juliamanifolds.github.io/Manifolds.jl/stable/"),
@@ -161,6 +163,7 @@ makedocs(;
     modules=[
         Manopt,
         Base.get_extension(Manopt, :ManoptJuMPExt),
+        Base.get_extension(Manopt, :ManoptJuMPManifoldsExt),
         Base.get_extension(Manopt, :ManoptLineSearchesExt),
         Base.get_extension(Manopt, :ManoptLRUCacheExt),
         Base.get_extension(Manopt, :ManoptManifoldsExt),
@@ -215,7 +218,12 @@ makedocs(;
         ],
         "Helpers" => ["Checks" => "helpers/checks.md", "Exports" => "helpers/exports.md"],
         "Contributing to Manopt.jl" => "contributing.md",
-        "Extensions" => "extensions.md",
+        "Extensions" => [
+            "Overview" => "extensions/index.md",
+            "JuMP" => "extensions/JuMP.md",
+            "LineSearches.jl" => "extensions/LineSearches.md",
+            "Manifolds" => "extensions/Manifolds.md",
+        ],
         "Notation" => "notation.md",
         "Changelog" => "changelog.md",
         "References" => "references.md",

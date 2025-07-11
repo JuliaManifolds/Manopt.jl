@@ -20,6 +20,17 @@ a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]::before {
     margin-right: 4px;
     vertical-align: middle;
 }
+a[href^="https://jump.dev/JuMP.jl/stable/"]::before {
+    content: "";
+    background-image: url('logo-JuMP.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: inline-block;
+    height: 1em;
+    width: 1em;
+    margin-right: 4px;
+    vertical-align: middle;
+}
 a[href^="https://en.wikipedia.org/"]::before {
     content: "";
     background-image: url('wikipedia.png');
@@ -38,5 +49,8 @@ a[href^="https://en.wikipedia.org/"]::before {
     }
     a[href^="https://juliamanifolds.github.io/Manifolds.jl/"]::before {
         background-image: url('logo-manifolds-dark.png');
+    }
+    a[href^="https://jump.dev/JuMP.jl/stable/"]::before {
+        background-image: url('logo-JuMP-dark.svg');
     }
 }

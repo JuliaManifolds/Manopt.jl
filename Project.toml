@@ -31,6 +31,7 @@ RipQP = "1e40b3f8-35eb-4cd8-8edd-3e515bb9de08"
 
 [extensions]
 ManoptJuMPExt = "JuMP"
+ManoptJuMPManifoldsExt = ["JuMP", "Manifolds"]
 ManoptLRUCacheExt = "LRUCache"
 ManoptLineSearchesExt = "LineSearches"
 ManoptManifoldsExt = "Manifolds"
