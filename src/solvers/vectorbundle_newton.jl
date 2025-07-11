@@ -131,7 +131,7 @@ function AffineCovariantStepsize(
     theta_acc=1.1*theta_des,
     last_stepsize = 1.0
 )
-    return AffineCovariantStepsize{typeof(stepsize), typeof(theta)}(alpha, theta, theta_des, theta_acc, last_stepsize)
+    return AffineCovariantStepsize{typeof(alpha), typeof(theta)}(alpha, theta, theta_des, theta_acc, last_stepsize)
 end
 
 function (acs::AffineCovariantStepsize)(
@@ -260,14 +260,27 @@ Perform Newton's method for finding a zero of a mapping ``F:\mathcal M \to \math
 In each iteration the Newton equation
 `` Q_{F(p)} \circ F'(p) X + F(p) = 0``
 is solved to compute a Newton direction ``X``. The next iterate is then computed by applying a retraction.
-``NE`` is a functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}\circ F'(p)`` (covariant derivative of ``F``) and the right hand side ``F(p)`` at a point ``p\in\mathcal M``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+
+# Fields
+
+* `M`: domain manifold
+* 'E': range vector bundle
+* 'p': current iterate
+* 'NE': functor representing the Newton equation. It has at least fields ``A`` and ``b`` to store a representation of the Newton matrix ``Q_{F(p)}\circ F'(p)`` (covariant derivative of ``F``) and the right hand side ``F(p)`` at a point ``p\in\mathcal M``. The point ``p`` denotes the starting point. The algorithm can be run in-place of ``p``.
+
+# Keyword arguments
+
+* 'sub_problem': method (closed form solution) that gets the [`VectorbundleManoptProblem`](@ref) and the [`VectorbundleNewtonState`](@ref) and returns the solution of the Newton equation, i.e. the Newton direction `X`
+* 'sub_state': sub_state to sub_problem, in most cases either AllocatingEvaluation() or InplaceEvaluation()
+* `X=`zero_vector(M, p)
+* `retraction_method=``default_retraction_method`(M, typeof(p)),
+* `stopping_criterion=`[`StopAfterIteration`](@ref)`(1000)``,
+* `stepsize=`1.0
 
 """
-vectorbundle_newton(M::AbstractManifold, E::AbstractManifold, args...; kwargs...) #replace type of E with VectorBundle once this is available in ManifoldsBase
 
-function vectorbundle_newton(
-    M::AbstractManifold, E::AbstractManifold, NE, p; kwargs...
-)
+
+function vectorbundle_newton(M::AbstractManifold, E::AbstractManifold, NE, p; kwargs...) #replace type of E with VectorBundle once this is available in ManifoldsBase
     q = copy(M, p)
     return vectorbundle_newton!(M, E, NE, q; kwargs...)
 end
