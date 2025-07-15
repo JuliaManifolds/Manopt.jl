@@ -193,6 +193,11 @@ function identitytrans(S, p, X, q)
 	return X
 end
 
+# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
+function F1_at(Integrand, y, ydot, T, Tdot)
+	  return w(y.x[1],Integrand.scaling)'*T+Tdot'*y.x[3]
+end
+
 # ╔═╡ 229fa902-e125-429a-852d-0668f64c7640
 function F2_at(Integrand, y, ydot, T, Tdot)
 	  return ydot.x[2]'*Tdot-T'*y.x[3]
@@ -218,6 +223,14 @@ function F_prime23_at(Integrand,y,ydot,B,Bdot,T,Tdot)
 	return -T'*B
 end
 
+# ╔═╡ e2f48dcc-5c23-453d-8ff3-eb425b7b67af
+"""
+If no vector transport is needed, leave it away, then a zero dummy transport is used
+"""
+function get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand)
+	ManoptExamples.get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand,zerotransport)
+end
+
 # ╔═╡ 808db8aa-64f7-4b36-8c6c-929ba4fa22db
 """
 Force field w and its derivative. A scaling parameter is also employed.
@@ -225,11 +238,6 @@ Force field w and its derivative. A scaling parameter is also employed.
 function w(p, c)
 	#return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
 	return [0.0,0.0,0.0] #c*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
-end
-
-# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
-function F1_at(Integrand, y, ydot, T, Tdot)
-	  return w(y.x[1],Integrand.scaling)'*T+Tdot'*y.x[3]
 end
 
 # ╔═╡ 288b9637-0500-40b8-a1f9-90cb9591402b
@@ -265,14 +273,6 @@ end;
 # ╔═╡ 14d42ecb-6563-4d62-94ce-a36b73ed9a78
 zerotransport=DifferentiableMapping(R3,R3,identitytrans,zerotrans_prime,nothing)
 
-
-# ╔═╡ e2f48dcc-5c23-453d-8ff3-eb425b7b67af
-"""
-If no vector transport is needed, leave it away, then a zero dummy transport is used
-"""
-function get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand)
-	ManoptExamples.get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand,zerotransport)
-end
 
 # ╔═╡ cab1527e-b7b9-4e13-8483-cba8b95c24da
 function evaluate(y, i, tloc)
@@ -455,7 +455,7 @@ begin
 end
 
 # ╔═╡ 87785942-c83b-4921-ad67-3bd7fd04b2bf
-CSV.write("norm_newton_direction_rod.csv", Tables.table(change), writeheader=false)
+CSV.write("results/norm_newton_direction_rod.csv", Tables.table(change), writeheader=false)
 
 # ╔═╡ b0b8e87f-da09-4500-8aa9-e35934f7ef54
 p_res = get_solver_result(st_res);
@@ -514,7 +514,7 @@ begin
 	    y1 = [p[2] for p in [y01, yT1]],
 	    z1 = [p[3] for p in [y01, yT1]],
 	)
-	CSV.write("inextensible-rod-data.csv", df)
+	CSV.write("results/inextensible-rod-data.csv", df)
 end
 
 # ╔═╡ Cell order:
