@@ -70,7 +70,7 @@ begin
 	y0 = [sin(theta)*cos(st),sin(theta)*sin(st),cos(theta)] # startpoint of geodesic
 	yT = [sin(theta)*cos(halt),sin(theta)*sin(halt),cos(theta)] # endpoint of geodesic
 
-	h_ref = 0.15
+	h_ref = 0.1
 end;
 
 # ╔═╡ 81c14a72-309c-470e-8c8c-bcc7dd843e43
@@ -339,9 +339,6 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	fig
 end
 
-# ╔═╡ 816eec7a-57b0-4dfc-95e9-749e8eb5a774
-circ = [[circx[i], circy[i], circz[i]] for i in 1:n]
-
 # ╔═╡ 6c798c86-aa6f-4050-a8db-70751de97470
 begin
 	paul_tol = load_paul_tol()
@@ -354,10 +351,13 @@ begin
 	black = RGBA(paul_tol["mediumcontrastblack"])
 end;
 
+# ╔═╡ a4fdc099-702f-456b-8106-429b26345cb2
+circ = [[circx[i], circy[i], circz[i]] for i in 1:n]
+
 # ╔═╡ 69b5427c-81b6-40a2-8bc0-ecb4701f663f
 begin
 
-	file_name = "geodesic_obstacle"
+	file_name = "results/geodesic_obstacle_href_$(h_ref)"
 	#local force field
 	#ws_local = [1.0*w(Manifolds.Sphere(2), p, s) for p in solutions[i]]		
 	asymptote_export_S2_signals(file_name*".asy";
@@ -399,6 +399,6 @@ end
 # ╠═4c26b3d0-51ed-48b1-9efe-1a4ba0949e04
 # ╟─da4fca13-23d3-4f4a-bc35-ace2b5dacaf8
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
-# ╠═816eec7a-57b0-4dfc-95e9-749e8eb5a774
 # ╠═6c798c86-aa6f-4050-a8db-70751de97470
+# ╠═a4fdc099-702f-456b-8106-429b26345cb2
 # ╠═69b5427c-81b6-40a2-8bc0-ecb4701f663f
