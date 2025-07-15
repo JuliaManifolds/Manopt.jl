@@ -50,7 +50,7 @@ For our example we set
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
-	N=10000
+	N=100
 
 	S = Manifolds.Sphere(2)
 	power = PowerManifold(S, NestedPowerRepresentation(), N) # power manifold of S
@@ -262,16 +262,25 @@ function solve_in_basis_repr(problem, newtonstate)
 	return get_vector(problem.manifold, newtonstate.p, X_base, DefaultOrthogonalBasis())
 end;
 
+# ╔═╡ fe2ff3d0-db3e-475f-a7be-e35ffd42f807
+rec = RecordChange(power;
+    inverse_retraction_method=ProjectionInverseRetraction())
+
+# ╔═╡ bcd9f127-0c20-43c2-ba34-1e792bfd1ee4
+deb = DebugChange(power;
+    inverse_retraction_method=ProjectionInverseRetraction())
+
 # ╔═╡ 9a2ebb9a-74c7-4efd-b042-23263bbf4235
 begin
 	NE = NewtonEquation(power, integrand, transport, Omega)
 		
 	st_res = vectorbundle_newton(power, TangentBundle(power), NE, discretized_y; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-12; outer_norm=Inf)),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-12; outer_norm=Inf, inverse_retraction_method=ProjectionInverseRetraction())),
 	retraction_method=ProjectionRetraction(),
 	#stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.1),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
-	record=[:Iterate, :Change, :Stepsize],
+	#debug=[:Iteration, :Change, "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
+	record=[:Iteration, rec => :Change, :Iterate],
 	return_state=true
 )
 end
@@ -285,8 +294,10 @@ We extract the recorded values
 begin
 	change = get_record(st_res, :Iteration, :Change)[2:end]
 	p_res = get_solver_result(st_res)
-	stepsizes = get_record(st_res, :Iteration, :Stepsize)
 end;
+
+# ╔═╡ 008d13c7-e900-41be-b133-9207a765bcf2
+change
 
 # ╔═╡ 4c939ec9-0e1b-4194-8f22-d2639172922c
 md"""
@@ -302,17 +313,6 @@ begin
 	Axis(f[row, col], yscale = log10, title = string("Norms of the Newton directions (semilogarithmic)"), xminorgridvisible = true, xticks = (1:length(change)), xlabel = "Iteration", ylabel = "‖δx‖")
     scatterlines!(change[1:end], color = :blue)
 	f	
-end
-
-# ╔═╡ 538b729a-87b3-4940-aecb-de9a8d08f513
-begin
-	f_st = Figure(;)
-	
-    row_st, col_st = fldmod1(1, 2)
-	
-	Axis(f_st[row_st, col_st], title = string("Stepsizes"), xminorgridvisible = true, xticks = (1:length(stepsizes)), xlabel = "Iteration", ylabel = "α")
-    scatterlines!(stepsizes[1:end-1], color = :blue)
-	f_st
 end
 
 # ╔═╡ 290dbe94-4686-4629-9f93-f01353aac404
@@ -450,12 +450,14 @@ end
 # ╠═6ce088e9-1aa0-4d44-98a3-2ab8b8ba5422
 # ╟─a3179c3a-cb5a-4fcb-bbdc-75ea693616d2
 # ╠═f78557e2-363e-4803-97d7-b57df115a619
+# ╠═fe2ff3d0-db3e-475f-a7be-e35ffd42f807
+# ╠═bcd9f127-0c20-43c2-ba34-1e792bfd1ee4
 # ╠═9a2ebb9a-74c7-4efd-b042-23263bbf4235
 # ╟─87af653d-901e-4f81-a41c-ddc613d04909
 # ╠═161070b9-7953-4260-ab3b-f0f0bf8410ac
+# ╠═008d13c7-e900-41be-b133-9207a765bcf2
 # ╟─4c939ec9-0e1b-4194-8f22-d2639172922c
 # ╠═a08b8946-5adb-43c7-98aa-113875c954b1
-# ╠═538b729a-87b3-4940-aecb-de9a8d08f513
 # ╟─290dbe94-4686-4629-9f93-f01353aac404
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 # ╠═574c7fd7-6d60-413c-b542-e69b675acc40
