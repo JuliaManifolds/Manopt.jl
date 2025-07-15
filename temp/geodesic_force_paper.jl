@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -50,7 +50,7 @@ For our example we set
 
 # ╔═╡ 12e32b83-ae65-406c-be51-3f21935eaae5
 begin
-	N=50
+	N=10000
 
 	S = Manifolds.Sphere(2)
 	power = PowerManifold(S, NestedPowerRepresentation(), N) # power manifold of S
@@ -162,7 +162,9 @@ $\omega(y) \coloneqq \frac{C y_3}{y_1^2+y_2^2} \cdot \bigg\langle \begin{pmatrix
 
 # ╔═╡ 808db8aa-64f7-4b36-8c6c-929ba4fa22db
 function w(p, c)
-		return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+	return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+	#return c*p[3]*[-p[2], p[1], 0.0] 
+	#return c*[-p[2], p[1], 0.0] 
 end;
 
 # ╔═╡ e6fdf785-808d-4203-a2d2-be9696b05689
@@ -173,7 +175,9 @@ Its derivative is given by
 # ╔═╡ 288b9637-0500-40b8-a1f9-90cb9591402b
 function w_prime(p, c)
 	nenner = p[1]^2+p[2]^2
-		return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
+	return c*[p[3]*2*p[1]*p[2]/nenner^2 p[3]*(-1.0/(nenner)+2.0*p[2]^2/nenner^2) -p[2]/nenner; p[3]*(1.0/nenner-2.0*p[1]^2/(nenner^2)) p[3]*(-2.0*p[1]*p[2]/(nenner^2)) p[1]/(nenner); 0.0 0.0 0.0]
+	#return c*[0.0 -p[3] -p[2]; p[3] 0.0 p[1]; 0.0 0.0 0.0]
+	#return c*[0.0 -1.0 0.0; 1.0 0.0 0.0; 0.0 0.0 0.0]
 end;
 
 # ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
@@ -187,7 +191,7 @@ begin
 		return B1dot'*B2dot+(w_prime(y,Integrand.scaling)*B1)'*B2
 	end
 
-	integrand=DifferentiableMapping(S,F_at,F_prime_at,3.4) 
+	integrand=DifferentiableMapping(S,F_at,F_prime_at,3.0) 
 
 end;
 
@@ -263,14 +267,13 @@ begin
 	NE = NewtonEquation(power, integrand, transport, Omega)
 		
 	st_res = vectorbundle_newton(power, TangentBundle(power), NE, discretized_y; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-12; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
-	#stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
+	#stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.1),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
-	record=[:Iterate, :Change],
+	record=[:Iterate, :Change, :Stepsize],
 	return_state=true
 )
-	# Affin kovariante Schrittweite als Stepsize o.Ä., dabei dokumentieren, dass man dann eine methode schreiben muss, die die rechte seite für den vereinfachten Newton zurückgibt und die die signatur wie oben haben soll. 
 end
 
 # ╔═╡ 87af653d-901e-4f81-a41c-ddc613d04909
@@ -282,6 +285,7 @@ We extract the recorded values
 begin
 	change = get_record(st_res, :Iteration, :Change)[2:end]
 	p_res = get_solver_result(st_res)
+	stepsizes = get_record(st_res, :Iteration, :Stepsize)
 end;
 
 # ╔═╡ 4c939ec9-0e1b-4194-8f22-d2639172922c
@@ -300,12 +304,25 @@ begin
 	f	
 end
 
+# ╔═╡ 538b729a-87b3-4940-aecb-de9a8d08f513
+begin
+	f_st = Figure(;)
+	
+    row_st, col_st = fldmod1(1, 2)
+	
+	Axis(f_st[row_st, col_st], title = string("Stepsizes"), xminorgridvisible = true, xticks = (1:length(stepsizes)), xlabel = "Iteration", ylabel = "α")
+    scatterlines!(stepsizes[1:end-1], color = :blue)
+	f_st
+end
+
 # ╔═╡ 290dbe94-4686-4629-9f93-f01353aac404
 md"""
 and the resulting geodesic under the force field (orange). The starting geodesic (blue) is plotted as well. The force acting on each point of the geodesic is visualized by green arrows. 
 """
 
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
+# ╠═╡ disabled = true
+#=╠═╡
 begin
 n = 25
 u = range(0,stop=2*π,length=n);
@@ -344,26 +361,27 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	
 	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =5, color=:red)
 	
-	arrows!(ax, π1.(p_res), π2.(p_res), π3.(p_res), π1.(ws), π2.(ws), π3.(ws); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.07)
+	arrows!(ax, π1.(p_res), π2.(p_res), π3.(p_res), π1.(ws), π2.(ws), π3.(ws); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.1)
 	
 	#arrows!(ax, π1.(discretized_y), π2.(discretized_y), π3.(discretized_y), π1.(ws_start), π2.(ws_start), π3.(ws_start); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.15)
 
 	cam = cameracontrols(ax.scene)
-	cam.lookat[] =[-2.5, 2.5, 2]
 	#cam.lookat[] =[1, 3.5, 2]
+	cam.lookat[] =[-2.5, 2.5, 2]
 	
 	fig
 	#cam
 	#save("/Users/bt308990/Documents/Publications/dmv/gfx_pdf/geodesic_under_force.png", fig, resolution=(1500, 800))
 end
+  ╠═╡ =#
 
 # ╔═╡ 574c7fd7-6d60-413c-b542-e69b675acc40
 begin
-	CSV.write("norm_newton_direction_geodesic_force.csv", Tables.table(change), writeheader=false)
-	CSV.write("geodesic_force_final.csv", Tables.table(reduce(hcat, geodesic_final)), writeheader=false) # saved as 3x(N+2) table (columns are points on the sphere)
-	CSV.write("geodesic_force_start.csv", Tables.table(reduce(hcat, geodesic_start)), writeheader=false)
-	CSV.write("geodesic_forcefield_final.csv", Tables.table(reduce(hcat, ws)), writeheader=false)
-	CSV.write("geodesic_forcefield_start.csv", Tables.table(reduce(hcat, ws_start)), writeheader=false)
+	CSV.write("results/norm_newton_direction_geodesic_force_N$(N).csv", Tables.table(change), writeheader=false)
+	#CSV.write("geodesic_force_final.csv", Tables.table(reduce(hcat, geodesic_final)), writeheader=false) # saved as 3x(N+2) table (columns are points on the sphere)
+	#CSV.write("geodesic_force_start.csv", Tables.table(reduce(hcat, geodesic_start)), writeheader=false)
+	#CSV.write("geodesic_forcefield_final.csv", Tables.table(reduce(hcat, ws)), writeheader=false)
+	#CSV.write("geodesic_forcefield_start.csv", Tables.table(reduce(hcat, ws_start)), writeheader=false)
 end;
 
 # ╔═╡ 6401400b-f1f2-4993-a990-fe82ed350226
@@ -378,9 +396,11 @@ begin
 end;
 
 # ╔═╡ 0324c562-2573-46d6-a8b6-a282a6c996cc
+# ╠═╡ disabled = true
+#=╠═╡
 begin
 
-	file_name = "test_asy"
+	file_name = "results/geodesic_force_N$(N)"
 	#local force field
 	#ws_local = [1.0*w(Manifolds.Sphere(2), p, s) for p in solutions[i]]		
 	asymptote_export_S2_signals(file_name*".asy";
@@ -403,6 +423,7 @@ begin
 	);
 	render_asymptote(file_name*".asy")
 end
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
@@ -434,6 +455,7 @@ end
 # ╠═161070b9-7953-4260-ab3b-f0f0bf8410ac
 # ╟─4c939ec9-0e1b-4194-8f22-d2639172922c
 # ╠═a08b8946-5adb-43c7-98aa-113875c954b1
+# ╠═538b729a-87b3-4940-aecb-de9a8d08f513
 # ╟─290dbe94-4686-4629-9f93-f01353aac404
 # ╠═6f6eb0f9-21af-481a-a2ae-020a0ff305bf
 # ╠═574c7fd7-6d60-413c-b542-e69b675acc40
