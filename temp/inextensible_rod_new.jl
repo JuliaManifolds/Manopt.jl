@@ -193,11 +193,6 @@ function identitytrans(S, p, X, q)
 	return X
 end
 
-# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
-function F1_at(Integrand, y, ydot, T, Tdot)
-	  return w(y.x[1],Integrand.scaling)'*T+Tdot'*y.x[3]
-end
-
 # ╔═╡ 229fa902-e125-429a-852d-0668f64c7640
 function F2_at(Integrand, y, ydot, T, Tdot)
 	  return ydot.x[2]'*Tdot-T'*y.x[3]
@@ -223,14 +218,6 @@ function F_prime23_at(Integrand,y,ydot,B,Bdot,T,Tdot)
 	return -T'*B
 end
 
-# ╔═╡ e2f48dcc-5c23-453d-8ff3-eb425b7b67af
-"""
-If no vector transport is needed, leave it away, then a zero dummy transport is used
-"""
-function get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand)
-	ManoptExamples.get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand,zerotransport)
-end
-
 # ╔═╡ 808db8aa-64f7-4b36-8c6c-929ba4fa22db
 """
 Force field w and its derivative. A scaling parameter is also employed.
@@ -238,6 +225,11 @@ Force field w and its derivative. A scaling parameter is also employed.
 function w(p, c)
 	#return c*p[3]*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
 	return [0.0,0.0,0.0] #c*[-p[2]/(p[1]^2+p[2]^2), p[1]/(p[1]^2+p[2]^2), 0.0] 
+end
+
+# ╔═╡ 56ae7f53-061e-4414-90ad-85c7a12d51e2
+function F1_at(Integrand, y, ydot, T, Tdot)
+	  return w(y.x[1],Integrand.scaling)'*T+Tdot'*y.x[3]
 end
 
 # ╔═╡ 288b9637-0500-40b8-a1f9-90cb9591402b
@@ -273,6 +265,14 @@ end;
 # ╔═╡ 14d42ecb-6563-4d62-94ce-a36b73ed9a78
 zerotransport=DifferentiableMapping(R3,R3,identitytrans,zerotrans_prime,nothing)
 
+
+# ╔═╡ e2f48dcc-5c23-453d-8ff3-eb425b7b67af
+"""
+If no vector transport is needed, leave it away, then a zero dummy transport is used
+"""
+function get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand)
+	ManoptExamples.get_Jac!(eval,A,row_idx,degT,col_idx,degB,h,nCells,y,integrand,zerotransport)
+end
 
 # ╔═╡ cab1527e-b7b9-4e13-8483-cba8b95c24da
 function evaluate(y, i, tloc)
@@ -406,6 +406,10 @@ function solve_in_basis_repr(problem, newtonstate)
 	return get_vector(problem.manifold, newtonstate.p, X, DefaultOrthogonalBasis())
 end
 
+# ╔═╡ 108320d3-ae0a-4a71-a2e9-b33964df1ded
+rec = RecordChange(product;
+    inverse_retraction_method=ProjectionInverseRetraction())
+
 # ╔═╡ d903c84a-45f6-4e09-9ec2-88e248531fec
 	begin
 	y_0 = copy(product, disc_y)
@@ -441,7 +445,7 @@ end
 stepsizes = get_record(st_res, :Iteration, :Stepsize)
 
 # ╔═╡ 929a282c-3b78-44c4-a1f2-e97c23746a9d
-CSV.write("stepsize_rod.csv", Tables.table(stepsizes[1:end-1]), writeheader=false)
+CSV.write("results/stepsize_rod.csv", Tables.table(stepsizes[1:end-1]), writeheader=false)
 
 # ╔═╡ e429bda6-61de-4277-bd95-db0ce25e0144
 begin
@@ -497,6 +501,8 @@ ax = Axis3(fig[1, 1], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3,
 end
 
 # ╔═╡ c7cd2023-f1cd-4728-bb53-bb6dcf545963
+# ╠═╡ disabled = true
+#=╠═╡
 begin
 	# CSV Exprot of the two signals
 	# Create a DataFrame from the two signals
@@ -516,6 +522,7 @@ begin
 	)
 	CSV.write("results/inextensible-rod-data.csv", df)
 end
+  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
@@ -549,6 +556,7 @@ end
 # ╠═cab1527e-b7b9-4e13-8483-cba8b95c24da
 # ╠═ea3c49be-896c-4470-b6fe-587ebe009eab
 # ╠═5fc9e70a-ff2d-44fa-8e0f-f2d235d462f3
+# ╠═108320d3-ae0a-4a71-a2e9-b33964df1ded
 # ╠═d903c84a-45f6-4e09-9ec2-88e248531fec
 # ╠═abe5c5f3-4a28-425c-afde-64b645f3a9d9
 # ╠═6451f8c5-7b4f-4792-87fd-9ed2635efa88

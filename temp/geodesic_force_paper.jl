@@ -266,10 +266,6 @@ end;
 rec = RecordChange(power;
     inverse_retraction_method=ProjectionInverseRetraction())
 
-# ╔═╡ bcd9f127-0c20-43c2-ba34-1e792bfd1ee4
-deb = DebugChange(power;
-    inverse_retraction_method=ProjectionInverseRetraction())
-
 # ╔═╡ 9a2ebb9a-74c7-4efd-b042-23263bbf4235
 begin
 	NE = NewtonEquation(power, integrand, transport, Omega)
@@ -321,8 +317,6 @@ and the resulting geodesic under the force field (orange). The starting geodesic
 """
 
 # ╔═╡ 6f6eb0f9-21af-481a-a2ae-020a0ff305bf
-# ╠═╡ disabled = true
-#=╠═╡
 begin
 n = 25
 u = range(0,stop=2*π,length=n);
@@ -373,7 +367,6 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	#cam
 	#save("/Users/bt308990/Documents/Publications/dmv/gfx_pdf/geodesic_under_force.png", fig, resolution=(1500, 800))
 end
-  ╠═╡ =#
 
 # ╔═╡ 574c7fd7-6d60-413c-b542-e69b675acc40
 begin
@@ -451,7 +444,6 @@ end
 # ╟─a3179c3a-cb5a-4fcb-bbdc-75ea693616d2
 # ╠═f78557e2-363e-4803-97d7-b57df115a619
 # ╠═fe2ff3d0-db3e-475f-a7be-e35ffd42f807
-# ╠═bcd9f127-0c20-43c2-ba34-1e792bfd1ee4
 # ╠═9a2ebb9a-74c7-4efd-b042-23263bbf4235
 # ╟─87af653d-901e-4f81-a41c-ddc613d04909
 # ╠═161070b9-7953-4260-ab3b-f0f0bf8410ac
