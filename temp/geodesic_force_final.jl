@@ -64,12 +64,6 @@ begin
 	
 	y0 = [sin(st),0,cos(st)] # startpoint of geodesic
 	yT = [sin(halt),0,cos(halt)] # endpoint of geodesic
-
-	#yT = [sin(st),0,cos(st)] # startpoint of geodesic: suedpol
-	#y0 = [sin(halt),0,cos(halt)] # endpoint of geodesic: nordpol
-
-	#y0 = [cos(st),sin(st),0] # startpoint of geodesic: aequator
-	#yT = [cos(halt),sin(halt),0] # endpoint of geodesic: aequator
 end;
 
 # ╔═╡ d286999d-6324-4112-87c5-de4df7a52d93
@@ -80,8 +74,6 @@ As a starting point, we use the geodesic connecting $\gamma_0$ and $\gamma_T$:
 # ╔═╡ 29043ca3-afe0-4280-a76a-7c160a117fdf
 function y(t)
 	return [sin(t), 0, cos(t)]
-	#return [sin(halt+st-t), 0, cos(halt+st-t)]
-	#return [cos(t), sin(t), 0]
 end;
 
 # ╔═╡ 5c0980c5-284e-4406-bab8-9b9aff9391ba
@@ -187,7 +179,7 @@ begin
 		return B1dot'*B2dot+(w_prime(y,Integrand.scaling)*B1)'*B2
 	end
 
-	integrand=DifferentiableMapping(S,F_at,F_prime_at,3.4) 
+	integrand=DifferentiableMapping(S,F_at,F_prime_at,3.0) 
 
 end;
 
@@ -263,7 +255,7 @@ begin
 	NE = NewtonEquation(power, integrand, transport, Omega)
 		
 	st_res = vectorbundle_newton(power, TangentBundle(power), NE, discretized_y; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-13; outer_norm=Inf)),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(power,1e-12; outer_norm=Inf)),
 	retraction_method=ProjectionRetraction(),
 	#stepsize=Manopt.AffineCovariantStepsize(power, theta_des=0.5),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
@@ -322,7 +314,6 @@ for i in 1:n
 end
 fig, ax, plt = meshscatter(
   sx,sy,sz,
-  #color = fill(RGBA(1.,1.,1.,0.), n, n),
 	color = RGBA(1.,1.,1.,0.),
   shading = Makie.automatic,
   transparency=true
@@ -343,7 +334,7 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	
 	scatter!(ax, π1.([y0, yT]), π2.([y0, yT]), π3.([y0, yT]); markersize =5, color=:red)
 	
-	arrows!(ax, π1.(p_res), π2.(p_res), π3.(p_res), π1.(ws), π2.(ws), π3.(ws); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.07)
+	arrows!(ax, π1.(p_res), π2.(p_res), π3.(p_res), π1.(ws), π2.(ws), π3.(ws); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.1)
 	
 
 	cam = cameracontrols(ax.scene)
