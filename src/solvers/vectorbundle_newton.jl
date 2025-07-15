@@ -152,7 +152,7 @@ function (acs::AffineCovariantStepsize)(
         amp.newton_equation.b .= rhs_simplified
 
         simplified_newton = ams.sub_problem(amp, ams)
-        acs.theta = norm(simplified_newton)/norm(ams.X)
+        acs.theta = norm(amp.manifold, ams.p, simplified_newton, Inf)/norm(amp.manifold, ams.p, ams.X, Inf)
         alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
         if acs.alpha < 1e-15
             println("Newton's method failed")
