@@ -406,9 +406,15 @@ function solve_in_basis_repr(problem, newtonstate)
 	return get_vector(problem.manifold, newtonstate.p, X, DefaultOrthogonalBasis())
 end
 
-# ╔═╡ 108320d3-ae0a-4a71-a2e9-b33964df1ded
+# ╔═╡ 3fbc3804-357b-4ff8-b97e-1a1be3aab2fb
+pr_inv = Manifolds.InverseProductRetraction(LogarithmicInverseRetraction(), ProjectionInverseRetraction(), LogarithmicInverseRetraction()) 
+
+# ╔═╡ ba5b8955-46e4-4147-838c-a6dfc3662452
 rec = RecordChange(product;
-    inverse_retraction_method=ProjectionInverseRetraction())
+    inverse_retraction_method=pr_inv)
+
+# ╔═╡ 5dce4ae9-87b3-4238-9d46-4d7947149a34
+pr = ProductRetraction(ExponentialRetraction(), ProjectionRetraction(), ExponentialRetraction())
 
 # ╔═╡ d903c84a-45f6-4e09-9ec2-88e248531fec
 	begin
@@ -417,12 +423,12 @@ rec = RecordChange(product;
 	NE = NewtonEquation(product, integrand1, integrand2, integrand3, integrand13, integrand23, transport, Omega1, Omega2, Omega3)
 		
 	st_res = vectorbundle_newton(product, TangentBundle(product), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(product,1e-12; outer_norm=Inf)),
-	#retraction_method=ProjectionRetraction(),
-	stepsize=Manopt.AffineCovariantStepsize(product, theta_des=0.5),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(product,1e-12; outer_norm=Inf, inverse_retraction_method=pr_inv)),
+	retraction_method=pr,
+	stepsize=Manopt.AffineCovariantStepsize(product, theta_des=0.5, outer_norm=Inf),
 	#stepsize=ConstantLength(power, 1.0),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop, (:Stepsize, "Stepsize: %1.8e"), "\n",],
-	record=[:Iterate, :Change, :Stepsize],
+	record=[:Iterate, rec => :Change, :Stepsize],
 	return_state=true
 )
 end
@@ -445,7 +451,10 @@ end
 stepsizes = get_record(st_res, :Iteration, :Stepsize)
 
 # ╔═╡ 929a282c-3b78-44c4-a1f2-e97c23746a9d
+# ╠═╡ disabled = true
+#=╠═╡
 CSV.write("results/stepsize_rod.csv", Tables.table(stepsizes[1:end-1]), writeheader=false)
+  ╠═╡ =#
 
 # ╔═╡ e429bda6-61de-4277-bd95-db0ce25e0144
 begin
@@ -501,8 +510,6 @@ ax = Axis3(fig[1, 1], aspect = :data, viewmode = :fitzoom, azimuth=-3pi/4 + 0.3,
 end
 
 # ╔═╡ c7cd2023-f1cd-4728-bb53-bb6dcf545963
-# ╠═╡ disabled = true
-#=╠═╡
 begin
 	# CSV Exprot of the two signals
 	# Create a DataFrame from the two signals
@@ -513,7 +520,7 @@ begin
 	    z1 = [p[3] for p in [y01, p_res[product,1] ..., yT1]],
 	)
 	# Write to CSV
-	CSV.write("inextensible-rod-result.csv", df)
+	CSV.write("results/inextensible-rod-result.csv", df)
 	
 	df = DataFrame(
 	    x1 = [p[1] for p in [y01, yT1]],
@@ -522,7 +529,6 @@ begin
 	)
 	CSV.write("results/inextensible-rod-data.csv", df)
 end
-  ╠═╡ =#
 
 # ╔═╡ Cell order:
 # ╠═c9994bc4-b7bb-11ef-3430-8976c5eabdeb
@@ -556,7 +562,9 @@ end
 # ╠═cab1527e-b7b9-4e13-8483-cba8b95c24da
 # ╠═ea3c49be-896c-4470-b6fe-587ebe009eab
 # ╠═5fc9e70a-ff2d-44fa-8e0f-f2d235d462f3
-# ╠═108320d3-ae0a-4a71-a2e9-b33964df1ded
+# ╠═3fbc3804-357b-4ff8-b97e-1a1be3aab2fb
+# ╠═ba5b8955-46e4-4147-838c-a6dfc3662452
+# ╠═5dce4ae9-87b3-4238-9d46-4d7947149a34
 # ╠═d903c84a-45f6-4e09-9ec2-88e248531fec
 # ╠═abe5c5f3-4a28-425c-afde-64b645f3a9d9
 # ╠═6451f8c5-7b4f-4792-87fd-9ed2635efa88
