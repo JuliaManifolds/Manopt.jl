@@ -99,6 +99,7 @@ end
     * `theta_des`: desired theta
     * `theta_acc`: acceptable theta
     * `last_stepsize`: last computed step size (helper)
+    * `outer_norm`: if `M` is a manifold with components, this can be used to specify the norm, that is used to compute the overall distance based on the element-wise distance. 
 
     # Constructor
 
@@ -107,7 +108,8 @@ end
         theta=1.3,
         theta_des=0.1,
         theta_acc=1.1*theta_des,
-        last_stepsize = 1.0
+        last_stepsize = 1.0,
+        outer_norm=2
         )
 
         initializes all fields, where none of them is mandatory. The length is set to ``1.0``.
@@ -122,6 +124,7 @@ mutable struct AffineCovariantStepsize{T, R<:Real} <: Stepsize
     theta_des::R
     theta_acc::R
     last_stepsize::R
+    outer_norm::Real
 end
 function AffineCovariantStepsize(
     M::AbstractManifold=DefaultManifold(2);
@@ -129,9 +132,10 @@ function AffineCovariantStepsize(
     theta=1.3,
     theta_des=0.1,
     theta_acc=1.1*theta_des,
-    last_stepsize = 1.0
+    last_stepsize = 1.0,
+    outer_norm=2
 )
-    return AffineCovariantStepsize{typeof(alpha), typeof(theta)}(alpha, theta, theta_des, theta_acc, last_stepsize)
+    return AffineCovariantStepsize{typeof(alpha), typeof(theta)}(alpha, theta, theta_des, theta_acc, last_stepsize, outer_norm)
 end
 
 function (acs::AffineCovariantStepsize)(
@@ -152,7 +156,7 @@ function (acs::AffineCovariantStepsize)(
         amp.newton_equation.b .= rhs_simplified
 
         simplified_newton = ams.sub_problem(amp, ams)
-        acs.theta = norm(amp.manifold, ams.p, simplified_newton, Inf)/norm(amp.manifold, ams.p, ams.X, Inf)
+        acs.theta = norm(amp.manifold, ams.p, simplified_newton, acs.outer_norm)/norm(amp.manifold, ams.p, ams.X, acs.outer_norm)
         alpha_new = min(1.0, ((acs.alpha*acs.theta_des)/(acs.theta)))
         if acs.alpha < 1e-15
             println("Newton's method failed")
