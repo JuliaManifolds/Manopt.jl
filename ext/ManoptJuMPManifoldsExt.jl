@@ -32,9 +32,7 @@ end
 function JuMP.reshape_vector(
     v::Vector{T}, shape::MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}
 ) where {T,M<:ManifoldsBase.AbstractManifold}
-    p = rand(shape.manifold, HyperboloidPoint)
-    p.value .= v
-    return p
+    return HyperboloidPoint(v)
 end
 # point -> vector
 function JuMP.vectorize(
@@ -42,5 +40,7 @@ function JuMP.vectorize(
 ) where {M<:ManifoldsBase.AbstractManifold}
     return p.value # is a vector already
 end
+
+MJE._shape(m::M, ::Manifolds.HyperboloidPoint) where {M} = MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}(m)
 
 end # module ManoptJuMPManifoldsExt
