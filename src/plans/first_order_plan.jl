@@ -1033,6 +1033,14 @@ function PreconditionedDirection(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PreconditionedDirectionRule, args...; kwargs...)
 end
 
+"""
+    AbstractRestartCondition
+
+A general functor, that handles the restart condition. It tells the algorithm if 
+it should restart
+"""
+abstract type AbstractRestartCondition end
+
 @doc raw"""
     DebugGradient <: DebugAction
 

@@ -66,6 +66,7 @@ mutable struct ConjugateGradientDescentState{
     T,
     F,
     TCoeff<:DirectionUpdateRuleStorage,
+    TResCond<:AbstractRestartCondition,
     TStepsize<:Stepsize,
     TStop<:StoppingCriterion,
     TRetr<:AbstractRetractionMethod,
@@ -77,6 +78,7 @@ mutable struct ConjugateGradientDescentState{
     δ::T
     β::F
     coefficient::TCoeff
+    restart_condition::TResCond
     stepsize::TStepsize
     stop::TStop
     retraction_method::TRetr
@@ -87,13 +89,14 @@ mutable struct ConjugateGradientDescentState{
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
+        res_cond::AbstractRestartCondition=RestartNever(),
         retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
     ) where {P,T}
         coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,βT,typeof(coef),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        cgs = new{P,T,βT,typeof(coef),typeof(res_cond),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
         cgs.p = p
         cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
@@ -102,6 +105,7 @@ mutable struct ConjugateGradientDescentState{
         cgs.retraction_method = retr
         cgs.stepsize = s
         cgs.coefficient = coef
+        cgs.restart_condition = res_cond
         cgs.vector_transport_method = vtr
         cgs.β = zero(βT)
         return cgs
@@ -112,6 +116,7 @@ function ConjugateGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
+    restart_condition::AbstractRestartCondition=RestartNever(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -127,6 +132,7 @@ function ConjugateGradientDescentState(
         stopping_criterion,
         stepsize,
         _produce_type(coefficient, M),
+        restart_condition,
         retraction_method,
         vector_transport_method,
         initial_gradient,
@@ -136,6 +142,10 @@ end
 function get_message(cgs::ConjugateGradientDescentState)
     # for now only step size is quipped with messages
     return get_message(cgs.stepsize)
+end
+
+function get_gradient(cgs::ConjugateGradientDescentState)
+    return cgs.X
 end
 
 _doc_CG_notaion = """
@@ -996,3 +1006,42 @@ function ConjugateGradientBealeRestart(args...; kwargs...)
         Manopt.ConjugateGradientBealeRestartRule, args...; kwargs...
     )
 end
+
+
+@doc """
+    RestartNever <: AbstractRestartCondition
+
+A functor `(problem, state, k) -> false` that corrects no search direction.
+"""
+struct RestartNever <: AbstractRestartCondition end
+
+function (corr::RestartNever)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+    return false
+end
+
+@doc """
+RestartDescent <: AbstractRestartCondition
+
+A functor `(problem, state, k) -> corr` that corrects every non descent direction.
+"""
+struct RestartDescent <: AbstractRestartCondition end
+function (corr::RestartDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+    return get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >= 0
+end
+
+@doc """
+RestartSufficientDescent <: AbstractRestartCondition
+
+A functor `(problem, state, k) -> corr` that corrects every non sufficient descent direction
+```math
+    ⟨X_k, δ_k) ≤ - κ ||X_k||^2
+```
+"""
+struct RestartSufficientDescent <: AbstractRestartCondition 
+    κ
+end
+function (corr::RestartSufficientDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+    return (get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) 
+            > - corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true))
+end
+

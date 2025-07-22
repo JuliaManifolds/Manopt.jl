@@ -465,6 +465,11 @@ export SteepestDescentCoefficient,
     DaiYuanCoefficient,
     HagerZhangCoefficient,
     ConjugateGradientBealeRestart
+# Direction Corrections
+export AbstractRestartCondition
+export RestartNever,
+    RestartDescent,
+    RestartSufficientDescent
 #
 # Solvers
 export adaptive_regularization_with_cubics,

@@ -139,6 +139,7 @@ function conjugate_gradient_descent!(
     mgo::O,
     p;
     coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
+    restart_condition::AbstractRestartCondition=RestartNever(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -157,6 +158,7 @@ function conjugate_gradient_descent!(
         stopping_criterion=stopping_criterion,
         stepsize=_produce_type(stepsize, M),
         coefficient=_produce_type(coefficient, M),
+        restart_condition=restart_condition,
         retraction_method=retraction_method,
         vector_transport_method=vector_transport_method,
         initial_gradient=initial_gradient,
@@ -185,5 +187,11 @@ function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentS
     vector_transport_to!(M, cgs.δ, cgs.p_old, cgs.δ, cgs.p, cgs.vector_transport_method)
     cgs.δ .*= cgs.β
     cgs.δ .-= cgs.X
+    if (cgs.restart_condition(amp, cgs, k))
+        # restart solver; set dir to -grad
+        cgs.δ = -copy(get_manifold(amp), cgs.p, cgs.X)
+        update_storage!(cgs.coefficient.storage, amp, cgs)
+        cgs.β = 0.0
+    end
     return cgs
 end
