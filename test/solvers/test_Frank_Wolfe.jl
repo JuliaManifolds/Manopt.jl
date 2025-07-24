@@ -32,26 +32,26 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
         Y = similar(X)
         FG(M, Y, p)
         @test FG(M, p) == Y
-        s = FrankWolfeState(M, oracle!; evaluation=InplaceEvaluation(), p=p)
+        s = FrankWolfeState(M, oracle!; evaluation = InplaceEvaluation(), p = p)
         @test Manopt.get_message(s) == ""
         @test startswith(repr(s), "# Solver state for `Manopt.jl`s Frank Wolfe Method\n")
         set_iterate!(s, 2 .* p)
         @test get_iterate(s) == 2 .* p
         dmp = DefaultManoptProblem(M, ManifoldGradientObjective(FC, FG))
         gds = GradientDescentState(M)
-        s2 = FrankWolfeState(M, dmp, gds; p=p)
+        s2 = FrankWolfeState(M, dmp, gds; p = p)
         @test Manopt.get_message(s2) == ""
     end
     @testset "Two small Test runs" begin
         @testset "Testing with an Oracle" begin
             p2a = Frank_Wolfe_method(
-                M, f, grad_f!, p; sub_problem=(oracle!), evaluation=InplaceEvaluation()
+                M, f, grad_f!, p; sub_problem = (oracle!), evaluation = InplaceEvaluation()
             )
             @test f(M, p2a) < f(M, p)
-            p2b = Frank_Wolfe_method(M, f, grad_f, p; sub_problem=oracle)
+            p2b = Frank_Wolfe_method(M, f, grad_f, p; sub_problem = oracle)
             @test f(M, p2b) ≈ f(M, p2a)
             p2c = copy(M, p)
-            Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem=oracle)
+            Frank_Wolfe_method!(M, f, grad_f, p2c; sub_problem = oracle)
             @test f(M, p2c) < f(M, p)
         end
         @testset "Testing with an Subsolver" begin
@@ -61,8 +61,8 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
                 f,
                 grad_f!,
                 p;
-                evaluation=InplaceEvaluation(),
-                stopping_criterion=StopAfterIteration(1),
+                evaluation = InplaceEvaluation(),
+                stopping_criterion = StopAfterIteration(1),
             )
             @test is_point(M, p3)
             p3b = Frank_Wolfe_method(
@@ -70,8 +70,8 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
                 f,
                 grad_f,
                 p;
-                evaluation=AllocatingEvaluation(),
-                stopping_criterion=StopAfterIteration(1),
+                evaluation = AllocatingEvaluation(),
+                stopping_criterion = StopAfterIteration(1),
             )
             #test that the subproblem is delivering a point.
             @test is_point(M, p3b)
@@ -82,7 +82,7 @@ using ManifoldsBase, Manopt, Random, Test, LinearAlgebra
             grad_fe(M, p) = zero_vector(M, p)
             oraclee(M, p, X) = X
             # and since the gradient is zero and oracle hence returns zero, the result is zero
-            @test 0.0 == Frank_Wolfe_method(M, fe, grad_fe, 0.0; sub_problem=oraclee)
+            @test 0.0 == Frank_Wolfe_method(M, fe, grad_fe, 0.0; sub_problem = oraclee)
         end
     end
 end

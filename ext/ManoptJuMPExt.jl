@@ -14,7 +14,7 @@ function __init__()
     return nothing
 end
 
-struct VectorizedManifold{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+struct VectorizedManifold{M <: ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
 
@@ -29,8 +29,8 @@ function MOI.dimension(set::VectorizedManifold)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
-struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
-       MOI.AbstractScalarFunction
+struct RiemannianFunction{MO <: Manopt.AbstractManifoldObjective} <:
+    MOI.AbstractScalarFunction
     func::MO
 end
 
@@ -53,35 +53,35 @@ Base.copy(func::RiemannianFunction) = func
 # We will then receive it in `MOI.set(::Optimizer, ::MOI.ObjectiveFunction, RiemannianFunction)`
 # where we will unwrap it and recover `func`.
 function JuMP.set_objective_function(
-    model::JuMP.Model, func::Manopt.AbstractManifoldObjective
-)
+        model::JuMP.Model, func::Manopt.AbstractManifoldObjective
+    )
     return JuMP.set_objective_function(model, RiemannianFunction(func))
 end
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
     # Manifold in which all the decision variables leave
-    manifold::Union{Nothing,ManifoldsBase.AbstractManifold}
+    manifold::Union{Nothing, ManifoldsBase.AbstractManifold}
     # Description of the problem in Manopt
-    problem::Union{Nothing,Manopt.AbstractManoptProblem}
+    problem::Union{Nothing, Manopt.AbstractManoptProblem}
     # State of the optimizer
-    state::Union{Nothing,Manopt.AbstractManoptSolverState}
+    state::Union{Nothing, Manopt.AbstractManoptSolverState}
     # Starting value for each variable
-    variable_primal_start::Vector{Union{Nothing,Float64}}
+    variable_primal_start::Vector{Union{Nothing, Float64}}
     # Sense of the optimization, that is whether it is for example min, max or no objective
     sense::MOI.OptimizationSense
     # Objective function of the optimization
-    objective::Union{Nothing,Manopt.AbstractManifoldObjective}
+    objective::Union{Nothing, Manopt.AbstractManifoldObjective}
     # Solver parameters set with `MOI.RawOptimizerAttribute`
-    options::Dict{String,Any}
+    options::Dict{String, Any}
     function Optimizer()
         return new(
             nothing,
             nothing,
             nothing,
-            Union{Nothing,Float64}[],
+            Union{Nothing, Float64}[],
             MOI.FEASIBILITY_SENSE,
             nothing,
-            Dict{String,Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
+            Dict{String, Any}(DESCENT_STATE_TYPE => Manopt.GradientDescentState),
         )
     end
 end
@@ -96,9 +96,9 @@ MOI.get(::Optimizer, ::MOI.SolverVersion) = "0.4.37"
 
 function MOI.is_empty(model::Optimizer)
     return isnothing(model.manifold) &&
-           isempty(model.variable_primal_start) &&
-           isnothing(model.objective) &&
-           model.sense == MOI.FEASIBILITY_SENSE
+        isempty(model.variable_primal_start) &&
+        isnothing(model.objective) &&
+        model.sense == MOI.FEASIBILITY_SENSE
 end
 
 """
@@ -203,7 +203,7 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
         throw(
-            MOI.AddConstraintNotAllowed{F,typeof(set)}(
+            MOI.AddConstraintNotAllowed{F, typeof(set)}(
                 "Only one manifold allowed, variables in `$(model.manifold)` have already been added.",
             ),
         )
@@ -216,7 +216,7 @@ function MOI.add_constrained_variables(model::Optimizer, set::VectorizedManifold
     for _ in 1:n
         push!(model.variable_primal_start, nothing)
     end
-    return v, MOI.ConstraintIndex{F,typeof(set)}(1)
+    return v, MOI.ConstraintIndex{F, typeof(set)}(1)
 end
 
 """
@@ -226,7 +226,7 @@ Return whether `vi` is a valid variable index.
 """
 function MOI.is_valid(model::Optimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
-           1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
+        1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
 end
 
 """
@@ -266,11 +266,11 @@ Set the starting value of the variable of index `vi` to `value`. Note that if
 and hence `MOI.optimize!` unless another starting value is set.
 """
 function MOI.set(
-    model::Optimizer,
-    ::MOI.VariablePrimalStart,
-    vi::MOI.VariableIndex,
-    value::Union{Real,Nothing},
-)
+        model::Optimizer,
+        ::MOI.VariablePrimalStart,
+        vi::MOI.VariableIndex,
+        value::Union{Real, Nothing},
+    )
     MOI.throw_if_not_valid(model, vi)
     model.variable_primal_start[vi.value] = value
     model.state = nothing
@@ -283,7 +283,7 @@ end
 Return `true` indicating that `Optimizer` supports being set the objective
 sense (that is, min, max or feasibility) and the objective function.
 """
-function MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
+function MOI.supports(::Optimizer, ::Union{MOI.ObjectiveSense, MOI.ObjectiveFunction})
     return true
 end
 
@@ -312,8 +312,8 @@ MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.sense
 Set the objective function as `func` for `model`.
 """
 function MOI.set(
-    model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
-)
+        model::Optimizer, attr::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction
+    )
     backend = MOI.Nonlinear.SparseReverseMode()
     vars = [MOI.VariableIndex(i) for i in eachindex(model.variable_primal_start)]
     nlp_model = MOI.Nonlinear.Model()
@@ -354,9 +354,9 @@ const DESCENT_STATE_TYPE = "descent_state_type"
 function MOI.optimize!(model::Optimizer)
     start = Float64[
         if isnothing(model.variable_primal_start[i])
-            error("No starting value specified for `$i`th variable.")
+                error("No starting value specified for `$i`th variable.")
         else
-            model.variable_primal_start[i]
+                model.variable_primal_start[i]
         end for i in eachindex(model.variable_primal_start)
     ]
     objective = model.objective
@@ -371,20 +371,20 @@ function MOI.optimize!(model::Optimizer)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
     reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
     descent_state_type = model.options[DESCENT_STATE_TYPE]
-    kws = Dict{Symbol,Any}(
+    kws = Dict{Symbol, Any}(
         Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
     )
-    s = descent_state_type(model.manifold; p=reshaped_start, kws...)
+    s = descent_state_type(model.manifold; p = reshaped_start, kws...)
     model.state = decorate_state!(s)
     solve!(model.problem, model.state)
     return nothing
 end
 
 struct ArrayShape{N} <: JuMP.AbstractShape
-    size::NTuple{N,Int}
+    size::NTuple{N, Int}
 end
 
-function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
+function JuMP.vectorize(array::Array{T, N}, ::ArrayShape{M}) where {T, N, M}
     return vec(array)
 end
 

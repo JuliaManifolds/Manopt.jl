@@ -15,9 +15,9 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     p = [4.0, 2.0]
     gds = GradientDescentState(
         M;
-        p=copy(p),
-        stopping_criterion=StopAfterIteration(10),
-        stepsize=Manopt.ConstantStepsize(M),
+        p = copy(p),
+        stopping_criterion = StopAfterIteration(10),
+        stepsize = Manopt.ConstantStepsize(M),
     )
     f(M, q) = distance(M, q, p) .^ 2
     grad_f(M, q) = -2 * log(M, q, p)
@@ -69,10 +69,10 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
     @test length(get_record(RecordSolverState(gds, [:Iteration]), :Iteration, 1)) == 0
     @test length(get_record(RecordIteration(), 1)) == 0
     @test_throws ErrorException get_record(
-        RecordSolverState(gds, Dict{Symbol,RecordAction}())
+        RecordSolverState(gds, Dict{Symbol, RecordAction}())
     )
     @test_throws ErrorException get_record(gds)
-    @test get_record(rs) == Array{Int64,1}()
+    @test get_record(rs) == Array{Int64, 1}()
     # RecordIteration
     @test a(dmp, gds, 0) == nothing # inactive
     @test a(dmp, gds, 1) == [1]
@@ -139,7 +139,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         e(dmp, gds, 1)
         @test e.recorded_values == [1.0] # no p0 -> assume p is the first iterate
 
-        dinvretr = RecordChange(; inverse_retraction_method=PolarInverseRetraction())
+        dinvretr = RecordChange(; inverse_retraction_method = PolarInverseRetraction())
         dmani = RecordChange(SymplecticMatrices(2))
         @test dinvretr.inverse_retraction_method === PolarInverseRetraction()
         @test dmani.inverse_retraction_method === CayleyInverseRetraction()
@@ -261,7 +261,7 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test RecordActionFactory(gds, g) == g
         rss = RecordActionFactory(gds, :Subsolver)
         @test rss isa RecordSubsolver
-        @test rss.record == [:Iteration]# Default
+        @test rss.record == [:Iteration] # Default
         rss2 = RecordActionFactory(gds, (:Subsolver, :Stop))
         @test rss2 isa RecordSubsolver
         @test rss2.record == [:Stop]
@@ -281,20 +281,20 @@ Manopt.get_parameter(d::TestRecordParameterState, ::Val{:value}) = d.value
         @test length(RecordGroup([RecordCost(), RecordIteration() => :It]).group) == 2
     end
     @testset "RecordTime" begin
-        h1 = RecordTime(; mode=:cumulative)
+        h1 = RecordTime(; mode = :cumulative)
         @test repr(h1) == "RecordTime(; mode=:cumulative)"
         @test Manopt.status_summary(h1) == ":Time"
         t = h1.start
         @test t isa Nanosecond
         h1(dmp, gds, 1)
         @test h1.start == t
-        h2 = RecordTime(; mode=:iterative)
+        h2 = RecordTime(; mode = :iterative)
         t = h2.start
         @test t isa Nanosecond
         sleep(0.002)
         h2(dmp, gds, 1)
         @test h2.start != t
-        h3 = RecordTime(; mode=:total)
+        h3 = RecordTime(; mode = :total)
         h3(dmp, gds, 1)
         h3(dmp, gds, 10)
         h3(dmp, gds, 19)

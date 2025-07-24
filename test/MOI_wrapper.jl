@@ -13,15 +13,15 @@ function _test_sphere_sum(model, obj_sign)
     @test primal_status(model) == MOI.FEASIBLE_POINT
     @test dual_status(model) == MOI.NO_SOLUTION
     @test objective_value(model) ≈ obj_sign * √3
-    @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1e-2
+    @test value.(model[:x]) ≈ obj_sign * inv(√3) * ones(3) rtol = 1.0e-2
     @test raw_status(model) isa String
-    @test raw_status(model)[end] != '\n'
+    return @test raw_status(model)[end] != '\n'
 end
 
 function test_sphere()
     model = Model(Manopt.JuMP_Optimizer)
     start = normalize(1:3)
-    @variable(model, x[i=1:3] in Sphere(2), start = start[i])
+    @variable(model, x[i = 1:3] in Sphere(2), start = start[i])
 
     function eval_sum_cb(M, x)
         return sum(x)
@@ -34,7 +34,7 @@ function test_sphere()
     objective = Manopt.ManifoldGradientObjective(eval_sum_cb, eval_grad_sum_cb)
 
     @testset "$obj_sense" for (obj_sense, obj_sign) in
-                              [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
+        [(MOI.MIN_SENSE, -1), (MOI.MAX_SENSE, 1)]
         @testset "JuMP objective" begin
             @objective(model, obj_sense, sum(x))
             _test_sphere_sum(model, obj_sign)
@@ -58,8 +58,8 @@ function test_sphere()
     @objective(model, Min, sum(xi^4 for xi in x))
     set_start_value.(x, start)
     optimize!(model)
-    @test objective_value(model) ≈ 1 / 3 rtol = 1e-4
-    @test value.(x) ≈ inv(√3) * ones(3) rtol = 1e-2
+    @test objective_value(model) ≈ 1 / 3 rtol = 1.0e-4
+    @test value.(x) ≈ inv(√3) * ones(3) rtol = 1.0e-2
     @test raw_status(model) isa String
     @test raw_status(model)[end] != '\n'
 
@@ -73,7 +73,7 @@ function test_sphere()
     set_start_value(x[3], 1.0)
 
     @variable(model, [1:2, 1:2] in Stiefel(2, 2))
-    @test_throws MOI.AddConstraintNotAllowed optimize!(model)
+    return @test_throws MOI.AddConstraintNotAllowed optimize!(model)
 end
 
 function _test_stiefel(solver)
@@ -82,7 +82,7 @@ function _test_stiefel(solver)
         -1 1
     ]
     # Use `add_bridges = false` to test `copy_to`
-    model = Model(Manopt.JuMP_Optimizer; add_bridges=false)
+    model = Model(Manopt.JuMP_Optimizer; add_bridges = false)
     dst = "descent_state_type"
     @test MOI.supports(unsafe_backend(model), MOI.RawOptimizerAttribute(dst))
     set_attribute(model, dst, solver)
@@ -107,11 +107,11 @@ end
 
 function test_runtests()
     optimizer = Manopt.JuMP_Optimizer()
-    config = MOI.Test.Config(; exclude=Any[MOI.ListOfModelAttributesSet])
+    config = MOI.Test.Config(; exclude = Any[MOI.ListOfModelAttributesSet])
     return MOI.Test.runtests(
         optimizer,
         config;
-        exclude=String[
+        exclude = String[
             # See https://github.com/jump-dev/MathOptInterface.jl/pull/2195
             "test_model_copy_to_UnsupportedConstraint",
             "test_model_copy_to_UnsupportedAttribute",

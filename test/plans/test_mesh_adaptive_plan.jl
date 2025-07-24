@@ -22,7 +22,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, Random
         @test Manopt.is_successful(ltap)
         # test call2 scale down!
         Random.seed!(42)
-        ltap(cmp, mesh_size; max_stepsize=1.0)
+        ltap(cmp, mesh_size; max_stepsize = 1.0)
         # check that this was successful as well
         @test Manopt.is_successful(ltap)
         #... and short enough
@@ -37,7 +37,7 @@ using ManifoldsBase, Manifolds, Manopt, Test, Random
         @test startswith(repr(dmads), "DefaultMeshAdaptiveDirectSearch\n")
         X = -ones(3)
         # This step would bring us to zero, but we only allow a max step 1.0
-        dmads(cmp, 1.0, p, X; max_stepsize=1.0)
+        dmads(cmp, 1.0, p, X; max_stepsize = 1.0)
         # and that should still improve
         @test Manopt.is_successful(dmads)
     end

@@ -1,4 +1,3 @@
-
 """
     max_stepsize(M::TangentBundle, p)
 
@@ -136,26 +135,26 @@ $(_var(:Keyword, :X))
   otherwise this is the memory that would be allocated anyways.
 """
 function reflect(
-    M::AbstractManifold,
-    p,
-    x;
-    retraction_method=default_retraction_method(M, typeof(p)),
-    inverse_retraction_method=default_inverse_retraction_method(M, typeof(p)),
-    X=nothing,
-)
+        M::AbstractManifold,
+        p,
+        x;
+        retraction_method = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method = default_inverse_retraction_method(M, typeof(p)),
+        X = nothing,
+    )
     return retract(
         M, p, -inverse_retract(M, p, x, inverse_retraction_method), retraction_method
     )
 end
 function reflect!(
-    M::AbstractManifold,
-    q,
-    p,
-    x;
-    retraction_method=default_retraction_method(M, typeof(p)),
-    inverse_retraction_method=default_inverse_retraction_method(M),
-    X=zero_vector(M, p),
-)
+        M::AbstractManifold,
+        q,
+        p,
+        x;
+        retraction_method = default_retraction_method(M, typeof(p)),
+        inverse_retraction_method = default_inverse_retraction_method(M),
+        X = zero_vector(M, p),
+    )
     inverse_retract!(M, X, p, x, inverse_retraction_method)
     X .*= -1
     return retract!(M, q, p, X, retraction_method)
