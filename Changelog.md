@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
 
+### Changed
+
+* Switch to using [Runic.jl](https://github.com/fredrikekre/Runic.jl) as code formatter
+
 ## [0.5.20] July 8, 2025
 
 ### Added
