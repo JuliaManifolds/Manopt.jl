@@ -1,11 +1,11 @@
 function default_stepsize(
-    M::AbstractManifold,
-    ::Type{<:ConjugateGradientDescentState};
-    retraction_method=default_retraction_method(M),
-)
+        M::AbstractManifold,
+        ::Type{<:ConjugateGradientDescentState};
+        retraction_method = default_retraction_method(M),
+    )
     # take a default with a slightly defensive initial step size.
     return ArmijoLinesearchStepsize(
-        M; retraction_method=retraction_method, initial_stepsize=1.0
+        M; retraction_method = retraction_method, initial_stepsize = 1.0
     )
 end
 function show(io::IO, cgds::ConjugateGradientDescentState)
@@ -71,7 +71,7 @@ $(_doc_update_delta_k)
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f))
 $(_var(:Argument, :grad_f))
 $(_var(:Argument, :p))
@@ -85,8 +85,8 @@ $(_var(:Argument, :p))
 $(_var(:Keyword, :differential))
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default="[`ArmijoLinesearch`](@ref)`()`"))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
+$(_var(:Keyword, :stepsize; default = "[`ArmijoLinesearch`](@ref)`()`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :vector_transport_method))
 
 If you provide the [`ManifoldFirstOrderObjective`](@ref) directly, the `evaluation=` keyword is ignored.
@@ -101,18 +101,18 @@ function conjugate_gradient_descent(M::AbstractManifold, f, grad_f; kwargs...)
     return conjugate_gradient_descent(M, f, grad_f, rand(M); kwargs...)
 end
 function conjugate_gradient_descent(
-    M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation=AllocatingEvaluation(), kwargs...
-) where {TF,TDF}
+        M::AbstractManifold, f::TF, grad_f::TDF, p; evaluation = AllocatingEvaluation(), kwargs...
+    ) where {TF, TDF}
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     grad_f_ = _ensure_mutating_gradient(grad_f, p, evaluation)
-    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation=evaluation)
-    rs = conjugate_gradient_descent(M, mgo, p_; evaluation=evaluation, kwargs...)
+    mgo = ManifoldGradientObjective(f_, grad_f_; evaluation = evaluation)
+    rs = conjugate_gradient_descent(M, mgo, p_; evaluation = evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function conjugate_gradient_descent(
-    M::AbstractManifold, mgo::O, p=rand(M); kwargs...
-) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold, mgo::O, p = rand(M); kwargs...
+    ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return conjugate_gradient_descent!(M, mgo, q; kwargs...)
 end
@@ -120,46 +120,46 @@ end
 @doc "$(_doc_CG)"
 conjugate_gradient_descent!(M::AbstractManifold, params...; kwargs...)
 function conjugate_gradient_descent!(
-    M::AbstractManifold,
-    f::TF,
-    grad_f::TDF,
-    p;
-    differential=nothing,
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-) where {TF,TDF}
+        M::AbstractManifold,
+        f::TF,
+        grad_f::TDF,
+        p;
+        differential = nothing,
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    ) where {TF, TDF}
     mgo = ManifoldGradientObjective(
-        f, grad_f; differential=differential, evaluation=evaluation
+        f, grad_f; differential = differential, evaluation = evaluation
     )
     dmgo = decorate_objective!(M, mgo; kwargs...)
     return conjugate_gradient_descent!(M, dmgo, p; kwargs...)
 end
 function conjugate_gradient_descent!(
-    M::AbstractManifold,
-    mgo::O,
-    p;
-    coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
-        M, ConjugateGradientDescentState; retraction_method=retraction_method
-    ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
-                                          StopWhenGradientNormLess(1e-8),
-    vector_transport_method=default_vector_transport_method(M, typeof(p)),
-    initial_gradient=zero_vector(M, p),
-    kwargs...,
-) where {O<:Union{AbstractManifoldFirstOrderObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold,
+        mgo::O,
+        p;
+        coefficient::Union{DirectionUpdateRule, ManifoldDefaultsFactory} = ConjugateDescentCoefficient(),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
+            M, ConjugateGradientDescentState; retraction_method = retraction_method
+        ),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(500) |
+            StopWhenGradientNormLess(1.0e-8),
+        vector_transport_method = default_vector_transport_method(M, typeof(p)),
+        initial_gradient = zero_vector(M, p),
+        kwargs...,
+    ) where {O <: Union{AbstractManifoldFirstOrderObjective, AbstractDecoratedManifoldObjective}}
     dmgo = decorate_objective!(M, mgo; kwargs...)
     dmp = DefaultManoptProblem(M, dmgo)
     cgs = ConjugateGradientDescentState(
         M;
-        p=p,
-        stopping_criterion=stopping_criterion,
-        stepsize=_produce_type(stepsize, M),
-        coefficient=_produce_type(coefficient, M),
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-        initial_gradient=initial_gradient,
+        p = p,
+        stopping_criterion = stopping_criterion,
+        stepsize = _produce_type(stepsize, M),
+        coefficient = _produce_type(coefficient, M),
+        retraction_method = retraction_method,
+        vector_transport_method = vector_transport_method,
+        initial_gradient = initial_gradient,
     )
     dcgs = decorate_state!(cgs; kwargs...)
     solve!(dmp, dcgs)

@@ -269,14 +269,14 @@ function __init__()
                     io,
                     "\nThe `convex_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
-                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+                printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
             end
             if exc.f === proximal_bundle_method_subsolver
                 print(
                     io,
                     "\nThe `proximal_bundle_method_subsolver` has to be implemented. A default is available currently when loading QuadraticModels.jl and RipQP.jl. That is\n",
                 )
-                printstyled(io, "`using QuadraticModels, RipQP`"; color=:cyan)
+                printstyled(io, "`using QuadraticModels, RipQP`"; color = :cyan)
             end
         end
     end

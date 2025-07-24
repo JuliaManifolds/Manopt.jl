@@ -16,14 +16,14 @@ Generate the [`ManifoldSubgradientObjective`](@ref) for a subgradient objective,
 of a (cost) function `f(M, p)` and a function `∂f(M, p)` that returns a not necessarily
 deterministic element from the subdifferential at `p` on a manifold `M`.
 """
-struct ManifoldSubgradientObjective{T<:AbstractEvaluationType,C,S} <:
-       AbstractManifoldCostObjective{T,C}
+struct ManifoldSubgradientObjective{T <: AbstractEvaluationType, C, S} <:
+    AbstractManifoldCostObjective{T, C}
     cost::C
     subgradient!!::S
     function ManifoldSubgradientObjective(
-        cost::C, subgrad::S; evaluation::AbstractEvaluationType=AllocatingEvaluation()
-    ) where {C,S}
-        return new{typeof(evaluation),C,S}(cost, subgrad)
+            cost::C, subgrad::S; evaluation::AbstractEvaluationType = AllocatingEvaluation()
+        ) where {C, S}
+        return new{typeof(evaluation), C, S}(cost, subgrad)
     end
 end
 
@@ -54,13 +54,13 @@ The evaluation is done in place of `X` for the `!`-variant.
 The result might not be deterministic, _one_ element of the subdifferential is returned.
 """
 function get_subgradient(
-    M::AbstractManifold, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
-)
+        M::AbstractManifold, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
+    )
     return sgo.subgradient!!(M, p)
 end
 function get_subgradient(
-    M::AbstractManifold, sgo::ManifoldSubgradientObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, sgo::ManifoldSubgradientObjective{InplaceEvaluation}, p
+    )
     X = zero_vector(M, p)
     return sgo.subgradient!!(M, X, p)
 end
@@ -69,20 +69,20 @@ function get_subgradient(M::AbstractManifold, admo::AbstractDecoratedManifoldObj
 end
 
 function get_subgradient!(
-    M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
-)
+        M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{AllocatingEvaluation}, p
+    )
     copyto!(M, X, sgo.subgradient!!(M, p))
     return X
 end
 function get_subgradient!(
-    M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{InplaceEvaluation}, p
-)
+        M::AbstractManifold, X, sgo::ManifoldSubgradientObjective{InplaceEvaluation}, p
+    )
     sgo.subgradient!!(M, X, p)
     return X
 end
 function get_subgradient!(
-    M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
-)
+        M::AbstractManifold, X, admo::AbstractDecoratedManifoldObjective, p
+    )
     return get_subgradient!(M, X, get_objective(admo, false), p)
 end
 
@@ -100,9 +100,9 @@ Depending on the [`AbstractEvaluationType`](@ref) `E` this is a function
 * `(M, p) -> X` for the [`AllocatingEvaluation`](@ref) case
 * `(M, X, p) -> X` for the [`InplaceEvaluation`](@ref) working in-place of `X`.
 """
-function get_subgradient_function(amso::ManifoldSubgradientObjective, recursive=false)
+function get_subgradient_function(amso::ManifoldSubgradientObjective, recursive = false)
     return amso.subgradient!!
 end
-function get_subgradient_function(admo::AbstractDecoratedManifoldObjective, recursive=false)
+function get_subgradient_function(admo::AbstractDecoratedManifoldObjective, recursive = false)
     return get_subgradient_function(get_objective(admo, recursive))
 end

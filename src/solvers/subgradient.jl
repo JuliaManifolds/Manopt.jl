@@ -5,7 +5,7 @@ stores option values for a [`subgradient_method`](@ref) solver
 
 # Fields
 
-$(_var(:Field, :p; add=[:as_Iterate]))
+$(_var(:Field, :p; add = [:as_Iterate]))
 * `p_star`: optimal value
 $(_var(:Field, :retraction_method))
 $(_var(:Field, :stepsize))
@@ -21,14 +21,14 @@ Initialise the Subgradient method state
 # Keyword arguments
 
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :p; add=:as_Initial))
-$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :X; add=:as_Memory))
+$(_var(:Keyword, :p; add = :as_Initial))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`"))
+$(_var(:Keyword, :X; add = :as_Memory))
 """
 mutable struct SubGradientMethodState{
-    TR<:AbstractRetractionMethod,TS<:Stepsize,TSC<:StoppingCriterion,P,T
-} <: AbstractManoptSolverState where {P,T}
+        TR <: AbstractRetractionMethod, TS <: Stepsize, TSC <: StoppingCriterion, P, T,
+    } <: AbstractManoptSolverState where {P, T}
     p::P
     p_star::P
     retraction_method::TR
@@ -36,21 +36,21 @@ mutable struct SubGradientMethodState{
     stop::TSC
     X::T
     function SubGradientMethodState(
-        M::TM;
-        p::P=rand(M),
-        stopping_criterion::SC=StopAfterIteration(5000),
-        stepsize::S=default_stepsize(M, SubGradientMethodState),
-        X::T=zero_vector(M, p),
-        retraction_method::TR=default_retraction_method(M, typeof(p)),
-    ) where {
-        TM<:AbstractManifold,
-        P,
-        T,
-        SC<:StoppingCriterion,
-        S<:Stepsize,
-        TR<:AbstractRetractionMethod,
-    }
-        return new{TR,S,SC,P,T}(
+            M::TM;
+            p::P = rand(M),
+            stopping_criterion::SC = StopAfterIteration(5000),
+            stepsize::S = default_stepsize(M, SubGradientMethodState),
+            X::T = zero_vector(M, p),
+            retraction_method::TR = default_retraction_method(M, typeof(p)),
+        ) where {
+            TM <: AbstractManifold,
+            P,
+            T,
+            SC <: StoppingCriterion,
+            S <: Stepsize,
+            TR <: AbstractRetractionMethod,
+        }
+        return new{TR, S, SC, P, T}(
             p, copy(M, p), retraction_method, stepsize, stopping_criterion, X
         )
     end
@@ -100,7 +100,7 @@ For more details see [FerreiraOliveira:1998](@cite).
 
 # Input
 
-$(_var(:Argument, :M; type=true))
+$(_var(:Argument, :M; type = true))
 $(_var(:Argument, :f))
 * `∂f`: the (sub)gradient ``∂ f: $(_math(:M)) → T$(_math(:M))`` of f
 $(_var(:Argument, :p))
@@ -111,9 +111,9 @@ alternatively to `f` and `∂f` a [`ManifoldSubgradientObjective`](@ref) `sgo` c
 
 $(_var(:Keyword, :evaluation))
 $(_var(:Keyword, :retraction_method))
-$(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(5000)`"))
-$(_var(:Keyword, :X; add=:as_Memory))
+$(_var(:Keyword, :stepsize; default = "[`default_stepsize`](@ref)`(M, SubGradientMethodState)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(5000)`"))
+$(_var(:Keyword, :X; add = :as_Memory))
 
 and the ones that are passed to [`decorate_state!`](@ref) for decorators.
 
@@ -128,23 +128,23 @@ function subgradient_method(M::AbstractManifold, f, ∂f; kwargs...)
     return subgradient_method(M, f, ∂f, rand(M); kwargs...)
 end
 function subgradient_method(
-    M::AbstractManifold,
-    f,
-    ∂f,
-    p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
+        M::AbstractManifold,
+        f,
+        ∂f,
+        p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
     p_ = _ensure_mutating_variable(p)
     f_ = _ensure_mutating_cost(f, p)
     ∂f_ = _ensure_mutating_gradient(∂f, p, evaluation)
-    sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation=evaluation)
-    rs = subgradient_method(M, sgo, p_; evaluation=evaluation, kwargs...)
+    sgo = ManifoldSubgradientObjective(f_, ∂f_; evaluation = evaluation)
+    rs = subgradient_method(M, sgo, p_; evaluation = evaluation, kwargs...)
     return _ensure_matching_output(p, rs)
 end
 function subgradient_method(
-    M::AbstractManifold, sgo::O, p; kwargs...
-) where {O<:Union{ManifoldSubgradientObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold, sgo::O, p; kwargs...
+    ) where {O <: Union{ManifoldSubgradientObjective, AbstractDecoratedManifoldObjective}}
     q = copy(M, p)
     return subgradient_method!(M, sgo, q; kwargs...)
 end
@@ -152,37 +152,37 @@ end
 @doc "$(_doc_SGM)"
 subgradient_method!(M::AbstractManifold, args...; kwargs...)
 function subgradient_method!(
-    M::AbstractManifold,
-    f,
-    ∂f,
-    p;
-    evaluation::AbstractEvaluationType=AllocatingEvaluation(),
-    kwargs...,
-)
-    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation=evaluation)
-    return subgradient_method!(M, sgo, p; evaluation=evaluation, kwargs...)
+        M::AbstractManifold,
+        f,
+        ∂f,
+        p;
+        evaluation::AbstractEvaluationType = AllocatingEvaluation(),
+        kwargs...,
+    )
+    sgo = ManifoldSubgradientObjective(f, ∂f; evaluation = evaluation)
+    return subgradient_method!(M, sgo, p; evaluation = evaluation, kwargs...)
 end
 function subgradient_method!(
-    M::AbstractManifold,
-    sgo::O,
-    p;
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Union{Stepsize,ManifoldDefaultsFactory}=default_stepsize(
-        M, SubGradientMethodState
-    ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(5000),
-    X=zero_vector(M, p),
-    kwargs...,
-) where {O<:Union{ManifoldSubgradientObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold,
+        sgo::O,
+        p;
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p)),
+        stepsize::Union{Stepsize, ManifoldDefaultsFactory} = default_stepsize(
+            M, SubGradientMethodState
+        ),
+        stopping_criterion::StoppingCriterion = StopAfterIteration(5000),
+        X = zero_vector(M, p),
+        kwargs...,
+    ) where {O <: Union{ManifoldSubgradientObjective, AbstractDecoratedManifoldObjective}}
     dsgo = decorate_objective!(M, sgo; kwargs...)
     mp = DefaultManoptProblem(M, dsgo)
     sgs = SubGradientMethodState(
         M;
-        p=p,
-        stopping_criterion=stopping_criterion,
-        stepsize=_produce_type(stepsize, M),
-        retraction_method=retraction_method,
-        X=X,
+        p = p,
+        stopping_criterion = stopping_criterion,
+        stepsize = _produce_type(stepsize, M),
+        retraction_method = retraction_method,
+        X = X,
     )
     dsgs = decorate_state!(sgs; kwargs...)
     solve!(mp, dsgs)
@@ -204,8 +204,8 @@ function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, k)
 end
 get_solver_result(sgs::SubGradientMethodState) = sgs.p_star
 function (cs::ConstantStepsize)(
-    amp::AbstractManoptProblem, sgs::SubGradientMethodState, ::Any, args...; kwargs...
-)
+        amp::AbstractManoptProblem, sgs::SubGradientMethodState, ::Any, args...; kwargs...
+    )
     s = cs.length
     if cs.type == :absolute
         ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))
@@ -216,8 +216,8 @@ function (cs::ConstantStepsize)(
     return s
 end
 function (s::DecreasingStepsize)(
-    amp::AbstractManoptProblem, sgs::SubGradientMethodState, k::Int, args...; kwargs...
-)
+        amp::AbstractManoptProblem, sgs::SubGradientMethodState, k::Int, args...; kwargs...
+    )
     ds = (s.length - k * s.subtrahend) * (s.factor^k) / ((k + s.shift)^(s.exponent))
     if s.type == :absolute
         ns = norm(get_manifold(amp), get_iterate(sgs), get_subgradient(sgs))

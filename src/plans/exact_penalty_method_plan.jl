@@ -52,15 +52,15 @@ to obtain a smooth cost function. This struct is also a functor `(M,p) -> v` of 
 
     ExactPenaltyCost(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
-mutable struct ExactPenaltyCost{S,CO,R}
+mutable struct ExactPenaltyCost{S, CO, R}
     co::CO
     ρ::R
     u::R
 end
 function ExactPenaltyCost(
-    co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
-) where {R}
-    return ExactPenaltyCost{typeof(smoothing),typeof(co),R}(co, ρ, u)
+        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing = LinearQuadraticHuber()
+    ) where {R}
+    return ExactPenaltyCost{typeof(smoothing), typeof(co), R}(co, ρ, u)
 end
 function set_parameter!(epc::ExactPenaltyCost, ::Val{:ρ}, ρ)
     epc.ρ = ρ
@@ -110,7 +110,7 @@ This struct is also a functor in both formats
 
     ExactPenaltyGradient(co::ConstrainedManifoldObjective, ρ, u; smoothing=LinearQuadraticHuber())
 """
-mutable struct ExactPenaltyGrad{S,CO,R}
+mutable struct ExactPenaltyGrad{S, CO, R}
     co::CO
     ρ::R
     u::R
@@ -124,9 +124,9 @@ function set_parameter!(epg::ExactPenaltyGrad, ::Val{:u}, u)
     return epg
 end
 function ExactPenaltyGrad(
-    co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing=LinearQuadraticHuber()
-) where {R}
-    return ExactPenaltyGrad{typeof(smoothing),typeof(co),R}(co, ρ, u)
+        co::ConstrainedManifoldObjective, ρ::R, u::R; smoothing = LinearQuadraticHuber()
+    ) where {R}
+    return ExactPenaltyGrad{typeof(smoothing), typeof(co), R}(co, ρ, u)
 end
 # Default (functions constraints): evaluate all gradients
 # Since for LogExp the pre-factor c seems to not be zero, this might be the best way to go here
@@ -157,8 +157,8 @@ end
 
 # Default (functions constraints): evaluate all gradients
 function (EG::ExactPenaltyGrad{<:LinearQuadraticHuber})(
-    M::AbstractManifold, X, p::P
-) where {P}
+        M::AbstractManifold, X, p::P
+    ) where {P}
     gp = get_inequality_constraint(M, EG.co, p, :)
     hp = get_equality_constraint(M, EG.co, p, :)
     m = length(gp)

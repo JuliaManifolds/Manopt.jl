@@ -12,7 +12,7 @@ An abstract type for objectives of sub problems within a solver but still store 
 original objective internally to generate generic objectives for sub solvers.
 """
 abstract type AbstractManifoldSubObjective{
-    E<:AbstractEvaluationType,O<:AbstractManifoldObjective
+    E <: AbstractEvaluationType, O <: AbstractManifoldObjective,
 } <: AbstractManifoldObjective{E} end
 
 function get_gradient_function(cgo::AbstractManifoldSubObjective)
@@ -32,8 +32,8 @@ get_objective(amso::AbstractManifoldSubObjective)
 Evaluate the cost of the (original) objective stored within the sub objective.
 """
 function get_objective_cost(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
-) where {E,O<:AbstractManifoldCostObjective}
+        M::AbstractManifold, amso::AbstractManifoldSubObjective{E, O}, p
+    ) where {E, O <: AbstractManifoldCostObjective}
     return get_cost(M, get_objective(amso), p)
 end
 
@@ -44,13 +44,13 @@ end
 Evaluate the gradient of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_gradient(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p
-) where {E,O<:AbstractManifoldObjective{E}}
+        M::AbstractManifold, amso::AbstractManifoldSubObjective{E, O}, p
+    ) where {E, O <: AbstractManifoldObjective{E}}
     return get_gradient(M, get_objective(amso), p)
 end
 function get_objective_gradient!(
-    M::AbstractManifold, X, amso::AbstractManifoldSubObjective{E,O}, p
-) where {E,O<:AbstractManifoldObjective{E}}
+        M::AbstractManifold, X, amso::AbstractManifoldSubObjective{E, O}, p
+    ) where {E, O <: AbstractManifoldObjective{E}}
     return get_gradient!(M, X, get_objective(amso), p)
 end
 
@@ -61,13 +61,13 @@ end
 Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_hessian(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
-) where {E,O<:AbstractManifoldObjective{E}}
+        M::AbstractManifold, amso::AbstractManifoldSubObjective{E, O}, p, X
+    ) where {E, O <: AbstractManifoldObjective{E}}
     return get_hessian(M, get_objective(amso), p, X)
 end
 function get_objective_hessian!(
-    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
-) where {E,O<:AbstractManifoldObjective{E}}
+        M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E, O}, p, X
+    ) where {E, O <: AbstractManifoldObjective{E}}
     get_hessian!(M, Y, get_objective(amso), p, X)
     return Y
 end
@@ -79,13 +79,13 @@ end
 Evaluate the Hessian of the (original) objective stored within the sub objective `amso`.
 """
 function get_objective_preconditioner(
-    M::AbstractManifold, amso::AbstractManifoldSubObjective{E,O}, p, X
-) where {E,O<:AbstractManifoldHessianObjective{E}}
+        M::AbstractManifold, amso::AbstractManifoldSubObjective{E, O}, p, X
+    ) where {E, O <: AbstractManifoldHessianObjective{E}}
     return get_preconditioner(M, get_objective(amso), p, X)
 end
 function get_objective_preconditioner!(
-    M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E,O}, p, X
-) where {E,O<:AbstractManifoldHessianObjective{E}}
+        M::AbstractManifold, Y, amso::AbstractManifoldSubObjective{E, O}, p, X
+    ) where {E, O <: AbstractManifoldHessianObjective{E}}
     return get_preconditioner!(M, Y, get_objective(amso), p, X)
 end
 

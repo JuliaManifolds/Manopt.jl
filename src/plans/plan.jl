@@ -56,14 +56,14 @@ the optimisation on manifolds is different from the usual “experience” in
 (classical, Euclidean) optimization.
 Any other value has the same effect as not setting it.
 """
-function get_parameter(e::Symbol, args...; default=get_parameter(Val(e), Val(:default)))
+function get_parameter(e::Symbol, args...; default = get_parameter(Val(e), Val(:default)))
     return @load_preference("$(e)", default)
 end
 function get_parameter(
-    e::Symbol, s::Symbol, args...; default=get_parameter(Val(e), Val(:default))
-)
+        e::Symbol, s::Symbol, args...; default = get_parameter(Val(e), Val(:default))
+    )
     return @load_preference("$(e)", default)
-end# Handle empty defaults
+end # Handle empty defaults
 get_parameter(::Symbol, ::Val{:default}) = nothing
 get_parameter(::Val{:Mode}, v::Val{:default}) = nothing
 
@@ -79,8 +79,8 @@ The parameters are stored to the global settings using [`Preferences.jl`](https:
 Passing a `value` of `""` deletes the corresponding entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
 """
-function set_parameter!(e::Symbol, value::Union{String,Bool,<:Number})
-    if length(value) == 0
+function set_parameter!(e::Symbol, value::Union{String, Bool, <:Number})
+    return if length(value) == 0
         @delete_preferences!(string(e))
         v = get_parameter(e, Val(:default))
         default = isnothing(v) ? "" : ((v isa String) ? " \"$v\"" : " ($v)")

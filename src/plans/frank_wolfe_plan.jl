@@ -1,4 +1,3 @@
-
 @doc raw"""
     FrankWolfeCost{P,T}
 
@@ -12,7 +11,7 @@ F(q) = ⟨X, \log_p q⟩
 The values `p` and `X` are stored within this functor and should be references to the
 iterate and gradient from within [`FrankWolfeState`](@ref).
 """
-mutable struct FrankWolfeCost{P,T}
+mutable struct FrankWolfeCost{P, T}
     p::P
     X::T
 end
@@ -35,7 +34,7 @@ Its gradient can be computed easily using `adjoint_differential_log_argument`.
 The values `p` and `X` are stored within this functor and should be references to the
 iterate and gradient from within [`FrankWolfeState`](@ref).
 """
-mutable struct FrankWolfeGradient{P,T}
+mutable struct FrankWolfeGradient{P, T}
     p::P
     X::T
 end

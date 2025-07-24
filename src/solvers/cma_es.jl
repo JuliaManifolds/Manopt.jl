@@ -8,7 +8,7 @@ State of covariance matrix adaptation evolution strategy.
 
 # Fields
 
-$(_var(:Field, :p; add=" storing the best point found so far"))
+$(_var(:Field, :p; add = " storing the best point found so far"))
 * `p_obj`                       objective value at `p`
 * `μ`                           parent number
 * `λ`                           population size
@@ -29,8 +29,8 @@ $(_var(:Field, :p; add=" storing the best point found so far"))
 * `worst_fitness_current_gen`   worst fitness value of individuals in the current generation
 * `p_m`                         point around which the search for new candidates is done
 * `σ`                           step size
-* `p_σ`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
-* `p_c`                         coordinates of a vector in ``$(_math(:TpM; p="p_m"))``
+* `p_σ`                         coordinates of a vector in ``$(_math(:TpM; p = "p_m"))``
+* `p_c`                         coordinates of a vector in ``$(_math(:TpM; p = "p_m"))``
 * `deviations`                  standard deviations of coordinate RNG
 * `buffer`                      buffer for random number generation and `wmean_y_c` of length `n_coords`
 * `e_mv_norm`                   expected value of norm of the `n_coords`-variable standard normal distribution
@@ -78,14 +78,14 @@ $(_var(:Field, :vector_transport_method))
 [`cma_es`](@ref)
 """
 mutable struct CMAESState{
-    P,
-    TParams<:Real,
-    TStopping<:StoppingCriterion,
-    TRetraction<:AbstractRetractionMethod,
-    TVTM<:AbstractVectorTransportMethod,
-    TB<:AbstractBasis,
-    TRng<:AbstractRNG,
-} <: AbstractManoptSolverState
+        P,
+        TParams <: Real,
+        TStopping <: StoppingCriterion,
+        TRetraction <: AbstractRetractionMethod,
+        TVTM <: AbstractVectorTransportMethod,
+        TB <: AbstractBasis,
+        TRng <: AbstractRNG,
+    } <: AbstractManoptSolverState
     p::P
     p_obj::TParams
     μ::Int
@@ -102,7 +102,7 @@ mutable struct CMAESState{
     ys_c::Vector{Vector{TParams}}
     covariance_matrix::Matrix{TParams}
     last_variances::Vector{TParams}
-    covariance_matrix_eigen::Eigen{TParams,TParams,Matrix{TParams},Vector{TParams}}
+    covariance_matrix_eigen::Eigen{TParams, TParams, Matrix{TParams}, Vector{TParams}}
     covariance_matrix_cond::TParams
     best_fitness_current_gen::TParams
     median_fitness_current_gen::TParams
@@ -122,34 +122,34 @@ mutable struct CMAESState{
 end
 
 function CMAESState(
-    M::AbstractManifold,
-    p_m::P,
-    μ::Int,
-    λ::Int,
-    μ_eff::TParams,
-    c_1::TParams,
-    c_c::TParams,
-    c_μ::TParams,
-    c_σ::TParams,
-    c_m::TParams,
-    d_σ::TParams,
-    stop::TStopping,
-    covariance_matrix::Matrix{TParams},
-    σ::TParams,
-    recombination_weights::Vector{TParams};
-    retraction_method::TRetraction=default_retraction_method(M, typeof(p_m)),
-    vector_transport_method::TVTM=default_vector_transport_method(M, typeof(p_m)),
-    basis::TB=default_basis(M, P),
-    rng::TRng=default_rng(),
-) where {
-    P,
-    TParams<:Real,
-    TStopping<:StoppingCriterion,
-    TRetraction<:AbstractRetractionMethod,
-    TVTM<:AbstractVectorTransportMethod,
-    TB<:AbstractBasis,
-    TRng<:AbstractRNG,
-}
+        M::AbstractManifold,
+        p_m::P,
+        μ::Int,
+        λ::Int,
+        μ_eff::TParams,
+        c_1::TParams,
+        c_c::TParams,
+        c_μ::TParams,
+        c_σ::TParams,
+        c_m::TParams,
+        d_σ::TParams,
+        stop::TStopping,
+        covariance_matrix::Matrix{TParams},
+        σ::TParams,
+        recombination_weights::Vector{TParams};
+        retraction_method::TRetraction = default_retraction_method(M, typeof(p_m)),
+        vector_transport_method::TVTM = default_vector_transport_method(M, typeof(p_m)),
+        basis::TB = default_basis(M, P),
+        rng::TRng = default_rng(),
+    ) where {
+        P,
+        TParams <: Real,
+        TStopping <: StoppingCriterion,
+        TRetraction <: AbstractRetractionMethod,
+        TVTM <: AbstractVectorTransportMethod,
+        TB <: AbstractBasis,
+        TRng <: AbstractRNG,
+    }
     n_coords = number_of_coordinates(M, basis)
     # approximation of expected value of norm of standard n_coords-variate normal distribution
     e_mv_norm = sqrt(n_coords) * (1 - 1 / (4 * n_coords) + 1 / (21 * n_coords))
@@ -159,7 +159,7 @@ function CMAESState(
     @assert sum(recombination_weights[1:μ]) ≈ 1
     cov_eig = eigen(covariance_matrix)
 
-    return CMAESState{P,TParams,TStopping,TRetraction,TVTM,TB,TRng}(
+    return CMAESState{P, TParams, TStopping, TRetraction, TVTM, TB, TRng}(
         allocate(M, p_m),
         Inf,
         μ,
@@ -284,7 +284,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     end
 
     # sorting solutions
-    ys_c_sorted = map(x -> x[1], sort(collect(zip(s.ys_c, fitness_vals)); by=f -> f[2]))
+    ys_c_sorted = map(x -> x[1], sort(collect(zip(s.ys_c, fitness_vals)); by = f -> f[2]))
 
     # selection and recombination
     fill!(s.buffer, 0) # from now on until the end of this method buffer is ⟨y⟩_w from Eq. (41)
@@ -303,7 +303,7 @@ function step_solver!(mp::AbstractManoptProblem, s::CMAESState, iteration::Int)
     # covariance matrix adaptation
     s.p_c .*= 1 - s.c_c # Eq. (45), part 1
     if norm(s.p_σ) / sqrt(1 - (1 - s.c_σ)^(2 * (iteration + 1))) <
-        (1.4 + 2 / (n_coords + 1)) * s.e_mv_norm # h_σ criterion
+            (1.4 + 2 / (n_coords + 1)) * s.e_mv_norm # h_σ criterion
         s.p_c .+= sqrt(s.c_c * (2 - s.c_c) * s.μ_eff) .* s.buffer # Eq. (45), part 2
         δh_σ = zero(s.c_c) # Appendix A
     else
@@ -373,7 +373,7 @@ setting.
 * `tol_x=1e-12`: tolerance for the `StopWhenPopulationStronglyConcentrated`, similar to
   absolute difference between subsequent point but actually computed from distribution
   parameters.
-$(_var(:Keyword, :stopping_criterion; default="`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
+$(_var(:Keyword, :stopping_criterion; default = "`default_cma_es_stopping_criterion(M, λ; tol_fun=tol_fun, tol_x=tol_x)`"))
 $(_var(:Keyword, :retraction_method))
 $(_var(:Keyword, :vector_transport_method))
 * `basis`               (`DefaultOrthonormalBasis()`) basis used to represent covariance in
@@ -399,42 +399,42 @@ function cma_es!(M::AbstractManifold, f, p_m; kwargs...)
 end
 
 function default_cma_es_stopping_criterion(
-    M::AbstractManifold, λ::Int; tol_fun::TParam=1e-12, tol_x::TParam=1e-12
-) where {TParam<:Real}
+        M::AbstractManifold, λ::Int; tol_fun::TParam = 1.0e-12, tol_x::TParam = 1.0e-12
+    ) where {TParam <: Real}
     return StopAfterIteration(50000) |
-           StopWhenCovarianceIllConditioned() |
-           StopWhenBestCostInGenerationConstant{TParam}(
-               Int(10 + ceil(30 * manifold_dimension(M) / λ))
-           ) |
-           StopWhenEvolutionStagnates(
-               Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
-           ) |
-           StopWhenPopulationDiverges(1e4) |
-           StopWhenPopulationCostConcentrated(
-               tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))
-           ) |
-           StopWhenPopulationStronglyConcentrated(tol_x)
+        StopWhenCovarianceIllConditioned() |
+        StopWhenBestCostInGenerationConstant{TParam}(
+        Int(10 + ceil(30 * manifold_dimension(M) / λ))
+    ) |
+        StopWhenEvolutionStagnates(
+        Int(120 + 30 * ceil(30 * manifold_dimension(M) / λ)), 20000, 0.3
+    ) |
+        StopWhenPopulationDiverges(1.0e4) |
+        StopWhenPopulationCostConcentrated(
+        tol_fun, Int(10 + ceil(30 * manifold_dimension(M) / λ))
+    ) |
+        StopWhenPopulationStronglyConcentrated(tol_x)
 end
 
 function cma_es!(
-    M::AbstractManifold,
-    mco::O,
-    p_m;
-    σ::Real=1.0,
-    λ::Int=4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
-    tol_fun::Real=1e-12,
-    tol_x::Real=1e-12,
-    stopping_criterion::StoppingCriterion=default_cma_es_stopping_criterion(
-        M, λ; tol_fun=tol_fun, tol_x=tol_x
-    ),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p_m)),
-    vector_transport_method::AbstractVectorTransportMethod=default_vector_transport_method(
-        M, typeof(p_m)
-    ),
-    basis::AbstractBasis=default_basis(M, typeof(p_m)),
-    rng::AbstractRNG=default_rng(),
-    kwargs..., #collect rest
-) where {O<:Union{AbstractManifoldCostObjective,AbstractDecoratedManifoldObjective}}
+        M::AbstractManifold,
+        mco::O,
+        p_m;
+        σ::Real = 1.0,
+        λ::Int = 4 + Int(floor(3 * log(manifold_dimension(M)))), # Eq. (48)
+        tol_fun::Real = 1.0e-12,
+        tol_x::Real = 1.0e-12,
+        stopping_criterion::StoppingCriterion = default_cma_es_stopping_criterion(
+            M, λ; tol_fun = tol_fun, tol_x = tol_x
+        ),
+        retraction_method::AbstractRetractionMethod = default_retraction_method(M, typeof(p_m)),
+        vector_transport_method::AbstractVectorTransportMethod = default_vector_transport_method(
+            M, typeof(p_m)
+        ),
+        basis::AbstractBasis = default_basis(M, typeof(p_m)),
+        rng::AbstractRNG = default_rng(),
+        kwargs..., #collect rest
+    ) where {O <: Union{AbstractManifoldCostObjective, AbstractDecoratedManifoldObjective}}
     dmco = decorate_objective!(M, mco; kwargs...)
     mp = DefaultManoptProblem(M, dmco)
     n_coords = number_of_coordinates(M, basis)
@@ -481,10 +481,10 @@ function cma_es!(
         covariance_matrix,
         σ,
         recombination_weights;
-        retraction_method=retraction_method,
-        vector_transport_method=vector_transport_method,
-        basis=basis,
-        rng=rng,
+        retraction_method = retraction_method,
+        vector_transport_method = vector_transport_method,
+        basis = basis,
+        rng = rng,
     )
 
     d_state = decorate_state!(state; kwargs...)
@@ -510,13 +510,13 @@ is the (real) dimension of `M`. The function corresponds to the Ehresmann connec
 defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """
 function eigenvector_transport!(
-    M::AbstractManifold,
-    matrix_eigen::Eigen,
-    p,
-    q,
-    basis::AbstractBasis,
-    vtm::AbstractVectorTransportMethod,
-)
+        M::AbstractManifold,
+        matrix_eigen::Eigen,
+        p,
+        q,
+        basis::AbstractBasis,
+        vtm::AbstractVectorTransportMethod,
+    )
     if is_flat(M)
         return matrix_eigen
     end
@@ -536,20 +536,20 @@ end
 Stop CMA-ES if condition number of covariance matrix exceeds `threshold`. This corresponds
 to `ConditionCov` condition from [Hansen:2023](@cite).
 """
-mutable struct StopWhenCovarianceIllConditioned{T<:Real} <: StoppingCriterion
+mutable struct StopWhenCovarianceIllConditioned{T <: Real} <: StoppingCriterion
     threshold::T
     last_cond::T
     at_iteration::Int
 end
-function StopWhenCovarianceIllConditioned(threshold::Real=1e14)
+function StopWhenCovarianceIllConditioned(threshold::Real = 1.0e14)
     return StopWhenCovarianceIllConditioned{typeof(threshold)}(threshold, 1, -1)
 end
 
 indicates_convergence(c::StopWhenCovarianceIllConditioned) = false
 is_active_stopping_criterion(c::StopWhenCovarianceIllConditioned) = c.at_iteration > 0
 function (c::StopWhenCovarianceIllConditioned)(
-    ::AbstractManoptProblem, s::CMAESState, k::Int
-)
+        ::AbstractManoptProblem, s::CMAESState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
         return false
@@ -587,7 +587,7 @@ generations is zero. This corresponds to `EqualFUnValues` condition from
 
 See also `StopWhenPopulationCostConcentrated`.
 """
-mutable struct StopWhenBestCostInGenerationConstant{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenBestCostInGenerationConstant{TParam <: Real} <: StoppingCriterion
     iteration_range::Int
     best_objective_at_last_change::TParam
     iterations_since_change::Int
@@ -604,8 +604,8 @@ function is_active_stopping_criterion(c::StopWhenBestCostInGenerationConstant)
     return c.iterations_since_change >= c.iteration_range
 end
 function (c::StopWhenBestCostInGenerationConstant)(
-    ::AbstractManoptProblem, s::CMAESState, k::Int
-)
+        ::AbstractManoptProblem, s::CMAESState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
         c.best_objective_at_last_change = Inf
@@ -650,7 +650,7 @@ at least `min_size` and no more than `max_size` iterations. Solver is stopped if
 in both histories the median of the most recent `fraction` of values is not better
 than the median of the oldest `fraction`.
 """
-mutable struct StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenEvolutionStagnates{TParam <: Real} <: StoppingCriterion
     min_size::Int
     max_size::Int
     fraction::TParam
@@ -660,8 +660,8 @@ mutable struct StopWhenEvolutionStagnates{TParam<:Real} <: StoppingCriterion
 end
 
 function StopWhenEvolutionStagnates(
-    min_size::Int, max_size::Int, fraction::TParam
-) where {TParam<:Real}
+        min_size::Int, max_size::Int, fraction::TParam
+    ) where {TParam <: Real}
     return StopWhenEvolutionStagnates{TParam}(
         min_size,
         max_size,
@@ -747,7 +747,7 @@ norm of `σ * p_c` is smaller than `tol`. This corresponds to `TolX` condition f
 
     StopWhenPopulationStronglyConcentrated(tol::Real)
 """
-mutable struct StopWhenPopulationStronglyConcentrated{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationStronglyConcentrated{TParam <: Real} <: StoppingCriterion
     tol::TParam
     at_iteration::Int
 end
@@ -761,8 +761,8 @@ function is_active_stopping_criterion(c::StopWhenPopulationStronglyConcentrated)
     return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationStronglyConcentrated)(
-    ::AbstractManoptProblem, s::CMAESState, k::Int
-)
+        ::AbstractManoptProblem, s::CMAESState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
         return false
@@ -799,7 +799,7 @@ Stop if `σ` times maximum deviation increased by more than `tol`. This usually 
 far too small `σ`, or divergent behavior. This corresponds to `TolXUp` condition from
 [Hansen:2023](@cite).
 """
-mutable struct StopWhenPopulationDiverges{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationDiverges{TParam <: Real} <: StoppingCriterion
     tol::TParam
     last_σ_times_maxstddev::TParam
     at_iteration::Int
@@ -850,12 +850,12 @@ and all function values in the current generation is below `tol`. This correspon
 
     StopWhenPopulationCostConcentrated(tol::Real, max_size::Int)
 """
-mutable struct StopWhenPopulationCostConcentrated{TParam<:Real} <: StoppingCriterion
+mutable struct StopWhenPopulationCostConcentrated{TParam <: Real} <: StoppingCriterion
     tol::TParam
     best_value_history::CircularBuffer{TParam}
     at_iteration::Int
 end
-function StopWhenPopulationCostConcentrated(tol::TParam, max_size::Int) where {TParam<:Real}
+function StopWhenPopulationCostConcentrated(tol::TParam, max_size::Int) where {TParam <: Real}
     return StopWhenPopulationCostConcentrated{TParam}(
         tol, CircularBuffer{TParam}(max_size), -1
     )
@@ -867,8 +867,8 @@ function is_active_stopping_criterion(c::StopWhenPopulationCostConcentrated)
     return c.at_iteration >= 0
 end
 function (c::StopWhenPopulationCostConcentrated)(
-    ::AbstractManoptProblem, s::CMAESState, k::Int
-)
+        ::AbstractManoptProblem, s::CMAESState, k::Int
+    )
     if k == 0 # reset on init
         c.at_iteration = -1
         return false
@@ -877,7 +877,7 @@ function (c::StopWhenPopulationCostConcentrated)(
     if isfull(c.best_value_history)
         min_hist, max_hist = extrema(c.best_value_history)
         if max_hist - min_hist < c.tol &&
-            s.best_fitness_current_gen - s.worst_fitness_current_gen < c.tol
+                s.best_fitness_current_gen - s.worst_fitness_current_gen < c.tol
             c.at_iteration = k
             return true
         end

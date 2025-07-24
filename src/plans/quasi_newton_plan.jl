@@ -168,7 +168,7 @@ Generate the `SR1` update.
 """
 struct SR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
-    SR1(r::Float64=-1.0) = new(r)
+    SR1(r::Float64 = -1.0) = new(r)
 end
 
 @doc raw"""
@@ -208,7 +208,7 @@ Generate the `InverseSR1`.
 """
 struct InverseSR1 <: AbstractQuasiNewtonUpdateRule
     r::Float64
-    InverseSR1(r::Float64=-1.0) = new(r)
+    InverseSR1(r::Float64 = -1.0) = new(r)
 end
 
 @doc raw"""
@@ -329,28 +329,28 @@ Add preconditioning to a gradient problem.
 
 $(_var(:Keyword, :evaluation))
 """
-struct QuasiNewtonPreconditioner{E<:AbstractEvaluationType,F}
+struct QuasiNewtonPreconditioner{E <: AbstractEvaluationType, F}
     preconditioner::F
 end
 function QuasiNewtonPreconditioner(
-    preconditioner::F; evaluation::E=AllocatingEvaluation()
-) where {E<:AbstractEvaluationType,F}
-    return QuasiNewtonPreconditioner{E,F}(preconditioner)
+        preconditioner::F; evaluation::E = AllocatingEvaluation()
+    ) where {E <: AbstractEvaluationType, F}
+    return QuasiNewtonPreconditioner{E, F}(preconditioner)
 end
 #
 #
 # Internally this always works in-place of X
 function (qnp::QuasiNewtonPreconditioner{AllocatingEvaluation})(
-    X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
-)
+        X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
+    )
     M = get_manifold(mp)
     p = get_iterate(s)
     copyto!(M, X, p, qnp.preconditioner(M, p, X))
     return X
 end
 function (pg::QuasiNewtonPreconditioner{InplaceEvaluation})(
-    X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
-)
+        X, mp::AbstractManoptProblem, s::AbstractGradientSolverState
+    )
     M = get_manifold(mp)
     p = get_iterate(s)
     pg.preconditioner(M, X, p, X)
@@ -424,12 +424,12 @@ Generate the Update rule with defaults from a manifold and the names correspondi
 [`AbstractQuasiNewtonDirectionUpdate`](@ref),
 """
 mutable struct QuasiNewtonMatrixDirectionUpdate{
-    NT<:AbstractQuasiNewtonUpdateRule,
-    B<:AbstractBasis,
-    VT<:AbstractVectorTransportMethod,
-    M<:AbstractMatrix,
-    F<:Union{<:Real,Nothing},
-} <: AbstractQuasiNewtonDirectionUpdate
+        NT <: AbstractQuasiNewtonUpdateRule,
+        B <: AbstractBasis,
+        VT <: AbstractVectorTransportMethod,
+        M <: AbstractMatrix,
+        F <: Union{<:Real, Nothing},
+    } <: AbstractQuasiNewtonDirectionUpdate
     basis::B
     matrix::M
     initial_scale::F
@@ -441,25 +441,25 @@ function status_summary(d::QuasiNewtonMatrixDirectionUpdate)
 end
 function show(io::IO, d::QuasiNewtonMatrixDirectionUpdate)
     s = """
-        QuasiNewtonMatrixDirectionUpdate($(d.basis), $(d.matrix), $(d.initial_scale), $(d.update), $(d.vector_transport_method))
-        """
+    QuasiNewtonMatrixDirectionUpdate($(d.basis), $(d.matrix), $(d.initial_scale), $(d.update), $(d.vector_transport_method))
+    """
     return print(io, s)
 end
 function QuasiNewtonMatrixDirectionUpdate(
-    M::AbstractManifold,
-    update::U,
-    basis::B=default_basis(M),
-    m::MT=Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M));
-    initial_scale::F=1.0,
-    vector_transport_method::V=default_vector_transport_method(M),
-) where {
-    U<:AbstractQuasiNewtonUpdateRule,
-    MT<:AbstractMatrix,
-    B<:AbstractBasis,
-    V<:AbstractVectorTransportMethod,
-    F<:Union{<:Real,Nothing},
-}
-    return QuasiNewtonMatrixDirectionUpdate{U,B,V,MT,F}(
+        M::AbstractManifold,
+        update::U,
+        basis::B = default_basis(M),
+        m::MT = Matrix{Float64}(I, manifold_dimension(M), manifold_dimension(M));
+        initial_scale::F = 1.0,
+        vector_transport_method::V = default_vector_transport_method(M),
+    ) where {
+        U <: AbstractQuasiNewtonUpdateRule,
+        MT <: AbstractMatrix,
+        B <: AbstractBasis,
+        V <: AbstractVectorTransportMethod,
+        F <: Union{<:Real, Nothing},
+    }
+    return QuasiNewtonMatrixDirectionUpdate{U, B, V, MT, F}(
         basis, m, initial_scale, update, vector_transport_method
     )
 end
@@ -468,8 +468,8 @@ function (d::QuasiNewtonMatrixDirectionUpdate)(mp::AbstractManoptProblem, st)
     return d(r, mp, st)
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    r, mp::AbstractManoptProblem, st
-) where {T<:Union{InverseBFGS,InverseDFP,InverseSR1,InverseBroyden}}
+        r, mp::AbstractManoptProblem, st
+    ) where {T <: Union{InverseBFGS, InverseDFP, InverseSR1, InverseBroyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
@@ -479,8 +479,8 @@ function (d::QuasiNewtonMatrixDirectionUpdate{T})(
     return r
 end
 function (d::QuasiNewtonMatrixDirectionUpdate{T})(
-    r, mp::AbstractManoptProblem, st
-) where {T<:Union{BFGS,DFP,SR1,Broyden}}
+        r, mp::AbstractManoptProblem, st
+    ) where {T <: Union{BFGS, DFP, SR1, Broyden}}
     M = get_manifold(mp)
     p = get_iterate(st)
     X = get_gradient(st)
@@ -506,23 +506,23 @@ where the approximating operator is represented by ``m`` stored pairs of tangent
 vectors ``$(_math(:Sequence, _tex(:widehat, "s"), "i", "k-m", "k-1"))`` and ``$(_math(:Sequence, _tex(:widehat, "y"), "i", "k-m", "k-1"))`` in the ``k``-th iteration.
 For the calculation of the search direction ``X_k``, the generalisation of the two-loop recursion
 is used (see [HuangGallivanAbsil:2015](@cite)),
-since it only requires inner products and linear combinations of tangent vectors in ``$(_math(:TpM; p="p_k"))``.
-For that the stored pairs of tangent vectors ``$( _tex(:widehat, "s"))_i,  $(_tex(:widehat, "y"))_i``,
+since it only requires inner products and linear combinations of tangent vectors in ``$(_math(:TpM; p = "p_k"))``.
+For that the stored pairs of tangent vectors ``$(_tex(:widehat, "s"))_i,  $(_tex(:widehat, "y"))_i``,
 the gradient ``$(_tex(:grad)) f(p_k)`` of the objective function ``f`` in ``p_k``
 and the positive definite self-adjoint operator
 
 $(_doc_QN_B)
 
 are used. The two-loop recursion can be understood as that the [`InverseBFGS`](@ref) update
-is executed ``m`` times in a row on ``$(_tex(:Cal, "B"))^{(0)}_k[⋅]`` using the tangent vectors ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i``,
+is executed ``m`` times in a row on ``$(_tex(:Cal, "B"))^{(0)}_k[⋅]`` using the tangent vectors ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i``,
 and in the same time the resulting operator ``$(_tex(:Cal, "B"))^{LRBFGS}_k [⋅]`` is directly applied on ``$(_tex(:grad))f(x_k)``.
 When updating there are two cases: if there is still free memory, ``k < m``, the previously
-stored vector pairs ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i`` have to be
-transported into the upcoming tangent space ``$(_math(:TpM; p="p_{k+1}"))``.
-If there is no free memory, the oldest pair ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i``
-has to be discarded and then all the remaining vector pairs ``$( _tex(:widehat, "s"))_i,$( _tex(:widehat, "y"))_i``
-are transported into the tangent space ``$(_math(:TpM; p="p_{k+1}"))``.
-After that the new values ``s_k = $( _tex(:widehat, "s"))_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = $( _tex(:widehat, "y"))_k``
+stored vector pairs ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i`` have to be
+transported into the upcoming tangent space ``$(_math(:TpM; p = "p_{k+1}"))``.
+If there is no free memory, the oldest pair ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i``
+has to be discarded and then all the remaining vector pairs ``$(_tex(:widehat, "s"))_i,$(_tex(:widehat, "y"))_i``
+are transported into the tangent space ``$(_math(:TpM; p = "p_{k+1}"))``.
+After that the new values ``s_k = $(_tex(:widehat, "s"))_k = T^{S}_{x_k, α_k η_k}(α_k η_k)`` and ``y_k = $(_tex(:widehat, "y"))_k``
 are stored at the beginning. This process ensures that new information about the objective
 function is always included and the old, probably no longer relevant, information is discarded.
 
@@ -561,14 +561,14 @@ $(_var(:Field, :vector_transport_method))
 [`AbstractQuasiNewtonDirectionUpdate`](@ref)
 """
 mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
-    NT<:AbstractQuasiNewtonUpdateRule,
-    T,
-    F,
-    V<:AbstractVector{F},
-    G<:Union{F,Nothing},
-    VT<:AbstractVectorTransportMethod,
-    Proj,
-} <: AbstractQuasiNewtonDirectionUpdate
+        NT <: AbstractQuasiNewtonUpdateRule,
+        T,
+        F,
+        V <: AbstractVector{F},
+        G <: Union{F, Nothing},
+        VT <: AbstractVectorTransportMethod,
+        Proj,
+    } <: AbstractQuasiNewtonDirectionUpdate
     memory_s::CircularBuffer{T}
     memory_y::CircularBuffer{T}
     ξ::Vector{F}
@@ -579,28 +579,28 @@ mutable struct QuasiNewtonLimitedMemoryDirectionUpdate{
     message::String
 end
 function QuasiNewtonLimitedMemoryDirectionUpdate(
-    M::AbstractManifold,
-    p,
-    ::NT,
-    memory_size::Int;
-    initial_vector::T=zero_vector(M, p),
-    initial_scale::G=1.0,
-    (project!)::Proj=(copyto!),
-    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
-) where {
-    NT<:AbstractQuasiNewtonUpdateRule,
-    T,
-    VTM<:AbstractVectorTransportMethod,
-    Proj,
-    G<:Union{<:Real,Nothing},
-}
+        M::AbstractManifold,
+        p,
+        ::NT,
+        memory_size::Int;
+        initial_vector::T = zero_vector(M, p),
+        initial_scale::G = 1.0,
+        (project!)::Proj = (copyto!),
+        vector_transport_method::VTM = default_vector_transport_method(M, typeof(p)),
+    ) where {
+        NT <: AbstractQuasiNewtonUpdateRule,
+        T,
+        VTM <: AbstractVectorTransportMethod,
+        Proj,
+        G <: Union{<:Real, Nothing},
+    }
     s = isnothing(initial_scale) ? (p, initial_vector) : (p, initial_vector, initial_scale)
     mT = allocate_result_type(M, QuasiNewtonLimitedMemoryDirectionUpdate, s)
     m1 = zeros(mT, memory_size)
     m2 = zeros(mT, memory_size)
     _initial_state = !isnothing(initial_scale) ? convert(mT, initial_scale) : initial_scale
     return QuasiNewtonLimitedMemoryDirectionUpdate{
-        NT,T,mT,typeof(m1),typeof(_initial_state),VTM,Proj
+        NT, T, mT, typeof(m1), typeof(_initial_state), VTM, Proj,
     }(
         CircularBuffer{T}(memory_size),
         CircularBuffer{T}(memory_size),
@@ -621,14 +621,14 @@ function status_summary(d::QuasiNewtonLimitedMemoryDirectionUpdate{T}) where {T}
     return s
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
-    mp::AbstractManoptProblem, st
-)
+        mp::AbstractManoptProblem, st
+    )
     r = zero_vector(get_manifold(mp), get_iterate(st))
     return d(r, mp, st)
 end
 function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
-    r, mp::AbstractManoptProblem, st
-)
+        r, mp::AbstractManoptProblem, st
+    )
     isempty(d.message) || (d.message = "") # reset message
     M = get_manifold(mp)
     p = get_iterate(st)
@@ -664,7 +664,7 @@ function (d::QuasiNewtonLimitedMemoryDirectionUpdate{InverseBFGS})(
         end
     end
     if (last_safe_index == -1)
-        d.message = "$(d.message)$(length(d.message)>0 ? :"\n" : "")"
+        d.message = "$(d.message)$(length(d.message) > 0 ? :"\n" : "")"
         d.message = "$(d.message) All memory yield zero inner products, falling back to a gradient step."
 
         r .*= -1
@@ -753,17 +753,17 @@ Generate a cautious update for either a matrix based or a limited memory based u
 [`QuasiNewtonMatrixDirectionUpdate`](@ref)
 [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref)
 """
-mutable struct QuasiNewtonCautiousDirectionUpdate{U,Tθ} <:
-               AbstractQuasiNewtonDirectionUpdate where {
-    U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate}
-}
+mutable struct QuasiNewtonCautiousDirectionUpdate{U, Tθ} <:
+    AbstractQuasiNewtonDirectionUpdate where {
+        U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate},
+    }
     update::U
     θ::Tθ
 end
 function QuasiNewtonCautiousDirectionUpdate(
-    update::U; θ::Function=identity
-) where {U<:Union{QuasiNewtonMatrixDirectionUpdate,QuasiNewtonLimitedMemoryDirectionUpdate}}
-    return QuasiNewtonCautiousDirectionUpdate{U,typeof(θ)}(update, θ)
+        update::U; θ::Function = identity
+    ) where {U <: Union{QuasiNewtonMatrixDirectionUpdate, QuasiNewtonLimitedMemoryDirectionUpdate}}
+    return QuasiNewtonCautiousDirectionUpdate{U, typeof(θ)}(update, θ)
 end
 (d::QuasiNewtonCautiousDirectionUpdate)(mp::AbstractManoptProblem, st) = d.update(mp, st)
 function (d::QuasiNewtonCautiousDirectionUpdate)(r, mp::AbstractManoptProblem, st)

@@ -3,7 +3,7 @@
 # Objective.
 _doc_CR_cost = """
 ```math
-f(X) = $(_tex(:frac, 1,2)) $(_tex(:norm, _tex(:Cal, "A")*"[X] + b"; index="p"))^2,\\qquad X ∈ $(_math(:TpM)),
+f(X) = $(_tex(:frac, 1, 2)) $(_tex(:norm, _tex(:Cal, "A") * "[X] + b"; index = "p"))^2,\\qquad X ∈ $(_math(:TpM)),
 ```
 """
 @doc """
@@ -35,16 +35,16 @@ The first variants allocate for the result, the second variants work in-place.
 
 Generate the objective specifying whether the two parts work allocating or in-place.
 """
-mutable struct SymmetricLinearSystemObjective{E<:AbstractEvaluationType,TA,T} <:
-               AbstractManifoldObjective{E}
+mutable struct SymmetricLinearSystemObjective{E <: AbstractEvaluationType, TA, T} <:
+    AbstractManifoldObjective{E}
     A!!::TA
     b!!::T
 end
 
 function SymmetricLinearSystemObjective(
-    A::TA, b::T; evaluation::E=AllocatingEvaluation(), kwargs...
-) where {TA,T,E<:AbstractEvaluationType}
-    return SymmetricLinearSystemObjective{E,TA,T}(A, b)
+        A::TA, b::T; evaluation::E = AllocatingEvaluation(), kwargs...
+    ) where {TA, T, E <: AbstractEvaluationType}
+    return SymmetricLinearSystemObjective{E, TA, T}(A, b)
 end
 
 function set_parameter!(slso::SymmetricLinearSystemObjective, symbol::Symbol, value)
@@ -63,15 +63,15 @@ $(_doc_CR_cost)
 at `X`.
 """
 function get_cost(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
-)
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
+    )
     M = base_manifold(TpM)
     p = base_point(TpM)
     return 0.5 * norm(M, p, slso.A!!(M, p, X) + slso.b!!(M, p))^2
 end
 function get_cost(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X
-)
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X
+    )
     M = base_manifold(TpM)
     p = base_point(TpM)
     Y = zero_vector(M, p)
@@ -87,8 +87,8 @@ end
 evaluate the stored value for computing the right hand side ``b`` in ``$(_tex(:Cal, "A"))=-b``.
 """
 function get_b(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
-)
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}
+    )
     return slso.b!!(base_manifold(TpM), base_point(TpM))
 end
 function get_b(TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation})
@@ -113,8 +113,8 @@ function get_gradient(TpM::TangentSpace, slso::SymmetricLinearSystemObjective, X
     return get_hessian(TpM, slso, p, X) + get_b(TpM, slso)
 end
 function get_gradient!(
-    TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
-)
+        TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X
+    )
     M = base_manifold(TpM)
     p = base_point(TpM)
     # Evaluate A[X] + b
@@ -122,8 +122,8 @@ function get_gradient!(
     return Y
 end
 function get_gradient!(
-    TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X
-)
+        TpM::TangentSpace, Y, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X
+    )
     M = base_manifold(TpM)
     p = base_point(TpM)
     W = copy(M, p, Y)
@@ -144,13 +144,13 @@ $(_doc_CR_cost)
 Which is ``$(_tex(:Hess)) f(X)[Y] = $(_tex(:Cal, "A"))[V]``. This can be computed in-place of `W`.
 """
 function get_hessian(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
-)
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
+    )
     return slso.A!!(base_manifold(TpM), base_point(TpM), V)
 end
 function get_hessian(
-    TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
-)
+        TpM::TangentSpace, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
+    )
     M = base_manifold(TpM)
     p = base_point(TpM)
     W = copy(M, p, V)
@@ -158,16 +158,16 @@ function get_hessian(
     return W
 end
 function get_hessian!(
-    TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
-)
+        TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{AllocatingEvaluation}, X, V
+    )
     M = base_manifold(TpM)
     p = base_point(TpM)
     copyto!(M, W, p, slso.A!!(M, p, V))
     return W
 end
 function get_hessian!(
-    TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
-)
+        TpM::TangentSpace, W, slso::SymmetricLinearSystemObjective{InplaceEvaluation}, X, V
+    )
     return slso.A!!(base_manifold(TpM), W, base_point(TpM), V)
 end
 
@@ -201,15 +201,15 @@ Initialise the state with default values.
 * `Ad=copy(TpM, Ar)`
 * `α::R=0.0`
 * `β::R=0.0`
-$(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
+$(_var(:Keyword, :stopping_criterion; default = "[`StopAfterIteration`](@ref)`(`$(_link(:manifold_dimension))`)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`"))
 $(_var(:Keyword, :X))
 
 # See also
 
 [`conjugate_residual`](@ref)
 """
-mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
-               AbstractManoptSolverState
+mutable struct ConjugateResidualState{T, R, TStop <: StoppingCriterion} <:
+    AbstractManoptSolverState
     X::T
     r::T
     d::T
@@ -220,22 +220,22 @@ mutable struct ConjugateResidualState{T,R,TStop<:StoppingCriterion} <:
     β::R
     stop::TStop
     function ConjugateResidualState(
-        TpM::TangentSpace,
-        slso::SymmetricLinearSystemObjective;
-        X::T=rand(TpM),
-        r::T=(-get_gradient(TpM, slso, X)),
-        d::T=copy(TpM, r),
-        Ar::T=get_hessian(TpM, slso, X, r),
-        Ad::T=copy(TpM, Ar),
-        α::R=0.0,
-        β::R=0.0,
-        stopping_criterion::SC=StopAfterIteration(manifold_dimension(TpM)) |
-                               StopWhenGradientNormLess(1e-8),
-        kwargs...,
-    ) where {T,R,SC<:StoppingCriterion}
+            TpM::TangentSpace,
+            slso::SymmetricLinearSystemObjective;
+            X::T = rand(TpM),
+            r::T = (-get_gradient(TpM, slso, X)),
+            d::T = copy(TpM, r),
+            Ar::T = get_hessian(TpM, slso, X, r),
+            Ad::T = copy(TpM, Ar),
+            α::R = 0.0,
+            β::R = 0.0,
+            stopping_criterion::SC = StopAfterIteration(manifold_dimension(TpM)) |
+                StopWhenGradientNormLess(1.0e-8),
+            kwargs...,
+        ) where {T, R, SC <: StoppingCriterion}
         M = base_manifold(TpM)
         p = base_point(TpM)
-        crs = new{T,R,SC}()
+        crs = new{T, R, SC}()
         crs.X = X
         crs.r = r
         crs.d = d
@@ -290,7 +290,7 @@ Stop when re relative residual in the [`conjugate_residual`](@ref)
 is below a certain threshold, i.e.
 
 ```math
-$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)"),"c")) ≤ ε,
+$(_tex(:displaystyle))$(_tex(:frac, _tex(:norm, "r^{(k)"), "c")) ≤ ε,
 ```
 
 where ``c = $(_tex(:norm, "b"))`` of the initial vector from the vector field in ``$(_tex(:Cal, "A"))(p)[X] + b(p) = 0_p``,
@@ -320,13 +320,13 @@ mutable struct StopWhenRelativeResidualLess{R} <: StoppingCriterion
     ε::R
     norm_r::R
     at_iteration::Int
-    function StopWhenRelativeResidualLess(c::R, ε::R; norm_r::R=2 * c * ε) where {R}
+    function StopWhenRelativeResidualLess(c::R, ε::R; norm_r::R = 2 * c * ε) where {R}
         return new{R}(c, ε, norm_r, -1)
     end
 end
 function (swrr::StopWhenRelativeResidualLess)(
-    amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, k::Int
-)
+        amp::AbstractManoptProblem{<:TangentSpace}, crs::ConjugateResidualState, k::Int
+    )
     TpM = get_manifold(amp)
     M = base_manifold(TpM)
     p = base_point(TpM)
@@ -346,7 +346,7 @@ function (swrr::StopWhenRelativeResidualLess)(
 end
 function get_reason(swrr::StopWhenRelativeResidualLess)
     if (swrr.at_iteration >= 0)
-        return "After iteration #$(swrr.at_iteration) the algorithm stopped with a relative residual $(swrr.norm_r/swrr.c) < $(swrr.ε).\n"
+        return "After iteration #$(swrr.at_iteration) the algorithm stopped with a relative residual $(swrr.norm_r / swrr.c) < $(swrr.ε).\n"
     end
     return ""
 end

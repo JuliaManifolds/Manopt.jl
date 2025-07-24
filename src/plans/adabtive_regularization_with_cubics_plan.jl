@@ -22,25 +22,25 @@ cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite)
 with either an [`AbstractManifoldHessianObjective`](@ref) `objective` or an decorator containing such an objective.
 """
 mutable struct AdaptiveRagularizationWithCubicsModelObjective{
-    E<:AbstractEvaluationType,
-    O<:Union{ManifoldHessianObjective,AbstractDecoratedManifoldObjective},
-    R,
-} <: AbstractManifoldSubObjective{E,O}
+        E <: AbstractEvaluationType,
+        O <: Union{ManifoldHessianObjective, AbstractDecoratedManifoldObjective},
+        R,
+    } <: AbstractManifoldSubObjective{E, O}
     objective::O
     σ::R
 end
 function AdaptiveRagularizationWithCubicsModelObjective(
-    mho::O, σ::R=1.0
-) where {
-    E,O<:Union{AbstractManifoldHessianObjective{E},AbstractDecoratedManifoldObjective{E}},R
-}
-    return AdaptiveRagularizationWithCubicsModelObjective{E,O,R}(mho, σ)
+        mho::O, σ::R = 1.0
+    ) where {
+        E, O <: Union{AbstractManifoldHessianObjective{E}, AbstractDecoratedManifoldObjective{E}}, R,
+    }
+    return AdaptiveRagularizationWithCubicsModelObjective{E, O, R}(mho, σ)
 end
 function set_parameter!(
-    f::AdaptiveRagularizationWithCubicsModelObjective,
-    ::Union{Val{:σ},Val{:RegularizationParameter}},
-    σ,
-)
+        f::AdaptiveRagularizationWithCubicsModelObjective,
+        ::Union{Val{:σ}, Val{:RegularizationParameter}},
+        σ,
+    )
     f.σ = σ
     return f
 end
@@ -60,8 +60,8 @@ m(X) = f(p) + ⟨\operatorname{grad} f(p), X ⟩_p + \frac{1}{2} ⟨\operatornam
 at `X`, cf. Eq. (33) in [AgarwalBoumalBullinsCartis:2020](@cite).
 """
 function get_cost(
-    TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
-)
+        TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+    )
     M = base_manifold(TpM)
     p = TpM.point
     c = get_objective_cost(M, arcmo, p)
@@ -85,16 +85,16 @@ Evaluate the gradient of the [`AdaptiveRagularizationWithCubicsModelObjective`](
 at `X`, cf. Eq. (37) in [AgarwalBoumalBullinsCartis:2020](@cite).
 """
 function get_gradient(
-    TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
-)
+        TpM::TangentSpace, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+    )
     M = base_manifold(TpM)
     p = TpM.point
     G = get_objective_gradient(M, arcmo, p)
     return G + get_objective_hessian(M, arcmo, p, X) + arcmo.σ * norm(M, p, X) * X
 end
 function get_gradient!(
-    TpM::TangentSpace, Y, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
-)
+        TpM::TangentSpace, Y, arcmo::AdaptiveRagularizationWithCubicsModelObjective, X
+    )
     M = base_manifold(TpM)
     p = TpM.point
     get_objective_hessian!(M, Y, arcmo, p, X)

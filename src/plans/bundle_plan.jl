@@ -101,22 +101,22 @@ Here the first entry specifies the tolerance for ``ε`` (``c``),
 the second the tolerance for ``\lvert g \rvert`` (``\lvert d \rvert``), respectively.
 """
 mutable struct StopWhenLagrangeMultiplierLess{
-    T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}
-} <: StoppingCriterion
+        T <: Real, A <: AbstractVector{<:T}, B <: Union{Nothing, <:AbstractVector{<:String}},
+    } <: StoppingCriterion
     tolerances::A
     values::A
     names::B
     mode::Symbol
     at_iteration::Int
     function StopWhenLagrangeMultiplierLess(
-        tol::T; mode::Symbol=:estimate, names::B=nothing
-    ) where {T<:Real,B<:Union{Nothing,<:AbstractVector{<:String}}}
-        return new{T,Vector{T},B}([tol], zero([tol]), names, mode, -1)
+            tol::T; mode::Symbol = :estimate, names::B = nothing
+        ) where {T <: Real, B <: Union{Nothing, <:AbstractVector{<:String}}}
+        return new{T, Vector{T}, B}([tol], zero([tol]), names, mode, -1)
     end
     function StopWhenLagrangeMultiplierLess(
-        tols::A; mode::Symbol=:estimate, names::B=nothing
-    ) where {T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}}
-        return new{T,A,B}(tols, zero(tols), names, mode, -1)
+            tols::A; mode::Symbol = :estimate, names::B = nothing
+        ) where {T <: Real, A <: AbstractVector{<:T}, B <: Union{Nothing, <:AbstractVector{<:String}}}
+        return new{T, A, B}(tols, zero(tols), names, mode, -1)
     end
 end
 function get_reason(sc::StopWhenLagrangeMultiplierLess)
@@ -129,7 +129,7 @@ function get_reason(sc::StopWhenLagrangeMultiplierLess)
             tol_str = join(
                 [
                     "$si = $ai < $bi" for
-                    (si, ai, bi) in zip(sc.names, sc.values, sc.tolerances)
+                        (si, ai, bi) in zip(sc.names, sc.values, sc.tolerances)
                 ],
                 ", ",
             )
@@ -176,7 +176,7 @@ mutable struct DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
     status::Symbol
     old_value::Float64
     tol::Float64
-    function DebugWarnIfLagrangeMultiplierIncreases(warn::Symbol=:Once; tol=1e2)
+    function DebugWarnIfLagrangeMultiplierIncreases(warn::Symbol = :Once; tol = 1.0e2)
         return new(warn, Float64(Inf), tol)
     end
 end
