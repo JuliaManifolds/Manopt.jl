@@ -100,13 +100,22 @@ function (cs::ConstantStepsize)(
     ams::AbstractManoptSolverState,
     ::Any,
     args...;
-    X=zero_vector(get_manifold(amp), get_iterate(ams)),
-    gradient=get_gradient!(amp, X, get_iterate(ams)),
+    X=nothing,
+    gradient=nothing,
     kwargs...,
 )
     s = cs.length
     if cs.type == :absolute
-        ns = norm(get_manifold(amp), get_iterate(ams), gradient)
+        if isnothing(gradient)
+            if isnothing(X)
+                grad = get_gradient(amp, get_iterate(ams))
+            else
+                grad = get_gradient!(amp, X, get_iterate(ams))
+            end
+        else
+            grad = gradient
+        end
+        ns = norm(get_manifold(amp), get_iterate(ams), grad)
         if ns > eps(eltype(s))
             s /= ns
         end
