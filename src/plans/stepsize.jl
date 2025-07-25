@@ -402,12 +402,21 @@ function (a::ArmijoLinesearchStepsize)(
     s::AbstractManoptSolverState,
     k::Int,
     η=(-get_gradient(mp, get_iterate(s)));
-    X=zero_vector(get_manifold(mp), get_iterate(s)),
-    gradient=get_gradient!(mp, X, get_iterate(s)),
+    X=nothing,
+    gradient=nothing,
     kwargs...,
 )
     p = get_iterate(s)
-    return a(mp, p, gradient, η; initial_guess=a.initial_guess(mp, s, k, a.last_stepsize))
+    if isnothing(gradient)
+        if isnothing(X)
+            grad = get_gradient(mp, p)
+        else
+            grad = get_gradient!(mp, X, p)
+        end
+    else
+        grad = gradient
+    end
+    return a(mp, p, grad, η; initial_guess=a.initial_guess(mp, s, k, a.last_stepsize))
 end
 function (a::ArmijoLinesearchStepsize)(
     mp::AbstractManoptProblem, p, X, η; initial_guess=1.0, kwargs...
@@ -589,20 +598,29 @@ function (awng::AdaptiveWNGradientStepsize)(
     s::AbstractGradientSolverState,
     i,
     args...;
-    X=zero_vector(get_manifold(mp), get_iterate(s)),
-    gradient=get_gradient!(mp, X, get_iterate(s)),
+    X=nothing,
+    gradient=nothing,
     kwargs...,
 )
+    if isnothing(gradient)
+        if isnothing(X)
+            grad = get_gradient(mp, p)
+        else
+            grad = get_gradient!(mp, X, p)
+        end
+    else
+        grad = gradient
+    end
     M = get_manifold(mp)
     p = get_iterate(s)
-    isnan(awng.weight) || (awng.weight = norm(M, p, gradient)) # init ω_0
+    isnan(awng.weight) || (awng.weight = norm(M, p, grad)) # init ω_0
     if i == 0 # init fields
-        awng.weight = norm(M, p, gradient) # init ω_0
+        awng.weight = norm(M, p, grad) # init ω_0
         (awng.weight == 0) && (awng.weight = 1.0)
         awng.count = 0
         return 1 / awng.gradient_bound
     end
-    grad_norm = norm(M, p, gradient)
+    grad_norm = norm(M, p, grad)
     if grad_norm < awng.gradient_reduction * awng.weight # grad norm < αω_{k-1}
         if awng.count + 1 == awng.count_threshold
             awng.gradient_bound = awng.alternate_bound(
@@ -951,15 +969,24 @@ function (a::NonmonotoneLinesearchStepsize)(
     s::AbstractManoptSolverState,
     k::Int,
     η=(-get_gradient(mp, get_iterate(s)));
-    X=zero_vector(get_manifold(mp), get_iterate(s)),
-    gradient=get_gradient!(mp, X, get_iterate(s)),
+    X=nothing,
+    gradient=nothing,
     kwargs...,
 )
+    if isnothing(gradient)
+        if isnothing(X)
+            grad = get_gradient(mp, get_iterate(s))
+        else
+            grad = get_gradient!(mp, X, get_iterate(s))
+        end
+    else
+        grad = gradient
+    end
     if !has_storage(a.storage, PointStorageKey(:Iterate)) ||
         !has_storage(a.storage, VectorStorageKey(:Gradient))
         # first time call: get old grad/iterate and store.
         p_old = get_iterate(s)
-        X_old = gradient
+        X_old = grad
     else
         #fetch
         p_old = get_storage(a.storage, PointStorageKey(:Iterate))
@@ -970,7 +997,7 @@ function (a::NonmonotoneLinesearchStepsize)(
         get_manifold(mp),
         get_iterate(s),
         (M, p) -> get_cost(M, get_objective(mp), p),
-        gradient,
+        grad,
         η,
         p_old,
         X_old,
