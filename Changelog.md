@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
+* a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
+* used this keyword in `conjugate_gradient`
 
 ## [0.5.20] July 8, 2025
 
