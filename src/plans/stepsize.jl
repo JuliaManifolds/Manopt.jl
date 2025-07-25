@@ -409,9 +409,9 @@ function (a::ArmijoLinesearchStepsize)(
     p = get_iterate(s)
     if isnothing(gradient)
         if isnothing(X)
-            grad = get_gradient(mp, p)
+            grad = get_gradient(mp, get_iterate(s))
         else
-            grad = get_gradient!(mp, X, p)
+            grad = get_gradient!(mp, X, get_iterate(s))
         end
     else
         grad = gradient
@@ -604,9 +604,9 @@ function (awng::AdaptiveWNGradientStepsize)(
 )
     if isnothing(gradient)
         if isnothing(X)
-            grad = get_gradient(mp, p)
+            grad = get_gradient(mp, get_iterate(s))
         else
-            grad = get_gradient!(mp, X, p)
+            grad = get_gradient!(mp, X, get_iterate(s))
         end
     else
         grad = gradient
