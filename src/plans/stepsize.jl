@@ -10,8 +10,7 @@ and the current number of iterations are the arguments
 and returns a number, namely the stepsize to use.
 
 The functor usually should accept arbitrary keyword arguments. Common ones used are
-* `X`: memory for a tangent vector, initialised to a zero vector at the current iterate
-* `gradient`: the actual gradient at the current iterate, evaluated in-place of `X`.
+* `gradient=nothing`: to pass a pre-calculated gradient, otherwise it is computed.
 
 For most it is advisable to employ a [`ManifoldDefaultsFactory`](@ref). Then
 the function creating the factory should either be called `TypeOf` or if that is confusing or too generic, `TypeOfLength`
@@ -100,21 +99,12 @@ function (cs::ConstantStepsize)(
     ams::AbstractManoptSolverState,
     ::Any,
     args...;
-    X=nothing,
     gradient=nothing,
     kwargs...,
 )
     s = cs.length
     if cs.type == :absolute
-        if isnothing(gradient)
-            if isnothing(X)
-                grad = get_gradient(amp, get_iterate(ams))
-            else
-                grad = get_gradient!(amp, X, get_iterate(ams))
-            end
-        else
-            grad = gradient
-        end
+        grad = isnothing(gradient) ? get_gradient(amp, get_iterate(ams)) : gradient
         ns = norm(get_manifold(amp), get_iterate(ams), grad)
         if ns > eps(eltype(s))
             s /= ns
@@ -402,20 +392,11 @@ function (a::ArmijoLinesearchStepsize)(
     s::AbstractManoptSolverState,
     k::Int,
     η=(-get_gradient(mp, get_iterate(s)));
-    X=nothing,
     gradient=nothing,
     kwargs...,
 )
     p = get_iterate(s)
-    if isnothing(gradient)
-        if isnothing(X)
-            grad = get_gradient(mp, get_iterate(s))
-        else
-            grad = get_gradient!(mp, X, get_iterate(s))
-        end
-    else
-        grad = gradient
-    end
+    grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     return a(mp, p, grad, η; initial_guess=a.initial_guess(mp, s, k, a.last_stepsize))
 end
 function (a::ArmijoLinesearchStepsize)(
@@ -598,19 +579,10 @@ function (awng::AdaptiveWNGradientStepsize)(
     s::AbstractGradientSolverState,
     i,
     args...;
-    X=nothing,
     gradient=nothing,
     kwargs...,
 )
-    if isnothing(gradient)
-        if isnothing(X)
-            grad = get_gradient(mp, get_iterate(s))
-        else
-            grad = get_gradient!(mp, X, get_iterate(s))
-        end
-    else
-        grad = gradient
-    end
+    grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     M = get_manifold(mp)
     p = get_iterate(s)
     isnan(awng.weight) || (awng.weight = norm(M, p, grad)) # init ω_0
@@ -969,19 +941,10 @@ function (a::NonmonotoneLinesearchStepsize)(
     s::AbstractManoptSolverState,
     k::Int,
     η=(-get_gradient(mp, get_iterate(s)));
-    X=nothing,
     gradient=nothing,
     kwargs...,
 )
-    if isnothing(gradient)
-        if isnothing(X)
-            grad = get_gradient(mp, get_iterate(s))
-        else
-            grad = get_gradient!(mp, X, get_iterate(s))
-        end
-    else
-        grad = gradient
-    end
+    grad = isnothing(gradient) ? get_gradient(mp, get_iterate(s)) : gradient
     if !has_storage(a.storage, PointStorageKey(:Iterate)) ||
         !has_storage(a.storage, VectorStorageKey(:Gradient))
         # first time call: get old grad/iterate and store.
