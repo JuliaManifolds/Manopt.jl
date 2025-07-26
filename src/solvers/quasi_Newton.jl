@@ -405,7 +405,7 @@ function step_solver!(mp::AbstractManoptProblem, qns::QuasiNewtonState, k)
             end
         end
     end
-    α = qns.stepsize(mp, qns, k, qns.η)
+    α = qns.stepsize(mp, qns, k, qns.η; gradient=qns.X)
     copyto!(M, qns.p_old, get_iterate(qns))
     ManifoldsBase.retract_fused!(M, qns.p, qns.p, qns.η, α, qns.retraction_method)
     qns.η .*= α
