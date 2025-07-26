@@ -269,7 +269,11 @@ function step_solver!(amp::AbstractManoptProblem, pgms::ProjectedGradientMethodS
     get_gradient!(amp, pgms.X, pgms.p)
     # Gradient step in q
     retract!(
-        M, pgms.q, pgms.p, -get_stepsize(amp, pgms, k; gradient=pgms.X) * pgms.X, pgms.retraction_method
+        M,
+        pgms.q,
+        pgms.p,
+        -get_stepsize(amp, pgms, k; gradient=pgms.X) * pgms.X,
+        pgms.retraction_method,
     )
     get_projected_point!(amp, pgms.q, pgms.q)
     # Determine search direction
