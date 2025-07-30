@@ -79,7 +79,7 @@ The parameters are stored to the global settings using [`Preferences.jl`](https:
 Passing a `value` of `""` deletes the corresponding entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
 """
-function set_parameter!(e::Symbol, value::Union{String,Bool, <:Number})
+function set_parameter!(e::Symbol, value::Union{String, Bool, <:Number})
     return if length(value) == 0
         @delete_preferences!(string(e))
         v = get_parameter(e, Val(:default))
