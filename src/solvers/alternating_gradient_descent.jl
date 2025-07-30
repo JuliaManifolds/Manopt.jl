@@ -149,7 +149,7 @@ function (ag::AlternatingGradientRule)(
     (k == 1) && zero_vector!(M, ag.X, agds.p)
     # update order(k)th component in-place
     get_gradient!(amp, ag.X[M, agds.order[agds.k]], agds.p, agds.order[agds.k])
-    return agds.stepsize(amp, agds, k; gradient=ag.X), ag.X # return current full gradient
+    return agds.stepsize(amp, agds, k; gradient = ag.X), ag.X # return current full gradient
 end
 
 @doc """

@@ -352,7 +352,7 @@ function step_solver!(amp::AbstractManoptProblem, ips::InteriorPointNewtonState,
     end
     set_parameter!(ips.stepsize, :DecreaseCondition, :τ, N, q)
     # determine stepsize
-    α = ips.stepsize(ips.step_problem, ips.step_state, k; gradient=X)
+    α = ips.stepsize(ips.step_problem, ips.step_state, k; gradient = X)
     # Update Parameters and slack
     retract!(M, ips.p, ips.p, α * ips.X, ips.retraction_method)
     if m > 0

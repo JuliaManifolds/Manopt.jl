@@ -196,7 +196,7 @@ function initialize_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodSta
 end
 function step_solver!(mp::AbstractManoptProblem, sgs::SubGradientMethodState, k)
     get_subgradient!(mp, sgs.X, sgs.p)
-    step = get_stepsize(mp, sgs, k; gradient=sgs.X)
+    step = get_stepsize(mp, sgs, k; gradient = sgs.X)
     M = get_manifold(mp)
     retract!(M, sgs.p, sgs.p, -step * sgs.X, sgs.retraction_method)
     (get_cost(mp, sgs.p) < get_cost(mp, sgs.p_star)) && copyto!(M, sgs.p_star, sgs.p)

@@ -336,7 +336,7 @@ function step_solver!(amp::AbstractManoptProblem, fws::FrankWolfeState, k)
     # solve sub task
     solve!(fws.sub_problem, fws.sub_state) # call the subsolver
     q = get_solver_result(fws.sub_state)
-    s = fws.stepsize(amp, fws, k; gradient=fws.X)
+    s = fws.stepsize(amp, fws, k; gradient = fws.X)
     # step along the geodesic
     retract!(
         M,
@@ -359,7 +359,7 @@ function step_solver!(
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = copy(M, fws.p)
     fws.sub_problem(M, q, fws.p, fws.X) # evaluate the closed form solution and store the result in q
-    s = fws.stepsize(amp, fws, k; gradient=fws.X)
+    s = fws.stepsize(amp, fws, k; gradient = fws.X)
     # step along the geodesic
     retract!(
         M,
@@ -382,7 +382,7 @@ function step_solver!(
     get_gradient!(amp, fws.X, fws.p) # evaluate grad F in place for O.X
     q = fws.sub_problem(M, fws.p, fws.X) # evaluate the closed form solution and store the result in O.p
     # step along the geodesic
-    s = fws.stepsize(amp, fws, k; gradient=fws.X)
+    s = fws.stepsize(amp, fws, k; gradient = fws.X)
     # step along the geodesic
     retract!(
         M,
