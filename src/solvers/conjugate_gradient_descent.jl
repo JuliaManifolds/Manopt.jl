@@ -176,7 +176,7 @@ end
 function step_solver!(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
     M = get_manifold(amp)
     copyto!(M, cgs.p_old, cgs.p)
-    current_stepsize = get_stepsize(amp, cgs, k, cgs.δ)
+    current_stepsize = get_stepsize(amp, cgs, k, cgs.δ; gradient=cgs.X)
     ManifoldsBase.retract_fused!(
         M, cgs.p, cgs.p, cgs.δ, current_stepsize, cgs.retraction_method
     )

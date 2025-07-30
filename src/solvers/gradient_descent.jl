@@ -75,9 +75,10 @@ function GradientDescentState(
     )
 end
 function (r::IdentityUpdateRule)(
-        mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
-    )
-    return get_stepsize(mp, s, k), get_gradient!(mp, s.X, s.p)
+    mp::AbstractManoptProblem, s::AbstractGradientSolverState, k
+)
+    get_gradient!(mp, s.X, s.p)
+    return get_stepsize(mp, s, k; gradient=s.X), s.X
 end
 function default_stepsize(
         M::AbstractManifold,
