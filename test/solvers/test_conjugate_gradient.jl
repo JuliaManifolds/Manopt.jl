@@ -278,4 +278,53 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
         @test f(M, p) < f(M, p0)
         @test isapprox(M, p, p_star; atol=5e-8)
     end
+
+    @testset "Restart Condition test" begin
+        n = 4
+        A = diagm(1:n)
+        M = Sphere(n-1)
+
+        e_func(p) = dot(p, A*p)
+
+        obj = ManifoldFirstOrderObjective(;
+            cost = (M,p) -> e_func(p),
+            gradient = (M,p) -> A*p - dot(p, A * p) * p
+        )
+        p0 = 0.5 * [1.0, 1.0, 1.0, 1.0]
+
+        stopping_criterion=StopAfterIteration(30)
+        get_stepsize() = Manopt.ArmijoLinesearchStepsize(
+            M; initial_stepsize=1.0, initial_guess = (args...) -> 1.0
+        )
+
+        p1 = conjugate_gradient_descent(
+            M,
+            obj,
+            p0;
+            restart_condition = RestartNever(),
+            stopping_criterion,
+            stepsize = get_stepsize()
+        )
+
+        p2 = conjugate_gradient_descent(
+            M,
+            obj,
+            p0;
+            restart_condition = RestartDescent(),
+            stopping_criterion,
+            stepsize = get_stepsize()
+        )
+
+        p3 = conjugate_gradient_descent(
+            M,
+            obj,
+            p0;
+            restart_condition = RestartSufficientDescent(0.5),
+            stopping_criterion,
+            stepsize = get_stepsize()
+        )
+        # sufficient descent should perform best, descent better than no restart
+        @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p3)
+        @test e_func(p3) ≈ 0 atol = 1e-3
+    end
 end
