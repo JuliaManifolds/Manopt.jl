@@ -60,7 +60,7 @@ function get_parameter(e::Symbol, args...; default = get_parameter(Val(e), Val(:
     return @load_preference("$(e)", default)
 end
 function get_parameter(
-        e::Symbol, s::Symbol, args...; default = get_parameter(Val(e), Val(:default))
+        e::Symbol, ::Symbol, args...; default = get_parameter(Val(e), Val(:default))
     )
     return @load_preference("$(e)", default)
 end # Handle empty defaults
@@ -79,7 +79,7 @@ The parameters are stored to the global settings using [`Preferences.jl`](https:
 Passing a `value` of `""` deletes the corresponding entry from the preferences.
 Whenever the `LocalPreferences.toml` is modified, this is also issued as an `@info`.
 """
-function set_parameter!(e::Symbol, value::Union{String, Bool, <:Number})
+function set_parameter!(e::Symbol, value::Union{String,Bool, <:Number})
     return if length(value) == 0
         @delete_preferences!(string(e))
         v = get_parameter(e, Val(:default))
