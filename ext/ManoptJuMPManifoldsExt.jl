@@ -41,6 +41,8 @@ function JuMP.vectorize(
     return p.value # is a vector already
 end
 
-MJE._shape(m::M, ::Manifolds.HyperboloidPoint) where {M} = MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}(m)
+function MJE._shape(m::M, ::Manifolds.HyperboloidPoint) where {M}
+    return MJE.ManifoldPointShape{M,Manifolds.HyperboloidPoint}(m)
+end
 
 end # module ManoptJuMPManifoldsExt
