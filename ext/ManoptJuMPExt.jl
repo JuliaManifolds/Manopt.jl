@@ -623,37 +623,31 @@ and the [`ManifoldSet`](@ref) in which they should belong as well as the
 shape of the manifold, that is, a [`ManifoldArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, array, M::ManifoldsBase.AbstractManifold)
-    shape = _shape(M)
-    return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(array, shape), ManifoldSet(M), shape
-    )
+    if array isa JuMP.ScalarVariable
+        return ManifoldVariable(array.info.start, M)
+    else
+        shape = _shape(M)
+        return JuMP.VariablesConstrainedOnCreation(
+            JuMP.vectorize(array, shape), ManifoldSet(M), shape
+        )
+    end
 end
 
 #
 #
 # NonArrayPoints define own variable
 # TODO: Document
-struct ManifoldVariable{P<:ManifoldsBase.AbstractManifoldPoint} <: JuMP.AbstractVariable
-    p::P
+struct ManifoldVariable{P<:ManifoldsBase.AbstractManifoldPoint,M<:ManifoldsBase.AbstractManifold} <: JuMP.AbstractVariable
+    start::P
+    manifold::M
 end
-# Taken / adapted from https://github.com/JuliaManifolds/Manopt.jl/pull/466#issuecomment-2862071520
-# TODO: I think I would prefer PoincareHalfPlanePoint(p) in Hyperbolic(3),
-# but it seems the in and such where not present for polynomials?
-function JuMP.build_variable(
-    _error::Function,
-    info::JuMP.VariableInfo,
-    p::ManifoldsBase.AbstractManifoldPoint;
-    extra_kwargs...,
-)
-    # cvarchecks(_error, info; extra_kwargs...) # What does this do? Necessary?
-    # _warnbounds(_error, p, info)              # What does this do?
-    return ManifoldVariable(p)
-end
-#
-#
+
 # TODO: Understand parameters here and document them
-function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, name::String="")
-    return nothing
+function JuMP.add_variable(model::JuMP.AbstractModel, v::ManifoldVariable, ::String="")
+    shape = _shape(v.manifold, v.start)
+    n = length(JuMP.vectorize(v.start, shape))
+    vars = [JuMP.VariableRef(model) for _ in 1:n]
+    return JuMP.reshape_vector(vars, shape)
 end
 
 """
