@@ -637,7 +637,9 @@ end
 #
 # NonArrayPoints define own variable
 # TODO: Document
-struct ManifoldVariable{P<:ManifoldsBase.AbstractManifoldPoint,M<:ManifoldsBase.AbstractManifold} <: JuMP.AbstractVariable
+struct ManifoldVariable{
+    P<:ManifoldsBase.AbstractManifoldPoint,M<:ManifoldsBase.AbstractManifold
+} <: JuMP.AbstractVariable
     start::P
     manifold::M
 end
