@@ -1032,6 +1032,9 @@ end
 @doc """
 RestartSufficientDescent <: AbstractRestartCondition
 
+## Fields
+* `κ`: the sufficient decrease factor
+
 A functor `(problem, state, k) -> corr` that corrects every non sufficient descent direction
 ```math
     ⟨X_k, δ_k) ≤ - κ ||X_k||^2
