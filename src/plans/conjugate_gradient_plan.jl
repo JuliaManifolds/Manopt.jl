@@ -89,7 +89,7 @@ mutable struct ConjugateGradientDescentState{
         sC::StoppingCriterion,
         s::Stepsize,
         dC::DirectionUpdateRule,
-        res_cond::AbstractRestartCondition=RestartNever(),
+        res_cond::AbstractRestartCondition=NeverRestart(),
         retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
         vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
@@ -116,7 +116,7 @@ function ConjugateGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
-    restart_condition::AbstractRestartCondition=RestartNever(),
+    restart_condition::AbstractRestartCondition=NeverRestart(),
     retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
     stepsize::Stepsize=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
@@ -1009,28 +1009,28 @@ end
 
 
 @doc """
-    RestartNever <: AbstractRestartCondition
+    NeverRestart <: AbstractRestartCondition
 
 A functor `(problem, state, k) -> false` that corrects no search direction.
 """
-struct RestartNever <: AbstractRestartCondition end
+struct NeverRestart <: AbstractRestartCondition end
 
-function (corr::RestartNever)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+function (corr::NeverRestart)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
     return false
 end
 
 @doc """
-RestartDescent <: AbstractRestartCondition
+RestartOnNonDescent <: AbstractRestartCondition
 
 A functor `(problem, state, k) -> corr` that corrects every non descent direction.
 """
-struct RestartDescent <: AbstractRestartCondition end
-function (corr::RestartDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+struct RestartOnNonDescent <: AbstractRestartCondition end
+function (corr::RestartOnNonDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
     return get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >= 0
 end
 
 @doc """
-RestartSufficientDescent <: AbstractRestartCondition
+RestartOnNonSufficientDescent <: AbstractRestartCondition
 
 ## Fields
 * `κ`: the sufficient decrease factor
@@ -1040,10 +1040,10 @@ A functor `(problem, state, k) -> corr` that corrects every non sufficient desce
     ⟨X_k, δ_k) ≤ - κ ||X_k||^2
 ```
 """
-struct RestartSufficientDescent <: AbstractRestartCondition 
+struct RestartOnNonSufficientDescent <: AbstractRestartCondition 
     κ
 end
-function (corr::RestartSufficientDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+function (corr::RestartOnNonSufficientDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
     return (get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) 
             > - corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true))
 end

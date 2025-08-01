@@ -301,7 +301,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             M,
             obj,
             p0;
-            restart_condition = RestartNever(),
+            restart_condition = NeverRestart(),
             stopping_criterion,
             stepsize = get_stepsize()
         )
@@ -310,7 +310,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             M,
             obj,
             p0;
-            restart_condition = RestartDescent(),
+            restart_condition = RestartOnNonDescent(),
             stopping_criterion,
             stepsize = get_stepsize()
         )
@@ -319,7 +319,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             M,
             obj,
             p0;
-            restart_condition = RestartSufficientDescent(0.5),
+            restart_condition = RestartOnNonSufficientDescent(0.5),
             stopping_criterion,
             stepsize = get_stepsize()
         )

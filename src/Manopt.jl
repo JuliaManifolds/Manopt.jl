@@ -467,9 +467,9 @@ export SteepestDescentCoefficient,
     ConjugateGradientBealeRestart
 # Direction Corrections
 export AbstractRestartCondition
-export RestartNever,
-    RestartDescent,
-    RestartSufficientDescent
+export NeverRestart,
+    RestartOnNonDescent,
+    RestartOnNonSufficientDescent
 #
 # Solvers
 export adaptive_regularization_with_cubics,
