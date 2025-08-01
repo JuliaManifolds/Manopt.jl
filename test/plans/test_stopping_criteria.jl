@@ -196,7 +196,7 @@ using Manifolds, ManifoldsBase, Manopt, ManoptTestSuite, Test, ManifoldsBase, Da
     end
 
     @testset "Stop with step size" begin
-        mgo = ManifoldGradientObjective((M, x) -> x^2, x -> 2x)
+        mgo = ManifoldGradientObjective((M, x) -> x^2, (M, x) -> 2x)
         dmp = DefaultManoptProblem(Euclidean(), mgo)
         gds = GradientDescentState(
             Euclidean();
