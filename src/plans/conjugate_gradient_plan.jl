@@ -66,7 +66,7 @@ mutable struct ConjugateGradientDescentState{
     T,
     F,
     TCoeff<:DirectionUpdateRuleStorage,
-    TResCond<:AbstractRestartCondition,
+    TRC<:AbstractRestartCondition,
     TStepsize<:Stepsize,
     TStop<:StoppingCriterion,
     TRetr<:AbstractRetractionMethod,
@@ -78,25 +78,25 @@ mutable struct ConjugateGradientDescentState{
     δ::T
     β::F
     coefficient::TCoeff
-    restart_condition::TResCond
+    restart_condition::TRC
     stepsize::TStepsize
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::VTM
-    function ConjugateGradientDescentState{P,T}(
+    function ConjugateGradientDescentState{P,T,TsC,TStep,TRC,TRetr,VTM}(
         M::AbstractManifold,
         p::P,
-        sC::StoppingCriterion,
-        s::Stepsize,
+        sC::TsC,
+        s::TStep,
         dC::DirectionUpdateRule,
-        res_cond::AbstractRestartCondition=NeverRestart(),
-        retr::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-        vtr::AbstractVectorTransportMethod=default_vector_transport_method(M),
+        res_cond::TRC=NeverRestart(),
+        retr::TRetr=default_retraction_method(M, typeof(p)),
+        vtr::VTM=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
-    ) where {P,T}
+    ) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
         coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,βT,typeof(coef),typeof(res_cond),typeof(s),typeof(sC),typeof(retr),typeof(vtr)}()
+        cgs = new{P,T,βT,typeof(coef),AbstractRestartCondition,TStep,TsC,TRetr,VTM}()
         cgs.p = p
         cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
@@ -116,17 +116,17 @@ function ConjugateGradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     coefficient::Union{DirectionUpdateRule,ManifoldDefaultsFactory}=ConjugateDescentCoefficient(),
-    restart_condition::AbstractRestartCondition=NeverRestart(),
-    retraction_method::AbstractRetractionMethod=default_retraction_method(M, typeof(p)),
-    stepsize::Stepsize=default_stepsize(
+    restart_condition::TRC=NeverRestart(),
+    retraction_method::TRetr=default_retraction_method(M, typeof(p)),
+    stepsize::TStep=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
-    stopping_criterion::StoppingCriterion=StopAfterIteration(500) |
+    stopping_criterion::TsC=StopAfterIteration(500) |
                                           StopWhenGradientNormLess(1e-8),
-    vector_transport_method=default_vector_transport_method(M, typeof(p)),
+    vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
-) where {P,T}
-    return ConjugateGradientDescentState{P,T}(
+) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
+    return ConjugateGradientDescentState{P,T,TsC,TStep,TRC,TRetr,VTM}(
         M,
         p,
         stopping_criterion,
@@ -1011,7 +1011,7 @@ end
 @doc """
     NeverRestart <: AbstractRestartCondition
 
-A functor `(problem, state, k) -> false` that corrects no search direction.
+A functor `(problem, state, k) -> false` that never indicates to restart.
 """
 struct NeverRestart <: AbstractRestartCondition end
 
@@ -1022,7 +1022,7 @@ end
 @doc """
 RestartOnNonDescent <: AbstractRestartCondition
 
-A functor `(problem, state, k) -> corr` that corrects every non descent direction.
+A functor `(problem, state, k) -> corr` that indicates to restart when the search direction is not a descent direction.
 """
 struct RestartOnNonDescent <: AbstractRestartCondition end
 function (corr::RestartOnNonDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
@@ -1035,10 +1035,12 @@ RestartOnNonSufficientDescent <: AbstractRestartCondition
 ## Fields
 * `κ`: the sufficient decrease factor
 
-A functor `(problem, state, k) -> corr` that corrects every non sufficient descent direction
+A functor `(problem, state, k) -> corr` that indicates to restart when the search direction is not a sufficient descent direction, i.e.
 ```math
-    ⟨X_k, δ_k) ≤ - κ ||X_k||^2
+    ⟨X, δ) ≤ - κ ||X||^2
 ```
+for gradient `X` and search direction `δ`.
+
 """
 struct RestartOnNonSufficientDescent <: AbstractRestartCondition 
     κ
