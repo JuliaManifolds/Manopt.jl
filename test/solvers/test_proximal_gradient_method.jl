@@ -73,13 +73,41 @@ using Manopt, Manifolds, Test, ManifoldDiff, ManoptTestSuite
         st = Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; initial_stepsize=1.0, strategy=:convex, stop_when_stepsize_less=2.0
         )
-        @test_logs (:warn,) st(mp, pgms, 1)
+
+        @test st.warm_start_factor == 1.0
+        @test st.last_stepsize == 1.0
         @test get_initial_stepsize(st) == 1.0
         pr = prox_h(M, 1.0, p0)
         @test get_proximal_map(M, ob, 1.0, p0) == pr
         @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
             M; strategy=:neither
         )
+        @test_throws DomainError Manopt.ProximalGradientMethodBacktrackingStepsize(
+            M; warm_start_factor=-1.0
+        )
+
+        @testset "Backtracking Warnings" begin
+            dw1 = DebugWarnIfStepsizeCollapsed(:Once)
+            @test repr(dw1) == "DebugWarnIfStepsizeCollapsed()"
+            pgms_warn = ProximalGradientMethodState(
+                M;
+                p=p0,
+                stepsize=Manopt.ProximalGradientMethodBacktrackingStepsize(
+                    M; initial_stepsize=1.0, strategy=:convex, stop_when_stepsize_less=10.0
+                ),
+                stopping_criterion=StopAfterIteration(200),
+            )
+            @test_logs (:warn,) (:warn,) dw1(mp, pgms_warn, 1)
+            dw2 = DebugWarnIfStepsizeCollapsed(:Once)
+            pgms_const = ProximalGradientMethodState(
+                M;
+                p=p0,
+                stepsize=Manopt.ConstantStepsize(M, 1.0),
+                stopping_criterion=StopAfterIteration(2),
+            )
+            @test_throws DomainError dw2(mp, pgms_const, 1)
+            @test isnothing(dw2(mp, pgms_const, 0))
+        end
 
         # Test subsolver with subgradient
         ∂h(M, q) = ManifoldDiff.subgrad_distance(M, p, q, 1; atol=1e-8)

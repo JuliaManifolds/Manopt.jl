@@ -403,6 +403,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P,T} <: Stepsize
     candidate_point::P
     last_stepsize::T
     stop_when_stepsize_less::T
+    warm_start_factor::T
 
     function ProximalGradientMethodBacktrackingStepsize(
         M::AbstractManifold;
@@ -411,6 +412,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P,T} <: Stepsize
         contraction_factor::T=0.5,
         strategy::Symbol=:nonconvex,
         stop_when_stepsize_less::T=1e-8,
+        warm_start_factor::T=1.0,
     ) where {T}
         0 < sufficient_decrease < 1 ||
             throw(DomainError(sufficient_decrease, "sufficient_decrease must be in (0, 1)"))
@@ -425,6 +427,8 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P,T} <: Stepsize
                 stop_when_stepsize_less, "stop_when_stepsize_less must be positive"
             ),
         )
+        warm_start_factor > 0 ||
+            throw(DomainError(warm_start_factor, "warm_start_factor must be positive"))
 
         p = rand(M)
         return new{typeof(p),T}(
@@ -435,6 +439,7 @@ mutable struct ProximalGradientMethodBacktrackingStepsize{P,T} <: Stepsize
             p,
             initial_stepsize,
             stop_when_stepsize_less,
+            warm_start_factor,
         )
     end
 end
@@ -445,10 +450,11 @@ function Base.show(io::IO, pgb::ProximalGradientMethodBacktrackingStepsize)
     s = """
     ProximalGradientMethodBacktrackingStepsize(;
         contraction_factor=$(pgb.contraction_factor),
-        Initial_stepsize=$(pgb.initial_stepsize),
+        initial_stepsize=$(pgb.initial_stepsize),
         stop_when_stepsize_less=$(pgb.stop_when_stepsize_less),
         sufficient_decrease=$(pgb.sufficient_decrease),
-        strategy=$(pgb.strategy)
+        strategy=$(pgb.strategy),
+        warm_start_factor=$(pgb.warm_start_factor),
     )
     """
     return print(io, s)
@@ -462,10 +468,10 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
     p = st.a  # Current point (post-acceleration)
     X = st.X  # Current gradient
 
-    # For convex case, start with the last stepsize (warm start)
-    # For nonconvex case, reset to initial stepsize
+    # For the convex case, start with the last stepsize (warm start)
+    # For the nonconvex case, reset to initial stepsize
     λ = if s.strategy === :convex && i > 1
-        s.last_stepsize
+        min(s.initial_stepsize, s.warm_start_factor * s.last_stepsize)
     else
         s.initial_stepsize
     end
@@ -494,12 +500,12 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
 
         # Compute log_p(candidate_point) and its squared norm for the conditions
         log_p_q = inverse_retract(M, p, candidate_point, st.inverse_retraction_method)
-        log_p_q_norm_squared = norm(M, p, log_p_q)^2
+        squared_distance = distance(M, p, candidate_point)^2
 
         if s.strategy === :nonconvex
             # Nonconvex descent condition
             if get_cost(mp, p) - get_cost(mp, candidate_point) >=
-                (s.sufficient_decrease / λ) * log_p_q_norm_squared
+                (s.sufficient_decrease / λ) * squared_distance
                 s.last_stepsize = λ
                 return λ
             end
@@ -508,7 +514,7 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
             g_q = get_cost_smooth(M, objective, candidate_point)
 
             # Convex descent condition
-            if g_q <= g_p + inner(M, p, X, log_p_q) + (1 / 2λ) * log_p_q_norm_squared
+            if g_q <= g_p + inner(M, p, X, log_p_q) + (1 / 2λ) * squared_distance
                 s.last_stepsize = λ
                 return λ
             end
@@ -517,7 +523,6 @@ function (s::ProximalGradientMethodBacktrackingStepsize)(
         # Reduce step size
         λ *= s.contraction_factor
     end
-    @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
     return λ
 end
 
@@ -711,4 +716,54 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
     return print(
         io, "StopWhenGradientMappingNormLess($(c.threshold))\n    $(status_summary(c))"
     )
+end
+
+@doc raw"""
+    DebugWarnIfStepsizeCollapsed <: DebugAction
+
+print a warning if the backtracking stopped because the stepsize fell below a given threshold in the [`proximal_gradient_method`](@ref).
+This threshold is specified by the `stop_when_stepsize_less` field of the [`ProximalGradientMethodBacktrackingStepsize`](@ref).
+
+# Constructor
+
+    DebugWarnIfStepsizeCollapsed(warn=:Once;)
+
+Initialize the warning to warning level (`:Once`).
+
+The `warn` level can be set to `:Once` to only warn the first time the cost increases,
+to `:Always` to report an increase every time it happens, and it can be set to `:No`
+to deactivate the warning, then this [`DebugAction`](@ref) is inactive.
+All other symbols are handled as if they were `:Always`
+"""
+mutable struct DebugWarnIfStepsizeCollapsed <: DebugAction
+    status::Symbol
+    function DebugWarnIfStepsizeCollapsed(warn::Symbol=:Once;)
+        return new(warn)
+    end
+end
+function show(io::IO, di::DebugWarnIfStepsizeCollapsed)
+    return print(io, "DebugWarnIfStepsizeCollapsed()")
+end
+
+function (d::DebugWarnIfStepsizeCollapsed)(
+    ::AbstractManoptProblem, st::ProximalGradientMethodState, k::Int
+)
+    (k < 1) && (return nothing)
+    s = st.stepsize
+    (!isa(s, Manopt.ProximalGradientMethodBacktrackingStepsize)) && throw(
+        DomainError(
+            s,
+            "DebugWarnIfStepsizeCollapsed only works with `ProximalGradientMethodBacktrackingStepsize` stepsizes.",
+        ),
+    )
+    if d.status !== :No
+        if s.last_stepsize ≤ s.stop_when_stepsize_less
+            @warn "Backtracking stopped because the stepsize fell below the threshold $(s.stop_when_stepsize_less)."
+            if d.status === :Once
+                @warn "Further warnings will be suppressed, use DebugWarnIfLagrangeMultiplierIncreases(:Always) to get all warnings."
+                d.status = :No
+            end
+        end
+    end
+    return nothing
 end
