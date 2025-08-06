@@ -568,16 +568,24 @@ Base.length(shape::ManifoldArrayShape) = prod(shape.size)
 """
     _vectorize!(res::Vector{T}, array::Array{T,N}, shape::ManifoldArrayShape{N}) where {T,N}
 
-Inplace version of `res = JuMP.vectorize(array, shape)`.
+A local, in-place variant of [`JuMP.vectorize`](@extref `JuMP.vectorize`)`(array, shape)`,
+that is, it converts the `array` representing a point or a tangent vector on a manifold
+to a vector that fits into the framework of [`JuMP.jl`](@extref JuMP :std:doc:`index`).
+
+The reverse is done by [`_reshape_vector!`](@ref).
 """
 function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ManifoldArrayShape{N}) where {T,N}
     return copyto!(res, array)
 end
 
 """
-    _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ManifoldArrayShape{N}) where {T,N}
+    _reshape_vector!(res::Array{T,N}, vec::Vector{T}, shape::ManifoldArrayShape{N}) where {T,N}
 
-Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
+A local, in-place variant of [`JuMP.reshape_vector`](@extref `JuMP.reshape_vector`)`(vec, shape)`,
+that is, it converts a vector that fits into the framework of [`JuMP.jl`](@extref JuMP :std:doc:`index`)
+to an array representing a point or a tangent vector on a manifold.
+
+The reverse is done by [`_vectorize!`](@ref).
 """
 function _reshape_vector!(
     res::Array{T,N}, vec::Vector{T}, ::ManifoldArrayShape{N}
