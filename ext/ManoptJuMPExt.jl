@@ -531,11 +531,11 @@ end
 @doc """
     TangentVectorShape{M<:ManifoldsBase.AbstractManifold,T}
 
-Represent a tangect vector on the tangent bundle of a manifold `M`.
+Represent a tangent vector on the tangent bundle of a manifold `M`.
 
 # Fields
 * `manifold::M`: The manifold on which the tangent vector resides
-* `p::P` (optioal) the base point P the tangent space is at where the vector of type `T`
+* `p::P` (optional) the base point P the tangent space is at where the vector of type `T`
     is defined.
 
 # Constructor
@@ -600,16 +600,37 @@ Return a zero element of the shape `shape`.
 """
 _zero(shape::ManifoldArrayShape{N}) where {N} = zeros(shape.size)
 
+"""
+    JuMP.vectorize(p::Array{T,N}, shape::ManifoldArrayShape{N}) where {T,N}
+
+Given a point `p` as an ``N``-dimensional array representing a point on a certain
+manifold, reshape it to a vector, which is necessary within [`JuMP`](@extref JuMP :std:doc:`index`).
+
+For the inverse see [`JuMP.reshape_vector`](@ref JuMP.reshape_vector(::Vector, ::ManifoldArrayShape)).
+"""
 function JuMP.vectorize(array::Array{T,N}, ::ManifoldArrayShape{N}) where {T,N}
     return vec(array)
 end
 
+"""
+    JuMP.reshape_vector(vector::Vector, shape::ManifoldArrayShape)
+
+Given some vector representation `vector` used within [`JuMP`](@extref JuMP :std:doc:`index`) of a point on a manifold represents points
+by arrays, use the information from the `shape` to reshape it back into such an array.
+
+For the inverse see [`JuMP.vectorize`](@ref JuMP.vectorize(::Array, ::ManifoldArrayShape)).
+"""
 function JuMP.reshape_vector(vector::Vector, shape::ManifoldArrayShape)
     return reshape(vector, shape.size)
 end
 
-JuMP.reshape_set(set::ManifoldSet, shape::ManifoldArrayShape) = set.manifold
-JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointShape) = set.manifold
+#TODO: Document
+JuMP.reshape_set(set::ManifoldSet, ::ManifoldArrayShape) = set.manifold
+
+#TODO: Document
+JuMP.reshape_set(set::ManifoldSet, ::ManifoldPointShape) = set.manifold
+#TODO: Document
+JuMP.reshape_set(set::ManifoldSet, ::TangentVectorShape) = set.manifold
 
 function _shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldArrayShape(ManifoldsBase.representation_size(m))
@@ -623,15 +644,16 @@ function JuMP.in_set_string(mime, set::ManifoldsBase.AbstractManifold)
 end
 
 """
-    JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
+    JuMP.build_variable(::Function, array, manifold::ManifoldsBase.AbstractManifold)
 
-Build a [`VariablesConstrainedOnCreation`](@extref `JuMP.VariablesConstrainedOnCreation`) object containing variables
-and the [`ManifoldSet`](@ref) in which they should belong as well as the
-`shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, a [`ManifoldArrayShape`](@ref).
+TODO:
+* Document
+* either here or with different dispatch: cover also the non-array case? If so, how?
 """
 function JuMP.build_variable(::Function, array, M::ManifoldsBase.AbstractManifold)
     if array isa JuMP.ScalarVariable
+        #TODO: UUnderstand what .start is
+        #TODO: maybe do this in a separate dispatch?
         return ManifoldVariable(array.info.start, M)
     else
         shape = _shape(M)
@@ -643,8 +665,10 @@ end
 
 #
 #
-# NonArrayPoints define own variable
+# NonArrayPoints define own variable, since they are not just an array/scalar variables
 # TODO: Document
+# TODO: Understand the difference between this and the shape
+# TODO: Which further fields do we need? a `VariableInfo`? What is expected to be in here? The VariableInfo docs do not tell much.
 struct ManifoldVariable{
     P<:ManifoldsBase.AbstractManifoldPoint,M<:ManifoldsBase.AbstractManifold
 } <: JuMP.AbstractVariable
