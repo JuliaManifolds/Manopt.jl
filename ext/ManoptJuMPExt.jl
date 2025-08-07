@@ -625,7 +625,7 @@ end
 """
     JuMP.build_variable(::Function, func, manifold::ManifoldsBase.AbstractManifold)
 
-Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
+Build a [`VariablesConstrainedOnCreation`](@extref `JuMP.VariablesConstrainedOnCreation`) object containing variables
 and the [`ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
 shape of the manifold, that is, a [`ManifoldArrayShape`](@ref).
