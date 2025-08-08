@@ -96,7 +96,7 @@ mutable struct ConjugateGradientDescentState{
     ) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
         coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,βT,typeof(coef),AbstractRestartCondition,TStep,TsC,TRetr,VTM}()
+        cgs = new{P,T,βT,typeof(coef),TRC,TStep,TsC,TRetr,VTM}()
         cgs.p = p
         cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
