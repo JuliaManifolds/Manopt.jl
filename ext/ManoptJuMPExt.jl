@@ -98,7 +98,8 @@ as a [`MOI.AbstractScalarFunction`](@extref JuMP :jl:type:`MathOptInterface.Abst
 # Fields
 * `func::MO`: The [`AbstractManifoldObjective`](@ref) function to be wrapped.
 """
-struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
+struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
+       MOI.AbstractScalarFunction
     func::MO
 end
 
@@ -255,9 +256,7 @@ end
 Return `true` indicating that [`ManoptOptimizer`](@ref) support optimization on
 variables constrained to belong in a vectorized manifold.
 """
-function MOI.supports_add_constrained_variables(
-    ::ManoptOptimizer, ::Type{<:ManifoldSet}
-)
+function MOI.supports_add_constrained_variables(::ManoptOptimizer, ::Type{<:ManifoldSet})
     return true
 end
 
@@ -486,7 +485,6 @@ For the inverse see [`JuMP.vectorize`](@ref JuMP.vectorize(::Array, ::ManifoldPo
 function JuMP.reshape_vector(vector::Vector, shape::ManifoldPointArrayShape)
     return reshape(vector, shape.size)
 end
-
 
 function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointArrayShape)
     return set.manifold
