@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `quasi_Newton`
   * `projected_gradient_method`
 
+### Changed
+
+* remodeeled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
+
 ## [0.5.20] July 8, 2025
 
 ### Added

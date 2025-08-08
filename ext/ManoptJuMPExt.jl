@@ -60,18 +60,31 @@ function Manopt.JuMP_Optimizer(args...)
     return ManoptOptimizer(args...)
 end
 
-struct VectorizedManifold{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+"""
+    ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
+
+Model a manifold from [`ManifoldsBase.jl`](@extref) as a vectorial set in the
+`MathOptInterface` (`MOI`).
+This is a slight misuse of notation, since the manifold itself might not be embedded,
+but just be parametrized in a certain way.
+
+# Fields
+
+* `manifold::M`: The manifold in which the variables are constrained to lie.
+  This is a [`ManifoldsBase.AbstractManifold`](@extref) object.
+"""
+struct ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
     manifold::M
 end
 
 """
-    MOI.dimension(set::VectorizedManifold)
+    MOI.dimension(set::ManifoldSet)
 
 Return the representation side of points on the (vectorized in representation) manifold.
 As the MOI variables are real, this means if the [`representation_size`](@extref `ManifoldsBase.representation_size-Tuple{AbstractManifold}`)
 yields (in product) `n`, this refers to the vectorized point / tangent vector  from (a subset of ``ℝ^n``).
 """
-function MOI.dimension(set::VectorizedManifold)
+function MOI.dimension(set::ManifoldSet)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
@@ -182,7 +195,7 @@ end
 
 Return `true` indicating that `Manopt.ManoptOptimizer` implements
 `MOI.add_constrained_variables` and `MOI.set` for
-`MOI.ObjectiveFunction` so it can be used with [`JuMP.direct_model`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.direct_model)
+`MOI.ObjectiveFunction` so it can be used with [`JuMP.direct_model`](@extref)
 and does not require a `MOI.Utilities.CachingOptimizer`.
 See See [`MOI.supports_incremental_interface`](@extref JuMP :jl:function:`MathOptInterface.supports_incremental_interface`).
 """
@@ -200,25 +213,25 @@ function MOI.copy_to(dest::ManoptOptimizer, src::MOI.ModelLike)
 end
 
 """
-    MOI.supports_add_constrained_variables(::ManoptOptimizer, ::Type{<:VectorizedManifold})
+    MOI.supports_add_constrained_variables(::ManoptOptimizer, ::Type{<:ManifoldSet})
 
 Return `true` indicating that `Manopt.ManoptOptimizer` support optimization on
 variables constrained to belong in a vectorized manifold.
 """
 function MOI.supports_add_constrained_variables(
-    ::ManoptOptimizer, ::Type{<:VectorizedManifold}
+    ::ManoptOptimizer, ::Type{<:ManifoldSet}
 )
     return true
 end
 
 """
-    MOI.add_constrained_variables(model::ManoptOptimizer, set::VectorizedManifold)
+    MOI.add_constrained_variables(model::ManoptOptimizer, set::ManifoldSet)
 
-Add `MOI.dimension(set)` variables constrained in `set` and return the list
+Add [`MOI.dimension`](@extref JuMP :jl:function:`MathOptInterface.dimension`)`(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables manifold as a set.
 """
-function MOI.add_constrained_variables(model::ManoptOptimizer, set::VectorizedManifold)
+function MOI.add_constrained_variables(model::ManoptOptimizer, set::ManifoldSet)
     F = MOI.VectorOfVariables
     if !isnothing(model.manifold)
         throw(
@@ -245,20 +258,20 @@ Return whether `vi` is a valid variable index.
 """
 function MOI.is_valid(model::ManoptOptimizer, vi::MOI.VariableIndex)
     return !isnothing(model.manifold) &&
-           1 <= vi.value <= MOI.dimension(VectorizedManifold(model.manifold))
+           1 <= vi.value <= MOI.dimension(ManifoldSet(model.manifold))
 end
 
 """
     MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@ref) of the [`Manopt.JuMP_VectorizedManifold`](@ref).
+to the [`MOI.dimension`](@extref JuMP :jl:function:`MathOptInterface.dimension`) of the [`ManifoldSet`](@ref).
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
         return 0
     else
-        return MOI.dimension(VectorizedManifold(model.manifold))
+        return MOI.dimension(ManifoldSet(model.manifold))
     end
 end
 
@@ -413,7 +426,7 @@ function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
     return reshape(vector, shape.size)
 end
 
-function JuMP.reshape_set(set::VectorizedManifold, shape::ArrayShape)
+function JuMP.reshape_set(set::ManifoldSet, shape::ArrayShape)
     return set.manifold
 end
 
@@ -432,14 +445,14 @@ end
     JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
 
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
-and the [`Manopt.JuMP_VectorizedManifold`](@ref) in which they should belong as well as the
+and the [`ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, [`Manopt.JuMP_ArrayShape`](@ref).
+shape of the manifold, that is, [`ArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)
     return JuMP.VariablesConstrainedOnCreation(
-        JuMP.vectorize(func, shape), VectorizedManifold(m), shape
+        JuMP.vectorize(func, shape), ManifoldSet(m), shape
     )
 end
 
@@ -476,7 +489,7 @@ end
 """
     MOI.get(model::ManoptOptimizer, ::MOI.PrimalStatus)
 
-Return `MOI.NO_SOLUTION` if `optimize!` hasn't been called yet and
+Return [`MOI.NO_SOLUTION`](@extref JuMP :jl:constant:`MathOptInterface.NO_SOLUTION`) if `optimize!` hasn't been called yet and
 `MOI.FEASIBLE_POINT` otherwise indicating that a solution is available
 to query with `MOI.VariablePrimalStart`.
 """
@@ -491,7 +504,7 @@ end
 """
     MOI.get(::ManoptOptimizer, ::MOI.DualStatus)
 
-Returns `MOI.NO_SOLUTION` indicating that there is no dual solution
+Returns [`MOI.NO_SOLUTION`](@extref JuMP :jl:constant:`MathOptInterface.NO_SOLUTION`) indicating that there is no dual solution
 available.
 """
 MOI.get(::ManoptOptimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
@@ -499,7 +512,7 @@ MOI.get(::ManoptOptimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 """
     MOI.get(model::ManoptOptimizer, ::MOI.RawStatusString)
 
-Return a `String` containing `Manopt.get_reason` without the ending newline
+Return a `String` containing [`get_reason`](@ref) without the ending newline
 character.
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.RawStatusString)
