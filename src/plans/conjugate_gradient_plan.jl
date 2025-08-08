@@ -83,7 +83,7 @@ mutable struct ConjugateGradientDescentState{
     stop::TStop
     retraction_method::TRetr
     vector_transport_method::VTM
-    function ConjugateGradientDescentState{P,T,TsC,TStep,TRC,TRetr,VTM}(
+    function ConjugateGradientDescentState(
         M::AbstractManifold,
         p::P,
         sC::TsC,
