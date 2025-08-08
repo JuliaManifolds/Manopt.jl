@@ -13,12 +13,12 @@ const MOI = JuMP.MOI
 Represent a solver from `Manopt.jl` within the [`MathOptInterface` (MOI)](@extref JuMP :std:label:`The-MOI-interface`) framework of [`JuMP.jl`](@extref JuMP :std:doc:`index`)
 
 # Fields
-* `problem::([`AbstractManoptProblem`](@ref) a problem in manopt, especially
+* `problem::`[`AbstractManoptProblem`](@ref) a problem in manopt, especially
     containing the manifold and the objective function. It can be constructed as soon as
     the manifold and the objective are present.
-* `manifold::`([`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) the manifold on which the optimization is performed.
-* `objective::`([`AbstractManifoldObjective`](@ref) the objective function to be optimized.
-* `state::`([`AbstractManoptSolverState`](@ref) the state specifying the solver to use.
+* `manifold::`[`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) the manifold on which the optimization is performed.
+* `objective::`[`AbstractManifoldObjective`](@ref) the objective function to be optimized.
+* `state::`[`AbstractManoptSolverState`](@ref) the state specifying the solver to use.
 * `variable_primal_start::Vector{Union{Nothing,Float64}}` starting value for the solver,
     in a vectorized form that [`JuMP.jl`](@extref JuMP :std:doc:`index`) requires.
 * `sense::`[`MOI.OptimizationSense`](@extref JuMP :jl:type:`MathOptInterface.OptimizationSense`) the sense of optimization,
