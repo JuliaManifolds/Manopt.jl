@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* remodeeled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
+* remodeled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
+* the internal `VectorizedManifold` is now called `ManifoldSet`
+* the internal `ArrayShape` is not called `ManifoldPointArrayShape`
 
 ## [0.5.20] July 8, 2025
 

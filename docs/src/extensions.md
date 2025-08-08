@@ -70,9 +70,9 @@ Manopt.Rn
 Manopt.Rn_default
 ```
 
-## JuMP.jl
+## [JuMP.jl](@extref JuMP :std:doc:`index`)
 
-Manopt can be used using the [JuMP.jl](https://github.com/jump-dev/JuMP.jl) interface.
+Manopt can be used from within [`JuMP.jl`](@extref JuMP :std:doc:`index`).
 The manifold is provided in the `@variable` macro. Note that until now,
 only variables (points on manifolds) are supported, that are arrays, especially structs do not yet work.
 The algebraic expression of the objective function is specified in the `@objective` macro.
@@ -89,8 +89,8 @@ optimize!(model)
 solution_summary(model)
 ```
 
-Several functions from the [Mathematical Optimization Interface](https://github.com/jump-dev/MathOptInterface.jl) (MOI) are
-extended when both `Manopt.jl and [JuMP.jl](https://jump.dev) are loaded:
+Several functions from the [Mathematical Optimization Interface (MOI)](@extref JuMP :std:label:`The-MOI-interface`) are
+extended when both `Manopt.jl` and [`JuMP.jl`](@extref JuMP :std:doc:`index`) are loaded:
 
 ```@docs
 Manopt.JuMP_Optimizer

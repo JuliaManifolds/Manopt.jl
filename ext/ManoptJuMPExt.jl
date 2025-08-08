@@ -16,7 +16,7 @@ Represent a solver from `Manopt.jl` within the [`MathOptInterface` (MOI)](@extre
 * `problem::([`AbstractManoptProblem`](@ref) a problem in manopt, especially
     containing the manifold and the objective function. It can be constructed as soon as
     the manifold and the objective are present.
-* `manifold::`([`AbstractManifold`](@ref) the manifold on which the optimization is performed.
+* `manifold::`([`AbstractManifold`](@extref `ManifoldsBase.AbstractManifold`) the manifold on which the optimization is performed.
 * `objective::`([`AbstractManifoldObjective`](@ref) the objective function to be optimized.
 * `state::`([`AbstractManoptSolverState`](@ref) the state specifying the solver to use.
 * `variable_primal_start::Vector{Union{Nothing,Float64}}` starting value for the solver,
@@ -53,7 +53,7 @@ end
 """
     Manopt.JuMP_Optimizer()
 
-Represent a solver from `Manopt.jl` within the `MathOptInterface` (`MOI`) framework.
+Represent a solver from `Manopt.jl` within the [`MathOptInterface` (MOI)](@extref JuMP :std:label:`The-MOI-interface`) framework.
 See [`ManoptOptimizer`](@ref) for the fields and their meaning.
 """
 function Manopt.JuMP_Optimizer(args...)
@@ -64,7 +64,7 @@ end
     ManifoldSet{M<:ManifoldsBase.AbstractManifold} <: MOI.AbstractVectorSet
 
 Model a manifold from [`ManifoldsBase.jl`](@extref) as a vectorial set in the
-`MathOptInterface` (`MOI`).
+[`MathOptInterface` (MOI)](@extref JuMP :std:label:`The-MOI-interface`).
 This is a slight misuse of notation, since the manifold itself might not be embedded,
 but just be parametrized in a certain way.
 
@@ -88,19 +88,50 @@ function MOI.dimension(set::ManifoldSet)
     return prod(ManifoldsBase.representation_size(set.manifold))
 end
 
-struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <:
-       MOI.AbstractScalarFunction
+@doc """
+    RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
+A wrapper for a [`AbstractManifoldObjective`](@ref) that can be used
+as a [`MOI.AbstractScalarFunction`](@extref JuMP :jl:type:`MathOptInterface.AbstractScalarFunction`).
+
+
+
+# Fields
+* `func::MO`: The [`AbstractManifoldObjective`](@ref) function to be wrapped.
+"""
+struct RiemannianFunction{MO<:Manopt.AbstractManifoldObjective} <: MOI.AbstractScalarFunction
     func::MO
 end
 
+@doc """
+    JuMP.jump_function_type(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
+
+The [`JuMP.jl`](@extref JuMP :std:doc:`index`) function type of a function of type [`RiemannianFunction`](@ref) for any [`AbstractModel`](@extref JuMP.AbstractModel)
+is that function type itself
+"""
 function JuMP.jump_function_type(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
     return F
 end
 
+@doc """
+    JuMP.jump_function(::JuMP.AbstractModel, F::Type{<:RiemannianFunction})
+
+The [`JuMP.jl`](@extref JuMP :std:doc:`index`) function of a [`RiemannianFunction`](@ref) for any [`AbstractModel`](@extref JuMP.AbstractModel)
+is that function itself.
+"""
 JuMP.jump_function(::JuMP.AbstractModel, f::RiemannianFunction) = f
 
+#
+# The string representation
+# maybe not document this since it seems to be mainly for display reasons
 JuMP.function_string(mime::MIME, f::RiemannianFunction) = string(f.func)
 
+"""
+    MOI.Utilities.map_indices(index_map::Function, func::RiemannianFunction)
+
+The original docstring states something about substituting some variable indices
+by their index map variants.
+On a [`RiemannianFunction`](@ref) there is nothing to substitute,
+"""
 MOI.Utilities.map_indices(::Function, func::RiemannianFunction) = func
 
 # We we don't support `MOI.modify` and `RiemannianFunction` is not mutable, no need to copy anything
@@ -111,6 +142,12 @@ Base.copy(func::RiemannianFunction) = func
 # It will then be allowed to go through all the MOI layers because it is of the right type
 # We will then receive it in `MOI.set(::ManoptOptimizer, ::MOI.ObjectiveFunction, RiemannianFunction)`
 # where we will unwrap it and recover `func`.
+@doc """
+    JuMP.set_objective_function(model::JuMP.Model, obj::Manopt.AbstractManifoldObjective)
+
+Set the objective function of a [`JuMP.Model`](@extref) `model` to an [`AbstractManifoldObjective`](@ref) `obj`.
+This allows to use `@objective` with an objective from `Manopt.jl`.
+"""
 function JuMP.set_objective_function(
     model::JuMP.Model, func::Manopt.AbstractManifoldObjective
 )
@@ -123,7 +160,7 @@ end
 Return the version of the Manopt solver, it corresponds to the version of
 Manopt.jl.
 """
-MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) = "0.4.37"
+MOI.get(::ManoptOptimizer, ::MOI.SolverVersion) = "Manopt.jl $(pkgversion(Manopt))"
 
 function MOI.is_empty(model::ManoptOptimizer)
     return isnothing(model.manifold) &&
@@ -133,7 +170,7 @@ function MOI.is_empty(model::ManoptOptimizer)
 end
 
 """
-    MOI.empty!(model::ManoptJuMPExt.ManoptOptimizer)
+    MOI.empty!(model::ManoptOptimizer)
 
 Clear all model data from `model` but keep the `options` set.
 """
@@ -163,7 +200,7 @@ end
 """
     MOI.get(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
 
-Return last `value` set by `MOI.set(model, attr, value)`.
+Return last `value` set by [`set`](@extref `MathOptInterface.set`)`(model, attr, value)`.
 """
 function MOI.get(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
     return model.options[attr.name]
@@ -183,7 +220,7 @@ end
 """
     MOI.get(::ManoptOptimizer, ::MOI.SolverName)
 
-Return the name of the `ManoptOptimizer` with the value of
+Return the name of the [`ManoptOptimizer`](@ref) with the value of
 the `descent_state_type` option.
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.SolverName)
@@ -193,20 +230,20 @@ end
 """
     MOI.supports_incremental_interface(::ManoptOptimizer)
 
-Return `true` indicating that `Manopt.ManoptOptimizer` implements
-`MOI.add_constrained_variables` and `MOI.set` for
-`MOI.ObjectiveFunction` so it can be used with [`JuMP.direct_model`](@extref)
-and does not require a `MOI.Utilities.CachingOptimizer`.
-See See [`MOI.supports_incremental_interface`](@extref JuMP :jl:function:`MathOptInterface.supports_incremental_interface`).
+Return `true` indicating that [`ManoptOptimizer`](@ref) implements
+[`add_constrained_variables`](@extref `MathOptInterface.add_constrained_variables`) and [`set`](@extref `MathOptInterface.set`) for
+[`ObjectiveFunction`](@extref `MathOptInterface.ObjectiveFunction`) so it can be used with [`direct_model`](@extref `JuMP.direct_model`)
+and does not require a [`CachingOptimizer`](@extref `MathOptInterface.Utilities.CachingOptimizer`).
+See See [`supports_incremental_interface`](@extref `MathOptInterface.supports_incremental_interface`).
 """
 MOI.supports_incremental_interface(::ManoptOptimizer) = true
 
 """
     MOI.copy_to(dest::ManoptOptimizer, src::MOI.ModelLike)
 
-Because `supports_incremental_interface(dest)` is `true`, this simply
-uses `MOI.Utilities.default_copy_to` and copies the variables with
-`MOI.add_constrained_variables` and the objective sense with `MOI.set`.
+Because [`supports_incremental_interface`](@extref `MathOptInterface.supports_incremental_interface`)`(dest)` is `true`, this simply
+uses [`default_copy_to`](@extref `MathOptInterface.Utilities.default_copy_to`) and copies the variables with
+[`add_constrained_variables`](@extref `MathOptInterface.add_constrained_variables`) and the objective sense with [`set`](@extref `MathOptInterface.set`).
 """
 function MOI.copy_to(dest::ManoptOptimizer, src::MOI.ModelLike)
     return MOI.Utilities.default_copy_to(dest, src)
@@ -215,7 +252,7 @@ end
 """
     MOI.supports_add_constrained_variables(::ManoptOptimizer, ::Type{<:ManifoldSet})
 
-Return `true` indicating that `Manopt.ManoptOptimizer` support optimization on
+Return `true` indicating that [`ManoptOptimizer`](@ref) support optimization on
 variables constrained to belong in a vectorized manifold.
 """
 function MOI.supports_add_constrained_variables(
@@ -227,7 +264,7 @@ end
 """
     MOI.add_constrained_variables(model::ManoptOptimizer, set::ManifoldSet)
 
-Add [`MOI.dimension`](@extref JuMP :jl:function:`MathOptInterface.dimension`)`(set)` variables constrained in `set` and return the list
+Add [`dimension`](@extref `MathOptInterface.dimension`)`(set)` variables constrained in `set` and return the list
 of variable indices that can be used to reference them as well a constraint
 index for the constraint enforcing the membership of the variables manifold as a set.
 """
@@ -265,7 +302,7 @@ end
     MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
 
 Return the number of variables added in the model, this corresponds
-to the [`MOI.dimension`](@extref JuMP :jl:function:`MathOptInterface.dimension`) of the [`ManifoldSet`](@ref).
+to the [`dimension`](@extref JuMP :jl:function:`MathOptInterface.dimension`) of the [`ManifoldSet`](@ref).
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
     if isnothing(model.manifold)
@@ -276,9 +313,9 @@ function MOI.get(model::ManoptOptimizer, ::MOI.NumberOfVariables)
 end
 
 """
-    MOI.supports(::Manopt.ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
+    MOI.supports(::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
 
-Return `true` indicating that `Manopt.ManoptOptimizer` supports starting values
+Return `true` indicating that [`ManoptOptimizer`](@ref) supports starting values
 for the variables.
 """
 function MOI.supports(
@@ -324,8 +361,8 @@ end
 """
     MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
 
-Modify the objective sense to either `MOI.MAX_SENSE`, `MOI.MIN_SENSE` or
-`MOI.FEASIBILITY_SENSE`.
+Modify the objective sense to either [`MAX_SENSE`](@extref), [`MIN_SENSE`](@extref) or
+[`FEASIBILITY_SENSE`](@extref).
 """
 function MOI.set(model::ManoptOptimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
@@ -335,7 +372,7 @@ end
 """
     MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense)
 
-Return the objective sense, defaults to `MOI.FEASIBILITY_SENSE` if no sense has
+Return the objective sense, defaults to [`FEASIBILITY_SENSE`](@extref) if no sense has
 already been set.
 """
 MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense) = model.sense
@@ -414,24 +451,49 @@ function MOI.optimize!(model::ManoptOptimizer)
     return nothing
 end
 
-struct ArrayShape{N} <: JuMP.AbstractShape
+@doc """
+    ManifoldPointArrayShape{N} <: JuMP.AbstractShape
+
+Represent some generic `AbstractArray` of a certain size representing an point
+on a manifold
+
+# Fields
+
+* `size::NTuple{N,Int}`: The size of the array
+"""
+struct ManifoldPointArrayShape{N} <: JuMP.AbstractShape
     size::NTuple{N,Int}
 end
 
-function JuMP.vectorize(array::Array{T,N}, ::ArrayShape{M}) where {T,N,M}
+"""
+    JuMP.vectorize(p::Array{T,N}, shape::ManifoldPointArrayShape{N}) where {T,N}
+
+Given a point `p` as an ``N``-dimensional array representing a point on a certain
+manifold, reshape it to a vector, which is necessary within [`JuMP`](@extref JuMP :std:doc:`index`).
+For the inverse see [`JuMP.reshape_vector`](@ref JuMP.reshape_vector(::Vector, ::ManifoldPointArrayShape)).
+"""
+function JuMP.vectorize(array::Array{T,N}, ::ManifoldPointArrayShape{M}) where {T,N,M}
     return vec(array)
 end
 
-function JuMP.reshape_vector(vector::Vector, shape::ArrayShape)
+"""
+    JuMP.reshape_vector(vector::Vector, shape::ManifoldPointArrayShape)
+
+Given some vector representation `vector` used within [`JuMP`](@extref JuMP :std:doc:`index`) of a point on a manifold represents points
+by arrays, use the information from the `shape` to reshape it back into such an array.
+For the inverse see [`JuMP.vectorize`](@ref JuMP.vectorize(::Array, ::ManifoldPointArrayShape)).
+"""
+function JuMP.reshape_vector(vector::Vector, shape::ManifoldPointArrayShape)
     return reshape(vector, shape.size)
 end
 
-function JuMP.reshape_set(set::ManifoldSet, shape::ArrayShape)
+
+function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointArrayShape)
     return set.manifold
 end
 
 function _shape(m::ManifoldsBase.AbstractManifold)
-    return ArrayShape(ManifoldsBase.representation_size(m))
+    return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
 end
 
 _in(mime::MIME"text/plain") = "in"
@@ -447,7 +509,7 @@ end
 Build a `JuMP.VariablesConstrainedOnCreation` object containing variables
 and the [`ManifoldSet`](@ref) in which they should belong as well as the
 `shape` that can be used to go from the vectorized MOI representation to the
-shape of the manifold, that is, [`ArrayShape`](@ref).
+shape of the manifold, that is, [`ManifoldPointArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
     shape = _shape(m)
@@ -459,9 +521,9 @@ end
 """
     MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
 
-Return `MOI.OPTIMIZE_NOT_CALLED` if `optimize!` hasn't been called yet and
-`MOI.LOCALLY_SOLVED` otherwise indicating that the solver has solved the
-problem to local optimality the value of `MOI.RawStatusString` for more
+Return [`OPTIMIZE_NOT_CALLED`](@extref `MathOptInterface.OPTIMIZE_NOT_CALLED`) if [`optimize!`](@extref `JuMP.optimize!`) hasn't been called yet and
+[`LOCALLY_SOLVED`](@extref `MathOptInterface.LOCALLY_SOLVED`) otherwise indicating that the solver has solved the
+problem to local optimality the value of [`RawStatusString`](@extref `MathOptInterface.RawStatusString`) for more
 details on why the solver stopped.
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.TerminationStatus)
@@ -475,7 +537,7 @@ end
 """
     MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
 
-Return `0` if `optimize!` hasn't been called yet and
+Return `0` if [`optimize!`](@extref `JuMP.optimize!`) hasn't been called yet and
 `1` otherwise indicating that one solution is available.
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.ResultCount)
@@ -490,8 +552,8 @@ end
     MOI.get(model::ManoptOptimizer, ::MOI.PrimalStatus)
 
 Return [`MOI.NO_SOLUTION`](@extref JuMP :jl:constant:`MathOptInterface.NO_SOLUTION`) if `optimize!` hasn't been called yet and
-`MOI.FEASIBLE_POINT` otherwise indicating that a solution is available
-to query with `MOI.VariablePrimalStart`.
+[`MOI.FEASIBLE_POINT`](@extref `MathOptInterface.FEASIBLE_POINT`) if it is otherwise indicating that a solution is available
+to query with [`VariablePrimalStart`](@extref `MathOptInterface.VariablePrimalStart`).
 """
 function MOI.get(model::ManoptOptimizer, ::MOI.PrimalStatus)
     if isnothing(model.state)
@@ -504,7 +566,7 @@ end
 """
     MOI.get(::ManoptOptimizer, ::MOI.DualStatus)
 
-Returns [`MOI.NO_SOLUTION`](@extref JuMP :jl:constant:`MathOptInterface.NO_SOLUTION`) indicating that there is no dual solution
+Returns [`MOI.NO_SOLUTION`](@extref `MathOptInterface.NO_SOLUTION`) indicating that there is no dual solution
 available.
 """
 MOI.get(::ManoptOptimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
