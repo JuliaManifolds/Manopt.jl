@@ -80,7 +80,7 @@ The `descent_state_type` attribute specifies the solver.
 
 ```julia
 using JuMP, Manopt, Manifolds
-model = Model(Manopt.ManoptOptimizer)
+model = Model(Manopt.JuMP_Optimizer)
 # Change the solver with this option, `GradientDescentState` is the default
 set_attribute("descent_state_type", GradientDescentState)
 @variable(model, U[1:2, 1:2] in Stiefel(2, 2), start = 1.0)
@@ -92,34 +92,13 @@ solution_summary(model)
 ### Interface functions
 
 ```@docs
-Manopt.JuMP_ArrayShape
-Manopt.JuMP_VectorizedManifold
-MOI.dimension(::Manopt.JuMP_VectorizedManifold)
-Manopt.ManoptOptimizer
-MOI.empty!(::Manopt.ManoptOptimizer)
-MOI.supports(::Manopt.ManoptOptimizer, ::MOI.RawOptimizerAttribute)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.RawOptimizerAttribute)
-MOI.set(::Manopt.ManoptOptimizer, ::MOI.RawOptimizerAttribute, ::Any)
-MOI.supports_incremental_interface(::Manopt.ManoptOptimizer)
-MOI.copy_to(::Manopt.ManoptOptimizer, ::MOI.ModelLike)
-MOI.supports_add_constrained_variables(::Manopt.ManoptOptimizer, ::Type{<:Manopt.JuMP_VectorizedManifold})
-MOI.add_constrained_variables(::Manopt.ManoptOptimizer, ::Manopt.JuMP_VectorizedManifold)
-MOI.is_valid(model::Manopt.ManoptOptimizer, ::MOI.VariableIndex)
-MOI.get(model::Manopt.ManoptOptimizer, ::MOI.NumberOfVariables)
-MOI.supports(::Manopt.ManoptOptimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex})
-MOI.set(::Manopt.ManoptOptimizer, ::MOI.VariablePrimalStart, ::MOI.VariableIndex, ::Union{Real,Nothing})
-MOI.set(::Manopt.ManoptOptimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
-MOI.set(::Manopt.ManoptOptimizer, ::MOI.ObjectiveFunction, func::MOI.AbstractScalarFunction)
-MOI.supports(::Manopt.ManoptOptimizer, ::Union{MOI.ObjectiveSense,MOI.ObjectiveFunction})
-JuMP.build_variable(::Function, ::Any, ::Manopt.AbstractManifold)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.ResultCount)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.SolverName)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.ObjectiveValue)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.PrimalStatus)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.DualStatus)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.TerminationStatus)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.SolverVersion)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.ObjectiveSense)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.VariablePrimal, ::MOI.VariableIndex)
-MOI.get(::Manopt.ManoptOptimizer, ::MOI.RawStatusString)
+Manopt.JuMP_Optimizer
+MOI.dimension
+MOI.empty!
+MOI.get
+MOI.is_valid
+MathOptInterface.set :: Tuple{ManoptJuMPExt.ManoptOptimizer, MathOptInterface.VariablePrimalStart, MathOptInterface.VariableIndex, Union{Nothing, Real}}
+MOI.supports
+MOI.supports_incremental_interface
+MOI.supports_add_constrained_variables
 ```

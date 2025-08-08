@@ -52,6 +52,7 @@ mutable struct ManoptOptimizer <: MOI.AbstractOptimizer
 end
 """
     Manopt.JuMP_Optimizer()
+
 Represent a solver from `Manopt.jl` within the `MathOptInterface` (`MOI`) framework.
 See [`ManoptOptimizer`](@ref) for the fields and their meaning.
 """
