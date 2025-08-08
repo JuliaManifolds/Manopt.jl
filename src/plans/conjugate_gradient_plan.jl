@@ -126,7 +126,7 @@ function ConjugateGradientDescentState(
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
 ) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
-    return ConjugateGradientDescentState{P,T,TsC,TStep,TRC,TRetr,VTM}(
+    return ConjugateGradientDescentState(
         M,
         p,
         stopping_criterion,
