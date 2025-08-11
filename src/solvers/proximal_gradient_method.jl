@@ -5,7 +5,8 @@ _doc_prox_grad_method = """
     proximal_gradient_method!(M, f, g, grad_g, p; prox_nonsmooth=nothing, kwargs...)
     proximal_gradient_method!(M, mpgo::ManifoldProximalGradientObjective, p; kwargs...)
 
-Perform the proximal gradient method as introduced in [BergmannJasaJohnPfeffer:2025](@cite).
+Perform the proximal gradient method as introduced in [BergmannJasaJohnPfeffer:2025:1](@cite) and [BergmannJasaJohnPfeffer:2025:2](@cite).
+See also [FengHuangSongYingZeng:2021](@cite) for a similar approach.
 
 Given the minimization problem
 
