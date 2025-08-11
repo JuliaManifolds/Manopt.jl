@@ -546,7 +546,9 @@ end
 
 Inplace version of `res = JuMP.reshape_vector(vec, shape)`.
 """
-function _reshape_vector!(res::Array{T,N}, vec::Vector{T}, ::ManifoldPointArrayShape{N}) where {T,N}
+function _reshape_vector!(
+    res::Array{T,N}, vec::Vector{T}, ::ManifoldPointArrayShape{N}
+) where {T,N}
     return copyto!(res, vec)
 end
 
