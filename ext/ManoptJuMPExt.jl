@@ -585,6 +585,8 @@ end
     _tangent_shape(m::ManifoldsBase.AbstractManifold)
 
 Return the shape of points of the manifold `m`.
+At the moment, we don't support support manifolds for which the shape is different
+than a `Array`.
 """
 function _point_shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
@@ -594,6 +596,9 @@ end
     _tangent_shape(m::ManifoldsBase.AbstractManifold)
 
 Return the shape of points of the tangent space of the manifold `m`.
+At the moment, we don't support support manifolds for which the shape of tangent
+points are different from the same of points so we return a
+[`ManifoldPointArrayShape`](@ref).
 """
 function _tangent_shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
