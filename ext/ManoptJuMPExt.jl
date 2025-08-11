@@ -535,7 +535,9 @@ Base.length(shape::ManifoldPointArrayShape) = prod(shape.size)
 
 Inplace version of `res = JuMP.vectorize(array, shape)`.
 """
-function _vectorize!(res::Vector{T}, array::Array{T,N}, ::ManifoldPointArrayShape{N}) where {T,N}
+function _vectorize!(
+    res::Vector{T}, array::Array{T,N}, ::ManifoldPointArrayShape{N}
+) where {T,N}
     return copyto!(res, array)
 end
 
