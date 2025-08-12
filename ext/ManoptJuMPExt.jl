@@ -383,10 +383,6 @@ already been set.
 """
 MOI.get(model::ManoptOptimizer, ::MOI.ObjectiveSense) = model.sense
 
-# We could have it be a subtype of `AbstractManifoldGradientObjective{E,TC,TG}`
-# but I wouldn't know what to do with `TC` and `TG` in this case.
-# But we still implement an API similar to `get_cost` and `get_gradient!`
-# so for consistency.
 """
     _EmbeddingObjective{E<:MOI.AbstractNLPEvaluator,T}
 
