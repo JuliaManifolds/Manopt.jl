@@ -195,6 +195,7 @@ Return a `Bool` indicating whether `attr.name` is a valid option name
 for `Manopt`.
 """
 function MOI.supports(::ManoptOptimizer, ::MOI.RawOptimizerAttribute)
+    @show @__LINE__
     # FIXME Ideally, this should only return `true` if it is a valid keyword argument for
     #       one of the `...DescentState()` constructors. Is there an easy way to check this ?
     #       Does it depend on the different solvers ?
@@ -207,6 +208,7 @@ end
 Return last `value` set by [`set`](@extref `MathOptInterface.set`)`(model, attr, value)`.
 """
 function MOI.get(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute)
+    @show @__LINE__
     return model.options[attr.name]
 end
 
@@ -217,6 +219,7 @@ Set the value for the keyword argument `attr.name` to give for the constructor
 `model.options[DESCENT_STATE_TYPE]`.
 """
 function MOI.set(model::ManoptOptimizer, attr::MOI.RawOptimizerAttribute, value)
+    @show @__LINE__
     model.options[attr.name] = value
     return nothing
 end
@@ -250,6 +253,7 @@ uses [`default_copy_to`](@extref `MathOptInterface.Utilities.default_copy_to`) a
 [`add_constrained_variables`](@extref `MathOptInterface.add_constrained_variables`) and the objective sense with [`set`](@extref `MathOptInterface.set`).
 """
 function MOI.copy_to(dest::ManoptOptimizer, src::MOI.ModelLike)
+    @show @__LINE__
     return MOI.Utilities.default_copy_to(dest, src)
 end
 
@@ -586,11 +590,10 @@ function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointArrayShape)
 end
 
 """
-    _tangent_shape(m::ManifoldsBase.AbstractManifold)
+    _point_shape(m::ManifoldsBase.AbstractManifold)
 
 Return the shape of points of the manifold `m`.
-At the moment, we don't support support manifolds for which the shape is different
-than a `Array`.
+At the moment, we only support manifolds for which the shape is a `Array`.
 """
 function _point_shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
@@ -600,8 +603,8 @@ end
     _tangent_shape(m::ManifoldsBase.AbstractManifold)
 
 Return the shape of points of the tangent space of the manifold `m`.
-At the moment, we don't support support manifolds for which the shape of tangent
-points are different from the same of points so we return a
+At the moment, we only support manifolds for which the shape of tangent
+points is the same as the shape of points so we return a
 [`ManifoldPointArrayShape`](@ref).
 """
 function _tangent_shape(m::ManifoldsBase.AbstractManifold)
