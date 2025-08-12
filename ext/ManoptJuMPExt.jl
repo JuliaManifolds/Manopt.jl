@@ -445,7 +445,7 @@ function MOI.set(
     MOI.Nonlinear.set_objective(nlp_model, nl)
     evaluator = MOI.Nonlinear.Evaluator(nlp_model, backend, vars)
     MOI.initialize(evaluator, [:Grad])
-    objective = let
+    objective = let                                             # COV_EXCL_LINE
         # To avoid creating a closure capturing the `embedding_obj` object,
         # we use the `let` block trick detailed in:
         # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
