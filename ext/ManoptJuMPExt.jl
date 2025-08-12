@@ -88,7 +88,7 @@ Note that this is not the dimension of the manifold itself, but the
 vector length of the vectorized representation of the manifold.
 """
 function MOI.dimension(set::ManifoldSet)
-    return length(_point_shape(set.manifold))
+    return length(_shape(set.manifold))
 end
 
 @doc """
@@ -412,7 +412,7 @@ Convert the point `p` to its vectorization and then evaluate the objective
 using `objective.evaluator`.
 """
 function _get_cost(M, objective::_EmbeddingObjective, p)
-    _vectorize!(objective.vectorized_point, p, _point_shape(M))
+    _vectorize!(objective.vectorized_point, p, _shape(M))
     return MOI.eval_objective(objective.evaluator, objective.vectorized_point)
 end
 
@@ -424,12 +424,12 @@ using `objective.evaluator` to get the vectorized gradient. Then reshape the
 gradient and convert it to the Riemannian gradient.
 """
 function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
-    _vectorize!(objective.vectorized_point, p, _point_shape(M))
+    _vectorize!(objective.vectorized_point, p, _shape(M))
     MOI.eval_objective_gradient(
         objective.evaluator, objective.vectorized_tangent, objective.vectorized_point
     )
     _reshape_vector!(
-        objective.embedding_tangent, objective.vectorized_tangent, _tangent_shape(M)
+        objective.embedding_tangent, objective.vectorized_tangent, _shape(M)
     )
     return ManifoldDiff.riemannian_gradient!(M, gradient, p, objective.embedding_tangent)
 end
@@ -455,9 +455,9 @@ function MOI.set(
         # https://docs.julialang.org/en/v1/manual/performance-tips/#man-performance-captured
         embedding_obj = _EmbeddingObjective(
             evaluator,
-            zeros(length(_point_shape(model.manifold))),
-            zeros(length(_tangent_shape(model.manifold))),
-            _zero(_tangent_shape(model.manifold)),
+            zeros(length(_shape(model.manifold))),
+            zeros(length(_shape(model.manifold))),
+            _zero(_shape(model.manifold)),
         )
         RiemannianFunction(
             Manopt.ManifoldGradientObjective(
@@ -502,7 +502,7 @@ function MOI.optimize!(model::ManoptOptimizer)
     end
     dmgo = decorate_objective!(model.manifold, objective)
     model.problem = DefaultManoptProblem(model.manifold, dmgo)
-    reshaped_start = JuMP.reshape_vector(start, _point_shape(model.manifold))
+    reshaped_start = JuMP.reshape_vector(start, _shape(model.manifold))
     descent_state_type = model.options[DESCENT_STATE_TYPE]
     kws = Dict{Symbol,Any}(
         Symbol(key) => value for (key, value) in model.options if key != DESCENT_STATE_TYPE
@@ -590,24 +590,12 @@ function JuMP.reshape_set(set::ManifoldSet, shape::ManifoldPointArrayShape)
 end
 
 """
-    _point_shape(m::ManifoldsBase.AbstractManifold)
+    _shape(m::ManifoldsBase.AbstractManifold)
 
 Return the shape of points of the manifold `m`.
 At the moment, we only support manifolds for which the shape is a `Array`.
 """
-function _point_shape(m::ManifoldsBase.AbstractManifold)
-    return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
-end
-
-"""
-    _tangent_shape(m::ManifoldsBase.AbstractManifold)
-
-Return the shape of points of the tangent space of the manifold `m`.
-At the moment, we only support manifolds for which the shape of tangent
-points is the same as the shape of points so we return a
-[`ManifoldPointArrayShape`](@ref).
-"""
-function _tangent_shape(m::ManifoldsBase.AbstractManifold)
+function _shape(m::ManifoldsBase.AbstractManifold)
     return ManifoldPointArrayShape(ManifoldsBase.representation_size(m))
 end
 
@@ -627,7 +615,7 @@ and the [`ManifoldSet`](@ref) in which they should belong as well as the
 shape of the manifold, that is, [`ManifoldPointArrayShape`](@ref).
 """
 function JuMP.build_variable(::Function, func, m::ManifoldsBase.AbstractManifold)
-    shape = _point_shape(m)
+    shape = _shape(m)
     return JuMP.VariablesConstrainedOnCreation(
         JuMP.vectorize(func, shape), ManifoldSet(m), shape
     )
