@@ -428,9 +428,7 @@ function _get_gradient!(M, gradient, objective::_EmbeddingObjective, p)
     MOI.eval_objective_gradient(
         objective.evaluator, objective.vectorized_tangent, objective.vectorized_point
     )
-    _reshape_vector!(
-        objective.embedding_tangent, objective.vectorized_tangent, _shape(M)
-    )
+    _reshape_vector!(objective.embedding_tangent, objective.vectorized_tangent, _shape(M))
     return ManifoldDiff.riemannian_gradient!(M, gradient, p, objective.embedding_tangent)
 end
 
