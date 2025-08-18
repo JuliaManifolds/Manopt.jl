@@ -1680,3 +1680,191 @@ end
 function get_last_stepsize(step::WolfePowellBinaryLinesearchStepsize, ::Any...)
     return step.last_stepsize
 end
+
+# ===== RDoG (Riemannian Distance over Gradients) Stepsize =====
+
+@doc raw"""
+    RDoGStepsize{R<:Real} <: Stepsize
+
+Implements the Riemannian Distance over Gradients (RDoG) stepsize schedule, a learning-rate-free 
+optimization method for Riemannian manifolds introduced by [Dodd, Sharrock, and Nemeth (2024)](@cite).
+
+This stepsize adapts automatically without hyperparameter tuning by tracking the maximum distance 
+from the initial point and accumulating gradient norms.
+
+# Fields
+
+* `initial_distance::R`: initial distance estimate ``ϵ > 0``
+* `max_distance::R`: maximum distance from initial point ``\bar{r}_t = \max_{s≤t} d(p_0, p_s)``
+* `gradient_sum::R`: accumulated squared gradient norms ``G_t = \sum_{s=0}^t \|∇f(p_s)\|^2``
+* `initial_point`: the initial point ``p_0``
+* `use_curvature::Bool`: whether to use sectional curvature in the stepsize
+* `sectional_curvature_bound::R`: lower bound on sectional curvature ``κ`` (only used if `use_curvature=true`)
+
+The stepsize at iteration ``t`` is computed as:
+
+```math
+η_t = \frac{\bar{r}_t}{\sqrt{ζ_κ(\bar{r}_t)} \sqrt{G_t}}
+```
+
+where ``ζ_κ`` is the geometric curvature function:
+- ``ζ_κ(d) = 1`` if ``κ ≥ 0`` or `use_curvature=false`
+- ``ζ_κ(d) = \frac{\sqrt{|κ|} d}{\tanh(\sqrt{|κ|} d)}`` if ``κ < 0``
+
+# Constructor
+
+    RDoGStepsize(M::AbstractManifold; kwargs...)
+
+Initialize the RDoG stepsize on manifold `M`.
+
+## Keyword arguments
+
+* `initial_distance=1e-3`: initial distance estimate ``ϵ``
+* `use_curvature=false`: whether to incorporate sectional curvature
+* `sectional_curvature_bound=0.0`: lower bound on sectional curvature (if known)
+$(_var(:Keyword, :p; add="initial point, used to track distances"))
+
+# See also
+
+[`AdaptiveWNGradientStepsize`](@ref), [`gradient_descent`](@ref)
+"""
+mutable struct RDoGStepsize{R<:Real,P} <: Stepsize
+    initial_distance::R
+    max_distance::R
+    gradient_sum::R
+    initial_point::P
+    use_curvature::Bool
+    sectional_curvature_bound::R
+    last_stepsize::R
+end
+
+function RDoGStepsize(
+    M::AbstractManifold;
+    p=rand(M),
+    initial_distance::R=1e-3,
+    use_curvature::Bool=false,
+    sectional_curvature_bound::R=0.0,
+) where {R<:Real}
+    return RDoGStepsize{R,typeof(p)}(
+        initial_distance,
+        initial_distance,  # max_distance starts at initial_distance
+        zero(R),          # gradient_sum starts at 0
+        copy(M, p),       # store initial point
+        use_curvature,
+        sectional_curvature_bound,
+        NaN,              # last_stepsize
+    )
+end
+
+"""
+    geometric_curvature_function(κ::Real, d::Real)
+
+Compute the geometric curvature function ``ζ_κ(d)`` for sectional curvature bound ``κ``.
+
+```math
+ζ_κ(d) = \\begin{cases}
+    \\frac{\\sqrt{|κ|} d}{\\tanh(\\sqrt{|κ|} d)} & \\text{if } κ < 0 \\\\
+    1 & \\text{if } κ ≥ 0
+\\end{cases}
+```
+"""
+function geometric_curvature_function(κ::Real, d::Real)
+    if κ < 0 && d > 0
+        sqrt_abs_κ = sqrt(abs(κ))
+        arg = sqrt_abs_κ * d
+        # Avoid numerical issues for small arguments
+        if arg < 1e-8
+            return 1.0 + arg^2 / 3.0  # Taylor expansion
+        else
+            return arg / tanh(arg)
+        end
+    else
+        return 1.0
+    end
+end
+
+function (rdog::RDoGStepsize)(
+    mp::AbstractManoptProblem,
+    s::AbstractManoptSolverState,
+    i,
+    args...;
+    gradient=nothing,
+    kwargs...,
+)
+    M = get_manifold(mp)
+    p = get_iterate(s)
+    grad = isnothing(gradient) ? get_gradient(mp, p) : gradient
+    
+    # Compute gradient norm
+    grad_norm_sq = norm(M, p, grad)^2
+    
+    if i == 0
+        # Initialize on first call
+        rdog.gradient_sum = grad_norm_sq
+        rdog.initial_point = copy(M, p)
+        rdog.max_distance = rdog.initial_distance
+        
+        # Initial stepsize
+        if rdog.use_curvature
+            ζ = geometric_curvature_function(rdog.sectional_curvature_bound, rdog.max_distance)
+            stepsize = rdog.initial_distance / (sqrt(ζ) * sqrt(max(grad_norm_sq, eps())))
+        else
+            stepsize = rdog.initial_distance / sqrt(max(grad_norm_sq, eps()))
+        end
+    else
+        # Update gradient sum
+        rdog.gradient_sum += grad_norm_sq
+        
+        # Update max distance
+        current_distance = distance(M, rdog.initial_point, p)
+        rdog.max_distance = max(rdog.max_distance, current_distance)
+        
+        # Compute stepsize
+        if rdog.use_curvature
+            ζ = geometric_curvature_function(rdog.sectional_curvature_bound, rdog.max_distance)
+            stepsize = rdog.max_distance / (sqrt(ζ) * sqrt(rdog.gradient_sum))
+        else
+            stepsize = rdog.max_distance / sqrt(rdog.gradient_sum)
+        end
+    end
+    
+    rdog.last_stepsize = stepsize
+    return stepsize
+end
+
+get_initial_stepsize(rdog::RDoGStepsize) = rdog.last_stepsize
+get_last_stepsize(rdog::RDoGStepsize) = rdog.last_stepsize
+
+function show(io::IO, rdog::RDoGStepsize)
+    s = """
+    RDoGStepsize(;
+      initial_distance=$(rdog.initial_distance),
+      use_curvature=$(rdog.use_curvature),
+      sectional_curvature_bound=$(rdog.sectional_curvature_bound)
+    )
+    
+    Current state:
+      max_distance = $(rdog.max_distance)
+      gradient_sum = $(rdog.gradient_sum)
+      last_stepsize = $(rdog.last_stepsize)
+    """
+    return print(io, s)
+end
+
+"""
+    RDoG(; kwargs...)
+    RDoG(M::AbstractManifold; kwargs...)
+
+Creates a factory for the [`RDoGStepsize`](@ref).
+
+## Keyword arguments
+
+* `initial_distance=1e-3`: initial distance estimate
+* `use_curvature=false`: whether to use sectional curvature
+* `sectional_curvature_bound=0.0`: lower bound on sectional curvature
+
+$(_note(:ManifoldDefaultFactory, "RDoGStepsize"))
+"""
+function RDoG(args...; kwargs...)
+    return ManifoldDefaultsFactory(Manopt.RDoGStepsize, args...; kwargs...)
+end
