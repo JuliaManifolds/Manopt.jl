@@ -16,7 +16,7 @@ Random.seed!(42)
 
 # Setup: Rayleigh quotient minimization on the sphere
 # We want to find the dominant eigenvector of a symmetric matrix
-d = 30
+d = 2
 M = Sphere(d - 1)
 
 # Create a symmetric matrix with known eigenvalues
@@ -148,7 +148,7 @@ println("-" ^ 30)
 
 result_armijo = gradient_descent(
     M, f, grad_f, p0;
-    stepsize=ArmijoLinesearch(M; initial_stepsize=1.0, contraction_factor=0.95, sufficient_decrease=1e-1),
+    stepsize=ArmijoLinesearch(M;),
     stopping_criterion=StopAfterIteration(maxiter) | StopWhenGradientNormLess(1e-6),
     debug=[
         :Iteration,
