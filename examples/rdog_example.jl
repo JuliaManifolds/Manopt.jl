@@ -141,3 +141,28 @@ for eps in [1e-5, 1e-3, 1e-1]
     final_gap = final_cost - true_optimal
     println("ε = $eps: Final gap = $(final_gap), Reduction = $(abs(initial_gap / final_gap))x")
 end
+
+# Example 5: Armijo line search for comparison (Sphere only)
+println("\n5. Armijo (line search) for comparison")
+println("-" ^ 30)
+
+result_armijo = gradient_descent(
+    M, f, grad_f, p0;
+    stepsize=ArmijoLinesearch(M; initial_stepsize=1.0, contraction_factor=0.95, sufficient_decrease=1e-1),
+    stopping_criterion=StopAfterIteration(maxiter) | StopWhenGradientNormLess(1e-6),
+    debug=[
+        :Iteration,
+        " | ",
+        (:Cost, "f(x) = %.12f"),
+        " | ",
+        (:GradientNorm, "||grad f|| = %.8e"),
+        " | ",
+        (:Stepsize, "step = %.8e\n"),
+        write_every,
+    ]
+)
+final_cost_armijo = f(M, result_armijo)
+final_gap_armijo = final_cost_armijo - true_optimal
+println("Final cost (Armijo): ", final_cost_armijo)
+println("Final optimality gap (Armijo): ", final_gap_armijo)
+println("Gap reduction factor (Armijo): ", abs(initial_gap / final_gap_armijo))
