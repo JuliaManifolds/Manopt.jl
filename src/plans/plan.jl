@@ -101,6 +101,8 @@ by `set_parameter!(:Mode, "")`.
 """
 is_tutorial_mode() = (get_parameter(:Mode) == "Tutorial")
 
+# include this first because all following elements might define keyword helpers.
+
 include("manifold_default_factory.jl")
 include("objective.jl")
 include("problem.jl")
@@ -111,6 +113,9 @@ include("record.jl")
 
 include("stopping_criterion.jl")
 include("stepsize.jl")
+
+include("keywords.jl")
+
 include("bundle_plan.jl")
 include("cost_plan.jl")
 include("first_order_plan.jl")
