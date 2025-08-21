@@ -4,6 +4,7 @@
 A small internal struct to represent a set of keywords,
 
 # Fields
+
 * `accepted`
 * `deprecated`
 
@@ -36,12 +37,15 @@ function Base.show(io::IO, ::Keywords{Nothing})
     print(io, "Keywords()")
 end
 
-function Base.show(io::IO, keywords::Keywords{I})
+function Base.show(io::IO, kw::Keywords{I,A,B}) where {I,A,B}
+    as = (isnothing(kw.accepted) || length(kw.accepted) == 0) ? "none" : join(kw.accepted, ", ")
+    ds = (isnothing(kw.deprecated) || length(kw.deprecated) == 0) ? "none" : join(kw.deprecated, ", ")
+    dt = isnothing(I) ? "A set of Keywords" : "Keywords for $I:"
     print(io, """
-    Keywords for $I:
+    $dt
 
-    accepted: $(keywords.accepted)
-    deprecated: $(keywords.deprecated)
+    accepted: $as
+    deprecated: $ds
     """
     )
 end
@@ -57,12 +61,12 @@ accepts when constructed.
 
 this also includes keywords that are passed on to internal structures.
 """
-accepted_keywords(::Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize, StoppingCriterion, Function})
+function accepted_keywords(
+    ::Union{Type{T},F}
+) where {T<:Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize, StoppingCriterion}, F<:Function}
+    return direct_keywords(T)
+end
 
-# default: all direct ones
-accepted_keywords(T) = direct_keywords(T)
-
-function direct_keywords end
 """
     direct_keywords(problem)
     direct_keywords(objective)
@@ -76,6 +80,15 @@ a mutating variant.
 For example `direct_keywords(gradient_descent)` and `direct_keywords(gradient_descent!)`
 should return the same set [`Keywords!`](@ref).
 """
-direct_keywords(::Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize,  StoppingCriterion, Function})
+function direct_keywords(
+    s::Union{Type{T},F}
+) where {T<:Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize, StoppingCriterion}, F<:Function}
+    return Keywords(; in=s)
+end
 
-direct_keywords(T::Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize, StoppingCriterion, Function}) = Keywords(; type=T)
+function pretty_string_keywords(s::Set{Symbol})
+    (length(s) == 0) && return ""
+    return """
+    * $(join(s, "\n* "))
+    """
+end

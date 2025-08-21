@@ -81,6 +81,12 @@ function (r::IdentityUpdateRule)(
     get_gradient!(mp, s.X, s.p)
     return get_stepsize(mp, s, k; gradient=s.X), s.X
 end
+function direct_keywords(::Type{GradientDescentState})
+    return Keywords(
+        Set([:p, :X, :stopping_criterion, :retraction_method, :stepsize, :direction]);
+        in=GradientDescentState
+        )
+end
 function default_stepsize(
     M::AbstractManifold,
     ::Type{GradientDescentState};
