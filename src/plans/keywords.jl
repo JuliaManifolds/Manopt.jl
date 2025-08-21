@@ -25,28 +25,36 @@ struct Keywords{I,A<:Union{Nothing,Set{Symbol}},D<:Union{Nothing,Set{Symbol}}}
     deprecated::D
 end
 function Keywords(
-    accepted::A,
-    deprecated::D=Set{Symbol}();
-    in=nothing
+    accepted::A, deprecated::D=Set{Symbol}(); in=nothing
 ) where {A<:Union{Nothing,Set{Symbol}},D<:Union{Nothing,Set{Symbol}}}
     return Keywords{in,A,D}(accepted, deprecated)
 end
-Keywords(::Nothing=nothing; in=Nothing) = Keywords{in,Nothing,Nothing}(nothing,nothing)
+Keywords(::Nothing=nothing; in=Nothing) = Keywords{in,Nothing,Nothing}(nothing, nothing)
 
 function Base.show(io::IO, ::Keywords{Nothing})
-    print(io, "Keywords()")
+    return print(io, "Keywords()")
 end
 
 function Base.show(io::IO, kw::Keywords{I,A,B}) where {I,A,B}
-    as = (isnothing(kw.accepted) || length(kw.accepted) == 0) ? "none" : join(kw.accepted, ", ")
-    ds = (isnothing(kw.deprecated) || length(kw.deprecated) == 0) ? "none" : join(kw.deprecated, ", ")
+    as = if (isnothing(kw.accepted) || length(kw.accepted) == 0)
+        "none"
+    else
+        join(kw.accepted, ", ")
+    end
+    ds = if (isnothing(kw.deprecated) || length(kw.deprecated) == 0)
+        "none"
+    else
+        join(kw.deprecated, ", ")
+    end
     dt = isnothing(I) ? "A set of Keywords" : "Keywords for $I:"
-    print(io, """
-    $dt
+    return print(
+        io,
+        """
+$dt
 
-    accepted: $as
-    deprecated: $ds
-    """
+accepted: $as
+deprecated: $ds
+""",
     )
 end
 
@@ -63,7 +71,16 @@ this also includes keywords that are passed on to internal structures.
 """
 function accepted_keywords(
     ::Union{Type{T},F}
-) where {T<:Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize, StoppingCriterion}, F<:Function}
+) where {
+    T<:Union{
+        AbstractManoptProblem,
+        AbstractManifoldObjective,
+        AbstractManoptSolverState,
+        Stepsize,
+        StoppingCriterion,
+    },
+    F<:Function,
+}
     return direct_keywords(T)
 end
 
@@ -82,7 +99,16 @@ should return the same set [`Keywords!`](@ref).
 """
 function direct_keywords(
     s::Union{Type{T},F}
-) where {T<:Union{AbstractManoptProblem, AbstractManifoldObjective, AbstractManoptSolverState, Stepsize, StoppingCriterion}, F<:Function}
+) where {
+    T<:Union{
+        AbstractManoptProblem,
+        AbstractManifoldObjective,
+        AbstractManoptSolverState,
+        Stepsize,
+        StoppingCriterion,
+    },
+    F<:Function,
+}
     return Keywords(; in=s)
 end
 

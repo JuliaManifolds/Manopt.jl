@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* a system to track keywords, warning when unused ones are passed and a static way to explore possible keywords.
 * a `warm_start_factor` field to `ProximalGradientMethodBacktrackingStepsize` to allow to scale the stepsize in the backtracking procedure.
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
 * used this keyword in

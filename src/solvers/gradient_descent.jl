@@ -84,8 +84,8 @@ end
 function direct_keywords(::Type{GradientDescentState})
     return Keywords(
         Set([:p, :X, :stopping_criterion, :retraction_method, :stepsize, :direction]);
-        in=GradientDescentState
-        )
+        in=GradientDescentState,
+    )
 end
 function default_stepsize(
     M::AbstractManifold,
