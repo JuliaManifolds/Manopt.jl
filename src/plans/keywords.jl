@@ -74,7 +74,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
         "none"
     else
         ast = ""
-        for kwn in sort!(collect(kw.accepted); by = s->lowercase(String(s)))
+        for kwn in sort!(collect(kw.accepted); by=s -> lowercase(String(s)))
             if !startswith(string(kwn), "_")
                 astn = "\n  * $(kwn)"
                 if haskey(kw.origins, kwn) && kw.origins[kwn] isa Vector
