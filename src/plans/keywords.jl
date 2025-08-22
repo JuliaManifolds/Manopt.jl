@@ -73,12 +73,25 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
     as = if (length(kw.accepted) == 0)
         "none"
     else
-        join(kw.accepted, ", ")
+        ast = ""
+        for kwn in sort!(collect(kw.accepted); by = s->lowercase(String(s)))
+            if !startswith(string(kwn), "_")
+                astn = "\n  * $(kwn)"
+                if haskey(kw.origins, kwn) && kw.origins[kwn] isa Vector
+                    pass_on = last(kw.origins[kwn])
+                    if !("$(I)!" == "$(pass_on)")
+                        astn *= " (passed on to $pass_on)"
+                    end
+                end
+                ast *= astn
+            end
+        end
+        ast
     end
     ds = if (length(kw.deprecated) == 0)
-        "none"
+        ""
     else
-        join(kw.deprecated, ", ")
+        "\ndeprecated $(join(kw.deprecated, ", "))"
     end
     dt = isnothing(I) ? "A set of Keywords" : "Keywords for $I:"
     return print(
@@ -86,8 +99,7 @@ function Base.show(io::IO, kw::Keywords{I}) where {I}
         """
 $dt
 
-accepted: $as
-deprecated: $ds
+accepted: $as$ds
 """,
     )
 end
@@ -175,6 +187,10 @@ accepted_keywords(T) = direct_keywords(T)
 # this will become the second keyword of the direct calls; the accepted ones union also all direct ones (but without modifying origin then)
 #
 # Make internal ones with prefix _ (line embedded_X and embedded_p in decorate_objective) and do not add them to the keywords listed
+#
+# Format idea
+# @extract_keywords Type(=Nothing) function deprecated
+# and direct_keywords (as well as accepted) takes that as a symbol to map to types,
 """
 @extract_keywords(function_definition[, deprecated_set::Set{Symbol}=Set{Symbol}()])
 

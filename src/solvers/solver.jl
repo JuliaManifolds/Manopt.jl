@@ -114,8 +114,8 @@ decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...
     count::Union{Missing,AbstractVector{<:Symbol}}=missing,
     objective_type::Symbol=:Riemannian,
     p=objective_type == :Riemannian ? missing : rand(M),
-    embedded_p=objective_type == :Riemannian ? missing : embed(M, p),
-    embedded_X=objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
+    _embedded_p=objective_type == :Riemannian ? missing : embed(M, p),
+    _embedded_X=objective_type == :Riemannian ? missing : embed(M, p, zero_vector(M, p)),
     return_objective=false,
     kwargs...,
 ) where {O<:AbstractManifoldObjective}
@@ -128,7 +128,7 @@ decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...
     # and always last wrapper: `ReturnObjective`.
     deco_o = o
     if objective_type ∈ [:Embedding, :Euclidean]
-        deco_o = EmbeddedManifoldObjective(o, embedded_p, embedded_X)
+        deco_o = EmbeddedManifoldObjective(o, _embedded_p, _embedded_X)
     end
     (!ismissing(count)) && (deco_o = objective_count_factory(M, deco_o, count))
     (!ismissing(cache)) && (deco_o = objective_cache_factory(M, deco_o, cache))
