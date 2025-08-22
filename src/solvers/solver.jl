@@ -1,3 +1,5 @@
+function decorate_state! end
+
 @doc raw"""
     decorate_state!(s::AbstractManoptSolverState)
 
@@ -25,7 +27,9 @@ other keywords are ignored.
 
 [`DebugSolverState`](@ref), [`RecordSolverState`](@ref), [`ReturnSolverState`](@ref)
 """
-function decorate_state!(
+decorate_state!(s::AbstractManoptSolverState; kwargs...)
+
+@extract_keywords function decorate_state!(
     s::S;
     debug::Union{
         Missing, # none
@@ -73,6 +77,7 @@ function decorate_state!(
     return deco_s
 end
 
+function decorate_objective! end
 @doc raw"""
     decorate_objective!(M, o::AbstractManifoldObjective)
 
@@ -98,7 +103,9 @@ A specific one is used to activate certain decorators.
 
 [`objective_cache_factory`](@ref)
 """
-function decorate_objective!(
+decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...)
+
+@extract_keywords function decorate_objective!(
     M::AbstractManifold,
     o::O;
     cache::Union{

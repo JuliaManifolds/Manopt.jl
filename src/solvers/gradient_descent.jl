@@ -52,7 +52,7 @@ mutable struct GradientDescentState{
     stop::TStop
     retraction_method::TRTM
 end
-function GradientDescentState(
+@extract_keywords function GradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     X::T=zero_vector(M, p),
@@ -81,12 +81,7 @@ function (r::IdentityUpdateRule)(
     get_gradient!(mp, s.X, s.p)
     return get_stepsize(mp, s, k; gradient=s.X), s.X
 end
-function direct_keywords(::Type{GradientDescentState})
-    return Keywords(
-        Set([:p, :X, :stopping_criterion, :retraction_method, :stepsize, :direction]);
-        in=GradientDescentState,
-    )
-end
+
 function default_stepsize(
     M::AbstractManifold,
     ::Type{GradientDescentState};
@@ -174,7 +169,7 @@ $(_note(:OutputSection))
 @doc "$(_doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 
-function gradient_descent(
+@extract_keywords function gradient_descent(
     M::AbstractManifold,
     f,
     grad_f,
@@ -198,21 +193,27 @@ function gradient_descent(
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
+@combine_keywords gradient_descent gradient_descent!
 
 "$(_doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
+
+# TODO Add this second signature as well
 function gradient_descent!(
     M::AbstractManifold,
     f,
     grad_f,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     return gradient_descent!(M, mgo, p; kwargs...)
 end
-function gradient_descent!(
+@extract_keywords function gradient_descent!(
     M::AbstractManifold,
     mgo::O,
     p;
@@ -251,6 +252,7 @@ function gradient_descent!(
     solve!(dmp, ds)
     return get_solver_return(get_objective(dmp), ds)
 end
+@combine_keywords gradient_descent! decorate_objective! decorate_state!
 #
 # Solver functions
 #
