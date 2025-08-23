@@ -52,7 +52,7 @@ mutable struct GradientDescentState{
     stop::TStop
     retraction_method::TRTM
 end
-@extract_keywords function GradientDescentState(
+function GradientDescentState(
     M::AbstractManifold;
     p::P=rand(M),
     X::T=zero_vector(M, p),
@@ -169,7 +169,7 @@ $(_note(:OutputSection))
 @doc "$(_doc_gradient_descent)"
 gradient_descent(M::AbstractManifold, args...; kwargs...)
 
-@extract_keywords function gradient_descent(
+function gradient_descent(
     M::AbstractManifold,
     f,
     grad_f,
@@ -193,7 +193,7 @@ function gradient_descent(
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
-@combine_keywords gradient_descent gradient_descent!
+calls_with_kwargs(::typeof(gradient_descent)) = (gradient_descent!,)
 
 "$(_doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
@@ -213,7 +213,7 @@ function gradient_descent!(
     )
     return gradient_descent!(M, mgo, p; kwargs...)
 end
-@extract_keywords function gradient_descent!(
+function gradient_descent!(
     M::AbstractManifold,
     mgo::O,
     p;
@@ -252,7 +252,7 @@ end
     solve!(dmp, ds)
     return get_solver_return(get_objective(dmp), ds)
 end
-@combine_keywords gradient_descent! decorate_objective! decorate_state!
+calls_with_kwargs(::typeof(gradient_descent!)) = (decorate_objective!, decorate_state!)
 #
 # Solver functions
 #

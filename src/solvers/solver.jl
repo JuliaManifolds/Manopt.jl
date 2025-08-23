@@ -29,7 +29,7 @@ other keywords are ignored.
 """
 decorate_state!(s::AbstractManoptSolverState; kwargs...)
 
-@extract_keywords function decorate_state!(
+function decorate_state!(
     s::S;
     debug::Union{
         Missing, # none
@@ -105,7 +105,7 @@ A specific one is used to activate certain decorators.
 """
 decorate_objective!(M::AbstractManifold, o::AbstractManifoldObjective; kwargs...)
 
-@extract_keywords function decorate_objective!(
+function decorate_objective!(
     M::AbstractManifold,
     o::O;
     cache::Union{
