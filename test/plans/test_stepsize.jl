@@ -129,19 +129,81 @@ using ManoptTestSuite
         @test ps(dmp, sgs, 1) == (f(M, p) - 0 + 1) / (norm(M, p, X)^2)
     end
     @testset "Distance over Gradients Stepsize" begin
-        M = Euclidean(2)
-        f(M, p) = sum(p .^ 2)
-        grad_f(M, p) = sum(2 .* p)
-        dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
-        p = [2.0, 2.0]
-        gds = GradientDescentState(M; p=p)
-        ds = RDoGStepsize(M, p=p, initial_distance=1.0)
-        @test ds.gradient_sum == 0
-        @test ds.max_distance == 1.0
-        @test ds.initial_point == p
-        @test ds.last_stepsize  === NaN
-        lr = ds(dmp, gds, 0)
-        @test lr == 0.125
+        @testset "does not use sectional cuvature (Eucludian)" begin
+            M = Euclidean(2)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [2.0, 2.0]
+            gds = GradientDescentState(M; p=p)
+            ds = RDoGStepsize(M, p=p, initial_distance=1.0, use_curvature=false)
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize  === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.125
+        end
+        @testset "use sectional cuvature (Euclidian)" begin
+            M = Euclidean(2)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [2.0, 2.0]
+            gds = GradientDescentState(M; p=p)
+            ds = RDoGStepsize(M, p=p, initial_distance=1.0, use_curvature=true, sectional_curvature_bound=0.0)
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize  === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.125
+        end
+        @testset "do not use sectional cuvature (Sphere)" begin
+            M = Sphere(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [1, 0] 
+            gds = GradientDescentState(M; p=p)
+            ds = RDoGStepsize(M, p=p, initial_distance=1.0, use_curvature=false)
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize  === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.5
+        end
+        @testset "use sectional cuvature (Sphere)" begin
+            M = Sphere(1)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [1, 0]
+            gds = GradientDescentState(M; p=p)
+            ds = RDoGStepsize(M, p=p, initial_distance=1.0, use_curvature=true, sectional_curvature_bound=1.0)
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize  === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.5
+        end
+        @testset "use sectional cuvature (Hyperbolic)" begin
+            M = Hyperbolic(2)
+            f(M, p) = sum(p .^ 2)
+            grad_f(M, p) = sum(2 .* p)
+            dmp = DefaultManoptProblem(M, ManifoldGradientObjective(f, grad_f))
+            p = [0, 1, sqrt(2)]
+            gds = GradientDescentState(M; p=p)
+            ds = RDoGStepsize(M, p=p, initial_distance=1.0, use_curvature=true, sectional_curvature_bound=-1.0)
+            @test ds.gradient_sum == 0
+            @test ds.max_distance == 1.0
+            @test ds.initial_point == p
+            @test ds.last_stepsize  === NaN
+            lr = ds(dmp, gds, 0)
+            @test lr == 0.125
+        end
     end
     @testset "max_stepsize fallbacks" begin
         M = ManoptTestSuite.DummyManifold()
