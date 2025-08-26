@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.13
 
 using Markdown
 using InteractiveUtils
@@ -15,12 +15,14 @@ begin
 	#using ManoptExamples
 	using Manifolds
 	using OffsetArrays
-	using Random
 	using RecursiveArrayTools
     using WGLMakie, Makie, GeometryTypes, Colors
-	#using CairoMakie
-	#using FileIO
+	using CairoMakie
+	using DataFrames, CSV
 end;
+
+# ╔═╡ 66fbe00e-1d30-468d-baa5-05e099cf329e
+#Pkg.develop(path="/Users/bt308990/Documents/julia/Manopt-old.jl")
 
 # ╔═╡ aeceb735-da1b-4db5-9964-538b316441c2
 begin
@@ -49,33 +51,28 @@ begin
 	#yd = [[1.0,1.0,1.0] for Ωi in Omega];
 end;
 
-# ╔═╡ b211e406-61df-427c-885c-8217adc42540
-function y1(t)
-	return [sin(t), 0, cos(t)]
+# ╔═╡ c6b1fd66-ef1f-427e-b8cc-d2da9c127ee3
+begin
+	function y(t)
+		return [sin(t), 0, cos(t)]
+	end
+
+	function u(t)
+		#return [sin(t*pi/2+pi/4), cos(t*pi/2+pi/4), 0]
+		return [0.0, 0, 0]
+	end
+
+	function λ(t)
+		return [0.0, 0.0, 0.0]
+	end
+
+	discretized_y = [y(Ωi) for Ωi in Omega];
+	discretized_u = [u(Ωi) for Ωi in Omega];
+	discretized_λ = [λ(Ωi) for Ωi in Omega];
+
+	disc_y = ArrayPartition(discretized_y, discretized_u, discretized_λ);
+	
 end;
-
-# ╔═╡ bb07fd2d-df5f-4e4a-bd5f-c58bf2f1990f
-function u(t)
-	#return [sin(t*pi/2+pi/4), cos(t*pi/2+pi/4), 0]
-	return [0.0, 0, 0]
-end;
-
-# ╔═╡ 930ead70-8331-4e78-b15a-f67cc6042acb
-function λ(t)
-	return [0.0, 0.0, 0.0]
-end;
-
-# ╔═╡ ee844858-db04-4a3f-947b-18130e3bf160
-discretized_y = [y1(Ωi) for Ωi in Omega];
-
-# ╔═╡ b0e6d152-91cc-4f29-940a-ec23a342ab59
-discretized_u = [u(Ωi) for Ωi in Omega];
-
-# ╔═╡ 347f61fc-fb14-47d0-8602-8550cf881ceb
-discretized_λ = [λ(Ωi) for Ωi in Omega];
-
-# ╔═╡ 33c572fe-0103-4e8e-82fa-4035955347b8
-disc_y = ArrayPartition(discretized_y, discretized_u, discretized_λ);
 
 # ╔═╡ 9b589eb8-c42c-45cf-a2d4-89fd1d522759
 """
@@ -92,32 +89,30 @@ mutable struct DifferentiableMapping{M<:AbstractManifold, N<:AbstractManifold,F1
 end
 
 # ╔═╡ b22850cc-26fa-4fbe-a919-0ae95c8571d6
+md"""
+The following two routines define the vector transport, its derivative and its second derivative. The first derivative is needed to obtain covariant derivative from the ordinary derivative.
 """
- The following two routines define the vector transport, its derivative and its second derivative. The first derivative is needed to obtain covariant derivative from the ordinary derivative.
+
+# ╔═╡ 6dc5ca81-70b6-4aab-8f52-64b696e06217
+begin
+	function transport_by_proj(S, p, X, q)
+		return X - q*(q'*X)
+	end
+
+	function transport_by_proj_prime(S, p, dq, X)
+		return (- dq*p' - p*dq')*X
+	end
+
+	function transport_by_proj_doubleprime(S, p, dq1, dq2, X)
+		return (-dq1*dq2' - dq2 * dq1')*X
+	end
+
+end;
+
+# ╔═╡ 8596f05e-bc6f-4891-80ee-e45e9d730089
+md"""
+Helper routines
 """
-function transport_by_proj(S, p, X, q)
-	return X - q*(q'*X)
-end
-
-# ╔═╡ 3ee0ae2b-200e-4ce4-8dc9-b873bb6873f4
-function transport_by_proj_prime(S, p, dq, X)
-	return (- dq*p' - p*dq')*X
-end;
-
-# ╔═╡ 777c9eab-0e5d-41d5-a73a-685ab24b82ff
-function transport_by_proj_doubleprime(S, p, dq1, dq2, X)
-	return (-dq1*dq2' - dq2 * dq1')*X
-end;
-
-# ╔═╡ 8cc250f5-f66e-4746-9855-664be0bd3408
-function zerotrans_prime(S, p, X, dq)
-	return 0.0*dq
-end;
-
-# ╔═╡ ecd3cb2a-887f-4cb2-bcb6-2bb58366ff07
-function identitytrans(S, p, X, q)
-	return X
-end;
 
 # ╔═╡ a3a135f0-c5e8-4825-8653-cbd68bbe795e
 md"""
@@ -231,8 +226,18 @@ powerR3lambda = PowerManifold(R3, NestedPowerRepresentation(), N) #λ
 product = ProductManifold(powerS, powerR3, powerR3lambda)
 end;
 
-# ╔═╡ c1ae6bcf-fab5-4456-8a11-7f36f125fffa
-zerotransport=DifferentiableMapping(R3,R3,identitytrans,zerotrans_prime)
+# ╔═╡ 452addcd-d0f4-4059-8de6-448045e5b670
+begin
+	function zerotrans_prime(S, p, X, dq)
+		return 0.0*dq
+	end
+
+	function identitytrans(S, p, X, q)
+		return X
+	end
+
+	zerotransport=DifferentiableMapping(R3,R3,identitytrans,zerotrans_prime)
+end;
 
 # ╔═╡ 259c5f1b-5447-4690-a706-5dcc4c9fa5bb
 function P_prime_test_lambda(Integrand,y,B,T)
@@ -289,12 +294,7 @@ integrand_state_eq = DifferentiableMapping(S,S,state_equation_at, state_equation
 	
 end;
 
-# ╔═╡ 75cc0c62-293c-4e21-bdf4-7156244a9d68
-md"""
-Assemblierungsroutinen:
-"""
-
-# ╔═╡ 697c0fbc-3717-4158-8d95-06893c143276
+# ╔═╡ 9cad614b-f5b1-43ac-a612-6f32458f7cdd
 """
  A:      Matrix to be written into\\
 row_idx: row index of block inside system\\
@@ -379,7 +379,7 @@ end
  end
 end
 
-# ╔═╡ 85400860-8a15-4f6e-bec4-108bdb8da275
+# ╔═╡ ea918bcc-2d49-47cf-ad9c-79ae3bc9484c
 """
 If no vector transport is needed, leave it away, then a zero dummy transport is used
 """
@@ -387,7 +387,7 @@ function get_Jac!(A,row_idx,col_idx,h,nCells,y,integrand)
 	get_Jac!(A,row_idx,col_idx,h,nCells,y,integrand,zerotransport)
 end
 
-# ╔═╡ 6354afbc-28a1-4b33-a2ba-5878eb9d7d03
+# ╔═╡ f7d66dfb-d246-486a-9033-ab82fde3d586
 """
   T          : Test function
   tlf        : 1/0 : scaling of test function at left interval point
@@ -419,8 +419,7 @@ function assemble_local_rhs!(b,row_idx, h, i, yl, yr, T, tlf, trf, integrand)
 	end
 end
 
-
-# ╔═╡ afc8df19-7226-4a37-b59a-236400d37cff
+# ╔═╡ 6cf5ad9a-b3dc-4a11-bf01-3aa188c9667b
 """
  A:      Matrix to be written into\\
 row_idx: row index of block inside system\\
@@ -509,7 +508,7 @@ function evaluate(y, i, tloc)
 	)
 end
 
-# ╔═╡ cd866f05-b106-4cb7-a520-03f0bf8c4402
+# ╔═╡ c9b6a526-7b30-44bf-b652-ff9c17a4599c
 """
  A:      Matrix to be written into\\
 row_idx: row index of block inside system\\
@@ -537,26 +536,30 @@ function get_Jac!(A,row_idx,col_idx,h, nCells,y,integrand,transport)
 			col_base_idx = 1
 		end
 
-		Bcl=get_basis(M,yl.x[col_base_idx],DefaultOrthonormalBasis())
+		Bcl= get_basis(M,yl.x[col_base_idx],DefaultOrthonormalBasis())
 	    Bl = get_vectors(M,yl.x[col_base_idx], Bcl)
-		Bcr=get_basis(M,yr.x[col_base_idx],DefaultOrthonormalBasis())
+		Bcr= get_basis(M,yr.x[col_base_idx],DefaultOrthonormalBasis())
 	    Br = get_vectors(M,yr.x[col_base_idx], Bcr)
 
-		Tcl=get_basis(N,yl.x[row_idx],DefaultOrthonormalBasis())
+		Tcl= get_basis(N,yl.x[row_idx],DefaultOrthonormalBasis())
 	    Tl = get_vectors(N,yl.x[row_idx], Tcl)
-		Tcr=get_basis(N,yr.x[row_idx],DefaultOrthonormalBasis())
+		Tcr= get_basis(N,yr.x[row_idx],DefaultOrthonormalBasis())
 	    Tr = get_vectors(N,yr.x[row_idx], Tcr)
 
         # In the following, all combinations of test and basis functions have to be considered.
 		
-    	assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  			Tl,1,0, integrand, transport)		
-		assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tl,1,0, integrand, transport)		
-		assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  Tr,0,1, integrand, transport)		
-		assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tr,0,1, integrand, transport)		
+    	assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  			Tl,1,0, integrand, transport)	
+		#println("A1", A)
+		assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tl,1,0, integrand, transport)	
+		#println("A2", A)
+		assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Bl,1,0,  Tr,0,1, integrand, transport)
+		#println("A3", A)
+		assemble_local_Jac_with_connection!(A,row_idx,col_idx,h,i,yl,yr, Br,0,1,  Tr,0,1, integrand, transport)	
+		#println("A4", A)
 	end
 end
 
-# ╔═╡ b8880b9b-047d-4a84-8494-c99f6b25d151
+# ╔═╡ 9480c8ef-0f01-4983-8915-4f2513f89c5f
 function get_rhs_row!(b,row_idx,h,nCells,y,integrand)
 	CoDom = integrand.precodomain
 	# Schleife über Intervalle
@@ -580,7 +583,7 @@ function get_rhs_row!(b,row_idx,h,nCells,y,integrand)
 	end
 end
 
-# ╔═╡ 9fbe80b4-6371-41d3-b381-7fcd9dd9ece9
+# ╔═╡ 42b3c2e4-c06e-4a9a-acd3-5a5a06a55e9a
 function get_rhs_simplified!(b,row_idx,h,nCells,y,y_trial,integrand,transport)
 	S = integrand.precodomain
 	# Schleife über Intervalle
@@ -609,7 +612,7 @@ function get_rhs_simplified!(b,row_idx,h,nCells,y,y_trial,integrand,transport)
 	end
 end
 
-# ╔═╡ d098fbc7-2407-45f7-99bd-21a77705bc16
+# ╔═╡ b26f9e81-bd4e-48f5-b6de-31d46daac22c
 """
  A:      Matrix to be written into\\
 row_idx: row index of block inside system\\
@@ -654,46 +657,131 @@ function get_Jac_Lyy!(A,row_idx,col_idx,h, nCells,y,integrand,transport)
 	end
 end
 
-# ╔═╡ bd557dde-2dcc-42fc-9394-803b8d5af9b3
-md"""
-Für Aufruf Newton
-"""
-
-# ╔═╡ e0b255cc-7ccd-4171-8550-e04191e77bf3
-"""
-Dummy
-"""
-function bundlemap(M, y)
-		# Include boundary points
+# ╔═╡ 1c0028e5-6beb-4512-b1f3-c18780b68ad8
+begin
+mutable struct NewtonEquation{F1, F2, F3, F13, F23, F21, F22, J1, SE, T1, T2, T3, Om, NM, Nrhs}
+	integrand_Lprime::F1
+	integrand_Lyy1::F2
+	integrand_Lyy2::F3
+	integrand_L_yu::F13
+	integrand_L_λy::F23
+	integrand_L_uλ::F21
+	integrand_L_uu::F22
+	integrandJ_1::J1
+	integrand_stateeq::SE
+	VT::T1
+	transport_Lyy1::T2
+	transport_Lyy2::T3
+	interval::Om
+	A11::NM
+	A12::NM
+	A13::NM
+	A22::NM
+	A23::NM
+	A33::NM
+	A::NM
+	b1::Nrhs
+	b2::Nrhs
+	b3::Nrhs
+	b::Nrhs
 end
 
-# ╔═╡ a53b96cc-7093-4ce7-b3f2-7c94ddbc0a5a
-"""
-Dummy
-"""
-function connection_map(E, q)
-    return q
-end
-
-# ╔═╡ 45141a59-510a-4177-bab1-31be7450fcd9
-function solve_linear_system(M, p, state, prob)
-	obj = get_objective(prob)
+function NewtonEquation(M, int1, int2, int3, int13, int23, int21, int22, intJ1, intSE, VTP, VT1, VT2, time)
 	n1 = Int(manifold_dimension(submanifold(M, 1)))
 	n2 = Int(manifold_dimension(submanifold(M, 2)))
-	#n3 = Int(manifold_dimension(submanifold(M, 3)))
 	n3 = n1 # Dim muss 2 sein (aktuell liegt λ im R3, deswegen hier per Hand)
-
-	Ac11::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n1)
-	Ac11_helper::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n1)
-	Ac12::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n2) #Ac21 = Ac12'
-	Ac13::SparseMatrixCSC{Float64,Int32} = spzeros(n1,n3) #Ac31 = Ac13'
-	Ac22::SparseMatrixCSC{Float64,Int32} = spzeros(n2,n2)
-	Ac23::SparseMatrixCSC{Float64,Int32} = spzeros(n2,n3) #Ac32 = Ac23'
-	Ac33::SparseMatrixCSC{Float64,Int32} = spzeros(n3,n3)
 	
-	bc1 = zeros(n1)
-	bc2 = zeros(n2)
-	bc3 = zeros(n3)
+	A11::SparseMatrixCSC{Float64, Int32} = spzeros(n1,n1)
+	A12::SparseMatrixCSC{Float64, Int32} = spzeros(n1,n2)
+	A22::SparseMatrixCSC{Float64, Int32} = spzeros(n2,n2)
+	A13::SparseMatrixCSC{Float64, Int32} = spzeros(n1,n3)
+	A23::SparseMatrixCSC{Float64, Int32} = spzeros(n2,n3)
+	A33::SparseMatrixCSC{Float64, Int32} = spzeros(n3,n3)
+	A::SparseMatrixCSC{Float64, Int32} = spzeros(n1+n2+n3, n1+n2+n3)
+	
+	b1 = zeros(n1)
+	b2 = zeros(n2)
+	b3 = zeros(n3)
+	b = zeros(n1+n2+n3)
+	
+	return NewtonEquation{typeof(int1), typeof(int2), typeof(int3), typeof(int13), typeof(int23), typeof(int21), typeof(int22), typeof(intJ1), typeof(intSE), typeof(VTP), typeof(VT1), typeof(VT2), typeof(time), typeof(A11), typeof(b1)}(int1, int2, int3, int13, int23, int21, int22, intJ1, intSE, VTP, VT1, VT2, time, A11, A12, A13, A22, A23, A33, A, b1, b2, b3, b)
+end
+	
+function (ne::NewtonEquation)(M, VB, p)
+	n1 = Int(manifold_dimension(submanifold(M, 1)))
+	n2 = Int(manifold_dimension(submanifold(M, 2)))
+	n3 = n1
+	
+	ne.A11 .= spzeros(n1,n1)
+	ne.A12 .= spzeros(n1,n2)
+	#ne.A11 .= Matrix{Float64}(I, n1, n1)
+	A11_helper = spzeros(n1,n1)
+	ne.A13 .= spzeros(n1,n3)
+	ne.A22 .= spzeros(n2,n2)
+	ne.A23 .= spzeros(n2,n3)
+	ne.A33 .= spzeros(n3,n3)
+	
+	ne.b1 .= zeros(n1)
+	ne.b2 .= zeros(n2)
+	ne.b3 .= zeros(n3)
+
+	projected_λ = project(powerS, p[M,1], p[M, 3]) 
+	p[M, 3] = projected_λ
+	
+	Oy1 = OffsetArray([y01, p[M, 1]..., yT1], 0:(length(ne.interval)+1))
+	Oy2 = OffsetArray([y02, p[M, 2]..., yT2], 0:(length(ne.interval)+1))
+	Oy3 = OffsetArray([y03, p[M, 3]..., yT3], 0:(length(ne.interval)+1))
+	Oy = ArrayPartition(Oy1,Oy2,Oy3);
+
+	# Retraktion für lambda (VT) per hand (λ+ = P(y+)(λ+δλ)), TODO: Im Newton die Retraktion richtig setzen
+
+	nCells = length(ne.interval)+1
+	
+	println("Assemble:")
+
+	#ManoptExamples.get_Jac!(evaluate,ne.A11,1,1,1,1,h,nCells,Oy,ne.integrand_Lprime,ne.VT)
+	get_Jac!(ne.A11,1,1,h,nCells,Oy,ne.integrand_Lprime,ne.VT)
+	get_Jac_Lyy!(A11_helper,1,1,h,nCells,Oy,ne.integrand_Lyy1,ne.transport_Lyy1)
+	ne.A11 += A11_helper + A11_helper'	
+	A11_helper *= 0.0
+	get_Jac_Lyy!(A11_helper,1,1,h,nCells,Oy,ne.integrand_Lyy2,ne.transport_Lyy2)
+	ne.A11 += A11_helper
+	
+	#ManoptExamples.get_Jac!(evaluate,ne.A12,1,1,2,1,h,nCells,Oy, ne.integrand_L_yu, zerotransport)
+	#ManoptExamples.get_Jac!(evaluate,ne.A23,2,1,3,1,h,nCells,Oy, ne.integrand_L_uλ, zerotransport)
+	#ManoptExamples.get_Jac!(evaluate,ne.A13,1,1,3,1,h,nCells,Oy,ne.integrand_L_λy,ne.VT)
+	#ManoptExamples.get_Jac!(evaluate,ne.A22,2,1,2,1,h,nCells,Oy,ne.integrand_L_uu, zerotransport)
+	get_Jac!(ne.A12,1,2,h,nCells,Oy, ne.integrand_L_yu)
+	get_Jac!(ne.A23,2,3,h,nCells,Oy, ne.integrand_L_uλ)
+	get_Jac!(ne.A13,1,3,h,nCells,Oy,ne.integrand_L_λy,ne.VT)
+	get_Jac!(ne.A22,2,2,h,nCells,Oy,ne.integrand_L_uu)
+	
+	lambda_helper = get_coordinates(powerS, p[M,1], p[M,3], DefaultOrthogonalBasis())
+	ne.b1 = ne.A13 * lambda_helper
+	
+	#ManoptExamples.get_rhs_row!(evaluate,ne.b1,1,1,h,nCells,Oy,ne.integrandJ_1)
+	#ManoptExamples.get_rhs_row!(evaluate,ne.b2,2,1,h,nCells,Oy,ne.integrand_L_uλ)
+	#ManoptExamples.get_rhs_row!(evaluate,ne.b3,3,1,h,nCells,Oy,ne.integrand_stateeq)
+	
+	get_rhs_row!(ne.b1,1,h,nCells,Oy,ne.integrandJ_1)
+	get_rhs_row!(ne.b2,2,h,nCells,Oy,ne.integrand_L_uλ)
+	get_rhs_row!(ne.b3,3,h,nCells,Oy,ne.integrand_stateeq)
+	
+	#A33 = 0 
+
+	ne.A .= vcat(hcat(ne.A11 , ne.A12 , ne.A13), 
+			  hcat(ne.A12', ne.A22 , ne.A23), 
+			  hcat(ne.A13', ne.A23', ne.A33))
+		
+	ne.b .= vcat(ne.b1, ne.b2, ne.b3)
+	return
+end
+
+
+function (ne::NewtonEquation)(M, VB, p, p_trial)
+	n1 = Int(manifold_dimension(submanifold(M, 1)))
+	n2 = Int(manifold_dimension(submanifold(M, 2)))
+	n3 = Int(manifold_dimension(submanifold(M, 3)))
 	
 	bctrial1=zeros(n1)
 	bctrial2=zeros(n2)
@@ -701,91 +789,58 @@ function solve_linear_system(M, p, state, prob)
 
 	projected_λ = project(powerS, p[M,1], p[M, 3]) 
 	p[M, 3] = projected_λ
-	# Retraktion für lambda (VT) per hand (λ+ = P(y+)(λ+δλ)), TODO: Im Newton die Retraktion richtig setzen
 	
-	Oy1 = OffsetArray([y01, p[M, 1]..., yT1], 0:(length(Omega)+1))
-	Oy2 = OffsetArray([y02, p[M, 2]..., yT2], 0:(length(Omega)+1))
-	Oy3 = OffsetArray([y03, p[M, 3]..., yT3], 0:(length(Omega)+1))
+	Oy1 = OffsetArray([y01, p[M, 1]..., yT1], 0:(length(ne.interval)+1))
+	Oy2 = OffsetArray([y02, p[M, 2]..., yT2], 0:(length(ne.interval)+1))
+	Oy3 = OffsetArray([y03, p[M, 3]..., yT3], 0:(length(ne.interval)+1))
 	Oy = ArrayPartition(Oy1,Oy2,Oy3);
 
 	
-	Oytrial1 = OffsetArray([y01, state.p_trial[M,1]..., yT1], 0:(length(Omega)+1))
-	Oytrial2 = OffsetArray([y02, state.p_trial[M,2]..., yT2], 0:(length(Omega)+1))
-	Oytrial3 = OffsetArray([y03, state.p_trial[M,3]..., yT3], 0:(length(Omega)+1))
-
+	Oytrial1 = OffsetArray([y01, p_trial[M,1]..., yT1], 0:(length(ne.interval)+1))
+	Oytrial2 = OffsetArray([y02, p_trial[M,2]..., yT2], 0:(length(ne.interval)+1))
+	Oytrial3 = OffsetArray([y03, p_trial[M,3]..., yT3], 0:(length(ne.interval)+1))
 	Oytrial = ArrayPartition(Oytrial1,Oytrial2,Oytrial3);
-	
-	nCells = length(Omega)+1
 
-	get_Jac!(Ac11,1,1,h,nCells,Oy,integrand_L_prime,transport)
-	get_Jac_Lyy!(Ac11_helper,1,1,h,nCells,Oy,integrand_Lyy_1,transport_Lyy_1)
-	Ac11 += Ac11_helper + Ac11_helper'
+	nCells = length(ne.Omega) + 1
 
-	Ac11_helper *= 0.0
-	get_Jac_Lyy!(Ac11_helper,1,1,h,nCells,Oy,integrand_Lyy_2,transport_Lyy_2)
-	
-	Ac11 += Ac11_helper
-	#println(Matrix(Ac11))
-	
-	get_Jac!(Ac12,1,2,h,nCells,Oy, integrand_Lyu)
-	get_Jac!(Ac23,2,3,h,nCells,Oy, integrand_Luλ)
-	get_Jac!(Ac13,1,3,h,nCells,Oy,integrand_Lλy,transport)
-	get_Jac!(Ac22,2,2,h,nCells,Oy,integrand_Luu)
+	get_rhs_simplified!(bctrial2,2,h,nCells,Oy,Oytrial,ne.integrand_L_yu,ne.VT)
+	get_rhs_simplified!(bctrial3,3,h,nCells,Oy,Oytrial,ne.integrand_L_uλ, zerotransport)
 
-
-	lambda_helper = get_coordinates(powerS, p[M,1], p[M,3], DefaultOrthogonalBasis())
-	bc1 = Ac13 * lambda_helper
-	
-	get_rhs_row!(bc1,1,h,nCells,Oy,integrandJ1)
-	get_rhs_row!(bc2,2,h,nCells,Oy,integrand_Luλ)
-	get_rhs_row!(bc3,3,h,nCells,Oy,integrand_state_eq)
-
-	println("norm bc1:", norm(bc1))
-	println("norm bc2:", norm(bc2))
-	println("norm bc3:", norm(bc3))
-
-	
-	Ac = vcat(hcat(Ac11 , Ac12 , Ac13), 
-			  hcat(Ac12', Ac22 , Ac23), 
-			  hcat(Ac13', Ac23', Ac33))
-
-	if state.is_same == true
-		bcsys = vcat(bc1, bc2, bc3)
-	else
-		#get_rhs_simplified!(bctrial1,1,h,nCells,Oy,Oytrial,integrand1)
-		get_rhs_simplified!(bctrial2,2,h,nCells,Oy,Oytrial,integrand_Lyu,transport)
-		get_rhs_simplified!(bctrial3,3,h,nCells,Oy,Oytrial,integrand_Luλ)
-		bctrial = vcat(bctrial1,bctrial2, bctrail3)
-    	bcsys=bctrial-(1.0 - state.stepsize.alpha)*vcat(bc1, bc2,bc3)
-		println("alpha: ", state.stepsize.alpha)
-	end
-	Xc = (Ac) \ (-bcsys)
-	M_helper = ProductManifold(powerS, powerR3, powerS)
-	p_helper = ArrayPartition(p[M, 1], p[M, 2], p[M, 1])
-	B = get_basis(M_helper, p_helper, DefaultOrthonormalBasis())
-	res_c = get_vector(M_helper, p_helper, Xc, B)
-	return res_c
+	return vcat(bctrial1,bctrial2, bctrial3)
 end
+end;
 
-# ╔═╡ a231448c-8819-42c8-9826-59183c47526e
-solve(problem, newtonstate, k) = solve_linear_system(problem.manifold, newtonstate.p, newtonstate, problem)
+# ╔═╡ 45141a59-510a-4177-bab1-31be7450fcd9
+function solve_in_basis_repr(problem, newtonstate) 
+	X = (problem.newton_equation.A) \ (-problem.newton_equation.b)
+	M_helper = ProductManifold(powerS, powerR3, powerS)
+	p_helper = ArrayPartition(newtonstate.p[problem.manifold, 1], newtonstate.p[problem.manifold, 2], newtonstate.p[problem.manifold, 1])
+	return get_vector(M_helper, p_helper, X, DefaultOrthogonalBasis())
+end
 
 # ╔═╡ b3d4e21b-8183-4522-a463-63bef1810357
 """ Initial geodesic """
 y_0 = copy(product, disc_y)
 
+# ╔═╡ b7f97707-786c-47c7-a3b6-afaedf2083d3
+pr = ProductRetraction(ProjectionRetraction(), ExponentialRetraction(), ExponentialRetraction())
+
 # ╔═╡ 5220a0dd-9484-4556-a7d0-ecf94955bf6c
-st_res = vectorbundle_newton(product, TangentBundle(product), bundlemap, bundlemap, connection_map, y_0;
-	sub_problem=solve,
-	sub_state=AllocatingEvaluation(),
-	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(product,1e-12; outer_norm=Inf)),
-	#retraction_method=ProductRetraction(),
-stepsize=ConstantLength(1.0),
-#stepsize=Manopt.AffineCovariantStepsize(product),
+begin
+	NE = NewtonEquation(product, integrand_L_prime, integrand_Lyy_1, integrand_Lyy_2, integrand_Lyu, integrand_Lλy, integrand_Luλ, integrand_Luu, integrandJ1, integrand_state_eq, transport, transport_Lyy_1, transport_Lyy_2, Omega)
+
+	st_res = vectorbundle_newton(product, TangentBundle(product), NE, y_0; sub_problem=solve_in_basis_repr, sub_state=AllocatingEvaluation(),
+	stopping_criterion=(StopAfterIteration(150)|StopWhenChangeLess(product,1e-11; outer_norm=Inf)),
+	retraction_method=pr,
+	#stepsize=Manopt.AffineCovariantStepsize(product, theta_des=0.5, outer_norm=Inf),
 	debug=[:Iteration, (:Change, "Change: %1.8e"), "\n", :Stop],
 	record=[:Iterate, :Change],
 	return_state=true
 )
+end
+
+# ╔═╡ 74d553d3-b1d1-47af-ba1f-6d4297148b51
+iterates = get_record(st_res, :Iteration, :Iterate)
 
 # ╔═╡ 6920c45e-4ccb-4b60-a90c-c8df0792269c
 change = get_record(st_res, :Iteration, :Change)[2:end];
@@ -821,25 +876,25 @@ for i in 1:n
 end
 fig, ax, plt = meshscatter(
   sx,sy,sz,
-  color = fill(RGBA(1.,1.,1.,0.), n, n),
+  color = RGBA(1.,1.,1.,0.),
   shading = Makie.automatic,
   transparency=true
 )
 ax.show_axis = false
 
 state_start = [y01, discretized_y ...,yT1]
-state_final = [y01, p_res.x[1] ..., yT1]
+state_final = [y01, p_res[product,1] ..., yT1]
 wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
     π1(x) = 1.0*x[1]
     π2(x) = 1.0*x[2]
     π3(x) = 1.0*x[3]
-	#arrows!(ax, π1.(p_res.x[1]), π2.(p_res.x[1]), π3.(p_res.x[1]), π1.(p_res.x[3]), π2.(p_res.x[3]), π3.(p_res.x[3]); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=2.5)
-	scatterlines!(ax, π1.(state_final), π2.(state_final), π3.(state_final); markersize=8, color=:orange, linewidth=2)
-	scatterlines!(ax, π1.(state_start), π2.(state_start), π3.(state_start); markersize=8, color=:blue, linewidth=2)
-	scatter!(ax, π1.([y01, yT1]), π2.([y01, yT1]), π3.([y01, yT1]); markersize =10, color=:red)
+	arrows!(ax, π1.(p_res.x[1]), π2.(p_res.x[1]), π3.(p_res.x[1]), π1.(p_res.x[3]), π2.(p_res.x[3]), π3.(p_res.x[3]); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=2.5)
+	scatterlines!(ax, π1.(state_final), π2.(state_final), π3.(state_final); markersize=5, color=:orange, linewidth=0.1)
+	#scatterlines!(ax, π1.(state_start), π2.(state_start), π3.(state_start); markersize=8, color=:blue, linewidth=1)
+	scatter!(ax, π1.([y01, yT1]), π2.([y01, yT1]), π3.([y01, yT1]); markersize =7, color=:red)
 	
 	#scatter!(ax, 1.0,1.0,1.0; markersize =9, color=:red)
-	scatter!(ax, 1/sqrt(3), 1/sqrt(3), 1/sqrt(3); markersize =12, color=:red)
+	scatter!(ax, 1/sqrt(3), 1/sqrt(3), 1/sqrt(3); markersize =7, color=:red)
 	
 	#arrows!(ax, π1.(p_res.x[1]), π2.(p_res.x[1]), π3.(p_res.x[1]), π1.(-p_res.x[2]), π2.(-p_res.x[2]), π3.(-p_res.x[2]); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.13), transparency=true, lengthscale=0.05)
 	fig
@@ -847,22 +902,15 @@ end
 
 # ╔═╡ Cell order:
 # ╠═6362be32-ed1a-11ef-0352-c7ccb14267de
+# ╠═66fbe00e-1d30-468d-baa5-05e099cf329e
 # ╠═bc7188d7-38a4-49a3-9271-c2ad4b4ebf91
 # ╠═aeceb735-da1b-4db5-9964-538b316441c2
-# ╠═b211e406-61df-427c-885c-8217adc42540
-# ╠═bb07fd2d-df5f-4e4a-bd5f-c58bf2f1990f
-# ╠═930ead70-8331-4e78-b15a-f67cc6042acb
-# ╠═ee844858-db04-4a3f-947b-18130e3bf160
-# ╠═b0e6d152-91cc-4f29-940a-ec23a342ab59
-# ╠═347f61fc-fb14-47d0-8602-8550cf881ceb
-# ╠═33c572fe-0103-4e8e-82fa-4035955347b8
+# ╠═c6b1fd66-ef1f-427e-b8cc-d2da9c127ee3
 # ╠═9b589eb8-c42c-45cf-a2d4-89fd1d522759
 # ╟─b22850cc-26fa-4fbe-a919-0ae95c8571d6
-# ╠═3ee0ae2b-200e-4ce4-8dc9-b873bb6873f4
-# ╠═777c9eab-0e5d-41d5-a73a-685ab24b82ff
-# ╠═8cc250f5-f66e-4746-9855-664be0bd3408
-# ╠═ecd3cb2a-887f-4cb2-bcb6-2bb58366ff07
-# ╠═c1ae6bcf-fab5-4456-8a11-7f36f125fffa
+# ╠═6dc5ca81-70b6-4aab-8f52-64b696e06217
+# ╟─8596f05e-bc6f-4891-80ee-e45e9d730089
+# ╠═452addcd-d0f4-4059-8de6-448045e5b670
 # ╟─a3a135f0-c5e8-4825-8653-cbd68bbe795e
 # ╠═423eadae-bc19-48a7-a468-3506e20a784c
 # ╠═ded804d7-792b-42c1-8283-237b3ec3faac
@@ -885,23 +933,21 @@ end
 # ╠═06d1f25c-80d8-4a07-8b53-3cabc90e70a9
 # ╟─8552ff47-9c4c-4028-b6cd-635f144ae522
 # ╠═4d79c53a-06ee-4c42-8fdf-678ca6a8c7e8
-# ╟─75cc0c62-293c-4e21-bdf4-7156244a9d68
-# ╠═697c0fbc-3717-4158-8d95-06893c143276
-# ╠═cd866f05-b106-4cb7-a520-03f0bf8c4402
-# ╠═85400860-8a15-4f6e-bec4-108bdb8da275
-# ╠═6354afbc-28a1-4b33-a2ba-5878eb9d7d03
-# ╠═b8880b9b-047d-4a84-8494-c99f6b25d151
-# ╠═9fbe80b4-6371-41d3-b381-7fcd9dd9ece9
-# ╠═d098fbc7-2407-45f7-99bd-21a77705bc16
-# ╠═afc8df19-7226-4a37-b59a-236400d37cff
+# ╠═9cad614b-f5b1-43ac-a612-6f32458f7cdd
+# ╠═ea918bcc-2d49-47cf-ad9c-79ae3bc9484c
+# ╠═f7d66dfb-d246-486a-9033-ab82fde3d586
+# ╠═6cf5ad9a-b3dc-4a11-bf01-3aa188c9667b
+# ╠═c9b6a526-7b30-44bf-b652-ff9c17a4599c
+# ╠═9480c8ef-0f01-4983-8915-4f2513f89c5f
+# ╠═42b3c2e4-c06e-4a9a-acd3-5a5a06a55e9a
+# ╠═b26f9e81-bd4e-48f5-b6de-31d46daac22c
 # ╠═707d23d1-f7b4-49cb-b0ff-11ec536939fa
-# ╟─bd557dde-2dcc-42fc-9394-803b8d5af9b3
-# ╠═e0b255cc-7ccd-4171-8550-e04191e77bf3
-# ╠═a53b96cc-7093-4ce7-b3f2-7c94ddbc0a5a
-# ╠═a231448c-8819-42c8-9826-59183c47526e
+# ╠═1c0028e5-6beb-4512-b1f3-c18780b68ad8
 # ╠═45141a59-510a-4177-bab1-31be7450fcd9
 # ╠═b3d4e21b-8183-4522-a463-63bef1810357
+# ╠═b7f97707-786c-47c7-a3b6-afaedf2083d3
 # ╠═5220a0dd-9484-4556-a7d0-ecf94955bf6c
+# ╠═74d553d3-b1d1-47af-ba1f-6d4297148b51
 # ╠═6920c45e-4ccb-4b60-a90c-c8df0792269c
 # ╠═921845f5-2114-4e8f-a3c4-e1677e9134dd
 # ╠═817c3466-eeb7-4979-a738-1036b719361f
