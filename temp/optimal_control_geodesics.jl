@@ -12,7 +12,7 @@ begin
 	using LinearAlgebra
 	using SparseArrays
 	using Manopt
-	#using ManoptExamples
+	using ManoptExamples
 	using Manifolds
 	using OffsetArrays
 	using RecursiveArrayTools
@@ -26,7 +26,7 @@ end;
 
 # ╔═╡ aeceb735-da1b-4db5-9964-538b316441c2
 begin
-	N=200
+	N=25
 	
 	st1 = 0.0
 	halt1 = 1.0
@@ -46,7 +46,7 @@ begin
 	y03 = [0,0,0] # start lambda
 	yT3 = [0,0,0] # end lambda
 
-	α = 0.00031;
+	α = 0.00811;
 	yd = [1/sqrt(3)*[1.0,1.0,1.0] for Ωi in Omega];
 	#yd = [[1.0,1.0,1.0] for Ωi in Omega];
 end;
@@ -739,32 +739,33 @@ function (ne::NewtonEquation)(M, VB, p)
 	
 	println("Assemble:")
 
-	#ManoptExamples.get_Jac!(evaluate,ne.A11,1,1,1,1,h,nCells,Oy,ne.integrand_Lprime,ne.VT)
-	get_Jac!(ne.A11,1,1,h,nCells,Oy,ne.integrand_Lprime,ne.VT)
+	ManoptExamples.get_Jac!(evaluate,ne.A11,1,1,1,1,h,nCells,Oy,ne.integrand_Lprime,ne.VT)
+	#get_Jac!(ne.A11,1,1,h,nCells,Oy,ne.integrand_Lprime,ne.VT)
 	get_Jac_Lyy!(A11_helper,1,1,h,nCells,Oy,ne.integrand_Lyy1,ne.transport_Lyy1)
 	ne.A11 += A11_helper + A11_helper'	
 	A11_helper *= 0.0
 	get_Jac_Lyy!(A11_helper,1,1,h,nCells,Oy,ne.integrand_Lyy2,ne.transport_Lyy2)
 	ne.A11 += A11_helper
 	
-	#ManoptExamples.get_Jac!(evaluate,ne.A12,1,1,2,1,h,nCells,Oy, ne.integrand_L_yu, zerotransport)
+	ManoptExamples.get_Jac!(evaluate,ne.A12,1,1,2,1,h,nCells,Oy, ne.integrand_L_yu, zerotransport)
 	#ManoptExamples.get_Jac!(evaluate,ne.A23,2,1,3,1,h,nCells,Oy, ne.integrand_L_uλ, zerotransport)
 	#ManoptExamples.get_Jac!(evaluate,ne.A13,1,1,3,1,h,nCells,Oy,ne.integrand_L_λy,ne.VT)
-	#ManoptExamples.get_Jac!(evaluate,ne.A22,2,1,2,1,h,nCells,Oy,ne.integrand_L_uu, zerotransport)
-	get_Jac!(ne.A12,1,2,h,nCells,Oy, ne.integrand_L_yu)
+	ManoptExamples.get_Jac!(evaluate,ne.A22,2,1,2,1,h,nCells,Oy,ne.integrand_L_uu, zerotransport)
+	
+	#get_Jac!(ne.A12,1,2,h,nCells,Oy, ne.integrand_L_yu)
 	get_Jac!(ne.A23,2,3,h,nCells,Oy, ne.integrand_L_uλ)
 	get_Jac!(ne.A13,1,3,h,nCells,Oy,ne.integrand_L_λy,ne.VT)
-	get_Jac!(ne.A22,2,2,h,nCells,Oy,ne.integrand_L_uu)
+	#get_Jac!(ne.A22,2,2,h,nCells,Oy,ne.integrand_L_uu)
 	
 	lambda_helper = get_coordinates(powerS, p[M,1], p[M,3], DefaultOrthogonalBasis())
 	ne.b1 = ne.A13 * lambda_helper
 	
-	#ManoptExamples.get_rhs_row!(evaluate,ne.b1,1,1,h,nCells,Oy,ne.integrandJ_1)
-	#ManoptExamples.get_rhs_row!(evaluate,ne.b2,2,1,h,nCells,Oy,ne.integrand_L_uλ)
+	ManoptExamples.get_rhs_row!(evaluate,ne.b1,1,1,h,nCells,Oy,ne.integrandJ_1)
+	ManoptExamples.get_rhs_row!(evaluate,ne.b2,2,1,h,nCells,Oy,ne.integrand_L_uλ)
 	#ManoptExamples.get_rhs_row!(evaluate,ne.b3,3,1,h,nCells,Oy,ne.integrand_stateeq)
 	
-	get_rhs_row!(ne.b1,1,h,nCells,Oy,ne.integrandJ_1)
-	get_rhs_row!(ne.b2,2,h,nCells,Oy,ne.integrand_L_uλ)
+	#get_rhs_row!(ne.b1,1,h,nCells,Oy,ne.integrandJ_1)
+	#get_rhs_row!(ne.b2,2,h,nCells,Oy,ne.integrand_L_uλ)
 	get_rhs_row!(ne.b3,3,h,nCells,Oy,ne.integrand_stateeq)
 	
 	#A33 = 0 
@@ -885,10 +886,10 @@ ax.show_axis = false
 state_start = [y01, discretized_y ...,yT1]
 state_final = [y01, p_res[product,1] ..., yT1]
 wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
-    π1(x) = 1.0*x[1]
-    π2(x) = 1.0*x[2]
-    π3(x) = 1.0*x[3]
-	arrows!(ax, π1.(p_res.x[1]), π2.(p_res.x[1]), π3.(p_res.x[1]), π1.(p_res.x[3]), π2.(p_res.x[3]), π3.(p_res.x[3]); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=2.5)
+    π1(x) = 1.01*x[1]
+    π2(x) = 1.01*x[2]
+    π3(x) = 1.01*x[3]
+	arrows!(ax, π1.(p_res.x[1]), π2.(p_res.x[1]), π3.(p_res.x[1]), π1.(-p_res.x[2]), π2.(-p_res.x[2]), π3.(-p_res.x[2]); color=:green, linewidth=0.001, arrowsize=Vec3f(0.03, 0.03, 0.05), transparency=true, lengthscale=0.1)
 	scatterlines!(ax, π1.(state_final), π2.(state_final), π3.(state_final); markersize=5, color=:orange, linewidth=0.1)
 	#scatterlines!(ax, π1.(state_start), π2.(state_start), π3.(state_start); markersize=8, color=:blue, linewidth=1)
 	scatter!(ax, π1.([y01, yT1]), π2.([y01, yT1]), π3.([y01, yT1]); markersize =7, color=:red)
@@ -899,6 +900,9 @@ wireframe!(ax, sx, sy, sz, color = RGBA(0.5,0.5,0.7,0.1); transparency=true)
 	#arrows!(ax, π1.(p_res.x[1]), π2.(p_res.x[1]), π3.(p_res.x[1]), π1.(-p_res.x[2]), π2.(-p_res.x[2]), π3.(-p_res.x[2]); color=:green, linewidth=0.01, arrowsize=Vec3f(0.03, 0.03, 0.13), transparency=true, lengthscale=0.05)
 	fig
 end
+
+# ╔═╡ e212110d-abce-4be4-8327-bd5b3a4e1329
+norm(p_res.x[2])
 
 # ╔═╡ Cell order:
 # ╠═6362be32-ed1a-11ef-0352-c7ccb14267de
@@ -952,3 +956,4 @@ end
 # ╠═921845f5-2114-4e8f-a3c4-e1677e9134dd
 # ╠═817c3466-eeb7-4979-a738-1036b719361f
 # ╠═ac49e504-f3ba-4a5e-9a66-21160f38874e
+# ╠═e212110d-abce-4be4-8327-bd5b3a4e1329
