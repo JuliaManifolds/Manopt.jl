@@ -81,6 +81,7 @@ function (r::IdentityUpdateRule)(
     get_gradient!(mp, s.X, s.p)
     return get_stepsize(mp, s, k; gradient=s.X), s.X
 end
+
 function default_stepsize(
     M::AbstractManifold,
     ::Type{GradientDescentState};
@@ -192,18 +193,24 @@ function gradient_descent(
     q = copy(M, p)
     return gradient_descent!(M, mgo, q; kwargs...)
 end
+calls_with_kwargs(::typeof(gradient_descent)) = (gradient_descent!,)
 
 "$(_doc_gradient_descent)"
 gradient_descent!(M::AbstractManifold, args...; kwargs...)
+
+# TODO Add this second signature as well
 function gradient_descent!(
     M::AbstractManifold,
     f,
     grad_f,
     p;
+    differential=nothing,
     evaluation::AbstractEvaluationType=AllocatingEvaluation(),
     kwargs...,
 )
-    mgo = ManifoldGradientObjective(f, grad_f; evaluation=evaluation)
+    mgo = ManifoldGradientObjective(
+        f, grad_f; differential=differential, evaluation=evaluation
+    )
     return gradient_descent!(M, mgo, p; kwargs...)
 end
 function gradient_descent!(
@@ -245,6 +252,7 @@ function gradient_descent!(
     solve!(dmp, ds)
     return get_solver_return(get_objective(dmp), ds)
 end
+calls_with_kwargs(::typeof(gradient_descent!)) = (decorate_objective!, decorate_state!)
 #
 # Solver functions
 #
