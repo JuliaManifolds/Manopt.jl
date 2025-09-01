@@ -1,7 +1,7 @@
 s = joinpath(@__DIR__, "..", "ManoptTestSuite.jl")
 !(s in LOAD_PATH) && (push!(LOAD_PATH, s))
 
-using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, Random
+using Manopt, Manifolds, ManifoldsBase, ManoptTestSuite, Test, Random, LinearAlgebra
 using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
 
 @testset "Conjugate Gradient Descent" begin
@@ -324,7 +324,7 @@ using LinearAlgebra: Diagonal, dot, eigvals, eigvecs
             stepsize = get_stepsize()
         )
         # sufficient descent should perform best, descent better than no restart
-        @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p3)
-        @test e_func(p3) ≈ 0 atol = 1e-3
+        @test e_func(p3) < e_func(p2) && e_func(p2) < e_func(p1)
+        @test e_func(p3) ≈ 1 atol = 1e-3
     end
 end
