@@ -14,13 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * a `gradient=` keyword in several `Stepsize`s, such that one can avoid to internally avoid computing the gradient again.
 * used this keyword in
   * `alternating_gradient_descent`
-  * `conjugate_gradient`
+  * conjugate_gradient
   * `Frank_Wolfe_method`
   * `gradient_descent`
   * `interior_point_newton`
   * `quasi_Newton`
   * `projected_gradient_method`
 * a `restart_condition` functor to `conjugate_gradient_descent`, which allows the algorithm to restart if the search direction is sub-par. 
+* two references
+
+### Fixed
+
+* Fixed some math rendering in the docs.
+
+### Changed
+
+* remodelled the docs for the extensions a bit, added `JuMP` to the DocumenterInterlinks.
+* the internal `VectorizedManifold` is now called `ManifoldSet`
+* the internal `ArrayShape` is not called `ManifoldPointArrayShape`
 
 ## [0.5.20] July 8, 2025
 
