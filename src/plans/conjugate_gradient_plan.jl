@@ -32,6 +32,7 @@ $(_var(:Field, :X))
 * `δ`:                       the current descent direction, also a tangent vector
 * `β`:                       the current update coefficient rule, see .
 * `coefficient`:             function to determine the new `β`
+* `restart_condition`:       an [`AbstractRestartCondition`](@ref) to determine how to handle non-descent directions.
 $(_var(:Field, :stepsize))
 $(_var(:Field, :stopping_criterion, "stop"))
 $(_var(:Field, :retraction_method))
@@ -52,6 +53,7 @@ The following fields from above <re keyword arguments
 $(_var(:Keyword, :X, "initial_gradient"))
 $(_var(:Keyword, :p; add=:as_Initial))
 * `coefficient=[`ConjugateDescentCoefficient`](@ref)`()`: specify a CG coefficient, see also the [`ManifoldDefaultsFactory`](@ref).
+* `restart_condition=[`NeverRestart`](@ref)`()`: specify a [restart condition](@ref cg-restart). It defaults to never restart.
 $(_var(:Keyword, :stepsize; default="[`default_stepsize`](@ref)`(M, ConjugateGradientDescentState; retraction_method=retraction_method)`"))
 $(_var(:Keyword, :stopping_criterion; default="[`StopAfterIteration`](@ref)`(500)`$(_sc(:Any))[`StopWhenGradientNormLess`](@ref)`(1e-8)`)"))
 $(_var(:Keyword, :retraction_method))
@@ -64,13 +66,13 @@ $(_var(:Keyword, :vector_transport_method))
 mutable struct ConjugateGradientDescentState{
     P,
     T,
+    F,
     TStepsize<:Stepsize,
     TStop<:StoppingCriterion,
+    TCoeff<:DirectionUpdateRuleStorage,
     TRC<:AbstractRestartCondition,
     TRetr<:AbstractRetractionMethod,
     VTM<:AbstractVectorTransportMethod,
-    F,
-    TCoeff<:DirectionUpdateRuleStorage,
 } <: AbstractGradientSolverState
     p::P
     p_old::P
@@ -96,7 +98,7 @@ mutable struct ConjugateGradientDescentState{
     ) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
         coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
-        cgs = new{P,T,TStep,TsC,TRC,TRetr,VTM,βT,typeof(coef)}()
+        cgs = new{P,T,βT,TStep,TsC,typeof(coef),TRC,TRetr,VTM}()
         cgs.p = p
         cgs.p_old = copy(M, p)
         cgs.X = initial_gradient
@@ -1011,7 +1013,7 @@ end
 @doc """
     NeverRestart <: AbstractRestartCondition
 
-A functor `(problem, state, k) -> false` that never indicates to restart.
+A restart strategy that indicates to never restart.
 """
 struct NeverRestart <: AbstractRestartCondition end
 
@@ -1020,9 +1022,16 @@ function (corr::NeverRestart)(amp::AbstractManoptProblem, cgs::ConjugateGradient
 end
 
 @doc """
-RestartOnNonDescent <: AbstractRestartCondition
+    RestartOnNonDescent <: AbstractRestartCondition
 
-A functor `(problem, state, k) -> corr` that indicates to restart when the search direction is not a descent direction.
+A restart strategy that restarts, whenever the search direction `δ` is not a descent direction,
+i.e. when
+
+```math
+    ⟨$(_tex(:grad))f(p), δ⟩ > 0,
+```
+
+at the current iterate ``p``.
 """
 struct RestartOnNonDescent <: AbstractRestartCondition end
 function (corr::RestartOnNonDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
@@ -1035,18 +1044,17 @@ RestartOnNonSufficientDescent <: AbstractRestartCondition
 ## Fields
 * `κ`: the sufficient decrease factor
 
-A functor `(problem, state, k) -> corr` that indicates to restart when the search direction is not a sufficient descent direction, i.e.
+A restart strategy that indicates to restart whenever the search direction `δ` is not a sufficient descent direction, i.e.
 ```math
-    ⟨X, δ) ≤ - κ ||X||^2
+    ⟨$(_tex(:grad))f(p), δ⟩ ≤ - κ $(_tex(:norm, "X"))^2.
 ```
-for gradient `X` and search direction `δ`.
 
+at the current iterate ``p``.
 """
-struct RestartOnNonSufficientDescent <: AbstractRestartCondition 
-    κ
+struct RestartOnNonSufficientDescent{F<:Real} <: AbstractRestartCondition
+    κ::F
 end
 function (corr::RestartOnNonSufficientDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
-    return (get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) 
+    return (get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true)
             > - corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true))
 end
-

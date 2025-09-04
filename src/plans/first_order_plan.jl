@@ -1036,8 +1036,11 @@ end
 """
     AbstractRestartCondition
 
-A general functor, that handles the restart condition. It tells the algorithm if 
-it should restart
+A general struct, that indicates then to restart.
+It is used within the [`ConjugateGradientDescentState`](@ref).
+
+It is implemented to work as a functor `(problem, state, iteration) -> true|false`
+and what is done in the restart case (`true`) is decided by the single solver.
 """
 abstract type AbstractRestartCondition end
 

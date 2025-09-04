@@ -17,6 +17,7 @@ function show(io::IO, cgds::ConjugateGradientDescentState)
     $Iter
     ## Parameters
     * conjugate gradient coefficient: $(cgds.coefficient) (last β=$(cgds.β))
+    * restart condition: $(cgds.restart_condition)
     * retraction method: $(cgds.retraction_method)
     * vector transport method: $(cgds.vector_transport_method)
 
@@ -82,7 +83,7 @@ $(_var(:Argument, :p))
   rule to compute the descent direction update coefficient ``β_k``, as a functor, where
   the resulting function maps are `(amp, cgs, k) -> β` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
-* `restart_condition::AbstractRestartCondition=`[`NeverRestart`]`)(@ref)`()`: 
+* `restart_condition::AbstractRestartCondition=`[`NeverRestart`]`)(@ref)`()`:
   rule when the algorithm should restart, i.e. use the negative gradient instead of the computed direction,
   as a functior where the resulting function maps are `(amp, cgs, k) -> corr::Bool` with `amp` an [`AbstractManoptProblem`](@ref),
   `cgs` is the [`ConjugateGradientDescentState`](@ref), and `k` is the current iterate.
