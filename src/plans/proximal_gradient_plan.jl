@@ -1,12 +1,12 @@
-@doc raw"""
+@doc """
     ManifoldProximalGradientObjective{E,<:AbstractEvaluationType, TC, TG, TGG, TP} <: AbstractManifoldObjective{E,TC,TGG}
 
 Model an objective of the form
 ```math
-    f(p) = g(p) + h(p),\qquad p \in \mathcal M,
+    f(p) = g(p) + h(p), $(_tex(:qquad)) p ∈ $(_math(:M)),
 ```
-where ``g: \mathcal M → \bar{ℝ}`` is a differentiable function
-and ``h: → \bar{ℝ}`` is a (possibly) lower semicontinous, and proper function.
+where ``g: $(_math(:M)) → $(_tex(:eR))`` is a differentiable function
+and ``h: → $(_tex(:eR))`` is a (possibly) lower semicontinous, and proper function.
 
 This objective provides the total cost ``f``, its smooth component ``g``,
 as well as ``$(_tex(:grad)) g`` and ``$(_tex(:prox))_{λ h}``.
@@ -126,24 +126,29 @@ function get_proximal_map!(
     mpgo.proximal_map_h!!(M, q, λ, p)
     return q
 end
-# 
+#
 # Nonsmooth cost, for subproblem formulation
-@doc raw"""
+@doc """
     ProximalGradientNonsmoothCost{F, R, P}
 
 Stores the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``, as well as the stepsize parameter ``λ ∈ ℝ``.
 
 This struct is also a functor `(M, q) -> v` that can be used as a cost function within a solver, primarily for solving the proximal map subproblem formulation in the proximal gradient method, which reads
+
 ```math
-    $(_tex(:prox))_{λ h}(p) = \operatorname{argmin}_{q \in \mathcal M} \left( h(q) + \frac{1}{2λ} $(_math(:distance))^2(q, p) \right)
+    $(_tex(:prox))_{λ h}(p) = $(_tex(:argmin))_{q ∈ $(_math(:M))} h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)
 ```
+
 Hence, the functor reads
+
 ```math
-    (M, q) \mapsto h(q) + \frac{1}{2λ} $(_math(:distance))^2(q, p)
+    (M, q) ↦ h(q) + \frac{1}{2λ} $(_math(:distance))^2(q, p)
 ```
+
 and `p` is the proximity point where the proximal map is evaluated, i.e. the argument `p` of the proximal map ``$(_tex(:prox))_{λ h}``.
 
 ## Fields
+
 * `cost::F` - the nonsmooth part ``h`` of the proximal gradient objective, i.e. the part of the objective whose proximal map is sought
 * `λ::R` - the stepsize parameter for the proximal map
 * `proximity_point::P` - point where the proximal map is evaluated, i.e. the argument ``p`` of the proximal map ``$(_tex(:prox))_{λ h} (p)`` that we want to solve for
@@ -173,17 +178,18 @@ function (pgnc::ProximalGradientNonsmoothCost)(M::AbstractManifold, p)
     return pgnc.cost(M, p) + (1 / 2 * pgnc.λ) * distance(M, p, pgnc.proximity_point)^2
 end
 
-@doc raw"""
+@doc """
     ProximalGradientNonsmoothSubgradient{F, R, P}
+
 Stores a subgradient of the nonsmooth part ``h`` of the proximal gradient objective ``f = g + h``, as well as the stepsize parameter ``λ ∈ ℝ``.
 
 This struct is also a functor in both formats
     * `(M, p) -> X` to compute the gradient in allocating fashion.
-This is primarily used for computing a subgradient of the cost function ``h(q) + \frac{1}{2λ} $(_math(:distance))^2(q, p)`` that defines proximal map in the proximal gradient method. This reads
+This is primarily used for computing a subgradient of the cost function ``h(q) + $(_tex(:frac, "1", "2λ"))$(_math(:distance))^2(q, p)`` that defines proximal map in the proximal gradient method. This reads
 ```math
-    \partial h(q) - \frac{1}{λ} \operatorname{log}_q p
+    ∂h(q) - $(_tex(:frac, "1","λ"))$(_tex(:log))_q p
 ```
-`` is the proximity point where the proximal map is evaluated, i.e. the argument ``p`` of the proximal map ``$(_tex(:prox))_{λ h} (p)``.
+is the proximity point where the proximal map is evaluated, i.e. the argument ``p`` of the proximal map ``$(_tex(:prox))_{λ h} (p)``.
 
 ## Fields
 
@@ -192,6 +198,8 @@ This is primarily used for computing a subgradient of the cost function ``h(q) +
 * `proximity_point::P` - point where the proximal map is evaluated, i.e. the argument of the proximal map that we want to solve for
 
 # Constructor
+
+
     ProximalGradientNonsmoothSubgradient(cost, λ, proximity_point)
 """
 mutable struct ProximalGradientNonsmoothSubgradient{F,R,P}
