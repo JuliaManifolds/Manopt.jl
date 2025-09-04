@@ -39,10 +39,10 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T$(_math(:M))``
+* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : $(_tex(:Cal, "N")) → T$(_math(:M))``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:M)) → \mathcal N``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:M)) → $(_tex(:Cal, "N"))``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
@@ -408,7 +408,7 @@ end
 
 Evaluate the adjoint of the linearized forward operator of ``(DΛ(m))^*[Y]`` stored within
 the [`AbstractPrimalDualManifoldObjective`](@ref) (in place of `X`).
-Since ``Y∈T_n\mathcal N``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
+Since ``Y∈T_n$(_tex(:Cal, "N"))``, both ``m`` and ``n=Λ(m)`` are necessary arguments, mainly because
 the forward operator ``Λ`` might be `missing` in `p`.
 """
 adjoint_linearized_operator(
@@ -509,12 +509,11 @@ Compute the primal residual at current iterate ``k`` given the necessary values 
 X_{k-1}``, and ``n_{k-1}`` from the previous iterate.
 
 ```math
-\Bigl\lVert
-\frac{1}{σ}\operatorname{retr}^{-1}_{x_{k}}x_{k-1} -
-V_{x_k\gets m_k}\bigl(DΛ^*(m_k)\bigl[V_{n_k\gets n_{k-1}}X_{k-1} - X_k \bigr]
-\Bigr\rVert
+$(_tex(:norm,
+  "$(_tex(:frac, "1", "σ"))$(_tex(:retr))^{-1}_{x_{k}}x_{k-1} - V_{x_k←m_k} $(_tex(:bigl))( DΛ^*(m_k)$(_tex(:bigl))[V_{n_k← n_{k-1}}X_{k-1} - X_k $(_tex(:bigr))]$(_tex(:bigr)))"
+))
 ```
-where ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
+where ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref)
 """
 function primal_residual(
     tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
@@ -570,31 +569,20 @@ on the `o.variant` used:
 
 For the `:linearized` it reads
 ```math
-\Bigl\lVert
-\frac{1}{τ}\bigl(
-V_{n_{k}\gets n_{k-1}}(X_{k-1})
-- X_k
-\bigr)
--
-DΛ(m_k)\bigl[
-V_{m_k\gets x_k}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}
-\bigr]
-\Bigr\rVert
+$(_tex(:norm,
+    "$(_tex(:frac, "1", "τ"))$(_tex(:bigl))( V_{n_{k}← n_{k-1}}(X_{k-1}) - X_k $(_tex(:bigr)) ) - DΛ(m_k)$(_tex(:bigl))[ V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}(x_{k-1})$(_tex(:bigr))]"
+))
 ```
 
 and for the `:exact` variant
 
 ```math
-\Bigl\lVert
-\frac{1}{τ} V_{n_{k}\gets n_{k-1}}(X_{k-1})
--
-\operatorname{retr}^{-1}_{n_{k}}\bigl(
-Λ(\operatorname{retr}_{m_{k}}(V_{m_k\gets x_k}\operatorname{retr}^{-1}_{x_{k}}x_{k-1}))
-\bigr)
-\Bigr\rVert
+$(_tex(:norm,
+  "$(_tex(:frac, "1", "τ")) V_{n_{k}← n_{k-1}}(X_{k-1}) - $(_tex(:retr))^{-1}_{n_{k}}$(_tex(:bigl))( Λ($(_tex(:retr))_{m_{k}}(V_{m_k← x_k}$(_tex(:retr))^{-1}_{x_{k}}x_{k-1}))$(_tex(:bigr)))"
+))
 ```
 
-where in both cases ``V_{⋅\gets⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
+where in both cases ``V_{⋅←⋅}`` is the vector transport used in the [`ChambollePockState`](@ref).
 """
 function dual_residual(
     tmp::TwoManifoldProblem, apds::AbstractPrimalDualSolverState, p_old, X_old, n_old
@@ -700,7 +688,7 @@ DebugDualResidual(; kwargs...)
 # Keyword warguments
 
 * `io=`stdout`: stream to perform the debug to
-* `format="$prefix%s"`: format to print the dual residual, using the
+* `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="Dual Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
@@ -762,7 +750,7 @@ should at least record `:Iterate`, `:X` and `:n`.
 # Keyword warguments
 
 * `io=`stdout`: stream to perform the debug to
-* `format="$prefix%s"`: format to print the dual residual, using the
+* `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="Primal Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """
@@ -824,7 +812,7 @@ with the keywords
 # Keyword warguments
 
 * `io=`stdout`: stream to perform the debug to
-* `format="$prefix%s"`: format to print the dual residual, using the
+* `format="\$prefix%s"`: format to print the dual residual, using the
 * `prefix="PD Residual: "`: short form to just set the prefix
 * `storage` (a new [`StoreStateAction`](@ref)) to store values for the debug.
 """

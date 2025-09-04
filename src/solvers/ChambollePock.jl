@@ -189,13 +189,13 @@ end
 
 _tex_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_tex(:Cal, "N")))"
 
-_doc_ChambollePock_formula = raw"""
-Given a `cost` function ``\mathcal E:$(_math(:M)) → ℝ`` of the form
+_doc_ChambollePock_formula = """
+Given a `cost` function ``$(_tex(:Cal, "E")): $(_math(:M)) → ℝ`` of the form
 ```math
-\mathcal f(p) = F(p) + G( Λ(p) ),
+$(_tex(:Cal, "E"))(p) = F(p) + G( Λ(p) ),
 ```
-where ``F:$(_math(:M)) → ℝ``, ``G:\mathcal N → ℝ``,
-and ``Λ:$(_math(:M)) → \mathcal N``.
+where ``F:$(_math(:M)) → ℝ``, ``G:$(_tex(:Cal, "N")) → ℝ``,
+and ``Λ:$(_math(:M)) → $(_tex(:Cal, "N"))``.
 """
 
 _doc_ChambollePock = """
@@ -517,9 +517,9 @@ end
     update_prox_parameters!(o)
 update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@cite),
 
-1. ``θ_{n} = \frac{1}{\sqrt{1+2γτ_n}}``
+1. ``θ_{n} = $(_tex(:frac, "1", "$(_tex(:sqrt, "1+2γτ_n"))"))``
 2. ``τ_{n+1} = θ_nτ_n``
-3. ``σ_{n+1} = \frac{σ_n}{θ_n}``
+3. ``σ_{n+1} = $(_tex(:frac, "σ_n", "θ_n"))``
 """
 function update_prox_parameters!(pds::S) where {S<:AbstractPrimalDualSolverState}
     if pds.acceleration > 0

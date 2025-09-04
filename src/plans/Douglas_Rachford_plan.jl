@@ -7,7 +7,7 @@ reflect the point `x` from the manifold `M` at the point `f(x)` of the
 function ``f: $(_math(:M)) → $(_math(:M))``, given by
 
 ````math
-    \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),
+    $(_tex(:reflect))_f(x) = $(_tex(:reflect))_{f(x)}(x),
 ````
 
 Compute the result in `q`.

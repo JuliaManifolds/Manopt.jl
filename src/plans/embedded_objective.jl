@@ -232,7 +232,7 @@ end
     X = get_grad_equality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
     get_grad_equality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
 
-Evaluate the gradient of the `j`th equality constraint ``\operatorname{grad} h_j(p)``
+Evaluate the gradient of the `j`th equality constraint ``$(_tex(:grad)) h_j(p)``
 defined in the embedding, that is embed `p` before calling the gradient function stored in
 the [`EmbeddedManifoldObjective`](@ref).
 
@@ -304,7 +304,7 @@ end
     X = get_grad_inequality_constraint(M::AbstractManifold, emo::EmbeddedManifoldObjective, p, j)
     get_grad_inequality_constraint!(M::AbstractManifold, X, emo::EmbeddedManifoldObjective, p, j)
 
-Evaluate the gradient of the `j`th inequality constraint ``\operatorname{grad} g_j(p)``
+Evaluate the gradient of the `j`th inequality constraint ``$(_tex(:grad)) g_j(p)``
 defined in the embedding, that is embed `p` before calling the gradient function stored in
 the [`EmbeddedManifoldObjective`](@ref).
 

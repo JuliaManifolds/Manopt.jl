@@ -255,44 +255,39 @@ end
 Given the constrained optimization problem
 
 ```math
-\\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\\end{aligned}
+$(_tex(:aligned,
+    "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
+    "$(_tex(:text, " subject to ")) &g_i(p) ≤ 0 $(_tex(:quad)) $(_tex(:text, " for ")) i= 1, …, m,",
+    "$(_tex(:quad)) & h_j(p) = 0 $(_tex(:quad))$(_tex(:text, " for ")) j=1,…,n,",
+))
 ```
 
 Then reformulating the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+$(_tex(:Cal,"L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p)
 ```
 
 in a perturbed / barrier method in a condensed form
 using a slack variable ``s ∈ ℝ^m`` and a barrier parameter ``β``
 and the Riemannian gradient of the Lagrangian with respect to the first parameter
-``\operatorname{grad}_p L(p, μ, λ)``.
+``$(_tex(:grad))_p L(p, μ, λ)``.
 
-Let ``\mathcal N = $(_math(:M)) × ℝ^n``. We obtain the linear system
+Let ``$(_tex(:Cal, "N")) = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } (X,Y) ∈ T_{(p,λ)}\mathcal N
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where " )) (X,Y) ∈ T_{(p,λ)}$(_tex(:Cal, "N"))
 ```
 
-where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator and
+where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator and
 this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}$(_math(:M))`` given by
 
 ```math
-b(p,λ) = \begin{pmatrix}
-\operatorname{grad} f(p)
-+ \displaystyle\sum_{j=1}^n λ_j \operatorname{grad} h_j(p)
-+ \displaystyle\sum_{i=1}^m μ_i \operatorname{grad} g_i(p)
-+ \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}\bigl(
-  μ_i(g_i(p)+s_i) + β - μ_is_i
-\bigr)\operatorname{grad} g_i(p)\\
-h(p)
-\end{pmatrix}
+b(p,λ) = $(_tex(:pmatrix,
+    "$(_tex(:grad)) f(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) $(_tex(:frac, "μ_i", "s_i"))$(_tex(:bigl))( μ_i(g_i(p)+s_i) + β - μ_is_i $(_tex(:bigr)))$(_tex(:grad)) g_i(p)",
+    "h(p)",
+))
 ```
 
 # Fields
@@ -357,39 +352,37 @@ end
 Given the constrained optimization problem
 
 ```math
-\begin{aligned}
-\min_{p ∈\mathcal{M}} &f(p)\\
-\text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
-\quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
+$(_tex(:aligned,
+    "$(_tex(:min))_{p ∈ $(_math(:M))} & f(p)",
+    "$(_tex(:text, "subject to")) & g_i(p) ≤ 0 $(_tex(:quad))$(_tex(:text, " for " )) i= 1, …, m,",
+    "$(_tex(:quad)) & h_j(p)=0 $(_tex(:quad)) $(_tex(:text, " for " )) j=1,…,n,",
+))
 ```
 
 we reformulate the KKT conditions of the Lagrangian
 from the optimality conditions of the Lagrangian
 
 ```math
-\mathcal L(p, μ, λ) = f(p) + \sum_{j=1}^n λ_jh_j(p) + \sum_{i=1}^m μ_ig_i(p)
+$(_tex(:Cal, "L"))(p, μ, λ) = f(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p) +$(_tex(:sum, "i=1", "m")) μ_ig_i(p)
 ```
 
-in a perturbed / barrier method enhanced as well as condensed form as using ``\operatorname{grad}_o L(p, μ, λ)``
+in a perturbed / barrier method enhanced as well as condensed form as using ``$(_tex(:grad))_o L(p, μ, λ)``
 the Riemannian gradient of the Lagrangian with respect to the first parameter.
 
-Let ``\mathcal N = $(_math(:M)) × ℝ^n``. We obtain the linear system
+Let ``$(_tex(:Cal, "N")) = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } X ∈ T_p$(_math(:M)), Y ∈ ℝ^n
+$(_tex(:Cal, "A"))(p,λ)[X,Y] = -b(p,λ),$(_tex(:qquad)) $(_tex(:text, "where " )) X ∈ T_p$(_math(:M)), Y ∈ ℝ^n
 ```
-where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator
-on ``T_{(p,λ)}\mathcal N = T_p$(_math(:M)) × ℝ^n`` given by
+where ``$(_tex(:Cal, "A")): T_{(p,λ)}$(_tex(:Cal, "N")) → T_{(p,λ)}$(_tex(:Cal, "N"))`` is a linear operator
+on ``T_{(p,λ)}$(_tex(:Cal, "N")) = T_p$(_math(:M)) × ℝ^n`` given by
 
 ```math
-\mathcal A(p,λ)[X,Y] = \begin{pmatrix}
-$(_tex(:Hess))_p\mathcal L(p, μ, λ)[X]
-+ \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}⟨\operatorname{grad} g_i(p), X⟩\operatorname{grad} g_i(p)
-+ \displaystyle\sum_{j=1}^n Y_j \operatorname{grad} h_j(p)
-\\
-\Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n
-\end{pmatrix}
+$(_tex(:Cal, "A"))(p,λ)[X,Y] =
+$(_tex(:pmatrix,
+    "$(_tex(:Hess))_p$(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum,"i=1", "m")) $(_tex(:frac, "μ_i", "s_i")) ⟨$(_tex(:grad)) g_i(p), X⟩$(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Y_j $(_tex(:grad)) h_j(p)",
+    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+))
 ```
 
 # Fields
@@ -462,27 +455,28 @@ for the inequality constraints.
 Given the [`LagrangianCost`](@ref)
 
 ```math
-\mathcal L(p; μ, λ) = f(p) + \sum_{i=1}^m μ_ig_i(p) + \sum_{j=1}^n λ_jh_j(p)
+$(_tex(:Cal, "L"))(p; μ, λ) = f(p) + $(_tex(:sum, "i=1", "m")) μ_ig_i(p) + $(_tex(:sum, "j=1", "n")) λ_jh_j(p)
 ```
 
 the [`LagrangianGradient`](@ref)
 
 ```math
-\operatorname{grad}\mathcal L(p, μ, λ) = \operatorname{grad}f(p) + \sum_{j=1}^n λ_j \operatorname{grad} h_j(p) + \sum_{i=1}^m μ_i \operatorname{grad} g_i(p),
+$(_tex(:grad))$(_tex(:Cal, "L"))(p, μ, λ) = $(_tex(:grad))f(p) + $(_tex(:sum, "j=1", "n")) λ_j $(_tex(:grad)) h_j(p) + $(_tex(:sum, "i=1", "m")) μ_i $(_tex(:grad)) g_i(p),
 ```
 
 and introducing the slack variables ``s=-g(p) ∈ ℝ^m``
 the vector field is given by
 
 ```math
-F(p, μ, λ, s) = \begin{pmatrix}
-\operatorname{grad}_p \mathcal L(p, μ, λ)\\
-g(p) + s\\
-h(p)\\
-μ ⊙ s
-\end{pmatrix}, \text{ where } p \in $(_math(:M)), μ, s \in ℝ^m\text{ and } λ \in ℝ^n,
+F(p, μ, λ, s) = $(_tex(:pmatrix,
+  "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ)",
+  "g(p) + s",
+  "h(p)",
+  "μ ⊙ s",
+)),
 ```
-where ``⊙`` denotes the Hadamard (or elementwise) product
+where ``p ∈ $(_math(:M))``, ``μ, s ∈ ℝ^m`` and ``λ ∈ ℝ^n``,
+and ``⊙`` denotes the Hadamard (or elementwise) product
 
 # Fields
 
@@ -533,16 +527,17 @@ Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcudin
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldAdjointJacobian`](@ref)..
 
 ```math
-\operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    $(_tex(:Hess))_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
-    \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + W_i\Bigr)_{i=1}^m\\
-    \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
-    μ ⊙ W + s ⊙ Y
-\end{pmatrix},
+$(_tex(:operatorname, "J")) F(p, μ, λ, s)[X, Y, Z, W] =
+$(_tex(:pmatrix,
+    "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
+    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + W_i$(_tex(:Bigr)))_{i=1}^m",
+    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+    "μ ⊙ W + s ⊙ Y",
+))
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X]``.
 
 # Fields
 
@@ -607,16 +602,17 @@ Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-condi
 for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFieldJacobian`](@ref).
 
 ```math
-\operatorname{J}^* F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    $(_tex(:Hess))_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
-    \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + s_iW_i\Bigr)_{i=1}^m\\
-    \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
-    μ ⊙ W + Y
-\end{pmatrix},
+$(_tex(:operatorname, "J"))^*
+F(p, μ, λ, s)[X, Y, Z, W] = $(_tex(:pmatrix,
+    "$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X] + $(_tex(:displaystyle))$(_tex(:sum, "i=1", "m")) Y_i $(_tex(:grad)) g_i(p) + $(_tex(:displaystyle))$(_tex(:sum, "j=1", "n")) Z_j $(_tex(:grad)) h_j(p)",
+    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), X⟩ + s_iW_i$(_tex(:Bigr)))_{i=1}^m",
+    "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), X⟩ $(_tex(:Bigr)))_{j=1}^n",
+    "μ ⊙ W + Y"
+)),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p $(_tex(:Cal, "L"))(p, μ, λ)[X]``.
 
 # Fields
 
@@ -709,30 +705,31 @@ end
 @doc """
     KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective}
 
-Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rVert^2``,
+Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = $(_tex(:norm, "F(p,μ,λ,s)"))^2``,
 that is of the norm squared of the [`KKTVectorField`](@ref) ``F``.
 
 This is given in [LaiYoshise:2024](@cite) as the gradient of their merit function,
 which we can write with the adjoint ``J^*`` of the Jacobian
 
 ```math
-\operatorname{grad} φ = 2\operatorname{J}^* F(p, μ, λ, s)[F(p, μ, λ, s)],
+$(_tex(:grad)) φ = 2$(_tex(:operatorname, "J"))^* F(p, μ, λ, s)[F(p, μ, λ, s)],
 ```
 
 and hence is computed with [`KKTVectorFieldAdjointJacobian`](@ref) and [`KKTVectorField`](@ref).
 
-For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad}_p \mathcal L(p,μ,λ) ∈ T_p$(_math(:M))``,
+For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = $(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ) ∈ T_p$(_math(:M))``,
 for a shorthand of the first component of ``F``, as
 
 ```math
-\operatorname{grad} φ
+$(_tex(:grad)) φ
 =
-2 \begin{pmatrix}
-\operatorname{grad}_p \mathcal L(p,μ,λ)[L] + (g_i(p) + s_i)\operatorname{grad} g_i(p) + h_j(p)\operatorname{grad} h_j(p)\\
-  \Bigl( ⟨\operatorname{grad} g_i(p), L⟩ + s_i\Bigr)_{i=1}^m + μ ⊙ s ⊙ s\\
-  \Bigl( ⟨\operatorname{grad} h_j(p), L⟩ \Bigr)_{j=1}^n\\
-  g + s + μ ⊙ μ ⊙ s
-\end{pmatrix},
+2
+$(_tex(:pmatrix,
+  "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p,μ,λ)[L] + (g_i(p) + s_i)$(_tex(:grad)) g_i(p) + h_j(p)$(_tex(:grad)) h_j(p)",
+  "$(_tex(:Bigl))( ⟨$(_tex(:grad)) g_i(p), L⟩ + s_i$(_tex(:Bigr)))_{i=1}^m + μ ⊙ s ⊙ s",
+  "$(_tex(:Bigl))( ⟨$(_tex(:grad)) h_j(p), L⟩ $(_tex(:Bigr)))_{j=1}^n",
+  "g + s + μ ⊙ μ ⊙ s",
+)),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
@@ -800,27 +797,27 @@ that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:M)) × ℝ^m × 
 Then, let
 
 ```math
-τ_1 = \frac{m⋅\min\{ μ ⊙ s\}}{μ^{$(_tex(:rm, "T"))}s}
-\quad\text{ and }\quad
-τ_2 = \frac{μ^{$(_tex(:rm, "T"))}s}{\lVert F(q) \rVert}
+τ_1 = $(_tex(:frac, "m$(_tex(:min))$(_tex(:set, "μ ⊙ s"))", "μ^{$(_tex(:rm, "T"))}s"))
+$(_tex(:quad))$(_tex(:text, " and " ))$(_tex(:quad))
+τ_2 = $(_tex(:frac, "μ^{$(_tex(:rm, "T"))}s", "$(_tex(:norm, "F(q)"))")),
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
-For a new candidate ``q(α) = \bigl(p(α), λ(α), μ(α), s(α)\bigr) := (\operatorname{retr}_p(αX), λ+αY, μ+αZ, s+αW)``,
+For a new candidate ``q(α) = $(_tex(:bigl))(p(α), λ(α), μ(α), s(α)$(_tex(:bigr)) := ($(_tex(:retr))_p(αX), λ+αY, μ+αZ, s+αW)``,
 we then define two functions
 
 ```math
-c_1(α) = \min\{ μ(α) ⊙ s(α) \} - \frac{γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)}{m}
-\quad\text{ and }\quad
-c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 \lVert F(q(α)) \rVert.
+c_1(α) = $(_tex(:min))$(_tex(:set, "μ(α) ⊙ s(α)")) - $(_tex(:frac, "γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)", "m"))
+$(_tex(:quad))$(_tex(:text, " and " ))$(_tex(:quad))
+c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 $(_tex(:norm, "F(q(α))")).
 ```
 
-While the paper now states that the (Armijo) linesearch starts at a point
-``\tilde α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
-into the linesearch as well.
+While the paper now states that the (Armijo) line search starts at a point
+``$(_tex(:tilde)) α``, it is easier to include the condition that ``c_1(α) ≥ 0`` and ``c_2(α) ≥ 0``
+into the line search as well.
 
 The functor `InteriorPointCentralityCondition(cmo, γ, μ, s, normKKT)(N,qα)`
-defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are nonnegative.
+defined here evaluates this condition and returns true if both ``c_1`` and ``c_2`` are non-negative.
 
 # Fields
 
@@ -893,13 +890,13 @@ Stop when the KKT residual
 
 ```
 r^2
-= \lVert \operatorname{grad}_p \mathcal L(p, μ, λ) \rVert^2
-+ \sum_{i=1}^m [μ_i]_{-}^2 + [g_i(p)]_+^2 + \lvert \mu_ig_i(p)^2
-+ \sum_{j=1}^n \lvert h_i(p)\rvert^2.
+= $(_tex(:norm, "$(_tex(:grad))_p $(_tex(:Cal, "L"))(p, μ, λ) "))^2
++ $(_tex(:sum, "i=1", "m")) [μ_i]_{-}^2 + [g_i(p)]_+^2 + $(_tex(:abs, "μ_i g_i(p)"))^2
++ $(_tex(:sum, "j=1", "n")) $(_tex(:abs, "h_i(p)"))^2.
 ```
 
 is less than a given threshold ``r < ε``.
-We use ``[v]_+ = \max\{0,v\}`` and ``[v]_- = \min\{0,t\}``
+We use ``[v]_+ = $(_tex(:max))$(_tex(:set, "0,v"))`` and ``[v]_- = $(_tex(:min))$(_tex(:set, "0,t"))``
 for the positive and negative part of ``v``, respectively
 
 # Fields
@@ -968,7 +965,7 @@ end
 Compute the new ``σ`` factor for the barrier parameter in [`interior_point_Newton`](@ref) as
 
 ```math
-\min\{\frac{1}{2}, \lVert F(p; μ, λ, s)\rVert^{\frac{1}{2}} \},
+$(_tex(:min))$(_tex(:set, "$(_tex(:frac, "1", "2")), $(_tex(:norm, "F(p; μ, λ, s)"))^{$(_tex(:frac, "1", "2"))}")),
 ```
 where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is used.
 

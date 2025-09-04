@@ -1,7 +1,7 @@
 @doc """
     estimate_sectional_curvature(M::AbstractManifold, p)
 
-Estimate the sectional curvature of a manifold ``$(_math(:M))`` at a point ``p \in $(_math(:M))``
+Estimate the sectional curvature of a manifold ``$(_math(:M))`` at a point ``p ∈ $(_math(:M))``
 on two random tangent vectors at ``p`` that are orthogonal to each other.
 
 # See also
@@ -22,16 +22,16 @@ compute a curvature-dependent bound.
 The formula reads
 
 ```math
-\zeta_{1, ω}(δ)
-\coloneqq
-\begin{cases}
-    1 & \text{if } ω ≥ 0, \\
-    \sqrt{-ω} \, δ \cot(\sqrt{-ω} \, δ) & \text{if } ω < 0,
-\end{cases}
+ζ_{1, ω}(δ)
+:=
+$(_tex(:cases,
+  "1 & $(_tex(:text, " if ")) ω ≥ 0,",
+  "$(_tex(:sqrt, "-ω"))δ$(_tex(:cot))($(_tex(:sqrt, "-ω"))δ) & $(_tex(:text, " if ")) ω < 0",
+))
 ```
 
-where ``ω ≤ κ_p`` for all ``p ∈ \mathcal U`` is a lower bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ $(_math(:M))`` with diameter ``δ``.
+where ``ω ≤ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is a lower bound to the sectional curvature in
+a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:M))`` with diameter ``δ``.
 """
 function ζ_1(k_min, diameter)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
@@ -45,15 +45,15 @@ compute a curvature-dependent bound.
 The formula reads
 
 ```math
-\zeta_{2, Ω}(δ) \coloneqq
-\begin{cases}
-    1 & \text{if } Ω ≤ 0,\\
-    \sqrt{Ω} \, δ \cot(\sqrt{Ω} \, δ) & \text{if } Ω > 0,
-\end{cases}
+ζ_{2, Ω}(δ) :=
+$(_tex(:cases,
+"1 & $(_tex(:text, " if ")) Ω ≤ 0,",
+"$(_tex(:sqrt, "Ω"))δ$(_tex(:cot))($(_tex(:sqrt, "Ω"))δ) & $(_tex(:text, " if ")) Ω > 0",
+))
 ```
 
-where ``Ω ≥ κ_p`` for all ``p ∈ \mathcal U`` is an upper bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ $(_math(:M))`` with diameter ``δ``.
+where ``Ω ≥ κ_p`` for all ``p ∈ $(_tex(:Cal, "U"))`` is an upper bound to the sectional curvature in
+a (strongly geodesically convex) bounded subset ``$(_tex(:Cal, "U")) ⊆ $(_math(:M))`` with diameter ``δ``.
 """
 function ζ_2(k_max, diameter)
     (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
@@ -103,7 +103,7 @@ $(_var(:Field, :X; add=[:as_Subgradient]))
 $(_var(:Field, :stepsize))
 * `ε::R`:                      convex combination of the linearization errors
 * `λ:::AbstractVector{<:R}`:   convex coefficients from the slution of the subproblem
-* `ξ`:                         the stopping parameter given by ``ξ = -\\lVert g\\rvert^2 – ε``
+* `ξ`:                         the stopping parameter given by ``ξ = -$(_tex(:norm, "g"))^2 – ε``
 $(_var(:Field, :sub_problem))
 $(_var(:Field, :sub_state))
 
@@ -365,8 +365,8 @@ end
 @doc """
     DomainBackTrackingStepsize <: Stepsize
 
-Implement a backtrack as long as we are ``q = \operatorname{retr}_p(X)``
-yields a point closer to ``p`` than ``\lVert X \rVert_p`` or
+Implement a backtrack as long as we are ``q =$(_tex(:retr))_p(X)``
+yields a point closer to ``p`` than ``$(_tex(:norm, "X"; index="p"))`` or
 ``q`` is not on the domain.
 For the domain this step size requires a [`ConvexBundleMethodState`](@ref).
 """
@@ -563,9 +563,9 @@ function status_summary(nsbt::NullStepBackTrackingStepsize)
 end
 get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 
-_doc_cbm_gk = raw"""
+_doc_cbm_gk = """
 ```math
-g_k = \sum_{j\in J_k} λ_j^k $(_tex(:rm, "P"))_{p_k←q_j}X_{q_j},
+g_k = $(_tex(:sum, "j ∈ J_k")) λ_j^k $(_tex(:rm, "P"))_{p_k←q_j}X_{q_j},
 ```
 """
 _doc_convex_bundle_method = """
@@ -841,7 +841,8 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
         new_value = -st.ξ
         if new_value ≥ d.old_value * d.tol
             @warn """The Lagrange multiplier increased by at least $(d.tol).
-            At iteration #$k the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).\n
+            At iteration #$k the negative of the Lagrange multiplier, -ξ, increased from $(d.old_value) to $(new_value).
+
             Consider decreasing either the `diameter` keyword argument, or one
             of the parameters involved in the estimation of the sectional curvature, such as
             `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.
@@ -853,7 +854,8 @@ function (d::DebugWarnIfLagrangeMultiplierIncreases)(
             end
         elseif new_value < zero(number_eltype(st.ξ))
             @warn """The Lagrange multiplier is positive.
-            At iteration #$k the negative of the Lagrange multiplier, -ξ, became negative.\n
+            At iteration #$k the negative of the Lagrange multiplier, -ξ, became negative.
+
             Consider increasing either the `diameter` keyword argument, or changing
             one of the parameters involved in the estimation of the sectional curvature, such as
             `k_min`, `k_max`, `diameter`, or `ϱ` in the `convex_bundle_method` call.

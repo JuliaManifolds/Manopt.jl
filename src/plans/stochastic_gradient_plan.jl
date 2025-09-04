@@ -83,7 +83,7 @@ end
     get_gradients(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
 
-Evaluate all summands gradients ``\{\operatorname{grad}f_i\}_{i=1}^n`` at `p` (in place of `X`).
+Evaluate all summands gradients ``$(_math(:Sequence, "$(_tex(:grad))f", "i", "1", "n")) at `p` (in place of `X`).
 
 If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient) can not be determined.
@@ -178,7 +178,7 @@ end
     get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, k)
     get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, Y, p, k)
 
-Evaluate one of the summands gradients ``\operatorname{grad}f_k``, ``k∈\{1,…,n\}``, at `x` (in place of `Y`).
+Evaluate one of the summands gradients ``$(_tex(:grad))f_k``, ``k ∈ $(_tex(:set, "1,…,n"))``, at `p` (in place of `Y`).
 
 If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
@@ -270,7 +270,7 @@ end
     get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, X, p)
 
-Evaluate the complete gradient ``\operatorname{grad} f = \displaystyle\sum_{i=1}^n \operatorname{grad} f_i(p)`` at `p` (in place of `X`).
+Evaluate the complete gradient ``$(_tex(:grad)) f = $(_tex(:displaystyle))$(_tex(:sum, "i=1", "n")) $(_tex(:grad)) f_i(p)`` at `p` (in place of `X`).
 
 If you use a single function for the stochastic gradient, that works in-place, then [`get_gradient`](@ref) is not available,
 since the length (or number of elements of the gradient required for allocation) can not be determined.
