@@ -5,7 +5,7 @@ author: "Ronny Bergmann"
 
 Specifying a cost function $f:  \mathcal M → ℝ$ on a manifold
 is usually the model one starts with.
-Specifying its gradient $\operatorname{grad} f: \mathcal M → T\mathcal M$, or more precisely $\operatorname{grad}f(p) ∈ T_p\mathcal M$, and eventually a Hessian $\operatorname{Hess} f:  T_p\mathcal M → T_p\mathcal M$ are then necessary to perform optimization.
+Specifying its gradient $\operatorname{grad} f: \mathcal M → T\mathcal M$, or more precisely $\operatorname{grad}f(p) ∈ T_p\mathcal M$, and eventually a Hessian $$(_tex(:Hess)) f:  T_p\mathcal M → T_p\mathcal M$ are then necessary to perform optimization.
 Since these might be challenging to compute, especially when manifolds and differential geometry are not
 the main area of a user, easier to use methods might be welcome.
 
@@ -90,7 +90,7 @@ Luckily there exist two functions in [`ManifoldDiff.jl`](https://juliamanifolds.
 manifolds from [`Manifolds.jl`](https://github.com/JuliaManifolds/Manifolds.jl), namely [`riemannian_gradient`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_gradient-Tuple{AbstractManifold,%20Any,%20Any})`(M, p, eG)` that converts a Riemannian gradient
 `eG=`$\nabla \tilde f(p)$  into a the Riemannian one $\operatorname{grad} f(p)$
  and [`riemannian_Hessian`](https://juliamanifolds.github.io/ManifoldDiff.jl/stable/library/#ManifoldDiff.riemannian_Hessian-Tuple{AbstractManifold,%20Any,%20Any,%20Any,%20Any})`(M, p, eG, eH, X)`
- which converts the Euclidean Hessian `eH=`$\nabla^2 \tilde f(p)[X]$  into $\operatorname{Hess} f(p)[X]$,
+ which converts the Euclidean Hessian `eH=`$\nabla^2 \tilde f(p)[X]$  into $$(_tex(:Hess)) f(p)[X]$,
  where we also require the Euclidean gradient `eG=`$\nabla \tilde f(p)$.
 
 So we can define

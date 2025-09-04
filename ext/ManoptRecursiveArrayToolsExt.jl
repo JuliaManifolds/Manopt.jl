@@ -13,7 +13,7 @@ using Manopt: _tex, _var, ManifoldDefaultsFactory, _produce_type
 
 using RecursiveArrayTools
 
-@doc raw"""
+@doc """
     X = get_gradient(M::ProductManifold, ago::ManifoldAlternatingGradientObjective, p)
     get_gradient!(M::ProductManifold, P::ManifoldAlternatingGradientObjective, X, p)
 
@@ -29,7 +29,7 @@ function get_gradient(
     return ArrayPartition([gi(M, p) for gi in mago.gradient!!]...)
 end
 
-@doc raw"""
+@doc """
     X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, i)
     get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, i)
 

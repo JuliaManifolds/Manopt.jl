@@ -1,9 +1,9 @@
-@doc raw"""
+@doc """
     ManifoldDifferenceOfConvexObjective{E} <: AbstractManifoldCostObjective{E}
 
 Specify an objective for a [`difference_of_convex_algorithm`](@ref).
 
-The objective ``f: \mathcal M → ℝ`` is given as
+The objective ``f: $(_math(:M)) → ℝ`` is given as
 
 ```math
     f(p) = g(p) - h(p)
@@ -15,7 +15,7 @@ Furthermore the subdifferential ``∂h`` of ``h`` is required.
 # Fields
 
 * `cost`: an implementation of ``f(p) = g(p)-h(p)`` as a function `f(M,p)`.
-* `∂h!!`: a deterministic version of ``∂h: \mathcal M → T\mathcal M``,
+* `∂h!!`: a deterministic version of ``∂h: $(_math(:M)) → T$(_math(:M))``,
   in the sense that calling `∂h(M, p)` returns a subgradient of ``h`` at `p` and
   if there is more than one, it returns a deterministic choice.
 
@@ -122,7 +122,7 @@ function get_subtrahend_gradient!(
     return get_subtrahend_gradient!(M, X, get_objective(admo, false), p)
 end
 
-@doc raw"""
+@doc """
     LinearizedDCCost
 
 A functor `(M,q) → ℝ` to represent the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
@@ -163,7 +163,7 @@ function set_parameter!(ldc::LinearizedDCCost, ::Val{:X}, X)
     return ldc
 end
 
-@doc raw"""
+@doc """
     LinearizedDCGrad
 
 A functor `(M,X,p) → ℝ` to represent the gradient of the inner problem of a [`ManifoldDifferenceOfConvexObjective`](@ref).
@@ -240,14 +240,14 @@ end
 #
 # Difference of Convex Proximal Algorithm plan
 #
-@doc raw"""
+@doc """
     ManifoldDifferenceOfConvexProximalObjective{E} <: Problem
 
 Specify an objective [`difference_of_convex_proximal_point`](@ref) algorithm.
 The problem is of the form
 
 ```math
-    \operatorname*{argmin}_{p∈\mathcal M} g(p) - h(p)
+    \operatorname*{argmin}_{p∈$(_math(:M))} g(p) - h(p)
 ```
 
 where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
@@ -256,7 +256,7 @@ where both ``g`` and ``h`` are convex, lower semicontinuous and proper.
 
 * `cost`:     implementation of ``f(p) = g(p)-h(p)``
 * `gradient`: the gradient of the cost
-* `grad_h!!`: a function ``\operatorname{grad}h: \mathcal M → T\mathcal M``,
+* `grad_h!!`: a function ``\operatorname{grad}h: $(_math(:M)) → T$(_math(:M))``,
 
 Note that both the gradients might be given in two possible signatures
 as allocating or in-place.
@@ -321,7 +321,7 @@ function get_gradient_function(
     return dcpo.gradient!!
 end
 
-@doc raw"""
+@doc """
     X = get_subtrahend_gradient(M::AbstractManifold, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
     get_subtrahend_gradient!(M::AbstractManifold, X, dcpo::ManifoldDifferenceOfConvexProximalObjective, p)
 
@@ -366,14 +366,14 @@ function get_subtrahend_gradient!(
     return X
 end
 
-@doc raw"""
+@doc """
     ProximalDCCost
 
 A functor `(M, p) → ℝ` to represent the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref).
 This is the cost function of the proximal map of `g`.
 
 ```math
-    F_{p_k}(p) = \frac{1}{2λ}d_{\mathcal M}(p_k,p)^2 + g(p)
+    F_{p_k}(p) = \frac{1}{2λ}d_{$(_math(:M))}(p_k,p)^2 + g(p)
 ```
 
 for a point `pk` and a proximal parameter ``λ``.
@@ -408,20 +408,20 @@ function set_parameter!(pdcc::ProximalDCCost, ::Val{:λ}, λ)
     return pdcc
 end
 
-@doc raw"""
+@doc """
     ProximalDCGrad
 
 A functor `(M,X,p) → ℝ` to represent the gradient of the inner cost function of a [`ManifoldDifferenceOfConvexProximalObjective`](@ref).
 This is the gradient function of the proximal map cost function of `g`. Based on
 
 ```math
-    F_{p_k}(p) = \frac{1}{2λ}d_{\mathcal M}(p_k,p)^2 + g(p)
+    F_{p_k}(p) = $(_tex(:frac, "1", "2λ}d_{$(_math(:M))"))(p_k,p)^2 + g(p)
 ```
 
 it reads
 
 ```math
-    \operatorname{grad} F_{p_k}(p) = \operatorname{grad} g(p) - \frac{1}{λ}\log_p p_k
+    \operatorname{grad} F_{p_k}(p) = \operatorname{grad} g(p) - $(_tex(:frac, "1", "λ"))\log_p p_k
 ```
 
 for a point `pk` and a proximal parameter `λ`.

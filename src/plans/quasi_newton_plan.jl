@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     AbstractQuasiNewtonDirectionUpdate
 
 An abstract representation of an Quasi Newton Update rule to determine the next direction
@@ -17,7 +17,7 @@ Initialize direction update. By default no change is made.
 """
 initialize_update!(s::AbstractQuasiNewtonDirectionUpdate) = s
 
-@doc raw"""
+@doc """
     AbstractQuasiNewtonUpdateRule
 
 Specify a type for the different [`AbstractQuasiNewtonDirectionUpdate`](@ref)s,
@@ -26,7 +26,7 @@ while the default for [`QuasiNewtonLimitedMemoryDirectionUpdate`](@ref) the most
 """
 abstract type AbstractQuasiNewtonUpdateRule end
 
-@doc raw"""
+@doc """
     BFGS <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian BFGS update is used in the Riemannian quasi-Newton method.
@@ -35,7 +35,7 @@ Denote by ``\widetilde{H}_k^\mathrm{BFGS}`` the operator concatenated with a vec
 Then the update formula reads
 
 ```math
-H^\mathrm{BFGS}_{k+1} = \widetilde{H}^\mathrm{BFGS}_k  + \frac{y_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{BFGS}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k }{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{BFGS}_k s_k}
+H^\mathrm{BFGS}_{k+1} = \widetilde{H}^\mathrm{BFGS}_k  + \frac{y_k y^{$(_tex(:rm, "T"))}_k }{s^{$(_tex(:rm, "T"))}_k y_k} - \frac{\widetilde{H}^\mathrm{BFGS}_k s_k s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{BFGS}_k }{s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{BFGS}_k s_k}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -49,7 +49,7 @@ respectively.
 """
 struct BFGS <: AbstractQuasiNewtonUpdateRule end
 
-@doc raw"""
+@doc """
     InverseBFGS <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian BFGS update is used in the Riemannian quasi-Newton method.
@@ -59,12 +59,12 @@ Then the update formula reads
 
 ```math
 B^\mathrm{BFGS}_{k+1}  = \Bigl(
-  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{$(_tex(:rm, "T"))}_k }{s^{$(_tex(:rm, "T"))}_k y_k}
 \Bigr)
 \widetilde{B}^\mathrm{BFGS}_k
 \Bigl(
-  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k }{s^{\mathrm{T}}_k y_k}
-\Bigr) + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{$(_tex(:rm, "T"))}_k }{s^{$(_tex(:rm, "T"))}_k y_k}
+\Bigr) + \frac{s_k s^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -78,7 +78,7 @@ respectively.
 """
 struct InverseBFGS <: AbstractQuasiNewtonUpdateRule end
 
-@doc raw"""
+@doc """
     DFP <: AbstractQuasiNewtonUpdateRule
 
 indicates in an [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian DFP update is used in the Riemannian quasi-Newton method.
@@ -88,12 +88,12 @@ Then the update formula reads
 
 ```math
 H^\mathrm{DFP}_{k+1} = \Bigl(
-  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{y_k s^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
 \Bigr)
 \widetilde{H}^\mathrm{DFP}_k
 \Bigl(
-  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-\Bigr) + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
+  \mathrm{id}_{T_{x_{k+1}} \mathcal{M}} - \frac{s_k y^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
+\Bigr) + \frac{y_k y^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -107,7 +107,7 @@ respectively.
 """
 struct DFP <: AbstractQuasiNewtonUpdateRule end
 
-@doc raw"""
+@doc """
     InverseDFP <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian DFP update is used in the Riemannian quasi-Newton method.
@@ -116,8 +116,8 @@ Denote by ``\widetilde{B}_k^\mathrm{DFP}`` the operator concatenated with a vect
 Then the update formula reads
 
 ```math
-B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-  - \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{DFP}_k y_k}
+B^\mathrm{DFP}_{k+1} = \widetilde{B}^\mathrm{DFP}_k + \frac{s_k s^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
+  - \frac{\widetilde{B}^\mathrm{DFP}_k y_k y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{DFP}_k}{y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{DFP}_k y_k}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -131,7 +131,7 @@ respectively.
 """
 struct InverseDFP <: AbstractQuasiNewtonUpdateRule end
 
-@doc raw"""
+@doc """
     SR1 <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian SR1 update is used in the Riemannian quasi-Newton method.
@@ -142,9 +142,9 @@ Then the update formula reads
 ```math
 H^\mathrm{SR1}_{k+1} = \widetilde{H}^\mathrm{SR1}_k
 + \frac{
-  (y_k - \widetilde{H}^\mathrm{SR1}_k s_k) (y_k - \widetilde{H}^\mathrm{SR1}_k s_k)^{\mathrm{T}}
+  (y_k - \widetilde{H}^\mathrm{SR1}_k s_k) (y_k - \widetilde{H}^\mathrm{SR1}_k s_k)^{$(_tex(:rm, "T"))}
 }{
-(y_k - \widetilde{H}^\mathrm{SR1}_k s_k)^{\mathrm{T}} s_k
+(y_k - \widetilde{H}^\mathrm{SR1}_k s_k)^{$(_tex(:rm, "T"))} s_k
 }
 ```
 
@@ -171,7 +171,7 @@ struct SR1 <: AbstractQuasiNewtonUpdateRule
     SR1(r::Float64=-1.0) = new(r)
 end
 
-@doc raw"""
+@doc """
     InverseSR1 <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the inverse Riemannian SR1 update is used in the Riemannian quasi-Newton method.
@@ -182,9 +182,9 @@ Then the update formula reads
 ```math
 B^\mathrm{SR1}_{k+1} = \widetilde{B}^\mathrm{SR1}_k
 + \frac{
-  (s_k - \widetilde{B}^\mathrm{SR1}_k y_k) (s_k - \widetilde{B}^\mathrm{SR1}_k y_k)^{\mathrm{T}}
+  (s_k - \widetilde{B}^\mathrm{SR1}_k y_k) (s_k - \widetilde{B}^\mathrm{SR1}_k y_k)^{$(_tex(:rm, "T"))}
 }{
-  (s_k - \widetilde{B}^\mathrm{SR1}_k y_k)^{\mathrm{T}} y_k
+  (s_k - \widetilde{B}^\mathrm{SR1}_k y_k)^{$(_tex(:rm, "T"))} y_k
 }
 ```
 
@@ -211,7 +211,7 @@ struct InverseSR1 <: AbstractQuasiNewtonUpdateRule
     InverseSR1(r::Float64=-1.0) = new(r)
 end
 
-@doc raw"""
+@doc """
     Broyden <: AbstractQuasiNewtonUpdateRule
 
 indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update is used in the Riemannian quasi-Newton method, which is as a convex combination of [`BFGS`](@ref) and [`DFP`](@ref).
@@ -221,14 +221,14 @@ Then the update formula reads
 
 ```math
 H^\mathrm{Br}_{k+1} = \widetilde{H}^\mathrm{Br}_k
-  - \frac{\widetilde{H}^\mathrm{Br}_k s_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k}{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k} + \frac{y_k y^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
-  + φ_k s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k
+  - \frac{\widetilde{H}^\mathrm{Br}_k s_k s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{Br}_k}{s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{Br}_k s_k} + \frac{y_k y^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
+  + φ_k s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{Br}_k s_k
   \Bigl(
-        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k}
+        \frac{y_k}{s^{$(_tex(:rm, "T"))}_k y_k} - \frac{\widetilde{H}^\mathrm{Br}_k s_k}{s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{Br}_k s_k}
   \Bigr)
   \Bigl(
-        \frac{y_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{H}^\mathrm{Br}_k s_k}{s^{\mathrm{T}}_k \widetilde{H}^\mathrm{Br}_k s_k}
-  \Bigr)^{\mathrm{T}}
+        \frac{y_k}{s^{$(_tex(:rm, "T"))}_k y_k} - \frac{\widetilde{H}^\mathrm{Br}_k s_k}{s^{$(_tex(:rm, "T"))}_k \widetilde{H}^\mathrm{Br}_k s_k}
+  \Bigr)^{$(_tex(:rm, "T"))}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -249,7 +249,7 @@ mutable struct Broyden <: AbstractQuasiNewtonUpdateRule
 end
 Broyden(φ::Float64) = Broyden(φ, :constant)
 
-@doc raw"""
+@doc """
     InverseBroyden <: AbstractQuasiNewtonUpdateRule
 
 Indicates in [`AbstractQuasiNewtonDirectionUpdate`](@ref) that the Riemannian Broyden update
@@ -262,14 +262,14 @@ Then the update formula reads
 
 ```math
 B^\mathrm{Br}_{k+1} = \widetilde{B}^\mathrm{Br}_k
- - \frac{\widetilde{B}^\mathrm{Br}_k y_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k}
-   + \frac{s_k s^{\mathrm{T}}_k}{s^{\mathrm{T}}_k y_k}
- + φ_k y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k
+ - \frac{\widetilde{B}^\mathrm{Br}_k y_k y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{Br}_k}{y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{Br}_k y_k}
+   + \frac{s_k s^{$(_tex(:rm, "T"))}_k}{s^{$(_tex(:rm, "T"))}_k y_k}
+ + φ_k y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{Br}_k y_k
  \Bigl(
-     \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{B}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k}
+     \frac{s_k}{s^{$(_tex(:rm, "T"))}_k y_k} - \frac{\widetilde{B}^\mathrm{Br}_k y_k}{y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{Br}_k y_k}
     \Bigr) \Bigl(
-        \frac{s_k}{s^{\mathrm{T}}_k y_k} - \frac{\widetilde{B}^\mathrm{Br}_k y_k}{y^{\mathrm{T}}_k \widetilde{B}^\mathrm{Br}_k y_k}
- \Bigr)^{\mathrm{T}}
+        \frac{s_k}{s^{$(_tex(:rm, "T"))}_k y_k} - \frac{\widetilde{B}^\mathrm{Br}_k y_k}{y^{$(_tex(:rm, "T"))}_k \widetilde{B}^\mathrm{Br}_k y_k}
+ \Bigr)^{$(_tex(:rm, "T"))}
 ```
 
 where ``s_k`` and ``y_k`` are the coordinate vectors with respect to the current basis (from [`QuasiNewtonState`](@ref)) of
@@ -705,7 +705,7 @@ function initialize_update!(d::QuasiNewtonLimitedMemoryDirectionUpdate)
     return d
 end
 
-@doc raw"""
+@doc """
     QuasiNewtonCautiousDirectionUpdate <: AbstractQuasiNewtonDirectionUpdate
 
 These [`AbstractQuasiNewtonDirectionUpdate`](@ref)s represent any quasi-Newton update rule,

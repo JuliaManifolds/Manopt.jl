@@ -57,7 +57,7 @@ function get_cost(
     return sum(f(M, p) for f in sgo.cost)
 end
 
-@doc raw"""
+@doc """
     get_cost(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, i)
 
 Evaluate the `i`th summand of the cost.
@@ -79,7 +79,7 @@ function get_cost(
     )
 end
 
-@doc raw"""
+@doc """
     get_gradients(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradients!(M::AbstractManifold, X, sgo::ManifoldStochasticGradientObjective, p)
 
@@ -174,7 +174,7 @@ function get_gradients!(mp::AbstractManoptProblem, X, p)
     return get_gradients!(get_manifold(mp), X, get_objective(mp), p)
 end
 
-@doc raw"""
+@doc """
     get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p, k)
     get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, Y, p, k)
 
@@ -266,7 +266,7 @@ function get_gradient!(mp::AbstractManoptProblem, X, p, k)
     return get_gradient!(get_manifold(mp), X, get_objective(mp), p, k)
 end
 
-@doc raw"""
+@doc """
     get_gradient(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, p)
     get_gradient!(M::AbstractManifold, sgo::ManifoldStochasticGradientObjective, X, p)
 

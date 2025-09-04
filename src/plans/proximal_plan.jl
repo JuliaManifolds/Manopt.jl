@@ -74,7 +74,7 @@ mutable struct ManifoldProximalMapObjective{E<:AbstractEvaluationType,TC,TP,V} <
         return new{E,F,PF,typeof(i)}(f, prox_f, i)
     end
 end
-@doc raw"""
+@doc """
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalMapObjective, λ, p)
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalMapObjective, λ, p, i)
@@ -260,7 +260,7 @@ end
 #
 # Debug the Cyclic Proximal point parameter
 #
-@doc raw"""
+@doc """
     DebugProximalParameter <: DebugAction
 
 print the current iterates proximal point algorithm parameter given by
@@ -287,7 +287,7 @@ end
 
 #
 # Record
-@doc raw"""
+@doc """
     RecordProximalParameter <: RecordAction
 
 record the current iterates proximal point algorithm parameter given by in

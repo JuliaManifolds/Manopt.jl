@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     TwoManifoldProblem{
         MT<:AbstractManifold,NT<:AbstractManifold,O<:AbstractManifoldObjective
     } <: AbstractManoptProblem{MT}
@@ -19,7 +19,7 @@ _get_manifold(tmp::TwoManifoldProblem, ::Val{2}) = tmp.second_manifold
 
 get_objective(tmo::TwoManifoldProblem) = tmo.objective
 
-@doc raw"""
+@doc """
     AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <: AbstractManifoldCostObjective{E,C}
 
 A common abstract super type for objectives that consider primal-dual problems.
@@ -27,7 +27,7 @@ A common abstract super type for objectives that consider primal-dual problems.
 abstract type AbstractPrimalDualManifoldObjective{E<:AbstractEvaluationType,C,P} <:
               AbstractManifoldCostObjective{E,C} end
 
-@doc raw"""
+@doc """
     PrimalDualManifoldObjective{T<:AbstractEvaluationType} <: AbstractPrimalDualManifoldObjective{T}
 
 Describes an Objective linearized or exact Chambolle-Pock algorithm, cf. [BergmannHerzogSilvaLouzeiroTenbrinckVidalNunez:2021](@cite), [ChambollePock:2011](@cite)
@@ -39,10 +39,10 @@ depending on the `evaluation=` keyword in the constructor and stored in `T <: Ab
 
 * `cost`:                          ``F + G(Λ(⋅))`` to evaluate interim cost function values
 * `linearized_forward_operator!!`: linearized operator for the forward operation in the algorithm ``DΛ``
-* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T\mathcal M``
+* `linearized_adjoint_operator!!`: the adjoint differential ``(DΛ)^* : \mathcal N → T$(_math(:M))``
 * `prox_f!!`:                      the proximal map belonging to ``f``
 * `prox_G_dual!!`:                 the proximal map belonging to ``g_n^*``
-* `Λ!!`:                           the  forward operator (if given) ``Λ: \mathcal M → \mathcal N``
+* `Λ!!`:                           the  forward operator (if given) ``Λ: $(_math(:M)) → \mathcal N``
 
 Either the linearized operator ``DΛ`` or ``Λ`` are required usually.
 
@@ -240,7 +240,7 @@ function get_dual_prox!(
     return get_dual_prox!(M, Y, get_objective(admo, false), n, τ, X)
 end
 
-@doc raw"""
+@doc """
     Y = linearized_forward_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, X, n)
     linearized_forward_operator!(M::AbstractManifold, N::AbstractManifold, Y, apdmo::AbstractPrimalDualManifoldObjective, m, X, n)
 
@@ -332,7 +332,7 @@ function linearized_forward_operator!(
     return linearized_forward_operator!(M, N, Y, get_objective(admo, false), m, X, n)
 end
 
-@doc raw"""
+@doc """
     q = forward_operator(M::AbstractManifold, N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, p)
     forward_operator!(M::AbstractManifold, N::AbstractManifold, q, apdmo::AbstractPrimalDualManifoldObjective, p)
 
@@ -402,7 +402,7 @@ function forward_operator!(
     return forward_operator!(M, N, q, get_objective(admo, false), p)
 end
 
-@doc raw"""
+@doc """
     X = adjoint_linearized_operator(N::AbstractManifold, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
     adjoint_linearized_operator(N::AbstractManifold, X, apdmo::AbstractPrimalDualManifoldObjective, m, n, Y)
 
@@ -494,7 +494,7 @@ function adjoint_linearized_operator!(
     return adjoint_linearized_operator!(M, N, X, get_objective(admo, false), m, n, Y)
 end
 
-@doc raw"""
+@doc """
     AbstractPrimalDualSolverState
 
 A general type for all primal dual based options to be used within primal dual
@@ -502,7 +502,7 @@ based algorithms
 """
 abstract type AbstractPrimalDualSolverState <: AbstractManoptSolverState end
 
-@doc raw"""
+@doc """
     primal_residual(p, o, x_old, X_old, n_old)
 
 Compute the primal residual at current iterate ``k`` given the necessary values ``x_{k-1},
@@ -561,7 +561,7 @@ function primal_residual(
         ),
     )
 end
-@doc raw"""
+@doc """
     dual_residual(p, o, x_old, X_old, n_old)
 
 Compute the dual residual at current iterate ``k`` given the necessary values ``x_{k-1},
@@ -687,7 +687,7 @@ end
 #
 # Special Debuggers
 #
-@doc raw"""
+@doc """
     DebugDualResidual <: DebugAction
 
 A Debug action to print the dual residual.
@@ -748,7 +748,7 @@ function (d::DebugDualResidual)(
     end
     return d.storage(tmp, apds, k)
 end
-@doc raw"""
+@doc """
     DebugPrimalResidual <: DebugAction
 
 A Debug action to print the primal residual.
@@ -808,7 +808,7 @@ function (d::DebugPrimalResidual)(
     end
     return d.storage(tmp, apds, k)
 end
-@doc raw"""
+@doc """
     DebugPrimalDualResidual <: DebugAction
 
 A Debug action to print the primal dual residual.

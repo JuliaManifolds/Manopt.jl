@@ -90,15 +90,15 @@ function mid_point!(M::Sphere, y, p, q, x)
     return y
 end
 
-@doc raw"""
+@doc """
     reflect(M, f, x; kwargs...)
     reflect!(M, q, f, x; kwargs...)
 
 reflect the point `x` from the manifold `M` at the point `f(x)` of the
-function ``f: \mathcal M → \mathcal M``, given by
+function ``f: $(_math(:M)) → $(_math(:M))``, given by
 
 ````math
-    \operatorname{refl}_f(x) = \operatorname{refl}_{f(x)}(x),
+$(_tex(:operatorname, "refl"))_f(x) = $(_tex(:operatorname, "refl"))_{f(x)}(x),
 ````
 
 Compute the result in `q`.

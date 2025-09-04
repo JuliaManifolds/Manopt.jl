@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
     StoppingCriterion
 
 An abstract type for the functors representing stopping criteria, so they are
@@ -44,7 +44,7 @@ function get_count(c::StoppingCriterion, ::Val{:Iterations})
         return 0
     end
 end
-@doc raw"""
+@doc """
     StoppingCriterionGroup <: StoppingCriterion
 
 An abstract type for a Stopping Criterion that itself consists of a set of
@@ -129,7 +129,7 @@ function set_parameter!(c::StopAfter, ::Val{:MaxTime}, v::Period)
     return c
 end
 
-@doc raw"""
+@doc """
     StopAfterIteration <: StoppingCriterion
 
 A functor for a stopping criterion to stop after a maximal number of iterations.
@@ -440,7 +440,7 @@ function set_parameter!(c::StopWhenCostLess, ::Val{:MinCost}, v)
     return c
 end
 
-@doc raw"""
+@doc """
     StopWhenEntryChangeLess
 
 Evaluate whether a certain fields change is less than a certain threshold
@@ -897,7 +897,7 @@ function show(io::IO, c::StopWhenIterateNaN)
     return print(io, "StopWhenIterateNaN()\n    $(status_summary(c))")
 end
 
-@doc raw"""
+@doc """
     StopWhenSmallerOrEqual <: StoppingCriterion
 
 A functor for an stopping criterion, where the algorithm if stopped when a variable is smaller than or equal to its minimum value.
@@ -1013,7 +1013,7 @@ end
 # Meta Criteria
 #
 
-@doc raw"""
+@doc """
     StopWhenAll <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
@@ -1095,7 +1095,7 @@ function Base.:&(s1::StopWhenAll, s2::StopWhenAll)
     return StopWhenAll(s1.criteria..., s2.criteria...)
 end
 
-@doc raw"""
+@doc """
     StopWhenAny <: StoppingCriterionSet
 
 store an array of [`StoppingCriterion`](@ref) elements and indicates to stop,
@@ -1192,7 +1192,7 @@ end
 
 is_active_stopping_criterion(c::StoppingCriterion) = (c.at_iteration >= 0)
 
-@doc raw"""
+@doc """
     get_active_stopping_criteria(c)
 
 returns all active stopping criteria, if any, that are within a
@@ -1216,7 +1216,7 @@ function get_active_stopping_criteria(c::sC) where {sC<:StoppingCriterion}
     end
 end
 
-@doc raw"""
+@doc """
     get_stopping_criteria(c)
 
 return the array of internally stored [`StoppingCriterion`](@ref)s for a
@@ -1245,7 +1245,7 @@ function set_parameter!(c::StopWhenAny, s::Symbol, v)
     return c
 end
 
-@doc raw"""
+@doc """
     StopWhenRepeated <: StoppingCriterion
 
 A stopping Criterion that indicates to stop when the (internal) stoppoing criterion it wraps,
@@ -1346,7 +1346,7 @@ function show(io::IO, sc::StopWhenRepeated)
     )
 end
 
-@doc raw"""
+@doc """
     StopWhenCriterionWithIterationCondition <: StoppingCriterion
 
 A stopping criterion that indicates to stop when the (internal) stopping criterion it wraps,
@@ -1452,7 +1452,7 @@ function show(io::IO, sc::StopWhenCriterionWithIterationCondition)
     )
 end
 
-@doc raw"""
+@doc """
     get_reason(s::AbstractManoptSolverState)
 
 return the current reason stored within the [`StoppingCriterion`](@ref) from

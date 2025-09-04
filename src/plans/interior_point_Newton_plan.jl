@@ -249,17 +249,17 @@ end
 # Constraint functors
 #
 
-@doc raw"""
+@doc """
     CondensedKKTVectorField{O<:ConstrainedManifoldObjective,T,R} <: AbstractConstrainedSlackFunctor{T,R}
 
 Given the constrained optimization problem
 
 ```math
-\begin{aligned}
+\\begin{aligned}
 \min_{p ∈\mathcal{M}} &f(p)\\
 \text{subject to } &g_i(p)\leq 0 \quad \text{ for } i= 1, …, m,\\
 \quad &h_j(p)=0 \quad \text{ for } j=1,…,n,
-\end{aligned}
+\\end{aligned}
 ```
 
 Then reformulating the KKT conditions of the Lagrangian
@@ -274,14 +274,14 @@ using a slack variable ``s ∈ ℝ^m`` and a barrier parameter ``β``
 and the Riemannian gradient of the Lagrangian with respect to the first parameter
 ``\operatorname{grad}_p L(p, μ, λ)``.
 
-Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
+Let ``\mathcal N = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
 \mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } (X,Y) ∈ T_{(p,λ)}\mathcal N
 ```
 
 where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator and
-this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}\mathcal M`` given by
+this struct models the right hand side ``b(p,λ) ∈ T_{(p,λ)}$(_math(:M))`` given by
 
 ```math
 b(p,λ) = \begin{pmatrix}
@@ -351,7 +351,7 @@ function show(io::IO, CKKTvf::CondensedKKTVectorField)
     )
 end
 
-@doc raw"""
+@doc """
     CondensedKKTVectorFieldJacobian{O<:ConstrainedManifoldObjective,T,R}  <: AbstractConstrainedSlackFunctor{T,R}
 
 Given the constrained optimization problem
@@ -374,17 +374,17 @@ from the optimality conditions of the Lagrangian
 in a perturbed / barrier method enhanced as well as condensed form as using ``\operatorname{grad}_o L(p, μ, λ)``
 the Riemannian gradient of the Lagrangian with respect to the first parameter.
 
-Let ``\mathcal N = \mathcal M × ℝ^n``. We obtain the linear system
+Let ``\mathcal N = $(_math(:M)) × ℝ^n``. We obtain the linear system
 
 ```math
-\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } X ∈ T_p\mathcal M, Y ∈ ℝ^n
+\mathcal A(p,λ)[X,Y] = -b(p,λ),\qquad \text{where } X ∈ T_p$(_math(:M)), Y ∈ ℝ^n
 ```
 where ``\mathcal A: T_{(p,λ)}\mathcal N → T_{(p,λ)}\mathcal N`` is a linear operator
-on ``T_{(p,λ)}\mathcal N = T_p\mathcal M × ℝ^n`` given by
+on ``T_{(p,λ)}\mathcal N = T_p$(_math(:M)) × ℝ^n`` given by
 
 ```math
 \mathcal A(p,λ)[X,Y] = \begin{pmatrix}
-\operatorname{Hess}_p\mathcal L(p, μ, λ)[X]
+$(_tex(:Hess))_p\mathcal L(p, μ, λ)[X]
 + \displaystyle\sum_{i=1}^m \frac{μ_i}{s_i}⟨\operatorname{grad} g_i(p), X⟩\operatorname{grad} g_i(p)
 + \displaystyle\sum_{j=1}^n Y_j \operatorname{grad} h_j(p)
 \\
@@ -453,7 +453,7 @@ function show(io::IO, CKKTvfJ::CondensedKKTVectorFieldJacobian)
     )
 end
 
-@doc raw"""
+@doc """
     KKTVectorField{O<:ConstrainedManifoldObjective}
 
 Implement the vectorfield ``F`` KKT-conditions, inlcuding a slack variable
@@ -480,7 +480,7 @@ F(p, μ, λ, s) = \begin{pmatrix}
 g(p) + s\\
 h(p)\\
 μ ⊙ s
-\end{pmatrix}, \text{ where } p \in \mathcal M, μ, s \in ℝ^m\text{ and } λ \in ℝ^n,
+\end{pmatrix}, \text{ where } p \in $(_math(:M)), μ, s \in ℝ^m\text{ and } λ \in ℝ^n,
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
@@ -498,7 +498,7 @@ in the computations. Furthermore Both fields together also calrify the product m
 # Example
 
 Define `F = KKTVectorField(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `F(N, q)` or as the in-place variant `F(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` for the result.
 """
@@ -526,7 +526,7 @@ function show(io::IO, KKTvf::KKTVectorField)
     return print(io, "KKTVectorField\nwith the objective\n\t$(KKTvf.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldJacobian{O<:ConstrainedManifoldObjective}
 
 Implement the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
@@ -534,7 +534,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 \operatorname{J} F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess}_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
+    $(_tex(:Hess))_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
     \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + W_i\Bigr)_{i=1}^m\\
     \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
     μ ⊙ W + s ⊙ Y
@@ -542,7 +542,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess}_p \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p \mathcal L(p, μ, λ)[X]``.
 
 # Fields
 
@@ -557,7 +557,7 @@ Generate the Jacobian of the KKT vector field related to some [`ConstrainedManif
 # Example
 
 Define `JF = KKTVectorFieldJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `JF(N, q, Y)` or as the in-place variant `JF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
@@ -600,7 +600,7 @@ function show(io::IO, KKTvfJ::KKTVectorFieldJacobian)
     return print(io, "KKTVectorFieldJacobian\nwith the objective\n\t$(KKTvfJ.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldAdjointJacobian{O<:ConstrainedManifoldObjective}
 
 Implement the Adjoint of the Jacobian of the vector field ``F`` of the KKT-conditions, inlcuding a slack variable
@@ -608,7 +608,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 
 ```math
 \operatorname{J}^* F(p, μ, λ, s)[X, Y, Z, W] = \begin{pmatrix}
-    \operatorname{Hess}_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
+    $(_tex(:Hess))_p \mathcal L(p, μ, λ)[X] + \displaystyle\sum_{i=1}^m Y_i \operatorname{grad} g_i(p) + \displaystyle\sum_{j=1}^n Z_j \operatorname{grad} h_j(p)\\
     \Bigl( ⟨\operatorname{grad} g_i(p), X⟩ + s_iW_i\Bigr)_{i=1}^m\\
     \Bigl( ⟨\operatorname{grad} h_j(p), X⟩ \Bigr)_{j=1}^n\\
     μ ⊙ W + Y
@@ -616,7 +616,7 @@ for the inequality constraints, see [`KKTVectorField`](@ref) and [`KKTVectorFiel
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product
 
-See also the [`LagrangianHessian`](@ref) ``\operatorname{Hess}_p \mathcal L(p, μ, λ)[X]``.
+See also the [`LagrangianHessian`](@ref) ``$(_tex(:Hess))_p \mathcal L(p, μ, λ)[X]``.
 
 # Fields
 
@@ -631,7 +631,7 @@ Generate the Adjoint Jacobian of the KKT vector field related to some [`Constrai
 # Example
 
 Define `AdJF = KKTVectorFieldAdjointJacobian(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `AdJF(N, q, Y)` or as the in-place variant `AdJF(N, Z, q, Y)`,
 where `q` is a point on `N` and `Y` and `Z` are a tangent vector at `q`.
 """
@@ -673,7 +673,7 @@ function show(io::IO, KKTvfAdJ::KKTVectorFieldAdjointJacobian)
     return print(io, "KKTVectorFieldAdjointJacobian\nwith the objective\n\t$(KKTvfAdJ.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
 
 Implement the square of the norm of the vectorfield ``F`` of the KKT-conditions, inlcuding a slack variable
@@ -691,7 +691,7 @@ In [LaiYoshise:2024](@cite) this is called the merit function.
 # Example
 
 Define `f = KKTVectorFieldNormSq(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `f(N, q)`, where `q` is a point on `N`.
 """
 mutable struct KKTVectorFieldNormSq{O<:ConstrainedManifoldObjective}
@@ -706,7 +706,7 @@ function show(io::IO, KKTvfNSq::KKTVectorFieldNormSq)
     return print(io, "KKTVectorFieldNormSq\nwith the objective\n\t$(KKTvfNSq.cmo)")
 end
 
-@doc raw"""
+@doc """
     KKTVectorFieldNormSqGradient{O<:ConstrainedManifoldObjective}
 
 Compute the gradient of the [`KKTVectorFieldNormSq`](@ref) ``φ(p,μ,λ,s) = \lVert F(p,μ,λ,s)\rVert^2``,
@@ -721,7 +721,7 @@ which we can write with the adjoint ``J^*`` of the Jacobian
 
 and hence is computed with [`KKTVectorFieldAdjointJacobian`](@ref) and [`KKTVectorField`](@ref).
 
-For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad}_p \mathcal L(p,μ,λ) ∈ T_p\mathcal M``,
+For completeness, the gradient reads, using the [`LagrangianGradient`](@ref) ``L = \operatorname{grad}_p \mathcal L(p,μ,λ) ∈ T_p$(_math(:M))``,
 for a shorthand of the first component of ``F``, as
 
 ```math
@@ -747,7 +747,7 @@ where ``⊙`` denotes the Hadamard (or elementwise) product.
 # Example
 
 Define `grad_f = KKTVectorFieldNormSqGradient(cmo)` for some [`ConstrainedManifoldObjective`](@ref) `cmo`
-and let `N` be the product manifold of ``\mathcal M×ℝ^m×ℝ^n×ℝ^m``.
+and let `N` be the product manifold of ``$(_math(:M))×ℝ^m×ℝ^n×ℝ^m``.
 Then, you can call this cost as `grad_f(N, q)` or as the in-place variant `grad_f(N, Y, q)`,
 where `q` is a point on `N` and `Y` is a tangent vector at `q` returning the resulting gradient at.
 """
@@ -785,7 +785,7 @@ function interior_point_initial_guess(
     return ifelse(isfinite(max_step), min(l, max_step / grad_norm), l)
 end
 
-@doc raw"""
+@doc """
     InteriorPointCentralityCondition{CO,R}
 
 A functor to check the centrality condition.
@@ -795,14 +795,14 @@ Section 6 of [LaiYoshise:2024](@cite) propose the following additional condition
 inspired by the Euclidean case described in Section 6 [El-BakryTapiaTsuchiyaZhang:1996](@cite):
 
 For a given [`ConstrainedManifoldObjective`](@ref) assume consider the [`KKTVectorField`](@ref) ``F``,
-that is we are at a point ``q = (p, λ, μ, s)``  on ``\mathcal M × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
+that is we are at a point ``q = (p, λ, μ, s)``  on ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m``and a search direction ``V = (X, Y, Z, W)``.
 
 Then, let
 
 ```math
-τ_1 = \frac{m⋅\min\{ μ ⊙ s\}}{μ^{\mathrm{T}}s}
+τ_1 = \frac{m⋅\min\{ μ ⊙ s\}}{μ^{$(_tex(:rm, "T"))}s}
 \quad\text{ and }\quad
-τ_2 = \frac{μ^{\mathrm{T}}s}{\lVert F(q) \rVert}
+τ_2 = \frac{μ^{$(_tex(:rm, "T"))}s}{\lVert F(q) \rVert}
 ```
 where ``⊙`` denotes the Hadamard (or elementwise) product.
 
@@ -810,9 +810,9 @@ For a new candidate ``q(α) = \bigl(p(α), λ(α), μ(α), s(α)\bigr) := (\oper
 we then define two functions
 
 ```math
-c_1(α) = \min\{ μ(α) ⊙ s(α) \} - \frac{γτ_1 μ(α)^{\mathrm{T}}s(α)}{m}
+c_1(α) = \min\{ μ(α) ⊙ s(α) \} - \frac{γτ_1 μ(α)^{$(_tex(:rm, "T"))}s(α)}{m}
 \quad\text{ and }\quad
-c_2(α) = μ(α)^{\mathrm{T}}s(α) – γτ_2 \lVert F(q(α)) \rVert.
+c_2(α) = μ(α)^{$(_tex(:rm, "T"))}s(α) – γτ_2 \lVert F(q(α)) \rVert.
 ```
 
 While the paper now states that the (Armijo) linesearch starts at a point
@@ -886,7 +886,7 @@ function set_parameter!(ipcc::InteriorPointCentralityCondition, ::Val{:τ}, N, q
     return ipcc
 end
 
-@doc raw"""
+@doc """
     StopWhenKKTResidualLess <: StoppingCriterion
 
 Stop when the KKT residual
@@ -962,7 +962,7 @@ function show(io::IO, c::StopWhenKKTResidualLess)
 end
 
 # An internal function to compute the new σ
-@doc raw"""
+@doc """
     calculate_σ(M, cmo, p, μ, λ, s; kwargs...)
 
 Compute the new ``σ`` factor for the barrier parameter in [`interior_point_Newton`](@ref) as
@@ -975,7 +975,7 @@ where ``F`` is the KKT vector field, hence the [`KKTVectorFieldNormSq`](@ref) is
 # Keyword arguments
 
 * `vector_space=`[`Rn`](@ref Manopt.Rn) a function that, given an integer, returns the manifold to be used for the vector space components ``ℝ^m,ℝ^n``
-* `N` the manifold ``\mathcal M × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
+* `N` the manifold ``$(_math(:M)) × ℝ^m × ℝ^n × ℝ^m`` the vector field lives on (generated using `vector_space`)
 * `q` provide memory on `N` for interims evaluation of the vector field
 """
 function calculate_σ(

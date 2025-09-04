@@ -95,7 +95,15 @@ mutable struct ConjugateGradientDescentState{
         retr::TRetr=default_retraction_method(M, typeof(p)),
         vtr::VTM=default_vector_transport_method(M),
         initial_gradient::T=zero_vector(M, p),
-    ) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
+    ) where {
+        P,
+        T,
+        TsC<:StoppingCriterion,
+        TStep<:Stepsize,
+        TRC<:AbstractRestartCondition,
+        TRetr<:AbstractRetractionMethod,
+        VTM<:AbstractVectorTransportMethod,
+    }
         coef = DirectionUpdateRuleStorage(M, dC; p_init=p, X_init=initial_gradient)
         βT = allocate_result_type(M, ConjugateGradientDescentState, (p, initial_gradient))
         cgs = new{P,T,βT,TStep,TsC,typeof(coef),TRC,TRetr,VTM}()
@@ -123,11 +131,18 @@ function ConjugateGradientDescentState(
     stepsize::TStep=default_stepsize(
         M, ConjugateGradientDescentState; retraction_method=retraction_method
     ),
-    stopping_criterion::TsC=StopAfterIteration(500) |
-                                          StopWhenGradientNormLess(1e-8),
+    stopping_criterion::TsC=StopAfterIteration(500) | StopWhenGradientNormLess(1e-8),
     vector_transport_method::VTM=default_vector_transport_method(M, typeof(p)),
     initial_gradient::T=zero_vector(M, p),
-) where {P,T,TsC<:StoppingCriterion,TStep<:Stepsize,TRC<:AbstractRestartCondition,TRetr<:AbstractRetractionMethod,VTM<:AbstractVectorTransportMethod}
+) where {
+    P,
+    T,
+    TsC<:StoppingCriterion,
+    TStep<:Stepsize,
+    TRC<:AbstractRestartCondition,
+    TRetr<:AbstractRetractionMethod,
+    VTM<:AbstractVectorTransportMethod,
+}
     return ConjugateGradientDescentState(
         M,
         p,
@@ -156,7 +171,7 @@ the current iterate and gradient by ``p_{k+1}, X_{k+1}``, respectively,
 as well as the last update direction by ``δ_k``.
 """
 
-@doc raw"""
+@doc """
     ConjugateDescentCoefficientRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient adapted to manifolds
@@ -820,7 +835,7 @@ function PolakRibiereCoefficient(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.PolakRibiereCoefficientRule, args...; kwargs...)
 end
 
-@doc raw"""
+@doc """
     SteepestDescentCoefficientRule <: DirectionUpdateRule
 
 A functor `(problem, state, k) -> β_k` to compute the conjugate gradient update coefficient
@@ -1009,7 +1024,6 @@ function ConjugateGradientBealeRestart(args...; kwargs...)
     )
 end
 
-
 @doc """
     NeverRestart <: AbstractRestartCondition
 
@@ -1017,7 +1031,9 @@ A restart strategy that indicates to never restart.
 """
 struct NeverRestart <: AbstractRestartCondition end
 
-function (corr::NeverRestart)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+function (corr::NeverRestart)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+)
     return false
 end
 
@@ -1034,7 +1050,9 @@ i.e. when
 at the current iterate ``p``.
 """
 struct RestartOnNonDescent <: AbstractRestartCondition end
-function (corr::RestartOnNonDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
+function (corr::RestartOnNonDescent)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+)
     return get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >= 0
 end
 
@@ -1054,7 +1072,11 @@ at the current iterate ``p``.
 struct RestartOnNonSufficientDescent{F<:Real} <: AbstractRestartCondition
     κ::F
 end
-function (corr::RestartOnNonSufficientDescent)(amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k)
-    return (get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true)
-            > - corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true))
+function (corr::RestartOnNonSufficientDescent)(
+    amp::AbstractManoptProblem, cgs::ConjugateGradientDescentState, k
+)
+    return (
+        get_differential(amp, cgs.p, cgs.δ; gradient=cgs.X, evaluated=true) >
+        -corr.κ * get_differential(amp, cgs.p, cgs.X; gradient=cgs.X, evaluated=true)
+    )
 end

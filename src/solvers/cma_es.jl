@@ -492,7 +492,7 @@ function cma_es!(
     return get_solver_return(get_objective(mp), d_state)
 end
 
-@doc raw"""
+@doc """
     eigenvector_transport!(
         M::AbstractManifold,
         matrix_eigen::Eigen,
@@ -505,7 +505,7 @@ end
 Transport the matrix with `matrix_eig` eigen decomposition when expanded in `basis` from
 point `p` to point `q` on `M`. Update `matrix_eigen` in-place.
 
-`(p, matrix_eig)` belongs to the fiber bundle of ``B = \mathcal M × SPD(n)``, where `n`
+`(p, matrix_eig)` belongs to the fiber bundle of ``B = $(_math(:M)))) × SPD(n)``, where `n`
 is the (real) dimension of `M`. The function corresponds to the Ehresmann connection
 defined by vector transport `vtm` of eigenvectors of `matrix_eigen`.
 """
@@ -731,7 +731,7 @@ function show(io::IO, c::StopWhenEvolutionStagnates)
     )
 end
 
-@doc raw"""
+@doc """
     StopWhenPopulationStronglyConcentrated{TParam<:Real} <: StoppingCriterion
 
 Stop if the standard deviation in all coordinates is smaller than `tol` and

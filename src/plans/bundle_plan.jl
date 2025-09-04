@@ -4,32 +4,33 @@
 
 function convex_bundle_method_subsolver end
 function convex_bundle_method_subsolver! end
-@doc raw"""
+@doc """
     λ = convex_bundle_method_subsolver(M, p_last_serious, linearization_errors, transported_subgradients)
     convex_bundle_method_subsolver!(M, λ, p_last_serious, linearization_errors, transported_subgradients)
 
 solver for the subproblem of the convex bundle method
 at the last serious iterate ``p_k`` given the current linearization errors ``c_j^k``,
-and transported subgradients ``\mathrm{P}_{p_k←q_j} X_{q_j}``.
+and transported subgradients ``$(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}``.
 
 The computation can also be done in-place of `λ`.
 
 The subproblem for the convex bundle method is
 ```math
-\begin{align*}
-    \operatorname*{arg\,min}_{λ ∈ ℝ^{\lvert J_k\rvert}}&
-    \frac{1}{2} \Bigl\lVert \sum_{j ∈ J_k} λ_j \mathrm{P}_{p_k←q_j} X_{q_j} \Bigr\rVert^2
-    + \sum_{j ∈ J_k} λ_j \, c_j^k
-    \\
-    \text{s. t.}\quad &
-    \sum_{j ∈ J_k} λ_j = 1,
-    \quad λ_j ≥ 0
-    \quad \text{for all }
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "J_k"))}
+    &
+    $(_tex(:frac, "1", "2"))$(_tex(:Bigl))\\lVert $(_tex(:sum, "j ∈ J_k")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j} $(_tex(:Bigl))\\rVert^2
+    + $(_tex(:sum, "j ∈ J_k")), "λ_j \\, c_j^k"
+    \\\\
+    $(_tex(:text, "s. t."))$(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ J_k")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all "))
     j ∈ J_k,
 \end{align*}
 ```
 
-where ``J_k = \{j ∈ J_{k-1} \ | \ λ_j > 0\} \cup \{k\}``.
+where ``J_k = $(_tex(:set, "j ∈ J_{k-1} \\ | \\ λ_j > 0")) ∪ $(_tex(:set, "k"))``.
 See [BergmannHerzogJasa:2024](@cite) for more details
 
 !!! tip
@@ -42,7 +43,7 @@ convex_bundle_method_subsolver(
 
 function proximal_bundle_method_subsolver end
 function proximal_bundle_method_subsolver! end
-@doc raw"""
+@doc """
     λ = proximal_bundle_method_subsolver(M, p_last_serious, μ, approximation_errors, transported_subgradients)
     proximal_bundle_method_subsolver!(M, λ, p_last_serious, μ, approximation_errors, transported_subgradients)
 
@@ -50,18 +51,18 @@ solver for the subproblem of the proximal bundle method.
 
 The subproblem for the proximal bundle method is
 ```math
-\begin{align*}
-    \operatorname*{arg\,min}_{λ ∈ ℝ^{\lvert L_l\rvert}} &
-    \frac{1}{2 \mu_l} \Bigl\lVert \sum_{j ∈ L_l} λ_j \mathrm{P}_{p_k←q_j} X_{q_j} \Bigr\rVert^2
-    + \sum_{j ∈ L_l} λ_j \, c_j^k
-    \\
-    \text{s. t.} \quad &
-    \sum_{j ∈ L_l} λ_j = 1,
-    \quad λ_j ≥ 0
-    \quad \text{for all } j ∈ L_l,
-\end{align*}
+\\begin{align*}
+    $(_tex(:argmin))_{λ ∈ ℝ^{$(_tex(:abs, "L_l"))} &
+    $(_tex(:frac, "1", "2 μ_l")) $(_tex(:Bigl)) \\lVert $(_tex(:sum, "j ∈ L_l")) λ_j $(_tex(:rm, "P"))_{p_k←q_j} X_{q_j}$(_tex(:Bigr))\rVert^2
+    + $(_tex(:sum, "j ∈ L_l")) "λ_j \\, c_j^k
+    \\\\
+    $(_tex(:text, "s. t.")) $(_tex(:quad)) &
+    $(_tex(:sum, "j ∈ L_l")) λ_j = 1,
+    $(_tex(:quad)) λ_j ≥ 0
+    $(_tex(:quad)) $(_tex(:text, "for all ")) j ∈ L_l,
+\\end{align*}
 ```
-where ``L_l = \{k\}`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1} \cup \{k\}`` otherwise.
+where ``L_l = $(_tex(:set, "k"))`` if ``q_k`` is a serious iterate, and ``L_l = L_{l-1}  ∪ $(_tex(:set, "k"))`` otherwise.
 See [HoseiniMonjeziNobakhtianPouryayevali:2021](@cite).
 
 !!! tip
@@ -72,7 +73,7 @@ proximal_bundle_method_subsolver(
     M, p_last_serious, μ, approximation_errors, transported_subgradients
 )
 
-@doc raw"""
+@doc """
     StopWhenLagrangeMultiplierLess <: StoppingCriterion
 
 Stopping Criteria for Lagrange multipliers.
@@ -82,13 +83,13 @@ where based on the Lagrange multipliers an approximate (sub)gradient ``g`` and a
 is computed.
 
 The `mode=:both` requires that both
-``ε`` and ``\lvert g \rvert`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
+``ε`` and ``$(_tex(:abs, "g"))`` are smaller than their `tolerance`s for the [`convex_bundle_method`](@ref),
 and that
-``c`` and ``\lvert d \rvert`` are smaller than their `tolerance`s for the [`proximal_bundle_method`](@ref).
+``c`` and ``$(_tex(:abs, "d"))`` are smaller than their `tolerance`s for the [`proximal_bundle_method`](@ref).
 
 The `mode=:estimate` requires that, for the [`convex_bundle_method`](@ref)
-``-ξ = \lvert g \rvert^2 + ε`` is less than a given `tolerance`.
-For the [`proximal_bundle_method`](@ref), the equation reads ``-ν = μ \lvert d \rvert^2 + c``.
+``-ξ = $(_tex(:abs, "g"))^2 + ε`` is less than a given `tolerance`.
+For the [`proximal_bundle_method`](@ref), the equation reads ``-ν = μ $(_tex(:abs, "d"))^2 + c``.
 
 # Constructors
 
@@ -98,7 +99,7 @@ Create the stopping criterion for one of the `mode`s mentioned.
 Note that tolerance can be a single number for the `:estimate` case,
 but a vector of two values is required for the `:both` mode.
 Here the first entry specifies the tolerance for ``ε`` (``c``),
-the second the tolerance for ``\lvert g \rvert`` (``\lvert d \rvert``), respectively.
+the second the tolerance for ``$(_tex(:abs, "g"))`` (``$(_tex(:abs, "d"))``), respectively.
 """
 mutable struct StopWhenLagrangeMultiplierLess{
     T<:Real,A<:AbstractVector{<:T},B<:Union{Nothing,<:AbstractVector{<:String}}
@@ -156,7 +157,7 @@ function show(io::IO, sc::StopWhenLagrangeMultiplierLess)
     )
 end
 
-@doc raw"""
+@doc """
     DebugWarnIfLagrangeMultiplierIncreases <: DebugAction
 
 print a warning if the Lagrange parameter based value ``-ξ`` of the bundle method increases.

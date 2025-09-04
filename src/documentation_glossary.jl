@@ -90,6 +90,7 @@ define!(
     :pmatrix,
     (lines...) -> raw"\begin{pmatrix} " * join(lines, raw"\\ ") * raw"\end{pmatrix}",
 )
+define!(:LaTeX, :operatorname, (name) -> raw"\operatorname{$name}")
 define!(:LaTeX, :proj, raw"\operatorname{proj}")
 define!(:LaTeX, :prox, raw"\operatorname{prox}")
 define!(:LaTeX, :quad, raw"\quad")
@@ -99,6 +100,7 @@ define!(:LaTeX, :retr, raw"\operatorname{retr}")
 define!(:LaTeX, :rm, (letter) -> raw"\mathrm{" * "$letter" * "}")
 define!(:LaTeX, :sqrt, (s) -> raw"\sqrt{" * "$s}")
 define!(:LaTeX, :subgrad, raw"∂")
+define!(:LaTeX, :set, (s) -> raw"\{" * "$s" * raw"\}")
 define!(:LaTeX, :sum, (b="", t="") -> raw"\sum" * "_{$b}^{$t}")
 define!(:LaTeX, :text, (letter) -> raw"\text{" * "$letter" * "}")
 define!(:LaTeX, :transp, raw"\mathrm{T}")

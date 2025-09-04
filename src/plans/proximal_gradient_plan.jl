@@ -88,7 +88,7 @@ function get_cost_smooth(
     return objective.cost_smooth(M, p)
 end
 
-@doc raw"""
+@doc """
     q = get_proximal_map(M::AbstractManifold, mpo::ManifoldProximalGradientObjective, λ, p)
     get_proximal_map!(M::AbstractManifold, q, mpo::ManifoldProximalGradientObjective, λ, p)
 
@@ -378,7 +378,7 @@ function show(io::IO, pgms::ProximalGradientMethodState)
 end
 #
 # Stepsize
-@doc raw"""
+@doc """
     ProximalGradientMethodBacktrackingStepsize <: Stepsize
 
 A functor for backtracking line search in proximal gradient methods.
@@ -726,7 +726,7 @@ function show(io::IO, c::StopWhenGradientMappingNormLess)
     )
 end
 
-@doc raw"""
+@doc """
     DebugWarnIfStepsizeCollapsed <: DebugAction
 
 print a warning if the backtracking stopped because the stepsize fell below a given threshold in the [`proximal_gradient_method`](@ref).

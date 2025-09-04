@@ -1,4 +1,4 @@
-@doc raw"""
+@doc """
 🏔️ Manopt.jl: optimization on Manifolds in Julia.
 
 * 📚 Documentation: [manoptjl.org](https://manoptjl.org)
@@ -444,9 +444,7 @@ export SteepestDescentCoefficient,
     ConjugateGradientBealeRestart
 # Direction Corrections
 export AbstractRestartCondition
-export NeverRestart,
-    RestartOnNonDescent,
-    RestartOnNonSufficientDescent
+export NeverRestart, RestartOnNonDescent, RestartOnNonSufficientDescent
 #
 # Solvers
 export adaptive_regularization_with_cubics,

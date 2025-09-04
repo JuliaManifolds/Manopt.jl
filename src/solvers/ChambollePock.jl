@@ -190,12 +190,12 @@ end
 _tex_DΛ = "DΛ: T_{m}$(_math(:M)) → T_{Λ(m)}$(_tex(:Cal, "N")))"
 
 _doc_ChambollePock_formula = raw"""
-Given a `cost` function ``\mathcal E:\mathcal M → ℝ`` of the form
+Given a `cost` function ``\mathcal E:$(_math(:M)) → ℝ`` of the form
 ```math
 \mathcal f(p) = F(p) + G( Λ(p) ),
 ```
-where ``F:\mathcal M → ℝ``, ``G:\mathcal N → ℝ``,
-and ``Λ:\mathcal M → \mathcal N``.
+where ``F:$(_math(:M)) → ℝ``, ``G:\mathcal N → ℝ``,
+and ``Λ:$(_math(:M)) → \mathcal N``.
 """
 
 _doc_ChambollePock = """
@@ -513,7 +513,7 @@ function dual_update!(
     return cps
 end
 
-@doc raw"""
+@doc """
     update_prox_parameters!(o)
 update the prox parameters as described in Algorithm 2 of [ChambollePock:2011](@cite),
 

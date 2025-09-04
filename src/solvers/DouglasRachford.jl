@@ -377,7 +377,7 @@ function _reflect!(M, r, p, x, R, ::AllocatingEvaluation)
 end
 _reflect!(M, r, p, x, R, ::InplaceEvaluation) = R(M, r, p, x)
 
-@doc raw"""
+@doc """
     DouglasRachford(M, f, proxes_f, p; kwargs...)
 
 a doc string with some math ``t_{k+1} = g(α_k; t_k, s_k)``

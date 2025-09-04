@@ -1,7 +1,7 @@
-@doc raw"""
+@doc """
     estimate_sectional_curvature(M::AbstractManifold, p)
 
-Estimate the sectional curvature of a manifold ``\mathcal M`` at a point ``p \in \mathcal M``
+Estimate the sectional curvature of a manifold ``$(_math(:M))`` at a point ``p \in $(_math(:M))``
 on two random tangent vectors at ``p`` that are orthogonal to each other.
 
 # See also
@@ -15,7 +15,7 @@ function estimate_sectional_curvature(M::AbstractManifold, p)
     return sectional_curvature(M, p, X, Y)
 end
 
-@doc raw"""
+@doc """
     ζ_1(ω, δ)
 
 compute a curvature-dependent bound.
@@ -31,14 +31,14 @@ The formula reads
 ```
 
 where ``ω ≤ κ_p`` for all ``p ∈ \mathcal U`` is a lower bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ $(_math(:M))`` with diameter ``δ``.
 """
 function ζ_1(k_min, diameter)
     (k_min < zero(k_min)) && return sqrt(-k_min) * diameter * coth(sqrt(-k_min) * diameter)
     return one(k_min)
 end
 
-@doc raw"""
+@doc """
     ζ_2(Ω, δ)
 
 compute a curvature-dependent bound.
@@ -53,17 +53,17 @@ The formula reads
 ```
 
 where ``Ω ≥ κ_p`` for all ``p ∈ \mathcal U`` is an upper bound to the sectional curvature in
-a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ \mathcal M`` with diameter ``δ``.
+a (strongly geodesically convex) bounded subset ``\mathcal U ⊆ $(_math(:M))`` with diameter ``δ``.
 """
 function ζ_2(k_max, diameter)
     (k_max > zero(k_max)) && return sqrt(k_max) * diameter * cot(sqrt(k_max) * diameter)
     return one(k_max)
 end
 
-@doc raw"""
+@doc """
     close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
 
-sample a random point close to ``p ∈ \mathcal M`` within a tolerance `tol`
+sample a random point close to ``p ∈ $(_math(:M))`` within a tolerance `tol`
 and a [retraction](@extref ManifoldsBase :doc:`retractions`).
 """
 function close_point(M, p, tol; retraction_method=default_retraction_method(M, typeof(p)))
@@ -362,7 +362,7 @@ function _null_condition(amp, M, q, p_last_serious, X, g, VT, IRT, m, t, ξ, ϱ)
     )
 end
 
-@doc raw"""
+@doc """
     DomainBackTrackingStepsize <: Stepsize
 
 Implement a backtrack as long as we are ``q = \operatorname{retr}_p(X)``
@@ -465,7 +465,7 @@ function DomainBackTracking(args...; kwargs...)
     return ManifoldDefaultsFactory(Manopt.DomainBackTrackingStepsize, args...; kwargs...)
 end
 
-@doc raw"""
+@doc """
     NullStepBackTrackingStepsize <: Stepsize
 
 Implement a backtracking with a geometric condition in the case of a null step.
@@ -565,7 +565,7 @@ get_message(nsbt::NullStepBackTrackingStepsize) = nsbt.message
 
 _doc_cbm_gk = raw"""
 ```math
-g_k = \sum_{j\in J_k} λ_j^k \mathrm{P}_{p_k←q_j}X_{q_j},
+g_k = \sum_{j\in J_k} λ_j^k $(_tex(:rm, "P"))_{p_k←q_j}X_{q_j},
 ```
 """
 _doc_convex_bundle_method = """

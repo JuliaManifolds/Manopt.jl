@@ -332,7 +332,7 @@ function show(io::IO, c::StopWhenFirstOrderProgress)
     return print(io, "StopWhenFirstOrderProgress($(repr(c.θ)))\n    $(status_summary(c))")
 end
 
-@doc raw"""
+@doc """
     StopWhenAllLanczosVectorsUsed <: StoppingCriterion
 
 When an inner iteration has used up all Lanczos vectors, then this stopping criterion is
