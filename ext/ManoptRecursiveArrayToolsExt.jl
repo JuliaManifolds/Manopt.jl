@@ -33,7 +33,7 @@ end
     X = get_gradient(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, p, i)
     get_gradient!(M::AbstractManifold, p::ManifoldAlternatingGradientObjective, X, p, i)
 
-Evaluate one of the component gradients ``\operatorname{grad}f_i``, ``i∈\{1,…,n\}``, at `x` (in place of `Y`).
+Evaluate one of the component gradients ``$(_tex(:grad)) f_i``, ``i∈ $(_tex(:set, "1,…,n"))``, at `x` (in place of `Y`).
 """
 function get_gradient(
     M::ProductManifold,
